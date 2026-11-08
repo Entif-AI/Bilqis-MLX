@@ -1,5 +1,6 @@
 """Accepted-run production ingress for post-remediation stale replay faults."""
 from pathlib import Path
+from dataclasses import replace
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 import os
@@ -18,8 +19,8 @@ from bilqis_mlx.runtime.atlas_capability_support_owner import (
 )
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    accept_and_publish, bind_accepted_execution_cache, derive_successor_bundle,
-    load_accepted_generation,
+    accept_and_publish, bind_accepted_correction_authority,
+    bind_accepted_execution_cache, derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.cognitive_solver import QualifiedComposition, SolveContext
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
@@ -48,9 +49,14 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
             os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
         self.environment.start()
         source = candidate(parent_state())
+        source = replace(source, correction_frontier={
+            **source.correction_frontier,
+            "source_authority_registry_sha256": AUTHORITY.digest,
+        })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             publish_bamf_generation(
                 self.run, source, acceptance=acceptance(source))
+            bind_accepted_correction_authority(self.run, AUTHORITY)
 
     def tearDown(self):
         self.environment.stop()
@@ -59,6 +65,10 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
     def _publish_source_qualified_support(self, run):
         parent, transaction, retained, _authority = source_qualified_state()
         bundle = candidate(retained)
+        bundle = replace(bundle, correction_frontier={
+            **bundle.correction_frontier,
+            "source_authority_registry_sha256": AUTHORITY.digest,
+        })
         decision = retention_decision(parent=parent, retained=retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             published = accept_and_publish(
@@ -68,6 +78,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
             )
             accepted_manifest = bind_accepted_execution_cache(
                 run).accepted_manifest_sha256
+            bind_accepted_correction_authority(run, AUTHORITY)
         self.assertEqual(accepted_manifest, published["manifest_sha256"])
         return accepted_manifest
 

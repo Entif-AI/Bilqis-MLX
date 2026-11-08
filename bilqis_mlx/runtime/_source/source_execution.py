@@ -117,11 +117,14 @@ class SourceExecutionContext:
             _read_executable_factory_release_artifact as _read_executable_factory_release)
 
         release = _read_executable_factory_release(run_dir, receipt)
-        if correction_registry is not None:
-            from bilqis_mlx.runtime.bamf_bundle.admission import (
-                bind_accepted_correction_authority,
-            )
-            bind_accepted_correction_authority(run_dir, correction_registry)
+        if accepted_runtime_host is not None:
+            from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+            if (not isinstance(accepted_runtime_host, AcceptedRuntimeHost)
+                    or accepted_runtime_host.run_dir.resolve()
+                    != Path(run_dir).resolve()):
+                _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
+            accepted_runtime_host.source_authority()
+            correction_registry = accepted_runtime_host.registry
         context = cls(
             release=release, graph=graph, source_root=source_root,
             source_registry=source_registry, answer_registry=answer_registry,
@@ -215,6 +218,12 @@ class SourceExecutionContext:
                 or host.run_dir.resolve() != Path(run_dir).resolve()
                 or host.registry is not self.correction_registry):
             _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
+        host.source_authority()
+
+    def source_authority(self):
+        """Return the opaque authority owned by this context's current accepted host."""
+        self.require_accepted_runtime(self.run_dir)
+        return self._accepted_runtime_host.source_authority()
 
     def require_capabilities(self, capabilities: tuple[str, ...]) -> None:
         """Check a complete host request before any of its providers run."""

@@ -73,6 +73,9 @@ def validate_identity_sidecars(extents, provenance, records, invalid):
             or len(set(banks)) != len(banks)):
         invalid()
     _validate_feature_binding(compiler, invalid)
+    source_authority_anchor = correction.get('source_authority_registry_sha256')
+    if (source_authority_anchor is not None and not _digest(source_authority_anchor)):
+        invalid()
     if (compiler.get('factor_map_sha256') != extents.factor_map_digest
             or not _digest(compiler.get('compiler_sha256'))
             or any(not _epoch(record.get(key)) for record, keys in (

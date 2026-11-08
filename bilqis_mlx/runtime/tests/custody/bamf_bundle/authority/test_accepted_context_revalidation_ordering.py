@@ -1,6 +1,7 @@
 """Ordering and replay tests for accepted C09 context revalidation."""
 from __future__ import annotations
 
+from dataclasses import replace
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -21,7 +22,9 @@ from bilqis_mlx.runtime.accepted_correction_runtime import (
 )
 from bilqis_mlx.runtime.atlas_owner_ingress import _route
 from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
-from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    bind_accepted_correction_authority, bind_accepted_execution_cache,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, candidate, parent_state, shape_patch,
 )
@@ -74,10 +77,14 @@ class AcceptedContextOrderingTests(unittest.TestCase):
 
     def _publish(self):
         source = candidate(parent_state())
+        source = replace(source, correction_frontier={
+            **source.correction_frontier,
+            "source_authority_registry_sha256": AUTHORITY.digest,
+        })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             publish_bamf_generation(
                 self.run, source, acceptance=acceptance(source))
-            return bind_accepted_execution_cache(self.run)
+            return bind_accepted_correction_authority(self.run, AUTHORITY)
 
     def _persist_invalidation(self, cache, event):
         record = context_invalidation_record(
@@ -110,7 +117,7 @@ class AcceptedContextOrderingTests(unittest.TestCase):
                     current, event, source_authority),
                 AUTHORITY,
             )
-            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            host = AcceptedRuntimeHost(self.run)
 
         event_a = _event(case, x_digest, y_digest)
         event_b = _event(case, y_digest, z_digest)
@@ -181,7 +188,7 @@ class AcceptedContextOrderingTests(unittest.TestCase):
                     current, event, source_authority),
                 AUTHORITY,
             )
-            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            host = AcceptedRuntimeHost(self.run)
         invalidation = _event(case, old_digest, new_digest)
         receipt = self._persist_invalidation(cache, invalidation)
 
@@ -239,7 +246,7 @@ class AcceptedContextOrderingTests(unittest.TestCase):
                     current, event, source_authority),
                 AUTHORITY,
             )
-            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            host = AcceptedRuntimeHost(self.run)
         invalidation = _event(case, case.previous.digest, "e" * 64)
         receipt = self._persist_invalidation(cache, invalidation)
         held = owner.index.nodes[0]
@@ -271,7 +278,7 @@ class AcceptedContextOrderingTests(unittest.TestCase):
                     current, event, source_authority),
                 AUTHORITY,
             )
-            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            host = AcceptedRuntimeHost(self.run)
             transition = host.record_context_transition(
                 case.previous, case.contexts)
         invalidation = transition.invalidations[0]

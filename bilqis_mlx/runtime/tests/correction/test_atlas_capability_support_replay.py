@@ -65,7 +65,7 @@ class CapabilitySupportReplayTests(CapabilitySupportOwnerFixture):
         self.assertEqual(reloaded.ledger, expected_ledger)
 
     def test_accepted_correction_stream_delivers_to_live_capability_support_owner(self):
-        self.publish_support()
+        self.publish_support(authority_registry=AUTHORITY)
         owner = self.load_support(AUTHORITY)
         correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
         with shape_patch():

@@ -99,10 +99,12 @@ def bind_accepted_registry(
 def register_compiled_batch(
     run_dir: Path, batch, registry: SourceAuthorityRegistry | None = None,
 ) -> None:
-    from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+    from bilqis_mlx.runtime.bamf_bundle.admission import (
+        require_accepted_correction_registry,
+    )
     from bilqis_mlx.runtime.atlas_owner_ingress import _route
 
-    cache = bind_accepted_execution_cache(run_dir)
+    cache, registry = require_accepted_correction_registry(run_dir, registry)
     owners = (
         ("ATLAS_FEATURE", batch.atlas_feature_artifact_owner),
         ("PACKED_FRAME", batch.compiled.packed_frame_artifact_owner),
@@ -118,10 +120,12 @@ def register_compiled_batch(
 def register_solve_context(
     run_dir: Path, context, registry: SourceAuthorityRegistry | None = None,
 ) -> None:
-    from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+    from bilqis_mlx.runtime.bamf_bundle.admission import (
+        require_accepted_correction_registry,
+    )
     from bilqis_mlx.runtime.atlas_owner_ingress import _route
 
-    cache = bind_accepted_execution_cache(run_dir)
+    cache, registry = require_accepted_correction_registry(run_dir, registry)
     owner = context.operator_composition_artifact_owner
     register_accepted_target(
         run_dir, cache.accepted_manifest_sha256, "OPERATOR_COMPOSITION", owner,

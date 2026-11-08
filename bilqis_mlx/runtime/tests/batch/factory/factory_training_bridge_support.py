@@ -67,7 +67,7 @@ class FactoryTrainingBridgeFixture(SourceBackboneTestBase):
             "factory_release_sha256": self.context.release.release_sha256,
             "factory_release_file": release_file,
         }
-        return AcceptedRuntimeHost(run_dir, AUTHORITY).source_context(
+        return AcceptedRuntimeHost(run_dir).source_context(
             receipt, graph=self.context.graph,
             source_root=self.context.source_root)
 

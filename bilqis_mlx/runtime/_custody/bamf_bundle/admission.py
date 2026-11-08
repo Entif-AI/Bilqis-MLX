@@ -34,7 +34,7 @@ from .accepted_runtime import (
     _EXECUTION_CACHE_OWNER, _published_in_memory_identity, _read_accepted,
     bind_accepted_cache_authority, bind_accepted_correction_authority,
     bind_accepted_execution_cache, interactive_accepted_cache_inference,
-    load_accepted_generation,
+    load_accepted_generation, require_accepted_correction_registry,
 )
 from .publication import publish_bamf_generation
 from .records import (

@@ -14,12 +14,23 @@ import mlx.core as mx
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.factory.curriculum_definition import from_legacy_course
+from bilqis_mlx.factory.executable_release import compile_executable_factory_release
+from bilqis_mlx.factory.execution import CurriculumProfile
+from bilqis_mlx.factory.tests.test_executable_release import _answers
+from bilqis_mlx.factory.tests.test_execution_plan import (
+    _synthetic_course, _synthetic_registry,
+)
 from bilqis_mlx.learning.atlas_candidate import begin_candidate, candidate_step, resolve_candidate
 from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
 from bilqis_mlx.runtime import mlx_checkpoint
 from bilqis_mlx.runtime.bamf_bundle import publication
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
+)
+from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    bind_accepted_correction_authority,
 )
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
@@ -44,9 +55,21 @@ from bilqis_mlx.semantics.domains import contract_digest
 
 PRIVATE = Ed25519PrivateKey.from_private_bytes(bytes.fromhex("29" * 32))
 PUBLIC = PRIVATE.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw).hex()
+WRONG_PRIVATE = Ed25519PrivateKey.from_private_bytes(bytes.fromhex("31" * 32))
+WRONG_PUBLIC = WRONG_PRIVATE.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw).hex()
 OWNER = "fixture:a12-source-owner"
-REGISTRY = SourceAuthorityRegistry((SourceAuthorityKey(
-    OWNER, PUBLIC, (SourceAuthorityScope(DependencyKind.ARTIFACT, "a12-export:"),)),))
+KEY_OWNER = "fixture:key-owner"
+SCOPE_OWNER = "fixture:scope-owner"
+REGISTRY = SourceAuthorityRegistry((
+    SourceAuthorityKey(
+        OWNER, PUBLIC, (SourceAuthorityScope(DependencyKind.ARTIFACT, "a12-export:"),)),
+    SourceAuthorityKey(
+        KEY_OWNER, WRONG_PUBLIC,
+        (SourceAuthorityScope(DependencyKind.ARTIFACT, "a12-export:"),)),
+    SourceAuthorityKey(
+        SCOPE_OWNER, PUBLIC,
+        (SourceAuthorityScope(DependencyKind.ARTIFACT, "other-export:"),)),
+))
 
 
 def _selection():
@@ -57,12 +80,12 @@ def _selection():
         entry["source_bundle_id"])
 
 
-def _receipt(selection, frontier, artifacts):
+def _receipt(selection, frontier, artifacts, *, owner=OWNER, signer=PRIVATE):
     value = ExportClearanceReceipt(
-        OWNER, selection.bundle_id, selection.release_sha256, selection.source_bundle_id,
+        owner, selection.bundle_id, selection.release_sha256, selection.source_bundle_id,
         contract_digest(frontier), frontier.rights_epoch, frontier.correction_generation,
         artifacts, (), (), (), "0" * 128)
-    return replace(value, signature_hex=PRIVATE.sign(value.signing_bytes()).hex())
+    return replace(value, signature_hex=signer.sign(value.signing_bytes()).hex())
 
 
 class PackageImportAdoptionTests(TestCase):
@@ -74,6 +97,7 @@ class PackageImportAdoptionTests(TestCase):
         self.env.start()
         self.addCleanup(self.env.stop)
         self.run = self.root / "run"
+        self.registry = REGISTRY
         self.selection = _selection()
         self.frontier = SourceFrontier(2, 4, ())
         self.state = parent_state()
@@ -82,7 +106,8 @@ class PackageImportAdoptionTests(TestCase):
             base,
             provenance=replace(base.provenance, release_digest=self.selection.release_sha256),
             correction_frontier={**base.correction_frontier,
-                                 "release_digest": self.selection.release_sha256})
+                                 "release_digest": self.selection.release_sha256,
+                                 "source_authority_registry_sha256": self.registry.digest})
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             self.pointer = publish_candidate(self.run, self.initial)
         array = np.asarray(self.state.optimizer.parameters[NAME], dtype="<f4")
@@ -92,6 +117,16 @@ class PackageImportAdoptionTests(TestCase):
             self.initial.topology.digest, self.selection.release_sha256,
             self.initial.extents.active_semantic_digest, self.initial.extents.factor_map_digest,
             self.initial.extents.motif_key_map_digest)
+        course = _synthetic_course(6)
+        curriculum, bindings = from_legacy_course(course)
+        self.source_graph = {
+            "tokens": ["fixture.padding", "cogal.value.false", "cogal.value.true"]}
+        self.source_registry = _synthetic_registry()
+        self.answer_registry = _answers()
+        self.factory_release = compile_executable_factory_release(
+            curriculum, bindings, CurriculumProfile.full(), self.source_registry,
+            self.answer_registry, source_root=None, graph=self.source_graph,
+            verification_seed=17)
 
     def package_and_clearance(self):
         source, _ = snapshot(PackageKind.WEIGHT_DELTA)
@@ -122,7 +157,25 @@ class PackageImportAdoptionTests(TestCase):
             return publish_screened_delta_import(
                 screened, self.run, export_clearance=receipt,
                 atlas_selection=self.selection, source_frontier=self.frontier,
-                authority_registry=REGISTRY)
+                source_context=self.source_context())
+
+    def source_context(self):
+        with shape_patch():
+            bind_accepted_correction_authority(self.run, self.registry)
+        host = AcceptedRuntimeHost(self.run)
+        receipt = {"factory_release_sha256": self.factory_release.release_sha256}
+        with patch(
+            "bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
+            return_value=self.factory_release,
+        ), patch(
+            "bilqis_mlx.source_adapters.school.live_source_registry",
+            return_value=self.source_registry,
+        ), patch(
+            "bilqis_mlx.factory.live_answers.live_answer_registry",
+            return_value=self.answer_registry,
+        ):
+            return host.source_context(
+                receipt, graph=self.source_graph, source_root=None)
 
     def parent_acceptance_path(self):
         return (self.run / "bamf-acceptance"
@@ -201,6 +254,29 @@ class PackageImportAdoptionTests(TestCase):
         pointer = json.loads((self.run / "bamf-state.json").read_text())
         self.assertEqual(pointer["manifest_sha256"], self.pointer["manifest_sha256"])
 
+    def test_host_bound_authority_rejects_scope_key_and_stale_frontier_before_publish(self):
+        screened, receipt = self.screened()
+        artifacts = receipt.export_artifact_digests
+        cases = (
+            ("scope", _receipt(
+                self.selection, self.frontier, artifacts, owner=SCOPE_OWNER), self.frontier),
+            ("key", _receipt(
+                self.selection, self.frontier, artifacts, owner=KEY_OWNER), self.frontier),
+            ("frontier", receipt, SourceFrontier(3, 4, ())),
+        )
+        for name, candidate_receipt, frontier in cases:
+            with self.subTest(name=name), patch(
+                "bilqis_mlx.runtime.cognitive_package.adoption.accept_and_publish",
+                side_effect=AssertionError("downstream mutation reached"),
+            ):
+                with self.assertRaises(BilqisError):
+                    publish_screened_delta_import(
+                        screened, self.run, export_clearance=candidate_receipt,
+                        atlas_selection=self.selection, source_frontier=frontier,
+                        source_context=self.source_context())
+        pointer = json.loads((self.run / "bamf-state.json").read_text())
+        self.assertEqual(pointer["manifest_sha256"], self.pointer["manifest_sha256"])
+
     def test_stale_screened_parent_fails_after_intervening_generation(self):
         screened, receipt = self.screened()
         advanced = accepted_state(self.state)
@@ -223,7 +299,7 @@ class PackageImportAdoptionTests(TestCase):
                 publish_screened_delta_import(
                     screened, self.run, export_clearance=receipt,
                     atlas_selection=self.selection, source_frontier=self.frontier,
-                    authority_registry=REGISTRY)
+                    source_context=self.source_context())
         pointer = json.loads((self.run / "bamf-state.json").read_text())
         self.assertEqual(pointer["manifest_sha256"], self.pointer["manifest_sha256"])
 

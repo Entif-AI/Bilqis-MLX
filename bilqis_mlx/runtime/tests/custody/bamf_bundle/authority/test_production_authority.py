@@ -88,9 +88,18 @@ class ProductionAuthorityTests(unittest.TestCase):
         self.environment.stop()
         self.temporary.cleanup()
 
-    def publish(self, source):
+    def publish(self, source, registry=None):
+        if registry is not None:
+            source = replace(source, correction_frontier={
+                **source.correction_frontier,
+                "source_authority_registry_sha256": registry.digest,
+            })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(self.run, source, acceptance=acceptance(source))
+            pointer = publish_bamf_generation(
+                self.run, source, acceptance=acceptance(source))
+            if registry is not None:
+                bind_accepted_correction_authority(self.run, registry)
+            return pointer
 
     def test_production_step_accepts_no_caller_participation_facts(self):
         """The production API takes no caller-authored participation facts."""
@@ -151,7 +160,7 @@ class ProductionAuthorityTests(unittest.TestCase):
                 self.run, registry, lambda: object())
 
     def test_signed_accepted_correction_replays_into_motif_owner_after_cold_restart(self):
-        self.publish(candidate(parent_state()))
+        self.publish(candidate(parent_state()), AUTHORITY)
         with shape_patch():
             cache = bind_accepted_execution_cache(self.run)
         fixture = FrameEncoderTests()

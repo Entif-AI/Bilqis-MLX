@@ -1,6 +1,7 @@
 """Shared accepted capability-support fixtures for C09 tests."""
 from __future__ import annotations
 
+from dataclasses import replace
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -23,7 +24,9 @@ from bilqis_mlx.runtime.atlas_training_contracts import (
 )
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
 from bilqis_mlx.runtime.source_execution import source_content_digest
-from bilqis_mlx.runtime.bamf_bundle.admission import accept_and_publish
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    accept_and_publish, bind_accepted_correction_authority,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     HP, NAME, candidate, parent_state, retention_decision, shape_patch,
 )
@@ -107,16 +110,23 @@ class CapabilitySupportOwnerFixture(unittest.TestCase):
         self.environment.stop()
         self.temporary.cleanup()
 
-    def publish_support(self, *, authority=None):
+    def publish_support(self, *, authority=None, authority_registry=None):
         parent, transaction, retained, authority = source_qualified_state(
             authority=authority)
         bundle = candidate(retained)
+        if authority_registry is not None:
+            bundle = replace(bundle, correction_frontier={
+                **bundle.correction_frontier,
+                "source_authority_registry_sha256": authority_registry.digest,
+            })
         decision = retention_decision(parent=parent, retained=retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             published = accept_and_publish(
                 self.run, bundle, retained, decision=decision,
                 feature_sha256=bundle.extents.factor_map_digest,
                 training_authorities=transaction.training_authorities)
+            if authority_registry is not None:
+                bind_accepted_correction_authority(self.run, authority_registry)
         return published, authority
 
     def load_support(self, authority_registry=None):
