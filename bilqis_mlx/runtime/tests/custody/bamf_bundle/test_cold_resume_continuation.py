@@ -166,6 +166,8 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
             uninterrupted = continue_generation(
                 second, student=held, pointer=held_pointer)
         cold = self.probe()
+        self.assertEqual(
+            cold["run_seed"], prepared.candidate.run_identity.run_seed)
         self.assertEqual(cold["published"]["manifest_sha256"],
                          uninterrupted["published"]["manifest_sha256"])
         self.assertEqual(cold["successor_digest"], uninterrupted["successor_digest"])

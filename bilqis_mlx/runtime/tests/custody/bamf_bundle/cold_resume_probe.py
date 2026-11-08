@@ -92,6 +92,9 @@ def continue_generation(run, *, student=None, pointer=None) -> dict:
             "state_digest": retained_digest(student.retained_state),
             "teacher_state": dict(student.teacher_state),
             "optimizer_step": student.retained_state.optimizer_step,
+            "run_seed": (
+                student.run_identity.run_seed
+                if student.run_identity is not None else None),
         }
         names = tuple(sorted(student.retained_state.optimizer.parameters))
         parameters = student.retained_state.optimizer.parameters

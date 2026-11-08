@@ -12,8 +12,11 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
+from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
 from bilqis_mlx.runtime.bamf_bundle import publish_initial_generation
-from bilqis_mlx.runtime.bamf_bundle.genesis import _issue_binding
+from bilqis_mlx.runtime.bamf_bundle.genesis import (
+    _issue_binding, validate_initial_generation_binding,
+)
 from bilqis_mlx.runtime.bamf_bundle import genesis as genesis_owner
 from bilqis_mlx.runtime.bamf_bundle.genesis_records import (
     mint_initial_generation_binding,
@@ -90,13 +93,20 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
                 "release_digest": "1" * 64,
             },
         )
-        forged = replace(prepared, candidate=foreign)
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            with self.assertRaises(BilqisError) as failure:
-                publish_initial_generation(self.run, forged, reserve_gib=0.)
+        with shape_patch(), self.assertRaises(BilqisError) as failure:
+            _issue_binding(
+                foreign, release=prepared.release, admission=prepared.admission,
+                graph=prepared.graph, origin_checkpoint=prepared.origin_checkpoint,
+                factory_authority=prepared.factory_authority,
+                foundation_features=prepared.foundation_features)
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+        with self.assertRaises(BilqisError) as preparation_failure:
+            replace(prepared, candidate=foreign)
+        self.assertEqual(
+            preparation_failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
         self.assertFalse((self.run / "bamf-state.json").exists())
 
     def test_wrong_b01_model_authority_rejects_before_allocation(self):
@@ -199,6 +209,25 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
             failure.exception.context["reason"],
             "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
 
+    def test_bootstrap_rejects_post_issuance_optimizer_hyperparameter_substitution(self):
+        with shape_patch():
+            prepared = genesis_preparation(run_seed=243)
+        altered = replace(
+            prepared.candidate,
+            optimizer_hyperparameters=AdamWHyperparameters(
+                .002, (.9, .95), 1e-8, .01))
+        with self.assertRaises(BilqisError) as binding_failure:
+            validate_initial_generation_binding(altered, prepared.binding)
+        self.assertEqual(
+            binding_failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_BINDING_DRIFT")
+        with self.assertRaises(BilqisError) as preparation_failure:
+            replace(prepared, candidate=altered)
+        self.assertEqual(
+            preparation_failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
+        self.assertFalse((self.run / "bamf-state.json").exists())
+
     def test_caller_cannot_preage_foundation_rows_even_with_rehashed_identity(self):
         with shape_patch():
             prepared = genesis_preparation(run_seed=247)
@@ -243,13 +272,21 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
         )
         for altered in variants:
             with self.subTest(sidecars=altered), shape_patch(), \
-                    patch.object(mlx_checkpoint, "assert_headroom"), \
                     self.assertRaises(BilqisError) as failure:
-                publish_initial_generation(
-                    self.run, replace(prepared, candidate=altered), reserve_gib=0.)
+                _issue_binding(
+                    altered, release=prepared.release, admission=prepared.admission,
+                    graph=prepared.graph,
+                    origin_checkpoint=prepared.origin_checkpoint,
+                    factory_authority=prepared.factory_authority,
+                    foundation_features=prepared.foundation_features)
             self.assertEqual(
                 failure.exception.context["reason"],
                 "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+            with self.assertRaises(BilqisError) as preparation_failure:
+                replace(prepared, candidate=altered)
+            self.assertEqual(
+                preparation_failure.exception.context["reason"],
+                "BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
             self.assertFalse((self.run / "bamf-state.json").exists())
 
 

@@ -1,7 +1,7 @@
 """B13 generation-zero run identity, construction, and bootstrap authority."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Mapping
 
 from bilqis_mlx.factory.executable_release import (
@@ -26,7 +26,7 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 from .records import BamfBundleCandidate, invalid, sidecar_records
 from .genesis_records import (
     BamfRunIdentity, InitialGenerationBinding, ParsedInitialGenerationBinding,
-    mint_initial_generation_binding,
+    mint_initial_generation_binding, optimizer_hyperparameters_digest,
 )
 from .genesis_foundation import (
     InitialFoundationFeatureAuthority, initial_foundation_row_ages,
@@ -36,14 +36,24 @@ from .genesis_origin import (
     InitialFactoryFoundationAuthority, replay_initial_factory_foundation_authority,
 )
 
+_PREPARED_INITIAL_GENERATION_ISSUER = object()
 
-@dataclass(frozen=True)
+
+@dataclass(frozen=True, init=False)
 class PreparedInitialGeneration:
     candidate: BamfBundleCandidate
     binding: InitialGenerationBinding
     factory_authority: InitialFactoryFoundationAuthority
     graph: dict
     foundation_features: InitialFoundationFeatureAuthority
+    _issuance: object = field(init=False, default=None, repr=False, compare=False)
+
+    def __init__(self, *args, **kwargs) -> None:
+        invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
+
+    def __post_init__(self) -> None:
+        if getattr(self, "_issuance", None) is not _PREPARED_INITIAL_GENERATION_ISSUER:
+            invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
 
     @property
     def release(self) -> ExecutableFactoryRelease:
@@ -269,8 +279,15 @@ def prepare_initial_generation(
         origin_checkpoint=origin_checkpoint,
         factory_authority=authority,
         foundation_features=foundation_features)
-    return PreparedInitialGeneration(
-        candidate, binding, authority, dict(graph), foundation_features)
+    prepared = object.__new__(PreparedInitialGeneration)
+    for name, value in (
+            ("candidate", candidate), ("binding", binding),
+            ("factory_authority", authority), ("graph", dict(graph)),
+            ("foundation_features", foundation_features),
+            ("_issuance", _PREPARED_INITIAL_GENERATION_ISSUER)):
+        object.__setattr__(prepared, name, value)
+    prepared.__post_init__()
+    return prepared
 
 
 def validate_initial_generation_binding(candidate, binding) -> None:
@@ -285,6 +302,8 @@ def validate_initial_generation_binding(candidate, binding) -> None:
             or binding.run_identity_sha256 != candidate.run_identity.digest
             or binding.candidate_identity_sha256
             != candidate_identity_digest(candidate.retained_state)
+            or binding.optimizer_hyperparameters_sha256
+            != optimizer_hyperparameters_digest(candidate.optimizer_hyperparameters)
             or binding.feature_sha256 != candidate.extents.factor_map_digest
             or binding.optimizer_step != candidate.retained_state.optimizer_step):
         invalid("BAMF_INITIAL_GENERATION_BINDING_DRIFT")
@@ -294,6 +313,7 @@ def validate_initial_generation_preparation(prepared: PreparedInitialGeneration)
     """Replay all Factory/source/B01 authority immediately before mutation."""
     if type(prepared) is not PreparedInitialGeneration:
         invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
+    prepared.__post_init__()
     _validate_candidate_source_authority(
         prepared.candidate, release=prepared.release,
         admission=prepared.admission, graph=prepared.graph,
@@ -314,6 +334,8 @@ def validate_parsed_initial_generation_binding(student, binding, expected_digest
             or binding.run_identity_sha256 != student.run_identity.digest
             or binding.candidate_identity_sha256
             != candidate_identity_digest(student.retained_state)
+            or binding.optimizer_hyperparameters_sha256
+            != optimizer_hyperparameters_digest(student.optimizer_hyperparameters)
             or binding.feature_sha256 != student.extents.factor_map_digest
             or binding.optimizer_step != student.retained_state.optimizer_step):
         invalid("BAMF_INITIAL_GENERATION_BINDING_DRIFT")

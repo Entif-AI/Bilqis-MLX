@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass, field, fields
 from typing import Mapping
 
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
 
 from .records import canonical, invalid, sha
 
@@ -88,6 +89,7 @@ class InitialGenerationBinding:
     generation: int
     run_identity_sha256: str
     candidate_identity_sha256: str
+    optimizer_hyperparameters_sha256: str
     feature_sha256: str
     optimizer_step: int
     schema_version: str = INITIAL_BINDING_SCHEMA
@@ -100,13 +102,14 @@ class InitialGenerationBinding:
                 or self.schema_version != INITIAL_BINDING_SCHEMA
                 or any(not _hex(value) for value in (
                     self.run_identity_sha256, self.candidate_identity_sha256,
-                    self.feature_sha256))):
+                    self.optimizer_hyperparameters_sha256, self.feature_sha256))):
             invalid("BAMF_INITIAL_GENERATION_BINDING_INVALID")
 
     def _public_record(self) -> dict:
         return {name: getattr(self, name) for name in (
             "run_id", "generation", "run_identity_sha256",
-            "candidate_identity_sha256", "feature_sha256", "optimizer_step",
+            "candidate_identity_sha256", "optimizer_hyperparameters_sha256",
+            "feature_sha256", "optimizer_step",
             "schema_version")}
 
     @property
@@ -120,7 +123,8 @@ class InitialGenerationBinding:
     def from_record(cls, record: Mapping) -> "ParsedInitialGenerationBinding":
         names = {
             "run_id", "generation", "run_identity_sha256",
-            "candidate_identity_sha256", "feature_sha256", "optimizer_step",
+            "candidate_identity_sha256", "optimizer_hyperparameters_sha256",
+            "feature_sha256", "optimizer_step",
             "schema_version",
         }
         if not isinstance(record, Mapping) or set(record) != names | {"binding_sha256"}:
@@ -130,7 +134,8 @@ class InitialGenerationBinding:
                 or not isinstance(payload["run_id"], str) or not payload["run_id"]
                 or payload["generation"] != 0 or payload["optimizer_step"] != 0
                 or any(not _hex(payload[name]) for name in (
-                    "run_identity_sha256", "candidate_identity_sha256", "feature_sha256"))
+                    "run_identity_sha256", "candidate_identity_sha256",
+                    "optimizer_hyperparameters_sha256", "feature_sha256"))
                 or record["binding_sha256"] != sha(canonical(payload))):
             invalid("BAMF_INITIAL_GENERATION_BINDING_INVALID")
         return ParsedInitialGenerationBinding(payload)
@@ -152,6 +157,13 @@ class ParsedInitialGenerationBinding:
         return sha(canonical(self.fields))
 
 
+def optimizer_hyperparameters_digest(hyperparameters) -> str:
+    if type(hyperparameters) is not AdamWHyperparameters:
+        invalid("BAMF_INITIAL_GENERATION_BINDING_INVALID")
+    hyperparameters.__post_init__()
+    return sha(canonical(asdict(hyperparameters)))
+
+
 def mint_initial_generation_binding(candidate) -> InitialGenerationBinding:
     """Issue one live bootstrap binding after the caller proves source authority."""
     identity = candidate.run_identity
@@ -160,6 +172,8 @@ def mint_initial_generation_binding(candidate) -> InitialGenerationBinding:
             ("run_id", candidate.run_id), ("generation", 0),
             ("run_identity_sha256", identity.digest),
             ("candidate_identity_sha256", candidate_identity_digest(candidate.retained_state)),
+            ("optimizer_hyperparameters_sha256",
+             optimizer_hyperparameters_digest(candidate.optimizer_hyperparameters)),
             ("feature_sha256", candidate.extents.factor_map_digest),
             ("optimizer_step", candidate.retained_state.optimizer_step),
             ("schema_version", INITIAL_BINDING_SCHEMA),

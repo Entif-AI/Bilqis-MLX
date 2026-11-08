@@ -21,6 +21,7 @@ from bilqis_mlx.runtime.bamf_bundle import (
     verify_accepted_generation_feature_receipt,
 )
 from bilqis_mlx.runtime.bamf_bundle import feature_authority, genesis_foundation
+from bilqis_mlx.runtime.bamf_bundle.genesis import _issue_binding
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures, FeatureSchema
 from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
@@ -182,13 +183,20 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
                 **prepared.candidate.compiler_features,
                 "factor_map_sha256": ARBITRARY})
         with shape_patch(), self.foundation_replay(features), \
-                patch.object(mlx_checkpoint, "assert_headroom"), \
                 self.assertRaises(BilqisError) as failure:
-            publish_initial_generation(
-                self.run, replace(prepared, candidate=adversary), reserve_gib=0.)
+            _issue_binding(
+                adversary, release=prepared.release, admission=prepared.admission,
+                graph=prepared.graph, origin_checkpoint=prepared.origin_checkpoint,
+                factory_authority=prepared.factory_authority,
+                foundation_features=prepared.foundation_features)
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+        with self.assertRaises(BilqisError) as preparation_failure:
+            replace(prepared, candidate=adversary)
+        self.assertEqual(
+            preparation_failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
 
     def test_forged_receipt_is_rejected_by_live_verification(self):
         features = source_features()
@@ -223,13 +231,20 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
                     **prepared.candidate.compiler_features["feature_source"],
                     "release_sha256": "4" * 64}})
         with shape_patch(), self.foundation_replay(features), \
-                patch.object(mlx_checkpoint, "assert_headroom"), \
                 self.assertRaises(BilqisError) as failure:
-            publish_initial_generation(
-                self.run, replace(prepared, candidate=adversary), reserve_gib=0.)
+            _issue_binding(
+                adversary, release=prepared.release, admission=prepared.admission,
+                graph=prepared.graph, origin_checkpoint=prepared.origin_checkpoint,
+                factory_authority=prepared.factory_authority,
+                foundation_features=prepared.foundation_features)
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+        with self.assertRaises(BilqisError) as preparation_failure:
+            replace(prepared, candidate=adversary)
+        self.assertEqual(
+            preparation_failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
 
     def test_cold_resume_reproduces_the_same_receipt_identity(self):
         features = source_features()
