@@ -15,7 +15,7 @@ from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle, save_bamf_bundle
 from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
-    InitialGenerationBinding, mint_initial_generation_binding,
+    InitialGenerationBinding, _mint_initial_generation_binding,
 )
 from bilqis_mlx.runtime.bamf_bundle.publication.genesis_trust import GENESIS_TRUST_SCHEMA
 from bilqis_mlx.runtime.bamf_bundle.records import BAMF_POINTER_SCHEMA, canonical
@@ -49,7 +49,7 @@ class GenerationZeroColdTrustTests(unittest.TestCase):
         target.parent.mkdir(parents=True)
         stage.rename(target)
 
-        package_local = mint_initial_generation_binding(prepared.candidate)
+        package_local = _mint_initial_generation_binding(prepared.candidate)
         acceptance_root = self.run / "bamf-acceptance"
         acceptance_root.mkdir()
         (acceptance_root / f"{digest}.json").write_bytes(

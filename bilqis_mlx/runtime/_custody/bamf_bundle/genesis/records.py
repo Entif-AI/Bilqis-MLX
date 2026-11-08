@@ -164,14 +164,50 @@ def optimizer_hyperparameters_digest(hyperparameters) -> str:
     return sha(canonical(asdict(hyperparameters)))
 
 
-def mint_initial_generation_binding(candidate) -> InitialGenerationBinding:
-    """Issue one live bootstrap binding after the caller proves source authority."""
+def initial_generation_candidate_identity_digest(candidate) -> str:
+    """Digest every authority-relevant field of one exact generation-zero candidate."""
+    from ..motif_codec import snapshot_to_record
+
+    state = candidate.retained_state
+    identity = candidate.run_identity
+    try:
+        payload = {
+            "run_id": candidate.run_id,
+            "generation": candidate.generation,
+            "parent_manifest_sha256": candidate.parent_manifest_sha256,
+            "run_identity_sha256": identity.digest,
+            "optimizer_state_sha256": candidate_identity_digest(state),
+            "optimizer_hyperparameters_sha256": optimizer_hyperparameters_digest(
+                candidate.optimizer_hyperparameters),
+            "implementation_sha256": candidate.implementation_sha256,
+            "topology_sha256": candidate.topology.digest,
+            "extents_sha256": candidate.extents.digest,
+            "provenance_sha256": candidate.provenance.digest,
+            "semantic_abi": dict(candidate.semantic_abi),
+            "compiler_features": dict(candidate.compiler_features),
+            "correction_frontier": dict(candidate.correction_frontier),
+            "teacher_state": dict(candidate.teacher_state),
+            "evaluation_contract": dict(candidate.evaluation_contract),
+            "transition": dict(candidate.transition),
+            "plasticity_policy": state.policy.to_record(),
+            "motif_allocation": snapshot_to_record(state.allocations),
+            "step_proofs": [proof.to_record() for proof in state.step_proofs],
+            "state_schema_version": state.schema_version,
+        }
+    except (AttributeError, KeyError, TypeError, ValueError):
+        invalid("BAMF_INITIAL_GENERATION_BINDING_INVALID")
+    return sha(canonical(payload))
+
+
+def _mint_initial_generation_binding(candidate) -> InitialGenerationBinding:
+    """Create the live binding only for the owner-replayed B13 issuance path."""
     identity = candidate.run_identity
     binding = object.__new__(InitialGenerationBinding)
     for name, value in (
             ("run_id", candidate.run_id), ("generation", 0),
             ("run_identity_sha256", identity.digest),
-            ("candidate_identity_sha256", candidate_identity_digest(candidate.retained_state)),
+            ("candidate_identity_sha256",
+             initial_generation_candidate_identity_digest(candidate)),
             ("optimizer_hyperparameters_sha256",
              optimizer_hyperparameters_digest(candidate.optimizer_hyperparameters)),
             ("feature_sha256", candidate.extents.factor_map_digest),

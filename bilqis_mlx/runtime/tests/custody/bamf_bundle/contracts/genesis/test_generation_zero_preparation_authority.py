@@ -15,7 +15,7 @@ from bilqis_mlx.runtime.bamf_bundle.genesis import (
     _issue_binding, validate_initial_generation_binding,
 )
 from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
-    mint_initial_generation_binding,
+    _mint_initial_generation_binding,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     genesis_preparation, shape_patch,
@@ -53,7 +53,7 @@ class GenerationZeroPreparationAuthorityTests(unittest.TestCase):
 
         with shape_patch():
             prepared = genesis_preparation(run_seed=233)
-        minted = mint_initial_generation_binding(prepared.candidate)
+        minted = _mint_initial_generation_binding(prepared.candidate)
         with patch.object(mlx_checkpoint, "assert_headroom"), self.assertRaises(BilqisError) as failure:
             publication._publish_authorized_generation(
                 self.run, prepared.candidate, minted, reserve_gib=0.)
@@ -116,6 +116,66 @@ class GenerationZeroPreparationAuthorityTests(unittest.TestCase):
             preparation_failure.exception.context["reason"],
             "BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
         self.assertFalse((self.run / "bamf-state.json").exists())
+
+    def test_bootstrap_binding_rejects_non_optimizer_genesis_substitution(self):
+        from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+
+        with shape_patch():
+            prepared = genesis_preparation(run_seed=247)
+        candidate = prepared.candidate
+        state = candidate.retained_state
+        policy = state.policy
+        with patch.object(ModelTopologySpecV2, "__post_init__", return_value=None):
+            changed_topology = replace(candidate.topology, default_run_seed=1)
+        changed_policy = replace(
+            policy,
+            row_ages=(replace(policy.row_ages[0], accepted_age=1),),
+        )
+        variants = {
+            "teacher_state": replace(
+                candidate,
+                teacher_state={**candidate.teacher_state, "next_seed": 248},
+            ),
+            "provenance": replace(
+                candidate,
+                provenance=replace(candidate.provenance, source_identity="c" * 64),
+            ),
+            "topology": replace(candidate, topology=changed_topology),
+            "extents": replace(
+                candidate,
+                extents=replace(candidate.extents, active_semantic_digest="9" * 64),
+            ),
+            "implementation": replace(candidate, implementation_sha256="1" * 64),
+            "semantic_abi": replace(
+                candidate,
+                semantic_abi={**candidate.semantic_abi, "active_set_sha256": "9" * 64},
+            ),
+            "compiler_features": replace(
+                candidate,
+                compiler_features={**candidate.compiler_features, "compiler_sha256": "9" * 64},
+            ),
+            "correction_frontier": replace(
+                candidate,
+                correction_frontier={**candidate.correction_frontier,
+                                     "correction_generation": 1},
+            ),
+            "evaluation_contract": replace(
+                candidate,
+                evaluation_contract={**candidate.evaluation_contract,
+                                     "contract_sha256": "9" * 64},
+            ),
+            "plasticity_policy": replace(
+                candidate,
+                retained_state=replace(state, policy=changed_policy),
+            ),
+        }
+        for label, altered in variants.items():
+            with self.subTest(label=label):
+                with self.assertRaises(BilqisError) as failure:
+                    validate_initial_generation_binding(altered, prepared.binding)
+                self.assertEqual(
+                    failure.exception.context["reason"],
+                    "BAMF_INITIAL_GENERATION_BINDING_DRIFT")
 
 
 if __name__ == "__main__":

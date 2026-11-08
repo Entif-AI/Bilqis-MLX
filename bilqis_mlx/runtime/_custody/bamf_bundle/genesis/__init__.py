@@ -26,7 +26,8 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 from ..records import BamfBundleCandidate, invalid, sidecar_records
 from .records import (
     BamfRunIdentity, InitialGenerationBinding, ParsedInitialGenerationBinding,
-    mint_initial_generation_binding, optimizer_hyperparameters_digest,
+    _mint_initial_generation_binding, initial_generation_candidate_identity_digest,
+    optimizer_hyperparameters_digest,
 )
 from .foundation import (
     InitialFoundationFeatureAuthority, initial_foundation_row_ages,
@@ -161,7 +162,7 @@ def _issue_binding(
         factory_authority=factory_authority,
         foundation_features=foundation_features)
     _validate_candidate_b01_authority(candidate, foundation_features)
-    return mint_initial_generation_binding(candidate)
+    return _mint_initial_generation_binding(candidate)
 
 
 def _validate_candidate_b01_authority(
@@ -301,7 +302,7 @@ def validate_initial_generation_binding(candidate, binding) -> None:
             or binding.run_id != candidate.run_id
             or binding.run_identity_sha256 != candidate.run_identity.digest
             or binding.candidate_identity_sha256
-            != candidate_identity_digest(candidate.retained_state)
+            != initial_generation_candidate_identity_digest(candidate)
             or binding.optimizer_hyperparameters_sha256
             != optimizer_hyperparameters_digest(candidate.optimizer_hyperparameters)
             or binding.feature_sha256 != candidate.extents.factor_map_digest
@@ -333,7 +334,7 @@ def validate_parsed_initial_generation_binding(student, binding, expected_digest
             or binding.run_id != student.run_id
             or binding.run_identity_sha256 != student.run_identity.digest
             or binding.candidate_identity_sha256
-            != candidate_identity_digest(student.retained_state)
+            != initial_generation_candidate_identity_digest(student)
             or binding.optimizer_hyperparameters_sha256
             != optimizer_hyperparameters_digest(student.optimizer_hyperparameters)
             or binding.feature_sha256 != student.extents.factor_map_digest
