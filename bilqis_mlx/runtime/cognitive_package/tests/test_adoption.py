@@ -46,6 +46,9 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     HP, NAME, accepted_state, candidate, parent_state, publish_candidate,
     retention_decision, shape_patch,
 )
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
+    genesis_feature_source_patch, issue_feature_authority, source_features,
+)
 from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_release_audit import ExportClearanceReceipt
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
@@ -99,7 +102,6 @@ class PackageImportAdoptionTests(TestCase):
         self.run = self.root / "run"
         self.registry = REGISTRY
         self.selection = _selection()
-        self.frontier = SourceFrontier(2, 4, ())
         self.state = parent_state()
         base = candidate(self.state)
         self.initial = replace(
@@ -108,15 +110,25 @@ class PackageImportAdoptionTests(TestCase):
             correction_frontier={**base.correction_frontier,
                                  "release_digest": self.selection.release_sha256,
                                  "source_authority_registry_sha256": self.registry.digest})
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            self.pointer = publish_candidate(self.run, self.initial)
+        foundation_features = issue_feature_authority(
+            source_features(release=self.selection.release_sha256))
+        with shape_patch(), genesis_feature_source_patch(
+                source_features(release=self.selection.release_sha256)), \
+                patch.object(mlx_checkpoint, "assert_headroom"):
+            self.pointer = publish_candidate(
+                self.run, self.initial, foundation_features=foundation_features)
             self.initial = load_bamf_generation(self.run / "bamf-state.json")
+        self.frontier = SourceFrontier(
+            self.initial.correction_frontier["rights_epoch"],
+            self.initial.correction_frontier["correction_generation"],
+            (),
+        )
         self.state = self.initial.retained_state
         array = np.asarray(self.state.optimizer.parameters[NAME], dtype="<f4")
         self.tensor = ReceiverTensor(NAME, array.shape, array.tobytes())
         self.binding = PackageBinding(
             receiver_weight_digest((self.tensor,)), receiver_parameter_schema_digest((self.tensor,)),
-            self.initial.topology.digest, self.selection.release_sha256,
+            self.initial.topology.digest, self.initial.provenance.release_digest,
             self.initial.extents.active_semantic_digest, self.initial.extents.factor_map_digest,
             self.initial.extents.motif_key_map_digest)
         course = _synthetic_course(6)
@@ -189,14 +201,17 @@ class PackageImportAdoptionTests(TestCase):
         with shape_patch():
             loaded = load_bamf_generation(self.run / "bamf-state.json")
 
-        self.assertEqual(loaded.generation, 1)
+        self.assertEqual(loaded.generation, self.initial.generation + 1)
         self.assertEqual(
             loaded.retained_state.optimizer_step,
             self.state.optimizer_step,
         )
         self.assertEqual(loaded.retained_state.policy.mode, self.state.policy.mode)
         self.assertEqual(loaded.retained_state.policy.accepted_fast_since_full, 0)
-        self.assertEqual(tuple(row.accepted_age for row in loaded.retained_state.policy.row_ages), (0, 2))
+        self.assertEqual(
+            loaded.retained_state.policy.row_ages,
+            screened.transaction.candidate.policy.row_ages,
+        )
         self.assertAlmostEqual(
             float(np.asarray(loaded.retained_state.optimizer.parameters[NAME])[0, 0]),
             float(np.asarray(self.state.optimizer.parameters[NAME])[0, 0]) + .5,
@@ -218,7 +233,7 @@ class PackageImportAdoptionTests(TestCase):
         with shape_patch():
             loaded = load_bamf_generation(self.run / "bamf-state.json")
 
-        self.assertEqual(loaded.generation, 1)
+        self.assertEqual(loaded.generation, self.initial.generation + 1)
         self.assertEqual(loaded.transition["kind"], "PACKAGE_IMPORT")
         self.assertEqual(loaded.transition["package_sha256"], screened.candidate.package.digest)
         self.assertEqual(
@@ -228,7 +243,8 @@ class PackageImportAdoptionTests(TestCase):
 
         transaction = begin_candidate(loaded.retained_state)
         execution = execution_provenance(
-            transaction.parent, rows=(0,), candidate_step=1)
+            transaction.parent, rows=(0,), candidate_step=1,
+            extents=loaded.extents)
         with shape_patch():
             transaction = candidate_step(
                 transaction,
@@ -287,7 +303,8 @@ class PackageImportAdoptionTests(TestCase):
 
     def test_stale_screened_parent_fails_after_intervening_generation(self):
         screened, receipt = self.screened()
-        advanced = accepted_state(self.state)
+        advanced = accepted_state(
+            self.state, self.initial.extents, spec=self.initial.topology)
         successor = candidate(advanced, 1, self.pointer["manifest_sha256"])
         successor = replace(
             successor, provenance=self.initial.provenance,
@@ -315,7 +332,7 @@ class PackageImportAdoptionTests(TestCase):
         self.assertEqual(published["parent_manifest_sha256"], self.pointer["manifest_sha256"])
         with shape_patch():
             loaded = load_bamf_generation(self.run / "bamf-state.json")
-        self.assertEqual(loaded.generation, 1)
+        self.assertEqual(loaded.generation, self.initial.generation + 1)
         self.assertEqual(loaded.transition["package_sha256"], screened.candidate.package.digest)
 
     def test_missing_parent_acceptance_cannot_authorize_package_import(self):

@@ -150,9 +150,10 @@ def parent_state() -> CandidateState:
 
 def accepted_state(
         parent: CandidateState,
-        extents: GenerationExtents | None = None) -> CandidateState:
+        extents: GenerationExtents | None = None,
+        spec: ModelTopologySpecV2 | None = None) -> CandidateState:
     transaction = begin_candidate(parent)
-    spec = ModelTopologySpecV2()
+    spec = ModelTopologySpecV2() if spec is None else spec
     extents = extents or GenerationExtents(
         1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
     with shape_patch():

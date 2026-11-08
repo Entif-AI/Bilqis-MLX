@@ -111,12 +111,13 @@ def acceptance(bundle, *, parent=None) -> object:
         feature_sha256=bundle.extents.factor_map_digest)
 
 
-def publish_candidate(run_dir, bundle):
+def publish_candidate(run_dir, bundle, *, foundation_features=None):
     from ..helpers import accepted_state, genesis_preparation
 
     if bundle.generation == 0:
         prepared = genesis_preparation(
             run_id=bundle.run_id,
+            foundation_features=foundation_features,
             delivery_events=({"event": "FIXTURE_GENESIS", "optimizer_step": 0},))
         pointer = publish_initial_generation(run_dir, prepared, reserve_gib=0.)
         source_authority = bundle.correction_frontier.get(

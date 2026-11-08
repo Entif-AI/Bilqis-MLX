@@ -25,10 +25,11 @@ from bilqis_mlx.runtime.atlas_training_contracts import (
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
 from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    accept_and_publish, bind_accepted_correction_authority,
+    accept_and_publish, bind_accepted_correction_authority, derive_successor_bundle,
+    load_accepted_generation,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    HP, NAME, candidate, parent_state, retention_decision, shape_patch,
+    HP, NAME, parent_state, publish_genesis, retention_decision, shape_patch,
 )
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
@@ -79,11 +80,11 @@ def training_authority(
 
 
 def source_qualified_state(
-        parent=None, *, authority=None, extents=None, **authority_kwargs):
+        parent=None, *, authority=None, extents=None, spec=None, **authority_kwargs):
     parent = parent_state() if parent is None else parent
     transaction = begin_candidate(parent)
     authority = training_authority(**authority_kwargs) if authority is None else authority
-    spec = ModelTopologySpecV2()
+    spec = ModelTopologySpecV2() if spec is None else spec
     extents = extents or GenerationExtents(
         1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
     with shape_patch():
@@ -113,16 +114,24 @@ class CapabilitySupportOwnerFixture(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish_support(self, *, authority=None, authority_registry=None):
-        parent, transaction, retained, authority = source_qualified_state(
-            authority=authority)
-        bundle = candidate(retained)
-        if authority_registry is not None:
-            bundle = replace(bundle, correction_frontier={
-                **bundle.correction_frontier,
-                "source_authority_registry_sha256": authority_registry.digest,
-            })
-        decision = retention_decision(parent=parent, retained=retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            pointer = publish_genesis(self.run)
+            accepted_parent = load_accepted_generation(self.run)
+            parent, transaction, retained, authority = source_qualified_state(
+                accepted_parent.retained_state, authority=authority,
+                extents=accepted_parent.extents, spec=accepted_parent.topology)
+            bundle = derive_successor_bundle(
+                accepted_parent,
+                retained,
+                parent_manifest_sha256=pointer["manifest_sha256"],
+                delivery_events=({"event": "FIXTURE_CAPABILITY_SUPPORT"},),
+            )
+            if authority_registry is not None:
+                bundle = replace(bundle, correction_frontier={
+                    **bundle.correction_frontier,
+                    "source_authority_registry_sha256": authority_registry.digest,
+                })
+            decision = retention_decision(parent=parent, retained=retained)
             published = accept_and_publish(
                 self.run, bundle, retained, decision=decision,
                 feature_sha256=bundle.extents.factor_map_digest,
