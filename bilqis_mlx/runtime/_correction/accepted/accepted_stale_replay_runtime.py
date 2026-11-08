@@ -192,6 +192,35 @@ def _flush_c10_intents(retained, ledger, corrections) -> None:
             outbox, intent, correction, ledger, retained.registry)
 
 
+def _flush_context_requalifications(retained, ledger, records) -> None:
+    """Project only context tasks with durable source-owned v2 temporal custody."""
+    tasks = tuple(
+        task for task in ledger.pending_source_tasks
+        if task.context_event_id is not None
+    )
+    if not tasks:
+        return
+    context_records = {
+        record["context_invalidation"]["context_event_id"]: record
+        for record in records
+        if record["event"] == "BAMF_C09_CONTEXT_INVALIDATION"
+    }
+    from bilqis_mlx.runtime.akasha_outbox import append_context_requalification
+    outbox = retained.run_dir / "akasha-outbox.sqlite3"
+    for task in tasks:
+        record = context_records.get(task.context_event_id)
+        if record is None:
+            _invalid("BAMF_C10_CONTEXT_RECEIPT_REQUIRED")
+        # Historical v1 invalidations remain replayable C09 evidence, but they
+        # cannot be projected into C10 because no source-owned four-time tuple
+        # existed. Never fabricate or alias one during replay.
+        if (record["context_invalidation"].get("schema_version")
+                != "bilqis.c09-context-invalidation/v2"):
+            continue
+        append_context_requalification(
+            outbox, retained.run_dir, retained.manifest_sha256, task, ledger)
+
+
 def replay_stale_evidence(retained) -> tuple[object, ...]:
     """Rebuild durable stale-replay faults from accepted evidence and live owners."""
     if retained.registry is None:
@@ -212,6 +241,7 @@ def replay_stale_evidence(retained) -> tuple[object, ...]:
             retained.run_dir, retained.manifest_sha256, retained.registry)
     }
     _flush_c10_intents(retained, ledger, corrections)
+    _flush_context_requalifications(retained, ledger, records)
     remediations = tuple(
         remediation_from_record(record)
         for record in records if record["event"] == REMEDIATION_EVENT)
