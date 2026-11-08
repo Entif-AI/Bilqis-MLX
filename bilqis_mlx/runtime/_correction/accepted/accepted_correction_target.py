@@ -13,6 +13,7 @@ from .context_revalidation import (
     advance_context_revalidation, apply_context_invalidation,
     next_context_revalidation_task, revalidate_context_node,
 )
+from .atlas_revalidation_queue import _sort_tasks
 from bilqis_mlx.semantics.context_eligibility import C09ContextInvalidation
 
 
@@ -33,6 +34,9 @@ class AcceptedCorrectionTarget:
         default_factory=dict)
     context_deferred: dict[str, ContextRevalidationFrontier] = field(
         default_factory=dict)
+    context_invalidations: dict[
+        str, tuple[str, C09ContextInvalidation]
+    ] = field(default_factory=dict)
 
     @property
     def context_holds(self) -> set[str]:
@@ -105,6 +109,12 @@ class AcceptedCorrectionTarget:
         owner = self.owner
         if owner is None:
             return
+        remembered = self.context_invalidations.get(event.event_id)
+        accepted = (accepted_event_id, event)
+        if remembered is not None and remembered != accepted:
+            from .atlas_revalidation_common import _invalid
+            _invalid("BAMF_C09_CONTEXT_INVALIDATION_REPLAY_DRIFT")
+        self.context_invalidations[event.event_id] = accepted
         existing = self.context_queues.get(event.event_id)
         queue = apply_context_invalidation(
             event, accepted_event_id, owner.index)
@@ -118,6 +128,34 @@ class AcceptedCorrectionTarget:
             for prior in self.context_queues.values())
         if queue.pending or follows_active_context:
             self.context_queues[event.event_id] = queue
+
+    def _reconcile_late_context_materializations(self) -> None:
+        """Reapply accepted context invalidations when an owner index grows later."""
+        owner = self.owner
+        if owner is None:
+            return
+        for event_id, (accepted_event_id, event) in tuple(
+                self.context_invalidations.items()):
+            refreshed = apply_context_invalidation(
+                event, accepted_event_id, owner.index)
+            if not refreshed.pending:
+                continue
+            existing = self.context_queues.get(event_id)
+            if existing is None:
+                self.context_queues[event_id] = refreshed
+                continue
+            by_artifact = {
+                task.artifact_id: task for task in existing.pending}
+            by_artifact.update({
+                task.artifact_id: task for task in refreshed.pending})
+            pending = _sort_tasks(tuple(by_artifact.values()))
+            self.context_queues[event_id] = ContextRevalidationQueue(
+                event,
+                accepted_event_id,
+                pending,
+                tuple(sorted(task.artifact_id for task in pending)),
+                existing.history,
+            )
 
     def _refresh_waiting_contexts(self) -> None:
         owner = self.owner
@@ -225,8 +263,11 @@ class AcceptedCorrectionTarget:
         self, registry: SourceAuthorityRegistry,
     ) -> None:
         owner = self.owner
+        if owner is None:
+            return
+        self._reconcile_late_context_materializations()
         hold_late = getattr(owner, "hold_late_correction", None)
-        if owner is None or not callable(hold_late):
+        if not callable(hold_late):
             return
         already_pending = {event.event_id for event in self.pending}
         queue = getattr(owner, "queue", None)
