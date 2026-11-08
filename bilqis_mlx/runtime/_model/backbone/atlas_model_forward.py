@@ -19,8 +19,10 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
 from bilqis_mlx.runtime.model_topology_v2 import (
     ModelTopologySpecV2, expected_bamf_shapes, validate_bamf_parameters,
 )
+from bilqis_mlx.runtime.atlas_training_authority import extend_training_dependencies
 from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
 from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 
 from .atlas_model_backend import Backend, model_backend
 from .atlas_model_contracts import (
@@ -79,6 +81,37 @@ def _executed_readout_parameters(plan, output):
     return dense
 
 
+def _execution_dependencies(batch, producer, accepted_cache):
+    """Capture source-owned correction premises that actually fed this B11 step.
+
+    Capability support owns its own dependency index, so it must not retain a
+    dangling ARTIFACT ref to a foreign owner.  Instead it freezes the concrete
+    source/release/operator/policy/rights/time premises of each consumed
+    physical artifact.  A correction to any such premise can then reach both
+    the physical owner and the learned support directly.
+    """
+    dependencies = set()
+    feature = batch.atlas_feature_artifact_owner.current_node
+    dependencies.update(
+        ref for ref in feature.immediate_dependencies
+        if ref.kind is not DependencyKind.ARTIFACT)
+    row = batch.compiled.compiled.rows[0]
+    for node in batch.compiled.packed_frame_artifact_owner.require_row(row):
+        dependencies.update(
+            ref for ref in node.immediate_dependencies
+            if ref.kind is not DependencyKind.ARTIFACT)
+    motif = producer._motif_read
+    if (accepted_cache is not None and motif is not None
+            and motif.participating_slots):
+        owner = bind_motif_artifact_owner(accepted_cache, batch.compiled)
+        node = owner.current_node
+        dependencies.update(
+            ref for ref in node.immediate_dependencies
+            if ref.kind is not DependencyKind.ARTIFACT)
+        dependencies.update(owner.source_dependencies)
+    return tuple(sorted(dependencies))
+
+
 def _forward_participation(params, batch, plan, output, producer, accepted_cache):
     source = batch.sources[0]
     snapshot = load_pinned_atlas_snapshot(source.selection)
@@ -120,7 +153,9 @@ def _forward_participation(params, batch, plan, output, producer, accepted_cache
         tuple(sorted(dense)),
         (() if producer._motif_read is None else (producer._motif_read,)),
         batch.compiled.features.role_map,
-        batch.training_authority,
+        (None if batch.training_authority is None else extend_training_dependencies(
+            batch.training_authority,
+            _execution_dependencies(batch, producer, accepted_cache))),
     )
 
 

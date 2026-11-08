@@ -1,129 +1,60 @@
-"""Production capability-support provenance from B11, C05 acceptance and B13 custody."""
+"""C09 capability-support provenance and accepted-lineage tests."""
 from __future__ import annotations
 
 import json
-import os
-from pathlib import Path
-from tempfile import TemporaryDirectory
-import unittest
+from dataclasses import replace
 from unittest.mock import patch
-
-import mlx.core as mx
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.factory.teaching import content_digest
-from bilqis_mlx.learning.atlas_candidate import (
-    begin_candidate, candidate_step, resolve_candidate,
+from bilqis_mlx.runtime.atlas_capability_support_owner import CapabilitySupportArtifactOwner
+from bilqis_mlx.runtime.atlas_training_authority import extend_training_dependencies
+from bilqis_mlx.runtime.accepted_corrections import (
+    AcceptedRuntimeHost, ContextRevalidationFrontier, _RUNTIME_OWNER,
 )
-from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
-from bilqis_mlx.learning.source_atoms import SourceAtomRow
-from bilqis_mlx.runtime.atlas_capability_support_owner import (
-    CapabilitySupportArtifactOwner, load_capability_support_owner,
+from bilqis_mlx.runtime.accepted_correction_ledger import (
+    CONTEXT_INVALIDATION_EVENT, CORRECTION_EVENT,
+    append_record, context_invalidation_record, read_records,
 )
 from bilqis_mlx.runtime.capability_support_loading import accepted_support_census
-from bilqis_mlx.runtime.accepted_corrections import (
-    _RUNTIME_OWNER, record_accepted_correction,
-    record_accepted_revalidation,
+from bilqis_mlx.runtime.atlas_revalidation import (
+    SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
+    apply_capability_support_correction,
 )
-from bilqis_mlx.runtime.akasha_outbox import pending_events
-from bilqis_mlx.runtime.atlas_revalidation import apply_capability_support_correction
-from bilqis_mlx.runtime.atlas_training_authority import _issue as issue_training_authority
-from bilqis_mlx.runtime.atlas_training_contracts import (
-    BamfDeliveryProvenance, BamfTrainingRow, _issue_training_batch,
+from bilqis_mlx.runtime.context_revalidation import ContextStateTransition
+from bilqis_mlx.runtime.atlas_requalification_contracts import (
+    RequalificationStatus,
 )
-from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
-from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     accept_and_publish, derive_successor_bundle, load_accepted_generation,
 )
+from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.accepted_correction_runtime import runtime
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    HP, NAME, candidate, parent_state, retention_decision, shape_patch,
+    retention_decision, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
-    AUTHORITY, _event, _ref, _result,
+    AUTHORITY, _SOURCE_OWNER, _TEST_PUBLIC, _event, _ref,
 )
-from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
-from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    DependencyIndex, DependencyKind, DependencyRef,
+)
+from bilqis_mlx.semantics.context_eligibility import C09ContextInvalidation
+
+from .capability_support_owner_support import (
+    CapabilitySupportOwnerFixture, GENERATION, IMMEDIATE_DEPENDENCIES,
+    SOURCE_ID, SOURCE_ROW, TARGET, source_qualified_state, training_authority,
+)
+from . import capability_support_owner_support as support_fixture
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.test_accepted_context_revalidation import (
+    _signed_context_result,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
+    source_owned_temporal_case,
+)
 
 
-TARGET = "capability:target"
-SOURCE_ROW = "source:capability-support:row"
-SOURCE_FAMILY = "source-family:capability-support"
-EPISODE = "episode:capability-support"
-SOURCE_RELEASE = "4" * 64
-GENERATION = "5" * 64
-
-
-def _training_authority(
-    *, capability=TARGET, source_row=SOURCE_ROW,
-    source_family=SOURCE_FAMILY, episode=EPISODE,
-    generation_binding=GENERATION,
-):
-    row = {"id": source_row, "capability": capability}
-    provenance = BamfDeliveryProvenance(
-        source_row, source_content_digest((row,)), "fixture-source", capability,
-        None, (), 1, 1, None, 0,
-        source_family, episode)
-    training_row = BamfTrainingRow(None, None, None, provenance)
-    batch = _issue_training_batch(
-        SOURCE_RELEASE, generation_binding, content_digest((row,)), capability,
-        (training_row,))
-    source = SourceAtomRow(
-        AtlasArtifactSelection(
-            "/fixture", "1" * 64, SOURCE_RELEASE, "2" * 64),
-        row, {}, Path("."), 17, 1)
-    return issue_training_authority(batch, source, provenance)
-
-
-def _source_qualified_state(parent=None, **authority_kwargs):
-    parent = parent_state() if parent is None else parent
-    transaction = begin_candidate(parent)
-    authority = _training_authority(**authority_kwargs)
-    spec = ModelTopologySpecV2()
-    extents = GenerationExtents(
-        1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
-    with shape_patch():
-        transaction = candidate_step(
-            transaction,
-            {NAME: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
-            execution_provenance(
-                transaction.parent, rows=(0,),
-                candidate_step=transaction.update_steps + 1),
-            HP, spec=spec, extents=extents, loss_bearing=True, max_norm=1.,
-            training_authority=authority)
-    return parent, transaction, resolve_candidate(transaction, accepted=True), authority
-
-
-class CapabilitySupportOwnerTests(unittest.TestCase):
-    def setUp(self):
-        self.temporary = TemporaryDirectory()
-        self.root = Path(self.temporary.name)
-        self.run = self.root / "run"
-        self.environment = patch.dict(
-            os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
-        self.environment.start()
-
-    def tearDown(self):
-        self.environment.stop()
-        self.temporary.cleanup()
-
-    def publish_support(self):
-        parent, transaction, retained, authority = _source_qualified_state()
-        bundle = candidate(retained)
-        decision = retention_decision(parent=parent, retained=retained)
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            published = accept_and_publish(
-                self.run, bundle, retained, decision=decision,
-                feature_sha256=bundle.extents.factor_map_digest,
-                training_authorities=transaction.training_authorities)
-        return published, authority
-
-    def load_support(self, authority_registry=None):
-        with shape_patch():
-            return load_capability_support_owner(
-                self.run, TARGET, authority_registry)
-
+class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
     def test_b13_acceptance_persists_exact_source_anchor_and_materializes_owner(self):
         published, authority = self.publish_support()
         acceptance_path = (
@@ -133,6 +64,10 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
         self.assertEqual(record["source_anchors"][0][1], SOURCE_ROW)
         self.assertEqual(record["source_anchors"][0][2], authority.source_row_sha256)
         self.assertEqual(record["source_anchors"][0][8], authority.digest)
+        self.assertEqual(
+            tuple(map(tuple, record["source_anchors"][0][9])),
+            tuple((ref.kind.value, ref.key)
+                  for ref in authority.immediate_dependencies))
 
         owner = self.load_support()
         self.assertEqual(owner.support.source_anchor_ids, (SOURCE_ROW,))
@@ -160,11 +95,196 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
                 "training-batch:" + authority.training_batch_sha256,
             ),
             owner.current_node.immediate_dependencies)
+        for dependency in IMMEDIATE_DEPENDENCIES:
+            self.assertIn(dependency, owner.current_node.immediate_dependencies)
         self.assertEqual(
             self.load_support().support,
             owner.support)
         with self.assertRaises(BilqisError):
             CapabilitySupportArtifactOwner()
+
+    def test_operator_correction_holds_lossless_learned_support(self):
+        self.publish_support()
+        authority = SourceAuthorityRegistry((SourceAuthorityKey(
+            _SOURCE_OWNER,
+            _TEST_PUBLIC,
+            (SourceAuthorityScope(DependencyKind.OPERATOR, "operator:"),),
+        ),))
+        owner = self.load_support(authority)
+        dependency = next(
+            ref for ref in owner.current_node.immediate_dependencies
+            if ref.kind is DependencyKind.OPERATOR)
+        self.assertTrue(apply_capability_support_correction(
+            owner, _event(dependency), authority))
+        with self.assertRaises(BilqisError) as caught:
+            owner.require(TARGET)
+        self.assertEqual(
+            caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+
+    def test_concrete_source_correction_holds_learned_support_across_row_identity(self):
+        self.publish_support()
+        authority = SourceAuthorityRegistry((SourceAuthorityKey(
+            _SOURCE_OWNER,
+            _TEST_PUBLIC,
+            (SourceAuthorityScope(DependencyKind.SOURCE, SOURCE_ID),),
+        ),))
+        owner = self.load_support(authority)
+        self.assertIn(
+            DependencyRef(DependencyKind.SOURCE, SOURCE_ID),
+            owner.current_node.immediate_dependencies,
+        )
+        self.assertNotEqual(SOURCE_ID, SOURCE_ROW)
+        self.assertTrue(apply_capability_support_correction(
+            owner,
+            _event(DependencyRef(DependencyKind.SOURCE, SOURCE_ID)),
+            authority,
+        ))
+        with self.assertRaises(BilqisError) as caught:
+            owner.require(TARGET)
+        self.assertEqual(
+            caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+
+    def test_execution_observed_source_dependency_reaches_learned_support(self):
+        motif_source = DependencyRef(
+            DependencyKind.SOURCE, "source:retained-motif-independent")
+        authority = extend_training_dependencies(
+            training_authority(), (motif_source,))
+        self.publish_support(authority=authority)
+        registry = SourceAuthorityRegistry((SourceAuthorityKey(
+            _SOURCE_OWNER,
+            _TEST_PUBLIC,
+            (SourceAuthorityScope(
+                DependencyKind.SOURCE, "source:retained-motif-independent"),),
+        ),))
+        owner = self.load_support(registry)
+        self.assertIn(motif_source, owner.current_node.immediate_dependencies)
+        self.assertTrue(apply_capability_support_correction(
+            owner, _event(motif_source), registry))
+        with self.assertRaises(BilqisError) as caught:
+            owner.require(TARGET)
+        self.assertEqual(
+            caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+
+    def test_changed_context_revalidation_requires_capability_requalification(self):
+        self.publish_support()
+        owner = self.load_support(AUTHORITY)
+        prior = owner.current_node
+        updated = replace(prior, content_digest="d" * 64)
+        transition = ContextStateTransition(
+            artifact_id=prior.artifact_id,
+            previous_content_digest=prior.content_digest,
+            new_content_digest=updated.content_digest,
+            previous_eligible=prior.eligible,
+            new_eligible=updated.eligible,
+            previous_dependencies=prior.immediate_dependencies,
+            new_dependencies=updated.immediate_dependencies,
+            source_receipt_sha256="c" * 64,
+            context_event_id="context-event:fixture",
+            context_invalidation_receipt_sha256="e" * 64,
+            source_owner=_SOURCE_OWNER,
+            source_signature_hex="0" * 128,
+            changed=True,
+        )
+        owner._install_context_revalidation(
+            DependencyIndex.build((updated,)), transition)
+        self.assertIs(
+            owner.support.status,
+            RequalificationStatus.REQUALIFICATION_REQUIRED)
+        self.assertEqual(len(owner.ledger.pending_source_tasks), 1)
+        self.assertEqual(owner.ledger.pending_c10_intents, ())
+        task = owner.ledger.pending_source_tasks[0]
+        self.assertIsNone(task.correction_event_id)
+        self.assertEqual(task.context_event_id, transition.context_event_id)
+        self.assertEqual(task.reason_code, "CONTEXT_SUPPORT_REQUALIFICATION")
+        with self.assertRaises(BilqisError) as caught:
+            owner.require(TARGET)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C09_CAPABILITY_SUPPORT_REQUALIFICATION_REQUIRED")
+
+    def test_context_requalification_survives_cold_accepted_replay(self):
+        case = source_owned_temporal_case()
+        context_dependency = DependencyRef(
+            DependencyKind.TIME,
+            "time:asof:context:" + case.previous.digest)
+        dependencies = tuple(sorted((
+            *(ref for ref in IMMEDIATE_DEPENDENCIES
+              if ref.kind is not DependencyKind.TIME),
+            context_dependency,
+        )))
+        with patch.object(
+            support_fixture, "immediate_dependencies",
+            return_value=dependencies,
+        ):
+            published, _authority = self.publish_support()
+        owner = self.load_support(AUTHORITY)
+        with shape_patch():
+            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+        invalidation = C09ContextInvalidation(
+            old_context_digest=case.previous.digest,
+            new_context_digest="e" * 64,
+            reason_codes=("BAMF_CONTEXT_APPROVED_VIEW_CHANGED",),
+            principal_id=case.task.principal_id,
+            tenant_id=case.task.tenant_id,
+            scope=case.task.scope,
+            semantic_release=case.task.semantic_release,
+            policy_epoch=case.policy.policy_epoch,
+            rights_epoch=case.frontier.rights_epoch,
+            correction_generation=case.frontier.correction_generation,
+            causal_prefix_end=case.task.causal_prefix_end,
+            invalidated_handles=tuple(sorted({
+                handle
+                for frame in case.previous.eligible.frames
+                for handle in (frame.frame_handle, *frame.member_handles)
+            })),
+        )
+        record = context_invalidation_record(
+            published["manifest_sha256"], invalidation)
+        append_record(
+            self.run, published["manifest_sha256"], record)
+        runtime(
+            self.run, published["manifest_sha256"],
+        ).deliver_context_invalidation(record["event_id"], invalidation)
+        prior = owner.current_node
+        new_time = DependencyRef(
+            DependencyKind.TIME,
+            "time:asof:context:" + invalidation.new_context_digest)
+        result = _signed_context_result(
+            prior,
+            invalidation=invalidation,
+            accepted_event_id=record["event_id"],
+            dependencies=tuple(sorted((
+                *(ref for ref in prior.immediate_dependencies
+                  if ref != context_dependency),
+                new_time,
+            ))),
+            digest="d" * 64,
+        )
+        with shape_patch():
+            host.record_context_revalidation(
+                ContextRevalidationFrontier((result,)))
+        self.assertIs(
+            owner.support.status,
+            RequalificationStatus.REQUALIFICATION_REQUIRED)
+
+        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _RUNTIME_OWNER.clear()
+        cold_owner = self.load_support(AUTHORITY)
+        self.assertIs(
+            cold_owner.support.status,
+            RequalificationStatus.REQUALIFICATION_REQUIRED)
+        self.assertEqual(len(cold_owner.ledger.pending_source_tasks), 1)
+        self.assertEqual(cold_owner.ledger.pending_c10_intents, ())
+        self.assertEqual(
+            cold_owner.ledger.pending_source_tasks[0].context_event_id,
+            invalidation.event_id)
+        with self.assertRaises(BilqisError):
+            cold_owner.require(TARGET)
+        records = read_records(self.run, published["manifest_sha256"])
+        self.assertIn(CONTEXT_INVALIDATION_EVENT, {
+            item["event"] for item in records})
+        self.assertNotIn(CORRECTION_EVENT, {
+            item["event"] for item in records})
 
     def test_retained_capability_provenance_survives_unrelated_successor_acceptance(self):
         first, _authority_a = self.publish_support()
@@ -173,7 +293,7 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
             accepted_parent = load_accepted_generation(self.run)
         capability_b = "capability:unrelated-b"
         source_b = "source:capability-support:row-b"
-        parent_state_b, transaction_b, retained_b, _authority_b = _source_qualified_state(
+        parent_state_b, transaction_b, retained_b, _authority_b = source_qualified_state(
             accepted_parent.retained_state,
             capability=capability_b,
             source_row=source_b,
@@ -214,134 +334,8 @@ class CapabilitySupportOwnerTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             inherited.require(TARGET)
 
-    def test_source_correction_holds_read_equal_revalidation_releases_changed_requires_requalification(self):
-        self.publish_support()
-        owner = self.load_support()
-        correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
-        self.assertTrue(apply_capability_support_correction(
-            owner, correction, AUTHORITY))
-        queue = owner.queue
-        self.assertEqual(queue.held_artifact_ids, (owner.current_node.artifact_id,))
-        with self.assertRaises(BilqisError):
-            owner.require(TARGET)
-        with self.assertRaises(BilqisError):
-            self.load_support()
-        reloaded = self.load_support(AUTHORITY)
-        self.assertEqual(
-            reloaded.queue.held_artifact_ids,
-            (reloaded.current_node.artifact_id,))
-        with self.assertRaises(BilqisError):
-            reloaded.require(TARGET)
-
-        node = owner.current_node
-        owner.advance(
-            _result(node, digest=node.content_digest, correction=correction), AUTHORITY)
-        self.assertEqual(owner.require(TARGET).status, "QUALIFIED")
-        with self.assertRaises(BilqisError):
-            self.load_support()
-        self.assertIsNone(self.load_support(AUTHORITY).queue)
-
-        self.assertTrue(apply_capability_support_correction(
-            owner, correction, AUTHORITY))
-        node = owner.current_node
-        owner.advance(_result(node, digest="f" * 64, correction=correction), AUTHORITY)
-        self.assertEqual(owner.support.status, "REQUALIFICATION_REQUIRED")
-        self.assertEqual(len(owner.ledger.pending_source_tasks), 1)
-        self.assertEqual(
-            owner.ledger.pending_source_tasks[0].capability_id,
-            TARGET,
-        )
-        self.assertEqual(len(owner.ledger.pending_c10_intents), 1)
-        expected_ledger = owner.ledger
-        with self.assertRaises(BilqisError):
-            owner.require(TARGET)
-        reloaded = self.load_support(AUTHORITY)
-        self.assertEqual(reloaded.support.status, "REQUALIFICATION_REQUIRED")
-        self.assertEqual(reloaded.ledger, expected_ledger)
-
-    def test_accepted_correction_stream_delivers_to_live_capability_support_owner(self):
-        self.publish_support()
-        owner = self.load_support(AUTHORITY)
-        correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
-        with shape_patch():
-            record_accepted_correction(self.run, correction, AUTHORITY)
-        self.assertEqual(
-            owner.queue.held_artifact_ids,
-            (owner.current_node.artifact_id,))
-        with self.assertRaises(BilqisError):
-            owner.require(TARGET)
-
-        _RUNTIME_OWNER.clear()
-        reloaded = self.load_support(AUTHORITY)
-        self.assertEqual(
-            reloaded.queue.held_artifact_ids,
-            (reloaded.current_node.artifact_id,))
-        with self.assertRaises(BilqisError):
-            reloaded.require(TARGET)
-
-        node = reloaded.current_node
-        with shape_patch():
-            record_accepted_revalidation(
-                self.run,
-                _result(node, digest="f" * 64, correction=correction),
-                AUTHORITY,
-            )
-        self.assertEqual(reloaded.support.status, "REQUALIFICATION_REQUIRED")
-        self.assertEqual(len(reloaded.ledger.pending_source_tasks), 1)
-        self.assertEqual(len(reloaded.ledger.pending_c10_intents), 1)
-        self.assertEqual(
-            len(pending_events(self.run / "akasha-outbox.sqlite3")),
-            1,
-        )
-
-    def test_deleting_active_hold_state_cannot_masquerade_as_clear(self):
-        published, _authority = self.publish_support()
-        owner = self.load_support()
-        correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
-        self.assertTrue(apply_capability_support_correction(
-            owner, correction, AUTHORITY))
-        hold_dir = (
-            self.run / "c09-capability-support" / published["manifest_sha256"])
-        state_path = next(hold_dir.glob("*.json"))
-        marker_path = state_path.with_suffix(state_path.suffix + ".seen")
-        self.assertTrue(marker_path.is_file())
-        state_path.unlink()
-        with self.assertRaises(BilqisError):
-            self.load_support(AUTHORITY)
-
-    def test_deleting_both_local_hold_files_cannot_erase_data_plane_commitment(self):
-        published, _authority = self.publish_support()
-        owner = self.load_support()
-        correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
-        self.assertTrue(apply_capability_support_correction(
-            owner, correction, AUTHORITY))
-        hold_dir = (
-            self.run / "c09-capability-support" / published["manifest_sha256"])
-        state_path = next(hold_dir.glob("*.json"))
-        marker_path = state_path.with_suffix(state_path.suffix + ".seen")
-        state_path.unlink()
-        marker_path.unlink()
-        with self.assertRaises(BilqisError):
-            self.load_support(AUTHORITY)
-
-    def test_replayed_transition_must_match_current_materialized_support_node(self):
-        published, _authority = self.publish_support()
-        owner = self.load_support()
-        correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
-        self.assertTrue(apply_capability_support_correction(
-            owner, correction, AUTHORITY))
-        node = owner.current_node
-        owner.advance(
-            _result(node, digest=node.content_digest, correction=correction), AUTHORITY)
-        hold_dir = (
-            self.run / "c09-capability-support" / published["manifest_sha256"])
-        state_path = next(hold_dir.glob("*.json"))
-        record = json.loads(state_path.read_text())
-        record["transition"]["previous_content_digest"] = "0" * 64
-        state_path.write_text(json.dumps(record, sort_keys=True) + "\n")
-        with self.assertRaises(BilqisError):
-            self.load_support(AUTHORITY)
 
 
 if __name__ == "__main__":
+    import unittest
     unittest.main()

@@ -9,8 +9,10 @@ from bilqis_mlx.runtime.capability_support_journal import event_from_record
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyIndex
 
 from .accepted_correction_ledger import (
-    CONTEXT_INVALIDATION_EVENT, CORRECTION_EVENT, REVALIDATION_EVENT,
-    context_invalidation_from_record, frontier_from_record, read_records,
+    CONTEXT_INVALIDATION_EVENT, CONTEXT_REVALIDATION_EVENT,
+    CORRECTION_EVENT, REVALIDATION_EVENT,
+    context_frontier_from_record, context_invalidation_from_record,
+    frontier_from_record, read_records,
 )
 from .accepted_correction_target import AcceptedCorrectionTarget
 from .atlas_revalidation_common import _invalid
@@ -60,6 +62,8 @@ class AcceptedCorrectionRuntime:
                 break
             owner.advance(RevalidationFrontier((candidate,)), registry)
             consumed.add((candidate.correction_event_id, candidate.artifact_id))
+            target.mark_branch_reconciled(
+                candidate.correction_event_id, candidate.artifact_id)
         relevant = {
             (item.correction_event_id, item.artifact_id)
             for item in frontier.results
@@ -91,7 +95,10 @@ class AcceptedCorrectionRuntime:
             self._restore_branches(target)
             target.seen.update(seen_event_ids)
             self._replay(target)
+            if self.registry is not None:
+                target.reconcile_late_materializations(self.registry)
             self._retry_deferred(target)
+            self._retry_context_deferred(target)
             from .accepted_stale_replay_runtime import replay_stale_evidence
             replay_stale_evidence(self)
 
@@ -156,7 +163,15 @@ class AcceptedCorrectionRuntime:
                 target.accept_correction(event, self.registry)
             elif record["event"] == CONTEXT_INVALIDATION_EVENT:
                 target.accept_context_invalidation(
-                    context_invalidation_from_record(record))
+                    event_id, context_invalidation_from_record(record))
+            elif record["event"] == CONTEXT_REVALIDATION_EVENT:
+                frontier = context_frontier_from_record(record)
+                if self.registry is None:
+                    _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
+                if not target.advance_context(frontier, self.registry):
+                    target.context_deferred[event_id] = frontier
+                    continue
+                target.context_deferred.pop(event_id, None)
             elif record["event"] == REVALIDATION_EVENT:
                 frontier = frontier_from_record(record)
                 if not self._advance(target, event_id, frontier, self.registry):
@@ -173,6 +188,20 @@ class AcceptedCorrectionRuntime:
             if self._advance(target, event_id, frontier, self.registry):
                 target.seen.add(event_id)
                 del target.deferred[event_id]
+
+    def _retry_context_deferred(
+        self, target: AcceptedCorrectionTarget,
+    ) -> None:
+        if self.registry is None:
+            return
+        progressed = True
+        while progressed:
+            progressed = False
+            for event_id, frontier in tuple(target.context_deferred.items()):
+                if target.advance_context(frontier, self.registry):
+                    target.seen.add(event_id)
+                    del target.context_deferred[event_id]
+                    progressed = True
 
     def deliver(
         self, event_id: str, event: CorrectionEvent,
@@ -209,8 +238,23 @@ class AcceptedCorrectionRuntime:
             for target in tuple(self.targets.values()):
                 if target.owner is None or event_id in target.seen:
                     continue
-                target.accept_context_invalidation(event)
+                target.accept_context_invalidation(event_id, event)
                 target.seen.add(event_id)
+                self._retry_context_deferred(target)
+
+    def deliver_context_revalidation(
+        self, event_id: str, frontier, registry: SourceAuthorityRegistry,
+    ) -> None:
+        with self.lock:
+            self.bind_registry(registry)
+            for target in tuple(self.targets.values()):
+                if target.owner is None or event_id in target.seen:
+                    continue
+                if target.advance_context(frontier, self.registry):
+                    target.seen.add(event_id)
+                    self._retry_context_deferred(target)
+                else:
+                    target.context_deferred[event_id] = frontier
 
 
 __all__ = ("AcceptedCorrectionRuntime",)

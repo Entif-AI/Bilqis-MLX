@@ -6,6 +6,7 @@ from bilqis_mlx.errors import BilqisError
 from .atlas_requalification_contracts import (
     C10InvalidationIntent, CapabilitySupport, RequalificationLedger,
     RequalificationStatus, RequalificationUpdate, TargetedSourceTask,
+    CONTEXT_TARGETED_SOURCE_TASK_SCHEMA,
 )
 from .atlas_revalidation_common import _invalid
 
@@ -35,24 +36,30 @@ def _support_from_record(item: dict) -> CapabilitySupport:
 
 
 def _task_record(item: TargetedSourceTask) -> dict:
-    return {
+    record = {
         "task_id": item.task_id,
         "capability_id": item.capability_id,
         "source_anchor_ids": list(item.source_anchor_ids),
-        "correction_event_id": item.correction_event_id,
         "retained_generation_sha256": item.retained_generation_sha256,
         "reason_code": item.reason_code,
         "schema_version": item.schema_version,
     }
+    if item.schema_version == CONTEXT_TARGETED_SOURCE_TASK_SCHEMA:
+        record["context_event_id"] = item.context_event_id
+    else:
+        record["correction_event_id"] = item.correction_event_id
+    return record
 
 
 def _task_from_record(item: dict) -> TargetedSourceTask:
     return TargetedSourceTask(
         task_id=item["task_id"], capability_id=item["capability_id"],
         source_anchor_ids=tuple(item["source_anchor_ids"]),
-        correction_event_id=item["correction_event_id"],
+        correction_event_id=item.get("correction_event_id"),
         retained_generation_sha256=item["retained_generation_sha256"],
-        reason_code=item["reason_code"], schema_version=item["schema_version"],
+        reason_code=item["reason_code"],
+        context_event_id=item.get("context_event_id"),
+        schema_version=item["schema_version"],
     )
 
 

@@ -2,11 +2,16 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import mlx.core as mx
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    DependencyKind, DependencyRef,
+)
 from bilqis_mlx.learning.atlas_readout import DecisionKind, ExecutionMode
 from bilqis_mlx.runtime.atlas_model import bind_compiled_training_batch, forward_bamf
 from bilqis_mlx.runtime.cognitive_solver import (
@@ -63,6 +68,9 @@ class FactoryTrainingBridgeTests(FactoryTrainingBridgeFixture):
                     self.assertEqual(
                         compiled.training_authority.source_row_sha256,
                         training_row.provenance.source_row_content_sha256)
+                    self.assertEqual(
+                        compiled.training_authority.immediate_dependencies,
+                        training_row.provenance.immediate_dependencies)
                     self.assertEqual(training_row.provenance.requested_count, each + 2)
                     self.assertEqual(training_row.provenance.delivered_count, each)
                     self.assertEqual(
@@ -81,6 +89,44 @@ class FactoryTrainingBridgeTests(FactoryTrainingBridgeFixture):
         self.assertEqual(
             tuple(call.args[1] for call in register.call_args_list),
             prepared.compiled_rows)
+
+    def test_revalidated_frame_context_cannot_reuse_stale_training_authority(self):
+        _rows, prepared = self.prepare("A.IDENTITY", 37101, 2)
+        compiled = prepared.compiled_rows[0]
+        owner = compiled.compiled.packed_frame_artifact_owner
+        row = compiled.compiled.compiled.rows[0]
+        nodes = owner.require_row(row)
+        node = next(
+            item for item in nodes
+            if any(ref.kind is DependencyKind.TIME
+                   and ref.key.startswith("time:asof:context:")
+                   for ref in item.immediate_dependencies)
+        )
+        old_time = next(
+            ref for ref in node.immediate_dependencies
+            if ref.kind is DependencyKind.TIME
+            and ref.key.startswith("time:asof:context:"))
+        new_time = DependencyRef(
+            DependencyKind.TIME, "time:asof:context:" + "f" * 64)
+        new_dependencies = tuple(sorted(
+            new_time if ref == old_time else ref
+            for ref in node.immediate_dependencies))
+        updated = replace(node, immediate_dependencies=new_dependencies)
+        owner._install_context_revalidation(
+            owner.index.replace_node(updated),
+            SimpleNamespace(
+                artifact_id=node.artifact_id,
+                previous_content_digest=node.content_digest,
+                new_content_digest=node.content_digest,
+                new_dependencies=new_dependencies,
+            ),
+        )
+
+        with self.assertRaises(BilqisError) as caught:
+            compiled.__post_init__()
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "B11_TRAINING_AUTHORITY_CONTEXT_DRIFT")
 
     def test_b11_row_binding_rejects_sibling_row_substitution(self):
         rows, prepared = self.prepare("A.IDENTITY", 37104, 2)

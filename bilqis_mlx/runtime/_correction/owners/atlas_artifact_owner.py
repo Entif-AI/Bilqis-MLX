@@ -33,8 +33,36 @@ def _atlas_ref(features: AtlasFeatures) -> DependencyRef:
     return DependencyRef(DependencyKind.SOURCE, "atlas:" + features.atlas_bundle_id)
 
 
-def _node(features: AtlasFeatures, predecessor: AtlasFeatures | None) -> ArtifactNode:
+def _feature_schema_refs(feature_schema: FeatureSchema) -> tuple[DependencyRef, ...]:
+    """Name the transform contract and source adapters that materialize AtlasFeatures."""
+    if type(feature_schema) is not FeatureSchema:
+        _invalid("BAMF_C09_ATLAS_FEATURE_OWNER_INVALID")
+    schema_contract = contract_digest((
+        feature_schema.schema_version,
+        feature_schema.role_ids,
+        feature_schema.schema_ids,
+        feature_schema.source_bindings,
+    ))
+    return tuple(sorted({
+        DependencyRef(
+            DependencyKind.OPERATOR,
+            "operator:atlas-feature-schema:" + schema_contract,
+        ),
+        *(DependencyRef(
+            DependencyKind.OPERATOR,
+            "operator:" + adapter_id,
+        ) for _schema_id, adapter_id in feature_schema.source_bindings),
+    }))
+
+
+def _node(
+    features: AtlasFeatures,
+    predecessor: AtlasFeatures | None,
+    feature_schema: FeatureSchema | None = None,
+) -> ArtifactNode:
     dependencies = [_source_ref(features), _release_ref(features), _atlas_ref(features)]
+    if feature_schema is not None:
+        dependencies.extend(_feature_schema_refs(feature_schema))
     if predecessor is not None:
         dependencies.append(DependencyRef(DependencyKind.ARTIFACT, _artifact_id(predecessor)))
     impact, exigency = owner_priority(ArtifactKind.ATLAS_FEATURE)
@@ -63,7 +91,10 @@ class AtlasFeatureArtifactOwner:
                     and predecessor.predecessor_digest is not None)):
             _invalid("BAMF_C09_ATLAS_FEATURE_PREDECESSOR_INCOMPLETE")
         nodes = (() if predecessor is None else (_node(predecessor, None),))
-        self._index = DependencyIndex.build((*nodes, _node(features, predecessor)))
+        self._index = DependencyIndex.build((
+            *nodes,
+            _node(features, predecessor, feature_schema),
+        ))
         self._current_artifact_id = _artifact_id(features)
         self._queue: RevalidationQueue | None = None
 
@@ -79,6 +110,15 @@ class AtlasFeatureArtifactOwner:
     @property
     def index(self) -> DependencyIndex:
         return self._index
+
+    def _install_context_revalidation(
+        self, index: DependencyIndex, transition,
+    ) -> bool:
+        if (not isinstance(index, DependencyIndex)
+                or {node.artifact_id for node in index.nodes}
+                != {node.artifact_id for node in self._index.nodes}):
+            _invalid("BAMF_C09_CONTEXT_REVALIDATION_INDEX_DRIFT")
+        self._index = index
 
     @property
     def queue(self) -> RevalidationQueue | None:
@@ -142,6 +182,9 @@ def _packed_frame_node(row: CompiledFrameBatch, packed) -> ArtifactNode:
     dependencies.update((
         DependencyRef(DependencyKind.RELEASE, "release:" + packed.semantic_release),
         DependencyRef(
+            DependencyKind.OPERATOR,
+            "operator:frame-compiler:" + row.schema_version),
+        DependencyRef(
             DependencyKind.POLICY,
             "policy:" + contract_digest((row.scope, row.policy_version[0], row.policy_version[1]))),
         DependencyRef(
@@ -188,10 +231,35 @@ class PackedFrameArtifactOwner:
                 nodes[node.artifact_id] = node
         self._index = DependencyIndex.build(tuple(nodes.values()))
         self._queue: RevalidationQueue | None = None
+        self._context_dependency_overrides: dict[
+            str, tuple[DependencyRef, ...],
+        ] = {}
 
     @property
     def index(self) -> DependencyIndex:
         return self._index
+
+    def _install_context_revalidation(
+        self, index: DependencyIndex, transition,
+    ) -> None:
+        if (not isinstance(index, DependencyIndex)
+                or {node.artifact_id for node in index.nodes}
+                != {node.artifact_id for node in self._index.nodes}):
+            _invalid("BAMF_C09_CONTEXT_REVALIDATION_INDEX_DRIFT")
+        previous = self._index.node(transition.artifact_id)
+        updated = index.node(transition.artifact_id)
+        if (previous.content_digest != transition.previous_content_digest
+                or updated.content_digest != transition.new_content_digest
+                or updated.immediate_dependencies
+                != transition.new_dependencies):
+            _invalid("BAMF_C09_CONTEXT_REVALIDATION_INDEX_DRIFT")
+        self._index = index
+        if previous.content_digest == updated.content_digest:
+            self._context_dependency_overrides[
+                updated.artifact_id] = updated.immediate_dependencies
+        else:
+            self._context_dependency_overrides.pop(updated.artifact_id, None)
+        return True
 
     @property
     def queue(self) -> RevalidationQueue | None:
@@ -212,8 +280,12 @@ class PackedFrameArtifactOwner:
                 continue
             expected = _packed_frame_node(row, position.packed)
             node = self.node_for(position.packed)
+            dependency_match = (
+                node.immediate_dependencies == expected.immediate_dependencies
+                or self._context_dependency_overrides.get(node.artifact_id)
+                == node.immediate_dependencies)
             if (node.content_digest != expected.content_digest
-                    or node.immediate_dependencies != expected.immediate_dependencies):
+                    or not dependency_match):
                 _invalid("BAMF_C09_PACKED_FRAME_CONTENT_DRIFT")
             from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corrections
             require_pending_corrections(self, node.artifact_id)

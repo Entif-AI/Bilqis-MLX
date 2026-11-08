@@ -19,8 +19,8 @@ from bilqis_mlx.runtime.capability_authority import (
 from bilqis_mlx.runtime.tests.capability.test_capability_authority import (
     GENERATION, GRAPH, _authority, _evidence, _release,
 )
-from bilqis_mlx.runtime.tests.correction.test_atlas_capability_support_owner import (
-    _source_qualified_state,
+from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
+    source_qualified_state,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     candidate, retention_decision, shape_patch,
@@ -48,7 +48,7 @@ class AcceptedProgressionHistoryTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def _publish_support_and_correction(self):
-        parent, transaction, retained, _training_authority = _source_qualified_state(
+        parent, transaction, retained, _training_authority = source_qualified_state(
             capability="target",
             source_row=SOURCE_ROW,
             source_family="source-family:accepted-progression",

@@ -9,6 +9,7 @@ from .atlas_revalidation import CorrectionEvent, _digest, _invalid, _name
 
 CAPABILITY_SUPPORT_SCHEMA = "bilqis.c09.capability-support/v1"
 TARGETED_SOURCE_TASK_SCHEMA = "bilqis.c09.targeted-source-task/v1"
+CONTEXT_TARGETED_SOURCE_TASK_SCHEMA = "bilqis.c09.targeted-source-task/v2"
 C10_INTENT_SCHEMA = "bilqis.c09.c10-invalidation-intent/v1"
 REQUALIFICATION_LEDGER_SCHEMA = "bilqis.c09.requalification-ledger/v1"
 REQUALIFICATION_UPDATE_SCHEMA = "bilqis.c09.requalification-update/v1"
@@ -45,25 +46,43 @@ class TargetedSourceTask:
     task_id: str
     capability_id: str
     source_anchor_ids: tuple[str, ...]
-    correction_event_id: str
+    correction_event_id: str | None
     retained_generation_sha256: str
     reason_code: str = "SUPPORT_REQUALIFICATION"
+    context_event_id: str | None = None
     schema_version: str = TARGETED_SOURCE_TASK_SCHEMA
 
     def __post_init__(self) -> None:
-        identity = {
+        correction_identity = {
             "capability_id": self.capability_id,
             "source_anchor_ids": self.source_anchor_ids,
             "correction_event_id": self.correction_event_id,
             "retained_generation_sha256": self.retained_generation_sha256,
         }
+        context_identity = {
+            "capability_id": self.capability_id,
+            "source_anchor_ids": self.source_anchor_ids,
+            "context_event_id": self.context_event_id,
+            "retained_generation_sha256": self.retained_generation_sha256,
+        }
+        correction_form = (
+            self.schema_version == TARGETED_SOURCE_TASK_SCHEMA
+            and _name(self.correction_event_id)
+            and self.context_event_id is None
+            and self.reason_code == "SUPPORT_REQUALIFICATION"
+            and self.task_id == _identity(correction_identity)
+        )
+        context_form = (
+            self.schema_version == CONTEXT_TARGETED_SOURCE_TASK_SCHEMA
+            and self.correction_event_id is None
+            and _name(self.context_event_id)
+            and self.reason_code == "CONTEXT_SUPPORT_REQUALIFICATION"
+            and self.task_id == _identity(context_identity)
+        )
         if (not _digest(self.task_id) or not _name(self.capability_id)
                 or not _canonical_names(self.source_anchor_ids)
-                or not _name(self.correction_event_id)
                 or not _digest(self.retained_generation_sha256)
-                or self.reason_code != "SUPPORT_REQUALIFICATION"
-                or self.task_id != _identity(identity)
-                or self.schema_version != TARGETED_SOURCE_TASK_SCHEMA):
+                or not (correction_form or context_form)):
             _invalid("BAMF_C09_SOURCE_TASK_INVALID")
 
     @classmethod
@@ -82,6 +101,27 @@ class TargetedSourceTask:
             source_anchor_ids=support.source_anchor_ids,
             correction_event_id=event.event_id,
             retained_generation_sha256=support.retained_generation_sha256,
+        )
+
+    @classmethod
+    def from_context(
+        cls, support: CapabilitySupport, context_event_id: str,
+    ) -> "TargetedSourceTask":
+        identity = {
+            "capability_id": support.capability_id,
+            "source_anchor_ids": support.source_anchor_ids,
+            "context_event_id": context_event_id,
+            "retained_generation_sha256": support.retained_generation_sha256,
+        }
+        return cls(
+            task_id=_identity(identity),
+            capability_id=support.capability_id,
+            source_anchor_ids=support.source_anchor_ids,
+            correction_event_id=None,
+            retained_generation_sha256=support.retained_generation_sha256,
+            reason_code="CONTEXT_SUPPORT_REQUALIFICATION",
+            context_event_id=context_event_id,
+            schema_version=CONTEXT_TARGETED_SOURCE_TASK_SCHEMA,
         )
 
 
@@ -139,7 +179,6 @@ class C10InvalidationIntent:
             affected_artifact_ids=affected_artifact_ids,
             capability_ids=capability_ids,
         )
-
 
 @dataclass(frozen=True)
 class RequalificationLedger:
