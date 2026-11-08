@@ -166,6 +166,7 @@ def _compile_native_target(row, *, kind: str, gold, head, source_context: Source
 
 def _row_immediate_dependencies(
     row_id: str,
+    source_id: str | None,
     operation_id: str | None,
     model_input: BamfModelInput,
 ) -> tuple[DependencyRef, ...]:
@@ -185,6 +186,8 @@ def _row_immediate_dependencies(
             "rights:" + contract_digest((
                 prefix.policy_version[2], prefix.policy_version[3]))),
     }
+    if source_id is not None:
+        dependencies.add(DependencyRef(DependencyKind.SOURCE, source_id))
     if operation_id is not None:
         dependencies.add(DependencyRef(
             DependencyKind.OPERATOR, "operator:" + operation_id))
@@ -263,7 +266,7 @@ def compile_training_batch(delivered_rows, source_context: SourceExecutionContex
         provenance = replace(
             provenance,
             immediate_dependencies=_row_immediate_dependencies(
-                identity, operation_id, model_input))
+                identity, source_id, operation_id, model_input))
         result.append(BamfTrainingRow(model_input, target, native_target, provenance))
     return _issue_training_batch(
         release.release_sha256, generation_binding, content_digest(delivered_rows),

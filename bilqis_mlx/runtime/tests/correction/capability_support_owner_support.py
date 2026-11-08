@@ -33,13 +33,15 @@ from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, Dependen
 
 TARGET = "capability:target"
 SOURCE_ROW = "source:capability-support:row"
+SOURCE_ID = "fixture-source"
 SOURCE_FAMILY = "source-family:capability-support"
 EPISODE = "episode:capability-support"
 SOURCE_RELEASE = "4" * 64
 GENERATION = "5" * 64
-def immediate_dependencies(source_row=SOURCE_ROW):
+def immediate_dependencies(source_row=SOURCE_ROW, source_id=SOURCE_ID):
     return tuple(sorted((
         DependencyRef(DependencyKind.SOURCE, source_row),
+        DependencyRef(DependencyKind.SOURCE, source_id),
         DependencyRef(DependencyKind.OPERATOR, "operator:fixture-support"),
         DependencyRef(DependencyKind.RELEASE, "source-release:" + SOURCE_RELEASE),
         DependencyRef(DependencyKind.POLICY, "policy:fixture-support"),
@@ -53,14 +55,15 @@ IMMEDIATE_DEPENDENCIES = immediate_dependencies()
 
 def training_authority(
     *, capability=TARGET, source_row=SOURCE_ROW,
+    source_id=SOURCE_ID,
     source_family=SOURCE_FAMILY, episode=EPISODE,
     generation_binding=GENERATION,
 ):
     row = {"id": source_row, "capability": capability}
     provenance = BamfDeliveryProvenance(
-        source_row, source_content_digest((row,)), "fixture-source", capability,
+        source_row, source_content_digest((row,)), source_id, capability,
         None, (), 1, 1, None, 0,
-        source_family, episode, immediate_dependencies(source_row))
+        source_family, episode, immediate_dependencies(source_row, source_id))
     training_row = BamfTrainingRow(None, None, None, provenance)
     batch = _issue_training_batch(
         SOURCE_RELEASE, generation_binding, content_digest((row,)), capability,

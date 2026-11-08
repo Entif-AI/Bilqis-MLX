@@ -311,6 +311,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         prefix = row.model_input.prefix
         expected = {
             DependencyRef(DependencyKind.SOURCE, row.provenance.row_id),
+            DependencyRef(DependencyKind.SOURCE, row.provenance.source_id),
             DependencyRef(
                 DependencyKind.OPERATOR, 'operator:fixture.operator'),
             DependencyRef(

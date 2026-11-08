@@ -41,8 +41,8 @@ from bilqis_mlx.semantics.cognitive_dependencies import (
 from bilqis_mlx.semantics.context_eligibility import C09ContextInvalidation
 
 from .capability_support_owner_support import (
-    CapabilitySupportOwnerFixture, GENERATION, IMMEDIATE_DEPENDENCIES, SOURCE_ROW,
-    TARGET, source_qualified_state,
+    CapabilitySupportOwnerFixture, GENERATION, IMMEDIATE_DEPENDENCIES,
+    SOURCE_ID, SOURCE_ROW, TARGET, source_qualified_state,
 )
 from . import capability_support_owner_support as support_fixture
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.test_accepted_context_revalidation import (
@@ -115,6 +115,29 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
             if ref.kind is DependencyKind.OPERATOR)
         self.assertTrue(apply_capability_support_correction(
             owner, _event(dependency), authority))
+        with self.assertRaises(BilqisError) as caught:
+            owner.require(TARGET)
+        self.assertEqual(
+            caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+
+    def test_concrete_source_correction_holds_learned_support_across_row_identity(self):
+        self.publish_support()
+        authority = SourceAuthorityRegistry((SourceAuthorityKey(
+            _SOURCE_OWNER,
+            _TEST_PUBLIC,
+            (SourceAuthorityScope(DependencyKind.SOURCE, SOURCE_ID),),
+        ),))
+        owner = self.load_support(authority)
+        self.assertIn(
+            DependencyRef(DependencyKind.SOURCE, SOURCE_ID),
+            owner.current_node.immediate_dependencies,
+        )
+        self.assertNotEqual(SOURCE_ID, SOURCE_ROW)
+        self.assertTrue(apply_capability_support_correction(
+            owner,
+            _event(DependencyRef(DependencyKind.SOURCE, SOURCE_ID)),
+            authority,
+        ))
         with self.assertRaises(BilqisError) as caught:
             owner.require(TARGET)
         self.assertEqual(
