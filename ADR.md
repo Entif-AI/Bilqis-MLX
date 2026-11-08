@@ -3158,3 +3158,85 @@ substituted, corrupted or unregistered source content fails closed.
 semantic admission, or change neural state. Reuse existing content-addressed/Data
 Plane storage primitives where they fit; do not create a second path-as-authority
 registry under another name.
+
+## ADR-137 | 2026-11-08 | Separate design review, implementation proof, drift, and integration
+
+**Status:** Accepted by direct owner instruction on 2026-11-08 after reviewing the
+project's recent BAMF execution history and the intended Elephant-Goldfish Model
+lifecycle.
+
+**Problem:** BAMF had gradually repurposed fresh EGM Goldfish review into a
+post-implementation merge-readiness loop. That mixed four different questions:
+whether a design was ready to implement, whether the implementation behaved
+correctly, whether the implementation still matched the approved design, and whether
+the exact candidate was ready for integration. The overlap caused repeated broad
+review and test cycles, consumed expensive evidence after its relevant fact was
+already established, and encouraged agents to rerun work after context changes rather
+than reuse valid receipts.
+
+The same execution history also showed a language-quality problem. Bilqis is an
+ML/runtime, provenance, lifecycle, and state-consistency project, but descriptions of
+ordinary correctness work sometimes borrowed terminology from unrelated technical
+domains. Automated systems and human reviewers may classify work partly from the
+language used to describe it. Inaccurate framing can therefore cause benign work to
+be misclassified, producing avoidable warnings, latency, resource consumption, and
+workflow interruption. The project needs descriptions that are both technically
+exact and faithful to the actual domain.
+
+**Decision:** BAMF now uses the lifecycle
+
+`DESIGN -> EGM REVIEW -> IMPLEMENT -> VERIFY -> DRIFT -> PREMERGE -> HUMAN REVIEW`.
+
+EGM review is a pre-implementation design/specification gate. Goldfish review the
+design using only the personas and standards appropriate to the unresolved design
+questions. In particular, Implementation Readiness evaluates whether a plan can be
+executed without unresolved design choices; it is not a finished-code review rubric.
+`EGM-Pending`, `EGM-Passed`, and `EGM-Failed` therefore describe design-review
+state. Historical uses of those labels under the earlier convention remain
+provenance and are not rewritten.
+
+Implementation correctness is established through claim-first differential
+verification. Before running a check, identify the claim, changed surface, prior
+evidence, reason that evidence no longer settles the claim, and the cheapest next
+proof. Escalate from deterministic checks to focused regressions, affected owner
+tests, dependency-closure integration tests, expensive witnesses, and finally the
+premerge aggregate gate only while relevant uncertainty remains. Passing evidence is
+reused until a change can plausibly invalidate the assumptions on which it depends.
+Agent turnover, elapsed time, issue bookkeeping, or equivalent branch movement do not
+by themselves invalidate proof.
+
+When implementation becomes behaviorally stable, compare the approved design with
+the code that implements it. Drift analysis is bounded to the approved design,
+implementation surfaces, and directly affected shared contracts. Differences are
+classified as implementation defects, design drift, design evolution, documentation
+staleness, or no drift. A code repair that restores the already-approved design uses
+focused engineering verification; only a genuine design change returns the affected
+design scope to EGM.
+
+Integration uses the minimum sufficient evidence set that makes the current decision
+defensible. Expensive witnesses are terminal proofs for requirements that cheaper
+evidence cannot establish, not ordinary debugging loops. Broad aggregate verification
+runs at an actual integration boundary and is reused when its exact assumptions
+remain valid.
+
+**Language discipline:** New issues, specifications, implementation plans, review
+assignments, findings, test descriptions, commits, pull requests, handoffs, and
+receipts should describe the software relationships actually being evaluated:
+component ownership, canonical sources of truth, provenance, lineage, state and
+identity consistency, lifecycle transitions, validation order, acceptance and
+publication, retry/recovery behavior, compatibility, reproducibility, design
+fidelity, concrete mismatched inputs, and deterministic proof.
+
+Describe the expected relationship, observed relationship, exact difference, smallest
+material consequence, and evidence directly. Existing code symbols, schemas, issue
+identifiers, and externally defined terms remain verbatim where necessary; surrounding
+prose explains their actual software role. This changes wording and process routing,
+not correctness requirements.
+
+**Structural enforcement:** `AGENTS.md` and
+`docs/tasks/bamf-0.2/EGM_EXECUTION.md` carry the canonical lifecycle. Lane A/B/C
+execution entrypoints delegate to it. `scripts/verify_bamf_0_2_contracts.py` checks
+the lifecycle marker and design-first EGM rule, and its focused regression protects
+the cutover. Existing differential-test receipts, dependency mapping, diagnostic-loop
+budgets, precedence-ordered diagnosis, and snapshot-pinned detached execution remain
+the proof-economy mechanisms for implementation work.
