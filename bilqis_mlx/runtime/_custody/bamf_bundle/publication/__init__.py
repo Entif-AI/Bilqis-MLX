@@ -8,11 +8,11 @@ from pathlib import Path
 from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.learning.atlas_acceptance import AcceptedCandidateBinding
 
-from .codec import load_bamf_bundle, save_bamf_bundle
-from .records import (
+from ..codec import load_bamf_bundle, save_bamf_bundle
+from ..records import (
     BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, invalid,
 )
-from ._publication_authority import (
+from .authority import (
     _UNBOUND_RETRY,
     load_generation_locked as _load_generation_locked_impl,
     parent_acceptance_for_publication as _parent_acceptance_for_publication_impl,
@@ -21,9 +21,9 @@ from ._publication_authority import (
     require_published_acceptance as _require_published_acceptance_impl,
     validate_parent_transition as _validate_parent_transition_impl,
 )
-from ._publication_events import record_bamf_rejection
-from ._publication_retry import existing_initial_generation_retry
-from ._publication_storage import (
+from .events import record_bamf_rejection
+from .retry import existing_initial_generation_retry
+from .storage import (
     ACCEPTANCE_DIR, _acceptance_path, _atomic_pointer, _live_bundle_manifest,
     _pointer_lock, _read_pointer, _require_bundle_root, _require_run_root,
     _stage, _write_acceptance,
@@ -107,7 +107,7 @@ def _publish_authorized_generation(
         reserve_gib: float) -> dict:
     """Shared crash-safe transaction after generation-specific authority validates."""
     if candidate.generation == 0:
-        from .genesis import (
+        from ..genesis import (
             PreparedInitialGeneration, validate_initial_generation_binding,
             validate_initial_generation_preparation,
         )

@@ -11,7 +11,7 @@ from unittest.mock import patch
 from bilqis_mlx._data_plane import file_objects
 from bilqis_mlx.data_plane import data_plane
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
-import bilqis_mlx.runtime.bamf_bundle._publication_storage as publication_storage
+import bilqis_mlx.runtime.bamf_bundle.publication.storage as publication_storage
 import bilqis_mlx.runtime.checkpoints as checkpoints
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError

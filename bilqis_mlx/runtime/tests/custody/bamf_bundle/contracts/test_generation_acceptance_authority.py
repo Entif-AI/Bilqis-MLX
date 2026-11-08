@@ -2,7 +2,7 @@
 from ._generation_acceptance_support import *
 import bilqis_mlx.runtime.bamf_bundle.feature_authority as feature_authority
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
-import bilqis_mlx.runtime.bamf_bundle._feature_acceptance as feature_acceptance
+import bilqis_mlx.runtime.bamf_bundle.feature.acceptance as feature_acceptance
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
     frozen_snapshot as genesis_frozen_snapshot,
     source_features as genesis_source_features,

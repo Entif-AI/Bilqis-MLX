@@ -23,16 +23,16 @@ from bilqis_mlx.runtime.model_topology_v2 import (
     validate_b01_generation_authority,
 )
 
-from .records import BamfBundleCandidate, invalid, sidecar_records
-from .genesis_records import (
+from ..records import BamfBundleCandidate, invalid, sidecar_records
+from .records import (
     BamfRunIdentity, InitialGenerationBinding, ParsedInitialGenerationBinding,
     mint_initial_generation_binding, optimizer_hyperparameters_digest,
 )
-from .genesis_foundation import (
+from .foundation import (
     InitialFoundationFeatureAuthority, initial_foundation_row_ages,
     initial_foundation_sidecars,
 )
-from .genesis_origin import (
+from .origin import (
     InitialFactoryFoundationAuthority, replay_initial_factory_foundation_authority,
 )
 
@@ -343,6 +343,6 @@ def validate_parsed_initial_generation_binding(student, binding, expected_digest
 
 def publish_initial_generation(run_dir, prepared: PreparedInitialGeneration, *, reserve_gib=100.0):
     """Publish genesis through the existing B13 transaction, never through C05."""
-    from .publication import _publish_authorized_generation
+    from ..publication import _publish_authorized_generation
     return _publish_authorized_generation(
         run_dir, prepared.candidate, prepared, reserve_gib=reserve_gib)

@@ -21,11 +21,11 @@ from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
 from .codec import load_bamf_bundle
 from .publication import _require_published_acceptance
 from .records import BamfBundleCandidate, invalid
-from ._feature_acceptance import (
+from .feature.acceptance import (
     accepted_binding_for_manifest, accepted_generation,
     parent_acceptance_anchor_from_manifest,
 )
-from ._feature_receipt import AcceptedGenerationFeatureReceipt, is_digest
+from .feature.receipt import AcceptedGenerationFeatureReceipt, is_digest
 
 FEATURE_SOURCE_KEYS = frozenset({
     "atlas_bundle_id", "release_sha256", "source_bundle_id"})

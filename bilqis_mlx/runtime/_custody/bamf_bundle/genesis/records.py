@@ -7,7 +7,7 @@ from typing import Mapping
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
 
-from .records import canonical, invalid, sha
+from ..records import canonical, invalid, sha
 
 RUN_IDENTITY_SCHEMA = "bilqis.mlx.bamf-run-identity/v1"
 INITIAL_BINDING_SCHEMA = "bilqis.mlx.bamf-initial-generation-binding/v1"

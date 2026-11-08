@@ -10,8 +10,8 @@ import uuid
 from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError, SHA256_HEX_LENGTH
-from .codec import validate_bamf_bundle_custody
-from .records import (
+from ..codec import validate_bamf_bundle_custody
+from ..records import (
     BAMF_POINTER_SCHEMA, LEGACY_BAMF_POINTER_SCHEMA, canonical, invalid,
 )
 

@@ -16,7 +16,7 @@ from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, load_bamf_generation_authority,
     publish_bamf_generation,
 )
-from bilqis_mlx.runtime.bamf_bundle._feature_acceptance import (
+from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
     accepted_binding_for_manifest,
 )
 from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle, save_bamf_bundle

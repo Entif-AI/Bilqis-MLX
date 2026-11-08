@@ -18,7 +18,7 @@ from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateT
 from bilqis_mlx.runtime.bamf_bundle import (
     BamfBundleCandidate, prepare_initial_generation, publish_initial_generation,
 )
-from bilqis_mlx.runtime.bamf_bundle.genesis_foundation import (
+from bilqis_mlx.runtime.bamf_bundle.genesis.foundation import (
     initial_foundation_sidecars,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (

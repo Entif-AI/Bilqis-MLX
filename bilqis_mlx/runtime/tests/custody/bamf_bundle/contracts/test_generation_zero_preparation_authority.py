@@ -14,7 +14,7 @@ from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
 from bilqis_mlx.runtime.bamf_bundle.genesis import (
     _issue_binding, validate_initial_generation_binding,
 )
-from bilqis_mlx.runtime.bamf_bundle.genesis_records import (
+from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
     mint_initial_generation_binding,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (

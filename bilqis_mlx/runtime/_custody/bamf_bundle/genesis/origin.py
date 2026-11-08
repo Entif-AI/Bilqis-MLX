@@ -13,7 +13,7 @@ from bilqis_mlx.runtime.admission import _require_executable_factory_admission
 from bilqis_mlx.runtime.state import _fingerprint
 from bilqis_mlx.state_dag import read_current, read_generation
 
-from .records import invalid
+from ..records import invalid
 
 
 _FACTORY_FOUNDATION_ISSUER = object()

@@ -11,7 +11,7 @@ from bilqis_mlx.semantics.atlas.feature_io_pins import _source_owned_feature_sch
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures, FeatureSchema, build_feature_manifest
 from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
 
-from .records import canonical, invalid, sha
+from ..records import canonical, invalid, sha
 
 _FEATURE_AUTHORITY_ISSUER = object()
 

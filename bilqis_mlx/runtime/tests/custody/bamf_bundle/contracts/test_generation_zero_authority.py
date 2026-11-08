@@ -13,7 +13,7 @@ import mlx.core as mx
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 import bilqis_mlx.runtime.bamf_bundle.feature_authority as feature_authority
-from bilqis_mlx.runtime.bamf_bundle._feature_acceptance import (
+from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
     accepted_binding_for_manifest,
 )
 from bilqis_mlx.errors import BilqisError

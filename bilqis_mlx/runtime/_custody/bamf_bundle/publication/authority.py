@@ -10,14 +10,14 @@ from bilqis_mlx.learning.atlas_acceptance import (
     ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
 )
 
-from .package_import_transition import (
+from ..package_import_transition import (
     is_package_import_transition, require_issued_package_import_transition,
 )
-from .records import (
+from ..records import (
     ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BAMF_POINTER_SCHEMA,
     BamfBundleCandidate, CompleteStudent, invalid,
 )
-from ._publication_storage import ACCEPTANCE_DIR
+from .storage import ACCEPTANCE_DIR
 
 
 _UNBOUND_RETRY = object()
@@ -162,7 +162,7 @@ def require_published_acceptance(
     try:
         record = json.loads(acceptance_path.read_bytes())
         if student.generation == 0:
-            from .genesis import (
+            from ..genesis import (
                 InitialGenerationBinding,
                 validate_parsed_initial_generation_binding,
             )

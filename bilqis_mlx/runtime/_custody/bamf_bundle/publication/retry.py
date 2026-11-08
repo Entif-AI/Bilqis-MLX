@@ -6,10 +6,10 @@ from pathlib import Path
 from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 
-from .records import (
+from ..records import (
     BAMF_POINTER_SCHEMA, BamfBundleCandidate, canonical, invalid, sidecar_records,
 )
-from ._publication_storage import ACCEPTANCE_DIR
+from .storage import ACCEPTANCE_DIR
 
 
 def _same_initial_candidate(student, candidate: BamfBundleCandidate) -> bool:

@@ -9,13 +9,13 @@ from bilqis_mlx.learning.atlas_acceptance import (
     ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
 )
 
-from .codec import load_bamf_bundle
-from .publication import ACCEPTANCE_DIR, _pointer_lock, _read_pointer
-from .records import (
+from ..codec import load_bamf_bundle
+from ..publication import ACCEPTANCE_DIR, _pointer_lock, _read_pointer
+from ..records import (
     ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BAMF_BUNDLE_SCHEMA,
     BamfGenerationManifest, invalid, sha,
 )
-from ._feature_receipt import is_digest
+from .receipt import is_digest
 
 
 def accepted_generation(pointer_path: Path):
@@ -45,7 +45,7 @@ def accepted_binding_for_manifest(
     try:
         record = json.loads(path.read_bytes())
         if student.generation == 0:
-            from .genesis import (
+            from ..genesis import (
                 InitialGenerationBinding,
                 validate_parsed_initial_generation_binding,
             )

@@ -13,7 +13,7 @@ from bilqis_mlx.runtime.bamf_bundle import (
     feature_authority, issue_initial_foundation_feature_authority,
     publish_initial_generation,
 )
-from bilqis_mlx.runtime.bamf_bundle import genesis_foundation
+from bilqis_mlx.runtime.bamf_bundle.genesis import foundation as genesis_foundation
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.test_feature_authority import (

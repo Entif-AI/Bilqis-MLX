@@ -5,8 +5,8 @@ from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
 
-from .records import CompleteStudent, canonical, invalid, sha
-from ._publication_storage import _live_bundle_manifest, _pointer_lock, _read_pointer
+from ..records import CompleteStudent, canonical, invalid, sha
+from .storage import _live_bundle_manifest, _pointer_lock, _read_pointer
 
 
 def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dict) -> str:

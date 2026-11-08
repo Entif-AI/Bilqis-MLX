@@ -14,10 +14,10 @@ from .genesis import (
     BamfRunIdentity, InitialGenerationBinding, PreparedInitialGeneration,
     prepare_initial_generation, publish_initial_generation,
 )
-from .genesis_foundation import (
+from .genesis.foundation import (
     InitialFoundationFeatureAuthority, issue_initial_foundation_feature_authority,
 )
-from .genesis_origin import (
+from .genesis.origin import (
     InitialFactoryFoundationAuthority, issue_initial_factory_foundation_authority,
 )
 from .package_import_transition import PackageImportTransition

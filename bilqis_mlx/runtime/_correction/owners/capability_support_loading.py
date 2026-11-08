@@ -16,7 +16,7 @@ from .capability_support_materialization import materialized_support
 
 def _accepted_binding(run_dir: Path, manifest_sha256: str):
     from bilqis_mlx.runtime.bamf_bundle.publication import ACCEPTANCE_DIR, _pointer_lock
-    from bilqis_mlx.runtime.bamf_bundle.genesis_records import (
+    from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
         INITIAL_BINDING_SCHEMA, InitialGenerationBinding,
     )
 

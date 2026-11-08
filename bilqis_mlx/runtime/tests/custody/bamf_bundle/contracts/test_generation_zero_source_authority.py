@@ -18,7 +18,7 @@ from bilqis_mlx.runtime.bamf_bundle.genesis import (
     _issue_binding, validate_initial_generation_binding,
 )
 from bilqis_mlx.runtime.bamf_bundle import genesis as genesis_owner
-from bilqis_mlx.runtime.bamf_bundle.genesis_records import (
+from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
     mint_initial_generation_binding,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
