@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
-  "updated_at": "2026-11-07T14:24:54-05:00",
+  "observed_unified": "9795a3edff705ff6e44eec29dc60fed74d2abc74",
+  "updated_at": "2026-11-08T02:31:45-05:00",
   "exception": null,
   "items": [
     {
@@ -129,10 +129,11 @@
     },
     {
       "issue": 480,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "9795a3edff705ff6e44eec29dc60fed74d2abc74",
-      "summary": "B13.3 is EGM-Passed through round 3 and has been merge-forwarded to current reviewed unified 9795a3ed after #516; final exact-head focused proof and Goldfish recheck remain before turn-in.",
+      "pr": 920,
+      "state": "TURNED_IN",
+      "head_sha": "b6422871764c4a979684afb4faa09db914647f61",
+      "head_sha_role": "fresh exact-head EGM-reviewed semantic/test candidate; subsequent TURNED_IN bookkeeping is docs/flow-only and covered by TEST_EVIDENCE_REUSED from 5eb62d5e5e16fbdf15ac0d715b17fe29ec545c34..HEAD",
+      "summary": "B13.3 is turned in as ready PR #920 against reviewed unified 9795a3ed. Fresh pinned EGM passed with both independent Goldfish at 0 Blockers / 0 Majors / 0 Nits. Exact M3 proof: cache transition + cold continuation 10/10 PASS; canonical Microspenics frozen-v1 1/1 PASS; live legacy-trainer authority PASS; BAMF contracts 43/43 and flow-control PASS. Full premerge ran 3687 total / 3509 pass / 168 explicit skips / 10 inherited failures-or-errors; the exact failing surface reproduced identically on pristine reviewed unified (28 targeted / 18 pass / same 10 fail), with no #480 production or test delta. Human merge remains external authority.",
       "resume_trigger": null,
       "closed_pr": 734,
       "preserved_branch": "codex/480-b13-3-reconcile-20261108"
