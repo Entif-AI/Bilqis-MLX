@@ -256,18 +256,21 @@ class PackageImportAdoptionTests(TestCase):
         package, receipt = self.package_and_clearance()
         with shape_patch():
             parent = load_bamf_generation(self.run / "bamf-state.json")
+        reached = []
 
         class ForgedSourceContext:
             def require_accepted_runtime(self, _run_dir):
-                raise AssertionError("duck-typed runtime hook reached")
+                reached.append("runtime")
 
             def source_authority(self):
-                raise AssertionError("duck-typed authority hook reached")
+                reached.append("authority")
+                return None
 
         with self.assertRaises(BilqisError):
             _verify_export_clearance(
                 package, parent, receipt, self.selection, self.frontier,
                 ForgedSourceContext(), self.run)
+        self.assertEqual(reached, [])
 
     def test_host_bound_authority_rejects_scope_key_and_stale_frontier_before_publish(self):
         screened, receipt = self.screened()
