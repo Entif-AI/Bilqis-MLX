@@ -2,15 +2,15 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "d4bad39a32a80acbffdb9f891a906892ab2e9fab",
-  "updated_at": "2026-11-07T22:52:00Z",
+  "updated_at": "2026-11-08T00:05:08Z",
   "exception": null,
   "items": [
     {
       "issue": 516,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "fb4e3541ba01b08ed69a040b63a9be7d04b7cb35",
-      "summary": "C09.1 semantic repair candidate fb4e3541 closes the prior five-Major round: replay-safe context evidence, direct composition policy/time provenance, stale B11 context rejection, physical rematerialization holds, and exact-cache A13 context reachability. The branch remains ACTIVE only for exact-head qualification and EGM turn-in.",
+      "head_sha": "a08c7ff2810a91411797fc1de33a103a061c2eb7",
+      "summary": "C09.1 semantic repair candidate a08c7ff2 closes the fresh e85db744 two-Major provenance round by preserving concrete source_id edges alongside instructional row identity for learned support and by binding numeric operator operands to the source-owned premise identity. The branch remains ACTIVE only for exact-head qualification and EGM turn-in.",
       "resume_trigger": null,
       "preserved_branch": "codex/516-c09-1-egm-remediation-20261107"
     },
