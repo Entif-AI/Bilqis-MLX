@@ -787,3 +787,43 @@ The final ADR-132/ADR-135 snapshot-isolated aggregate is still required against 
 evidence-bearing exact candidate before targeted human-authorized reinspection. This
 remains a bounded post-cap repair/reinspection path, not automatic round 6, and no
 PR or merge authority is inferred from deterministic qualification.
+
+### Corrected detached aggregate classification — 2026-11-07
+
+The first detached final-premerge launch failed before tests because the quality
+command did not receive the reviewed-unified base ref. The exact same candidate was
+therefore relaunched from the same digest-pinned source snapshot with
+`BILQIS_QUALITY_BASE_REF=origin/codex/bamf-unified-base-20261028`. The quality phase
+then passed in full: governance, Factory architecture, docs, error-control delta,
+changed-file smell audit, legacy-trainer authority/tests, and BAMF flow-control/tests
+were all green; error-control reported **new debt 0**.
+
+The full premerge suite then executed against candidate
+`6b27397fa3904f250906733e903df040d38c3e60`:
+
+- **3,633 total**;
+- **3,461 PASS**;
+- **167 explicit skips**;
+- **5 errors**;
+- runtime: **482.824s**.
+
+All five errors are exactly the already-reproduced inherited/base-only C09 set,
+`BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT`: one in `test_compiled.py`, two in
+`test_execution.py`, and two in `test_members.py`. No additional #697-local failure
+class appeared. The repaired B13.5 surfaces exercised in the same aggregate,
+including live bundle/v2 cutover, real multi-release Atlas replay, relocation,
+missing/tampered/unregistered artifact rejection, long accepted history,
+publication, and cold-resume continuation, passed.
+
+The detached wrapper returned source-mutation exit 86 because the suite created an
+empty repository-root `runs/` directory. This was proven as a harness false positive
+by comparing the rerun's finished snapshot against the preserved unchanged control
+snapshot from the first launch: the **only** mutation-guard-visible delta was the
+empty top-level `runs/` directory. No tracked source byte, fixture byte, symlink,
+file mode, or other source-tree entry changed; `git status` in the finished snapshot
+was clean. The runtime directory creation is therefore not a #697 semantic or source
+mutation.
+
+Deterministic post-cap qualification is complete for the repaired B13.5 scope. The
+remaining gate is the explicitly human-authorized fresh targeted reinspection of the
+repaired loci. It does not reset or renumber rounds 1–5 and is not automatic round 6.
