@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "210b29c275dd912801cc85b2bc0aeb7e01c9e7f9",
-  "updated_at": "2026-11-08T06:34:00Z",
+  "observed_unified": "56254f343904cecebf7fa067e76a937836673083",
+  "updated_at": "2026-11-08T01:52:00Z",
   "exception": null,
   "items": [
     {
@@ -230,8 +230,8 @@
       "issue": 916,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "210b29c275dd912801cc85b2bc0aeb7e01c9e7f9",
-      "summary": "A13 source-owned four-time identity remediation selected for #911 early-resume dependency: extend the accepted hash-pinned context transition authority and durable C09 invalidation custody with explicit source/effective/observed/recorded time without caller inference or correction authority.",
+      "head_sha": "254160a783ba7ceb81089fcf22732d15b0c1cb12",
+      "summary": "A13 four-time remediation repaired after fresh round-1 EGM Major: typed C09 context invalidation v2 now binds source/effective/observed/recorded time plus source temporal-authority digest; v1 event identity/decoding remains historical. Context codecs split below module-size limits; same-round reinspection pending.",
       "resume_trigger": null,
       "preserved_branch": "codex/916-a13-four-time-context-20261108"
     }
