@@ -132,14 +132,12 @@
     {
       "issue": 480,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "39bf54e820c6e9f6aef75345557a50f0d51cd7ef",
-      "summary": "B13.3 historical-reader/disposable-cache candidate is transitional drain inventory.",
-      "resume_trigger": "Lane B selects B13.3 as its single current integration candidate after nearer-to-merge inventory drains.",
+      "state": "ACTIVE",
+      "head_sha": "210b29c275dd912801cc85b2bc0aeb7e01c9e7f9",
+      "summary": "B13.3 selected for current integration after #754 cache-transition remediation and #479 B13.2 custody merged; reconciling the preserved historical-reader/disposable-cache proof on current reviewed unified.",
+      "resume_trigger": null,
       "closed_pr": 734,
-      "preserved_branch": "codex/bamf02-b13-3-480-cache-custody-20261102",
-      "closed_under": "EGM issue-label queue; EGM-Pending is durable on issue #480",
-      "close_reason": "Await fresh whole-candidate EGM on the durable branch before opening a merge-ready PR."
+      "preserved_branch": "codex/480-b13-3-reconcile-20261108"
     },
     {
       "issue": 754,
