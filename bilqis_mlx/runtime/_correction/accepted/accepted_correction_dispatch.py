@@ -255,6 +255,8 @@ class AcceptedCorrectionRuntime:
                     self._retry_context_deferred(target)
                 else:
                     target.context_deferred[event_id] = frontier
+            from .accepted_stale_replay_runtime import replay_stale_evidence
+            replay_stale_evidence(self)
 
 
 __all__ = ("AcceptedCorrectionRuntime",)
