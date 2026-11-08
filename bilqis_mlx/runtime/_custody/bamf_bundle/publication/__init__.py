@@ -22,6 +22,7 @@ from .authority import (
     validate_parent_transition as _validate_parent_transition_impl,
 )
 from .events import record_bamf_rejection
+from .genesis_trust import publish_initial_generation_trust_root
 from .retry import existing_initial_generation_retry
 from .storage import (
     ACCEPTANCE_DIR, _acceptance_path, _atomic_pointer, _live_bundle_manifest,
@@ -106,6 +107,7 @@ def _publish_authorized_generation(
         run_dir: Path, candidate: BamfBundleCandidate, authority, *,
         reserve_gib: float) -> dict:
     """Shared crash-safe transaction after generation-specific authority validates."""
+    prepared = None
     if candidate.generation == 0:
         from ..genesis import (
             PreparedInitialGeneration, validate_initial_generation_binding,
@@ -114,6 +116,7 @@ def _publish_authorized_generation(
         if (type(authority) is not PreparedInitialGeneration
                 or authority.candidate is not candidate):
             invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
+        prepared = authority
         authority.__post_init__()
         validate_initial_generation_binding(candidate, authority.binding)
         existing = _existing_initial_generation_retry(run_dir, candidate, authority)
@@ -148,6 +151,8 @@ def _publish_authorized_generation(
                 shutil.rmtree(stage)
                 student = load_bamf_bundle(
                     run_dir / current["bundle"], expected_manifest_sha256=digest)
+                if prepared is not None:
+                    publish_initial_generation_trust_root(prepared, digest)
                 _write_acceptance(run_dir, digest, authority)
                 reconcile_bamf_outbox(run_dir, student)
                 return current
@@ -174,6 +179,8 @@ def _publish_authorized_generation(
                     os.fsync(directory)
                 finally:
                     os.close(directory)
+            if prepared is not None:
+                publish_initial_generation_trust_root(prepared, digest)
             _write_acceptance(run_dir, digest, authority)
             pointer = {
                 "schema": BAMF_POINTER_SCHEMA, "run_id": candidate.run_id,

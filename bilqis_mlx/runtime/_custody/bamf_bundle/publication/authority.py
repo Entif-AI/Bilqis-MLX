@@ -169,10 +169,14 @@ def require_published_acceptance(
             acceptance = InitialGenerationBinding.from_record(record)
             validate_parsed_initial_generation_binding(
                 student, acceptance, pointer["acceptance_sha256"])
-            return acceptance
-        acceptance = AcceptedCandidateBinding.from_record(record)
+        else:
+            acceptance = AcceptedCandidateBinding.from_record(record)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, BilqisError):
         invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+    if student.generation == 0:
+        from .genesis_trust import require_initial_generation_trust_root
+        require_initial_generation_trust_root(pointer, student, acceptance)
+        return acceptance
     if (acceptance.schema_version != ACCEPTANCE_SCHEMA
             or acceptance.digest != pointer["acceptance_sha256"]
             or acceptance.run_id != student.run_id
