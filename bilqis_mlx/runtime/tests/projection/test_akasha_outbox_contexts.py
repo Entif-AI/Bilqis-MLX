@@ -247,12 +247,13 @@ class AkashaOutboxContextIntegrationTests(CapabilitySupportOwnerFixture):
         with patch.object(
             support_fixture, "immediate_dependencies", return_value=dependencies,
         ):
-            published, _authority = self.publish_support()
+            published, _authority = self.publish_support(
+                authority_registry=AUTHORITY)
         owner = self.load_support(AUTHORITY)
         before = self._training_custody()
 
         with shape_patch():
-            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            host = AcceptedRuntimeHost(self.run)
             transition = host.record_context_transition(
                 case.previous, case.contexts)
         invalidation = transition.invalidations[0]
