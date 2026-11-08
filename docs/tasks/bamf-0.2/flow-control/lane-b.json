@@ -384,9 +384,9 @@
       "issue": 904,
       "pr": null,
       "state": "READY",
-      "head_sha": "42fc68f01a4cf91f4a27a87035685939a027671f",
-      "summary": "B13.6 round-5 EGM Major is repaired on reviewed unified d4bad39a. Generation-zero foundation sidecars are owner-derived from verified Factory state; when A06 feature authority is supplied, B13 re-enters registered A01/A06 source authority and reconstructs the exact feature schema/factor map instead of trusting caller mappings. Semantic repair is 14b53a81; test-only successor-fixture alignment is 42fc68f0 after the first broad run exposed three stale synthetic-lineage fixtures. Fresh exact-head detached M3 proof is green: complete B13 custody 154 passed / 0 failed / 5 explicit skips, opt-in full witnesses 2/2, focused successor ring 15/15, structure/governance/smell green, legacy authority 7/7, flow-control 15/15, source_mutated=false. Fresh exact-head EGM is requested; historical round-5 FAIL and PM-2026-11-07-007 remain append-only.",
-      "resume_trigger": "Fresh pinned EGM passes on exact head 42fc68f0 (plus evidence/flow-control-only checkpoint commit if present); then run turn-in gates and open the lane-to-unified PR without self-merge.",
+      "head_sha": "395c4bc7d6058a4afcf8dcef7acfff57533390b9",
+      "summary": "B13.6 round-6 authority redesign is proven on exact head 395c4bc7 against reviewed unified d4bad39a. Persisted Factory runtime ownership now issues generation-zero origin authority; A01/A06 feature authority is mandatory and preserves distinct Factory vs Atlas identity domains; FOUNDATION row ages are owner-derived at zero. Round-6 regressions pass 19/19, 28/28 and 84/84. The first exact-head broad run at ebfe14b4 failed only because a private cache test helper omitted mandatory feature-source replay; production failed closed. Test-only repair 395c4bc7 passes cache 2/2. Replacement detached r9 is green: complete B13 custody 157 passed / 0 failed / 0 errors / 5 explicit skips, opt-in parameter-schema + full-resume witnesses 2/2, source_mutated=false, and all source/snapshot mutation-guard digests equal 18042b79.... Historical round-5/round-6 EGM FAILs and r8 proof failure remain append-only.",
+      "resume_trigger": "Fresh pinned isolated EGM passes on exact head 395c4bc7 (or its evidence/flow-control-only descendant); then run invalidated turn-in gates and open the lane-to-unified PR without self-merge.",
       "preserved_branch": "codex/904-b13-6-generation-zero-20261107"
     }
   ]

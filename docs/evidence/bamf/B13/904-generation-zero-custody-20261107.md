@@ -287,3 +287,74 @@ No learner, persistent AdamW, teacher, champion, soup, checkpoint lineage, or
 durable training run was started or mutated. Round-5 failure remains append-only;
 this exact candidate is eligible for a genuinely fresh pinned EGM round and is not
 retroactively accepted by the passing proof.
+
+## EGM round-6 authority remediation and exact-head proof — 2026-11-07
+
+Fresh round-6 EGM on the post-round-5 candidate failed for three distinct
+authority defects, preserved append-only on issue #904 and in
+`PM-2026-11-07-008`:
+
+- **Blocker:** a caller-mintable Factory origin could present a self-consistent
+  `ExecutableAdmissionReceipt` plus `Checkpoint` without consuming the persisted
+  current-student runtime owner;
+- **Blocker:** Factory release/catalog identity was conflated with Atlas
+  semantic-release/active-set identity, while A01/A06 feature authority remained
+  optional;
+- **Major:** caller-authored `foundation_row_ages` could pre-age fresh FOUNDATION
+  rows despite zero accepted updates.
+
+Semantic repair head `4be8e0845a7ca9797b6b355ac1961ef1faa07fe3`
+redesigned the boundary structurally:
+
+- `InitialFactoryFoundationAuthority` is issued only by replaying persisted
+  current Factory runtime state and re-entering executable admission;
+- generation-zero feature authority is mandatory and independently replays the
+  A01/A06 source/feature owners;
+- Atlas active-set / semantic-release identities remain distinct from Factory
+  semantic-catalog / release identities;
+- fresh FOUNDATION row maturity is owner-derived from active Atlas ABI membership
+  and starts at accepted age zero;
+- raw receipt/checkpoint pairs, caller-authored sidecars, and caller-authored row
+  ages do not establish publication authority.
+
+Regression-first proof for the three round-6 defects is green:
+
+- focused source + feature authority: **19/19 PASS**;
+- widened generation-zero authority: **28/28 PASS**;
+- broader publication/continuation ring: **84/84 PASS**.
+
+Quality cleanup head `ebfe14b4f06193100f2ac6ad3791b91b46dc2e54`
+then passed full repository quality, the BAMF contract verifier, and diff checks.
+
+The first replacement exact-head detached proof at `ebfe14b4...` failed
+**155 passed / 2 errors / 5 skips**. Both errors were test-fixture drift in the
+cache-separation module's private `_shape_patch()`: it omitted the now-mandatory
+genesis feature-source replay context. Production correctly failed closed with
+`ATLAS_SOURCE_PIN_NOT_REGISTERED` / normalized
+`BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_INVALID`. No production authority was
+weakened.
+
+Test-only repair head `395c4bc7d6058a4afcf8dcef7acfff57533390b9`
+adds the missing feature-source replay patch to that private cache fixture.
+Focused cache regression is **2/2 PASS**.
+
+Fresh replacement detached M3 Ultra proof `bamf-904-r9-exact-head` on exact head
+`395c4bc7d6058a4afcf8dcef7acfff57533390b9` is PASS:
+
+- complete B13 custody tree: **162 total / 157 passed / 0 failed / 0 errors / 5
+  explicit skips**;
+- opt-in B01 parameter-schema witness: PASS;
+- opt-in complete clean-process full-resume witness: PASS;
+- opt-in witness command total: **2/2 PASS**;
+- command return code: `0`;
+- `source_mutated=false`;
+- source, snapshot, mutation-guard, final snapshot, and final mutation-guard digest
+  all equal
+  `18042b794ef0f3c8b215edbe69c994dc450c733cf2cd6307d4bc6249bc20894d`.
+
+The successful r9 run therefore establishes the full exact-head proof gate for the
+round-6 repair. It does not retroactively convert any prior EGM failure or the r8
+fixture-only broad-proof failure into PASS. The next merge-readiness gate is a
+genuinely fresh isolated EGM on this exact implementation/evidence lineage, followed
+only on clean review by final turn-in checks and a ready PR. Human merge and issue
+closure remain outside this checkpoint's authority.
