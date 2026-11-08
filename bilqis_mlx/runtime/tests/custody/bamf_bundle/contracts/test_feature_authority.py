@@ -21,7 +21,8 @@ from bilqis_mlx.runtime.bamf_bundle import (
     read_accepted_generation_feature_receipt,
     verify_accepted_generation_feature_receipt,
 )
-from bilqis_mlx.runtime.bamf_bundle import feature_authority, genesis_foundation
+from bilqis_mlx.runtime.bamf_bundle import feature_authority
+from bilqis_mlx.runtime.bamf_bundle.genesis import foundation as genesis_foundation
 from bilqis_mlx.runtime.bamf_bundle.genesis import _issue_binding
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures, FeatureSchema
