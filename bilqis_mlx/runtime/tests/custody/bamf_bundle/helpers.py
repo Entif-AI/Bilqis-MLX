@@ -1,9 +1,10 @@
 """Small real-B12 fixtures for B13.1 custody tests."""
 from __future__ import annotations
 
+from contextlib import nullcontext
+
 import mlx.core as mx
 
-from bilqis_mlx.factory.executable_release import admit_executable_factory_release
 from bilqis_mlx.learning.atlas_candidate import (
     CandidateCustodyIdentity, CandidateState, begin_candidate, candidate_step,
     resolve_candidate,
@@ -25,7 +26,9 @@ from bilqis_mlx.runtime.model_topology_v2 import (
     ParameterGroup, ParameterSpec, b01_generation_authority,
     b01_generation_extents, b01_model_implementation_sha256,
 )
-from bilqis_mlx.runtime.state import _fingerprint
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
+    genesis_feature_source_patch, issue_factory_authority, issue_feature_authority,
+)
 
 NAME = "identity.bank.0"
 RELEASE = "b" * 64
@@ -36,12 +39,12 @@ HP = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
 FIXTURE_PARENT_MANIFEST = "6" * 64
 
 
-def _genesis_defaults(release):
+def _genesis_defaults(release, semantic_release):
     source_identity = (release.source_bindings.source_attestation_sha256
                        or release.source_bindings.digest())
     teacher_identity = release.execution_plan.projection_digests.teaching
     provenance = GenerationProvenance(
-        source_identity, release.release_sha256, teacher_identity, 0)
+        source_identity, semantic_release, teacher_identity, 0)
     motif = MotifManifest(provenance.release_digest)
     extents = GenerationExtents(
         1, 1, "a" * 64, motif.digest, "c" * 64)
@@ -82,16 +85,16 @@ def _genesis_defaults(release):
         },
     }
 def genesis_preparation(*, run_id="fixture-run", run_seed=17,
-                        delivery_events=None, foundation_row_ages=None, **overrides):
+                        delivery_events=None, **overrides):
     """Enter B13 generation zero through the production constructor and issuer."""
     foundation_features = overrides.pop("foundation_features", None)
     from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
     release, graph = _executable_fixture()
     origin = Checkpoint("7" * 64, "bundles/foundation-origin", 0, True)
-    admission = admit_executable_factory_release(
-        release, student_sha256=origin.sha256,
-        optimizer_step=origin.optimizer_step,
-        semantic_graph_sha256=_fingerprint(graph), graph=graph)
+    factory_authority = issue_factory_authority(release, graph, origin)
+    generic_features = foundation_features is None
+    if generic_features:
+        foundation_features = issue_feature_authority()
     forbidden = {
         "semantic_abi", "compiler_features", "correction_frontier",
         "teacher_state", "evaluation_contract",
@@ -99,29 +102,30 @@ def genesis_preparation(*, run_id="fixture-run", run_seed=17,
     if forbidden:
         raise AssertionError(
             "generation-zero sidecars are owner-derived: " + ",".join(sorted(forbidden)))
-    values = _genesis_defaults(release) | overrides
-    (semantic_abi, compiler_features, _correction_frontier,
-     _teacher_state, _evaluation_contract) = initial_foundation_sidecars(
-        release, admission, graph, run_seed=run_seed,
-        feature_authority=foundation_features)
-    motif = MotifManifest(values["provenance"].release_digest)
-    extents = b01_generation_extents(
-        semantic_abi=semantic_abi,
-        compiler_features=compiler_features, motif_page_count=1,
-        motif_key_map_digest=motif.digest)
-    return prepare_initial_generation(
-        run_id=run_id, run_seed=run_seed, origin_checkpoint=origin,
-        release=release, admission=admission, graph=graph,
-        model_authority=b01_generation_authority(extents),
-        optimizer_hyperparameters=HP,
-        provenance=values["provenance"],
-        foundation_features=foundation_features,
-        foundation_row_ages=(
-            () if foundation_row_ages is None else foundation_row_ages),
-        delivery_events=(
-            ({"event": "FIXTURE_GENESIS", "optimizer_step": 0},)
-            if delivery_events is None else delivery_events),
-    )
+    values = _genesis_defaults(
+        release, foundation_features.features.semantic_release) | overrides
+    replay = genesis_feature_source_patch() if generic_features else nullcontext()
+    with replay:
+        (semantic_abi, compiler_features, _correction_frontier,
+         _teacher_state, _evaluation_contract) = initial_foundation_sidecars(
+            release, factory_authority.admission, graph, run_seed=run_seed,
+            feature_authority=foundation_features)
+        motif = MotifManifest(values["provenance"].release_digest)
+        extents = b01_generation_extents(
+            semantic_abi=semantic_abi,
+            compiler_features=compiler_features, motif_page_count=1,
+            motif_key_map_digest=motif.digest)
+        return prepare_initial_generation(
+            run_id=run_id, run_seed=run_seed, graph=graph,
+            factory_authority=factory_authority,
+            model_authority=b01_generation_authority(extents),
+            optimizer_hyperparameters=HP,
+            provenance=values["provenance"],
+            foundation_features=foundation_features,
+            delivery_events=(
+                ({"event": "FIXTURE_GENESIS", "optimizer_step": 0},)
+                if delivery_events is None else delivery_events),
+        )
 def publish_genesis(run_dir, *, run_seed=17, **overrides):
     """Publish a real production generation zero, never a test-minted C05 token."""
     return publish_initial_generation(

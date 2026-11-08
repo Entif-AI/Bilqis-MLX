@@ -70,7 +70,6 @@ class GenerationAcceptanceFixture:
             with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
                 self._parent_pointer = publish_genesis(
                     self.run,
-                    foundation_row_ages=parent_state().policy.row_ages,
                 )
                 self._parent = load_bamf_generation(self.run / "bamf-state.json")
         return self._parent

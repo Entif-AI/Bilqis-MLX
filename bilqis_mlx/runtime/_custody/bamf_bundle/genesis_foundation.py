@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from bilqis_mlx.factory.executable_release import (
     ExecutableAdmissionReceipt, ExecutableFactoryRelease,
 )
-from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.state import _fingerprint
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas.feature_io_pins import _source_owned_feature_schema
@@ -85,7 +84,7 @@ def initial_foundation_sidecars(
         release: ExecutableFactoryRelease,
         admission: ExecutableAdmissionReceipt,
         graph: dict, *, run_seed: int,
-        feature_authority: InitialFoundationFeatureAuthority | None = None,
+        feature_authority: InitialFoundationFeatureAuthority,
         ) -> tuple[dict, dict, dict, dict, dict]:
     """Project genesis sidecars only from independently admitted Factory state.
 
@@ -100,24 +99,15 @@ def initial_foundation_sidecars(
 
     plan = release.execution_plan
     projections = plan.projection_digests
-    rows = ModelTopologySpecV2.semantic_bank_rows
-    bank_count = max(1, (len(release.semantic_catalog) + rows - 1) // rows)
+    feature = _replay_features(feature_authority)
+    bank_count = max(1, feature.snapshot.counts.abi_banks)
     semantic = {
         "schema": "bilqis.mlx.bamf-semantic-abi/v1",
-        "active_set_sha256": release.semantic_catalog_sha256,
+        "active_set_sha256": feature.snapshot.active_set_sha256,
         "semantic_bank_count": bank_count,
         "bank_identities": [f"bank:{index}" for index in range(bank_count)],
     }
-    feature = None if feature_authority is None else _replay_features(feature_authority)
-    if feature is not None and feature.features.semantic_release != release.release_sha256:
-        invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
-    factor_map_sha256 = (feature.features.digest if feature is not None else
-        sha(canonical({
-            "schema": "bilqis.mlx.bamf-initial-factor-map/v1",
-            "semantic_catalog_sha256": release.semantic_catalog_sha256,
-            "source_projection_sha256": projections.source,
-            "answer_schema_projection_sha256": projections.answer_schema,
-        })))
+    factor_map_sha256 = feature.features.digest
     compiler = {
         "schema": "bilqis.mlx.bamf-compiler-features/v1",
         "factor_map_sha256": factor_map_sha256,
@@ -128,24 +118,25 @@ def initial_foundation_sidecars(
         })),
         "rights_epoch": 0,
         "correction_generation": 0,
-    }
-    if feature is not None:
-        compiler["feature_source"] = {
+        "factory_release_sha256": release.release_sha256,
+        "factory_semantic_catalog_sha256": release.semantic_catalog_sha256,
+        "feature_source": {
             "atlas_bundle_id": feature.features.atlas_bundle_id,
             "release_sha256": feature.features.semantic_release,
             "source_bundle_id": feature.features.source_bundle_id,
-        }
-        compiler["feature_schema"] = {
+        },
+        "feature_schema": {
             "role_ids": list(feature.schema.role_ids),
             "schema_ids": list(feature.schema.schema_ids),
             "source_bindings": [list(item) for item in feature.schema.source_bindings],
-        }
+        },
+    }
     source_identity = (release.source_bindings.source_attestation_sha256
                        or release.source_bindings.digest())
     correction = {
         "schema": "bilqis.mlx.bamf-correction-frontier/v1",
         "source_identity": source_identity,
-        "release_digest": release.release_sha256,
+        "release_digest": feature.features.semantic_release,
         "rights_epoch": 0,
         "correction_generation": 0,
         "frontier": [],
@@ -164,7 +155,18 @@ def initial_foundation_sidecars(
     return semantic, compiler, correction, teacher, evaluation
 
 
+def initial_foundation_row_ages(
+        feature_authority: InitialFoundationFeatureAuthority) -> tuple:
+    """Derive fresh FOUNDATION membership from active A01 ABI rows at age zero."""
+    from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge
+
+    feature = _replay_features(feature_authority)
+    return tuple(
+        IdentityRowAge(entry.bank, entry.row, 0)
+        for entry in feature.snapshot.abi_entries if entry.active)
+
+
 __all__ = (
     "InitialFoundationFeatureAuthority", "initial_foundation_sidecars",
-    "issue_initial_foundation_feature_authority",
+    "initial_foundation_row_ages", "issue_initial_foundation_feature_authority",
 )

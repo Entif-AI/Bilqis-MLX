@@ -12,7 +12,7 @@ from bilqis_mlx.learning.atlas_candidate import CandidateState
 from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
-from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
+from bilqis_mlx.learning.atlas_plasticity import PlasticityPolicy
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.atlas_optimizer import (
     AdamWHyperparameters, _create_unbound_bamf_optimizer,
@@ -22,7 +22,6 @@ from bilqis_mlx.runtime.model_topology_v2 import (
     ModelTopologySpecV2, b01_generation_authority, b01_generation_extents,
     validate_b01_generation_authority,
 )
-from bilqis_mlx.runtime.state import _fingerprint
 
 from .records import BamfBundleCandidate, invalid, sidecar_records
 from .genesis_records import (
@@ -30,7 +29,11 @@ from .genesis_records import (
     mint_initial_generation_binding,
 )
 from .genesis_foundation import (
-    InitialFoundationFeatureAuthority, initial_foundation_sidecars,
+    InitialFoundationFeatureAuthority, initial_foundation_row_ages,
+    initial_foundation_sidecars,
+)
+from .genesis_origin import (
+    InitialFactoryFoundationAuthority, replay_initial_factory_foundation_authority,
 )
 
 
@@ -38,37 +41,46 @@ from .genesis_foundation import (
 class PreparedInitialGeneration:
     candidate: BamfBundleCandidate
     binding: InitialGenerationBinding
-    release: ExecutableFactoryRelease
-    admission: ExecutableAdmissionReceipt
+    factory_authority: InitialFactoryFoundationAuthority
     graph: dict
-    origin_checkpoint: Checkpoint
-    foundation_features: InitialFoundationFeatureAuthority | None = None
+    foundation_features: InitialFoundationFeatureAuthority
+
+    @property
+    def release(self) -> ExecutableFactoryRelease:
+        return self.factory_authority.release
+
+    @property
+    def admission(self) -> ExecutableAdmissionReceipt:
+        return self.factory_authority.admission
+
+    @property
+    def origin_checkpoint(self) -> Checkpoint:
+        return self.factory_authority.origin_checkpoint
 
 
-def _validated_factory_origin(release, admission, graph, origin: Checkpoint) -> None:
-    if (type(release) is not ExecutableFactoryRelease
-            or type(admission) is not ExecutableAdmissionReceipt
-            or type(origin) is not Checkpoint or not isinstance(graph, dict)):
+def _validated_factory_origin(
+        factory_authority, graph, *, release=None, admission=None,
+        origin_checkpoint=None) -> InitialFactoryFoundationAuthority:
+    if (type(factory_authority) is not InitialFactoryFoundationAuthority
+            or not isinstance(graph, dict)):
         invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_INVALID")
-    try:
-        release.verify()
-        release.verify_semantic_catalog(graph)
-        admission.verify(release)
-    except (TypeError, ValueError):
-        invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_INVALID")
-    if (admission.student_sha256 != origin.sha256
-            or admission.optimizer_step != origin.optimizer_step
-            or admission.semantic_graph_sha256 != _fingerprint(graph)):
+    authority = replay_initial_factory_foundation_authority(factory_authority, graph)
+    if ((release is not None and release != authority.release)
+            or (admission is not None and admission != authority.admission)
+            or (origin_checkpoint is not None
+                and origin_checkpoint != authority.origin_checkpoint)):
         invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+    return authority
 
 
 def _factory_generation_provenance(
-        release: ExecutableFactoryRelease) -> GenerationProvenance:
-    """Project immutable generation-zero provenance from verified Factory authority."""
+        release: ExecutableFactoryRelease,
+        features: InitialFoundationFeatureAuthority) -> GenerationProvenance:
+    """Bind Factory source/teacher identity to the admitted Atlas semantic release."""
     source = (release.source_bindings.source_attestation_sha256
               or release.source_bindings.digest())
     return GenerationProvenance(
-        source, release.release_sha256,
+        source, features.features.semantic_release,
         release.execution_plan.projection_digests.teaching, 0)
 
 
@@ -76,13 +88,21 @@ def _validate_candidate_source_authority(
         candidate: BamfBundleCandidate, *, release: ExecutableFactoryRelease,
         admission: ExecutableAdmissionReceipt, graph: dict,
         origin_checkpoint: Checkpoint,
+        factory_authority: InitialFactoryFoundationAuthority | None = None,
         foundation_features: InitialFoundationFeatureAuthority | None = None) -> None:
     """Re-prove Factory/source/teacher authority for a generation-zero candidate."""
-    _validated_factory_origin(release, admission, graph, origin_checkpoint)
+    authority = _validated_factory_origin(
+        factory_authority, graph, release=release, admission=admission,
+        origin_checkpoint=origin_checkpoint)
+    release = authority.release
+    admission = authority.admission
+    origin_checkpoint = authority.origin_checkpoint
+    if type(foundation_features) is not InitialFoundationFeatureAuthority:
+        invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_INVALID")
     identity = candidate.run_identity
     if type(identity) is not BamfRunIdentity:
         invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
-    expected = _factory_generation_provenance(release)
+    expected = _factory_generation_provenance(release, foundation_features)
     expected_sidecars = initial_foundation_sidecars(
         release, admission, graph, run_seed=identity.run_seed,
         feature_authority=foundation_features)
@@ -122,17 +142,21 @@ def _issue_binding(
         candidate: BamfBundleCandidate, *, release: ExecutableFactoryRelease,
         admission: ExecutableAdmissionReceipt, graph: dict,
         origin_checkpoint: Checkpoint,
+        factory_authority: InitialFactoryFoundationAuthority | None = None,
         foundation_features: InitialFoundationFeatureAuthority | None = None,
         ) -> InitialGenerationBinding:
     _validate_candidate_source_authority(
         candidate, release=release, admission=admission, graph=graph,
         origin_checkpoint=origin_checkpoint,
+        factory_authority=factory_authority,
         foundation_features=foundation_features)
-    _validate_candidate_b01_authority(candidate)
+    _validate_candidate_b01_authority(candidate, foundation_features)
     return mint_initial_generation_binding(candidate)
 
 
-def _validate_candidate_b01_authority(candidate: BamfBundleCandidate) -> None:
+def _validate_candidate_b01_authority(
+        candidate: BamfBundleCandidate,
+        foundation_features: InitialFoundationFeatureAuthority) -> None:
     """Rebuild generation-zero B01 geometry and seeded numerical state."""
     if (type(candidate) is not BamfBundleCandidate
             or type(candidate.run_identity) is not BamfRunIdentity
@@ -153,7 +177,8 @@ def _validate_candidate_b01_authority(candidate: BamfBundleCandidate) -> None:
         optimizer, _decay, _initialization = _create_unbound_bamf_optimizer(
             topology, extents, run_seed=candidate.run_identity.run_seed)
         expected_policy = PlasticityPolicy(
-            "FOUNDATION", 0, candidate.retained_state.policy.row_ages)
+            "FOUNDATION", 0, initial_foundation_row_ages(
+                foundation_features))
         expected_state = CandidateState(
             optimizer, expected_policy, allocations, 0)
     except (TypeError, ValueError, KeyError, AttributeError):
@@ -173,25 +198,33 @@ def _validate_candidate_b01_authority(candidate: BamfBundleCandidate) -> None:
 
 
 def prepare_initial_generation(
-        *, run_id: str, run_seed: int, origin_checkpoint: Checkpoint,
-        release: ExecutableFactoryRelease, admission: ExecutableAdmissionReceipt,
-        graph: dict, model_authority: B01GenerationAuthority,
+        *, run_id: str, run_seed: int, graph: dict,
+        model_authority: B01GenerationAuthority,
         optimizer_hyperparameters: AdamWHyperparameters,
         provenance: GenerationProvenance,
+        factory_authority: InitialFactoryFoundationAuthority | None = None,
+        release: ExecutableFactoryRelease | None = None,
+        admission: ExecutableAdmissionReceipt | None = None,
+        origin_checkpoint: Checkpoint | None = None,
         foundation_features: InitialFoundationFeatureAuthority | None = None,
-        foundation_row_ages: tuple[IdentityRowAge, ...] = (),
         delivery_events: tuple = ()) -> PreparedInitialGeneration:
     """Construct one source-bound generation-zero candidate and live B13 capability."""
-    _validated_factory_origin(release, admission, graph, origin_checkpoint)
-    expected_provenance = _factory_generation_provenance(release)
+    authority = _validated_factory_origin(
+        factory_authority, graph, release=release, admission=admission,
+        origin_checkpoint=origin_checkpoint)
+    release = authority.release
+    admission = authority.admission
+    origin_checkpoint = authority.origin_checkpoint
+    if type(foundation_features) is not InitialFoundationFeatureAuthority:
+        invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_INVALID")
+    expected_provenance = _factory_generation_provenance(
+        release, foundation_features)
     if (not isinstance(run_id, str) or not run_id
             or type(run_seed) is not int or run_seed < 0
             or type(model_authority) is not B01GenerationAuthority
             or type(optimizer_hyperparameters) is not AdamWHyperparameters
             or type(provenance) is not GenerationProvenance
             or provenance != expected_provenance
-            or type(foundation_row_ages) is not tuple
-            or any(type(item) is not IdentityRowAge for item in foundation_row_ages)
             or type(delivery_events) is not tuple):
         invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
     (semantic_abi, compiler_features, correction_frontier,
@@ -211,6 +244,7 @@ def prepare_initial_generation(
         invalid("BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
     optimizer, _decay, _initialization = _create_unbound_bamf_optimizer(
         topology, extents, run_seed=run_seed)
+    foundation_row_ages = initial_foundation_row_ages(foundation_features)
     state = CandidateState(
         optimizer, PlasticityPolicy("FOUNDATION", 0, foundation_row_ages),
         allocations, 0)
@@ -233,10 +267,10 @@ def prepare_initial_generation(
     binding = _issue_binding(
         candidate, release=release, admission=admission, graph=graph,
         origin_checkpoint=origin_checkpoint,
+        factory_authority=authority,
         foundation_features=foundation_features)
     return PreparedInitialGeneration(
-        candidate, binding, release, admission, dict(graph), origin_checkpoint,
-        foundation_features)
+        candidate, binding, authority, dict(graph), foundation_features)
 
 
 def validate_initial_generation_binding(candidate, binding) -> None:
@@ -264,8 +298,10 @@ def validate_initial_generation_preparation(prepared: PreparedInitialGeneration)
         prepared.candidate, release=prepared.release,
         admission=prepared.admission, graph=prepared.graph,
         origin_checkpoint=prepared.origin_checkpoint,
+        factory_authority=prepared.factory_authority,
         foundation_features=prepared.foundation_features)
-    _validate_candidate_b01_authority(prepared.candidate)
+    _validate_candidate_b01_authority(
+        prepared.candidate, prepared.foundation_features)
     validate_initial_generation_binding(prepared.candidate, prepared.binding)
 
 

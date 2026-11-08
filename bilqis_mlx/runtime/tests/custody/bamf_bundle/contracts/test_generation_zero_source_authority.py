@@ -10,6 +10,8 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.bamf_bundle import publish_initial_generation
 from bilqis_mlx.runtime.bamf_bundle.genesis import _issue_binding
 from bilqis_mlx.runtime.bamf_bundle import genesis as genesis_owner
@@ -47,6 +49,24 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_INVALID")
+
+    def test_plain_factory_receipt_and_checkpoint_do_not_establish_bootstrap_authority(self):
+        """Self-consistent Factory values are not the persisted runtime owner's grant."""
+        with shape_patch():
+            prepared = genesis_preparation(run_seed=219)
+        with shape_patch(), self.assertRaises(BilqisError):
+            genesis_owner.prepare_initial_generation(
+                run_id=prepared.candidate.run_id,
+                run_seed=prepared.candidate.run_identity.run_seed,
+                origin_checkpoint=prepared.origin_checkpoint,
+                release=prepared.release,
+                admission=prepared.admission,
+                graph=prepared.graph,
+                model_authority=b01_generation_authority(prepared.candidate.extents),
+                optimizer_hyperparameters=prepared.candidate.optimizer_hyperparameters,
+                provenance=prepared.candidate.provenance,
+                foundation_features=prepared.foundation_features,
+                delivery_events=prepared.candidate.outbox)
 
     def test_foreign_provenance_rejects_before_pointer_mutation(self):
         with shape_patch():
@@ -96,7 +116,7 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
             B01GenerationAuthority(
                 census, "0" * 64),
         )
-        with patch.object(
+        with shape_patch(), patch.object(
                 genesis_owner, "_create_unbound_bamf_optimizer",
                 side_effect=AssertionError("model allocation reached")):
             for authority in wrong:
@@ -104,11 +124,13 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
                     genesis_owner.prepare_initial_generation(
                         run_id=prepared.candidate.run_id,
                         run_seed=prepared.candidate.run_identity.run_seed,
+                        factory_authority=prepared.factory_authority,
                         origin_checkpoint=prepared.origin_checkpoint,
                         release=prepared.release, admission=prepared.admission,
                         graph=prepared.graph, model_authority=authority,
                         optimizer_hyperparameters=prepared.candidate.optimizer_hyperparameters,
                         provenance=prepared.candidate.provenance,
+                        foundation_features=prepared.foundation_features,
                         delivery_events=prepared.candidate.outbox)
                 self.assertEqual(
                     failure.exception.context["reason"],
@@ -154,7 +176,9 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
         with shape_patch(), self.assertRaises(BilqisError) as failure:
             _issue_binding(
                 foreign, release=prepared.release, admission=prepared.admission,
-                graph=prepared.graph, origin_checkpoint=prepared.origin_checkpoint)
+                graph=prepared.graph, origin_checkpoint=prepared.origin_checkpoint,
+                factory_authority=prepared.factory_authority,
+                foundation_features=prepared.foundation_features)
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
@@ -168,10 +192,36 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
         with shape_patch(), self.assertRaises(BilqisError) as failure:
             _issue_binding(
                 relabeled, release=prepared.release, admission=prepared.admission,
-                graph=prepared.graph, origin_checkpoint=prepared.origin_checkpoint)
+                graph=prepared.graph, origin_checkpoint=prepared.origin_checkpoint,
+                factory_authority=prepared.factory_authority,
+                foundation_features=prepared.foundation_features)
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+
+    def test_caller_cannot_preage_foundation_rows_even_with_rehashed_identity(self):
+        with shape_patch():
+            prepared = genesis_preparation(run_seed=247)
+        candidate = prepared.candidate
+        forged_state = replace(
+            candidate.retained_state,
+            policy=PlasticityPolicy(
+                "FOUNDATION", 0, (IdentityRowAge(0, 0, 8),)))
+        forged = replace(
+            candidate,
+            retained_state=forged_state,
+            run_identity=replace(
+                candidate.run_identity,
+                initial_candidate_identity_sha256=candidate_identity_digest(forged_state)))
+        with shape_patch(), self.assertRaises(BilqisError) as failure:
+            _issue_binding(
+                forged, release=prepared.release, admission=prepared.admission,
+                graph=prepared.graph, origin_checkpoint=prepared.origin_checkpoint,
+                factory_authority=prepared.factory_authority,
+                foundation_features=prepared.foundation_features)
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
 
     def test_valid_factory_cannot_publish_caller_authored_foundation_sidecars(self):
         with shape_patch():

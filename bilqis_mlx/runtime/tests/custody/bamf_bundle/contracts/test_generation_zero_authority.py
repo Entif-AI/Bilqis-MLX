@@ -104,40 +104,23 @@ class GenerationZeroAuthorityTests(unittest.TestCase):
             "BAMF_GENERATION_ACCEPTANCE_INVALID")
 
     def test_source_admission_drift_rejects_before_any_run_write(self):
-        from bilqis_mlx.factory.executable_release import admit_executable_factory_release
-        from bilqis_mlx.learning.champions import Checkpoint
-        from bilqis_mlx.runtime.state import _fingerprint
-        from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import _genesis_defaults
-        from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
-        from bilqis_mlx.runtime.bamf_bundle.genesis_foundation import (
-            initial_foundation_sidecars,
-        )
-
-        release, graph = _executable_fixture()
-        origin = Checkpoint("7" * 64, "bundles/foundation-origin", 0, True)
-        admission = admit_executable_factory_release(
-            release, student_sha256="8" * 64,
-            optimizer_step=origin.optimizer_step,
-            semantic_graph_sha256=_fingerprint(graph), graph=graph)
-        values = _genesis_defaults(release)
-        from bilqis_mlx.learning.atlas_engram import MotifManifest
         from bilqis_mlx.runtime.model_topology_v2 import (
-            b01_generation_authority, b01_generation_extents,
+            b01_generation_authority,
         )
-        motif = MotifManifest(values["provenance"].release_digest)
-        semantic_abi, compiler_features, _, _, _ = initial_foundation_sidecars(
-            release, admission, graph, run_seed=73)
-        extents = b01_generation_extents(
-            semantic_abi=semantic_abi,
-            compiler_features=compiler_features, motif_page_count=1,
-            motif_key_map_digest=motif.digest)
+        with shape_patch():
+            prepared = genesis_preparation(run_seed=73)
+        admission = replace(prepared.admission, student_sha256="8" * 64)
         with shape_patch(), self.assertRaises(BilqisError) as failure:
             prepare_initial_generation(
                 run_id="fixture-run", run_seed=73,
-                origin_checkpoint=origin, release=release, admission=admission,
-                graph=graph, model_authority=b01_generation_authority(extents),
+                factory_authority=prepared.factory_authority,
+                origin_checkpoint=prepared.origin_checkpoint,
+                release=prepared.release, admission=admission,
+                graph=prepared.graph,
+                model_authority=b01_generation_authority(prepared.candidate.extents),
                 optimizer_hyperparameters=HP,
-                provenance=values["provenance"])
+                provenance=prepared.candidate.provenance,
+                foundation_features=prepared.foundation_features)
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
@@ -163,9 +146,8 @@ class GenerationZeroAuthorityTests(unittest.TestCase):
                 publish_initial_generation(
                     self.run,
                     PreparedInitialGeneration(
-                        prepared.candidate, parsed, prepared.release,
-                        prepared.admission, prepared.graph,
-                        prepared.origin_checkpoint),
+                        prepared.candidate, parsed, prepared.factory_authority,
+                        prepared.graph, prepared.foundation_features),
                     reserve_gib=0.)
 
     def test_exact_retry_converges_and_conflicting_seed_cannot_replace_genesis(self):

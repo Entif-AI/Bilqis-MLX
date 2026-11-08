@@ -65,8 +65,10 @@ def rewrite_motif_bundle_fixture(
 
 def shape_patch():
     from .helpers import DECLARED
+    from .genesis_authority_fixtures import genesis_feature_source_patch
 
     stack = ExitStack()
+    stack.enter_context(genesis_feature_source_patch())
     for target in ("bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
                    "bilqis_mlx.runtime.topology_v2.ledger.expected_bamf_shapes",
                    "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
@@ -115,7 +117,6 @@ def publish_candidate(run_dir, bundle):
     if bundle.generation == 0:
         prepared = genesis_preparation(
             run_id=bundle.run_id,
-            foundation_row_ages=bundle.retained_state.policy.row_ages,
             delivery_events=({"event": "FIXTURE_GENESIS", "optimizer_step": 0},))
         return publish_initial_generation(run_dir, prepared, reserve_gib=0.)
     parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")

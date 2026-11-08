@@ -32,6 +32,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
 
 RELEASE = _executable_fixture()[0].release_sha256
+ATLAS_RELEASE = "1" * 64
 ATLAS_BUNDLE = "2" * 64
 SOURCE_BUNDLE = "3" * 64
 ARBITRARY = "b" * 64
@@ -40,9 +41,9 @@ def feature_schema() -> dict:
     return {"role_ids": [], "schema_ids": [], "source_bindings": []}
 
 
-def source_features() -> AtlasFeatures:
+def source_features(*, release=RELEASE) -> AtlasFeatures:
     return AtlasFeatures(
-        RELEASE, ATLAS_BUNDLE, SOURCE_BUNDLE, None, (), (), (), (), ())
+        release, ATLAS_BUNDLE, SOURCE_BUNDLE, None, (), (), (), (), ())
 
 
 def feature_bound(source, features: AtlasFeatures, *, digest=None, release=RELEASE):
@@ -111,7 +112,7 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
 
     def foundation_authority(self, features):
         selection = AtlasArtifactSelection(
-            "/artifact", ATLAS_BUNDLE, RELEASE, SOURCE_BUNDLE)
+            "/artifact", ATLAS_BUNDLE, features.semantic_release, SOURCE_BUNDLE)
         with self.foundation_replay(features):
             return issue_initial_foundation_feature_authority(selection)
 
@@ -139,6 +140,21 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         self.assertEqual(receipt.semantic_release, RELEASE)
         self.assertEqual(receipt.source_atlas_bundle_id, ATLAS_BUNDLE)
         self.assertIsNone(receipt.predecessor_feature_sha256)
+
+    def test_genesis_preserves_distinct_atlas_release_and_active_set_identity(self):
+        features = source_features(release=ATLAS_RELEASE)
+        authority = self.foundation_authority(features)
+        with shape_patch(), self.foundation_replay(features):
+            prepared = genesis_preparation(foundation_features=authority)
+        snapshot = frozen_snapshot(authority.selection)
+        self.assertNotEqual(prepared.release.release_sha256, ATLAS_RELEASE)
+        self.assertEqual(prepared.candidate.provenance.release_digest, ATLAS_RELEASE)
+        self.assertEqual(
+            prepared.candidate.semantic_abi["active_set_sha256"],
+            snapshot.active_set_sha256)
+        self.assertEqual(
+            prepared.candidate.extents.active_semantic_digest,
+            snapshot.active_set_sha256)
 
     def test_unaccepted_candidate_can_only_replay_its_recorded_source_features(self):
         features = source_features()
@@ -186,14 +202,13 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         self.assertEqual(
             failure.exception.context["reason"], "BAMF_FEATURE_RECEIPT_MISMATCH")
 
-    def test_generation_without_recorded_source_binding_refuses_receipt(self):
+    def test_production_genesis_always_records_replayable_source_binding(self):
         features = source_features()
         self.publish(candidate(parent_state()))
-        with self.assertRaises(BilqisError) as failure:
-            self.read_receipt(features)
-        self.assertEqual(
-            failure.exception.context["reason"],
-            "BAMF_FEATURE_SOURCE_BINDING_MISSING")
+        with shape_patch():
+            student = feature_authority._accepted_generation(self.pointer)[1]
+        self.assertIn("feature_source", student.compiler_features)
+        self.assertIn("feature_schema", student.compiler_features)
 
     def test_release_drift_between_custody_and_source_refuses_receipt(self):
         features = source_features()
