@@ -4,7 +4,7 @@ from .common import (
 )
 from .records import FeatureSchema, ConceptFeature, ProspectiveIdentityFeature, ProspectiveIdentityFeatureSet, FeatureRow, AtlasFeatures
 from .sources import _source_rule_categories, _graph_vector
-from .manifest import build_feature_manifest
+from .manifest import FEATURE_MANIFEST_OPERATOR_ID, build_feature_manifest
 from .prospective import plan_prospective_identity_features
 
 for _export in (_invalid, _utf8, _sorted_ids, _factor_overflow, _category_map, _normalized_count, _source_rule_categories, _graph_vector, FeatureSchema, ConceptFeature, ProspectiveIdentityFeature, ProspectiveIdentityFeatureSet, FeatureRow, AtlasFeatures, build_feature_manifest, plan_prospective_identity_features):
