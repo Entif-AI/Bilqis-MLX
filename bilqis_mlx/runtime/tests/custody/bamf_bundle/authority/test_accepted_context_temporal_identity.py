@@ -1,6 +1,7 @@
 """Accepted C09 context invalidations retain source-owned four-time identity."""
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     CONTEXT_INVALIDATION_EVENT,
+    context_invalidation_from_record,
     context_temporal_identity_from_record,
     read_records,
 )
@@ -14,9 +15,46 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_
     source_owned_temporal_case,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
+from bilqis_mlx.semantics.context_eligibility import (
+    C09ContextInvalidation,
+    C09_INVALIDATION_SCHEMA_V1,
+)
+from bilqis_mlx.semantics.domains import contract_digest
 
 
 class AcceptedContextTemporalIdentityTests(AcceptedContextFixture):
+    def test_historical_v1_event_identity_excludes_v2_temporal_fields(self):
+        event = C09ContextInvalidation(
+            old_context_digest="1" * 64,
+            new_context_digest="2" * 64,
+            reason_codes=("BAMF_CONTEXT_APPROVED_VIEW_CHANGED",),
+            principal_id="principal:legacy",
+            tenant_id="tenant:legacy",
+            scope="SOURCE_CONTEXT",
+            semantic_release="3" * 64,
+            policy_epoch=1,
+            rights_epoch=1,
+            correction_generation=1,
+            causal_prefix_end=1,
+            invalidated_handles=("frame:legacy",),
+        )
+        self.assertEqual(event.schema_version, C09_INVALIDATION_SCHEMA_V1)
+        self.assertEqual(event.event_id, contract_digest({
+            "old_context_digest": event.old_context_digest,
+            "new_context_digest": event.new_context_digest,
+            "reason_codes": event.reason_codes,
+            "principal_id": event.principal_id,
+            "tenant_id": event.tenant_id,
+            "scope": event.scope,
+            "semantic_release": event.semantic_release,
+            "policy_epoch": event.policy_epoch,
+            "rights_epoch": event.rights_epoch,
+            "correction_generation": event.correction_generation,
+            "causal_prefix_end": event.causal_prefix_end,
+            "invalidated_handles": event.invalidated_handles,
+            "schema_version": event.schema_version,
+        }))
+
     def test_source_owned_four_time_identity_survives_cold_ledger_read(self):
         case = source_owned_temporal_case()
         authority = case.contexts.transition_authority
@@ -26,6 +64,25 @@ class AcceptedContextTemporalIdentityTests(AcceptedContextFixture):
             transition = host.record_context_transition(
                 case.previous, case.contexts)
         self.assertEqual(len(transition.invalidations), 1)
+        live_event = transition.invalidations[0]
+        self.assertEqual(
+            (
+                live_event.source_time,
+                live_event.effective_time,
+                live_event.observed_at,
+                live_event.recorded_at,
+            ),
+            (
+                authority.source_time,
+                authority.effective_time,
+                authority.observed_at,
+                authority.recorded_at,
+            ),
+        )
+        self.assertEqual(
+            live_event.temporal_authority_sha256,
+            authority.authority_registry_sha256,
+        )
 
         records = read_records(self.run, cache.accepted_manifest_sha256)
         record = next(
@@ -46,16 +103,18 @@ class AcceptedContextTemporalIdentityTests(AcceptedContextFixture):
         cold_record = next(
             item for item in cold_records
             if item["event"] == CONTEXT_INVALIDATION_EVENT)
+        cold_event = context_invalidation_from_record(cold_record)
+        self.assertEqual(cold_event, live_event)
         self.assertEqual(context_temporal_identity_from_record(cold_record), expected)
 
         for field in ("source_time", "effective_time", "observed_at", "recorded_at"):
             with self.subTest(field=field):
                 forged_record = dict(cold_record)
-                forged_identity = dict(cold_record["source_temporal_identity"])
-                forged_identity[field] += 1
-                forged_record["source_temporal_identity"] = forged_identity
+                forged_payload = dict(cold_record["context_invalidation"])
+                forged_payload[field] += 1
+                forged_record["context_invalidation"] = forged_payload
                 with self.assertRaises(BilqisError):
-                    context_temporal_identity_from_record(forged_record)
+                    context_invalidation_from_record(forged_record)
 
 
 if __name__ == "__main__":
