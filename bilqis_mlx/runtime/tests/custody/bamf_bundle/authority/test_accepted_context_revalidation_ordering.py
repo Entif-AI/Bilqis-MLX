@@ -20,7 +20,7 @@ from bilqis_mlx.runtime.accepted_correction_ledger import (
 from bilqis_mlx.runtime.accepted_correction_runtime import (
     require_pending_corrections, runtime,
 )
-from bilqis_mlx.runtime.atlas_owner_ingress import _route
+from bilqis_mlx.runtime._atlas_owner_ingress import _route
 from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.bamf_bundle.admission import (

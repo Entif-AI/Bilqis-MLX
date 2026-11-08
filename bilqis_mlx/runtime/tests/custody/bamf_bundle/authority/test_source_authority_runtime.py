@@ -135,6 +135,16 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
         self.assertFalse(hasattr(accepted_runtime, "_EXECUTION_CACHE_OWNER"))
         self.assertFalse(hasattr(accepted_runtime, "_ExecutionCacheOwner"))
 
+    def test_public_c09_facade_exposes_no_raw_registry_mutation_helpers(self):
+        from bilqis_mlx.runtime import atlas_revalidation
+        for name in (
+            "apply_capability_support_correction",
+            "apply_compiled_batch_correction",
+            "apply_motif_correction",
+            "apply_solve_context_correction",
+        ):
+            self.assertFalse(hasattr(atlas_revalidation, name), name)
+
     def test_successor_cannot_replace_accepted_source_authority_root(self):
         _source, pointer = self.publish()
         drift = SourceAuthorityRegistry((replace(
@@ -195,6 +205,32 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
             self.assertEqual(cache._correction_registry, REGISTRY)
             authority = AcceptedRuntimeHost(self.run).source_authority()
             self.assertIs(require_source_authority_runtime(authority, cache), authority)
+
+    def test_owned_cache_cannot_replace_registry_and_digest_after_binding(self):
+        self.publish()
+        drift = SourceAuthorityRegistry((replace(
+            REGISTRY.keys[0], owner_id="source:drift"),))
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+            object.__setattr__(cache, "_correction_registry", drift)
+            object.__setattr__(
+                cache, "source_authority_registry_sha256", drift.digest)
+            from bilqis_mlx.runtime.atlas_source_authority import (
+                _provision_source_authority_runtime,
+            )
+            with self.assertRaises(BilqisError):
+                _provision_source_authority_runtime(cache)
+
+    def test_bound_cache_rechecks_current_host_registry_before_authority_use(self):
+        self.publish()
+        drift = SourceAuthorityRegistry((replace(
+            REGISTRY.keys[0], owner_id="source:drift"),))
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+            authority = AcceptedRuntimeHost(self.run).source_authority()
+            provision_source_authority_registry(self.run, drift)
+            with self.assertRaises(BilqisError):
+                require_source_authority_runtime(authority, cache)
 
     def test_legacy_sidecar_is_readable_but_cannot_mint_source_authority(self):
         self.publish(anchored=False)

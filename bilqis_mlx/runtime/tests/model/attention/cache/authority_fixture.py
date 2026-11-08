@@ -16,6 +16,9 @@ from bilqis_mlx.runtime import atlas_cache_rebuild as _rebuild
 from bilqis_mlx.runtime import atlas_cache_eligibility as _eligibility
 from bilqis_mlx.runtime.atlas_cache_binding import binding_digest
 from bilqis_mlx.runtime.atlas_cache_rebuild import CacheEligibilityReceipt
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
+    AUTHORITY as C09_TEST_AUTHORITY,
+)
 
 _KEY = Ed25519PrivateKey.from_private_bytes(bytes(range(32)))
 PUBLIC_KEY_HEX = _KEY.public_key().public_bytes(
@@ -35,7 +38,10 @@ def authority_registry(
     ),))
 
 
-AUTHORITY_REGISTRY = authority_registry()
+AUTHORITY_REGISTRY = SourceAuthorityRegistry(tuple(sorted(
+    (*C09_TEST_AUTHORITY.keys, *authority_registry().keys),
+    key=lambda key: key.owner_id,
+)))
 _CACHE_MAC_KEY = bytes(range(32, 64))
 
 
@@ -69,8 +75,14 @@ def _test_rebuild_inputs():
 def install_test_owner(test_case, *, eligibility=True, current_binding=True):
     _test_lookup(CACHE_AUTHORITY)[3].clear()
     patcher = patch.object(_runtime, "_authority_state", _test_lookup)
+    accepted = patch.object(
+        _runtime, "_accepted_cache_for_authority",
+        lambda authority: SimpleNamespace(_run_dir=None),
+    )
     patcher.start()
+    accepted.start()
     test_case.addCleanup(patcher.stop)
+    test_case.addCleanup(accepted.stop)
     test_case.addCleanup(set_test_canonical_source, None)
     if current_binding:
         binding_owner = patch.object(

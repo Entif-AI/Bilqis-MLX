@@ -29,7 +29,7 @@ from bilqis_mlx.semantics.tests.test_cognitive_operators import (
 
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _result
-from bilqis_mlx.runtime.atlas_revalidation import apply_solve_context_correction
+from bilqis_mlx.runtime._atlas_owner_ingress import apply_solve_context_correction
 
 class CognitiveSolverTests(unittest.TestCase):
     def test_applicable_exact_operator_wins_with_full_score_no_neural(self):

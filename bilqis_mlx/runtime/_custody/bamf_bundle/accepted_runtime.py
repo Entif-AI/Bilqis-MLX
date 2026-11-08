@@ -144,15 +144,23 @@ def _make_execution_cache_runtime():
         with _pointer_lock(run_dir):
             pointer = _read_pointer(run_dir / "bamf-state.json")
             if (pointer is None
-                    or pointer.get("manifest_sha256")
-                    != cache.accepted_manifest_sha256
+                    or pointer.get("manifest_sha256") != cache.accepted_manifest_sha256
                     or pointer.get("run_id") != cache.run_id
                     or pointer.get("generation") != cache.generation):
                 invalid("B13_EXECUTION_CACHE_STALE")
+            from .source_authority_custody import (
+                read_provisioned_source_authority_registry,
+            )
+            current_registry = read_provisioned_source_authority_registry(run_dir)
             with lock:
                 entry = entries.get(str(run_dir))
                 if (entry is None or entry[0] != cache.accepted_manifest_sha256
-                        or entry[1] is not cache):
+                        or entry[1] is not cache
+                        or current_registry != entry[2]
+                        or cache._correction_registry is not entry[2]
+                        or cache.source_authority_registry_sha256 != entry[3]
+                        or cache.generation_binding != entry[4]
+                        or cache.motif_manifest.digest != entry[5]):
                     invalid("B13_EXECUTION_CACHE_REQUIRED")
         return cache
 
@@ -188,6 +196,11 @@ def _make_execution_cache_runtime():
                             object.__setattr__(cache, "_correction_registry", registry)
                         elif cache._correction_registry != registry:
                             invalid("BAMF_C09_CORRECTION_AUTHORITY_DRIFT")
+                    if (cache._correction_registry is not retained[2]
+                            or cache.source_authority_registry_sha256 != retained[3]
+                            or cache.generation_binding != retained[4]
+                            or cache.motif_manifest.digest != retained[5]):
+                        invalid("BAMF_EXECUTION_CACHE_CUSTODY_DRIFT")
                     return cache
                 cache = _new_execution_cache(
                     run_id=identity.run_id,
@@ -201,7 +214,15 @@ def _make_execution_cache_runtime():
                 object.__setattr__(cache, "_run_dir", run_dir)
                 if registry is not None:
                     object.__setattr__(cache, "_correction_registry", registry)
-                entries[key] = (identity.manifest_sha256, cache)
+                entries[key] = (
+                    identity.manifest_sha256,
+                    cache,
+                    registry,
+                    student.correction_frontier.get(
+                        "source_authority_registry_sha256"),
+                    generation_binding,
+                    student.retained_state.allocations.manifest.digest,
+                )
                 return cache
 
     def reset_for_tests():

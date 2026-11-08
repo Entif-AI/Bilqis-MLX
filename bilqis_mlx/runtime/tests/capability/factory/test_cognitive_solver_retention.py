@@ -3,7 +3,7 @@ from dataclasses import replace
 import unittest
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.atlas_revalidation import apply_solve_context_correction
+from bilqis_mlx.runtime._atlas_owner_ingress import apply_solve_context_correction
 from bilqis_mlx.runtime.cognitive_solver import (
     NeuralProposal, QualifiedComposition, RouteKind, SolveContext, solve_task,
 )

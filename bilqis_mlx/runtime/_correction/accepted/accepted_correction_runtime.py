@@ -102,7 +102,7 @@ def register_compiled_batch(
     run_dir: Path, batch,
 ) -> None:
     from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
-    from bilqis_mlx.runtime.atlas_owner_ingress import _route
+    from bilqis_mlx.runtime._atlas_owner_ingress import _route
 
     cache = bind_accepted_execution_cache(run_dir)
     owners = (
@@ -120,7 +120,7 @@ def register_solve_context(
     run_dir: Path, context,
 ) -> None:
     from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
-    from bilqis_mlx.runtime.atlas_owner_ingress import _route
+    from bilqis_mlx.runtime._atlas_owner_ingress import _route
 
     cache = bind_accepted_execution_cache(run_dir)
     owner = context.operator_composition_artifact_owner

@@ -1,4 +1,4 @@
-"""Production C09 correction ingress for stateful artifact owners."""
+"""Internal C09 correction routing for stateful artifact owners."""
 from __future__ import annotations
 
 from .atlas_revalidation_common import _invalid

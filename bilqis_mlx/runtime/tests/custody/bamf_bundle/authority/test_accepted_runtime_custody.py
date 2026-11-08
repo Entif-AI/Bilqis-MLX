@@ -1,5 +1,6 @@
 """Accepted-generation runtime custody and C09 replay witnesses."""
 from dataclasses import replace
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 from pathlib import Path
@@ -31,7 +32,7 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
     derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
-    AcceptedExecutionCache, bind_motif_artifact_owner,
+    AcceptedExecutionCache, bind_cache_authority, bind_motif_artifact_owner,
     require_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
@@ -98,6 +99,30 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         with shape_patch(), self.assertRaises(BilqisError):
             bind_accepted_cache_authority(
                 self.run, lambda: object())
+
+    def test_cache_authority_has_no_importable_alternate_issuer(self):
+        from bilqis_mlx.runtime import atlas_cache_runtime
+        self.assertFalse(hasattr(
+            atlas_cache_runtime, "_ACCEPTED_CACHE_AUTHORITY_ISSUER"))
+
+    def test_concurrent_cache_authority_binds_reuse_one_capability(self):
+        registry = SourceAuthorityRegistry((SourceAuthorityKey(
+            "cache-host", "1" * 64,
+            (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),),
+        ),))
+        self.publish(candidate(parent_state()), registry)
+        source = lambda: object()
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+            with patch(
+                "bilqis_mlx.runtime.bamf_bundle.execution_cache.require_accepted_execution_cache",
+                return_value=cache,
+            ), ThreadPoolExecutor(max_workers=8) as pool:
+                authorities = tuple(pool.map(
+                    lambda _index: bind_cache_authority(cache, source), range(16)))
+        self.assertTrue(all(
+            authority is authorities[0] for authority in authorities))
+        self.assertIs(cache._cache_authority, authorities[0])
 
     def _motif_fixture(self):
         self.publish(candidate(parent_state()), AUTHORITY)

@@ -10,6 +10,32 @@ from .exchange import inspect_package, stage_received_package
 from .receiver import _load_current_generation, current_receiver_binding
 
 
+def _stage_received_package_if_current(
+        inspected, staging_dir, run_dir, accepted_manifest_sha256,
+        source_authority_registry_sha256):
+    """Stage only while the authority identities validated above remain current."""
+    from bilqis_mlx.runtime.bamf_bundle import publication
+    from bilqis_mlx.runtime.bamf_bundle.source_authority_custody import (
+        read_provisioned_source_authority_registry,
+    )
+
+    run_dir = Path(run_dir)
+    with publication._pointer_lock(run_dir):
+        pointer = publication._read_pointer(run_dir / "bamf-state.json")
+        require(
+            pointer is not None
+            and pointer.get("manifest_sha256") == accepted_manifest_sha256,
+            "receiver accepted generation advanced after source clearance",
+        )
+        registry = read_provisioned_source_authority_registry(run_dir)
+        require(
+            registry is not None
+            and registry.digest == source_authority_registry_sha256,
+            "receiver source authority root changed after source clearance",
+        )
+        return stage_received_package(inspected, staging_dir)
+
+
 def receive_screen_and_publish_package(
         sender_dir, staging_dir, package_sha256, run_dir, *,
         max_wire_bytes: int, source_context, artifact_path, target_capability: str,
@@ -25,10 +51,13 @@ def receive_screen_and_publish_package(
 
     # Reject stale/revoked source authority before any durable receiver staging.
     _, parent = _load_current_generation(run_dir)
-    _verify_export_clearance(
+    _, accepted_manifest_sha256, source_authority_registry_sha256 = (
+        _verify_export_clearance(
         inspected.package, parent, export_clearance, atlas_selection,
-        source_frontier, source_context, run_dir)
-    exchange = stage_received_package(inspected, staging_dir)
+        source_frontier, source_context, run_dir))
+    exchange = _stage_received_package_if_current(
+        inspected, staging_dir, run_dir, accepted_manifest_sha256,
+        source_authority_registry_sha256)
 
     candidate = apply_plastic_delta(exchange.package, run_dir)
     screened = screen_delta_candidate(

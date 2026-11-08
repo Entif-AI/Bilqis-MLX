@@ -66,7 +66,7 @@ class ExactCacheArtifactOwnerTests(unittest.TestCase):
     def test_signed_rights_correction_holds_cache_before_next_use(self):
         event = _event(self.owner.rights_dependency)
         queue = apply_cache_correction(
-            CACHE_AUTHORITY, self.artifact, self.binding, event, AUTHORITY)
+            CACHE_AUTHORITY, self.artifact, self.binding, event)
         self.assertEqual(queue.held_artifact_ids,
                          (self.owner.current_node.artifact_id,))
         held = self.infer(self.owner)
@@ -79,6 +79,12 @@ class ExactCacheArtifactOwnerTests(unittest.TestCase):
         self.assertEqual(progress.queue.held_artifact_ids, ())
         accepted = self.infer(self.owner)
         self.assertEqual((accepted.value, accepted.used_cache), ("CACHE", True))
+
+    def test_caller_cannot_supply_correction_registry(self):
+        event = _event(self.owner.rights_dependency)
+        with self.assertRaises(TypeError):
+            apply_cache_correction(
+                CACHE_AUTHORITY, self.artifact, self.binding, event, AUTHORITY)
 
     def test_context_invalidation_reverse_reaches_exact_cache(self):
         context_ref = DependencyRef(
@@ -109,7 +115,7 @@ class ExactCacheArtifactOwnerTests(unittest.TestCase):
     def test_public_decode_cannot_bypass_held_exact_cache_owner(self):
         event = _event(self.owner.rights_dependency)
         apply_cache_correction(
-            CACHE_AUTHORITY, self.artifact, self.binding, event, AUTHORITY)
+            CACHE_AUTHORITY, self.artifact, self.binding, event)
 
         with self.assertRaises(BilqisError) as caught:
             decode_cache(CACHE_AUTHORITY, self.artifact, self.binding)
@@ -118,10 +124,10 @@ class ExactCacheArtifactOwnerTests(unittest.TestCase):
     def test_unrelated_correction_cannot_clear_existing_cache_hold(self):
         event = _event(self.owner.rights_dependency)
         queue = apply_cache_correction(
-            CACHE_AUTHORITY, self.artifact, self.binding, event, AUTHORITY)
+            CACHE_AUTHORITY, self.artifact, self.binding, event)
         unrelated = _event(_ref(DependencyKind.SOURCE, "source:unrelated"))
         returned = apply_cache_correction(
-            CACHE_AUTHORITY, self.artifact, self.binding, unrelated, AUTHORITY)
+            CACHE_AUTHORITY, self.artifact, self.binding, unrelated)
         self.assertIs(returned, queue)
         self.assertIs(self.owner.queue, queue)
         held = self.infer(self.owner)
@@ -140,7 +146,7 @@ class ExactCacheArtifactOwnerTests(unittest.TestCase):
                     CACHE_AUTHORITY, self.artifact, self.binding)
                 event = _event(owner.rights_dependency)
                 apply_cache_correction(
-                    CACHE_AUTHORITY, self.artifact, self.binding, event, AUTHORITY)
+                    CACHE_AUTHORITY, self.artifact, self.binding, event)
                 node = owner.current_node
                 owner.advance(_result(
                     node,

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+from threading import RLock
 
 from bilqis_mlx.errors import BilqisError
 from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
@@ -40,14 +41,13 @@ def _new_authority_owner():
     return require, issue
 
 
-class _AcceptedCacheAuthorityIssuer:
-    """Non-callable issuer owned by authenticated B13 execution custody."""
+def _new_accepted_cache_authority_owner(issue):
+    """Own exactly one live B14 authority per authenticated B13 cache."""
+    lock = RLock()
+    by_cache = {}
+    by_authority = {}
 
-    def __init__(self, issue):
-        self._issue = issue
-        self._accepted_caches = {}
-
-    def issue(self, accepted_cache, eligibility_source=None):
+    def bind(accepted_cache, eligibility_source=None):
         from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
             require_accepted_execution_cache,
         )
@@ -59,18 +59,54 @@ class _AcceptedCacheAuthorityIssuer:
                 or cache.source_authority_registry_sha256 is None
                 or registry.digest != cache.source_authority_registry_sha256):
             _invalid()
-        authority = self._issue(
-            registry, cache._cache_mac_key, eligibility_source)
-        self._accepted_caches[id(authority)] = cache
-        return authority
+        with lock:
+            retained = by_cache.get(id(cache))
+            if retained is None:
+                authority = issue(
+                    registry, cache._cache_mac_key, eligibility_source)
+                retained = (
+                    cache, authority, registry, eligibility_source)
+                by_cache[id(cache)] = retained
+                by_authority[id(authority)] = retained
+                object.__setattr__(cache, "_cache_authority", authority)
+                object.__setattr__(cache, "_cache_authority_registry", registry)
+                object.__setattr__(
+                    cache, "_cache_eligibility_source", eligibility_source)
+            else:
+                if (retained[0] is not cache
+                        or retained[2] != registry
+                        or retained[3] is not eligibility_source):
+                    _invalid()
+                authority = retained[1]
+                if (cache._cache_authority is not authority
+                        or cache._cache_authority_registry != retained[2]
+                        or cache._cache_eligibility_source is not retained[3]):
+                    _invalid()
+            return authority
 
-    def accepted_cache(self, authority):
-        return self._accepted_caches.get(id(authority))
+    def accepted_cache(authority):
+        with lock:
+            retained = by_authority.get(id(authority))
+            if (retained is None or retained[1] is not authority
+                    or retained[0]._cache_authority is not authority):
+                return None
+            return retained[0]
+
+    def clear_for_tests():
+        with lock:
+            by_cache.clear()
+            by_authority.clear()
+
+    return bind, accepted_cache, clear_for_tests
 
 
 _authority_state, _raw_authority_issue = _new_authority_owner()
-_ACCEPTED_CACHE_AUTHORITY_ISSUER = _AcceptedCacheAuthorityIssuer(
+(_bind_accepted_cache_authority,
+ _accepted_cache_for_authority,
+ _reset_accepted_cache_authority_owner_for_tests) = (
+    _new_accepted_cache_authority_owner(
     _raw_authority_issue)
+)
 del _raw_authority_issue
 
 
@@ -133,6 +169,8 @@ def _require_authority(authority: CacheAuthorityRuntime) -> CacheAuthorityRuntim
     if type(authority) is not CacheAuthorityRuntime:
         _invalid()
     _authority_state(authority)
+    if _accepted_cache_for_authority(authority) is None:
+        _invalid()
     return authority
 
 
@@ -147,12 +185,12 @@ def bind_cache_artifact_owner(authority, artifact, binding):
     if owner is None:
         owner = _issue_exact_cache_artifact_owner(authority, artifact, binding)
         owners[key] = owner
-    accepted_cache = _ACCEPTED_CACHE_AUTHORITY_ISSUER.accepted_cache(authority)
+    accepted_cache = _accepted_cache_for_authority(authority)
     if accepted_cache is not None and accepted_cache._run_dir is not None:
         from bilqis_mlx.runtime.accepted_corrections import (
             register_accepted_target,
         )
-        from bilqis_mlx.runtime.atlas_owner_ingress import _route
+        from bilqis_mlx.runtime._atlas_owner_ingress import _route
         register_accepted_target(
             accepted_cache._run_dir,
             accepted_cache.accepted_manifest_sha256,
@@ -163,10 +201,12 @@ def bind_cache_artifact_owner(authority, artifact, binding):
 
 
 def apply_cache_correction(
-    authority, artifact, binding, event, authority_registry,
+    authority, artifact, binding, event,
 ):
     """Deliver one qualified C09 correction into opaque cache custody."""
+    authority = _require_authority(authority)
     owner = bind_cache_artifact_owner(authority, artifact, binding)
+    authority_registry, _, _, _ = _authority_state(authority)
     authority_registry.verify_correction(event)
     if not owner.index.direct_dependents(event.dependency):
         return owner.queue

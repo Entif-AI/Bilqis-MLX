@@ -19,8 +19,8 @@ from bilqis_mlx.runtime.accepted_correction_ledger import (
 from bilqis_mlx.runtime.capability_support_loading import accepted_support_census
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
-    apply_capability_support_correction,
 )
+from bilqis_mlx.runtime._atlas_owner_ingress import apply_capability_support_correction
 from bilqis_mlx.runtime.context_revalidation import ContextStateTransition
 from bilqis_mlx.runtime.atlas_requalification_contracts import (
     RequalificationStatus,

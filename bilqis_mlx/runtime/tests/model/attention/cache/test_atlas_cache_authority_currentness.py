@@ -30,7 +30,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     OWNER_ID, PUBLIC_KEY_HEX, authority_for_registry, install_test_owner,
 )
-from bilqis_mlx.runtime.tests.model.attention.cache.test_atlas_cache_authority_integration import (
+from bilqis_mlx.runtime.tests.model.attention.cache.cache_authority_integration_fixture import (
     _A12_OWNER, _A12_PUBLIC, _EXPORTED, _cache_shape_patch, _clearance,
     _context, _selection,
 )

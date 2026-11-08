@@ -17,7 +17,7 @@ from bilqis_mlx.runtime.accepted_correction_ledger import (
     append_record, context_invalidation_record,
 )
 from bilqis_mlx.runtime.accepted_correction_runtime import runtime
-from bilqis_mlx.runtime.atlas_owner_ingress import _route
+from bilqis_mlx.runtime._atlas_owner_ingress import _route
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache,
