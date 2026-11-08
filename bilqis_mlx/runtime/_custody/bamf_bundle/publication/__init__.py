@@ -108,31 +108,35 @@ def _existing_initial_generation_retry(
         write_acceptance=_write_acceptance)
 
 
+def _authorize_publication_candidate(
+        run_dir: Path, candidate: BamfBundleCandidate, authority):
+    """Validate generation-specific authority before entering shared publication."""
+    if candidate.generation > 0:
+        return _require_acceptance(candidate, authority), None, None
+    from ..genesis import (
+        PreparedInitialGeneration, validate_initial_generation_binding,
+        validate_initial_generation_preparation,
+    )
+    if (type(authority) is not PreparedInitialGeneration
+            or authority.candidate is not candidate):
+        invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
+    authority.__post_init__()
+    validate_initial_generation_binding(candidate, authority.binding)
+    existing = _existing_initial_generation_retry(run_dir, candidate, authority)
+    if existing is not None:
+        return None, authority, existing
+    validate_initial_generation_preparation(authority)
+    return authority.binding, authority, None
+
+
 def _publish_authorized_generation(
         run_dir: Path, candidate: BamfBundleCandidate, authority, *,
         reserve_gib: float) -> dict:
     """Shared crash-safe transaction after generation-specific authority validates."""
-    prepared = None
-    initial_preparation = None
-    if candidate.generation == 0:
-        from ..genesis import (
-            PreparedInitialGeneration, validate_initial_generation_binding,
-            validate_initial_generation_preparation,
-        )
-        if (type(authority) is not PreparedInitialGeneration
-                or authority.candidate is not candidate):
-            invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
-        prepared = authority
-        authority.__post_init__()
-        validate_initial_generation_binding(candidate, authority.binding)
-        existing = _existing_initial_generation_retry(run_dir, candidate, authority)
-        if existing is not None:
-            return existing
-        validate_initial_generation_preparation(authority)
-        initial_preparation = authority
-        authority = authority.binding
-    else:
-        authority = _require_acceptance(candidate, authority)
+    authority, prepared, existing = _authorize_publication_candidate(
+        run_dir, candidate, authority)
+    if existing is not None:
+        return existing
     run_dir = Path(run_dir)
     parent_acceptance = _parent_acceptance_for_publication(
         run_dir, candidate, authority)
@@ -163,8 +167,9 @@ def _publish_authorized_generation(
                 _write_acceptance(run_dir, digest, authority)
                 reconcile_bamf_outbox(run_dir, student)
                 return current
-            if initial_preparation is not None:
-                validate_initial_generation_preparation(initial_preparation)
+            if prepared is not None:
+                from ..genesis import validate_initial_generation_preparation
+                validate_initial_generation_preparation(prepared)
             _validate_parent_transition_impl(
                 run_dir, current, candidate,
                 load_bundle=load_bamf_bundle, reconcile=reconcile_bamf_outbox)

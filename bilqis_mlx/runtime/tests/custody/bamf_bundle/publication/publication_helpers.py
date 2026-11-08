@@ -111,33 +111,34 @@ def acceptance(bundle, *, parent=None) -> object:
         feature_sha256=bundle.extents.factor_map_digest)
 
 
-def publish_candidate(run_dir, bundle, *, foundation_features=None):
+def _publish_initial_candidate(run_dir, bundle, foundation_features):
     from ..helpers import accepted_state, genesis_preparation
 
-    if bundle.generation == 0:
-        prepared = genesis_preparation(
-            run_id=bundle.run_id,
-            foundation_features=foundation_features,
-            delivery_events=({"event": "FIXTURE_GENESIS", "optimizer_step": 0},))
-        pointer = publish_initial_generation(run_dir, prepared, reserve_gib=0.)
-        source_authority = bundle.correction_frontier.get(
-            "source_authority_registry_sha256")
-        if source_authority is None:
-            return pointer
-        parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
-        retained = accepted_state(parent.retained_state, parent.extents)
-        bundle = derive_successor_bundle(
-            parent, retained, parent_manifest_sha256=pointer["manifest_sha256"],
-            delivery_events=({"event": "FIXTURE_SOURCE_AUTHORITY"},))
-        bundle = replace(bundle, correction_frontier={
-            **bundle.correction_frontier,
-            "source_authority_registry_sha256": source_authority,
-        })
-        return publish_bamf_generation(
-            run_dir, bundle,
-            acceptance=acceptance(bundle, parent=parent.retained_state),
-            reserve_gib=0.)
+    prepared = genesis_preparation(
+        run_id=bundle.run_id,
+        foundation_features=foundation_features,
+        delivery_events=({"event": "FIXTURE_GENESIS", "optimizer_step": 0},))
+    pointer = publish_initial_generation(run_dir, prepared, reserve_gib=0.)
+    source_authority = bundle.correction_frontier.get(
+        "source_authority_registry_sha256")
+    if source_authority is None:
+        return pointer
     parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
+    retained = accepted_state(parent.retained_state, parent.extents)
+    bundle = derive_successor_bundle(
+        parent, retained, parent_manifest_sha256=pointer["manifest_sha256"],
+        delivery_events=({"event": "FIXTURE_SOURCE_AUTHORITY"},))
+    bundle = replace(bundle, correction_frontier={
+        **bundle.correction_frontier,
+        "source_authority_registry_sha256": source_authority,
+    })
+    return publish_bamf_generation(
+        run_dir, bundle,
+        acceptance=acceptance(bundle, parent=parent.retained_state),
+        reserve_gib=0.)
+
+
+def _normalize_candidate_for_parent(bundle, parent):
     if bundle.run_identity is None:
         bundle = replace(bundle, run_identity=parent.run_identity)
     kind = bundle.transition.get("kind")
@@ -215,6 +216,14 @@ def publish_candidate(run_dir, bundle, *, foundation_features=None):
             teacher_state=dict(parent.teacher_state),
             evaluation_contract=dict(parent.evaluation_contract),
             run_identity=parent.run_identity)
+    return bundle
+
+
+def publish_candidate(run_dir, bundle, *, foundation_features=None):
+    if bundle.generation == 0:
+        return _publish_initial_candidate(run_dir, bundle, foundation_features)
+    parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
+    bundle = _normalize_candidate_for_parent(bundle, parent)
     return publish_bamf_generation(
         run_dir, bundle,
         acceptance=acceptance(bundle, parent=parent.retained_state))
