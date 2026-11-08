@@ -1,7 +1,7 @@
 """Accepted-generation C09 correction and revalidation ingress."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from .accepted_correction_ledger import (
@@ -35,6 +35,8 @@ class AcceptedRuntimeHost:
 
     run_dir: Path
     registry: SourceAuthorityRegistry
+    _source_authority: object | None = field(
+        default=None, init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         if not isinstance(self.run_dir, Path) or not isinstance(
@@ -44,6 +46,24 @@ class AcceptedRuntimeHost:
             bind_accepted_correction_authority,
         )
         bind_accepted_correction_authority(self.run_dir, self.registry)
+
+    def source_authority(self):
+        """Return only the opaque source authority owned by this accepted host."""
+        from bilqis_mlx.runtime.atlas_source_authority import (
+            _ACCEPTED_SOURCE_AUTHORITY_ISSUER,
+            require_source_authority_runtime,
+        )
+        authority = self._source_authority
+        if authority is None:
+            from bilqis_mlx.runtime.bamf_bundle.admission import (
+                bind_accepted_correction_authority,
+            )
+            cache = bind_accepted_correction_authority(
+                self.run_dir, self.registry)
+            authority = _ACCEPTED_SOURCE_AUTHORITY_ISSUER.issue(
+                cache, self.registry)
+            object.__setattr__(self, "_source_authority", authority)
+        return require_source_authority_runtime(authority)
 
     def source_context(self, receipt: dict, *, graph: dict, source_root: Path | None):
         """Mint the admitted host context without granting authority to workers."""
