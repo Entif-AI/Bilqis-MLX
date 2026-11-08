@@ -121,7 +121,8 @@ def publish_candidate(run_dir, bundle):
     parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
     if bundle.run_identity is None:
         bundle = replace(bundle, run_identity=parent.run_identity)
-    if bundle.transition.get("kind") == "RETAINED_CANDIDATE":
+    kind = bundle.transition.get("kind")
+    if kind == "RETAINED_CANDIDATE":
         retained = replace(
             bundle.retained_state,
             allocations=parent.retained_state.allocations,
@@ -130,6 +131,43 @@ def publish_candidate(run_dir, bundle):
             parent, retained,
             parent_manifest_sha256=bundle.parent_manifest_sha256,
             delivery_events=bundle.outbox)
+    elif kind == "PACKAGE_IMPORT":
+        retained = replace(
+            bundle.retained_state,
+            allocations=parent.retained_state.allocations,
+            custody=parent.retained_state.custody)
+        bundle = replace(
+            bundle, implementation_sha256=parent.implementation_sha256,
+            topology=parent.topology, extents=parent.extents,
+            retained_state=retained, provenance=parent.provenance,
+            semantic_abi=dict(parent.semantic_abi),
+            compiler_features=dict(parent.compiler_features),
+            correction_frontier=dict(parent.correction_frontier),
+            teacher_state=dict(parent.teacher_state),
+            evaluation_contract=dict(parent.evaluation_contract),
+            run_identity=parent.run_identity)
+    elif kind == "PARAMETER_EXTENSION":
+        retained = replace(
+            bundle.retained_state,
+            allocations=parent.retained_state.allocations,
+            custody=parent.retained_state.custody)
+        extents = replace(
+            parent.extents,
+            active_semantic_digest=bundle.extents.active_semantic_digest)
+        semantic = {
+            **parent.semantic_abi,
+            "active_set_sha256": bundle.semantic_abi["active_set_sha256"],
+        }
+        bundle = replace(
+            bundle, implementation_sha256=parent.implementation_sha256,
+            topology=parent.topology, extents=extents,
+            retained_state=retained, provenance=parent.provenance,
+            semantic_abi=semantic,
+            compiler_features=dict(parent.compiler_features),
+            correction_frontier=dict(parent.correction_frontier),
+            teacher_state=dict(parent.teacher_state),
+            evaluation_contract=dict(parent.evaluation_contract),
+            run_identity=parent.run_identity)
     elif (bundle.topology == parent.topology
             and bundle.extents.semantic_bank_count == parent.extents.semantic_bank_count
             and bundle.extents.motif_page_count == parent.extents.motif_page_count
