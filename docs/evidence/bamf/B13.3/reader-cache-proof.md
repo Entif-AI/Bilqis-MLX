@@ -122,6 +122,14 @@ schema `bilqis.state-head/v1`.
 The source bytes were read only. No archive copy, checkpoint publication, cache
 repair, optimizer step, or neural update occurred.
 
+`TEST_EVIDENCE_REUSED`: the fresh merge-forwarded M3 custody witnesses above are
+bound to tested head `5eb62d5e5e16fbdf15ac0d715b17fe29ec545c34`. Comparison range
+`5eb62d5e5e16fbdf15ac0d715b17fe29ec545c34..HEAD` through the final #480
+turn-in head changes only B13.3 evidence/flow bookkeeping. It changes no production code, tests,
+fixtures, dependencies, test harness, environment/configuration input, or
+Microspenics source input, so the exact passing 10/10 cache/cold-resume and 1/1
+historical-v1 receipts remain valid under the repository's passing-test reuse rule.
+
 The original fresh neural/custody witnesses are bound to semantic/test head
 `9d1bc1c8c753031f0642c60b0f85c8e2d0edb812`. Later changes in this #480
 reconciliation branch are limited to this evidence receipt and Lane-B flow-control
