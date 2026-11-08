@@ -2,7 +2,7 @@
 from pathlib import Path
 import sqlite3
 from tempfile import TemporaryDirectory
-from types import SimpleNamespace
+from types import MappingProxyType, SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -51,14 +51,14 @@ from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, Dependen
 CONTEXT_EVENT_ID = "b" * 64
 CONTEXT_RECEIPT_ID = "c" * 64
 GENERATION = "d" * 64
-TEMPORAL_IDENTITY = {
+TEMPORAL_IDENTITY = MappingProxyType({
     "source_time": 10,
     "effective_time": 20,
     "observed_at": 15,
     "recorded_at": 16,
     "authority_registry_sha256": "e" * 64,
     "schema_version": "bilqis.source-context-temporal-identity/v1",
-}
+})
 
 
 def _ledger(status=RequalificationStatus.REQUALIFICATION_REQUIRED):
