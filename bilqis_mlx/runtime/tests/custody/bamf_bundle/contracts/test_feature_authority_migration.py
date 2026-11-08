@@ -33,6 +33,64 @@ from bilqis_mlx.semantics.tests.atlas.projection.helpers import (
 
 
 class AcceptedFeatureMigrationTests(FeatureLineageCase):
+    def _save_legacy_bundle(self, student, stage_name):
+        stage = self.run / stage_name
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            manifest = save_bamf_bundle(student, stage)
+        bundle_root = self.run / "bamf-bundles"
+        bundle_root.mkdir(parents=True, exist_ok=True)
+        stage.rename(bundle_root / manifest["manifest_sha256"])
+        return manifest
+
+    def _legacy_changed_tip(self, root):
+        genesis = feature_bound(candidate(parent_state()), root)
+        first_manifest = self._save_legacy_bundle(genesis, "legacy-genesis")
+        changed = replace(
+            root, semantic_release=SUCCESSOR_RELEASE,
+            atlas_bundle_id=SUCCESSOR_ATLAS_BUNDLE,
+            source_bundle_id=SUCCESSOR_SOURCE_BUNDLE,
+            predecessor_digest=root.digest)
+        generation_one = feature_bound(
+            candidate(
+                accepted_state(parent_state()), 1,
+                first_manifest["manifest_sha256"]),
+            changed, release=SUCCESSOR_RELEASE,
+            atlas_bundle=SUCCESSOR_ATLAS_BUNDLE,
+            source_bundle=SUCCESSOR_SOURCE_BUNDLE)
+        generation_one = replace(generation_one, transition={
+            **generation_one.transition, "kind": "PARAMETER_EXTENSION",
+            "invalidate_derived_caches": True})
+        second_manifest = self._save_legacy_bundle(
+            generation_one, "legacy-generation-one")
+        return genesis, first_manifest, changed, generation_one, second_manifest
+
+    def _install_legacy_acceptance_pointer(
+            self, genesis, first_manifest, generation_one, second_manifest):
+        first_acceptance = acceptance(genesis)
+        second_acceptance = mint_acceptance_binding(
+            retention_decision(
+                parent=genesis.retained_state,
+                retained=generation_one.retained_state),
+            generation_one.retained_state, run_id=generation_one.run_id,
+            generation=generation_one.generation,
+            feature_sha256=generation_one.extents.factor_map_digest)
+        acceptance_root = self.run / "bamf-acceptance"
+        acceptance_root.mkdir()
+        for manifest, binding in (
+                (first_manifest, first_acceptance),
+                (second_manifest, second_acceptance)):
+            (acceptance_root / f"{manifest['manifest_sha256']}.json").write_bytes(
+                canonical(binding.to_record()))
+        self.pointer.write_bytes(canonical({
+            "schema": BAMF_POINTER_SCHEMA,
+            "run_id": generation_one.run_id,
+            "generation": generation_one.generation,
+            "parent_manifest_sha256": generation_one.parent_manifest_sha256,
+            "bundle": f"bamf-bundles/{second_manifest['manifest_sha256']}",
+            "manifest_sha256": second_manifest["manifest_sha256"],
+            "acceptance_sha256": second_acceptance.digest,
+        }))
+
     def test_changed_release_replays_real_sibling_atlas_bundles(self):
         source_root = self.root / "source"
         source_root.mkdir()
@@ -85,60 +143,10 @@ class AcceptedFeatureMigrationTests(FeatureLineageCase):
 
     def test_live_v2_cutover_preserves_changed_feature_construction_history(self):
         root = source_features()
-        genesis = feature_bound(candidate(parent_state()), root)
-        legacy_stage = self.run / "legacy-genesis"
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            first_manifest = save_bamf_bundle(genesis, legacy_stage)
-        bundle_root = self.run / "bamf-bundles"
-        bundle_root.mkdir(parents=True)
-        first_target = bundle_root / first_manifest["manifest_sha256"]
-        legacy_stage.rename(first_target)
-        first_acceptance = acceptance(genesis)
-
-        changed = replace(
-            root, semantic_release=SUCCESSOR_RELEASE,
-            atlas_bundle_id=SUCCESSOR_ATLAS_BUNDLE,
-            source_bundle_id=SUCCESSOR_SOURCE_BUNDLE,
-            predecessor_digest=root.digest)
-        generation_one = feature_bound(
-            candidate(
-                accepted_state(parent_state()), 1,
-                first_manifest["manifest_sha256"]),
-            changed, release=SUCCESSOR_RELEASE,
-            atlas_bundle=SUCCESSOR_ATLAS_BUNDLE,
-            source_bundle=SUCCESSOR_SOURCE_BUNDLE)
-        generation_one = replace(generation_one, transition={
-            **generation_one.transition, "kind": "PARAMETER_EXTENSION",
-            "invalidate_derived_caches": True})
-        second_stage = self.run / "legacy-generation-one"
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            second_manifest = save_bamf_bundle(generation_one, second_stage)
-        second_target = bundle_root / second_manifest["manifest_sha256"]
-        second_stage.rename(second_target)
-        second_acceptance = mint_acceptance_binding(
-            retention_decision(
-                parent=genesis.retained_state,
-                retained=generation_one.retained_state),
-            generation_one.retained_state, run_id=generation_one.run_id,
-            generation=generation_one.generation,
-            feature_sha256=generation_one.extents.factor_map_digest)
-
-        acceptance_root = self.run / "bamf-acceptance"
-        acceptance_root.mkdir()
-        for manifest, binding in (
-                (first_manifest, first_acceptance),
-                (second_manifest, second_acceptance)):
-            (acceptance_root / f"{manifest['manifest_sha256']}.json").write_bytes(
-                canonical(binding.to_record()))
-        self.pointer.write_bytes(canonical({
-            "schema": BAMF_POINTER_SCHEMA,
-            "run_id": generation_one.run_id,
-            "generation": generation_one.generation,
-            "parent_manifest_sha256": generation_one.parent_manifest_sha256,
-            "bundle": f"bamf-bundles/{second_manifest['manifest_sha256']}",
-            "manifest_sha256": second_manifest["manifest_sha256"],
-            "acceptance_sha256": second_acceptance.digest,
-        }))
+        genesis, first_manifest, changed, generation_one, second_manifest = (
+            self._legacy_changed_tip(root))
+        self._install_legacy_acceptance_pointer(
+            genesis, first_manifest, generation_one, second_manifest)
 
         retained = feature_bound(
             candidate(
