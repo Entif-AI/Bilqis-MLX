@@ -60,6 +60,9 @@ def _dependency_record(authority) -> tuple[tuple[str, str], ...]:
 
 def _source_anchors(training_authorities, state) -> tuple[tuple, ...]:
     if training_authorities is None:
+        if any(proof.training_authority_sha256 is not None
+               for proof in state.step_proofs):
+            _invalid()
         return ()
     if type(training_authorities) is not tuple:
         _invalid()
