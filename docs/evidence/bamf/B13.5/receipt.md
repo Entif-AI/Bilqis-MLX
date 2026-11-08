@@ -728,3 +728,62 @@ Exact post-cap proof on semantic head `2d4d013e`:
 `EGM-Failed` remains the historical automatic-episode disposition until the
 human-authorized post-cap targeted reinspection of these repaired loci completes.
 That reinspection is not round 6 and does not reopen unrelated review budget.
+
+### Human-authorized pathless mitigation consumption — 2026-11-07
+
+The owner-directed architectural correction was isolated as mitigation #912 and
+completed before parent reconciliation. #912 established ADR-136: accepted
+historical artifact authority is content-addressed and portable; a host filesystem
+path may locate local bytes but cannot become semantic identity or historical
+authority. The independently reviewed mitigation head
+`6bfb5c96ba73e5f080e79e66df34ab59f63f1231` closed with no Blocker, Major or Nit.
+
+The parent repair above retained its useful live bundle/v2 cutover bridge but its
+first multi-release repair still accepted a caller-provided Atlas root/current
+bundle. The final parent reconciliation therefore composes that cutover bridge with
+#912's stronger historical resolver instead of preserving caller locator authority.
+Accepted feature replay now derives `AtlasArtifactIdentity` from each generation's
+custody-recorded `atlas_bundle_id`, `release_sha256` and `source_bundle_id`, resolves
+that identity beneath the machine-local content-addressed Atlas root, and then runs
+the existing A01 source-pin and exact bundle/release/source/content verification.
+Current pre-acceptance candidate replay may still consume its exact local source
+path; accepted historical replay does not.
+
+The composed implementation/test head before this evidence-only bookkeeping is
+`aa203815dfbffb22d8bf82fd2a6a5fb70cab4e3d` on isolated reconciliation branch
+`codex/697-pathless-reconcile-20261107`. The original #697 worktree was deliberately
+abandoned as a write surface after a concurrent A02 writer appeared in overlapping
+files; no foreign staged changes were committed or pushed by this reconciliation.
+
+Exact-head deterministic proof on `aa203815`:
+
+- complete B13 custody package: **156 total / 151 PASS / 5 explicit skips /
+  0 failures / 0 errors**;
+- Atlas snapshot identity/content contracts: **4/4 PASS**;
+- the combined focused seam covering the v2 cutover, 1,100-generation iterative
+  history, real two-release loader, relocation, missing/tampered/unregistered
+  historical artifacts and pre-CAS compatibility: **21/21 PASS**;
+- real relocation proof reproduces the exact accepted feature receipt after moving
+  the Atlas artifact root; the original root is not required;
+- development structure: **PASS, 0 violations**;
+- governance integrity: **PASS, 0 violations**;
+- Factory architecture and documentation gates: **PASS**;
+- error-control plane: **PASS, new debt 0**;
+- changed-file code-smell audit: **PASS, 0 findings**;
+- live Microspenics legacy-trainer authority: **PASS**;
+- BAMF flow-control and checked-in contract mirrors: **PASS**;
+- `git diff --check`: **PASS**.
+
+Disposable downstream A02/#399 composition on the same B13 implementation, without
+mutating the preserved #399 branch:
+
+- A02 staging capability: **2/2 PASS**;
+- full-topology production staging: **1/1 PASS in 188.087s**;
+- ordinary A02 planner: **5/5 PASS + 1 explicit optional real-source skip**;
+- generic/caller-minted predecessor authority remains fail-closed, and staged A02
+  evidence still cannot mint publication authority.
+
+The final ADR-132/ADR-135 snapshot-isolated aggregate is still required against the
+evidence-bearing exact candidate before targeted human-authorized reinspection. This
+remains a bounded post-cap repair/reinspection path, not automatic round 6, and no
+PR or merge authority is inferred from deterministic qualification.
