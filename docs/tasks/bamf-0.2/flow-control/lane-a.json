@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "56254f343904cecebf7fa067e76a937836673083",
-  "updated_at": "2026-11-08T02:02:00Z",
+  "updated_at": "2026-11-08T02:10:00Z",
   "exception": null,
   "items": [
     {
@@ -228,10 +228,10 @@
     },
     {
       "issue": 916,
-      "pr": null,
-      "state": "ACTIVE",
+      "pr": 918,
+      "state": "TURNED_IN",
       "head_sha": "326c443e2d790ca23264cb9c5aa7135082bcf8e5",
-      "summary": "A13 four-time remediation round-1 second repair: typed C09 v2 already binds source/effective/observed/recorded time; v2 record construction now requires source temporal authority and every cold v2 decode independently revalidates the tuple against the hash-pinned A13 registry. Historical v1 identity/decoding remains exact. Same-round reinspection pending.",
+      "summary": "A13 four-time temporal identity remediation turned in as PR #918 after pinned EGM round 1 PASS (0 Blockers / 0 Majors). Typed C09 invalidation v2 binds source/effective/observed/recorded time plus source temporal-authority digest; v2 live persistence requires opaque A13 authority and cold decode independently revalidates the tuple against the hash-pinned source registry. Historical v1 identity/decoding and the correction-backed bridge remain unchanged. Widened ring 42/42 PASS; structure/governance/smell/flow/error-control green. Human merge remains external authority; downstream #911 is the consumer.",
       "resume_trigger": null,
       "preserved_branch": "codex/916-a13-four-time-context-20261108"
     }
