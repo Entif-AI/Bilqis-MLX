@@ -383,10 +383,10 @@
     {
       "issue": 904,
       "pr": null,
-      "state": "READY",
-      "head_sha": "395c4bc7d6058a4afcf8dcef7acfff57533390b9",
-      "summary": "B13.6 round-6 authority redesign is proven on exact head 395c4bc7 against reviewed unified d4bad39a. Persisted Factory runtime ownership now issues generation-zero origin authority; A01/A06 feature authority is mandatory and preserves distinct Factory vs Atlas identity domains; FOUNDATION row ages are owner-derived at zero. Round-6 regressions pass 19/19, 28/28 and 84/84. The first exact-head broad run at ebfe14b4 failed only because a private cache test helper omitted mandatory feature-source replay; production failed closed. Test-only repair 395c4bc7 passes cache 2/2. Replacement detached r9 is green: complete B13 custody 157 passed / 0 failed / 0 errors / 5 explicit skips, opt-in parameter-schema + full-resume witnesses 2/2, source_mutated=false, and all source/snapshot mutation-guard digests equal 18042b79.... Historical round-5/round-6 EGM FAILs and r8 proof failure remain append-only.",
-      "resume_trigger": "Fresh pinned isolated EGM passes on exact head 395c4bc7 (or its evidence/flow-control-only descendant); then run invalidated turn-in gates and open the lane-to-unified PR without self-merge.",
+      "state": "ACTIVE",
+      "head_sha": "cce50961d68c979b036986239f6f6a39b8c0f077",
+      "summary": "B13.6 fresh EGM round 7 failed 0 Blockers / 2 distinct Majors: the live bootstrap did not seal separately serialized AdamW hyperparameters, and clean-process proof did not literally assert run_seed. Both are locally repaired at cce50961 without changing C16 optimizer-policy ownership: InitialGenerationBinding now binds the exact supplied AdamWHyperparameters digest; PreparedInitialGeneration is owner-issued/non-rewrappable; parsed cold acceptance validates the same digest; lawful subprocess continuation emits/asserts run_seed. RED exploit reproduced before repair. Post-repair source+genesis authority 20/20, cold continuation 8/8, widened ring 85/85, full quality green, contract verifier 43/43 + 215/215 + 172/172, diff clean. PM-2026-11-07-010 and historical EGM FAIL remain append-only. Replacement exact-head detached proof is required before any new EGM.",
+      "resume_trigger": "A new snapshot-pinned detached full-custody + opt-in witness proof passes on exact remote repair head (or evidence-only descendant) with source_mutated=false; then move #904 EGM-Failed -> EGM-Pending and request a genuinely fresh isolated EGM.",
       "preserved_branch": "codex/904-b13-6-generation-zero-20261107"
     }
   ]

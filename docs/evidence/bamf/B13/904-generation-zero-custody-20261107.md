@@ -358,3 +358,67 @@ fixture-only broad-proof failure into PASS. The next merge-readiness gate is a
 genuinely fresh isolated EGM on this exact implementation/evidence lineage, followed
 only on clean review by final turn-in checks and a ready PR. Human merge and issue
 closure remain outside this checkpoint's authority.
+
+## Fresh EGM round-7 Majors and remediation — 2026-11-07
+
+Fresh isolated round-7 review of evidence head
+`c9f57c849ad294fd9c77201b9d9078441952b35a` / implementation head
+`395c4bc7d6058a4afcf8dcef7acfff57533390b9` against reviewed unified
+`d4bad39a32a80acbffdb9f891a906892ab2e9fab` returned **FAIL — 0 Blockers / 2
+distinct Majors / 0 Nits**:
+
+1. The live generation-zero bootstrap bound the exact retained numerical state but
+   did not bind the separately serialized `AdamWHyperparameters`. Because
+   `PreparedInitialGeneration` was an ordinary caller-rewrappable dataclass, a
+   caller holding an otherwise valid preparation could replace only
+   `optimizer_hyperparameters` and reach publication with a distinct immutable
+   generation-zero manifest.
+2. Production persisted the exact operator `run_seed`, and same-process tests
+   asserted it, but the lawful clean-process continuation witness did not emit or
+   assert that seed. The issue's literal clean-process proof obligation was therefore
+   incomplete.
+
+The failure is preserved on issue #904 comment `6716401000` and canonical incident
+`PM-2026-11-07-010`. No PR was opened and no live learner or persistent optimizer
+state was started or mutated.
+
+Failing-before regression proved the first Major directly: the new
+`test_bootstrap_rejects_post_issuance_optimizer_hyperparameter_substitution`
+expected a `BilqisError` but the unpatched candidate published without one.
+
+Semantic repair head `cce50961d68c979b036986239f6f6a39b8c0f077` closes both findings
+without moving optimizer-policy ownership into B01:
+
+- C16.1b remains the owner that supplies the actual admitted optimizer input; B13
+  now binds the exact canonical digest of that supplied `AdamWHyperparameters`
+  record into `InitialGenerationBinding`;
+- live binding validation and parsed cold-acceptance validation both compare that
+  digest against the exact candidate/student optimizer hyperparameters;
+- `PreparedInitialGeneration` now follows the repository's live-capability pattern:
+  caller construction is forbidden, issuance occurs only inside
+  `prepare_initial_generation(...)`, and caller rewrapping cannot regain live
+  publication authority;
+- existing source/feature adversaries still prove their original semantic drift
+  reasons directly, while separately proving the forged prepared wrapper is rejected;
+- the lawful subprocess cold-resume probe now emits the sealed `run_seed`, and the
+  uninterrupted-vs-cold continuation witness asserts exact equality.
+
+Local post-repair proof:
+
+- generation-zero source + generation-zero authority: **20/20 PASS**;
+- clean-process cold-resume continuation: **8/8 PASS**;
+- widened acceptance/authority/feature/publication/durability/cold-resume ring:
+  **85/85 PASS**;
+- full repository `quality:check`: PASS; governance, Factory architecture and docs
+  green; error-control new debt **0**; changed-file smell findings **0**;
+- legacy-trainer authority **7/7 PASS**; BAMF flow-control **15/15 PASS**;
+- BAMF contract verifier: **43/43** exact issue mirrors, all **215** indexed
+  identities and **172** recursive child mirrors green;
+- `git diff --check`: PASS.
+
+The repair deliberately rejected an incorrect intermediate interpretation that B01
+default AdamW values should replace the C16-supplied optimizer input. The accepted
+ownership remains: C16.1b supplies the already-authorized optimizer input; B13 seals
+its exact identity into generation-zero custody. Round 7 remains failed until a new
+snapshot-pinned exact-head detached proof completes and a subsequent fresh isolated
+EGM independently passes.
