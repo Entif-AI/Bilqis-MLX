@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.factory.executable_release import (
     ExecutableAdmissionReceipt, ExecutableFactoryRelease,
 )
@@ -37,12 +38,12 @@ class InitialFactoryFoundationAuthority:
         if (getattr(self, "_issuance", None) is not _FACTORY_FOUNDATION_ISSUER
                 or not isinstance(self.source_run_dir, str) or not self.source_run_dir
                 or not isinstance(self.current_state_sha256, str)
-                or len(self.current_state_sha256) != 64
+                or len(self.current_state_sha256) != SHA256_HEX_LENGTH
                 or type(self.release) is not ExecutableFactoryRelease
                 or type(self.admission) is not ExecutableAdmissionReceipt
                 or type(self.origin_checkpoint) is not Checkpoint
                 or not isinstance(self.semantic_graph_sha256, str)
-                or len(self.semantic_graph_sha256) != 64):
+                or len(self.semantic_graph_sha256) != SHA256_HEX_LENGTH):
             invalid("BAMF_INITIAL_GENERATION_FACTORY_AUTHORITY_INVALID")
 
 

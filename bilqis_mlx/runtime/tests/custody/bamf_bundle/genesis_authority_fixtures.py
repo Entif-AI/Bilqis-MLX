@@ -4,7 +4,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from dataclasses import asdict
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import mkdtemp
 from unittest.mock import patch
 
 from bilqis_mlx.runtime.admission import _executable_factory_admission
@@ -26,7 +26,6 @@ ATLAS_RELEASE = "d" * 64
 ATLAS_BUNDLE = "e" * 64
 SOURCE_BUNDLE = "f" * 64
 ACTIVE_SET = "a" * 64
-_SOURCE_ROOTS: list[TemporaryDirectory] = []
 
 
 def feature_schema() -> FeatureSchema:
@@ -75,9 +74,7 @@ def issue_feature_authority(features: AtlasFeatures | None = None):
 
 
 def issue_factory_authority(release, graph, origin):
-    source = TemporaryDirectory(prefix="bamf-genesis-source-")
-    _SOURCE_ROOTS.append(source)
-    root = Path(source.name)
+    root = Path(mkdtemp(prefix="bamf-genesis-source-"))
     _, release_file, admission = _executable_factory_admission(
         root, release, origin, _fingerprint(graph), graph)
     receipt = {
