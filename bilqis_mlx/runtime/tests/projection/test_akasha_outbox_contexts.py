@@ -1,6 +1,8 @@
 """Context-native C09 requalification projection into the C10 outbox."""
 from pathlib import Path
+import sqlite3
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -20,12 +22,30 @@ from bilqis_mlx.runtime.atlas_requalification import (
 from bilqis_mlx.runtime.accepted_correction_runtime import (
     AcceptedCorrectionRuntime,
 )
+from bilqis_mlx.runtime.accepted_corrections import (
+    AcceptedRuntimeHost, ContextRevalidationFrontier, _RUNTIME_OWNER,
+)
+from bilqis_mlx.runtime.accepted_correction_ledger import (
+    CONTEXT_INVALIDATION_EVENT, read_records,
+)
 from bilqis_mlx.runtime.accepted_stale_replay_runtime import (
     _flush_context_requalifications,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_context_revalidation_support import (
-    AUTHORITY,
+from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
+    CapabilitySupportOwnerFixture, IMMEDIATE_DEPENDENCIES,
 )
+from bilqis_mlx.runtime.tests.correction import (
+    capability_support_owner_support as support_fixture,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
+    source_owned_temporal_case,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_context_revalidation_support import (
+    AUTHORITY, signed_context_result,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
 
 CONTEXT_EVENT_ID = "b" * 64
@@ -73,15 +93,15 @@ def _context_record(context_event_id=CONTEXT_EVENT_ID):
 
 class AkashaOutboxContextTests(unittest.TestCase):
     @patch(
-        "bilqis_mlx.runtime.akasha_outbox.contexts._accepted_context_record",
-        return_value=_context_record(),
-    )
-    @patch(
-        "bilqis_mlx.runtime.akasha_outbox.contexts._context_temporal_identity",
-        return_value=TEMPORAL_IDENTITY,
+        "bilqis_mlx.runtime.akasha_outbox.contexts._accepted_context_invalidation",
+        return_value=(
+            _context_record(),
+            SimpleNamespace(source_time=10, effective_time=20,
+                            observed_at=15, recorded_at=16),
+        ),
     )
     def test_context_task_enqueues_exactly_once_with_source_owned_time(
-        self, _identity, _record,
+        self, _accepted,
     ):
         ledger, task = _ledger()
         with TemporaryDirectory() as folder:
@@ -111,16 +131,14 @@ class AkashaOutboxContextTests(unittest.TestCase):
             self.assertEqual(len(read_outbox(path)), 1)
 
     @patch(
-        "bilqis_mlx.runtime.akasha_outbox.contexts._accepted_context_record",
-        side_effect=lambda _run, _manifest, event_id: _context_record(event_id),
+        "bilqis_mlx.runtime.akasha_outbox.contexts._accepted_context_invalidation",
+        side_effect=lambda _run, _manifest, event_id: (
+            _context_record(event_id),
+            SimpleNamespace(source_time=10, effective_time=20,
+                            observed_at=15, recorded_at=16),
+        ),
     )
-    @patch(
-        "bilqis_mlx.runtime.akasha_outbox.contexts._context_temporal_identity",
-        return_value=TEMPORAL_IDENTITY,
-    )
-    def test_context_task_rejects_receipt_or_support_drift(
-        self, _identity, _record,
-    ):
+    def test_context_task_rejects_support_drift(self, _accepted):
         ledger, task = _ledger()
         with TemporaryDirectory() as folder:
             path = Path(folder) / "outbox.sqlite3"
@@ -128,6 +146,21 @@ class AkashaOutboxContextTests(unittest.TestCase):
             with self.assertRaises(BilqisError):
                 append_context_requalification(
                     path, Path(folder), GENERATION, task, qualified)
+
+    @patch(
+        "bilqis_mlx.runtime.accepted_correction_ledger.read_records",
+        return_value=(_context_record(), _context_record()),
+    )
+    def test_duplicate_durable_context_receipt_fails_closed(self, _records):
+        ledger, task = _ledger()
+        with TemporaryDirectory() as folder, self.assertRaises(BilqisError) as caught:
+            append_context_requalification(
+                Path(folder) / "outbox.sqlite3", Path(folder),
+                GENERATION, task, ledger)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C10_CONTEXT_RECEIPT_REQUIRED",
+        )
 
     @patch("bilqis_mlx.runtime.akasha_outbox.append_context_requalification")
     def test_cold_flush_projects_v2_but_never_fabricates_v1_time(self, append):
@@ -157,16 +190,94 @@ class AkashaOutboxContextTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             _flush_context_requalifications(retained, ledger, ())
 
-    @patch(
-        "bilqis_mlx.runtime.accepted_stale_replay_runtime."
-        "replay_stale_evidence"
-    )
-    def test_live_context_revalidation_flushes_projection_immediately(self, replay):
-        with TemporaryDirectory() as folder:
-            retained = AcceptedCorrectionRuntime(Path(folder), GENERATION)
-            retained.deliver_context_revalidation(
-                "context-revalidation:fixture", object(), AUTHORITY)
-        replay.assert_called_once_with(retained)
+
+class AkashaOutboxContextIntegrationTests(CapabilitySupportOwnerFixture):
+    def _training_custody(self):
+        files = {}
+        for relative in ("bamf-bundles", "bamf-acceptance"):
+            root = self.run / relative
+            for path in sorted(root.rglob("*")):
+                if path.is_file():
+                    files[str(path.relative_to(self.run))] = path.read_bytes()
+        files["bamf-state.json"] = (self.run / "bamf-state.json").read_bytes()
+        with sqlite3.connect(self.root / "plane.sqlite3") as connection:
+            nodes = tuple(connection.execute(
+                "SELECT * FROM nodes ORDER BY sha256").fetchall())
+        return files, nodes
+
+    def test_missing_durable_context_receipt_fails_closed(self):
+        published, _authority = self.publish_support()
+        ledger, task = _ledger()
+        with self.assertRaises(BilqisError) as caught:
+            append_context_requalification(
+                self.run / "akasha-outbox.sqlite3", self.run,
+                published["manifest_sha256"], task, ledger)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C10_CONTEXT_RECEIPT_REQUIRED",
+        )
+
+    def test_live_and_cold_v2_projection_is_exactly_once_and_neural_inert(self):
+        case = source_owned_temporal_case()
+        old_time = DependencyRef(
+            DependencyKind.TIME, "time:asof:context:" + case.previous.digest)
+        dependencies = tuple(sorted((
+            *(ref for ref in IMMEDIATE_DEPENDENCIES
+              if ref.kind is not DependencyKind.TIME),
+            old_time,
+        )))
+        with patch.object(
+            support_fixture, "immediate_dependencies", return_value=dependencies,
+        ):
+            published, _authority = self.publish_support()
+        owner = self.load_support(AUTHORITY)
+        before = self._training_custody()
+
+        with shape_patch():
+            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            transition = host.record_context_transition(
+                case.previous, case.contexts)
+        invalidation = transition.invalidations[0]
+        record = next(
+            item for item in read_records(self.run, published["manifest_sha256"])
+            if item["event"] == CONTEXT_INVALIDATION_EVENT)
+        result = signed_context_result(
+            owner.current_node,
+            invalidation=invalidation,
+            accepted_event_id=record["event_id"],
+            dependencies=tuple(sorted(
+                ref for ref in owner.current_node.immediate_dependencies
+                if ref != old_time)),
+            digest="d" * 64,
+            eligible=False,
+        )
+        with shape_patch():
+            host.record_context_revalidation(
+                ContextRevalidationFrontier((result,)))
+
+        outbox = self.run / "akasha-outbox.sqlite3"
+        live = read_outbox(outbox)
+        self.assertEqual(len(live), 1)
+        event = live[0]
+        authority = case.contexts.transition_authority
+        self.assertEqual(event.kind, AkashaEventKind.REQUALIFICATION)
+        self.assertEqual(event.source_receipt_sha256, record["event_id"])
+        self.assertEqual(
+            (event.source_time, event.effective_time,
+             event.observed_at, event.recorded_at),
+            (authority.source_time, authority.effective_time,
+             authority.observed_at, authority.recorded_at),
+        )
+
+        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _RUNTIME_OWNER.clear()
+        cold_owner = self.load_support(AUTHORITY)
+        self.assertEqual(len(read_outbox(outbox)), 1)
+        self.assertEqual(
+            cold_owner.ledger.pending_source_tasks[0].context_event_id,
+            invalidation.event_id,
+        )
+        self.assertEqual(self._training_custody(), before)
 
 
 if __name__ == "__main__":

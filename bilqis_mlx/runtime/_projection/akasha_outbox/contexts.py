@@ -6,11 +6,12 @@ from .events import AkashaEvent
 from .store import append_outbox
 
 
-def _accepted_context_record(
+def _accepted_context_invalidation(
     run_dir: Path, manifest_sha256: str, context_event_id: str,
-) -> dict:
+) -> tuple[dict, object]:
     from bilqis_mlx.runtime.accepted_correction_ledger import (
         CONTEXT_INVALIDATION_EVENT,
+        context_invalidation_from_record,
         read_records,
     )
 
@@ -21,15 +22,8 @@ def _accepted_context_record(
     )
     if len(matches) != 1:
         _invalid("BAMF_C10_CONTEXT_RECEIPT_REQUIRED")
-    return matches[0]
-
-
-def _context_temporal_identity(record: dict) -> dict:
-    from bilqis_mlx.runtime.accepted_correction_ledger import (
-        context_temporal_identity_from_record,
-    )
-
-    return context_temporal_identity_from_record(record)
+    record = matches[0]
+    return record, context_invalidation_from_record(record)
 
 
 def event_from_context_requalification(
@@ -47,9 +41,8 @@ def event_from_context_requalification(
             or task.context_event_id is None
             or task.correction_event_id is not None):
         _invalid("BAMF_C10_CONTEXT_REQUALIFICATION_ARGUMENT_INVALID")
-    record = _accepted_context_record(
+    record, invalidation = _accepted_context_invalidation(
         Path(run_dir), manifest_sha256, task.context_event_id)
-    temporal = _context_temporal_identity(record)
     support = ledger.capability(task.capability_id)
     if (support.status is not RequalificationStatus.REQUALIFICATION_REQUIRED
             or support.retained_generation_sha256
@@ -68,10 +61,10 @@ def event_from_context_requalification(
             "source_task_id": task.task_id,
             "source_anchor_ids": list(task.source_anchor_ids),
         },
-        source_time=temporal["source_time"],
-        effective_time=temporal["effective_time"],
-        observed_at=temporal["observed_at"],
-        recorded_at=temporal["recorded_at"],
+        source_time=invalidation.source_time,
+        effective_time=invalidation.effective_time,
+        observed_at=invalidation.observed_at,
+        recorded_at=invalidation.recorded_at,
     )
 
 
