@@ -110,6 +110,8 @@ def _authenticate_features(student, artifact_path: str | None = None, *, predece
                      str(artifact_path), identity.bundle_id,
                      identity.release_sha256, identity.source_bundle_id))
     snapshot = load_pinned_atlas_snapshot(selection)
+    if student.extents.active_semantic_digest != snapshot.active_set_sha256:
+        invalid("BAMF_FEATURE_ACTIVE_SET_DRIFT")
     try:
         features = build_feature_manifest(snapshot, schema)
     except BilqisError:

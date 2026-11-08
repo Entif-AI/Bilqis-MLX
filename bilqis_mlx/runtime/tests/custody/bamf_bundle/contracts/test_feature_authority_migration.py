@@ -118,12 +118,14 @@ class AcceptedFeatureMigrationTests(FeatureLineageCase):
             candidate(parent_state()), first_features,
             release=first_release.digest,
             atlas_bundle=first_artifact.bundle_id,
-            source_bundle=first_release.source_bundle_id))
+            source_bundle=first_release.source_bundle_id,
+            active_set=first_snapshot.active_set_sha256))
         changed = feature_bound(
             candidate(accepted_state(parent_state()), 1, first["manifest_sha256"]),
             second_features, release=second_release.digest,
             atlas_bundle=second_artifact.bundle_id,
-            source_bundle=second_release.source_bundle_id)
+            source_bundle=second_release.source_bundle_id,
+            active_set=second_snapshot.active_set_sha256)
         changed = replace(changed, transition={
             **changed.transition, "kind": "PARAMETER_EXTENSION",
             "invalidate_derived_caches": True})

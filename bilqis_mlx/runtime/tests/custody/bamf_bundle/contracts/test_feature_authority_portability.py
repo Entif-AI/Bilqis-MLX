@@ -88,19 +88,20 @@ class AcceptedFeaturePortabilityTests(unittest.TestCase):
             second_snapshot, FeatureSchema((), (), first_features))
         return (
             artifact_root,
-            (first_release, first_artifact, first_features),
-            (second_release, second_artifact, second_features),
+            (first_release, first_artifact, first_snapshot, first_features),
+            (second_release, second_artifact, second_snapshot, second_features),
         )
 
     def _publish_lineage(self):
         artifact_root, first, second = self._two_releases()
-        first_release, first_artifact, first_features = first
-        second_release, second_artifact, second_features = second
+        first_release, first_artifact, first_snapshot, first_features = first
+        second_release, second_artifact, second_snapshot, second_features = second
         first_published = self._publish(feature_bound(
             candidate(parent_state()), first_features,
             release=first_release.digest,
             atlas_bundle=first_artifact.bundle_id,
             source_bundle=first_release.source_bundle_id,
+            active_set=first_snapshot.active_set_sha256,
         ))
         successor = feature_bound(
             candidate(
@@ -110,6 +111,7 @@ class AcceptedFeaturePortabilityTests(unittest.TestCase):
             release=second_release.digest,
             atlas_bundle=second_artifact.bundle_id,
             source_bundle=second_release.source_bundle_id,
+            active_set=second_snapshot.active_set_sha256,
         )
         successor = replace(
             successor, transition={
@@ -137,8 +139,8 @@ class AcceptedFeaturePortabilityTests(unittest.TestCase):
 
     def test_real_loader_replays_accepted_lineage_across_two_atlas_releases(self):
         _, first, second, allowed = self._publish_lineage()
-        first_release, first_artifact, first_features = first
-        second_release, second_artifact, second_features = second
+        first_release, first_artifact, _first_snapshot, first_features = first
+        second_release, second_artifact, _second_snapshot, second_features = second
         with shape_patch(), self._fixture_pins(allowed):
             receipt, current, predecessor = read_accepted_generation_feature_lineage(
                 self.pointer)

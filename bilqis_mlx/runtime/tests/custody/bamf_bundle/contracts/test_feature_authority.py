@@ -45,13 +45,18 @@ def source_features() -> AtlasFeatures:
 
 
 def feature_bound(source, features: AtlasFeatures, *, digest=None, release=RELEASE,
-                  atlas_bundle=ATLAS_BUNDLE, source_bundle=SOURCE_BUNDLE):
+                  atlas_bundle=ATLAS_BUNDLE, source_bundle=SOURCE_BUNDLE,
+                  active_set=None):
     """Bind a candidate to a recorded source release and feature map."""
     factor_map = digest or features.digest
+    active_set = active_set or source.extents.active_semantic_digest
     return replace(
         source,
-        extents=replace(source.extents, factor_map_digest=factor_map),
+        extents=replace(
+            source.extents, active_semantic_digest=active_set,
+            factor_map_digest=factor_map),
         provenance=replace(source.provenance, release_digest=release),
+        semantic_abi={**source.semantic_abi, "active_set_sha256": active_set},
         compiler_features={
             **source.compiler_features,
             "factor_map_sha256": factor_map,
@@ -174,6 +179,20 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
             self.read_receipt(features)
         self.assertEqual(
             failure.exception.context["reason"], "BAMF_FEATURE_SOURCE_IDENTITY_DRIFT")
+
+    def test_active_set_drift_between_custody_and_source_refuses_receipt(self):
+        features = source_features()
+        source = feature_bound(candidate(parent_state()), features)
+        drifted = replace(
+            source,
+            extents=replace(source.extents, active_semantic_digest=ARBITRARY),
+            semantic_abi={**source.semantic_abi, "active_set_sha256": ARBITRARY},
+        )
+        self.publish(drifted)
+        with self.assertRaises(BilqisError) as failure:
+            self.read_receipt(features)
+        self.assertEqual(
+            failure.exception.context["reason"], "BAMF_FEATURE_ACTIVE_SET_DRIFT")
 
     def test_cold_resume_reproduces_the_same_receipt_identity(self):
         features = source_features()
