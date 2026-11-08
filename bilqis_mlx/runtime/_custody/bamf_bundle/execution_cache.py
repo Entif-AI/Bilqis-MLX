@@ -35,6 +35,7 @@ class AcceptedExecutionCache:
     accepted_manifest_sha256: str
     generation_binding: str
     motif_manifest: MotifManifest
+    source_authority_registry_sha256: str | None
     schema_version: str = "bilqis.mlx.b13-accepted-execution-cache/v1"
     _issuance: object = field(init=False, repr=False, compare=False)
     _motif_artifact_owners: dict = field(init=False, repr=False, compare=False)
@@ -44,6 +45,7 @@ class AcceptedExecutionCache:
     _cache_eligibility_source: object | None = field(init=False, repr=False, compare=False)
     _run_dir: Path | None = field(init=False, repr=False, compare=False)
     _correction_registry: object | None = field(init=False, repr=False, compare=False)
+    _source_authority: object | None = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         _invalid("B13_EXECUTION_CACHE_CALLER_CONSTRUCTION_FORBIDDEN")
@@ -56,6 +58,8 @@ class AcceptedExecutionCache:
             or not _digest(self.accepted_manifest_sha256)
             or not _digest(self.generation_binding)
             or type(self.motif_manifest) is not MotifManifest
+            or (self.source_authority_registry_sha256 is not None
+                and not _digest(self.source_authority_registry_sha256))
             or self.schema_version
             != "bilqis.mlx.b13-accepted-execution-cache/v1"
         ):
@@ -69,6 +73,7 @@ def _issue_accepted_execution_cache(
     accepted_manifest_sha256: str,
     generation_binding: str,
     motif_manifest: MotifManifest,
+    source_authority_registry_sha256: str | None = None,
 ) -> AcceptedExecutionCache:
     cache = object.__new__(AcceptedExecutionCache)
     for name, value in (
@@ -77,6 +82,7 @@ def _issue_accepted_execution_cache(
         ("accepted_manifest_sha256", accepted_manifest_sha256),
         ("generation_binding", generation_binding),
         ("motif_manifest", motif_manifest),
+        ("source_authority_registry_sha256", source_authority_registry_sha256),
         ("schema_version", "bilqis.mlx.b13-accepted-execution-cache/v1"),
         ("_issuance", _ISSUER),
         ("_motif_artifact_owners", weakref.WeakValueDictionary()),
@@ -86,6 +92,7 @@ def _issue_accepted_execution_cache(
         ("_cache_eligibility_source", None),
         ("_run_dir", None),
         ("_correction_registry", None),
+        ("_source_authority", None),
     ):
         object.__setattr__(cache, name, value)
     cache.__post_init__()
@@ -139,12 +146,10 @@ def bind_cache_authority(cache, registry, eligibility_source=None):
         object.__setattr__(cache, "_cache_authority", authority)
         object.__setattr__(cache, "_cache_authority_registry", registry)
         object.__setattr__(cache, "_cache_eligibility_source", eligibility_source)
-        object.__setattr__(cache, "_correction_registry", registry)
         return authority
     if (registry != cache._cache_authority_registry
             or eligibility_source is not cache._cache_eligibility_source):
         _invalid("B13_CACHE_AUTHORITY_SOURCE_DRIFT")
-    object.__setattr__(cache, "_correction_registry", registry)
     return authority
 
 

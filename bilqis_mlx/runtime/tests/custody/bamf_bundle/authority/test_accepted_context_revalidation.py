@@ -92,7 +92,7 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
                 "TEST_CONTEXT_LATE", owner,
                 lambda current, event, source_authority: _route(
                     current, event, source_authority), AUTHORITY)
-            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            host = AcceptedRuntimeHost(self.run)
         invalidation = C09ContextInvalidation(
             old_context_digest=case.previous.digest,
             new_context_digest="e" * 64,

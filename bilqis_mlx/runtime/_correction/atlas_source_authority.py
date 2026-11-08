@@ -7,6 +7,7 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
+from ..semantics.foundation.domains import contract_digest
 from .atlas_revalidation_common import (
     SOURCE_AUTHORITY_KEY_SCHEMA,
     SOURCE_AUTHORITY_REGISTRY_SCHEMA,
@@ -73,6 +74,10 @@ class SourceAuthorityRegistry:
                 or len({key.owner_id for key in self.keys}) != len(self.keys)
                 or self.schema_version != SOURCE_AUTHORITY_REGISTRY_SCHEMA):
             _invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_INVALID")
+
+    @property
+    def digest(self) -> str:
+        return contract_digest(self)
 
     def _require(
         self, owner_id: str, dependency_kind: DependencyKind,
@@ -163,52 +168,63 @@ class SourceAuthorityRegistry:
 
 
 def _new_authority_owner():
-    """Create one process-local owner for opaque C09 source authority."""
+    """Create one process-local owner for opaque accepted-cache authority."""
     issued = {}
 
-    def require(authority):
-        entry = issued.get(id(authority))
-        if entry is None or entry[0] is not authority:
-            _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
-        return entry[1]
-
-    def issue(registry):
-        if type(registry) is not SourceAuthorityRegistry:
-            _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
-        authority = object.__new__(SourceAuthorityRuntime)
-        issued[id(authority)] = (authority, registry)
-        return authority
-
-    return require, issue
-
-
-class _AcceptedSourceAuthorityIssuer:
-    """Issuer reachable only through authenticated accepted-run custody."""
-
-    def __init__(self, issue):
-        self._issue = issue
-        self._accepted = {}
-
-    def issue(self, accepted_cache, registry):
+    def require(authority, accepted_cache):
         from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
             require_accepted_execution_cache,
         )
 
         cache = require_accepted_execution_cache(accepted_cache)
-        if type(registry) is not SourceAuthorityRegistry:
+        entry = issued.get(id(authority))
+        if (entry is None or entry[0] is not authority
+                or entry[1] is not cache):
             _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
-        retained = self._accepted.get(id(cache))
-        if retained is not None:
-            if retained[0] is not cache or retained[1] != registry:
-                _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
-            return retained[2]
-        authority = self._issue(registry)
-        self._accepted[id(cache)] = (cache, registry, authority)
+        registry = entry[2]
+        if (cache._correction_registry is not registry
+                or cache.source_authority_registry_sha256 is None
+                or cache.source_authority_registry_sha256 != registry.digest):
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+        return registry
+
+    def issue(accepted_cache):
+        from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+            require_accepted_execution_cache,
+        )
+
+        cache = require_accepted_execution_cache(accepted_cache)
+        registry = cache._correction_registry
+        if (type(registry) is not SourceAuthorityRegistry
+                or cache.source_authority_registry_sha256 is None
+                or cache.source_authority_registry_sha256 != registry.digest):
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+        authority = object.__new__(SourceAuthorityRuntime)
+        issued[id(authority)] = (authority, cache, registry)
         return authority
+
+    return require, issue
+
+
+def _make_source_authority_provisioner(issue):
+    def provision(accepted_cache):
+        from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+            require_accepted_execution_cache,
+        )
+
+        cache = require_accepted_execution_cache(accepted_cache)
+        authority = cache._source_authority
+        if authority is None:
+            authority = issue(cache)
+            object.__setattr__(cache, "_source_authority", authority)
+        require_source_authority_runtime(authority, cache)
+        return authority
+
+    return provision
 
 
 _authority_state, _raw_authority_issue = _new_authority_owner()
-_ACCEPTED_SOURCE_AUTHORITY_ISSUER = _AcceptedSourceAuthorityIssuer(
+_provision_source_authority_runtime = _make_source_authority_provisioner(
     _raw_authority_issue)
 del _raw_authority_issue
 
@@ -222,17 +238,19 @@ class SourceAuthorityRuntime:
         _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
 
     def _validate_export_clearance_context(
-            self, receipt, selection, source_frontier, artifact_digests):
+            self, accepted_cache, receipt, selection, source_frontier,
+            artifact_digests):
         from bilqis_mlx.semantics.atlas_release_audit import (
             validate_export_clearance_context,
         )
         return validate_export_clearance_context(
             receipt, selection, source_frontier, artifact_digests,
-            _authority_state(self))
+            _authority_state(self, accepted_cache))
 
 
-def require_source_authority_runtime(authority) -> SourceAuthorityRuntime:
+def require_source_authority_runtime(
+        authority, accepted_cache) -> SourceAuthorityRuntime:
     if type(authority) is not SourceAuthorityRuntime:
         _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
-    _authority_state(authority)
+    _authority_state(authority, accepted_cache)
     return authority

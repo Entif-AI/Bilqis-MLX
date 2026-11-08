@@ -216,10 +216,10 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
             support_fixture, "immediate_dependencies",
             return_value=dependencies,
         ):
-            published, _authority = self.publish_support()
+            published, _authority = self.publish_support(authority_registry=AUTHORITY)
         owner = self.load_support(AUTHORITY)
         with shape_patch():
-            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            host = AcceptedRuntimeHost(self.run)
         invalidation = C09ContextInvalidation(
             old_context_digest=case.previous.digest,
             new_context_digest="e" * 64,

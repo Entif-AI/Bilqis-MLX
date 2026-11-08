@@ -12,6 +12,7 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_correction_authority
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, candidate, parent_state, shape_patch,
 )
@@ -47,10 +48,16 @@ class AcceptedCorrectionCompositionCase(unittest.TestCase):
         self.environment.stop()
         self.temporary.cleanup()
 
-    def publish(self, source):
+    def publish(self, source, registry=AUTHORITY):
+        source = replace(source, correction_frontier={
+            **source.correction_frontier,
+            "source_authority_registry_sha256": registry.digest,
+        })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(
+            pointer = publish_bamf_generation(
                 self.run, source, acceptance=acceptance(source))
+            bind_accepted_correction_authority(self.run, registry)
+            return pointer
 
     def _composition_context(self, count):
         binding, generation, _budget, add, _ambiguous = _fixture()

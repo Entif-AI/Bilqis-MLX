@@ -23,7 +23,6 @@ class CognitivePackageOperatorTests(unittest.TestCase):
         receipt = object()
         selection = object()
         frontier = object()
-        registry = object()
         receive = Mock(return_value=exchange)
         verify = Mock(return_value="clearance")
         apply = Mock(return_value=candidate)
@@ -45,21 +44,30 @@ class CognitivePackageOperatorTests(unittest.TestCase):
                 max_wire_bytes=4096, source_context=source,
                 artifact_path="artifact", target_capability="C.TARGET",
                 export_clearance=receipt, atlas_selection=selection,
-                source_frontier=frontier, authority_registry=registry,
+                source_frontier=frontier,
                 reserve_gib=123.0)
 
         self.assertIs(result, published)
         receive.assert_called_once_with(
             "sender", "staging", "a" * 64, binding, max_wire_bytes=4096)
         verify.assert_called_once_with(
-            package, parent, receipt, selection, frontier, registry)
+            package, parent, receipt, selection, frontier, source, Path("run"))
         apply.assert_called_once_with(package, Path("run"))
         screen.assert_called_once_with(
             candidate, source, "artifact", "C.TARGET", run_dir=Path("run"))
         publish.assert_called_once_with(
             screened, Path("run"), export_clearance=receipt,
             atlas_selection=selection, source_frontier=frontier,
-            authority_registry=registry, reserve_gib=123.0)
+            source_context=source, reserve_gib=123.0)
+
+    def test_caller_cannot_supply_authority_registry(self):
+        with self.assertRaises(TypeError):
+            subject.receive_screen_and_publish_package(
+                "sender", "staging", "a" * 64, Path("run"),
+                max_wire_bytes=4096, source_context=object(),
+                artifact_path="artifact", target_capability="C.TARGET",
+                export_clearance=object(), atlas_selection=object(),
+                source_frontier=object(), authority_registry=object())
 
     def test_caller_cannot_supply_acceptance_boolean(self):
         with self.assertRaises(TypeError):
@@ -68,8 +76,7 @@ class CognitivePackageOperatorTests(unittest.TestCase):
                 max_wire_bytes=4096, source_context=object(),
                 artifact_path="artifact", target_capability="C.TARGET",
                 export_clearance=object(), atlas_selection=object(),
-                source_frontier=object(), authority_registry=object(),
-                accepted=True)
+                source_frontier=object(), accepted=True)
 
 
 if __name__ == "__main__":

@@ -34,36 +34,47 @@ class AcceptedRuntimeHost:
     """Host-owned production ingress for one accepted run's C09 authority."""
 
     run_dir: Path
-    registry: SourceAuthorityRegistry
+    _accepted_cache: object | None = field(
+        default=None, init=False, repr=False, compare=False)
     _source_authority: object | None = field(
         default=None, init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
-        if not isinstance(self.run_dir, Path) or not isinstance(
-                self.registry, SourceAuthorityRegistry):
+        if not isinstance(self.run_dir, Path):
             _invalid("BAMF_C09_ACCEPTED_RUNTIME_HOST_INVALID")
         from bilqis_mlx.runtime.bamf_bundle.admission import (
-            bind_accepted_correction_authority,
+            bind_accepted_execution_cache,
         )
-        bind_accepted_correction_authority(self.run_dir, self.registry)
+        from bilqis_mlx.runtime.atlas_source_authority import (
+            _provision_source_authority_runtime,
+        )
+
+        cache = bind_accepted_execution_cache(self.run_dir)
+        if not isinstance(cache._correction_registry, SourceAuthorityRegistry):
+            _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
+        authority = _provision_source_authority_runtime(cache)
+        object.__setattr__(self, "_accepted_cache", cache)
+        object.__setattr__(self, "_source_authority", authority)
+
+    @property
+    def registry(self) -> SourceAuthorityRegistry:
+        self.source_authority()
+        registry = self._accepted_cache._correction_registry
+        if not isinstance(registry, SourceAuthorityRegistry):
+            _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
+        return registry
 
     def source_authority(self):
         """Return only the opaque source authority owned by this accepted host."""
         from bilqis_mlx.runtime.atlas_source_authority import (
-            _ACCEPTED_SOURCE_AUTHORITY_ISSUER,
             require_source_authority_runtime,
         )
-        authority = self._source_authority
-        if authority is None:
-            from bilqis_mlx.runtime.bamf_bundle.admission import (
-                bind_accepted_correction_authority,
-            )
-            cache = bind_accepted_correction_authority(
-                self.run_dir, self.registry)
-            authority = _ACCEPTED_SOURCE_AUTHORITY_ISSUER.issue(
-                cache, self.registry)
-            object.__setattr__(self, "_source_authority", authority)
-        return require_source_authority_runtime(authority)
+        from bilqis_mlx.runtime.bamf_bundle.admission import (
+            bind_accepted_execution_cache,
+        )
+
+        cache = bind_accepted_execution_cache(self.run_dir)
+        return require_source_authority_runtime(self._source_authority, cache)
 
     def source_context(self, receipt: dict, *, graph: dict, source_root: Path | None):
         """Mint the admitted host context without granting authority to workers."""
@@ -75,7 +86,6 @@ class AcceptedRuntimeHost:
             self.run_dir, receipt, graph=graph, source_root=source_root,
             source_registry=live_source_registry(),
             answer_registry=live_answer_registry(),
-            correction_registry=self.registry,
             accepted_runtime_host=self,
         )
 
@@ -122,18 +132,19 @@ def record_accepted_correction(
     registry: SourceAuthorityRegistry,
 ) -> str:
     """Persist and synchronously deliver one signed correction to live owners."""
-    from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+    from bilqis_mlx.runtime.bamf_bundle.admission import (
+        require_accepted_correction_registry,
+    )
 
     if not isinstance(event, CorrectionEvent):
         _invalid("BAMF_C09_CORRECTION_EVENT_REQUIRED")
-    registry.verify_correction(event)
     run_dir = Path(run_dir)
-    cache = bind_accepted_execution_cache(run_dir)
+    cache, registry = require_accepted_correction_registry(run_dir, registry)
+    registry.verify_correction(event)
     record = correction_record(cache.accepted_manifest_sha256, event)
     append_record(run_dir, cache.accepted_manifest_sha256, record)
     runtime(run_dir, cache.accepted_manifest_sha256).deliver(
         record["event_id"], event, registry)
-    object.__setattr__(cache, "_correction_registry", registry)
     return record["event_id"]
 
 
@@ -195,14 +206,16 @@ def record_accepted_revalidation(
     registry: SourceAuthorityRegistry,
 ) -> str:
     """Persist signed source recomputation evidence and advance live holds."""
-    from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+    from bilqis_mlx.runtime.bamf_bundle.admission import (
+        require_accepted_correction_registry,
+    )
 
     if not isinstance(frontier, RevalidationFrontier) or not frontier.results:
         _invalid("BAMF_C09_REVALIDATION_FRONTIER_REQUIRED")
+    run_dir = Path(run_dir)
+    cache, registry = require_accepted_correction_registry(run_dir, registry)
     for result in frontier.results:
         registry.verify_revalidation(result)
-    run_dir = Path(run_dir)
-    cache = bind_accepted_execution_cache(run_dir)
     corrections = {
         event.event_id: event
         for _event_id, event in accepted_corrections(
@@ -218,7 +231,6 @@ def record_accepted_revalidation(
     append_record(run_dir, cache.accepted_manifest_sha256, record)
     runtime(run_dir, cache.accepted_manifest_sha256).deliver_revalidation(
         record["event_id"], frontier, registry)
-    object.__setattr__(cache, "_correction_registry", registry)
     return record["event_id"]
 
 
@@ -227,7 +239,9 @@ def record_accepted_context_revalidation(
     registry: SourceAuthorityRegistry,
 ) -> str:
     """Persist source-signed context recomputation without inventing a correction."""
-    from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+    from bilqis_mlx.runtime.bamf_bundle.admission import (
+        require_accepted_correction_registry,
+    )
 
     if (not isinstance(frontier, ContextRevalidationFrontier)
             or not frontier.results):
@@ -235,7 +249,7 @@ def record_accepted_context_revalidation(
     if not isinstance(registry, SourceAuthorityRegistry):
         _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
     run_dir = Path(run_dir)
-    cache = bind_accepted_execution_cache(run_dir)
+    cache, registry = require_accepted_correction_registry(run_dir, registry)
     records = read_records(run_dir, cache.accepted_manifest_sha256)
     invalidations = {
         item["context_invalidation"]["context_event_id"]: item
@@ -259,7 +273,6 @@ def record_accepted_context_revalidation(
     append_record(run_dir, cache.accepted_manifest_sha256, record)
     runtime(run_dir, cache.accepted_manifest_sha256).deliver_context_revalidation(
         record["event_id"], frontier, registry)
-    object.__setattr__(cache, "_correction_registry", registry)
     return record["event_id"]
 
 
@@ -268,12 +281,14 @@ def record_accepted_remediation(
     registry: SourceAuthorityRegistry,
 ) -> str:
     """Persist one claimed repair outcome against an accepted signed correction."""
-    from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+    from bilqis_mlx.runtime.bamf_bundle.admission import (
+        require_accepted_correction_registry,
+    )
 
     if not isinstance(remediation, RemediationReceipt):
         _invalid("BAMF_C09_REMEDIATION_RECEIPT_INVALID")
     run_dir = Path(run_dir)
-    cache = bind_accepted_execution_cache(run_dir)
+    cache, registry = require_accepted_correction_registry(run_dir, registry)
     corrections = {
         event.event_id: event
         for _event_id, event in accepted_corrections(
@@ -287,7 +302,6 @@ def record_accepted_remediation(
     record = remediation_record(cache.accepted_manifest_sha256, remediation)
     append_record(run_dir, cache.accepted_manifest_sha256, record)
     retained = runtime(run_dir, cache.accepted_manifest_sha256)
-    retained.bind_registry(registry)
     from .accepted_stale_replay_runtime import replay_stale_evidence
     replay_stale_evidence(retained)
     return record["event_id"]
@@ -298,16 +312,17 @@ def record_accepted_derived_claim(
     registry: SourceAuthorityRegistry,
 ) -> tuple[str, tuple[object, ...]]:
     """Persist later evidence and classify any proven post-remediation stale replay."""
-    from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+    from bilqis_mlx.runtime.bamf_bundle.admission import (
+        require_accepted_correction_registry,
+    )
 
     if not isinstance(claim, DerivedClaim):
         _invalid("BAMF_C09_DERIVED_CLAIM_INVALID")
     run_dir = Path(run_dir)
-    cache = bind_accepted_execution_cache(run_dir)
+    cache, registry = require_accepted_correction_registry(run_dir, registry)
     record = derived_claim_record(cache.accepted_manifest_sha256, claim)
     append_record(run_dir, cache.accepted_manifest_sha256, record)
     retained = runtime(run_dir, cache.accepted_manifest_sha256)
-    retained.bind_registry(registry)
     from .accepted_stale_replay_runtime import replay_stale_evidence
     results = replay_stale_evidence(retained)
     return record["event_id"], results

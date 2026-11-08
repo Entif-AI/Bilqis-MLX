@@ -62,7 +62,7 @@ class AcceptedContextTemporalIdentityTests(AcceptedContextFixture):
         authority = case.contexts.transition_authority
         cache = self.publish()
         with shape_patch():
-            host = AcceptedRuntimeHost(self.run, AUTHORITY)
+            host = AcceptedRuntimeHost(self.run)
             transition = host.record_context_transition(
                 case.previous, case.contexts)
         self.assertEqual(len(transition.invalidations), 1)

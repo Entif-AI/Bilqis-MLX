@@ -1,6 +1,7 @@
 """Factory gradient, candidate-step, and accepted C09 custody integration."""
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
@@ -19,7 +20,9 @@ from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.atlas_model import bamf_value_and_grad
 from bilqis_mlx.runtime.atlas_training_adapter import pad_microbatches
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
-from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    bind_accepted_correction_authority, load_accepted_generation,
+)
 from bilqis_mlx.runtime.factory_candidate_training import (
     FactoryDeliveryObservation, _frame_stats,
 )
@@ -163,7 +166,7 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
             run_dir = Path(run_dir_value)
             self._publish(run_dir)
             source_context = self.accepted_source_context(run_dir)
-            AcceptedRuntimeHost(run_dir, AUTHORITY).record_correction(correction)
+            AcceptedRuntimeHost(run_dir).record_correction(correction)
             parent = load_accepted_generation(run_dir)
             observation = FactoryDeliveryObservation(
                 ObservationCapture(run_dir, {}), 1, rows, 37118)
@@ -205,11 +208,16 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
         return rows, delivery
 
     def _publish(self, run_dir: Path) -> None:
+        candidate = replace(self.candidate, correction_frontier={
+            **self.candidate.correction_frontier,
+            "source_authority_registry_sha256": AUTHORITY.digest,
+        })
         with patch(
             "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom", return_value=None,
         ):
             publish_bamf_generation(
-                run_dir, self.candidate, acceptance=acceptance(self.candidate))
+                run_dir, candidate, acceptance=acceptance(candidate))
+            bind_accepted_correction_authority(run_dir, AUTHORITY)
 
 
 if __name__ == "__main__":
