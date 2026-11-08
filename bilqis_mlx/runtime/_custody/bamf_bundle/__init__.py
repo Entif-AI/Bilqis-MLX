@@ -14,6 +14,9 @@ from .genesis import (
     BamfRunIdentity, InitialGenerationBinding, PreparedInitialGeneration,
     prepare_initial_generation, publish_initial_generation,
 )
+from .genesis_foundation import (
+    InitialFoundationFeatureAuthority, issue_initial_foundation_feature_authority,
+)
 from .package_import_transition import PackageImportTransition
 from .source_continuation import continue_source_qualified_motifs_from_bundle
 from .records import (
@@ -33,5 +36,6 @@ __all__ = (
     "authenticate_bamf_candidate_features",
     "verify_accepted_generation_feature_receipt",
     "BamfRunIdentity", "InitialGenerationBinding", "PreparedInitialGeneration",
+    "InitialFoundationFeatureAuthority", "issue_initial_foundation_feature_authority",
     "prepare_initial_generation", "publish_initial_generation",
 )

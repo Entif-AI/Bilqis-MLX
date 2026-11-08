@@ -29,7 +29,9 @@ from .genesis_records import (
     BamfRunIdentity, InitialGenerationBinding, ParsedInitialGenerationBinding,
     mint_initial_generation_binding,
 )
-from .genesis_foundation import initial_foundation_sidecars
+from .genesis_foundation import (
+    InitialFoundationFeatureAuthority, initial_foundation_sidecars,
+)
 
 
 @dataclass(frozen=True)
@@ -40,6 +42,7 @@ class PreparedInitialGeneration:
     admission: ExecutableAdmissionReceipt
     graph: dict
     origin_checkpoint: Checkpoint
+    foundation_features: InitialFoundationFeatureAuthority | None = None
 
 
 def _validated_factory_origin(release, admission, graph, origin: Checkpoint) -> None:
@@ -72,7 +75,8 @@ def _factory_generation_provenance(
 def _validate_candidate_source_authority(
         candidate: BamfBundleCandidate, *, release: ExecutableFactoryRelease,
         admission: ExecutableAdmissionReceipt, graph: dict,
-        origin_checkpoint: Checkpoint) -> None:
+        origin_checkpoint: Checkpoint,
+        foundation_features: InitialFoundationFeatureAuthority | None = None) -> None:
     """Re-prove Factory/source/teacher authority for a generation-zero candidate."""
     _validated_factory_origin(release, admission, graph, origin_checkpoint)
     identity = candidate.run_identity
@@ -80,7 +84,8 @@ def _validate_candidate_source_authority(
         invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
     expected = _factory_generation_provenance(release)
     expected_sidecars = initial_foundation_sidecars(
-        release, admission, graph, run_seed=identity.run_seed)
+        release, admission, graph, run_seed=identity.run_seed,
+        feature_authority=foundation_features)
     teacher = candidate.teacher_state
     correction = candidate.correction_frontier
     if (candidate.generation != 0 or candidate.parent_manifest_sha256 is not None
@@ -116,10 +121,13 @@ def _validate_candidate_source_authority(
 def _issue_binding(
         candidate: BamfBundleCandidate, *, release: ExecutableFactoryRelease,
         admission: ExecutableAdmissionReceipt, graph: dict,
-        origin_checkpoint: Checkpoint) -> InitialGenerationBinding:
+        origin_checkpoint: Checkpoint,
+        foundation_features: InitialFoundationFeatureAuthority | None = None,
+        ) -> InitialGenerationBinding:
     _validate_candidate_source_authority(
         candidate, release=release, admission=admission, graph=graph,
-        origin_checkpoint=origin_checkpoint)
+        origin_checkpoint=origin_checkpoint,
+        foundation_features=foundation_features)
     _validate_candidate_b01_authority(candidate)
     return mint_initial_generation_binding(candidate)
 
@@ -170,6 +178,7 @@ def prepare_initial_generation(
         graph: dict, model_authority: B01GenerationAuthority,
         optimizer_hyperparameters: AdamWHyperparameters,
         provenance: GenerationProvenance,
+        foundation_features: InitialFoundationFeatureAuthority | None = None,
         foundation_row_ages: tuple[IdentityRowAge, ...] = (),
         delivery_events: tuple = ()) -> PreparedInitialGeneration:
     """Construct one source-bound generation-zero candidate and live B13 capability."""
@@ -187,7 +196,8 @@ def prepare_initial_generation(
         invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
     (semantic_abi, compiler_features, correction_frontier,
      teacher_state, evaluation_contract) = initial_foundation_sidecars(
-        release, admission, graph, run_seed=run_seed)
+        release, admission, graph, run_seed=run_seed,
+        feature_authority=foundation_features)
     allocations = MotifAllocationSnapshot(MotifManifest(provenance.release_digest))
     try:
         extents = b01_generation_extents(
@@ -222,9 +232,11 @@ def prepare_initial_generation(
     sidecar_records(candidate)
     binding = _issue_binding(
         candidate, release=release, admission=admission, graph=graph,
-        origin_checkpoint=origin_checkpoint)
+        origin_checkpoint=origin_checkpoint,
+        foundation_features=foundation_features)
     return PreparedInitialGeneration(
-        candidate, binding, release, admission, dict(graph), origin_checkpoint)
+        candidate, binding, release, admission, dict(graph), origin_checkpoint,
+        foundation_features)
 
 
 def validate_initial_generation_binding(candidate, binding) -> None:
@@ -251,7 +263,8 @@ def validate_initial_generation_preparation(prepared: PreparedInitialGeneration)
     _validate_candidate_source_authority(
         prepared.candidate, release=prepared.release,
         admission=prepared.admission, graph=prepared.graph,
-        origin_checkpoint=prepared.origin_checkpoint)
+        origin_checkpoint=prepared.origin_checkpoint,
+        foundation_features=prepared.foundation_features)
     _validate_candidate_b01_authority(prepared.candidate)
     validate_initial_generation_binding(prepared.candidate, prepared.binding)
 

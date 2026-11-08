@@ -1,13 +1,69 @@
 """Owner-derived sidecars for a fresh BAMF generation-zero foundation."""
 from __future__ import annotations
+from dataclasses import dataclass, field
 
 from bilqis_mlx.factory.executable_release import (
     ExecutableAdmissionReceipt, ExecutableFactoryRelease,
 )
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.state import _fingerprint
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas.feature_io_pins import _source_owned_feature_schema
+from bilqis_mlx.semantics.atlas_features import AtlasFeatures, FeatureSchema, build_feature_manifest
+from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
 
 from .records import canonical, invalid, sha
+
+_FEATURE_AUTHORITY_ISSUER = object()
+
+
+@dataclass(frozen=True)
+class InitialFoundationFeatureAuthority:
+    """Source-replayed A01/A03/A06 feature authority for generation zero."""
+
+    selection: AtlasArtifactSelection
+    snapshot: FrozenAtlasSnapshot
+    schema: FeatureSchema
+    features: AtlasFeatures
+    _issuance: object = field(init=False, default=None, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if (getattr(self, "_issuance", None) is not _FEATURE_AUTHORITY_ISSUER
+                or type(self.selection) is not AtlasArtifactSelection
+                or type(self.snapshot) is not FrozenAtlasSnapshot
+                or type(self.schema) is not FeatureSchema
+                or type(self.features) is not AtlasFeatures):
+            invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_INVALID")
+
+
+def issue_initial_foundation_feature_authority(
+        selection: AtlasArtifactSelection) -> InitialFoundationFeatureAuthority:
+    """Replay source-owned semantic inputs and issue the bounded B13 input."""
+    if type(selection) is not AtlasArtifactSelection:
+        invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_INVALID")
+    try:
+        snapshot, schema = _source_owned_feature_schema(selection)
+        features = build_feature_manifest(snapshot, schema)
+    except Exception:
+        invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_INVALID")
+    authority = object.__new__(InitialFoundationFeatureAuthority)
+    for name, value in (
+            ("selection", selection), ("snapshot", snapshot),
+            ("schema", schema), ("features", features),
+            ("_issuance", _FEATURE_AUTHORITY_ISSUER)):
+        object.__setattr__(authority, name, value)
+    authority.__post_init__()
+    return authority
+
+
+def _replay_features(authority) -> InitialFoundationFeatureAuthority:
+    if type(authority) is not InitialFoundationFeatureAuthority:
+        invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_INVALID")
+    authority.__post_init__()
+    expected = issue_initial_foundation_feature_authority(authority.selection)
+    if authority != expected:
+        invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+    return expected
 
 
 def _verified_factory(release, admission, graph) -> None:
@@ -28,7 +84,9 @@ def _verified_factory(release, admission, graph) -> None:
 def initial_foundation_sidecars(
         release: ExecutableFactoryRelease,
         admission: ExecutableAdmissionReceipt,
-        graph: dict, *, run_seed: int) -> tuple[dict, dict, dict, dict, dict]:
+        graph: dict, *, run_seed: int,
+        feature_authority: InitialFoundationFeatureAuthority | None = None,
+        ) -> tuple[dict, dict, dict, dict, dict]:
     """Project genesis sidecars only from independently admitted Factory state.
 
     Generation zero has no accepted correction or C03 visit history yet.  B13
@@ -50,12 +108,16 @@ def initial_foundation_sidecars(
         "semantic_bank_count": bank_count,
         "bank_identities": [f"bank:{index}" for index in range(bank_count)],
     }
-    factor_map_sha256 = sha(canonical({
-        "schema": "bilqis.mlx.bamf-initial-factor-map/v1",
-        "semantic_catalog_sha256": release.semantic_catalog_sha256,
-        "source_projection_sha256": projections.source,
-        "answer_schema_projection_sha256": projections.answer_schema,
-    }))
+    feature = None if feature_authority is None else _replay_features(feature_authority)
+    if feature is not None and feature.features.semantic_release != release.release_sha256:
+        invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
+    factor_map_sha256 = (feature.features.digest if feature is not None else
+        sha(canonical({
+            "schema": "bilqis.mlx.bamf-initial-factor-map/v1",
+            "semantic_catalog_sha256": release.semantic_catalog_sha256,
+            "source_projection_sha256": projections.source,
+            "answer_schema_projection_sha256": projections.answer_schema,
+        })))
     compiler = {
         "schema": "bilqis.mlx.bamf-compiler-features/v1",
         "factor_map_sha256": factor_map_sha256,
@@ -67,6 +129,17 @@ def initial_foundation_sidecars(
         "rights_epoch": 0,
         "correction_generation": 0,
     }
+    if feature is not None:
+        compiler["feature_source"] = {
+            "atlas_bundle_id": feature.features.atlas_bundle_id,
+            "release_sha256": feature.features.semantic_release,
+            "source_bundle_id": feature.features.source_bundle_id,
+        }
+        compiler["feature_schema"] = {
+            "role_ids": list(feature.schema.role_ids),
+            "schema_ids": list(feature.schema.schema_ids),
+            "source_bindings": [list(item) for item in feature.schema.source_bindings],
+        }
     source_identity = (release.source_bindings.source_attestation_sha256
                        or release.source_bindings.digest())
     correction = {
@@ -91,4 +164,7 @@ def initial_foundation_sidecars(
     return semantic, compiler, correction, teacher, evaluation
 
 
-__all__ = ("initial_foundation_sidecars",)
+__all__ = (
+    "InitialFoundationFeatureAuthority", "initial_foundation_sidecars",
+    "issue_initial_foundation_feature_authority",
+)

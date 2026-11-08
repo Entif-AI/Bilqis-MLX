@@ -16,17 +16,18 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
     authenticate_bamf_candidate_features, publish_bamf_generation,
+    issue_initial_foundation_feature_authority, publish_initial_generation,
     read_accepted_generation_feature_receipt,
     verify_accepted_generation_feature_receipt,
 )
-from bilqis_mlx.runtime.bamf_bundle import feature_authority
-from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.runtime.bamf_bundle import feature_authority, genesis_foundation
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas_features import AtlasFeatures, FeatureSchema
 from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
 from bilqis_mlx.semantics.atlas_projection_parts.releases import AtlasCounts
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    publish_candidate,
-    candidate, parent_state, shape_patch,
+    genesis_preparation, publish_candidate, candidate, parent_state, shape_patch,
 )
 from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
 
@@ -99,6 +100,29 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
             build_feature_manifest=lambda snapshot, schema: features,
         )
 
+    def foundation_replay(self, features):
+        schema = FeatureSchema((), (), source_bindings=())
+        return patch.multiple(
+            genesis_foundation,
+            _source_owned_feature_schema=lambda selection: (
+                frozen_snapshot(selection), schema),
+            build_feature_manifest=lambda snapshot, feature_schema: features,
+        )
+
+    def foundation_authority(self, features):
+        selection = AtlasArtifactSelection(
+            "/artifact", ATLAS_BUNDLE, RELEASE, SOURCE_BUNDLE)
+        with self.foundation_replay(features):
+            return issue_initial_foundation_feature_authority(selection)
+
+    def publish_feature_genesis(self, features):
+        authority = self.foundation_authority(features)
+        with shape_patch(), self.foundation_replay(features), \
+                patch.object(mlx_checkpoint, "assert_headroom"):
+            return publish_initial_generation(
+                self.run, genesis_preparation(foundation_features=authority),
+                reserve_gib=0.)
+
     def read_receipt(self, features):
         """Read the live accepted receipt under the custody and source seams."""
         with shape_patch(), self.source_replay(features):
@@ -106,7 +130,7 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
 
     def test_accepted_generation_mints_source_replayed_receipt(self):
         features = source_features()
-        published = self.publish(feature_bound(candidate(parent_state()), features))
+        published = self.publish_feature_genesis(features)
         receipt = self.read_receipt(features)
         self.assertEqual(receipt.run_id, "fixture-run")
         self.assertEqual(receipt.generation, 0)
@@ -132,18 +156,27 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
 
     def test_arbitrary_digest_candidate_cannot_self_ratify(self):
         features = source_features()
-        adversary = feature_bound(
-            candidate(parent_state()), features, digest=ARBITRARY)
-        self.publish(adversary)
-        with self.assertRaises(BilqisError) as failure:
-            self.read_receipt(features)
+        authority = self.foundation_authority(features)
+        with self.foundation_replay(features):
+            prepared = genesis_preparation(foundation_features=authority)
+        adversary = replace(
+            prepared.candidate,
+            extents=replace(prepared.candidate.extents, factor_map_digest=ARBITRARY),
+            compiler_features={
+                **prepared.candidate.compiler_features,
+                "factor_map_sha256": ARBITRARY})
+        with shape_patch(), self.foundation_replay(features), \
+                patch.object(mlx_checkpoint, "assert_headroom"), \
+                self.assertRaises(BilqisError) as failure:
+            publish_initial_generation(
+                self.run, replace(prepared, candidate=adversary), reserve_gib=0.)
         self.assertEqual(
             failure.exception.context["reason"],
-            "BAMF_FEATURE_SOURCE_REPLAY_MISMATCH")
+            "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
 
     def test_forged_receipt_is_rejected_by_live_verification(self):
         features = source_features()
-        self.publish(feature_bound(candidate(parent_state()), features))
+        self.publish_feature_genesis(features)
         receipt = self.read_receipt(features)
         forged = replace(receipt, feature_sha256=ARBITRARY)
         with shape_patch(), self.source_replay(features):
@@ -164,16 +197,28 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
 
     def test_release_drift_between_custody_and_source_refuses_receipt(self):
         features = source_features()
-        self.publish(feature_bound(
-            candidate(parent_state()), features, release="4" * 64))
-        with self.assertRaises(BilqisError) as failure:
-            self.read_receipt(features)
+        authority = self.foundation_authority(features)
+        with self.foundation_replay(features):
+            prepared = genesis_preparation(foundation_features=authority)
+        adversary = replace(
+            prepared.candidate,
+            compiler_features={
+                **prepared.candidate.compiler_features,
+                "feature_source": {
+                    **prepared.candidate.compiler_features["feature_source"],
+                    "release_sha256": "4" * 64}})
+        with shape_patch(), self.foundation_replay(features), \
+                patch.object(mlx_checkpoint, "assert_headroom"), \
+                self.assertRaises(BilqisError) as failure:
+            publish_initial_generation(
+                self.run, replace(prepared, candidate=adversary), reserve_gib=0.)
         self.assertEqual(
-            failure.exception.context["reason"], "BAMF_FEATURE_SOURCE_IDENTITY_DRIFT")
+            failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
 
     def test_cold_resume_reproduces_the_same_receipt_identity(self):
         features = source_features()
-        self.publish(feature_bound(candidate(parent_state()), features))
+        self.publish_feature_genesis(features)
         first = self.read_receipt(features)
         second = self.read_receipt(features)
         self.assertEqual(first.digest, second.digest)
@@ -181,7 +226,7 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
 
     def test_receipt_record_round_trip_detects_tampering(self):
         features = source_features()
-        self.publish(feature_bound(candidate(parent_state()), features))
+        self.publish_feature_genesis(features)
         receipt = self.read_receipt(features)
         record = receipt.to_record()
         self.assertEqual(
