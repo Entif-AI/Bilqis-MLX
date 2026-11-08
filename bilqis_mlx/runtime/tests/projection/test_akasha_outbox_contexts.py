@@ -61,7 +61,9 @@ TEMPORAL_IDENTITY = MappingProxyType({
 })
 
 
-def _ledger(status=RequalificationStatus.REQUALIFICATION_REQUIRED):
+def _ledger(
+    status=RequalificationStatus.REQUALIFICATION_REQUIRED, *, pending=True,
+):
     support = CapabilitySupport(
         capability_id="capability:context",
         support_artifact_ids=("capability:context",),
@@ -70,16 +72,13 @@ def _ledger(status=RequalificationStatus.REQUALIFICATION_REQUIRED):
         observation_ids=("observation:context",),
         status=status,
     )
-    return RequalificationLedger((support,)), TargetedSourceTask.from_context(
-        support, CONTEXT_EVENT_ID)
+    task = TargetedSourceTask.from_context(support, CONTEXT_EVENT_ID)
+    return RequalificationLedger(
+        (support,), pending_source_tasks=(task,) if pending else ()), task
 
 
 def _pending_ledger():
-    ledger, task = _ledger()
-    return RequalificationLedger(
-        ledger.capabilities,
-        pending_source_tasks=(task,),
-    ), task
+    return _ledger()
 
 
 def _context_record(context_event_id=CONTEXT_EVENT_ID):
@@ -146,6 +145,25 @@ class AkashaOutboxContextTests(unittest.TestCase):
             with self.assertRaises(BilqisError):
                 append_context_requalification(
                     path, Path(folder), GENERATION, task, qualified)
+
+    @patch(
+        "bilqis_mlx.runtime.akasha_outbox.contexts._accepted_context_invalidation",
+        return_value=(
+            _context_record(),
+            SimpleNamespace(source_time=10, effective_time=20,
+                            observed_at=15, recorded_at=16),
+        ),
+    )
+    def test_context_task_must_be_pending_in_c09_ledger(self, _accepted):
+        ledger, task = _ledger(pending=False)
+        with TemporaryDirectory() as folder, self.assertRaises(BilqisError) as caught:
+            append_context_requalification(
+                Path(folder) / "outbox.sqlite3", Path(folder),
+                GENERATION, task, ledger)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C10_CONTEXT_REQUALIFICATION_ARGUMENT_INVALID",
+        )
 
     @patch(
         "bilqis_mlx.runtime.accepted_correction_ledger.read_records",
@@ -269,10 +287,13 @@ class AkashaOutboxContextIntegrationTests(CapabilitySupportOwnerFixture):
              authority.observed_at, authority.recorded_at),
         )
 
+        for path in self.run.glob("akasha-outbox.sqlite3*"):
+            path.unlink()
+        self.assertEqual(read_outbox(outbox), ())
         admission._EXECUTION_CACHE_OWNER.entries.clear()
         _RUNTIME_OWNER.clear()
         cold_owner = self.load_support(AUTHORITY)
-        self.assertEqual(len(read_outbox(outbox)), 1)
+        self.assertEqual(read_outbox(outbox), (event,))
         self.assertEqual(
             cold_owner.ledger.pending_source_tasks[0].context_event_id,
             invalidation.event_id,

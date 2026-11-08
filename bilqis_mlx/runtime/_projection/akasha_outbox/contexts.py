@@ -39,7 +39,8 @@ def event_from_context_requalification(
     if (not isinstance(task, TargetedSourceTask)
             or not isinstance(ledger, RequalificationLedger)
             or task.context_event_id is None
-            or task.correction_event_id is not None):
+            or task.correction_event_id is not None
+            or task not in ledger.pending_source_tasks):
         _invalid("BAMF_C10_CONTEXT_REQUALIFICATION_ARGUMENT_INVALID")
     record, invalidation = _accepted_context_invalidation(
         Path(run_dir), manifest_sha256, task.context_event_id)
