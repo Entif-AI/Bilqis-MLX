@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "56254f343904cecebf7fa067e76a937836673083",
-  "updated_at": "2026-11-08T01:52:00Z",
+  "updated_at": "2026-11-08T02:02:00Z",
   "exception": null,
   "items": [
     {
@@ -230,8 +230,8 @@
       "issue": 916,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "254160a783ba7ceb81089fcf22732d15b0c1cb12",
-      "summary": "A13 four-time remediation repaired after fresh round-1 EGM Major: typed C09 context invalidation v2 now binds source/effective/observed/recorded time plus source temporal-authority digest; v1 event identity/decoding remains historical. Context codecs split below module-size limits; same-round reinspection pending.",
+      "head_sha": "326c443e2d790ca23264cb9c5aa7135082bcf8e5",
+      "summary": "A13 four-time remediation round-1 second repair: typed C09 v2 already binds source/effective/observed/recorded time; v2 record construction now requires source temporal authority and every cold v2 decode independently revalidates the tuple against the hash-pinned A13 registry. Historical v1 identity/decoding remains exact. Same-round reinspection pending.",
       "resume_trigger": null,
       "preserved_branch": "codex/916-a13-four-time-context-20261108"
     }
