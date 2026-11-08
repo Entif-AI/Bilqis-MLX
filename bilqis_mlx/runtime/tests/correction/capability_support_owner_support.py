@@ -100,6 +100,37 @@ def source_qualified_state(
     return parent, transaction, resolve_candidate(transaction, accepted=True), authority
 
 
+def publish_support_fixture(
+        run, *, authority=None, authority_registry=None, delivery_event="FIXTURE_CAPABILITY_SUPPORT",
+        **authority_kwargs):
+    with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+        pointer = publish_genesis(run)
+        accepted_parent = load_accepted_generation(run)
+        parent, transaction, retained, authority = source_qualified_state(
+            accepted_parent.retained_state, authority=authority,
+            extents=accepted_parent.extents, spec=accepted_parent.topology,
+            **authority_kwargs)
+        bundle = derive_successor_bundle(
+            accepted_parent,
+            retained,
+            parent_manifest_sha256=pointer["manifest_sha256"],
+            delivery_events=({"event": delivery_event},),
+        )
+        if authority_registry is not None:
+            bundle = replace(bundle, correction_frontier={
+                **bundle.correction_frontier,
+                "source_authority_registry_sha256": authority_registry.digest,
+            })
+        decision = retention_decision(parent=parent, retained=retained)
+        published = accept_and_publish(
+            run, bundle, retained, decision=decision,
+            feature_sha256=bundle.extents.factor_map_digest,
+            training_authorities=transaction.training_authorities)
+        if authority_registry is not None:
+            bind_accepted_correction_authority(run, authority_registry)
+    return published, authority
+
+
 class CapabilitySupportOwnerFixture(unittest.TestCase):
     def setUp(self):
         self.temporary = TemporaryDirectory()
@@ -114,31 +145,8 @@ class CapabilitySupportOwnerFixture(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish_support(self, *, authority=None, authority_registry=None):
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            pointer = publish_genesis(self.run)
-            accepted_parent = load_accepted_generation(self.run)
-            parent, transaction, retained, authority = source_qualified_state(
-                accepted_parent.retained_state, authority=authority,
-                extents=accepted_parent.extents, spec=accepted_parent.topology)
-            bundle = derive_successor_bundle(
-                accepted_parent,
-                retained,
-                parent_manifest_sha256=pointer["manifest_sha256"],
-                delivery_events=({"event": "FIXTURE_CAPABILITY_SUPPORT"},),
-            )
-            if authority_registry is not None:
-                bundle = replace(bundle, correction_frontier={
-                    **bundle.correction_frontier,
-                    "source_authority_registry_sha256": authority_registry.digest,
-                })
-            decision = retention_decision(parent=parent, retained=retained)
-            published = accept_and_publish(
-                self.run, bundle, retained, decision=decision,
-                feature_sha256=bundle.extents.factor_map_digest,
-                training_authorities=transaction.training_authorities)
-            if authority_registry is not None:
-                bind_accepted_correction_authority(self.run, authority_registry)
-        return published, authority
+        return publish_support_fixture(
+            self.run, authority=authority, authority_registry=authority_registry)
 
     def load_support(self, authority_registry=None):
         with shape_patch():

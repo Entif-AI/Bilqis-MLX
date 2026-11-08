@@ -18,12 +18,16 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation, publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_cache_authority, bind_accepted_correction_authority,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    DECLARED, acceptance, candidate, parent_state, shape_patch,
+    DECLARED, acceptance, accepted_state, candidate, genesis_preparation, parent_state,
+    shape_patch,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
+    genesis_feature_source_patch, issue_feature_authority, source_features,
 )
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     OWNER_ID, PUBLIC_KEY_HEX,
@@ -185,9 +189,46 @@ def _binding(pointer, source, selection, clearance, frames, task, frontier, poli
 
 
 def _publish_cache_fixture(run, source):
-    with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-        return publish_bamf_generation(
-            run, source, acceptance=acceptance(source))
+    features = source_features(release=source.provenance.release_digest)
+    feature_authority = issue_feature_authority(features)
+    with shape_patch(), genesis_feature_source_patch(features), patch.object(
+            mlx_checkpoint, "assert_headroom"):
+        prepared = genesis_preparation(
+            run_id=source.run_id, foundation_features=feature_authority)
+        from bilqis_mlx.runtime.bamf_bundle import publish_initial_generation
+        pointer = publish_initial_generation(run, prepared, reserve_gib=0.)
+        parent = load_bamf_generation(Path(run) / "bamf-state.json")
+        retained = accepted_state(
+            parent.retained_state, parent.extents, spec=parent.topology)
+        from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
+        successor = derive_successor_bundle(
+            parent, retained, parent_manifest_sha256=pointer["manifest_sha256"],
+            delivery_events=({"event": "FIXTURE_CACHE_AUTHORITY"},))
+        correction_frontier = {
+            **successor.correction_frontier,
+            "rights_epoch": source.correction_frontier["rights_epoch"],
+            "correction_generation": source.correction_frontier[
+                "correction_generation"],
+        }
+        source_registry = source.correction_frontier.get(
+            "source_authority_registry_sha256")
+        if source_registry is not None:
+            correction_frontier["source_authority_registry_sha256"] = source_registry
+        successor = replace(
+            successor,
+            correction_frontier=correction_frontier,
+            compiler_features={
+                **successor.compiler_features,
+                "rights_epoch": source.compiler_features["rights_epoch"],
+                "correction_generation": source.compiler_features[
+                    "correction_generation"],
+            },
+        )
+        published = publish_bamf_generation(
+            run, successor,
+            acceptance=acceptance(successor, parent=parent.retained_state),
+            reserve_gib=0.)
+        return published, load_bamf_generation(Path(run) / "bamf-state.json")
 
 
 def _accepted_cache_authority(

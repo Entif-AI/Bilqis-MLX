@@ -69,7 +69,7 @@ class CacheAuthorityIntegrationTests(unittest.TestCase):
                 os.environ, {"BILQIS_DATA_PLANE": str(Path(temporary) / "plane.sqlite3")}):
             run = Path(temporary) / "run"
             source = _source(selection, frontier)
-            pointer = _publish_cache_fixture(run, source)
+            pointer, source = _publish_cache_fixture(run, source)
             authority, registry, eligibility_source = _accepted_cache_authority(
                 run, selection, clearance, frames, task, frontier, policy)
             binding = _binding(
