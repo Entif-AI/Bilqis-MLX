@@ -15,14 +15,17 @@ from .common import _fail
 
 
 SOURCE_CONTEXT_TRANSITION_AUTHORITY_SCHEMA = (
-    "bilqis.source-context-transition-authority/v1"
+    "bilqis.source-context-transition-authority/v2"
 )
-_POLICY_REGISTRY_SCHEMA = "bilqis.source-context-transition-policy-registry/v1"
+SOURCE_CONTEXT_TEMPORAL_IDENTITY_SCHEMA = (
+    "bilqis.source-context-temporal-identity/v1"
+)
+_POLICY_REGISTRY_SCHEMA = "bilqis.source-context-transition-policy-registry/v2"
 _POLICY_REGISTRY = Path(__file__).with_name(
-    "source_context_transition_policy_v1.json"
+    "source_context_transition_policy_v2.json"
 )
 _POLICY_REGISTRY_SHA256 = (
-    "6ac59c878f5e1ce5f0fafca4710669626b3e357d60b4c5d02edaee29f31d1ea9"
+    "4e68df20e78c573b24ee909abe95bfe62c8c23d18e3888507083dfe2e249a4a8"
 )
 _ISSUER = object()
 
@@ -69,6 +72,10 @@ class SourceContextTransitionAuthority:
     frontier: SourceFrontier
     effective_from: int
     effective_until: int
+    source_time: int
+    effective_time: int
+    observed_at: int
+    recorded_at: int
     authority_registry_sha256: str
     schema: str = SOURCE_CONTEXT_TRANSITION_AUTHORITY_SCHEMA
     _issuance: object = field(init=False, repr=False, compare=False)
@@ -89,6 +96,13 @@ class SourceContextTransitionAuthority:
             or self.frontier != expected_frontier
             or self.effective_from != entry["effective_from"]
             or self.effective_until != entry["effective_until"]
+            or self.source_time != entry["source_time"]
+            or self.effective_time != entry["effective_time"]
+            or self.observed_at != entry["observed_at"]
+            or self.recorded_at != entry["recorded_at"]
+            or self.effective_time != self.effective_until
+            or self.observed_at != self.task.observed_frontier
+            or not self.source_time <= self.observed_at <= self.recorded_at
             or self.authority_registry_sha256 != _POLICY_REGISTRY_SHA256
             or self.schema != SOURCE_CONTEXT_TRANSITION_AUTHORITY_SCHEMA
         ):
@@ -106,9 +120,10 @@ def _load_policy_registry() -> dict:
     expected_keys = {
         "atlas_bundle_id", "causal_prefix_end", "correction_generation",
         "current_effective_time", "effective_from", "effective_until",
-        "jurisdiction", "observed_frontier", "policy_epoch", "policy_id",
+        "effective_time", "jurisdiction", "observed_at", "observed_frontier",
+        "policy_epoch", "policy_id", "recorded_at",
         "principal_id", "purpose", "rights_epoch", "scope",
-        "semantic_release", "source_bundle_id", "tenant_id",
+        "semantic_release", "source_bundle_id", "source_time", "tenant_id",
     }
     if (
         hashlib.sha256(payload).hexdigest() != _POLICY_REGISTRY_SHA256
@@ -134,8 +149,18 @@ def _load_policy_registry() -> dict:
             for name in (
                 "causal_prefix_end", "correction_generation",
                 "current_effective_time", "effective_from", "effective_until",
-                "observed_frontier", "policy_epoch", "rights_epoch",
+                "effective_time", "observed_at", "observed_frontier",
+                "policy_epoch", "recorded_at", "rights_epoch", "source_time",
             )
+        )
+        or value["entries"][0]["effective_time"]
+           != value["entries"][0]["effective_until"]
+        or value["entries"][0]["observed_at"]
+           != value["entries"][0]["observed_frontier"]
+        or not (
+            value["entries"][0]["source_time"]
+            <= value["entries"][0]["observed_at"]
+            <= value["entries"][0]["recorded_at"]
         )
     ):
         _fail("BAMF_SOURCE_CONTEXT_TRANSITION_REGISTRY_INVALID")
@@ -174,6 +199,10 @@ def issue_source_context_transition_authority(
         ("frontier", frontier),
         ("effective_from", entry["effective_from"]),
         ("effective_until", entry["effective_until"]),
+        ("source_time", entry["source_time"]),
+        ("effective_time", entry["effective_time"]),
+        ("observed_at", entry["observed_at"]),
+        ("recorded_at", entry["recorded_at"]),
         ("authority_registry_sha256", _POLICY_REGISTRY_SHA256),
         ("schema", SOURCE_CONTEXT_TRANSITION_AUTHORITY_SCHEMA),
         ("_issuance", _ISSUER),
@@ -183,7 +212,47 @@ def issue_source_context_transition_authority(
     return authority
 
 
+def _temporal_identity_from_entry(entry: dict) -> dict:
+    return {
+        "source_time": entry["source_time"],
+        "effective_time": entry["effective_time"],
+        "observed_at": entry["observed_at"],
+        "recorded_at": entry["recorded_at"],
+        "authority_registry_sha256": _POLICY_REGISTRY_SHA256,
+        "schema_version": SOURCE_CONTEXT_TEMPORAL_IDENTITY_SCHEMA,
+    }
+
+
+def source_context_temporal_identity(
+    authority: SourceContextTransitionAuthority,
+) -> dict:
+    """Project the exact source-owned temporal tuple without granting authority."""
+    if type(authority) is not SourceContextTransitionAuthority:
+        _fail("BAMF_SOURCE_CONTEXT_TEMPORAL_AUTHORITY_REQUIRED")
+    authority.__post_init__()
+    value = {
+        "source_time": authority.source_time,
+        "effective_time": authority.effective_time,
+        "observed_at": authority.observed_at,
+        "recorded_at": authority.recorded_at,
+        "authority_registry_sha256": authority.authority_registry_sha256,
+        "schema_version": SOURCE_CONTEXT_TEMPORAL_IDENTITY_SCHEMA,
+    }
+    return validate_source_context_temporal_identity(value)
+
+
+def validate_source_context_temporal_identity(value: dict) -> dict:
+    """Revalidate a persisted tuple against the hash-pinned source policy."""
+    expected = _temporal_identity_from_entry(_load_policy_registry()["entries"][0])
+    if type(value) is not dict or value != expected:
+        _fail("BAMF_SOURCE_CONTEXT_TEMPORAL_IDENTITY_INVALID")
+    return dict(value)
+
+
 __all__ = (
     "SourceContextTransitionAuthority",
+    "SOURCE_CONTEXT_TEMPORAL_IDENTITY_SCHEMA",
     "issue_source_context_transition_authority",
+    "source_context_temporal_identity",
+    "validate_source_context_temporal_identity",
 )

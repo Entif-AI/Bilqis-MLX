@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
-  "updated_at": "2026-11-07T18:21:51Z",
+  "observed_unified": "56254f343904cecebf7fa067e76a937836673083",
+  "updated_at": "2026-11-08T02:10:00Z",
   "exception": null,
   "items": [
     {
@@ -225,6 +225,15 @@
       "summary": "A13 EGM-Mitigation follow-on turned in as PR #907. Round 1 EGM rejected caller-owned temporal authority and a skipped real-A01 witness; repair 3b80a76c replaces that seam with a hash-pinned opaque source/policy authority. Current-unified proof: source-context 10/10, C09 boundary 5/5, real A01 3/3 zero skips, changed-scope quality green. Disposable join with authoritative #752 consumer 03e7a3c0 proves hold-before-reuse and cold replay; accepted-runtime 9/9. Targeted EGM re-audit PASS at 4e3b8826 with zero Blocker/Major/Minor/Nit. Remote turn-in head 48c2dbad includes EGM evidence only after the reviewed head.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-906-temporal-context-20261107"
+    },
+    {
+      "issue": 916,
+      "pr": 918,
+      "state": "TURNED_IN",
+      "head_sha": "326c443e2d790ca23264cb9c5aa7135082bcf8e5",
+      "summary": "A13 four-time temporal identity remediation turned in as PR #918 after pinned EGM round 1 PASS (0 Blockers / 0 Majors). Typed C09 invalidation v2 binds source/effective/observed/recorded time plus source temporal-authority digest; v2 live persistence requires opaque A13 authority and cold decode independently revalidates the tuple against the hash-pinned source registry. Historical v1 identity/decoding and the correction-backed bridge remain unchanged. Widened ring 42/42 PASS; structure/governance/smell/flow/error-control green. Human merge remains external authority; downstream #911 is the consumer.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/916-a13-four-time-context-20261108"
     }
   ]
 }

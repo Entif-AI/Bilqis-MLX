@@ -160,3 +160,79 @@ class SourceAuthorityRegistry:
             transition.artifact_id,
             transition.source_signature_hex,
             transition.revalidated_signing_bytes())
+
+
+def _new_authority_owner():
+    """Create one process-local owner for opaque C09 source authority."""
+    issued = {}
+
+    def require(authority):
+        entry = issued.get(id(authority))
+        if entry is None or entry[0] is not authority:
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+        return entry[1]
+
+    def issue(registry):
+        if type(registry) is not SourceAuthorityRegistry:
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+        authority = object.__new__(SourceAuthorityRuntime)
+        issued[id(authority)] = (authority, registry)
+        return authority
+
+    return require, issue
+
+
+class _AcceptedSourceAuthorityIssuer:
+    """Issuer reachable only through authenticated accepted-run custody."""
+
+    def __init__(self, issue):
+        self._issue = issue
+        self._accepted = {}
+
+    def issue(self, accepted_cache, registry):
+        from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+            require_accepted_execution_cache,
+        )
+
+        cache = require_accepted_execution_cache(accepted_cache)
+        if type(registry) is not SourceAuthorityRegistry:
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+        retained = self._accepted.get(id(cache))
+        if retained is not None:
+            if retained[0] is not cache or retained[1] != registry:
+                _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+            return retained[2]
+        authority = self._issue(registry)
+        self._accepted[id(cache)] = (cache, registry, authority)
+        return authority
+
+
+_authority_state, _raw_authority_issue = _new_authority_owner()
+_ACCEPTED_SOURCE_AUTHORITY_ISSUER = _AcceptedSourceAuthorityIssuer(
+    _raw_authority_issue)
+del _raw_authority_issue
+
+
+class SourceAuthorityRuntime:
+    """Opaque C09 capability bound by accepted-run custody to one registry."""
+
+    __slots__ = ()
+
+    def __new__(cls, *args, **kwargs):
+        _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+
+    def _validate_export_clearance_context(
+            self, receipt, selection, source_frontier, artifact_digests):
+        from bilqis_mlx.semantics.atlas_release_audit import (
+            validate_export_clearance_context,
+        )
+        return validate_export_clearance_context(
+            receipt, selection, source_frontier, artifact_digests,
+            _authority_state(self))
+
+
+def require_source_authority_runtime(authority) -> SourceAuthorityRuntime:
+    if type(authority) is not SourceAuthorityRuntime:
+        _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+    _authority_state(authority)
+    return authority
