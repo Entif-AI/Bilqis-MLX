@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "56254f343904cecebf7fa067e76a937836673083",
-  "updated_at": "2026-11-08T02:15:00Z",
+  "observed_unified": "9795a3edff705ff6e44eec29dc60fed74d2abc74",
+  "updated_at": "2026-11-08T07:17:43Z",
   "exception": null,
   "items": [
     {
@@ -19,9 +19,9 @@
       "issue": 911,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "ec706edb96c6afc236383ee4a325d4e922dd3e47",
-      "summary": "C10 context-native requalification projection is implemented at semantic head ec706edb: accepted context-targeted C09 tasks project exactly once into the local Akasha outbox using durable context custody; live context revalidation flushes immediately and cold replay flushes pending context tasks. Historical v1 invalidations are never assigned fabricated time. Focused projection/correction/capability proof is green. Final unmocked custody witness and turn-in remain gated on #916/PR #918 arriving through reviewed unified; no sibling merge/cherry-pick.",
-      "resume_trigger": "Resume exact-head integration proof when #916 / PR #918 is merged into reviewed unified, then consume the accepted typed v2 four-time invalidation contract and run fresh #911 EGM.",
+      "head_sha": "11d796c688350139802fe249e3944e77f4bb6de8",
+      "summary": "C10 context-native requalification projection now consumes #916 through reviewed unified 9795a3ed. Semantic head 11d796c6 decodes the durable accepted C09ContextInvalidation v2 directly, projects exactly one canonical REQUALIFICATION event with source-owned source/effective/observed/recorded times, preserves historical v1 without fabricated time, and leaves the correction-backed bridge unchanged. Literal live plus cold replay produces one event and persisted training-generation custody remains byte-identical. Focused owner proof: 23 tests + 17 subtests; verify:leaf: 61 tests + 4 subtests; diff hygiene green.",
+      "resume_trigger": "Run the exact-head premerge gate and fresh pinned #911 EGM; if clean, turn in the ready lane-to-unified PR without self-merge.",
       "preserved_branch": "codex/911-c10-context-requalification-20261108"
     },
     {
