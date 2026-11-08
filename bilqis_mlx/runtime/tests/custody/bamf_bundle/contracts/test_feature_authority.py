@@ -6,6 +6,8 @@ receipt is minted from custody and from the replayed admitted source release.
 from __future__ import annotations
 
 import os
+import subprocess
+import sys
 import unittest
 from dataclasses import replace
 from pathlib import Path
@@ -25,8 +27,7 @@ from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
 from bilqis_mlx.semantics.atlas_projection_parts.releases import AtlasCounts
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    publish_candidate,
-    candidate, parent_state, shape_patch,
+    accepted_state, publish_candidate, candidate, parent_state, shape_patch,
 )
 
 RELEASE = "1" * 64
@@ -43,20 +44,26 @@ def source_features() -> AtlasFeatures:
         RELEASE, ATLAS_BUNDLE, SOURCE_BUNDLE, None, (), (), (), (), ())
 
 
-def feature_bound(source, features: AtlasFeatures, *, digest=None, release=RELEASE):
+def feature_bound(source, features: AtlasFeatures, *, digest=None, release=RELEASE,
+                  atlas_bundle=ATLAS_BUNDLE, source_bundle=SOURCE_BUNDLE,
+                  active_set=None):
     """Bind a candidate to a recorded source release and feature map."""
     factor_map = digest or features.digest
+    active_set = active_set or source.extents.active_semantic_digest
     return replace(
         source,
-        extents=replace(source.extents, factor_map_digest=factor_map),
+        extents=replace(
+            source.extents, active_semantic_digest=active_set,
+            factor_map_digest=factor_map),
         provenance=replace(source.provenance, release_digest=release),
+        semantic_abi={**source.semantic_abi, "active_set_sha256": active_set},
         compiler_features={
             **source.compiler_features,
             "factor_map_sha256": factor_map,
             "feature_source": {
-                "atlas_bundle_id": ATLAS_BUNDLE,
+                "atlas_bundle_id": atlas_bundle,
                 "release_sha256": release,
-                "source_bundle_id": SOURCE_BUNDLE},
+                "source_bundle_id": source_bundle},
             "feature_schema": feature_schema()},
         correction_frontier={
             **source.correction_frontier, "release_digest": release})
@@ -79,7 +86,10 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         self.run = self.root / "run"
         self.pointer = self.run / "bamf-state.json"
         self.environment = patch.dict(
-            os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
+            os.environ, {
+                "BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3"),
+                "BILQIS_ATLAS_ARTIFACT_ROOT": str(self.root / "atlas"),
+            })
         self.environment.start()
 
     def tearDown(self):
@@ -101,7 +111,7 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
     def read_receipt(self, features):
         """Read the live accepted receipt under the custody and source seams."""
         with shape_patch(), self.source_replay(features):
-            return read_accepted_generation_feature_receipt(self.pointer, "/artifact")
+            return read_accepted_generation_feature_receipt(self.pointer)
 
     def test_accepted_generation_mints_source_replayed_receipt(self):
         features = source_features()
@@ -148,7 +158,7 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         with shape_patch(), self.source_replay(features):
             with self.assertRaises(BilqisError) as failure:
                 verify_accepted_generation_feature_receipt(
-                    self.pointer, "/artifact", forged)
+                    self.pointer, forged)
         self.assertEqual(
             failure.exception.context["reason"], "BAMF_FEATURE_RECEIPT_MISMATCH")
 
@@ -170,13 +180,62 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         self.assertEqual(
             failure.exception.context["reason"], "BAMF_FEATURE_SOURCE_IDENTITY_DRIFT")
 
+    def test_active_set_drift_between_custody_and_source_refuses_receipt(self):
+        features = source_features()
+        source = feature_bound(candidate(parent_state()), features)
+        drifted = replace(
+            source,
+            extents=replace(source.extents, active_semantic_digest=ARBITRARY),
+            semantic_abi={**source.semantic_abi, "active_set_sha256": ARBITRARY},
+        )
+        self.publish(drifted)
+        with self.assertRaises(BilqisError) as failure:
+            self.read_receipt(features)
+        self.assertEqual(
+            failure.exception.context["reason"], "BAMF_FEATURE_ACTIVE_SET_DRIFT")
+
+    def test_same_feature_child_active_set_drift_refuses_receipt(self):
+        features = source_features()
+        first = self.publish(feature_bound(candidate(parent_state()), features))
+        child = feature_bound(
+            candidate(
+                accepted_state(parent_state()), 1,
+                first["manifest_sha256"]),
+            features, active_set=ARBITRARY)
+        child = replace(child, transition={
+            **child.transition,
+            "kind": "PARAMETER_EXTENSION",
+            "invalidate_derived_caches": True,
+        })
+        self.publish(child)
+
+        with self.assertRaises(BilqisError) as failure:
+            self.read_receipt(features)
+        self.assertEqual(
+            failure.exception.context["reason"], "BAMF_FEATURE_ACTIVE_SET_DRIFT")
+
     def test_cold_resume_reproduces_the_same_receipt_identity(self):
         features = source_features()
         self.publish(feature_bound(candidate(parent_state()), features))
         first = self.read_receipt(features)
-        second = self.read_receipt(features)
-        self.assertEqual(first.digest, second.digest)
-        self.assertEqual(first, second)
+        child = subprocess.run(
+            [sys.executable, "-B", "-c", """
+from pathlib import Path
+from unittest.mock import patch
+from bilqis_mlx.runtime.bamf_bundle import feature_authority, read_accepted_generation_feature_receipt
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.test_feature_authority import source_features, frozen_snapshot
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
+
+features = source_features()
+with shape_patch(), patch.object(
+        feature_authority, "load_pinned_atlas_snapshot",
+        side_effect=frozen_snapshot), patch.object(
+        feature_authority, "build_feature_manifest", return_value=features):
+    print(read_accepted_generation_feature_receipt(Path(__import__('sys').argv[1])).digest)
+""", str(self.pointer)],
+            cwd=Path.cwd(), env=os.environ.copy(), text=True,
+            capture_output=True, check=True)
+        self.assertEqual(first.digest, child.stdout.strip().splitlines()[-1])
 
     def test_receipt_record_round_trip_detects_tampering(self):
         features = source_features()

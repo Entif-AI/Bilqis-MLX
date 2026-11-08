@@ -16,7 +16,8 @@ from .package_import_transition import (
     is_package_import_transition, require_issued_package_import_transition,
 )
 from .records import (
-    BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, canonical, invalid, sha,
+    ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BAMF_POINTER_SCHEMA,
+    BamfBundleCandidate, CompleteStudent, canonical, invalid, sha,
 )
 
 from ._publication_storage import (
@@ -143,15 +144,71 @@ def _require_accepted_parent(run_dir: Path, candidate: BamfBundleCandidate,
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
 
+def _parent_acceptance_for_publication(
+        run_dir: Path, candidate: BamfBundleCandidate,
+        accepted: AcceptedCandidateBinding):
+    """Read the exact parent acceptance that the new immutable manifest must bind."""
+    pointer_path = Path(run_dir) / "bamf-state.json"
+    with _pointer_lock(run_dir):
+        current = _read_pointer(pointer_path)
+        if current is None:
+            if candidate.generation != 0 or candidate.parent_manifest_sha256 is not None:
+                invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+            return None
+        if current["generation"] == candidate.generation:
+            if (current["run_id"] != candidate.run_id
+                    or current["parent_manifest_sha256"] != candidate.parent_manifest_sha256
+                    or current.get("acceptance_sha256") != accepted.digest):
+                invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+            manifest = _live_bundle_manifest(run_dir, current)
+            if manifest.get("schema") != ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA:
+                return _UNBOUND_RETRY
+            return manifest.get("parent_acceptance_sha256")
+        if (current["run_id"] != candidate.run_id
+                or current["generation"] != candidate.generation - 1
+                or current["manifest_sha256"] != candidate.parent_manifest_sha256):
+            invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+        parent = load_bamf_bundle(
+            run_dir / current["bundle"],
+            expected_manifest_sha256=current["manifest_sha256"])
+        parent_acceptance = _require_published_acceptance(run_dir, current, parent)
+        if parent_acceptance.schema_version != ACCEPTANCE_SCHEMA:
+            invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+        return current["acceptance_sha256"]
+
+
+_UNBOUND_RETRY = object()
+
+
+def _save_publication_bundle(candidate: BamfBundleCandidate, stage: Path,
+                             parent_acceptance, *, reserve_gib: float):
+    """Use the acceptance-bound writer when available; preserve pinned old-writer replay."""
+    if parent_acceptance is _UNBOUND_RETRY:
+        return save_bamf_bundle(candidate, stage, reserve_gib=reserve_gib)
+    try:
+        return save_bamf_bundle(
+            candidate, stage, reserve_gib=reserve_gib,
+            parent_acceptance_sha256=parent_acceptance)
+    except TypeError as exc:
+        if "unexpected keyword argument 'parent_acceptance_sha256'" not in str(exc):
+            raise
+        if candidate.generation > 0:
+            invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
+        return save_bamf_bundle(candidate, stage, reserve_gib=reserve_gib)
+
+
 def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
                             acceptance: AcceptedCandidateBinding | None = None,
                             reserve_gib: float = 100.0) -> dict:
     """Publish once; retries converge across staging, rename, pointer and outbox crashes."""
     run_dir = Path(run_dir)
     accepted = _require_acceptance(candidate, acceptance)
+    parent_acceptance = _parent_acceptance_for_publication(
+        run_dir, candidate, accepted)
     stage = _stage(run_dir)
     try:
-        manifest = save_bamf_bundle(candidate, stage, reserve_gib=reserve_gib)
+        manifest = _save_publication_bundle(
+            candidate, stage, parent_acceptance, reserve_gib=reserve_gib)
         digest = manifest["manifest_sha256"]
         target = _require_bundle_root(run_dir, create=True) / digest
         pointer_path = run_dir / "bamf-state.json"
@@ -172,6 +229,14 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
                 reconcile_bamf_outbox(run_dir, student)
                 return current
             _validate_parent_transition(run_dir, current, candidate)
+            if candidate.generation > 0:
+                parent = load_bamf_bundle(
+                    run_dir / current["bundle"],
+                    expected_manifest_sha256=current["manifest_sha256"])
+                live_parent_acceptance = _require_published_acceptance(
+                    run_dir, current, parent)
+                if live_parent_acceptance.digest != parent_acceptance:
+                    invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
             if target.exists() or target.is_symlink():
                 if target.is_symlink() or not target.is_dir():
                     invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
