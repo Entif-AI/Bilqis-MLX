@@ -42,8 +42,13 @@ The parameter-extension case:
 5. rebuilds the cache and compares the chunked result with fresh full-prefix
    inference.
 
-The model-swap case repeats the same custody path for a production
-`MODEL_SWAP` transition with a changed topology identity and query tensor.
+The model-swap case repeats the same custody path through the production
+`MODEL_SWAP` classifier, accepted-runtime authority and `AttentionCache`
+validation with a controlled alternate topology identity and changed query
+tensor. BAMF-0.2 currently admits one frozen `ModelTopologySpecV2`, so the test
+uses an identity-only test variant to exercise the fail-closed transition
+contract. It does not claim that a second production topology is currently
+admitted.
 
 Fresh execution on the M3 Ultra at candidate
 `9d1bc1c8c753031f0642c60b0f85c8e2d0edb812`:
@@ -110,8 +115,10 @@ repository's `TEST_EVIDENCE_REUSED` rule.
 
 The two B13.3 owned clauses are measured on current reviewed code:
 
-- inference caches are disposable across accepted `MODEL_SWAP` and
-  `PARAMETER_EXTENSION` transitions;
+- inference caches are disposable across accepted `PARAMETER_EXTENSION`
+  transitions, and the production `MODEL_SWAP` classifier/cache contract
+  rejects predecessor cache state under a controlled alternate topology
+  identity;
 - historical v1 bundles retain their reader, remain immutable, and fail closed
   before BAMF-v2 construction.
 
@@ -123,3 +130,32 @@ mutated. Parent #372 retains its broader integration acceptance.
 
 Fresh whole-candidate pinned EGM and the repository pre-merge gate remain before
 #480 turn-in.
+
+## Current owner and verification map
+
+The original B13.3 packet preserves pre-refactor paths as historical ownership
+provenance. Current reviewed-unified ownership is:
+
+- historical v1 bundle reader:
+  `bilqis_mlx/runtime/_custody/mlx_checkpoint.py:load_bundle`;
+- generation transition classification/publication:
+  `bilqis_mlx/runtime/_custody/bamf_bundle/publication.py`;
+- transition and sidecar contracts:
+  `bilqis_mlx/runtime/_custody/bamf_bundle/records.py`;
+- accepted execution-cache reissue:
+  `bilqis_mlx/runtime/_custody/bamf_bundle/accepted_runtime.py` and
+  `execution_cache.py`;
+- boundary commit:
+  `bilqis_mlx/runtime/_custody/boundary_commit.py`;
+- focused tests:
+  `bilqis_mlx/runtime/tests/custody/bamf_bundle/test_cache_separation.py`,
+  `test_cold_resume_continuation.py`, and `test_frozen_v1.py`.
+
+The current first verification command is:
+
+`python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/custody/bamf_bundle/test_cache_separation.py bilqis_mlx/runtime/tests/custody/bamf_bundle/test_cold_resume_continuation.py`
+
+The historical-v1 witness is run separately with the explicit canonical
+Microspenics bundle path and manifest digest. This remaps current ownership and
+test entrypoints only; it does not change the inherited B13.3 requirements or
+acceptance contract.
