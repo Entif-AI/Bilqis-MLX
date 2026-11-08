@@ -96,5 +96,19 @@ class IssueContractRegistryTests(unittest.TestCase):
             {**item, 'children': item['children'][1:]}, original, missing, self.pinned))
 
 
+    def test_egm_policy_is_design_first_and_lanes_delegate_to_canonical_lifecycle(self):
+        marker = "<!-- BAMF02:DESIGN-VERIFY-DRIFT-LIFECYCLE:20261108 -->"
+        self.assertEqual(contracts.EGM_POLICY_MARKER, marker)
+        agents = (contracts.ROOT / "AGENTS.md").read_text()
+        egm = (contracts.TASKS / "EGM_EXECUTION.md").read_text()
+        self.assertIn(marker, agents)
+        self.assertIn("EGM review occurs before implementation.", egm)
+        self.assertIn("minimum sufficient evidence set", egm)
+        for filename in contracts.EGM_OPERATIONAL_DOCS[1:]:
+            lane = (contracts.ROOT / filename).read_text()
+            self.assertIn("docs/tasks/bamf-0.2/EGM_EXECUTION.md", lane)
+            self.assertIn("before substantive implementation", lane.lower())
+
+
 if __name__ == '__main__':
     unittest.main()
