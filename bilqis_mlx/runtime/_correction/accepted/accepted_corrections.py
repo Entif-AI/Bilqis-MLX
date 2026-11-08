@@ -145,6 +145,9 @@ def record_accepted_context_transition(
     from bilqis_mlx.factory.skos_curriculum.source_context import (
         SourceLessonContexts, source_lesson_expiry_task,
     )
+    from bilqis_mlx.factory.skos_curriculum.source_context_policy import (
+        source_context_temporal_identity,
+    )
     from bilqis_mlx.semantics.context_eligibility import transition_context
     from bilqis_mlx.semantics.context_eligibility import SourceFrontier
 
@@ -164,13 +167,24 @@ def record_accepted_context_transition(
 
     run_dir = Path(run_dir)
     cache = bind_accepted_execution_cache(run_dir)
+    temporal = source_context_temporal_identity(authority)
     transition = transition_context(
-        previous, frames, task_scope, source_frontier, authority.policy)
+        previous, frames, task_scope, source_frontier, authority.policy,
+        temporal_identity={
+            "source_time": temporal["source_time"],
+            "effective_time": temporal["effective_time"],
+            "observed_at": temporal["observed_at"],
+            "recorded_at": temporal["recorded_at"],
+            "temporal_authority_sha256":
+                temporal["authority_registry_sha256"],
+        },
+    )
     if not transition.invalidations:
         return transition
     retained = runtime(run_dir, cache.accepted_manifest_sha256)
     for event in transition.invalidations:
-        record = context_invalidation_record(cache.accepted_manifest_sha256, event)
+        record = context_invalidation_record(
+            cache.accepted_manifest_sha256, event, authority)
         append_record(run_dir, cache.accepted_manifest_sha256, record)
         retained.deliver_context_invalidation(record["event_id"], event)
     return transition
