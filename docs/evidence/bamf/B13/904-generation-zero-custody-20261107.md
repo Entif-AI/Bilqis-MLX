@@ -223,3 +223,67 @@ No learner, persistent AdamW, teacher, champion, soup, checkpoint lineage, or
 durable training run was started or mutated. Round-4 failure remains append-only;
 this repair is eligible for a new fresh exact-head EGM, not retroactive acceptance
 of the failed candidate.
+
+## EGM round-5 Major remediation and exact-head proof — 2026-11-07
+
+Fresh pinned round-5 EGM reviewed exact candidate
+`de50c30d9112169b856bc48660d806383c861104` against reviewed unified
+`d4bad39a32a80acbffdb9f891a906892ab2e9fab` and returned **FAIL — 0 Blockers / 1
+Major / 0 Nits**. Both review lenses converged on one remaining target-local
+authority gap: generation zero still accepted caller-supplied foundation sidecars
+(`semantic_abi`, `compiler_features`, `correction_frontier`, `teacher_state`, and
+`evaluation_contract`) even though Factory/source/B01 authority was independently
+replayed.
+
+Semantic repair head `14b53a81d952e763a8c26dda6e49d65d5b6be63a` closes that gap without
+weakening the successor model:
+
+- generation-zero foundation sidecars are derived from verified Factory state
+  rather than copied from caller mappings;
+- when A06 feature authority is supplied, B13 independently re-enters registered
+  A01 source authority and source-pinned A06 feature authority, then reconstructs
+  the exact feature schema and factor-map identity before binding compiler state;
+- altered caller foundation sidecars cannot be substituted into publication;
+- feature-authority tests now cover source-owned reconstruction while keeping
+  historical generations without recorded source bindings readable but unable to
+  mint accepted feature authority;
+- the oversized shared custody fixture helper was split into a bounded publication
+  helper instead of exempting the repository's changed-file structure ceiling.
+
+The first broad detached proof on `14b53a81...` failed **151 passed / 3 errors / 5
+explicit skips**. Those three errors were stale successor-test fixtures exposed by
+the stricter owner-derived genesis identity, not production authority failures:
+
+- the parameter-extension cache fixture carried synthetic pre-repair sidecar and
+  extents identity;
+- the package-import fixture carried synthetic topology/extents rather than exact
+  accepted-parent custody;
+- the tensor-CAS generation-2 fixture advanced from retained state still carrying
+  generation-0 custody.
+
+Production validation rejected all three fail-closed. No production guard was
+relaxed. Test-only correction head `42fc68f01a4cf91f4a27a87035685939a027671f`
+aligns successor fixtures with the accepted parent while preserving only each
+test's intended transition delta. The formerly failing successor ring then passed
+**15/15**.
+
+Fresh exact-head detached M3 Ultra proof at `42fc68f01a4cf91f4a27a87035685939a027671f`:
+
+- complete B13 custody tree: **159 total / 154 passed / 0 failed / 5 explicit
+  optional/environment skips**;
+- opt-in complete B01 parameter-schema plus clean-process full-resume witnesses:
+  **2/2 PASS**;
+- detached receipt status: **PASS**, command return code `0`;
+- source/snapshot digest remained
+  `8a126a9bd93205beaf7618edf1770ccd16fe2efcdc7996f8c7dc2e7aca044e82`
+  before and after the run, with `source_mutated=false`;
+- focused post-fixture successor ring: **15/15 PASS**;
+- changed-scope structure/governance/smell checks: PASS, zero findings;
+- legacy-trainer authority tests: **7/7 PASS**;
+- BAMF flow-control tests: **15/15 PASS**;
+- `git diff --check`: PASS.
+
+No learner, persistent AdamW, teacher, champion, soup, checkpoint lineage, or
+durable training run was started or mutated. Round-5 failure remains append-only;
+this exact candidate is eligible for a genuinely fresh pinned EGM round and is not
+retroactively accepted by the passing proof.

@@ -384,9 +384,9 @@
       "issue": 904,
       "pr": null,
       "state": "READY",
-      "head_sha": "6df4dcb2710492f1ac53ec86391dbf701b0baa69",
-      "summary": "B13.6 round-4 EGM Blocker is repaired after consuming reviewed unified d4bad39a. Generation-zero mutation now requires the complete prepared bootstrap proof; the shared sink and issuer independently replay Factory/source plus canonical B01 seeded numerical authority before mutation or binding issuance. Exact detached M3 proof is green: focused authority 28/28, complete B13 custody 153 passed / 0 failed / 5 explicit skips, opt-in full witnesses 2/2, quality:changed and full quality:check PASS, error-control new debt 0, BAMF contracts 43/43 with all 215/172 identity mirrors. Fresh exact-head EGM is requested; PM-2026-11-07-006 preserves the failed round.",
-      "resume_trigger": "Fresh pinned EGM passes on the stable round-4 repair candidate; then run the premerge/hosted turn-in gates and open the lane-to-unified PR without self-merge.",
+      "head_sha": "42fc68f01a4cf91f4a27a87035685939a027671f",
+      "summary": "B13.6 round-5 EGM Major is repaired on reviewed unified d4bad39a. Generation-zero foundation sidecars are owner-derived from verified Factory state; when A06 feature authority is supplied, B13 re-enters registered A01/A06 source authority and reconstructs the exact feature schema/factor map instead of trusting caller mappings. Semantic repair is 14b53a81; test-only successor-fixture alignment is 42fc68f0 after the first broad run exposed three stale synthetic-lineage fixtures. Fresh exact-head detached M3 proof is green: complete B13 custody 154 passed / 0 failed / 5 explicit skips, opt-in full witnesses 2/2, focused successor ring 15/15, structure/governance/smell green, legacy authority 7/7, flow-control 15/15, source_mutated=false. Fresh exact-head EGM is requested; historical round-5 FAIL and PM-2026-11-07-007 remain append-only.",
+      "resume_trigger": "Fresh pinned EGM passes on exact head 42fc68f0 (plus evidence/flow-control-only checkpoint commit if present); then run turn-in gates and open the lane-to-unified PR without self-merge.",
       "preserved_branch": "codex/904-b13-6-generation-zero-20261107"
     }
   ]
