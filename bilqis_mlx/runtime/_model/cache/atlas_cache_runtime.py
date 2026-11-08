@@ -47,14 +47,17 @@ class _AcceptedCacheAuthorityIssuer:
         self._issue = issue
         self._accepted_caches = {}
 
-    def issue(self, accepted_cache, registry, eligibility_source=None):
+    def issue(self, accepted_cache, eligibility_source=None):
         from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
             require_accepted_execution_cache,
         )
         from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
 
         cache = require_accepted_execution_cache(accepted_cache)
-        if not isinstance(registry, SourceAuthorityRegistry):
+        registry = cache._correction_registry
+        if (type(registry) is not SourceAuthorityRegistry
+                or cache.source_authority_registry_sha256 is None
+                or registry.digest != cache.source_authority_registry_sha256):
             _invalid()
         authority = self._issue(
             registry, cache._cache_mac_key, eligibility_source)

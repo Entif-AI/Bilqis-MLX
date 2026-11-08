@@ -38,10 +38,12 @@ from bilqis_mlx.runtime.cognitive_package import (
     receiver_weight_digest,
 )
 from bilqis_mlx.runtime.cognitive_package.delta import _issue_screened, _package_transaction
+from bilqis_mlx.runtime.cognitive_package.adoption import _verify_export_clearance
 from bilqis_mlx.runtime.cognitive_package.tests.fixtures import snapshot
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     HP, NAME, accepted_state, candidate, parent_state, publish_candidate,
-    retention_decision, shape_patch, with_source_authority_registry,
+    provision_source_authority_registry, retention_decision, shape_patch,
+    with_source_authority_registry,
 )
 from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_release_audit import ExportClearanceReceipt
@@ -105,6 +107,7 @@ class PackageImportAdoptionTests(TestCase):
             correction_frontier={**base.correction_frontier,
                                  "release_digest": self.selection.release_sha256})
         self.initial = with_source_authority_registry(self.initial, self.registry)
+        provision_source_authority_registry(self.run, self.registry)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             self.pointer = publish_candidate(self.run, self.initial)
         array = np.asarray(self.state.optimizer.parameters[NAME], dtype="<f4")
@@ -248,6 +251,23 @@ class PackageImportAdoptionTests(TestCase):
             self.adopt(screened, forged)
         pointer = json.loads((self.run / "bamf-state.json").read_text())
         self.assertEqual(pointer["manifest_sha256"], self.pointer["manifest_sha256"])
+
+    def test_duck_typed_source_context_cannot_authorize_package_clearance(self):
+        package, receipt = self.package_and_clearance()
+        with shape_patch():
+            parent = load_bamf_generation(self.run / "bamf-state.json")
+
+        class ForgedSourceContext:
+            def require_accepted_runtime(self, _run_dir):
+                raise AssertionError("duck-typed runtime hook reached")
+
+            def source_authority(self):
+                raise AssertionError("duck-typed authority hook reached")
+
+        with self.assertRaises(BilqisError):
+            _verify_export_clearance(
+                package, parent, receipt, self.selection, self.frontier,
+                ForgedSourceContext(), self.run)
 
     def test_host_bound_authority_rejects_scope_key_and_stale_frontier_before_publish(self):
         screened, receipt = self.screened()

@@ -25,6 +25,13 @@ source frontier, and requires the package `SourceRights` to be its exact portabl
 projection. Embedded rights or matching caller fields cannot authorize adoption.
 Do not pass private metadata to the public export API.
 
+The accepted-run host provisions C09 registry material independently at
+`<run_dir>/source-authority-registry.json`. Generation publication and accepted
+runtime binding require the candidate registry record and digest to match that host
+trust root exactly. A candidate cannot establish, replace, or repair the trust root.
+Historical generations without a C09 root remain readable but cannot mint live
+source authority.
+
 `CognitivePackage.canonical_json` is the portable representation. JSON uses sorted
 keys, compact separators, UTF-8 without normalization, arrays for tuples and
 lowercase hex payloads. `digest` is SHA-256 over those exact UTF-8 bytes. The schema
@@ -145,8 +152,10 @@ decision, and delegates accepted publication to the B13 boundary above.
 
 The operator is orchestration, not a new authority. An `ExportClearanceReceipt`,
 Atlas selection, and source frontier supplied to the call are revalidated against
-the accepted run's custody-owned source authority. Callers do not supply or select
-a source-authority registry. A matching embedded
+the accepted run's custody-owned source authority. The production clearance boundary
+requires the exact host-minted `SourceExecutionContext`; duck-typed substitutes are
+rejected before durable staging. Callers do not supply or select a source-authority
+registry. A matching embedded
 `SourceRights`, an `ELIGIBLE`-style result, or a caller-created `accepted=True`
 cannot publish a generation. Presentation/CLI code therefore does not duplicate
 this chain or become a package-admission trust root.

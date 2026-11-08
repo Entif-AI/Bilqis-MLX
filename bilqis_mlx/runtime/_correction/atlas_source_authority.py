@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from threading import RLock
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -266,15 +267,14 @@ def _new_authority_owner():
 
 
 def _make_source_authority_provisioner(issue):
+    lock = RLock()
+
     def provision(accepted_cache):
         from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
             require_accepted_execution_cache,
         )
-        from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
-            _EXECUTION_CACHE_OWNER,
-        )
 
-        with _EXECUTION_CACHE_OWNER.lock:
+        with lock:
             cache = require_accepted_execution_cache(accepted_cache)
             authority = cache._source_authority
             if authority is None:

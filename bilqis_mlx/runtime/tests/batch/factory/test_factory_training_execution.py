@@ -36,7 +36,7 @@ from bilqis_mlx.runtime.teacher_observation_capture import (
 )
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import HP
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, with_source_authority_registry,
+    acceptance, provision_source_authority_registry, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
@@ -210,6 +210,7 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
         return rows, delivery
 
     def _publish(self, run_dir: Path) -> None:
+        provision_source_authority_registry(run_dir, AUTHORITY)
         candidate = with_source_authority_registry(self.candidate, AUTHORITY)
         with patch(
             "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom", return_value=None,

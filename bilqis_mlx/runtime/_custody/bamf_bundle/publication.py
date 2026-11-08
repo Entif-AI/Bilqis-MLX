@@ -125,9 +125,16 @@ def _validate_parent_transition(run_dir: Path, pointer: dict | None, candidate: 
     reconcile_bamf_outbox(run_dir, parent)
 
 
-def _require_acceptance(candidate: BamfBundleCandidate,
+def _require_acceptance(run_dir: Path, candidate: BamfBundleCandidate,
                          acceptance: AcceptedCandidateBinding | None) -> AcceptedCandidateBinding:
     """Publication is not acceptance: the retention owner must have accepted it."""
+    from .source_authority_custody import (
+        require_provisioned_source_authority_registry,
+    )
+    trusted_registry = require_provisioned_source_authority_registry(
+        run_dir, candidate.correction_frontier)
+    trusted_registry_sha256 = (
+        trusted_registry.digest if trusted_registry is not None else None)
     if type(acceptance) is not AcceptedCandidateBinding:
         invalid("BAMF_GENERATION_ACCEPTANCE_REQUIRED")
     if (acceptance.schema_version != ACCEPTANCE_SCHEMA
@@ -140,7 +147,9 @@ def _require_acceptance(candidate: BamfBundleCandidate,
             or acceptance.step_proof_sha256 != tuple(
                 proof.digest for proof in candidate.retained_state.step_proofs)
             or acceptance.source_authority_registry_sha256
-            != _source_authority_registry_digest(candidate.correction_frontier)):
+            != trusted_registry_sha256
+            or _source_authority_registry_digest(candidate.correction_frontier)
+            != trusted_registry_sha256):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     return acceptance
 
@@ -221,7 +230,7 @@ def publish_bamf_generation(run_dir: Path, candidate: BamfBundleCandidate, *,
                             reserve_gib: float = 100.0) -> dict:
     """Publish once; retries converge across staging, rename, pointer and outbox crashes."""
     run_dir = Path(run_dir)
-    accepted = _require_acceptance(candidate, acceptance)
+    accepted = _require_acceptance(run_dir, candidate, acceptance)
     parent_acceptance = _parent_acceptance_for_publication(
         run_dir, candidate, accepted)
     stage = _stage(run_dir)

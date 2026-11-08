@@ -24,6 +24,7 @@ from bilqis_mlx.runtime.atlas_revalidation import (
 )
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_candidate_step, bind_accepted_cache_authority,
     bind_accepted_execution_cache,
@@ -35,7 +36,7 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, candidate, next_accepted_step, parent_state, shape_patch,
-    with_source_authority_registry,
+    provision_source_authority_registry, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _sign_event,
@@ -57,6 +58,7 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
 
     def publish(self, source, registry=None):
         if registry is not None:
+            provision_source_authority_registry(self.run, registry)
             source = with_source_authority_registry(source, registry)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             pointer = publish_bamf_generation(
@@ -124,7 +126,7 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             owner.require(cache, compiled)
 
-        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _reset_execution_cache_owner_for_tests()
         _RUNTIME_OWNER.clear()
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)
@@ -139,7 +141,7 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         with shape_patch():
             record_accepted_correction(self.run, correction)
         (self.run / "events.jsonl").unlink()
-        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _reset_execution_cache_owner_for_tests()
         _RUNTIME_OWNER.clear()
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)
@@ -165,7 +167,7 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         ledger = self.run / "events.jsonl"
         lines = ledger.read_text(encoding="utf-8").splitlines(keepends=True)
         ledger.write_text("".join(lines[:-1]), encoding="utf-8")
-        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _reset_execution_cache_owner_for_tests()
         _RUNTIME_OWNER.clear()
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)

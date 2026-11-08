@@ -35,6 +35,7 @@ from bilqis_mlx.learning.atlas_participation import (
     RoleReadParticipation, SemanticDenominator, StepParticipationInputs,
 )
 from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_candidate_step, bind_accepted_cache_authority,
     bind_accepted_execution_cache,
@@ -60,7 +61,7 @@ from bilqis_mlx.learning._retention.tests.execution_fixtures import (
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, accepted_state, candidate, parent_state, retention_decision,
-    shape_patch, with_source_authority_registry,
+    provision_source_authority_registry, shape_patch, with_source_authority_registry,
 )
 
 
@@ -89,6 +90,7 @@ class ProductionAuthorityTests(unittest.TestCase):
 
     def publish(self, source, registry=None):
         if registry is not None:
+            provision_source_authority_registry(self.run, registry)
             source = with_source_authority_registry(source, registry)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             pointer = publish_bamf_generation(
@@ -176,7 +178,7 @@ class ProductionAuthorityTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             owner.require(cache, compiled)
 
-        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _reset_execution_cache_owner_for_tests()
         _RUNTIME_OWNER.clear()
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)

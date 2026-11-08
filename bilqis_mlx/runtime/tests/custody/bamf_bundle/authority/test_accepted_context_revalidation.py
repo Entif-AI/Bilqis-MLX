@@ -13,6 +13,7 @@ from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corre
 from bilqis_mlx.runtime.accepted_correction_runtime import runtime
 from bilqis_mlx.runtime.atlas_owner_ingress import _route
 from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_context_revalidation_support import (
@@ -53,7 +54,7 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
         self.assertEqual(
             owner.index.node(direct.artifact_id).immediate_dependencies, (new_time,))
 
-        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _reset_execution_cache_owner_for_tests()
         _RUNTIME_OWNER.clear()
         cold_owner = ContextOwner((replace(direct), replace(descendant)))
         with shape_patch():

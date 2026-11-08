@@ -10,6 +10,7 @@ from bilqis_mlx.runtime.accepted_correction_ledger import read_records
 from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corrections
 from bilqis_mlx.runtime.atlas_owner_ingress import _route
 from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_context_revalidation_support import (
@@ -40,7 +41,7 @@ class AcceptedContextChangeTests(AcceptedContextFixture):
         replacement_direct = replace(
             direct, content_digest="d" * 64, immediate_dependencies=(new_time,))
         replacement_descendant = owner.index.node("motif:context-descendant")
-        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _reset_execution_cache_owner_for_tests()
         _RUNTIME_OWNER.clear()
         replacement = ContextOwner((replacement_direct, replacement_descendant))
         with shape_patch():
@@ -67,7 +68,7 @@ class AcceptedContextChangeTests(AcceptedContextFixture):
             len(read_records(self.run, cache.accepted_manifest_sha256)), before + 1)
 
         direct = owner.index.node("frame:context-direct")
-        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _reset_execution_cache_owner_for_tests()
         _RUNTIME_OWNER.clear()
         cold_owner = ContextOwner((replace(direct), replace(descendant)))
         with shape_patch():

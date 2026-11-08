@@ -22,7 +22,7 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_motif_artifact_owner
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, candidate, next_accepted_step, parent_state, shape_patch,
-    with_source_authority_registry,
+    provision_source_authority_registry, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _sign_event
 
@@ -46,6 +46,7 @@ class AcceptedRuntimeRecoveryTests(unittest.TestCase):
                 self.run, source, acceptance=acceptance(source))
 
     def _motif_fixture(self):
+        provision_source_authority_registry(self.run, AUTHORITY)
         self.publish(with_source_authority_registry(candidate(parent_state()), AUTHORITY))
         with shape_patch():
             cache = bind_accepted_execution_cache(self.run)

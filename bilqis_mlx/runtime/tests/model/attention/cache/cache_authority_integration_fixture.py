@@ -21,7 +21,8 @@ from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_cache_authority
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    DECLARED, acceptance, candidate, parent_state, shape_patch,
+    DECLARED, acceptance, candidate, parent_state,
+    provision_source_authority_registry, shape_patch,
 )
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     OWNER_ID, PUBLIC_KEY_HEX,
@@ -184,6 +185,7 @@ def _binding(pointer, source, selection, clearance, frames, task, frontier, poli
 
 
 def _publish_cache_fixture(run, source):
+    provision_source_authority_registry(run, _accepted_registry())
     with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
         return publish_bamf_generation(
             run, source, acceptance=acceptance(source))

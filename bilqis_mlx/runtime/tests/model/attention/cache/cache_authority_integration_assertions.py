@@ -12,6 +12,7 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
 )
 from bilqis_mlx.runtime.atlas_cache_records import _encode_cold_cache
 from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_cache_authority,
     interactive_accepted_cache_inference,
@@ -73,7 +74,7 @@ def _assert_correction_hold(
 
 
 def _assert_cold_replay_hold(test, run, registry, eligibility_source, binding):
-    admission._EXECUTION_CACHE_OWNER.entries.clear()
+    _reset_execution_cache_owner_for_tests()
     _RUNTIME_OWNER.clear()
     atlas_cache_runtime._ACCEPTED_CACHE_AUTHORITY_ISSUER._accepted_caches.clear()
     values = np.ones((256, HEAD_WIDTH), dtype=np.float32)

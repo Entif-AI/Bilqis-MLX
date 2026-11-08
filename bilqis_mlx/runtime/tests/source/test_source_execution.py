@@ -17,7 +17,8 @@ from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, shape_patch,
+    acceptance, candidate, parent_state, provision_source_authority_registry,
+    shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY
 
@@ -65,6 +66,7 @@ class SourceExecutionContextTests(unittest.TestCase):
         with TemporaryDirectory() as temporary, patch.dict(
                 os.environ, {"BILQIS_DATA_PLANE": str(Path(temporary) / "plane.sqlite3")}):
             run_dir = Path(temporary) / "run"
+            provision_source_authority_registry(run_dir, AUTHORITY)
             source = candidate(parent_state())
             source = replace(source, correction_frontier={
                 **source.correction_frontier,

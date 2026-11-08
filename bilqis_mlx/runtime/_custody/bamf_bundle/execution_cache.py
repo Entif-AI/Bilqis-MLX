@@ -98,9 +98,9 @@ def require_accepted_execution_cache(cache) -> AcceptedExecutionCache:
         _invalid("B13_EXECUTION_CACHE_REQUIRED")
     cache.__post_init__()
     from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
-        _EXECUTION_CACHE_OWNER,
+        _require_owned_execution_cache,
     )
-    return _EXECUTION_CACHE_OWNER.require(cache)
+    return _require_owned_execution_cache(cache)
 
 
 def bind_motif_artifact_owner(cache, compiled):
@@ -129,16 +129,22 @@ def bind_motif_artifact_owner(cache, compiled):
     return owner
 
 
-def bind_cache_authority(cache, registry, eligibility_source=None):
+def bind_cache_authority(cache, eligibility_source=None):
     """Bind one opaque B14 cache authority to authenticated B13 custody."""
     cache = require_accepted_execution_cache(cache)
+    from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
     from bilqis_mlx.runtime.atlas_cache_runtime import (
         _ACCEPTED_CACHE_AUTHORITY_ISSUER,
     )
+    registry = cache._correction_registry
+    if (type(registry) is not SourceAuthorityRegistry
+            or cache.source_authority_registry_sha256 is None
+            or registry.digest != cache.source_authority_registry_sha256):
+        _invalid("B13_CACHE_AUTHORITY_SOURCE_REQUIRED")
     authority = cache._cache_authority
     if authority is None:
         authority = _ACCEPTED_CACHE_AUTHORITY_ISSUER.issue(
-            cache, registry, eligibility_source)
+            cache, eligibility_source)
         object.__setattr__(cache, "_cache_authority", authority)
         object.__setattr__(cache, "_cache_authority_registry", registry)
         object.__setattr__(cache, "_cache_eligibility_source", eligibility_source)

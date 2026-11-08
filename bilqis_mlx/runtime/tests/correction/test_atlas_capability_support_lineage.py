@@ -23,7 +23,8 @@ from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import
     SOURCE_ROW, TARGET, source_qualified_state,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, retention_decision, shape_patch, with_source_authority_registry,
+    candidate, provision_source_authority_registry, retention_decision, shape_patch,
+    with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _ref, _sign_event,
@@ -47,6 +48,7 @@ class CapabilitySupportLineageTests(unittest.TestCase):
 
     def publish_support(self):
         parent, transaction, retained, authority = source_qualified_state()
+        provision_source_authority_registry(self.run, AUTHORITY)
         bundle = with_source_authority_registry(candidate(retained), AUTHORITY)
         decision = retention_decision(parent=parent, retained=retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):

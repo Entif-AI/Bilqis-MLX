@@ -29,7 +29,7 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     HP, NAME, candidate, parent_state, retention_decision, shape_patch,
-    with_source_authority_registry,
+    provision_source_authority_registry, with_source_authority_registry,
 )
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
@@ -116,6 +116,7 @@ class CapabilitySupportOwnerFixture(unittest.TestCase):
             authority=authority)
         bundle = candidate(retained)
         if authority_registry is not None:
+            provision_source_authority_registry(self.run, authority_registry)
             bundle = with_source_authority_registry(bundle, authority_registry)
         decision = retention_decision(parent=parent, retained=retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):

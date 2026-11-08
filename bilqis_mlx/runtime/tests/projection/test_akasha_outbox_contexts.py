@@ -32,6 +32,7 @@ from bilqis_mlx.runtime.accepted_stale_replay_runtime import (
     _flush_context_requalifications,
 )
 from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
     CapabilitySupportOwnerFixture, IMMEDIATE_DEPENDENCIES,
 )
@@ -291,7 +292,7 @@ class AkashaOutboxContextIntegrationTests(CapabilitySupportOwnerFixture):
         for path in self.run.glob("akasha-outbox.sqlite3*"):
             path.unlink()
         self.assertEqual(read_outbox(outbox), ())
-        admission._EXECUTION_CACHE_OWNER.entries.clear()
+        _reset_execution_cache_owner_for_tests()
         _RUNTIME_OWNER.clear()
         cold_owner = self.load_support(AUTHORITY)
         self.assertEqual(read_outbox(outbox), (event,))

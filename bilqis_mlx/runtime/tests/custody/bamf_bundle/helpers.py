@@ -225,6 +225,19 @@ def with_source_authority_registry(bundle, registry):
     )
 
 
+def provision_source_authority_registry(run_dir: Path, registry) -> Path:
+    """Install test-only host trust-root material outside generation custody."""
+    from bilqis_mlx.runtime.bamf_bundle.source_authority_custody import (
+        SOURCE_AUTHORITY_REGISTRY_FILE,
+    )
+
+    root = Path(run_dir)
+    root.mkdir(parents=True, exist_ok=True)
+    path = root / SOURCE_AUTHORITY_REGISTRY_FILE
+    path.write_bytes(canonical(registry.to_record()))
+    return path
+
+
 def publish_candidate(run_dir, bundle):
     """Publish one candidate with its retention acceptance binding."""
     return publish_bamf_generation(run_dir, bundle, acceptance=acceptance(bundle))

@@ -18,6 +18,8 @@ from bilqis_mlx.runtime.atlas_cache_records import _encode_cold_cache
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
+from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_cache_authority
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     OWNER_ID, PUBLIC_KEY_HEX, authority_for_registry, install_test_owner,
 )
@@ -28,7 +30,7 @@ from .cache_authority_integration_assertions import (
     _assert_correction_hold, _assert_exact_rebuild, _assert_live_cache_use,
 )
 from .cache_authority_integration_fixture import (
-    _accepted_cache_authority, _binding, _clearance, _context,
+    _accepted_cache_authority, _binding, _cache_shape_patch, _clearance, _context,
     _publish_cache_fixture, _selection, _source,
 )
 
@@ -82,6 +84,23 @@ class CacheAuthorityIntegrationTests(unittest.TestCase):
             _assert_cold_replay_hold(
                 self, run, registry, eligibility_source, binding)
             _assert_binding_drift_rejected(self, authority, binding)
+
+    def test_b14_cannot_replace_c09_registry_from_accepted_cache(self):
+        selection = _selection()
+        frames, task, frontier, policy = _context(selection.release_sha256)
+        with TemporaryDirectory() as temporary, patch.dict(
+                os.environ, {"BILQIS_DATA_PLANE": str(Path(temporary) / "plane.sqlite3")}):
+            run = Path(temporary) / "run"
+            source = _source(selection, frontier)
+            _publish_cache_fixture(run, source)
+            with _cache_shape_patch():
+                cache = bind_accepted_execution_cache(run)
+            drift = SourceAuthorityRegistry((SourceAuthorityKey(
+                "attacker", PUBLIC_KEY_HEX,
+                (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),)),))
+            object.__setattr__(cache, "_correction_registry", drift)
+            with self.assertRaises(BilqisError):
+                bind_cache_authority(cache, lambda: None)
 
 
 if __name__ == "__main__":

@@ -23,7 +23,8 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, shape_patch, with_source_authority_registry,
+    acceptance, candidate, parent_state, provision_source_authority_registry,
+    shape_patch, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
     source_owned_temporal_case,
@@ -86,6 +87,7 @@ class AcceptedContextFixture(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish(self):
+        provision_source_authority_registry(self.run, AUTHORITY)
         source = with_source_authority_registry(candidate(parent_state()), AUTHORITY)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             publish_bamf_generation(

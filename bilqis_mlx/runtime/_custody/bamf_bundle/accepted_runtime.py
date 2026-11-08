@@ -20,51 +20,12 @@ from .records import (
 )
 
 
-class _ExecutionCacheOwner:
-    """Process-lifetime custody for one retained execution cache per live run."""
-
-    def __init__(self):
-        self.lock = RLock()
-        self.entries = {}
-
-    def get(self, key):
-        return self.entries.get(key)
-
-    def set(self, key, manifest_sha256, cache) -> None:
-        self.entries[key] = (manifest_sha256, cache)
-
-    def issue(self, key, manifest_sha256, **fields):
-        cache = _new_execution_cache(**fields)
-        object.__setattr__(cache, "_run_dir", Path(key))
-        self.set(key, manifest_sha256, cache)
-        return cache
-
-    def require(self, cache):
-        key = getattr(cache, "_run_dir", None)
-        if key is None:
-            invalid("B13_EXECUTION_CACHE_REQUIRED")
-        entry = self.entries.get(str(Path(key).resolve()))
-        if (entry is None or entry[0] != cache.accepted_manifest_sha256
-                or entry[1] is not cache):
-            invalid("B13_EXECUTION_CACHE_REQUIRED")
-        return cache
-
-
-_EXECUTION_CACHE_OWNER = _ExecutionCacheOwner()
-
-
-def _accepted_source_authority_registry(student: CompleteStudent):
-    record = student.correction_frontier.get("source_authority_registry")
-    digest = student.correction_frontier.get("source_authority_registry_sha256")
-    if record is None:
-        if digest is not None:
-            invalid("BAMF_C09_CORRECTION_AUTHORITY_MATERIAL_MISSING")
-        return None
-    from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
-    registry = SourceAuthorityRegistry.from_record(record)
-    if digest != registry.digest:
-        invalid("BAMF_C09_CORRECTION_AUTHORITY_ANCHOR_MISMATCH")
-    return registry
+def _accepted_source_authority_registry(run_dir: Path, student: CompleteStudent):
+    from .source_authority_custody import (
+        require_provisioned_source_authority_registry,
+    )
+    return require_provisioned_source_authority_registry(
+        run_dir, student.correction_frontier)
 
 
 @dataclass(frozen=True)
@@ -80,22 +41,27 @@ class AcceptedGenerationIdentity:
     candidate_identity_sha256: str
 
 
-def _read_accepted(run_dir: Path):
+def _read_accepted_locked(run_dir: Path):
     run_dir = Path(run_dir)
     pointer_path = run_dir / "bamf-state.json"
-    with _pointer_lock(run_dir):
-        pointer = _read_pointer(pointer_path)
-        if pointer is None:
-            invalid("BAMF_GENERATION_POINTER_MISSING")
-        student = load_bamf_bundle(
-            run_dir / "bamf-bundles" / pointer["manifest_sha256"],
-            expected_manifest_sha256=pointer["manifest_sha256"])
-        if (student.run_id != pointer["run_id"]
-                or student.generation != pointer["generation"]
-                or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
-            invalid("BAMF_GENERATION_POINTER_DRIFT")
-        _require_published_acceptance(run_dir, pointer, student)
+    pointer = _read_pointer(pointer_path)
+    if pointer is None:
+        invalid("BAMF_GENERATION_POINTER_MISSING")
+    student = load_bamf_bundle(
+        run_dir / "bamf-bundles" / pointer["manifest_sha256"],
+        expected_manifest_sha256=pointer["manifest_sha256"])
+    if (student.run_id != pointer["run_id"]
+            or student.generation != pointer["generation"]
+            or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
+        invalid("BAMF_GENERATION_POINTER_DRIFT")
+    _require_published_acceptance(run_dir, pointer, student)
     return pointer, student
+
+
+def _read_accepted(run_dir: Path):
+    run_dir = Path(run_dir)
+    with _pointer_lock(run_dir):
+        return _read_accepted_locked(run_dir)
 
 
 def load_accepted_generation(run_dir: Path) -> CompleteStudent:
@@ -125,93 +91,139 @@ def _identity_from_pointer(
         candidate_identity_sha256=candidate_identity_digest(student.retained_state))
 
 
-def _published_in_memory_identity(
-        run_dir: Path, student: CompleteStudent) -> AcceptedGenerationIdentity:
+def _published_in_memory_identity_locked(
+        run_dir: Path, student: CompleteStudent, pointer: dict,
+) -> AcceptedGenerationIdentity:
     run_dir = Path(run_dir)
     if type(student) is not CompleteStudent:
         invalid("BAMF_GENERATION_POINTER_DRIFT")
+    identity = _identity_from_pointer(student, pointer)
+    manifest = _live_bundle_manifest(run_dir, pointer)
+    if (manifest["implementation_sha256"] != student.implementation_sha256
+            or canonical(manifest["topology"])
+            != canonical(student.topology.to_record())
+            or canonical(manifest["extents"])
+            != canonical(student.extents.to_record())
+            or canonical(manifest["provenance"])
+            != canonical(student.provenance.to_record())
+            or canonical(manifest["transition"])
+            != canonical(dict(student.transition))
+            or manifest["optimizer"]["step"] != student.retained_state.optimizer_step
+            or canonical(manifest["optimizer"]["hyperparameters"])
+            != canonical(asdict(student.optimizer_hyperparameters))):
+        invalid("BAMF_GENERATION_POINTER_DRIFT")
+    for name, record in sidecar_records(student).items():
+        stored = manifest["sidecars"].get(name)
+        if (not isinstance(stored, dict)
+                or stored.get("sha256") != sha(canonical(record))):
+            invalid("BAMF_GENERATION_POINTER_DRIFT")
+    _require_published_acceptance(run_dir, pointer, student)
+    return identity
+
+
+def _published_in_memory_identity(
+        run_dir: Path, student: CompleteStudent) -> AcceptedGenerationIdentity:
+    run_dir = Path(run_dir)
     with _pointer_lock(run_dir):
         pointer = _read_pointer(run_dir / "bamf-state.json")
         if pointer is None:
             invalid("BAMF_GENERATION_POINTER_MISSING")
-        identity = _identity_from_pointer(student, pointer)
-        manifest = _live_bundle_manifest(run_dir, pointer)
-        if (manifest["implementation_sha256"] != student.implementation_sha256
-                or canonical(manifest["topology"])
-                != canonical(student.topology.to_record())
-                or canonical(manifest["extents"])
-                != canonical(student.extents.to_record())
-                or canonical(manifest["provenance"])
-                != canonical(student.provenance.to_record())
-                or canonical(manifest["transition"])
-                != canonical(dict(student.transition))
-                or manifest["optimizer"]["step"] != student.retained_state.optimizer_step
-                or canonical(manifest["optimizer"]["hyperparameters"])
-                != canonical(asdict(student.optimizer_hyperparameters))):
-            invalid("BAMF_GENERATION_POINTER_DRIFT")
-        for name, record in sidecar_records(student).items():
-            stored = manifest["sidecars"].get(name)
-            if (not isinstance(stored, dict)
-                    or stored.get("sha256") != sha(canonical(record))):
-                invalid("BAMF_GENERATION_POINTER_DRIFT")
-        _require_published_acceptance(run_dir, pointer, student)
-    return identity
+        return _published_in_memory_identity_locked(run_dir, student, pointer)
 
 
-def bind_accepted_execution_cache(run_dir: Path):
-    """Authenticate the live accepted generation and mint its retained B08 cache."""
-    run_dir = Path(run_dir)
-    _pointer, student = _read_accepted(run_dir)
-    identity = _published_in_memory_identity(run_dir, student)
-    generation_binding = execution_generation_digest(
-        student.retained_state.optimizer.parameters,
-        spec=student.topology,
-        extents=student.extents,
-    )
-    registry = _accepted_source_authority_registry(student)
-    key = str(run_dir.resolve())
-    with _EXECUTION_CACHE_OWNER.lock:
-        retained = _EXECUTION_CACHE_OWNER.get(key)
-        if retained is not None and retained[0] == identity.manifest_sha256:
-            cache = retained[1]
-            if (cache.run_id != identity.run_id
-                    or cache.generation != identity.generation
-                    or cache.generation_binding != generation_binding
-                    or cache.source_authority_registry_sha256
-                    != student.correction_frontier.get(
-                        "source_authority_registry_sha256")
-                    or cache.motif_manifest.digest
-                    != student.retained_state.allocations.manifest.digest):
-                invalid("BAMF_EXECUTION_CACHE_CUSTODY_DRIFT")
-            if registry is not None:
-                if cache._correction_registry is None:
-                    object.__setattr__(cache, "_correction_registry", registry)
-                elif cache._correction_registry != registry:
-                    invalid("BAMF_C09_CORRECTION_AUTHORITY_DRIFT")
-            if cache._run_dir is None:
-                object.__setattr__(cache, "_run_dir", run_dir.resolve())
-            return cache
-        cache = _EXECUTION_CACHE_OWNER.issue(
-            key, identity.manifest_sha256,
-            run_id=identity.run_id,
-            generation=identity.generation,
-            accepted_manifest_sha256=identity.manifest_sha256,
-            generation_binding=generation_binding,
-            motif_manifest=student.retained_state.allocations.manifest,
-            source_authority_registry_sha256=student.correction_frontier.get(
-                "source_authority_registry_sha256"),
-        )
-        if registry is not None:
-            object.__setattr__(cache, "_correction_registry", registry)
+def _make_execution_cache_runtime():
+    """Close cache installation over the one canonical live-pointer verifier."""
+    lock = RLock()
+    entries = {}
+
+    def require(cache):
+        key = getattr(cache, "_run_dir", None)
+        if key is None:
+            invalid("B13_EXECUTION_CACHE_REQUIRED")
+        run_dir = Path(key).resolve()
+        with _pointer_lock(run_dir):
+            pointer = _read_pointer(run_dir / "bamf-state.json")
+            if (pointer is None
+                    or pointer.get("manifest_sha256")
+                    != cache.accepted_manifest_sha256
+                    or pointer.get("run_id") != cache.run_id
+                    or pointer.get("generation") != cache.generation):
+                invalid("B13_EXECUTION_CACHE_STALE")
+            with lock:
+                entry = entries.get(str(run_dir))
+                if (entry is None or entry[0] != cache.accepted_manifest_sha256
+                        or entry[1] is not cache):
+                    invalid("B13_EXECUTION_CACHE_REQUIRED")
         return cache
+
+    def bind(run_dir: Path):
+        """Authenticate and bind exactly the live accepted generation cache."""
+        run_dir = Path(run_dir).resolve()
+        with _pointer_lock(run_dir):
+            pointer, student = _read_accepted_locked(run_dir)
+            identity = _published_in_memory_identity_locked(
+                run_dir, student, pointer)
+            generation_binding = execution_generation_digest(
+                student.retained_state.optimizer.parameters,
+                spec=student.topology,
+                extents=student.extents,
+            )
+            registry = _accepted_source_authority_registry(run_dir, student)
+            key = str(run_dir)
+            with lock:
+                retained = entries.get(key)
+                if retained is not None and retained[0] == identity.manifest_sha256:
+                    cache = retained[1]
+                    if (cache.run_id != identity.run_id
+                            or cache.generation != identity.generation
+                            or cache.generation_binding != generation_binding
+                            or cache.source_authority_registry_sha256
+                            != student.correction_frontier.get(
+                                "source_authority_registry_sha256")
+                            or cache.motif_manifest.digest
+                            != student.retained_state.allocations.manifest.digest):
+                        invalid("BAMF_EXECUTION_CACHE_CUSTODY_DRIFT")
+                    if registry is not None:
+                        if cache._correction_registry is None:
+                            object.__setattr__(cache, "_correction_registry", registry)
+                        elif cache._correction_registry != registry:
+                            invalid("BAMF_C09_CORRECTION_AUTHORITY_DRIFT")
+                    return cache
+                cache = _new_execution_cache(
+                    run_id=identity.run_id,
+                    generation=identity.generation,
+                    accepted_manifest_sha256=identity.manifest_sha256,
+                    generation_binding=generation_binding,
+                    motif_manifest=student.retained_state.allocations.manifest,
+                    source_authority_registry_sha256=student.correction_frontier.get(
+                        "source_authority_registry_sha256"),
+                )
+                object.__setattr__(cache, "_run_dir", run_dir)
+                if registry is not None:
+                    object.__setattr__(cache, "_correction_registry", registry)
+                entries[key] = (identity.manifest_sha256, cache)
+                return cache
+
+    def reset_for_tests():
+        with lock:
+            entries.clear()
+
+    return bind, require, reset_for_tests
+
+
+(
+    bind_accepted_execution_cache,
+    _require_owned_execution_cache,
+    _reset_execution_cache_owner_for_tests,
+) = _make_execution_cache_runtime()
 
 
 def bind_accepted_cache_authority(
     run_dir: Path, eligibility_source=None,
 ):
     """Issue/reuse the B14 authority owned by the current accepted generation."""
-    cache, registry = _accepted_correction_registry(run_dir)
-    return cache, bind_cache_authority(cache, registry, eligibility_source)
+    cache, _registry = _accepted_correction_registry(run_dir)
+    return cache, bind_cache_authority(cache, eligibility_source)
 
 
 def _accepted_correction_registry(run_dir: Path):
@@ -251,7 +263,7 @@ def interactive_accepted_cache_inference(
 
 
 __all__ = (
-    "AcceptedGenerationIdentity", "_EXECUTION_CACHE_OWNER",
+    "AcceptedGenerationIdentity",
     "_identity_from_pointer", "_published_in_memory_identity", "_read_accepted",
     "bind_accepted_cache_authority",
     "bind_accepted_execution_cache", "interactive_accepted_cache_inference",

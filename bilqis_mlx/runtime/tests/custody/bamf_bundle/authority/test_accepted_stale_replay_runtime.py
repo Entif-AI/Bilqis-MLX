@@ -25,7 +25,8 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 from bilqis_mlx.runtime.cognitive_solver import QualifiedComposition, SolveContext
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, retention_decision, shape_patch,
+    acceptance, candidate, parent_state, provision_source_authority_registry,
+    retention_decision, shape_patch,
     with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
@@ -49,6 +50,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         self.environment = patch.dict(
             os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
         self.environment.start()
+        provision_source_authority_registry(self.run, AUTHORITY)
         source = with_source_authority_registry(candidate(parent_state()), AUTHORITY)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             publish_bamf_generation(
@@ -60,6 +62,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
 
     def _publish_source_qualified_support(self, run):
         parent, transaction, retained, _authority = source_qualified_state()
+        provision_source_authority_registry(run, AUTHORITY)
         bundle = with_source_authority_registry(candidate(retained), AUTHORITY)
         decision = retention_decision(parent=parent, retained=retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):

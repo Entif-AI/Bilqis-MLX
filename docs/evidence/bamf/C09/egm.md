@@ -60,3 +60,31 @@ Combined focused prime tests: **90 passed, 1 optional skip**.
 **Latest C09.1 EGM: RE-REVIEW PENDING.** Earlier C09.3
 actor-prefix and receipt-relabel repairs also await
 independent readback. No scoped EGM PASS is inferred.
+
+## #917 accepted-run source-authority remediation
+
+The post-merge #917 repair at `ec87edac08a7f43b5fa44ff9278d0f0b2b91e855`
+received a fresh three-lens review from the pinned EGM above. The deduplicated
+result was **3 Blockers, 2 Majors, 0 Nits**. The candidate therefore remained
+failed and draft PR #927 was not merge-ready.
+
+The review found five authority defects: the genesis candidate could still select
+its own C09 trust root; a duck-typed package `source_context` could clear the
+pre-staging gate; accepted-cache installation raced accepted-pointer advancement;
+an importable cache owner could mint alternate accepted-cache credentials; and B14
+could accept a caller-selected source-authority registry. A direct adversarial
+witness confirmed the first defect by swapping only the registry after a valid
+retention decision and obtaining a live source-authority runtime.
+
+The subsequent repair binds C09 to the independently provisioned host registry,
+requires exact `SourceExecutionContext` at package clearance, holds the accepted
+pointer lock through cache authentication and installation, rechecks pointer
+currentness at cache use, removes the alternate cache-owner issuer, and derives B14
+registry authority only from the accepted cache. Regression tests include the
+original genesis substitution, post-publication registry drift, duck-typed package
+context, a deterministic pointer/cache race, stale-cache use, and B14 registry
+replacement.
+
+**Disposition: RE-REVIEW PENDING.** Passing local tests do not clear the failed EGM.
+A new immutable SHA requires three fresh reviewers and **0 Blockers / 0 Majors**.
+No neural, student, trainer, optimizer, or checkpoint workload was run.
