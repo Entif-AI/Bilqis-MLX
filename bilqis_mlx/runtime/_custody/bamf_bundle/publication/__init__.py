@@ -22,7 +22,10 @@ from .authority import (
     validate_parent_transition as _validate_parent_transition_impl,
 )
 from .events import record_bamf_rejection
-from .genesis_trust import publish_initial_generation_trust_root
+from .genesis_trust import (
+    publish_initial_generation_trust_root, require_initial_generation_trust_root,
+    sealed_initial_generation_manifest,
+)
 from .retry import existing_initial_generation_retry
 from .storage import (
     ACCEPTANCE_DIR, _acceptance_path, _atomic_pointer, _live_bundle_manifest,
@@ -100,7 +103,9 @@ def _existing_initial_generation_retry(
         load_generation_locked=_load_generation_locked,
         require_published_acceptance=_require_published_acceptance,
         load_bundle=load_bamf_bundle, atomic_pointer=_atomic_pointer,
-        reconcile=reconcile_bamf_outbox)
+        reconcile=reconcile_bamf_outbox,
+        sealed_manifest=sealed_initial_generation_manifest,
+        write_acceptance=_write_acceptance)
 
 
 def _publish_authorized_generation(
@@ -154,7 +159,7 @@ def _publish_authorized_generation(
                 student = load_bamf_bundle(
                     run_dir / current["bundle"], expected_manifest_sha256=digest)
                 if prepared is not None:
-                    publish_initial_generation_trust_root(prepared, digest)
+                    require_initial_generation_trust_root(current, student, authority)
                 _write_acceptance(run_dir, digest, authority)
                 reconcile_bamf_outbox(run_dir, student)
                 return current
@@ -184,7 +189,7 @@ def _publish_authorized_generation(
                 finally:
                     os.close(directory)
             if prepared is not None:
-                publish_initial_generation_trust_root(prepared, digest)
+                publish_initial_generation_trust_root(run_dir, prepared, digest)
             _write_acceptance(run_dir, digest, authority)
             pointer = {
                 "schema": BAMF_POINTER_SCHEMA, "run_id": candidate.run_id,

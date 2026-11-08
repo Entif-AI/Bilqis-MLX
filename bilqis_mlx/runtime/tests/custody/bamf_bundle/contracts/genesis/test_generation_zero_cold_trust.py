@@ -7,15 +7,17 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
+from bilqis_mlx.data_plane import close_data_planes, data_plane
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.data_plane import close_data_planes
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
-from bilqis_mlx.runtime.bamf_bundle.codec import save_bamf_bundle
+from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle, save_bamf_bundle
 from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
-    mint_initial_generation_binding,
+    InitialGenerationBinding, mint_initial_generation_binding,
 )
+from bilqis_mlx.runtime.bamf_bundle.publication.genesis_trust import GENESIS_TRUST_SCHEMA
 from bilqis_mlx.runtime.bamf_bundle.records import BAMF_POINTER_SCHEMA, canonical
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     genesis_preparation, publish_genesis, shape_patch,
@@ -66,6 +68,58 @@ class GenerationZeroColdTrustTests(unittest.TestCase):
 
     def test_package_local_genesis_cannot_become_live_accepted_custody(self):
         self._install_package_local_genesis()
+        with shape_patch(), self.assertRaises(BilqisError) as accepted_failure:
+            load_accepted_generation(self.run)
+        self.assertEqual(
+            accepted_failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_TRUST_ROOT_REQUIRED")
+
+        with shape_patch(), self.assertRaises(BilqisError) as authority_failure:
+            load_bamf_generation_authority(self.run / "bamf-state.json")
+        self.assertEqual(
+            authority_failure.exception.context["reason"],
+            "BAMF_INITIAL_GENERATION_TRUST_ROOT_REQUIRED")
+
+    def test_generic_data_plane_reference_cannot_mint_genesis_trust(self):
+        pointer = self._install_package_local_genesis()
+        with shape_patch():
+            student = load_bamf_bundle(
+                self.run / pointer["bundle"],
+                expected_manifest_sha256=pointer["manifest_sha256"])
+        binding = InitialGenerationBinding.from_record(__import__("json").loads(
+            (self.run / "bamf-acceptance" /
+             f"{pointer['manifest_sha256']}.json").read_text(encoding="utf-8")))
+        identity = student.run_identity
+        forged = {
+            "schema": GENESIS_TRUST_SCHEMA,
+            "run_id": student.run_id,
+            "generation": 0,
+            "manifest_sha256": pointer["manifest_sha256"],
+            "acceptance_sha256": binding.digest,
+            "run_identity_sha256": identity.digest,
+            "candidate_identity_sha256": candidate_identity_digest(
+                student.retained_state),
+            "topology_digest": student.topology.digest,
+            "extents_digest": student.extents.digest,
+            "implementation_sha256": student.implementation_sha256,
+            "factory_state_sha256": "0" * 64,
+            "factory_release_sha256": identity.factory_release_sha256,
+            "semantic_graph_sha256": identity.semantic_graph_sha256,
+            "source_identity": identity.initial_source_identity,
+            "release_digest": identity.initial_release_digest,
+            "teacher_identity": identity.initial_teacher_identity,
+            "teacher_epoch": identity.initial_teacher_epoch,
+        }
+        reference = (
+            f"bamf-genesis-trust-v1:{student.run_id}:"
+            f"{pointer['manifest_sha256']}")
+        raw = canonical(forged)
+        digest = __import__("hashlib").sha256(raw).hexdigest()
+        plane = data_plane()
+        plane.put_object(digest, raw)
+        plane.put_node(digest, raw, 0, None)
+        plane.put_object_reference(reference, raw)
+
         with shape_patch(), self.assertRaises(BilqisError) as accepted_failure:
             load_accepted_generation(self.run)
         self.assertEqual(

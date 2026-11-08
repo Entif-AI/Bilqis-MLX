@@ -102,6 +102,32 @@ class GenerationZeroRetryTests(unittest.TestCase):
         self.assertEqual(manifest, durable_manifest)
         self.assertEqual(student.run_identity.run_seed, 311)
 
+    def test_post_trust_seal_crash_recovers_after_factory_advances(self):
+        prepared = self._prepare(run_seed=3111)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
+                patch.object(
+                    publication, "_write_acceptance",
+                    side_effect=RuntimeError("acceptance crash")):
+            with self.assertRaisesRegex(RuntimeError, "acceptance crash"):
+                publish_initial_generation(self.run, prepared, reserve_gib=0.)
+
+        self.assertFalse((self.run / "bamf-state.json").exists())
+        self.assertFalse((self.run / "bamf-acceptance").exists())
+        bundles = tuple((self.run / "bamf-bundles").iterdir())
+        self.assertEqual(len(bundles), 1)
+        durable_manifest = bundles[0].name
+
+        self._advance_factory_source(prepared)
+        recovered = self._publish(prepared)
+
+        self.assertEqual(recovered["manifest_sha256"], durable_manifest)
+        self.assertEqual(len(tuple((self.run / "bamf-acceptance").iterdir())), 1)
+        with shape_patch():
+            student, manifest = load_bamf_generation_authority(
+                self.run / "bamf-state.json")
+        self.assertEqual(manifest, durable_manifest)
+        self.assertEqual(student.run_identity.run_seed, 3111)
+
     def test_post_pointer_crash_retry_reconciles_pending_delivery_before_success(self):
         prepared = self._prepare(run_seed=312)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \

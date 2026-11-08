@@ -2,15 +2,18 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
+import sqlite3
 
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH, data_plane
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 
-from ..records import CompleteStudent, canonical, invalid
+from ..codec import load_bamf_bundle
+from ..records import CompleteStudent, canonical, invalid, sha
+from .retry import _same_initial_candidate
 
 
 GENESIS_TRUST_SCHEMA = "bilqis.mlx.bamf-genesis-trust/v1"
-_REFERENCE_PREFIX = "bamf-genesis-trust-v1:"
 
 
 def _hex(value: object) -> bool:
@@ -18,10 +21,10 @@ def _hex(value: object) -> bool:
             and all(char in "0123456789abcdef" for char in value))
 
 
-def _reference(run_id: str, manifest_sha256: str) -> str:
+def _identity(run_id: str, manifest_sha256: str) -> tuple[str, str]:
     if not isinstance(run_id, str) or not run_id or not _hex(manifest_sha256):
         invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_INVALID")
-    return f"{_REFERENCE_PREFIX}{run_id}:{manifest_sha256}"
+    return run_id, manifest_sha256
 
 
 def _trust_record(prepared, manifest_sha256: str) -> dict:
@@ -56,20 +59,78 @@ def _trust_record(prepared, manifest_sha256: str) -> dict:
     }
 
 
-def publish_initial_generation_trust_root(prepared, manifest_sha256: str) -> None:
-    """Persist one append-only acceptance witness outside the BAMF package."""
+def _stored_trust(run_id: str):
+    plane = data_plane()
+    with plane._lock:
+        return plane._db.execute(
+            "SELECT generation,manifest_sha256,payload_sha256,payload "
+            "FROM bamf_genesis_trust WHERE run_id=?", (run_id,)
+        ).fetchone()
+
+
+def _require_exact_stored_trust(run_id: str, manifest_sha256: str, raw: bytes) -> bool:
+    stored = _stored_trust(run_id)
+    if stored is None:
+        return False
+    generation, stored_manifest, payload_sha256, payload = stored
+    if (generation != 0 or stored_manifest != manifest_sha256
+            or payload_sha256 != sha(payload) or payload != raw):
+        invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_DRIFT")
+    return True
+
+
+def sealed_initial_generation_manifest(prepared) -> str | None:
+    """Return an already sealed exact genesis without replaying mutable upstream."""
+    prepared.__post_init__()
+    stored = _stored_trust(prepared.candidate.run_id)
+    if stored is None:
+        return None
+    manifest_sha256 = stored[1]
+    raw = canonical(_trust_record(prepared, manifest_sha256))
+    _require_exact_stored_trust(
+        prepared.candidate.run_id, manifest_sha256, raw)
+    return manifest_sha256
+
+
+def publish_initial_generation_trust_root(
+        run_dir: Path, prepared, manifest_sha256: str) -> None:
+    """Seal one B13-owned append-only acceptance witness outside the BAMF package."""
+    from ..genesis import validate_initial_generation_preparation
+
+    run_id, manifest_sha256 = _identity(prepared.candidate.run_id, manifest_sha256)
     record = _trust_record(prepared, manifest_sha256)
     raw = canonical(record)
-    reference = _reference(record["run_id"], manifest_sha256)
-    plane = data_plane()
-    existing = plane.get_object_reference(reference)
-    if existing is not None:
-        if existing[1] != raw:
-            invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_DRIFT")
+    target = Path(run_dir) / "bamf-bundles" / manifest_sha256
+    student = load_bamf_bundle(target, expected_manifest_sha256=manifest_sha256)
+    if not _same_initial_candidate(student, prepared.candidate):
+        invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_DRIFT")
+    if _require_exact_stored_trust(run_id, manifest_sha256, raw):
         return
-    plane.put_object_reference(reference, raw)
-    readback = plane.get_object_reference(reference)
-    if readback is None or readback[1] != raw:
+
+    plane = data_plane()
+    payload_sha256 = sha(raw)
+    validate_initial_generation_preparation(prepared)
+    with plane.transaction():
+        existing = plane._db.execute(
+            "SELECT generation,manifest_sha256,payload_sha256,payload "
+            "FROM bamf_genesis_trust WHERE run_id=?", (run_id,)
+        ).fetchone()
+        if existing is not None:
+            generation, stored_manifest, stored_sha256, stored_raw = existing
+            if (generation != 0 or stored_manifest != manifest_sha256
+                    or stored_sha256 != payload_sha256 or stored_raw != raw):
+                invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_DRIFT")
+            return
+        try:
+            plane._db.execute(
+                "INSERT INTO bamf_genesis_trust("
+                "run_id,generation,manifest_sha256,payload_sha256,payload) "
+                "VALUES(?,?,?,?,?)",
+                (run_id, 0, manifest_sha256, payload_sha256, raw),
+            )
+        except sqlite3.IntegrityError:
+            invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_DRIFT")
+    if not _require_exact_stored_trust(run_id, manifest_sha256, raw):
         invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_DRIFT")
 
 
@@ -77,19 +138,24 @@ def require_initial_generation_trust_root(
         pointer: dict, student: CompleteStudent, binding) -> None:
     """Require the external owner-issued witness before granting cold authority."""
     identity = student.run_identity
-    reference = _reference(student.run_id, pointer.get("manifest_sha256"))
-    stored = data_plane().get_object_reference(reference)
+    run_id, manifest_sha256 = _identity(
+        student.run_id, pointer.get("manifest_sha256"))
+    stored = _stored_trust(run_id)
     if stored is None:
         invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_REQUIRED")
+    generation, stored_manifest, payload_sha256, raw = stored
+    if (generation != 0 or stored_manifest != manifest_sha256
+            or payload_sha256 != sha(raw)):
+        invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_INVALID")
     try:
-        record = json.loads(stored[1])
+        record = json.loads(raw)
     except (UnicodeDecodeError, json.JSONDecodeError):
         invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_INVALID")
     expected = {
         "schema": GENESIS_TRUST_SCHEMA,
         "run_id": student.run_id,
         "generation": 0,
-        "manifest_sha256": pointer["manifest_sha256"],
+        "manifest_sha256": manifest_sha256,
         "acceptance_sha256": binding.digest,
         "run_identity_sha256": identity.digest,
         "candidate_identity_sha256": candidate_identity_digest(student.retained_state),
