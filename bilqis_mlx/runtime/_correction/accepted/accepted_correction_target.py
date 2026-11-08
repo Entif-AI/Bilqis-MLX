@@ -168,31 +168,47 @@ class AcceptedCorrectionTarget:
                 queue.event, queue.accepted_event_id, owner.index)
             self.context_queues[event_id] = refreshed
 
-    def advance_context(
+    def _context_frontier_queue(
         self, frontier: ContextRevalidationFrontier,
-        registry: SourceAuthorityRegistry,
-    ) -> bool:
+    ) -> tuple[tuple, ContextRevalidationQueue | None, bool | None]:
         owner = self.owner
         if owner is None:
-            return True
+            return (), None, True
         relevant = tuple(
             item for item in frontier.results
             if any(node.artifact_id == item.artifact_id for node in owner.index.nodes)
         )
         if not relevant:
-            return True
+            belongs_here = any(
+                item.context_event_id in self.context_invalidations
+                for item in frontier.results)
+            return (), None, False if belongs_here else True
         context_event_id = relevant[0].context_event_id
         queue = self.context_queues.get(context_event_id)
+        if queue is None and context_event_id in self.context_invalidations:
+            self._reconcile_late_context_materializations()
+            queue = self.context_queues.get(context_event_id)
         if queue is None:
-            # This target was not affected by that accepted invalidation. The
-            # evidence may still be globally valid for another owner; treat it as
-            # harmless here so late registration/cold replay cannot be poisoned.
-            return True
+            return relevant, None, True
         if not queue.pending:
             self._refresh_waiting_contexts()
             queue = self.context_queues.get(context_event_id)
             if queue is None or not queue.pending:
-                return False
+                return relevant, None, False
+        return relevant, queue, None
+
+    def advance_context(
+        self, frontier: ContextRevalidationFrontier,
+        registry: SourceAuthorityRegistry,
+    ) -> bool:
+        owner = self.owner
+        relevant, queue, terminal = self._context_frontier_queue(frontier)
+        if terminal is not None:
+            return terminal
+        if owner is None or queue is None:
+            from .atlas_revalidation_common import _invalid
+            _invalid("BAMF_C09_CONTEXT_REVALIDATION_TARGET_DRIFT")
+        context_event_id = queue.event.event_id
         for item in relevant:
             task = next_context_revalidation_task(owner.index, queue)
             if task is None:

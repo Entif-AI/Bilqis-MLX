@@ -113,4 +113,3 @@ class AcceptedCorrectionCompositionCase(unittest.TestCase):
                 for handle in (frame.frame_handle, *frame.member_handles)
             })),
         )
-
