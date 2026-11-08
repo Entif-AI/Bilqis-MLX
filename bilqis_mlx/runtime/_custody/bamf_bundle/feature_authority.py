@@ -172,6 +172,9 @@ def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student, *,
         parent = current
         predecessor = features
         if child.extents.factor_map_digest == parent.extents.factor_map_digest:
+            if (child.extents.active_semantic_digest
+                    != parent.extents.active_semantic_digest):
+                invalid("BAMF_FEATURE_ACTIVE_SET_DRIFT")
             source = _feature_source(child.compiler_features)
             if (child.compiler_features.get("factor_map_sha256") != features.digest
                     or source != _feature_source(parent.compiler_features)

@@ -27,7 +27,7 @@ from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
 from bilqis_mlx.semantics.atlas_projection_parts.releases import AtlasCounts
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    publish_candidate, candidate, parent_state, shape_patch,
+    accepted_state, publish_candidate, candidate, parent_state, shape_patch,
 )
 
 RELEASE = "1" * 64
@@ -189,6 +189,26 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
             semantic_abi={**source.semantic_abi, "active_set_sha256": ARBITRARY},
         )
         self.publish(drifted)
+        with self.assertRaises(BilqisError) as failure:
+            self.read_receipt(features)
+        self.assertEqual(
+            failure.exception.context["reason"], "BAMF_FEATURE_ACTIVE_SET_DRIFT")
+
+    def test_same_feature_child_active_set_drift_refuses_receipt(self):
+        features = source_features()
+        first = self.publish(feature_bound(candidate(parent_state()), features))
+        child = feature_bound(
+            candidate(
+                accepted_state(parent_state()), 1,
+                first["manifest_sha256"]),
+            features, active_set=ARBITRARY)
+        child = replace(child, transition={
+            **child.transition,
+            "kind": "PARAMETER_EXTENSION",
+            "invalidate_derived_caches": True,
+        })
+        self.publish(child)
+
         with self.assertRaises(BilqisError) as failure:
             self.read_receipt(features)
         self.assertEqual(
