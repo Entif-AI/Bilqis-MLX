@@ -131,3 +131,7 @@ all object-identical to the A05 `frame_compiler` owners, and repository search
 finds the authoritative schema/handle/digest definitions only in
 `semantics/_frame_compiler/prefix_inventory.py`. The delta after semantic repair
 `37417f9e...` is docs/flow bookkeeping only.
+
+Ready PR **#936** turns this scoped repair in to
+`codex/bamf-unified-base-20261028`. Human review/merge remains the integration
+authority; no self-merge is authorized.

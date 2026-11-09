@@ -237,11 +237,11 @@
     },
     {
       "issue": 354,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "37417f9e80921e0b9be040eaf48da8f0940e8ed9",
-      "summary": "Scoped A13/A05 compiled-prefix authority integration is qualified on reviewed unified 4bfcbd5a: A05 owns complete-prefix identity/evidence and A13 issues the exact SourceGrant only after replay. Fresh review found one split-module duplicate-identity Major; bounded owner-alias repair is green at 15 passed + 6 subtests with zero skips and exact identity proof. Fresh repaired-head reinspection pending.",
-      "resume_trigger": null,
+      "pr": 936,
+      "state": "TURNED_IN",
+      "head_sha": "fc3a32f59f2f77eb352d586a3b43ddff1d2a0c53",
+      "summary": "Scoped A13/A05 compiled-prefix authority repair is turned in as ready PR #936 after current-unified qualification, one shared-contract Major repair, and targeted reinspection PASS 0 Blockers / 0 Majors / 0 Nits. A05 is the sole prefix identity owner; A13 issues only after exact replay.",
+      "resume_trigger": "Human review/merge PR #936 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
       "preserved_branch": "codex/354-a13-prefix-inventory-20261107"
     }
   ]
