@@ -11,15 +11,18 @@ from bilqis_mlx.errors.catalog import BY_CODE, BY_LEGACY_CODE
 
 class CatalogTests(unittest.TestCase):
     def test_frozen_catalog_order_and_complete_contracts(self):
-        payload = json.dumps([asdict(spec) for spec in CATALOG[:-9]],
+        payload = json.dumps([asdict(spec) for spec in CATALOG[:-10]],
                              sort_keys=True, separators=(",", ":"))
-        self.assertEqual(len(CATALOG), 123)
+        self.assertEqual(len(CATALOG), 124)
         self.assertEqual(hashlib.sha256(payload.encode()).hexdigest(),
                          "19f57f09d168f1380c9d7a372f26fdc94bcca536a8fc0d303800eb2181aef7c3")
-        self.assertEqual(len(BY_CODE), 123)
+        self.assertEqual(len(BY_CODE), 124)
         self.assertIs(BY_CODE["SCHOOL.STATE.COURSE_DIGEST_MISMATCH"],
                       SCHOOL.STATE.COURSE_DIGEST_MISMATCH)
         self.assertIs(CATALOG[-1], SCHOOL.BAMF_PACKAGE.INVALID)
+        self.assertEqual(
+            BY_CODE["SCHOOL.BAMF_FIRST_STUDENT.INVALID"].owner,
+            "runtime.bamf_first_student")
         for spec in CATALOG:
             for alias in spec.legacy_codes:
                 self.assertIn(spec, BY_LEGACY_CODE[alias])

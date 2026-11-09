@@ -27,7 +27,7 @@ def _epoch(value):
     return type(value) is int and value >= 0
 
 
-def _validate_feature_binding(compiler):
+def _validate_feature_binding(compiler, invalid):
     """Keep recorded source/schema bindings shape-checked when they are present.
 
     Absence stays legal for historical generations; the accepted-generation
@@ -51,6 +51,12 @@ def _validate_feature_binding(compiler):
                    or not all(isinstance(value, str) and value for value in row)
                    for row in schema['source_bindings'])):
         invalid()
+    grades = compiler.get('factory_grade_ids')
+    if grades is not None and (
+            not isinstance(grades, list) or not grades
+            or len(set(grades)) != len(grades)
+            or any(type(grade) is not str or not grade for grade in grades)):
+        invalid()
 
 
 def validate_identity_sidecars(extents, provenance, records, invalid):
@@ -72,7 +78,10 @@ def validate_identity_sidecars(extents, provenance, records, invalid):
             or not all(type(bank) is str and bank.strip() and bank.isprintable() for bank in banks)
             or len(set(banks)) != len(banks)):
         invalid()
-    _validate_feature_binding(compiler)
+    _validate_feature_binding(compiler, invalid)
+    source_authority_anchor = correction.get('source_authority_registry_sha256')
+    if (source_authority_anchor is not None and not _digest(source_authority_anchor)):
+        invalid()
     if (compiler.get('factor_map_sha256') != extents.factor_map_digest
             or not _digest(compiler.get('compiler_sha256'))
             or any(not _epoch(record.get(key)) for record, keys in (

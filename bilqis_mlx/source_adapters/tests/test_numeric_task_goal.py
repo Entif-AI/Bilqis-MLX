@@ -27,7 +27,8 @@ class NumericTaskGoalTests(unittest.TestCase):
     def test_source_visible_addition_becomes_bounded_admitted_operator_hole(self):
         expression = calculate("ADD", number(2), number(3))
         row = {
-            "id": "numeric-case-1", "capability": "C.ADD",
+            "id": "numeric-case-1", "source_id": "source:shared-premise",
+            "capability": "C.ADD",
             "record": {"symbols": encode(expression)}, "tokens": [1, 2, 3, 4],
         }
 
@@ -42,6 +43,14 @@ class NumericTaskGoalTests(unittest.TestCase):
         self.assertEqual(goal.semantic_release, "b" * 64)
         self.assertEqual(binding.task.scope, "C.ADD")
         self.assertEqual(len(binding.operands), 2)
+        self.assertEqual(
+            {operand.source_reference for operand in binding.operands},
+            {"source:shared-premise"},
+        )
+        self.assertNotIn(
+            "source:numeric-row:numeric-case-1",
+            {operand.source_reference for operand in binding.operands},
+        )
 
     def test_evaluator_gold_is_forbidden_at_lowering_boundary(self):
         expression = calculate("ADD", number(2), number(3))

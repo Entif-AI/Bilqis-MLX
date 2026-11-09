@@ -119,7 +119,7 @@ class SemanticContrastTeacherBridgeTests(unittest.TestCase):
 
     def test_real_event_frame_release_contains_semantic_contrast_teaching_option(self):
         execution = self.release.execution_plan.capability_map[CAPABILITY]
-        self.assertEqual(execution.provider_id, "source.issue349.event-frames/v1")
+        self.assertEqual(execution.provider_id, "source.ithkuil-event-frames/v1")
         self.assertIn(OPTION_ID, execution.teaching_option_ids)
         adapter = self.registry.require(event_frames.GENERATOR, event_frames.ORACLE)
         self.assertIs(adapter.enrich, enrich_contrasts)

@@ -98,3 +98,45 @@ def mark_affected_capabilities(
     )
     return RequalificationUpdate(
         next_ledger, affected_ids, new_tasks, new_intents)
+
+
+def mark_context_affected_capability(
+    ledger: RequalificationLedger, transition,
+) -> RequalificationUpdate:
+    """Create context-authenticated fresh work without inventing C10 authority."""
+    from bilqis_mlx.runtime.context_revalidation import ContextStateTransition
+
+    if (not isinstance(ledger, RequalificationLedger)
+            or not isinstance(transition, ContextStateTransition)
+            or not transition.changed):
+        _invalid("BAMF_C09_CONTEXT_REQUALIFICATION_ARGUMENT_INVALID")
+    affected = tuple(
+        support for support in ledger.capabilities
+        if transition.artifact_id in support.support_artifact_ids)
+    if not affected:
+        return RequalificationUpdate(ledger, (), (), ())
+    affected_ids = tuple(item.capability_id for item in affected)
+    updated = tuple(
+        replace(support, status=RequalificationStatus.REQUALIFICATION_REQUIRED)
+        if support in affected else support
+        for support in ledger.capabilities)
+    prior_history = tuple(
+        support for support in affected
+        if support.status is RequalificationStatus.QUALIFIED)
+    existing_tasks = {item.task_id for item in ledger.pending_source_tasks}
+    proposed_tasks = tuple(
+        TargetedSourceTask.from_context(
+            support, transition.context_event_id)
+        for support in affected)
+    new_tasks = tuple(
+        item for item in proposed_tasks if item.task_id not in existing_tasks)
+    next_ledger = RequalificationLedger(
+        capabilities=updated,
+        historical=(*ledger.historical, *prior_history),
+        pending_source_tasks=tuple(sorted(
+            (*ledger.pending_source_tasks, *new_tasks),
+            key=lambda item: item.task_id)),
+        pending_c10_intents=ledger.pending_c10_intents,
+    )
+    return RequalificationUpdate(
+        next_ledger, affected_ids, new_tasks, ())

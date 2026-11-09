@@ -61,7 +61,8 @@ def _maximum(capability) -> int:
 
 
 def _visit_numeric(
-    item, path, *, root, row, row_id, semantic_release, capability, release,
+    item, path, *, root, row, row_id, source_identity, semantic_release,
+    capability, release,
     registry, maximum, actual, operands, grants, nodes,
 ):
     if isinstance(item, Literal):
@@ -78,7 +79,7 @@ def _visit_numeric(
             handle = "source:numeric-set:" + contract_digest((row_id, path, value))
             typed = TypedValue("NumberSet", value, semantic_release, handle)
             source = SourceOperand(
-                typed, SourceKind.TASK_VISIBLE, "source:numeric-row:" + row_id,
+                typed, SourceKind.TASK_VISIBLE, source_identity,
                 len(row.get("tokens", ())))
             operands.append(source)
             grants.append(_grant(
@@ -93,7 +94,7 @@ def _visit_numeric(
         handle = "source:numeric-literal:" + contract_digest((row_id, path, value))
         typed = TypedValue("Number", value, semantic_release, handle)
         source = SourceOperand(
-            typed, SourceKind.TASK_VISIBLE, "source:numeric-row:" + row_id,
+            typed, SourceKind.TASK_VISIBLE, source_identity,
             len(row.get("tokens", ())))
         operands.append(source)
         grants.append(_grant(
@@ -104,7 +105,8 @@ def _visit_numeric(
         _invalid("BAMF_C04_NUMERIC_EXPRESSION_INVALID")
     refs = tuple(_visit_numeric(
         child, (*path, index), root=False, row=row, row_id=row_id,
-        semantic_release=semantic_release, capability=capability, release=release,
+        source_identity=source_identity, semantic_release=semantic_release,
+        capability=capability, release=release,
         registry=registry, maximum=maximum, actual=actual, operands=operands,
         grants=grants, nodes=nodes,
     ) for index, child in enumerate(item.arguments))
@@ -195,9 +197,11 @@ def lower_numeric_task_goal(
     operands = []
     nodes = []
     row_id = str(row.get("id") or row.get("source_id") or "numeric-row")
+    source_identity = str(row.get("source_id") or row_id)
 
     _visit_numeric(
         expression, (), root=True, row=row, row_id=row_id,
+        source_identity=source_identity,
         semantic_release=semantic_release, capability=capability, release=release,
         registry=registry, maximum=maximum, actual=actual, operands=operands,
         grants=grants, nodes=nodes)

@@ -25,13 +25,14 @@ from .encoding import encode_source_compiled, encode_source_compiled_with_handof
 class _SourceBackboneProducerSession:
     """Own source h0 and the only legal sequential group-receipt construction."""
 
-    def __init__(self, encoded, handoffs, parameters, compiled):
+    def __init__(self, encoded, handoffs, parameters, compiled, artifact_owner):
         self._compiled = compiled
         self._encoded = encoded
         self._handoffs = tuple(handoffs)
         self._parameters = dict(parameters)
         self._sources = None
         self._feature_schema = None
+        self._artifact_owner = artifact_owner
         self._source_digest = contract_digest(tuple(item.digest for item in handoffs))
         self._topology = ModelTopologySpecV2()
         self._generation = execution_generation_digest(
@@ -61,6 +62,7 @@ class _SourceBackboneProducerSession:
     def _receipt_replay(self):
         if self._sources is None or self._feature_schema is None:
             _invalid_producer_receipt()
+        self._artifact_owner.require(self._compiled.features)
         encoded, handoffs = self._encoded, self._handoffs
         for handoff in handoffs:
             handoff.__post_init__()
@@ -244,14 +246,17 @@ class _SourceBackboneProducerSession:
         return receipt
 
 
-def start_source_backbone_numerical(compiled, parameters, sources, feature_schema):
+def start_source_backbone_numerical(
+    compiled, parameters, sources, feature_schema, artifact_owner,
+):
     """Compute h0 and input coordinates internally before constructing a session.
 
     The accepted source encoder replays source, rights, prefix, feature and full
     B01 parameter checks. Each compiled row is one independent source sequence.
     Extent and prefix digests are observations, not B13 generation credentials.
     """
-    encoding = encode_source_compiled(compiled, parameters, sources, feature_schema)
+    encoding = encode_source_compiled(
+        compiled, parameters, sources, feature_schema, artifact_owner)
     valid = mx.array([[position is not None for position in row]
                       for row in encoding.handles], dtype=mx.bool_)
     return UnadmittedBackboneSession(
@@ -263,12 +268,13 @@ def start_source_backbone_numerical(compiled, parameters, sources, feature_schem
 
 
 def start_source_backbone_producer(
-    compiled, parameters, sources, feature_schema,
+    compiled, parameters, sources, feature_schema, artifact_owner,
 ):
     """Create the B11 producer only by replaying and revalidating actual source rows."""
     encoded, handoffs = encode_source_compiled_with_handoffs(
-        compiled, parameters, sources, feature_schema)
-    producer = _SourceBackboneProducerSession(encoded, handoffs, parameters, compiled)
+        compiled, parameters, sources, feature_schema, artifact_owner)
+    producer = _SourceBackboneProducerSession(
+        encoded, handoffs, parameters, compiled, artifact_owner)
     producer._bind_authoritative_inputs(sources, feature_schema)
     producer._receipts = ()
     receipt = _issue_from_producer(producer)
@@ -329,13 +335,13 @@ def finalize_source_backbone_hidden(producer):
 
 
 def start_retained_source_backbone_producer(
-    compiled, parameters, sources, feature_schema, manifest, *, seal,
+    compiled, parameters, sources, feature_schema, manifest, artifact_owner, *, seal,
 ):
     """B13-only B11 producer whose g1 boundary executes the retained B08 read."""
     if seal is not _B13_EXECUTION_SEAL or type(manifest) is not MotifManifest:
         _invalid_producer_receipt()
     producer = start_source_backbone_producer(
-        compiled, parameters, sources, feature_schema)
+        compiled, parameters, sources, feature_schema, artifact_owner)
     if manifest.digest != compiled.extents.motif_key_map_digest:
         _invalid_producer_receipt()
     producer._motif_manifest = manifest

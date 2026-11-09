@@ -108,6 +108,17 @@ class BAMF_TRAINING_ADAPTER:
     )
 
 
+class BAMF_FIRST_STUDENT:
+    INVALID = _spec(
+        ("SCHOOL", "BAMF_FIRST_STUDENT", "INVALID"),
+        owner="runtime.bamf_first_student",
+        title="BAMF first-student preflight is invalid",
+        message_template="The BAMF first-student preflight is invalid: {reason}",
+        disposition="PRESERVE_AND_INSPECT",
+        next_action="Keep the admitted source run unchanged; reconcile the launch config, Factory/Atlas bindings and empty target before retrying.",
+    )
+
+
 class BAMF_WORKSTACK:
     VALIDATION_INVALID = _spec(
         ("SCHOOL", "BAMF_WORKSTACK", "VALIDATION_INVALID"), owner="scripts.check_bamf_workstack",

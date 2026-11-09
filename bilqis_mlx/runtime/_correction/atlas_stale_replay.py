@@ -20,6 +20,21 @@ PROCESS_FAULT_SCHEMA = "bilqis.c09.process-fault/v1"
 PROCESS_FAULT_RESULT_SCHEMA = "bilqis.c09.process-fault-result/v1"
 
 
+def _affected_artifact_ids(
+    index: DependencyIndex, dependency: DependencyRef,
+) -> frozenset[str]:
+    affected = set()
+    frontier = list(index.direct_dependents(dependency))
+    while frontier:
+        node = frontier.pop()
+        if node.artifact_id in affected:
+            continue
+        affected.add(node.artifact_id)
+        frontier.extend(index.direct_dependents(
+            DependencyRef(DependencyKind.ARTIFACT, node.artifact_id)))
+    return frozenset(affected)
+
+
 class RemediationStatus(str, Enum):
     PENDING = "PENDING"
     COMPLETED = "COMPLETED"
@@ -156,6 +171,9 @@ def escalate_stale_replay(
         _invalid("BAMF_C09_PROCESS_FAULT_CORRECTION_DRIFT")
     if remediation.completed_at < correction.recorded_at:
         _invalid("BAMF_C09_REMEDIATION_BEFORE_CORRECTION")
+    proven_affected = _affected_artifact_ids(index, correction.dependency)
+    if not set(remediation.affected_artifact_ids) <= proven_affected:
+        _invalid("BAMF_C09_REMEDIATION_AFFECTED_ROOT_INVALID")
     for index_in_path, artifact_id in enumerate(claim.derived_path):
         node = index.node(artifact_id)
         if index_in_path and DependencyRef(
@@ -170,7 +188,7 @@ def escalate_stale_replay(
             or claim.fact_digest != remediation.superseded_fact_digest):
         return None
     roots = set(remediation.affected_artifact_ids).intersection(
-        claim.derived_path)
+        claim.derived_path).intersection(proven_affected)
     if not roots:
         return None
     held = set(roots)
