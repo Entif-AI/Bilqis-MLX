@@ -5,8 +5,8 @@
 - Issue: #399 — A02.1 | Allocate stable semantic banks and activate admitted identity rows
 - Branch: `codex/bamf02-a-399-production-admission-20261106`
 - Historical PR #887: closed unmerged after the earlier A02 publication-authority overreach was corrected.
-- Reviewed integration trunk consumed for the current candidate: `6b085f875ab781a3771c89916a1e42653f73e882`
-- Repaired A02 semantic head: `df0c11ea6a687c062143ebc0b16705f2ca7fee2b`; later `cba3712f` / `d571f162` commits only preserve or merge reviewed-unified state and do not change A02 semantics.
+- Reviewed integration trunk consumed for the current candidate: `e206ec0e957e24823f3136c0f3bffe1fc950013e`
+- Repaired A02 semantic head: `d64df31416712b51a24c45417b05893c923642cd`.
 - Dependency authority consumed: reviewed B13 accepted-generation feature authority from #708/#809.
 - Additional B13 integration repair in this branch: recursive accepted-generation feature lineage is rederived through the same accepted source authority, while the immediate parent generation's effective feature map is kept distinct from the current feature artifact's last distinct construction predecessor. A02 therefore does not mint a parallel factor-map authority or mistake retained reuse for a new feature transition.
 - Rejected historical PR #698 lineage was not revived or used as current authority.
@@ -95,24 +95,36 @@ This post-seal witness proves that the ordinary initial accepted generation can 
 ## 2026-11-09 current-unified qualification
 
 The repaired A02 owner branch consumed reviewed unified
-`636ac8ffdeece7d6f8b24e9d1f46596396848db7` exactly once at the turn-in boundary.
+`e206ec0e957e24823f3136c0f3bffe1fc950013e` exactly once at the turn-in boundary.
 The resulting semantic integration head is
-`6c59b20230ba222cfbd24933c1de046b558aceb2`.
+`d64df31416712b51a24c45417b05893c923642cd`.
 
-The reviewed-unified delta was limited to C09 packed-frame/context-view custody and
-the accepted execution cache. No A02 semantic/staging owner was changed by the sync.
-Accordingly the already-completed 316.421s full-topology witness remains reusable:
-its A02 staging inputs and implementation are unchanged. The newly invalidated C09
-seam was instead requalified directly after the sync.
+The current sync exposed one A02-owned integration regression that focused staging
+tests had not exercised: exporting the MLX-heavy `stage_vocabulary_extension`
+executor eagerly from `bamf_bundle` caused cold checkpoint metadata import to reach
+MLX. The public package now lazy-loads that executor, while the typed A02 handoff
+records remain lightweight. Two pre-existing B13 tests that attempted to publish a
+vocabulary/active-set extension through generic retention publication were also
+corrected to assert the required C07 boundary instead of bypassing it.
 
 Post-sync differential proof:
 
 ```text
-A02/B13 focused staging + feature/publication ring: 30/30 PASS
-new C09 packed/context accepted-custody ring:       5/5 PASS
-A02 semantic owner ring:                           11 PASS / 0 fail / 2 explicit opt-in skips
+A02 issuance + generic-publication boundary:       3/3 PASS
+cold checkpoint metadata import:                   1/1 PASS
+B13 tensor-CAS + cache-boundary ring:               9/9 PASS
+combined affected ring:                            13/13 PASS
 git diff --check:                                  PASS
 ```
+
+The repository-wide premerge sweep was also run against the current reviewed-unified
+base. Static governance, structure, flow-control, legacy-trainer and changed-file
+quality gates passed. The aggregate test phase still reports unrelated repository
+baseline/environment debt (including unavailable legacy source artifacts and other
+independently changing owner surfaces); those failures are not represented as A02
+acceptance. The A02-caused cold-import regression and the two stale generic
+publication expectations discovered by that sweep were repaired and are covered by
+the 13/13 affected ring above.
 
 No neural workload, `AdamW.update`, accepted generation publication, C07 lease, or
 live learner mutation was exercised by this qualification. A fresh merge-readiness

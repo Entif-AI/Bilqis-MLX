@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "636ac8ffdeece7d6f8b24e9d1f46596396848db7",
-  "updated_at": "2026-11-09T19:32:52Z",
+  "observed_unified": "e206ec0e957e24823f3136c0f3bffe1fc950013e",
+  "updated_at": "2026-11-09T21:32:24Z",
   "exception": null,
   "items": [
     {
@@ -99,9 +99,9 @@
       "issue": 399,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "df0c11ea6a687c062143ebc0b16705f2ca7fee2b",
-      "head_sha_role": "repaired A02 semantic head; cba3712f/d571f162 are reviewed-unified synchronization/control-plane-only descendants",
-      "summary": "A02.1 staging-only owner implementation is integrated through reviewed unified 6b085f87. The exact owner-issued staged handoff now seals run identity, full authority-bearing candidate state, retained B12 custody and outbox/receipt; the speculative A02-owned C07 replay exception was removed so same-map active-set adoption stays fail-closed until #510 supplies reviewed Atlas-admission authority. Focused A02/B13 proof, quality/governance/flow and BAMF contracts are green; final authority and adversarial reviews report 0 Blockers / 0 Majors / 0 Nits and NO_DRIFT. Readiness found only this stale durable-receipt mismatch, now corrected; final reread and premerge remain before human-review PR turn-in.",
+      "head_sha": "d64df31416712b51a24c45417b05893c923642cd",
+      "head_sha_role": "current A02 semantic head after reviewed-unified e206ec0 sync and cold-import/publication-boundary repair",
+      "summary": "A02.1 staging-only owner implementation is synchronized through reviewed unified e206ec0. The exact owner-issued staged handoff seals run identity, complete authority-bearing candidate state, retained B12 custody and outbox/receipt; generic B13 publication remains fail-closed at BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED until #510 consumes the typed handoff. Current integration repaired one A02-caused cold checkpoint-import regression by lazy-loading the MLX-heavy staging executor and updated stale generic publication tests to assert the C07 boundary. The affected exact-head ring is 13/13 PASS and git diff --check is clean. Repository-wide static premerge gates are green; unrelated aggregate baseline/environment failures remain outside A02 acceptance. Fresh exact-head independent review remains before human-review PR turn-in.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-399-production-admission-20261106",
       "closed_pr": 887,
