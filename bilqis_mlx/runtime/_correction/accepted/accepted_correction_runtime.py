@@ -10,16 +10,9 @@ from .accepted_correction_dispatch import AcceptedCorrectionRuntime
 from .atlas_revalidation_common import _invalid
 
 
-def _make_runtime_core():
-    """Own accepted runtimes, verifier roots, and mutation leases privately."""
-    entries = {}
-    lock = RLock()
+def _make_owner_custody(entries):
     active_owner = ContextVar("bamf_c09_active_accepted_owner", default=None)
     superseded_owners = weakref.WeakSet()
-
-    def require_owned(retained) -> None:
-        if not any(candidate is retained for candidate in entries.values()):
-            _invalid("BAMF_C09_ACCEPTED_RUNTIME_REQUIRED")
 
     def authorize_owner(owner, action):
         token = active_owner.set(owner)
@@ -67,6 +60,25 @@ def _make_runtime_core():
         if any(candidate is not target for candidate in matched):
             _invalid("BAMF_C09_ACCEPTED_TARGET_IDENTITY_CONFLICT")
         return target
+
+    return (
+        authorize_owner, retire_owner, owner_is_superseded,
+        require_bound_registry, target_for_owner,
+    )
+
+
+def _make_runtime_core():
+    """Own accepted runtimes, verifier roots, and mutation leases privately."""
+    entries = {}
+    lock = RLock()
+    (
+        authorize_owner, retire_owner, owner_is_superseded,
+        require_bound_registry, target_for_owner,
+    ) = _make_owner_custody(entries)
+
+    def require_owned(retained) -> None:
+        if not any(candidate is retained for candidate in entries.values()):
+            _invalid("BAMF_C09_ACCEPTED_RUNTIME_REQUIRED")
 
     def retained(run_dir: Path, manifest_sha256: str) -> AcceptedCorrectionRuntime:
         from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
