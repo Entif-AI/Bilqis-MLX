@@ -1,10 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "81a9e4e24fcca307cb0019db4e4c07737a8b744b",
-  "updated_at": "2026-11-08T07:48:27Z",
+  "observed_unified": "7d9e0e8209e2d077e4fc30f65a3ebf3f29a91f3f",
+  "updated_at": "2026-11-09T03:37:09Z",
   "exception": null,
   "items": [
+    {
+      "issue": 543,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "7d9e0e8209e2d077e4fc30f65a3ebf3f29a91f3f",
+      "summary": "C16.1b active on its dedicated serialized-writer branch after consuming accepted B13.6 generation-zero custody and reviewed unified 7d9e0e82. The leaf binds the admitted Factory foundation, B01 topology/native zero AdamW, source-owned Atlas foundation, teacher baseline and operator run_seed into the B13 preflight boundary without launching neural updates.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/543-c16-foundation-20261108"
+    },
     {
       "issue": 516,
       "pr": 915,
