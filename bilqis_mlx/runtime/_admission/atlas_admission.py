@@ -1,7 +1,8 @@
-"""C07 lease contracts and disposable persistence, pending accepted run authority.
+"""C07 lease contracts plus fixture and accepted-run persistence boundaries.
 
-These C-owned boundary records do not implement A09, A12 or B13. Their explicit
-contract-fixture provenance cannot authorize a saved human learner.
+The historical ``DISPOSABLE_CONTRACT`` shape remains non-authoritative. Production
+lease persistence independently replays accepted B13 birth identity before that
+shape may be attached to a saved run.
 """
 from __future__ import annotations
 
@@ -58,8 +59,8 @@ def validate_atlas_command_request(args):
         _lease_from_json(json.loads(path.read_text(encoding='utf-8')))
     except (OSError, ValueError):
         _invalid('BAMF_ATLAS_SCOPE_FILE_INVALID')
-    # B13's accepted BAMF run owner and the actual A12 authority audit have not
-    # arrived through unified. Disposable projections cannot authorize this CLI.
+    # A scope file alone still cannot authorize the CLI: this parser-level check
+    # has neither accepted B13 run custody nor the typed A02 staged candidate.
     _invalid('BAMF_ATLAS_ACCEPTED_RUN_AUTHORITY_UNAVAILABLE')
 
 
@@ -110,6 +111,114 @@ def persist_atlas_lease(run_dir, lease, *, independently_loaded_run, registry):
     with _atlas_lease_lock(run_dir):
         return _persist_atlas_lease_locked(run_dir, lease,
             independently_loaded_run=independently_loaded_run, registry=registry)
+
+
+def _accepted_run_lease_identity(run_dir):
+    """Re-derive the lease comparison identity from live accepted B13 custody."""
+    from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
+    from .jit_adoption import _accepted_lease_run_identity
+
+    student, _manifest_sha256 = load_bamf_generation_authority(
+        Path(run_dir) / 'bamf-state.json')
+    if student.run_identity is None:
+        _invalid('BAMF_ATLAS_ACCEPTED_RUN_IDENTITY_REQUIRED')
+    return _accepted_lease_run_identity(student.run_identity)
+
+
+def _accepted_source_registry(run_dir, source_authority):
+    """Resolve source verification only through one accepted-run C09 capability."""
+    from bilqis_mlx.runtime.atlas_source_authority import (
+        SourceAuthorityRuntime, require_source_authority_runtime,
+    )
+    if type(source_authority) is not SourceAuthorityRuntime:
+        _invalid('BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID')
+    from bilqis_mlx.runtime.bamf_bundle.admission import (
+        bind_accepted_execution_cache,
+    )
+    cache = bind_accepted_execution_cache(Path(run_dir))
+    require_source_authority_runtime(source_authority, cache)
+    return cache._correction_registry
+
+
+def persist_accepted_atlas_lease(run_dir, lease, *, source_authority):
+    """Persist a human lease only after independent accepted-run identity replay."""
+    expected = _accepted_run_lease_identity(run_dir)
+    if not isinstance(lease, AtlasAdmissionLease) or lease.run_identity != expected:
+        _invalid('BAMF_ATLAS_LEASE_RUN_IDENTITY_DRIFT')
+    registry = _accepted_source_registry(run_dir, source_authority)
+    with _atlas_lease_lock(run_dir, fixture_authority=False):
+        return _persist_atlas_lease_locked(
+            run_dir, lease, independently_loaded_run=expected, registry=registry,
+            fixture_authority=False)
+
+
+def read_accepted_atlas_lease(run_dir, *, source_authority):
+    """Read the current production lease only through accepted B13 run identity."""
+    expected = _accepted_run_lease_identity(run_dir)
+    registry = _accepted_source_registry(run_dir, source_authority)
+    return _read_atlas_lease(
+        run_dir, expected, registry=registry, fixture_authority=False)
+
+
+def read_accepted_atlas_factory_release(run_dir):
+    """Resolve current Factory authority only through accepted B13 lineage.
+
+    Generation zero binds the founding Factory release in ``BamfRunIdentity``.
+    A C07 generation binds its successor directly in ``AtlasAdmissionBinding``.
+    Ordinary retained generations inherit the nearest accepted ancestor's Factory
+    authority through the acceptance-bound parent chain; they never reintroduce
+    the legacy operator receipt as a second current-Factory authority.
+    """
+    from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
+        ParsedAtlasAdmissionBinding,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
+    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
+        accepted_binding_for_manifest, accepted_generation,
+        parent_acceptance_anchor_from_manifest,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.genesis import (
+        BamfRunIdentity, ParsedInitialGenerationBinding,
+    )
+    from . import admission as factory_admission
+
+    root = Path(run_dir)
+    pointer, student = accepted_generation(root / "bamf-state.json")
+    manifest_sha256 = pointer["manifest_sha256"]
+    acceptance_sha256 = pointer["acceptance_sha256"]
+    visited = set()
+    while True:
+        if manifest_sha256 in visited:
+            _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
+        visited.add(manifest_sha256)
+        binding = accepted_binding_for_manifest(
+            root, manifest_sha256, student,
+            expected_acceptance_sha256=acceptance_sha256)
+        if isinstance(binding, ParsedAtlasAdmissionBinding):
+            digest = binding.factory_release_sha256
+            break
+        if student.generation == 0:
+            identity = student.run_identity
+            if (type(binding) is not ParsedInitialGenerationBinding
+                    or type(identity) is not BamfRunIdentity):
+                _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
+            digest = identity.factory_release_sha256
+            break
+        parent_manifest_sha256 = student.parent_manifest_sha256
+        parent_acceptance_sha256 = parent_acceptance_anchor_from_manifest(
+            root, manifest_sha256)
+        if (not _sha(parent_manifest_sha256)
+                or not _sha(parent_acceptance_sha256)):
+            _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
+        student = load_bamf_bundle(
+            root / "bamf-bundles" / parent_manifest_sha256,
+            expected_manifest_sha256=parent_manifest_sha256)
+        manifest_sha256 = parent_manifest_sha256
+        acceptance_sha256 = parent_acceptance_sha256
+    return factory_admission._read_executable_factory_release_artifact(root, {
+        "factory_release_sha256": digest,
+        "factory_release_file": "factory-releases/" + digest + ".json",
+    })
 
 
 def renew_atlas_lease(run_dir, lease, *, independently_loaded_run, registry,

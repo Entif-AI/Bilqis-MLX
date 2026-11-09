@@ -52,8 +52,10 @@ def _lease_from_json(payload):
         _invalid('BAMF_ATLAS_LEASE_PAYLOAD_INVALID')
 
 
-def _read_atlas_lease(run_dir, independently_loaded_run, *, registry, current_authority=True):
-    directory = _store(run_dir)
+def _read_atlas_lease(
+        run_dir, independently_loaded_run, *, registry, current_authority=True,
+        fixture_authority=True):
+    directory = _store(run_dir, fixture_authority=fixture_authority)
     reference = directory / 'current.json'
     if reference.is_symlink():
         _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
@@ -82,15 +84,19 @@ def _read_atlas_lease(run_dir, independently_loaded_run, *, registry, current_au
     return lease
 
 
-def _persist_atlas_lease_locked(run_dir, lease, *, independently_loaded_run, registry):
+def _persist_atlas_lease_locked(
+        run_dir, lease, *, independently_loaded_run, registry,
+        fixture_authority=True):
     if (not isinstance(lease, AtlasAdmissionLease)
             or not isinstance(independently_loaded_run, LeaseRunIdentity)
             or lease.run_identity != independently_loaded_run):
         _invalid('BAMF_ATLAS_LEASE_RUN_IDENTITY_DRIFT')
     lease.source_approval.verify(registry)
-    directory = _store(run_dir)
+    directory = _store(run_dir, fixture_authority=fixture_authority)
     reference = directory / 'current.json'
-    prior = _read_atlas_lease(run_dir, independently_loaded_run, registry=registry)
+    prior = _read_atlas_lease(
+        run_dir, independently_loaded_run, registry=registry,
+        fixture_authority=fixture_authority)
     if prior is not None:
         if prior != lease:
             _invalid('BAMF_ATLAS_LEASE_EXPLICIT_RENEWAL_REQUIRED')
@@ -110,17 +116,19 @@ def _persist_atlas_lease_locked(run_dir, lease, *, independently_loaded_run, reg
     _durable_json(reference, {'schema': 'bilqis.c07.atlas-lease-reference/v1',
         'run_identity_digest': contract_digest(independently_loaded_run),
         'lease_sha256': lease.digest(), 'lease_file': relative})
-    if _read_atlas_lease(run_dir, independently_loaded_run, registry=registry) != lease:
+    if _read_atlas_lease(
+            run_dir, independently_loaded_run, registry=registry,
+            fixture_authority=fixture_authority) != lease:
         _invalid('BAMF_ATLAS_LEASE_READBACK_DRIFT')
     return reference
 
 
 @contextmanager
-def _atlas_lease_lock(run_dir):
+def _atlas_lease_lock(run_dir, *, fixture_authority=True):
     import fcntl
     import os
     import stat
-    directory = _store(run_dir)
+    directory = _store(run_dir, fixture_authority=fixture_authority)
     directory.mkdir(parents=True, exist_ok=True)
     lock = directory / 'writer.lock'
     descriptor = os.open(lock, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)

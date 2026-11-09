@@ -157,6 +157,10 @@ def advance_atlas_frontier(current, proposal, lease):
             'JIT_ADOPTION_ANSWER_IMPLEMENTATION_DRIFT': 'BAMF_ATLAS_ANSWER_IMPLEMENTATION_DRIFT',
         }.get(str(error), 'BAMF_ATLAS_IMPLEMENTATION_REVALIDATION_FAILED')
         _invalid(reason)
-    # #510 owns the concrete, freshly revalidated prepared-successor transaction.
-    # No callback can turn disposable contract evidence into committed admission.
-    return staged('ADOPTION_EXECUTOR_UNAVAILABLE', 'Keep this exact successor staged until the accepted run-owner and #510 adoption executor are available.')
+    # #510 now owns the concrete, freshly revalidated prepared-successor
+    # transaction.  C07.1a still exposes only DISPOSABLE_CONTRACT run identity,
+    # so this public policy may not feed that executor until the accepted B13
+    # run owner projects non-disposable run authority into C07.
+    return staged(
+        'ACCEPTED_RUN_AUTHORITY_UNAVAILABLE',
+        'Keep this exact successor staged until the accepted run owner binds the persisted lease to production custody.')

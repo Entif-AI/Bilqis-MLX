@@ -11242,7 +11242,7 @@
       "count": 1,
       "exception": "OSError",
       "expression": "'disposable interruption before pointer publication'",
-      "path": "bilqis_mlx/runtime/tests/admission/test_atlas_lease_renewal.py"
+      "path": "bilqis_mlx/runtime/tests/admission/atlas/test_atlas_lease_renewal.py"
     },
     {
       "code_hint": "model-input planning entered before A06 authority rejection",

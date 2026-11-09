@@ -9,7 +9,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_admission import (
     AtlasAdmissionLease, issue_atlas_lease, persist_atlas_lease, read_atlas_lease,
 )
-from bilqis_mlx.runtime.tests.admission.test_atlas_admission import (
+from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import (
     _lease, _run, _scope, _signed, _REGISTRY,
 )
 
