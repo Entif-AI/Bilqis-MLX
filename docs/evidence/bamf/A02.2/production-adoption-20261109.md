@@ -6,7 +6,7 @@ Reviewed unified consumed before issue-owned edits:
 `6a770f10074df6f4f8889d439f783ad42f5efe63`.
 
 Current remotely verified production-repair head:
-`4f5972b12fe933ee19701b17ba138a93a5bb7404`.
+`09b3b7dfe3b7d5336d29f25b106e925dceff628a`.
 
 Status: **IMPLEMENTATION_RECONCILED; FULL COMPOSED WITNESS AND FINAL INDEPENDENT REVIEW PENDING**.
 
@@ -80,6 +80,32 @@ Head `4f5972b1` closes that seam:
 The regression proves insufficient current space fails before the successor
 Factory artifact exists and before B13 publication is called.
 
+## Generation-zero capacity-ownership repair
+
+Detached witness v4 reached the real B13 pre-pointer crash but then exposed a
+second production defect: generation zero had already allocated every bank named
+by the complete A01 ABI snapshot, including banks containing only inactive future
+identities. With an inactive identity at ABI index 8192, generation zero therefore
+started with two physical banks and A02 could only activate an existing row; it
+could not exercise the issue-owned capacity-expansion transition.
+
+That behavior contradicted the BAMF-0.2 identity contract: the ABI namespace is
+append-only, but physical semantic-bank capacity is generation-scoped; a fresh
+lineage starts with the minimum capacity needed by its accepted active ABI and
+additional 8192-row banks are allocated at accepted admission boundaries.
+
+Head `09b3b7df` repairs generation-zero ownership by deriving initial
+`semantic_bank_count` from the highest **active** ABI bank, with a minimum of
+one bank, instead of from the complete source ABI census. The source snapshot and
+stable future ABI indices remain unchanged; only unadmitted neural capacity is
+deferred until A02 admission.
+
+A direct owner-sidecar regression uses a two-bank source ABI with only index 0
+active. It failed before the repair with generation-zero bank count 2 and now
+proves generation zero exposes exactly one bank and one `bank:0` identity.
+The widened post-repair ring passed 29 generation-zero/feature-authority tests,
+8 cold-resume tests, 8 C07 adoption tests and 6 persisted-lease policy tests.
+
 ## Current verification
 
 ```text
@@ -94,6 +120,10 @@ changed-file smell audit at 4f5972b1: 0 findings
 development structure/governance:     PASS
 docs check:                            PASS
 git diff --check:                      PASS
+generation-zero / feature authority:  29 PASS
+cold resume:                            8 PASS
+C07 post-genesis repair ring:           8 PASS
+persisted-lease policy:                 6 PASS
 ```
 
 No live learner, shared AdamW update, or neural training workload was started by
@@ -139,3 +169,11 @@ sealed resource requirement identity; the sealed requirement itself remains
 unchanged and is still revalidated by C07 before first persistence. The tracked
 low-space regression separately proves that real insufficient admission
 headroom fails before successor Factory or B13 persistence.
+
+Detached witness v4 then reached the intended B13 pre-pointer crash. Its
+post-crash cold read correctly followed the accepted generation-zero pointer, but
+that generation still reported two banks because the then-current genesis owner
+preallocated all ABI banks. This was not a witness-only mismatch: it exposed the
+generation-zero capacity-ownership defect repaired at `09b3b7df`. The next
+detached witness therefore exercises the repaired real one-bank -> two-bank
+transition rather than weakening the expected old extent.
