@@ -32,6 +32,14 @@ unified trunk for human sign-off; the issue never authorizes self-merging that P
 Accepted cross-lane work becomes available to the other lanes through the next
 issue-boundary sync from unified.
 
+**Portable artifact authority:** host-local filesystem paths are storage placement,
+not semantic identity or authority. BAMF receipts and historical source replay must
+bind immutable content/source identities and remain valid when the same custody is
+copied to another machine or mounted under a different root. A local resolver may
+use paths internally to find bytes, but callers must not supply a pathname as the
+authority for accepted historical lineage; resolved content must still pass its
+own source-pin and digest checks. See ADR-136.
+
 ## BAMF-0.2 GitHub Project dashboard contract — 2026-11-03
 
 The `BAMF-0.2 Execution` GitHub Project is an observability surface. It does not

@@ -44,5 +44,23 @@ from .presentation.operator_cli.settings import (
 )
 
 
+_BAMF_FOUNDATION_EXPORTS = frozenset({
+    "BamfFoundationConfig",
+    "LaunchReceipt",
+    "preflight_bamf_foundation",
+})
+
+
+def __getattr__(name):
+    """Load MLX-backed foundation exports only when a caller asks for them."""
+    if name not in _BAMF_FOUNDATION_EXPORTS:
+        raise AttributeError(name)
+    from .runtime import bamf_first_student
+
+    value = getattr(bamf_first_student, name)
+    globals()[name] = value
+    return value
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

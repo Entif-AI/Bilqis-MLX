@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 from ..atlas_projection import FrozenAtlasSnapshot
-from .snapshot_contracts import AtlasArtifactSelection, _require_registered_source_pin
+from .snapshot_contracts import (
+    AtlasArtifactIdentity, AtlasArtifactSelection, _require_registered_source_pin,
+    resolve_atlas_artifact_selection,
+)
 from .snapshot_materialize import load_atlas_snapshot
 
 
@@ -18,7 +21,9 @@ def load_pinned_atlas_snapshot(selection: AtlasArtifactSelection) -> FrozenAtlas
 
 
 __all__ = (
+    "AtlasArtifactIdentity",
     "AtlasArtifactSelection",
     "load_atlas_snapshot",
     "load_pinned_atlas_snapshot",
+    "resolve_atlas_artifact_selection",
 )

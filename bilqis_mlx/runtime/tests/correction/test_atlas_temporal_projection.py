@@ -1,8 +1,9 @@
 """Source-authenticated temporal projection behavior."""
 import unittest
 
+from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
-    ArtifactKind, DependencyIndex, DependencyKind, TemporalEvent,
+    AUTHORITY, ArtifactKind, DependencyIndex, DependencyKind, TemporalEvent,
     TemporalEventKind, TemporalStatus, _event, _node,
     _ref, apply_correction, bind_as_of_dependency, project_as_of,
     replace,
@@ -10,6 +11,32 @@ from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
 
 
 class TemporalProjectionTests(unittest.TestCase):
+    def test_real_packed_frame_owner_projects_context_time_dependency(self):
+        fixture = FrameEncoderTests()
+        fixture.setUp()
+        compiled, _vectors, _ast = fixture.compiled_inputs()
+        owner = compiled.packed_frame_artifact_owner
+        context_digests = {
+            row.context_digest for row in compiled.compiled.rows
+            if row.context_digest is not None
+        }
+        self.assertTrue(context_digests)
+        nodes = owner.index.nodes
+        self.assertTrue(nodes)
+        for node in nodes:
+            time_refs = tuple(
+                ref for ref in node.immediate_dependencies
+                if ref.kind is DependencyKind.TIME)
+            self.assertEqual(len(time_refs), 1)
+            self.assertTrue(time_refs[0].key.startswith("time:asof:context:"))
+            self.assertIn(time_refs[0].key.removeprefix("time:asof:context:"),
+                          context_digests)
+        time_ref = next(
+            ref for ref in nodes[0].immediate_dependencies
+            if ref.kind is DependencyKind.TIME)
+        queue = owner.apply_correction(_event(time_ref), AUTHORITY)
+        self.assertIn(nodes[0].artifact_id, queue.held_artifact_ids)
+
     def _temporal_projection_fixture(self):
         planned = TemporalEvent(
             event_id="event:planned", actor_id="actor:alpha",

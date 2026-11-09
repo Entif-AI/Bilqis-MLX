@@ -14,15 +14,41 @@ from bilqis_mlx.presentation.school_telemetry import SchoolTelemetry, LETTER_TAB
 from bilqis_mlx.presentation.progression_projection import GraduationProjection
 from bilqis_mlx.profiles.catalog import displayed_numeric_maximum
 from bilqis_mlx.runtime.disk import headroom_snapshot
+from bilqis_mlx.runtime.bamf_first_student import (
+    load_bamf_foundation_dashboard_projection,
+)
 from bilqis_mlx.state_dag import read_current
 from bilqis_mlx.source import AUDITED_PARENT
 from ..compatibility.historical_live_release import historical_rubric_description
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard
 
 
+def _bamf_foundation_dashboard_state(run_dir: Path):
+    projection = load_bamf_foundation_dashboard_projection(run_dir)
+    if projection is None:
+        return None
+    return {
+        "generation": 0,
+        "factory_release_sha256": projection.factory_release_sha256,
+        "teacher": {"events": projection.teacher_events},
+        "result": projection.last_run_status,
+        "school": {
+            "current_student": {
+                "optimizer_step": projection.optimizer_step,
+            },
+            "active_grades": list(projection.active_grades),
+            "grade_index": projection.active_grades.index(projection.current_grade),
+            "visits": projection.grade_visits,
+            "stage": projection.stage,
+        },
+    }
+
+
 def _dashboard_state(run_dir: Path):
     state_path = run_dir / "state.json"
     state = read_current(run_dir) if state_path.exists() else None
+    if state is None:
+        state = _bamf_foundation_dashboard_state(run_dir)
     school = state["school"] if state else {}
     active = school.get("active_grades", ())
     grade_index = school.get("grade_index", 0)

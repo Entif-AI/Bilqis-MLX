@@ -62,7 +62,7 @@ class BamfBundleCodecTests(unittest.TestCase):
         self.assertEqual(reserve.call_args.kwargs["reserve_gib"], 100.0)
 
         uninterrupted = next_accepted_step(retained)
-        resumed = next_accepted_step(loaded.retained_state)
+        resumed = next_accepted_step(loaded.retained_state, loaded.extents)
         self.assertEqual(resumed.optimizer_step, uninterrupted.optimizer_step)
         self.assertEqual(resumed.policy, uninterrupted.policy)
         np.testing.assert_array_equal(
@@ -85,7 +85,7 @@ class BamfBundleCodecTests(unittest.TestCase):
             "from bilqis_mlx.runtime.bamf_bundle import load_bamf_bundle",
             "from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import NAME,next_accepted_step,shape_patch",
             "with shape_patch(): student=load_bamf_bundle(sys.argv[1])",
-            "state=next_accepted_step(student.retained_state)",
+            "state=next_accepted_step(student.retained_state, student.extents)",
             "result={'optimizer_step':state.optimizer_step,'parameters_sha256':hashlib.sha256(np.asarray(state.optimizer.parameters[NAME]).tobytes()).hexdigest(),'counts_sha256':hashlib.sha256(np.asarray(state.optimizer.update_counts[NAME]).tobytes()).hexdigest(),'policy':state.policy.to_record()}",
             "print(json.dumps(result,sort_keys=True))",
         ))
@@ -111,7 +111,7 @@ class BamfBundleCodecTests(unittest.TestCase):
                 self.root / "motif-bundle",
                 expected_manifest_sha256=manifest["manifest_sha256"])
         self.assertEqual(loaded.retained_state.allocations, allocations)
-        resumed = next_accepted_step(loaded.retained_state)
+        resumed = next_accepted_step(loaded.retained_state, loaded.extents)
         self.assertEqual(resumed.allocations, allocations)
         self.assertEqual(resumed.optimizer_step, parent.optimizer_step + 1)
 
