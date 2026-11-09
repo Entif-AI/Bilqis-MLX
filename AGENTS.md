@@ -8,6 +8,30 @@ trainer, scheduler, teacher, retention, admission, and controller logic unless t
 active BAMF issue explicitly owns a change to it. Do not merge or copy newer `main`
 controller code into this branch simply to catch up with `main`.
 
+<!-- BAMF02:LEGACY-TRAINER-AUTHORITY:20261107 -->
+### Legacy trainer adaptation authority — 2026-11-07
+
+When any issue, remediation, EGM review, compatibility task, or worklog needs to
+inspect or adapt behavior from the **latest legacy trainer**, the sole current
+adaptation oracle is the preserved Factory replay worktree and run below:
+
+- worktree: `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026`
+- branch: `codex/337-replay-349-20261026`
+- run: `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`
+
+Run `python3 -B scripts/check_legacy_trainer_authority.py --live` before using
+legacy behavior as an implementation or review premise. Record that receipt in the
+issue/PR worklog when the legacy trainer materially informs the change.
+
+Prometheus remains valid **historical evidence about the Prometheus lineage only**.
+`runs/codex-0001-prometheus`, the root `npm start`/`verify` convenience commands,
+and Prometheus-specific ADR observations are not the latest legacy-trainer
+adaptation source. Do not infer current legacy trainer policy, resume shape,
+teacher behavior, scheduler behavior, or compatibility expectations from
+Prometheus when implementing BAMF or another successor. Historical Prometheus
+mentions must be labeled as historical/non-authoritative for adaptation rather
+than presented as the current legacy baseline.
+
 The BAMF architecture, including `ADR-BAMF02-004`, and issue hierarchy live in
 `docs/architecture/BAMF_0_2.md` and `docs/tasks/bamf-0.2/`. The imported New Ithkuil/SKOS source lives under
 `lib/ithkuil/` with its ingestion Skill and fingerprinted test policy. Treat those
@@ -30,16 +54,18 @@ of an issue.** Coordinate shared integration changes through the relevant owner.
 Before a feature's integration turn-in, consume the current
 `origin/codex/bamf-unified-base-20261028`, record the unified SHA consumed,
 resolve conflicts, and run the smallest affected verification. Do not merge
-`main` or a sibling lane directly. Keep implementation and review state
-on the owning issue and branch until the work is truly ready to merge. Do not use a
-draft pull request as a queue marker or review-state surrogate. A new exact-head EGM
-request adds `EGM-Pending` to the owning issue. Replace it with `EGM-Passed` only
-after a complete PASS, or with `EGM-Failed` after any Blocker/Major failure. Label
-each independently executable remediation issue created from that failure
-`EGM-Mitigation`. Keep `EGM-Failed` on the owner while repairs are in progress. Move
-the owner back to `EGM-Pending` only when the full known failure set is repaired and
-the next whole candidate is again ready for review. A behavior-changing commit after
-`EGM-Passed` invalidates that state for merge readiness.
+`main` or a sibling lane directly. Keep implementation and review state on the
+owning issue and branch until
+the work is truly ready to merge. Do not use a draft pull request as a queue marker
+or review-state surrogate.
+
+EGM labels describe **design/specification review state only**. Add `EGM-Pending`
+when a fresh design review is pending, replace it with `EGM-Passed` after a complete
+design PASS, or with `EGM-Failed` while a material design finding remains unresolved.
+Use `EGM-Mitigation` only for bounded work created specifically to resolve a design
+review finding before implementation. Ordinary implementation commits do not
+invalidate `EGM-Passed`; a semantic design amendment invalidates only the affected
+review scope unless it changes the architecture.
 
 ### Differential verification and expensive-test reuse — 2026-11-04
 
@@ -68,12 +94,15 @@ failed test, changed dependency/toolchain, or altered test policy can invalidate
 prior broad receipt; prose-only progress and unchanged code cannot. Install the
 optional accelerator dependencies with `python3 -m pip install -e '.[test]'`.
 
-Open the lane-to-unified PR only after the candidate is otherwise ready to merge,
-including required EGM PASS and every pre-PR gate available on the branch. Open it
-ready for human review, not as a draft work queue. PR-hosted checks are the final
-integration gate; a behavior-changing repair for a hosted failure invalidates the
-prior EGM PASS. Existing historical/draft PRs remain provenance and need not be
-closed or recreated solely to adopt this policy. No issue authorizes self-merge.
+Open the lane-to-unified PR only after the candidate is otherwise ready to merge:
+the design review is complete, required differential evidence is green or validly
+reused, required detached witnesses are reconciled, design-to-code drift is
+reconciled, and every applicable pre-PR gate is green or validly reused. Open it ready
+for human review, not as a draft work queue. PR-hosted checks are the final integration
+gate. A hosted repair invalidates only evidence whose assumptions changed; if the
+repair changes approved design semantics, return only that affected design scope to
+EGM. Existing historical/draft PRs remain provenance and need not be closed or
+recreated solely to adopt this policy. No issue authorizes self-merge.
 After accepted work lands on unified, the next issue in every lane repeats the
 sync-in step so reviewed cross-lane interfaces arrive early.
 
@@ -165,7 +194,7 @@ reveals a second independent problem, perform a **scope-drift audit** before mor
 work. If every obligation still maps to inherited required clauses, keep going and
 split again when useful; do not collapse it back into the parent. Only the
 untraceable delta is `EXPAND` and must pass the expansion gate. Never run EGM to
-manufacture authority for an expansion that current delivery does not require.
+create scope for an expansion that current delivery does not require.
 
 **Diagnostic-loop budget (2026-11-05):** Differential test selection does not
 authorize unbounded bespoke probes. Treat any live Factory/MLX/full-model witness,
@@ -241,100 +270,209 @@ leaf contract.
 
 Prioritize completing near-to-merge work without serializing independent,
 dependency-ready leaves. A seventh simultaneous `ACTIVE` item requires a
-machine-readable lane exception naming its reason, authority and expiry condition.
-Human review, EGM, dependency acceptance and other parked gates remain real
+machine-readable lane exception naming its reason, approving owner and expiry condition.
+Human review, design review, dependency acceptance and other parked gates remain real
 obligations; classifying them as non-WIP means **freeze until the gate changes**,
 not ignore them.
 
-<!-- BAMF02:EGM-MERGE-READINESS-GATE:20261102 -->
-### EGM is a merge-readiness gate, not a per-fix loop
+<!-- BAMF02:DESIGN-VERIFY-DRIFT-LIFECYCLE:20261108 -->
+### Design review, implementation proof, drift, and integration are separate gates
 
-Spend a fresh pinned Google EGM review only when a PR is otherwise being prepared
-for human merge: all known Blocker/Major findings have been repaired or
-evidence-backed contested, independently remediable failures have durable issues,
-required dependency authority is consumable, required current-unified sync has
-been completed, affected verification is green, and the exact candidate head is
-stable enough to turn in. Do **not** spend fresh EGM review after each individual
-remediation issue, local defect fix, merge-forward, or intermediate checkpoint.
-Use focused regressions, ordinary independent review, CI and owner verification to
-clear that engineering queue first.
+Use one mechanism for one question:
 
-If the final merge-readiness EGM finds new Blocker/Major defects, record the exact
-review receipt and create or link durable remediation issues at coherent ownership
-boundaries. Repair the complete known set before requesting another fresh EGM pass.
-The next EGM reviews the next whole merge candidate, not each remediation in
-isolation. Any older copied BAMF issue text prescribing "one repair pass and one
-targeted re-audit" is superseded by this rule and
+1. **EGM design review** asks whether the issue/specification is correct, complete,
+   understandable, and actionable before implementation.
+2. **Engineering verification** asks whether the implementation behaves correctly.
+3. **Design drift analysis** asks whether the finished implementation still matches
+   the approved design.
+4. **Integration verification** asks whether the exact candidate is ready to turn in
+   against the reviewed integration branch.
+
+A result from one gate does not stand in for another. A passing test suite does not
+prove design fidelity. A clean EGM review does not prove runtime behavior. A clean
+drift report does not replace tests. A premerge result does not retroactively repair
+an underspecified design.
+
+The detailed procedure is
 `docs/tasks/bamf-0.2/EGM_EXECUTION.md`.
-<!-- BAMF02:EGM-BOUNDED-CONVERGENCE:20261103 -->
-### EGM review episodes are finite and root-cause routed
 
-ADR-127 is controlling.
+### Domain-precise language is part of execution quality
 
-The pinned BAMF EGM checkout remains `b3a35956759bf7f024af2ff061b2e0b44b438e4c`
-for reviewer/persona reproducibility. Its historical review-loop termination
-behavior is not BAMF authority. BAMF adds the finite convergence rules below at
-the orchestration boundary.
+Bilqis is an ML/runtime, provenance, lifecycle, and state-consistency project.
+Describe work using those relationships directly.
 
-One merge candidate has one persistent EGM episode across repair commits. The
-episode counter belongs to the candidate lineage, not the exact Git SHA, so a
-repair does not reset it. The default episode cap is **five complete
-whole-candidate rounds**. A complete clean round with no unsettled Blocker/Major
-is sufficient for BAMF implementation merge readiness. A failed or missing
-requested reviewer does not make a clean round. At the five-round cap, or when
-review churn is detected, automatic review stops and the owner returns the
-candidate to design or asks the human for an explicit override. Do not start a
-new episode merely by rewriting, rebasing, or changing the candidate head.
+This matters operationally as well as stylistically. Automated systems and human
+reviewers may classify work partly from the terminology used to describe it. Benign
+ML/runtime work phrased with vocabulary imported from unrelated technical domains can
+be misclassified, which can create avoidable warnings, latency, resource consumption,
+and workflow interruption. Precise domain wording improves classification and
+comprehension without changing the engineering requirement.
 
-Before repairing a Blocker/Major, classify its basis and owner. A blocking
-finding must identify a violated requirement/authority, a concrete in-scope
-failure, or a missing required ownership/interface/acceptance seam. Classify it
-as `TARGET_LOCAL`, `SHARED_CONTRACT`, `PARENT_INTEGRATION`, `AUTHORITY_GAP`, or
-`MECHANICAL_PROOF`. Shared, parent, and authority findings are repaired once at
-their canonical owner; affected descendants wait for that repair instead of
-inventing local variants. If multiple late findings share one premise or owner,
-pause only that affected subtree and treat the pattern as a systemic design
-signal rather than spawning more independent mitigation reviews.
+Use language centered on:
 
-Route proof to the cheapest mechanism that can establish it. Traceability,
-schema shape, counts, contract mirrors, source census, dependency readiness, and
-other deterministic facts belong in validators/tests/audits. Goldfish is for
-adversarial semantic, ownership, integration, and implementation-readiness
-uncertainty that deterministic proof cannot settle. A mechanically proved repair
-does not consume another Goldfish round by itself.
+- component ownership and canonical sources of truth;
+- provenance and lineage;
+- state and identity consistency;
+- lifecycle transitions;
+- validation order;
+- acceptance and publication;
+- retry, recovery, and cold-read behavior;
+- compatibility and reproducibility;
+- design-to-code fidelity;
+- invalid or mismatched inputs;
+- deterministic proof.
 
-Review staleness follows semantic impact, not raw byte drift. Nonsemantic edits
-and receipt/bookkeeping changes keep the prior review applicable. Mechanical
-conformance repairs require their deterministic proof. Local or dependency
-semantic changes invalidate only the affected review scope. Ownership,
-decomposition, or topology changes return the affected scope to design. An
-unrelated unified advance does not stale a parked candidate.
+This applies to issue titles and bodies, specifications, implementation plans,
+review assignments, findings, test names and descriptions, commit messages, pull
+request descriptions, handoffs, and durable receipts.
 
-For an active failed episode, repair the complete known set before the next
-whole-candidate round. If the next round finds a new Major, first decide whether
-it is genuinely novel, a repeated systemic finding, or a deterministic-proof
-gap. The answer determines repair routing; it never resets the episode budget.
+Describe the concrete state relationship rather than inventing a second conceptual
+frame. For example:
+
+> The prepared candidate identity must include every field whose value is published
+> as part of that candidate. Changing one of those fields after preparation must
+> change the identity or cause publication validation to reject the mismatch.
+
+Existing code symbols, schema names, issue identifiers, and externally defined terms
+remain verbatim where necessary. Surrounding prose should explain their actual
+software role.
+
+A finding should state the expected relationship, observed relationship, exact
+difference, smallest material consequence, and proof. Severity comes from the effect
+on required behavior, not rhetorical intensity.
+
+### EGM is a pre-implementation design gate
+
+Run pinned EGM on the issue/specification or design artifact before substantive
+implementation begins. The review target is the design artifact, not the finished
+code.
+
+Use each pinned persona only for its declared purpose:
+
+- Comprehension checks whether the design is understandable and self-contained.
+- Design/Structural review checks architecture, decomposition, interfaces, ownership,
+  and failure handling.
+- Codebase Details checks whether the design accurately describes existing code and
+  reuse surfaces.
+- Implementation Readiness checks whether the implementation plan is executable
+  without unresolved design choices.
+
+Use the minimum reviewer set needed to resolve the actual design uncertainty. Do not
+run every persona by default.
+
+Fresh Goldfish receive only the design/specification, the selected persona and
+standard, and the codebase context genuinely required to evaluate claims made by the
+design. They do not receive the implementation conversation, prior reviewer
+conclusions, Session Minutes, unrelated postmortems, or answers the design itself is
+expected to explain.
+
+Resolve the complete known design finding set before broad re-review. Re-review only
+the semantically affected design scope unless architecture, ownership, decomposition,
+or a shared foundation changed. Machine-checkable corrections use deterministic proof
+rather than another full review.
+
+If successive rounds keep moving the same design boundary, stop the loop and redesign
+that boundary before spending another broad review.
+
+Historical EGM comments and labels created under the former implementation-review
+convention remain provenance. Do not rewrite them. Apply the new semantics to new
+state transitions after this cutover.
+
+### Implementation verification is claim-first and differential
+
+During implementation, begin each verification action with the question it must
+answer. Prefer the cheapest sufficient proof and widen only while relevant uncertainty
+remains.
+
+Use this escalation order unless the requirement itself demands a later tier:
+
+1. deterministic/static check;
+2. focused regression;
+3. directly affected owner tests;
+4. dependency-closure integration tests;
+5. hardware/full-model/end-to-end witness;
+6. premerge aggregate gate.
+
+The existing differential verification, passing-evidence reuse, diagnostic-loop
+budget, precedence-ordered diagnosis, and detached-run rules in this file remain
+controlling.
+
+Do not rerun passing evidence without a concrete invalidation. Do not use a broad
+suite as the ordinary mechanism for discovering a local defect. When many failures
+appear together, determine whether they share one root cause before creating separate
+remediation work.
+
+When repeated manual judgment is needed to choose tests, improve the dependency map,
+validator, focused contract test, or receipt so future selection becomes mechanical.
+
+### Post-implementation drift is the fidelity gate
+
+When implementation is behaviorally stable, compare the approved design with the code
+that implements it. Use EGM drift detection for this phase, not Implementation
+Readiness.
+
+Bound drift analysis to the approved design, its implementation surfaces, and directly
+affected shared contracts. Do not scan unrelated designs merely because a tool can do
+so.
+
+Classify a material difference as:
+
+- `IMPLEMENTATION_DEFECT`: code does not implement the approved design;
+- `DESIGN_DRIFT`: code contains a semantic choice not represented in the approved
+  design;
+- `DESIGN_EVOLUTION`: implementation exposed a real requirement or constraint that
+  requires a design amendment;
+- `DOCUMENTATION_STALE`: descriptive text is outdated without a material design
+  disagreement;
+- `NO_DRIFT`.
+
+Repair implementation defects with focused engineering verification. A genuine design
+change returns only the affected design scope to EGM. A repair that restores the
+already-approved design does not require a whole-design review.
+
+### Integration turn-in
+
+Run `npm run verify:premerge` only at an actual integration boundary and only when no
+reusable valid receipt already covers the relevant state.
+
+Before opening a PR require:
+
+- completed design review;
+- no unresolved required implementation defect;
+- required differential evidence green or validly reused;
+- required detached evidence green or validly reused;
+- drift reconciled;
+- required current-unified synchronization completed;
+- stable candidate head.
+
+Hosted PR checks are the final integration gate. Reproduce hosted failures at the
+smallest useful scope, repair them, and rerun only evidence whose assumptions changed.
+
+The objective is not maximum test volume. The objective is the **minimum sufficient
+evidence set that makes the current decision defensible**.
+
 ### Remediation artifacts are a working set, not an archive
 
 Keep a remediation issue open until its exact recorded defect has been reproduced,
 repaired, covered by a regression, verified on a durable PR/head, **and the accepted
 implementation has actually merged into its intended integration branch**. A green
 or review-ready PR/head is evidence that the repair is code-complete, not that the
-issue lifecycle is complete. Final parent EGM or sibling work may remain outstanding,
-but the remediation issue closes only after merge readback proves its code landed.
+issue lifecycle is complete. Final parent integration or sibling work may remain
+outstanding, but the remediation issue closes only after merge readback proves its code landed.
 
 Keep a remediation PR in draft only while its own scoped implementation or known
-Blocker/Major repair is incomplete. Parent-level EGM debt is not a reason for draft
-status. Mark the PR ready when its own acceptance is satisfied; merge or close it
+Blocker/Major repair is incomplete. Parent-level design-review or integration work is not a reason for
+draft status. Mark the PR ready when its own acceptance is satisfied; merge or close it
 promptly once its change is consumed by the intended parent/candidate branch.
 Closed issues and merged PRs remain provenance and should not remain in the active
 queue just to preserve history once the merge-backed close condition is satisfied.
 
-If later EGM or integration proves the **same original defect** still exists, reopen
-the remediation issue. If it exposes a different mechanism, newly unlocked gap, or
-new acceptance failure, create a new issue. The owning parent issue/PR carries the
-aggregate EGM pass/fail state and whole-candidate merge readiness.
-Prefer repairing a remediation issue directly on the authorized parent candidate
+If later verification, drift analysis, or integration proves the **same original
+defect** still exists, reopen the remediation issue. If it exposes a different
+mechanism, newly unlocked gap, or new acceptance failure, create a new issue. The
+owning parent issue/PR carries aggregate implementation and integration readiness;
+EGM labels remain design-review state.
+Prefer repairing a remediation issue directly on the approved parent candidate
 branch when writer ownership and review isolation allow it. Do not create a separate
 PR merely to preserve the finding; the issue already provides the durable defect
 record. Use a stacked remediation PR only when branch ownership, concurrent-writer
@@ -353,27 +491,28 @@ remains an operator duty. **The ledger is scheduling state, never a distributed
 mutex.** See `ADR-124` and
 `docs/tasks/bamf-0.2/README.md`.
 
-## BAMF-0.2 GitHub Project dashboard authority — 2026-11-03
+## BAMF-0.2 GitHub Project dashboard role — 2026-11-03
 
 The `BAMF-0.2 Execution` GitHub Project is a read-model and dashboard. It may
-summarize repository state, but it does not own execution state, EGM state, issue
-state, dependency authority, or merge readiness. The repository issues and
-labels, ADRs, BAMF task registry, flow-control records, dependency evidence, and
-execution receipts remain authoritative.
+summarize repository state, but it does not own execution state, EGM design-review
+state, issue state, dependency readiness, or merge readiness. The repository issues
+and labels, ADRs, BAMF task registry, flow-control records, dependency evidence, and
+execution receipts remain the controlling sources.
 
 - Treat `BAMF-Leaf` as a one-time structural projection of the current BAMF leaf
   set for Project filtering. Do not build automatic leaf-label synchronization or
-  infer leaf authority from Project membership.
+  infer leaf identity from Project membership.
 - Use the canonical issue labels `EGM-Pending`, `EGM-Failed`, `EGM-Mitigation`,
-  and `EGM-Passed` for EGM state. Do not add a duplicate Project EGM field or use
+  and `EGM-Passed` for EGM design-review state. Do not add a duplicate Project EGM
+  field or use
   PR status tokens as a second EGM state machine.
 - Project views, filters, charts, and insights may derive from authoritative
   labels and issue/PR state. They must remain observational.
-- Project `Status` is not issue-close authority. Keep the Project workflow that
+- Project `Status` does not close issues. Keep the Project workflow that
   closes an issue merely because `Status` becomes `Done` disabled.
 - For a bounded implementing issue, a verified accepted merge into its owning
   reviewed integration target is the normal repository closeout boundary once
-  the issue's acceptance and EGM obligations are satisfied. Close that issue as
+  the issue's acceptance and design-review obligations are satisfied. Close that issue as
   `completed` immediately after merge readback; do not accumulate merged zombie
   issues for later cleanup.
 - BAMF implementation PRs commonly target the reviewed unified trunk rather than
@@ -396,7 +535,7 @@ container. The ceiling applies to inventory, never to number of agents allowed t
 prepare independent work.
 
 Before opening a BAMF implementation PR, inspect the available live inventory.
-The following reconciler is **advisory**, not a hard authorization gate:
+The following reconciler is **advisory**, not a hard admission gate:
 
 `python3 -B scripts/check_bamf_flow_control.py --live`
 
@@ -413,15 +552,16 @@ same integration delta.
 
 If live implementation inventory exceeds the ceiling, BAMF is in **DRAIN** mode.
 Do not open another implementation PR unless it replaces a PR closed in the same
-operation or the flow-control policy carries an explicit owner-authorized exception.
-New implementation work may proceed on authorized branches/issues without
+operation or the flow-control policy carries an explicit owner-approved exception.
+New implementation work may proceed on approved branches/issues without
 increasing PR inventory.
 
-EGM review state and PR timing are governed by the canonical EGM label lifecycle in
-this file. PRs are integration vehicles, not durable EGM queue markers. Do not keep
-an implementation PR open solely to represent `EGM-Pending`, `EGM-Failed`, or
-`EGM-Mitigation`; the issue labels and durable branch/head custody carry that
-state. An active merge or remediation-delivery attempt may still use a PR.
+EGM labels describe design-review state and do not serve as a PR queue. PRs are
+integration vehicles. Do not keep an implementation PR open solely to represent
+`EGM-Pending`, `EGM-Failed`, or `EGM-Mitigation`; issue labels preserve design
+review state, while implementation proof, drift, and premerge readiness come from
+their durable receipts. An active merge or remediation-delivery attempt may still use
+a PR.
 
 The flow-control checker reconciles the ledger against live GitHub state. An open
 implementation PR that is explicitly represented in the ledger counts even when
@@ -746,6 +886,7 @@ Preserve real-student/own-AdamW recovery, stable token meanings, answer correctn
 - **ADR-025 event-lineage safety:** Source-verified initialization, A→B admission, provisional training visits, same-cohort exam and capability-best publication use an immutable generation-bound event outbox written with the state; replay missing JSONL entries by verified ID/payload on human resume rather than repeating model/AdamW updates. A lesson selected from another grade's weakest-three recovery credits the grade of the *capability taught* in teacher stats, while retaining the separately reported active scheduler grade. Grade-best events credit the completed exam grade, even after an immediate B→A replay transition.
 - **ADR-081 state data plane:** Current and per-generation School50 state files are tiny immutable Merkle-DAG pointers backed by the workstation-shared SQLite/WAL data plane. Do not reintroduce full-copy JSON generations or recursively embed archival history into the live receipt. Large logical fields must use content-addressed objects/shards; unchanged fields share references. Immutable model/soup SHA proofs may be reused only through the stat-bound data-plane verification cache; any file identity/stat change forces rehash. `BILQIS_DATA_PLANE` explicitly overrides the durable workstation database location.
 - **ADR-082 hot/cold runtime boundary:** Treat the data plane as an addressable database rather than eagerly reconstructing the whole logical receipt for narrow work. Prefer field-selective reads. Subshard high-churn teacher-miss data below capability granularity while retaining compatibility with old DAG nodes. `events.jsonl` remains append-only evidence, while hot event-ID membership/payload/count queries use the shared SQLite tail index instead of rescanning the ledger. Active bundles/soups/cohorts belong in the hot run namespace; historical evidence may live in shared content-addressed archival storage and be hydrated on demand, but logical pointers/digests and exact historical readback must remain valid.
+- **ADR-136 portable artifact authority:** Filesystem paths are locators, never semantic identities or authority. Accepted BAMF lineage and other portable receipts must bind immutable content/source identities and reproduce after custody is copied to a different host or root. Resolution may use machine-local paths below the authority boundary, but callers may not authenticate historical state by supplying a pathname. Re-resolved bytes must satisfy the same registered source pins, content digests and exact identity checks before use.
 - **ADR-026 historical repair, superseded by ADR-031:** Grade B source-oracled lessons and live exams share constructors; neither may create a permanent item embargo. Preserve earlier still-wrong, source-verified examples across exams until a direct post-visit or cohort recheck establishes correction. Rerank the full eligible pool after each weakest-three round. The earlier **unratified** 24-item/capability truncation and automatic up-to-25% Grade B prerequisite injection were retired from the active trainer during the classroom merge. Current replay is exposure-aware and derives capacity from the actual batch classes and remaining visit steps; the inherited teacher policy still selects the lesson strategy. Actual human-run B acquisition and A recovery remain unproven. See ADR-031, `docs/evidence/diagnostics/AB_CLASSROOM_DIAGNOSTICS_20261016.md`, and historical `docs/evidence/diagnostics/GRADE_B_REGRESSION_FORENSICS_20261016.md`.
 - Search the current official `ithkuil.net` grammar **and** lexicon before suggesting any novel semantic primitive. Verify scope, stems, and composition, not superficial word similarity. Entif/Rosetta or Metacognitive Atlas novelty remains a research hypothesis until NI coverage is exhausted.
 - **Curriculum is a New Ithkuil specification conformance suite:** compose meanings from registered tokens using source-attested lexicon and grammar rules; test both legal and illegal constructions, decomposition and reconstruction, contrastive cases, independently mastered prerequisites and retention. Do not invent NI equivalents or substitute the nearest English analogy. External conceptual roots may be curated; the dialect constraint can relax only after the NI regimen completion gate, not before.

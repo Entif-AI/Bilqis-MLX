@@ -16,7 +16,7 @@ from bilqis_mlx.semantics.atlas.vocabulary import (
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
 from bilqis_mlx.semantics.atlas_projection import BANK_SIZE
 from bilqis_mlx.semantics.frame_schema import ConceptRef, FrameTree
-from bilqis_mlx.semantics.tests.test_atlas_release_held_gloss import (
+from bilqis_mlx.semantics.tests.core.test_atlas_release_held_gloss import (
     _held_gloss_fixture,
     _prior,
 )

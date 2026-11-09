@@ -60,3 +60,44 @@ Combined focused prime tests: **90 passed, 1 optional skip**.
 **Latest C09.1 EGM: RE-REVIEW PENDING.** Earlier C09.3
 actor-prefix and receipt-relabel repairs also await
 independent readback. No scoped EGM PASS is inferred.
+
+## #917 accepted-run source-authority remediation
+
+The post-merge #917 repair at `ec87edac08a7f43b5fa44ff9278d0f0b2b91e855`
+received a fresh three-lens review from the pinned EGM above. The deduplicated
+result was **3 Blockers, 2 Majors, 0 Nits**. The candidate therefore remained
+failed and draft PR #927 was not merge-ready.
+
+The review found five authority defects: the genesis candidate could still select
+its own C09 trust root; a duck-typed package `source_context` could clear the
+pre-staging gate; accepted-cache installation raced accepted-pointer advancement;
+an importable cache owner could mint alternate accepted-cache credentials; and B14
+could accept a caller-selected source-authority registry. A direct adversarial
+witness confirmed the first defect by swapping only the registry after a valid
+retention decision and obtaining a live source-authority runtime.
+
+The next two immutable candidates were also rejected. `200441d3dbc27221fd2d77a1c6d14a1a5360d1a8`
+failed a fresh diagnostic review before qualification. The repaired
+`cd20336ef8747d86a831ce09487522892affd79b` then passed exact-head deterministic
+proof and hosted checks but failed its own fresh three-lens EGM at a deduplicated
+**3 Blockers, 2 Majors, 0 Nits**. That review showed that authority had still moved
+rather than disappeared: the runtime trust-root writer was first-caller-selectable;
+the exact retained registry could still be recovered and used to mutate accepted
+owners outside durable ledger dispatch; stale accepted host/context handles could
+roll forward into a successor generation; and the C09/B13 integration had created
+a B14 issuer whose policy/context resolver was both first-caller-selected and
+TOCTOU-sensitive.
+
+The current repair removes the runtime C09 trust-root provisioner, keeps accepted
+correction runtimes and verifier roots closure-private, authorizes accepted-owner
+mutation only while dispatching an already-durable accepted event, and rechecks the
+originating accepted host/context before every registration or mutation seam. It
+also restores the accepted B14.1/#719 boundary: C09/B13 does **not** manufacture a
+production B14 authority while no real upstream B14 owner exists. The native B14
+test-only owner remains available for B14 contract tests without becoming a
+production issuer.
+
+**Disposition: REPAIR / RE-PROVE IN PROGRESS.** `cd20336e...` remains immutable
+failed evidence. A later committed SHA must pass full deterministic and hosted
+proof, then receive three completely fresh reviewers and **0 Blockers / 0 Majors**.
+No neural, student, trainer, optimizer, or checkpoint workload was run.

@@ -150,3 +150,11 @@ def _train_step(mx, parameters, optimizer, rows, config, answer_ids,
     optimizer.update(parameters, clipped)
     mx.eval(parameters, optimizer.state, loss, norm)
     return float(loss.item()), float(norm.item())
+
+
+def train_bamf_factory_step(*args, **kwargs):
+    """Explicit BAMF successor entrypoint; the stale historical trainer is not used."""
+    from bilqis_mlx.runtime.factory_candidate_training import (
+        execute_factory_candidate_step,
+    )
+    return execute_factory_candidate_step(*args, **kwargs)

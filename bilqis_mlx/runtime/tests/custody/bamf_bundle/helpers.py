@@ -1,17 +1,14 @@
 """Small real-B12 fixtures for B13.1 custody tests."""
 from __future__ import annotations
 
-from contextlib import ExitStack
-from copy import deepcopy
+from contextlib import nullcontext
+from dataclasses import replace
 import os
 from pathlib import Path
-from unittest.mock import patch
+import tempfile
 
 import mlx.core as mx
 
-from bilqis_mlx.data_plane import data_plane
-from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
-from bilqis_mlx.learning.atlas_retention_decision import decide_candidate_retention
 from bilqis_mlx.learning.atlas_candidate import (
     CandidateCustodyIdentity, CandidateState, begin_candidate, candidate_step,
     resolve_candidate,
@@ -20,26 +17,124 @@ from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_pr
 from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
+from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.bamf_bundle import (
-    BamfBundleCandidate, publish_bamf_generation,
+    BamfBundleCandidate, prepare_initial_generation, publish_initial_generation,
 )
-from bilqis_mlx.runtime.bamf_bundle.motif_codec import snapshot_to_record
-from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
+from bilqis_mlx.runtime.bamf_bundle.genesis.foundation import (
+    initial_foundation_sidecars,
+)
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, GenerationProvenance, Initializer, ModelTopologySpecV2,
-    ParameterGroup, ParameterSpec,
+    ParameterGroup, ParameterSpec, b01_generation_authority,
+    b01_generation_extents, b01_model_implementation_sha256,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
+    genesis_feature_source_patch, issue_factory_authority, issue_feature_authority,
 )
 
 NAME = "identity.bank.0"
 RELEASE = "b" * 64
-IMPLEMENTATION = "e" * 64
-DECLARED = (ParameterSpec(NAME, (2, 2), Initializer.MATRIX,
+IMPLEMENTATION = b01_model_implementation_sha256()
+DECLARED = (ParameterSpec(NAME, (2, 2), Initializer.EMBEDDING,
                           ParameterGroup.IDENTITY_ROW_AGE, True),)
 HP = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
 FIXTURE_PARENT_MANIFEST = "6" * 64
 
 
+def _genesis_defaults(release, semantic_release):
+    source_identity = (release.source_bindings.source_attestation_sha256
+                       or release.source_bindings.digest())
+    teacher_identity = release.execution_plan.projection_digests.teaching
+    provenance = GenerationProvenance(
+        source_identity, semantic_release, teacher_identity, 0)
+    motif = MotifManifest(provenance.release_digest)
+    extents = GenerationExtents(
+        1, 1, "a" * 64, motif.digest, "c" * 64)
+    return {
+        "provenance": provenance,
+        "extents": extents,
+        "semantic_abi": {
+            "schema": "bilqis.mlx.bamf-semantic-abi/v1",
+            "active_set_sha256": "a" * 64,
+            "semantic_bank_count": 1,
+            "bank_identities": ["bank:0"],
+        },
+        "compiler_features": {
+            "schema": "bilqis.mlx.bamf-compiler-features/v1",
+            "factor_map_sha256": "c" * 64,
+            "compiler_sha256": "f" * 64,
+            "rights_epoch": 2,
+            "correction_generation": 4,
+        },
+        "correction_frontier": {
+            "schema": "bilqis.mlx.bamf-correction-frontier/v1",
+            "source_identity": source_identity,
+            "release_digest": release.release_sha256,
+            "rights_epoch": 2,
+            "correction_generation": 4,
+            "frontier": [],
+        },
+        "teacher_state": {
+            "schema": "bilqis.mlx.bamf-teacher-state/v1",
+            "teacher_identity": teacher_identity,
+            "teacher_epoch": 0,
+            "next_seed": 42,
+            "cursor": "lesson:7",
+        },
+        "evaluation_contract": {
+            "schema": "bilqis.mlx.bamf-evaluation-contract/v1",
+            "contract_sha256": "9" * 64,
+        },
+    }
+def genesis_preparation(*, run_id="fixture-run", run_seed=17,
+                        delivery_events=None, **overrides):
+    """Enter B13 generation zero through the production constructor and issuer."""
+    foundation_features = overrides.pop("foundation_features", None)
+    from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
+    release, graph = _executable_fixture()
+    origin = Checkpoint("7" * 64, "bundles/foundation-origin", 0, True)
+    factory_authority = issue_factory_authority(release, graph, origin)
+    generic_features = foundation_features is None
+    if generic_features:
+        foundation_features = issue_feature_authority()
+    forbidden = {
+        "semantic_abi", "compiler_features", "correction_frontier",
+        "teacher_state", "evaluation_contract",
+    } & set(overrides)
+    if forbidden:
+        raise AssertionError(
+            "generation-zero sidecars are owner-derived: " + ",".join(sorted(forbidden)))
+    values = _genesis_defaults(
+        release, foundation_features.features.semantic_release) | overrides
+    replay = genesis_feature_source_patch() if generic_features else nullcontext()
+    with replay:
+        (semantic_abi, compiler_features, _correction_frontier,
+         _teacher_state, _evaluation_contract) = initial_foundation_sidecars(
+            release, factory_authority.admission, graph, run_seed=run_seed,
+            feature_authority=foundation_features)
+        motif = MotifManifest(values["provenance"].release_digest)
+        extents = b01_generation_extents(
+            semantic_abi=semantic_abi,
+            compiler_features=compiler_features, motif_page_count=1,
+            motif_key_map_digest=motif.digest)
+        return prepare_initial_generation(
+            run_id=run_id, run_seed=run_seed, graph=graph,
+            factory_authority=factory_authority,
+            model_authority=b01_generation_authority(extents),
+            optimizer_hyperparameters=HP,
+            provenance=values["provenance"],
+            foundation_features=foundation_features,
+            delivery_events=(
+                ({"event": "FIXTURE_GENESIS", "optimizer_step": 0},)
+                if delivery_events is None else delivery_events),
+        )
+def publish_genesis(run_dir, *, run_seed=17, **overrides):
+    """Publish a real production generation zero, never a test-minted C05 token."""
+    return publish_initial_generation(
+        run_dir, genesis_preparation(run_seed=run_seed, **overrides),
+        reserve_gib=0.)
 def parent_state() -> CandidateState:
     values = mx.array([[.5, -.25], [1., 2.]], dtype=mx.float32)
     optimizer = AdamWStateTree(
@@ -57,33 +152,58 @@ def parent_state() -> CandidateState:
             ModelTopologySpecV2().digest, extents.digest))
 
 
-def accepted_state(parent: CandidateState) -> CandidateState:
+def accepted_state(
+        parent: CandidateState,
+        extents: GenerationExtents | None = None,
+        spec: ModelTopologySpecV2 | None = None) -> CandidateState:
     transaction = begin_candidate(parent)
-    transaction = candidate_step(
-        transaction, {NAME: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
-        execution_provenance(transaction.parent, rows=(0,),
-                                   candidate_step=transaction.update_steps + 1), HP, decay={NAME: True},
-        loss_bearing=True, max_norm=1.)
+    spec = ModelTopologySpecV2() if spec is None else spec
+    extents = extents or GenerationExtents(
+        1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
+    with shape_patch():
+        transaction = candidate_step(
+            transaction, {NAME: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)},
+            execution_provenance(transaction.parent, rows=(0,),
+                                       candidate_step=transaction.update_steps + 1,
+                                       extents=extents), HP,
+            spec=spec, extents=extents,
+            loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=True)
 
 
-def rejected_state(parent: CandidateState) -> CandidateState:
+def rejected_state(
+        parent: CandidateState,
+        extents: GenerationExtents | None = None) -> CandidateState:
     transaction = begin_candidate(parent)
-    transaction = candidate_step(
-        transaction, {NAME: mx.ones((2, 2), dtype=mx.float32)},
-        execution_provenance(transaction.parent, rows=(0,),
-                                   candidate_step=transaction.update_steps + 1), HP, decay={NAME: True},
-        loss_bearing=True, max_norm=1.)
+    spec = ModelTopologySpecV2()
+    extents = extents or GenerationExtents(
+        1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
+    with shape_patch():
+        transaction = candidate_step(
+            transaction, {NAME: mx.ones((2, 2), dtype=mx.float32)},
+            execution_provenance(transaction.parent, rows=(0,),
+                                       candidate_step=transaction.update_steps + 1,
+                                       extents=extents), HP,
+            spec=spec, extents=extents,
+            loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=False)
 
 
-def next_accepted_step(parent: CandidateState) -> CandidateState:
+def next_accepted_step(
+        parent: CandidateState,
+        extents: GenerationExtents | None = None) -> CandidateState:
     transaction = begin_candidate(parent)
-    transaction = candidate_step(
-        transaction, {NAME: mx.array([[.25, -.5], [0., 0.]], dtype=mx.float32)},
-        execution_provenance(transaction.parent, rows=(0,),
-                                   candidate_step=transaction.update_steps + 1), HP, decay={NAME: True},
-        loss_bearing=True, max_norm=1.)
+    spec = ModelTopologySpecV2()
+    extents = extents or GenerationExtents(
+        1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
+    with shape_patch():
+        transaction = candidate_step(
+            transaction, {NAME: mx.array([[.25, -.5], [0., 0.]], dtype=mx.float32)},
+            execution_provenance(transaction.parent, rows=(0,),
+                                       candidate_step=transaction.update_steps + 1,
+                                       extents=extents), HP,
+            spec=spec, extents=extents,
+            loss_bearing=True, max_norm=1.)
     return resolve_candidate(transaction, accepted=True)
 
 
@@ -113,87 +233,47 @@ def candidate(state: CandidateState, generation=0, parent=None) -> BamfBundleCan
         transition, ({"event": "FIXTURE_ACCEPTED", "optimizer_step": state.optimizer_step},))
 
 
-def rewrite_motif_bundle_fixture(
-        bundle_root: Path, manifest: dict, allocations: MotifAllocationSnapshot) -> dict:
-    """Replace fixture motif bytes, then rebind exact immutable custody metadata."""
-    root = Path(bundle_root)
-    record = deepcopy({key: value for key, value in manifest.items()
-                       if key != "manifest_sha256"})
-    raw_motif = canonical(snapshot_to_record(allocations))
-    motif_sha = sha(raw_motif)
-    motif_path = root / record["sidecars"]["motif_allocation"]["filename"]
-    with motif_path.open("wb") as stream:
-        stream.write(raw_motif)
-        stream.flush()
-        os.fsync(stream.fileno())
-    data_plane().put_object(motif_sha, raw_motif)
-    record["sidecars"]["motif_allocation"] = {
-        "filename": motif_path.name,
-        "sha256": motif_sha,
-        "object_sha256": motif_sha,
-    }
-    prior_extents = record["extents"]
-    record["extents"] = GenerationExtents(
-        prior_extents["semantic_bank_count"], prior_extents["motif_page_count"],
-        prior_extents["active_semantic_digest"], allocations.manifest.digest,
-        prior_extents["factor_map_digest"],
-    ).to_record()
-    raw_manifest = canonical(record)
-    manifest_sha = sha(raw_manifest)
-    manifest_path = root / "manifest.json"
-    with manifest_path.open("wb") as stream:
-        stream.write(raw_manifest)
-        stream.flush()
-        os.fsync(stream.fileno())
-    data_plane().put_node(
-        manifest_sha, raw_manifest, record["generation"],
-        record["parent_manifest_sha256"])
-    directory = os.open(root, os.O_RDONLY)
-    try:
-        os.fsync(directory)
-    finally:
-        os.close(directory)
-    return {**record, "manifest_sha256": manifest_sha}
-
-
-def shape_patch():
-    """Bind the B01 parameter ledger owner to the fixture's single bank."""
-    stack = ExitStack()
-    for target in ("bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
-                   "bilqis_mlx.runtime.topology_v2.ledger.expected_bamf_shapes",
-                   "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
-                   "bilqis_mlx.runtime.backbone_identity.expected_bamf_shapes",
-                   "bilqis_mlx.learning.atlas_participation_census."
-                   "expected_bamf_shapes",
-                   "bilqis_mlx.learning._retention.atlas_participation_census."
-                   "expected_bamf_shapes",
-                   ):
-        stack.enter_context(patch(target, return_value=DECLARED))
-    return stack
-
-
-def retention_decision(*, accepted=True, parent=None, retained=None) -> object:
-    """Issue a test-only token from the unshipped disposable C05 harness."""
-    from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
-        _screen_inputs,
-    )
-    from tests.bamf_disposable_retention import issue_disposable_screen
-    screen = _screen_inputs(protected_loss=2 if accepted else 3)
-    return issue_disposable_screen(
-        screen,
-        parent if parent is not None else parent_state(),
-        retained if retained is not None else parent_state(),
+def provision_source_authority_registry(run_dir: Path, registry) -> Path:
+    """Install test-only C09 host-root material outside generation custody."""
+    from bilqis_mlx.runtime.bamf_bundle.records import canonical, invalid
+    from bilqis_mlx.runtime.bamf_bundle.source_authority_custody import (
+        SOURCE_AUTHORITY_REGISTRY_FILE, source_authority_registry_lock,
     )
 
+    root = Path(run_dir)
+    root.mkdir(parents=True, exist_ok=True)
+    raw = canonical(registry.to_record())
+    with source_authority_registry_lock(root):
+        target = root / SOURCE_AUTHORITY_REGISTRY_FILE
+        if target.exists():
+            if target.read_bytes() != raw:
+                invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_IMMUTABLE")
+            return target
+        fd, temporary = tempfile.mkstemp(
+            prefix=".source-authority-registry.", suffix=".tmp", dir=root)
+        temporary_path = Path(temporary)
+        try:
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(raw)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary_path, target)
+            return target
+        finally:
+            if temporary_path.exists():
+                temporary_path.unlink()
 
-def acceptance(bundle) -> object:
-    """Mint the retention owner's acceptance binding for one candidate bundle."""
-    return mint_acceptance_binding(
-        retention_decision(retained=bundle.retained_state), bundle.retained_state, run_id=bundle.run_id,
-        generation=bundle.generation,
-        feature_sha256=bundle.extents.factor_map_digest)
+
+def with_source_authority_registry(bundle, registry):
+    """Bind accepted candidate material to the separately provisioned host root."""
+    return replace(bundle, correction_frontier={
+        **bundle.correction_frontier,
+        "source_authority_registry_sha256": registry.digest,
+        "source_authority_registry": registry.to_record(),
+    })
 
 
-def publish_candidate(run_dir, bundle):
-    """Publish one candidate with its retention acceptance binding."""
-    return publish_bamf_generation(run_dir, bundle, acceptance=acceptance(bundle))
+from .publication.publication_helpers import (
+    acceptance, publish_candidate, retention_decision,
+    rewrite_motif_bundle_fixture, shape_patch,
+)

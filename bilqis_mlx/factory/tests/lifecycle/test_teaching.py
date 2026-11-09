@@ -56,7 +56,7 @@ class ClosedTeachingTests(unittest.TestCase):
             AnswerFamily("numeric_active", ("0", "1", "2", "3")),))
         curriculum = replace(release.curriculum, grades=(replace(
             grade, capabilities=(*grade.capabilities[:-1], numeric)),))
-        with patch("bilqis_mlx.source_adapters.school.draw_b_grade_bridges",
+        with patch("bilqis_mlx.source_adapters._school.boolean.draw_b_grade_bridges",
                    return_value=()) as draw:
             enrich_boolean(source_root=None, graph={}, course=curriculum,
                 capability="Z.C0", seed=17, option_id=BOOLEAN_ASSOCIATION_OPTION)

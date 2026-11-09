@@ -1,0 +1,112 @@
+# C04 completion receipt — 2026-11-07
+
+- issue_key: C04 / #373
+- implementing children: #498, #499, #500
+- lane: C / runtime-integration
+- closeout branch: `codex/bamf02-c04-373-20261107`
+- consumed reviewed-unified SHA: `58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`
+- C04 implementation ancestor: `5daee1284bbce7461a104e2dfdadc0d646504daf`
+- C02 requalification ancestor: `cc94a04a3959d6ab0546bb6b55e9d387b3b853c1`
+- production-authority / solver proof ancestor: `aeeba85e7ff06a671d92bbb3d161bc963d96b470`
+- protected authority: referenced by identifier only; no protected contents copied
+- neural_training_started: false
+- live_student_mutated: false
+- self_merge_authorized: false
+
+## Changed paths
+
+- `bilqis_mlx/runtime/tests/batch/test_factory_training_bridge.py`
+- `docs/evidence/bamf/C04/parent-acceptance.md`
+- `docs/evidence/bamf/C04/receipt.md`
+
+`docs/evidence/bamf/C04/egm.md` is added only after the exact repaired head receives its fresh independent re-audit.
+
+No production code change is required: the reviewed C04 implementation is already present on
+the consumed unified base. This branch exists to perform the dependency requalification and
+turn-in that the historical C04 receipts explicitly deferred.
+
+## Consumed verification evidence
+
+Historical implementation/review evidence:
+- C04/C05 reviewed integration cut PR #561: targeted C04/C05 **70/70 PASS** and C04.3 EGM PASS.
+- C02 post-merge repair PR #895: detached Studio acceptance **12/12 PASS**,
+  CPU C02 authority **29/29 PASS**, source_mutated=false.
+- Production-authority remediation PR #809: cognitive solver/replay/import/readout
+  **19/19 PASS**; moved semantic core **31 PASS + 1 expected optional integration skip**;
+  base-aware quality check PASS; hosted portable-core, portable and semantic-ABI-integrity PASS.
+
+Current-tree source readback confirms:
+- exact-first deterministic route ordering;
+- TaskGoal/v1 source-lowered bounded DAG ownership;
+- one bounded neural proposal plus bounded local refinement;
+- deterministic verified fallback / typed unresolved;
+- exact full score and replay-safe cost accounting;
+- no assessment/gold import in the solver closure;
+- literal `ADD(MUL(2,3),4) == 10` with two pure calls;
+- fresh ROLE_LOOKUP cases through CompleteSolver;
+- live typed TaskGoal readout -> neural proposal -> pure solver route;
+- closeout regression: source-owned Factory authority -> real B11 proposer/forward -> legal source-visible binding -> pure operator.
+
+## Test command for human/CI replay
+
+```sh
+python3 -B scripts/run_tests.py \
+  bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py \
+  bilqis_mlx/runtime/tests/capability/factory/test_solver_replay.py \
+  bilqis_mlx/runtime/tests/capability/factory/test_solver_import_boundaries.py \
+  bilqis_mlx/runtime/tests/capability/factory/test_task_goal_readout.py \
+  bilqis_mlx/runtime/tests/capability/test_capability_evaluation.py \
+  bilqis_mlx/semantics/tests/cognitive_dag
+```
+
+The new fixture-backed B11 bridge regression is replayed separately on a configured Studio/MLX host with the pinned A01 bundle mounted:
+
+```sh
+python3 -B scripts/run_tests.py \
+  bilqis_mlx/runtime/tests/batch/test_factory_training_bridge.py
+```
+
+That fixture-backed replay was attempted in the independent reviewer sandbox but could not enter test discovery because the sandbox lacked `mlx` and `BILQIS_A01_ATLAS_BUNDLE`. No passing local result is claimed for that attempt.
+
+No new local test result is claimed in this receipt until the exact repaired head is exercised. Historical results above are consumed from their cited exact run receipts. Fresh hosted PR checks and an independent exact-head re-audit are required before this closeout is marked complete.
+
+## Observed outcome
+
+C04 is no longer blocked by the upstream conditions named in its historical receipts.
+The current reviewed unified tree contains the solver, current exact-operator/DAG authority,
+typed neural readout integration, C02 repaired integration boundary, and later
+execution-authority remediation. Parent acceptance is therefore satisfied at the software
+and integration-contract level.
+
+## Remaining owned defects
+
+None identified in C04-owned scope. Any later retained-learning, persistent-student or
+new-capability learning claim remains with its separate owner and is not manufactured here.
+
+## Turn-in rule
+
+Children #498, #499 and #500 are already closed under ADR-121. The PR must target `codex/bamf-unified-base-20261028`, remain unmerged, and list only `Closes #373` for human merge.
+
+
+## Final exact-head review and hosted verification
+
+Semantic candidate reviewed: `5f02a471504e08c3dc088584e6cac454917e72cd` on base
+`58eb36bba1958e0b3ca5d6aa3080260ccac3e9a1`.
+
+Fresh independent exact-head source review: **PASS, 0 Blockers / 0 Majors**. The reviewer
+confirmed the repaired role-lookup citation and the new source-authority -> real B11 proposer
+-> `forward_bamf` -> `solve_task` -> pure `SELECT_BOOLEAN` regression. One documentation
+nit about the fixture-backed replay command was repaired in this receipt.
+
+Hosted checks on the exact semantic candidate:
+- Semantic ABI integrity: **PASS**.
+- Bilqis MLX portable verification: **PASS**.
+- portable-core: **PASS**.
+- portable: **PASS**.
+- semantic-profile jobs: skipped as non-applicable.
+
+The independent reviewer did not run a passing MLX fixture-backed execution. A separate
+attempt failed before test discovery because the review environment had no `mlx` module and
+no `BILQIS_A01_ATLAS_BUNDLE`; this is recorded as an environment limitation, not converted
+into a fabricated test result. No live learner, optimizer, checkpoint, or source state was
+mutated.

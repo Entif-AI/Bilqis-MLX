@@ -97,6 +97,41 @@ class AdamWStateTree:
                 _invalid()
 
 
+def reconcile_b01_optimizer_manifest(
+        state: AdamWStateTree, spec, extents) -> Mapping[str, bool]:
+    """Validate one optimizer tree against B01 and return its decay manifest.
+
+    B01 owns the complete parameter names, shapes, initializers and decay flags.
+    B12 adds moments/counts but cannot invent a parallel tree or caller-authored
+    decay policy. Order is checked as well as membership so serialization and
+    optimizer custody consume the same expanded ParameterSpec sequence.
+    """
+    from bilqis_mlx.runtime.model_topology_v2 import (
+        GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
+        validate_bamf_parameters,
+    )
+
+    if (type(state) is not AdamWStateTree
+            or type(spec) is not ModelTopologySpecV2
+            or type(extents) is not GenerationExtents):
+        _invalid()
+    state.validate()
+    validate_bamf_parameters(spec, extents, state.parameters)
+    declared = expected_bamf_shapes(spec, extents)
+    names = tuple(item.name for item in declared)
+    if any(tuple(tree) != names for tree in (
+            state.parameters, state.m, state.v, state.update_counts)):
+        _invalid()
+    for item in declared:
+        if (state.parameters[item.name].shape != item.shape
+                or state.m[item.name].shape != item.shape
+                or state.v[item.name].shape != item.shape
+                or state.update_counts[item.name].shape
+                != declared_update_count_shape(item)):
+            _invalid()
+    return MappingProxyType({item.name: item.decay for item in declared})
+
+
 def _validate_step_inputs(parent, gradients, participation):
     if (type(parent) is not AdamWStateTree or
             any(not isinstance(tree, Mapping) or set(tree) != set(parent.parameters)
@@ -218,5 +253,5 @@ def _create_unbound_bamf_optimizer(spec, extents, *, run_seed):
     }
     state = AdamWStateTree(parameters, {item.name: native[item.name]["m"] for item in declared},
                            {item.name: native[item.name]["v"] for item in declared}, counts)
-    decay = MappingProxyType({item.name: item.decay for item in declared})
+    decay = reconcile_b01_optimizer_manifest(state, spec, extents)
     return state, decay, manifest

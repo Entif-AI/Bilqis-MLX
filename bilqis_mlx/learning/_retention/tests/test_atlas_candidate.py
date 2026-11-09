@@ -1,6 +1,11 @@
 """B12.2 disposable candidate rollback and accepted-clock witnesses."""
+import hashlib
+import inspect
+import json
 from dataclasses import replace
+from pathlib import Path
 from unittest import TestCase
+from unittest.mock import patch
 
 import mlx.core as mx
 import numpy as np
@@ -19,6 +24,37 @@ from bilqis_mlx.learning.atlas_candidate import (
 )
 from bilqis_mlx.learning._retention._atlas_candidate.common import PREVIOUS_STEP_PROOF_SCHEMA
 from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
+from bilqis_mlx.learning.source_atoms import SourceAtomRow
+from bilqis_mlx.factory.teaching import content_digest
+from bilqis_mlx.runtime.atlas_training_contracts import (
+    BamfDeliveryProvenance, BamfTrainingRow, _issue_training_batch,
+)
+from bilqis_mlx.runtime.atlas_visit_provenance import BamfVisitProvenance
+from bilqis_mlx.runtime.atlas_training_authority import _issue as issue_training_authority
+from bilqis_mlx.runtime.source_execution import source_content_digest
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    DependencyKind, DependencyRef,
+)
+
+
+def _visit_provenance(capability_id: str) -> BamfVisitProvenance:
+    payload = {
+        "run_identity_sha256": "1" * 64,
+        "run_seed": 17,
+        "generation": 0,
+        "accepted_manifest_sha256": "2" * 64,
+        "teacher_identity": "3" * 64,
+        "teacher_epoch": 0,
+        "student_sha256": "4" * 64,
+        "selection_seed": 42,
+        "cursor": "lesson:7",
+        "capability_id": capability_id,
+        "policy_key": "p-strong",
+        "schema": "bilqis.bamf.c03-teacher-visit-identity/v1",
+    }
+    wire = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return BamfVisitProvenance.from_c03_record({
+        **payload, "visit_id": hashlib.sha256(wire.encode()).hexdigest()})
 
 
 class CandidateTransactionTests(TestCase):
@@ -29,27 +65,115 @@ class CandidateTransactionTests(TestCase):
                               {name: mx.ones_like(values) * .01},
                               {name: mx.array([2, 3], dtype=mx.uint64)})
         from bilqis_mlx.runtime.model_topology_v2 import (
-            GenerationExtents, ModelTopologySpecV2,
+            GenerationExtents, Initializer, ModelTopologySpecV2,
+            ParameterGroup, ParameterSpec,
         )
         allocations = MotifAllocationSnapshot(MotifManifest(RELEASE))
         extents = GenerationExtents(
             1, 1, "a" * 64, allocations.manifest.digest, "c" * 64)
+        spec = ModelTopologySpecV2()
         self.parent = CandidateState(
             state, PlasticityPolicy('ADAPTIVE', 7, (IdentityRowAge(0, 0, 7), IdentityRowAge(0, 1, 2))),
             allocations, 11,
             CandidateCustodyIdentity(
-                "fixture-run", 0, "6" * 64, ModelTopologySpecV2().digest,
+                "fixture-run", 0, "6" * 64, spec.digest,
                 extents.digest))
         self.hp = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
         self.name = name
+        self.spec = spec
+        self.extents = extents
+        self.declared = (ParameterSpec(
+            name, (2, 2), Initializer.EMBEDDING,
+            ParameterGroup.IDENTITY_ROW_AGE, True),)
+        self.no_decay_declared = (ParameterSpec(
+            name, (2, 2), Initializer.EMBEDDING,
+            ParameterGroup.IDENTITY_ROW_AGE, False),)
+
+    def test_public_candidate_step_accepts_no_caller_decay(self):
+        self.assertNotIn("decay", inspect.signature(candidate_step).parameters)
+
+    def test_public_candidate_step_derives_no_decay_from_custody_bound_b01(self):
+        optimizer = self.parent.optimizer
+        zero_moments = AdamWStateTree(
+            optimizer.parameters,
+            {self.name: mx.zeros_like(optimizer.m[self.name])},
+            {self.name: mx.zeros_like(optimizer.v[self.name])},
+            optimizer.update_counts,
+        )
+        parent = replace(self.parent, optimizer=zero_moments)
+        candidate = begin_candidate(parent)
+        before = np.asarray(parent.optimizer.parameters[self.name]).copy()
+        with patch(
+                "bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
+                return_value=self.no_decay_declared), patch(
+                "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
+                return_value=self.no_decay_declared):
+            stepped = candidate_step(
+                candidate, {self.name: mx.zeros((2, 2), dtype=mx.float32)},
+                execution_provenance(parent, rows=(0,), candidate_step=1),
+                self.hp, spec=self.spec, extents=self.extents,
+                loss_bearing=True, max_norm=1.)
+        np.testing.assert_array_equal(
+            np.asarray(stepped.optimizer.parameters[self.name]), before)
+        np.testing.assert_array_equal(
+            np.asarray(stepped.optimizer.update_counts[self.name]), [3, 3])
+
+    def test_direct_public_step_with_real_b11_authority_still_uses_b01_decay(self):
+        source_row = {"id": "row-1", "capability": "A.TEST", "payload": "fixture"}
+        delivery = BamfDeliveryProvenance(
+            "row-1", source_content_digest((source_row,)), "source-1", "A.TEST", "op-1", (), 1, 1, None, 0,
+            _visit_provenance("A.TEST"), "family-1", "episode-1", tuple(sorted((
+                DependencyRef(DependencyKind.SOURCE, "row-1"),
+                DependencyRef(DependencyKind.OPERATOR, "operator:op-1"),
+                DependencyRef(DependencyKind.RELEASE, "source-release:" + "4" * 64),
+                DependencyRef(DependencyKind.POLICY, "policy:fixture"),
+                DependencyRef(DependencyKind.RIGHTS, "rights:fixture"),
+            ))))
+        batch = _issue_training_batch(
+            "4" * 64, "5" * 64, content_digest((source_row,)), "A.TEST",
+            (BamfTrainingRow(None, None, None, delivery),))
+        source = SourceAtomRow(None, source_row, {}, Path("."), 0, 1)
+        authority = issue_training_authority(batch, source, delivery)
+        optimizer = self.parent.optimizer
+        zero_moments = AdamWStateTree(
+            optimizer.parameters,
+            {self.name: mx.zeros_like(optimizer.m[self.name])},
+            {self.name: mx.zeros_like(optimizer.v[self.name])},
+            optimizer.update_counts,
+        )
+        parent = replace(self.parent, optimizer=zero_moments)
+        before = np.asarray(parent.optimizer.parameters[self.name]).copy()
+        with patch(
+                "bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
+                return_value=self.no_decay_declared), patch(
+                "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
+                return_value=self.no_decay_declared):
+            stepped = candidate_step(
+                begin_candidate(parent),
+                {self.name: mx.zeros((2, 2), dtype=mx.float32)},
+                execution_provenance(parent, rows=(0,), candidate_step=1),
+                self.hp, spec=self.spec, extents=self.extents,
+                loss_bearing=True, max_norm=1., training_authority=authority)
+        np.testing.assert_array_equal(
+            np.asarray(stepped.optimizer.parameters[self.name]), before)
+        self.assertIs(stepped.training_authorities[0], authority)
+        self.assertEqual(stepped.step_proofs[0].training_authority_sha256,
+                         authority.digest)
 
     def step(self, candidate, rows=(0,), *, loss_bearing=True):
-        return candidate_step(
-            candidate, {self.name: mx.array([[3., 4.], [3e38, -3e38]], dtype=mx.float32)},
-            execution_provenance(
-                candidate.parent, rows=rows, loss_bearing=loss_bearing,
-                candidate_step=candidate.update_steps + 1), self.hp,
-            decay={self.name: True}, loss_bearing=loss_bearing, max_norm=1.)
+        with patch(
+                "bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
+                return_value=self.declared), patch(
+                "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
+                return_value=self.declared):
+            return candidate_step(
+                candidate,
+                {self.name: mx.array([[3., 4.], [3e38, -3e38]], dtype=mx.float32)},
+                execution_provenance(
+                    candidate.parent, rows=rows, loss_bearing=loss_bearing,
+                    candidate_step=candidate.update_steps + 1), self.hp,
+                spec=self.spec, extents=self.extents,
+                loss_bearing=loss_bearing, max_norm=1.)
 
     def snapshot(self, state):
         return tuple(np.asarray(getattr(state.optimizer, field)[self.name]).tobytes()
@@ -81,12 +205,17 @@ class CandidateTransactionTests(TestCase):
 
     def test_changing_step_masks_ages_union_once(self):
         first = self.step(begin_candidate(self.parent))
-        second = candidate_step(
-            first, {self.name: mx.zeros((2, 2), dtype=mx.float32)},
-            execution_provenance(
-                first.parent, rows=(1,), candidate_step=first.update_steps + 1),
-            self.hp, decay={self.name: True},
-            loss_bearing=True, max_norm=1.)
+        with patch(
+                "bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
+                return_value=self.declared), patch(
+                "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
+                return_value=self.declared):
+            second = candidate_step(
+                first, {self.name: mx.zeros((2, 2), dtype=mx.float32)},
+                execution_provenance(
+                    first.parent, rows=(1,), candidate_step=first.update_steps + 1),
+                self.hp, spec=self.spec, extents=self.extents,
+                loss_bearing=True, max_norm=1.)
         accepted = resolve_candidate(second, accepted=True)
         self.assertEqual(tuple(r.accepted_age for r in accepted.policy.row_ages), (8, 3))
         np.testing.assert_array_equal(np.asarray(accepted.optimizer.update_counts[self.name]), [3, 4])

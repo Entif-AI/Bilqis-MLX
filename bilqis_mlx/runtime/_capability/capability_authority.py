@@ -11,6 +11,7 @@ from ..factory.assessment import AssessmentScopeContract, assessment_scope_contr
 from ..factory.executable_release import ExecutableAdmissionReceipt, ExecutableFactoryRelease
 from ..learning.capability_championship import ReplayBinding
 from ..semantics.domains import contract_digest
+from .atlas_capability_support_owner import CapabilitySupportArtifactOwner
 from .capability_retention import Assessment, EvidenceKind, _invalid, _names, _sha
 
 
@@ -131,7 +132,8 @@ def evaluate_progression_authority(
         release, capability_id, target_evidence, prerequisite_evidence, current, *,
         admission, semantic_graph_sha256, prerequisite_thresholds,
         source_rights: Callable | None, promotion_policy: Callable | None,
-        admission_lease: Callable | None) -> ProgressionGate:
+        admission_lease: Callable | None,
+        capability_support_owner=None) -> ProgressionGate:
     """Return fixture/requalification preflight; never publish an admission."""
     if (not isinstance(release, ExecutableFactoryRelease)
             or not isinstance(target_evidence, ReleasedEvidence)
@@ -194,6 +196,20 @@ def evaluate_progression_authority(
         return held("FACTORY_ADMISSION_INVALID")
     if target_evidence.assessment.cohort.kind not in (EvidenceKind.FRESH_TARGET, EvidenceKind.FRESH_LESSON):
         return held("INDEPENDENT_FRESH_TARGET_EVIDENCE_REQUIRED")
+    learned_support = any(
+        result.neural_calls > 0
+        for case, result in zip(
+            target_evidence.assessment.cohort.cases,
+            target_evidence.assessment.results)
+        if case.capability_id == capability_id)
+    if learned_support:
+        if not isinstance(capability_support_owner, CapabilitySupportArtifactOwner):
+            return held("CURRENT_CAPABILITY_SUPPORT_REQUIRED")
+        try:
+            capability_support_owner.require(
+                capability_id, current.generation_digest)
+        except BilqisError:
+            return held("CURRENT_CAPABILITY_SUPPORT_HELD")
     for kind, verifier in ((AuthorityKind.SOURCE_RIGHTS, source_rights),
                            (AuthorityKind.PROMOTION_POLICY, promotion_policy),
                            (AuthorityKind.ADMISSION_LEASE, admission_lease)):
@@ -217,3 +233,26 @@ def evaluate_progression_authority(
         return held("PREREQUISITE_EVIDENCE_INSUFFICIENT", blocked)
     return ProgressionGate(GateStatus.ELIGIBLE, "UNIFORM_FACTORY_PREFLIGHT_PASSED",
                            request, tuple(authorities))
+
+
+def evaluate_accepted_progression_authority(
+        run_dir, release, capability_id, target_evidence, prerequisite_evidence,
+        current, **authority_inputs) -> ProgressionGate:
+    """Evaluate learned progression from current accepted B13 support custody."""
+    from pathlib import Path
+    from bilqis_mlx.runtime.atlas_capability_support_owner import (
+        load_capability_support_owner,
+    )
+    if not isinstance(run_dir, Path):
+        _invalid("BAMF_PROGRESSION_ACCEPTED_RUN_REQUIRED")
+    if "capability_support_owner" in authority_inputs:
+        _invalid("BAMF_PROGRESSION_CALLER_SUPPORT_FORBIDDEN")
+    if "correction_authority_registry" in authority_inputs:
+        _invalid("BAMF_PROGRESSION_CALLER_CORRECTION_AUTHORITY_FORBIDDEN")
+    try:
+        owner = load_capability_support_owner(run_dir, capability_id)
+    except (BilqisError, AttributeError):
+        owner = None
+    return evaluate_progression_authority(
+        release, capability_id, target_evidence, prerequisite_evidence, current,
+        capability_support_owner=owner, **authority_inputs)

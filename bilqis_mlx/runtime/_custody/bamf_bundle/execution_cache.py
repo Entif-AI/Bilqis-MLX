@@ -2,13 +2,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
+import weakref
 
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_engram import MotifManifest
-
-
-_ISSUER = object()
 
 
 def _invalid(reason: str) -> None:
@@ -32,33 +31,39 @@ class AcceptedExecutionCache:
     accepted_manifest_sha256: str
     generation_binding: str
     motif_manifest: MotifManifest
+    source_authority_registry_sha256: str | None
     schema_version: str = "bilqis.mlx.b13-accepted-execution-cache/v1"
-    _issuance: object = field(init=False, repr=False, compare=False)
+    _motif_artifact_owners: dict = field(init=False, repr=False, compare=False)
+    _run_dir: Path | None = field(init=False, repr=False, compare=False)
+    _correction_registry: object | None = field(init=False, repr=False, compare=False)
+    _source_authority: object | None = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         _invalid("B13_EXECUTION_CACHE_CALLER_CONSTRUCTION_FORBIDDEN")
 
     def __post_init__(self) -> None:
         if (
-            getattr(self, "_issuance", None) is not _ISSUER
-            or not isinstance(self.run_id, str) or not self.run_id
+            not isinstance(self.run_id, str) or not self.run_id
             or type(self.generation) is not int or self.generation < 0
             or not _digest(self.accepted_manifest_sha256)
             or not _digest(self.generation_binding)
             or type(self.motif_manifest) is not MotifManifest
+            or (self.source_authority_registry_sha256 is not None
+                and not _digest(self.source_authority_registry_sha256))
             or self.schema_version
             != "bilqis.mlx.b13-accepted-execution-cache/v1"
         ):
             _invalid("B13_EXECUTION_CACHE_INVALID")
 
 
-def _issue_accepted_execution_cache(
+def _new_execution_cache(
     *,
     run_id: str,
     generation: int,
     accepted_manifest_sha256: str,
     generation_binding: str,
     motif_manifest: MotifManifest,
+    source_authority_registry_sha256: str | None = None,
 ) -> AcceptedExecutionCache:
     cache = object.__new__(AcceptedExecutionCache)
     for name, value in (
@@ -67,8 +72,12 @@ def _issue_accepted_execution_cache(
         ("accepted_manifest_sha256", accepted_manifest_sha256),
         ("generation_binding", generation_binding),
         ("motif_manifest", motif_manifest),
+        ("source_authority_registry_sha256", source_authority_registry_sha256),
         ("schema_version", "bilqis.mlx.b13-accepted-execution-cache/v1"),
-        ("_issuance", _ISSUER),
+        ("_motif_artifact_owners", weakref.WeakValueDictionary()),
+        ("_run_dir", None),
+        ("_correction_registry", None),
+        ("_source_authority", None),
     ):
         object.__setattr__(cache, name, value)
     cache.__post_init__()
@@ -79,7 +88,37 @@ def require_accepted_execution_cache(cache) -> AcceptedExecutionCache:
     if type(cache) is not AcceptedExecutionCache:
         _invalid("B13_EXECUTION_CACHE_REQUIRED")
     cache.__post_init__()
-    return cache
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        _require_owned_execution_cache,
+    )
+    return _require_owned_execution_cache(cache)
 
 
-__all__ = ("AcceptedExecutionCache", "require_accepted_execution_cache")
+def bind_motif_artifact_owner(cache, compiled):
+    """Bind mutable C09 hold state to one immutable compiled-frame identity."""
+    cache = require_accepted_execution_cache(cache)
+    from bilqis_mlx.runtime.atlas_motif_owner import MotifArtifactOwner
+    key = tuple(
+        node.artifact_id
+        for node in compiled.packed_frame_artifact_owner.index.nodes
+    )
+    owner = cache._motif_artifact_owners.get(key)
+    if owner is None:
+        owner = MotifArtifactOwner(cache, compiled)
+        cache._motif_artifact_owners[key] = owner
+    if cache._run_dir is not None:
+        from bilqis_mlx.runtime.accepted_corrections import (
+            register_accepted_target,
+        )
+        register_accepted_target(
+            cache._run_dir, cache.accepted_manifest_sha256,
+            "MOTIF", owner,
+        )
+    owner.require(cache, compiled)
+    return owner
+
+
+__all__ = (
+    "AcceptedExecutionCache", "bind_motif_artifact_owner",
+    "require_accepted_execution_cache",
+)

@@ -49,7 +49,6 @@ from bilqis_mlx.runtime.factory_retention_owner import (
     _candidate_from_live_parent, evaluate_factory_retention_candidate,
 )
 from bilqis_mlx.runtime.factory_task_authority import factory_task_authority
-from bilqis_mlx.runtime.model_topology_v2 import expected_bamf_shapes
 from bilqis_mlx.runtime.task_goal_readout import task_goal_route_decisions, task_goal_route_plan
 from bilqis_mlx.runtime.assessment import _persist_executable_cohort
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
@@ -153,12 +152,10 @@ def _source_owned_candidate_step_evidence(run_dir, source_context, parent, cache
     gradient = bamf_value_and_grad(
         dict(parent.retained_state.optimizer.parameters),
         live_batch, plan, targets, mask, cache)
-    declared = expected_bamf_shapes(parent.topology, parent.extents)
     transaction = admit_uninterrupted_candidate_step(
         run_dir, parent, loss_bearing_target=True, gradient_execution=gradient,
         teacher_hparams=replace(
             HP, learning_rate=C05_TRAINING_LEARNING_RATE),
-        decay={item.name: item.decay for item in declared},
         max_norm=1.0)
     if transaction.update_steps != 1 or len(transaction.training_authorities) != 1:
         raise AssertionError("C05 source-owned step did not execute exactly once")
@@ -212,7 +209,8 @@ def _publish_c05_successor(run_dir, source_context, parent, cache, artifact, tra
     ):
         published = accept_and_publish(
             run_dir, successor, retained, decision=decision,
-            feature_sha256=successor.extents.factor_map_digest)
+            feature_sha256=successor.extents.factor_map_digest,
+            training_authorities=transaction.training_authorities)
     return successor, retained, published
 
 

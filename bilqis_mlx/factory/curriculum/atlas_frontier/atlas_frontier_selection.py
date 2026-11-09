@@ -42,6 +42,7 @@ class FrontierDeltaSelection:
     prerequisite_slope: int
     downstream_unlocks: int
     deferred: tuple[DeferredClosure, ...]
+    requested_obligation_keys: tuple[tuple[str, str], ...]
     candidate_signature: str
     selection_sha256: str
     schema: str = "bilqis.factory-atlas-frontier-selection/v1"
@@ -57,6 +58,8 @@ class FrontierDeltaSelection:
                 or not self.selected_obligations
                 or any(item.semantic_id != self.selected_semantic_id
                        for item in self.selected_obligations)
+                or self.requested_obligation_keys
+                   != tuple(sorted(set(self.requested_obligation_keys)))
                 or self.selection_sha256 != self.expected_digest()):
             _fail("BAMF_PLANNER_SELECTION_INVALID")
 
@@ -133,6 +136,7 @@ def _candidate_signature(
 def _ranked_ready_targets(
     snapshot: CurriculumSnapshot,
     closure: FrontierClosure,
+    requested_obligation_keys: tuple[tuple[str, str], ...] = (),
 ) -> tuple[dict[str, tuple[CandidateClosure, ...]], list[tuple]]:
     graph = _graph(closure)
     groups = _grouped(closure)
@@ -141,8 +145,14 @@ def _ranked_ready_targets(
     if width == 0:
         _fail("BAMF_PLANNER_NO_READY_DELTA")
     ranked = []
+    requested = set(requested_obligation_keys)
     for identity, rows in groups.items():
         if not _semantic_ready(rows):
+            continue
+        obligation_digest = hashlib.sha256(_bytes(tuple(
+            (row.family_id, row.source_evidence_sha256, row.prerequisites)
+            for row in sorted(rows)))).hexdigest()
+        if (identity, obligation_digest) in requested:
             continue
         ranked.append((
             len(_ancestors(identity, graph)),
@@ -152,6 +162,22 @@ def _ranked_ready_targets(
             rows,
         ))
     return groups, ranked
+
+
+def ranked_frontier_target(
+    snapshot: CurriculumSnapshot, closure: FrontierClosure,
+    requested_obligation_keys: tuple[tuple[str, str], ...] = (),
+) -> tuple[str, tuple[CandidateClosure, ...]]:
+    """Return the exact #393 winner without requiring realization evidence."""
+    snapshot.verify()
+    closure.verify()
+    validate_closure_structure(snapshot, closure)
+    _, ranked = _ranked_ready_targets(
+        snapshot, closure, requested_obligation_keys)
+    if not ranked:
+        _fail("BAMF_PLANNER_NO_BOUNDED_READY_DELTA")
+    _, _, _, identity, rows = min(ranked)
+    return identity, rows
 
 
 def validate_frontier_selection(
@@ -177,7 +203,8 @@ def validate_frontier_selection(
             or selection.policy_epoch != snapshot.policy_epoch
             or selection.cursor != snapshot.cursor):
         _fail("BAMF_PLANNER_SELECTION_INVALID")
-    _, ranked = _ranked_ready_targets(snapshot, closure)
+    _, ranked = _ranked_ready_targets(
+        snapshot, closure, selection.requested_obligation_keys)
     if not ranked:
         _fail("BAMF_PLANNER_SELECTION_INVALID")
     slope, neg_unlocks, _, identity, rows = min(ranked)
@@ -212,34 +239,45 @@ def validate_frontier_selection(
         _fail("BAMF_PLANNER_SELECTION_INVALID")
 
 
-def select_frontier_delta(
+def select_frontier_delta_for_projection(
     snapshot: CurriculumSnapshot,
     closure: FrontierClosure,
     current_release: ExecutableFactoryRelease,
-    projections: tuple[TargetDeltaProjection, ...],
+    projection: TargetDeltaProjection,
+    requested_obligation_keys: tuple[tuple[str, str], ...] = (),
 ) -> FrontierDeltaSelection:
-    """Select one bounded semantic target without staging or adopting it."""
+    """Apply the unchanged #393 comparator to one code-owned winner projection.
+
+    This narrow A09.5 seam exists so an unavailable lower-ranked realization
+    cannot force the adapter to invent a projection merely to prove which
+    semantic target #393 ranks first.
+    """
     if (type(snapshot) is not CurriculumSnapshot
             or type(closure) is not FrontierClosure
-            or not isinstance(current_release, ExecutableFactoryRelease)):
+            or not isinstance(current_release, ExecutableFactoryRelease)
+            or type(projection) is not TargetDeltaProjection):
         _fail("BAMF_PLANNER_SELECTION_INPUT_INVALID")
     snapshot.verify()
     closure.verify()
     current_release.verify()
+    projection.verify()
     if (closure.snapshot_sha256 != snapshot.snapshot_sha256
             or snapshot.admitted_factory_release_sha256 != current_release.release_sha256):
         _fail("BAMF_PLANNER_SELECTION_PREDECESSOR_MISMATCH")
     validate_closure_structure(snapshot, closure)
-    projections_by_identity = target_projections(closure, current_release, projections)
-    groups, ranked = _ranked_ready_targets(snapshot, closure)
+    identity, rows = ranked_frontier_target(
+        snapshot, closure, requested_obligation_keys)
     capability_limit = min(9, snapshot.budget.max_candidates)
     identity_limit = snapshot.budget.max_identity_rows
     if capability_limit < 1:
         _fail("BAMF_PLANNER_DELTA_BUDGET_EXHAUSTED")
-    if not ranked:
-        _fail("BAMF_PLANNER_NO_BOUNDED_READY_DELTA")
-    slope, neg_unlocks, _, identity, rows = min(ranked)
-    projection = projections_by_identity[identity]
+    graph = _graph(closure)
+    groups = _grouped(closure)
+    slope = len(_ancestors(identity, graph))
+    neg_unlocks = -_marginal_unlocks(identity, groups)
+    if projection.semantic_id != identity:
+        _fail("BAMF_PLANNER_SELECTION_INVALID")
+    validate_target_projection(current_release, rows, projection)
     capabilities = projection.added_capability_ids
     introduced = projection.introduced_semantic_ids
     if len(capabilities) > capability_limit or len(introduced) > identity_limit:
@@ -265,9 +303,37 @@ def select_frontier_delta(
         slope,
         -neg_unlocks,
         deferred,
+        requested_obligation_keys,
         _candidate_signature(identity, rows, capabilities, introduced),
         "0" * 64,
     )
     result = replace(provisional, selection_sha256=provisional.expected_digest())
     result.verify()
     return result
+
+
+def select_frontier_delta(
+    snapshot: CurriculumSnapshot,
+    closure: FrontierClosure,
+    current_release: ExecutableFactoryRelease,
+    projections: tuple[TargetDeltaProjection, ...],
+) -> FrontierDeltaSelection:
+    """Select one bounded semantic target without staging or adopting it."""
+    if (type(snapshot) is not CurriculumSnapshot
+            or type(closure) is not FrontierClosure
+            or not isinstance(current_release, ExecutableFactoryRelease)):
+        _fail("BAMF_PLANNER_SELECTION_INPUT_INVALID")
+    snapshot.verify()
+    closure.verify()
+    current_release.verify()
+    if (closure.snapshot_sha256 != snapshot.snapshot_sha256
+            or snapshot.admitted_factory_release_sha256 != current_release.release_sha256):
+        _fail("BAMF_PLANNER_SELECTION_PREDECESSOR_MISMATCH")
+    validate_closure_structure(snapshot, closure)
+    projections_by_identity = target_projections(closure, current_release, projections)
+    _, ranked = _ranked_ready_targets(snapshot, closure)
+    if not ranked:
+        _fail("BAMF_PLANNER_NO_BOUNDED_READY_DELTA")
+    identity = min(ranked)[3]
+    return select_frontier_delta_for_projection(
+        snapshot, closure, current_release, projections_by_identity[identity])

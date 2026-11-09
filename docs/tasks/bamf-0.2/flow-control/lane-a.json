@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "3899649586b105b075e92f0ee3c51e80c379b473",
-  "updated_at": "2026-11-07T04:56:53Z",
+  "observed_unified": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
+  "updated_at": "2026-11-09T06:16:47Z",
   "exception": null,
   "items": [
     {
@@ -99,21 +99,48 @@
       "issue": 399,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "ba1c366e8f583d1c0bb2676a7740c749707e7fa1",
-      "summary": "A02.1 resumed under serialized single-writer custody after the C07 owner published exact branch checkpoint 87f9edb6 defining the staged-candidate consumption seam. This does not treat sibling-lane code as reviewed authority: #399 is active only to harden and finish its exact typed A02StagedVocabularyExtension/A02VocabularyStagingReceipt handoff, then final turn-in must consume the accepted C07 repair through reviewed unified. Existing staging remains non-publishing and preserves native B12/B13 optimizer state.",
+      "head_sha": "29054e32a3b17897748125ecac9370f77cdd46e6",
+      "summary": "A02.1 resumed under serialized single-writer custody against current reviewed unified 9385ac7f. The exact C07 branch checkpoint 87f9edb6 defines the staged-candidate consumption seam but is not treated as reviewed sibling authority. This pass reconciles A02's preserved production staging onto current B13 feature/publication owners and hardens the exact typed A02StagedVocabularyExtension/A02VocabularyStagingReceipt handoff. Final turn-in still requires the accepted C07 repair through reviewed unified.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-399-production-admission-20261106",
       "closed_pr": 887,
       "closed_under": "BAMF WAITING issue/branch queue; open implementation PRs are reserved for merge-ready candidates or active remediation delivery.",
-      "close_reason": "C07.1b/#510 owns persisted-lease-gated atomic adoption; #510 remains blocked on A09.5/#395 realization breadth."
+      "close_reason": "Historical waiting reason was C07.1b/#510 persisted-lease-gated adoption; bounded A02 implementation resumed against exact upstream branch interface while final integration still waits reviewed C07 authority."
+    },
+    {
+      "issue": 888,
+      "pr": null,
+      "state": "READY",
+      "head_sha": "3bedf7c3ddf1e536261aeb5b0830441cd399dca5",
+      "summary": "#888 realization-breadth repair is review-ready at semantic head 3bedf7c3 on reviewed unified 947a4ddd. Fresh targeted EGM PASS: 0 Blockers/0 Majors; readiness had one nonblocking test-clarity Nit only. Actual pinned A01/A08 replay proves the three #890 event successors through the parent next_atlas_delta path; a reviewer additionally exercised the full unmodified 9307-concept census. Hosted portable-core/portable/Semantic ABI PASS. PR #891 is ready for human review; merge/closure remain external authority.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a09-5a-888-realizations-20261107"
+    },
+    {
+      "issue": 889,
+      "pr": null,
+      "state": "READY",
+      "head_sha": "4e3f36afbd41856fe671bcd1dfb159df51eeb6b2",
+      "summary": "A09.5b primary-source staging repair is consumed by the #888 cohesive candidate: exact pinned primary source sense/text hash can stage without an auxiliary evidence row while all source/provider/oracle/admission boundaries remain fail-closed. Focused staging proof is green.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a09-5b-889-primary-source-20261107"
+    },
+    {
+      "issue": 890,
+      "pr": null,
+      "state": "READY",
+      "head_sha": "831e6419370cadf1fe5128cf7d6e90e112e2d54a",
+      "summary": "A09.5c event source authority is consumed by the #888 cohesive candidate: occurrence, commencement and termination use stable non-experimental identities bound to exact Ithkuil senses, source-text/PDF hashes, independent oracle and append-only prerequisite-closed semantic projection. Source/semantic owner checks are green.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a09-5c-890-event-authority-20261107"
     },
     {
       "issue": 395,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "c2e212e0bef7975e78dfc2f0a6071e21566b6539",
-      "summary": "A09.5 focused implementation passes on current unified, but three genuine post-A/B/C source-to-staged successor realizations are not yet accepted; #420 supplied rule/family authority, not the required realization breadth.",
-      "resume_trigger": "Accepted realization/staging authority must provide at least three genuinely new source-qualified candidate-to-staged-successor bindings beyond historical A/B/C, or an accepted equivalent owner contract.",
+      "pr": 891,
+      "state": "READY",
+      "head_sha": "3bedf7c3ddf1e536261aeb5b0830441cd399dca5",
+      "summary": "A09.5 parent is review-ready at semantic head 3bedf7c3 after consuming #889/#890 and closing #888. Real pinned A01/A08 replay, three successive source-qualified next_atlas_delta proposals, restart/source-order/grade-label behavior, current-credit filtering, source-authority failure closure, and fixed-point behavior are accepted. Fresh targeted EGM PASS 0 Blockers/0 Majors; hosted portable-core/portable/Semantic ABI PASS; PR #891 MERGEABLE/CLEAN and out of draft. Human merge and issue closure remain separate.",
+      "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a09-5-395-20261105"
     },
     {
@@ -201,6 +228,33 @@
       "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
       "summary": "Scoped842round1 source-inspection/literal-proof repair durable and regression-verified at a0a00fef; consumed by parent candidate, no separate PR.",
       "resume_trigger": null
+    },
+    {
+      "issue": 906,
+      "pr": 907,
+      "state": "TURNED_IN",
+      "head_sha": "48c2dbad85137b0589d64a9df8a1c2b062d48232",
+      "summary": "A13 EGM-Mitigation follow-on turned in as PR #907. Round 1 EGM rejected caller-owned temporal authority and a skipped real-A01 witness; repair 3b80a76c replaces that seam with a hash-pinned opaque source/policy authority. Current-unified proof: source-context 10/10, C09 boundary 5/5, real A01 3/3 zero skips, changed-scope quality green. Disposable join with authoritative #752 consumer 03e7a3c0 proves hold-before-reuse and cold replay; accepted-runtime 9/9. Targeted EGM re-audit PASS at 4e3b8826 with zero Blocker/Major/Minor/Nit. Remote turn-in head 48c2dbad includes EGM evidence only after the reviewed head.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a-906-temporal-context-20261107"
+    },
+    {
+      "issue": 916,
+      "pr": 918,
+      "state": "TURNED_IN",
+      "head_sha": "326c443e2d790ca23264cb9c5aa7135082bcf8e5",
+      "summary": "A13 four-time temporal identity remediation turned in as PR #918 after pinned EGM round 1 PASS (0 Blockers / 0 Majors). Typed C09 invalidation v2 binds source/effective/observed/recorded time plus source temporal-authority digest; v2 live persistence requires opaque A13 authority and cold decode independently revalidates the tuple against the hash-pinned source registry. Historical v1 identity/decoding and the correction-backed bridge remain unchanged. Widened ring 42/42 PASS; structure/governance/smell/flow/error-control green. Human merge remains external authority; downstream #911 is the consumer.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/916-a13-four-time-context-20261108"
+    },
+    {
+      "issue": 354,
+      "pr": 936,
+      "state": "TURNED_IN",
+      "head_sha": "fc3a32f59f2f77eb352d586a3b43ddff1d2a0c53",
+      "summary": "Scoped A13/A05 compiled-prefix authority repair is turned in as ready PR #936 after current-unified qualification, one shared-contract Major repair, and targeted reinspection PASS 0 Blockers / 0 Majors / 0 Nits. A05 is the sole prefix identity owner; A13 issues only after exact replay.",
+      "resume_trigger": "Human review/merge PR #936 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
+      "preserved_branch": "codex/354-a13-prefix-inventory-20261107"
     }
   ]
 }

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from .. import context_eligibility as _api
+import bilqis_mlx.semantics.context_eligibility as _api
 
 
 @dataclass(frozen=True)
@@ -20,6 +20,11 @@ class C09ContextInvalidation:
     correction_generation: int
     causal_prefix_end: int
     invalidated_handles: tuple[str, ...]
+    source_time: int | None = None
+    effective_time: int | None = None
+    observed_at: int | None = None
+    recorded_at: int | None = None
+    temporal_authority_sha256: str | None = None
     schema_version: str = _api.C09_INVALIDATION_SCHEMA
 
     def __post_init__(self) -> None:
@@ -38,12 +43,45 @@ class C09ContextInvalidation:
                     self.policy_epoch, self.rights_epoch,
                     self.correction_generation, self.causal_prefix_end))
                 or not _api._names(self.invalidated_handles)
-                or not self.invalidated_handles
-                or self.schema_version != _api.C09_INVALIDATION_SCHEMA):
+                or not self.invalidated_handles):
+            _api._invalid("BAMF_CONTEXT_C09_INVALIDATION_INVALID")
+        temporal = (
+            self.source_time, self.effective_time,
+            self.observed_at, self.recorded_at,
+        )
+        legacy = (
+            self.schema_version == _api.C09_INVALIDATION_SCHEMA_V1
+            and temporal == (None, None, None, None)
+            and self.temporal_authority_sha256 is None
+        )
+        current = (
+            self.schema_version == _api.C09_INVALIDATION_SCHEMA_V2
+            and all(_api._epoch(item) for item in temporal)
+            and self.source_time <= self.observed_at <= self.recorded_at
+            and isinstance(self.temporal_authority_sha256, str)
+            and _api._SHA256.fullmatch(self.temporal_authority_sha256)
+        )
+        if not (legacy or current):
             _api._invalid("BAMF_CONTEXT_C09_INVALIDATION_INVALID")
 
     @property
     def event_id(self) -> str:
+        if self.schema_version == _api.C09_INVALIDATION_SCHEMA_V1:
+            return _api.contract_digest({
+                "old_context_digest": self.old_context_digest,
+                "new_context_digest": self.new_context_digest,
+                "reason_codes": self.reason_codes,
+                "principal_id": self.principal_id,
+                "tenant_id": self.tenant_id,
+                "scope": self.scope,
+                "semantic_release": self.semantic_release,
+                "policy_epoch": self.policy_epoch,
+                "rights_epoch": self.rights_epoch,
+                "correction_generation": self.correction_generation,
+                "causal_prefix_end": self.causal_prefix_end,
+                "invalidated_handles": self.invalidated_handles,
+                "schema_version": self.schema_version,
+            })
         return _api.contract_digest(self)
 
 
@@ -76,6 +114,8 @@ def transition_context(
     task_scope: TaskScope,
     source_frontier: SourceFrontier,
     policy: ContextPolicy,
+    *,
+    temporal_identity: dict | None = None,
 ) -> ContextTransition:
     """Compare pinned frontiers and emit C09 on loss/change of eligibility.
 
@@ -107,6 +147,19 @@ def transition_context(
     reason_codes = (
         current.reason_codes if isinstance(current, _api.ContextHold)
         else ("BAMF_CONTEXT_APPROVED_VIEW_CHANGED",))
+    temporal_fields = {}
+    if temporal_identity is not None:
+        expected = {
+            "source_time", "effective_time", "observed_at", "recorded_at",
+            "temporal_authority_sha256",
+        }
+        if (type(temporal_identity) is not dict
+                or set(temporal_identity) != expected):
+            _api._invalid("BAMF_CONTEXT_C09_TEMPORAL_IDENTITY_INVALID")
+        temporal_fields = {
+            **temporal_identity,
+            "schema_version": _api.C09_INVALIDATION_SCHEMA_V2,
+        }
     invalidation = _api.C09ContextInvalidation(
         old_context_digest=prior.digest,
         new_context_digest=new_digest,
@@ -123,5 +176,6 @@ def transition_context(
             handle for frame in prior.frames
             for handle in (frame.frame_handle, *frame.member_handles)
         })),
+        **temporal_fields,
     )
     return _api.ContextTransition(current, (invalidation,))

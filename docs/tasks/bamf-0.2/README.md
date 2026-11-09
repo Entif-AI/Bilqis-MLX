@@ -11,7 +11,7 @@ The first full hierarchy is [A09 #360](https://github.com/Entif-AI/Bilqis-MLX/is
 <!-- BAMF02:ALL-LANES-GROOMED-20261027 -->
 ## Current native issue-tree routing | 27 October 2026
 
-43 original complete owner contracts across three lanes; 157 native recursively linked child nodes (A 44, B 53, C 60). Assign an agent **only to a deepest ready implementable child**, never to an intermediate group or an original integration parent. If a child remains too large, recursively subdivide it without dropping source clauses, technical details or original acceptance. See [full native child registry](children/README.md), [machine-readable tree](children/registry.json) and updated [complete parent book](ISSUE_BOOK.md).
+43 original complete owner contracts across three lanes; 172 native recursively linked child nodes (A 52, B 58, C 62). Assign an agent **only to a deepest ready implementable child**, never to an intermediate group or an original integration parent. If a child remains too large, recursively subdivide it without dropping source clauses, technical details or original acceptance. See [full native child registry](children/README.md), [machine-readable tree](children/registry.json) and updated [complete parent book](ISSUE_BOOK.md).
 
 First ready child candidates: A [A01.1 #396](https://github.com/Entif-AI/Bilqis-MLX/issues/396), B [B01.1a #434](https://github.com/Entif-AI/Bilqis-MLX/issues/434), C [C01.1 #486](https://github.com/Entif-AI/Bilqis-MLX/issues/486). Readiness still depends on actual upstream branch/receipt state and existing one-writer rules.
 
@@ -31,6 +31,17 @@ CPU source/fixture work
 proceeds concurrently. MLX evaluation and neural updates use one serialized M3
 Ultra lane. The first durable student gate is [C16](issues/C16.md); full delivery
 is [C15](issues/C15.md).
+
+## Latest legacy trainer source
+
+Any issue that needs to adapt behavior from the latest legacy trainer uses the
+preserved Factory replay at
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`,
+not the Prometheus training run. See
+[`LEGACY_TRAINER_AUTHORITY.md`](LEGACY_TRAINER_AUTHORITY.md) and run
+`python3 -B scripts/check_legacy_trainer_authority.py --live` before relying on
+legacy behavior in implementation or review. Prometheus remains historical lineage
+evidence only.
 
 ## Flow control and parked PR discipline
 

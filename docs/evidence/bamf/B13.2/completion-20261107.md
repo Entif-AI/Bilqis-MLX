@@ -1,0 +1,236 @@
+# B13.2 #479 completion receipt — 2026-11-07
+
+Issue: #479 — `BAMF-0.2 B13.2 | Validate complete generation and cold-resume exact training state`
+
+Completion branch: `codex/bamf02-b13-2-479-complete-20261107`
+
+Reviewed unified consumed: `9301e41ef215b9d035449c3260c7cd0f8ee0b5a7`
+
+Exact semantic/test head: `62237b4666513f7555d142d0b25fb0e001f87f81`
+
+## Dependency closure
+
+The two explicit resume conditions recorded for #479 are now satisfied.
+
+1. B13.1 #478 is accepted and consumable. PR #885 was human-merged into reviewed
+   unified as `9301e41ef215b9d035449c3260c7cd0f8ee0b5a7`, and issue #478 is closed
+   `EGM-Passed`.
+2. Remediation #709 is closed `EGM-Passed`, and its accepted pointer/lock cold-resume,
+   Factory next-visit, one controlled next optimizer step, source-qualified execution
+   and cross-backend continuation implementation is already in this candidate's
+   reviewed-unified ancestry.
+
+The prior #479 PR #677 remains historical provenance. Its useful complete numerical
+custody witness was restored as tests only. Its stale EGM result and stale custody
+implementation were not revived or treated as current acceptance evidence.
+
+## Complete generation custody
+
+The restored full-custody witness exercises the actual complete B01/B12 numerical
+tree rather than the small synthetic helper shape:
+
+- 214 named parameter tensors;
+- 79,469,798 scalar parameters;
+- weight, first-moment, second-moment and update-count trees;
+- optimizer hyperparameters and optimizer step;
+- row-establishment policy and motif allocation state;
+- teacher cursor/seed and teacher state;
+- topology/extents, semantic ABI, compiler features and correction frontier;
+- provenance, evaluation contract, transition and outbox payload identity;
+- all three unadmitted numerical backbone groups in a clean CPU process.
+
+The witness freezes the expected in-memory observation before save, writes a complete
+bundle through the current B13 codec, reads it in-process and in a fresh Python
+process, and checks byte/dtype/shape and numerical-output equivalence. It also hashes
+the bundle before and after both reads, so first read cannot silently mutate custody.
+
+Detached exact-head result at `62237b46`:
+
+- `BILQIS_BAMF_FULL_WITNESS=1 python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/custody/bamf_bundle/test_full_resume.py`
+- **1 passed / 0 failed / 0 skipped / 0 errors**;
+- detached receipt: `/private/tmp/bamf-479/full-resume.receipt.json`;
+- source snapshot digest before/after: `72b29b1a07a8a59022ea64efd371783a8974798036adcfec42895eaedc838443`;
+- `source_mutated=false`.
+
+The adjacent mutation controls passed **3/3** on the same candidate lineage.
+
+## Accepted-generation cold resume and next controlled step
+
+The current accepted-custody continuation suite passed **8/8** on `62237b46`. It
+loads through the published B13 generation pointer/lock path, preserves the accepted
+generation identity, reconstructs Factory next-visit state, runs exactly one
+controlled next optimizer step, compares uninterrupted and cold successor custody,
+reissues accepted execution cache authority for the successor and rejects stale or
+corrupt predecessor cache authority. A direct synthetic save/load cannot satisfy the
+accepted-generation path.
+
+## Source-qualified cross-backend continuation
+
+The required source-qualified continuation was run detached against the accepted A01
+artifact and the exact `62237b46` branch/remote head. The source arm executed on
+Apple Metal and the destination cold-resume arm executed on CPU.
+
+Exact result:
+
+- test: `FactoryRetentionOwnerLiveTests.test_source_qualified_candidate_can_publish_then_continue`;
+- **1 passed / 0 failed**;
+- source backend: `APPLE_METAL`, MLX `0.31.1`, FP32;
+- destination backend: `CPU`, MLX `0.31.1`, FP32;
+- committed semantic output match: `true`;
+- maximum observed cross-backend absolute divergence: `2.35140323638916e-05`;
+- declared FP32 tolerance: `0.002`;
+- accepted parent unchanged: `true`;
+- no generation 2 publication: `true`;
+- branch HEAD before/after and remote HEAD: `62237b4666513f7555d142d0b25fb0e001f87f81`;
+- worktree clean before/after;
+- detached receipt: `/private/tmp/bamf-479/source-continuation.receipt.json`.
+
+The controlled continuation begins from accepted generation 1, preserves the
+Factory release and natural next-selection evidence, executes one controlled
+optimizer comparison from the same committed parent, and holds publication of the
+comparison successor. No durable learner or own AdamW is started or mutated.
+
+## Canonical legacy-v1 witness — Microspenics
+
+Current repository authority is explicit: BAMF compatibility work that inspects or
+adapts the latest legacy trainer MUST use the preserved Factory replay worktree/run
+`microspenics-349-replay`. Prometheus is historical evidence about the Prometheus
+lineage only and cannot establish current BAMF legacy-trainer compatibility.
+
+The required live authority check passed before using legacy behavior as a #479
+premise:
+
+- command: `python3 -B scripts/check_legacy_trainer_authority.py --live`;
+- branch: `codex/337-replay-349-20261026`;
+- observed legacy source head: `d84d2ab9e2d79817c131ef7e0d4ec0d574e57b32`;
+- canonical run: `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`;
+- observed generation: `24254`;
+- state schema: `bilqis.state-head/v1`.
+
+The canonical Microspenics state resolves its current `model_bundle` to
+`bundles/best-18601-70d09abe56ca`. That bundle is an actual six-layer historical-v1
+student with:
+
+- schema `bilqis.mlx.fp32-adamw-bundle/v1`;
+- optimizer step `135208`;
+- topology schema `bilqis.mlx.model-topology/v1`;
+- six layers, width 384, 24 heads, context 96;
+- manifest SHA-256
+  `70cb9169b8bcae85cd4ea6db81c4e88eb9c423d82888af1f6b4e00c26419315d`.
+
+Fresh #479 witness on the current candidate lineage:
+
+- `BILQIS_FROZEN_V1_BUNDLE=<microspenics run>/bundles/best-18601-70d09abe56ca`
+  `BILQIS_FROZEN_V1_MANIFEST_SHA256=70cb9169...`
+  `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/custody/bamf_bundle/test_frozen_v1.py`;
+- **1 passed / 0 failed / 0 skipped / 0 errors**.
+
+The test verifies the real Microspenics bundle reads through the historical reader
+without mutation, reproduces its optimizer/topology state, and is rejected as
+`bamf-atlas-v2` before v2 tensor/optimizer construction.
+
+The earlier #754 / PR #902 Prometheus witness remains historical evidence about the
+Prometheus lineage and is not consumed as #479 compatibility authority. Its prior
+classification as "canonical" in this completion receipt was incorrect and was
+withdrawn before accepting any round-2 EGM verdict.
+
+## Acceptance disposition before final EGM
+
+The implementation queue known from the prior #479 EGM is now closed on this
+candidate:
+
+- stale B13 custody/run-root defects are superseded by accepted #478 custody;
+- complete-generation numerical custody is freshly measured;
+- accepted pointer/lock cold resume is freshly measured;
+- Factory next-visit state and one controlled next optimizer step are measured;
+- the source-qualified continuation path is freshly measured;
+- Metal-to-CPU FP32 continuation parity is freshly measured;
+- genuine historical-v1 compatibility is freshly measured against the canonical
+  Microspenics run and bundle.
+
+The first attempted round-2 Goldfish review was aborted before verdict when this
+authority error was discovered. It is `OBSOLETE/SUPERSEDED`, not PASS or FAIL, and
+does not count as a completed round.
+
+## Corrected round-2 EGM result
+
+The corrected exact-head review used candidate
+`58dc31f85dd6711887de8d774ab4518119dbd3d3` with semantic/test head
+`62237b4666513f7555d142d0b25fb0e001f87f81` and reviewed-unified ancestry
+`9301e41ef215b9d035449c3260c7cd0f8ee0b5a7`.
+
+Two fresh Goldfish reviewers independently returned PASS:
+
+- comprehension / re-implementation: **PASS — 0 unsettled Blockers / 0 unsettled Majors**;
+- codebase-details / integration: **PASS — 0 unsettled Blockers / 0 unsettled Majors**.
+
+Both reviewers verified the corrected Microspenics authority boundary. Prometheus is
+historical-only and is not consumed as current compatibility authority. The
+comprehension review independently verified complete generation custody, published
+pointer/lock cold resume, Factory next-visit reconstruction, exactly one controlled
+next optimizer step, source-qualified Metal-to-CPU continuation, human-run/operator
+lock/resource boundaries and the canonical Microspenics frozen-v1 witness. The
+codebase-details review independently verified the actual 214-tensor / 79,469,798
+parameter production numerical tree, accepted #478/#709 ancestry, parent/pointer
+immutability, genuine Microspenics bundle identity, read-only v1 loading and v2
+rejection before v2 tensor construction.
+
+Review family: `78092a13-20d4-4812-bfae-74724bda8d91`.
+
+Live reviewed unified subsequently advanced to
+`fd9ef2890149ab5ae395640ce980a20f13a388c6` only through A13 temporal-context and
+C01 handoff changes. No intervening path touches B13 custody, Factory-retention
+continuation, legacy-trainer authority, model topology or this leaf's test surfaces.
+Under ADR-127 that unrelated drift does not invalidate this reviewed candidate.
+
+`62237b46..58dc31f8` changes only evidence and flow-control bookkeeping. Semantic,
+custody and MLX proof is therefore retained under AGENTS.md `TEST_EVIDENCE_REUSED`.
+Any final EGM-result/turn-in bookkeeping after `58dc31f8` is likewise documentation
+and coordination state only and does not invalidate the reviewed behavior.
+
+## Turn-in disposition
+
+#479 B13.2 is EGM-passed and the repository pre-merge gate is now satisfied.
+
+The first detached pre-merge attempt on `6885130e` was not accepted as a #479
+semantic failure. It exposed two independent baseline/harness problems:
+
+- 18 setup errors came from the copied detached snapshot omitting the external
+  `vendor/legacy-v16/runs` fixture relationship, so pinned legacy checkpoints were
+  absent or imported from the wrong root;
+- the sole deterministic assertion failure, the relocated learning-owner census,
+  reproduced unchanged on exact consumed unified `9301e41e`: accepted
+  `atlas_package_import.py` had become the 42nd canonical learning owner while the
+  census still asserted 41.
+
+The baseline census repair is test-only commit
+`c83a9c274d1b9d01d1e3b5d6af1a0e7732f1cc8d`: expected owner count 41 -> 42.
+Failing-before was reproduced on both the #479 branch and a detached worktree at
+`9301e41e`; passing-after is **5/5**. No production/runtime behavior changed after
+the corrected EGM-reviewed head, so `EGM-Passed` remains valid under AGENTS.md.
+
+The true pre-merge retry ran in an isolated Git worktree at exact `c83a9c27` with
+the existing retention-lab legacy `runs` fixture bound into repository-local
+`vendor/legacy-v16/runs` without committing it. Exact result:
+
+- `npm run verify:premerge`;
+- **3520 total / 3360 passed / 0 failed / 160 explicit skips / 0 errors**;
+- return code 0;
+- worktree clean before and after;
+- head before and after: `c83a9c274d1b9d01d1e3b5d6af1a0e7732f1cc8d`;
+- receipt: `/private/tmp/bamf-479/premerge-retry.receipt.json`;
+- log: `/private/tmp/bamf-479/premerge-retry.log`.
+
+Any bookkeeping after `c83a9c27` is documentation/flow-control-only and therefore
+reuses this pre-merge evidence under `TEST_EVIDENCE_REUSED`. B13.2 is ready for a
+lane-to-unified PR and human review. This receipt does not authorize self-merge or a
+live student start. Issue closure remains tied to accepted integration into reviewed
+unified.
+
+Turn-in PR: #909 — `BAMF-0.2 B13.2 | Complete generation custody and exact cold
+resume (#479)`.
+
+PR #909 is opened ready for human review against
+`codex/bamf-unified-base-20261028`, not as a draft queue marker. Hosted checks on the
+exact final PR head are the remaining integration gate. No self-merge is authorized.
+

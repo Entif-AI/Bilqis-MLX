@@ -1,6 +1,7 @@
 """Gold-blind C04 lowering for admitted finite-number arithmetic rows."""
 from __future__ import annotations
 import json
+from dataclasses import replace
 from types import MappingProxyType
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -60,7 +61,8 @@ def _maximum(capability) -> int:
 
 
 def _visit_numeric(
-    item, path, *, root, row, row_id, semantic_release, capability, release,
+    item, path, *, root, row, row_id, source_identity, semantic_release,
+    capability, release,
     registry, maximum, actual, operands, grants, nodes,
 ):
     if isinstance(item, Literal):
@@ -77,7 +79,7 @@ def _visit_numeric(
             handle = "source:numeric-set:" + contract_digest((row_id, path, value))
             typed = TypedValue("NumberSet", value, semantic_release, handle)
             source = SourceOperand(
-                typed, SourceKind.TASK_VISIBLE, "source:numeric-row:" + row_id,
+                typed, SourceKind.TASK_VISIBLE, source_identity,
                 len(row.get("tokens", ())))
             operands.append(source)
             grants.append(_grant(
@@ -92,7 +94,7 @@ def _visit_numeric(
         handle = "source:numeric-literal:" + contract_digest((row_id, path, value))
         typed = TypedValue("Number", value, semantic_release, handle)
         source = SourceOperand(
-            typed, SourceKind.TASK_VISIBLE, "source:numeric-row:" + row_id,
+            typed, SourceKind.TASK_VISIBLE, source_identity,
             len(row.get("tokens", ())))
         operands.append(source)
         grants.append(_grant(
@@ -103,7 +105,8 @@ def _visit_numeric(
         _invalid("BAMF_C04_NUMERIC_EXPRESSION_INVALID")
     refs = tuple(_visit_numeric(
         child, (*path, index), root=False, row=row, row_id=row_id,
-        semantic_release=semantic_release, capability=capability, release=release,
+        source_identity=source_identity, semantic_release=semantic_release,
+        capability=capability, release=release,
         registry=registry, maximum=maximum, actual=actual, operands=operands,
         grants=grants, nodes=nodes,
     ) for index, child in enumerate(item.arguments))
@@ -194,9 +197,11 @@ def lower_numeric_task_goal(
     operands = []
     nodes = []
     row_id = str(row.get("id") or row.get("source_id") or "numeric-row")
+    source_identity = str(row.get("source_id") or row_id)
 
     _visit_numeric(
         expression, (), root=True, row=row, row_id=row_id,
+        source_identity=source_identity,
         semantic_release=semantic_release, capability=capability, release=release,
         registry=registry, maximum=maximum, actual=actual, operands=operands,
         grants=grants, nodes=nodes)
@@ -220,4 +225,51 @@ def lower_numeric_task_goal(
     return task_goal_from_program(program, binding, goal_id=row_id), binding
 
 
-__all__ = ("lower_numeric_task_goal",)
+def resolve_numeric_task_goal(
+    row: dict, *, semantic_release: str, capability, release, **kwargs,
+):
+    """Resolve the source-owned route hole without exposing it to model input."""
+    if not isinstance(row, dict):
+        _invalid("BAMF_C04_NUMERIC_TRAINING_TARGET_INVALID")
+    if row.get("answer_kind") == "binary":
+        from .answer_choice_task_goal import resolve_answer_choice_task_goal
+        return resolve_answer_choice_task_goal(
+            row, semantic_release=semantic_release, capability=capability,
+            release=release, **kwargs)
+    source = dict(row)
+    source.pop("gold", None)
+    goal, _binding = lower_numeric_task_goal(
+        source, semantic_release=semantic_release, capability=capability,
+        release=release, **kwargs)
+    expression = decode(row["record"]["symbols"])
+    declared = capability.capability_id.removeprefix("C.")
+    if declared == "NUMBER" and isinstance(expression, Literal):
+        from .answer_choice_task_goal import resolve_answer_choice_task_goal
+        return resolve_answer_choice_task_goal(
+            row, semantic_release=semantic_release, capability=capability,
+            release=release, **kwargs)
+    if (isinstance(expression, Apply)
+            and expression.operator.symbol == "school.op.EQ"
+            and declared != "EQ"):
+        expression = expression.arguments[0]
+    if not isinstance(expression, Apply):
+        _invalid("BAMF_C04_NUMERIC_TRAINING_TARGET_INVALID")
+    actual = expression.operator.symbol.removeprefix("school.op.")
+    nodes = []
+    resolved = 0
+    for node in goal.expression_or_holes.nodes:
+        if node.operator_id is None:
+            if actual not in node.candidate_operator_ids:
+                _invalid("BAMF_C04_NUMERIC_TRAINING_TARGET_INVALID")
+            node = replace(
+                node, operator_id=actual, candidate_operator_ids=(), constraints=())
+            resolved += 1
+        nodes.append(node)
+    if resolved != 1:
+        _invalid("BAMF_C04_NUMERIC_TRAINING_TARGET_INVALID")
+    return replace(
+        goal, expression_or_holes=replace(
+            goal.expression_or_holes, nodes=tuple(nodes)))
+
+
+__all__ = ("lower_numeric_task_goal", "resolve_numeric_task_goal")

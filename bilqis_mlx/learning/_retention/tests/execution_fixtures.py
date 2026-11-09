@@ -29,7 +29,7 @@ CENSUS_SHAPES = (
 
 
 def execution_provenance(parent, *, rows=(0,), loss_bearing=True, mode="FULL",
-                         candidate_step=1):
+                         candidate_step=1, extents=None):
     """Issue owner provenance for one executed step over the fixture bank.
 
     The provenance binds the exact parent candidate identity and optimizer
@@ -46,7 +46,7 @@ def execution_provenance(parent, *, rows=(0,), loss_bearing=True, mode="FULL",
         frozen_parameter_names=(), admitted_identity_rows=identity,
         fast_identity_rows=identity, established_identity_rows=())
     candidate_step_ordinal = candidate_step
-    extents = GenerationExtents(
+    extents = extents or GenerationExtents(
         1, 1, "a" * 64, parent.allocations.manifest.digest, "c" * 64)
     with ExitStack() as stack:
         for target in CENSUS_SHAPES:

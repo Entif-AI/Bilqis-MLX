@@ -67,6 +67,23 @@ class DataPlaneStoreMixin:
             conflicted INTEGER NOT NULL,
             PRIMARY KEY(run_dir, event_id)
         ) WITHOUT ROWID;
+        CREATE TABLE IF NOT EXISTS bamf_genesis_trust(
+            run_id TEXT PRIMARY KEY,
+            generation INTEGER NOT NULL CHECK(generation = 0),
+            manifest_sha256 TEXT NOT NULL UNIQUE,
+            payload_sha256 TEXT NOT NULL,
+            payload BLOB NOT NULL
+        ) WITHOUT ROWID;
+        CREATE TRIGGER IF NOT EXISTS bamf_genesis_trust_no_update
+        BEFORE UPDATE ON bamf_genesis_trust
+        BEGIN
+            SELECT RAISE(ABORT, 'BAMF_GENESIS_TRUST_IMMUTABLE');
+        END;
+        CREATE TRIGGER IF NOT EXISTS bamf_genesis_trust_no_delete
+        BEFORE DELETE ON bamf_genesis_trust
+        BEGIN
+            SELECT RAISE(ABORT, 'BAMF_GENESIS_TRUST_IMMUTABLE');
+        END;
         """)
         row = self._db.execute(
             "SELECT value FROM meta WHERE key='schema_version'").fetchone()
@@ -117,6 +134,35 @@ class DataPlaneStoreMixin:
         if len(raw) != row[1] or hashlib.sha256(raw).hexdigest() != digest:
             raise ValueError(_error(DataPlaneError.OBJECT_CORRUPTED, digest))
         return raw
+
+    def put_object_reference(self, reference: str, raw: bytes) -> str:
+        """Atomically point one stable data-plane name at immutable content."""
+        if (not isinstance(reference, str) or not reference
+                or "\n" in reference or "\r" in reference):
+            raise ValueError(DataPlaneError.OBJECT_DIGEST_INVALID.value)
+        digest = hashlib.sha256(raw).hexdigest()
+        self.put_object(digest, raw)
+        with self.transaction():
+            self._db.execute(
+                "INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)",
+                ("object_reference_v1:" + reference, digest),
+            )
+        return digest
+
+    def get_object_reference(self, reference: str) -> tuple[str, bytes] | None:
+        """Resolve a stable data-plane name without weakening content integrity."""
+        if (not isinstance(reference, str) or not reference
+                or "\n" in reference or "\r" in reference):
+            raise ValueError(DataPlaneError.OBJECT_DIGEST_INVALID.value)
+        with self._lock:
+            row = self._db.execute(
+                "SELECT value FROM meta WHERE key=?",
+                ("object_reference_v1:" + reference,),
+            ).fetchone()
+        if row is None:
+            return None
+        digest = row[0]
+        return digest, self.get_object(digest)
 
     def put_node(self, digest: str, raw: bytes, generation: int,
                  parent_sha256: str | None) -> None:

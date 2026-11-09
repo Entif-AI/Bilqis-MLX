@@ -13,7 +13,9 @@ from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.semantics.context_eligibility import (
     PUBLIC_FORMAL, ContextPolicy, SourceFrontier, TaskScope,
 )
-from bilqis_mlx.semantics.frame_compiler import compile_prefix_rows
+from bilqis_mlx.semantics.frame_compiler import (
+    compile_prefix_rows, validate_partial_visible_forest,
+)
 from bilqis_mlx.source_adapters.atoms.admission import public_formal_atom_context
 from bilqis_mlx.source_adapters.atoms.authority import canonical_graph_for
 
@@ -83,8 +85,10 @@ def compile_factory_evaluation_batch(
     )
     rows = compile_prefix_rows(
         ((ast, len(ast.atoms), config),), authenticated.features.semantic_release)
+    receipt = validate_partial_visible_forest(rows.rows[0], ast, config)
     compiled = CompiledEncoderInput(
-        rows, (config,), authenticated.features, candidate.extents)
+        rows, (config,), authenticated.features, candidate.extents,
+        source_asts=(ast,), partial_forest_receipts=(receipt,))
     source = SourceAtomRow(
         authenticated.selection, row, source_graph,
         Path(source_context.source_root), source_seed, source_each,
@@ -92,6 +96,7 @@ def compile_factory_evaluation_batch(
     batch = BamfCompiledBatch(
         compiled, (source,), authenticated.schema)
     batch.__post_init__()
+    source_context.register_compiled_batch(batch)
     return batch
 
 

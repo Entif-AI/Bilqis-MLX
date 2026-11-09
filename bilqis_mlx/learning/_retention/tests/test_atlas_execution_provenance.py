@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import unittest
 from dataclasses import replace
+from unittest.mock import patch
 
 import mlx.core as mx
 import numpy as np
@@ -37,11 +38,13 @@ class ExecutionProvenanceBindingTests(unittest.TestCase):
             {NAME: mx.ones_like(values) * .01},
             {NAME: mx.array([2, 3], dtype=mx.uint64)})
         from bilqis_mlx.runtime.model_topology_v2 import (
-            GenerationExtents, ModelTopologySpecV2,
+            GenerationExtents, Initializer, ModelTopologySpecV2,
+            ParameterGroup, ParameterSpec,
         )
         allocations = MotifAllocationSnapshot(MotifManifest(RELEASE))
         extents = GenerationExtents(
             1, 1, "a" * 64, allocations.manifest.digest, "c" * 64)
+        spec = ModelTopologySpecV2()
         self.parent = __import__(
             "bilqis_mlx.learning.atlas_candidate", fromlist=["CandidateState"]
         ).CandidateState(
@@ -49,17 +52,28 @@ class ExecutionProvenanceBindingTests(unittest.TestCase):
                                                      IdentityRowAge(0, 1, 2))),
             allocations, 11,
             CandidateCustodyIdentity(
-                "fixture-run", 0, "6" * 64, ModelTopologySpecV2().digest,
+                "fixture-run", 0, "6" * 64, spec.digest,
                 extents.digest))
         self.hp = AdamWHyperparameters(.001, (.9, .95), 1e-8, .01)
+        self.spec = spec
+        self.extents = extents
+        self.declared = (ParameterSpec(
+            NAME, (2, 2), Initializer.EMBEDDING,
+            ParameterGroup.IDENTITY_ROW_AGE, True),)
 
     def gradients(self):
         return {NAME: mx.array([[3., 4.], [0., 0.]], dtype=mx.float32)}
 
     def step(self, candidate, execution):
-        return candidate_step(
-            candidate, self.gradients(), execution, self.hp, decay={NAME: True},
-            loss_bearing=True, max_norm=1.)
+        with patch(
+                "bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
+                return_value=self.declared), patch(
+                "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
+                return_value=self.declared):
+            return candidate_step(
+                candidate, self.gradients(), execution, self.hp,
+                spec=self.spec, extents=self.extents,
+                loss_bearing=True, max_norm=1.)
 
     def test_raw_caller_mask_is_not_an_execution_authority(self):
         candidate = begin_candidate(self.parent)

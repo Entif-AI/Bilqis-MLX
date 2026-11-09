@@ -92,6 +92,9 @@ def continue_generation(run, *, student=None, pointer=None) -> dict:
             "state_digest": retained_digest(student.retained_state),
             "teacher_state": dict(student.teacher_state),
             "optimizer_step": student.retained_state.optimizer_step,
+            "run_seed": (
+                student.run_identity.run_seed
+                if student.run_identity is not None else None),
         }
         names = tuple(sorted(student.retained_state.optimizer.parameters))
         parameters = student.retained_state.optimizer.parameters
@@ -102,9 +105,10 @@ def continue_generation(run, *, student=None, pointer=None) -> dict:
             transaction, probe_gradients(parameters, target),
             execution_provenance(
                 transaction.parent, rows=(0,),
-                candidate_step=transaction.update_steps + 1),
+                candidate_step=transaction.update_steps + 1,
+                extents=student.extents),
             AdamWHyperparameters(LEARNING_RATE, (.9, .95), 1e-8, .01),
-            decay={name: True for name in names},
+            spec=student.topology, extents=student.extents,
             loss_bearing=True, max_norm=1.)
         accepted = resolve_candidate(transaction, accepted=True)
         loss_after = probe_loss(accepted.optimizer.parameters, target)

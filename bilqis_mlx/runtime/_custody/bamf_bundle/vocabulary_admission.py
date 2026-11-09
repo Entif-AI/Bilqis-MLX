@@ -32,11 +32,12 @@ from bilqis_mlx.semantics.atlas.vocabulary_resources import (
 from bilqis_mlx.semantics.atlas.vocabulary_transaction import (
     FullVocabularyParent, _stage_authenticated_full_vocabulary_extension,
 )
-from ._feature_authority_records import _feature_schema
 from ._vocabulary_admission_records import (
     A02StagedVocabularyExtension, A02VocabularyStagingReceipt, STAGED_EVENT,
 )
-from .feature_authority import read_accepted_generation_feature_lineage
+from .feature_authority import (
+    _feature_schema, read_accepted_generation_feature_lineage,
+)
 from .publication import load_bamf_generation_authority
 from .records import BamfBundleCandidate, canonical, invalid, sha
 
@@ -146,7 +147,7 @@ def stage_vocabulary_extension(
     run_dir = Path(run_dir)
     pointer_path = run_dir / "bamf-state.json"
     parent_receipt, features, predecessor = read_accepted_generation_feature_lineage(
-        pointer_path, artifact_path)
+        pointer_path)
     if predecessor is None:
         invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
     parent, parent_manifest = load_bamf_generation_authority(pointer_path)

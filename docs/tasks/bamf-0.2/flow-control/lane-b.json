@@ -1,26 +1,24 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "aef69dae9179bb09f85f955b8a494f6582eac942",
-  "updated_at": "2026-11-07T02:54:54+00:00",
+  "observed_unified": "4bfcbd5a9aaa22a1bc2bca4c7a64ec203df07044",
+  "updated_at": "2026-11-09T05:43:34Z",
   "exception": null,
   "items": [
     {
       "issue": 475,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "b5c3df440d397c0c2cd2165d5f2c015c1d1e7a0c",
-      "summary": "B12.2 remains the current primary Lane B integration surface; remediation #710 owns the unresolved execution-provenance defect.",
-      "resume_trigger": "Remediation #710 is consumed; issue #475 transitions to EGM-Pending; fresh exact-head EGM passes; an integration PR slot is available.",
-      "closed_pr": 695,
-      "preserved_branch": "codex/b12-475-initialized-rows-20261101",
-      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Failed; remediation #710"
+      "state": "TURNED_IN",
+      "head_sha": "e99630d4812a852589dae55dac61bd398b3fba08",
+      "summary": "B12.2 is complete and closed: PR #882 was human-merged into reviewed unified as 0afb12a0 after hosted portable/core and semantic-ABI success plus fresh focused acceptance proof.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b12-2-475-complete-20261106",
+      "merged_pr": 882
     },
     {
       "issue": 465,
       "pr": null,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "a1025e442277ee71b2120f87b9254179cee88dfb",
       "summary": "B09.2 parent candidate awaits production-authority remediation.",
       "resume_trigger": "Remediation #711 is consumed into the candidate, required B05/B08/B11 production provenance is consumable, and the candidate is selected for merge-readiness review.",
@@ -65,27 +63,38 @@
     },
     {
       "issue": 697,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "bd000f39a59142fb77f40d4426bd127c936ca119",
-      "summary": "B13.5 accepted-generation predecessor-authority bridge remains parked.",
-      "resume_trigger": "Remediation #708 is resolved against accepted B12/B13 custody and the candidate is selected for integration.",
+      "pr": 913,
+      "state": "TURNED_IN",
+      "head_sha": "694ba90f55c1bc5fe1b98dc1cae19134d505947a",
+      "head_sha_role": "human-authorized post-cap targeted-review exact head; semantic repair head ff00945a closes retained active-set drift and 694ba90f is test-only fixture conformance; ADR-127 automatic episode 697-b13-5-20261107 remains historically capped at round 5",
+      "summary": "B13.5 is turned in as ready PR #913 after the explicitly human-authorized post-cap targeted reinspection. The candidate consumes accepted #912 pathless/content-addressed Atlas authority, preserves live accepted bundle/v2 -> acceptance-bound v3 continuation, and now binds B13 active-set custody to replayed Atlas authority across both changed-map and unchanged-map descendants. Fresh exact-head targeted review: 0 Blockers / 0 Majors. Exact proof: B13 custody 158 total / 153 pass / 5 explicit skips / 0 failures; focused B13.5 authority 23 pass + 3 subtests; final premerge 3,635 total / 3,463 pass / 167 skips / exactly 5 inherited C09 BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT errors and no #697-local failure. Hosted semantic-abi-integrity, portable-core and portable checks passed on PR head 3e70b2c1; PR #913 was MERGEABLE/CLEAN before this docs/flow-only TURNED_IN bookkeeping commit. Human merge remains external authority; downstream A02 consumption remains owned by #399.",
+      "resume_trigger": null,
       "closed_pr": 698,
-      "preserved_branch": "feat/bamf-b13-5-697-generation-feature-binding-20261101",
+      "preserved_branch": "codex/697-postcap-final-20261107",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; remediation #708"
     },
     {
+      "issue": 478,
+      "pr": 885,
+      "state": "TURNED_IN",
+      "head_sha": "f166cac5db1e217880ce706efb51408001c7231e",
+      "head_sha_role": "merged PR head; semantic repair proof is bound to d51bb12f and reused across the docs/flow-only d51bb12f..f166cac5 range under AGENTS.md TEST_EVIDENCE_REUSED",
+      "summary": "B13.1 #478 is accepted and closed. PR #885 was human-merged into reviewed unified as 9301e41e after round-5 same-round reinspection PASS from both reviewers, exact-head hosted semantic-abi-integrity/portable-core/portable success, and CLEAN merge state. The accepted B13.1 custody surface is now consumable by B13.2 #479.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b13-1-478-complete-20261106",
+      "merged_pr": 885
+    },
+    {
       "issue": 479,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "d18997f2b5c9314a6f4fd15dd590fabfd2dd3546",
-      "summary": "B13.2 cold-resume proof remains incomplete.",
-      "resume_trigger": "Remediation #709 proves the required real cold resume through the next controlled optimizer step and the accepted B13.1 custody surface is consumable.",
-      "closed_pr": 677,
-      "preserved_branch": "codex/bamf02-b13-2-479-cold-resume-20261101",
-      "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Failed; remediation #709"
+      "state": "TURNED_IN",
+      "head_sha": "24ee3d80ee0208fd62b6b8d1d84044cb42e24077",
+      "head_sha_role": "merged PR head; corrected EGM-reviewed head is 58dc31f8, semantic/test proof is 62237b46, and the final premerge-tested head is c83a9c27.",
+      "summary": "B13.2 #479 is accepted and closed. PR #909 was human-merged into reviewed unified as cc48ac40d875f0c2ae8ffbdc70001dbfc4815334 after corrected round-2 EGM PASS, accepted-custody continuation 8/8, complete numerical custody, source-qualified Metal-to-CPU continuation, and a 3520-test premerge gate with zero failures or errors. Canonical legacy compatibility remains bound to branch codex/337-replay-349-20261026 at d84d2ab9e2d79817c131ef7e0d4ec0d574e57b32 and run /Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay; its frozen-v1 bundle passed 1/1.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b13-2-479-complete-20261107",
+      "merged_pr": 909
     },
     {
       "issue": 485,
@@ -120,15 +129,24 @@
     },
     {
       "issue": 480,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "39bf54e820c6e9f6aef75345557a50f0d51cd7ef",
-      "summary": "B13.3 historical-reader/disposable-cache candidate is transitional drain inventory.",
-      "resume_trigger": "Lane B selects B13.3 as its single current integration candidate after nearer-to-merge inventory drains.",
+      "pr": 920,
+      "state": "TURNED_IN",
+      "head_sha": "b6422871764c4a979684afb4faa09db914647f61",
+      "head_sha_role": "fresh exact-head EGM-reviewed semantic/test candidate; subsequent TURNED_IN bookkeeping is docs/flow-only and covered by TEST_EVIDENCE_REUSED from 5eb62d5e5e16fbdf15ac0d715b17fe29ec545c34..HEAD",
+      "summary": "B13.3 is turned in as ready PR #920 against reviewed unified 9795a3ed. Fresh pinned EGM passed with both independent Goldfish at 0 Blockers / 0 Majors / 0 Nits. Exact M3 proof: cache transition + cold continuation 10/10 PASS; canonical Microspenics frozen-v1 1/1 PASS; live legacy-trainer authority PASS; BAMF contracts 43/43 and flow-control PASS. Full premerge ran 3687 total / 3509 pass / 168 explicit skips / 10 inherited failures-or-errors; the exact failing surface reproduced identically on pristine reviewed unified (28 targeted / 18 pass / same 10 fail), with no #480 production or test delta. Human merge remains external authority.",
+      "resume_trigger": null,
       "closed_pr": 734,
-      "preserved_branch": "codex/bamf02-b13-3-480-cache-custody-20261102",
-      "closed_under": "EGM issue-label queue; EGM-Pending is durable on issue #480",
-      "close_reason": "Await fresh whole-candidate EGM on the durable branch before opening a merge-ready PR."
+      "preserved_branch": "codex/480-b13-3-reconcile-20261108"
+    },
+    {
+      "issue": 754,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "beae73a57df182fd478856a340b0685d861095b1",
+      "summary": "B13.3 remediation was accepted and merged through PR #902. Its cache-transition and cold-continuation repairs remain accepted. Its Prometheus frozen-v1 witness is historical evidence about the Prometheus lineage only and is not current BAMF legacy-trainer compatibility authority; successor compatibility work must use the canonical Microspenics source declared by AGENTS.md and LEGACY_TRAINER_AUTHORITY.md.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/754-cache-transition-20261105",
+      "merged_pr": 902
     },
     {
       "issue": 711,
@@ -343,12 +361,31 @@
     },
     {
       "issue": 476,
-      "pr": 886,
+      "pr": null,
       "state": "TURNED_IN",
-      "head_sha": "760b3a75417c95269636f75c3e832f20bfeb665d",
-      "summary": "Ready PR #886; fresh Chat on Steroids Goldfish review PASS with 0 Blocker / 0 Major across codebase-details, comprehension and adversarial reviewers. B12.3 capability-gated historical scalar migration, accepted global optimizer steps, preclip participation masking, and separate retained-candidate row ages are verified; hosted and human merge review remain pending.",
+      "head_sha": "a5c25eb140f1af05ad2b270ed38f7a2b5af42230",
+      "summary": "B12.3 passed fresh Chat on Steroids Goldfish review and human merge through PR #886; reviewed unified consumed the exact candidate as merge 3899649586b105b075e92f0ee3c51e80c379b473 and issue #476 is closed completed.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b12-3-476-complete-20261106"
+      "preserved_branch": "codex/bamf02-b12-3-476-complete-20261106",
+      "merged_pr": 886
+    },
+    {
+      "issue": 477,
+      "pr": 892,
+      "state": "TURNED_IN",
+      "head_sha": "95b1a776ae79d03934d123845081ba71d6edf842",
+      "summary": "Ready PR #892 turns in B12.4 against reviewed unified 38996495. Fresh whole-candidate Chat on Steroids EGM round 2 passed semantic head c7747196 with 0 Blockers / 0 Majors / 0 Nits after repairing the round-1 TARGET_LOCAL decay-authority Major. Candidate-owned proof is green; representative aggregate failures reproduce on exact reviewed unified and are disclosed as inherited base debt. ADR-128 governs admission at twelve total PRs with no per-lane PR cap.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b12-4-477-complete-20261106"
+    },
+    {
+      "issue": 367,
+      "pr": 935,
+      "state": "TURNED_IN",
+      "head_sha": "8523823509393f80c6125e61297c486f1d78b7e9",
+      "summary": "Scoped B10 request-disposition owner is turned in as ready PR #935 after current-unified qualification and fresh independent PASS 0 Blockers / 0 Majors / 0 Nits. C04 TaskGoal yields ORDINARY / EXPLICIT_MEMBER / UNRESOLVED_NESTED without caller booleans; B06/B11 composition remains downstream #471 work.",
+      "resume_trigger": "Human review/merge PR #935 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
+      "preserved_branch": "codex/367-b10-refinement-disposition-20261107"
     }
   ]
 }

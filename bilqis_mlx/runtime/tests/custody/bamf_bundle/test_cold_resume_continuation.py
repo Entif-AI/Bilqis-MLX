@@ -22,6 +22,11 @@ from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, publish_bamf_generation, save_bamf_bundle,
 )
 from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+    require_accepted_execution_cache,
+)
+from bilqis_mlx.runtime.bamf_bundle.records import SIDECARS
+from bilqis_mlx.runtime.atlas_model_forward import _source_producer
 
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe import (
     continue_generation, retained_digest,
@@ -72,7 +77,7 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
             retained, source.optimizer_hyperparameters, source.provenance,
             source.semantic_abi, source.compiler_features, source.correction_frontier,
             source.teacher_state, source.evaluation_contract, source.transition,
-            tuple(records["outbox"]))
+            tuple(records["outbox"]), source.run_identity)
 
     def probe(self, run=None):
         """Cold resume in a clean process and return its receipt."""
@@ -85,28 +90,29 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         return json.loads(process.stdout.strip().splitlines()[-1])
 
     def test_cold_resume_continues_the_next_controlled_optimizer_step(self):
-        initial = parent_state()
-        first = self.publish(candidate(initial))
+        first = self.publish(candidate(parent_state()))
+        with shape_patch():
+            student = load_bamf_generation(self.run / "bamf-state.json")
+            initial = student.retained_state
         receipt = self.probe()
         self.assertEqual(receipt["generation"], 0)
         self.assertEqual(receipt["manifest_sha256"], first["manifest_sha256"])
         self.assertEqual(receipt["state_digest"], retained_digest(initial))
-        self.assertEqual(receipt["teacher_state"], dict(
-            candidate(initial).teacher_state))
+        self.assertEqual(receipt["teacher_state"]["teacher_identity"],
+                         student.provenance.teacher_identity)
         self.assertEqual(receipt["optimizer_step"], initial.optimizer_step)
         self.assertEqual(receipt["successor_optimizer_step"],
                          initial.optimizer_step + 1)
         counts = receipt["successor_update_counts"]["identity.bank.0"]
         # The disposable execution fixture reports row 0 only. Row 1 must
         # not advance merely because B01 declares it in the same tensor.
-        self.assertEqual(counts, [3, 3])
+        self.assertEqual(counts, [1, 0])
         self.assertEqual(receipt["published"]["generation"], 1)
         self.assertEqual(
             receipt["published"]["parent_manifest_sha256"], first["manifest_sha256"])
 
     def test_cold_resumed_generation_is_the_published_generation(self):
-        initial = parent_state()
-        first = self.publish(candidate(initial))
+        first = self.publish(candidate(parent_state()))
         self.probe()
         pointer = json.loads((self.run / "bamf-state.json").read_text())
         self.assertEqual(pointer["generation"], 1)
@@ -114,12 +120,11 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         with shape_patch():
             student = load_bamf_generation(self.run / "bamf-state.json")
         self.assertEqual(student.generation, 1)
-        self.assertEqual(student.retained_state.optimizer_step, 12)
-        self.assertEqual(student.retained_state.optimizer_step, 12)
+        self.assertEqual(student.retained_state.optimizer_step, 1)
         self.assertEqual(
             [int(value) for value in
              np.asarray(student.retained_state.optimizer.update_counts["identity.bank.0"])],
-            [3, 3])
+            [1, 0])
 
     def test_synthetic_direct_save_load_cannot_satisfy_acceptance(self):
         initial = parent_state()
@@ -135,13 +140,17 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         self.assertNotEqual(process.returncode, 0)
 
     def test_uninterrupted_and_cold_continuation_publish_the_same_successor(self):
-        initial = parent_state()
-        self.publish(candidate(initial))
+        self.publish(candidate(parent_state()))
         second = self.root / "uninterrupted"
-        source = candidate(initial)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            held_pointer = publish_candidate(second, source)
-            held = self.in_memory_student(source, held_pointer)
+            from bilqis_mlx.runtime.bamf_bundle import publish_initial_generation
+            from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+                genesis_preparation,
+            )
+            prepared = genesis_preparation()
+            held_pointer = publish_initial_generation(
+                second, prepared, reserve_gib=0.)
+            held = self.in_memory_student(prepared.candidate, held_pointer)
         with patch(
                 "bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe."
                 "load_accepted_generation",
@@ -157,6 +166,8 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
             uninterrupted = continue_generation(
                 second, student=held, pointer=held_pointer)
         cold = self.probe()
+        self.assertEqual(
+            cold["run_seed"], prepared.candidate.run_identity.run_seed)
         self.assertEqual(cold["published"]["manifest_sha256"],
                          uninterrupted["published"]["manifest_sha256"])
         self.assertEqual(cold["successor_digest"], uninterrupted["successor_digest"])
@@ -169,13 +180,13 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         self.assertEqual(cold["decision"]["decision_sha256"],
                          uninterrupted["decision"]["decision_sha256"])
 
-    def test_live_loss_bearing_path_requires_execution_owner(self):
+    def test_live_loss_bearing_path_requires_gradient_execution_owner(self):
         self.publish(candidate(parent_state()))
         with shape_patch():
             with self.assertRaises(BilqisError) as failure:
                 admission.admit_candidate_step(
                     self.run, {}, loss_bearing_target=True,
-                    teacher_hparams=None, decay={}, max_norm=1.)
+                    teacher_hparams=None, max_norm=1.)
         self.assertEqual(failure.exception.context["reason"],
                          "B11_GRADIENT_EXECUTION_REQUIRED")
 
@@ -254,6 +265,50 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
         self.assertIsNot(cold_release, release)
         cold = evidence(cold_release, cold_receipt, json.loads(json.dumps(teacher)))
         self.assertEqual(cold, uninterrupted)
+
+    def test_cold_continuation_reissues_cache_and_rejects_stale_or_corrupt_cache(self):
+        initial = parent_state()
+        absent_run = self.root / "cache-absent"
+        stale_run = self.root / "cache-stale"
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            publish_candidate(absent_run, candidate(initial))
+            pointer = publish_candidate(stale_run, candidate(initial))
+            stale_cache = admission.bind_accepted_execution_cache(stale_run)
+
+        bundle = stale_run / pointer["bundle"]
+        manifest = json.loads((bundle / "manifest.json").read_text())
+        self.assertEqual(set(manifest["sidecars"]), set(SIDECARS))
+        self.assertFalse(any(
+            "cache" in binding["filename"]
+            for binding in manifest["sidecars"].values()))
+
+        absent = self.probe(absent_run)
+        stale = self.probe(stale_run)
+        with shape_patch():
+            fresh_cache = admission.bind_accepted_execution_cache(stale_run)
+
+        self.assertEqual(stale["successor_digest"], absent["successor_digest"])
+        self.assertEqual(stale["successor_optimizer_step"],
+                         absent["successor_optimizer_step"])
+        self.assertEqual(stale["successor_update_counts"],
+                         absent["successor_update_counts"])
+        self.assertEqual(stale["decision"]["decision_sha256"],
+                         absent["decision"]["decision_sha256"])
+        self.assertEqual(stale_cache.generation, 0)
+        self.assertEqual(fresh_cache.generation, 1)
+        self.assertNotEqual(stale_cache.accepted_manifest_sha256,
+                            fresh_cache.accepted_manifest_sha256)
+        self.assertNotEqual(stale_cache.generation_binding,
+                            fresh_cache.generation_binding)
+        with self.assertRaises(BilqisError) as mismatch:
+            _source_producer(
+                None, None, fresh_cache.generation_binding, stale_cache)
+        self.assertEqual(mismatch.exception.context["reason"],
+                         "B13_EXECUTION_CACHE_STALE")
+
+        object.__setattr__(stale_cache, "generation_binding", "corrupt")
+        with self.assertRaises(BilqisError):
+            require_accepted_execution_cache(stale_cache)
 
     def test_cold_resume_refuses_a_generation_without_published_custody(self):
         process = subprocess.run(

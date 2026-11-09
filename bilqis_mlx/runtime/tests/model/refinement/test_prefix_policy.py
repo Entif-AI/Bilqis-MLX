@@ -10,6 +10,7 @@ from bilqis_mlx.runtime.refinement_policy import (
     prefix_inventory_handle, salience_evidence_digest,
     select_prediction_refinements,
 )
+from bilqis_mlx.runtime import refinement_contracts
 from bilqis_mlx.semantics.context_eligibility import (
     PUBLIC_FORMAL, ContextEligibility, ContextHold, ContextMember,
     ContextPolicy, SourceFrontier, SourceGrant, TaskScope,
@@ -19,6 +20,8 @@ from bilqis_mlx.semantics.frame_codec import SchemaTagMap
 from bilqis_mlx.semantics.frame_compiler import (
     FrameCompilerConfig, SourceAtom, StreamingAST, atom_evidence_digest,
     compile_prefix,
+    prefix_inventory_evidence_digest as a05_prefix_inventory_evidence_digest,
+    prefix_inventory_handle as a05_prefix_inventory_handle,
 )
 from bilqis_mlx.semantics.frame_schema import (
     ConceptRef, FrameSchema, FrameTree, RoleOccurrence, RoleSpec, SourceSpan,
@@ -28,6 +31,15 @@ from bilqis_mlx.semantics.frame_schema import (
 from bilqis_mlx.runtime.tests.model.refinement.helpers import _case, _grant_salience, SourceCase, SOURCE_ID
 
 class RefinementPolicyTests(unittest.TestCase):
+    def test_complete_prefix_identity_is_owned_only_by_a05(self):
+        self.assertIs(prefix_inventory_handle, a05_prefix_inventory_handle)
+        self.assertIs(prefix_inventory_evidence_digest,
+                      a05_prefix_inventory_evidence_digest)
+        self.assertIs(refinement_contracts.prefix_inventory_handle,
+                      a05_prefix_inventory_handle)
+        self.assertIs(refinement_contracts.prefix_inventory_evidence_digest,
+                      a05_prefix_inventory_evidence_digest)
+
     def test_quota_8_to_9_and_future_frames_do_not_change_earlier_prediction(self):
         case = _case()
         early = replace(case.task, causal_prefix_end=8)

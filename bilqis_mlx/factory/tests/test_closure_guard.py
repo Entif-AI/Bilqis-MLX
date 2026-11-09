@@ -2,7 +2,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts.check_factory_closure import inspect_factory_closure
+from scripts.quality.check_factory_closure import inspect_factory_closure
 
 
 class FactoryClosureGuardTests(unittest.TestCase):

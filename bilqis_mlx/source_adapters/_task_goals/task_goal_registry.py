@@ -7,8 +7,10 @@ from pathlib import Path
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
-from .numeric_task_goal import lower_numeric_task_goal
-from .answer_choice_task_goal import lower_answer_choice_task_goal
+from .numeric_task_goal import lower_numeric_task_goal, resolve_numeric_task_goal
+from .answer_choice_task_goal import (
+    lower_answer_choice_task_goal, resolve_answer_choice_task_goal,
+)
 
 SHA256_HEX_LENGTH = 64
 
@@ -28,6 +30,7 @@ class RegisteredTaskGoalLowerer:
     lowerer_id: str
     implementation_sha256: str
     lower: object
+    resolve: object
 
     def __post_init__(self):
         if (not all(isinstance(value, str) and value for value in (
@@ -35,7 +38,7 @@ class RegisteredTaskGoalLowerer:
                 self.lowerer_id, self.implementation_sha256))
                 or len(self.provider_implementation_sha256) != SHA256_HEX_LENGTH
                 or len(self.implementation_sha256) != SHA256_HEX_LENGTH
-                or not callable(self.lower)):
+                or not callable(self.lower) or not callable(self.resolve)):
             _invalid("BAMF_C04_TASK_LOWERER_INVALID")
 
 
@@ -52,7 +55,7 @@ def live_task_goal_lowerers():
         "source.finite-numeric/v2",
         c_provider_digest(),
         "bilqis.c04.numeric-task-goal/v1",
-        _digest(path), lower_numeric_task_goal,
+        _digest(path), lower_numeric_task_goal, resolve_numeric_task_goal,
     )
     answer_path = root / "answer_choice_task_goal.py"
     answer_digest = _digest(answer_path)
@@ -60,19 +63,19 @@ def live_task_goal_lowerers():
         RegisteredTaskGoalLowerer(
             "source.micro.predicates/v1", a_provider_digest(),
             "bilqis.c04.answer-choice-task-goal/v1", answer_digest,
-            lower_answer_choice_task_goal),
+            lower_answer_choice_task_goal, resolve_answer_choice_task_goal),
         RegisteredTaskGoalLowerer(
             "source.micro.boolean-connectives/v1", b_digest(),
             "bilqis.c04.answer-choice-task-goal/v1", answer_digest,
-            lower_answer_choice_task_goal),
+            lower_answer_choice_task_goal, resolve_answer_choice_task_goal),
         RegisteredTaskGoalLowerer(
             "source.micro.boolean-composite/v1", b_composite_digest(),
             "bilqis.c04.answer-choice-task-goal/v1", answer_digest,
-            lower_answer_choice_task_goal),
+            lower_answer_choice_task_goal, resolve_answer_choice_task_goal),
         RegisteredTaskGoalLowerer(
             "source.micro.boolean-identification/v1", b_idboolops_digest(),
             "bilqis.c04.answer-choice-task-goal/v1", answer_digest,
-            lower_answer_choice_task_goal),
+            lower_answer_choice_task_goal, resolve_answer_choice_task_goal),
     )
     return (numeric, *choices)
 

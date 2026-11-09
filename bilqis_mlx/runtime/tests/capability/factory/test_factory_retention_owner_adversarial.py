@@ -75,7 +75,11 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
                 capability_map={item.capability_id: item for item in capabilities},
             ),
         )
-        source = SimpleNamespace(__post_init__=lambda: None, release=release)
+        source = SimpleNamespace(
+            __post_init__=lambda: None,
+            release=release,
+            require_accepted_runtime=Mock(),
+        )
         candidate = object.__new__(CandidateTransaction)
         object.__setattr__(candidate, "training_authorities", (
             SimpleNamespace(delivery_capability=target, release_sha256=release_sha),
@@ -112,7 +116,7 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
         self.assertEqual(result, "evaluation")
         fresh.assert_not_called()
 
-    def test_real_source_replays_failed_run_overlap_and_redraws_exact_cohort(self):
+    def test_real_source_family_overlap_fails_closed_across_redraws(self):
         from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
             live_factory_context,
         )
@@ -128,13 +132,13 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
         seed = 3080565765513679913
         original = source.draw_rows(seed=seed, capability="B.IDBOOLOPS", each=6)
         self.assertIn(taught[0]["id"], {row["id"] for row in original})
-        fresh = _fresh_rows(source, ("B.IDBOOLOPS",), seed=seed,
-            training=((authority.source_family_id,), authority.episode_ids))
-        self.assertEqual(len(fresh.rows), 6)
-        self.assertNotIn(taught[0]["id"], {row["id"] for row in fresh.rows})
-        self.assertGreater(fresh.seed, seed)
-        self.assertEqual(fresh.rows, tuple(source.draw_rows(
-            seed=fresh.seed, capability="B.IDBOOLOPS", each=6)))
+        with self.assertRaises(BilqisError) as caught:
+            _fresh_rows(
+                source, ("B.IDBOOLOPS",), seed=seed,
+                training=((authority.source_family_id,), authority.episode_ids))
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C05_INDEPENDENT_SOURCE_DRAW_EXHAUSTED")
 
     def test_fresh_draw_rejects_explicit_family_episode_and_identity_aliases(self):
         for field, value in (("source_family_id", "trained-family"),
@@ -150,15 +154,17 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
                     training=(("trained-family",), ("trained-episode",)))
                 self.assertEqual((result.seed, result.rows), (8, tuple(clean)))
 
-    def test_fresh_draw_rejects_owner_derived_training_family(self):
-        source = _draw_source([_rows("first"), _rows("clean")])
-        family = _source_family(source.release.execution_plan.capability_map["A"],
-                                seed=7, each=6)
-        result = _fresh_rows(source, ("A",), seed=7,
-                             training=((family,), ("trained",)))
-        self.assertEqual(result.seed, 8)
-        self.assertEqual([row["id"] for row in result.rows],
-                         [f"clean-{index}" for index in range(6)])
+    def test_fresh_draw_rejects_owner_derived_training_family_across_redraws(self):
+        source = _draw_source([_rows("draw")] * C05_MAX_FRESH_DRAWS)
+        family = _source_family(source.release.execution_plan.capability_map["A"])
+        with self.assertRaises(BilqisError) as caught:
+            _fresh_rows(
+                source, ("A",), seed=7,
+                training=((family,), ("trained",)))
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C05_INDEPENDENT_SOURCE_DRAW_EXHAUSTED")
+        self.assertEqual(source.draw_rows.call_count, C05_MAX_FRESH_DRAWS)
 
     def test_foundation_draw_allows_training_overlap(self):
         rows = _rows("taught")

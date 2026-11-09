@@ -1,6 +1,8 @@
 """Source-backed B11 forward, loss, gradient, and update ownership."""
 from dataclasses import replace
-from unittest import skipUnless
+from types import SimpleNamespace
+from unittest import TestCase, skipUnless
+from unittest.mock import patch
 
 import mlx.core as mx
 
@@ -27,10 +29,13 @@ from bilqis_mlx.runtime.atlas_model import (
     BamfCompiledBatch, BamfGradientExecution, BamfLossExecution,
     bamf_value_and_grad, forward_bamf,
 )
+from bilqis_mlx.runtime._atlas_owner_ingress import apply_compiled_batch_correction
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
+import bilqis_mlx.runtime.atlas_model_forward as forward_impl
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
-    _issue_accepted_execution_cache,
+    _new_execution_cache,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     Initializer, ModelTopologySpecV2, expected_bamf_shapes,
@@ -42,6 +47,65 @@ from bilqis_mlx.semantics.released_frame_schemas import (
     load_released_frame_schemas, seal_released_frame_schemas,
 )
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
+
+
+class AtlasModelOwnerThreadingTests(TestCase):
+    def _batch(self, owner):
+        compiled = SimpleNamespace(
+            extents=SimpleNamespace(motif_key_map_digest="motif-digest"))
+        return SimpleNamespace(
+            compiled=compiled,
+            sources=("source",),
+            feature_schema=object(),
+            atlas_feature_artifact_owner=owner,
+        )
+
+    def test_source_producer_threads_compiled_batch_owner_in_every_cache_mode(self):
+        owner = object()
+        batch = self._batch(owner)
+        params = object()
+        producer = object()
+        with patch.object(
+                forward_impl, "start_source_backbone_producer",
+                return_value=producer) as start:
+            actual, accepted = forward_impl._source_producer(
+                params, batch, "generation", None)
+        self.assertIs(actual, producer)
+        self.assertIsNone(accepted)
+        self.assertIs(start.call_args.args[-1], owner)
+
+        empty_cache = SimpleNamespace(
+            generation_binding="generation",
+            motif_manifest=SimpleNamespace(digest="motif-digest", slots=()),
+        )
+        with patch.object(
+                forward_impl, "require_accepted_execution_cache",
+                return_value=empty_cache), patch.object(
+                forward_impl, "start_source_backbone_producer",
+                return_value=producer) as start:
+            actual, accepted = forward_impl._source_producer(
+                params, batch, "generation", object())
+        self.assertIs(actual, producer)
+        self.assertIs(accepted, empty_cache)
+        self.assertIs(start.call_args.args[-1], owner)
+
+        retained_cache = SimpleNamespace(
+            generation_binding="generation",
+            motif_manifest=SimpleNamespace(
+                digest="motif-digest", slots=(object(),)),
+        )
+        with patch.object(
+                forward_impl, "require_accepted_execution_cache",
+                return_value=retained_cache), patch.object(
+                forward_impl, "bind_motif_artifact_owner") as bind, patch.object(
+                forward_impl, "start_retained_source_backbone_producer",
+                return_value=producer) as start:
+            actual, accepted = forward_impl._source_producer(
+                params, batch, "generation", object())
+        self.assertIs(actual, producer)
+        self.assertIs(accepted, retained_cache)
+        bind.assert_called_once_with(retained_cache, batch.compiled)
+        self.assertIs(start.call_args.args[-1], owner)
 
 
 @skipUnless(REAL_BUNDLE, "real pinned A01 artifact not mounted")
@@ -101,6 +165,23 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
         )
         self.assertEqual(output.committed[0].value, ControlAction.END_FRAME)
 
+    def test_forward_preserves_atlas_feature_correction_hold_until_real_source_read(self):
+        batch = BamfCompiledBatch(
+            self.compiled, (self.source,), self.schema)
+        event = _event(batch.atlas_feature_artifact_owner.source_dependency)
+        self.assertIn(
+            "ATLAS_FEATURE",
+            apply_compiled_batch_correction(batch, event, AUTHORITY),
+        )
+        retained_owner = batch.atlas_feature_artifact_owner
+        with self.assertRaises(BilqisError) as caught:
+            forward_bamf(
+                self.parameters, batch, self._answer_plan(),
+                ExecutionMode.INFERENCE, None)
+        self.assertIs(batch.atlas_feature_artifact_owner, retained_owner)
+        self.assertEqual(
+            caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+
     def _live_gradient_execution(self):
         genesis = MotifAllocationSnapshot(
             MotifManifest(self.snapshot.release_sha256))
@@ -114,20 +195,23 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
         batch = BamfCompiledBatch(compiled, (self.source,), self.schema)
         plan = self._answer_plan(
             compiled=compiled, parameters=self.parameters)
-        cache = _issue_accepted_execution_cache(
+        cache = _new_execution_cache(
             run_id="source-backed-forward",
             generation=0,
             accepted_manifest_sha256="6" * 64,
             generation_binding=plan.generation_binding,
             motif_manifest=genesis.manifest,
         )
-        gradient_execution = bamf_value_and_grad(
-            self.parameters, batch,
-            plan,
-            (DecisionOutput("finish", ControlAction.END_FRAME),),
-            {"finish": True},
-            cache=cache,
-        )
+        with patch.object(
+                forward_impl, "require_accepted_execution_cache",
+                return_value=cache):
+            gradient_execution = bamf_value_and_grad(
+                self.parameters, batch,
+                plan,
+                (DecisionOutput("finish", ControlAction.END_FRAME),),
+                {"finish": True},
+                cache=cache,
+            )
         execution = gradient_execution.execution
         self.assertEqual(execution.custody_run_id, "source-backed-forward")
         self.assertEqual(execution.custody_generation, 0)
@@ -238,7 +322,6 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
             candidate_step_ordinal=1,
             teacher_hparams=AdamWHyperparameters(
                 .001, (.9, .95), 1e-8, .01),
-            decay={item.name: item.decay for item in declared},
             max_norm=1.0,
         )
         self.assertEqual(transaction.update_steps, 1)

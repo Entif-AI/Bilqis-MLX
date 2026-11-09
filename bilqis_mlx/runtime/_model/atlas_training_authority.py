@@ -7,10 +7,11 @@ import json
 import re
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.factory.teaching import content_digest
+from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.learning.source_atoms import SourceAtomRow
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyRef
 from bilqis_mlx.runtime.atlas_training_contracts import BamfTrainingBatch
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
@@ -31,6 +32,7 @@ class BamfTrainingAuthority:
     source_row_sha256: str
     source_family_id: str
     episode_id: str
+    immediate_dependencies: tuple[DependencyRef, ...]
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
@@ -45,7 +47,13 @@ class BamfTrainingAuthority:
                            for value in (self.release_sha256,
                                self.generation_binding,
                                self.training_batch_sha256,
-                               self.source_row_sha256))):
+                               self.source_row_sha256))
+                or type(self.immediate_dependencies) is not tuple
+                or not self.immediate_dependencies
+                or any(not isinstance(item, DependencyRef)
+                       for item in self.immediate_dependencies)
+                or self.immediate_dependencies != tuple(sorted(
+                    set(self.immediate_dependencies)))):
             _invalid("B11_TRAINING_AUTHORITY_INVALID")
 
     @property
@@ -59,14 +67,17 @@ class BamfTrainingAuthority:
             "row_sha256": self.source_row_sha256,
             "source_family": self.source_family_id,
             "episode": self.episode_id,
+            "immediate_dependencies": tuple(
+                (ref.kind.value, ref.key)
+                for ref in self.immediate_dependencies),
         }
         wire = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(wire.encode()).hexdigest()
 
 
-def _issue(batch, source):
-    provenance = batch.rows[0].provenance
-    if not provenance.source_family_id or not provenance.episode_id:
+def _issue(batch, source, provenance):
+    if (not provenance.source_family_id or not provenance.episode_id
+            or not provenance.immediate_dependencies):
         _invalid("B11_TRAINING_SOURCE_INDEPENDENCE_REQUIRED")
     authority = object.__new__(BamfTrainingAuthority)
     for name, value in (
@@ -75,9 +86,10 @@ def _issue(batch, source):
         ("training_batch_sha256", batch.authority_digest),
         ("delivery_capability", batch.delivery_capability),
         ("source_row_id", source.source_row["id"]),
-        ("source_row_sha256", content_digest((source.source_row,))),
+        ("source_row_sha256", provenance.source_row_content_sha256),
         ("source_family_id", provenance.source_family_id),
         ("episode_id", provenance.episode_id),
+        ("immediate_dependencies", provenance.immediate_dependencies),
         ("_issuance", _ISSUER),
     ):
         object.__setattr__(authority, name, value)
@@ -85,8 +97,39 @@ def _issue(batch, source):
     return authority
 
 
-def bind_compiled_training_batch(batch, compiled, sources, feature_schema):
-    """Issue B11 input only when Factory delivery and source atom are identical."""
+def extend_training_dependencies(
+    authority: BamfTrainingAuthority,
+    dependencies: tuple[DependencyRef, ...],
+) -> BamfTrainingAuthority:
+    """Return the same source authority with execution-observed C09 inputs added.
+
+    C02 can freeze source-owned premises before B11 runs, but retained motifs and
+    correction-owned artifacts are only knowable after the real forward path has
+    executed.  The B11 owner therefore extends, never replaces, that frontier.
+    """
+    if (type(authority) is not BamfTrainingAuthority
+            or type(dependencies) is not tuple
+            or any(not isinstance(item, DependencyRef) for item in dependencies)):
+        _invalid("B11_TRAINING_EXECUTION_DEPENDENCIES_INVALID")
+    authority.__post_init__()
+    merged = tuple(sorted(set((*authority.immediate_dependencies, *dependencies))))
+    if merged == authority.immediate_dependencies:
+        return authority
+    extended = object.__new__(BamfTrainingAuthority)
+    for name in (
+        "release_sha256", "generation_binding", "training_batch_sha256",
+        "delivery_capability", "source_row_id", "source_row_sha256",
+        "source_family_id", "episode_id",
+    ):
+        object.__setattr__(extended, name, getattr(authority, name))
+    object.__setattr__(extended, "immediate_dependencies", merged)
+    object.__setattr__(extended, "_issuance", _ISSUER)
+    extended.__post_init__()
+    return extended
+
+
+def bind_compiled_training_batch(batch, compiled, sources, feature_schema, *, row_index=0):
+    """Issue one B11 row from an exact source-owned C02 delivery batch."""
     from bilqis_mlx.runtime.atlas_model_contracts import BamfCompiledBatch
 
     if (type(batch) is not BamfTrainingBatch
@@ -94,15 +137,17 @@ def bind_compiled_training_batch(batch, compiled, sources, feature_schema):
             or type(sources) is not tuple or len(sources) != 1
             or type(sources[0]) is not SourceAtomRow
             or type(feature_schema) is not FeatureSchema
-            or len(batch.rows) != 1):
+            or type(row_index) is not int
+            or not 0 <= row_index < len(batch.rows)):
         _invalid("B11_TRAINING_AUTHORITY_INPUT_INVALID")
     batch.__post_init__()
-    provenance = batch.rows[0].provenance
+    provenance = batch.rows[row_index].provenance
     source = sources[0]
     source_row = source.source_row
-    if (content_digest((source_row,)) != batch.delivered_content_sha256
+    if (source_content_digest((source_row,)) != provenance.source_row_content_sha256
             or source_row.get("id") != provenance.row_id
             or source_row.get("capability") != provenance.capability_id):
         _invalid("B11_TRAINING_SOURCE_ROW_MISMATCH")
     return BamfCompiledBatch(
-        compiled, sources, feature_schema, training_authority=_issue(batch, source))
+        compiled, sources, feature_schema,
+        training_authority=_issue(batch, source, provenance))

@@ -36,8 +36,11 @@ from .atlas_revalidation_runtime import (
 from .atlas_source_authority import (
     SourceAuthorityKey,
     SourceAuthorityRegistry,
+    SourceAuthorityRuntime,
     SourceAuthorityScope,
+    require_source_authority_runtime,
 )
+from .atlas_cache_owner import ExactCacheArtifactOwner, cache_artifact_digest
 
 __all__ = [
     "CORRECTION_EVENT_SCHEMA",
@@ -59,11 +62,13 @@ __all__ = [
     "RevalidationTask",
     "SourceAuthorityKey",
     "SourceAuthorityRegistry",
+    "SourceAuthorityRuntime",
     "SourceAuthorityScope",
     "StateTransition",
     "advance_revalidation",
     "apply_correction",
     "next_revalidation_task",
     "read_artifact",
+    "require_source_authority_runtime",
     "revalidate_node",
 ]

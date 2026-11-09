@@ -16,6 +16,7 @@ from bilqis_mlx.learning.source_atoms.tests.backbone_test_support import SourceB
 from bilqis_mlx.runtime.atlas_model import forward_bamf
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_candidate_feature_context
+from bilqis_mlx.runtime.atlas_capability_support_owner import load_capability_support_owner
 from bilqis_mlx.runtime.factory_evaluation_compiler import compile_factory_evaluation_batch
 from bilqis_mlx.runtime.factory_retention_owner import _candidate_from_live_parent
 from bilqis_mlx.runtime.factory_task_authority import factory_task_authority
@@ -27,7 +28,8 @@ from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_nex
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_target_diagnostic import diagnose_factory_retention_target
 from bilqis_mlx.runtime.tests.capability.factory.retention.owner_live_support import (
     FIXED_EACH, TARGET, TRAIN_SEED, _assert_published_generation_one,
-    _initialize_generation, _publish_disposable_source_qualified_successor,
+    _initialize_generation, _publish_c05_successor,
+    _publish_disposable_source_qualified_successor,
     _source_owned_candidate_step, _source_owned_candidate_step_evidence,
 )
 
@@ -35,16 +37,16 @@ class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
     def setUp(self):
         if not mx.metal.is_available():
             self.skipTest("B13.2 source witness requires Apple Metal")
-        previous_device = mx.default_device()
-        mx.set_default_device(mx.gpu)
-        self.addCleanup(mx.set_default_device, previous_device)
-        super().setUp()
         artifact = os.environ.get("BILQIS_A01_ATLAS_BUNDLE")
         if not artifact:
             self.skipTest("BILQIS_A01_ATLAS_BUNDLE fixture is not mounted")
         self.artifact = Path(artifact)
         if not self.artifact.is_dir():
             self.skipTest("BILQIS_A01_ATLAS_BUNDLE fixture is not mounted")
+        previous_device = mx.default_device()
+        mx.set_default_device(mx.gpu)
+        self.addCleanup(mx.set_default_device, previous_device)
+        super().setUp()
         self.root = Path.cwd()
         self.source = (self.root / "vendor/legacy-v16").resolve()
         if not self.source.is_dir():
@@ -181,6 +183,25 @@ class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
                 root=self.root, source=self.source, target=TARGET)
             self.assertTrue(witness["no_generation_2"])
             print("B13_2_BACKEND_HANDOFF " + json.dumps(witness, sort_keys=True))
+
+    def test_accepted_c05_candidate_materializes_capability_support(self):
+        source_context, _ = live_factory_context(self.root, self.source)
+        genesis, _ = genesis_bundle(
+            self, self.snapshot, self.schema, self.artifact)
+        with tempfile.TemporaryDirectory() as directory:
+            run_dir = Path(directory)
+            parent, cache = _initialize_generation(
+                run_dir, source_context, genesis)
+            transaction = _source_owned_candidate_step(
+                run_dir, source_context, parent, cache, self.artifact)
+            _successor, _retained, published = _publish_c05_successor(
+                run_dir, source_context, parent, cache, self.artifact, transaction)
+            owner = load_capability_support_owner(run_dir, TARGET)
+            self.assertEqual(
+                owner.support.retained_generation_sha256,
+                published["manifest_sha256"])
+            self.assertEqual(owner.capability_id, TARGET)
+            self.assertTrue(owner.support.source_anchor_ids)
 
 
 if __name__ == "__main__":

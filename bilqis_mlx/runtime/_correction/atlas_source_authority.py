@@ -1,12 +1,15 @@
 """Host-provisioned source authority keys and scoped signature checks."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
+from threading import RLock
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
+from ..semantics.foundation.domains import contract_digest
 from .atlas_revalidation_common import (
     SOURCE_AUTHORITY_KEY_SCHEMA,
     SOURCE_AUTHORITY_REGISTRY_SCHEMA,
@@ -73,6 +76,67 @@ class SourceAuthorityRegistry:
                 or len({key.owner_id for key in self.keys}) != len(self.keys)
                 or self.schema_version != SOURCE_AUTHORITY_REGISTRY_SCHEMA):
             _invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_INVALID")
+
+    @property
+    def digest(self) -> str:
+        return contract_digest(self)
+
+    def to_record(self) -> dict:
+        return {
+            "keys": [
+                {
+                    "allowed_scopes": [
+                        {
+                            "key_prefix": scope.key_prefix,
+                            "kind": scope.kind.value,
+                            "schema_version": scope.schema_version,
+                        }
+                        for scope in key.allowed_scopes
+                    ],
+                    "owner_id": key.owner_id,
+                    "public_key_hex": key.public_key_hex,
+                    "schema_version": key.schema_version,
+                }
+                for key in self.keys
+            ],
+            "schema_version": self.schema_version,
+        }
+
+    @classmethod
+    def from_record(cls, record) -> "SourceAuthorityRegistry":
+        if (not isinstance(record, Mapping)
+                or set(record) != {"keys", "schema_version"}
+                or record.get("schema_version") != SOURCE_AUTHORITY_REGISTRY_SCHEMA
+                or not isinstance(record.get("keys"), (tuple, list))
+                or not record["keys"]):
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_INVALID")
+        keys = []
+        for item in record["keys"]:
+            if (not isinstance(item, Mapping)
+                    or set(item) != {
+                        "allowed_scopes", "owner_id", "public_key_hex",
+                        "schema_version",
+                    }
+                    or not isinstance(item.get("allowed_scopes"), (tuple, list))):
+                _invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_INVALID")
+            scopes = []
+            for scope in item["allowed_scopes"]:
+                if (not isinstance(scope, Mapping)
+                        or set(scope) != {"key_prefix", "kind", "schema_version"}):
+                    _invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_INVALID")
+                try:
+                    kind = DependencyKind(scope["kind"])
+                except (TypeError, ValueError):
+                    _invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_INVALID")
+                scopes.append(SourceAuthorityScope(
+                    kind, scope["key_prefix"], scope["schema_version"]))
+            keys.append(SourceAuthorityKey(
+                item["owner_id"], item["public_key_hex"], tuple(scopes),
+                item["schema_version"]))
+        registry = cls(tuple(keys), record["schema_version"])
+        if registry.to_record() != dict(record):
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_REGISTRY_INVALID")
+        return registry
 
     def _require(
         self, owner_id: str, dependency_kind: DependencyKind,
@@ -160,3 +224,96 @@ class SourceAuthorityRegistry:
             transition.artifact_id,
             transition.source_signature_hex,
             transition.revalidated_signing_bytes())
+
+
+def _new_authority_owner():
+    """Create one process-local owner for opaque accepted-cache authority."""
+    issued = {}
+
+    def require(authority, accepted_cache):
+        from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+            require_accepted_execution_cache,
+        )
+
+        cache = require_accepted_execution_cache(accepted_cache)
+        entry = issued.get(id(authority))
+        if (entry is None or entry[0] is not authority
+                or entry[1] is not cache):
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+        registry = entry[2]
+        if (cache._source_authority is not authority
+                or cache._correction_registry is not registry
+                or cache.source_authority_registry_sha256 is None
+                or cache.source_authority_registry_sha256 != registry.digest):
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+        return registry
+
+    def issue(accepted_cache):
+        from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+            require_accepted_execution_cache,
+        )
+
+        cache = require_accepted_execution_cache(accepted_cache)
+        registry = cache._correction_registry
+        if (type(registry) is not SourceAuthorityRegistry
+                or cache.source_authority_registry_sha256 is None
+                or cache.source_authority_registry_sha256 != registry.digest):
+            _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+        authority = object.__new__(SourceAuthorityRuntime)
+        issued[id(authority)] = (authority, cache, registry)
+        return authority
+
+    return require, issue
+
+
+def _make_source_authority_provisioner(issue):
+    lock = RLock()
+
+    def provision(accepted_cache):
+        from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+            require_accepted_execution_cache,
+        )
+
+        with lock:
+            cache = require_accepted_execution_cache(accepted_cache)
+            authority = cache._source_authority
+            if authority is None:
+                authority = issue(cache)
+                object.__setattr__(cache, "_source_authority", authority)
+            require_source_authority_runtime(authority, cache)
+            return authority
+
+    return provision
+
+
+_authority_state, _raw_authority_issue = _new_authority_owner()
+_provision_source_authority_runtime = _make_source_authority_provisioner(
+    _raw_authority_issue)
+del _raw_authority_issue
+
+
+class SourceAuthorityRuntime:
+    """Opaque C09 capability bound by accepted-run custody to one registry."""
+
+    __slots__ = ()
+
+    def __new__(cls, *args, **kwargs):
+        _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+
+    def _validate_export_clearance_context(
+            self, accepted_cache, receipt, selection, source_frontier,
+            artifact_digests):
+        from bilqis_mlx.semantics.atlas_release_audit import (
+            validate_export_clearance_context,
+        )
+        return validate_export_clearance_context(
+            receipt, selection, source_frontier, artifact_digests,
+            _authority_state(self, accepted_cache))
+
+
+def require_source_authority_runtime(
+        authority, accepted_cache) -> SourceAuthorityRuntime:
+    if type(authority) is not SourceAuthorityRuntime:
+        _invalid("BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+    _authority_state(authority, accepted_cache)
+    return authority

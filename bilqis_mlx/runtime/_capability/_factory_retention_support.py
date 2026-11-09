@@ -6,6 +6,7 @@ from pathlib import Path
 
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import CandidateTransaction, resolve_candidate
+from bilqis_mlx.learning.atlas_package_import import PackageImportTransaction
 from bilqis_mlx.runtime.atlas_training_authority import BamfTrainingAuthority
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache, derive_successor_bundle, load_accepted_generation,
@@ -79,6 +80,30 @@ def _candidate_from_live_parent(run_dir: Path, transaction: CandidateTransaction
     return parent, successor, preview, cache
 
 
+def _package_import_from_live_parent(
+        run_dir: Path, transaction: PackageImportTransaction):
+    """Bind one B12 package-import proposal to the current accepted B13 parent."""
+    if type(transaction) is not PackageImportTransaction:
+        _invalid("BAMF_C05_PACKAGE_IMPORT_PARENT_CUSTODY_MISMATCH")
+    parent = load_accepted_generation(run_dir)
+    cache = bind_accepted_execution_cache(run_dir)
+    custody = transaction.parent.custody
+    if (custody is None
+            or candidate_identity_digest(transaction.parent)
+            != candidate_identity_digest(parent.retained_state)
+            or custody.run_id != cache.run_id
+            or custody.generation != cache.generation
+            or custody.manifest_sha256 != cache.accepted_manifest_sha256
+            or custody.topology_digest != parent.topology.digest
+            or custody.extents_digest != parent.extents.digest):
+        _invalid("BAMF_C05_PACKAGE_IMPORT_PARENT_CUSTODY_MISMATCH")
+    successor = derive_successor_bundle(
+        parent, transaction.candidate,
+        parent_manifest_sha256=cache.accepted_manifest_sha256,
+        delivery_events=())
+    return parent, successor, transaction.candidate, cache
+
+
 def _instruments(source_context, candidate, artifact_path, rows, *, seed, each=None):
     generation = _generation(candidate)
     counts = {}
@@ -109,7 +134,7 @@ def _independent_draw(source_context, rows, seed, training):
         family = row.get("source_family_id")
         if not isinstance(family, str) or not family:
             execution = source_context.release.execution_plan.capability_map[row["capability"]]
-            family = _source_family(execution, seed=seed, each=C05_PROBE_EACH)
+            family = _source_family(execution)
         episode = row.get("episode_id")
         if not isinstance(episode, str) or not episode:
             episode = identity

@@ -12,6 +12,8 @@ from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.factory.tests.test_teaching import closed_source_fixture
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.atlas_training_adapter import BamfTarget, compile_training_batch, require_current_release
+from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures, ConceptFeature
 from bilqis_mlx.semantics.core import Literal
 from bilqis_mlx.semantics.context_eligibility import (
@@ -19,6 +21,10 @@ from bilqis_mlx.semantics.context_eligibility import (
     SourceFrontier, SourceGrant, TaskScope, frame_evidence_digest,
     member_evidence_digest,
 )
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    DependencyKind, DependencyRef,
+)
+from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
 from bilqis_mlx.semantics.frame_compiler import (
     FrameCompilerConfig, SourceAtom, StreamingAST, atom_evidence_digest,
@@ -197,11 +203,11 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         registry = SourceAdapterRegistry((replace(registered, draw=draw),))
         return replace(self.context, source_registry=registry)
 
-    def compile(self, rows, *, release_sha=None, encoders=None, policy='allow',
+    def compile(self, rows, *, release_sha=None, policy='allow',
                 generation=None, sealed=(), context_mutator=None,
                 frames_override=None, source_ast_override=None,
                 delivery_override=None, extra_kwargs=None,
-                source_context=None, source_seed=17):
+                source_context=None, source_seed=17, visit=None):
         context = source_context or self.context
         delivery = delivery_override or describe_delivered_teaching(
             context.release, 'Z.C0', 'source.direct/Z.C0', rows)
@@ -226,9 +232,10 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             None,
             base_task, base_frontier, base_policy)
         self.authority.return_value = _atlas_features(legitimate_asts, semantic_release)
-        return compile_training_batch(rows, context, {'context': 1024},
+        return compile_training_batch(rows, context, ModelTopologySpecV2(),
             delivery=delivery, delivery_capability='Z.C0', delivery_release_sha256=release_sha or context.release.release_sha256,
             teacher_strategy={'policy': 'focused'}, requested_count=3, optimizer_step_seed=42,
+            visit_provenance=(visit or visit_provenance('Z.C0')),
             source_authority=context.bind_rows(
                 rows, seed=source_seed, capability='Z.C0', each=len(rows)),
             rehearsal_by_id={rows[0]['id']: 'prior'}, visible_ends=visible_ends,
@@ -241,7 +248,7 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             answer_plan_for=lambda *args: {**answer_plan_for(*args), 'generation_binding': self.model_generation},
             frames_for_ast=frames_for_ast, task_scope=task,
             source_frontier=frontier, eligibility_policy=context_policy,
-            target_encoders=encoders, generation_binding=generation or self.model_generation,
+            generation_binding=generation or self.model_generation,
             sealed_holdout_ids=sealed, **(extra_kwargs or {}))
 
     def test_cross_source_ast_and_frame_substitution_is_rejected(self):
@@ -297,6 +304,39 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             self.compile(
                 self.rows,
                 extra_kwargs={'compile_prefix': lambda *_args: object()})
+
+    def test_training_provenance_preserves_immediate_c09_dependencies(self):
+        rows = ({**self.rows[0], 'operation_id': 'fixture.operator'},)
+        context = self.source_owned_context(rows)
+        batch = self.compile(rows, source_context=context)
+        row = batch.rows[0]
+        prefix = row.model_input.prefix
+        expected = {
+            DependencyRef(DependencyKind.SOURCE, row.provenance.row_id),
+            DependencyRef(DependencyKind.SOURCE, row.provenance.source_id),
+            DependencyRef(
+                DependencyKind.OPERATOR, 'operator:fixture.operator'),
+            DependencyRef(
+                DependencyKind.RELEASE,
+                'release:' + prefix.semantic_release),
+            DependencyRef(
+                DependencyKind.POLICY,
+                'policy:' + contract_digest((
+                    prefix.scope,
+                    prefix.policy_version[0],
+                    prefix.policy_version[1],
+                ))),
+            DependencyRef(
+                DependencyKind.RIGHTS,
+                'rights:' + contract_digest((
+                    prefix.policy_version[2],
+                    prefix.policy_version[3],
+                ))),
+            DependencyRef(
+                DependencyKind.TIME,
+                'time:asof:context:' + prefix.context_digest),
+        }
+        self.assertEqual(set(row.provenance.immediate_dependencies), expected)
         with self.assertRaises(TypeError):
             self.compile(
                 self.rows,
