@@ -4,7 +4,7 @@ Issue #905. Branch `codex/905-c02-5-visit-provenance-20261107`.
 Reviewed unified consumed for this scoped implementation:
 `bd3657e170c8bdc046a7bb28524c0fb829ca7ce9`.
 
-Status: **SEMANTICALLY_QUALIFIED; FRESH_FINAL_EGM_PASSED; PREMERGE_PENDING**.
+Status: **SEMANTICALLY_QUALIFIED; FRESH_FINAL_EGM_PASSED; PREMERGE_DIFFERENTIAL_CLEAN; PR_PENDING**.
 
 ## Authority boundary
 
@@ -167,3 +167,21 @@ reviewer then returned **PASS — 0 Blockers / 0 Majors / 0 Nits** and
 No live learner, durable optimizer update, source promotion or accepted production
 generation was started. The remaining turn-in gates are the repository pre-merge
 proof, ready PR creation, and hosted CI. Merge remains human-authorized only.
+
+## Exact-head premerge disposition — 2026-11-09
+
+The final bounded compatibility/mechanical-conformance commit is
+`7b7cf7ea8eca6b01938d68ed458ee3a8174405d8`. It changes no production source.
+Two downstream test helpers now provide the exact C03 visit envelope required by
+the already-landed C02.5 constructor contract; four task/dependency-evidence files
+mirror the live #905 direct prerequisite declaration and reviewed-unified closure.
+
+This tranche eliminates 20 candidate-only premerge errors. The remaining 28 failure
+identities reproduce exactly on reviewed-unified
+`2c26d4aca90f275e1c255aa6a197ab63e0528480`; there are zero candidate-only and zero
+baseline-only failure identities. A fresh independent review of exact
+`7b7cf7ea8eca6b01938d68ed458ee3a8174405d8` reports **PASS — 0 Blockers / 0 Majors /
+0 Nits** and classifies the tranche as ADR-127 `MECHANICAL_CONFORMANCE`.
+
+The branch is therefore ready for normal PR turn-in and hosted CI. No baseline
+failure is reassigned to C02.5, and merge remains a separate human authority gate.

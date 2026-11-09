@@ -87,3 +87,33 @@ or Nit was introduced.
 No live learner, durable optimizer update, source promotion, accepted production
 generation, sibling merge, or self-merge was performed. Human review and merge
 remain separate authority gates.
+
+## Exact-head premerge compatibility and fresh confirmation
+
+Premerge compatibility follow-up `7b7cf7ea8eca6b01938d68ed458ee3a8174405d8`
+is `MECHANICAL_CONFORMANCE` under ADR-127. It changes no production source:
+
+- two downstream test helpers now supply the already-required exact visit
+  provenance when constructing `BamfDeliveryProvenance`;
+- four dependency-evidence/task files mirror the live #905 direct-prerequisite
+  clarification `C02.3, B13.6, C03` and the accepted reviewed-unified receipt.
+
+The repair removed 20 candidate-only premerge errors. The remaining full-suite
+result is **3472 passed / 28 failed / 199 skipped / 27 errors** across 3699 tests.
+The same premerge runner on exact reviewed unified
+`2c26d4aca90f275e1c255aa6a197ab63e0528480` reports **3468 passed / 28 failed /
+199 skipped / 27 errors** across 3695 tests. The 28 failing test identities are
+exactly identical in both runs: candidate-only failures **0**, baseline-only
+failures **0**. Those residual failures therefore remain inherited reviewed-unified
+baseline debt and are not absorbed into C02.5.
+
+A fresh isolated exact-head review of
+`7b7cf7ea8eca6b01938d68ed458ee3a8174405d8` returned:
+
+**PASS — 0 Blockers / 0 Majors / 0 Nits.**
+
+The reviewer found no violated #905 requirement or authority, no concrete in-scope
+failure scenario, and no missing ownership/interface/acceptance seam. It confirmed
+that every `BamfDeliveryProvenance` constructor and every compile/prepare/candidate
+path in the exact tree carries visit provenance; the final compatibility delta is
+mechanical and does not stale the semantic review.
