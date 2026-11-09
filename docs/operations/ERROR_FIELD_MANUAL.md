@@ -1749,7 +1749,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2073** raw raises across **251** files. The baseline gate permits only reduction.
+Current production scan: **2073** raw raises across **253** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -2872,14 +2872,14 @@ Current production scan: **2073** raw raises across **251** files. The baseline 
 | `GRADE_REVISION_MUST_APPEND_CAPABILITY_DEBT` | 1 | `bilqis_mlx/compatibility/_recovery/scheduler_transitions.py` |
 | `GRADE_REVISION_REQUIRES_EXACTLY_ONE_CHANGED_GRADE` | 1 | `bilqis_mlx/compatibility/_recovery/scheduler_transitions.py` |
 | `GRADE_REVISION_REQUIRES_SAME_PARTIAL_GRADE_PROGRAM` | 1 | `bilqis_mlx/compatibility/_recovery/scheduler_transitions.py` |
-| `GRADE_SOUP_CHAMPION_CUSTODY_DRIFT` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
+| `GRADE_SOUP_CHAMPION_CUSTODY_DRIFT` | 1 | `bilqis_mlx/learning/_lesson_guidance/soups.py` |
 | `GRADE_SOUP_COVERAGE_PEAK_REGRESSED` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_CUSTODY_GRADE_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_retention.py` |
 | `GRADE_SOUP_EXISTING_RECIPE_DRIFT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_EXISTING_SCHEMA_DRIFT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_FROZEN_MODEL_SHAPE_DRIFT` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `GRADE_SOUP_GRADE_POINTER_DRIFT` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
-| `GRADE_SOUP_INGREDIENT_GRAPH_DIGEST_COLLISION` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
+| `GRADE_SOUP_INGREDIENT_GRAPH_DIGEST_COLLISION` | 1 | `bilqis_mlx/learning/_lesson_guidance/soups.py` |
 | `GRADE_SOUP_INVALID_ADMITTED_CAPABILITIES` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_INVALID_FROZEN_TENSORS` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_INVALID_INGREDIENT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
@@ -2899,7 +2899,7 @@ Current production scan: **2073** raw raises across **251** files. The baseline 
 | `GRADE_SOUP_SAVED_ARTIFACT_MISSING` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_SAVED_PATH_DRIFT` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_SAVED_SCHEMA_DRIFT` | 2 | `bilqis_mlx/learning/_championship/grade_soup.py` |
-| `GRADE_SOUP_UNSAFE_CHAMPION_BUNDLE` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
+| `GRADE_SOUP_UNSAFE_CHAMPION_BUNDLE` | 1 | `bilqis_mlx/learning/_lesson_guidance/soups.py` |
 | `GRADE_SOUP_UNSAFE_DIRECTORY` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
 | `GRADE_SOUP_UNSAFE_SAVED_PATH` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `GRADE_SOUP_UNVERIFIED_CHAMPION` | 1 | `bilqis_mlx/learning/_championship/grade_soup.py` |
@@ -2968,17 +2968,17 @@ Current production scan: **2073** raw raises across **251** files. The baseline 
 | `HUMAN_TRAINER_HISTORICAL_TEACHER_STATE_INCOMPLETE` | 1 | `bilqis_mlx/runtime/_custody/session.py` |
 | `HUMAN_TRAINER_INCUMBENT_CHECKPOINT_DRIFT` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
 | `HUMAN_TRAINER_INCUMBENT_UNSAFE_PATH` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
-| `HUMAN_TRAINER_INVALID_LESSON_BATCH_SIZE` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
+| `HUMAN_TRAINER_INVALID_LESSON_BATCH_SIZE` | 1 | `bilqis_mlx/learning/_lesson_guidance/selection.py` |
 | `HUMAN_TRAINER_INVALID_OPERATOR_LIMITS` | 1 | `bilqis_mlx/runtime/operator_session/operator_preflight.py` |
 | `HUMAN_TRAINER_LIVE_EXAM_INCOMPLETE_FACTORS` | 1 | `bilqis_mlx/runtime/_custody/boundary_commit.py` |
 | `HUMAN_TRAINER_LIVE_RUBRIC_EVIDENCE_MISSING` | 1 | `bilqis_mlx/runtime/_custody/boundary_commit.py` |
 | `HUMAN_TRAINER_LIVE_RUBRIC_IDENTITY_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/boundary_commit.py` |
 | `HUMAN_TRAINER_LIVE_RUBRIC_SCOPE_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/boundary_commit.py` |
 | `HUMAN_TRAINER_LIVE_SOURCE_REQUIRED` | 1 | `bilqis_mlx/runtime/_visits/preparation.py` |
-| `HUMAN_TRAINER_MISSING_BINARY_TRAINING_CLASS` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
+| `HUMAN_TRAINER_MISSING_BINARY_TRAINING_CLASS` | 1 | `bilqis_mlx/learning/_lesson_guidance/selection.py` |
 | `HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID` | 1 | `bilqis_mlx/runtime/_visits/common.py` |
-| `HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
-| `HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
+| `HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY` | 1 | `bilqis_mlx/learning/_lesson_guidance/selection.py` |
+| `HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH` | 1 | `bilqis_mlx/learning/_lesson_guidance/selection.py` |
 | `HUMAN_TRAINER_NEW_RUN_HAS_EXISTING_CONTENT` | 1 | `bilqis_mlx/runtime/_custody/session.py` |
 | `HUMAN_TRAINER_NO_SCHEDULED_CAPABILITY` | 1 | `bilqis_mlx/runtime/_visits/preparation.py` |
 | `HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT` | 1 | `bilqis_mlx/runtime/_visits/retention.py` |
