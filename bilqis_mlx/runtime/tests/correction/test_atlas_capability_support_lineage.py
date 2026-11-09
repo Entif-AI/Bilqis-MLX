@@ -15,16 +15,11 @@ from bilqis_mlx.runtime.accepted_correction_ledger import read_records
 from bilqis_mlx.runtime.atlas_capability_support_owner import (
     load_capability_support_owner,
 )
-from bilqis_mlx.runtime.bamf_bundle.admission import (
-    accept_and_publish, bind_accepted_correction_authority,
-)
 from bilqis_mlx.runtime.capability_support_journal import journal_path, read_journal
 from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
-    SOURCE_ROW, TARGET, source_qualified_state,
+    SOURCE_ROW, TARGET, publish_support_fixture,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, retention_decision, shape_patch,
-)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _ref, _sign_event,
 )
@@ -46,20 +41,8 @@ class CapabilitySupportLineageTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish_support(self):
-        parent, transaction, retained, authority = source_qualified_state()
-        bundle = candidate(retained)
-        bundle = replace(bundle, correction_frontier={
-            **bundle.correction_frontier,
-            "source_authority_registry_sha256": AUTHORITY.digest,
-        })
-        decision = retention_decision(parent=parent, retained=retained)
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            published = accept_and_publish(
-                self.run, bundle, retained, decision=decision,
-                feature_sha256=bundle.extents.factor_map_digest,
-                training_authorities=transaction.training_authorities)
-            bind_accepted_correction_authority(self.run, AUTHORITY)
-        return published, authority
+        return publish_support_fixture(
+            self.run, authority_registry=AUTHORITY)
 
     def load_support(self, authority_registry=None):
         with shape_patch():

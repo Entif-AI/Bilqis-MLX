@@ -114,12 +114,14 @@ class AcceptedFeatureMigrationTests(FeatureLineageCase):
             second_snapshot, FeatureSchema((), (), first_features))
         self.assertNotEqual(first_artifact.bundle_id, second_artifact.bundle_id)
 
-        first = self.publish(feature_bound(
-            candidate(parent_state()), first_features,
-            release=first_release.digest,
-            atlas_bundle=first_artifact.bundle_id,
-            source_bundle=first_release.source_bundle_id,
-            active_set=first_snapshot.active_set_sha256))
+        first = self.publish_feature_genesis(
+            first_features,
+            selection=__import__(
+                "bilqis_mlx.semantics.atlas.snapshot",
+                fromlist=["AtlasArtifactSelection"]).AtlasArtifactSelection(
+                    str(first_artifact.path), first_artifact.bundle_id,
+                    first_release.digest, first_release.source_bundle_id),
+            snapshot=first_snapshot, schema=FeatureSchema((), ()))
         changed = feature_bound(
             candidate(accepted_state(parent_state()), 1, first["manifest_sha256"]),
             second_features, release=second_release.digest,

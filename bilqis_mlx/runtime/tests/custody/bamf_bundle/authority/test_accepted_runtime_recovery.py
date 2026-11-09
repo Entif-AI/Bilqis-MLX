@@ -15,13 +15,12 @@ from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     append_record, correction_record, read_records,
 )
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache, derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_motif_artifact_owner
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, next_accepted_step, parent_state, shape_patch,
+    candidate, next_accepted_step, parent_state, publish_candidate, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import _event, _sign_event
 
@@ -41,8 +40,7 @@ class AcceptedRuntimeRecoveryTests(unittest.TestCase):
 
     def publish(self, source):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(
-                self.run, source, acceptance=acceptance(source))
+            return publish_candidate(self.run, source)
 
     def _motif_fixture(self):
         self.publish(candidate(parent_state()))
@@ -100,7 +98,7 @@ class AcceptedRuntimeRecoveryTests(unittest.TestCase):
                 append_record(self.run, ancestor_manifest, second_record)
         with shape_patch():
             parent = load_accepted_generation(self.run)
-        retained = next_accepted_step(parent.retained_state)
+        retained = next_accepted_step(parent.retained_state, parent.extents)
         successor = derive_successor_bundle(
             parent, retained, parent_manifest_sha256=ancestor_manifest,
             delivery_events=({"event": "FIXTURE_SUCCESSOR"},))

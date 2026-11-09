@@ -13,13 +13,13 @@ from bilqis_mlx.runtime.atlas_capability_support_owner import (
 )
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    accept_and_publish, load_accepted_generation,
+    accept_and_publish, derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
     TARGET, source_qualified_state,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, parent_state, retention_decision, shape_patch,
+    publish_genesis, retention_decision, shape_patch,
 )
 
 
@@ -37,21 +37,27 @@ class CapabilitySupportGenerationTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def test_retained_update_binds_support_to_current_execution_generation(self):
-        parent = parent_state()
-        parent_bundle = candidate(parent)
-        with shape_patch():
-            parent_generation = execution_generation_digest(
-                parent.optimizer.parameters,
-                spec=parent_bundle.topology,
-                extents=parent_bundle.extents,
-            )
-        parent, transaction, retained, authority = source_qualified_state(
-            parent,
-            generation_binding=parent_generation,
-        )
-        bundle = candidate(retained)
-        decision = retention_decision(parent=parent, retained=retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            pointer = publish_genesis(self.run)
+            accepted_parent = load_accepted_generation(self.run)
+            parent_generation = execution_generation_digest(
+                accepted_parent.retained_state.optimizer.parameters,
+                spec=accepted_parent.topology,
+                extents=accepted_parent.extents,
+            )
+            parent, transaction, retained, authority = source_qualified_state(
+                accepted_parent.retained_state,
+                extents=accepted_parent.extents,
+                spec=accepted_parent.topology,
+                generation_binding=parent_generation,
+            )
+            bundle = derive_successor_bundle(
+                accepted_parent,
+                retained,
+                parent_manifest_sha256=pointer["manifest_sha256"],
+                delivery_events=({"event": "FIXTURE_CAPABILITY_GENERATION"},),
+            )
+            decision = retention_decision(parent=parent, retained=retained)
             accept_and_publish(
                 self.run, bundle, retained, decision=decision,
                 feature_sha256=bundle.extents.factor_map_digest,

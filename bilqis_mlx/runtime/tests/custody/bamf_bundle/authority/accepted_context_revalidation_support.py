@@ -18,12 +18,11 @@ from bilqis_mlx.runtime.accepted_correction_ledger import (
 )
 from bilqis_mlx.runtime.accepted_correction_runtime import runtime
 from bilqis_mlx.runtime.atlas_owner_ingress import _route
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_correction_authority, bind_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, shape_patch,
+    candidate, parent_state, publish_candidate, shape_patch,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
     source_owned_temporal_case,
@@ -92,8 +91,7 @@ class AcceptedContextFixture(unittest.TestCase):
             "source_authority_registry_sha256": AUTHORITY.digest,
         })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            publish_bamf_generation(
-                self.run, source, acceptance=acceptance(source))
+            publish_candidate(self.run, source)
             return bind_accepted_correction_authority(self.run, AUTHORITY)
 
     def registered_owner(self):

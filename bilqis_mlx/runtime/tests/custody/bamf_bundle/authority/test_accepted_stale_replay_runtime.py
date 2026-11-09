@@ -17,7 +17,6 @@ from bilqis_mlx.runtime.akasha_outbox import pending_events
 from bilqis_mlx.runtime.atlas_capability_support_owner import (
     load_capability_support_owner,
 )
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     accept_and_publish, bind_accepted_correction_authority,
     bind_accepted_execution_cache, derive_successor_bundle, load_accepted_generation,
@@ -25,7 +24,8 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 from bilqis_mlx.runtime.cognitive_solver import QualifiedComposition, SolveContext
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, retention_decision, shape_patch,
+    candidate, parent_state, publish_candidate, publish_genesis,
+    retention_decision, shape_patch,
 )
 from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
     SOURCE_ROW, TARGET, source_qualified_state,
@@ -54,8 +54,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
             "source_authority_registry_sha256": AUTHORITY.digest,
         })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            publish_bamf_generation(
-                self.run, source, acceptance=acceptance(source))
+            publish_candidate(self.run, source)
             bind_accepted_correction_authority(self.run, AUTHORITY)
 
     def tearDown(self):
@@ -63,8 +62,16 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def _publish_source_qualified_support(self, run):
-        parent, transaction, retained, _authority = source_qualified_state()
-        bundle = candidate(retained)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            publish_genesis(run)
+            accepted_parent = load_accepted_generation(run)
+            parent_manifest = bind_accepted_execution_cache(
+                run).accepted_manifest_sha256
+        parent, transaction, retained, _authority = source_qualified_state(
+            accepted_parent.retained_state, extents=accepted_parent.extents)
+        bundle = derive_successor_bundle(
+            accepted_parent, retained, parent_manifest_sha256=parent_manifest,
+            delivery_events=({"event": "FIXTURE_SOURCE_QUALIFIED"},))
         bundle = replace(bundle, correction_frontier={
             **bundle.correction_frontier,
             "source_authority_registry_sha256": AUTHORITY.digest,
@@ -305,7 +312,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         with shape_patch():
             accepted_parent = load_accepted_generation(run)
         parent, transaction, retained, _authority = source_qualified_state(
-            accepted_parent.retained_state,
+            accepted_parent.retained_state, extents=accepted_parent.extents,
             capability=TARGET,
             source_row="source:capability-support:requalified",
             source_family="source-family:capability-support:requalified",

@@ -23,7 +23,7 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
-from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_candidate_step, bind_accepted_cache_authority,
     bind_accepted_correction_authority, bind_accepted_execution_cache,
@@ -34,7 +34,7 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     require_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, next_accepted_step, parent_state, shape_patch,
+    candidate, next_accepted_step, parent_state, publish_candidate, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _sign_event,
@@ -61,8 +61,7 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
                 "source_authority_registry_sha256": registry.digest,
             })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            pointer = publish_bamf_generation(
-                self.run, source, acceptance=acceptance(source))
+            pointer = publish_candidate(self.run, source)
             if registry is not None:
                 bind_accepted_correction_authority(self.run, registry)
             return pointer
@@ -75,9 +74,11 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         self.assertIs(require_accepted_execution_cache(cache), cache)
         self.assertIs(rebound, cache)
         self.assertEqual(cache.run_id, "fixture-run")
+        with shape_patch():
+            accepted = load_accepted_generation(self.run)
         self.assertEqual(
             cache.motif_manifest.digest,
-            parent_state().allocations.manifest.digest,
+            accepted.retained_state.allocations.manifest.digest,
         )
         with self.assertRaises(BilqisError):
             AcceptedExecutionCache()

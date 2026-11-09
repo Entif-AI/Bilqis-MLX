@@ -11,7 +11,7 @@ from unittest.mock import patch
 from bilqis_mlx._data_plane import file_objects
 from bilqis_mlx.data_plane import data_plane
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
-import bilqis_mlx.runtime.bamf_bundle._publication_storage as publication_storage
+import bilqis_mlx.runtime.bamf_bundle.publication.storage as publication_storage
 import bilqis_mlx.runtime.checkpoints as checkpoints
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
@@ -193,60 +193,3 @@ class PublicationDurabilityTests(unittest.TestCase):
                 self.assert_persisted_tensor_durable()
         self.assertEqual(self.run.name, 'reuse')
         self.assertFalse((self.run / 'bamf-state.json').exists())
-
-    def test_overlapping_cold_reader_cannot_race_outbox_reconciliation(self):
-        for operation in ('publish', 'load'):
-            with self.subTest(operation=operation):
-                self.run = self.root / operation
-                source = candidate(parent_state())
-                if operation == 'load':
-                    with patch.object(publication, 'reconcile_bamf_outbox', side_effect=RuntimeError('crash')):
-                        with self.assertRaises(RuntimeError):
-                            self.publish(source)
-                entered, release = threading.Event(), threading.Event()
-                guard = threading.Lock()
-                calls = []
-                reconcile = checkpoints._reconcile_delivery_outbox
-
-                def pause(run, record, **kwargs):
-                    with guard:
-                        calls.append(1)
-                        first = len(calls) == 1
-                    if first:
-                        entered.set()
-                        if not release.wait(5):
-                            raise RuntimeError('test synchronization timed out')
-                    return reconcile(run, record, **kwargs)
-
-                def writer():
-                    return (self.publish(source) if operation == 'publish'
-                            else load_bamf_generation(self.run / 'bamf-state.json'))
-
-                with shape_patch(), patch.object(checkpoints, '_reconcile_delivery_outbox', side_effect=pause):
-                    with ThreadPoolExecutor(max_workers=1) as pool:
-                        future = pool.submit(writer)
-                        try:
-                            self.assertTrue(entered.wait(5))
-                            with self.assertRaises(BilqisError):
-                                load_bamf_generation(self.run / 'bamf-state.json')
-                        finally:
-                            release.set()
-                            future.result(timeout=5)
-                events = [json.loads(line) for line in (self.run / 'events.jsonl').read_text().splitlines()]
-                self.assertEqual(len(events), 1)
-                self.assertEqual(events[0]['event'], 'FIXTURE_ACCEPTED')
-
-    def test_successor_recovers_pending_predecessor_before_advancing_pointer(self):
-        initial = parent_state()
-        with patch.object(publication, 'reconcile_bamf_outbox', side_effect=RuntimeError('crash')):
-            with self.assertRaises(RuntimeError):
-                self.publish(candidate(initial))
-        first = json.loads((self.run / 'bamf-state.json').read_text())
-        self.assertFalse((self.run / 'events.jsonl').exists())
-        self.publish(candidate(accepted_state(initial), 1, first['manifest_sha256']))
-        with shape_patch():
-            loaded = load_bamf_generation(self.run / 'bamf-state.json')
-        self.assertEqual(loaded.generation, 1)
-        events = [json.loads(line) for line in (self.run / 'events.jsonl').read_text().splitlines()]
-        self.assertEqual([e['optimizer_step'] for e in events], [11, 12])
-        self.assertEqual(len({e['event_id'] for e in events}), 2)

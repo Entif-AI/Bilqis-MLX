@@ -14,11 +14,13 @@ from bilqis_mlx.factory.execution import CurriculumProfile
 from bilqis_mlx.factory.tests.test_executable_release import _answers
 from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_course, _synthetic_registry
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_correction_authority
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, shape_patch,
+    candidate, parent_state, shape_patch,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
+    publish_candidate,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY
 
@@ -73,8 +75,7 @@ class SourceExecutionContextTests(unittest.TestCase):
                 "source_authority_registry_sha256": AUTHORITY.digest,
             })
             with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-                publish_bamf_generation(
-                    run_dir, source, acceptance=acceptance(source))
+                publish_candidate(run_dir, source)
                 bind_accepted_correction_authority(run_dir, AUTHORITY)
             receipt = {"factory_release_sha256": self.release.release_sha256}
             with patch(

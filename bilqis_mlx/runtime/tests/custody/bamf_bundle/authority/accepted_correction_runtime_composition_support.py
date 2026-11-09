@@ -11,10 +11,9 @@ from bilqis_mlx.runtime.accepted_corrections import record_accepted_revalidation
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_correction_authority
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, shape_patch,
+    publish_candidate, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _SOURCE_OWNER, _TEST_PUBLIC, _event, _result, _sign_event,
@@ -54,8 +53,7 @@ class AcceptedCorrectionCompositionCase(unittest.TestCase):
             "source_authority_registry_sha256": registry.digest,
         })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            pointer = publish_bamf_generation(
-                self.run, source, acceptance=acceptance(source))
+            pointer = publish_candidate(self.run, source)
             bind_accepted_correction_authority(self.run, registry)
             return pointer
 

@@ -17,13 +17,13 @@ from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corre
 from bilqis_mlx.runtime.accepted_correction_ledger import read_records
 from bilqis_mlx.runtime.atlas_artifact_owner import PackedFrameArtifactOwner
 from bilqis_mlx.runtime.atlas_owner_ingress import _route
-from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_correction_authority, bind_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_motif_artifact_owner
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, shape_patch,
+    candidate, parent_state, publish_candidate, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _result,
@@ -55,8 +55,7 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
             "source_authority_registry_sha256": AUTHORITY.digest,
         })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            pointer = publish_bamf_generation(
-                self.run, source, acceptance=acceptance(source))
+            pointer = publish_candidate(self.run, source)
             bind_accepted_correction_authority(self.run, AUTHORITY)
             return pointer
 

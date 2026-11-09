@@ -9,13 +9,13 @@ from bilqis_mlx.learning.atlas_acceptance import (
     ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
 )
 
-from .codec import load_bamf_bundle
-from .publication import ACCEPTANCE_DIR, _pointer_lock, _read_pointer
-from .records import (
+from ..codec import load_bamf_bundle
+from ..publication import ACCEPTANCE_DIR, _pointer_lock, _read_pointer
+from ..records import (
     ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BAMF_BUNDLE_SCHEMA,
     BamfGenerationManifest, invalid, sha,
 )
-from ._feature_receipt import is_digest
+from .receipt import is_digest
 
 
 def accepted_generation(pointer_path: Path):
@@ -37,13 +37,23 @@ def accepted_generation(pointer_path: Path):
 
 def accepted_binding_for_manifest(
         run_dir: Path, manifest_sha256: str, student, *,
-        expected_acceptance_sha256: str) -> AcceptedCandidateBinding:
-    """Authenticate one immutable generation's retained-acceptance evidence."""
+        expected_acceptance_sha256: str):
+    """Authenticate one immutable generation's generation-specific acceptance."""
     path = run_dir / ACCEPTANCE_DIR / f"{manifest_sha256}.json"
     if path.is_symlink() or not path.is_file():
         invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
     try:
-        binding = AcceptedCandidateBinding.from_record(json.loads(path.read_bytes()))
+        record = json.loads(path.read_bytes())
+        if student.generation == 0:
+            from ..genesis import (
+                InitialGenerationBinding,
+                validate_parsed_initial_generation_binding,
+            )
+            binding = InitialGenerationBinding.from_record(record)
+            validate_parsed_initial_generation_binding(
+                student, binding, expected_acceptance_sha256)
+            return binding
+        binding = AcceptedCandidateBinding.from_record(record)
     except (UnicodeDecodeError, json.JSONDecodeError, BilqisError):
         invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
     if (binding.digest != expected_acceptance_sha256
@@ -57,20 +67,22 @@ def accepted_binding_for_manifest(
             or binding.step_proof_sha256 != tuple(
                 proof.digest for proof in student.retained_state.step_proofs)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-    if student.generation > 0:
-        parent_sha = student.parent_manifest_sha256
-        if parent_sha is None:
-            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-        parent = load_bamf_bundle(
-            run_dir / "bamf-bundles" / parent_sha,
-            expected_manifest_sha256=parent_sha)
-        if (parent.generation + 1 != student.generation
-                or parent.run_id != student.run_id
-                or binding.parent_candidate_identity_sha256
-                != candidate_identity_digest(parent.retained_state)):
-            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    parent_anchor = parent_acceptance_anchor_from_manifest(
+        run_dir, manifest_sha256)
+    parent_sha = student.parent_manifest_sha256
+    if parent_sha is None:
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    parent = load_bamf_bundle(
+        run_dir / "bamf-bundles" / parent_sha,
+        expected_manifest_sha256=parent_sha)
+    if (parent.generation + 1 != student.generation
+            or parent.run_id != student.run_id
+            or (parent_anchor is not None
+                and parent.run_identity != student.run_identity)
+            or binding.parent_candidate_identity_sha256
+            != candidate_identity_digest(parent.retained_state)):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     return binding
-
 
 def parent_acceptance_anchor_from_manifest(
         run_dir: Path, manifest_sha256: str) -> str | None:

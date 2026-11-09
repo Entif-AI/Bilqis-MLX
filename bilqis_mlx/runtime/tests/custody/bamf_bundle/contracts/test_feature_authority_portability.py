@@ -15,6 +15,10 @@ from bilqis_mlx.runtime.bamf_bundle import read_accepted_generation_feature_line
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.test_feature_authority import (
     feature_bound,
 )
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.feature_authority_lineage_support import (
+    publish_feature_genesis,
+)
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     accepted_state,
     candidate,
@@ -96,13 +100,12 @@ class AcceptedFeaturePortabilityTests(unittest.TestCase):
         artifact_root, first, second = self._two_releases()
         first_release, first_artifact, first_snapshot, first_features = first
         second_release, second_artifact, second_snapshot, second_features = second
-        first_published = self._publish(feature_bound(
-            candidate(parent_state()), first_features,
-            release=first_release.digest,
-            atlas_bundle=first_artifact.bundle_id,
-            source_bundle=first_release.source_bundle_id,
-            active_set=first_snapshot.active_set_sha256,
-        ))
+        first_published = publish_feature_genesis(
+            self.run, first_features,
+            selection=AtlasArtifactSelection(
+                str(first_artifact.path), first_artifact.bundle_id,
+                first_release.digest, first_release.source_bundle_id),
+            snapshot=first_snapshot, schema=FeatureSchema((), ()))
         successor = feature_bound(
             candidate(
                 accepted_state(parent_state()), 1,

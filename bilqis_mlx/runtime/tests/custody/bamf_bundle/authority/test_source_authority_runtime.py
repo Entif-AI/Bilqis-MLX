@@ -14,16 +14,16 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityRuntime,
     require_source_authority_runtime,
 )
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import load_bamf_bundle
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_correction_authority,
     bind_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     accepted_state,
-    acceptance,
     candidate,
     parent_state,
+    publish_candidate,
     shape_patch,
 )
 from bilqis_mlx.semantics.context_eligibility import SourceFrontier
@@ -63,8 +63,7 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
                 "source_authority_registry_sha256": REGISTRY.digest,
             })
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            pointer = publish_bamf_generation(
-                run_dir, source, acceptance=acceptance(source))
+            pointer = publish_candidate(run_dir, source)
         return source, pointer
 
     def test_accepted_host_issues_and_reuses_opaque_source_authority(self):
@@ -87,6 +86,28 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             authority._validate_export_clearance_context(
                 cache, receipt, selection, SourceFrontier(8, 3, ()), artifacts)
+
+    def test_source_authority_anchor_enters_after_authenticated_genesis(self):
+        _source, pointer = self.publish()
+        self.assertEqual(pointer["generation"], 1)
+        parent_sha = pointer["parent_manifest_sha256"]
+        self.assertIsNotNone(parent_sha)
+        with shape_patch():
+            parent = load_bamf_bundle(
+                self.run / "bamf-bundles" / parent_sha,
+                expected_manifest_sha256=parent_sha)
+            current = load_bamf_bundle(
+                self.run / pointer["bundle"],
+                expected_manifest_sha256=pointer["manifest_sha256"])
+        self.assertEqual(parent.generation, 0)
+        self.assertIsNone(parent.parent_manifest_sha256)
+        self.assertNotIn(
+            "source_authority_registry_sha256", parent.correction_frontier)
+        self.assertEqual(current.generation, 1)
+        self.assertEqual(
+            current.correction_frontier["source_authority_registry_sha256"],
+            REGISTRY.digest)
+        self.assertEqual(current.run_identity, parent.run_identity)
 
     def test_attacker_first_registry_cannot_poison_the_accepted_cache(self):
         self.publish()

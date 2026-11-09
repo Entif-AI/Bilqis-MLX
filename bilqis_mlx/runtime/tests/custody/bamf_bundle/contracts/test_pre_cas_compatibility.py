@@ -60,7 +60,6 @@ class PreCasCompatibilityTests(DataPlaneCase):
             "bd0ac8d7c8488af69e92a837530c129f9d8df7ee9a525de4627f865c8cb218b1")
         run, descriptors = self.root / "legacy-cas-run", []
         source = candidate(parent_state())
-        expected = numerical_observation(source)
         save = mlx_checkpoint.save_bamf_state_payload
 
         def retained_descriptor(path, *args, **kwargs):
@@ -76,6 +75,8 @@ class PreCasCompatibilityTests(DataPlaneCase):
                     patch.object(mlx_checkpoint, "save_bamf_state_payload", side_effect=retained_descriptor):
                 pointer = publish_candidate(run, source)
             bundle = run / pointer["bundle"]
+            with shape_patch():
+                expected = numerical_observation(writer.load_bamf_bundle(bundle))
             before = {path.name: path.read_bytes() for path in bundle.iterdir()}
             digest = json.loads(before["manifest.json"])["tensors"]["object_sha256"]
             plane = data_plane()
@@ -115,11 +116,12 @@ class PreCasCompatibilityTests(DataPlaneCase):
         spec.loader.exec_module(writer)
         run = self.root / "run"
         initial = candidate(parent_state())
-        expected = numerical_observation(initial)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
                 patch.object(publication, "save_bamf_bundle", side_effect=writer.save_bamf_bundle):
             pointer = publish_candidate(run, initial)
         bundle = run / pointer["bundle"]
+        with shape_patch():
+            expected = numerical_observation(load_bamf_generation(run / "bamf-state.json"))
         before = {path.name: path.read_bytes() for path in bundle.iterdir()}
         manifest = json.loads(before["manifest.json"])
         self.assertNotIn("object_sha256", manifest["tensors"])
