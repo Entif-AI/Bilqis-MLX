@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from contextlib import redirect_stderr, redirect_stdout
 from contextlib import contextmanager
+from dataclasses import asdict
 import io
 import json
 from pathlib import Path
@@ -15,6 +16,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures imp
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from bilqis_mlx.runtime.tests._bamf_first_student_support import BamfFirstStudentCase
+from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import _lease
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactIdentity
 
@@ -77,7 +79,6 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         with self.foundation_create_context():
             code, output, errors = self.invoke([
                 "--dry-run", "--model-topology", str(TOPOLOGY),
-                "--admission-policy", "atlas-release",
                 "--atlas-release-manifest", str(manifest),
                 "--run-dir", str(target), "--source-prefetch-workers", "0",
                 *self.FOUNDATION_ARGS,
@@ -100,21 +101,38 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         self.assertEqual(report["neural_updates"], 0)
         self.assertFalse(target.exists())
 
-    def test_fresh_bamf_manifest_requires_explicit_atlas_release_policy(self):
+    def test_fresh_bamf_atlas_release_requires_scope_before_any_run_write(self):
         target = self.root / "new-bamf"
         manifest = self.root / "manifest.json"
         manifest.write_text("{}", encoding="utf-8")
-        with patch(
-                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.atlas_manifest_identity",
-                return_value=self.identity):
-            code, output, errors = self.invoke([
-                "--dry-run", "--model-topology", str(TOPOLOGY),
-                "--atlas-release-manifest", str(manifest),
-                "--run-dir", str(target), *self.FOUNDATION_ARGS,
-            ])
+        code, output, errors = self.invoke([
+            "--human-run", "--model-topology", str(TOPOLOGY),
+            "--admission-policy", "atlas-release",
+            "--atlas-release-manifest", str(manifest),
+            "--run-dir", str(target), *self.FOUNDATION_ARGS,
+        ])
 
         self.assertEqual((code, output), (2, ""))
-        self.assertIn("BAMF_OPERATOR_ATLAS_MANIFEST_POLICY_CONFLICT", errors)
+        self.assertIn("BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED", errors)
+        self.assertFalse(target.exists())
+
+    def test_fresh_bamf_atlas_release_scope_still_requires_accepted_run_authority(self):
+        target = self.root / "new-bamf"
+        manifest = self.root / "manifest.json"
+        manifest.write_text("{}", encoding="utf-8")
+        scope = self.root / "scope.json"
+        scope.write_text(json.dumps(asdict(_lease())), encoding="utf-8")
+
+        code, output, errors = self.invoke([
+            "--human-run", "--model-topology", str(TOPOLOGY),
+            "--admission-policy", "atlas-release",
+            "--atlas-release-manifest", str(manifest),
+            "--atlas-admission-scope", str(scope),
+            "--run-dir", str(target), *self.FOUNDATION_ARGS,
+        ])
+
+        self.assertEqual((code, output), (2, ""))
+        self.assertIn("BAMF_ATLAS_ACCEPTED_RUN_AUTHORITY_UNAVAILABLE", errors)
         self.assertFalse(target.exists())
 
     def test_fresh_bamf_dry_run_rejects_invalid_optimizer_before_writes(self):
@@ -123,7 +141,6 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         manifest.write_text("{}", encoding="utf-8")
         code, output, errors = self.invoke([
             "--dry-run", "--model-topology", str(TOPOLOGY),
-            "--admission-policy", "atlas-release",
             "--atlas-release-manifest", str(manifest),
             "--run-dir", str(target),
             "--run-id", "operator-first-student", "--run-seed", "543",
@@ -143,7 +160,6 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         with self.foundation_create_context():
             code, output, errors = self.invoke([
                 "--human-run", "--model-topology", str(TOPOLOGY),
-                "--admission-policy", "atlas-release",
                 "--atlas-release-manifest", str(manifest),
                 "--run-dir", str(target), *self.FOUNDATION_ARGS,
             ])

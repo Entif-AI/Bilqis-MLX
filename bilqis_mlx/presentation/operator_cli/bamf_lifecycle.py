@@ -24,10 +24,9 @@ def _foundation_inputs(args, topology: ModelTopologySpecV2, *, materialize_hp: b
         invalid("BAMF_OPERATOR_FOUNDATION_IDENTITY_REQUIRED")
     if args.atlas_release_manifest is None:
         invalid("BAMF_OPERATOR_ATLAS_MANIFEST_REQUIRED")
-    if args.admission_policy != "atlas-release":
-        invalid("BAMF_OPERATOR_ATLAS_MANIFEST_POLICY_CONFLICT")
-    if args.atlas_admission_scope is not None:
-        invalid("BAMF_ATLAS_ACCEPTED_RUN_AUTHORITY_UNAVAILABLE")
+    if args.admission_policy != "staged" or args.atlas_admission_scope is not None:
+        from bilqis_mlx.runtime.atlas_admission import validate_atlas_command_request
+        validate_atlas_command_request(args)
     hp = foundation_hyperparameters(
         args, required=True, materialize=materialize_hp)
     atlas = atlas_manifest_identity(args.atlas_release_manifest)
