@@ -14,7 +14,10 @@ from bilqis_mlx.runtime.factory_evaluation_compiler import compile_factory_evalu
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
     genesis_bundle, live_factory_context,
 )
-from bilqis_mlx.semantics.frame_compiler import validate_partial_visible_forest
+from bilqis_mlx.semantics.frame_compiler import (
+    prefix_inventory_evidence_digest, prefix_inventory_handle,
+    validate_partial_visible_forest,
+)
 
 
 class FactoryEvaluationCustodyTests(SourceBackboneTestBase):
@@ -53,6 +56,15 @@ class FactoryEvaluationCustodyTests(SourceBackboneTestBase):
         ast = compiled.source_asts[0]
         config = compiled.compiler_configs[0]
         receipt = compiled.partial_forest_receipts[0]
+        prefix = compiled.compiled.rows[0]
+        handle = prefix_inventory_handle(prefix.source_instance_id, prefix.visible_end)
+        grant = next(
+            (item for item in config.frontier.grants
+             if item.source_handle == handle),
+            None,
+        )
+        self.assertIsNotNone(grant)
+        self.assertEqual(grant.evidence_digest, prefix_inventory_evidence_digest(prefix))
         self.assertEqual(
             validate_partial_visible_forest(
                 compiled.compiled.rows[0], ast, config,

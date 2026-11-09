@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "636ac8ffdeece7d6f8b24e9d1f46596396848db7",
-  "updated_at": "2026-11-09T19:29:06Z",
+  "observed_unified": "6b085f875ab781a3771c89916a1e42653f73e882",
+  "updated_at": "2026-11-09T20:37:58Z",
   "exception": null,
   "items": [
     {
@@ -18,12 +18,12 @@
     {
       "issue": 930,
       "pr": 938,
-      "state": "ACTIVE",
-      "head_sha": "6b5aef0a7c798bc3b5b77ddbb930725e19ff93eb",
-      "head_sha_role": "latest implementation/proof head; any following lane bookkeeping commit is docs/flow-only and must be included in final exact-head qualification",
-      "summary": "C09 packed-frame/context-view integration repair remains ACTIVE on serialized-writer branch codex/930-c09-packed-frame-context-views-20261109 and is represented by open PR #938. Governing R3 design passed 0B/0M/0N. Failed implementation candidates bbba88eb, e05256de and 27afb804 remain preserved. The 27afb804 final authority EGM found one live-owner rematerialization Major: a cached single-context MotifArtifactOwner could survive immutable physical content/non-TIME dependency drift until GC. Head 6b5aef0 adds a red-to-green regression and makes cached motif-owner reuse validate incoming physical content plus non-TIME dependencies while preserving authorized mutable TIME rebinding. Focused motif/context proof is green, correction 58/58 passes, accepted runtime 8/8 passes, multi-context cold replay 1/1 passes, cache currentness 5/5 passes, learned-support projection 1/1 passes, and structure/smell/static-flow/diff gates are green. Exact-head hosted CI and a completely fresh final implementation EGM remain pending before human-review turn-in.",
+      "state": "TURNED_IN",
+      "head_sha": "e11c334055e5a5e0934888bdb6f253325f961dc0",
+      "summary": "C09 packed-frame/context-view repair passed exact-head hosted proof and fresh 0B/0M/0N implementation EGM, then merged through PR #938 as reviewed unified 636ac8ff. Issue #930 and parent #377 are closed EGM-Passed; historical failed candidates remain preserved.",
       "resume_trigger": null,
-      "preserved_branch": "codex/930-c09-packed-frame-context-views-20261109"
+      "preserved_branch": "codex/930-c09-packed-frame-context-views-20261109",
+      "merged_pr": 938
     },
     {
       "issue": 543,
@@ -77,10 +77,11 @@
     {
       "issue": 526,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "41e37cf60a934181548e9b343ddab1ce2b3849a7",
-      "summary": "717receiver authority and744C05screen are consumed;745A12clearance merged. Remaining718/746bridge waits for production importer ownership.",
-      "resume_trigger": "746has a real production package-importer/operator owner, completes its existing acceptance and is consumed by718/526; then select526for integration.",
+      "state": "ACTIVE",
+      "head_sha": "1d2564bdb00cd670dd1fe52bcb33d73f21dc6693",
+      "head_sha_role": "latest semantic implementation/proof head after current-unified sync; any following evidence/flow commit is docs-only but must be included in final exact-head qualification",
+      "summary": "#718/#526 consumed current reviewed unified 6b085f87 and all dependency remediations. Historical fresh EGM failures remain preserved: f31a8a19 failed 0B/2M on exact-type decision/binding forgery; cb285723 failed because module-global issuer sentinels remained transferable; 327dc0de failed 0B/1M when codebase and authority independently found the legitimate decision issuer imported its validator through the deliberately blocked _capability module alias. Semantic head 1d2564bd uses the canonical Factory owner import while retaining the closure-owned exact-object authority repair. Post-repair focused files are 17/17 and 16/16 PASS; expanded C12/C05/B13 authority/import ring is 76/76 PASS; architecture/docs/governance/smell/base-aware error-control/flow/diff gates are green. Fresh exact-head hosted proof and a completely new EGM family remain required.",
+      "resume_trigger": null,
       "closed_pr": 680,
       "preserved_branch": "codex/bamf02-c12-526-exchange-20261101",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",

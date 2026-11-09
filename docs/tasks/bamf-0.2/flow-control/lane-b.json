@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "4bfcbd5a9aaa22a1bc2bca4c7a64ec203df07044",
-  "updated_at": "2026-11-09T05:43:34Z",
+  "observed_unified": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
+  "updated_at": "2026-11-09T06:11:42Z",
   "exception": null,
   "items": [
     {
@@ -256,12 +256,13 @@
     },
     {
       "issue": 736,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "48315ee7bae3caa7d5ac279128c79217b9178d16",
-      "summary": "B06 source-positive proof paused at organic1029-line compiler structural encounter; canonical C01 already owns106-line wrapper candidate13b67a59. No B06 implementation mutation.",
-      "resume_trigger": "C01#347 canonical compiler structural repair is human-integrated through reviewed unified; resync Lane B once, then build a lawful source-owned normal-frame CLOSURE and public refinement/gradient witness.",
-      "preserved_branch": "codex/bamf02-b-736-refinement-proof-20261103"
+      "pr": 940,
+      "state": "TURNED_IN",
+      "head_sha": "f749a0a1226e975fb01881c6ca6ad2ecfd9799ff",
+      "summary": "B06.3 source-positive verification remediation is turned in as ready PR #940. Pinned-A01 production witness proves exact frame/occurrence/member custody and nonzero gradients through source identity, B03 frame encoding, and B06 refinement on the loss-bearing B11 path. Focused ring 31 pass + 34 subtests; BAMF contracts 43/43 and quality/governance/legacy-trainer/flow gates green; hosted portable-core, portable and semantic-ABI checks passed on semantic head f749a0a1. ADR-125/127 leave aggregate pinned EGM with parent #454; human merge remains external.",
+      "resume_trigger": "Human review/merge PR #940 into codex/bamf-unified-base-20261028. Parent #454 then consumes the remediation and owns aggregate merge-readiness EGM.",
+      "preserved_branch": "codex/736-b06-source-positive-20261109",
+      "head_sha_role": "semantic/test proof head; subsequent TURNED_IN bookkeeping is flow-control-only and reuses f749a0a1 proof under ADR-129"
     },
     {
       "issue": 783,
@@ -386,6 +387,15 @@
       "summary": "Scoped B10 request-disposition owner is turned in as ready PR #935 after current-unified qualification and fresh independent PASS 0 Blockers / 0 Majors / 0 Nits. C04 TaskGoal yields ORDINARY / EXPLICIT_MEMBER / UNRESOLVED_NESTED without caller booleans; B06/B11 composition remains downstream #471 work.",
       "resume_trigger": "Human review/merge PR #935 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
       "preserved_branch": "codex/367-b10-refinement-disposition-20261107"
+    },
+    {
+      "issue": 471,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
+      "summary": "B11.1 composition leaf activated after reviewed integration of A05/A13 prefix authority (#936), B10/C04 request disposition (#935), C05/A05 evaluation source custody (#937), and accepted run_seed/visit transport. Lane branch is exactly current reviewed unified; implementation is limited to canonical B06.2 selection -> B06.3 local refinement -> typed readout and existing backend dispatch obligations.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-neural"
     }
   ]
 }

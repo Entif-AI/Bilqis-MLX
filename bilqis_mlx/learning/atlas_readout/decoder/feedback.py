@@ -29,8 +29,7 @@ def occurrence_vector(occurrence):
     return mx.array(values)
 
 
-def role_vector(decision,semantics,parameters):
-    identifier=decision.role_id if decision.role_id is not None else 'NONE'
+def role_id_vector(identifier,semantics,parameters):
     rows=dict(semantics.features.role_map)
     if identifier not in rows:
         invalid()
@@ -40,3 +39,8 @@ def role_vector(decision,semantics,parameters):
     vector=_factor_vector(parameters['features.role'],row,overflow)
     return mx.sigmoid(parameters['features.gates'][FactorGate.ROLE])*(
         vector@parameters['features.project_role'].T)
+
+
+def role_vector(decision,semantics,parameters):
+    identifier=decision.role_id if decision.role_id is not None else 'NONE'
+    return role_id_vector(identifier,semantics,parameters)

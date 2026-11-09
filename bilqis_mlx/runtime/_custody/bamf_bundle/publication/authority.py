@@ -7,7 +7,8 @@ from pathlib import Path
 from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
-    ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
+    ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, _require_issued_binding,
+    candidate_identity_digest,
 )
 
 from ..atlas_admission import (
@@ -34,6 +35,8 @@ def require_acceptance(
         invalid("BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED")
     if type(acceptance) is not AcceptedCandidateBinding:
         invalid("BAMF_GENERATION_ACCEPTANCE_REQUIRED")
+    _require_issued_binding(acceptance)
+    acceptance.__post_init__()
     if (acceptance.schema_version != ACCEPTANCE_SCHEMA
             or acceptance.run_id != candidate.run_id
             or acceptance.generation != candidate.generation

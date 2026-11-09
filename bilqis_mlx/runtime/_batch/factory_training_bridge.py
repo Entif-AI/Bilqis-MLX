@@ -29,7 +29,9 @@ from bilqis_mlx.semantics.frame_schema import SourceSpan
 from bilqis_mlx.semantics.released_frame_schemas import (
     _load_pinned_released_frame_schemas,
 )
-from bilqis_mlx.source_adapters.atoms.admission import public_formal_atom_context
+from bilqis_mlx.source_adapters.atoms.admission import (
+    authorize_public_formal_prefix, public_formal_atom_context,
+)
 from bilqis_mlx.source_adapters.atoms.authority import canonical_graph_for
 
 from .atlas_training_adapter import compile_training_batch
@@ -120,6 +122,8 @@ def _bind_b11_rows(source_context, candidate, authenticated, training, source_ro
         approved_config = (item.config if item.projection is None
                            else replace(item.config, approved=item.projection))
         prefix = training.rows[index].model_input.prefix
+        approved_config = authorize_public_formal_prefix(
+            item.ast, prefix, approved_config)
         compiled_frame_rows = CompiledFrameRows(
             (prefix,), (prefix.positions,), ((True,) * len(prefix.positions),))
         if item.projection is None:
