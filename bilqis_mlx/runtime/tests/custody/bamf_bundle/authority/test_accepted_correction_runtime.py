@@ -245,6 +245,38 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
                 lambda current, event, source_authority: current,
             )
 
+    def test_runtime_reset_retires_live_accepted_owner(self):
+        case = source_owned_temporal_case()
+        direct = ArtifactNode(
+            "frame:reset-owner", ArtifactKind.PACKED_FRAME, "e" * 64, True,
+            (DependencyRef(
+                DependencyKind.TIME,
+                "time:asof:context:" + case.previous.digest),),
+            impact=3, exigency=3,
+        )
+
+        class Owner:
+            def __init__(self):
+                self.index = DependencyIndex.build((direct,))
+
+        owner = Owner()
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+            register_accepted_target(
+                self.run, cache.accepted_manifest_sha256, "TEST_RESET", owner
+            )
+            AcceptedRuntimeHost(self.run).record_context_transition(
+                case.previous, case.contexts)
+
+        _reset_accepted_correction_runtime_for_tests()
+        with self.assertRaises(BilqisError) as rejected:
+            require_pending_corrections(owner, direct.artifact_id)
+        self.assertEqual(
+            rejected.exception.context["reason"],
+            "BAMF_C09_ARTIFACT_OWNER_SUPERSEDED",
+        )
+
     def test_caller_cannot_revive_superseded_accepted_owner(self):
         case = source_owned_temporal_case()
         direct = ArtifactNode(

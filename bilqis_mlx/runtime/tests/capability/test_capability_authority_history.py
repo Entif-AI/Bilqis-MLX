@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.capability_championship import ReplayBinding
 from bilqis_mlx.runtime.accepted_corrections import (
     _reset_accepted_correction_runtime_for_tests, record_accepted_correction,
@@ -57,7 +58,6 @@ class AcceptedProgressionHistoryTests(unittest.TestCase):
             record_accepted_correction(
                 self.run,
                 _event(_ref(DependencyKind.SOURCE, SOURCE_ROW)),
-                AUTHORITY,
             )
         _reset_accepted_correction_runtime_for_tests()
 
@@ -84,15 +84,18 @@ class AcceptedProgressionHistoryTests(unittest.TestCase):
             return evaluate_accepted_progression_authority(
                 self.run, release, "target", target, (), replay, **authorities)
 
-    def test_cold_accepted_correction_history_fails_closed_without_authority(self):
+    def test_cold_accepted_correction_history_uses_accepted_authority_only(self):
         self._publish_support_and_correction()
         gate = self._evaluate()
         self.assertEqual(gate.status, "HELD")
-        self.assertEqual(gate.reason, "CURRENT_CAPABILITY_SUPPORT_REQUIRED")
+        self.assertEqual(gate.reason, "CURRENT_CAPABILITY_SUPPORT_HELD")
 
-        with_authority = self._evaluate(AUTHORITY)
-        self.assertEqual(with_authority.status, "HELD")
-        self.assertEqual(with_authority.reason, "CURRENT_CAPABILITY_SUPPORT_HELD")
+        with self.assertRaises(BilqisError) as rejected:
+            self._evaluate(AUTHORITY)
+        self.assertEqual(
+            rejected.exception.context["reason"],
+            "BAMF_PROGRESSION_CALLER_CORRECTION_AUTHORITY_FORBIDDEN",
+        )
 
 
 if __name__ == "__main__":

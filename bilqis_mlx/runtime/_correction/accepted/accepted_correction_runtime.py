@@ -139,6 +139,9 @@ def _make_runtime_core():
 
     def reset_for_tests() -> None:
         with lock:
+            for retained_runtime in entries.values():
+                for target in retained_runtime.targets.values():
+                    retire_owner(target.owner)
             entries.clear()
 
     return (
