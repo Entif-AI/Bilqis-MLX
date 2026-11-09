@@ -25,6 +25,9 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
     load_accepted_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.records import BamfBundleCandidate, sidecar_records
+from bilqis_mlx.runtime.bamf_bundle.package_import_transition import (
+    is_package_import_transition, validate_package_import_transition,
+)
 from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
 from bilqis_mlx.semantics.domains import contract_digest
 
@@ -111,6 +114,27 @@ def _student_reference(student: CompleteStudent, state: CandidateState | None = 
     }
 
 
+def _package_import_bootstrap_eligible(parent: CompleteStudent, state: Mapping) -> bool:
+    if (parent.generation <= 0
+            or parent.retained_state.optimizer_step != 0
+            or not is_package_import_transition(parent.transition)
+            or state.get("teacher_identity") != parent.provenance.teacher_identity
+            or state.get("teacher_epoch") != parent.provenance.teacher_epoch):
+        return False
+    validate_package_import_transition(parent.transition)
+    return True
+
+
+def _require_current_c03_lineage(parent: CompleteStudent, state: Mapping):
+    epoch = restore_teacher_lineage(state)
+    student = _student_reference(parent)
+    if (epoch.student_sha256 != student["student_sha256"]
+            or state.get("teacher_identity") != parent.provenance.teacher_identity
+            or state.get("teacher_epoch") != parent.provenance.teacher_epoch):
+        invalid("TEACHER_ACCEPTED_GENERATION_DRIFT")
+    return epoch
+
+
 def _c03_projection(parent: CompleteStudent, *, legacy_receipt, adaptation,
                     prior_region) -> TeacherCustodyProjection:
     state = dict(parent.teacher_state)
@@ -118,20 +142,40 @@ def _c03_projection(parent: CompleteStudent, *, legacy_receipt, adaptation,
     if "c03_lineage" in state:
         if any(value is not None for value in (legacy_receipt, adaptation, prior_region)):
             invalid("TEACHER_BOOTSTRAP_ALREADY_COMPLETE")
-        epoch = restore_teacher_lineage(state)
-        if (epoch.student_sha256 != student["student_sha256"]
-                or state.get("teacher_identity") != parent.provenance.teacher_identity
-                or state.get("teacher_epoch") != parent.provenance.teacher_epoch):
-            invalid("TEACHER_ACCEPTED_GENERATION_DRIFT")
+        _require_current_c03_lineage(parent, state)
         return TeacherCustodyProjection(
             state, state["teacher_identity"], state["teacher_epoch"])
-    if (parent.generation != 0 or not isinstance(legacy_receipt, Mapping)
+    can_bootstrap = (
+        parent.generation == 0 or _package_import_bootstrap_eligible(parent, state))
+    if (not can_bootstrap or not isinstance(legacy_receipt, Mapping)
             or not isinstance(adaptation, Mapping)
             or not isinstance(prior_region, str) or not prior_region):
         invalid("TEACHER_BOOTSTRAP_REQUIRED")
     return initialize_teacher_lineage(
         legacy_receipt, student, adaptation, prior_region=prior_region,
         next_seed=state["next_seed"], cursor=state["cursor"])
+
+
+def rebind_package_import_teacher_custody(
+        parent: CompleteStudent, retained_state: CandidateState,
+) -> TeacherCustodyProjection | None:
+    """Rebind mature recipient teacher custody after an accepted package import.
+
+    A pre-bootstrap recipient keeps its existing sidecar; _c03_projection
+    performs the narrowly authenticated PACKAGE_IMPORT bootstrap later.
+    """
+    if type(parent) is not CompleteStudent or type(retained_state) is not CandidateState:
+        invalid("TEACHER_STUDENT_BINDING_INVALID")
+    state = dict(parent.teacher_state)
+    if "c03_lineage" not in state:
+        return None
+    _require_current_c03_lineage(parent, state)
+    student = _student_reference(parent, retained_state)
+    next_epoch = bind_next_teacher_epoch(
+        state, student, bank_identity=_bank_identity(parent),
+        plasticity_identity=_plasticity_identity(retained_state))
+    return advance_teacher_lineage(
+        state, next_epoch, next_seed=state["next_seed"], cursor=state["cursor"])
 
 
 def _selection_projection(
@@ -253,5 +297,5 @@ def derive_c03_successor_bundle(
 
 __all__ = (
     "BoundTeacherVisit", "select_accepted_teacher_visit",
-    "derive_c03_successor_bundle",
+    "derive_c03_successor_bundle", "rebind_package_import_teacher_custody",
 )

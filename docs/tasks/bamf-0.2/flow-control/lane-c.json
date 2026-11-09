@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "f8f4bbafaa87056bda8665599f81c1c5284dcfd0",
-  "updated_at": "2026-11-09T22:13:59Z",
+  "observed_unified": "039fbcab999e290dcb3dcd9722924678a460bc4a",
+  "updated_at": "2026-11-09T23:31:40Z",
   "exception": null,
   "items": [
     {
@@ -76,16 +76,26 @@
     },
     {
       "issue": 526,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "1d2564bdb00cd670dd1fe52bcb33d73f21dc6693",
-      "head_sha_role": "latest semantic implementation/proof head after current-unified sync; any following evidence/flow commit is docs-only but must be included in final exact-head qualification",
-      "summary": "#718/#526 consumed current reviewed unified 6b085f87 and all dependency remediations. Historical fresh EGM failures remain preserved: f31a8a19 failed 0B/2M on exact-type decision/binding forgery; cb285723 failed because module-global issuer sentinels remained transferable; 327dc0de failed 0B/1M when codebase and authority independently found the legitimate decision issuer imported its validator through the deliberately blocked _capability module alias. Semantic head 1d2564bd uses the canonical Factory owner import while retaining the closure-owned exact-object authority repair. Post-repair focused files are 17/17 and 16/16 PASS; expanded C12/C05/B13 authority/import ring is 76/76 PASS; architecture/docs/governance/smell/base-aware error-control/flow/diff gates are green. Fresh exact-head hosted proof and a completely new EGM family remain required.",
+      "pr": 941,
+      "state": "TURNED_IN",
+      "head_sha": "b60218e821adffff10971d524914b4d03f70786c",
+      "summary": "#718/#526 passed fresh exact-head EGM 0B/0M/0N plus hosted Semantic ABI and base-aware portable verification, then merged through PR #941 as reviewed unified e206ec0e. The accepted owner chain binds current C09/A12 export authority, C05 screening, B12 receiver reset custody and B13 publication. Historical failed candidates remain preserved in the C12.2 evidence record.",
       "resume_trigger": null,
       "closed_pr": 680,
       "preserved_branch": "codex/bamf02-c12-526-exchange-20261101",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Failed; remediations #717/#718"
+      "close_reason": "EGM-Failed; remediations #717/#718",
+      "merged_pr": 941
+    },
+    {
+      "issue": 527,
+      "pr": 946,
+      "state": "TURNED_IN",
+      "head_sha": "3aa81f18dba338b79eff935de96e9d94eda75fae",
+      "head_sha_role": "exact semantic implementation/proof head; latest reviewed-unified integration head before final evidence commit is 64351d421edcd9594f1f393322fa15936602fc8c",
+      "summary": "C12.3 repaired the stale leaf design through append-only #527 amendments and fresh pre-implementation EGM re-audit at 0 Blockers / 0 Majors in readiness, codebase-fit and comprehension. Semantic head 3aa81f18 binds package export to exact signed A12/C09 authority through a sealed non-wire grant/token, preserves cognitive-package/v1, prevents direct/cold sender-publication bypass, composes B12/C05/B13 adoption with recipient-owned mature C03 rebinding, and preserves a narrow authenticated pre-bootstrap C03 path. Lane C consumed reviewed unified through 039fbcab conflict-free at integration head 64351d42. Post-merge proof is 68/68 package tests plus 10/10 targeted C03/B09/vocabulary tests, with flow-control and 43/43 contract mirrors green. The earlier semantic-head cross-owner ring remains 33/33. Aggregate quality debt is inherited C07.1b legacy-trainer receipt debt outside #527. Draft PR #946 is awaiting final evidence push/readback before ready-for-review transition.",
+      "resume_trigger": "Human review/merge PR #946 into codex/bamf-unified-base-20261028. Do not self-merge. After accepted integration, verify the reviewed-unified receipt and close #527 if GitHub has not closed it automatically.",
+      "preserved_branch": "codex/bamf02-c-runtime"
     },
     {
       "issue": 490,

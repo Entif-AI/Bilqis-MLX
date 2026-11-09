@@ -1,8 +1,9 @@
 """Synthetic public source snapshots; no production qualification authority."""
 from hashlib import sha256
 from bilqis_mlx.runtime.cognitive_package import (
-    PackageArtifact, PackageBinding, PackageKind, SourceRights, ExportSnapshot,
+    PackageArtifact, PackageBinding, PackageKind, ExportSnapshot,
 )
+from .export_authority_fixtures import grant
 
 
 def digest(value):
@@ -11,15 +12,18 @@ def digest(value):
 
 def snapshot(kind=PackageKind.EXACT_TRANSFORM):
     binding = PackageBinding(*(digest(str(i)) for i in range(7)))
-    artifacts = tuple(PackageArtifact(name, artifact_kind, data) for name, artifact_kind, data in (
-        ('operator', kind, b'x + 1'), ('fixture', PackageKind.FIXTURE, b'1 -> 2'),
-        ('counterexample', PackageKind.COUNTEREXAMPLE, b'0 != 2'),
-        ('behavior', PackageKind.BEHAVIORAL_DIFF, b'gains=1;regressions=0')))
-    rights = SourceRights('public-test-authority', digest('clearance'),
-                         tuple(sorted(a.digest for a in artifacts)), (), ())
+    artifacts = tuple(
+        PackageArtifact(name, artifact_kind, data)
+        for name, artifact_kind, data in (
+            ('operator', kind, b'x + 1'),
+            ('fixture', PackageKind.FIXTURE, b'1 -> 2'),
+            ('counterexample', PackageKind.COUNTEREXAMPLE, b'0 != 2'),
+            ('behavior', PackageKind.BEHAVIORAL_DIFF, b'gains=1;regressions=0'),
+        )
+    )
     source = ExportSnapshot('successor-test-generation', 'increment-signature', binding,
                             'exact-increment/v1', artifacts, 1024, 2048)
-    return source, rights
+    return source, grant(source)
 
 
 class PackageAssertions:

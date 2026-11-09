@@ -24,8 +24,8 @@ from bilqis_mlx.runtime.atlas_revalidation import (
 )
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
 from bilqis_mlx.runtime.cognitive_package import (
-    DeltaSlice, PackageArtifact, PackageBinding, PackageKind, ReceiverTensor, SourceRights,
-    apply_plastic_delta, encode_plastic_delta, export_capability,
+    DeltaSlice, PackageArtifact, PackageBinding, PackageKind, ReceiverTensor,
+    apply_plastic_delta, authorize_public_export, encode_plastic_delta, export_capability,
     publish_screened_delta_import, receiver_parameter_schema_digest, receiver_weight_digest,
 )
 from bilqis_mlx.runtime.cognitive_package.delta import _issue_screened, _package_transaction
@@ -143,8 +143,9 @@ class AdoptionHarness(TestCase):
         source = replace(source, binding=self.binding, artifacts=(artifact,) + source.artifacts[1:])
         artifacts = tuple(sorted(item.digest for item in source.artifacts))
         receipt = _receipt(self.selection, self.frontier, artifacts)
-        rights = SourceRights(OWNER, receipt.clearance_sha256, artifacts, (), ())
-        return export_capability(source, source.signature, rights), receipt
+        grant = authorize_public_export(
+            source, receipt, self.selection, self.frontier, self.registry)
+        return export_capability(source, source.signature, grant), receipt
 
     def screened(self, *, accepted=True):
         package, receipt = self.package_and_clearance()

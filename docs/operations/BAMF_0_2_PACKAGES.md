@@ -2,10 +2,25 @@
 
 C12.1 / #525 provides the portable manifest boundary under
 `bilqis_mlx.runtime.cognitive_package`. C12.2 adds local exchange, disposable delta
-screening and the accepted-import candidate. Parent #526/#718 still owns final EGM
-and human integration.
+screening and the accepted-import candidate. C12.3 / #527 hardens the public-export
+authority boundary and composes package import with C03 teacher custody.
 
-`export_capability(snapshot, signature, rights)` exports a single semantic
+`authorize_public_export(...)` first binds an immutable `ExportSnapshot` to the
+current A12/C09 source authority. It requires the source-owner-signed
+`ExportClearanceReceipt`, exact Atlas selection, current source frontier and current
+`SourceAuthorityRegistry`. The receipt's exact export digest set must equal the
+snapshot artifact digest set.
+
+C12 derives public classification from the already-typed package role after that
+A12 authorization. `FIXTURE` and `COUNTEREXAMPLE` project to `PUBLIC_FIXTURE`;
+`PROCEDURE`, `EXACT_TRANSFORM`, `ADAPTER_DELTA`, `WEIGHT_DELTA` and
+`BEHAVIORAL_DIFF` project to `PUBLIC_DERIVED`. The classification is descriptive,
+not a new rights regime: exact digest membership in the signed A12 export set is
+the authority. Upstream `PRIVATE_REAL` material cannot enter that set and
+`UNCLASSIFIED` material has no positive export authorization.
+
+The resulting `PublicExportGrant` is sealed, process-local and non-portable.
+`export_capability(snapshot, signature, grant)` exports a single semantic
 signature from an immutable `ExportSnapshot`. The snapshot identifies its source
 generation, exact operator, base weights, topology, parameter schema, semantic
 release, active semantic set, factor map and motif key map. Every identity digest
@@ -23,6 +38,11 @@ adoption right. `publish_screened_delta_import(...)` requires an A12
 host-provisioned source-authority registry, binds it to the live A12 selection and
 source frontier, and requires the package `SourceRights` to be its exact portable
 projection. Embedded rights or matching caller fields cannot authorize adoption.
+Neither `PackageArtifact` nor `cognitive-package/v1` carries source classification.
+The sealed grant and sender-publication authority token are deliberately non-wire.
+Cold package readers therefore reconstruct only the portable package and its
+historical `SourceRights`; they cannot reconstruct or invent source-export
+authority and cannot republish the cold-decoded object through the sender API.
 Do not pass private metadata to the public export API.
 
 The accepted-run host provisions C09 registry material independently at
@@ -66,11 +86,15 @@ semantic admissions or retained-learning receipts. Parent #381 remains open.
 
 ## Local directory exchange (C12.2 / #526)
 
-`cognitive_package.exchange.publish_package(package, directory)` publishes canonical
-bytes as `<package.digest>.json` using a flushed/fsynced temporary file, create-only
-atomic link and directory fsync. Retries preserve existing identical bytes and
-mtime. Existing conflicts and symlink entries reject; publication never replaces
-an addressed file. Directories are trusted local paths, not a remote transport.
+`cognitive_package.exchange.publish_package(package, directory)` is the public
+sender-publication boundary. It accepts only the exact in-memory package returned
+by the current authorized `export_capability(...)` path. Directly constructed or
+cold-decoded packages fail before sender publication. Authorized publication writes
+canonical bytes as `<package.digest>.json` using a flushed/fsynced temporary file,
+create-only atomic link and directory fsync. Retries preserve existing identical
+bytes and mtime. Existing conflicts and symlink entries reject; publication never
+replaces an addressed file. Directories are trusted local paths, not a remote
+transport.
 An error after linking, including a directory-fsync failure, can leave a complete
 addressed entry even though the call raises. Retry the same package to converge;
 never interpret an exception as proof that no entry exists.
@@ -80,7 +104,9 @@ requires a positive explicit wire-byte limit. It verifies regular-file type,
 bounded raw bytes, exact address digest, canonical package encoding, embedded
 clearance assertions and the existing compatibility plan without writing receiver
 staging. `stage_received_package(inspected, receiver)` performs the durable write
-only after the production operator has validated current accepted-run authority.
+through a private canonical-byte writer only after the production operator has
+validated current accepted-run authority. Receiver staging does not mint a new
+sender token and therefore does not create re-export authority.
 `receive_package(...)` remains the lower-level inspect-then-stage convenience API.
 The returned frozen `StagedExchange` holds the package, plan and receiver path.
 Heterogeneous exact packages receive `TEACHING_ONLY`; incompatible deltas reject
@@ -138,8 +164,23 @@ policy, C05 decision/evidence/policy digests and A12 clearance digest. A public
 `BamfBundleCandidate` cannot self-authorize this transition. Pointer failure leaves
 the prior generation current and retry converges on the immutable staged bundle.
 Cold load preserves the import lineage and reset state, and the next disposable B12
-optimizer step starts from those reset counts and moments. This candidate does not
-close #526/#718 until final exact-head EGM and human integration.
+optimizer step starts from those reset counts and moments.
+
+If the recipient already has mature C03 lineage, accepted package import also
+rebinds that recipient-owned teacher custody to the changed retained student through
+C03's existing `bind_next_teacher_epoch(...)` and `advance_teacher_lineage(...)`.
+The recipient's teacher/strategy knowledge, adaptation authority, replay ancestry,
+seed, cursor and historical last visit are preserved; checkpoint-local grade,
+causal and retirement evidence reset through the normal changed-student binding.
+The package never imports sender teacher state.
+
+If C03 has not bootstrapped yet, package import preserves the pre-bootstrap teacher
+sidecar. C03 may subsequently perform its ordinary bootstrap on a post-import
+generation only when the current transition is an authenticated `PACKAGE_IMPORT`,
+the retained optimizer step is still zero, teacher sidecar identity/epoch still
+match generation provenance, and the ordinary authoritative legacy receipt,
+adaptation and prior-region inputs are supplied. Any intervening optimizer step,
+non-package transition or missing bootstrap authority remains fail-closed.
 
 ## Production receive -> screen -> publish operator
 

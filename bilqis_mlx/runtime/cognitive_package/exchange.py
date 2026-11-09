@@ -7,7 +7,7 @@ import stat
 import tempfile
 
 from .contracts import PackageBinding, digest_string, require
-from .records import CognitivePackage, ImportPlan
+from .records import CognitivePackage, ImportPlan, _require_public_export_authorized
 from .staging import stage_import
 
 
@@ -50,8 +50,8 @@ def _sync_directory(directory):
         os.close(descriptor)
 
 
-def publish_package(package, directory):
-    """Validate before publication; retries never replace an existing entry."""
+def _publish_canonical_package(package, directory):
+    """Create-only canonical writer used after the caller's authority gate."""
     require(type(package) is CognitivePackage, 'invalid cognitive package')
     raw = package.canonical_json.encode('utf-8')
     directory = _directory(directory)
@@ -76,6 +76,12 @@ def publish_package(package, directory):
     return destination
 
 
+def publish_package(package, directory):
+    """Publish only a package issued by the current source-export authority path."""
+    _require_public_export_authorized(package)
+    return _publish_canonical_package(package, directory)
+
+
 def inspect_package(sender, package_digest, binding, *, max_wire_bytes):
     """Read and validate package bytes without mutating receiver staging."""
     require(digest_string(package_digest), 'invalid package digest')
@@ -98,7 +104,7 @@ def inspect_package(sender, package_digest, binding, *, max_wire_bytes):
 def stage_received_package(inspected, receiver):
     """Durably stage one already inspected package."""
     require(type(inspected) is InspectedExchange, 'inspected package required')
-    path = publish_package(inspected.package, receiver)
+    path = _publish_canonical_package(inspected.package, receiver)
     return StagedExchange(inspected.package, inspected.plan, path)
 
 
