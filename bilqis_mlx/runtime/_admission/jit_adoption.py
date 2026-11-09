@@ -127,6 +127,48 @@ def _authenticate_native_staged_candidate(
     return candidate
 
 
+def _accepted_native_retry(
+        run_dir: Path, candidate, *, candidate_identity: str,
+        parent_feature: str, staging_digest: str, atlas_lease,
+        proposal, selected):
+    """Return an exact previously published C07 pointer, or None for first publish."""
+    from dataclasses import fields
+    from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
+        accepted_binding_for_manifest, accepted_generation,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
+        ParsedAtlasAdmissionBinding,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.records import BamfBundleCandidate
+    from bilqis_mlx.semantics.domains import contract_digest
+
+    pointer, accepted = accepted_generation(run_dir / "bamf-state.json")
+    if accepted.generation < candidate.generation:
+        return None
+    if accepted.generation != candidate.generation:
+        _invalid("BAMF_ATLAS_NATIVE_RETRY_DRIFT")
+    if (type(candidate) is not BamfBundleCandidate
+            or any(getattr(accepted, item.name) != getattr(candidate, item.name)
+                   for item in fields(BamfBundleCandidate))
+            or candidate_identity_digest(accepted.retained_state) != candidate_identity):
+        _invalid("BAMF_ATLAS_NATIVE_RETRY_DRIFT")
+    binding = accepted_binding_for_manifest(
+        run_dir, pointer["manifest_sha256"], accepted,
+        expected_acceptance_sha256=pointer["acceptance_sha256"])
+    if (not isinstance(binding, ParsedAtlasAdmissionBinding)
+            or binding.candidate_identity_sha256 != candidate_identity
+            or binding.parent_feature_receipt_sha256 != parent_feature
+            or binding.staging_receipt_sha256 != staging_digest
+            or binding.lease_sha256 != atlas_lease.digest()
+            or binding.source_approval_sha256
+            != contract_digest(atlas_lease.source_approval)
+            or binding.proposal_sha256 != proposal.proposal_sha256
+            or binding.factory_release_sha256 != selected.successor.release_sha256):
+        _invalid("BAMF_ATLAS_NATIVE_RETRY_DRIFT")
+    return pointer
+
+
 @dataclass(frozen=True)
 class _PreparedSuccessorRuntime:
     """The one mutable learner lane as immutable executor inputs.
@@ -158,7 +200,8 @@ class _PreparedSuccessorRuntime:
 
 
 def _publish_native_staged_candidate(
-        runtime, selected, proposal, native_staged, atlas_lease, atlas_registry):
+        runtime, selected, proposal, native_staged, atlas_lease,
+        source_authority):
     """Publish the exact A02 state after C07 and B13 authority replay."""
     from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_lease
     from bilqis_mlx.runtime.bamf_bundle import (
@@ -181,14 +224,20 @@ def _publish_native_staged_candidate(
             or not _sha(staging_digest)):
         _invalid("BAMF_ATLAS_NATIVE_STAGING_ARGUMENT_INVALID")
 
+    persisted = read_accepted_atlas_lease(
+        runtime.run_dir, source_authority=source_authority)
+    if persisted is None or persisted != atlas_lease:
+        _invalid("BAMF_ATLAS_PERSISTED_LEASE_REQUIRED")
+    retry_pointer = _accepted_native_retry(
+        runtime.run_dir, candidate, candidate_identity=candidate_identity,
+        parent_feature=parent_feature, staging_digest=staging_digest,
+        atlas_lease=atlas_lease, proposal=proposal, selected=selected)
+    if retry_pointer is not None:
+        return retry_pointer
     candidate = _authenticate_native_staged_candidate(
         runtime.run_dir, candidate,
         expected_candidate_identity_sha256=candidate_identity,
         expected_parent_feature_receipt_sha256=parent_feature)
-    persisted = read_accepted_atlas_lease(
-        runtime.run_dir, registry=atlas_registry)
-    if persisted is None or persisted != atlas_lease:
-        _invalid("BAMF_ATLAS_PERSISTED_LEASE_REQUIRED")
     parent, _parent_manifest = load_bamf_generation_authority(
         runtime.run_dir / "bamf-state.json")
     binding = _issue_atlas_admission_binding(
@@ -208,7 +257,7 @@ def _publish_native_staged_candidate(
 def _execute_prepared_successor_adoption(
         runtime: _PreparedSuccessorRuntime, *, frontier, current, ledger, plan,
         checkpoint, proposal, staged, source_registry, answer_registry,
-        native_staged=None, atlas_lease=None, atlas_registry=None):
+        native_staged=None, atlas_lease=None, source_authority=None):
     """Freshly revalidate then enter the existing atomic prepared-successor owner.
 
     This is deliberately a concrete owner, not a caller callback.  It cannot
@@ -234,13 +283,13 @@ def _execute_prepared_successor_adoption(
             or school.current_student != checkpoint):
         _invalid("BAMF_ATLAS_RUNTIME_CONTEXT_CHANGED")
 
-    native_inputs = (native_staged, atlas_lease, atlas_registry)
+    native_inputs = (native_staged, atlas_lease, source_authority)
     if any(value is not None for value in native_inputs):
         if any(value is None for value in native_inputs):
             _invalid("BAMF_ATLAS_NATIVE_ADOPTION_ARGUMENT_INVALID")
         pointer = _publish_native_staged_candidate(
             runtime, selected, proposal, native_staged, atlas_lease,
-            atlas_registry)
+            source_authority)
         return replace(runtime, native_pointer=pointer)
 
     parameters, optimizer, graph, receipt, course = (

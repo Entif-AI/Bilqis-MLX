@@ -110,16 +110,34 @@ class AtlasAdmissionBindingTests(unittest.TestCase):
             parent.run_identity))
         with tempfile.TemporaryDirectory() as temporary, patch(
                 "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
-                return_value=(parent, "a" * 64)):
+                return_value=(parent, "a" * 64)), patch(
+                "bilqis_mlx.runtime.atlas_admission._accepted_source_registry",
+                return_value=_REGISTRY):
             root = Path(temporary)
-            persist_accepted_atlas_lease(root, lease, registry=_REGISTRY)
+            authority = object()
+            persist_accepted_atlas_lease(
+                root, lease, source_authority=authority)
             self.assertEqual(read_accepted_atlas_lease(
-                root, registry=_REGISTRY), lease)
+                root, source_authority=authority), lease)
             with self.assertRaises(BilqisError):
                 persist_accepted_atlas_lease(
                     root, replace(lease, run_identity=replace(
                         lease.run_identity, lineage_id="wrong-run")),
-                    registry=_REGISTRY)
+                    source_authority=authority)
+
+    def test_production_lease_rejects_raw_caller_source_registry(self):
+        parent, _staged = self._parent_and_candidate()
+        lease = replace(_lease(), run_identity=_accepted_lease_run_identity(
+            parent.run_identity))
+        with tempfile.TemporaryDirectory() as temporary, patch(
+                "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
+                return_value=(parent, "a" * 64)):
+            with self.assertRaises(BilqisError) as failure:
+                persist_accepted_atlas_lease(
+                    Path(temporary), lease, source_authority=_REGISTRY)
+            self.assertEqual(
+                failure.exception.context["reason"],
+                "BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
 
 
 if __name__ == "__main__":

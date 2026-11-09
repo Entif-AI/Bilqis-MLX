@@ -202,6 +202,8 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
         with self.admitted_boundary(), patch(
                 "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
                 return_value=(parent, "a" * 64)), patch(
+                "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_generation",
+                return_value=({"generation": parent.generation}, parent)), patch(
                 "bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt",
                 return_value=parent_feature), patch(
                 "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_lease",
@@ -216,7 +218,7 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
                 proposal=proposal, staged=(self.staged,),
                 source_registry=fixture.registry, answer_registry=fixture.answers,
                 native_staged=native_staged, atlas_lease=lease,
-                atlas_registry=_REGISTRY)
+                source_authority=object())
 
         published_candidate = publish.call_args.args[1]
         binding = publish.call_args.kwargs["admission"]
@@ -227,6 +229,61 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
                          self.staged.successor.release_sha256)
         self.assertEqual(result.native_pointer, pointer)
         self.assertIs(result.optimizer, self.optimizer)
+
+    def test_native_b13_retry_reuses_exact_already_published_admission(self):
+        from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
+            AtlasAdmissionBinding, _issue_atlas_admission_binding,
+        )
+        from bilqis_mlx.runtime.bamf_bundle.records import CompleteStudent
+        from bilqis_mlx.semantics.domains import contract_digest
+
+        parent, candidate = self._native_parent_and_candidate()
+        accepted = CompleteStudent(**candidate.__dict__)
+        lease = replace(_lease(), run_identity=_accepted_lease_run_identity(
+            parent.run_identity))
+        staging_receipt = SimpleNamespace(
+            candidate_identity_sha256=candidate_identity_digest(candidate.retained_state),
+            parent_feature_receipt_sha256="b" * 64,
+            digest="5" * 64,
+        )
+        native_staged = SimpleNamespace(candidate=candidate, receipt=staging_receipt)
+        plan, ledger, proposal = self._proposal(self.staged)
+        binding = _issue_atlas_admission_binding(
+            candidate, parent, lease_sha256=lease.digest(),
+            source_approval_sha256=contract_digest(lease.source_approval),
+            proposal_sha256=proposal.proposal_sha256,
+            factory_release_sha256=self.staged.successor.release_sha256,
+            staging_receipt_sha256=staging_receipt.digest,
+            parent_feature_receipt_sha256=staging_receipt.parent_feature_receipt_sha256,
+        )
+        historical = AtlasAdmissionBinding.from_record(binding.to_record())
+        pointer = {
+            "schema": "bilqis.mlx.bamf-state/v2",
+            "run_id": candidate.run_id,
+            "generation": candidate.generation,
+            "parent_manifest_sha256": candidate.parent_manifest_sha256,
+            "manifest_sha256": "c" * 64,
+            "acceptance_sha256": binding.digest,
+        }
+        fixture = self.fixture.fixture
+        with self.admitted_boundary(), patch(
+                "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_lease",
+                return_value=lease), patch(
+                "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_generation",
+                return_value=(pointer, accepted)), patch(
+                "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_binding_for_manifest",
+                return_value=historical), patch(
+                "bilqis_mlx.runtime.bamf_bundle.publish_atlas_admission_generation") as publish:
+            result = _execute_prepared_successor_adoption(
+                self._runtime(), frontier=self.frontier, current=self.current,
+                ledger=ledger, plan=plan, checkpoint=self.checkpoint,
+                proposal=proposal, staged=(self.staged,),
+                source_registry=fixture.registry, answer_registry=fixture.answers,
+                native_staged=native_staged, atlas_lease=lease,
+                source_authority=object())
+
+        self.assertEqual(result.native_pointer, pointer)
+        publish.assert_not_called()
 
 
 if __name__ == "__main__":

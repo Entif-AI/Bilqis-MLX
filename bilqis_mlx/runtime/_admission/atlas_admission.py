@@ -125,20 +125,37 @@ def _accepted_run_lease_identity(run_dir):
     return _accepted_lease_run_identity(student.run_identity)
 
 
-def persist_accepted_atlas_lease(run_dir, lease, *, registry):
+def _accepted_source_registry(run_dir, source_authority):
+    """Resolve source verification only through one accepted-run C09 capability."""
+    from bilqis_mlx.runtime.atlas_source_authority import (
+        SourceAuthorityRuntime, require_source_authority_runtime,
+    )
+    if type(source_authority) is not SourceAuthorityRuntime:
+        _invalid('BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID')
+    from bilqis_mlx.runtime.bamf_bundle.admission import (
+        bind_accepted_execution_cache,
+    )
+    cache = bind_accepted_execution_cache(Path(run_dir))
+    require_source_authority_runtime(source_authority, cache)
+    return cache._correction_registry
+
+
+def persist_accepted_atlas_lease(run_dir, lease, *, source_authority):
     """Persist a human lease only after independent accepted-run identity replay."""
     expected = _accepted_run_lease_identity(run_dir)
     if not isinstance(lease, AtlasAdmissionLease) or lease.run_identity != expected:
         _invalid('BAMF_ATLAS_LEASE_RUN_IDENTITY_DRIFT')
+    registry = _accepted_source_registry(run_dir, source_authority)
     with _atlas_lease_lock(run_dir, fixture_authority=False):
         return _persist_atlas_lease_locked(
             run_dir, lease, independently_loaded_run=expected, registry=registry,
             fixture_authority=False)
 
 
-def read_accepted_atlas_lease(run_dir, *, registry):
+def read_accepted_atlas_lease(run_dir, *, source_authority):
     """Read the current production lease only through accepted B13 run identity."""
     expected = _accepted_run_lease_identity(run_dir)
+    registry = _accepted_source_registry(run_dir, source_authority)
     return _read_atlas_lease(
         run_dir, expected, registry=registry, fixture_authority=False)
 
