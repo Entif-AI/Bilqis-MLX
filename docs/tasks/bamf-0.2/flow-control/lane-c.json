@@ -1,10 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "7d9e0e8209e2d077e4fc30f65a3ebf3f29a91f3f",
-  "updated_at": "2026-11-09T03:16:54Z",
+  "observed_unified": "2c26d4aca90f275e1c255aa6a197ab63e0528480",
+  "updated_at": "2026-11-09T04:54:20Z",
   "exception": null,
   "items": [
+    {
+      "issue": 543,
+      "pr": 933,
+      "state": "TURNED_IN",
+      "head_sha": "7b9ec1aaaf031cb32357847f8df25f960527374a",
+      "summary": "C16.1b is turned in as ready PR #933 after consuming reviewed unified 2c26d4ac. Exact reviewed head 7b9ec1aa binds persisted Factory foundation authority, independent A01/A06 Atlas feature authority, B01 topology/extents, explicit AdamW hyperparameters, Factory teacher identity and operator run_seed through B13 generation-zero custody with no neural update. Fresh EGM is 0 Blockers / 0 Majors / 0 Nits; the focused owner/dashboard/source-authority ring is 43/43 PASS; xdist first-student proof is 11 passed + 2 subtests; smell/governance/diff checks are clean. Paired detached premerge comparison found the exact same 28 failure identities on candidate and reviewed unified, with 0 candidate-only failures and 19 additional candidate tests passing.",
+      "resume_trigger": "Human review/merge PR #933 into codex/bamf-unified-base-20261028. Do not self-merge. After accepted integration, verify the reviewed-unified receipt and return downstream C16/C07 consumers to their recorded resume triggers.",
+      "preserved_branch": "codex/543-c16-foundation-20261108"
+    },
     {
       "issue": 516,
       "pr": 915,
