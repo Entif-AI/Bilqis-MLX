@@ -18,7 +18,7 @@ from bilqis_mlx.runtime.bamf_bundle import (
     require_issued_a02_staged_vocabulary_extension,
 )
 from bilqis_mlx.runtime.bamf_bundle._vocabulary_admission_records import (
-    _issue_a02_staged_vocabulary_extension,
+    STAGED_EVENT, _issue_a02_staged_vocabulary_extension,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
 from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
@@ -78,9 +78,27 @@ class A02StagingCapabilityTests(unittest.TestCase):
             _issue_a02_staged_vocabulary_extension(
                 replace(bundle, run_identity=None), receipt)
 
+        bundle = replace(bundle, outbox=({
+            "event": STAGED_EVENT,
+            "staging_receipt": receipt.to_record(),
+        },))
         staged = _issue_a02_staged_vocabulary_extension(bundle, receipt)
         self.assertIs(require_issued_a02_staged_vocabulary_extension(staged), staged)
         self.assertEqual(staged.receipt.digest, receipt.digest)
+
+        for mutated in (
+                replace(bundle, outbox=()),
+                replace(bundle, run_identity=replace(run_identity, run_seed=18))):
+            object.__setattr__(staged, "candidate", mutated)
+            with self.assertRaises(BilqisError):
+                require_issued_a02_staged_vocabulary_extension(staged)
+            object.__setattr__(staged, "candidate", bundle)
+
+        stale_receipt = replace(receipt, parent_feature_receipt_sha256="9" * 64)
+        object.__setattr__(staged, "receipt", stale_receipt)
+        with self.assertRaises(BilqisError):
+            require_issued_a02_staged_vocabulary_extension(staged)
+        object.__setattr__(staged, "receipt", receipt)
 
         with self.assertRaises(BilqisError):
             _issue_a02_staged_vocabulary_extension(

@@ -5,7 +5,9 @@ from dataclasses import asdict, dataclass, field
 
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 
-from .genesis.records import BamfRunIdentity
+from .genesis.records import (
+    BamfRunIdentity, initial_generation_candidate_identity_digest,
+)
 from .records import BamfBundleCandidate, canonical, invalid, sha
 
 STAGING_SCHEMA = "bilqis.mlx.a02-vocabulary-staging-receipt/v1"
@@ -17,6 +19,24 @@ _ISSUER = object()
 def _hex(value: object) -> bool:
     return (isinstance(value, str) and len(value) == 64
             and all(char in "0123456789abcdef" for char in value))
+
+
+def _candidate_handoff_digest(candidate: BamfBundleCandidate) -> str:
+    """Seal the complete staged candidate, not only its optimizer tensors."""
+    return sha(canonical({
+        "authority_sha256": initial_generation_candidate_identity_digest(candidate),
+        "outbox": candidate.outbox,
+    }))
+
+
+def _has_exact_staging_receipt(
+        candidate: BamfBundleCandidate,
+        receipt: A02VocabularyStagingReceipt) -> bool:
+    events = tuple(
+        event for event in candidate.outbox
+        if isinstance(event, dict) and event.get("event") == STAGED_EVENT)
+    return (len(events) == 1
+            and events[0].get("staging_receipt") == receipt.to_record())
 
 
 @dataclass(frozen=True)
@@ -72,6 +92,8 @@ class A02StagedVocabularyExtension:
     receipt: A02VocabularyStagingReceipt
     schema_version: str = STAGED_EXTENSION_SCHEMA
     _issuance: object = field(init=False, default=None, repr=False, compare=False)
+    _candidate_seal_sha256: str | None = field(
+        init=False, default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         if (getattr(self, "_issuance", None) is not _ISSUER
@@ -91,11 +113,15 @@ class A02StagedVocabularyExtension:
                 or self.candidate.extents.factor_map_digest != self.receipt.feature_sha256
                 or self.candidate.extents.semantic_bank_count
                 != self.receipt.semantic_bank_count
+                or not _has_exact_staging_receipt(self.candidate, self.receipt)
                 or dict(self.candidate.transition) != {
                     "schema": "bilqis.mlx.bamf-generation-transition/v1",
                     "kind": "PARAMETER_EXTENSION",
                     "invalidate_derived_caches": True,
                 }
+                or not _hex(self._candidate_seal_sha256)
+                or self._candidate_seal_sha256
+                != _candidate_handoff_digest(self.candidate)
                 or self.schema_version != STAGED_EXTENSION_SCHEMA):
             invalid("BAMF_A02_STAGED_EXTENSION_INVALID")
 
@@ -109,6 +135,8 @@ def _issue_a02_staged_vocabulary_extension(
     object.__setattr__(staged, "receipt", receipt)
     object.__setattr__(staged, "schema_version", STAGED_EXTENSION_SCHEMA)
     object.__setattr__(staged, "_issuance", _ISSUER)
+    object.__setattr__(staged, "_candidate_seal_sha256",
+                       _candidate_handoff_digest(candidate))
     staged.__post_init__()
     return staged
 
