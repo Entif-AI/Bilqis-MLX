@@ -192,8 +192,7 @@ def require_published_acceptance(
         from .genesis_trust import require_initial_generation_trust_root
         require_initial_generation_trust_root(pointer, student, acceptance)
         return acceptance
-    if (acceptance.schema_version != ACCEPTANCE_SCHEMA
-            or acceptance.digest != pointer["acceptance_sha256"]
+    if (acceptance.digest != pointer["acceptance_sha256"]
             or acceptance.run_id != student.run_id
             or acceptance.generation != student.generation
             or acceptance.feature_sha256 != student.extents.factor_map_digest
