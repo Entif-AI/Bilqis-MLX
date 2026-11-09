@@ -21,7 +21,12 @@ from bilqis_mlx.runtime.atlas_attention import (
     ATTENTION_PARAMETER_NAMES, AttentionScope, ccgqa,
 )
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import (
+    publish_atlas_admission_generation, publish_bamf_generation,
+)
+from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
+    _issue_atlas_admission_binding,
+)
 from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.model_topology_v2 import (
     Initializer, ModelTopologySpecV2, ParameterGroup, ParameterSpec,
@@ -184,6 +189,53 @@ class CacheSeparationTests(unittest.TestCase):
             failure.exception.context["reason"],
             "BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED")
         self.assertEqual(json.loads((run / "bamf-state.json").read_text())["generation"], 0)
+
+    def test_c07_parameter_extension_invalidates_real_cache_and_rebuilds(self):
+        run = self.root / "c07-extension"
+        state = _attention_state()
+        first = self._publish_initial(run, state)
+        with _shape_patch():
+            parent, first_authority, _, _, stale = _cache_for(
+                run, self.hidden, self.ids, self.valid)
+        successor = replace(
+            candidate(parent.retained_state, 1, first["manifest_sha256"]),
+            run_identity=parent.run_identity,
+            implementation_sha256=parent.implementation_sha256,
+            topology=parent.topology,
+            extents=parent.extents,
+            provenance=parent.provenance,
+            semantic_abi=dict(parent.semantic_abi),
+            compiler_features=dict(parent.compiler_features),
+            correction_frontier=dict(parent.correction_frontier),
+            teacher_state=dict(parent.teacher_state),
+            evaluation_contract=dict(parent.evaluation_contract),
+        )
+        extents = replace(successor.extents, active_semantic_digest="8" * 64)
+        successor = replace(
+            successor, extents=extents,
+            semantic_abi={**parent.semantic_abi, "active_set_sha256": "8" * 64},
+            transition={**successor.transition, "kind": "PARAMETER_EXTENSION",
+                        "invalidate_derived_caches": True})
+        with _shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            admission = _issue_atlas_admission_binding(
+                successor, parent,
+                lease_sha256="9" * 64,
+                source_approval_sha256="8" * 64,
+                proposal_sha256="7" * 64,
+                factory_release_sha256="6" * 64,
+                staging_receipt_sha256="5" * 64,
+                parent_feature_receipt_sha256="4" * 64)
+            second = publish_atlas_admission_generation(
+                run, successor, admission=admission, reserve_gib=0.)
+            student, authority, params, _, _ = _cache_for(
+                run, self.hidden, self.ids, self.valid)
+        self.assertEqual(student.transition["kind"], "PARAMETER_EXTENSION")
+        self.assertTrue(student.transition["invalidate_derived_caches"])
+        self.assertEqual(second["generation"], 1)
+        self.assertNotEqual(first_authority.generation_binding, authority.generation_binding)
+        _assert_rebuild_matches(
+            self, params, self.hidden, self.ids, self.valid,
+            authority.generation_binding, stale)
 
     def test_published_model_swap_invalidates_real_cache_and_rebuilds(self):
         run = self.root / "model-swap"

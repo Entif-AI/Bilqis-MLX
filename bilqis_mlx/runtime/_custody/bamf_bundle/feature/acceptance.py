@@ -9,6 +9,9 @@ from bilqis_mlx.learning.atlas_acceptance import (
     ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
 )
 
+from ..atlas_admission import (
+    ATLAS_ADMISSION_SCHEMA, AtlasAdmissionBinding, ParsedAtlasAdmissionBinding,
+)
 from ..codec import load_bamf_bundle
 from ..publication import ACCEPTANCE_DIR, _pointer_lock, _read_pointer
 from ..records import (
@@ -53,19 +56,24 @@ def accepted_binding_for_manifest(
             validate_parsed_initial_generation_binding(
                 student, binding, expected_acceptance_sha256)
             return binding
-        binding = AcceptedCandidateBinding.from_record(record)
+        binding = (
+            AtlasAdmissionBinding.from_record(record)
+            if record.get("schema_version") == ATLAS_ADMISSION_SCHEMA
+            else AcceptedCandidateBinding.from_record(record))
     except (UnicodeDecodeError, json.JSONDecodeError, BilqisError):
         invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
     if (binding.digest != expected_acceptance_sha256
-            or binding.schema_version != ACCEPTANCE_SCHEMA
             or binding.run_id != student.run_id
             or binding.generation != student.generation
             or binding.feature_sha256 != student.extents.factor_map_digest
             or binding.optimizer_step != student.retained_state.optimizer_step
             or binding.candidate_identity_sha256
-            != candidate_identity_digest(student.retained_state)
-            or binding.step_proof_sha256 != tuple(
-                proof.digest for proof in student.retained_state.step_proofs)):
+            != candidate_identity_digest(student.retained_state)):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    if (not isinstance(binding, ParsedAtlasAdmissionBinding)
+            and (binding.schema_version != ACCEPTANCE_SCHEMA
+                 or binding.step_proof_sha256 != tuple(
+                     proof.digest for proof in student.retained_state.step_proofs))):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     parent_anchor = parent_acceptance_anchor_from_manifest(
         run_dir, manifest_sha256)

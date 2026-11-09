@@ -23,6 +23,7 @@ from .feature.acceptance import (
     accepted_binding_for_manifest, accepted_generation,
     parent_acceptance_anchor_from_manifest,
 )
+from .atlas_admission import ParsedAtlasAdmissionBinding
 from .feature.receipt import AcceptedGenerationFeatureReceipt, is_digest
 from .feature.context import (
     AcceptedGenerationFeatureContext, AuthenticatedCandidateFeatureContext,
@@ -88,12 +89,13 @@ def _accepted_feature_context(run_dir: Path, manifest_sha256: str, student, *,
     result_binding = history[0][1]
     if result_binding is None:
         invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
-    for child, _ in reversed(history[:-1]):
+    for child, child_binding in reversed(history[:-1]):
         parent = current
         predecessor = features
         if child.extents.factor_map_digest == parent.extents.factor_map_digest:
             if (child.extents.active_semantic_digest
-                    != parent.extents.active_semantic_digest):
+                    != parent.extents.active_semantic_digest
+                    and not isinstance(child_binding, ParsedAtlasAdmissionBinding)):
                 invalid("BAMF_FEATURE_ACTIVE_SET_DRIFT")
             source = _feature_source(child.compiler_features)
             if (child.compiler_features.get("factor_map_sha256") != features.digest

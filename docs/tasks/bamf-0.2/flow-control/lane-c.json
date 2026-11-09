@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "6b085f875ab781a3771c89916a1e42653f73e882",
-  "updated_at": "2026-11-09T20:37:58Z",
+  "observed_unified": "f8f4bbafaa87056bda8665599f81c1c5284dcfd0",
+  "updated_at": "2026-11-09T22:13:59Z",
   "exception": null,
   "items": [
     {
@@ -222,6 +222,15 @@
       "summary": "Scoped C05 evaluation source-custody repair is turned in as ready PR #937 after current-unified qualification and fresh independent PASS 0 Blockers / 0 Majors / 0 Nits. Exact source AST plus A05 partial-visible-forest receipt reach CompiledEncoderInput while current source-context batch registration is preserved.",
       "resume_trigger": "Human review/merge PR #937 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
       "preserved_branch": "codex/378-c05-eval-ast-20261107"
+    },
+    {
+      "issue": 510,
+      "pr": 944,
+      "state": "READY",
+      "head_sha": "04f4fc3f6e63fb316ebb02004ae57f60973dcebf",
+      "preserved_branch": "codex/510-c07-atomic-adoption-20261107",
+      "summary": "C07.1b exact semantic head 04f4fc3f consumes merged A02/#399 through reviewed unified f8f4bbaf and requires the owner-issued A02StagedVocabularyExtension. Native current-Factory authority is derived only from accepted B13 lineage; generic C05/B13 vocabulary growth remains fail-closed. The exact successor Factory artifact is persisted before C07-bound B13 publication; accepted cold Factory replay and exact retry are proven, including B13 custody/outbox normalization and no legacy state.json. Expanded affected ring is 55/55 PASS; composed transaction witness PASS; quality/governance/smell/legacy-trainer/flow/contracts/diff gates are green. Fresh independent Goldfish exact-head review passed 0 Blockers / 0 Majors / 0 Nits and declared READY_FOR_HUMAN_REVIEW.",
+      "resume_trigger": "Human review/merge PR #944 into codex/bamf-unified-base-20261028. Do not self-merge."
     }
   ]
 }
