@@ -210,6 +210,9 @@ def b11_task_goal_proposer(
             or training.source_row_id != authority.source_row_id)))
     if (training_mismatch or plan.generation_binding != authority.generation_binding):
         _invalid("BAMF_C04_B11_TASK_PROPOSER_CUSTODY_MISMATCH")
+    expected_refinement_request = refinement_request_disposition(authority.goal)
+    if plan.refinement_request != expected_refinement_request:
+        _invalid("BAMF_C04_B11_TASK_REFINEMENT_REQUEST_MISMATCH")
     if plan.route_only:
         if plan.decisions != task_goal_route_decisions(authority.goal):
             _invalid("BAMF_C04_B11_TASK_ROUTE_PLAN_MISMATCH")

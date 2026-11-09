@@ -32,6 +32,7 @@ class BamfTrainingAuthority:
     source_row_sha256: str
     source_family_id: str
     episode_id: str
+    visit_id: str
     immediate_dependencies: tuple[DependencyRef, ...]
     _issuance: object = field(init=False, repr=False, compare=False)
 
@@ -47,7 +48,7 @@ class BamfTrainingAuthority:
                            for value in (self.release_sha256,
                                self.generation_binding,
                                self.training_batch_sha256,
-                               self.source_row_sha256))
+                               self.source_row_sha256, self.visit_id))
                 or type(self.immediate_dependencies) is not tuple
                 or not self.immediate_dependencies
                 or any(not isinstance(item, DependencyRef)
@@ -67,6 +68,7 @@ class BamfTrainingAuthority:
             "row_sha256": self.source_row_sha256,
             "source_family": self.source_family_id,
             "episode": self.episode_id,
+            "visit_id": self.visit_id,
             "immediate_dependencies": tuple(
                 (ref.kind.value, ref.key)
                 for ref in self.immediate_dependencies),
@@ -89,6 +91,7 @@ def _issue(batch, source, provenance):
         ("source_row_sha256", provenance.source_row_content_sha256),
         ("source_family_id", provenance.source_family_id),
         ("episode_id", provenance.episode_id),
+        ("visit_id", provenance.visit.visit_id),
         ("immediate_dependencies", provenance.immediate_dependencies),
         ("_issuance", _ISSUER),
     ):
@@ -119,7 +122,7 @@ def extend_training_dependencies(
     for name in (
         "release_sha256", "generation_binding", "training_batch_sha256",
         "delivery_capability", "source_row_id", "source_row_sha256",
-        "source_family_id", "episode_id",
+        "source_family_id", "episode_id", "visit_id",
     ):
         object.__setattr__(extended, name, getattr(authority, name))
     object.__setattr__(extended, "immediate_dependencies", merged)

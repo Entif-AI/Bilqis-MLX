@@ -232,7 +232,9 @@ class BamfCompiledBatch:
         if self.training_authority is not None:
             self.visit_provenance.__post_init__()
             if (self.visit_provenance.capability_id
-                    != self.training_authority.delivery_capability):
+                    != self.training_authority.delivery_capability
+                    or self.visit_provenance.visit_id
+                    != self.training_authority.visit_id):
                 _invalid("B11_VISIT_PROVENANCE_CAPABILITY_MISMATCH")
             row = self.compiled.compiled.rows[0]
             frame_nodes = self.compiled.packed_frame_artifact_owner.require_row(row)
