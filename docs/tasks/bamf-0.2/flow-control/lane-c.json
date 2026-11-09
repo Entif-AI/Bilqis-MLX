@@ -192,6 +192,15 @@
       "preserved_branch": "codex/bamf02-c-829-local-handoff-20261104",
       "summary": "Human-authorized EGM round 6 accepted; semantic repair 94d5763d with 21/21 focused proof. Synced reviewed unified 9301e41e without semantic implementation/test change and opened ready PR #908 from sync head 246e7ea3.",
       "resume_trigger": null
+    },
+    {
+      "issue": 905,
+      "pr": 934,
+      "state": "TURNED_IN",
+      "head_sha": "51110dedd4588e4238f749dab05e40b10357651a",
+      "summary": "C02.5 consumed reviewed unified 2c26d4ac exactly once; fresh scoped EGM passed 0 Blockers / 0 Majors / 0 Nits. Mechanical premerge compatibility closed 20 candidate-only fixture errors, and the remaining 28 failure identities reproduce exactly on reviewed unified with zero candidate-only residual failures. Ready PR #934 is turned in for human review.",
+      "resume_trigger": "Human review/merge PR #934 into codex/bamf-unified-base-20261028. Do not self-merge.",
+      "preserved_branch": "codex/905-c02-5-visit-provenance-20261107"
     }
   ]
 }

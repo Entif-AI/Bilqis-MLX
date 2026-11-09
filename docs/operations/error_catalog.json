@@ -11249,7 +11249,7 @@
       "count": 1,
       "exception": "AssertionError",
       "expression": "'model-input planning entered before A06 authority rejection'",
-      "path": "bilqis_mlx/runtime/tests/batch/test_atlas_training_real_source.py"
+      "path": "bilqis_mlx/runtime/tests/batch/training/test_atlas_training_real_source.py"
     },
     {
       "code_hint": "C05 fixed diagnostic Factory release drift",
