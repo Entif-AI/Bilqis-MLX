@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "e206ec0e957e24823f3136c0f3bffe1fc950013e",
-  "updated_at": "2026-11-09T21:13:04Z",
+  "observed_unified": "6a770f10074df6f4f8889d439f783ad42f5efe63",
+  "updated_at": "2026-11-09T23:09:28Z",
   "exception": null,
   "items": [
     {
@@ -26,6 +26,16 @@
       "preserved_branch": "codex/b09-465-participation-20261101",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; remediation #711"
+    },
+    {
+      "issue": 466,
+      "pr": 945,
+      "state": "ACTIVE",
+      "head_sha": "c1b65c3d15109746d2033473ceff33c611731b50",
+      "summary": "B09.3 #466 implementation and proof are complete at c1b65c3d (production semantics a6e6d3e2) under PR #945. C05 exposes a closure-bound live promotion receipt from immutable State-DAG/B13/Factory evidence; B09 binds exact retained custody and persists a one-way FOUNDATION -> ADAPTIVE transition without neural mutation. Universal B13 publication remains unchanged per the approved owner map. A real B13 accepted-successor publish/cold-load witness now proves exact PlasticityPolicy v2 + ModeTransition sidecar persistence. Local affected suites and repository guards are green; hosted CI and fresh pinned Goldfish implementation EGM remain the final gates before TURNED_IN.",
+      "resume_trigger": "Hosted required checks are green on the current branch and fresh independent pinned Goldfish implementation EGM reviews semantic/test proof head c1b65c3d15109746d2033473ceff33c611731b50 with 0 blockers/majors; then record TURNED_IN. Human merge remains external authority.",
+      "preserved_branch": "codex/466-b09-promotion-transition-20261109",
+      "head_sha_role": "semantic/test proof head; production semantic repair is a6e6d3e23ae9e91bc6ac92cdd7aa4d05345ec11f; subsequent flow-control-only bookkeeping may reuse this proof if no production/test semantics change"
     },
     {
       "issue": 456,
