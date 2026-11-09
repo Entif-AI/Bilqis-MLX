@@ -15,7 +15,10 @@ from bilqis_mlx.semantics.cognitive_dag import DAGNode, TaskGoal
 from bilqis_mlx.semantics.domains import contract_digest
 
 from .capability_evaluation import _invalid
-from .factory_task_authority import FactoryTaskAuthority
+from .factory_task_authority import (
+    FactoryTaskAuthority, bind_factory_task_compiled_batch,
+)
+from .refinement_request import refinement_request_disposition
 
 
 def _operator_id(node: DAGNode) -> str:
@@ -59,9 +62,10 @@ def augment_answer_plan_for_task_goal(
     """Place route selection before the ordinary source-owned answer plan."""
     if type(plan) is not AnswerPlan or type(goal) is not TaskGoal:
         _invalid("BAMF_C04_TASK_GOAL_PLAN_INPUT_INVALID")
+    request = refinement_request_disposition(goal)
     route = task_goal_route_decisions(goal)
     if not route:
-        return plan
+        return replace(plan, refinement_request=request)
     route_ids = tuple(item.decision_id for item in route)
     if len(route) + len(plan.decisions) > plan.maximum_decisions:
         _invalid("BAMF_C04_TASK_GOAL_ROUTE_BUDGET_EXCEEDED")
@@ -69,7 +73,8 @@ def augment_answer_plan_for_task_goal(
         decision,
         depends_on=tuple(dict.fromkeys((*route_ids, *decision.depends_on))),
     ) for decision in plan.decisions)
-    return replace(plan, decisions=(*route, *ordinary))
+    return replace(
+        plan, decisions=(*route, *ordinary), refinement_request=request)
 
 
 def task_goal_route_plan(goal: TaskGoal, compiled_batch, snapshot, generation_binding):
@@ -81,6 +86,7 @@ def task_goal_route_plan(goal: TaskGoal, compiled_batch, snapshot, generation_bi
     return AnswerPlan(
         ROUTE_MODALITY, len(compiled.positions), route, None, snapshot,
         SourceSpan(0, 0), generation_binding,
+        refinement_request=refinement_request_disposition(goal),
     )
 
 
@@ -206,12 +212,16 @@ def b11_task_goal_proposer(
             or training.source_row_id != authority.source_row_id)))
     if (training_mismatch or plan.generation_binding != authority.generation_binding):
         _invalid("BAMF_C04_B11_TASK_PROPOSER_CUSTODY_MISMATCH")
+    expected_refinement_request = refinement_request_disposition(authority.goal)
+    if plan.refinement_request != expected_refinement_request:
+        _invalid("BAMF_C04_B11_TASK_REFINEMENT_REQUEST_MISMATCH")
     if plan.route_only:
         if plan.decisions != task_goal_route_decisions(authority.goal):
             _invalid("BAMF_C04_B11_TASK_ROUTE_PLAN_MISMATCH")
         routed_plan = plan
     else:
         routed_plan = augment_answer_plan_for_task_goal(plan, authority.goal)
+    owned_batch = bind_factory_task_compiled_batch(compiled_batch, authority)
 
     def propose(request: NeuralRequest):
         if (type(request) is not NeuralRequest
@@ -221,7 +231,7 @@ def b11_task_goal_proposer(
                 or request.allowed_operator_ids != authority.goal.allowed_operator_ids):
             _invalid("BAMF_C04_B11_TASK_REQUEST_MISMATCH")
         output = forward_bamf(
-            parameters, compiled_batch, routed_plan,
+            parameters, owned_batch, routed_plan,
             ExecutionMode.INFERENCE, accepted_cache,
         )
         return proposal_from_task_goal_output(authority.goal, request, output)

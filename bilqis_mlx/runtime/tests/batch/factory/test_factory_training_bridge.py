@@ -21,9 +21,13 @@ from bilqis_mlx.runtime.factory_complete_solver import factory_evaluation_instru
 from bilqis_mlx.runtime.factory_task_authority import (
     factory_task_authority, factory_task_training_goal,
 )
+from bilqis_mlx.runtime.refinement_request import refinement_request_disposition
 from bilqis_mlx.runtime.task_goal_readout import (
     b11_task_goal_proposer, task_goal_route_decisions, task_goal_route_plan,
     task_goal_training_targets,
+)
+from bilqis_mlx.semantics.frame_compiler import (
+    prefix_inventory_evidence_digest, prefix_inventory_handle,
 )
 
 from .factory_training_bridge_support import FactoryTrainingBridgeFixture
@@ -91,6 +95,27 @@ class FactoryTrainingBridgeTests(FactoryTrainingBridgeFixture):
         self.assertEqual(
             tuple(call.args[1] for call in register.call_args_list),
             prepared.compiled_rows)
+
+    def test_b11_row_preserves_refinement_owner_inputs(self):
+        _rows, prepared = self.prepare("B.IDBOOLOPS", 37119, 1)
+        training_row = prepared.training_batch.rows[0]
+        compiled = prepared.compiled_rows[0]
+        self.assertIs(compiled.visit_provenance, training_row.provenance.visit)
+
+        prefix = compiled.compiled.compiled.rows[0]
+        config = compiled.compiled.compiler_configs[0]
+        handle = prefix_inventory_handle(prefix.source_instance_id, prefix.visible_end)
+        grant = next(
+            (item for item in config.frontier.grants
+             if item.source_handle == handle),
+            None,
+        )
+        self.assertIsNotNone(grant)
+        self.assertEqual(grant.evidence_digest, prefix_inventory_evidence_digest(prefix))
+
+        authority, plan = self.route_context(compiled)
+        self.assertEqual(
+            plan.refinement_request, refinement_request_disposition(authority.goal))
 
     def test_revalidated_frame_context_cannot_reuse_stale_training_authority(self):
         _rows, prepared = self.prepare("A.IDENTITY", 37101, 2)
