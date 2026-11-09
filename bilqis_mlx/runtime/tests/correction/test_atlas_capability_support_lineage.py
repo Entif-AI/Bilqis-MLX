@@ -16,15 +16,15 @@ from bilqis_mlx.runtime.atlas_capability_support_owner import (
     load_capability_support_owner,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    accept_and_publish,
+    accept_and_publish, derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.capability_support_journal import journal_path, read_journal
 from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
     SOURCE_ROW, TARGET, source_qualified_state,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, provision_source_authority_registry, retention_decision, shape_patch,
-    with_source_authority_registry,
+    provision_source_authority_registry, publish_genesis, retention_decision,
+    shape_patch, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _ref, _sign_event,
@@ -47,11 +47,23 @@ class CapabilitySupportLineageTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish_support(self):
-        parent, transaction, retained, authority = source_qualified_state()
-        provision_source_authority_registry(self.run, AUTHORITY)
-        bundle = with_source_authority_registry(candidate(retained), AUTHORITY)
-        decision = retention_decision(parent=parent, retained=retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            pointer = publish_genesis(self.run)
+            accepted_parent = load_accepted_generation(self.run)
+            parent, transaction, retained, authority = source_qualified_state(
+                accepted_parent.retained_state,
+                extents=accepted_parent.extents,
+                spec=accepted_parent.topology,
+            )
+            provision_source_authority_registry(self.run, AUTHORITY)
+            bundle = derive_successor_bundle(
+                accepted_parent,
+                retained,
+                parent_manifest_sha256=pointer["manifest_sha256"],
+                delivery_events=({"event": "FIXTURE_CAPABILITY_SUPPORT"},),
+            )
+            bundle = with_source_authority_registry(bundle, AUTHORITY)
+            decision = retention_decision(parent=parent, retained=retained)
             published = accept_and_publish(
                 self.run, bundle, retained, decision=decision,
                 feature_sha256=bundle.extents.factor_map_digest,

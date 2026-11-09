@@ -17,7 +17,7 @@ from bilqis_mlx.runtime.accepted_corrections import (
     record_accepted_correction, record_accepted_revalidation,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import correction_record
-from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache,
@@ -25,7 +25,7 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_motif_artifact_owner
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, next_accepted_step, parent_state, shape_patch,
+    candidate, next_accepted_step, parent_state, publish_candidate, shape_patch,
     provision_source_authority_registry, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
@@ -50,8 +50,7 @@ class AcceptedCorrectionReplayTests(unittest.TestCase):
         provision_source_authority_registry(self.run, AUTHORITY)
         source = with_source_authority_registry(source, AUTHORITY)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            pointer = publish_bamf_generation(
-                self.run, source, acceptance=acceptance(source))
+            pointer = publish_candidate(self.run, source)
             return pointer
 
     def _motif_fixture(self):
@@ -83,7 +82,7 @@ class AcceptedCorrectionReplayTests(unittest.TestCase):
 
         with shape_patch():
             parent = load_accepted_generation(self.run)
-        retained = next_accepted_step(parent.retained_state)
+        retained = next_accepted_step(parent.retained_state, parent.extents)
         successor = derive_successor_bundle(
             parent,
             retained,

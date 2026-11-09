@@ -21,14 +21,14 @@ from bilqis_mlx.runtime.accepted_correction_runtime import (
     deliver_accepted_context_invalidation, require_pending_corrections,
 )
 from bilqis_mlx.runtime._atlas_owner_ingress import _route
-from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, provision_source_authority_registry,
-    shape_patch, with_source_authority_registry,
+    candidate, parent_state, provision_source_authority_registry,
+    publish_candidate, shape_patch, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
     source_owned_temporal_case,
@@ -81,8 +81,7 @@ class AcceptedContextOrderingTests(unittest.TestCase):
         provision_source_authority_registry(self.run, AUTHORITY)
         source = with_source_authority_registry(candidate(parent_state()), AUTHORITY)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            publish_bamf_generation(
-                self.run, source, acceptance=acceptance(source))
+            publish_candidate(self.run, source)
             return bind_accepted_execution_cache(self.run)
 
     def _persist_invalidation(self, cache, event):
