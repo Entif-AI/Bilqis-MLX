@@ -258,8 +258,8 @@
       "issue": 736,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "8899f7d2cf0c4c89b992d9fdc72242944d7531c2",
-      "summary": "B06.3 source-positive remediation reactivated after #471/B11.1 human integration. Current work is limited to a real pinned-A01 production witness proving exact source frame/occurrence/member custody and gradient continuity through the B03 encoder into canonical B06.2 -> B06.3 refinement.",
+      "head_sha": "7bae93aad41a3bbfd1fbaec85ddd2f24270798ba",
+      "summary": "B06.3 source-positive production witness is implemented on the current B11 seam with no production-byte change: pinned-A01 Factory training proves exact frame/occurrence/member custody and nonzero gradients through source identity, B03 frame encoding, and B06 refinement. Focused ring 31 pass + 34 subtests; current cheap gates green. Fresh exact-head independent review remains.",
       "resume_trigger": null,
       "preserved_branch": "codex/736-b06-source-positive-20261109"
     },
