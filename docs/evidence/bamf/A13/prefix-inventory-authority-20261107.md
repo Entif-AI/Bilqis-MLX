@@ -120,3 +120,14 @@ Post-repair proof:
 This is `SHARED_CONTRACT / MECHANICAL_PROOF` repair under ADR-127, not a new
 authority or B11 composition. Fresh reinspection of the repaired exact head is
 required before turn-in.
+
+Targeted reinspection of exact remote head
+`c956380f20d3efbec4df7c12831a0a9bce2c4c36` closed the prior Major and returned:
+
+**PASS — 0 Blockers / 0 Majors / 0 Nits.**
+
+The reviewer verified that contract/ranking/policy handle and digest objects are
+all object-identical to the A05 `frame_compiler` owners, and repository search
+finds the authoritative schema/handle/digest definitions only in
+`semantics/_frame_compiler/prefix_inventory.py`. The delta after semantic repair
+`37417f9e...` is docs/flow bookkeeping only.
