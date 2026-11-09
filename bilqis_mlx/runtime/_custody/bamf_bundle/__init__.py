@@ -20,7 +20,6 @@ from ._vocabulary_admission_records import (
     A02StagedVocabularyExtension, A02VocabularyStagingReceipt,
     require_issued_a02_staged_vocabulary_extension,
 )
-from .vocabulary_admission import stage_vocabulary_extension
 from .package_import_transition import PackageImportTransition
 from .source_continuation import continue_source_qualified_motifs_from_bundle
 from .records import (
@@ -38,6 +37,7 @@ _LAZY_EXPORTS = MappingProxyType({
     "issue_initial_foundation_feature_authority": ".genesis.foundation",
     "InitialFactoryFoundationAuthority": ".genesis.origin",
     "issue_initial_factory_foundation_authority": ".genesis.origin",
+    "stage_vocabulary_extension": ".vocabulary_admission",
 })
 
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from contextlib import ExitStack
 from dataclasses import replace
+import json
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -148,7 +149,7 @@ class CacheSeparationTests(unittest.TestCase):
         with _shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             return publish_candidate(run, candidate(state))
 
-    def test_published_parameter_extension_invalidates_real_cache_and_rebuilds(self):
+    def test_generic_parameter_extension_stops_at_c07_boundary(self):
         run = self.root / "extension"
         state = _attention_state()
         first = self._publish_initial(run, state)
@@ -175,18 +176,14 @@ class CacheSeparationTests(unittest.TestCase):
             transition={**successor.transition, "kind": "PARAMETER_EXTENSION",
                         "invalidate_derived_caches": True})
         with _shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            second = _publish(
-                run, successor,
-                parent_state_for_acceptance=parent.retained_state)
-            student, authority, params, _, _ = _cache_for(
-                run, self.hidden, self.ids, self.valid)
-        self.assertEqual(student.transition["kind"], "PARAMETER_EXTENSION")
-        self.assertTrue(student.transition["invalidate_derived_caches"])
-        self.assertEqual(second["generation"], 1)
-        self.assertNotEqual(first_authority.generation_binding, authority.generation_binding)
-        _assert_rebuild_matches(
-            self, params, self.hidden, self.ids, self.valid,
-            authority.generation_binding, stale)
+            with self.assertRaises(BilqisError) as failure:
+                _publish(
+                    run, successor,
+                    parent_state_for_acceptance=parent.retained_state)
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED")
+        self.assertEqual(json.loads((run / "bamf-state.json").read_text())["generation"], 0)
 
     def test_published_model_swap_invalidates_real_cache_and_rebuilds(self):
         run = self.root / "model-swap"

@@ -3,11 +3,6 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
-
-from .genesis.records import (
-    BamfRunIdentity, initial_generation_candidate_identity_digest,
-)
 from .records import BamfBundleCandidate, canonical, invalid, sha
 
 STAGING_SCHEMA = "bilqis.mlx.a02-vocabulary-staging-receipt/v1"
@@ -23,6 +18,8 @@ def _hex(value: object) -> bool:
 
 def _candidate_handoff_digest(candidate: BamfBundleCandidate) -> str:
     """Seal the complete staged candidate, not only its optimizer tensors."""
+    from .genesis.records import initial_generation_candidate_identity_digest
+
     custody = candidate.retained_state.custody
     return sha(canonical({
         "authority_sha256": initial_generation_candidate_identity_digest(candidate),
@@ -98,6 +95,9 @@ class A02StagedVocabularyExtension:
         init=False, default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
+        from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+        from .genesis.records import BamfRunIdentity
+
         if (getattr(self, "_issuance", None) is not _ISSUER
                 or type(self.candidate) is not BamfBundleCandidate
                 or type(self.candidate.run_identity) is not BamfRunIdentity
