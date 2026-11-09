@@ -257,11 +257,11 @@
     {
       "issue": 736,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "48315ee7bae3caa7d5ac279128c79217b9178d16",
-      "summary": "B06 source-positive proof paused at organic1029-line compiler structural encounter; canonical C01 already owns106-line wrapper candidate13b67a59. No B06 implementation mutation.",
-      "resume_trigger": "C01#347 canonical compiler structural repair is human-integrated through reviewed unified; resync Lane B once, then build a lawful source-owned normal-frame CLOSURE and public refinement/gradient witness.",
-      "preserved_branch": "codex/bamf02-b-736-refinement-proof-20261103"
+      "state": "ACTIVE",
+      "head_sha": "8899f7d2cf0c4c89b992d9fdc72242944d7531c2",
+      "summary": "B06.3 source-positive remediation reactivated after #471/B11.1 human integration. Current work is limited to a real pinned-A01 production witness proving exact source frame/occurrence/member custody and gradient continuity through the B03 encoder into canonical B06.2 -> B06.3 refinement.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/736-b06-source-positive-20261109"
     },
     {
       "issue": 783,
