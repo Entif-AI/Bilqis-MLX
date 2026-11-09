@@ -11,6 +11,8 @@ from bilqis_mlx.learning.atlas_candidate import begin_candidate, candidate_step,
 from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
 from bilqis_mlx.runtime.cognitive_package import publish_screened_delta_import
+from bilqis_mlx.runtime.cognitive_package.adoption import _verify_export_clearance
+from bilqis_mlx.runtime.cognitive_package.receiver import _load_current_generation
 from bilqis_mlx.runtime.cognitive_package.tests.adoption_harness import (
     AdoptionHarness, KEY_OWNER, SCOPE_OWNER, _receipt,
 )
@@ -101,6 +103,21 @@ class PackageImportAdoptionTests(AdoptionHarness):
             self.adopt(screened, forged)
         pointer = json.loads((self.run / "bamf-state.json").read_text())
         self.assertEqual(pointer["manifest_sha256"], self.pointer["manifest_sha256"])
+
+    def test_forged_source_rights_do_not_become_a12_authority(self):
+        package, receipt = self.package_and_clearance()
+        forged = replace(
+            package,
+            rights=replace(package.rights, authority_id="fixture:attacker"),
+        )
+        with shape_patch():
+            _, parent = _load_current_generation(self.run)
+
+        with self.assertRaises(BilqisError):
+            _verify_export_clearance(
+                forged, parent, receipt, self.selection, self.frontier,
+                self.source_context(), self.run,
+            )
 
     def test_host_bound_authority_rejects_scope_key_and_stale_frontier_before_publish(self):
         screened, receipt = self.screened()
