@@ -4,7 +4,7 @@ Issue #905. Branch `codex/905-c02-5-visit-provenance-20261107`.
 Reviewed unified consumed for this scoped implementation:
 `bd3657e170c8bdc046a7bb28524c0fb829ca7ce9`.
 
-Status: **IMPLEMENTED_AND_QUALIFIED; REVIEWED_PARENT_INTEGRATION_HELD**.
+Status: **SEMANTICALLY_QUALIFIED; FRESH_FINAL_EGM_PENDING**.
 
 ## Authority boundary
 
@@ -101,6 +101,9 @@ branches are accepted through reviewed integration.
 The recorded integration hold is now satisfied. B13.6/#904 landed through PR #931
 and C03/#376 landed through PR #932; the current reviewed-unified receipt is
 `2c26d4aca90f275e1c255aa6a197ab63e0528480`.
+
+The one required reviewed-unified refresh is committed and remote-exact at
+`b05873bb3ddf2d64c8960ea03ef6052a0d6a8bfa`.
 
 This preserved branch consumed that reviewed unified exactly once. Conflict
 resolution kept current unified's C09 dependency capture and current Factory-test

@@ -179,8 +179,8 @@
       "issue": 905,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "c3d5619e50d98576caaeb324d8ec1de3403026f8",
-      "summary": "C02.5 resumed after reviewed unified consumed B13.6/#904 and C03/#376. Preserved semantic transport remains qualified; current task is dependency-sensitive revalidation and fresh final review only.",
+      "head_sha": "b05873bb3ddf2d64c8960ea03ef6052a0d6a8bfa",
+      "summary": "C02.5 consumed reviewed unified 2c26d4ac with #904/#376 accepted; dependency-sensitive proof and all owned gates are green. Fresh scoped final EGM pending before turn-in.",
       "resume_trigger": null,
       "preserved_branch": "codex/905-c02-5-visit-provenance-20261107"
     }
