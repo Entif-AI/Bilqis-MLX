@@ -1,5 +1,7 @@
 """Split B13.5 acceptance-provenance witnesses."""
 from ._generation_acceptance_support import *
+import bilqis_mlx.learning.atlas_acceptance as acceptance_owner
+import bilqis_mlx.learning.atlas_retention_decision as retention_owner
 import bilqis_mlx.runtime.bamf_bundle.feature_authority as feature_authority
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
 import bilqis_mlx.runtime.bamf_bundle.feature.acceptance as feature_acceptance
@@ -49,6 +51,31 @@ class GenerationAcceptanceAuthorityTests(GenerationAcceptanceFixture, unittest.T
         for name, value in binding._public_record().items():
             object.__setattr__(forged, name, value)
 
+        with self.assertRaises(BilqisError):
+            self.publish(source, acceptance=forged)
+
+    def test_reachable_decision_issuer_token_cannot_authorize_a_forgery(self):
+        source = candidate(parent_state())
+        decision = retention_decision(retained=source.retained_state)
+        forged = object.__new__(CandidateRetentionDecision)
+        for name, value in decision.__dict__.items():
+            object.__setattr__(forged, name, value)
+
+        self.assertFalse(hasattr(retention_owner, "_DECISION_ISSUER"))
+        with self.assertRaises(BilqisError):
+            mint_acceptance_binding(
+                forged, source.retained_state, run_id=source.run_id,
+                generation=source.generation,
+                feature_sha256=source.extents.factor_map_digest)
+
+    def test_reachable_binding_issuer_token_cannot_authorize_a_forgery(self):
+        source = self.source()
+        binding = self.binding(source)
+        forged = object.__new__(AcceptedCandidateBinding)
+        for name, value in binding.__dict__.items():
+            object.__setattr__(forged, name, value)
+
+        self.assertFalse(hasattr(acceptance_owner, "_BINDING_ISSUER"))
         with self.assertRaises(BilqisError):
             self.publish(source, acceptance=forged)
 

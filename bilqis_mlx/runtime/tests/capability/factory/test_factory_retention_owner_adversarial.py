@@ -14,6 +14,7 @@ from bilqis_mlx.runtime.factory_retention_owner import (
     evaluate_factory_retention_candidate,
 )
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import _screen_inputs
+from bilqis_mlx.runtime.capability_retention import Decision, DecisionStatus
 from bilqis_mlx.runtime.tests.capability.factory.retention import factory_retention_target_diagnostic as diagnostic
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_fixed_diagnostic import (
     _optimizer_delta_summary,
@@ -87,14 +88,17 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
         fixed = SimpleNamespace(rows=({"id": "fixed"},), seed=7)
         fresh = Mock(side_effect=AssertionError(
             "foundation acceptance constructed measure-only fresh rows"))
-        decision = SimpleNamespace()
+        decision = Decision(
+            DecisionStatus.ELIGIBLE, "PAIRED_SCREEN_WITHIN_BUDGET",
+            "a" * 64, "b" * 64, "c" * 64, "d" * 64)
 
         with patch.multiple(
                 owner,
                 create=True,
                 _training_exclusions=Mock(return_value=(("trained-family",), ("trained-episode",))),
                 _candidate_from_live_parent=Mock(return_value=(
-                    object(), object(), object(), object())),
+                    SimpleNamespace(retained_state=object()),
+                    SimpleNamespace(retained_state=object()), object(), object())),
                 candidate_identity_digest=Mock(return_value="d" * 64),
                 _owner_seed=Mock(return_value=11),
                 read_current=Mock(return_value={"factory_release_sha256": release_sha}),
@@ -108,12 +112,12 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
                 factory_complete_solver=Mock(side_effect=((object(), "b" * 64),
                                                           (object(), "c" * 64))),
                 evaluate_foundation_fixed_school_candidate=Mock(return_value=decision),
-                _issue_owner_evaluation=Mock(return_value="evaluation"),
         ):
             result = evaluate_factory_retention_candidate(
                 source, candidate, "artifact", target, run_dir=Path("unused"))
 
-        self.assertEqual(result, "evaluation")
+        self.assertIsInstance(result, FactoryRetentionEvaluation)
+        result.__post_init__()
         fresh.assert_not_called()
 
     def test_real_source_family_overlap_fails_closed_across_redraws(self):
@@ -266,6 +270,23 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
     def test_issuer_rejects_foreign_evidence(self):
         with self.assertRaises(Exception):
             issue_factory_retention_decision(object())
+
+    def test_reachable_factory_issuer_token_cannot_mint_live_c05_authority(self):
+        forged = object.__new__(FactoryRetentionEvaluation)
+        for name, value in (
+            ("decision", Decision(
+                DecisionStatus.ELIGIBLE, "PAIRED_SCREEN_WITHIN_BUDGET",
+                "a" * 64, "b" * 64, "c" * 64, "d" * 64)),
+            ("parent_candidate_sha256", "a" * 64),
+            ("candidate_candidate_sha256", "b" * 64),
+        ):
+            object.__setattr__(forged, name, value)
+
+        self.assertFalse(hasattr(owner, "_OWNER_ISSUER"))
+        self.assertFalse(hasattr(owner, "_raw_issue_owner_evaluation"))
+        self.assertFalse(hasattr(owner, "_issue_owner_evaluation"))
+        with self.assertRaises(Exception):
+            issue_factory_retention_decision(forged)
 
     def test_caller_selected_solver_and_policy_remain_fail_closed(self):
         with self.assertRaises(Exception):
