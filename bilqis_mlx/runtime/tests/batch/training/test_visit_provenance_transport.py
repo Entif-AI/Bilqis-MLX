@@ -15,14 +15,15 @@ from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import (
 
 class VisitProvenanceTransportTests(unittest.TestCase):
     @staticmethod
-    def _batch(visit):
+    def _batch(visit, *, capability_id=None):
+        capability_id = visit.capability_id if capability_id is None else capability_id
         provenance = BamfDeliveryProvenance(
-            "row-1", "a" * 64, "source-1", visit.capability_id, None,
+            "row-1", "a" * 64, "source-1", capability_id, None,
             (("policy", "focused"),), 3, 1, None, 42, visit,
             "family-1", "episode-1",
         )
         return _issue_training_batch(
-            "b" * 64, "generation-1", "c" * 64, visit.capability_id,
+            "b" * 64, "generation-1", "c" * 64, capability_id,
             (BamfTrainingRow(None, None, None, provenance),),
         )
 
@@ -41,6 +42,15 @@ class VisitProvenanceTransportTests(unittest.TestCase):
         forged["run_seed"] += 1
         with self.assertRaises(BilqisError):
             BamfVisitProvenance.from_c03_record(forged)
+
+    def test_delivery_rejects_visit_capability_mismatch(self):
+        visit = visit_provenance("A.IDENTITY")
+        with self.assertRaises(BilqisError) as caught:
+            self._batch(visit, capability_id="B.IDBOOLOPS")
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "VISIT_PROVENANCE_CAPABILITY_MISMATCH",
+        )
 
     def test_run_seed_is_not_optimizer_or_episode_alias(self):
         first = visit_provenance("B.IDBOOLOPS", run_seed=17)
