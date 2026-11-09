@@ -105,3 +105,7 @@ operands and nested state only from unresolved nodes consuming prior `RESULT`
 values. Current source custody remains supplied by the existing non-caller-
 constructible `FactoryTaskAuthority`; this branch neither mints a credential nor
 composes B06/B11.
+
+Ready PR **#935** turns this scoped owner repair in to
+`codex/bamf-unified-base-20261028`. Human review/merge remains the integration
+authority; no self-merge is authorized.

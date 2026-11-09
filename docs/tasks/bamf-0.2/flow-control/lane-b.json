@@ -380,11 +380,11 @@
     },
     {
       "issue": 367,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "d4e67cc9",
-      "summary": "Scoped B10 request-disposition integration is qualified on reviewed unified 4bfcbd5a: typed ORDINARY / EXPLICIT_MEMBER / UNRESOLVED_NESTED remains owner-derived from validated TaskGoal with no caller boolean; focused proof and current quality/legacy-trainer/flow/contracts are green. Fresh merge-readiness review pending.",
-      "resume_trigger": null,
+      "pr": 935,
+      "state": "TURNED_IN",
+      "head_sha": "8523823509393f80c6125e61297c486f1d78b7e9",
+      "summary": "Scoped B10 request-disposition owner is turned in as ready PR #935 after current-unified qualification and fresh independent PASS 0 Blockers / 0 Majors / 0 Nits. C04 TaskGoal yields ORDINARY / EXPLICIT_MEMBER / UNRESOLVED_NESTED without caller booleans; B06/B11 composition remains downstream #471 work.",
+      "resume_trigger": "Human review/merge PR #935 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
       "preserved_branch": "codex/367-b10-refinement-disposition-20261107"
     }
   ]
