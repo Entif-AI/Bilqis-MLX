@@ -92,3 +92,29 @@ validators. PR #546's Development section contains
 `closingIssuesReferences` readback returned #411
 and #432. PR receipt comment 6487365093 is present.
 Parent A13 remains open.
+
+## A13 EGM-Mitigation follow-on #906 temporal-authority review
+
+Round 1 reviewed `ee644401d12275c98e454156fd49193e57e5cead` and failed.
+One Blocker found that callers could still choose the temporal task/policy/frontier
+and absolute validity values. One Major found that the real pinned-A01 witness
+skipped because the A01 artifact was not mounted.
+
+Repair `3b80a76c0acafce79a061174554fb8ade0c62618` replaces that API with a
+hash-pinned, opaque `SourceContextTransitionAuthority` issued from the exact A01
+source selection. Direct construction, caller-selected effective time, scope drift,
+and post-issue tampering fail closed. The exact A01 artifact was reconstructed
+deterministically from its accepted conformance bundle and the real-source witness
+ran 3/3 with zero skips.
+
+The same Goldfish reviewer performed the permitted targeted re-audit at exact
+synchronized head `4e3b88262c79771138a3d7d97169394d73581c72`, based on reviewed unified
+`9301e41ef215b9d035449c3260c7cd0f8ee0b5a7`. Verdict: **PASS**, with zero
+remaining Blockers, Majors, Minors, or Nits in scope. Independent reruns were
+source-context 10/10, mounted A01 3/3, and semantics context 25/25. The reviewer
+also verified disposable joined head `40d84d361b06169f51cc45ae33e3d1288e9a4e29` is the exact #906 repair +
+authoritative #752 Lane-C consumer combination and preserves the producer files.
+
+This PASS applies to the A13 EGM-Mitigation follow-on only. It does not create
+a canonical A13.4 leaf, alter the A13.1-A13.3 registry, start #752 H4, authorize
+neural execution, or merge either issue.

@@ -77,6 +77,7 @@ class FactoryCandidateStep:
 
 def _frame_stats(compiled_batch) -> FrameStats:
     row = compiled_batch.compiled.compiled.rows[0]
+    compiled_batch.compiled.packed_frame_artifact_owner.require_row(row)
     closures = tuple(
         position for position in row.positions
         if position.kind is PositionKind.CLOSURE)
@@ -114,53 +115,10 @@ def _resource_plan(prepared, parent, memory_budget):
     return plan_microbatches(rows, parent.topology, memory_budget)
 
 
-def execute_factory_candidate_step(
-    run_dir: Path,
-    source_context,
-    parent: CompleteStudent,
-    atlas_artifact_path: str,
-    feature_artifact_path: str,
-    delivered_rows,
-    *,
-    capability: str,
-    delivery,
-    requested_count: int,
-    source_seed: int,
-    source_each: int,
-    optimizer_step_seed: int,
-    visit_provenance: BamfVisitProvenance,
-    teacher_strategy: dict,
-    teacher_hparams,
-    max_norm: float,
-    observation: FactoryDeliveryObservation,
-    rehearsal_by_id: dict | None = None,
-    memory_budget: MemoryBudget | None = None,
-) -> FactoryCandidateStep:
-    """Compose C02→C08→B10/B11→candidate custody without publishing state.
-
-    B11 currently issues one source-qualified compiled row per gradient witness.
-    C08 planning therefore runs over the complete delivered batch first, but a
-    multi-row or split plan fails closed before neural execution until the C08/B11
-    tree-gradient accumulator owns that one-logical-batch/one-AdamW-step seam.
-    """
-    if (not isinstance(parent, CompleteStudent)
-            or not isinstance(observation, FactoryDeliveryObservation)):
-        _invalid("FACTORY_CANDIDATE_STEP_INPUT_INVALID")
-    start = time.perf_counter()
-    cache = bind_accepted_execution_cache(Path(run_dir))
-    generation = execution_generation_digest(
-        parent.retained_state.optimizer.parameters,
-        spec=parent.topology, extents=parent.extents)
-    if cache.generation_binding != generation:
-        _invalid("FACTORY_CANDIDATE_STEP_GENERATION_DRIFT")
-    prepared = prepare_factory_training_batch(
-        source_context, parent, atlas_artifact_path, feature_artifact_path,
-        delivered_rows, generation, capability=capability, delivery=delivery,
-        requested_count=requested_count, source_seed=source_seed,
-        source_each=source_each, optimizer_step_seed=optimizer_step_seed,
-        visit_provenance=visit_provenance,
-        teacher_strategy=teacher_strategy,
-        rehearsal_by_id=rehearsal_by_id)
+def _execute_prepared_candidate(
+        run_dir, source_context, parent, atlas_artifact_path, delivered_rows, *,
+        capability, teacher_hparams, max_norm, observation, memory_budget,
+        cache, generation, prepared, start) -> FactoryCandidateStep:
     resource_plan = _resource_plan(prepared, parent, memory_budget)
     if (len(prepared.compiled_rows) != 1
             or resource_plan.groups != ((0,),)):
@@ -199,6 +157,61 @@ def execute_factory_candidate_step(
     return FactoryCandidateStep(
         prepared, resource_plan, authority, targets,
         gradient, transaction, cost)
+
+
+def execute_factory_candidate_step(
+    run_dir: Path,
+    source_context,
+    parent: CompleteStudent,
+    atlas_artifact_path: str,
+    feature_artifact_path: str,
+    delivered_rows,
+    *,
+    capability: str,
+    delivery,
+    requested_count: int,
+    source_seed: int,
+    source_each: int,
+    optimizer_step_seed: int,
+    visit_provenance: BamfVisitProvenance,
+    teacher_strategy: dict,
+    teacher_hparams,
+    max_norm: float,
+    observation: FactoryDeliveryObservation,
+    rehearsal_by_id: dict | None = None,
+    memory_budget: MemoryBudget | None = None,
+) -> FactoryCandidateStep:
+    """Compose C02→C08→B10/B11→candidate custody without publishing state.
+
+    B11 currently issues one source-qualified compiled row per gradient witness.
+    C08 planning therefore runs over the complete delivered batch first, but a
+    multi-row or split plan fails closed before neural execution until the C08/B11
+    tree-gradient accumulator owns that one-logical-batch/one-AdamW-step seam.
+    """
+    if (not isinstance(parent, CompleteStudent)
+            or not isinstance(observation, FactoryDeliveryObservation)):
+        _invalid("FACTORY_CANDIDATE_STEP_INPUT_INVALID")
+    source_context.require_accepted_runtime(Path(run_dir))
+    start = time.perf_counter()
+    cache = bind_accepted_execution_cache(Path(run_dir))
+    generation = execution_generation_digest(
+        parent.retained_state.optimizer.parameters,
+        spec=parent.topology, extents=parent.extents)
+    if cache.generation_binding != generation:
+        _invalid("FACTORY_CANDIDATE_STEP_GENERATION_DRIFT")
+    prepared = prepare_factory_training_batch(
+        source_context, parent, atlas_artifact_path, feature_artifact_path,
+        delivered_rows, generation, capability=capability, delivery=delivery,
+        requested_count=requested_count, source_seed=source_seed,
+        source_each=source_each, optimizer_step_seed=optimizer_step_seed,
+        visit_provenance=visit_provenance,
+        teacher_strategy=teacher_strategy,
+        rehearsal_by_id=rehearsal_by_id)
+    return _execute_prepared_candidate(
+        run_dir, source_context, parent, atlas_artifact_path, delivered_rows,
+        capability=capability, teacher_hparams=teacher_hparams,
+        max_norm=max_norm, observation=observation, memory_budget=memory_budget,
+        cache=cache, generation=generation, prepared=prepared, start=start)
 
 
 __all__ = (

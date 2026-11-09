@@ -69,6 +69,7 @@ class SourceBackboneReceiptTests(SourceBackboneTestBase):
         with self.assertRaises(TypeError):
             start_source_backbone_producer(
                 self.compiled, self.parameters, (self.source,), self.schema,
+                self.artifact_owner,
                 group1_motif=object())
 
     def test_producer_owns_h0_and_ordered_group_receipts(self):

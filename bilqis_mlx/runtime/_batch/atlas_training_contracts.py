@@ -10,6 +10,7 @@ from typing import Any
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.semantics.atlas_features import FeatureRow
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyRef
 from bilqis_mlx.semantics.frame_compiler import CompiledFrameBatch
 
 from .atlas_visit_provenance import BamfVisitProvenance
@@ -61,11 +62,18 @@ class BamfDeliveryProvenance:
     visit: BamfVisitProvenance
     source_family_id: str | None = None
     episode_id: str | None = None
+    immediate_dependencies: tuple[DependencyRef, ...] = ()
 
     def __post_init__(self) -> None:
         if (type(self.visit) is not BamfVisitProvenance
                 or self.visit.capability_id != self.capability_id):
             _invalid("VISIT_PROVENANCE_CAPABILITY_MISMATCH")
+        if (type(self.immediate_dependencies) is not tuple
+                or any(not isinstance(item, DependencyRef)
+                       for item in self.immediate_dependencies)
+                or self.immediate_dependencies != tuple(sorted(
+                    set(self.immediate_dependencies)))):
+            _invalid('DELIVERY_PROVENANCE_DEPENDENCIES_INVALID')
 
 
 @dataclass(frozen=True)
@@ -109,11 +117,7 @@ class BamfTrainingBatch:
             'generation_binding': self.generation_binding,
             'delivered_content_sha256': self.delivered_content_sha256,
             'delivery_capability': self.delivery_capability,
-            'rows': tuple((row.provenance.row_id, row.provenance.source_row_content_sha256,
-                           row.provenance.capability_id,
-                           row.provenance.visit.run_identity_sha256,
-                           row.provenance.visit.run_seed,
-                           row.provenance.visit.visit_id)
+            'rows': tuple(_canonical_json_value(row.provenance)
                           for row in self.rows),
         }
         wire = json.dumps(payload, sort_keys=True, separators=(',', ':'))

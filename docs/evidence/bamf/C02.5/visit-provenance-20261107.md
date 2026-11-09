@@ -50,6 +50,12 @@ The run used the previously qualified A01 artifact:
 
 `/Users/emilie/Code/371-c02-complete-20261106/.local/c02-a01-rebuild/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`
 
+Canonical current legacy-trainer adaptation source:
+
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`
+
+Prometheus is historical evidence only and not the current adaptation source.
+
 Detached run directory: `/tmp/bamf905-final-run-c3d5619`.
 The runner emitted a macOS completion notification and did not touch shared learner
 state.
@@ -89,3 +95,63 @@ select #905 for its actual final review/turn-in. Do not sibling-merge #904 or #3
 With this implementation, all four known B06 composition prerequisites now have
 scoped implementation branches. B11/#471 still must not compose them until the owner
 branches are accepted through reviewed integration.
+
+## Reviewed-parent resume and final qualification — 2026-11-08
+
+The recorded integration hold is now satisfied. B13.6/#904 landed through PR #931
+and C03/#376 landed through PR #932; the current reviewed-unified receipt is
+`2c26d4aca90f275e1c255aa6a197ab63e0528480`.
+
+This preserved branch consumed that reviewed unified exactly once. Conflict
+resolution kept current unified's C09 dependency capture and current Factory-test
+ownership/layout while preserving C02.5's exact C03 visit envelope. In particular:
+
+- `BamfDeliveryProvenance` retains both exact `BamfVisitProvenance` and current
+  `immediate_dependencies`;
+- the batch authority digest canonicalizes the complete current provenance record,
+  including the portable C03 visit projection, without serializing private issuer
+  tokens;
+- current Factory bridge fixtures pass a visit record explicitly while retaining
+  current C09 source/policy/rights/time dependencies;
+- the inherited Grade-A proposer fixture again uses the legal balanced `each=2`
+  draw; this is fixture repair only;
+- the touched candidate-step function was split into a small post-prepare owner so
+  the repository's changed-function structure gate remains green without changing
+  execution order or authority;
+- the error-field manual/catalog were regenerated only for the current moved test
+  path.
+
+Dependency-sensitive proof on the resumed tree:
+
+```text
+95 passed, 8 skipped, 16 subtests passed in 167.44s
+```
+
+That ring covers exact visit transport, adapter/authority/compilation/contracts/
+delivery/visibility, real-source authority, the current Factory/B11 bridge and
+candidate retention. The previously red Grade-A proposer witness was rerun alone
+after repair and passed 1/1.
+
+The newer Factory candidate-execution fixture is not used as C02.5 qualification
+because its generation-zero publication setup is already red on exact reviewed
+unified before C02.5 provenance participates. Exact baseline reproduction at
+`2c26d4aca90f275e1c255aa6a197ab63e0528480` fails with
+`BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED` at the old ordinary generation-zero
+publication call. C02.5 does not weaken or repair that B13.6-owned bootstrap gate.
+
+Integration gates after the refresh:
+
+```text
+ERROR_CONTROL_PLANE_OK ... new debt 0
+New changed-file findings: 0
+LEGACY_TRAINER_AUTHORITY_OK mode=static
+DEVELOPMENT_STRUCTURE_CHECK OK violations=0
+GOVERNANCE_INTEGRITY_CHECK OK violations=0
+BAMF_FLOW_CONTROL_OK
+DOCS_CHECK_OK
+git diff --check: PASS
+```
+
+No live learner, durable optimizer update, source promotion or accepted production
+generation was started. The only remaining engineering gate is one genuinely fresh
+scoped #905 turn-in EGM on the exact resumed candidate before PR turn-in.

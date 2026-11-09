@@ -1,0 +1,61 @@
+<!-- BAMF02:WORK-PACKET:B13.6 -->
+<!-- BAMF02:RECURSIVE-CHILD:B13.6 -->
+# B13.6 | Construct and publish authenticated generation-zero run custody
+
+**BAMF-0.2 implementation packet. Lane B.** Full original owner: B13 #372. Direct native parent: B13 #372. This is a bounded implementable child produced by `DECOMPOSE`, with `new_acceptance=false`.
+
+<!-- BAMF02:LANE-BRANCH-LIFECYCLE:B -->
+## Lane branch and integration lifecycle
+
+Use one dedicated issue branch/worktree forked from the current reviewed `origin/codex/bamf-unified-base-20261028`. Do not merge `main` or a sibling lane directly. Final turn-in consumes current reviewed unified, records its SHA, pushes a non-force issue branch, and opens a human-reviewed PR back to the unified branch. This issue authorizes no self-merge and no live persistent learner start.
+
+## Authority and inherited scope
+
+This child owns an existing but unassigned B13/C16 custody obligation. It adds no new product requirement. It inherits:
+
+- B13 #372: persist the complete BAMF generation, reproduce parameters/moments/teacher context/active ABI and the next seed on cold resume, and keep historical readers intact.
+- C16 #382 / C16.1 #541: record the first persistent student's exact topology, operator-selected seed, optimizer state, source/curriculum/teacher identities and correctly bound initial generation before CLI create/resume may become authoritative.
+- B13.1 #478: immutable bundle/pointer publication and accepted-generation custody are the canonical persistence mechanism.
+- B13.4 #481 / B01: the normative parameter census and initializer contracts remain authoritative.
+
+The current production publication code already states that genesis admission is a distinct source/bootstrap gate, but generation zero is still published only by supplying a C05 `AcceptedCandidateBinding`; tests manufacture that token through a disposable retention helper. That test-only retention authority is not a lawful production genesis gate.
+
+## Direct prerequisites
+
+- B13.1 #478 immutable bundle/pointer custody interface.
+- B13.4 #481 / B01 parameter-schema and initializer authority.
+
+Open parent state alone is not a blocker when the required exact interface is already present on reviewed unified; final turn-in must record the actual consumed receipts.
+
+## Exact owned result
+
+Implement the B13-owned generation-zero boundary so a C16 caller can supply already-authorized foundation inputs without becoming the trust root:
+
+1. Define an immutable owner-issued initial-generation/bootstrap binding that is distinct from C05 candidate-retention acceptance. It must bind the exact run lineage, generation `0`, candidate/state identity, topology/extents, source/release/teacher authority, implementation identity and operator-selected `run_seed`.
+2. Persist `run_seed` in B13 accepted generation custody so load/cold-resume reproduces it exactly. Do not reinterpret `run_id`, `episode_id`, or `optimizer_step_seed` as this seed.
+3. Construct the production generation-zero `BamfBundleCandidate` with `parent_manifest_sha256=None`, transition `INITIAL`, B01-shaped parameters, zero native AdamW moments/counts, FOUNDATION plasticity state, exact active semantic ABI, compiler/correction/evaluation/teacher sidecars, and no neural update.
+4. Publish generation zero through the existing B13 bundle/pointer transaction using the new bootstrap binding. Generation `>0` must continue to require the existing C05-issued `AcceptedCandidateBinding`; the new bootstrap token must never authorize a retained successor.
+5. Authenticate readback as `CompleteStudent` and expose enough sealed run-lineage data for B13.2/C16 to prove exact cold resume. Caller-created records, parsed historical records, or package-local credentials grant no live authority.
+6. Preserve the human-run boundary and 100GiB disk reserve. No additional state machine, checkpoint format, or publication pointer is introduced.
+
+## Downstream ownership
+
+C16.1b #543 consumes this B13 boundary to bind the actual admitted Factory foundation, teacher and topology. C16.1a #542 then exposes create/dry-run/resume. B13.2/C03 later derive and persist the true teacher-visit identity from the authenticated run lineage; this child does not mint visit IDs, and no `run_id`/`episode_id`/`optimizer_step_seed` substitution is permitted.
+
+## Proof
+
+Focused literal tests must show:
+
+- generation zero publishes without any C05 retention decision or test-only acceptance helper;
+- generation zero rejects an `AcceptedCandidateBinding` used as a bootstrap substitute and successors reject the bootstrap binding;
+- exact operator `run_seed` survives save/load and a clean-process cold read;
+- wrong seed, source/release/teacher binding, topology/extents, candidate state or implementation identity rejects before pointer mutation;
+- all initial AdamW moments/counts and optimizer step are zero and remain unchanged by dry construction/publication;
+- a second conflicting genesis cannot replace the accepted pointer; idempotent exact retry converges;
+- existing generation `>0` acceptance and historical-v1 behavior remain unchanged.
+
+Run focused software/custody tests first. Any MLX-heavy or plausibly >5-minute proof must use the repository's snapshot-pinned detached `m3-ultra` runner with desktop completion notification; do not poll it. No shared learner or durable neural update is authorized.
+
+## Turn-in
+
+Record consumed unified/dependency SHAs, changed paths, focused test totals, exact remote head, and any remaining authority boundary. Fresh EGM is a merge-readiness gate only; do not spend it on an intermediate checkpoint. Final merge/issue close remains human-owned.

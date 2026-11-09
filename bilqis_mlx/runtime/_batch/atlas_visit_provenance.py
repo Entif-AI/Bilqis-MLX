@@ -14,6 +14,7 @@ from collections.abc import Mapping
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 VISIT_IDENTITY_SCHEMA = "bilqis.bamf.c03-teacher-visit-identity/v1"
+SHA256_HEX_LENGTH = hashlib.sha256().digest_size * 2
 _VISIT_PROVENANCE_ISSUER = object()
 
 
@@ -22,7 +23,7 @@ def _invalid(reason: str) -> None:
 
 
 def _hex(value: object) -> bool:
-    return (isinstance(value, str) and len(value) == 64
+    return (isinstance(value, str) and len(value) == SHA256_HEX_LENGTH
             and all(char in "0123456789abcdef" for char in value))
 
 

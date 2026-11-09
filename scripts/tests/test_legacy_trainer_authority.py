@@ -84,6 +84,17 @@ class LegacyTrainerAuthorityTests(unittest.TestCase):
         receipt.write_text(f"Use {CANONICAL_RUN}, not the Prometheus training run.\n")
         self.assertEqual(validate_static(root), [])
 
+    def test_explicit_no_or_stale_prometheus_reference_is_allowed(self) -> None:
+        for text in (
+            "No Prometheus trainer path is part of this handoff.\n",
+            "The stale Prometheus trainer is not a BAMF activation path.\n",
+        ):
+            with self.subTest(text=text):
+                root = self.make_root()
+                receipt = root / "docs/evidence/bamf/receipt.md"
+                receipt.write_text(text)
+                self.assertEqual(validate_static(root), [])
+
 
 if __name__ == "__main__":
     unittest.main()

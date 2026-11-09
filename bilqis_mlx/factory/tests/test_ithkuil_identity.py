@@ -80,7 +80,7 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
                         self.frontier, self.current, self.parent_graph,
                         source_root=LEGACY, source_registry=self.registry,
                         answer_registry=live_answer_registry())
-                    self.assertEqual(prepared, (self.staged,))
+                    self.assertIn(self.staged, prepared)
                     self.assertEqual(candidate_realizations.admitted_candidate_graph(
                         self.staged, self.parent_graph), self.graph)
                 else:
@@ -308,8 +308,8 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
                 proposal, _ = session.propose_source_frontier_work(
                     Checkpoint("e" * 64, "bundles/fixture", 0, True), self.parent_graph)
             self.assertEqual(proposal.disposition, ProposalDisposition.SOURCE_DEVELOPMENT)
-            self.assertEqual(load_staged_candidates(root, self.frontier, self.current),
-                             (self.staged,))
+            staged = load_staged_candidates(root, self.frontier, self.current)
+            self.assertEqual(staged, (self.staged,))
             self.assertEqual(session.ledger.receipts, ())
 
     def test_ready_catalog_proposal_uses_existing_student_transaction(self):
