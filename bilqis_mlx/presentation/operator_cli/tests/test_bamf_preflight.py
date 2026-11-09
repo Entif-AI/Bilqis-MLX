@@ -1,6 +1,5 @@
-"""Real BAMF CLI configuration inspection stays held, read-only and neural-inert."""
+"""BAMF CLI preflight failures remain read-only and neural-inert."""
 from contextlib import redirect_stderr, redirect_stdout
-import hashlib
 import io
 import json
 from pathlib import Path
@@ -11,6 +10,8 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.cli import main, parse_args
+from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+from bilqis_mlx.semantics.atlas_projection import ATLAS_MANIFEST_SCHEMA, _canonical_bytes
 
 ROOT = Path(__file__).resolve().parents[4]
 TOPOLOGY = ROOT / 'configs/models/bamf-0.2.json'
@@ -23,41 +24,67 @@ class BamfPreflightTests(unittest.TestCase):
             code = main(['train', '--dry-run', '--model-topology', str(TOPOLOGY), *extra])
         return code, output.getvalue(), errors.getvalue()
 
-    def test_actual_v2_dry_run_reports_topology_without_creating_run(self):
+    def test_actual_v2_dry_run_requires_explicit_foundation_inputs_without_creating_run(self):
         with tempfile.TemporaryDirectory() as tmp:
             run = Path(tmp) / 'new'
-            code, output, _ = self.invoke(['--run-dir', str(run), '--source-prefetch-workers', '0'])
-            self.assertEqual(code, 2)
-            report = json.loads(output)
-            self.assertEqual(report['schema'], 'bilqis.bamf.operator-preflight/v1')
-            self.assertEqual(report['result'], 'HELD_PENDING_SOURCE_AND_GENERATION_AUTHORITY')
-            self.assertEqual(report['model_topology']['schema'], 'bilqis.mlx.model-topology/v2')
-            self.assertEqual(report['model_topology']['architecture_id'], 'bamf-atlas-v2')
-            self.assertEqual(report['model_topology']['digest'],
-                             '4ea0a04087596dc243a667ed17138ff0ffb3df8b4339759ddf533cdad7e0bd96')
-            self.assertEqual(report['source_prefetch_workers'], 0)
-            self.assertTrue(report['retention_enabled'])
-            self.assertFalse(report['ready_for_training'])
-            self.assertEqual(report['neural_updates'], 0)
+            code, output, errors = self.invoke([
+                '--run-dir', str(run), '--source-prefetch-workers', '0'])
+            self.assertEqual((code, output), (2, ''))
+            self.assertIn('BAMF_OPERATOR_FOUNDATION_IDENTITY_REQUIRED', errors)
             self.assertFalse(run.exists())
 
-    def test_manifest_is_an_opaque_unqualified_reference_not_a_lease(self):
+    def test_fresh_v2_conflicting_topology_rejects_before_source_or_run_write(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest = root / 'manifest.json'
+            manifest.write_text('{}')
+            forged = ModelTopologySpecV2()
+            object.__setattr__(forged, 'layers', forged.layers + 1)
+            with patch('bilqis_mlx.runtime.topology_lifecycle.topology_from_file',
+                       return_value=forged):
+                code, output, errors = self.invoke([
+                    '--run-dir', str(root / 'new'), '--atlas-release-manifest', str(manifest),
+                    '--run-id', 'new-run', '--run-seed', '5', '--learning-rate', '0.001',
+                    '--adam-beta1', '0.9', '--adam-beta2', '0.95', '--adam-eps', '1e-8',
+                    '--weight-decay', '0.1'])
+            self.assertEqual((code, output), (2, ''))
+            self.assertIn('BAMF_OPERATOR_CREATE_TOPOLOGY_CONFLICT', errors)
+            self.assertEqual(sorted(path.name for path in root.iterdir()), ['manifest.json'])
+
+    def test_unqualified_manifest_is_rejected_without_becoming_authority(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             manifest = root / 'manifest.json'
             raw = b'{"unqualified-source-reference":true}\n'
             manifest.write_bytes(raw)
             before = manifest.stat()
-            code, output, _ = self.invoke(['--run-dir', str(root / 'new'),
-                '--admission-policy', 'atlas-release', '--atlas-release-manifest', str(manifest)])
-            self.assertEqual(code, 2)
-            report = json.loads(output)
-            self.assertEqual(report['admission_policy'], 'atlas-release')
-            self.assertEqual(report['atlas_release_manifest']['sha256'], hashlib.sha256(raw).hexdigest())
-            self.assertEqual(report['atlas_release_manifest']['qualification'], 'NOT_VERIFIED')
+            code, output, errors = self.invoke([
+                '--run-dir', str(root / 'new'), '--atlas-release-manifest', str(manifest),
+                '--run-id', 'dry-run', '--run-seed', '7',
+                '--learning-rate', '0.001', '--adam-beta1', '0.9',
+                '--adam-beta2', '0.95', '--adam-eps', '1e-8', '--weight-decay', '0.1'])
+            self.assertEqual((code, output), (2, ''))
+            self.assertIn('BAMF_OPERATOR_ATLAS_MANIFEST_INVALID', errors)
             self.assertEqual(manifest.read_bytes(), raw)
             self.assertEqual(manifest.stat().st_mtime_ns, before.st_mtime_ns)
             self.assertEqual(sorted(p.name for p in root.iterdir()), ['manifest.json'])
+
+    def test_canonical_but_unpinned_manifest_cannot_mint_source_qualification(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest = root / 'manifest.json'
+            manifest.write_bytes(_canonical_bytes({
+                'schema': ATLAS_MANIFEST_SCHEMA,
+                'release_sha256': '0' * 64,
+            }))
+            code, output, errors = self.invoke([
+                '--run-dir', str(root / 'new'), '--atlas-release-manifest', str(manifest),
+                '--run-id', 'source-pin-test', '--run-seed', '7',
+                '--learning-rate', '0.001', '--adam-beta1', '0.9',
+                '--adam-beta2', '0.95', '--adam-eps', '1e-8', '--weight-decay', '0.1'])
+            self.assertEqual((code, output), (2, ''))
+            self.assertIn('BAMF_OPERATOR_ATLAS_MANIFEST_NOT_SOURCE_PINNED', errors)
+            self.assertFalse((root / 'new').exists())
 
     def test_missing_or_policy_conflicting_manifest_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -104,9 +131,9 @@ class BamfPreflightTests(unittest.TestCase):
             pointer = Path(tmp) / 'bamf-state.json'
             pointer.write_bytes(b'not-yet-qualified-by-B13')
             before = pointer.stat()
-            code, output, _ = self.invoke(['--run-dir', tmp, '--resume'])
-            self.assertEqual(code, 2)
-            self.assertFalse(json.loads(output)['ready_for_training'])
+            code, output, errors = self.invoke(['--run-dir', tmp, '--resume'])
+            self.assertEqual((code, output), (2, ''))
+            self.assertIn('BLOCKED', errors)
             self.assertEqual(pointer.read_bytes(), b'not-yet-qualified-by-B13')
             self.assertEqual(pointer.stat().st_mtime_ns, before.st_mtime_ns)
             code, output, errors = self.invoke(['--run-dir', tmp])
@@ -119,6 +146,8 @@ class BamfPreflightTests(unittest.TestCase):
         self.assertTrue(args.human_run)
         self.assertEqual(args.source_prefetch_workers, 1)
         self.assertEqual(args.atlas_release_manifest, Path('/manifest.json'))
+        self.assertTrue(parse_args(['train', '--admission-policy', 'staged']).admission_policy_explicit)
+        self.assertFalse(parse_args(['train']).admission_policy_explicit)
 
     def test_lease_scope_or_missing_resume_pointer_stays_blocked(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -186,6 +215,7 @@ raise SystemExit(main(['train','--dry-run','--model-topology',sys.argv[2],'--run
                 str(ROOT), str(TOPOLOGY), str(Path(tmp) / 'new')],
                 text=True, capture_output=True, timeout=20)
             self.assertEqual(result.returncode, 2, result.stderr)
-            self.assertEqual(json.loads(result.stdout)['neural_updates'], 0)
+            self.assertEqual(result.stdout, '')
+            self.assertIn('BAMF_OPERATOR_FOUNDATION_IDENTITY_REQUIRED', result.stderr)
             self.assertEqual(snapshot(), before)
             self.assertFalse((root / 'new').exists())

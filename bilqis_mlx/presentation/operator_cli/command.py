@@ -23,6 +23,28 @@ def diagnostics(run_dir: Path):
     return _print_status(audit_saved_run(run_dir))
 
 
+def _bamf_or_topology(args):
+    """Route BAMF v2 before legacy training while preserving C07 early failure."""
+    bamf_pointer = Path(args.run_dir).expanduser() / "bamf-state.json"
+    if ((args.admission_policy != "staged" or args.atlas_admission_scope is not None)
+            and not bamf_pointer.exists() and not bamf_pointer.is_symlink()):
+        from bilqis_mlx.runtime.atlas_admission import validate_atlas_command_request
+        validate_atlas_command_request(args)
+    from bilqis_mlx.runtime.topology_lifecycle import topology_from_file
+    topology = topology_from_file(args.model_topology)
+    from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+    if (args.resume and isinstance(topology, ModelTopologySpecV2)
+            and not bamf_pointer.exists() and not bamf_pointer.is_symlink()):
+        from .bamf_preflight import bamf_preflight
+        _print_status(bamf_preflight(args, topology).to_record())
+        return True, 2, topology
+    if (isinstance(topology, ModelTopologySpecV2)
+            or (args.resume and (bamf_pointer.exists() or bamf_pointer.is_symlink()))):
+        from .bamf_lifecycle import bamf_lifecycle
+        return True, _print_status(bamf_lifecycle(args, topology)), topology
+    return False, None, topology
+
+
 def _main(args):
     trace_path = None
     try:
@@ -31,20 +53,16 @@ def _main(args):
         if args.action=="diagnostics":return diagnostics(args.run_dir)
         if args.action in ("explain", "explain-error"):
             return _explain_code(args.code)
-        from bilqis_mlx.runtime.atlas_admission import validate_atlas_command_request
         _guard_independent_no_retention(args)
-        from bilqis_mlx.runtime.topology_lifecycle import topology_from_file, operator_topology
-        topology = topology_from_file(args.model_topology) if args.dry_run else None
-        from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
-        from .bamf_preflight import bamf_preflight, reject_manifest_request
-        if args.dry_run and isinstance(topology, ModelTopologySpecV2):
-            _print_status(bamf_preflight(args, topology).to_record())
-            return 2
+        handled, result, topology = _bamf_or_topology(args)
+        if handled:
+            return result
+        from bilqis_mlx.runtime.topology_lifecycle import operator_topology
+        from bilqis_mlx.runtime.atlas_admission import validate_atlas_command_request
+        from .bamf_preflight import reject_manifest_request
         if args.atlas_release_manifest is not None:
             reject_manifest_request('release-manifest-requires-held-bamf-v2-inspection')
         validate_atlas_command_request(args)
-        if not args.dry_run:
-            topology = topology_from_file(args.model_topology)
         if topology is not None:
             operator_topology(args.run_dir, resume=args.resume, requested=topology)
         if args.dry_run:
