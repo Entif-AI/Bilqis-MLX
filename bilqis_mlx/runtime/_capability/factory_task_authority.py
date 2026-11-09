@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from dataclasses import replace
 import hashlib
 import json
 
@@ -218,7 +219,21 @@ def factory_task_training_goal(
     return resolved
 
 
+def bind_factory_task_compiled_batch(
+    compiled_batch: BamfCompiledBatch,
+    authority: FactoryTaskAuthority,
+) -> BamfCompiledBatch:
+    """Bind existing C04 source authority to the B11 batch it already owns."""
+    if (type(compiled_batch) is not BamfCompiledBatch
+            or type(authority) is not FactoryTaskAuthority):
+        _invalid("BAMF_C04_B11_TASK_AUTHORITY_BINDING_INVALID")
+    authority.__post_init__()
+    compiled_batch.__post_init__()
+    return replace(compiled_batch, task_authority=authority)
+
+
 __all__ = (
     "FactoryTaskAuthority", "factory_task_authority",
     "factory_task_training_goal",
+    "bind_factory_task_compiled_batch",
 )

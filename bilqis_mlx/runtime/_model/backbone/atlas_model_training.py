@@ -110,6 +110,7 @@ def _bamf_value_and_grad_impl(
             answer_plan,
             ExecutionMode.INFERENCE,
             cache,
+                refinement_training=True,
         )
         execution = loss_bearing_bamf(output, targets, mask)
         holder["execution"] = execution

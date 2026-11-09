@@ -91,7 +91,9 @@ class RefinementPolicyTests(unittest.TestCase):
         early = replace(case.task, causal_prefix_end=8)
         seen = set()
         for index in range(48):
-            args = dict(training=True, visit_id=f"visit:{index}", task=early)
+            args = dict(
+                training=True, run_seed=17,
+                visit_id=f"visit:{index}", task=early)
             a = case.select(frames=case.frames[:8], **args)
             b = case.select(**args)
             self.assertEqual(a, b)
@@ -101,6 +103,11 @@ class RefinementPolicyTests(unittest.TestCase):
             task=early, explicit_member_question=False).selected[0].passes, 0)
         self.assertEqual(case.select(
             task=early, unresolved_nested_query=True).selected[0].passes, 2)
+
+    def test_inference_does_not_require_dummy_run_or_visit_identity(self):
+        case = _case(count=1, target_indices=(0,))
+        selected = case.select(run_seed=None, visit_id=None)
+        self.assertEqual(selected.selected[0].passes, 1)
 
     def test_invalid_inputs_reject(self):
         case = _case(count=1, target_indices=(0,))
