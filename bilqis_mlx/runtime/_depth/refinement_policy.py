@@ -133,7 +133,7 @@ class RefinementSelection:
 
 
 def _sample_passes(
-    run_seed: str, visit_id: str, prediction_boundary: int,
+    run_seed: int, visit_id: str, prediction_boundary: int,
     query_id: str, occurrence_id: str,
 ) -> int:
     # Canonical length-delimited fields prevent ambiguous concatenations.
@@ -155,8 +155,8 @@ def select_prediction_refinements(
     input_generation: str,
     query_id: str,
     requested_roles: tuple[str, ...],
-    run_seed: str,
-    visit_id: str,
+    run_seed: int | None,
+    visit_id: str | None,
     training: bool,
     explicit_member_question: bool,
     unresolved_nested_query: bool,
@@ -176,8 +176,10 @@ def select_prediction_refinements(
             or not isinstance(task_scope, TaskScope)
             or not isinstance(source_frontier, SourceFrontier)
             or not isinstance(policy, ContextPolicy)
-            or not all(_text(item) for item in (
-                input_generation, query_id, run_seed, visit_id))
+            or not all(_text(item) for item in (input_generation, query_id))
+            or (training and (type(run_seed) is not int or run_seed < 0
+                              or not _text(visit_id)))
+            or (not training and (run_seed is not None or visit_id is not None))
             or not isinstance(requested_roles, tuple)
             or any(not _text(role) for role in requested_roles)
             or len(set(requested_roles)) != len(requested_roles)

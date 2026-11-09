@@ -85,6 +85,14 @@ def _ordered_ids(decisions):
     return tuple(done)
 
 
+def _validate_refinement_request(request):
+    if request is None:
+        return
+    from bilqis_mlx.runtime.refinement_request import RefinementRequestDisposition
+    if type(request) is not RefinementRequestDisposition:
+        invalid()
+
+
 @dataclass(frozen=True)
 class AnswerPlan:
     modality_id: str
@@ -96,6 +104,7 @@ class AnswerPlan:
     generation_binding: str
     maximum_decisions: int = MAX_DECISIONS
     schema_version: str = PLAN_SCHEMA
+    refinement_request: object | None = None
 
     def __post_init__(self):
         if (self.schema_version != PLAN_SCHEMA or not _text(self.modality_id)
@@ -130,6 +139,7 @@ class AnswerPlan:
                 invalid()
         for d in self.decisions:
             d.__post_init__()
+        _validate_refinement_request(self.refinement_request)
         _ordered_ids(self.decisions)
         roles = {} if domain is None else {r.role_id: r for r in domain.schema.roles}
         lookup = {d.decision_id: d for d in self.decisions}

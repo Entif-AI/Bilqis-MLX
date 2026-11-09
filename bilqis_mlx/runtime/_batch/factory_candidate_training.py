@@ -18,7 +18,8 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_uninterrupted_candidate_step, bind_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.factory_task_authority import (
-    factory_task_authority, factory_task_training_goal,
+    bind_factory_task_compiled_batch, factory_task_authority,
+    factory_task_training_goal,
 )
 from bilqis_mlx.runtime.model_topology_v2 import bamf_parameter_census
 from bilqis_mlx.runtime.task_goal_readout import (
@@ -126,6 +127,7 @@ def _execute_prepared_candidate(
 
     compiled = prepared.compiled_rows[0]
     authority = factory_task_authority(source_context, compiled)
+    compiled = bind_factory_task_compiled_batch(compiled, authority)
     resolved = factory_task_training_goal(source_context, compiled, authority)
     targets, mask = task_goal_training_targets(authority.goal, resolved)
     feature_context = authenticate_bamf_candidate_feature_context(
