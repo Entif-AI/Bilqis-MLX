@@ -1,12 +1,13 @@
 # B06.3 #454: production ownership reconciliation
 
-Status: **DESIGN_EGM_PASS; RECONCILIATION_ACTIVE; HUMAN_MERGE_PENDING**.
+Status: **DESIGN_EGM_PASS; PR_942_TURNED_IN; HUMAN_MERGE_PENDING**.
 
 Issue: [#454](https://github.com/Entif-AI/Bilqis-MLX/issues/454)  
 Parent: [#365](https://github.com/Entif-AI/Bilqis-MLX/issues/365)  
 Residual registry owner: [#455](https://github.com/Entif-AI/Bilqis-MLX/issues/455)  
 Fresh reconciliation branch: `codex/454-b06-3-reconcile-20261109`  
 Consumed reviewed unified: `e206ec0e957e24823f3136c0f3bffe1fc950013e`
+Human-review PR: [#942](https://github.com/Entif-AI/Bilqis-MLX/pull/942)
 
 ## Current authority
 
@@ -98,7 +99,9 @@ Current branch-local checks after activation and receipt creation:
   or governance-integrity violations.
 - `npm run quality:changed` with base `e206ec0e`: **PASS**. This includes
   structure/governance, zero new changed-file smell findings, legacy-trainer
-  authority plus 7 tests, flow-control validation, and 15 flow-control tests.
+  authority plus 7 tests against canonical source
+  `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`,
+  flow-control validation, and 15 flow-control tests.
 - `git diff --check`: **PASS**.
 
 ## Closure boundary
