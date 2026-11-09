@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "f8f4bbafaa87056bda8665599f81c1c5284dcfd0",
-  "updated_at": "2026-11-09T22:24:39Z",
+  "observed_unified": "6a770f10074df6f4f8889d439f783ad42f5efe63",
+  "updated_at": "2026-11-09T22:46:06Z",
   "exception": null,
   "items": [
     {
@@ -29,12 +29,13 @@
     },
     {
       "issue": 466,
-      "pr": null,
+      "pr": 945,
       "state": "ACTIVE",
-      "head_sha": "f8f4bbafaa87056bda8665599f81c1c5284dcfd0",
-      "summary": "B09.3 #466 is active on a fresh current-unified branch after pinned design EGM PASS 0/0/0 across Design/Structural, Implementation Readiness and Codebase Details. Implement owner-issued C05 promotion receipt -> persisted grade-neutral B09 ModeTransition; historical #466 branches remain provenance only.",
-      "resume_trigger": null,
-      "preserved_branch": "codex/466-b09-promotion-transition-20261109"
+      "head_sha": "76b0e074a4462dd0475d83c3f834030e36749fb8",
+      "summary": "B09.3 #466 implementation is locally complete and turned into draft review PR #945 from current reviewed unified 6a770f10. C05 now mints caller-unconstructable current-generation promotion authority from immutable State-DAG evidence; B09 persists a one-way grade-neutral FOUNDATION -> ADAPTIVE ModeTransition without neural mutation. Focused and broader owner suites are green; fresh independent implementation EGM and hosted CI remain required before TURNED_IN/merge readiness.",
+      "resume_trigger": "Fresh independent EGM reviews the exact PR #945 semantic head with 0 blockers/majors and hosted required checks are green; then record TURNED_IN. Human merge remains external authority.",
+      "preserved_branch": "codex/466-b09-promotion-transition-20261109",
+      "head_sha_role": "semantic/test proof head; subsequent flow-control-only bookkeeping may reuse this proof if no production/test semantics change"
     },
     {
       "issue": 456,
