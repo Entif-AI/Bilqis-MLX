@@ -132,4 +132,6 @@ the 13/13 affected ring above.
 
 No neural workload, `AdamW.update`, accepted generation publication, C07 lease, or
 live learner mutation was exercised by this qualification. A fresh merge-readiness
-independent review/EGM is still required before the new human-review PR is opened.
+independent review completed on exact candidate head `8bf499f2b3b4f3af56328152f2dec4674339352c`
+with **0 Blockers / 0 Majors / 0 Nits**. Human-review PR #943 is open and GitHub
+reports it mergeable; merge remains human-owned.
