@@ -14,8 +14,13 @@ from bilqis_mlx.semantics.atlas_projection import (
     _canonical_bytes as _atlas_bytes, _digest as _atlas_sha256,
 )
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
+from bilqis_mlx.semantics.atlas_features.records import (
+    ProspectiveIdentityFeature, ProspectiveIdentityFeatureSet,
+)
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas.vocabulary import VocabularyPrior, plan_vocabulary_extension
+from bilqis_mlx.semantics.atlas.vocabulary_contracts import UINT32_MAX
+from bilqis_mlx.semantics.atlas.vocabulary_planning import _plan_from_snapshot
 from bilqis_mlx.semantics.atlas.vocabulary_resources import build_registry_mirror_delta
 from bilqis_mlx.semantics.tests.test_atlas_projection import PRIOR_ABI, _bindings
 from bilqis_mlx.semantics.tests.atlas.vocabulary_fixtures import _allocation_fixture
@@ -119,6 +124,26 @@ class AtlasVocabularyPlanningTests(unittest.TestCase):
         self.assertEqual((plan.allocations[0].bank, plan.allocations[0].row), (8, 0))
         self.assertEqual(plan.bank_count, 9)
         self.assertEqual(plan.active_indices, (0, 65536))
+
+    def test_a02_planner_rejects_index_above_uint32_without_allocation(self):
+        snapshot, prior = _allocation_fixture()
+        prospective = ProspectiveIdentityFeatureSet(
+            snapshot.release_sha256, snapshot.bundle_id, snapshot.source_bundle_id,
+            prior.features.digest, prior.features.type_map,
+            (ProspectiveIdentityFeature(
+                "urn:concept:uint32-overflow", UINT32_MAX + 1,
+                (), (), (), (), "FORMAL_ABI_NOT_ADMITTED"),),
+        )
+        with patch(
+                "bilqis_mlx.semantics.atlas.vocabulary_planning."
+                "plan_prospective_identity_features",
+                return_value=prospective), self.assertRaises(BilqisError) as caught:
+            _plan_from_snapshot(
+                prior, ("urn:concept:uint32-overflow",),
+                ModelTopologySpecV2(), snapshot)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_VOCABULARY_UINT32_EXHAUSTED")
 
     def test_a02_planner_rejects_unpinned_and_duplicate_admissions(self):
         snapshot, prior = _allocation_fixture()

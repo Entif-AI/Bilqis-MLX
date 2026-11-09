@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_candidate import CandidateCustodyIdentity
 from bilqis_mlx.runtime import release_adoption
 from bilqis_mlx.runtime.jit_adoption import (
@@ -17,6 +18,49 @@ from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import _lease
 
 
 class AtlasAdoptionPublicationTests(AtlasAdoptionExecutorFixture, unittest.TestCase):
+    def test_first_native_publish_rechecks_a02_resource_headroom_before_persistence(self):
+        parent, candidate = self._native_parent_and_candidate()
+        lease = replace(_lease(), run_identity=_accepted_lease_run_identity(
+            parent.run_identity))
+        native_staged = self._a02_staged(
+            candidate, required_available_bytes=2)
+        parent_feature = SimpleNamespace(
+            generation_manifest_sha256="a" * 64, digest="b" * 64)
+        plan, ledger, proposal = self._proposal(self.staged)
+        fixture = self.fixture.fixture
+        release_path = (
+            self.root / "factory-releases" /
+            (self.staged.successor.release_sha256 + ".json"))
+
+        with self.admitted_boundary(), patch(
+                "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
+                return_value=(parent, "a" * 64)), patch(
+                "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_generation",
+                return_value=({"generation": parent.generation}, parent)), patch(
+                "bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt",
+                return_value=parent_feature), patch(
+                "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_lease",
+                return_value=lease), patch(
+                "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_factory_release",
+                return_value=self.current), patch(
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission.shutil.disk_usage",
+                return_value=SimpleNamespace(free=1)), patch(
+                "bilqis_mlx.runtime.bamf_bundle.publish_atlas_admission_generation") as publish:
+            with self.assertRaises(BilqisError) as failure:
+                _execute_prepared_successor_adoption(
+                    self._runtime(), frontier=self.frontier, current=self.current,
+                    ledger=ledger, plan=plan, checkpoint=self.checkpoint,
+                    proposal=proposal, staged=(self.staged,),
+                    source_registry=fixture.registry, answer_registry=fixture.answers,
+                    native_staged=native_staged, atlas_lease=lease,
+                    source_authority=object())
+
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_VOCABULARY_ADMISSION_DISK_BUDGET_EXCEEDED")
+        self.assertFalse(release_path.exists())
+        publish.assert_not_called()
+
     def test_native_b13_adoption_publishes_exact_staged_candidate_without_legacy_materialization(self):
         from bilqis_mlx.runtime.bamf_bundle.atlas_admission import AtlasAdmissionBinding
 
@@ -135,6 +179,8 @@ class AtlasAdoptionPublicationTests(AtlasAdoptionExecutorFixture, unittest.TestC
                 return_value=(pointer, accepted)), patch(
                 "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_binding_for_manifest",
                 return_value=historical), patch(
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission.shutil.disk_usage",
+                side_effect=AssertionError("exact retry rechecked live A02 headroom")), patch(
                 "bilqis_mlx.runtime.bamf_bundle.publish_atlas_admission_generation") as publish:
             result = _execute_prepared_successor_adoption(
                 self._runtime(), frontier=self.frontier, current=self.current,

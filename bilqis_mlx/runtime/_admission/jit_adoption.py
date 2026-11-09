@@ -228,6 +228,7 @@ def _publish_native_staged_candidate(
     from bilqis_mlx.runtime.bamf_bundle import (
         load_bamf_generation_authority, publish_atlas_admission_generation,
         require_issued_a02_staged_vocabulary_extension,
+        require_staged_vocabulary_admission_headroom,
     )
     from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
         _issue_atlas_admission_binding,
@@ -272,6 +273,8 @@ def _publish_native_staged_candidate(
     if (accepted_current.release_sha256 != current.release_sha256
             or school.current_student != checkpoint):
         _invalid("BAMF_ATLAS_RUNTIME_CONTEXT_CHANGED")
+    require_staged_vocabulary_admission_headroom(
+        runtime.run_dir, native_staged)
     release_file = runtime_admission._persist_executable_factory_release(
         runtime.run_dir, selected.successor)
     expected_release_file = (
