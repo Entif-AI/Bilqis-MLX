@@ -705,10 +705,10 @@
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
         "resolution": "held",
-        "body_sha256": "764077af4df16098d1839d7d0c54f816c634b6876542fe0fcd47a8eb5b549b39",
-        "clause": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`.",
+        "body_sha256": "ef68b0d12d04d2b2ab33673083e85391c58cf3aef6454df39ab7ffeea4d8cd98",
+        "clause": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1c #950 -> C16.1a #542`.",
         "known_edges": [
-          "C16.1b"
+          "C16.1c"
         ],
         "external_receipts": [],
         "source_records": [
@@ -716,14 +716,14 @@
             "source_id": "C16.1a.body",
             "kind": "body",
             "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/542",
-            "sha256": "764077af4df16098d1839d7d0c54f816c634b6876542fe0fcd47a8eb5b549b39",
-            "excerpt": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`."
+            "sha256": "ef68b0d12d04d2b2ab33673083e85391c58cf3aef6454df39ab7ffeea4d8cd98",
+            "excerpt": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1c #950 -> C16.1a #542`."
           }
         ],
         "obligations": [
           "Preserve every original C16/C16.1 acceptance clause; this pinned record changes executable dependency order only and grants no production authority."
         ],
-        "unresolved": "C16.1a remains held until C16.1b consumes accepted B13.6 generation-zero custody and records the inherited C16 dependency receipts."
+        "unresolved": "C16.1a remains held until C16.1c binds host-owned C09 source authority into accepted generation-zero custody; C16.1a consumes that authority and does not mint it."
       }
     },
     {
