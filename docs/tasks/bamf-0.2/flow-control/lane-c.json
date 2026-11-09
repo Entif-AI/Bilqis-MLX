@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
-  "updated_at": "2026-11-07T10:16:00+00:00",
+  "updated_at": "2026-11-09T02:59:51Z",
   "exception": null,
   "items": [
     {
@@ -123,11 +123,11 @@
     {
       "issue": 510,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "13698be8e4cec8ac9e6933715da20f47933b90a6",
+      "state": "ACTIVE",
+      "head_sha": "d8bc2171f78851b403db1090e8e22d116cb373cb",
       "preserved_branch": "codex/510-c07-atomic-adoption-20261107",
-      "summary": "Concrete C07.1b prepared-successor executor is implemented, qualified and package-private at 13698be8; public Atlas policy truthfully holds on accepted-run authority rather than a missing executor. Production adoption remains blocked because #509 run identity is DISPOSABLE_CONTRACT and cannot attach to saved custody.",
-      "resume_trigger": "B13-owned accepted-run projection binds the accepted BAMF lineage to the concrete release_adoption Checkpoint/graph/optimizer state, and A09.5 PR #891 is consumed through reviewed unified integration."
+      "summary": "Resume trigger satisfied: A09.5 PR #891 and B13.6 PR #931 are accepted through reviewed unified. Resume the preserved package-private C07.1b executor, bind it to accepted B13 runtime custody, and replace legacy successor materialization with the exact native staged BAMF candidate without introducing a second admission state machine.",
+      "resume_trigger": null
     },
     {
       "issue": 829,
