@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "5f8f3d4b42cc4656020e4427c7d8e822825a36f9",
-  "updated_at": "2026-11-07T16:50:43Z",
+  "updated_at": "2026-11-09T19:41:42Z",
   "exception": null,
   "items": [
     {
@@ -20,10 +20,10 @@
     {
       "issue": 526,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "291a283f80c750b7ae81750ba692d9a47e5f0fca",
-      "summary": "718/526 consumed merged #746, then hardened C12 against caller-selected C09 registries with an opaque source-authority capability. Focused M3 owner/adoption ring 11/11. Safe but not review-ready because no production host owner currently issues that capability.",
-      "resume_trigger": "A trusted non-test C09 host/run owner binds its admitted SourceAuthorityRegistry to SourceAuthorityRuntime without a caller mint; then prove the real host -> C12 path and run the reserved fresh #718 EGM.",
+      "state": "ACTIVE",
+      "head_sha": "81d2f176120beb4a070bd006aa9bb089f05eb4f1",
+      "summary": "#718/#526 resume trigger is satisfied by merged #917: current reviewed unified now provides a non-test AcceptedRuntimeHost that owns SourceAuthorityRuntime bound to the accepted run/cache registry. Resume the preserved serialized-writer branch, sync current reviewed unified, prove the real accepted-host -> C12 path and then run the reserved fresh #718 EGM.",
+      "resume_trigger": null,
       "closed_pr": 680,
       "preserved_branch": "codex/bamf02-c12-526-exchange-20261101",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
