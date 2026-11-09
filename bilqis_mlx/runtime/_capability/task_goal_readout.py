@@ -15,7 +15,9 @@ from bilqis_mlx.semantics.cognitive_dag import DAGNode, TaskGoal
 from bilqis_mlx.semantics.domains import contract_digest
 
 from .capability_evaluation import _invalid
-from .factory_task_authority import FactoryTaskAuthority
+from .factory_task_authority import (
+    FactoryTaskAuthority, bind_factory_task_compiled_batch,
+)
 from .refinement_request import refinement_request_disposition
 
 
@@ -219,6 +221,7 @@ def b11_task_goal_proposer(
         routed_plan = plan
     else:
         routed_plan = augment_answer_plan_for_task_goal(plan, authority.goal)
+    owned_batch = bind_factory_task_compiled_batch(compiled_batch, authority)
 
     def propose(request: NeuralRequest):
         if (type(request) is not NeuralRequest
@@ -228,7 +231,7 @@ def b11_task_goal_proposer(
                 or request.allowed_operator_ids != authority.goal.allowed_operator_ids):
             _invalid("BAMF_C04_B11_TASK_REQUEST_MISMATCH")
         output = forward_bamf(
-            parameters, compiled_batch, routed_plan,
+            parameters, owned_batch, routed_plan,
             ExecutionMode.INFERENCE, accepted_cache,
         )
         return proposal_from_task_goal_output(authority.goal, request, output)

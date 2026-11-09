@@ -209,6 +209,7 @@ class BamfCompiledBatch:
     feature_schema: FeatureSchema
     training_authority: BamfTrainingAuthority | None = None
     visit_provenance: BamfVisitProvenance | None = None
+    task_authority: object | None = None
     schema_version: str = "bilqis.mlx.b11-compiled-batch/v1"
     atlas_feature_artifact_owner: AtlasFeatureArtifactOwner = field(init=False, compare=False)
 
@@ -229,6 +230,23 @@ class BamfCompiledBatch:
         ):
             _invalid("B11_COMPILED_BATCH_INVALID")
         self.compiled.__post_init__()
+        if self.task_authority is not None:
+            from bilqis_mlx.runtime.factory_task_authority import FactoryTaskAuthority
+            if type(self.task_authority) is not FactoryTaskAuthority:
+                _invalid("B11_FACTORY_TASK_AUTHORITY_INVALID")
+            self.task_authority.__post_init__()
+            training = self.training_authority
+            if (
+                self.task_authority.source_row_id != self.sources[0].source_row.get("id")
+                or self.task_authority.capability_id
+                != self.sources[0].source_row.get("capability")
+                or ((training is None)
+                    != (self.task_authority.training_authority_sha256 is None))
+                or (training is not None
+                    and training.digest
+                    != self.task_authority.training_authority_sha256)
+            ):
+                _invalid("B11_FACTORY_TASK_AUTHORITY_MISMATCH")
         if self.training_authority is not None:
             self.visit_provenance.__post_init__()
             if (self.visit_provenance.capability_id

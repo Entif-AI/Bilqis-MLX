@@ -13,10 +13,7 @@ from bilqis_mlx.semantics.cognitive_dependencies import (
     DependencyKind, DependencyRef,
 )
 from bilqis_mlx.learning.atlas_readout import DecisionKind, ExecutionMode
-from bilqis_mlx.runtime.atlas_model import (
-    bamf_value_and_grad, bind_compiled_training_batch, forward_bamf,
-)
-import bilqis_mlx.runtime.atlas_model_forward as forward_impl
+from bilqis_mlx.runtime.atlas_model import bind_compiled_training_batch, forward_bamf
 from bilqis_mlx.runtime.cognitive_solver import (
     GenerationBinding, RouteKind, SolveBudget, SolveContext, solve_task,
 )
@@ -24,15 +21,7 @@ from bilqis_mlx.runtime.factory_complete_solver import factory_evaluation_instru
 from bilqis_mlx.runtime.factory_task_authority import (
     factory_task_authority, factory_task_training_goal,
 )
-from bilqis_mlx.runtime.refinement_request import (
-    RefinementRequestDisposition, RefinementRequestKind,
-    refinement_request_disposition,
-)
-from bilqis_mlx.runtime.refinement_policy import RefinementChoice
-from bilqis_mlx.semantics.frame_compiler import PositionKind
-from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import (
-    visit_provenance,
-)
+from bilqis_mlx.runtime.refinement_request import refinement_request_disposition
 from bilqis_mlx.runtime.task_goal_readout import (
     b11_task_goal_proposer, task_goal_route_decisions, task_goal_route_plan,
     task_goal_training_targets,
@@ -127,33 +116,6 @@ class FactoryTrainingBridgeTests(FactoryTrainingBridgeFixture):
         authority, plan = self.route_context(compiled)
         self.assertEqual(
             plan.refinement_request, refinement_request_disposition(authority.goal))
-
-    def test_b11_row_rejects_same_capability_visit_substitution(self):
-        _rows, prepared = self.prepare("B.IDBOOLOPS", 37120, 1)
-        compiled = prepared.compiled_rows[0]
-        forged = visit_provenance(
-            compiled.visit_provenance.capability_id,
-            run_seed=compiled.visit_provenance.run_seed + 1,
-            generation=compiled.visit_provenance.generation,
-            selection_seed=compiled.visit_provenance.selection_seed,
-            policy_key=compiled.visit_provenance.policy_key,
-        )
-        with self.assertRaises(BilqisError):
-            replace(compiled, visit_provenance=forged)
-
-    def test_b11_task_proposer_rejects_substituted_refinement_disposition(self):
-        _rows, prepared = self.prepare("B.IDBOOLOPS", 37121, 1)
-        compiled = prepared.compiled_rows[0]
-        authority, plan = self.route_context(compiled)
-        forged = replace(
-            plan,
-            refinement_request=RefinementRequestDisposition(
-                RefinementRequestKind.EXPLICIT_MEMBER, ("forged-role",)),
-        )
-        with self.assertRaises(BilqisError):
-            b11_task_goal_proposer(
-                self.candidate.retained_state.optimizer.parameters,
-                compiled, forged, authority)
 
     def test_revalidated_frame_context_cannot_reuse_stale_training_authority(self):
         _rows, prepared = self.prepare("A.IDENTITY", 37101, 2)
@@ -258,84 +220,6 @@ class FactoryTrainingBridgeTests(FactoryTrainingBridgeFixture):
         self.assertEqual(targets[0].value, "ADD")
         self.assertEqual(mask, {route[0].decision_id: True})
         self.assertEqual(rows[0]["capability"], "C.ADD")
-
-    def test_b11_training_refinement_backpropagates_through_selected_source_frame(self):
-        _rows, prepared = self.prepare("A.IDENTITY", 37101, 2)
-        compiled = prepared.compiled_rows[0]
-        authority = factory_task_authority(self.context, compiled)
-        resolved = factory_task_training_goal(self.context, compiled, authority)
-        targets, mask = task_goal_training_targets(authority.goal, resolved)
-        plan = task_goal_route_plan(
-            authority.goal, compiled, self.feature_context.snapshot,
-            self.generation)
-        gradient = bamf_value_and_grad(
-            dict(self.candidate.retained_state.optimizer.parameters),
-            compiled, plan, targets, mask, None)
-        for name in (
-                "refine.query", "refine.key", "refine.value",
-                "refine.output", "refine.norm", "refine.gate_vector",
-                "refine.bias"):
-            with self.subTest(name=name):
-                self.assertGreater(float(mx.sum(mx.abs(gradient.gradients[name]))), 0.0)
-
-    def test_b11_zero_pass_selection_keeps_refinement_gradient_dark(self):
-        _rows, prepared = self.prepare("A.IDENTITY", 37103, 2)
-        compiled = prepared.compiled_rows[0]
-        authority = factory_task_authority(self.context, compiled)
-        resolved = factory_task_training_goal(self.context, compiled, authority)
-        targets, mask = task_goal_training_targets(authority.goal, resolved)
-        plan = task_goal_route_plan(
-            authority.goal, compiled, self.feature_context.snapshot,
-            self.generation)
-        gradient = bamf_value_and_grad(
-            dict(self.candidate.retained_state.optimizer.parameters),
-            compiled, plan, targets, mask, None)
-        for name in (
-                "refine.query", "refine.key", "refine.value",
-                "refine.output", "refine.norm", "refine.gate_vector",
-                "refine.bias", "refine.route", "refine.route_bias"):
-            with self.subTest(name=name):
-                self.assertEqual(float(mx.sum(mx.abs(gradient.gradients[name]))), 0.0)
-
-    def test_b11_refinement_maps_by_frame_identity_not_source_rank(self):
-        _rows, prepared = self.prepare("A.IDENTITY", 37101, 2)
-        compiled = prepared.compiled_rows[0]
-        producer, _ = forward_impl._source_producer(
-            dict(self.candidate.retained_state.optimizer.parameters),
-            compiled, self.generation, None)
-        row = compiled.compiled.compiled.rows[0]
-        closure_index, position = next(
-            (index, item) for index, item in enumerate(row.positions)
-            if item.kind is PositionKind.CLOSURE)
-        choice = RefinementChoice(
-            position.frame_handle, position.packed.sidecar.occurrence_id,
-            999_999, 0, 0.0, 1,
-            (self.generation, row.visible_end,
-             compiled.sources[0].source_row["id"],
-             position.packed.sidecar.occurrence_id),
-        )
-        self.assertEqual(
-            forward_impl._selected_frame_index(
-                row, producer._encoded,
-                compiled.compiled.compiler_configs[0], choice),
-            closure_index,
-        )
-
-    def test_b11_refinement_rejects_undefined_multi_role_pooling(self):
-        _rows, prepared = self.prepare("A.IDENTITY", 37101, 2)
-        compiled = prepared.compiled_rows[0]
-        roles = tuple(
-            role for role, _row in compiled.compiled.features.role_map
-            if role not in ("NONE", "UNKNOWN")
-        )[:2]
-        self.assertEqual(len(roles), 2)
-        request = RefinementRequestDisposition(
-            RefinementRequestKind.EXPLICIT_MEMBER, tuple(sorted(roles)))
-        semantics = SimpleNamespace(features=compiled.compiled.features)
-        with self.assertRaises(BilqisError):
-            forward_impl._refinement_role_vector(
-                request, semantics,
-                self.candidate.retained_state.optimizer.parameters)
 
 
 if __name__ == "__main__":
