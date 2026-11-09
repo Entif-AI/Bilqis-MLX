@@ -1,9 +1,10 @@
 """Two-consumer exchange and exact binding guards."""
 from dataclasses import fields, replace
 import unittest
+from bilqis_mlx.runtime.cognitive_package.tests.export_authority_fixtures import grant
 from bilqis_mlx.runtime.cognitive_package.tests.fixtures import PackageAssertions, snapshot, digest
 from bilqis_mlx.runtime.cognitive_package import (
-    CognitivePackage, ExportClassification, PackageKind, export_capability,
+    CognitivePackage, PackageKind, export_capability,
     stage_import,
 )
 
@@ -19,7 +20,7 @@ class ExchangeTests(PackageAssertions, unittest.TestCase):
         self.assertEqual(receiver.operator_identity, 'exact-increment/v1')
         self.assertEqual(receiver.max_memory_bytes, 1024)
         self.assertEqual(receiver.max_storage_bytes, 2048)
-        self.assertEqual(receiver.rights, rights)
+        self.assertEqual(receiver.rights, rights.rights)
         self.assertEqual(receiver.digest, digest(package.canonical_json))
         plan = stage_import(receiver, source.binding)
         self.assertEqual(plan.package_digest, package.digest)
@@ -44,8 +45,8 @@ class ExchangeTests(PackageAssertions, unittest.TestCase):
                         stage_import(package, other)
 
     def test_ancestry_survives_roundtrip(self):
-        source, rights = snapshot(PackageKind.PROCEDURE)
-        rights = replace(rights, revocation_lineage=(digest('ancestor'),))
+        source, _ = snapshot(PackageKind.PROCEDURE)
+        rights = grant(source, lineage=(digest('ancestor'),))
         package = export_capability(source, source.signature, rights)
         self.assertEqual(CognitivePackage.from_canonical_json(package.canonical_json).rights.revocation_lineage,
                          (digest('ancestor'),))
@@ -53,13 +54,9 @@ class ExchangeTests(PackageAssertions, unittest.TestCase):
     def test_mixed_exact_and_delta_mismatch_rejects_whole_package(self):
         source, rights = snapshot(PackageKind.WEIGHT_DELTA)
         from bilqis_mlx.runtime.cognitive_package import PackageArtifact
-        exact = PackageArtifact(
-            'exact', PackageKind.EXACT_TRANSFORM, b'identity',
-            ExportClassification.PUBLIC_DERIVED,
-        )
+        exact = PackageArtifact('exact', PackageKind.EXACT_TRANSFORM, b'identity')
         source = replace(source, artifacts=source.artifacts + (exact,))
-        rights = replace(rights, public_artifact_digests=tuple(sorted(
-            rights.public_artifact_digests + (exact.digest,))))
+        rights = grant(source)
         package = export_capability(source, source.signature, rights)
         with self.assertPackageError('binding'):
             stage_import(package, replace(source.binding, topology_digest=digest('other')))

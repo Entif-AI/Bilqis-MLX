@@ -1,6 +1,7 @@
 """C03 teacher-visit identity follows accepted B13 custody across restart."""
 from __future__ import annotations
 
+from dataclasses import replace
 import os
 import random
 from pathlib import Path
@@ -14,45 +15,21 @@ from bilqis_mlx.compatibility import historical_teacher_policy
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.learning_experiment import Settings
-from bilqis_mlx.learning.teacher_lineage import (
-    adaptation_authority_ref, restore_teacher_lineage,
-)
-from bilqis_mlx.learning.tests.teacher_strategy_test_support import teacher_fixture
+from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
 from bilqis_mlx.runtime.accepted_teacher_custody import (
     BoundTeacherVisit, derive_c03_successor_bundle, select_accepted_teacher_visit,
 )
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate, publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+from bilqis_mlx.runtime.bamf_bundle.package_import_transition import (
+    _issue_package_import_transition,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, accepted_state, publish_genesis, shape_patch,
 )
-
-
-def _adaptation():
-    record = {
-        "schema": "bilqis.bamf.legacy-trainer-authority/v1",
-        "version": "1.0.0",
-        "effective_date": "2026-11-07",
-        "purpose": "latest legacy trainer adaptation and compatibility oracle",
-        "source_branch": "codex/337-replay-349-20261026",
-        "source_worktree": "/preserved/replay",
-        "source_run": "/preserved/replay/run",
-        "source_state": "/preserved/replay/run/state.json",
-        "operator_preflight": "python3 -B scripts/check_legacy_trainer_authority.py --live",
-        "historical_non_authoritative_runs": [],
-    }
-    return adaptation_authority_ref(record, observed_source_head="d" * 40)
-
-
-def _selection_teacher():
-    teacher, _strong, _weak = teacher_fixture()
-    teacher["events"] = 100
-    teacher["global_stats"] = {
-        key: {"trials": 10, "reward_sum": index, "reward_ema": index}
-        for index, key in enumerate(teacher["strategies"])
-    }
-    teacher["grade_stats"] = {}
-    return teacher
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.teacher_custody_fixtures import (
+    adaptation, selection_teacher,
+)
 
 
 class C03AcceptedTeacherCustodyTests(unittest.TestCase):
@@ -74,7 +51,7 @@ class C03AcceptedTeacherCustodyTests(unittest.TestCase):
         with shape_patch():
             parent = load_accepted_generation(self.run)
 
-        teacher = _selection_teacher()
+        teacher = selection_teacher()
         current_student = candidate_identity_digest(parent.retained_state)
         school = SimpleNamespace(
             stage="RECOVERY_1",
@@ -84,7 +61,7 @@ class C03AcceptedTeacherCustodyTests(unittest.TestCase):
                 self.run, historical_teacher_policy, school, random.Random(17),
                 Settings(), "factory/7", {}, "A", capability_id="C.ADD",
                 total_capabilities=20, legacy_receipt={"teacher": teacher},
-                adaptation=_adaptation(), prior_region="legacy-region")
+                adaptation=adaptation(), prior_region="legacy-region")
         self.assertIsInstance(policy, dict)
         self.assertIsInstance(metadata, dict)
         self.assertEqual(bound.identity.run_identity_sha256, parent.run_identity.digest)
@@ -153,6 +130,56 @@ class C03AcceptedTeacherCustodyTests(unittest.TestCase):
         self.assertEqual(
             stale_failure.exception.context["reason"],
             "TEACHER_VISIT_ACCEPTED_GENERATION_DRIFT")
+
+    def test_prebootstrap_package_import_does_not_strand_c03_bootstrap(self):
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            pointer = publish_genesis(self.run, run_seed=73)
+        with shape_patch():
+            parent = load_accepted_generation(self.run)
+        transition = _issue_package_import_transition(
+            package_sha256="1" * 64,
+            screened_candidate_sha256="2" * 64,
+            reset_policy_sha256="3" * 64,
+            c05_evidence_sha256="4" * 64,
+            c05_policy_sha256="5" * 64,
+            source_clearance_sha256="6" * 64,
+        )
+        imported = BamfBundleCandidate(
+            parent.run_id, 1, pointer["manifest_sha256"],
+            parent.implementation_sha256, parent.topology, parent.extents,
+            parent.retained_state, parent.optimizer_hyperparameters,
+            parent.provenance, parent.semantic_abi, parent.compiler_features,
+            parent.correction_frontier, parent.teacher_state,
+            parent.evaluation_contract, transition,
+            ({"event": "C12_PREBOOTSTRAP_IMPORT", "optimizer_step": 0},),
+            parent.run_identity)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            imported_pointer = publish_bamf_generation(
+                self.run, imported,
+                acceptance=acceptance(imported, parent=parent.retained_state),
+                reserve_gib=0.)
+        with shape_patch():
+            cold = load_accepted_generation(self.run)
+        self.assertEqual(cold.generation, 1)
+        self.assertEqual(cold.retained_state.optimizer_step, 0)
+        self.assertNotIn("c03_lineage", cold.teacher_state)
+
+        student = candidate_identity_digest(cold.retained_state)
+        school = SimpleNamespace(
+            stage="RECOVERY_1",
+            current_student=SimpleNamespace(sha256=student))
+        with shape_patch():
+            bound, _policy, _metadata = select_accepted_teacher_visit(
+                self.run, historical_teacher_policy, school, random.Random(19),
+                Settings(), "factory/7", {}, "A", capability_id="C.ADD",
+                total_capabilities=20,
+                legacy_receipt={"teacher": selection_teacher()},
+                adaptation=adaptation(), prior_region="legacy-region")
+        self.assertEqual(bound.identity.generation, 1)
+        self.assertEqual(
+            bound.identity.accepted_manifest_sha256,
+            imported_pointer["manifest_sha256"])
+        self.assertEqual(bound.identity.student_sha256, student)
 
 
 if __name__ == "__main__":

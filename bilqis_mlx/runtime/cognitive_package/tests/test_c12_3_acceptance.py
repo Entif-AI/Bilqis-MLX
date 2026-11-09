@@ -10,13 +10,21 @@ from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import begin_candidate, candidate_step, resolve_candidate
 from bilqis_mlx.learning.atlas_package_import import ImportSlice, prepare_package_import
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
+from bilqis_mlx.learning.teacher_lineage import (
+    initialize_teacher_lineage, restore_teacher_lineage,
+)
 from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
 from bilqis_mlx.runtime import mlx_checkpoint
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
-from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation, publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
 from bilqis_mlx.runtime.cognitive_package.tests.adoption_harness import AdoptionHarness
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    HP, NAME, candidate, parent_state, publish_candidate, shape_patch,
+    HP, NAME, acceptance, accepted_state, candidate, parent_state, publish_candidate,
+    shape_patch,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.teacher_custody_fixtures import (
+    adaptation, selection_teacher,
 )
 
 
@@ -83,6 +91,18 @@ class C12ReceiverResetTests(AdoptionHarness):
         execution = execution_provenance(
             transaction.parent, rows=(0,), candidate_step=1, extents=imported.extents,
         )
+        self.assertEqual(
+            execution.parent_manifest_sha256,
+            imported_pointer["manifest_sha256"])
+        self.assertEqual(execution.parent_optimizer_step,
+                         imported.retained_state.optimizer_step)
+        self.assertEqual(imported.transition["kind"], "PACKAGE_IMPORT")
+        self.assertEqual(
+            imported.transition["package_sha256"],
+            screened.candidate.package.digest)
+        self.assertEqual(
+            imported.transition["reset_policy_sha256"],
+            screened.transaction.reset_policy_sha256)
         with shape_patch():
             transaction = candidate_step(
                 transaction,
@@ -127,3 +147,83 @@ class C12ReceiverResetTests(AdoptionHarness):
             cold.retained_state.optimizer_step,
             imported.retained_state.optimizer_step + 1,
         )
+
+    def test_mature_recipient_rebinds_its_own_teacher_lineage_on_import(self):
+        with shape_patch():
+            native = accepted_state(
+                self.initial.retained_state, self.initial.extents)
+            successor = derive_successor_bundle(
+                self.initial, native,
+                parent_manifest_sha256=self.pointer["manifest_sha256"],
+                delivery_events=(
+                    {"event": "C12_MATURE_RECIPIENT", "optimizer_step": 1},
+                ))
+        mature_teacher = initialize_teacher_lineage(
+            {"teacher": selection_teacher()},
+            {
+                "schema": "bilqis.bamf.student-reference/v1",
+                "student_sha256": candidate_identity_digest(native),
+                "region": "c12-mature-recipient-region",
+            },
+            adaptation(), prior_region="legacy-region",
+            next_seed=91, cursor="lesson:recipient",
+        )
+        mature = replace(
+            successor,
+            provenance=replace(
+                successor.provenance,
+                teacher_identity=mature_teacher.teacher_identity,
+                teacher_epoch=mature_teacher.teacher_epoch),
+            teacher_state=dict(mature_teacher.teacher_state),
+        )
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            self.pointer = publish_bamf_generation(
+                self.run, mature,
+                acceptance=acceptance(
+                    mature, parent=self.initial.retained_state),
+                reserve_gib=0.)
+            self.initial = load_bamf_generation(self.run / "bamf-state.json")
+
+        self.state = self.initial.retained_state
+        array = np.asarray(self.state.optimizer.parameters[NAME], dtype="<f4")
+        from bilqis_mlx.runtime.cognitive_package import (
+            PackageBinding, ReceiverTensor, receiver_parameter_schema_digest,
+            receiver_weight_digest,
+        )
+        self.tensor = ReceiverTensor(NAME, array.shape, array.tobytes())
+        self.binding = PackageBinding(
+            receiver_weight_digest((self.tensor,)),
+            receiver_parameter_schema_digest((self.tensor,)),
+            self.initial.topology.digest, self.initial.provenance.release_digest,
+            self.initial.extents.active_semantic_digest,
+            self.initial.extents.factor_map_digest,
+            self.initial.extents.motif_key_map_digest)
+        before = restore_teacher_lineage(self.initial.teacher_state)
+        old = self.initial.teacher_state["c03_lineage"]
+
+        screened, receipt = self.screened()
+        self.adopt(screened, receipt)
+        with shape_patch():
+            imported = load_bamf_generation(self.run / "bamf-state.json")
+        restored = restore_teacher_lineage(imported.teacher_state)
+        new = imported.teacher_state["c03_lineage"]
+        self.assertEqual(imported.teacher_state["teacher_epoch"], 1)
+        self.assertEqual(imported.teacher_state["next_seed"], 91)
+        self.assertEqual(imported.teacher_state["cursor"], "lesson:recipient")
+        self.assertEqual(new["prior_teacher"], old["current_teacher"])
+        self.assertEqual(new["source_teacher_sha256"], old["source_teacher_sha256"])
+        self.assertEqual(new["current_teacher"]["grade_stats"], {})
+        self.assertEqual(
+            new["current_teacher"]["causal_experiment"]["student_policy_epoch"][
+                "student_sha256"],
+            candidate_identity_digest(imported.retained_state))
+        self.assertNotEqual(restored.student_sha256, before.student_sha256)
+        self.assertEqual(
+            restored.student_sha256,
+            candidate_identity_digest(imported.retained_state))
+        self.assertEqual(
+            imported.provenance.teacher_identity,
+            imported.teacher_state["teacher_identity"])
+        self.assertEqual(
+            imported.provenance.teacher_epoch,
+            imported.teacher_state["teacher_epoch"])

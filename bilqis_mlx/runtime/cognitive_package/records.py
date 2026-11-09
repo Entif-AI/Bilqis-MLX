@@ -6,6 +6,8 @@ from .contracts import (
     digest_string, name, require,
 )
 
+_PUBLIC_EXPORT_PACKAGE_AUTHORITY = object()
+
 
 def validate_snapshot(value):
     require(all(name(v) for v in (value.generation_id, value.signature,
@@ -70,6 +72,22 @@ class CognitivePackage(ExportSnapshot):
     def from_canonical_json(cls, value):
         from .wire import decode_package
         return decode_package(value)
+
+
+def _mark_public_export_authorized(package):
+    require(type(package) is CognitivePackage, 'invalid cognitive package')
+    object.__setattr__(
+        package, '_public_export_authority', _PUBLIC_EXPORT_PACKAGE_AUTHORITY)
+    return package
+
+
+def _require_public_export_authorized(package):
+    require(
+        type(package) is CognitivePackage
+        and getattr(package, '_public_export_authority', None)
+        is _PUBLIC_EXPORT_PACKAGE_AUTHORITY,
+        'public sender package lacks source export authority',
+    )
 
 
 @dataclass(frozen=True)

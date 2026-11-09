@@ -1,9 +1,10 @@
 """Portable cognitive package staging; no learner or optimizer writes."""
 from .contracts import (
-    ExportClassification, PackageArtifact, PackageBinding, PackageKind, SourceRights,
+    ExportClassification, PackageArtifact, PackageBinding, PackageKind, PublicExportGrant,
+    SourceRights,
 )
 from .records import CognitivePackage, ExportSnapshot, ImportPlan
-from .staging import export_capability, stage_import
+from .staging import authorize_public_export, export_capability, stage_import
 from .delta import (
     DeltaSlice, DisposableDeltaCandidate, ReceiverTensor, ScreenedDeltaCandidate,
     apply_plastic_delta, encode_plastic_delta, screen_delta_candidate,
@@ -14,8 +15,10 @@ from .operator import receive_screen_and_publish_package
 from .receiver import current_receiver_binding
 
 __all__ = [
-    'ExportClassification', 'PackageArtifact', 'PackageBinding', 'PackageKind', 'SourceRights',
-    'CognitivePackage', 'ExportSnapshot', 'ImportPlan', 'export_capability', 'stage_import',
+    'ExportClassification', 'PackageArtifact', 'PackageBinding', 'PackageKind',
+    'PublicExportGrant', 'SourceRights',
+    'CognitivePackage', 'ExportSnapshot', 'ImportPlan', 'authorize_public_export',
+    'export_capability', 'stage_import',
     'publish_screened_delta_import',
     'receive_screen_and_publish_package', 'current_receiver_binding',
     'DeltaSlice', 'DisposableDeltaCandidate', 'ReceiverTensor', 'ScreenedDeltaCandidate',
