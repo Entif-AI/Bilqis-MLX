@@ -1,16 +1,16 @@
 # C12.3 | Private-safe export and local exchange closeout
 
-Issue: #527  
-Lane: C  
-Working branch: `codex/bamf02-c-runtime`  
+Issue: #527
+Lane: C
+Working branch: `codex/bamf02-c-runtime`
 Reviewed unified consumed before issue-owned edits:
-`6a770f10074df6f4f8889d439f783ad42f5efe63`  
+`6a770f10074df6f4f8889d439f783ad42f5efe63`
 Exact semantic implementation/proof head:
-`3aa81f18dba338b79eff935de96e9d94eda75fae`  
+`3aa81f18dba338b79eff935de96e9d94eda75fae`
 Latest reviewed unified consumed before turn-in:
-`066c08028f1f8b6c8f7ccc36c285df0ea3c6cfba`  
+`039fbcab9df0e3aac6efb622bfaa059fa7e2bf5a`
 Current integration head after the conflict-free reviewed-unified merge:
-`4ecb38003576ac32e10490c5ee6512710b5a25b5`
+`64351d421edcd9594f1f393322fa15936602fc8c`
 
 ## Dependency and ownership closure
 
@@ -147,10 +147,12 @@ optimizer was started or resumed.
   base/topology/release/motif rejection, behavioral diff/counterexamples, ancestry,
   crash-before-pointer retry and sender-optimizer non-adoption.
 
-The same **68/68** package suite and **33/33** cross-owner ring passed again after
-merging reviewed unified `066c0802`, whose B09.3 integration changed
-plasticity/package-import dependencies. The merge was conflict-free and introduced
-no C12.3 code edits.
+The complete **68/68** package suite passed again after merging latest reviewed
+unified `039fbcab`, whose B09.3 transition-authority work changed
+plasticity/package-import retention dependencies. A targeted post-merge C03/B09/
+vocabulary ring also passed **10/10**. The merge was conflict-free and introduced
+no C12.3 code edits. The earlier **33/33** cross-owner C03/B13/C05/A12/source-rights
+ring remains the semantic-head proof recorded above.
 
 Legacy-trainer authority source for the C03 fixture adaptation remains the canonical
 run at
@@ -158,7 +160,7 @@ run at
 
 ## Repository integration proof
 
-Against latest reviewed unified `066c0802`:
+Against latest reviewed unified `039fbcab`:
 
 - `quality:structure`: PASS, zero development-structure violations;
 - governance integrity: PASS, zero violations;
@@ -168,6 +170,9 @@ Against latest reviewed unified `066c0802`:
 - legacy-trainer checker unit tests: **7/7 PASS**;
 - `verify_bamf_0_2_contracts.py`: PASS, 43/43 exact mirrors and 216 indexed
   owner/child identities;
+- latest BAMF flow-control validator after `039fbcab`: PASS;
+- latest `verify_bamf_0_2_contracts.py` after `039fbcab`: PASS with the same
+  43/43 mirrors and 216 indexed owner/child identities;
 - `git diff --check`: PASS.
 
 The aggregate `quality:changed` chain stops only on

@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "066c08028f1f8b6c8f7ccc36c285df0ea3c6cfba",
-  "updated_at": "2026-11-09T23:23:54Z",
+  "observed_unified": "039fbcab9df0e3aac6efb622bfaa059fa7e2bf5a",
+  "updated_at": "2026-11-09T23:31:09Z",
   "exception": null,
   "items": [
     {
@@ -92,8 +92,8 @@
       "pr": 946,
       "state": "ACTIVE",
       "head_sha": "3aa81f18dba338b79eff935de96e9d94eda75fae",
-      "head_sha_role": "exact semantic implementation/proof head; latest reviewed-unified integration head before final evidence commit is 4ecb38003576ac32e10490c5ee6512710b5a25b5",
-      "summary": "C12.3 repaired the stale leaf design through append-only #527 amendments and fresh pre-implementation EGM re-audit at 0 Blockers / 0 Majors in readiness, codebase-fit and comprehension. Semantic head 3aa81f18 binds package export to exact signed A12/C09 authority through a sealed non-wire grant/token, preserves cognitive-package/v1, prevents direct/cold sender-publication bypass, composes B12/C05/B13 adoption with recipient-owned mature C03 rebinding, and preserves a narrow authenticated pre-bootstrap C03 path. After reviewed unified advanced to 066c0802 with B09.3 package-import/plasticity changes, Lane C merged it conflict-free at 4ecb3800 and reran 68/68 package tests plus 33/33 cross-owner tests. Structure/governance/smell/flow/contract checks remain green; aggregate quality stops only on the inherited C07.1b legacy-trainer receipt defect reproduced on exact reviewed unified. Draft PR #946 is awaiting final evidence push/readback before ready-for-review transition.",
+      "head_sha_role": "exact semantic implementation/proof head; latest reviewed-unified integration head before final evidence commit is 64351d421edcd9594f1f393322fa15936602fc8c",
+      "summary": "C12.3 repaired the stale leaf design through append-only #527 amendments and fresh pre-implementation EGM re-audit at 0 Blockers / 0 Majors in readiness, codebase-fit and comprehension. Semantic head 3aa81f18 binds package export to exact signed A12/C09 authority through a sealed non-wire grant/token, preserves cognitive-package/v1, prevents direct/cold sender-publication bypass, composes B12/C05/B13 adoption with recipient-owned mature C03 rebinding, and preserves a narrow authenticated pre-bootstrap C03 path. Lane C consumed reviewed unified through 039fbcab conflict-free at integration head 64351d42. Post-merge proof is 68/68 package tests plus 10/10 targeted C03/B09/vocabulary tests, with flow-control and 43/43 contract mirrors green. The earlier semantic-head cross-owner ring remains 33/33. Aggregate quality debt is inherited C07.1b legacy-trainer receipt debt outside #527. Draft PR #946 is awaiting final evidence push/readback before ready-for-review transition.",
       "resume_trigger": "Push/read back the final evidence state, mark PR #946 ready for human review, then finalize this lane item. Do not self-merge.",
       "preserved_branch": "codex/bamf02-c-runtime"
     },

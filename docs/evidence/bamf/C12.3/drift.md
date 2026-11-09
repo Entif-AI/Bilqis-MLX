@@ -1,11 +1,11 @@
 # C12.3 | Design-to-code drift report
 
 Design target: `docs/tasks/bamf-0.2/children/C12.3.md` plus GitHub #527 amendment
-comments `6753769152`, `6753797209`, `6753812392`  
+comments `6753769152`, `6753797209`, `6753812392`
 Pre-implementation reviewed-unified base:
-`6a770f10074df6f4f8889d439f783ad42f5efe63`  
+`6a770f10074df6f4f8889d439f783ad42f5efe63`
 Exact semantic implementation/proof head:
-`3aa81f18dba338b79eff935de96e9d94eda75fae`  
+`3aa81f18dba338b79eff935de96e9d94eda75fae`
 Pinned EGM:
 `b3a35956759bf7f024af2ff061b2e0b44b438e4c`
 
@@ -84,14 +84,16 @@ Benign implementation differences identified by the independent scopes:
 
 ## Reviewed-unified integration sync
 
-After semantic drift was frozen, reviewed unified advanced from `6a770f10` to
-`066c08028f1f8b6c8f7ccc36c285df0ea3c6cfba` with B09.3 plasticity-transition
-work that touched package-import dependencies. Lane C merged that reviewed base
-conflict-free at integration head
-`4ecb38003576ac32e10490c5ee6512710b5a25b5`.
+After semantic drift was frozen, reviewed unified advanced from `6a770f10` through
+`039fbcab9df0e3aac6efb622bfaa059fa7e2bf5a` with B09.3 plasticity-transition
+and transition-authority work that touched package-import/retention dependencies.
+Lane C merged the latest reviewed base conflict-free at integration head
+`64351d421edcd9594f1f393322fa15936602fc8c`.
 
-The complete C12 package suite (**68/68**) and cross-owner
-C03/B13/C05/A12/source-rights ring (**33/33**) passed again after that merge.
-Structure, governance, smell, flow-control and contract-mirror checks also remained
-green. The aggregate quality chain still stops only on the pre-existing C07.1b
-legacy-trainer receipt defect reproduced on the exact `066c0802` base.
+The complete C12 package suite (**68/68**) and targeted C03/B09/vocabulary ring
+(**10/10**) passed after that latest merge. The earlier cross-owner
+C03/B13/C05/A12/source-rights ring remains **33/33** at the semantic-head proof.
+Flow-control and contract-mirror checks also remained green after `039fbcab`.
+The aggregate quality chain previously stopped only on the pre-existing C07.1b
+legacy-trainer receipt defect reproduced on the reviewed base; #527 does not edit
+that unrelated receipt.
