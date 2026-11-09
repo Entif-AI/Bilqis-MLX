@@ -3652,7 +3652,7 @@ Current production scan: **2073** raw raises across **253** files. The baseline 
 | `malformed decoder payload` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py` |
 | `malformed translated score` | 1 | `bilqis_mlx/runtime/tests/capability/test_capability_evidence_history.py` |
 | `missing source manifest` | 1 | `bilqis_mlx/runtime/tests/capability/test_capability_authority.py` |
-| `model-input planning entered before A06 authority rejection` | 1 | `bilqis_mlx/runtime/tests/batch/test_atlas_training_real_source.py` |
+| `model-input planning entered before A06 authority rejection` | 1 | `bilqis_mlx/runtime/tests/batch/training/test_atlas_training_real_source.py` |
 | `non-finite JSON literal` | 1 | `bilqis_mlx/semantics/atlas/feature_io_contracts.py` |
 | `pointer interrupted` | 1 | `bilqis_mlx/runtime/tests/custody/state_dag/test_persistence.py` |
 | `snapshot must not mutate MLX telemetry` | 1 | `bilqis_mlx/runtime/tests/model/resources/test_memory_retry.py` |

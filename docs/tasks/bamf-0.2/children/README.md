@@ -113,6 +113,7 @@ Registration does not assert readiness, source qualification or owner completion
 - [C02.2 #491](https://github.com/Entif-AI/Bilqis-MLX/issues/491): Compile source-visible targets and preserve legal modalities (leaf; parent C02)
 - [C02.3 #492](https://github.com/Entif-AI/Bilqis-MLX/issues/492): Deliver strategy provenance and unified model backend batches (leaf; parent C02)
 - [C02.4 #493](https://github.com/Entif-AI/Bilqis-MLX/issues/493): Emit teacher feedback and grade-neutral workload receipts (leaf; parent C02)
+- [C02.5 #905](https://github.com/Entif-AI/Bilqis-MLX/issues/905): Transport B13/C03 run and visit provenance into BAMF batches (leaf; parent C02)
 - [C03.1 #494](https://github.com/Entif-AI/Bilqis-MLX/issues/494): Port replay-salvaged bounded teacher policy and prior evidence (leaf; parent C03)
 - [C03.2 #495](https://github.com/Entif-AI/Bilqis-MLX/issues/495): Preserve source-scored canaries and shadow-strategy semantics (leaf; parent C03)
 - [C03.3 #496](https://github.com/Entif-AI/Bilqis-MLX/issues/496): Bind valid mentor advice and report real teacher health (leaf; parent C03)

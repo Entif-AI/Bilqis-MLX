@@ -45,11 +45,12 @@ class TrainingVisibilityTests(AtlasTrainingAdapterTest):
                 (task, frontier, "DENY"))
         self.assertEqual(
             caught.exception.context["reason"], "CONTEXT_AUTHORITY_REQUIRED")
-        for mutation in (
-                lambda grant: replace(grant, revoked=True),
-                lambda grant: replace(grant, evidence_digest="e" * 64),
+        for name, mutation in (
+                ("revoked", lambda grant: replace(grant, revoked=True)),
+                ("evidence_digest", lambda grant: replace(
+                    grant, evidence_digest="e" * 64)),
         ):
-            with self.subTest(mutation=mutation):
+            with self.subTest(mutation=name):
                 def revoke(task, frontier, policy):
                     grants = (mutation(frontier.grants[0]), *frontier.grants[1:])
                     return task, replace(frontier, grants=grants), policy
@@ -59,8 +60,11 @@ class TrainingVisibilityTests(AtlasTrainingAdapterTest):
                     caught.exception.context["reason"], "CONTEXT_NOT_ELIGIBLE")
 
     def test_unverified_frame_adapter_cannot_supply_eligibility(self):
-        for frames in (lambda ast: (), lambda ast: (ast,)):
-            with self.subTest(frames=frames), self.assertRaises(BilqisError) as caught:
+        for name, frames in (
+                ("empty", lambda ast: ()),
+                ("unverified", lambda ast: (ast,)),
+        ):
+            with self.subTest(frames=name), self.assertRaises(BilqisError) as caught:
                 self.compile(self.rows, frames_override=frames)
             self.assertEqual(
                 caught.exception.context["reason"], "CONTEXT_SOURCE_FRAMES_REQUIRED")

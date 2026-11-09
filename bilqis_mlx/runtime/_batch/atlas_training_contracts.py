@@ -1,7 +1,7 @@
 """Immutable BAMF batch records and exact release-consumption boundary."""
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field, is_dataclass
+from dataclasses import dataclass, field, fields, is_dataclass
 from enum import Enum
 import hashlib
 import json
@@ -12,6 +12,8 @@ from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.semantics.atlas_features import FeatureRow
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyRef
 from bilqis_mlx.semantics.frame_compiler import CompiledFrameBatch
+
+from .atlas_visit_provenance import BamfVisitProvenance
 
 
 @dataclass(frozen=True)
@@ -57,11 +59,15 @@ class BamfDeliveryProvenance:
     delivered_count: int
     rehearsal: str | None
     optimizer_step_seed: int
+    visit: BamfVisitProvenance
     source_family_id: str | None = None
     episode_id: str | None = None
     immediate_dependencies: tuple[DependencyRef, ...] = ()
 
     def __post_init__(self) -> None:
+        if (type(self.visit) is not BamfVisitProvenance
+                or self.visit.capability_id != self.capability_id):
+            _invalid("VISIT_PROVENANCE_CAPABILITY_MISMATCH")
         if (type(self.immediate_dependencies) is not tuple
                 or any(not isinstance(item, DependencyRef)
                        for item in self.immediate_dependencies)
@@ -162,8 +168,15 @@ def _freeze(value):
 
 def _canonical_json_value(value):
     """Convert exact C02 records into an unambiguous JSON-safe digest form."""
-    if is_dataclass(value):
-        value = asdict(value)
+    if type(value) is BamfVisitProvenance:
+        value = value.to_c03_record()
+    elif is_dataclass(value):
+        # Process-local issuer tokens prove authority; they are not portable row data.
+        value = {
+            item.name: getattr(value, item.name)
+            for item in fields(value)
+            if not item.name.startswith("_")
+        }
     if value is None or type(value) in (str, bool, int, float):
         return value
     if isinstance(value, bytes):
