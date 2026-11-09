@@ -118,3 +118,24 @@ must prove, in one real composed path:
 After that witness passes, a fresh independent exact-head review must inspect the
 complete #400 candidate before normal human-review PR turn-in. This issue does
 not authorize self-merge.
+
+### Detached witness resource receipt
+
+The first real full-topology composition attempt that reached the current
+production staging path, detached witness v3, failed before staging with
+`BAMF_VOCABULARY_DISK_STAGING_BUDGET_EXCEEDED`. The host had approximately
+131.2 GiB free at the time, which is below the A02 requirement after combining
+the unchanged 100 GiB reserve, the 30 GiB planning allowance and the complete
+checkpoint lower bound. The detached runner recorded `source_mutated: false`;
+the failure is therefore retained as positive evidence that production staging
+fails closed on real insufficient capacity, not as a semantic acceptance
+failure.
+
+The replacement full witness supplies an explicitly ample disposable observed
+capacity only inside the test environment so it can exercise neural-state,
+crash/pointer and retry semantics independently of host disk pressure. Observed
+free bytes and the derived `fits` boolean are deliberately excluded from the
+sealed resource requirement identity; the sealed requirement itself remains
+unchanged and is still revalidated by C07 before first persistence. The tracked
+low-space regression separately proves that real insufficient admission
+headroom fails before successor Factory or B13 persistence.
