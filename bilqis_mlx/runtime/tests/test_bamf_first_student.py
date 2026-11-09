@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, replace
+import hashlib
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -11,15 +12,18 @@ from unittest.mock import patch
 import mlx.core as mx
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
+import bilqis_mlx.runtime.model_topology_v2 as model_topology_v2
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.admission import _executable_factory_admission
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
 from bilqis_mlx.runtime.bamf_first_student import (
+    BAMF_DASHBOARD_METRICS_SCHEMA,
     BAMF_FOUNDATION_CONFIG_SCHEMA,
     BAMF_LAUNCH_RECEIPT_SCHEMA,
     BamfFoundationConfig,
+    LaunchReceipt,
     preflight_bamf_foundation,
 )
 from bilqis_mlx.runtime.state import _fingerprint
@@ -86,6 +90,13 @@ class BamfFirstStudentTests(unittest.TestCase):
             optimizer_hyperparameters=self.hp,
         )
 
+    def test_cli_reexports_foundation_contract_without_owning_dispatch(self):
+        from bilqis_mlx import cli
+
+        self.assertIs(cli.BamfFoundationConfig, BamfFoundationConfig)
+        self.assertIs(cli.LaunchReceipt, LaunchReceipt)
+        self.assertIs(cli.preflight_bamf_foundation, preflight_bamf_foundation)
+
     def preflight(self, target: Path, *, config=None, release=None):
         config = self.config() if config is None else config
         release = self.release if release is None else release
@@ -101,6 +112,8 @@ class BamfFirstStudentTests(unittest.TestCase):
         with shape_patch():
             student, manifest_sha256 = load_bamf_generation_authority(
                 target / "bamf-state.json")
+            declared = model_topology_v2.expected_bamf_shapes(
+                student.topology, student.extents)
 
         self.assertEqual(receipt.schema_version, BAMF_LAUNCH_RECEIPT_SCHEMA)
         self.assertEqual(receipt.config_schema_version, BAMF_FOUNDATION_CONFIG_SCHEMA)
@@ -108,10 +121,47 @@ class BamfFirstStudentTests(unittest.TestCase):
         self.assertEqual(receipt.manifest_sha256, manifest_sha256)
         self.assertEqual(receipt.factory_release_sha256, self.release.release_sha256)
         self.assertEqual(receipt.run_identity.run_seed, 543)
+        self.assertEqual(
+            receipt.run_identity.initial_topology_digest, student.topology.digest)
+        self.assertEqual(
+            receipt.run_identity.initial_extents_digest, student.extents.digest)
+        self.assertEqual(
+            receipt.run_identity.initial_implementation_sha256,
+            student.implementation_sha256)
+        source_identity = (self.release.source_bindings.source_attestation_sha256
+                           or self.release.source_bindings.digest())
+        self.assertEqual(receipt.run_identity.initial_source_identity, source_identity)
+        self.assertEqual(student.provenance.source_identity, source_identity)
+        self.assertEqual(
+            receipt.run_identity.initial_release_digest,
+            student.provenance.release_digest)
+        self.assertEqual(
+            receipt.run_identity.initial_teacher_identity,
+            student.provenance.teacher_identity)
+        self.assertEqual(
+            receipt.run_identity.initial_teacher_epoch,
+            student.provenance.teacher_epoch)
+        self.assertEqual(
+            receipt.run_identity.factory_release_sha256,
+            self.release.release_sha256)
         self.assertEqual(receipt.optimizer_hyperparameters, self.hp)
         self.assertEqual(student.optimizer_hyperparameters, self.hp)
         self.assertEqual(student.retained_state.optimizer_step, 0)
         self.assertEqual(student.retained_state.step_proofs, ())
+        self.assertEqual(student.semantic_abi["schema"], "bilqis.mlx.bamf-semantic-abi/v1")
+        self.assertGreater(student.semantic_abi["semantic_bank_count"], 0)
+        self.assertEqual(
+            student.semantic_abi["active_set_sha256"],
+            student.extents.active_semantic_digest)
+        expected_shapes = {item.name: item.shape for item in declared}
+        actual_shapes = {
+            name: tuple(value.shape)
+            for name, value in student.retained_state.optimizer.parameters.items()
+        }
+        self.assertEqual(actual_shapes, expected_shapes)
+        self.assertEqual(
+            tuple(student.retained_state.optimizer.parameters),
+            tuple(item.name for item in declared))
         self.assertTrue(all(
             not bool(mx.any(moment))
             for tree in (student.retained_state.optimizer.m,
@@ -123,14 +173,29 @@ class BamfFirstStudentTests(unittest.TestCase):
         self.assertEqual(
             student.teacher_state["teacher_identity"],
             self.release.execution_plan.projection_digests.teaching)
+        self.assertEqual(
+            student.teacher_state["teacher_identity"],
+            student.provenance.teacher_identity)
         self.assertEqual(student.teacher_state["next_seed"], 543)
         self.assertEqual(receipt.atlas_artifact, self.identity)
-        self.assertEqual(receipt.dashboard_metrics.active_grades, ("A", "B", "C"))
-        self.assertEqual(receipt.dashboard_metrics.current_grade, "C")
+        admitted_grades = tuple(
+            grade.grade_id for grade in self.release.execution_plan.grades)
+        self.assertEqual(receipt.dashboard_metrics.active_grades, admitted_grades)
+        self.assertEqual(receipt.dashboard_metrics.current_grade, admitted_grades[0])
         self.assertEqual(receipt.dashboard_metrics.optimizer_step, 0)
-        self.assertEqual(receipt.dashboard_metrics.grade_visits, 11)
-        self.assertEqual(receipt.dashboard_metrics.stage, "FOUNDATION")
-        self.assertEqual(receipt.dashboard_metrics.last_run_status, "READY_FOR_HUMAN_START")
+        self.assertEqual(receipt.dashboard_metrics.grade_visits, 0)
+        self.assertEqual(receipt.dashboard_metrics.stage, "READY_FOR_HUMAN_START")
+        self.assertEqual(receipt.dashboard_metrics.last_run_status, "NOT_STARTED")
+        self.assertEqual(
+            receipt.dashboard_metrics.schema_version, BAMF_DASHBOARD_METRICS_SCHEMA)
+        self.assertEqual(receipt.input_schema_versions, (
+            ("config", BAMF_FOUNDATION_CONFIG_SCHEMA),
+            ("factory_release", self.release.schema),
+            ("atlas_artifact_identity", self.identity.schema),
+        ))
+        self.assertEqual(
+            dict(receipt.output_schema_versions)["dashboard_metrics"],
+            BAMF_DASHBOARD_METRICS_SCHEMA)
         self.assertEqual(receipt.optional_services_required, ())
         for optional in ("akasha", "low-bit-cache", "private-journal"):
             self.assertFalse((target / optional).exists())
@@ -159,6 +224,33 @@ class BamfFirstStudentTests(unittest.TestCase):
             failure.exception.context["reason"],
             "BAMF_FIRST_STUDENT_FACTORY_RELEASE_DRIFT")
         self.assertFalse(target.exists())
+
+    def test_preflight_rejects_nested_semantic_graph_mutation_after_config_creation(self):
+        config = self.config()
+        config.semantic_graph["tokens"].append("caller-mutation")
+        target = self.root / "new-run"
+
+        with self.assertRaises(BilqisError) as failure:
+            self.preflight(target, config=config)
+
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_FIRST_STUDENT_SEMANTIC_GRAPH_DRIFT")
+        self.assertFalse(target.exists())
+
+    def test_preflight_preserves_source_run_bytes_while_publishing_only_target(self):
+        def file_digests():
+            return {
+                str(path.relative_to(self.source)): hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in sorted(self.source.rglob("*")) if path.is_file()
+            }
+
+        before = file_digests()
+        target = self.root / "new-run"
+        self.preflight(target)
+        self.assertEqual(file_digests(), before)
+        self.assertTrue((target / "bamf-state.json").is_file())
+        self.assertFalse((self.source / "bamf-state.json").exists())
 
 
 if __name__ == "__main__":

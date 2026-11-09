@@ -42,6 +42,11 @@ from .presentation.operator_cli.command import (
 from .presentation.operator_cli.settings import (
     ROOT, DEFAULT_RUN, GRADE_A_MANIFEST, LEGACY_ROOT, ORIGINAL_CHECKPOINT,
 )
+from .runtime.bamf_first_student import (
+    BamfFoundationConfig,
+    LaunchReceipt,
+    preflight_bamf_foundation,
+)
 
 
 if __name__ == "__main__":

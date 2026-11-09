@@ -2,16 +2,14 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
 from typing import Mapping
 
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.factory.executable_release import (
-    SCHEMA as FACTORY_RELEASE_SCHEMA,
-    ExecutableFactoryRelease,
-)
+from bilqis_mlx.factory.executable_release import ExecutableFactoryRelease
 from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY, MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, STATE_SCHEMA
@@ -24,6 +22,7 @@ from bilqis_mlx.runtime.bamf_bundle import (
 )
 from bilqis_mlx.runtime.bamf_bundle.genesis.foundation import initial_foundation_sidecars
 from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
+    INITIAL_BINDING_SCHEMA,
     RUN_IDENTITY_SCHEMA,
     BamfRunIdentity,
 )
@@ -36,6 +35,7 @@ from bilqis_mlx.runtime.model_topology_v2 import (
     b01_generation_authority,
     b01_generation_extents,
 )
+from bilqis_mlx.runtime.state import _fingerprint
 from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactIdentity,
     resolve_atlas_artifact_selection,
@@ -43,11 +43,24 @@ from bilqis_mlx.semantics.atlas.snapshot import (
 
 
 BAMF_FOUNDATION_CONFIG_SCHEMA = "bilqis.mlx.bamf-foundation-config/v1"
+BAMF_DASHBOARD_METRICS_SCHEMA = "bilqis.mlx.bamf-launch-dashboard-metrics/v1"
 BAMF_LAUNCH_RECEIPT_SCHEMA = "bilqis.mlx.bamf-launch-receipt/v1"
 
 
 def _invalid(reason: str) -> None:
-    ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason=reason)
+    ErrorBus.Raise(SCHOOL.BAMF_FIRST_STUDENT.INVALID, reason=reason)
+
+
+def _sha256(value: object) -> bool:
+    return (isinstance(value, str) and len(value) == SHA256_HEX_LENGTH
+            and all(char in "0123456789abcdef" for char in value))
+
+
+def _schema_inventory(value: object) -> bool:
+    return (type(value) is tuple and bool(value)
+            and all(type(item) is tuple and len(item) == 2
+                    and all(type(part) is str and part for part in item)
+                    for item in value))
 
 
 @dataclass(frozen=True)
@@ -61,6 +74,7 @@ class BamfFoundationConfig:
     atlas_artifact: AtlasArtifactIdentity
     optimizer_hyperparameters: AdamWHyperparameters
     schema_version: str = BAMF_FOUNDATION_CONFIG_SCHEMA
+    _semantic_graph_sha256: str = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         if (self.schema_version != BAMF_FOUNDATION_CONFIG_SCHEMA
@@ -72,9 +86,16 @@ class BamfFoundationConfig:
                 or type(self.optimizer_hyperparameters) is not AdamWHyperparameters):
             _invalid("BAMF_FIRST_STUDENT_CONFIG_INVALID")
         self.optimizer_hyperparameters.__post_init__()
+        graph = deepcopy(dict(self.semantic_graph))
         object.__setattr__(
-            self, "semantic_graph",
-            MappingProxyType(deepcopy(dict(self.semantic_graph))))
+            self, "semantic_graph", MappingProxyType(graph))
+        object.__setattr__(self, "_semantic_graph_sha256", _fingerprint(graph))
+
+    def validate(self) -> None:
+        if (not _sha256(self._semantic_graph_sha256)
+                or _fingerprint(dict(self.semantic_graph)) != self._semantic_graph_sha256):
+            _invalid("BAMF_FIRST_STUDENT_SEMANTIC_GRAPH_DRIFT")
+        self.optimizer_hyperparameters.__post_init__()
 
 
 @dataclass(frozen=True)
@@ -85,6 +106,17 @@ class DashboardMetrics:
     active_grades: tuple[str, ...]
     current_grade: str
     last_run_status: str
+    schema_version: str = BAMF_DASHBOARD_METRICS_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (self.schema_version != BAMF_DASHBOARD_METRICS_SCHEMA
+                or self.optimizer_step != 0 or self.grade_visits != 0
+                or self.stage != "READY_FOR_HUMAN_START"
+                or type(self.active_grades) is not tuple or not self.active_grades
+                or any(type(grade) is not str or not grade for grade in self.active_grades)
+                or self.current_grade != self.active_grades[0]
+                or self.last_run_status != "NOT_STARTED"):
+            _invalid("BAMF_FIRST_STUDENT_DASHBOARD_METRICS_INVALID")
 
 
 @dataclass(frozen=True)
@@ -107,13 +139,13 @@ class LaunchReceipt:
         if (self.schema_version != BAMF_LAUNCH_RECEIPT_SCHEMA
                 or self.config_schema_version != BAMF_FOUNDATION_CONFIG_SCHEMA
                 or type(self.run_identity) is not BamfRunIdentity
-                or not isinstance(self.manifest_sha256, str)
-                or len(self.manifest_sha256) != 64
-                or not isinstance(self.factory_release_sha256, str)
-                or len(self.factory_release_sha256) != 64
+                or not _sha256(self.manifest_sha256)
+                or not _sha256(self.factory_release_sha256)
                 or type(self.atlas_artifact) is not AtlasArtifactIdentity
                 or type(self.optimizer_hyperparameters) is not AdamWHyperparameters
                 or type(self.dashboard_metrics) is not DashboardMetrics
+                or not _schema_inventory(self.input_schema_versions)
+                or not _schema_inventory(self.output_schema_versions)
                 or self.optional_services_required != ()):
             _invalid("BAMF_FIRST_STUDENT_LAUNCH_RECEIPT_INVALID")
 
@@ -126,22 +158,17 @@ def _fresh_run_dir(new_run_dir) -> Path:
     return path.resolve()
 
 
-def _dashboard_metrics(source_run_dir: str) -> DashboardMetrics:
-    from bilqis_mlx.presentation.dashboard import _dashboard_state
-
-    _, state, school, active, current_grade = _dashboard_state(Path(source_run_dir))
-    if not isinstance(state, dict) or not isinstance(school, dict):
-        _invalid("BAMF_FIRST_STUDENT_DASHBOARD_STATE_INVALID")
-    current = school.get("current_student")
-    if not isinstance(current, dict) or type(current.get("optimizer_step")) is not int:
-        _invalid("BAMF_FIRST_STUDENT_DASHBOARD_STATE_INVALID")
+def _launch_dashboard_metrics(release: ExecutableFactoryRelease) -> DashboardMetrics:
+    active = tuple(grade.grade_id for grade in release.execution_plan.grades)
+    if not active:
+        _invalid("BAMF_FIRST_STUDENT_DASHBOARD_SCOPE_INVALID")
     return DashboardMetrics(
-        optimizer_step=current["optimizer_step"],
-        grade_visits=school.get("visits", 0),
-        stage=school.get("stage", "READY_FOR_HUMAN_START"),
-        active_grades=tuple(active),
-        current_grade=current_grade,
-        last_run_status=state.get("result", "NOT_STARTED"),
+        optimizer_step=0,
+        grade_visits=0,
+        stage="READY_FOR_HUMAN_START",
+        active_grades=active,
+        current_grade=active[0],
+        last_run_status="NOT_STARTED",
     )
 
 
@@ -167,7 +194,7 @@ def preflight_bamf_foundation(
     """Publish one owner-derived generation zero without performing a neural update."""
     if type(config) is not BamfFoundationConfig:
         _invalid("BAMF_FIRST_STUDENT_CONFIG_INVALID")
-    config.__post_init__()
+    config.validate()
     target = _fresh_run_dir(new_run_dir)
     graph = deepcopy(dict(config.semantic_graph))
     factory = issue_initial_factory_foundation_authority(config.source_run_dir, graph)
@@ -198,7 +225,7 @@ def preflight_bamf_foundation(
             "optimizer_step": 0,
         },),
     )
-    metrics = _dashboard_metrics(factory.source_run_dir)
+    metrics = _launch_dashboard_metrics(admitted_release)
     _fresh_run_dir(target)
     pointer = publish_initial_generation(target, prepared)
     student, manifest_sha256 = load_bamf_generation_authority(target / "bamf-state.json")
@@ -217,10 +244,13 @@ def preflight_bamf_foundation(
         input_schema_versions=(
             ("config", BAMF_FOUNDATION_CONFIG_SCHEMA),
             ("factory_release", admitted_release.schema),
+            ("atlas_artifact_identity", config.atlas_artifact.schema),
         ),
         output_schema_versions=(
             ("launch_receipt", BAMF_LAUNCH_RECEIPT_SCHEMA),
+            ("dashboard_metrics", BAMF_DASHBOARD_METRICS_SCHEMA),
             ("run_identity", RUN_IDENTITY_SCHEMA),
+            ("initial_generation_binding", INITIAL_BINDING_SCHEMA),
             ("optimizer_state", STATE_SCHEMA),
             ("generation_bundle", ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA),
             ("generation_pointer", BAMF_POINTER_SCHEMA),
@@ -229,7 +259,8 @@ def preflight_bamf_foundation(
 
 
 __all__ = (
-    "BAMF_FOUNDATION_CONFIG_SCHEMA", "BAMF_LAUNCH_RECEIPT_SCHEMA",
+    "BAMF_FOUNDATION_CONFIG_SCHEMA", "BAMF_DASHBOARD_METRICS_SCHEMA",
+    "BAMF_LAUNCH_RECEIPT_SCHEMA",
     "BamfFoundationConfig", "DashboardMetrics", "LaunchReceipt",
     "preflight_bamf_foundation",
 )
