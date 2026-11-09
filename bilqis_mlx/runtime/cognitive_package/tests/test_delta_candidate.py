@@ -7,7 +7,7 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.cognitive_package import (
-    DeltaSlice, PackageArtifact, PackageKind, ReceiverTensor,
+    DeltaSlice, ExportClassification, PackageArtifact, PackageKind, ReceiverTensor,
     encode_plastic_delta, export_capability,
     receiver_parameter_schema_digest, receiver_weight_digest, screen_delta_candidate,
 )
@@ -32,7 +32,10 @@ def _package(tensors):
     changed = parent[1:3].tobytes()
     delta = np.asarray((0.5, -1.0), dtype="<f4").tobytes()
     payload = encode_plastic_delta((DeltaSlice("weights", 1, 3, _sha(changed), delta),))
-    artifact = PackageArtifact("weights", PackageKind.WEIGHT_DELTA, payload)
+    artifact = PackageArtifact(
+        "weights", PackageKind.WEIGHT_DELTA, payload,
+        ExportClassification.PUBLIC_DERIVED,
+    )
     binding = replace(
         source.binding,
         base_weight_digest=receiver_weight_digest(tensors),
@@ -154,7 +157,10 @@ class DisposableDeltaCandidateTests(unittest.TestCase):
             "weights", 0, 1, "a" * 64,
             np.asarray((1.0,), dtype="<f4").tobytes()),)) + b" "
         source, rights = snapshot(PackageKind.WEIGHT_DELTA)
-        artifact = PackageArtifact("weights", PackageKind.WEIGHT_DELTA, payload)
+        artifact = PackageArtifact(
+            "weights", PackageKind.WEIGHT_DELTA, payload,
+            ExportClassification.PUBLIC_DERIVED,
+        )
         source = replace(source, artifacts=(artifact,) + source.artifacts[1:])
         rights = replace(rights, public_artifact_digests=tuple(sorted(
             value.digest for value in source.artifacts)))

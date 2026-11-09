@@ -1,5 +1,5 @@
 """Immutable package address, payload and source-clearance contracts."""
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from enum import Enum
 from hashlib import sha256
 import re
@@ -39,6 +39,13 @@ class PackageKind(str, Enum):
     BEHAVIORAL_DIFF = 'behavioral_diff'
 
 
+class ExportClassification(str, Enum):
+    PUBLIC_FIXTURE = 'PUBLIC_FIXTURE'
+    PUBLIC_DERIVED = 'PUBLIC_DERIVED'
+    PRIVATE_REAL = 'PRIVATE_REAL'
+    UNCLASSIFIED = 'UNCLASSIFIED'
+
+
 @dataclass(frozen=True)
 class PackageBinding:
     base_weight_digest: str
@@ -59,10 +66,16 @@ class PackageArtifact:
     artifact_id: str
     kind: PackageKind
     payload: bytes
+    classification: ExportClassification = field(
+        default=ExportClassification.UNCLASSIFIED,
+        compare=False,
+        repr=False,
+    )
 
     def __post_init__(self):
         require(name(self.artifact_id) and type(self.kind) is PackageKind
-                and type(self.payload) is bytes and bool(self.payload),
+                and type(self.payload) is bytes and bool(self.payload)
+                and type(self.classification) is ExportClassification,
                 'invalid package artifact')
 
     @property

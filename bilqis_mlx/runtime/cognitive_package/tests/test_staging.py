@@ -3,7 +3,8 @@ from dataclasses import fields, replace
 import unittest
 from bilqis_mlx.runtime.cognitive_package.tests.fixtures import PackageAssertions, snapshot, digest
 from bilqis_mlx.runtime.cognitive_package import (
-    CognitivePackage, PackageKind, export_capability, stage_import,
+    CognitivePackage, ExportClassification, PackageKind, export_capability,
+    stage_import,
 )
 
 
@@ -52,7 +53,10 @@ class ExchangeTests(PackageAssertions, unittest.TestCase):
     def test_mixed_exact_and_delta_mismatch_rejects_whole_package(self):
         source, rights = snapshot(PackageKind.WEIGHT_DELTA)
         from bilqis_mlx.runtime.cognitive_package import PackageArtifact
-        exact = PackageArtifact('exact', PackageKind.EXACT_TRANSFORM, b'identity')
+        exact = PackageArtifact(
+            'exact', PackageKind.EXACT_TRANSFORM, b'identity',
+            ExportClassification.PUBLIC_DERIVED,
+        )
         source = replace(source, artifacts=source.artifacts + (exact,))
         rights = replace(rights, public_artifact_digests=tuple(sorted(
             rights.public_artifact_digests + (exact.digest,))))

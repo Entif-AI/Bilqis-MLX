@@ -2,10 +2,52 @@
 from dataclasses import replace
 import unittest
 from bilqis_mlx.runtime.cognitive_package.tests.fixtures import PackageAssertions, snapshot, digest
-from bilqis_mlx.runtime.cognitive_package import export_capability, stage_import
+from bilqis_mlx.runtime.cognitive_package import (
+    ExportClassification, export_capability, stage_import,
+)
 
 
 class ClearanceTests(PackageAssertions, unittest.TestCase):
+    def test_public_fixture_and_public_derived_are_the_only_export_classes(self):
+        source, rights = snapshot()
+        self.assertEqual(
+            {artifact.classification for artifact in source.artifacts},
+            {ExportClassification.PUBLIC_FIXTURE, ExportClassification.PUBLIC_DERIVED},
+        )
+        package = export_capability(source, source.signature, rights)
+        self.assertEqual(package.artifacts, source.artifacts)
+
+        for classification in (
+            ExportClassification.PRIVATE_REAL,
+            ExportClassification.UNCLASSIFIED,
+        ):
+            with self.subTest(classification=classification):
+                held = replace(
+                    source,
+                    artifacts=(
+                        replace(source.artifacts[0], classification=classification),
+                        *source.artifacts[1:],
+                    ),
+                )
+                with self.assertPackageError('public export classification'):
+                    export_capability(held, held.signature, rights)
+
+    def test_public_allowlist_cannot_reclassify_private_material(self):
+        source, rights = snapshot()
+        private = replace(
+            source,
+            artifacts=(
+                replace(
+                    source.artifacts[0],
+                    classification=ExportClassification.PRIVATE_REAL,
+                ),
+                *source.artifacts[1:],
+            ),
+        )
+        self.assertIn(private.artifacts[0].digest, rights.public_artifact_digests)
+        with self.assertPackageError('public export classification'):
+            export_capability(private, private.signature, rights)
+
     def test_every_payload_requires_public_clearance(self):
         source, rights = snapshot()
         for artifact in source.artifacts:

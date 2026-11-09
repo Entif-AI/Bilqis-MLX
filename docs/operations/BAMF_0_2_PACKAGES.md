@@ -23,7 +23,14 @@ adoption right. `publish_screened_delta_import(...)` requires an A12
 host-provisioned source-authority registry, binds it to the live A12 selection and
 source frontier, and requires the package `SourceRights` to be its exact portable
 projection. Embedded rights or matching caller fields cannot authorize adoption.
-Do not pass private metadata to the public export API.
+The source-side `PackageArtifact.classification` gate is separate from those
+digest assertions: `export_capability(...)` accepts only `PUBLIC_FIXTURE` and
+`PUBLIC_DERIVED`. `PRIVATE_REAL` and `UNCLASSIFIED` fail before portable
+serialization even when a caller places the same payload digest in the public
+allowlist. Classification is deliberately not serialized in
+`cognitive-package/v1`; the portable package carries the signed A12 clearance
+projection instead. Cold package readers therefore do not reconstruct or invent
+source classification. Do not pass private metadata to the public export API.
 
 The accepted-run host provisions C09 registry material independently at
 `<run_dir>/source-authority-registry.json`. Generation publication and accepted

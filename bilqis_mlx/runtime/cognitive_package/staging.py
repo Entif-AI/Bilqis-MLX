@@ -1,5 +1,7 @@
 """Public export and compatibility inspection without executing or adopting payloads."""
-from .contracts import PackageBinding, PackageKind, SourceRights, require
+from .contracts import (
+    ExportClassification, PackageBinding, PackageKind, SourceRights, require,
+)
 from .records import CognitivePackage, ExportSnapshot, ImportPlan
 
 
@@ -9,6 +11,11 @@ def export_capability(generation, signature, rights):
     require(type(signature) is str and signature == generation.signature,
             'package signature differs from source')
     require(type(rights) is SourceRights, 'invalid source clearance record')
+    require(all(artifact.classification in {
+                ExportClassification.PUBLIC_FIXTURE,
+                ExportClassification.PUBLIC_DERIVED,
+            } for artifact in generation.artifacts),
+            'public export classification rejects private or unclassified material')
     return CognitivePackage(
         generation.generation_id, signature, generation.binding,
         generation.operator_identity, generation.artifacts,

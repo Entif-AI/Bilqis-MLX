@@ -1,7 +1,8 @@
 """Synthetic public source snapshots; no production qualification authority."""
 from hashlib import sha256
 from bilqis_mlx.runtime.cognitive_package import (
-    PackageArtifact, PackageBinding, PackageKind, SourceRights, ExportSnapshot,
+    ExportClassification, PackageArtifact, PackageBinding, PackageKind,
+    SourceRights, ExportSnapshot,
 )
 
 
@@ -11,10 +12,17 @@ def digest(value):
 
 def snapshot(kind=PackageKind.EXACT_TRANSFORM):
     binding = PackageBinding(*(digest(str(i)) for i in range(7)))
-    artifacts = tuple(PackageArtifact(name, artifact_kind, data) for name, artifact_kind, data in (
-        ('operator', kind, b'x + 1'), ('fixture', PackageKind.FIXTURE, b'1 -> 2'),
-        ('counterexample', PackageKind.COUNTEREXAMPLE, b'0 != 2'),
-        ('behavior', PackageKind.BEHAVIORAL_DIFF, b'gains=1;regressions=0')))
+    artifacts = tuple(
+        PackageArtifact(name, artifact_kind, data, classification)
+        for name, artifact_kind, data, classification in (
+            ('operator', kind, b'x + 1', ExportClassification.PUBLIC_DERIVED),
+            ('fixture', PackageKind.FIXTURE, b'1 -> 2', ExportClassification.PUBLIC_FIXTURE),
+            ('counterexample', PackageKind.COUNTEREXAMPLE, b'0 != 2',
+             ExportClassification.PUBLIC_FIXTURE),
+            ('behavior', PackageKind.BEHAVIORAL_DIFF, b'gains=1;regressions=0',
+             ExportClassification.PUBLIC_DERIVED),
+        )
+    )
     rights = SourceRights('public-test-authority', digest('clearance'),
                          tuple(sorted(a.digest for a in artifacts)), (), ())
     source = ExportSnapshot('successor-test-generation', 'increment-signature', binding,
