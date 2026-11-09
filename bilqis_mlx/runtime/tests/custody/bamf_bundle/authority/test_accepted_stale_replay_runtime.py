@@ -9,7 +9,7 @@ import unittest
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.accepted_corrections import (
-    _RUNTIME_OWNER, record_accepted_correction, record_accepted_derived_claim,
+    _reset_accepted_correction_runtime_for_tests, record_accepted_correction, record_accepted_derived_claim,
     record_accepted_remediation, record_accepted_revalidation,
     register_solve_context,
 )
@@ -261,7 +261,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         outbox = run / "akasha-outbox.sqlite3"
         self.assertEqual(len(pending_events(outbox)), 1)
 
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         del owner
         with shape_patch():
             cold = load_capability_support_owner(run, TARGET)
@@ -316,7 +316,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
                 training_authorities=transaction.training_authorities,
             )
 
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         with shape_patch():
             owner = load_capability_support_owner(run, TARGET)
         self.assertEqual(

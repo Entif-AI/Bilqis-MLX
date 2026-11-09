@@ -14,8 +14,14 @@ from .accepted_stale_replay_ledger import (
     derived_claim_record, remediation_record,
 )
 from .accepted_correction_runtime import (
-    _RUNTIME_OWNER, register_accepted_target,
-    register_compiled_batch, register_solve_context, runtime,
+    _reset_accepted_correction_runtime_for_tests,
+    deliver_accepted_context_invalidation,
+    deliver_accepted_context_revalidation,
+    deliver_accepted_correction,
+    deliver_accepted_revalidation,
+    register_accepted_target,
+    register_compiled_batch, register_solve_context,
+    replay_accepted_stale_evidence,
 )
 from .atlas_revalidation_common import _invalid
 from .atlas_revalidation_evidence import CorrectionEvent, RevalidationFrontier
@@ -70,6 +76,7 @@ class AcceptedRuntimeHost:
 
     def source_context(self, receipt: dict, *, graph: dict, source_root: Path | None):
         """Mint the admitted host context without granting authority to workers."""
+        self.source_authority()
         from bilqis_mlx.factory.live_answers import live_answer_registry
         from bilqis_mlx.runtime.source_execution import SourceExecutionContext
         from bilqis_mlx.source_adapters.school import live_source_registry
@@ -82,41 +89,32 @@ class AcceptedRuntimeHost:
         )
 
     def record_correction(self, event: CorrectionEvent) -> str:
+        self.source_authority()
         return record_accepted_correction(self.run_dir, event)
 
     def record_context_transition(self, previous, contexts, *caller_state):
+        self.source_authority()
         return record_accepted_context_transition(
             self.run_dir, previous, contexts, *caller_state)
 
     def record_context_revalidation(
         self, frontier: ContextRevalidationFrontier,
     ) -> str:
+        self.source_authority()
         return record_accepted_context_revalidation(
             self.run_dir, frontier)
 
     def record_revalidation(self, frontier: RevalidationFrontier) -> str:
+        self.source_authority()
         return record_accepted_revalidation(self.run_dir, frontier)
 
     def record_remediation(self, remediation: RemediationReceipt) -> str:
+        self.source_authority()
         return record_accepted_remediation(self.run_dir, remediation)
 
     def record_derived_claim(self, claim: DerivedClaim):
+        self.source_authority()
         return record_accepted_derived_claim(self.run_dir, claim)
-
-    def cache_inference(
-        self, artifact, expected_binding, *, cached_infer, fp32_recompute,
-        quality_check, policy, eligibility_source=None,
-    ):
-        """Consume exact-cache state through the same accepted host authority."""
-        from bilqis_mlx.runtime.bamf_bundle.admission import (
-            interactive_accepted_cache_inference,
-        )
-        return interactive_accepted_cache_inference(
-            self.run_dir, artifact, expected_binding,
-            cached_infer=cached_infer, fp32_recompute=fp32_recompute,
-            quality_check=quality_check, policy=policy,
-            eligibility_source=eligibility_source,
-        )
 
 
 def record_accepted_correction(
@@ -134,8 +132,8 @@ def record_accepted_correction(
     registry.verify_correction(event)
     record = correction_record(cache.accepted_manifest_sha256, event)
     append_record(run_dir, cache.accepted_manifest_sha256, record)
-    runtime(run_dir, cache.accepted_manifest_sha256).deliver(
-        record["event_id"], event)
+    deliver_accepted_correction(
+        run_dir, cache.accepted_manifest_sha256, record["event_id"], event)
     return record["event_id"]
 
 
@@ -183,12 +181,12 @@ def record_accepted_context_transition(
     )
     if not transition.invalidations:
         return transition
-    retained = runtime(run_dir, cache.accepted_manifest_sha256)
     for event in transition.invalidations:
         record = context_invalidation_record(
             cache.accepted_manifest_sha256, event, authority)
         append_record(run_dir, cache.accepted_manifest_sha256, record)
-        retained.deliver_context_invalidation(record["event_id"], event)
+        deliver_accepted_context_invalidation(
+            run_dir, cache.accepted_manifest_sha256, record["event_id"], event)
     return transition
 
 
@@ -219,8 +217,8 @@ def record_accepted_revalidation(
             _invalid("BAMF_C09_REVALIDATION_CORRECTION_MISSING")
     record = revalidation_record(cache.accepted_manifest_sha256, frontier)
     append_record(run_dir, cache.accepted_manifest_sha256, record)
-    runtime(run_dir, cache.accepted_manifest_sha256).deliver_revalidation(
-        record["event_id"], frontier)
+    deliver_accepted_revalidation(
+        run_dir, cache.accepted_manifest_sha256, record["event_id"], frontier)
     return record["event_id"]
 
 
@@ -258,8 +256,8 @@ def record_accepted_context_revalidation(
     record = context_revalidation_record(
         cache.accepted_manifest_sha256, frontier)
     append_record(run_dir, cache.accepted_manifest_sha256, record)
-    runtime(run_dir, cache.accepted_manifest_sha256).deliver_context_revalidation(
-        record["event_id"], frontier)
+    deliver_accepted_context_revalidation(
+        run_dir, cache.accepted_manifest_sha256, record["event_id"], frontier)
     return record["event_id"]
 
 
@@ -287,9 +285,7 @@ def record_accepted_remediation(
         _invalid("BAMF_C09_REMEDIATION_CORRECTION_MISSING")
     record = remediation_record(cache.accepted_manifest_sha256, remediation)
     append_record(run_dir, cache.accepted_manifest_sha256, record)
-    retained = runtime(run_dir, cache.accepted_manifest_sha256)
-    from .accepted_stale_replay_runtime import replay_stale_evidence
-    replay_stale_evidence(retained)
+    replay_accepted_stale_evidence(run_dir, cache.accepted_manifest_sha256)
     return record["event_id"]
 
 
@@ -307,14 +303,14 @@ def record_accepted_derived_claim(
     cache, registry = _accepted_correction_registry(run_dir)
     record = derived_claim_record(cache.accepted_manifest_sha256, claim)
     append_record(run_dir, cache.accepted_manifest_sha256, record)
-    retained = runtime(run_dir, cache.accepted_manifest_sha256)
-    from .accepted_stale_replay_runtime import replay_stale_evidence
-    results = replay_stale_evidence(retained)
+    results = replay_accepted_stale_evidence(
+        run_dir, cache.accepted_manifest_sha256)
     return record["event_id"], results
 
 
 __all__ = (
-    "AcceptedRuntimeHost", "_RUNTIME_OWNER", "accepted_correction_id",
+    "AcceptedRuntimeHost", "_reset_accepted_correction_runtime_for_tests",
+    "accepted_correction_id",
     "accepted_corrections", "ContextRevalidatedArtifact",
     "ContextRevalidationFrontier",
     "record_accepted_correction",

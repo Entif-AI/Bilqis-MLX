@@ -1,13 +1,11 @@
 """Accepted-generation runtime custody and C09 replay witnesses."""
 from dataclasses import replace
-from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 from pathlib import Path
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
-from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -15,12 +13,12 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.runtime.accepted_corrections import (
-    _RUNTIME_OWNER, record_accepted_correction,
+    AcceptedRuntimeHost, _reset_accepted_correction_runtime_for_tests,
+    record_accepted_correction,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     append_record, correction_record, read_records,
 )
-from bilqis_mlx.runtime.atlas_cache_codec import CacheAuthorityRuntime
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
@@ -28,12 +26,11 @@ from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    admit_candidate_step, bind_accepted_cache_authority,
-    bind_accepted_execution_cache,
+    admit_candidate_step, bind_accepted_execution_cache,
     derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
-    AcceptedExecutionCache, bind_cache_authority, bind_motif_artifact_owner,
+    AcceptedExecutionCache, bind_motif_artifact_owner,
     require_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
@@ -82,80 +79,6 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             AcceptedExecutionCache()
 
-    def test_accepted_b13_custody_issues_and_retains_opaque_cache_authority(self):
-        registry = SourceAuthorityRegistry((SourceAuthorityKey(
-            "cache-host", "1" * 64,
-            (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),),
-        ),))
-        self.publish(candidate(parent_state()), registry)
-        source = lambda: object()
-        with shape_patch():
-            cache, authority = bind_accepted_cache_authority(
-                self.run, source)
-            rebound_cache, rebound_authority = bind_accepted_cache_authority(
-                self.run, source)
-        self.assertIsInstance(authority, CacheAuthorityRuntime)
-        self.assertIs(rebound_cache, cache)
-        self.assertIs(rebound_authority, authority)
-        with shape_patch(), self.assertRaises(BilqisError):
-            bind_accepted_cache_authority(
-                self.run, lambda: object())
-
-    def test_cache_authority_has_no_importable_alternate_issuer(self):
-        from bilqis_mlx.runtime import atlas_cache_runtime
-        self.assertFalse(hasattr(
-            atlas_cache_runtime, "_ACCEPTED_CACHE_AUTHORITY_ISSUER"))
-
-    def test_concurrent_cache_authority_binds_reuse_one_capability(self):
-        registry = SourceAuthorityRegistry((SourceAuthorityKey(
-            "cache-host", "1" * 64,
-            (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),),
-        ),))
-        self.publish(candidate(parent_state()), registry)
-        source = lambda: object()
-        with shape_patch():
-            cache = bind_accepted_execution_cache(self.run)
-            with patch(
-                "bilqis_mlx.runtime.bamf_bundle.execution_cache.require_accepted_execution_cache",
-                return_value=cache,
-            ), ThreadPoolExecutor(max_workers=8) as pool:
-                authorities = tuple(pool.map(
-                    lambda _index: bind_cache_authority(cache, source), range(16)))
-        self.assertTrue(all(
-            authority is authorities[0] for authority in authorities))
-        self.assertIs(cache._cache_authority, authorities[0])
-
-    def test_cache_authority_rejects_foreign_currentness_resolver(self):
-        registry = SourceAuthorityRegistry((SourceAuthorityKey(
-            "cache-host", "1" * 64,
-            (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),),
-        ),))
-        self.publish(candidate(parent_state()), registry)
-        foreign = self.root / "foreign-run" / "bamf-state.json"
-        source = lambda: SimpleNamespace(pointer_path=foreign)
-        with shape_patch():
-            _cache, authority = bind_accepted_cache_authority(self.run, source)
-            with self.assertRaises(BilqisError):
-                authority._current_eligibility_inputs()
-
-    def test_cache_authority_dies_after_accepted_generation_advance(self):
-        registry = SourceAuthorityRegistry((SourceAuthorityKey(
-            "cache-host", "1" * 64,
-            (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),),
-        ),))
-        pointer = self.publish(candidate(parent_state()), registry)
-        source = lambda: SimpleNamespace(
-            pointer_path=self.run / "bamf-state.json")
-        with shape_patch():
-            _cache, authority = bind_accepted_cache_authority(self.run, source)
-        successor = candidate(
-            next_accepted_step(parent_state()), generation=1,
-            parent=pointer["manifest_sha256"],
-        )
-        self.publish(successor, registry)
-        with shape_patch(), self.assertRaises(BilqisError):
-            authority._current_eligibility_inputs()
-
     def _motif_fixture(self):
         self.publish(candidate(parent_state()), AUTHORITY)
         with shape_patch():
@@ -184,13 +107,37 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
             owner.require(cache, compiled)
 
         _reset_execution_cache_owner_for_tests()
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)
             with self.assertRaises(BilqisError):
                 bind_motif_artifact_owner(cold_cache, compiled)
             with self.assertRaises(BilqisError):
                 bind_motif_artifact_owner(cold_cache, compiled)
+
+    def test_stale_accepted_host_cannot_roll_forward_correction_into_successor(self):
+        cache, _compiled, owner = self._motif_fixture()
+        with shape_patch():
+            host = AcceptedRuntimeHost(self.run)
+        correction = _event(owner.source_dependencies[0])
+        successor = candidate(
+            next_accepted_step(parent_state()), generation=1,
+            parent=cache.accepted_manifest_sha256,
+        )
+        self.publish(successor, AUTHORITY)
+        with shape_patch(), self.assertRaises(BilqisError):
+            host.record_correction(correction)
+
+    def test_exact_retained_registry_cannot_bypass_accepted_ledger_ingress(self):
+        _cache, _compiled, owner = self._motif_fixture()
+        correction = _event(owner.source_dependencies[0])
+        from bilqis_mlx.runtime import accepted_corrections
+        leaked_owner = getattr(accepted_corrections, "_RUNTIME_OWNER", None)
+        if leaked_owner is None:
+            return
+        retained = next(iter(leaked_owner.entries.values()))
+        with shape_patch(), self.assertRaises(BilqisError):
+            owner.apply_correction(correction, retained.registry)
 
     def test_missing_local_correction_ledger_fails_closed_after_history_exists(self):
         _cache, compiled, owner = self._motif_fixture()
@@ -199,7 +146,7 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
             record_accepted_correction(self.run, correction)
         (self.run / "events.jsonl").unlink()
         _reset_execution_cache_owner_for_tests()
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)
             with self.assertRaises(BilqisError) as caught:
@@ -225,7 +172,7 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         lines = ledger.read_text(encoding="utf-8").splitlines(keepends=True)
         ledger.write_text("".join(lines[:-1]), encoding="utf-8")
         _reset_execution_cache_owner_for_tests()
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)
             with self.assertRaises(BilqisError) as caught:

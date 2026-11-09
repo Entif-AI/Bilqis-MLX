@@ -13,7 +13,7 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.runtime.accepted_corrections import (
-    AcceptedRuntimeHost, _RUNTIME_OWNER,
+    AcceptedRuntimeHost, _reset_accepted_correction_runtime_for_tests,
     record_accepted_correction, record_accepted_revalidation,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import correction_record
@@ -92,7 +92,7 @@ class AcceptedCorrectionReplayTests(unittest.TestCase):
         )
         self.publish(successor)
         _reset_execution_cache_owner_for_tests()
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
 
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)

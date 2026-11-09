@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-import secrets
 from pathlib import Path
 import weakref
 
@@ -35,10 +34,6 @@ class AcceptedExecutionCache:
     source_authority_registry_sha256: str | None
     schema_version: str = "bilqis.mlx.b13-accepted-execution-cache/v1"
     _motif_artifact_owners: dict = field(init=False, repr=False, compare=False)
-    _cache_mac_key: bytes = field(init=False, repr=False, compare=False)
-    _cache_authority: object | None = field(init=False, repr=False, compare=False)
-    _cache_authority_registry: object | None = field(init=False, repr=False, compare=False)
-    _cache_eligibility_source: object | None = field(init=False, repr=False, compare=False)
     _run_dir: Path | None = field(init=False, repr=False, compare=False)
     _correction_registry: object | None = field(init=False, repr=False, compare=False)
     _source_authority: object | None = field(init=False, repr=False, compare=False)
@@ -80,10 +75,6 @@ def _new_execution_cache(
         ("source_authority_registry_sha256", source_authority_registry_sha256),
         ("schema_version", "bilqis.mlx.b13-accepted-execution-cache/v1"),
         ("_motif_artifact_owners", weakref.WeakValueDictionary()),
-        ("_cache_mac_key", secrets.token_bytes(32)),
-        ("_cache_authority", None),
-        ("_cache_authority_registry", None),
-        ("_cache_eligibility_source", None),
         ("_run_dir", None),
         ("_correction_registry", None),
         ("_source_authority", None),
@@ -129,20 +120,7 @@ def bind_motif_artifact_owner(cache, compiled):
     return owner
 
 
-def bind_cache_authority(cache, eligibility_source=None):
-    """Bind one opaque B14 cache authority to authenticated B13 custody."""
-    cache = require_accepted_execution_cache(cache)
-    from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
-    from bilqis_mlx.runtime.atlas_cache_runtime import _bind_accepted_cache_authority
-    registry = cache._correction_registry
-    if (type(registry) is not SourceAuthorityRegistry
-            or cache.source_authority_registry_sha256 is None
-            or registry.digest != cache.source_authority_registry_sha256):
-        _invalid("B13_CACHE_AUTHORITY_SOURCE_REQUIRED")
-    return _bind_accepted_cache_authority(cache, eligibility_source)
-
-
 __all__ = (
-    "AcceptedExecutionCache", "bind_cache_authority", "bind_motif_artifact_owner",
+    "AcceptedExecutionCache", "bind_motif_artifact_owner",
     "require_accepted_execution_cache",
 )

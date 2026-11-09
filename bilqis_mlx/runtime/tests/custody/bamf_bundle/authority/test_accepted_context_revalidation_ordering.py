@@ -11,14 +11,14 @@ from unittest.mock import patch
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.accepted_corrections import (
-    AcceptedRuntimeHost, ContextRevalidationFrontier, _RUNTIME_OWNER,
+    AcceptedRuntimeHost, ContextRevalidationFrontier, _reset_accepted_correction_runtime_for_tests,
     register_accepted_target,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     append_record, context_invalidation_record, read_records,
 )
 from bilqis_mlx.runtime.accepted_correction_runtime import (
-    require_pending_corrections, runtime,
+    deliver_accepted_context_invalidation, require_pending_corrections,
 )
 from bilqis_mlx.runtime._atlas_owner_ingress import _route
 from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
@@ -90,9 +90,9 @@ class AcceptedContextOrderingTests(unittest.TestCase):
             record = context_invalidation_record(
                 cache.accepted_manifest_sha256, event)
             append_record(self.run, cache.accepted_manifest_sha256, record)
-            runtime(
+            deliver_accepted_context_invalidation(
                 self.run, cache.accepted_manifest_sha256,
-            ).deliver_context_invalidation(record["event_id"], event)
+                record["event_id"], event)
         return record["event_id"]
 
     def test_overlapping_contexts_and_premature_evidence_replay_in_order(self):
@@ -147,7 +147,7 @@ class AcceptedContextOrderingTests(unittest.TestCase):
         )
 
         _reset_execution_cache_owner_for_tests()
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         cold_owner = _ContextOwner((direct,))
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)
@@ -211,7 +211,7 @@ class AcceptedContextOrderingTests(unittest.TestCase):
         self.assertIsNone(require_pending_corrections(owner, low.artifact_id))
 
         _reset_execution_cache_owner_for_tests()
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         cold_owner = _ContextOwner((high, low))
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)

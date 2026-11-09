@@ -3,14 +3,15 @@ from dataclasses import replace
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.accepted_corrections import (
-    AcceptedRuntimeHost, ContextRevalidationFrontier, _RUNTIME_OWNER,
+    AcceptedRuntimeHost, ContextRevalidationFrontier, _reset_accepted_correction_runtime_for_tests,
     register_accepted_target,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     append_record, context_invalidation_record,
 )
-from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corrections
-from bilqis_mlx.runtime.accepted_correction_runtime import runtime
+from bilqis_mlx.runtime.accepted_correction_runtime import (
+    deliver_accepted_context_invalidation, require_pending_corrections,
+)
 from bilqis_mlx.runtime._atlas_owner_ingress import _route
 from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
@@ -55,7 +56,7 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
             owner.index.node(direct.artifact_id).immediate_dependencies, (new_time,))
 
         _reset_execution_cache_owner_for_tests()
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         cold_owner = ContextOwner((replace(direct), replace(descendant)))
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)
@@ -116,9 +117,9 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
             record = context_invalidation_record(
                 cache.accepted_manifest_sha256, invalidation)
             append_record(self.run, cache.accepted_manifest_sha256, record)
-            runtime(
+            deliver_accepted_context_invalidation(
                 self.run, cache.accepted_manifest_sha256,
-            ).deliver_context_invalidation(record["event_id"], invalidation)
+                record["event_id"], invalidation)
         old_time = DependencyRef(
             DependencyKind.TIME, "time:asof:context:" + case.previous.digest)
         new_time = DependencyRef(

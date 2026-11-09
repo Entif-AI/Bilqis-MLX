@@ -10,8 +10,11 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_capability_support_owner import CapabilitySupportArtifactOwner
 from bilqis_mlx.runtime.atlas_training_authority import extend_training_dependencies
 from bilqis_mlx.runtime.accepted_corrections import (
-    AcceptedRuntimeHost, ContextRevalidationFrontier, _RUNTIME_OWNER,
+    AcceptedRuntimeHost, ContextRevalidationFrontier, _reset_accepted_correction_runtime_for_tests,
     record_accepted_correction,
+)
+from bilqis_mlx.runtime.accepted_correction_runtime import (
+    deliver_accepted_context_invalidation,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     CONTEXT_INVALIDATION_EVENT, CORRECTION_EVENT,
@@ -31,7 +34,6 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 )
 from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
-from bilqis_mlx.runtime.accepted_correction_runtime import runtime
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     retention_decision, shape_patch,
 )
@@ -243,9 +245,9 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
                 published["manifest_sha256"], invalidation)
             append_record(
                 self.run, published["manifest_sha256"], record)
-            runtime(
+            deliver_accepted_context_invalidation(
                 self.run, published["manifest_sha256"],
-            ).deliver_context_invalidation(record["event_id"], invalidation)
+                record["event_id"], invalidation)
         prior = owner.current_node
         new_time = DependencyRef(
             DependencyKind.TIME,
@@ -269,7 +271,7 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
             RequalificationStatus.REQUALIFICATION_REQUIRED)
 
         _reset_execution_cache_owner_for_tests()
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         cold_owner = self.load_support(AUTHORITY)
         self.assertIs(
             cold_owner.support.status,

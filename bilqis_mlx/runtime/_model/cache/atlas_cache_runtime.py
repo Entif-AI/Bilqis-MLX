@@ -3,9 +3,6 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-from dataclasses import dataclass
-from pathlib import Path
-from threading import RLock
 
 from bilqis_mlx.errors import BilqisError
 from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
@@ -15,14 +12,6 @@ from .atlas_cache_binding import (
 
 
 CACHE_AUTHENTICATOR_BYTES = 16
-
-
-@dataclass(frozen=True)
-class _AcceptedCacheAuthorityEntry:
-    cache: object
-    authority: object
-    registry: object
-    eligibility_source: object | None
 
 
 def _invalid() -> None:
@@ -51,78 +40,13 @@ def _new_authority_owner():
     return require, issue
 
 
-def _new_accepted_cache_authority_owner(issue):
-    """Own exactly one live B14 authority per authenticated B13 cache."""
-    lock = RLock()
-    by_cache = {}
-    by_authority = {}
-
-    def bind(accepted_cache, eligibility_source=None):
-        from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
-            require_accepted_execution_cache,
-        )
-        from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
-
-        cache = require_accepted_execution_cache(accepted_cache)
-        registry = cache._correction_registry
-        if (type(registry) is not SourceAuthorityRegistry
-                or cache.source_authority_registry_sha256 is None
-                or registry.digest != cache.source_authority_registry_sha256):
-            _invalid()
-        with lock:
-            retained = by_cache.get(id(cache))
-            if retained is None:
-                authority = issue(
-                    registry, cache._cache_mac_key, eligibility_source)
-                retained = _AcceptedCacheAuthorityEntry(
-                    cache=cache,
-                    authority=authority,
-                    registry=registry,
-                    eligibility_source=eligibility_source,
-                )
-                by_cache[id(cache)] = retained
-                by_authority[id(authority)] = retained
-                object.__setattr__(cache, "_cache_authority", authority)
-                object.__setattr__(cache, "_cache_authority_registry", registry)
-                object.__setattr__(
-                    cache, "_cache_eligibility_source", eligibility_source)
-            else:
-                if (retained.cache is not cache
-                        or retained.registry != registry
-                        or retained.eligibility_source is not eligibility_source):
-                    _invalid()
-                authority = retained.authority
-                if (cache._cache_authority is not authority
-                        or cache._cache_authority_registry != retained.registry
-                        or cache._cache_eligibility_source
-                        is not retained.eligibility_source):
-                    _invalid()
-            return authority
-
-    def accepted_cache(authority):
-        with lock:
-            retained = by_authority.get(id(authority))
-            if (retained is None or retained.authority is not authority
-                    or retained.cache._cache_authority is not authority):
-                return None
-            return retained.cache
-
-    def clear_for_tests():
-        with lock:
-            by_cache.clear()
-            by_authority.clear()
-
-    return bind, accepted_cache, clear_for_tests
-
-
 _authority_state, _raw_authority_issue = _new_authority_owner()
-(_bind_accepted_cache_authority,
- _accepted_cache_for_authority,
- _reset_accepted_cache_authority_owner_for_tests) = (
-    _new_accepted_cache_authority_owner(
-    _raw_authority_issue)
-)
 del _raw_authority_issue
+
+
+def _accepted_cache_for_authority(_authority):
+    """No production B14 issuer exists until an upstream owner supplies one."""
+    return None
 
 
 class CacheAuthorityRuntime:
@@ -178,20 +102,7 @@ class CacheAuthorityRuntime:
         _, _, source, _ = _authority_state(self)
         if source is None:
             _invalid()
-        accepted_cache = _accepted_cache_for_authority(self)
-        if accepted_cache is None or accepted_cache._run_dir is None:
-            _invalid()
-        from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
-            require_accepted_execution_cache,
-        )
-        cache = require_accepted_execution_cache(accepted_cache)
-        inputs = source()
-        pointer_path = getattr(inputs, "pointer_path", None)
-        if (not isinstance(pointer_path, Path)
-                or pointer_path.resolve()
-                != (Path(cache._run_dir) / "bamf-state.json").resolve()):
-            _invalid()
-        return inputs
+        return source()
 
 def _require_authority(authority: CacheAuthorityRuntime) -> CacheAuthorityRuntime:
     if type(authority) is not CacheAuthorityRuntime:

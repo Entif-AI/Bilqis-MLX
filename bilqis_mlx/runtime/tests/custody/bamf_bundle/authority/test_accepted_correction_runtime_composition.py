@@ -10,7 +10,9 @@ from bilqis_mlx.runtime.accepted_corrections import (
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     append_record, context_invalidation_record,
 )
-from bilqis_mlx.runtime.accepted_correction_runtime import runtime
+from bilqis_mlx.runtime.accepted_correction_runtime import (
+    deliver_accepted_context_invalidation,
+)
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache,
 )
@@ -81,9 +83,9 @@ class AcceptedCorrectionCompositionTests(AcceptedCorrectionCompositionCase):
                 record = context_invalidation_record(
                     accepted_cache.accepted_manifest_sha256, invalidation)
                 append_record(self.run, accepted_cache.accepted_manifest_sha256, record)
-                runtime(
+                deliver_accepted_context_invalidation(
                     self.run, accepted_cache.accepted_manifest_sha256,
-                ).deliver_context_invalidation(record["event_id"], invalidation)
+                    record["event_id"], invalidation)
             target = owner._accepted_correction_target
             self.assertEqual(target.context_queues, {})
             self.assertIn(invalidation.event_id, target.context_invalidations)

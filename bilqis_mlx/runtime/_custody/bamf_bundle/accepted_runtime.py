@@ -10,7 +10,7 @@ from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 
 from .codec import load_bamf_bundle
-from .execution_cache import _new_execution_cache, bind_cache_authority
+from .execution_cache import _new_execution_cache
 from .publication import (
     _live_bundle_manifest, _pointer_lock, _read_pointer,
     _require_published_acceptance,
@@ -260,14 +260,6 @@ def _make_execution_cache_runtime():
 ) = _make_execution_cache_runtime()
 
 
-def bind_accepted_cache_authority(
-    run_dir: Path, eligibility_source=None,
-):
-    """Issue/reuse the B14 authority owned by the current accepted generation."""
-    cache, _registry = _accepted_correction_registry(run_dir)
-    return cache, bind_cache_authority(cache, eligibility_source)
-
-
 def _accepted_correction_registry(run_dir: Path):
     """Resolve C09 verifier material only from current accepted B13 custody."""
     from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
@@ -285,29 +277,9 @@ def _accepted_correction_registry(run_dir: Path):
     return cache, bound
 
 
-def interactive_accepted_cache_inference(
-    run_dir: Path, artifact, expected_binding, *,
-    cached_infer, fp32_recompute, quality_check, policy,
-    eligibility_source=None,
-):
-    """Read B14 cache only through the authority owned by accepted B13 custody."""
-    from bilqis_mlx.runtime.atlas_cache_codec import interactive_cache_inference
-
-    _cache, authority = bind_accepted_cache_authority(
-        run_dir, eligibility_source)
-    return interactive_cache_inference(
-        authority, artifact, expected_binding,
-        cached_infer=cached_infer,
-        fp32_recompute=fp32_recompute,
-        quality_check=quality_check,
-        policy=policy,
-    )
-
-
 __all__ = (
     "AcceptedGenerationIdentity",
     "_identity_from_pointer", "_published_in_memory_identity", "_read_accepted",
-    "bind_accepted_cache_authority",
-    "bind_accepted_execution_cache", "interactive_accepted_cache_inference",
+    "bind_accepted_execution_cache",
     "load_accepted_generation",
 )

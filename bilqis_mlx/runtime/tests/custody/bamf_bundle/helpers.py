@@ -6,6 +6,7 @@ from copy import deepcopy
 from dataclasses import replace
 import os
 from pathlib import Path
+import tempfile
 from unittest.mock import patch
 
 import mlx.core as mx
@@ -228,9 +229,32 @@ def with_source_authority_registry(bundle, registry):
 def provision_source_authority_registry(run_dir: Path, registry) -> Path:
     """Install test-only host trust-root material outside generation custody."""
     from bilqis_mlx.runtime.bamf_bundle.source_authority_custody import (
-        provision_source_authority_registry as provision,
+        SOURCE_AUTHORITY_REGISTRY_FILE,
+        source_authority_registry_lock,
     )
-    return provision(run_dir, registry)
+    from bilqis_mlx.runtime.bamf_bundle.records import invalid
+
+    root = Path(run_dir)
+    raw = canonical(registry.to_record())
+    with source_authority_registry_lock(root):
+        target = root / SOURCE_AUTHORITY_REGISTRY_FILE
+        if target.exists():
+            if target.read_bytes() != raw:
+                invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_IMMUTABLE")
+            return target
+        fd, temporary = tempfile.mkstemp(
+            prefix=".source-authority-registry.", suffix=".tmp", dir=root)
+        temporary_path = Path(temporary)
+        try:
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(raw)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary_path, target)
+            return target
+        finally:
+            if temporary_path.exists():
+                temporary_path.unlink()
 
 
 def publish_candidate(run_dir, bundle):

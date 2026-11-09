@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.runtime.accepted_corrections import (
-    _RUNTIME_OWNER, accepted_correction_id, record_accepted_correction,
+    _reset_accepted_correction_runtime_for_tests, accepted_correction_id, record_accepted_correction,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import read_records
 from bilqis_mlx.runtime.atlas_capability_support_owner import (
@@ -85,7 +85,7 @@ class CapabilitySupportLineageTests(unittest.TestCase):
             (accepted_id,),
         )
 
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         reloaded = self.load_support(AUTHORITY)
         self.assertEqual(reloaded.queue.event.event_id, first.event_id)
         target = reloaded._accepted_correction_target

@@ -6,7 +6,7 @@ import json
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.accepted_corrections import (
-    _RUNTIME_OWNER, record_accepted_correction, record_accepted_revalidation,
+    _reset_accepted_correction_runtime_for_tests, record_accepted_correction, record_accepted_revalidation,
 )
 from bilqis_mlx.runtime.akasha_outbox import pending_events
 from bilqis_mlx.runtime._atlas_owner_ingress import apply_capability_support_correction
@@ -96,7 +96,7 @@ class CapabilitySupportReplayTests(CapabilitySupportOwnerFixture):
         with self.assertRaises(BilqisError):
             owner.require(TARGET)
 
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         reloaded = self.load_support()
         self.assertEqual(
             reloaded.queue.held_artifact_ids,

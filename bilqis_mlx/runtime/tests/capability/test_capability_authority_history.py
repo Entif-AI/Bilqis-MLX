@@ -10,7 +10,7 @@ from unittest.mock import patch
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.learning.capability_championship import ReplayBinding
 from bilqis_mlx.runtime.accepted_corrections import (
-    _RUNTIME_OWNER, record_accepted_correction,
+    _reset_accepted_correction_runtime_for_tests, record_accepted_correction,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import accept_and_publish
 from bilqis_mlx.runtime.capability_authority import (
@@ -68,7 +68,7 @@ class AcceptedProgressionHistoryTests(unittest.TestCase):
                 _event(_ref(DependencyKind.SOURCE, SOURCE_ROW)),
                 AUTHORITY,
             )
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
 
     def _evaluate(self, correction_registry=None):
         release, checkpoint, admission = _release()

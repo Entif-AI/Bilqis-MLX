@@ -17,10 +17,11 @@ from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, provision_source_authority_registry,
-    shape_patch,
+    acceptance, candidate, next_accepted_step, parent_state,
+    provision_source_authority_registry, shape_patch,
 )
-from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _ref
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 
 
 class SourceExecutionContextTests(unittest.TestCase):
@@ -95,6 +96,50 @@ class SourceExecutionContextTests(unittest.TestCase):
                 self.assertIs(
                     context.source_authority(),
                     AcceptedRuntimeHost(run_dir).source_authority())
+
+    def test_stale_source_context_cannot_roll_forward_correction_into_successor(self):
+        from pathlib import Path
+        with TemporaryDirectory() as temporary, patch.dict(
+                os.environ, {"BILQIS_DATA_PLANE": str(Path(temporary) / "plane.sqlite3")}):
+            run_dir = Path(temporary) / "run"
+            provision_source_authority_registry(run_dir, AUTHORITY)
+            source = candidate(parent_state())
+            source = replace(source, correction_frontier={
+                **source.correction_frontier,
+                "source_authority_registry_sha256": AUTHORITY.digest,
+                "source_authority_registry": AUTHORITY.to_record(),
+            })
+            with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+                pointer = publish_bamf_generation(
+                    run_dir, source, acceptance=acceptance(source))
+            receipt = {"factory_release_sha256": self.release.release_sha256}
+            with patch(
+                "bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
+                return_value=self.release,
+            ), patch(
+                "bilqis_mlx.source_adapters.school.live_source_registry",
+                return_value=self.sources,
+            ), patch(
+                "bilqis_mlx.factory.live_answers.live_answer_registry",
+                return_value=self.answers,
+            ), shape_patch():
+                context = AcceptedRuntimeHost(run_dir).source_context(
+                    receipt, graph=self.graph, source_root=None)
+            successor = candidate(
+                next_accepted_step(parent_state()), generation=1,
+                parent=pointer["manifest_sha256"],
+            )
+            successor = replace(successor, correction_frontier={
+                **successor.correction_frontier,
+                "source_authority_registry_sha256": AUTHORITY.digest,
+                "source_authority_registry": AUTHORITY.to_record(),
+            })
+            with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+                publish_bamf_generation(
+                    run_dir, successor, acceptance=acceptance(successor))
+            correction = _event(_ref(DependencyKind.RIGHTS, "rights:stale-context"))
+            with shape_patch(), self.assertRaises(BilqisError):
+                context.record_correction(correction)
 
     def test_forged_accepted_runtime_host_subclass_cannot_mint_live_context(self):
         from pathlib import Path

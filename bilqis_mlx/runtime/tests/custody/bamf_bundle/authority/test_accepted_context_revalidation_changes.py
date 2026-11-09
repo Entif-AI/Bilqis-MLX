@@ -3,7 +3,7 @@ from dataclasses import replace
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.accepted_corrections import (
-    AcceptedRuntimeHost, ContextRevalidationFrontier, _RUNTIME_OWNER,
+    AcceptedRuntimeHost, ContextRevalidationFrontier, _reset_accepted_correction_runtime_for_tests,
     register_accepted_target,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import read_records
@@ -42,7 +42,7 @@ class AcceptedContextChangeTests(AcceptedContextFixture):
             direct, content_digest="d" * 64, immediate_dependencies=(new_time,))
         replacement_descendant = owner.index.node("motif:context-descendant")
         _reset_execution_cache_owner_for_tests()
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         replacement = ContextOwner((replacement_direct, replacement_descendant))
         with shape_patch():
             cache = bind_accepted_execution_cache(self.run)
@@ -69,7 +69,7 @@ class AcceptedContextChangeTests(AcceptedContextFixture):
 
         direct = owner.index.node("frame:context-direct")
         _reset_execution_cache_owner_for_tests()
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         cold_owner = ContextOwner((replace(direct), replace(descendant)))
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)

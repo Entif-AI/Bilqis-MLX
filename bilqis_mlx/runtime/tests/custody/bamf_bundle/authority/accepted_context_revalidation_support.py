@@ -10,13 +10,15 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.runtime.accepted_corrections import (
-    AcceptedRuntimeHost, ContextRevalidatedArtifact, _RUNTIME_OWNER,
+    AcceptedRuntimeHost, ContextRevalidatedArtifact, _reset_accepted_correction_runtime_for_tests,
     register_accepted_target,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     append_record, context_invalidation_record,
 )
-from bilqis_mlx.runtime.accepted_correction_runtime import runtime
+from bilqis_mlx.runtime.accepted_correction_runtime import (
+    deliver_accepted_context_invalidation,
+)
 from bilqis_mlx.runtime._atlas_owner_ingress import _route
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
@@ -138,7 +140,7 @@ class AcceptedContextFixture(unittest.TestCase):
             record = context_invalidation_record(
                 cache.accepted_manifest_sha256, invalidation)
             append_record(self.run, cache.accepted_manifest_sha256, record)
-            runtime(
+            deliver_accepted_context_invalidation(
                 self.run, cache.accepted_manifest_sha256,
-            ).deliver_context_invalidation(record["event_id"], invalidation)
+                record["event_id"], invalidation)
         return case, owner, host, invalidation, record["event_id"]

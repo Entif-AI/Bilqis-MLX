@@ -7,9 +7,8 @@ import json
 import os
 from pathlib import Path
 import stat
-import tempfile
 
-from .records import canonical, invalid
+from .records import invalid
 
 
 SOURCE_AUTHORITY_REGISTRY_FILE = "source-authority-registry.json"
@@ -73,40 +72,6 @@ def read_provisioned_source_authority_registry(run_dir: Path):
         return _read_provisioned_source_authority_registry_unlocked(run_dir)
 
 
-def provision_source_authority_registry(run_dir: Path, registry) -> Path:
-    """Install the host root once; later provisioning may only be idempotent."""
-    from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
-    if type(registry) is not SourceAuthorityRegistry:
-        invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_INVALID")
-    root = Path(run_dir)
-    with source_authority_registry_lock(root):
-        current = _read_provisioned_source_authority_registry_unlocked(root)
-        if current is not None:
-            if current != registry:
-                invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_IMMUTABLE")
-            return root / SOURCE_AUTHORITY_REGISTRY_FILE
-        raw = canonical(registry.to_record())
-        fd, temporary = tempfile.mkstemp(
-            prefix=".source-authority-registry.", suffix=".tmp", dir=root)
-        temporary_path = Path(temporary)
-        try:
-            with os.fdopen(fd, "wb") as stream:
-                stream.write(raw)
-                stream.flush()
-                os.fsync(stream.fileno())
-            target = root / SOURCE_AUTHORITY_REGISTRY_FILE
-            os.replace(temporary_path, target)
-            directory = os.open(root, os.O_RDONLY)
-            try:
-                os.fsync(directory)
-            finally:
-                os.close(directory)
-            return target
-        finally:
-            if temporary_path.exists():
-                temporary_path.unlink()
-
-
 def require_provisioned_source_authority_registry(
         run_dir: Path, correction_frontier):
     """Bind candidate/live C09 material to an independent host-provisioned root."""
@@ -137,7 +102,6 @@ __all__ = (
     "SOURCE_AUTHORITY_REGISTRY_FILE",
     "SOURCE_AUTHORITY_REGISTRY_LOCK",
     "_require_provisioned_source_authority_registry_unlocked",
-    "provision_source_authority_registry",
     "read_provisioned_source_authority_registry",
     "require_provisioned_source_authority_registry",
     "source_authority_registry_lock",

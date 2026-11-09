@@ -151,6 +151,7 @@ class SourceExecutionContext:
     def register_compiled_batch(self, batch) -> None:
         if self.run_dir is None:
             return
+        self.require_accepted_runtime(self.run_dir)
         from bilqis_mlx.runtime.accepted_corrections import (
             register_compiled_batch,
         )
@@ -160,6 +161,7 @@ class SourceExecutionContext:
     def register_solve_context(self, context) -> None:
         if self.run_dir is None:
             return
+        self.require_accepted_runtime(self.run_dir)
         from bilqis_mlx.runtime.accepted_corrections import (
             register_solve_context,
         )
@@ -169,6 +171,7 @@ class SourceExecutionContext:
     def record_correction(self, event) -> str:
         if self.run_dir is None:
             _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
+        self.require_accepted_runtime(self.run_dir)
         from bilqis_mlx.runtime.accepted_corrections import (
             record_accepted_correction,
         )
@@ -178,6 +181,7 @@ class SourceExecutionContext:
     def record_revalidation(self, frontier) -> str:
         if self.run_dir is None:
             _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
+        self.require_accepted_runtime(self.run_dir)
         from bilqis_mlx.runtime.accepted_corrections import (
             record_accepted_revalidation,
         )

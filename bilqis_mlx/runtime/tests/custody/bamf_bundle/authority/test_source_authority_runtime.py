@@ -136,6 +136,27 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
         self.assertFalse(hasattr(accepted_runtime, "_EXECUTION_CACHE_OWNER"))
         self.assertFalse(hasattr(accepted_runtime, "_ExecutionCacheOwner"))
 
+    def test_source_authority_trust_root_has_no_runtime_provisioner(self):
+        from bilqis_mlx.runtime.bamf_bundle import source_authority_custody
+        self.assertFalse(
+            hasattr(source_authority_custody, "provision_source_authority_registry"))
+
+    def test_c09_runtime_exposes_no_retained_registry_owner(self):
+        from bilqis_mlx.runtime import accepted_corrections
+        from bilqis_mlx.runtime import accepted_correction_runtime
+        self.assertFalse(hasattr(accepted_corrections, "_RUNTIME_OWNER"))
+        self.assertFalse(hasattr(accepted_correction_runtime, "_RUNTIME_OWNER"))
+
+    def test_c09_does_not_manufacture_b14_cache_authority(self):
+        from bilqis_mlx.runtime import accepted_corrections
+        from bilqis_mlx.runtime.bamf_bundle import accepted_runtime, admission, execution_cache
+        self.assertFalse(hasattr(accepted_runtime, "bind_accepted_cache_authority"))
+        self.assertFalse(hasattr(accepted_runtime, "interactive_accepted_cache_inference"))
+        self.assertFalse(hasattr(admission, "bind_accepted_cache_authority"))
+        self.assertFalse(hasattr(admission, "interactive_accepted_cache_inference"))
+        self.assertFalse(hasattr(execution_cache, "bind_cache_authority"))
+        self.assertFalse(hasattr(accepted_corrections.AcceptedRuntimeHost, "cache_inference"))
+
     def test_public_c09_facade_exposes_no_raw_registry_mutation_helpers(self):
         from bilqis_mlx.runtime import atlas_revalidation
         for name in (

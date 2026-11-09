@@ -32,8 +32,7 @@ from bilqis_mlx.runtime.model_topology_v2 import ParameterCensus
 from .accepted_runtime import (
     AcceptedGenerationIdentity, _identity_from_pointer,
     _published_in_memory_identity, _read_accepted,
-    bind_accepted_cache_authority,
-    bind_accepted_execution_cache, interactive_accepted_cache_inference,
+    bind_accepted_execution_cache,
     load_accepted_generation,
 )
 from .publication import publish_bamf_generation

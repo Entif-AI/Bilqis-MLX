@@ -13,13 +13,11 @@ import numpy as np
 
 from bilqis_mlx.runtime import mlx_checkpoint
 from bilqis_mlx.runtime.atlas_cache_codec import HEAD_WIDTH, CacheBinding, codec_manifest
-from bilqis_mlx.runtime.atlas_cache_eligibility import CacheEligibilityInputs
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
-from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_cache_authority
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     DECLARED, acceptance, candidate, parent_state,
     provision_source_authority_registry, shape_patch,
@@ -189,19 +187,3 @@ def _publish_cache_fixture(run, source):
     with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
         return publish_bamf_generation(
             run, source, acceptance=acceptance(source))
-
-
-def _accepted_cache_authority(
-    run, selection, clearance, frames, task, frontier, policy,
-):
-    inputs = CacheEligibilityInputs(
-        run / "bamf-state.json", clearance, selection, frontier,
-        _EXPORTED, frames, task, policy,
-        lambda binding: np.zeros((256, HEAD_WIDTH), dtype=np.float32),
-    )
-    registry = _accepted_registry()
-    eligibility_source = lambda: inputs
-    with _cache_shape_patch():
-        _cache, authority = bind_accepted_cache_authority(
-            run, eligibility_source)
-    return authority, registry, eligibility_source

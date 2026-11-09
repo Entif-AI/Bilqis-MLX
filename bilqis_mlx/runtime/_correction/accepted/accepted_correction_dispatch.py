@@ -23,19 +23,28 @@ from .atlas_source_authority import SourceAuthorityRegistry
 
 class AcceptedCorrectionRuntime:
     def __init__(self, run_dir: Path, manifest_sha256: str,
-                 registry: SourceAuthorityRegistry):
+                 registry: SourceAuthorityRegistry, require_live, authorize_owner):
         if not isinstance(registry, SourceAuthorityRegistry):
             _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
+        if not callable(require_live) or not callable(authorize_owner):
+            _invalid("BAMF_C09_ACCEPTED_RUNTIME_REQUIRED")
         self.run_dir = Path(run_dir)
         self.manifest_sha256 = manifest_sha256
         self.registry = registry
         self.targets: dict[tuple[str, int], AcceptedCorrectionTarget] = {}
         self.lock = RLock()
         self._accepted_support_census = None
+        self._require_runtime = require_live
+        self._authorize_owner = authorize_owner
 
     def _require_live(self) -> None:
-        from .accepted_correction_runtime import _RUNTIME_OWNER
-        _RUNTIME_OWNER.require(self)
+        self._require_runtime(self)
+
+    def _with_target(self, target: AcceptedCorrectionTarget, action):
+        owner = target.owner
+        if owner is None:
+            return action()
+        return self._authorize_owner(owner, action)
 
     def _advance(
         self, target: AcceptedCorrectionTarget, event_id: str,
@@ -89,14 +98,30 @@ class AcceptedCorrectionRuntime:
             elif target.owner is not owner:
                 _invalid("BAMF_C09_ACCEPTED_TARGET_IDENTITY_CONFLICT")
             setattr(owner, "_accepted_correction_target", target)
-            self._restore_branches(target)
-            target.seen.update(seen_event_ids)
-            self._replay(target)
-            target.reconcile_late_materializations(self.registry)
-            self._retry_deferred(target)
-            self._retry_context_deferred(target)
-            from .accepted_stale_replay_runtime import replay_stale_evidence
-            replay_stale_evidence(self)
+            def hydrate():
+                self._restore_branches(target)
+                target.seen.update(seen_event_ids)
+                self._replay(target)
+                target.reconcile_late_materializations(self.registry)
+                target.activate_pending(self.registry)
+                self._retry_deferred(target)
+                self._retry_context_deferred(target)
+                from .accepted_stale_replay_runtime import replay_stale_evidence
+                replay_stale_evidence(self)
+            self._with_target(target, hydrate)
+
+    def refresh_target(self, target: AcceptedCorrectionTarget) -> None:
+        self._require_live()
+        with self.lock:
+            def refresh():
+                self._replay(target)
+                target.reconcile_late_materializations(self.registry)
+                target.activate_pending(self.registry)
+                self._retry_deferred(target)
+                self._retry_context_deferred(target)
+                from .accepted_stale_replay_runtime import replay_persisted_faults
+                replay_persisted_faults(self)
+            self._with_target(target, refresh)
 
     def _retire_divergent_aliases(self, kind: str, owner) -> None:
         index = getattr(owner, "index", None)
@@ -207,9 +232,11 @@ class AcceptedCorrectionRuntime:
             for target in tuple(self.targets.values()):
                 if target.owner is None or event_id in target.seen:
                     continue
-                target.accept_correction(event, self.registry)
-                target.seen.add(event_id)
-                self._retry_deferred(target)
+                def apply_event():
+                    target.accept_correction(event, self.registry)
+                    target.seen.add(event_id)
+                    self._retry_deferred(target)
+                self._with_target(target, apply_event)
 
     def deliver_revalidation(
         self, event_id: str, frontier: RevalidationFrontier,
@@ -219,11 +246,13 @@ class AcceptedCorrectionRuntime:
             for target in tuple(self.targets.values()):
                 if target.owner is None or event_id in target.seen:
                     continue
-                if self._advance(target, event_id, frontier, self.registry):
-                    target.seen.add(event_id)
-                else:
-                    target.deferred[event_id] = frontier
-                self._retry_deferred(target)
+                def apply_frontier():
+                    if self._advance(target, event_id, frontier, self.registry):
+                        target.seen.add(event_id)
+                    else:
+                        target.deferred[event_id] = frontier
+                    self._retry_deferred(target)
+                self._with_target(target, apply_frontier)
             from .accepted_stale_replay_runtime import replay_stale_evidence
             replay_stale_evidence(self)
 
@@ -233,9 +262,11 @@ class AcceptedCorrectionRuntime:
             for target in tuple(self.targets.values()):
                 if target.owner is None or event_id in target.seen:
                     continue
-                target.accept_context_invalidation(event_id, event)
-                target.seen.add(event_id)
-                self._retry_context_deferred(target)
+                def apply_context():
+                    target.accept_context_invalidation(event_id, event)
+                    target.seen.add(event_id)
+                    self._retry_context_deferred(target)
+                self._with_target(target, apply_context)
 
     def deliver_context_revalidation(
         self, event_id: str, frontier,
@@ -245,11 +276,13 @@ class AcceptedCorrectionRuntime:
             for target in tuple(self.targets.values()):
                 if target.owner is None or event_id in target.seen:
                     continue
-                if target.advance_context(frontier, self.registry):
-                    target.seen.add(event_id)
-                    self._retry_context_deferred(target)
-                else:
-                    target.context_deferred[event_id] = frontier
+                def apply_context_frontier():
+                    if target.advance_context(frontier, self.registry):
+                        target.seen.add(event_id)
+                        self._retry_context_deferred(target)
+                    else:
+                        target.context_deferred[event_id] = frontier
+                self._with_target(target, apply_context_frontier)
             from .accepted_stale_replay_runtime import replay_stale_evidence
             replay_stale_evidence(self)
 

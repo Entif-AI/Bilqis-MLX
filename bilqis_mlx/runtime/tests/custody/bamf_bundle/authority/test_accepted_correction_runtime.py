@@ -10,7 +10,7 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.runtime.accepted_corrections import (
-    AcceptedRuntimeHost, _RUNTIME_OWNER, record_accepted_revalidation,
+    AcceptedRuntimeHost, _reset_accepted_correction_runtime_for_tests, record_accepted_revalidation,
     register_accepted_target,
 )
 from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corrections
@@ -89,7 +89,7 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
                 held, digest=held.content_digest, correction=correction))
         self.assertEqual(owner.queue.held_artifact_ids, ())
         _reset_execution_cache_owner_for_tests()
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)
             cold_owner = bind_motif_artifact_owner(cold_cache, compiled)
@@ -130,7 +130,7 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
         self.assertEqual(held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
         _reset_execution_cache_owner_for_tests()
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         cold_owner = case.owner()
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)

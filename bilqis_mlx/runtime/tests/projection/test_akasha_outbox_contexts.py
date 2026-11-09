@@ -23,7 +23,7 @@ from bilqis_mlx.runtime.accepted_correction_runtime import (
     AcceptedCorrectionRuntime,
 )
 from bilqis_mlx.runtime.accepted_corrections import (
-    AcceptedRuntimeHost, ContextRevalidationFrontier, _RUNTIME_OWNER,
+    AcceptedRuntimeHost, ContextRevalidationFrontier, _reset_accepted_correction_runtime_for_tests,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     CONTEXT_INVALIDATION_EVENT, read_records,
@@ -293,7 +293,7 @@ class AkashaOutboxContextIntegrationTests(CapabilitySupportOwnerFixture):
             path.unlink()
         self.assertEqual(read_outbox(outbox), ())
         _reset_execution_cache_owner_for_tests()
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         cold_owner = self.load_support(AUTHORITY)
         self.assertEqual(read_outbox(outbox), (event,))
         self.assertEqual(
