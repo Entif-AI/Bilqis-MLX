@@ -15,6 +15,7 @@ from .publication import (
 )
 from ._vocabulary_admission_records import (
     A02StagedVocabularyExtension, A02VocabularyStagingReceipt,
+    require_issued_a02_staged_vocabulary_extension,
 )
 from .vocabulary_admission import stage_vocabulary_extension
 from .package_import_transition import PackageImportTransition
@@ -53,7 +54,7 @@ __all__ = (
     "publish_bamf_generation", "load_bamf_generation",
     "load_bamf_generation_authority", "record_bamf_rejection",
     "A02StagedVocabularyExtension", "A02VocabularyStagingReceipt",
-    "stage_vocabulary_extension",
+    "require_issued_a02_staged_vocabulary_extension", "stage_vocabulary_extension",
     "PackageImportTransition",
     "AcceptedGenerationFeatureReceipt", "AuthenticatedCandidateFeatureContext",
     "authenticate_bamf_candidate_feature_context", "read_accepted_generation_feature_lineage",

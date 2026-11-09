@@ -34,6 +34,7 @@ from bilqis_mlx.semantics.atlas.vocabulary_transaction import (
 )
 from ._vocabulary_admission_records import (
     A02StagedVocabularyExtension, A02VocabularyStagingReceipt, STAGED_EVENT,
+    _issue_a02_staged_vocabulary_extension,
 )
 from .feature_authority import (
     _feature_schema, read_accepted_generation_feature_lineage,
@@ -215,5 +216,5 @@ def stage_vocabulary_extension(
         dict(parent.evaluation_contract),
         {"schema": "bilqis.mlx.bamf-generation-transition/v1",
          "kind": "PARAMETER_EXTENSION", "invalidate_derived_caches": True},
-        (event,))
-    return A02StagedVocabularyExtension(candidate, receipt)
+        (event,), parent.run_identity)
+    return _issue_a02_staged_vocabulary_extension(candidate, receipt)

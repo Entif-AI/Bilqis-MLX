@@ -1,13 +1,17 @@
 """Typed A02 staging evidence for a C07-owned admission boundary."""
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+
+from .genesis.records import BamfRunIdentity
 from .records import BamfBundleCandidate, canonical, invalid, sha
 
 STAGING_SCHEMA = "bilqis.mlx.a02-vocabulary-staging-receipt/v1"
 STAGED_EXTENSION_SCHEMA = "bilqis.mlx.a02-staged-vocabulary-extension/v1"
 STAGED_EVENT = "BAMF_A02_VOCABULARY_STAGED"
+_ISSUER = object()
 
 
 def _hex(value: object) -> bool:
@@ -67,18 +71,53 @@ class A02StagedVocabularyExtension:
     candidate: BamfBundleCandidate
     receipt: A02VocabularyStagingReceipt
     schema_version: str = STAGED_EXTENSION_SCHEMA
+    _issuance: object = field(init=False, default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
-        if (type(self.candidate) is not BamfBundleCandidate
+        if (getattr(self, "_issuance", None) is not _ISSUER
+                or type(self.candidate) is not BamfBundleCandidate
+                or type(self.candidate.run_identity) is not BamfRunIdentity
+                or self.candidate.run_identity.run_id != self.candidate.run_id
                 or type(self.receipt) is not A02VocabularyStagingReceipt
                 or self.candidate.run_id != self.receipt.run_id
                 or self.candidate.generation != self.receipt.generation
                 or self.candidate.parent_manifest_sha256
                 != self.receipt.parent_manifest_sha256
+                or self.receipt.candidate_identity_sha256
+                != candidate_identity_digest(self.candidate.retained_state)
                 or self.candidate.extents.digest != self.receipt.prepared_extents_sha256
                 or self.candidate.extents.active_semantic_digest
                 != self.receipt.active_set_sha256
+                or self.candidate.extents.factor_map_digest != self.receipt.feature_sha256
                 or self.candidate.extents.semantic_bank_count
                 != self.receipt.semantic_bank_count
+                or dict(self.candidate.transition) != {
+                    "schema": "bilqis.mlx.bamf-generation-transition/v1",
+                    "kind": "PARAMETER_EXTENSION",
+                    "invalidate_derived_caches": True,
+                }
                 or self.schema_version != STAGED_EXTENSION_SCHEMA):
             invalid("BAMF_A02_STAGED_EXTENSION_INVALID")
+
+
+def _issue_a02_staged_vocabulary_extension(
+        candidate: BamfBundleCandidate,
+        receipt: A02VocabularyStagingReceipt) -> A02StagedVocabularyExtension:
+    """Issue one live A02 handoff after the staging owner has built both halves."""
+    staged = object.__new__(A02StagedVocabularyExtension)
+    object.__setattr__(staged, "candidate", candidate)
+    object.__setattr__(staged, "receipt", receipt)
+    object.__setattr__(staged, "schema_version", STAGED_EXTENSION_SCHEMA)
+    object.__setattr__(staged, "_issuance", _ISSUER)
+    staged.__post_init__()
+    return staged
+
+
+def require_issued_a02_staged_vocabulary_extension(
+        value) -> A02StagedVocabularyExtension:
+    """Reject caller-constructed or deserialized lookalikes at the C07 boundary."""
+    if (type(value) is not A02StagedVocabularyExtension
+            or getattr(value, "_issuance", None) is not _ISSUER):
+        invalid("BAMF_A02_STAGED_EXTENSION_INVALID")
+    value.__post_init__()
+    return value
