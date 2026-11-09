@@ -30,10 +30,12 @@ def _motif_node(cache, compiled: CompiledEncoderInput) -> tuple[ArtifactNode, tu
     manifest = cache.motif_manifest
     if type(manifest) is not MotifManifest or manifest.digest != compiled.extents.motif_key_map_digest:
         _invalid("BAMF_C09_MOTIF_MANIFEST_DRIFT")
-    frame_nodes = compiled.packed_frame_artifact_owner.index.nodes
+    packed_owner = compiled.packed_frame_artifact_owner
+    frame_nodes = packed_owner.physical_nodes
     frame_ids = tuple(node.artifact_id for node in frame_nodes)
     dependencies = {
         *(node.reference for node in frame_nodes),
+        *packed_owner.current_context_dependencies,
         DependencyRef(DependencyKind.RELEASE, "semantic-release:" + manifest.semantic_release),
         DependencyRef(DependencyKind.RELEASE, "generation:" + cache.generation_binding),
         DependencyRef(DependencyKind.SOURCE, "accepted-manifest:" + cache.accepted_manifest_sha256),
@@ -41,8 +43,12 @@ def _motif_node(cache, compiled: CompiledEncoderInput) -> tuple[ArtifactNode, tu
         DependencyRef(DependencyKind.TIME, "generation:" + str(cache.generation)),
     }
     impact, exigency = owner_priority(ArtifactKind.MOTIF)
+    identity = (
+        frame_ids if not packed_owner.origin_context_keys
+        else ("multi-context", *frame_ids, *packed_owner.origin_context_keys)
+    )
     return ArtifactNode(
-        artifact_id="motif:" + manifest.digest + ":" + contract_digest(frame_ids),
+        artifact_id="motif:" + manifest.digest + ":" + contract_digest(identity),
         kind=ArtifactKind.MOTIF,
         content_digest=manifest.digest,
         eligible=True,
@@ -57,7 +63,7 @@ class MotifArtifactOwner:
 
     def __init__(self, cache, compiled: CompiledEncoderInput):
         motif, frame_ids = _motif_node(cache, compiled)
-        frame_nodes = compiled.packed_frame_artifact_owner.index.nodes
+        frame_nodes = compiled.packed_frame_artifact_owner.physical_nodes
         self._artifact_id = motif.artifact_id
         self._frame_ids = frame_ids
         self._index = DependencyIndex.build((*frame_nodes, motif))
@@ -93,6 +99,25 @@ class MotifArtifactOwner:
             for ref in self._index.node(artifact_id).immediate_dependencies
             if ref.kind is DependencyKind.SOURCE
         }))
+
+    def accepts_packed_owner(self, packed_owner) -> bool:
+        """Whether cached custody matches the incoming immutable frame contract."""
+        frame_nodes = packed_owner.physical_nodes
+        if tuple(node.artifact_id for node in frame_nodes) != self._frame_ids:
+            return False
+        for expected in frame_nodes:
+            current = self._index.node(expected.artifact_id)
+            if current.content_digest != expected.content_digest:
+                return False
+            current_immutable = tuple(
+                ref for ref in current.immediate_dependencies
+                if ref.kind is not DependencyKind.TIME)
+            expected_immutable = tuple(
+                ref for ref in expected.immediate_dependencies
+                if ref.kind is not DependencyKind.TIME)
+            if current_immutable != expected_immutable:
+                return False
+        return True
 
     def require(self, cache, compiled: CompiledEncoderInput) -> ArtifactNode:
         expected, frame_ids = _motif_node(cache, compiled)
