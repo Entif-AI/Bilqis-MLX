@@ -142,11 +142,7 @@ def _resource_requirement(resource) -> dict:
     return record
 
 
-def stage_vocabulary_extension(
-        run_dir: Path, artifact_path: str, source_bundle_path: Path,
-        admissions: tuple[str, ...]) -> A02StagedVocabularyExtension:
-    """Prepare one exact A02 successor without granting C07 admission authority."""
-    run_dir = Path(run_dir)
+def _accepted_vocabulary_parent(run_dir: Path, artifact_path: str):
     pointer_path = run_dir / "bamf-state.json"
     feature_context = read_accepted_generation_feature_context(pointer_path)
     parent_receipt = feature_context.receipt
@@ -163,28 +159,44 @@ def stage_vocabulary_extension(
     schema = FeatureSchema(
         recorded.role_ids, recorded.schema_ids, predecessor,
         recorded.source_bindings)
-    active_ids = _accepted_active_ids(parent, snapshot)
     prior = VocabularyPrior(
-        selection, parent.extents, features, schema, active_ids,
-        parent_manifest)
-    available = int(shutil.disk_usage(run_dir).free)
-    full_parent = _full_parent(parent, prior, available)
+        selection, parent.extents, features, schema,
+        _accepted_active_ids(parent, snapshot), parent_manifest)
+    return parent, parent_manifest, parent_receipt, features, predecessor, prior
+
+
+def _prepare_vocabulary_extension(
+        run_dir: Path, source_bundle_path: Path, admissions: tuple[str, ...],
+        parent, features, predecessor, prior):
+    full_parent = _full_parent(parent, prior, int(shutil.disk_usage(run_dir).free))
     if predecessor is None:
         if features.predecessor_digest is not None:
             invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
         plan = plan_vocabulary_extension(prior, admissions, parent.topology)
         prepared = stage_full_vocabulary_extension(full_parent, plan)
         mirror = build_registry_mirror_delta(
-            prior, plan, source_bundle_path=Path(source_bundle_path))
-    else:
-        plan = _plan_authenticated_vocabulary_extension(
-            prior, admissions, parent.topology, features, predecessor)
-        prepared = _stage_authenticated_full_vocabulary_extension(
-            full_parent, plan, accepted_features=features,
-            predecessor=predecessor)
-        mirror = _build_authenticated_registry_mirror_delta(
-            prior, plan, source_bundle_path=Path(source_bundle_path),
-            accepted_features=features, predecessor=predecessor)
+            prior, plan, source_bundle_path=source_bundle_path)
+        return plan, prepared, mirror
+    plan = _plan_authenticated_vocabulary_extension(
+        prior, admissions, parent.topology, features, predecessor)
+    prepared = _stage_authenticated_full_vocabulary_extension(
+        full_parent, plan, accepted_features=features, predecessor=predecessor)
+    mirror = _build_authenticated_registry_mirror_delta(
+        prior, plan, source_bundle_path=source_bundle_path,
+        accepted_features=features, predecessor=predecessor)
+    return plan, prepared, mirror
+
+
+def stage_vocabulary_extension(
+        run_dir: Path, artifact_path: str, source_bundle_path: Path,
+        admissions: tuple[str, ...]) -> A02StagedVocabularyExtension:
+    """Prepare one exact A02 successor without granting C07 admission authority."""
+    run_dir = Path(run_dir)
+    parent, parent_manifest, parent_receipt, features, predecessor, prior = (
+        _accepted_vocabulary_parent(run_dir, artifact_path))
+    plan, prepared, mirror = _prepare_vocabulary_extension(
+        run_dir, Path(source_bundle_path), admissions, parent, features,
+        predecessor, prior)
     successor_state = _successor_state(parent, prepared)
     resource_record = _resource_requirement(prepared.resource_estimate)
     receipt = A02VocabularyStagingReceipt(
