@@ -151,16 +151,28 @@ class LaunchReceipt:
 
 
 def _fresh_run_dir(new_run_dir) -> Path:
-    path = Path(new_run_dir).expanduser()
-    if (path.is_symlink() or (path.exists() and not path.is_dir())
-            or (path.is_dir() and next(path.iterdir(), None) is not None)):
-        _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
-    return path.resolve()
+    try:
+        path = Path(new_run_dir).expanduser()
+        if (path.is_symlink() or (path.exists() and not path.is_dir())
+                or (path.is_dir() and next(path.iterdir(), None) is not None)):
+            _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
+        return path.resolve()
+    except (TypeError, OSError, PermissionError, RuntimeError):
+        _invalid("BAMF_FIRST_STUDENT_TARGET_PATH_INVALID")
+
+
+def _resolved_run_path(value, *, reason: str) -> Path:
+    try:
+        return Path(value).expanduser().resolve()
+    except (TypeError, OSError, PermissionError, RuntimeError):
+        _invalid(reason)
 
 
 def _canonical_disjoint_run_paths(source_run_dir: str, new_run_dir) -> tuple[Path, Path]:
-    source = Path(source_run_dir).expanduser().resolve()
-    target = Path(new_run_dir).expanduser().resolve()
+    source = _resolved_run_path(
+        source_run_dir, reason="BAMF_FIRST_STUDENT_SOURCE_PATH_INVALID")
+    target = _resolved_run_path(
+        new_run_dir, reason="BAMF_FIRST_STUDENT_TARGET_PATH_INVALID")
     if target == source or source in target.parents:
         _invalid("BAMF_FIRST_STUDENT_TARGET_OVERLAPS_SOURCE")
     return source, target

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, replace
 import hashlib
+import io
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -15,6 +16,7 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 import bilqis_mlx.runtime.model_topology_v2 as model_topology_v2
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.champions import Checkpoint
+from bilqis_mlx.presentation.dashboard import build as build_dashboard
 from bilqis_mlx.runtime.admission import _executable_factory_admission
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
@@ -180,6 +182,8 @@ class BamfFirstStudentTests(unittest.TestCase):
         self.assertEqual(receipt.atlas_artifact, self.identity)
         admitted_grades = tuple(
             grade.grade_id for grade in self.release.execution_plan.grades)
+        self.assertEqual(
+            tuple(student.compiler_features["factory_grade_ids"]), admitted_grades)
         self.assertEqual(receipt.dashboard_metrics.active_grades, admitted_grades)
         self.assertEqual(receipt.dashboard_metrics.current_grade, admitted_grades[0])
         self.assertEqual(receipt.dashboard_metrics.optimizer_step, 0)
@@ -262,6 +266,33 @@ class BamfFirstStudentTests(unittest.TestCase):
             for path in sorted(self.source.rglob("*")) if path.is_file()
         }, before)
 
+    def test_preflight_types_target_path_normalization_failure_before_factory_replay(self):
+        with patch("bilqis_mlx.runtime.bamf_first_student."
+                   "issue_initial_factory_foundation_authority") as factory_replay:
+            with self.assertRaises(BilqisError) as failure:
+                self.preflight(object())
+
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_FIRST_STUDENT_TARGET_PATH_INVALID")
+        factory_replay.assert_not_called()
+
+    def test_preflight_types_source_path_expansion_failure_before_factory_replay(self):
+        config = replace(
+            self.config(), source_run_dir="~bilqis-no-such-user-543/source-run")
+        target = self.root / "new-run"
+
+        with patch("bilqis_mlx.runtime.bamf_first_student."
+                   "issue_initial_factory_foundation_authority") as factory_replay:
+            with self.assertRaises(BilqisError) as failure:
+                self.preflight(target, config=config)
+
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_FIRST_STUDENT_SOURCE_PATH_INVALID")
+        factory_replay.assert_not_called()
+        self.assertFalse(target.exists())
+
     def test_preflight_rejects_release_not_owned_by_current_factory_state(self):
         target = self.root / "new-run"
         foreign = replace(self.release, release_sha256="9" * 64)
@@ -298,6 +329,27 @@ class BamfFirstStudentTests(unittest.TestCase):
         self.assertEqual(file_digests(), before)
         self.assertTrue((target / "bamf-state.json").is_file())
         self.assertFalse((self.source / "bamf-state.json").exists())
+
+    def test_published_generation_zero_is_immediately_visible_to_existing_dashboard(self):
+        target = self.root / "new-run"
+        self.preflight(target)
+        admitted_grades = tuple(
+            grade.grade_id for grade in self.release.execution_plan.grades)
+
+        with shape_patch():
+            board = build_dashboard(
+                target, stream=io.StringIO(), reserve_gib=0.)
+
+        self.assertEqual(board.state["step"], 0)
+        self.assertEqual(board.state["visits"], 0)
+        self.assertEqual(board.state["stop"], "NOT_STARTED")
+        self.assertEqual(board.state["phase"], "READY_FOR_HUMAN_START")
+        self.assertEqual(board.state["prefix"], admitted_grades[0])
+        mastery = board.rows["GRADES & MASTERY"][-1]
+        self.assertEqual(mastery["grade"], admitted_grades[0])
+        self.assertEqual(mastery["step"], 0)
+        self.assertEqual(mastery["outcome"], "READY_FOR_HUMAN_START")
+        self.assertFalse((target / "state.json").exists())
 
 
 if __name__ == "__main__":

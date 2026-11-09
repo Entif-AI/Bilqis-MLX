@@ -51,6 +51,12 @@ def _validate_feature_binding(compiler, invalid):
                    or not all(isinstance(value, str) and value for value in row)
                    for row in schema['source_bindings'])):
         invalid()
+    grades = compiler.get('factory_grade_ids')
+    if grades is not None and (
+            not isinstance(grades, list) or not grades
+            or len(set(grades)) != len(grades)
+            or any(type(grade) is not str or not grade for grade in grades)):
+        invalid()
 
 
 def validate_identity_sidecars(extents, provenance, records, invalid):

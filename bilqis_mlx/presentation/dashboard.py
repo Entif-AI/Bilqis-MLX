@@ -20,9 +20,46 @@ from ..compatibility.historical_live_release import historical_rubric_descriptio
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard
 
 
+def _bamf_foundation_dashboard_state(run_dir: Path):
+    pointer = run_dir / "bamf-state.json"
+    if not pointer.is_file():
+        return None
+    from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
+
+    student, _ = load_bamf_generation_authority(pointer)
+    grades = student.compiler_features.get("factory_grade_ids")
+    identity = student.run_identity
+    if (student.generation != 0 or student.retained_state.optimizer_step != 0
+            or identity is None or not isinstance(grades, list) or not grades
+            or any(type(grade) is not str or not grade for grade in grades)):
+        return None
+    return {
+        "generation": 0,
+        "run_id": student.run_id,
+        "factory_release_sha256": identity.factory_release_sha256,
+        "teacher": {
+            "events": 0,
+            "identity": student.teacher_state.get("teacher_identity"),
+        },
+        "result": "NOT_STARTED",
+        "school": {
+            "current_student": {
+                "sha256": identity.initial_candidate_identity_sha256,
+                "optimizer_step": 0,
+            },
+            "active_grades": list(grades),
+            "grade_index": 0,
+            "visits": 0,
+            "stage": "READY_FOR_HUMAN_START",
+        },
+    }
+
+
 def _dashboard_state(run_dir: Path):
     state_path = run_dir / "state.json"
     state = read_current(run_dir) if state_path.exists() else None
+    if state is None:
+        state = _bamf_foundation_dashboard_state(run_dir)
     school = state["school"] if state else {}
     active = school.get("active_grades", ())
     grade_index = school.get("grade_index", 0)
