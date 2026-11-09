@@ -124,4 +124,3 @@ class PackageImportAdoptionTests(AdoptionHarness):
                         source_context=self.source_context())
         pointer = json.loads((self.run / "bamf-state.json").read_text())
         self.assertEqual(pointer["manifest_sha256"], self.pointer["manifest_sha256"])
-
