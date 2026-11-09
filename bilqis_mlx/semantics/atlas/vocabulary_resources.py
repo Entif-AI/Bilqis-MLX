@@ -21,6 +21,7 @@ from .vocabulary import (
     STAGED_ONLY, VocabularyExtension, VocabularyPrior,
     plan_vocabulary_extension,
 )
+from .vocabulary_planning import _plan_authenticated_vocabulary_extension
 
 RESOURCE_SCHEMA = "bilqis.atlas-vocabulary-resource-estimate/v1"
 REGISTRY_DELTA_SCHEMA = "bilqis.atlas-vocabulary-registry-mirror-delta/v1"
@@ -127,20 +128,26 @@ def estimate_vocabulary_resources(
     )
 
 
-def build_registry_mirror_delta(
+def _build_registry_mirror_delta(
     prior: VocabularyPrior,
     plan: VocabularyExtension,
     *,
     source_bundle_path: Path,
+    accepted_features=None,
+    predecessor=None,
 ) -> RegistryMirrorDelta:
     """Derive descriptions from verified source SKOS.definition, not labels."""
     if (type(prior) is not VocabularyPrior
             or type(plan) is not VocabularyExtension
             or not isinstance(source_bundle_path, Path)):
         _invalid("BAMF_VOCABULARY_MIRROR_INPUT_INVALID")
-    replay = plan_vocabulary_extension(
-        prior, tuple(item.semantic_id for item in plan.allocations),
-        ModelTopologySpecV2())
+    admissions = tuple(item.semantic_id for item in plan.allocations)
+    replay = (plan_vocabulary_extension(
+        prior, admissions, ModelTopologySpecV2())
+        if accepted_features is None and predecessor is None
+        else _plan_authenticated_vocabulary_extension(
+            prior, admissions, ModelTopologySpecV2(),
+            accepted_features, predecessor))
     if replay != plan:
         _invalid("BAMF_VOCABULARY_MIRROR_SOURCE_REPLAY_MISMATCH")
     snapshot = load_pinned_atlas_snapshot(prior.source_selection)
@@ -191,3 +198,27 @@ def build_registry_mirror_delta(
         active_indices=plan.active_indices,
         rows=tuple(rows),
     )
+
+
+def build_registry_mirror_delta(
+    prior: VocabularyPrior,
+    plan: VocabularyExtension,
+    *,
+    source_bundle_path: Path,
+) -> RegistryMirrorDelta:
+    return _build_registry_mirror_delta(
+        prior, plan, source_bundle_path=source_bundle_path)
+
+
+def _build_authenticated_registry_mirror_delta(
+    prior: VocabularyPrior,
+    plan: VocabularyExtension,
+    *,
+    source_bundle_path: Path,
+    accepted_features,
+    predecessor,
+) -> RegistryMirrorDelta:
+    """A02 owner path after B13 authenticates the predecessor-bearing map."""
+    return _build_registry_mirror_delta(
+        prior, plan, source_bundle_path=source_bundle_path,
+        accepted_features=accepted_features, predecessor=predecessor)

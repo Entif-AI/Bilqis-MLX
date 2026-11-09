@@ -155,6 +155,9 @@ class AcceptedFeatureLineageTests(FeatureLineageCase):
                 feature_authority, "build_feature_manifest", side_effect=replay):
             receipt, current, predecessor = read_accepted_generation_feature_lineage(
                 self.pointer)
+            _, source_current, _, construction_predecessor = (
+                feature_authority._read_accepted_generation_feature_context(
+                    self.pointer))
             self.assertEqual(
                 verify_accepted_generation_feature_receipt(
                     self.pointer, receipt), receipt)
@@ -163,3 +166,5 @@ class AcceptedFeatureLineageTests(FeatureLineageCase):
         self.assertEqual(receipt.feature_sha256, changed.digest)
         self.assertEqual(receipt.predecessor_feature_sha256, changed.digest)
         self.assertEqual((current, predecessor), (changed, changed))
+        self.assertEqual(
+            (source_current, construction_predecessor), (changed, root))

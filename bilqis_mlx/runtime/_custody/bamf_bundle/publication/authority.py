@@ -105,6 +105,13 @@ def require_accepted_parent(
             or acceptance.parent_candidate_identity_sha256
             != candidate_identity_digest(parent.retained_state)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    vocabulary_changed = (
+        parent.extents.semantic_bank_count != candidate.extents.semantic_bank_count
+        or parent.extents.active_semantic_digest
+        != candidate.extents.active_semantic_digest
+    )
+    if vocabulary_changed:
+        invalid("BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED")
 
 
 def parent_acceptance_for_publication(
