@@ -10,7 +10,7 @@ from unittest.mock import patch
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.capability_championship import ReplayBinding
 from bilqis_mlx.runtime.accepted_corrections import (
-    _reset_accepted_correction_runtime_for_tests, record_accepted_correction,
+    AcceptedRuntimeHost, _reset_accepted_correction_runtime_for_tests,
 )
 from bilqis_mlx.runtime.capability_authority import (
     AuthorityKind, evaluate_accepted_progression_authority,
@@ -55,10 +55,8 @@ class AcceptedProgressionHistoryTests(unittest.TestCase):
                 generation_binding=GENERATION,
                 authority_registry=AUTHORITY,
             )
-            record_accepted_correction(
-                self.run,
-                _event(_ref(DependencyKind.SOURCE, SOURCE_ROW)),
-            )
+            AcceptedRuntimeHost(self.run).record_correction(
+                _event(_ref(DependencyKind.SOURCE, SOURCE_ROW)))
         _reset_accepted_correction_runtime_for_tests()
 
     def _evaluate(self, correction_registry=None):
