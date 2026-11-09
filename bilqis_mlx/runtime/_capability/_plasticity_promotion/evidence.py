@@ -187,10 +187,48 @@ def validate_sweep_evidence(
 
 
 def evidence_digest(evidence) -> str:
-    records = [{
-        "generation": generation,
-        "factory_release_sha256": receipt.get("factory_release_sha256"),
-        "school": receipt.get("school"),
-        "last_exam": receipt.get("last_exam"),
-    } for generation, receipt, _school in evidence]
+    """Digest only promotion-authoritative state from verified State-DAG nodes.
+
+    The State DAG already authenticates each raw receipt.  Re-hashing the full
+    serialized SchoolState here would incorrectly make grade labels, grade index,
+    course digest, and other scheduler-local metadata part of B09 transition
+    authority.  The receipt instead commits to the exact fields that C05 validates
+    for this promotion attempt.  Runtime release identity is still checked for
+    immutability across the interval by ``evidence_interval``; the immutable birth
+    release and foundation capability scope are bound separately in the issued
+    promotion receipt.
+    """
+    records = []
+    for generation, receipt, school in evidence:
+        last_exam = receipt.get("last_exam")
+        exam_projection = None
+        if isinstance(last_exam, dict):
+            exam_projection = {
+                "student_sha256": last_exam.get("student_sha256"),
+                "optimizer_step": last_exam.get("optimizer_step"),
+                "grade_test_lifecycle": last_exam.get("grade_test_lifecycle"),
+                "assessment_scope_sha256": last_exam.get("assessment_scope_sha256"),
+                "scores": last_exam.get("scores"),
+            }
+        records.append({
+            "generation": generation,
+            "school": {
+                "stage": school.stage,
+                "queue": tuple(school.queue),
+                "promotion_sweep_scope": tuple(school.promotion_sweep_scope),
+                "promotion_sweep_scores": tuple(school.promotion_sweep_scores),
+                "promotion_sweep_attempt_student_sha256":
+                    school.promotion_sweep_attempt_student_sha256,
+                "promotion_sweep_attempt_scope":
+                    tuple(school.promotion_sweep_attempt_scope),
+                "promotion_sweep_return_stage":
+                    getattr(school, "promotion_sweep_return_stage", None),
+                "grade_exam_epoch": school.grade_exam_epoch,
+                "carried_mastery_debt": tuple(school.carried_mastery_debt),
+                "current_student_sha256": school.current_student.sha256,
+                "current_student_optimizer_step":
+                    school.current_student.optimizer_step,
+            },
+            "last_exam": exam_projection,
+        })
     return digest(records)
