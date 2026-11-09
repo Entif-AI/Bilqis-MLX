@@ -177,11 +177,11 @@
     },
     {
       "issue": 905,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "e78e44a6bafa6c078f039b902254e48bfe01ba4b",
-      "summary": "C02.5 consumed reviewed unified 2c26d4ac and fresh scoped EGM passed after one test-only proof repair; 0 Blockers / 0 Majors / 0 Nits. Differential leaf and aggregate quality are green; repository premerge gate pending before ready PR turn-in.",
-      "resume_trigger": null,
+      "pr": 934,
+      "state": "TURNED_IN",
+      "head_sha": "51110dedd4588e4238f749dab05e40b10357651a",
+      "summary": "C02.5 consumed reviewed unified 2c26d4ac exactly once; fresh scoped EGM passed 0 Blockers / 0 Majors / 0 Nits. Mechanical premerge compatibility closed 20 candidate-only fixture errors, and the remaining 28 failure identities reproduce exactly on reviewed unified with zero candidate-only residual failures. Ready PR #934 is turned in for human review.",
+      "resume_trigger": "Human review/merge PR #934 into codex/bamf-unified-base-20261028. Do not self-merge.",
       "preserved_branch": "codex/905-c02-5-visit-provenance-20261107"
     }
   ]

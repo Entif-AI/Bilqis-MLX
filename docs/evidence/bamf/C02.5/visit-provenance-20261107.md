@@ -4,7 +4,7 @@ Issue #905. Branch `codex/905-c02-5-visit-provenance-20261107`.
 Reviewed unified consumed for this scoped implementation:
 `bd3657e170c8bdc046a7bb28524c0fb829ca7ce9`.
 
-Status: **SEMANTICALLY_QUALIFIED; FRESH_FINAL_EGM_PASSED; PREMERGE_DIFFERENTIAL_CLEAN; PR_PENDING**.
+Status: **SEMANTICALLY_QUALIFIED; FRESH_FINAL_EGM_PASSED; PREMERGE_DIFFERENTIAL_CLEAN; TURNED_IN_PR_934**.
 
 ## Authority boundary
 
@@ -185,3 +185,8 @@ baseline-only failure identities. A fresh independent review of exact
 
 The branch is therefore ready for normal PR turn-in and hosted CI. No baseline
 failure is reassigned to C02.5, and merge remains a separate human authority gate.
+
+Ready PR #934 was opened from the preserved feature branch into
+`codex/bamf-unified-base-20261028` at evidence head
+`51110dedd4588e4238f749dab05e40b10357651a`. Human review/merge remains required;
+the issue and PR do not authorize self-merge.
