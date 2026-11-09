@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
-  "updated_at": "2026-11-09T06:52:14Z",
+  "updated_at": "2026-11-09T07:34:37Z",
   "exception": null,
   "items": [
     {
@@ -17,10 +17,11 @@
     },
     {
       "issue": 930,
-      "pr": null,
+      "pr": 938,
       "state": "ACTIVE",
-      "head_sha": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
-      "summary": "C09 packed-frame/context-view integration repair is ACTIVE on isolated serialized-writer branch codex/930-c09-packed-frame-context-views-20261109. Baseline on reviewed unified 9385ac7f reproduced 1 pass / 5 BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT errors. Rejected R2 review is preserved; governing R3 passed fresh three-lens design review at 0 Blockers / 0 Majors / 0 Nits in every lens. Implementation now preserves one physical packed identity across scoped origin-context views, keeps current TIME as mutable custody, derives stable multi-context motif/cache identity from physical IDs plus origin-context keys, preserves single-context identity, and passes the focused nested/context/motif/cold-replay acceptance matrix plus the full correction ring. Final candidate freeze and implementation EGM remain pending.",
+      "head_sha": "f0faed7f62b71d2a3b21a81931635e9a88249f4f",
+      "head_sha_role": "implementation plus mandatory S0 companion-test structure head; this lane/PR bookkeeping commit is docs/flow-only and must be included in the final exact-head qualification range",
+      "summary": "C09 packed-frame/context-view integration repair remains ACTIVE on serialized-writer branch codex/930-c09-packed-frame-context-views-20261109 and is represented by open PR #938. Governing R3 design passed 0B/0M/0N. Candidate e05256de closed the prior semantic/readiness proof gaps but fresh successor EGM failed readiness 0B/2M on mandatory S0 companion-test structure and stale flow/PR bookkeeping, while codebase and authority each passed 0B/0M/0N. Structural successor f0faed7f moves focused context-view tests into mirrored submodules so all encountered companion files are below 240 LoC without changing production semantics. Final docs/flow reconciliation, exact-head proof, fresh implementation EGM and human-review turn-in remain pending.",
       "resume_trigger": null,
       "preserved_branch": "codex/930-c09-packed-frame-context-views-20261109"
     },
