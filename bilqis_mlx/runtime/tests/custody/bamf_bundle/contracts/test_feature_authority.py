@@ -277,7 +277,7 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         self.assertEqual(
             failure.exception.context["reason"], "BAMF_FEATURE_ACTIVE_SET_DRIFT")
 
-    def test_same_feature_child_active_set_drift_refuses_receipt(self):
+    def test_same_feature_child_active_set_drift_requires_c07_admission(self):
         features = source_features()
         first = self.publish_feature_genesis(features)
         with shape_patch():
@@ -295,15 +295,18 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
                 transition={
                     **child.transition, "kind": "PARAMETER_EXTENSION",
                     "invalidate_derived_caches": True})
-            with patch.object(mlx_checkpoint, "assert_headroom"):
+            with patch.object(mlx_checkpoint, "assert_headroom"), \
+                    self.assertRaises(BilqisError) as failure:
                 publish_bamf_generation(
                     self.run, child,
                     acceptance=acceptance(
                         child, parent=parent.retained_state), reserve_gib=0.)
-        with self.assertRaises(BilqisError) as failure:
-            self.read_receipt(features)
         self.assertEqual(
-            failure.exception.context["reason"], "BAMF_FEATURE_ACTIVE_SET_DRIFT")
+            failure.exception.context["reason"],
+            "BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED")
+        receipt = self.read_receipt(features)
+        self.assertEqual(receipt.generation, 0)
+        self.assertEqual(receipt.generation_manifest_sha256, first["manifest_sha256"])
 
     def test_cold_resume_reproduces_the_same_receipt_identity(self):
         features = source_features()
