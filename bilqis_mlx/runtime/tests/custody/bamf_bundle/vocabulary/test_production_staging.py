@@ -19,11 +19,15 @@ from bilqis_mlx.runtime.bamf_bundle import (
 )
 from bilqis_mlx.runtime.bamf_bundle.genesis import foundation as genesis_foundation
 from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
+from bilqis_mlx.runtime.model_topology_v2 import (
+    expected_bamf_shapes, initialize_bamf_row,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, genesis_preparation,
 )
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
+from bilqis_mlx.semantics.atlas.vocabulary_factors import prepare_identity_factors
 from bilqis_mlx.semantics.tests.atlas.vocabulary_fixtures import _allocation_fixture
 
 
@@ -106,7 +110,10 @@ class A02ProductionStagingTests(unittest.TestCase):
             },
         )
         self._accept(current, parent_state=parent.retained_state)
-        return root_snapshot, current_snapshot, parent.retained_state.optimizer
+        return (
+            root_snapshot, current_snapshot, current_features,
+            parent.retained_state.optimizer,
+        )
 
     def _source_patches(self, root_snapshot, current_snapshot):
         def source_snapshot(selection):
@@ -135,7 +142,8 @@ class A02ProductionStagingTests(unittest.TestCase):
         return stack
 
     def test_stages_bank_extension_without_granting_admission(self):
-        root_snapshot, current_snapshot, optimizer = self._publish_source_parent()
+        root_snapshot, current_snapshot, current_features, optimizer = (
+            self._publish_source_parent())
         parent = load_bamf_generation(self.pointer, publish_missing_outbox=False)
         with self._source_patches(root_snapshot, current_snapshot):
             with self.assertRaises(BilqisError):
@@ -149,6 +157,31 @@ class A02ProductionStagingTests(unittest.TestCase):
         self.assertEqual(staged.receipt.generation, 2)
         self.assertEqual(staged.receipt.semantic_bank_count, 2)
         self.assertEqual(staged.receipt.status, "STAGED_NOT_ADMITTED")
+        self.assertNotEqual(
+            parent.run_identity.run_seed, parent.topology.default_run_seed)
+        feature_names = (
+            "features.type", "features.project_type",
+            "features.project_graph", "features.gates",
+        )
+        _, factors = prepare_identity_factors(
+            current_snapshot, current_features, ("urn:concept:8192",),
+            {name: parent.retained_state.optimizer.parameters[name]
+             for name in feature_names},
+            extents=parent.extents,
+        )
+        specs = {
+            item.name: item for item in expected_bamf_shapes(
+                parent.topology, staged.candidate.extents)
+        }
+        expected_row = initialize_bamf_row(
+            specs["identity.bank.1"], run_seed=parent.run_identity.run_seed,
+            row_id="urn:concept:8192", factor=factors[0][1],
+        )
+        np.testing.assert_array_equal(
+            np.asarray(staged.candidate.retained_state.optimizer.parameters[
+                "identity.bank.1"][0]),
+            expected_row,
+        )
         np.testing.assert_array_equal(
             np.asarray(staged.candidate.retained_state.optimizer.parameters["identity.bank.0"]),
             np.asarray(optimizer.parameters["identity.bank.0"]))

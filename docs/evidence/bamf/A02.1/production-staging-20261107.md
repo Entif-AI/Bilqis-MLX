@@ -4,8 +4,8 @@
 
 - Issue: #399 — A02.1 | Allocate stable semantic banks and activate admitted identity rows
 - Branch: `codex/bamf02-a-399-production-admission-20261106`
-- Draft PR: #887 into `codex/bamf-unified-base-20261028`
-- Reviewed integration trunk consumed: `3899649586b105b075e92f0ee3c51e80c379b473`
+- Historical PR #887: closed unmerged after the earlier A02 publication-authority overreach was corrected.
+- Reviewed integration trunk consumed for the current candidate: `9385ac7f336dca090cdd746fe8b87904ff2e5415`
 - Dependency authority consumed: reviewed B13 accepted-generation feature authority from #708/#809.
 - Additional B13 integration repair in this branch: recursive predecessor-bearing feature lineage is rederived through the same accepted source authority so A02 does not mint a parallel factor-map authority.
 - Rejected historical PR #698 lineage was not revived or used as current authority.
@@ -39,47 +39,47 @@ Preflight review found material defects in the earlier turn-in. They were accept
 4. **Generic retention bypass.** Ordinary C05 retention acceptance cannot publish a semantic-bank or active-set change; publication requires the missing C07 adoption executor instead.
 5. **Recursive B13 predecessor lineage.** Reviewed B13 source-rederivation authority existed through #708/#809, but the accepted reader could not recursively reconstruct predecessor-bearing feature lineage. This branch repairs that projection while preserving source ownership.
 6. **Successive A02 parent state.** The earlier path rebuilt the active set from immutable source `entry.active` flags. Accepted BAMF `PlasticityPolicy.row_ages` now supplies the admitted identity-row set, while the source snapshot remains the immutable semantic-ID/index authority. Active semantic ABI and feature-map authority remain distinct identities.
+7. **Accepted run-seed drift.** Fresh exact-head review found that the production staging adapter passed `ModelTopologySpecV2.default_run_seed` (fixed at zero) into new identity-row initialization instead of the accepted generation's `BamfRunIdentity.run_seed`. The adapter now fails closed without accepted run identity and passes the accepted run seed. The full-topology witness deliberately uses a nonzero accepted seed and independently recomputes the new row bytes from that seed and the source-derived factor.
+8. **Authenticated full-parent validation.** The authenticated full-tree staging path now performs the same explicit `VocabularyBankParent` type guard as the ordinary staging path, so malformed authenticated input fails through the typed ErrorBus boundary rather than leaking an attribute error.
 
 The previous claim that C07 governed only new Atlas releases was incorrect and is withdrawn. C07 explicitly governs subsequent source-valid additions under a persisted lease.
 
 ## Verification
 
-Current cheap verification after the ownership correction:
+Current exact-tree verification after the ownership and run-seed corrections:
 
 ```text
 A02 staging/authority regressions: 3 passed, 0 failed, 0 skipped
 A02 semantic owner suites:         11 passed, 0 failed, 2 explicit opt-in skips
+B13 accepted feature authority:     11 passed, 0 failed, 0 skipped
+ordinary B13 publication:           11 passed, 0 failed, 0 skipped
 changed-file smell audit:          0 findings
-error-control new debt:            0
+development structure/governance:  pass
+legacy-trainer checks:              pass
+contract verifier:                  pass (43/43 issue mirrors)
 flow-control checker:              pass
 git diff --check:                  pass
 ```
 
 Historical note: an earlier full-topology witness completed 1/1 PASS in 336.214s after repairing a duplicate Python module identity. That witness exercised direct A02 pointer publication and therefore is **not current admission acceptance evidence** after the C07 boundary correction. It remains diagnostic history only.
 
-The current full-topology staging witness is `test_production_staging.py`. It was run through the repository detached long-run protocol from an immutable source snapshot and passed:
+The prior detached witness at snapshot `83ea978691054b0eb25912f31cda9d9af8d3af805e41e3ab330ac8c113a9243f` is historical only because later production and test changes invalidated it. The current full-topology staging witness is `test_production_staging.py`; it was rerun on the repaired working tree after the accepted run-seed fix and passed:
 
 ```text
-snapshot/source/final sha256: 83ea978691054b0eb25912f31cda9d9af8d3af805e41e3ab330ac8c113a9243f
 command: env BILQIS_BAMF_FULL_WITNESS=1 python3 -B scripts/run_tests.py \
   bilqis_mlx/runtime/tests/custody/bamf_bundle/vocabulary/test_production_staging.py
-Ran 1 test in 169.561s
+Ran 1 test in 387.353s
 OK
 TEST_TOTALS total=1 passed=1 failed=0 skipped=0 errors=0
-detached receipt status: PASS
-returncode: 0
-source_mutated: false
 ```
 
-Receipt: `/private/tmp/bamf-a02-399-full-staging-20261107.receipt.json`; log: `/private/tmp/bamf-a02-399-full-staging-20261107.log`. This proves the corrected A02 staging path and fail-closed publication boundary. It does **not** prove or authorize C07 admission.
+This current witness additionally proves that a nonzero accepted `BamfRunIdentity.run_seed` determines the staged new-row bytes; it independently recomputes the expected row from the accepted seed and source-derived factor. It proves the corrected A02 staging path and fail-closed publication boundary. It does **not** prove or authorize C07 admission.
 
 ## Dependency and disposition
 
-- #399 is **WAITING**, not complete.
-- C07.1b/#510 is the required downstream owner for persisted-lease validation plus atomic adoption of the exact A02 staged candidate.
-- #510 is not presently completion-ready because A09.5/#395 still lacks its required three genuinely new source-qualified candidate-to-staged-successor realizations; #395 records that as its explicit resume trigger.
-- C05 leaves #501-#503 and C06 leaves #504-#507 are closed accepted; A12 is closed. The unresolved A09.5 realization breadth is the material current blocker for the C07 acceptance chain.
-- PR #887 is closed unmerged under the BAMF WAITING issue/branch queue; the implementation branch remains preserved.
-- Official merge-readiness EGM has **not** begun. The earlier fresh reviewers were preflight only because hosted checks were not yet green when they were launched.
+- #399 is **ACTIVE for final A02 qualification**. Live contract reconciliation established that its staging-only leaf acceptance does not require final C07 adoption; the prior WAITING-on-C07 trigger inverted the cross-lane dependency.
+- The lawful cross-lane sequence is A02 owner-issued staged handoff -> reviewed unified -> C07/#510 consumption. No sibling branch merge or copied receipt is authorized.
+- C07.1b/#510 remains the downstream owner for persisted-lease validation and atomic adoption of the exact A02 staged candidate, but its Blockers 1/2/4 are not prerequisites for this A02 leaf turn-in.
+- Historical PR #887 remains closed. A fresh Lane-A -> reviewed-unified PR is required after exact-head EGM and premerge qualification.
+- Official merge-readiness EGM must review the repaired exact semantic head; earlier reviews remain historical/preflight evidence.
 - No self-merge or issue closure is authorized.
-- #478 / PR #885 remains waiting on a genuinely accepted A02/C07 production receipt, not this staging receipt.

@@ -67,6 +67,8 @@ def _accepted_active_ids(parent, snapshot) -> tuple[str, ...]:
 
 def _bank_parent(parent, prior, available: int) -> VocabularyBankParent:
     optimizer = parent.retained_state.optimizer
+    if parent.run_identity is None:
+        invalid("BAMF_RUN_IDENTITY_DRIFT")
     banks = range(parent.extents.semantic_bank_count)
     weights = tuple(optimizer.parameters[f"identity.bank.{bank}"] for bank in banks)
     moments_m = tuple(optimizer.m[f"identity.bank.{bank}"] for bank in banks)
@@ -85,7 +87,7 @@ def _bank_parent(parent, prior, available: int) -> VocabularyBankParent:
     return VocabularyBankParent(
         prior, weights, moments_m, moments_v, tuple(counts),
         {name: optimizer.parameters[name] for name in feature_names},
-        parent.topology.default_run_seed, available)
+        parent.run_identity.run_seed, available)
 
 
 def _full_parent(parent, prior, available: int) -> FullVocabularyParent:

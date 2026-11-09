@@ -143,6 +143,8 @@ def _stage_authenticated_full_vocabulary_extension(
             or not isinstance(parent.optimizer_state, Mapping)):
         _invalid("BAMF_VOCABULARY_FULL_PARENT_INVALID")
     banks = parent.bank_parent
+    if type(banks) is not VocabularyBankParent:
+        _invalid("BAMF_VOCABULARY_FULL_PARENT_INVALID")
     extents = banks.prior.extents
     bamf_serialization_arrays(
         parent.topology, extents, parent.parameters, parent.optimizer_state)

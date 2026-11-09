@@ -98,10 +98,10 @@
     {
       "issue": 399,
       "pr": null,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "84e8c9004148bc80c69af670feec4490adf68826",
-      "summary": "A02.1 owner-side C07 handoff repair is complete on current reviewed unified 9385ac7f. The production staging path now emits only owner-issued A02StagedVocabularyExtension authority, binds the exact candidate identity, feature digest, PARAMETER_EXTENSION transition and accepted BamfRunIdentity, and ordinary C05 publication fails closed at the C07 vocabulary boundary. Independent read-only review found 0 Blockers / 0 Majors / 0 Nits and confirmed this closes A02's side of prior #510 Blocker 3. #399 is parked rather than occupying Lane A while the remaining #510 defects are repaired.",
-      "resume_trigger": "Resume only after C07.1b/#510 lands a reviewed-unified repair that consumes require_issued_a02_staged_vocabulary_extension(...) and closes its remaining atomic publication/retry/source-authority blockers. Then sync reviewed unified once, run the final A02/C07 integration proof and turn-in gates; do not merge a sibling Lane C branch directly.",
+      "summary": "A02.1 resumed after live contract reconciliation proved the prior WAITING-on-C07 trigger inverted the cross-lane dependency. The leaf owns the staging-only A02 handoff and may turn in independently once its own qualification is green; reviewed unified must carry that owner-issued handoff before C07/#510 can consume it. Current repair scope is limited to the accepted-run seed defect and refreshing the invalidated full-topology staging witness before fresh EGM/turn-in.",
+      "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-399-production-admission-20261106",
       "closed_pr": 887,
       "closed_under": "BAMF WAITING issue/branch queue; open implementation PRs are reserved for merge-ready candidates or active remediation delivery.",
