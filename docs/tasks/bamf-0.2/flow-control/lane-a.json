@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
-  "updated_at": "2026-11-09T06:16:47Z",
+  "updated_at": "2026-11-09T06:39:39Z",
   "exception": null,
   "items": [
     {
@@ -98,10 +98,10 @@
     {
       "issue": 399,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "29054e32a3b17897748125ecac9370f77cdd46e6",
-      "summary": "A02.1 resumed under serialized single-writer custody against current reviewed unified 9385ac7f. The exact C07 branch checkpoint 87f9edb6 defines the staged-candidate consumption seam but is not treated as reviewed sibling authority. This pass reconciles A02's preserved production staging onto current B13 feature/publication owners and hardens the exact typed A02StagedVocabularyExtension/A02VocabularyStagingReceipt handoff. Final turn-in still requires the accepted C07 repair through reviewed unified.",
-      "resume_trigger": null,
+      "state": "WAITING",
+      "head_sha": "84e8c9004148bc80c69af670feec4490adf68826",
+      "summary": "A02.1 owner-side C07 handoff repair is complete on current reviewed unified 9385ac7f. The production staging path now emits only owner-issued A02StagedVocabularyExtension authority, binds the exact candidate identity, feature digest, PARAMETER_EXTENSION transition and accepted BamfRunIdentity, and ordinary C05 publication fails closed at the C07 vocabulary boundary. Independent read-only review found 0 Blockers / 0 Majors / 0 Nits and confirmed this closes A02's side of prior #510 Blocker 3. #399 is parked rather than occupying Lane A while the remaining #510 defects are repaired.",
+      "resume_trigger": "Resume only after C07.1b/#510 lands a reviewed-unified repair that consumes require_issued_a02_staged_vocabulary_extension(...) and closes its remaining atomic publication/retry/source-authority blockers. Then sync reviewed unified once, run the final A02/C07 integration proof and turn-in gates; do not merge a sibling Lane C branch directly.",
       "preserved_branch": "codex/bamf02-a-399-production-admission-20261106",
       "closed_pr": 887,
       "closed_under": "BAMF WAITING issue/branch queue; open implementation PRs are reserved for merge-ready candidates or active remediation delivery.",
