@@ -1870,21 +1870,21 @@
       "parent_number": 371,
       "deps": [
         "C02.3",
-        "B13",
+        "B13.6",
         "C03"
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 C02.5 | Transport B13/C03 run and visit provenance into BAMF batches",
-      "body_sha256": "081ca325173a805cee4475e8b9bab574123e2401bcf05943ebf99e00f972c4b0",
+      "body_sha256": "ef5a5c8afef45e96c5b1376342cc800a47b21dc667ecdcfe75dec1424eca800c",
       "source_parent_sha256": "7337f48ccbb3dbd89c5d1d114c28d01815ed3e19b4c5008c66495ea36838c187",
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
-        "body_sha256": "081ca325173a805cee4475e8b9bab574123e2401bcf05943ebf99e00f972c4b0",
-        "clause": "This leaf transports those owner records only.",
+        "resolution": "resolved",
+        "body_sha256": "ef5a5c8afef45e96c5b1376342cc800a47b21dc667ecdcfe75dec1424eca800c",
+        "clause": "**Direct prerequisites:** C02.3, B13.6, C03",
         "known_edges": [
           "C02.3",
-          "B13",
+          "B13.6",
           "C03"
         ],
         "external_receipts": [],
@@ -1893,14 +1893,15 @@
             "source_id": "C02.5.body",
             "kind": "body",
             "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/905",
-            "sha256": "081ca325173a805cee4475e8b9bab574123e2401bcf05943ebf99e00f972c4b0",
+            "sha256": "ef5a5c8afef45e96c5b1376342cc800a47b21dc667ecdcfe75dec1424eca800c",
             "excerpt": "B13.6 #904 frozen run-identity/seed interface."
           }
         ],
         "obligations": [
-          "Transport the exact upstream record as non-authorizing provenance; preserve optimizer_step_seed and episode_id as separate existing meanings; final turn-in requires accepted #904/#376 receipts through reviewed unified."
+          "Transport the exact upstream record as non-authorizing provenance; preserve optimizer_step_seed and episode_id as separate existing meanings; final turn-in consumes accepted #904/#376 receipts through reviewed unified.",
+          "Reviewed unified 2c26d4aca90f275e1c255aa6a197ab63e0528480 contains B13.6/#904 through PR #931 and C03/#376 through PR #932; C02.5 may proceed to final review without minting upstream authority."
         ],
-        "unresolved": "B13.6 #904 and the new C03 visit-identity surface are frozen branch receipts, not yet accepted reviewed-unified dependencies. Implementation may proceed against the frozen interface; merge-readiness may not."
+        "unresolved": null
       }
     },
     {

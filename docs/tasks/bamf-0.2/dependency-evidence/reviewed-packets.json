@@ -767,8 +767,8 @@
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
         "resolution": "resolved",
-        "body_sha256": "081ca325173a805cee4475e8b9bab574123e2401bcf05943ebf99e00f972c4b0",
-        "clause": "This leaf transports those owner records only.",
+        "body_sha256": "ef5a5c8afef45e96c5b1376342cc800a47b21dc667ecdcfe75dec1424eca800c",
+        "clause": "**Direct prerequisites:** C02.3, B13.6, C03",
         "known_edges": [
           "C02.3",
           "B13.6",
@@ -780,7 +780,7 @@
             "source_id": "C02.5.body",
             "kind": "body",
             "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/905",
-            "sha256": "081ca325173a805cee4475e8b9bab574123e2401bcf05943ebf99e00f972c4b0",
+            "sha256": "ef5a5c8afef45e96c5b1376342cc800a47b21dc667ecdcfe75dec1424eca800c",
             "excerpt": "B13.6 #904 frozen run-identity/seed interface."
           }
         ],

@@ -12,6 +12,7 @@ from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.runtime.tests.model.test_atlas_model_retained import (
     AtlasModelRetainedMotifTests,
 )
+from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
 
@@ -27,6 +28,7 @@ def _training_authority(compiled, source, generation):
     provenance = BamfDeliveryProvenance(
         row["id"], source_content_digest((row,)), row.get("source_id"),
         row.get("capability", "A.IDENTITY"), None, (), 1, 1, None, 0,
+        visit_provenance(row.get("capability", "A.IDENTITY")),
         "source-family:test-retained", "episode:test-retained",
         tuple(sorted(dependencies)),
     )

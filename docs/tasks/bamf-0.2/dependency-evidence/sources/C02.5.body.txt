@@ -10,6 +10,8 @@ C02.3 requires strategy provenance and unified BAMF model-backend batches. B06.2
 
 ## Direct prerequisites
 
+**Direct prerequisites:** C02.3, B13.6, C03
+
 - C02.3 #492 accepted batch/provenance interface.
 - B13.6 #904 frozen run-identity/seed interface.
 - C03 #376 frozen teacher-visit identity interface.
