@@ -6,13 +6,15 @@ inside the test harness. Never import this module from a production runtime path
 """
 from __future__ import annotations
 
+from weakref import WeakValueDictionary
+
 from bilqis_mlx.learning import atlas_retention_decision as owner
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.runtime.capability_retention import (
     DecisionStatus, evaluate_retention_candidate,
 )
 
-_TEST_ISSUED = {}
+_TEST_ISSUED = WeakValueDictionary()
 _OWNER_GLOBALS = owner.CandidateRetentionDecision.__post_init__.__globals__
 _PRODUCTION_REQUIRE = _OWNER_GLOBALS["_require_issued_decision"]
 

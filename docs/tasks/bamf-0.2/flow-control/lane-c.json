@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "8899f7d2cf0c4c89b992d9fdc72242944d7531c2",
-  "updated_at": "2026-11-09T20:08:18Z",
+  "observed_unified": "6b085f875ab781a3771c89916a1e42653f73e882",
+  "updated_at": "2026-11-09T20:37:58Z",
   "exception": null,
   "items": [
     {
@@ -79,8 +79,8 @@
       "pr": null,
       "state": "ACTIVE",
       "head_sha": "9ae482d45bbf58636b2a4dea3c2286ba684e67ce",
-      "head_sha_role": "latest semantic implementation/proof head after consuming reviewed unified 8899f7d2; the following evidence/flow commit is docs-only and must be included in final exact-head qualification",
-      "summary": "#718/#526 consumed current reviewed unified 8899f7d2 and all dependency remediations. f31a8a19 first failed fresh EGM at 0B/2M on exact-type decision/binding forgery. cb285723 then failed a new fresh family because the repair still relied on transferable module-global issuer sentinels: codebase 0B/2M, authority 0B/3M, readiness PASS. Semantic head 9ae482d4 replaces Factory evaluation, retention-decision and acceptance-binding sentinels with closure-owned exact-object issuance registries and removes generic live mints. Post-repair focused files are 17/17 and 16/16 PASS; expanded C12/C05/B13 authority/import ring is 76/76 PASS; architecture/docs/governance/smell/base-aware error-control/flow/diff gates are green. Fresh exact-head hosted proof and a completely new EGM family remain required.",
+      "head_sha_role": "latest semantic implementation/proof head; branch later consumed reviewed unified 6b085f87 through fd8a5cff and the following evidence/flow commit must be included in final exact-head qualification",
+      "summary": "#718/#526 consumed current reviewed unified 6b085f87 and all dependency remediations. f31a8a19 first failed fresh EGM at 0B/2M on exact-type decision/binding forgery. cb285723 then failed a new fresh family because the repair still relied on transferable module-global issuer sentinels: codebase 0B/2M, authority 0B/3M, readiness PASS. Semantic head 9ae482d4 replaces Factory evaluation, retention-decision and acceptance-binding sentinels with closure-owned exact-object issuance registries and removes generic live mints. Post-repair focused files are 17/17 and 16/16 PASS; expanded C12/C05/B13 authority/import ring is 76/76 PASS. The #736/PR #940 unified advance touched only a Factory-refinement test and Lane B bookkeeping, so that proof remains reusable; architecture/docs/governance/smell/base-aware error-control/flow/diff gates are green. Fresh exact-head hosted proof and a completely new EGM family remain required.",
       "resume_trigger": null,
       "closed_pr": 680,
       "preserved_branch": "codex/bamf02-c12-526-exchange-20261101",
