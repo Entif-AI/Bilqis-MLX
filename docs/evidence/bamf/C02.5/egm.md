@@ -45,6 +45,10 @@ The current Factory candidate-execution generation-zero fixture remains outside
 C02.5 acceptance: exact reviewed unified is independently red there with
 `BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED` before #905 provenance participates.
 
+The canonical current legacy-trainer adaptation source remains
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
+Prometheus is historical evidence only and is not the current adaptation source.
+
 ## Bounded review repair
 
 Repair head `e78e44a6bafa6c078f039b902254e48bfe01ba4b` changes two test files only:
