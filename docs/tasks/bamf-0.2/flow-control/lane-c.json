@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "7d9e0e8209e2d077e4fc30f65a3ebf3f29a91f3f",
-  "updated_at": "2026-11-09T02:59:18Z",
+  "updated_at": "2026-11-09T03:16:54Z",
   "exception": null,
   "items": [
     {
@@ -28,8 +28,8 @@
       "issue": 376,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "ee8c6ef916826be2b991294371ee55e3211f3ba1",
-      "summary": "C03 resumed after B13.6/#904 merged through reviewed unified; completing real visit-selection wiring and B13.2 cold-resume persistence only.",
+      "head_sha": "b5603ebe2587521bc0eb556904435a5006711e8a",
+      "summary": "C03 accepted-custody semantic head qualified; fresh scoped EGM pending before turn-in.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-c03-376-20261107"
     },
