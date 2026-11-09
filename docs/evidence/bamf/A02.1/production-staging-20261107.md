@@ -84,3 +84,29 @@ This current witness proves that the ordinary initial accepted generation can st
 - Historical PR #887 remains closed. A fresh Lane-A -> reviewed-unified PR is required after exact-head EGM and premerge qualification.
 - Official merge-readiness EGM must review the repaired exact semantic head; earlier reviews remain historical/preflight evidence.
 - No self-merge or issue closure is authorized.
+
+## 2026-11-09 current-unified qualification
+
+The repaired A02 owner branch consumed reviewed unified
+`636ac8ffdeece7d6f8b24e9d1f46596396848db7` exactly once at the turn-in boundary.
+The resulting semantic integration head is
+`6c59b20230ba222cfbd24933c1de046b558aceb2`.
+
+The reviewed-unified delta was limited to C09 packed-frame/context-view custody and
+the accepted execution cache. No A02 semantic/staging owner was changed by the sync.
+Accordingly the already-completed 316.421s full-topology witness remains reusable:
+its A02 staging inputs and implementation are unchanged. The newly invalidated C09
+seam was instead requalified directly after the sync.
+
+Post-sync differential proof:
+
+```text
+A02/B13 focused staging + feature/publication ring: 30/30 PASS
+new C09 packed/context accepted-custody ring:       5/5 PASS
+A02 semantic owner ring:                           11 PASS / 0 fail / 2 explicit opt-in skips
+git diff --check:                                  PASS
+```
+
+No neural workload, `AdamW.update`, accepted generation publication, C07 lease, or
+live learner mutation was exercised by this qualification. A fresh merge-readiness
+independent review/EGM is still required before the new human-review PR is opened.

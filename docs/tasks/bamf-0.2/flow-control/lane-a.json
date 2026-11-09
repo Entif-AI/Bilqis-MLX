@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
-  "updated_at": "2026-11-09T06:39:39Z",
+  "observed_unified": "636ac8ffdeece7d6f8b24e9d1f46596396848db7",
+  "updated_at": "2026-11-09T19:32:52Z",
   "exception": null,
   "items": [
     {
@@ -99,8 +99,9 @@
       "issue": 399,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "84e8c9004148bc80c69af670feec4490adf68826",
-      "summary": "A02.1 resumed after live contract reconciliation proved the prior WAITING-on-C07 trigger inverted the cross-lane dependency. The leaf owns the staging-only A02 handoff and may turn in independently once its own qualification is green; reviewed unified must carry that owner-issued handoff before C07/#510 can consume it. Current repair scope is limited to the accepted-run seed defect and refreshing the invalidated full-topology staging witness before fresh EGM/turn-in.",
+      "head_sha": "6c59b20230ba222cfbd24933c1de046b558aceb2",
+      "head_sha_role": "current-unified semantic integration head; following evidence/flow bookkeeping commits are documentation-only",
+      "summary": "A02.1 staging-only owner implementation is integrated with reviewed unified 636ac8ff at semantic head 6c59b202. The owner-issued exact handoff, accepted run-seed repair, and accepted feature-lineage staging remain intact. Post-sync A02/B13 focused proof is 30/30, the newly invalidated C09 context/source seam is 5/5, and semantic owner proof is 11 PASS with 2 explicit opt-in skips. The prior 316.421s full-topology witness remains reusable because the sync changed only C09 context/cache custody and those surfaces were requalified directly. Fresh merge-readiness independent review/EGM and premerge gates remain before a new human-review PR.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-399-production-admission-20261106",
       "closed_pr": 887,
