@@ -92,3 +92,31 @@ The existing `select_prediction_refinements` long-function baseline remains
 historical and this change adds zero new smell debt. No B06 policy duplication,
 consumer-local grant, learner, optimizer, source publication, or A13 parent
 closeout was introduced. Fresh merge-readiness review remains the next gate.
+
+## Fresh review repair — 2026-11-09
+
+Fresh review of exact head `fba3ecb2b9abdc3c3eacc45b5e890ceef7f60d4b`
+returned **FAIL — 0 Blockers / 1 Major / 0 Nits**. Current-unified's later B06
+module split had reintroduced a second `PREFIX_INVENTORY_SCHEMA`,
+`prefix_inventory_handle(...)`, and `prefix_inventory_evidence_digest(...)` in
+`runtime/refinement_contracts`, with `refinement_ranking` consuming that copy.
+That violated the existing owner contract even though the active selector already
+used A05 identities.
+
+The bounded repair removes the duplicate definitions and imports the A05
+`frame_compiler` identities into the split B06 contract module. A regression now
+asserts object identity across the public refinement API, split contract module,
+ranking module, and A05 owner.
+
+Post-repair proof:
+
+- accepted-A01 source/refinement ring: **15 passed + 6 subtests**, zero skips;
+- exact import identity: contract/ranking handle and digest objects are all the
+  A05 `frame_compiler` objects;
+- BAMF contract verifier: **43/43** mirrors and **216** indexed identities;
+- changed-file smell audit: zero new findings; the historical long-function
+  baseline remains unchanged.
+
+This is `SHARED_CONTRACT / MECHANICAL_PROOF` repair under ADR-127, not a new
+authority or B11 composition. Fresh reinspection of the repaired exact head is
+required before turn-in.

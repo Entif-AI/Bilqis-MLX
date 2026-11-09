@@ -240,7 +240,7 @@
       "pr": null,
       "state": "ACTIVE",
       "head_sha": "55e94b29",
-      "summary": "Scoped A13/A05 compiled-prefix authority integration is qualified on reviewed unified 4bfcbd5a: A05 owns complete-prefix identity/evidence and A13 issues the exact SourceGrant only after replay. Real accepted-A01 source proof is 14 passed + 6 subtests with zero skips; current quality/legacy-trainer/flow/contracts are green. Fresh merge-readiness review pending.",
+      "summary": "Scoped A13/A05 compiled-prefix authority integration is qualified on reviewed unified 4bfcbd5a: A05 owns complete-prefix identity/evidence and A13 issues the exact SourceGrant only after replay. Fresh review found one split-module duplicate-identity Major; bounded owner-alias repair is green at 15 passed + 6 subtests with zero skips and exact identity proof. Fresh repaired-head reinspection pending.",
       "resume_trigger": null,
       "preserved_branch": "codex/354-a13-prefix-inventory-20261107"
     }

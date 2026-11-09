@@ -20,13 +20,13 @@ from bilqis_mlx.semantics.context_eligibility import (
 from bilqis_mlx.semantics.frame_schema import FrameInstance
 from bilqis_mlx.semantics.frame_compiler import (
     CompiledFrameBatch, FrameCompilerConfig, PositionKind, StreamingAST,
-    compile_prefix,
+    PREFIX_INVENTORY_SCHEMA, compile_prefix,
+    prefix_inventory_evidence_digest, prefix_inventory_handle,
 )
 
 
 POLICY_SCHEMA = "bilqis.mlx.refinement-selection/v1"
 SALIENCE_SCHEMA = "bilqis.mlx.refinement-source-salience/v1"
-PREFIX_INVENTORY_SCHEMA = "bilqis.mlx.refinement-prefix-inventory/v1"
 MAX_SELECTED_FRAMES = 32
 FRAMES_PER_QUOTA = 8
 MAX_PASSES = 2
@@ -77,29 +77,6 @@ def salience_evidence_digest(witness: SourceSalience) -> str:
         asdict(witness), sort_keys=True, separators=(",", ":"),
         ensure_ascii=False, allow_nan=False,
     )
-    return hashlib.sha256((payload + "\n").encode("utf-8")).hexdigest()
-
-
-def prefix_inventory_handle(source_id: str, p: int) -> str:
-    """Stable handle that the A05 source owner must grant for this prefix."""
-    if not _text(source_id) or type(p) is not int or p < 0:
-        _invalid()
-    return f"source:refinement-prefix:{source_id}:{p}"
-
-
-def prefix_inventory_evidence_digest(compiled: CompiledFrameBatch) -> str:
-    """Bind the complete p-local closure inventory, not a supplied subset."""
-    if type(compiled) is not CompiledFrameBatch:
-        _invalid()
-    compiled.__post_init__()
-    payload = json.dumps({
-        "schema": PREFIX_INVENTORY_SCHEMA,
-        "source_instance_id": compiled.source_instance_id,
-        "prediction_boundary": compiled.visible_end,
-        "semantic_release": compiled.semantic_release,
-        "compiled_cache_key": compiled.cache_key,
-        "context_digest": compiled.context_digest,
-    }, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256((payload + "\n").encode("utf-8")).hexdigest()
 
 
