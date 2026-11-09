@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "6a770f10074df6f4f8889d439f783ad42f5efe63",
-  "updated_at": "2026-11-09T23:04:19Z",
+  "observed_unified": "516725b6170f258ad86b0c5d4ca050907238e59d",
+  "updated_at": "2026-11-09T23:52:17Z",
   "exception": null,
   "items": [
     {
@@ -112,10 +112,10 @@
       "issue": 400,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "09b3b7dfe3b7d5336d29f25b106e925dceff628a",
-      "head_sha_role": "current A02.2 semantic repair after reviewed-unified 6a770f10 sync; full one-bank-to-two-bank composition witness pending",
-      "summary": "A02.2 is reconciled through reviewed #399/#510 integration. The issue now revalidates the A02-sealed conservative disk requirement immediately before first C07 Factory/B13 persistence, preserves exact accepted-retry idempotency, proves UINT32_MAX+1 refusal, and repairs generation-zero capacity ownership so inactive future ABI banks are not physically preallocated before A02 admission. The genesis/feature ring is 29 PASS, cold resume 8 PASS, C07 ring 8 PASS and lease policy 6 PASS; changed-file smell is 0 findings and structure/governance/error-control/docs/flow/diff gates are green. Detached v3 proved real low-space refusal; v4 exposed the now-repaired genesis preallocation defect. A corrected real full-topology one-bank -> two-bank crash/cold-read/retry witness and fresh exact-head independent review remain before turn-in.",
-      "resume_trigger": "Read the detached full-topology witness receipt after its completion notification. If green, commit the issue-specific witness/evidence, rerun final changed-head gates, obtain fresh independent exact-head review, then open the normal human-review PR into codex/bamf-unified-base-20261028. Do not self-merge.",
+      "head_sha": "8b3f071215b27b98f8ae15a9d0b02fc72b7fc80d",
+      "head_sha_role": "post-merge A02.2 candidate after reviewed-unified 516725b6 synchronization; full composed runtime proof complete; independent exact-head review pending",
+      "summary": "A02.2 is reconciled through reviewed #399/#510 integration and current reviewed unified 516725b6. The issue revalidates the A02-sealed conservative disk requirement immediately before first C07 Factory/B13 persistence, preserves exact accepted-retry idempotency, proves UINT32_MAX+1 refusal, and defers inactive future ABI banks until accepted A02 admission. Post-merge qualification is green: semantics 14 PASS with 2 explicit opt-in skips, generation-zero/feature-authority/cold-resume 38 PASS, C07/lease-policy 14 PASS, smell 0, structure/governance/error-control/flow/contracts/docs/diff PASS. Detached v6 full-topology proof passed in 633.718s from immutable snapshot eed6f34f with source_mutated=false, proving real one-bank -> two-bank staging, B13 pre-pointer crash/cold read, exact retry, old weight/m/v preservation, zero new-row moments, bundle reuse and successor Factory acceptance. Fresh independent exact-head review remains before human-review PR turn-in.",
+      "resume_trigger": "Obtain fresh independent exact-head review of 8b3f0712 plus the durable v6 receipt. If clean, set #400 READY, open the normal human-review PR into codex/bamf-unified-base-20261028, bind the PR number and add the durable issue checkpoint. Do not self-merge.",
       "preserved_branch": "codex/bamf02-a-semantics"
     },
     {

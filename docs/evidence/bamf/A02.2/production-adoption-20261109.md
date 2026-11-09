@@ -2,13 +2,13 @@
 
 Issue #400. Lane A branch `codex/bamf02-a-semantics`.
 
-Reviewed unified consumed before issue-owned edits:
-`6a770f10074df6f4f8889d439f783ad42f5efe63`.
+Reviewed unified consumed at final qualification:
+`516725b6170f258ad86b0c5d4ca050907238e59d`.
 
-Current remotely verified production-repair head:
-`09b3b7dfe3b7d5336d29f25b106e925dceff628a`.
+Current remotely verified post-merge candidate head:
+`8b3f071215b27b98f8ae15a9d0b02fc72b7fc80d`.
 
-Status: **IMPLEMENTATION_RECONCILED; FULL COMPOSED WITNESS AND FINAL INDEPENDENT REVIEW PENDING**.
+Status: **IMPLEMENTATION_AND_FULL_COMPOSED_PROOF_COMPLETE; FINAL INDEPENDENT EXACT-HEAD REVIEW PENDING**.
 
 ## Integrated ownership boundary
 
@@ -42,8 +42,7 @@ It does not revive the historical direct-A02 publication design.
    zero moments/counts for new identity rows. Parameter-extension issuance rejects
    changes to pre-existing optimizer rows. The final issue-specific full witness
    additionally hashes bank-0 weight/m/v before staging, after a simulated
-   pre-pointer crash/cold load, and after accepted extension; that witness is the
-   remaining expensive gate.
+   pre-pointer crash/cold load, and after accepted extension.
 3. **Continue beyond 65535 with uint32 indices and validate bounds.** Existing
    source-replayed planning proves ABI index 65536 maps to bank 8, row 0 without
    aliasing. This qualification adds a direct `UINT32_MAX + 1` rejection witness
@@ -109,31 +108,28 @@ The widened post-repair ring passed 29 generation-zero/feature-authority tests,
 ## Current verification
 
 ```text
-A02 semantic planning/factors/resources/staging/transaction: 14 tests PASS; 2 opt-in skips
-A02 staged-handoff / generic-publication boundary:             4 tests PASS; 1 opt-in skip
-C07 executor/publication/composed retry ring:                  8 tests PASS
-C07 persisted-lease policy ring:                               6 tests PASS
-focused integrated total:                                     32 tests PASS; 3 opt-in skips
+A02 semantic planning/factors/resources/staging/transaction: 14 PASS; 2 opt-in skips
+generation-zero / feature authority + cold resume:           38 PASS
+C07 executor/publication/composed retry + lease policy:      14 PASS
+post-merge full-topology A02 -> C07/B13 witness v6:           1 PASS in 633.718s
 
-error-control:                         PASS, new debt 0
-changed-file smell audit at 4f5972b1: 0 findings
-development structure/governance:     PASS
-docs check:                            PASS
-git diff --check:                      PASS
-generation-zero / feature authority:  29 PASS
-cold resume:                            8 PASS
-C07 post-genesis repair ring:           8 PASS
-persisted-lease policy:                 6 PASS
+error-control:                     PASS, new debt 0
+changed-file smell audit:          0 findings
+development structure/governance: PASS
+flow-control tests:                15/15 PASS
+BAMF exact issue mirrors:          43/43 PASS
+docs check:                        PASS
+git diff --check:                  PASS
 ```
 
 No live learner, shared AdamW update, or neural training workload was started by
 this qualification.
 
-## Remaining exact gates
+## Full composed proof
 
 The issue-specific disposable full-topology witness is intentionally detached
-because constructing and validating the complete B01 state is expensive. It
-must prove, in one real composed path:
+because constructing and validating the complete B01 state is expensive. The
+post-merge v6 run proves, in one real composed path:
 
 1. real accepted B13 generation zero;
 2. real `stage_vocabulary_extension(...)` owner issuance;
@@ -145,9 +141,16 @@ must prove, in one real composed path:
    weight/m/v hashes, and zero new-row moments;
 7. accepted Factory authority resolves to the C07-bound successor.
 
-After that witness passes, a fresh independent exact-head review must inspect the
-complete #400 candidate before normal human-review PR turn-in. This issue does
-not authorize self-merge.
+Detached v6 ran from immutable snapshot
+`eed6f34fbf7b1eac9b1265def50dbd8f8e3c8ee169592cdc306e40e5a847558f`
+after conflict-free synchronization with reviewed unified `516725b6`. It
+returned `status: PASS`, `command_returncode: 0`,
+`source_mutated: false`, and `Ran 1 test in 633.718s — OK`. Its real A02
+staging receipt records `previous_bank_count: 1`,
+`next_bank_count: 2`, and allocation of ABI index 8192 to bank 1 row 0.
+
+A fresh independent exact-head review remains required before normal
+human-review PR turn-in. This issue does not authorize self-merge.
 
 ### Detached witness resource receipt
 
@@ -177,3 +180,10 @@ preallocated all ABI banks. This was not a witness-only mismatch: it exposed the
 generation-zero capacity-ownership defect repaired at `09b3b7df`. The next
 detached witness therefore exercises the repaired real one-bank -> two-bank
 transition rather than weakening the expected old extent.
+
+Detached witness v5 then passed the repaired one-bank -> two-bank path before
+the final reviewed-unified synchronization. After reviewed unified advanced to
+`516725b6`, Lane A merged that head conflict-free. The only overlapping A02
+successor-policy change preserved B09's accepted `mode_transition` field.
+Detached witness v6 reran the complete proof on that post-merge tree and passed
+without source mutation, making v6 the final runtime receipt for turn-in.
