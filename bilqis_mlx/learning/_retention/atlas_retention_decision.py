@@ -175,9 +175,8 @@ _require_issued_decision, _raw_issue_decision = _new_decision_owner()
 def _make_factory_retention_issuer(raw_issue):
     def issue_factory_retention_decision(owner_evaluation) -> CandidateRetentionDecision:
         """Issue live acceptance authority only from the Factory C05 owner."""
-        from bilqis_mlx.runtime.factory_retention_owner import FactoryRetentionEvaluation
-        from bilqis_mlx.runtime._capability.factory_retention_owner import (
-            _require_factory_evaluation,
+        from bilqis_mlx.runtime.factory_retention_owner import (
+            FactoryRetentionEvaluation, _require_factory_evaluation,
         )
         from bilqis_mlx.runtime.capability_retention import DecisionStatus
 

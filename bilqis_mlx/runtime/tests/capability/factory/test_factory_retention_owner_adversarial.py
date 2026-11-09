@@ -118,6 +118,10 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
 
         self.assertIsInstance(result, FactoryRetentionEvaluation)
         result.__post_init__()
+        issued = issue_factory_retention_decision(result)
+        self.assertTrue(issued.accepted)
+        self.assertEqual(issued.parent_generation, "d" * 64)
+        self.assertEqual(issued.candidate_generation, "d" * 64)
         fresh.assert_not_called()
 
     def test_real_source_family_overlap_fails_closed_across_redraws(self):
