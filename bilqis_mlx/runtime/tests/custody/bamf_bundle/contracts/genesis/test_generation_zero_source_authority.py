@@ -18,12 +18,21 @@ from bilqis_mlx.runtime.bamf_bundle.genesis import (
     _issue_binding, validate_initial_generation_binding,
 )
 from bilqis_mlx.runtime.bamf_bundle import genesis as genesis_owner
+from bilqis_mlx.runtime.bamf_bundle.genesis import foundation as genesis_foundation
 from bilqis_mlx.runtime.model_topology_v2 import (
     B01GenerationAuthority, ParameterCensus, b01_generation_authority,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     genesis_preparation, shape_patch,
 )
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
+    issue_factory_authority,
+)
+from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
+from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
+from bilqis_mlx.semantics.tests.atlas.vocabulary_fixtures import _allocation_fixture
+from bilqis_mlx.learning.champions import Checkpoint
 
 
 class GenerationZeroSourceAuthorityTests(unittest.TestCase):
@@ -38,6 +47,35 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
     def tearDown(self):
         self.environment.stop()
         self.temporary.cleanup()
+
+    def test_generation_zero_does_not_preallocate_inactive_source_abi_banks(self):
+        snapshot, _prior = _allocation_fixture(highest=8192)
+        schema = FeatureSchema((), ())
+        features = build_feature_manifest(snapshot, schema)
+        selection = AtlasArtifactSelection(
+            "/fixture/atlas", snapshot.bundle_id,
+            snapshot.release_sha256, snapshot.source_bundle_id)
+        release, graph = _executable_fixture()
+        origin = Checkpoint("7" * 64, "bundles/foundation-origin", 0, True)
+        factory = issue_factory_authority(release, graph, origin)
+
+        with patch.multiple(
+                genesis_foundation,
+                _source_owned_feature_schema=lambda _selection: (snapshot, schema),
+                build_feature_manifest=lambda _snapshot, _schema: features):
+            authority = (
+                genesis_foundation.issue_initial_foundation_feature_authority(
+                    selection))
+            semantic, *_ = genesis_foundation.initial_foundation_sidecars(
+                release, factory.admission, graph, run_seed=17,
+                feature_authority=authority)
+
+        self.assertEqual(snapshot.counts.abi_banks, 2)
+        self.assertEqual(
+            tuple(entry.index for entry in snapshot.abi_entries if entry.active),
+            (0,))
+        self.assertEqual(semantic["semantic_bank_count"], 1)
+        self.assertEqual(semantic["bank_identities"], ["bank:0"])
 
     def test_direct_issuer_rejects_unvalidated_factory_origin(self):
         with shape_patch():
