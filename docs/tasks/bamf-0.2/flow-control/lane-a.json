@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "56254f343904cecebf7fa067e76a937836673083",
-  "updated_at": "2026-11-08T02:10:00Z",
+  "observed_unified": "4bfcbd5a9aaa22a1bc2bca4c7a64ec203df07044",
+  "updated_at": "2026-11-09T05:45:48Z",
   "exception": null,
   "items": [
     {
@@ -234,6 +234,15 @@
       "summary": "A13 four-time temporal identity remediation turned in as PR #918 after pinned EGM round 1 PASS (0 Blockers / 0 Majors). Typed C09 invalidation v2 binds source/effective/observed/recorded time plus source temporal-authority digest; v2 live persistence requires opaque A13 authority and cold decode independently revalidates the tuple against the hash-pinned source registry. Historical v1 identity/decoding and the correction-backed bridge remain unchanged. Widened ring 42/42 PASS; structure/governance/smell/flow/error-control green. Human merge remains external authority; downstream #911 is the consumer.",
       "resume_trigger": null,
       "preserved_branch": "codex/916-a13-four-time-context-20261108"
+    },
+    {
+      "issue": 354,
+      "pr": 936,
+      "state": "TURNED_IN",
+      "head_sha": "fc3a32f59f2f77eb352d586a3b43ddff1d2a0c53",
+      "summary": "Scoped A13/A05 compiled-prefix authority repair is turned in as ready PR #936 after current-unified qualification, one shared-contract Major repair, and targeted reinspection PASS 0 Blockers / 0 Majors / 0 Nits. A05 is the sole prefix identity owner; A13 issues only after exact replay.",
+      "resume_trigger": "Human review/merge PR #936 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
+      "preserved_branch": "codex/354-a13-prefix-inventory-20261107"
     }
   ]
 }
