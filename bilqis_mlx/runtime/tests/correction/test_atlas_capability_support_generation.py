@@ -19,8 +19,10 @@ from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import
     TARGET, source_qualified_state,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    publish_genesis, retention_decision, shape_patch,
+    publish_genesis, provision_source_authority_registry,
+    retention_decision, shape_patch, with_source_authority_registry,
 )
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY
 
 
 class CapabilitySupportGenerationTests(unittest.TestCase):
@@ -40,23 +42,26 @@ class CapabilitySupportGenerationTests(unittest.TestCase):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             pointer = publish_genesis(self.run)
             accepted_parent = load_accepted_generation(self.run)
+            parent = accepted_parent.retained_state
             parent_generation = execution_generation_digest(
-                accepted_parent.retained_state.optimizer.parameters,
+                parent.optimizer.parameters,
                 spec=accepted_parent.topology,
                 extents=accepted_parent.extents,
             )
             parent, transaction, retained, authority = source_qualified_state(
-                accepted_parent.retained_state,
+                parent,
+                generation_binding=parent_generation,
                 extents=accepted_parent.extents,
                 spec=accepted_parent.topology,
-                generation_binding=parent_generation,
             )
             bundle = derive_successor_bundle(
                 accepted_parent,
                 retained,
                 parent_manifest_sha256=pointer["manifest_sha256"],
-                delivery_events=({"event": "FIXTURE_CAPABILITY_GENERATION"},),
+                delivery_events=({"event": "FIXTURE_CAPABILITY_SUPPORT"},),
             )
+            provision_source_authority_registry(self.run, AUTHORITY)
+            bundle = with_source_authority_registry(bundle, AUTHORITY)
             decision = retention_decision(parent=parent, retained=retained)
             accept_and_publish(
                 self.run, bundle, retained, decision=decision,

@@ -40,35 +40,13 @@ def _new_authority_owner():
     return require, issue
 
 
-class _AcceptedCacheAuthorityIssuer:
-    """Non-callable issuer owned by authenticated B13 execution custody."""
-
-    def __init__(self, issue):
-        self._issue = issue
-        self._accepted_caches = {}
-
-    def issue(self, accepted_cache, registry, eligibility_source=None):
-        from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
-            require_accepted_execution_cache,
-        )
-        from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
-
-        cache = require_accepted_execution_cache(accepted_cache)
-        if not isinstance(registry, SourceAuthorityRegistry):
-            _invalid()
-        authority = self._issue(
-            registry, cache._cache_mac_key, eligibility_source)
-        self._accepted_caches[id(authority)] = cache
-        return authority
-
-    def accepted_cache(self, authority):
-        return self._accepted_caches.get(id(authority))
-
-
 _authority_state, _raw_authority_issue = _new_authority_owner()
-_ACCEPTED_CACHE_AUTHORITY_ISSUER = _AcceptedCacheAuthorityIssuer(
-    _raw_authority_issue)
 del _raw_authority_issue
+
+
+def _accepted_cache_for_authority(_authority):
+    """No production B14 issuer exists until an upstream owner supplies one."""
+    return None
 
 
 class CacheAuthorityRuntime:
@@ -130,6 +108,13 @@ def _require_authority(authority: CacheAuthorityRuntime) -> CacheAuthorityRuntim
     if type(authority) is not CacheAuthorityRuntime:
         _invalid()
     _authority_state(authority)
+    accepted_cache = _accepted_cache_for_authority(authority)
+    if accepted_cache is None:
+        _invalid()
+    from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+        require_accepted_execution_cache,
+    )
+    require_accepted_execution_cache(accepted_cache)
     return authority
 
 
@@ -144,27 +129,26 @@ def bind_cache_artifact_owner(authority, artifact, binding):
     if owner is None:
         owner = _issue_exact_cache_artifact_owner(authority, artifact, binding)
         owners[key] = owner
-    accepted_cache = _ACCEPTED_CACHE_AUTHORITY_ISSUER.accepted_cache(authority)
+    accepted_cache = _accepted_cache_for_authority(authority)
     if accepted_cache is not None and accepted_cache._run_dir is not None:
         from bilqis_mlx.runtime.accepted_corrections import (
             register_accepted_target,
         )
-        from bilqis_mlx.runtime.atlas_owner_ingress import _route
         register_accepted_target(
             accepted_cache._run_dir,
             accepted_cache.accepted_manifest_sha256,
             "EXACT_CACHE", owner,
-            lambda current, event, registry: _route(current, event, registry),
-            accepted_cache._correction_registry,
         )
     return owner
 
 
 def apply_cache_correction(
-    authority, artifact, binding, event, authority_registry,
+    authority, artifact, binding, event,
 ):
     """Deliver one qualified C09 correction into opaque cache custody."""
+    authority = _require_authority(authority)
     owner = bind_cache_artifact_owner(authority, artifact, binding)
+    authority_registry, _, _, _ = _authority_state(authority)
     authority_registry.verify_correction(event)
     if not owner.index.direct_dependents(event.dependency):
         return owner.queue

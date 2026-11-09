@@ -79,6 +79,7 @@ class GenerationAcceptancePublicationTests(GenerationAcceptanceFixture, unittest
         record = issued.to_record()
         record["schema_version"] = PREVIOUS_SOURCE_ACCEPTANCE_SCHEMA
         record["source_anchors"] = []
+        record.pop("source_authority_registry_sha256")
         record["binding_sha256"] = hashlib.sha256(canonical({
             key: value for key, value in record.items()
             if key != "binding_sha256"

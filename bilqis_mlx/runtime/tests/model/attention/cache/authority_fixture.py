@@ -1,6 +1,7 @@
 """Deterministic test-only cache authority; never production provenance."""
 from unittest.mock import patch
 from types import SimpleNamespace
+from pathlib import Path
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -16,6 +17,9 @@ from bilqis_mlx.runtime import atlas_cache_rebuild as _rebuild
 from bilqis_mlx.runtime import atlas_cache_eligibility as _eligibility
 from bilqis_mlx.runtime.atlas_cache_binding import binding_digest
 from bilqis_mlx.runtime.atlas_cache_rebuild import CacheEligibilityReceipt
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
+    AUTHORITY as C09_TEST_AUTHORITY,
+)
 
 _KEY = Ed25519PrivateKey.from_private_bytes(bytes(range(32)))
 PUBLIC_KEY_HEX = _KEY.public_key().public_bytes(
@@ -35,7 +39,10 @@ def authority_registry(
     ),))
 
 
-AUTHORITY_REGISTRY = authority_registry()
+AUTHORITY_REGISTRY = SourceAuthorityRegistry(tuple(sorted(
+    (*C09_TEST_AUTHORITY.keys, *authority_registry().keys),
+    key=lambda key: key.owner_id,
+)))
 _CACHE_MAC_KEY = bytes(range(32, 64))
 
 
@@ -68,9 +75,30 @@ def _test_rebuild_inputs():
 
 def install_test_owner(test_case, *, eligibility=True, current_binding=True):
     _test_lookup(CACHE_AUTHORITY)[3].clear()
+
+    def synthetic_cache(authority):
+        source = _test_lookup(authority)[2]
+        inputs = source() if source is not None else None
+        pointer_path = getattr(inputs, "pointer_path", None)
+        return SimpleNamespace(
+            _run_dir=pointer_path.parent if isinstance(pointer_path, Path) else None,
+        )
+
     patcher = patch.object(_runtime, "_authority_state", _test_lookup)
+    accepted = patch.object(
+        _runtime, "_accepted_cache_for_authority",
+        synthetic_cache,
+    )
+    custody = patch(
+        "bilqis_mlx.runtime.bamf_bundle.execution_cache.require_accepted_execution_cache",
+        side_effect=lambda cache: cache,
+    )
     patcher.start()
+    accepted.start()
+    custody.start()
     test_case.addCleanup(patcher.stop)
+    test_case.addCleanup(accepted.stop)
+    test_case.addCleanup(custody.stop)
     test_case.addCleanup(set_test_canonical_source, None)
     if current_binding:
         binding_owner = patch.object(

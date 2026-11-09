@@ -238,7 +238,7 @@ def replay_stale_evidence(retained) -> tuple[object, ...]:
     corrections = {
         event.event_id: event
         for _event_id, event in accepted_corrections(
-            retained.run_dir, retained.manifest_sha256, retained.registry)
+            retained.run_dir, retained.manifest_sha256)
     }
     _flush_c10_intents(retained, ledger, corrections)
     _flush_context_requalifications(retained, ledger, records)

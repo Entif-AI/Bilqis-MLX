@@ -1,6 +1,7 @@
 """C09 motif custody on the actual compiled-frame/B13 cache boundary."""
 from dataclasses import replace
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_engram import MotifManifest
@@ -9,10 +10,10 @@ from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.runtime.atlas_motif_owner import MotifArtifactOwner
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
-    apply_motif_correction,
 )
+from bilqis_mlx.runtime._atlas_owner_ingress import apply_motif_correction
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
-    _issue_accepted_execution_cache, bind_motif_artifact_owner,
+    _new_execution_cache, bind_motif_artifact_owner,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _SOURCE_OWNER, _TEST_PUBLIC, _event, _result,
@@ -31,12 +32,18 @@ class MotifArtifactOwnerTests(unittest.TestCase):
         self.compiled = CompiledEncoderInput(
             compiled.compiled, compiled.compiler_configs,
             compiled.features, extents)
-        self.cache = _issue_accepted_execution_cache(
+        self.cache = _new_execution_cache(
             run_id="test-c09-motif", generation=7,
             accepted_manifest_sha256="8" * 64,
             generation_binding="7" * 64,
             motif_manifest=self.manifest,
         )
+        custody = patch(
+            "bilqis_mlx.runtime.bamf_bundle.execution_cache.require_accepted_execution_cache",
+            side_effect=lambda cache: cache,
+        )
+        custody.start()
+        self.addCleanup(custody.stop)
         self.owner = bind_motif_artifact_owner(self.cache, self.compiled)
 
     def test_source_correction_holds_real_frame_before_motif_lookup(self):

@@ -21,8 +21,9 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_motif_artifact_owner
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     candidate, next_accepted_step, parent_state, publish_candidate, shape_patch,
+    provision_source_authority_registry, with_source_authority_registry,
 )
-from bilqis_mlx.runtime.tests.test_atlas_revalidation import _event, _sign_event
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _sign_event
 
 
 class AcceptedRuntimeRecoveryTests(unittest.TestCase):
@@ -43,7 +44,8 @@ class AcceptedRuntimeRecoveryTests(unittest.TestCase):
             return publish_candidate(self.run, source)
 
     def _motif_fixture(self):
-        self.publish(candidate(parent_state()))
+        provision_source_authority_registry(self.run, AUTHORITY)
+        self.publish(with_source_authority_registry(candidate(parent_state()), AUTHORITY))
         with shape_patch():
             cache = bind_accepted_execution_cache(self.run)
         fixture = FrameEncoderTests()
@@ -56,7 +58,9 @@ class AcceptedRuntimeRecoveryTests(unittest.TestCase):
                 motif_key_map_digest=cache.motif_manifest.digest,
             ),
         )
-        return cache, compiled, bind_motif_artifact_owner(cache, compiled)
+        with shape_patch():
+            owner = bind_motif_artifact_owner(cache, compiled)
+        return cache, compiled, owner
 
     def test_file_ahead_of_history_after_commit_crash_recovers_exact_history(self):
         cache, _compiled, owner = self._motif_fixture()

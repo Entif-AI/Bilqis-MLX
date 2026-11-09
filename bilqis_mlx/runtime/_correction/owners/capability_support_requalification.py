@@ -40,7 +40,7 @@ def install_requalification(owner, update: RequalificationUpdate) -> None:
     ))
 
 
-def rehydrate_support_hold(owner, hold, node, authority_registry):
+def _rehydrate_support_hold(owner, hold, node, authority_registry):
     if hold is None:
         return owner
     if not isinstance(authority_registry, SourceAuthorityRegistry):
@@ -82,4 +82,4 @@ def rehydrate_support_hold(owner, hold, node, authority_registry):
     return owner
 
 
-__all__ = ("install_ledger", "install_requalification", "rehydrate_support_hold")
+__all__ = ("install_ledger", "install_requalification")

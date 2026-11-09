@@ -9,7 +9,8 @@ import unittest
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.accepted_corrections import (
-    _RUNTIME_OWNER, record_accepted_correction, record_accepted_derived_claim,
+    AcceptedRuntimeHost,
+    _reset_accepted_correction_runtime_for_tests, record_accepted_correction, record_accepted_derived_claim,
     record_accepted_remediation, record_accepted_revalidation,
     register_solve_context,
 )
@@ -18,14 +19,14 @@ from bilqis_mlx.runtime.atlas_capability_support_owner import (
     load_capability_support_owner,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    accept_and_publish, bind_accepted_correction_authority,
+    accept_and_publish,
     bind_accepted_execution_cache, derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.cognitive_solver import QualifiedComposition, SolveContext
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, parent_state, publish_candidate, publish_genesis,
-    retention_decision, shape_patch,
+    candidate, parent_state, provision_source_authority_registry, publish_candidate,
+    publish_genesis, retention_decision, shape_patch, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
     SOURCE_ROW, TARGET, source_qualified_state,
@@ -48,14 +49,10 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         self.environment = patch.dict(
             os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
         self.environment.start()
-        source = candidate(parent_state())
-        source = replace(source, correction_frontier={
-            **source.correction_frontier,
-            "source_authority_registry_sha256": AUTHORITY.digest,
-        })
+        provision_source_authority_registry(self.run, AUTHORITY)
+        source = with_source_authority_registry(candidate(parent_state()), AUTHORITY)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             publish_candidate(self.run, source)
-            bind_accepted_correction_authority(self.run, AUTHORITY)
 
     def tearDown(self):
         self.environment.stop()
@@ -67,15 +64,13 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
             accepted_parent = load_accepted_generation(run)
             parent_manifest = bind_accepted_execution_cache(
                 run).accepted_manifest_sha256
+        provision_source_authority_registry(run, AUTHORITY)
         parent, transaction, retained, _authority = source_qualified_state(
             accepted_parent.retained_state, extents=accepted_parent.extents)
         bundle = derive_successor_bundle(
             accepted_parent, retained, parent_manifest_sha256=parent_manifest,
             delivery_events=({"event": "FIXTURE_SOURCE_QUALIFIED"},))
-        bundle = replace(bundle, correction_frontier={
-            **bundle.correction_frontier,
-            "source_authority_registry_sha256": AUTHORITY.digest,
-        })
+        bundle = with_source_authority_registry(bundle, AUTHORITY)
         decision = retention_decision(parent=parent, retained=retained)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             published = accept_and_publish(
@@ -85,7 +80,6 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
             )
             accepted_manifest = bind_accepted_execution_cache(
                 run).accepted_manifest_sha256
-            bind_accepted_correction_authority(run, AUTHORITY)
         self.assertEqual(accepted_manifest, published["manifest_sha256"])
         return accepted_manifest
 
@@ -131,7 +125,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
             binding, qualified_compositions=(cached,),
             qualification_verifier=lambda item: True)
         with shape_patch():
-            register_solve_context(self.run, context, AUTHORITY)
+            register_solve_context(self.run, context)
         dependency = DependencyRef(
             DependencyKind.SOURCE,
             "source:binding:" + contract_digest(binding),
@@ -140,11 +134,8 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         owner = context.operator_composition_artifact_owner
         node = owner.node_for(cached)
         with shape_patch():
-            record_accepted_correction(self.run, correction, AUTHORITY)
-            record_accepted_revalidation(
-                self.run,
-                _result(node, digest=node.content_digest, correction=correction),
-                AUTHORITY,
+            AcceptedRuntimeHost(self.run).record_correction(correction)
+            AcceptedRuntimeHost(self.run).record_revalidation(_result(node, digest=node.content_digest, correction=correction),
             )
         self.assertEqual(owner.require(cached, binding), node)
 
@@ -173,9 +164,8 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
             derived_path=(node.artifact_id,),
         )
         with shape_patch():
-            record_accepted_remediation(self.run, remediation, AUTHORITY)
-            _event_id, faults = record_accepted_derived_claim(
-                self.run, stale, AUTHORITY)
+            AcceptedRuntimeHost(self.run).record_remediation(remediation)
+            _event_id, faults = AcceptedRuntimeHost(self.run).record_derived_claim(stale)
         self.assertEqual(len(faults), 1)
         self.assertEqual(
             faults[0].fault.reason_code,
@@ -198,7 +188,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
             binding, qualified_compositions=(cached,),
             qualification_verifier=lambda item: True)
         with shape_patch():
-            register_solve_context(self.run, context, AUTHORITY)
+            register_solve_context(self.run, context)
         dependency = DependencyRef(
             DependencyKind.SOURCE,
             "source:binding:" + contract_digest(binding),
@@ -207,15 +197,10 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         owner = context.operator_composition_artifact_owner
         node = owner.node_for(cached)
         with shape_patch():
-            record_accepted_correction(self.run, correction, AUTHORITY)
-            record_accepted_revalidation(
-                self.run,
-                _result(node, digest=node.content_digest, correction=correction),
-                AUTHORITY,
+            AcceptedRuntimeHost(self.run).record_correction(correction)
+            AcceptedRuntimeHost(self.run).record_revalidation(_result(node, digest=node.content_digest, correction=correction),
             )
-            record_accepted_remediation(
-                self.run,
-                RemediationReceipt(
+            AcceptedRuntimeHost(self.run).record_remediation(RemediationReceipt(
                     remediation_id="remediation:accepted-runtime-independent",
                     correction_event_id=correction.event_id,
                     correction_receipt_sha256=correction.source_receipt_sha256,
@@ -229,11 +214,8 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
                     completed_at=650,
                     status=RemediationStatus.COMPLETED,
                 ),
-                AUTHORITY,
             )
-            _event_id, faults = record_accepted_derived_claim(
-                self.run,
-                DerivedClaim(
+            _event_id, faults = AcceptedRuntimeHost(self.run).record_derived_claim(DerivedClaim(
                     claim_id="claim:accepted-runtime-independent",
                     actor_id="actor:later-independent",
                     source_event_id="event:later-independent",
@@ -243,7 +225,6 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
                     observed_at=725,
                     derived_path=(node.artifact_id,),
                 ),
-                AUTHORITY,
             )
         self.assertEqual(faults, ())
         self.assertEqual(owner.require(cached, binding), node)
@@ -254,9 +235,9 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         correction, remediation, stale, later = self._late_support_evidence(
             accepted_manifest)
         with shape_patch():
-            record_accepted_correction(run, correction, AUTHORITY)
-            record_accepted_remediation(run, remediation, AUTHORITY)
-            _event_id, faults = record_accepted_derived_claim(run, stale, AUTHORITY)
+            AcceptedRuntimeHost(run).record_correction(correction)
+            AcceptedRuntimeHost(run).record_remediation(remediation)
+            _event_id, faults = AcceptedRuntimeHost(run).record_derived_claim(stale)
         self.assertEqual(len(faults), 1)
         update = faults[0].requalification
         self.assertEqual(update.affected_capability_ids, (TARGET,))
@@ -269,7 +250,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
             )
 
         with shape_patch():
-            owner = load_capability_support_owner(run, TARGET, AUTHORITY)
+            owner = load_capability_support_owner(run, TARGET)
         self.assertEqual(owner.support.status, "REQUALIFICATION_REQUIRED")
         self.assertEqual(owner.ledger.pending_source_tasks, update.ledger.pending_source_tasks)
         self.assertEqual(owner.ledger.pending_c10_intents, update.ledger.pending_c10_intents)
@@ -278,18 +259,17 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         outbox = run / "akasha-outbox.sqlite3"
         self.assertEqual(len(pending_events(outbox)), 1)
 
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         del owner
         with shape_patch():
-            cold = load_capability_support_owner(run, TARGET, AUTHORITY)
+            cold = load_capability_support_owner(run, TARGET)
         self.assertEqual(cold.support.status, "REQUALIFICATION_REQUIRED")
         self.assertEqual(cold.ledger.pending_source_tasks, update.ledger.pending_source_tasks)
         self.assertEqual(cold.ledger.pending_c10_intents, update.ledger.pending_c10_intents)
         self.assertEqual(len(pending_events(outbox)), 1)
 
         with shape_patch():
-            _event_id, later_faults = record_accepted_derived_claim(
-                run, later, AUTHORITY)
+            _event_id, later_faults = AcceptedRuntimeHost(run).record_derived_claim(later)
         self.assertEqual(later_faults, ())
         with shape_patch():
             self.assertEqual(
@@ -303,16 +283,16 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         correction, remediation, stale, _later = self._late_support_evidence(
             first_manifest)
         with shape_patch():
-            record_accepted_correction(run, correction, AUTHORITY)
-            record_accepted_remediation(run, remediation, AUTHORITY)
-            _event_id, faults = record_accepted_derived_claim(
-                run, stale, AUTHORITY)
+            AcceptedRuntimeHost(run).record_correction(correction)
+            AcceptedRuntimeHost(run).record_remediation(remediation)
+            _event_id, faults = AcceptedRuntimeHost(run).record_derived_claim(stale)
         self.assertEqual(len(faults), 1)
 
         with shape_patch():
             accepted_parent = load_accepted_generation(run)
         parent, transaction, retained, _authority = source_qualified_state(
-            accepted_parent.retained_state, extents=accepted_parent.extents,
+            accepted_parent.retained_state,
+            extents=accepted_parent.extents,
             capability=TARGET,
             source_row="source:capability-support:requalified",
             source_family="source-family:capability-support:requalified",
@@ -333,19 +313,15 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
                 training_authorities=transaction.training_authorities,
             )
 
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         with shape_patch():
-            owner = load_capability_support_owner(run, TARGET, AUTHORITY)
+            owner = load_capability_support_owner(run, TARGET)
         self.assertEqual(
             owner.support.retained_generation_sha256,
             second["manifest_sha256"],
         )
         self.assertEqual(owner.support.status, "QUALIFIED")
         self.assertEqual(owner.require(TARGET), owner.support)
-        self.assertNotIn(
-            "capability-support:" + TARGET,
-            owner._accepted_correction_target.process_fault_holds,
-        )
 
 
 if __name__ == "__main__":

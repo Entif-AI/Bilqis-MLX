@@ -353,6 +353,15 @@ same host for signed correction and signed revalidation delivery. Thus the
 production ingress is connected to actual owner consumers rather than only to
 fixture-local helper calls.
 
+**Later #917 authority correction (2026-11-08):** the accepted-cache portion of
+this historical remediation was subsequently rejected by fresh EGM. Binding a B14
+authority through `AcceptedRuntimeHost` allowed the first caller to supply the
+policy/context resolver and left a resolver-time currentness race. The repaired
+contract therefore removes C09/B13 production issuance and cache inference from
+`AcceptedRuntimeHost`; B14 remains without a production issuer until its genuine
+upstream owner exists. This note preserves the earlier evidence without treating
+that superseded integration as current authority.
+
 Primary surface:
 
 - `bilqis_mlx/runtime/_correction/accepted_corrections.py`

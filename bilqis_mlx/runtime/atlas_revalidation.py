@@ -41,12 +41,6 @@ from .atlas_source_authority import (
     require_source_authority_runtime,
 )
 from .atlas_cache_owner import ExactCacheArtifactOwner, cache_artifact_digest
-from .atlas_owner_ingress import (
-    apply_capability_support_correction,
-    apply_compiled_batch_correction,
-    apply_motif_correction,
-    apply_solve_context_correction,
-)
 
 __all__ = [
     "CORRECTION_EVENT_SCHEMA",
@@ -73,10 +67,6 @@ __all__ = [
     "StateTransition",
     "advance_revalidation",
     "apply_correction",
-    "apply_capability_support_correction",
-    "apply_compiled_batch_correction",
-    "apply_motif_correction",
-    "apply_solve_context_correction",
     "next_revalidation_task",
     "read_artifact",
     "require_source_authority_runtime",
