@@ -258,7 +258,7 @@ class BamfFirstStudentTests(unittest.TestCase):
 
         before = file_digests()
         for target in (self.source, self.source / "new-child"):
-            with self.subTest(target=target), \
+            with self.subTest(target=str(target)), \
                     patch("bilqis_mlx.runtime.bamf_first_student."
                           "issue_initial_factory_foundation_authority") as factory_replay:
                 with self.assertRaises(BilqisError) as failure:
