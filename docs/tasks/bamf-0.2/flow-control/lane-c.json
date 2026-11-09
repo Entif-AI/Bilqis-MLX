@@ -225,12 +225,12 @@
     },
     {
       "issue": 510,
-      "pr": null,
+      "pr": 944,
       "state": "READY",
       "head_sha": "04f4fc3f6e63fb316ebb02004ae57f60973dcebf",
       "preserved_branch": "codex/510-c07-atomic-adoption-20261107",
       "summary": "C07.1b exact semantic head 04f4fc3f consumes merged A02/#399 through reviewed unified f8f4bbaf and requires the owner-issued A02StagedVocabularyExtension. Native current-Factory authority is derived only from accepted B13 lineage; generic C05/B13 vocabulary growth remains fail-closed. The exact successor Factory artifact is persisted before C07-bound B13 publication; accepted cold Factory replay and exact retry are proven, including B13 custody/outbox normalization and no legacy state.json. Expanded affected ring is 55/55 PASS; composed transaction witness PASS; quality/governance/smell/legacy-trainer/flow/contracts/diff gates are green. Fresh independent Goldfish exact-head review passed 0 Blockers / 0 Majors / 0 Nits and declared READY_FOR_HUMAN_REVIEW.",
-      "resume_trigger": "Open and complete normal human review of the #510 PR into codex/bamf-unified-base-20261028. Do not self-merge."
+      "resume_trigger": "Human review/merge PR #944 into codex/bamf-unified-base-20261028. Do not self-merge."
     }
   ]
 }
