@@ -1,18 +1,28 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "4bfcbd5a9aaa22a1bc2bca4c7a64ec203df07044",
-  "updated_at": "2026-11-09T05:49:48Z",
+  "observed_unified": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
+  "updated_at": "2026-11-09T06:52:14Z",
   "exception": null,
   "items": [
     {
       "issue": 917,
       "pr": 927,
-      "state": "ACTIVE",
-      "head_sha": "5209c230f67cd55ed4e919fe62bc954b665d306b",
-      "summary": "C09 remediation remains ACTIVE on draft PR #927 after fresh exact-head EGM of b6232012 failed at 1 Blocker / 1 Major / 1 Nit. Repair head 5209c230 closes the production-importable accepted-correction reset bypass by retiring live owners before runtime reset, restores the cold capability-history fixture through accepted custody, and forbids caller-supplied correction authority. Reviewed unified 4bfcbd5a has now been consumed; full exact-head proof, hosted CI, and a completely fresh three-lens EGM are required before readiness.",
+      "state": "TURNED_IN",
+      "head_sha": "50c6215f09dcc312ac21e657384369bbedc2439e",
+      "summary": "C09 source-authority remediation passed fresh exact-head EGM at 50c6215f with 0 Blockers / 0 Majors, then merged through PR #927 as reviewed unified b86dd279. Issue #917 is closed EGM-Passed. This remains narrower historical qualification and does not satisfy the separate #930 packed-frame/context-view acceptance.",
       "resume_trigger": null,
-      "preserved_branch": "codex/917-c09-source-authority-runtime-r3-20261108"
+      "preserved_branch": "codex/917-c09-source-authority-runtime-r3-20261108",
+      "merged_pr": 927
+    },
+    {
+      "issue": 930,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
+      "summary": "C09 packed-frame/context-view integration repair is ACTIVE on isolated serialized-writer branch codex/930-c09-packed-frame-context-views-20261109. Baseline on reviewed unified 9385ac7f reproduced 1 pass / 5 BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT errors. Rejected R2 review is preserved; governing R3 passed fresh three-lens design review at 0 Blockers / 0 Majors / 0 Nits in every lens. Implementation now preserves one physical packed identity across scoped origin-context views, keeps current TIME as mutable custody, derives stable multi-context motif/cache identity from physical IDs plus origin-context keys, preserves single-context identity, and passes the focused nested/context/motif/cold-replay acceptance matrix plus the full correction ring. Final candidate freeze and implementation EGM remain pending.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/930-c09-packed-frame-context-views-20261109"
     },
     {
       "issue": 543,

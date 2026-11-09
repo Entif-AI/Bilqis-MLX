@@ -98,10 +98,7 @@ def bind_motif_artifact_owner(cache, compiled):
     """Bind mutable C09 hold state to one immutable compiled-frame identity."""
     cache = require_accepted_execution_cache(cache)
     from bilqis_mlx.runtime.atlas_motif_owner import MotifArtifactOwner
-    key = tuple(
-        node.artifact_id
-        for node in compiled.packed_frame_artifact_owner.index.nodes
-    )
+    key = compiled.packed_frame_artifact_owner.cache_identity
     owner = cache._motif_artifact_owners.get(key)
     if owner is None:
         owner = MotifArtifactOwner(cache, compiled)
