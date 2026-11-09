@@ -1,5 +1,5 @@
 {
-  "legacy_raw_file_count": 251,
+  "legacy_raw_file_count": 253,
   "legacy_raw_raise_count": 2073,
   "legacy_raw_raise_groups": [
     {
@@ -7437,6 +7437,55 @@
       "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
     },
     {
+      "code_hint": "HUMAN_TRAINER_INVALID_LESSON_BATCH_SIZE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_INVALID_LESSON_BATCH_SIZE'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/selection.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_MISSING_BINARY_TRAINING_CLASS",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_MISSING_BINARY_TRAINING_CLASS'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/selection.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/selection.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/selection.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_CHAMPION_CUSTODY_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_CHAMPION_CUSTODY_DRIFT'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/soups.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_INGREDIENT_GRAPH_DIGEST_COLLISION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_INGREDIENT_GRAPH_DIGEST_COLLISION'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/soups.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_UNSAFE_CHAMPION_BUNDLE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_UNSAFE_CHAMPION_BUNDLE'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/soups.py"
+    },
+    {
       "code_hint": "FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE",
       "count": 1,
       "exception": "ValueError",
@@ -8291,13 +8340,6 @@
       "path": "bilqis_mlx/learning/lesson_guidance.py"
     },
     {
-      "code_hint": "GRADE_SOUP_CHAMPION_CUSTODY_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_CHAMPION_CUSTODY_DRIFT'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
       "code_hint": "GRADE_SOUP_FROZEN_MODEL_SHAPE_DRIFT",
       "count": 1,
       "exception": "ValueError",
@@ -8312,13 +8354,6 @@
       "path": "bilqis_mlx/learning/lesson_guidance.py"
     },
     {
-      "code_hint": "GRADE_SOUP_INGREDIENT_GRAPH_DIGEST_COLLISION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_INGREDIENT_GRAPH_DIGEST_COLLISION'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
       "code_hint": "GRADE_SOUP_SAVED_ARTIFACT_CHANGED",
       "count": 1,
       "exception": "ValueError",
@@ -8326,45 +8361,10 @@
       "path": "bilqis_mlx/learning/lesson_guidance.py"
     },
     {
-      "code_hint": "GRADE_SOUP_UNSAFE_CHAMPION_BUNDLE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_UNSAFE_CHAMPION_BUNDLE'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
       "code_hint": "GRADE_SOUP_UNSAFE_SAVED_PATH",
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADE_SOUP_UNSAFE_SAVED_PATH'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_INVALID_LESSON_BATCH_SIZE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_INVALID_LESSON_BATCH_SIZE'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_MISSING_BINARY_TRAINING_CLASS",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_MISSING_BINARY_TRAINING_CLASS'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH'",
       "path": "bilqis_mlx/learning/lesson_guidance.py"
     },
     {
