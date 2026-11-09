@@ -50,6 +50,14 @@ Blockers / 0 Majors / 0 Nits**, with disposition
 **READY_FOR_HUMAN_REVIEW**. The durable review receipt is
 `docs/evidence/bamf/C03/egm.md`.
 
+Hosted CI subsequently exposed only opaque numeric guard debt in the new C03
+digest-width checks. Repair `874eabc39ad2086b758e891ccf9b6f6a2f11ccec`
+names those unchanged SHA-256/Git-commit widths, regenerates the repository-owned
+error catalog/manual, and passes the exact 37-test C03/B13 ring plus the
+error-control gate with zero new debt. A targeted fresh Goldfish re-audit of that
+repair also returned **0 Blockers / 0 Majors / 0 Nits** and confirmed no semantic
+contract changed.
+
 ## Remaining gate
 
 Ready human-review PR #932 is open against
