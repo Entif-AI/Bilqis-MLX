@@ -239,8 +239,8 @@
       "issue": 354,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "06ef583f0722075bbb3bd1dbb8df6d931a1011b7",
-      "summary": "Scoped A13/A05 compiled-prefix authority integration selected to unblock B11/#471; current reviewed unified 4bfcbd5a is being consumed while preserving A05 ownership of prefix identity/evidence and A13 issuance only after exact replay.",
+      "head_sha": "55e94b29",
+      "summary": "Scoped A13/A05 compiled-prefix authority integration is qualified on reviewed unified 4bfcbd5a: A05 owns complete-prefix identity/evidence and A13 issues the exact SourceGrant only after replay. Real accepted-A01 source proof is 14 passed + 6 subtests with zero skips; current quality/legacy-trainer/flow/contracts are green. Fresh merge-readiness review pending.",
       "resume_trigger": null,
       "preserved_branch": "codex/354-a13-prefix-inventory-20261107"
     }

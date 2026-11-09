@@ -11,6 +11,10 @@ no production source boundary issued the complete compiled-prefix credential.
 This patch moves identity/evidence ownership to A05 and makes A13 issue the grant
 only after exact source-owned replay. B06 remains a verifier/consumer.
 
+Canonical latest legacy-trainer adaptation source:
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
+Prometheus remains historical evidence only and is not the current adaptation source.
+
 ## Exact identity
 
 - reviewed unified base: `bd3657e170c8bdc046a7bb28524c0fb829ca7ce9`
@@ -64,3 +68,27 @@ must consume this source grant only after reviewed integration. Together with th
 separate C05 AST-custody and B10 request-disposition branches, the remaining
 independent B06 production authority gap is durable operator `run_seed` plus true
 visit identity.
+
+## Reviewed-unified refresh — 2026-11-09
+
+The preserved branch consumed current reviewed unified
+`4bfcbd5a9aaa22a1bc2bca4c7a64ec203df07044` exactly once at merge checkpoint
+`55e94b29`. The only merge conflict was the shared Lane A flow ledger; current
+reviewed-unified entries were preserved and this scoped #354 integration was
+reactivated without changing A05/A13 ownership.
+
+Current source-positive qualification used the accepted A01 artifact at
+`/Users/emilie/Code/371-c02-complete-20261106/.local/c02-a01-rebuild/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`:
+
+- source admission + prefix policy + salience ring: **14 passed + 6 subtests**,
+  zero skips;
+- BAMF contract verifier: **43/43** exact issue mirrors, **216** indexed identities;
+- `quality:changed`: PASS, zero new changed-file findings;
+- current Microspenics legacy-trainer authority and its 7 tests: PASS;
+- BAMF flow-control and its 15 tests: PASS;
+- `git diff --check`: clean.
+
+The existing `select_prediction_refinements` long-function baseline remains
+historical and this change adds zero new smell debt. No B06 policy duplication,
+consumer-local grant, learner, optimizer, source publication, or A13 parent
+closeout was introduced. Fresh merge-readiness review remains the next gate.
