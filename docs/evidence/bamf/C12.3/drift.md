@@ -85,7 +85,7 @@ Benign implementation differences identified by the independent scopes:
 ## Reviewed-unified integration sync
 
 After semantic drift was frozen, reviewed unified advanced from `6a770f10` through
-`039fbcab9df0e3aac6efb622bfaa059fa7e2bf5a` with B09.3 plasticity-transition
+`039fbcab999e290dcb3dcd9722924678a460bc4a` with B09.3 plasticity-transition
 and transition-authority work that touched package-import/retention dependencies.
 Lane C merged the latest reviewed base conflict-free at integration head
 `64351d421edcd9594f1f393322fa15936602fc8c`.
