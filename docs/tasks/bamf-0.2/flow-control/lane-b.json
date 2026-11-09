@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "4bfcbd5a9aaa22a1bc2bca4c7a64ec203df07044",
-  "updated_at": "2026-11-09T05:43:34Z",
+  "observed_unified": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
+  "updated_at": "2026-11-09T06:11:42Z",
   "exception": null,
   "items": [
     {
@@ -386,6 +386,15 @@
       "summary": "Scoped B10 request-disposition owner is turned in as ready PR #935 after current-unified qualification and fresh independent PASS 0 Blockers / 0 Majors / 0 Nits. C04 TaskGoal yields ORDINARY / EXPLICIT_MEMBER / UNRESOLVED_NESTED without caller booleans; B06/B11 composition remains downstream #471 work.",
       "resume_trigger": "Human review/merge PR #935 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
       "preserved_branch": "codex/367-b10-refinement-disposition-20261107"
+    },
+    {
+      "issue": 471,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
+      "summary": "B11.1 composition leaf activated after reviewed integration of A05/A13 prefix authority (#936), B10/C04 request disposition (#935), C05/A05 evaluation source custody (#937), and accepted run_seed/visit transport. Lane branch is exactly current reviewed unified; implementation is limited to canonical B06.2 selection -> B06.3 local refinement -> typed readout and existing backend dispatch obligations.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-neural"
     }
   ]
 }
