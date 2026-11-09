@@ -89,3 +89,19 @@ Current-head qualification:
 No B06 policy, B11 composition, caller credential, learner, optimizer, source
 publication, or parent-closeout semantics were added. Fresh merge-readiness review
 remains the next gate.
+
+## Fresh merge-readiness review — 2026-11-09
+
+Independent review of exact remote head
+`31be2acb53e7e8d14779b45602bc7d9ae4741ffd` against reviewed unified
+`4bfcbd5a9aaa22a1bc2bca4c7a64ec203df07044` returned:
+
+**PASS — 0 Blockers / 0 Majors / 0 Nits.**
+
+The reviewer confirmed the semantic delta remains limited to the closed
+`ORDINARY | EXPLICIT_MEMBER | UNRESOLVED_NESTED` classifier and focused proof.
+The classifier derives requested roles only from validated `RefKind.INPUT`
+operands and nested state only from unresolved nodes consuming prior `RESULT`
+values. Current source custody remains supplied by the existing non-caller-
+constructible `FactoryTaskAuthority`; this branch neither mints a credential nor
+composes B06/B11.
