@@ -1,18 +1,29 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
-  "updated_at": "2026-11-09T06:55:39Z",
+  "observed_unified": "636ac8ffdeece7d6f8b24e9d1f46596396848db7",
+  "updated_at": "2026-11-09T19:29:06Z",
   "exception": null,
   "items": [
     {
       "issue": 917,
       "pr": 927,
-      "state": "ACTIVE",
-      "head_sha": "5209c230f67cd55ed4e919fe62bc954b665d306b",
-      "summary": "C09 remediation remains ACTIVE on draft PR #927 after fresh exact-head EGM of b6232012 failed at 1 Blocker / 1 Major / 1 Nit. Repair head 5209c230 closes the production-importable accepted-correction reset bypass by retiring live owners before runtime reset, restores the cold capability-history fixture through accepted custody, and forbids caller-supplied correction authority. Reviewed unified 4bfcbd5a has now been consumed; full exact-head proof, hosted CI, and a completely fresh three-lens EGM are required before readiness.",
+      "state": "TURNED_IN",
+      "head_sha": "50c6215f09dcc312ac21e657384369bbedc2439e",
+      "summary": "C09 source-authority remediation passed fresh exact-head EGM at 50c6215f with 0 Blockers / 0 Majors, then merged through PR #927 as reviewed unified b86dd279. Issue #917 is closed EGM-Passed. This remains narrower historical qualification and does not satisfy the separate #930 packed-frame/context-view acceptance.",
       "resume_trigger": null,
-      "preserved_branch": "codex/917-c09-source-authority-runtime-r3-20261108"
+      "preserved_branch": "codex/917-c09-source-authority-runtime-r3-20261108",
+      "merged_pr": 927
+    },
+    {
+      "issue": 930,
+      "pr": 938,
+      "state": "ACTIVE",
+      "head_sha": "6b5aef0a7c798bc3b5b77ddbb930725e19ff93eb",
+      "head_sha_role": "latest implementation/proof head; any following lane bookkeeping commit is docs/flow-only and must be included in final exact-head qualification",
+      "summary": "C09 packed-frame/context-view integration repair remains ACTIVE on serialized-writer branch codex/930-c09-packed-frame-context-views-20261109 and is represented by open PR #938. Governing R3 design passed 0B/0M/0N. Failed implementation candidates bbba88eb, e05256de and 27afb804 remain preserved. The 27afb804 final authority EGM found one live-owner rematerialization Major: a cached single-context MotifArtifactOwner could survive immutable physical content/non-TIME dependency drift until GC. Head 6b5aef0 adds a red-to-green regression and makes cached motif-owner reuse validate incoming physical content plus non-TIME dependencies while preserving authorized mutable TIME rebinding. Focused motif/context proof is green, correction 58/58 passes, accepted runtime 8/8 passes, multi-context cold replay 1/1 passes, cache currentness 5/5 passes, learned-support projection 1/1 passes, and structure/smell/static-flow/diff gates are green. Exact-head hosted CI and a completely fresh final implementation EGM remain pending before human-review turn-in.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/930-c09-packed-frame-context-views-20261109"
     },
     {
       "issue": 543,
@@ -215,9 +226,9 @@
       "issue": 510,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "87f9edb64b6e955f3d0490af1eee1220435bc639",
+      "head_sha": "587bb61e07885cafd356329ad8b6db15bce4c3f9",
       "preserved_branch": "codex/510-c07-atomic-adoption-20261107",
-      "summary": "C07.1b consumed current reviewed unified 9385ac7f after the A02 owner published an exact typed staging checkpoint. Current work composes the existing AtlasAdmissionBinding/native-candidate path with reviewed C09 accepted source-authority custody, then closes atomic Factory/B13 commit ordering and exact retry convergence before final A02 reviewed-unified consumption.",
+      "summary": "C07.1b semantic repair head 587bb61e persists the exact selected ExecutableFactoryRelease before B13 publication, binds it into non-caller-mintable AtlasAdmissionBinding authority, re-resolves that release only through accepted B13 custody, converges exact already-published retries, and retains reviewed accepted-run SourceAuthorityRuntime custody. Current reviewed unified 636ac8ff is being consumed for the latest C09 context/source-authority repair. Final turn-in still requires the real owner-issued A02 handoff through reviewed unified; no sibling Lane A merge is authorized.",
       "resume_trigger": null
     }
   ]

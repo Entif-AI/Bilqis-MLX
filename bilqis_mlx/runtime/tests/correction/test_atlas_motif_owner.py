@@ -132,6 +132,12 @@ class MotifArtifactOwnerTests(unittest.TestCase):
             self.owner.require(self.cache, self.compiled)
 
     def test_cache_lifetime_reuses_one_owner(self):
+        packed_owner = self.compiled.packed_frame_artifact_owner
+        self.assertEqual(packed_owner.origin_context_keys, ())
+        self.assertEqual(
+            packed_owner.cache_identity,
+            tuple(node.artifact_id for node in packed_owner.physical_nodes),
+        )
         self.assertIs(
             self.owner,
             bind_motif_artifact_owner(self.cache, self.compiled),
@@ -161,7 +167,6 @@ class MotifArtifactOwnerTests(unittest.TestCase):
             second_owner.current_node.content_digest,
             self.owner.current_node.content_digest,
         )
-
 
 if __name__ == "__main__":
     unittest.main()
