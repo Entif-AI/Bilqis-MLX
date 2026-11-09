@@ -2,16 +2,16 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "7d9e0e8209e2d077e4fc30f65a3ebf3f29a91f3f",
-  "updated_at": "2026-11-09T03:48:09Z",
+  "updated_at": "2026-11-09T03:37:09Z",
   "exception": null,
   "items": [
     {
       "issue": 543,
       "pr": null,
-      "state": "TURNED_IN",
-      "head_sha": "c087191a0643c3e8fdf00119b63c6d07dd58962f",
-      "summary": "C16.1b implementation is turned in at semantic head c087191a after binding the admitted Factory foundation, source-owned Atlas identity, B01 topology/extents, teacher projection, explicit operator AdamW hyperparameters and run_seed through B13 generation-zero custody. Focused preflight 6/6, B13 genesis 18/18, error catalog 3/3, governance/structure 13/13, BAMF contract verification, error-control new-debt=0 and local flow validation pass. Fresh EGM remains pending. Live flow reconciliation also reports unrelated open PRs #864 and #927 missing from the repository ledger; this leaf did not mutate sibling flow records.",
-      "resume_trigger": "Run fresh C16.1b EGM against semantic head c087191a0643c3e8fdf00119b63c6d07dd58962f, resolve any blocker/major findings, then open or update the human-review PR into codex/bamf-unified-base-20261028. Reconcile repository-wide live flow entries for unrelated PRs #864 and #927 under their owners. Do not self-merge.",
+      "state": "ACTIVE",
+      "head_sha": "7d9e0e8209e2d077e4fc30f65a3ebf3f29a91f3f",
+      "summary": "C16.1b active on its dedicated serialized-writer branch after consuming accepted B13.6 generation-zero custody and reviewed unified 7d9e0e82. The leaf binds the admitted Factory foundation, B01 topology/native zero AdamW, source-owned Atlas foundation, teacher baseline and operator run_seed into the B13 preflight boundary without launching neural updates.",
+      "resume_trigger": null,
       "preserved_branch": "codex/543-c16-foundation-20261108"
     },
     {
