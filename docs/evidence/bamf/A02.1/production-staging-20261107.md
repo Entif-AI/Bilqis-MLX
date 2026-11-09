@@ -5,7 +5,8 @@
 - Issue: #399 — A02.1 | Allocate stable semantic banks and activate admitted identity rows
 - Branch: `codex/bamf02-a-399-production-admission-20261106`
 - Historical PR #887: closed unmerged after the earlier A02 publication-authority overreach was corrected.
-- Reviewed integration trunk consumed for the current candidate: `636ac8ffdeece7d6f8b24e9d1f46596396848db7`
+- Reviewed integration trunk consumed for the current candidate: `6b085f875ab781a3771c89916a1e42653f73e882`
+- Repaired A02 semantic head: `df0c11ea6a687c062143ebc0b16705f2ca7fee2b`; later `cba3712f` / `d571f162` commits only preserve or merge reviewed-unified state and do not change A02 semantics.
 - Dependency authority consumed: reviewed B13 accepted-generation feature authority from #708/#809.
 - Additional B13 integration repair in this branch: recursive accepted-generation feature lineage is rederived through the same accepted source authority, while the immediate parent generation's effective feature map is kept distinct from the current feature artifact's last distinct construction predecessor. A02 therefore does not mint a parallel factor-map authority or mistake retained reuse for a new feature transition.
 - Rejected historical PR #698 lineage was not revived or used as current authority.
@@ -46,17 +47,19 @@ Preflight review found material defects in the earlier turn-in. They were accept
 9. **Initial and retained same-map staging.** Fresh exact-head EGM found that the production adapter conflated the immediate parent generation's feature map with the current feature artifact's own predecessor. That rejected generation zero outright and also broke ordinary retained descendants that reused an unchanged map. B13 replay now exposes both relationships distinctly. A02 uses source-replayed predecessor-free validation when the accepted feature artifact has no construction predecessor, and authenticated predecessor validation only when the artifact actually records one. The full-topology witness now stages directly from accepted generation zero instead of manufacturing a generation-one feature transition first.
 10. **C07-accepted A02 replay — downstream C07 boundary.** Fresh turn-in review found that a lawfully adopted A02 active-set extension will require B13 replay to recognize C07's distinct accepted Atlas-admission binding. Reviewed unified does not yet contain that binding contract, and ordinary `AcceptedCandidateBinding/v5` intentionally has no A02 staging-receipt anchor. A02 therefore leaves current B13 replay fail-closed rather than inventing a prospective C07/C05 acceptance shape. #510 owns that integration after this owner-issued staged handoff lands through reviewed unified.
 11. **Owner-surface coupling — Major.** The A02 adapter had imported private B12 parameter-extension issuance and private B13 feature-context/schema helpers. Those dependencies now have explicit public owner seams: `issue_parameter_extension_state(...)`, `AcceptedGenerationFeatureContext` / `read_accepted_generation_feature_context(...)`, and `feature_schema_from_compiler_features(...)`. A02 consumes only those public surfaces.
+12. **Issued-handoff mutation — Blocker.** Exact-head adversarial review proved that an issuer-bearing `A02StagedVocabularyExtension` could be mutated after issuance because the earlier validator rebound only optimizer identity plus selected candidate fields. The handoff now seals the complete authority-bearing candidate identity plus the full outbox, requires exactly one `STAGED_EVENT` carrying the exact staging receipt, and recomputes that seal at `require_issued_a02_staged_vocabulary_extension(...)`.
+13. **Retained custody omitted from the seal — Blocker.** The first complete-candidate seal reused the genesis authority digest, which intentionally omitted B12 `CandidateState.custody`. The A02 seal now also binds the exact retained custody record. Focused tamper coverage rejects changed manifest, generation, run identity, topology/extents custody and the broader receipt/outbox/run-identity mutation matrix while the unmodified owner-issued handoff remains valid.
 
 The previous claim that C07 governed only new Atlas releases was incorrect and is withdrawn. C07 explicitly governs subsequent source-valid additions under a persisted lease.
 
 ## Verification
 
-Current exact-tree verification after the ownership and run-seed corrections:
+Current exact-tree verification after the ownership, run-seed, handoff-seal and custody corrections:
 
 ```text
 A02 staging/authority regressions: 3 passed, 0 failed, 0 skipped
 A02 semantic owner suites:         11 passed, 0 failed, 2 explicit opt-in skips
-B13 feature authority + lineage:    18 passed, 0 failed, 0 skipped
+B13 feature authority core ring:    11 passed, 0 failed, 0 skipped
 ordinary B13 publication:           11 passed, 0 failed, 0 skipped
 changed-file smell audit:          0 findings
 development structure/governance:  pass
@@ -68,17 +71,17 @@ git diff --check:                  pass
 
 Historical note: an earlier full-topology witness completed 1/1 PASS in 336.214s after repairing a duplicate Python module identity. That witness exercised direct A02 pointer publication and therefore is **not current admission acceptance evidence** after the C07 boundary correction. It remains diagnostic history only.
 
-The prior detached witness at snapshot `83ea978691054b0eb25912f31cda9d9af8d3af805e41e3ab330ac8c113a9243f` and the later 387.353s run are historical only because subsequent production changes invalidated them. The current full-topology staging witness is `test_production_staging.py`; after the accepted run-seed and feature-construction-lineage repairs it stages directly from accepted generation zero and passed:
+The prior detached witness at snapshot `83ea978691054b0eb25912f31cda9d9af8d3af805e41e3ab330ac8c113a9243f`, the later 387.353s run, and the 316.421s pre-seal run are historical because subsequent production changes invalidated them. A post-seal full-topology staging witness completed in 344.835s before the final retained-custody field was added to that seal; it therefore remains supporting rather than final turn-in evidence. The focused exact-head capability proof covers the final custody predicate, and the final full-topology witness is rerun only if required by the changed-predicate proof budget before turn-in.
 
 ```text
 command: env BILQIS_BAMF_FULL_WITNESS=1 python3 -B scripts/run_tests.py \
   bilqis_mlx/runtime/tests/custody/bamf_bundle/vocabulary/test_production_staging.py
-Ran 1 test in 316.421s
+Ran 1 test in 344.835s
 OK
 TEST_TOTALS total=1 passed=1 failed=0 skipped=0 errors=0
 ```
 
-This current witness proves that the ordinary initial accepted generation can stage A02 growth without a fabricated predecessor feature artifact. It additionally proves that a nonzero accepted `BamfRunIdentity.run_seed` determines the staged new-row bytes by independently recomputing the expected row from the accepted seed and source-derived factor. It proves the corrected A02 staging path and fail-closed publication boundary. It does **not** prove or authorize C07 admission.
+This post-seal witness proves that the ordinary initial accepted generation can stage A02 growth without a fabricated predecessor feature artifact. It additionally proves that a nonzero accepted `BamfRunIdentity.run_seed` determines the staged new-row bytes by independently recomputing the expected row from the accepted seed and source-derived factor. The final retained-custody seal delta is separately covered by the exact owner-issued handoff regression until the final changed-predicate witness is recorded. None of these proofs authorize C07 admission.
 
 ## Dependency and disposition
 
