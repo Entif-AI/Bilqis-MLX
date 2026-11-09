@@ -128,6 +128,10 @@ class AcceptedMultiContextReplayTests(unittest.TestCase):
             alternate_motif = bind_motif_artifact_owner(
                 cache, alternate_compiled)
             self.assertIs(motif, bind_motif_artifact_owner(cache, compiled))
+            self.assertIs(
+                alternate_motif,
+                bind_motif_artifact_owner(cache, alternate_compiled),
+            )
         self.assertNotEqual(
             alternate_motif.current_node.artifact_id,
             motif.current_node.artifact_id)
@@ -165,6 +169,10 @@ class AcceptedMultiContextReplayTests(unittest.TestCase):
         with shape_patch():
             host.record_context_revalidation(
                 ContextRevalidationFrontier((motif_result,)))
+            self.assertIs(motif, bind_motif_artifact_owner(cache, compiled))
+        self.assertIn(new_time, motif.current_node.immediate_dependencies)
+        self.assertNotIn(old_time, motif.current_node.immediate_dependencies)
+        self.assertIs(motif.require(cache, compiled), motif.current_node)
         return new_time
 
     def _cold_reconstruct(self, rows, cache, packed_identity, motif_identity,

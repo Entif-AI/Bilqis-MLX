@@ -10,7 +10,6 @@ from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, ArtifactKind, DependencyIndex, DependencyKind, TemporalEvent,
     TemporalEventKind, TemporalStatus, _event, _node,
     _ref, apply_correction, bind_as_of_dependency, project_as_of,
-    replace,
 )
 from bilqis_mlx.semantics.frame_compiler import _prefix_digest
 
