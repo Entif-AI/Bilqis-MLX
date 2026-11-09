@@ -17,6 +17,7 @@ from .vocabulary import (
     CandidateState, VocabularyBankParent, VocabularyExtension,
     STAGED_ONLY, apply_vocabulary_extension,
 )
+from .vocabulary_staging import _apply_authenticated_vocabulary_extension
 from .vocabulary_resources import (
     DEFAULT_DISK_RESERVE_BYTES, DEFAULT_EXTRA_PLANNING_BYTES,
     VocabularyResourceEstimate, estimate_vocabulary_resources,
@@ -126,3 +127,65 @@ def stage_full_vocabulary_extension(
         parameters=parameters,
         optimizer_state=optimizer_state,
     )
+
+
+def _stage_authenticated_full_vocabulary_extension(
+    parent: FullVocabularyParent,
+    plan: VocabularyExtension,
+    *,
+    accepted_features,
+    predecessor,
+) -> PreparedVocabularyCandidate:
+    """Full-tree owner path after accepted predecessor-feature verification."""
+    if (type(parent) is not FullVocabularyParent
+            or type(parent.topology) is not ModelTopologySpecV2
+            or not isinstance(parent.parameters, Mapping)
+            or not isinstance(parent.optimizer_state, Mapping)):
+        _invalid("BAMF_VOCABULARY_FULL_PARENT_INVALID")
+    banks = parent.bank_parent
+    if type(banks) is not VocabularyBankParent:
+        _invalid("BAMF_VOCABULARY_FULL_PARENT_INVALID")
+    extents = banks.prior.extents
+    bamf_serialization_arrays(
+        parent.topology, extents, parent.parameters, parent.optimizer_state)
+    for bank in range(extents.semantic_bank_count):
+        name = f"identity.bank.{bank}"
+        if (banks.weights[bank] is not parent.parameters[name]
+                or banks.moments_m[bank] is not parent.optimizer_state[name]["m"]
+                or banks.moments_v[bank] is not parent.optimizer_state[name]["v"]):
+            _invalid("BAMF_VOCABULARY_BANK_SLICE_DRIFT")
+    factor_names = (
+        "features.type", "features.project_type",
+        "features.project_graph", "features.gates",
+    )
+    if (set(banks.feature_parameters) != set(factor_names)
+            or any(banks.feature_parameters[name] is not parent.parameters[name]
+                   for name in factor_names)):
+        _invalid("BAMF_VOCABULARY_FEATURE_PARAMETER_SLICE_DRIFT")
+    estimate = estimate_vocabulary_resources(
+        banks.prior, plan,
+        observed_available_bytes=parent.observed_available_bytes,
+        reserve_bytes=parent.reserve_bytes,
+        extra_planning_bytes=parent.extra_planning_bytes)
+    if not estimate.fits:
+        _invalid("BAMF_VOCABULARY_DISK_STAGING_BUDGET_EXCEEDED")
+    staged = _apply_authenticated_vocabulary_extension(
+        banks, plan, accepted_features=accepted_features,
+        predecessor=predecessor)
+    parameters = dict(parent.parameters)
+    optimizer_state = dict(parent.optimizer_state)
+    for bank, weight in enumerate(staged.weights):
+        name = f"identity.bank.{bank}"
+        parameters[name] = weight
+        optimizer_state[name] = {
+            "m": staged.moments_m[bank], "v": staged.moments_v[bank]}
+    bamf_serialization_arrays(
+        parent.topology, staged.extents, parameters, optimizer_state)
+    if (optimizer_state["step"] is not parent.optimizer_state["step"]
+            or optimizer_state["learning_rate"]
+            is not parent.optimizer_state["learning_rate"]):
+        _invalid("BAMF_VOCABULARY_OPTIMIZER_SCALAR_DRIFT")
+    return PreparedVocabularyCandidate(
+        staged, parent.topology.digest, staged.extents.digest,
+        hashlib.sha256(staged.active_mask).hexdigest(), estimate,
+        parameters, optimizer_state)

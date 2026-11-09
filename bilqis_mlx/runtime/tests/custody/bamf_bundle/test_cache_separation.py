@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from contextlib import ExitStack
 from dataclasses import replace
+import json
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -153,8 +154,44 @@ class CacheSeparationTests(unittest.TestCase):
         with _shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             return publish_candidate(run, candidate(state))
 
-    def test_published_parameter_extension_invalidates_real_cache_and_rebuilds(self):
+    def test_generic_parameter_extension_stops_at_c07_boundary(self):
         run = self.root / "extension"
+        state = _attention_state()
+        first = self._publish_initial(run, state)
+        with _shape_patch():
+            parent, first_authority, _, _, stale = _cache_for(
+                run, self.hidden, self.ids, self.valid)
+        successor = replace(
+            candidate(parent.retained_state, 1, first["manifest_sha256"]),
+            run_identity=parent.run_identity,
+            implementation_sha256=parent.implementation_sha256,
+            topology=parent.topology,
+            extents=parent.extents,
+            provenance=parent.provenance,
+            semantic_abi=dict(parent.semantic_abi),
+            compiler_features=dict(parent.compiler_features),
+            correction_frontier=dict(parent.correction_frontier),
+            teacher_state=dict(parent.teacher_state),
+            evaluation_contract=dict(parent.evaluation_contract),
+        )
+        extents = replace(successor.extents, active_semantic_digest="8" * 64)
+        successor = replace(
+            successor, extents=extents,
+            semantic_abi={**parent.semantic_abi, "active_set_sha256": "8" * 64},
+            transition={**successor.transition, "kind": "PARAMETER_EXTENSION",
+                        "invalidate_derived_caches": True})
+        with _shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            with self.assertRaises(BilqisError) as failure:
+                _publish(
+                    run, successor,
+                    parent_state_for_acceptance=parent.retained_state)
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED")
+        self.assertEqual(json.loads((run / "bamf-state.json").read_text())["generation"], 0)
+
+    def test_c07_parameter_extension_invalidates_real_cache_and_rebuilds(self):
+        run = self.root / "c07-extension"
         state = _attention_state()
         first = self._publish_initial(run, state)
         with _shape_patch():

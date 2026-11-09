@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "4bfcbd5a9aaa22a1bc2bca4c7a64ec203df07044",
-  "updated_at": "2026-11-09T05:45:48Z",
+  "observed_unified": "bcc82f86e2c409e22329d38c14b757d7e5a0d517",
+  "updated_at": "2026-11-09T21:32:24Z",
   "exception": null,
   "items": [
     {
@@ -94,6 +94,19 @@
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-421-egm-repair-20261105",
       "merged_pr": 862
+    },
+    {
+      "issue": 399,
+      "pr": 943,
+      "state": "READY",
+      "head_sha": "d64df31416712b51a24c45417b05893c923642cd",
+      "head_sha_role": "current A02 semantic head after reviewed-unified e206ec0 sync and cold-import/publication-boundary repair",
+      "summary": "A02.1 staging-only owner implementation is synchronized through reviewed unified bcc82f86 and turned in as human-review PR #943. The exact owner-issued staged handoff seals run identity, complete authority-bearing candidate state, retained B12 custody and outbox/receipt; generic B13 publication remains fail-closed at BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED until #510 consumes the typed handoff. Current integration repaired one A02-caused cold checkpoint-import regression by lazy-loading the MLX-heavy staging executor and updated stale generic publication tests to assert the C07 boundary. The affected final-head ring is 13/13 PASS; docs, flow-control and diff hygiene pass; fresh independent exact-head review reports 0 Blockers / 0 Majors / 0 Nits. GitHub reports PR #943 mergeable. Human merge remains the gate before #510 consumes the handoff through reviewed unified.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a-399-production-admission-20261106",
+      "closed_pr": 887,
+      "closed_under": "BAMF WAITING issue/branch queue; open implementation PRs are reserved for merge-ready candidates or active remediation delivery.",
+      "close_reason": "Historical waiting reason was C07.1b/#510 persisted-lease-gated adoption; bounded A02 implementation resumed against exact upstream branch interface while final integration still waits reviewed C07 authority."
     },
     {
       "issue": 888,

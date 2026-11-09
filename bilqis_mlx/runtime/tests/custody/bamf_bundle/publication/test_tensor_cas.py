@@ -128,17 +128,11 @@ class BamfTensorCasTests(unittest.TestCase):
         self.assertEqual(reserve.call_args.kwargs["required_bytes"], target.stat().st_size)
         self.assertEqual(target.stat().st_ino, inode)
 
-    def test_published_generations_reuse_then_separate_payloads(self):
+    def test_generic_publication_cannot_advance_vocabulary_extension(self):
         run = self.root / "run"
         state = parent_state()
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             first = publish_candidate(run, candidate(state))
-            first_root = run / first["bundle"]
-            before = {p.name: p.read_bytes() for p in first_root.iterdir()}
-            first_manifest = json.loads(before["manifest.json"])
-            digest = first_manifest["tensors"]["object_sha256"]
-            original = data_plane().require_file_object(digest)
-            original_inode = original.stat().st_ino
             initial = load_bamf_generation(run / "bamf-state.json")
             state = initial.retained_state
             swap = candidate(state, 1, first["manifest_sha256"])
@@ -146,27 +140,12 @@ class BamfTensorCasTests(unittest.TestCase):
             semantic = {**swap.semantic_abi, "active_set_sha256": "8" * 64}
             swap = replace(swap, extents=extents, semantic_abi=semantic,
                            transition={**swap.transition, "kind": "PARAMETER_EXTENSION"})
-            second = publish_candidate(run, swap)
-            second_manifest = json.loads((run / second["bundle"] / "manifest.json").read_bytes())
-            self.assertEqual(second_manifest["tensors"]["object_sha256"], digest)
-            self.assertEqual(original.stat().st_ino, original_inode)
-            current = load_bamf_generation(run / "bamf-state.json")
-            changed = replace(candidate(
-                accepted_state(current.retained_state, current.extents),
-                2, second["manifest_sha256"]),
-                              extents=extents, semantic_abi=semantic)
-            third = publish_candidate(run, changed)
-            third_manifest = json.loads((run / third["bundle"] / "manifest.json").read_bytes())
-            self.assertNotEqual(third_manifest["tensors"]["object_sha256"], digest)
-            self.assertEqual(load_bamf_generation(run / "bamf-state.json").generation, 2)
-            self.assertEqual(load_bamf_bundle(first_root).generation, 0)
-            self.assertEqual(load_bamf_bundle(run / second["bundle"]).generation, 1)
-            expected_events = [dict(load_bamf_bundle(run / pointer["bundle"]).outbox[0])
-                               for pointer in (first, second, third)]
-        self.assertEqual({p.name: p.read_bytes() for p in first_root.iterdir()}, before)
-        self.assertEqual(len(tuple(original.parent.parent.glob("*/*.safetensors"))), 2)
-        events = [json.loads(line) for line in (run / "events.jsonl").read_text().splitlines()]
-        self.assertEqual(events, expected_events)
+            with self.assertRaises(BilqisError) as failure:
+                publish_candidate(run, swap)
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED")
+        self.assertEqual(json.loads((run / "bamf-state.json").read_text())["generation"], 0)
 
 
 if __name__ == "__main__":

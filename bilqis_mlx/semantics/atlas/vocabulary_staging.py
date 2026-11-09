@@ -14,7 +14,9 @@ from .vocabulary_contracts import (
     VocabularyExtension, VocabularyPrior, _invalid,
 )
 from .vocabulary_factors import prepare_identity_factors
-from .vocabulary_planning import _plan_from_snapshot, _verified_prior
+from .vocabulary_planning import (
+    _plan_from_snapshot, _verified_authenticated_prior, _verified_prior,
+)
 
 def _mask(indices: tuple[int, ...], capacity: int) -> bytes:
     mask = bytearray((capacity + 7) // 8)
@@ -57,14 +59,20 @@ def _validate_bank_parent(parent: VocabularyBankParent) -> None:
         _invalid("BAMF_VOCABULARY_ROW_COUNTS_INVALID")
 
 
-def _verified_extension(parent, plan):
+def _verified_extension(parent, plan, *, accepted_features=None, predecessor=None):
     _validate_bank_parent(parent)
     if (type(plan) is not VocabularyExtension
             or not isinstance(plan.allocations, tuple)
             or any(type(item) is not VocabularyAllocation
                    for item in plan.allocations)):
         _invalid("BAMF_VOCABULARY_PLAN_INVALID")
-    snapshot = _verified_prior(parent.prior)
+    if accepted_features is None and predecessor is None:
+        snapshot = _verified_prior(parent.prior)
+    elif accepted_features is not None and predecessor is not None:
+        snapshot = _verified_authenticated_prior(
+            parent.prior, accepted_features, predecessor)
+    else:
+        _invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
     expected = _plan_from_snapshot(
         parent.prior,
         tuple(item.semantic_id for item in plan.allocations),
@@ -181,6 +189,24 @@ def apply_vocabulary_extension(
 ) -> CandidateState:
     """Build a detached bank candidate without adopting a source or student."""
     snapshot, old_count, estimated_bytes, factors = _verified_extension(parent, plan)
+    touched, weights, moments_m, moments_v = _detached_bank_copies(
+        parent, plan, old_count)
+    staged = _stage_extension_rows(
+        parent, plan, factors, touched, weights, moments_m, moments_v)
+    return _candidate_state(parent, plan, snapshot, estimated_bytes, staged)
+
+
+def _apply_authenticated_vocabulary_extension(
+    parent: VocabularyBankParent,
+    plan: VocabularyExtension,
+    *,
+    accepted_features,
+    predecessor,
+) -> CandidateState:
+    """Owner path after B13 authenticates a predecessor-bearing feature map."""
+    snapshot, old_count, estimated_bytes, factors = _verified_extension(
+        parent, plan, accepted_features=accepted_features,
+        predecessor=predecessor)
     touched, weights, moments_m, moments_v = _detached_bank_copies(
         parent, plan, old_count)
     staged = _stage_extension_rows(

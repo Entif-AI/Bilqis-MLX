@@ -4,8 +4,11 @@ from types import MappingProxyType
 
 from .codec import load_bamf_bundle, save_bamf_bundle
 from .feature_authority import (
-    AcceptedGenerationFeatureReceipt, AuthenticatedCandidateFeatureContext,
+    AcceptedGenerationFeatureContext, AcceptedGenerationFeatureReceipt,
+    AuthenticatedCandidateFeatureContext,
     authenticate_bamf_candidate_feature_context, authenticate_bamf_candidate_features,
+    feature_schema_from_compiler_features,
+    read_accepted_generation_feature_context,
     read_accepted_generation_feature_lineage, read_accepted_generation_feature_receipt,
     verify_accepted_generation_feature_receipt,
 )
@@ -13,6 +16,10 @@ from .publication import (
     load_bamf_generation, load_bamf_generation_authority,
     publish_atlas_admission_generation, publish_bamf_generation,
     record_bamf_rejection,
+)
+from ._vocabulary_admission_records import (
+    A02StagedVocabularyExtension, A02VocabularyStagingReceipt,
+    require_issued_a02_staged_vocabulary_extension,
 )
 from .package_import_transition import PackageImportTransition
 from .source_continuation import continue_source_qualified_motifs_from_bundle
@@ -31,6 +38,7 @@ _LAZY_EXPORTS = MappingProxyType({
     "issue_initial_foundation_feature_authority": ".genesis.foundation",
     "InitialFactoryFoundationAuthority": ".genesis.origin",
     "issue_initial_factory_foundation_authority": ".genesis.origin",
+    "stage_vocabulary_extension": ".vocabulary_admission",
 })
 
 
@@ -50,9 +58,13 @@ __all__ = (
     "publish_bamf_generation", "load_bamf_generation",
     "publish_atlas_admission_generation",
     "load_bamf_generation_authority", "record_bamf_rejection",
+    "A02StagedVocabularyExtension", "A02VocabularyStagingReceipt",
+    "require_issued_a02_staged_vocabulary_extension", "stage_vocabulary_extension",
     "PackageImportTransition",
-    "AcceptedGenerationFeatureReceipt", "AuthenticatedCandidateFeatureContext",
+    "AcceptedGenerationFeatureContext", "AcceptedGenerationFeatureReceipt",
+    "AuthenticatedCandidateFeatureContext",
     "authenticate_bamf_candidate_feature_context", "read_accepted_generation_feature_lineage",
+    "read_accepted_generation_feature_context", "feature_schema_from_compiler_features",
     "read_accepted_generation_feature_receipt",
     "authenticate_bamf_candidate_features",
     "verify_accepted_generation_feature_receipt",

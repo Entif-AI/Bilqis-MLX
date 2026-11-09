@@ -17,8 +17,7 @@ from .vocabulary_contracts import (
     VocabularyAllocation, VocabularyExtension, VocabularyPrior, _invalid,
 )
 
-def _verified_prior(prior: VocabularyPrior) -> FrozenAtlasSnapshot:
-    """Reload A01's repository-pinned artifact instead of trusting a dataclass."""
+def _validate_prior_record(prior: VocabularyPrior) -> None:
     if (type(prior) is not VocabularyPrior
             or prior.schema_version != VOCABULARY_PRIOR_SCHEMA
             or type(prior.source_selection) is not AtlasArtifactSelection
@@ -30,13 +29,14 @@ def _verified_prior(prior: VocabularyPrior) -> FrozenAtlasSnapshot:
             or len(prior.generation_id) != 64
             or any(char not in "0123456789abcdef" for char in prior.generation_id)):
         _invalid("BAMF_VOCABULARY_PRIOR_INVALID")
-    # A successor feature-map predecessor must be authenticated by the
-    # accepted generation/checkpoint owner, not by a caller's digest pair.
-    # Until that owner supplies a sealed predecessor receipt, only A01's
-    # source-replayable first-generation map is eligible for this API.
-    if prior.feature_schema.predecessor is not None:
-        _invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
-    snapshot = load_pinned_atlas_snapshot(prior.source_selection)
+
+
+def _verify_prior_snapshot(
+        prior: VocabularyPrior,
+        snapshot: FrozenAtlasSnapshot) -> FrozenAtlasSnapshot:
+    """Verify one source-replayed prior after its predecessor authority is settled."""
+    if type(snapshot) is not FrozenAtlasSnapshot:
+        _invalid("BAMF_VOCABULARY_PRIOR_INVALID")
     if build_feature_manifest(snapshot, prior.feature_schema) != prior.features:
         _invalid("BAMF_VOCABULARY_FEATURE_SOURCE_REPLAY_MISMATCH")
     if (snapshot.shape_policy_sha256 != _atlas_sha256(_atlas_bytes(SHAPE_POLICY))
@@ -54,12 +54,44 @@ def _verified_prior(prior: VocabularyPrior) -> FrozenAtlasSnapshot:
         _invalid("BAMF_VOCABULARY_PRIOR_ACTIVE_ID_UNKNOWN")
     if (active != tuple(sorted(set(active)))
             or any(index > UINT32_MAX for index in active)
-            or tuple(item.semantic_id for item in prior.features.concepts)
-            != tuple(sorted(prior.active_semantic_ids, key=lambda name: name.encode("utf-8")))
+            or (prior.feature_schema.predecessor is None
+                and tuple(item.semantic_id for item in prior.features.concepts)
+                != tuple(sorted(
+                    prior.active_semantic_ids, key=lambda name: name.encode("utf-8"))))
             or _atlas_sha256(_atlas_bytes(list(active))) != prior.extents.active_semantic_digest
             or any(index >= prior.extents.semantic_bank_count * BANK_SIZE for index in active)):
         _invalid("BAMF_VOCABULARY_PRIOR_ACTIVE_SET_DRIFT")
     return snapshot
+
+
+def _verified_prior(prior: VocabularyPrior) -> FrozenAtlasSnapshot:
+    """Reload A01's repository-pinned artifact instead of trusting a dataclass."""
+    _validate_prior_record(prior)
+    # A successor feature-map predecessor must be authenticated by the
+    # accepted generation/checkpoint owner, not by a caller's digest pair.
+    # Until that owner supplies a sealed predecessor receipt, only A01's
+    # source-replayable first-generation map is eligible for this API.
+    if prior.feature_schema.predecessor is not None:
+        _invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
+    snapshot = load_pinned_atlas_snapshot(prior.source_selection)
+    return _verify_prior_snapshot(prior, snapshot)
+
+
+def _verified_authenticated_prior(
+        prior: VocabularyPrior,
+        accepted_features: AtlasFeatures,
+        predecessor: AtlasFeatures) -> FrozenAtlasSnapshot:
+    """Owner-only successor validation after B13 authenticates the predecessor."""
+    _validate_prior_record(prior)
+    if (type(accepted_features) is not AtlasFeatures
+            or type(predecessor) is not AtlasFeatures
+            or prior.features != accepted_features
+            or prior.feature_schema.predecessor != predecessor
+            or accepted_features.predecessor_digest != predecessor.digest
+            or prior.extents.factor_map_digest != accepted_features.digest):
+        _invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
+    return _verify_prior_snapshot(
+        prior, load_pinned_atlas_snapshot(prior.source_selection))
 
 
 def _plan_from_snapshot(
@@ -132,4 +164,17 @@ def plan_vocabulary_extension(
 ) -> VocabularyExtension:
     """Plan stable A01 ABI slots; no row or neural state is activated here."""
     snapshot = _verified_prior(prior)
+    return _plan_from_snapshot(prior, admissions, shape_policy, snapshot)
+
+
+def _plan_authenticated_vocabulary_extension(
+    prior: VocabularyPrior,
+    admissions: tuple[str, ...],
+    shape_policy: ModelTopologySpecV2,
+    accepted_features: AtlasFeatures,
+    predecessor: AtlasFeatures,
+) -> VocabularyExtension:
+    """Owner path for a successor whose predecessor was authenticated by B13."""
+    snapshot = _verified_authenticated_prior(
+        prior, accepted_features, predecessor)
     return _plan_from_snapshot(prior, admissions, shape_policy, snapshot)

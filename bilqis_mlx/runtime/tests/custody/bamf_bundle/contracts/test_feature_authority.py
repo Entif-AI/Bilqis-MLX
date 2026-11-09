@@ -304,6 +304,9 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
         self.assertEqual(
             failure.exception.context["reason"],
             "BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED")
+        receipt = self.read_receipt(features)
+        self.assertEqual(receipt.generation, 0)
+        self.assertEqual(receipt.generation_manifest_sha256, first["manifest_sha256"])
 
     def test_cold_resume_reproduces_the_same_receipt_identity(self):
         features = source_features()
