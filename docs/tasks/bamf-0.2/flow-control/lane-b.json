@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
-  "updated_at": "2026-11-09T06:11:42Z",
+  "observed_unified": "e206ec0e957e24823f3136c0f3bffe1fc950013e",
+  "updated_at": "2026-11-09T21:13:04Z",
   "exception": null,
   "items": [
     {
@@ -51,15 +51,16 @@
     },
     {
       "issue": 454,
-      "pr": null,
-      "state": "WAITING",
-      "head_sha": "89819d6d1cf58cabadf324775d7bbd0c23130bd0",
-      "summary": "B06.3 has current-unified conflict and source-positive witness remediation outstanding.",
-      "resume_trigger": "Remediations #735 and #736 are resolved, the candidate is synchronized once to current reviewed unified, and it is selected for final merge-readiness review.",
+      "pr": 942,
+      "state": "TURNED_IN",
+      "head_sha": "314d63c478f0c0393e0c5da8961df708c4dd8c27",
+      "head_sha_role": "exact reconciliation proof head; the following turn-in commit changes only docs/flow bookkeeping and must still be included in final hosted qualification",
+      "summary": "B06.3 production-ownership reconciliation is turned in as PR #942. Fresh pinned design EGM passed across Readiness, Codebase Details and Design/Structural review; the accepted #471/#736 semantic proof is NO_DRIFT from 6b085f87 to consumed reviewed unified e206ec0e, and this candidate changes only reconciliation receipt/flow state. Historical PR #684 remains closed provenance; #365 and #455 remain open.",
+      "resume_trigger": "Human review/merge PR #942 into codex/bamf-unified-base-20261028. Do not self-merge. After merge, verify the reviewed-unified receipt and allow GitHub to close #454 through the PR closing link; keep #365 and #455 open.",
       "closed_pr": 684,
-      "preserved_branch": "codex/b06-454-refinement-20261101",
+      "preserved_branch": "codex/454-b06-3-reconcile-20261109",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Failed; remediations #735/#736"
+      "close_reason": "Historical PR #684 remains closed; #735/#736 resolved and fresh #454 reconciliation now proceeds from current reviewed unified"
     },
     {
       "issue": 697,
