@@ -76,6 +76,7 @@ class FactoryCandidateStep:
 
 def _frame_stats(compiled_batch) -> FrameStats:
     row = compiled_batch.compiled.compiled.rows[0]
+    compiled_batch.compiled.packed_frame_artifact_owner.require_row(row)
     closures = tuple(
         position for position in row.positions
         if position.kind is PositionKind.CLOSURE)
@@ -144,6 +145,7 @@ def execute_factory_candidate_step(
     if (not isinstance(parent, CompleteStudent)
             or not isinstance(observation, FactoryDeliveryObservation)):
         _invalid("FACTORY_CANDIDATE_STEP_INPUT_INVALID")
+    source_context.require_accepted_runtime(Path(run_dir))
     start = time.perf_counter()
     cache = bind_accepted_execution_cache(Path(run_dir))
     generation = execution_generation_digest(

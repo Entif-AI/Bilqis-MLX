@@ -100,6 +100,7 @@ Registration does not assert readiness, source qualification or owner completion
 - [B13.2 #479](https://github.com/Entif-AI/Bilqis-MLX/issues/479): Validate complete generation and cold-resume exact training state (leaf; parent B13)
 - [B13.3 #480](https://github.com/Entif-AI/Bilqis-MLX/issues/480): Keep disposable caches and historical v1 reader custody separate (leaf; parent B13)
 - [B13.4 #481](https://github.com/Entif-AI/Bilqis-MLX/issues/481): Reconcile committed parameter schema with checkpoint manifests (leaf; parent B13)
+- [B13.6 #904](https://github.com/Entif-AI/Bilqis-MLX/issues/904): Construct and publish authenticated generation-zero run custody (leaf; parent B13)
 - [B14.1 #482](https://github.com/Entif-AI/Bilqis-MLX/issues/482): Implement deterministic rotated three-bit cache vector coding (leaf; parent B14)
 - [B14.2 #483](https://github.com/Entif-AI/Bilqis-MLX/issues/483): Reconstruct quantized norms and small-record FP32 fallback (leaf; parent B14)
 - [B14.3 #484](https://github.com/Entif-AI/Bilqis-MLX/issues/484): Bind derived cache to causal generation and FP32 reference policies (leaf; parent B14)

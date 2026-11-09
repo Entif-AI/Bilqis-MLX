@@ -67,6 +67,7 @@ def _test_rebuild_inputs():
 
 
 def install_test_owner(test_case, *, eligibility=True, current_binding=True):
+    _test_lookup(CACHE_AUTHORITY)[3].clear()
     patcher = patch.object(_runtime, "_authority_state", _test_lookup)
     patcher.start()
     test_case.addCleanup(patcher.stop)

@@ -1593,7 +1593,7 @@
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 B13.3 | Keep disposable caches and historical v1 reader custody separate",
-      "body_sha256": "ee69cdf6ea9daa9965d063ed0f15562f368737a3186ea4a03bf59e1fffac0d32",
+      "body_sha256": "5ca7647d90c5076521f12f18c5ba55ea6c03714ebcd59fbefc2bd39edda5af0d",
       "clause_span": [
         6,
         9
@@ -1616,6 +1616,44 @@
         12
       ],
       "source_parent_sha256": "2ee76692706486f543cfed7f9926c3519c5cfdc33b81630a92d49020a31e9215"
+    },
+    {
+      "key": "B13.6",
+      "number": 904,
+      "parent_key": "B13",
+      "parent_number": 372,
+      "deps": [
+        "B13.1",
+        "B13.4"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B13.6 | Construct and publish authenticated generation-zero run custody",
+      "body_sha256": "9b52a41e078ef9b26e8f4248c4e4ae004c6f1215eda9ea749da1ce3263dd3bc4",
+      "source_parent_sha256": "2ee76692706486f543cfed7f9926c3519c5cfdc33b81630a92d49020a31e9215",
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "9b52a41e078ef9b26e8f4248c4e4ae004c6f1215eda9ea749da1ce3263dd3bc4",
+        "clause": "## Direct prerequisites",
+        "known_edges": [
+          "B13.1",
+          "B13.4"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "B13.6.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/904",
+            "sha256": "9b52a41e078ef9b26e8f4248c4e4ae004c6f1215eda9ea749da1ce3263dd3bc4",
+            "excerpt": "The current production publication code already states that genesis admission is a distinct source/bootstrap gate, but generation zero is still published only by supplying a C05 `AcceptedCandidateBinding`; tests manufacture that token through a disposable retention helper. That test-only retention authority is not a lawful production genesis gate."
+          }
+        ],
+        "obligations": [
+          "Consume the existing B13.1 publication and B13.4/B01 parameter-schema interfaces without treating their open parent state as a caller-mintable authority. Final turn-in must record the actual accepted dependency receipts."
+        ],
+        "unresolved": "B13.1 parent acceptance remains open even though the required publication interface exists on reviewed unified; implementation may proceed against that frozen interface, but final turn-in must consume the accepted receipt."
+      }
     },
     {
       "key": "B14.1",
@@ -2692,20 +2730,39 @@
       "parent_key": "C16.1",
       "parent_number": 541,
       "deps": [
-        "B13",
-        "C02",
-        "C03",
-        "C05",
-        "C08"
+        "C16.1b"
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 C16.1a | Implement persistent BAMF create dry-run and resume entrypoints",
-      "body_sha256": "61687e330d42def1e6fb4d0f1d6ef03206207835e72b528c79ae7f002fc2556d",
+      "body_sha256": "764077af4df16098d1839d7d0c54f816c634b6876542fe0fcd47a8eb5b549b39",
       "clause_span": [
         0,
         4
       ],
-      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e"
+      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e",
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "764077af4df16098d1839d7d0c54f816c634b6876542fe0fcd47a8eb5b549b39",
+        "clause": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`.",
+        "known_edges": [
+          "C16.1b"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "C16.1a.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/542",
+            "sha256": "764077af4df16098d1839d7d0c54f816c634b6876542fe0fcd47a8eb5b549b39",
+            "excerpt": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`."
+          }
+        ],
+        "obligations": [
+          "Preserve every original C16/C16.1 acceptance clause; this pinned record changes executable dependency order only and grants no production authority."
+        ],
+        "unresolved": "C16.1a remains held until C16.1b consumes accepted B13.6 generation-zero custody and records the inherited C16 dependency receipts."
+      }
     },
     {
       "key": "C16.1b",
@@ -2713,16 +2770,47 @@
       "parent_key": "C16.1",
       "parent_number": 541,
       "deps": [
-        "C16.1a"
+        "B13.6",
+        "C02",
+        "C03",
+        "C05",
+        "C08"
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 C16.1b | Bind fresh student topology teacher optimizer and admitted foundations",
-      "body_sha256": "650904da28447742ad0e1727646831aa2f4c5cb8c40137d5a809d8bd0de0789c",
+      "body_sha256": "7a04dd8f68f0ac289394e390bc1be3a9fa7159f5cde614ce84ecc416d5c39475",
       "clause_span": [
         4,
         8
       ],
-      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e"
+      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e",
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "7a04dd8f68f0ac289394e390bc1be3a9fa7159f5cde614ce84ecc416d5c39475",
+        "clause": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`.",
+        "known_edges": [
+          "B13.6",
+          "C02",
+          "C03",
+          "C05",
+          "C08"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "C16.1b.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/543",
+            "sha256": "7a04dd8f68f0ac289394e390bc1be3a9fa7159f5cde614ce84ecc416d5c39475",
+            "excerpt": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`."
+          }
+        ],
+        "obligations": [
+          "Preserve every original C16/C16.1 acceptance clause; this pinned record changes executable dependency order only and grants no production authority."
+        ],
+        "unresolved": "C16.1b remains held until B13.6 provides accepted generation-zero custody; inherited C02/C03/C05/C08 interfaces may be implemented against their exact reviewed receipts without making their OPEN parent state a caller credential."
+      }
     },
     {
       "key": "C16.2",

@@ -50,7 +50,8 @@ def _source_row_grants(
         principal_id: str, tenant_id: str, purpose: str, semantic_release: str,
         jurisdiction: str, scope: str, rights_epoch: int,
         correction_generation: int, observed_at: int,
-        effective_from: int) -> tuple[SourceGrant, ...]:
+        effective_from: int,
+        effective_until: int | None = None) -> tuple[SourceGrant, ...]:
     common = dict(
         principal_id=principal_id,
         tenant_id=tenant_id,
@@ -63,6 +64,7 @@ def _source_row_grants(
         correction_generation=correction_generation,
         observed_at=observed_at,
         effective_from=effective_from,
+        effective_until=effective_until,
     )
     return tuple(sorted((
         SourceGrant(
@@ -95,6 +97,7 @@ def _source_row_context(
     observed_at: int,
     effective_from: int,
     causal_prefix_end: int,
+    effective_until: int | None = None,
 ) -> SourceRowContext:
     """Bind exact row bytes without promoting the row into an admitted concept."""
     span = SourceSpan(0, 1)
@@ -129,7 +132,7 @@ def _source_row_context(
         frame_handle, frame, frame_source, (member,),
         principal_id, tenant_id, purpose, PUBLIC_FORMAL, semantic_release,
         jurisdiction, scope, PUBLIC_FORMAL, policy_epoch, rights_epoch,
-        correction_generation, observed_at, effective_from, None,
+        correction_generation, observed_at, effective_from, effective_until,
         causal_prefix_end,
     )
     grants = _source_row_grants(
@@ -138,7 +141,7 @@ def _source_row_context(
         semantic_release=semantic_release, jurisdiction=jurisdiction,
         scope=scope, rights_epoch=rights_epoch,
         correction_generation=correction_generation, observed_at=observed_at,
-        effective_from=effective_from)
+        effective_from=effective_from, effective_until=effective_until)
     return SourceRowContext(a01_source_bundle_id, envelope, grants, witness)
 
 

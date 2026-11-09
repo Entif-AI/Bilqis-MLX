@@ -9,6 +9,7 @@ from bilqis_mlx.learning.source_atoms.backbone import (
     start_retained_source_backbone_producer, start_source_backbone_producer,
 )
 from bilqis_mlx.learning.source_atoms.backbone_receipts import HIT, NO_HIT
+from bilqis_mlx.runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
 from bilqis_mlx.learning.tests.motif_reads.test_source_owner import (
     SourceOwnedMotifReadTests,
 )
@@ -23,10 +24,11 @@ class RetainedBackboneMotifTests(unittest.TestCase):
     def test_g1_receipt_records_actual_retained_motif_participation(self):
         (compiled, parameters, source, feature_schema, manifest, _spec, _extents,
          _hidden, _slot_id) = SourceOwnedMotifReadTests()._fixture()
+        owner = AtlasFeatureArtifactOwner(compiled.features, feature_schema)
         plain = start_source_backbone_producer(
-            compiled, parameters, (source,), feature_schema).advance()
+            compiled, parameters, (source,), feature_schema, owner).advance()
         retained = start_retained_source_backbone_producer(
-            compiled, parameters, (source,), feature_schema, manifest,
+            compiled, parameters, (source,), feature_schema, manifest, owner,
             seal=_B13_EXECUTION_SEAL).advance()
         mx.eval(plain.hidden, retained.hidden)
         self.assertEqual(plain.motif_disposition, NO_HIT)
@@ -39,8 +41,9 @@ class RetainedBackboneMotifTests(unittest.TestCase):
     def test_source_owned_depth_inputs_execute_all_three_groups(self):
         (compiled, parameters, source, feature_schema, manifest, spec, extents,
          _hidden, _slot_id) = SourceOwnedMotifReadTests()._fixture()
+        owner = AtlasFeatureArtifactOwner(compiled.features, feature_schema)
         producer = start_retained_source_backbone_producer(
-            compiled, parameters, (source,), feature_schema, manifest,
+            compiled, parameters, (source,), feature_schema, manifest, owner,
             seal=_B13_EXECUTION_SEAL)
         first = producer.advance()
         second = producer.advance(depth_parameters=depth_parameter_view(
