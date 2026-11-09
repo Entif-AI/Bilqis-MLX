@@ -161,23 +161,60 @@ def read_accepted_atlas_lease(run_dir, *, source_authority):
 
 
 def read_accepted_atlas_factory_release(run_dir):
-    """Resolve the current Factory release only through accepted C07/B13 custody."""
+    """Resolve current Factory authority only through accepted B13 lineage.
+
+    Generation zero binds the founding Factory release in ``BamfRunIdentity``.
+    A C07 generation binds its successor directly in ``AtlasAdmissionBinding``.
+    Ordinary retained generations inherit the nearest accepted ancestor's Factory
+    authority through the acceptance-bound parent chain; they never reintroduce
+    the legacy operator receipt as a second current-Factory authority.
+    """
     from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
         ParsedAtlasAdmissionBinding,
     )
+    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
         accepted_binding_for_manifest, accepted_generation,
+        parent_acceptance_anchor_from_manifest,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.genesis import (
+        BamfRunIdentity, ParsedInitialGenerationBinding,
     )
     from . import admission as factory_admission
 
     root = Path(run_dir)
     pointer, student = accepted_generation(root / "bamf-state.json")
-    binding = accepted_binding_for_manifest(
-        root, pointer["manifest_sha256"], student,
-        expected_acceptance_sha256=pointer["acceptance_sha256"])
-    if not isinstance(binding, ParsedAtlasAdmissionBinding):
-        _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
-    digest = binding.factory_release_sha256
+    manifest_sha256 = pointer["manifest_sha256"]
+    acceptance_sha256 = pointer["acceptance_sha256"]
+    visited = set()
+    while True:
+        if manifest_sha256 in visited:
+            _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
+        visited.add(manifest_sha256)
+        binding = accepted_binding_for_manifest(
+            root, manifest_sha256, student,
+            expected_acceptance_sha256=acceptance_sha256)
+        if isinstance(binding, ParsedAtlasAdmissionBinding):
+            digest = binding.factory_release_sha256
+            break
+        if student.generation == 0:
+            identity = student.run_identity
+            if (type(binding) is not ParsedInitialGenerationBinding
+                    or type(identity) is not BamfRunIdentity):
+                _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
+            digest = identity.factory_release_sha256
+            break
+        parent_manifest_sha256 = student.parent_manifest_sha256
+        parent_acceptance_sha256 = parent_acceptance_anchor_from_manifest(
+            root, manifest_sha256)
+        if (not _sha(parent_manifest_sha256)
+                or not _sha(parent_acceptance_sha256)):
+            _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
+        student = load_bamf_bundle(
+            root / "bamf-bundles" / parent_manifest_sha256,
+            expected_manifest_sha256=parent_manifest_sha256)
+        manifest_sha256 = parent_manifest_sha256
+        acceptance_sha256 = parent_acceptance_sha256
     return factory_admission._read_executable_factory_release_artifact(root, {
         "factory_release_sha256": digest,
         "factory_release_file": "factory-releases/" + digest + ".json",

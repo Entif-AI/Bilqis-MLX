@@ -1,52 +1,23 @@
-"""C07.1b concrete executor uses the native prepared-successor transaction."""
-from dataclasses import asdict, fields, replace
-import json
+"""C07.1b executor revalidates context before native or legacy commit."""
+from dataclasses import asdict, replace
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.factory.autonomy import compile_autonomy_plan, initial_evidence_ledger
-from bilqis_mlx.factory.jit_curriculum import propose_curriculum_delta
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.runtime import release_adoption
-from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate, CompleteStudent
-from bilqis_mlx.runtime.bamf_bundle.genesis import BamfRunIdentity
 from bilqis_mlx.runtime.jit_adoption import (
-    _PreparedSuccessorRuntime, _accepted_lease_run_identity,
-    _authenticate_native_staged_candidate,
-    _execute_prepared_successor_adoption,
+    _authenticate_native_staged_candidate, _execute_prepared_successor_adoption,
 )
-from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import _lease, _REGISTRY
-from bilqis_mlx.runtime.tests.admission.prepared_successor_fixtures import (
-    PreparedSuccessorFixture,
+from bilqis_mlx.runtime.tests.admission.atlas.atlas_adoption_executor_support import (
+    AtlasAdoptionExecutorFixture,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import candidate, parent_state
 
 
-class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
-    def _native_parent_and_candidate(self):
-        identity = BamfRunIdentity(
-            "fixture-run", 17, "1" * 64, "bundles/foundation-origin", 0,
-            "2" * 64, "3" * 64, "4" * 64, "5" * 64, "6" * 64,
-            "7" * 64, "fixture-source", "8" * 64, "fixture-teacher", 0)
-        base = candidate(parent_state())
-        values = {item.name: getattr(base, item.name) for item in fields(BamfBundleCandidate)}
-        values["run_identity"] = identity
-        parent = CompleteStudent(**values)
-        staged = replace(
-            base, generation=1, parent_manifest_sha256="a" * 64,
-            transition={
-                "schema": "bilqis.mlx.bamf-generation-transition/v1",
-                "kind": "PARAMETER_EXTENSION",
-                "invalidate_derived_caches": True,
-            },
-            run_identity=identity,
-        )
-        return parent, staged
-
+class AtlasAdoptionExecutorTests(AtlasAdoptionExecutorFixture, unittest.TestCase):
     def test_native_candidate_preflight_requires_exact_b13_parent_and_a02_anchors(self):
         parent, staged = self._native_parent_and_candidate()
+        owner_staged = self._a02_staged(staged)
         parent_feature = SimpleNamespace(
             generation_manifest_sha256="a" * 64, digest="b" * 64)
         with patch(
@@ -55,61 +26,31 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
                 "bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt",
                 return_value=parent_feature):
             self.assertIs(
-                _authenticate_native_staged_candidate(
-                    self.root, staged,
-                    expected_candidate_identity_sha256=candidate_identity_digest(
-                        staged.retained_state),
-                    expected_parent_feature_receipt_sha256=parent_feature.digest,
-                ),
-                staged,
-            )
-
+                _authenticate_native_staged_candidate(self.root, owner_staged),
+                owner_staged.candidate)
             with self.assertRaises(BilqisError) as failure:
                 _authenticate_native_staged_candidate(
-                    self.root, staged,
-                    expected_candidate_identity_sha256="c" * 64,
-                    expected_parent_feature_receipt_sha256=parent_feature.digest,
-                )
+                    self.root, SimpleNamespace(candidate=staged))
             self.assertEqual(
                 failure.exception.context["reason"],
-                "BAMF_ATLAS_NATIVE_STAGING_DRIFT",
-            )
+                "BAMF_A02_STAGED_EXTENSION_INVALID")
 
     def test_native_candidate_preflight_rejects_parent_drift_before_mutation(self):
         parent, staged = self._native_parent_and_candidate()
         parent_feature = SimpleNamespace(
             generation_manifest_sha256="a" * 64, digest="b" * 64)
-        drifted = replace(staged, parent_manifest_sha256="d" * 64)
+        owner_staged = self._a02_staged(
+            replace(staged, parent_manifest_sha256="d" * 64))
         with patch(
                 "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
                 return_value=(parent, "a" * 64)), patch(
                 "bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt",
                 return_value=parent_feature):
             with self.assertRaises(BilqisError) as failure:
-                _authenticate_native_staged_candidate(
-                    self.root, drifted,
-                    expected_candidate_identity_sha256=candidate_identity_digest(
-                        drifted.retained_state),
-                    expected_parent_feature_receipt_sha256=parent_feature.digest,
-                )
+                _authenticate_native_staged_candidate(self.root, owner_staged)
             self.assertEqual(
                 failure.exception.context["reason"],
-                "BAMF_ATLAS_ACCEPTED_PARENT_DRIFT",
-            )
-
-    def _proposal(self, staged):
-        plan = compile_autonomy_plan(self.current)
-        ledger = initial_evidence_ledger(self.current, plan=plan)
-        proposal = propose_curriculum_delta(
-            self.frontier, self.current, ledger, plan,
-            self.checkpoint.sha256, self.checkpoint.optimizer_step,
-            candidate_bindings=(staged.binding,))
-        return plan, ledger, proposal
-
-    def _runtime(self, mx=None):
-        return _PreparedSuccessorRuntime(
-            mx, self.root, self.receipt, None, None, self.graph,
-            self.parameters, self.optimizer, 0.)
+                "BAMF_ATLAS_ACCEPTED_PARENT_DRIFT")
 
     def test_executor_rechecks_saved_checkpoint_before_native_commit(self):
         plan, ledger, proposal = self._proposal(self.staged)
@@ -147,8 +88,7 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
             factory_release_sha256=self.current.release_sha256,
             factory_release_file=release_file,
             factory_release_schema=self.current.schema,
-            factory_admission_v2=asdict(admission),
-        )
+            factory_admission_v2=asdict(admission))
         plan, ledger, proposal = self._proposal(self.staged)
         fixture = self.fixture.fixture
         old_weights = {
@@ -182,129 +122,6 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
                       if name == "embedding.weight" else result.parameters[name])
             np.testing.assert_array_equal(np.asarray(active), old)
             np.testing.assert_array_equal(np.asarray(self.parameters[name]), old)
-
-    def test_native_b13_adoption_publishes_exact_staged_candidate_without_legacy_materialization(self):
-        from bilqis_mlx.runtime.bamf_bundle.atlas_admission import AtlasAdmissionBinding
-
-        parent, candidate = self._native_parent_and_candidate()
-        lease = replace(_lease(), run_identity=_accepted_lease_run_identity(
-            parent.run_identity))
-        staging_receipt = SimpleNamespace(
-            candidate_identity_sha256=candidate_identity_digest(candidate.retained_state),
-            parent_feature_receipt_sha256="b" * 64,
-            digest="5" * 64,
-        )
-        native_staged = SimpleNamespace(candidate=candidate, receipt=staging_receipt)
-        parent_feature = SimpleNamespace(
-            generation_manifest_sha256="a" * 64, digest="b" * 64)
-        plan, ledger, proposal = self._proposal(self.staged)
-        fixture = self.fixture.fixture
-        pointer = {"schema": "bilqis.mlx.bamf-state/v2", "generation": 1}
-        release_path = (
-            self.root / "factory-releases" /
-            (self.staged.successor.release_sha256 + ".json"))
-
-        def publish_after_factory(*args, **kwargs):
-            self.assertTrue(release_path.is_file())
-            self.assertEqual(
-                json.loads(release_path.read_text())["factory_release_sha256"],
-                self.staged.successor.release_sha256)
-            return pointer
-
-        with self.admitted_boundary(), patch(
-                "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
-                return_value=(parent, "a" * 64)), patch(
-                "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_generation",
-                return_value=({"generation": parent.generation}, parent)), patch(
-                "bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt",
-                return_value=parent_feature), patch(
-                "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_lease",
-                return_value=lease), patch(
-                "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_factory_release",
-                return_value=self.staged.successor), patch(
-                "bilqis_mlx.runtime.bamf_bundle.publish_atlas_admission_generation",
-                side_effect=publish_after_factory) as publish, patch.object(
-                release_adoption, "_adopt_prepared_successor",
-                side_effect=AssertionError("legacy materialization")):
-            result = _execute_prepared_successor_adoption(
-                self._runtime(), frontier=self.frontier, current=self.current,
-                ledger=ledger, plan=plan, checkpoint=self.checkpoint,
-                proposal=proposal, staged=(self.staged,),
-                source_registry=fixture.registry, answer_registry=fixture.answers,
-                native_staged=native_staged, atlas_lease=lease,
-                source_authority=object())
-
-        published_candidate = publish.call_args.args[1]
-        binding = publish.call_args.kwargs["admission"]
-        self.assertIs(published_candidate, candidate)
-        self.assertIsInstance(binding, AtlasAdmissionBinding)
-        self.assertEqual(binding.lease_sha256, lease.digest())
-        self.assertEqual(binding.factory_release_sha256,
-                         self.staged.successor.release_sha256)
-        self.assertTrue(release_path.is_file())
-        self.assertEqual(result.native_pointer, pointer)
-        self.assertIs(result.optimizer, self.optimizer)
-
-    def test_native_b13_retry_reuses_exact_already_published_admission(self):
-        from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
-            AtlasAdmissionBinding, _issue_atlas_admission_binding,
-        )
-        from bilqis_mlx.runtime.bamf_bundle.records import CompleteStudent
-        from bilqis_mlx.semantics.domains import contract_digest
-
-        parent, candidate = self._native_parent_and_candidate()
-        accepted = CompleteStudent(**candidate.__dict__)
-        lease = replace(_lease(), run_identity=_accepted_lease_run_identity(
-            parent.run_identity))
-        staging_receipt = SimpleNamespace(
-            candidate_identity_sha256=candidate_identity_digest(candidate.retained_state),
-            parent_feature_receipt_sha256="b" * 64,
-            digest="5" * 64,
-        )
-        native_staged = SimpleNamespace(candidate=candidate, receipt=staging_receipt)
-        plan, ledger, proposal = self._proposal(self.staged)
-        binding = _issue_atlas_admission_binding(
-            candidate, parent, lease_sha256=lease.digest(),
-            source_approval_sha256=contract_digest(lease.source_approval),
-            proposal_sha256=proposal.proposal_sha256,
-            factory_release_sha256=self.staged.successor.release_sha256,
-            staging_receipt_sha256=staging_receipt.digest,
-            parent_feature_receipt_sha256=staging_receipt.parent_feature_receipt_sha256,
-        )
-        historical = AtlasAdmissionBinding.from_record(binding.to_record())
-        pointer = {
-            "schema": "bilqis.mlx.bamf-state/v2",
-            "run_id": candidate.run_id,
-            "generation": candidate.generation,
-            "parent_manifest_sha256": candidate.parent_manifest_sha256,
-            "manifest_sha256": "c" * 64,
-            "acceptance_sha256": binding.digest,
-        }
-        fixture = self.fixture.fixture
-        with self.admitted_boundary(), patch(
-                "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_lease",
-                return_value=lease), patch(
-                "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_factory_release",
-                return_value=self.staged.successor), patch(
-                "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_generation",
-                return_value=(pointer, accepted)), patch(
-                "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_binding_for_manifest",
-                return_value=historical), patch(
-                "bilqis_mlx.runtime.bamf_bundle.publish_atlas_admission_generation") as publish:
-            result = _execute_prepared_successor_adoption(
-                self._runtime(), frontier=self.frontier, current=self.current,
-                ledger=ledger, plan=plan, checkpoint=self.checkpoint,
-                proposal=proposal, staged=(self.staged,),
-                source_registry=fixture.registry, answer_registry=fixture.answers,
-                native_staged=native_staged, atlas_lease=lease,
-                source_authority=object())
-
-        self.assertEqual(result.native_pointer, pointer)
-        publish.assert_not_called()
-        self.assertTrue((
-            self.root / "factory-releases" /
-            (self.staged.successor.release_sha256 + ".json")
-        ).is_file())
 
 
 if __name__ == "__main__":

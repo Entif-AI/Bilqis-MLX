@@ -182,6 +182,39 @@ class AtlasAdmissionBindingTests(unittest.TestCase):
                     atlas_admission.read_accepted_atlas_factory_release(root)
         self.assertEqual(resolved, release)
 
+    def test_generation_zero_birth_identity_is_the_cold_factory_release_authority(self):
+        from bilqis_mlx.runtime import admission as factory_admission
+        from bilqis_mlx.runtime.bamf_bundle.genesis import ParsedInitialGenerationBinding
+        from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
+
+        parent, _staged = self._parent_and_candidate()
+        release, _graph = _executable_fixture()
+        parent = replace(
+            parent,
+            run_identity=replace(
+                parent.run_identity,
+                factory_release_sha256=release.release_sha256),
+        )
+        pointer = {
+            "schema": "bilqis.mlx.bamf-generation-pointer/v2",
+            "run_id": parent.run_id,
+            "generation": 0,
+            "parent_manifest_sha256": None,
+            "bundle": "bamf-bundles/" + "c" * 64,
+            "manifest_sha256": "c" * 64,
+            "acceptance_sha256": "d" * 64,
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            factory_admission._persist_executable_factory_release(root, release)
+            with patch(
+                    "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_generation",
+                    return_value=(pointer, parent)), patch(
+                    "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_binding_for_manifest",
+                    return_value=ParsedInitialGenerationBinding({})):
+                resolved = atlas_admission.read_accepted_atlas_factory_release(root)
+        self.assertEqual(resolved, release)
+
 
 if __name__ == "__main__":
     unittest.main()
