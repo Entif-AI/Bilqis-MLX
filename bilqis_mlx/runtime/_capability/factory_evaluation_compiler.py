@@ -96,6 +96,7 @@ def compile_factory_evaluation_batch(
     batch = BamfCompiledBatch(
         compiled, (source,), authenticated.schema)
     batch.__post_init__()
+    source_context.register_compiled_batch(batch)
     return batch
 
 

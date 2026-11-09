@@ -1,7 +1,11 @@
 from dataclasses import replace
+import os
+from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
+import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.adapters import SourceAdapterRegistry
 from bilqis_mlx.factory.answers import AnswerModalityRegistry
 from bilqis_mlx.factory.curriculum_definition import from_legacy_course
@@ -9,7 +13,16 @@ from bilqis_mlx.factory.executable_release import compile_executable_factory_rel
 from bilqis_mlx.factory.execution import CurriculumProfile
 from bilqis_mlx.factory.tests.test_executable_release import _answers
 from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_course, _synthetic_registry
+from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_correction_authority
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    candidate, parent_state, shape_patch,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
+    publish_candidate,
+)
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY
 
 
 class SourceExecutionContextTests(unittest.TestCase):
@@ -32,6 +45,57 @@ class SourceExecutionContextTests(unittest.TestCase):
         self.assertIs(context.source_registry, self.sources)
         self.assertIs(context.answer_registry, self.answers)
         self.assertIsNone(context.source_root)
+
+    def test_unbound_source_context_cannot_claim_accepted_runtime_custody(self):
+        from pathlib import Path
+        context = SourceExecutionContext(**self.arguments)
+        with self.assertRaises(ValueError):
+            context.require_accepted_runtime(Path("fixture-run"))
+
+    def test_structurally_forged_context_cannot_claim_host_custody(self):
+        from pathlib import Path
+        run_dir = Path("fixture-run")
+        context = SourceExecutionContext(
+            **self.arguments, run_dir=run_dir, correction_registry=AUTHORITY)
+        with self.assertRaises(BilqisError) as caught:
+            context.require_accepted_runtime(run_dir)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED",
+        )
+
+    def test_accepted_runtime_host_mints_context_that_clears_custody_gate(self):
+        from pathlib import Path
+        with TemporaryDirectory() as temporary, patch.dict(
+                os.environ, {"BILQIS_DATA_PLANE": str(Path(temporary) / "plane.sqlite3")}):
+            run_dir = Path(temporary) / "run"
+            source = candidate(parent_state())
+            source = replace(source, correction_frontier={
+                **source.correction_frontier,
+                "source_authority_registry_sha256": AUTHORITY.digest,
+            })
+            with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+                publish_candidate(run_dir, source)
+                bind_accepted_correction_authority(run_dir, AUTHORITY)
+            receipt = {"factory_release_sha256": self.release.release_sha256}
+            with patch(
+                "bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
+                return_value=self.release,
+            ), patch(
+                "bilqis_mlx.source_adapters.school.live_source_registry",
+                return_value=self.sources,
+            ), patch(
+                "bilqis_mlx.factory.live_answers.live_answer_registry",
+                return_value=self.answers,
+            ):
+                with shape_patch():
+                    context = AcceptedRuntimeHost(run_dir).source_context(
+                        receipt, graph=self.graph, source_root=None)
+            with shape_patch():
+                context.require_accepted_runtime(run_dir)
+                self.assertIs(
+                    context.source_authority(),
+                    AcceptedRuntimeHost(run_dir).source_authority())
 
     def test_admitted_context_uses_the_cold_read_authority(self):
         from pathlib import Path

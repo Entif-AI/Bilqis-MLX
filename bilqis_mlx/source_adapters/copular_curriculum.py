@@ -11,6 +11,8 @@ import json
 from pathlib import Path
 
 from ..curriculum import AnswerFamily, BINARY
+from ..curriculum import GRADE_IDS
+from ..errors import ErrorBus, FACTORY
 from ..live_grade_c import registry_graph as numeric_registry_graph
 from ..semantics.copular import SYMBOL, SEMANTIC_ID
 from ..source_adapters.copular import (
@@ -127,8 +129,31 @@ def stage_identity(frontier, current, graph, *, source_root, source_registry, an
         raise ValueError("COPULAR_EXACT_NEW_CANDIDATE_REQUIRED")
     candidate_id = matches[0].candidate_id
     capability = capability_definition()
-    curriculum = replace(current.curriculum, grades=(*current.curriculum.grades,
-        GradeSpec("D", (capability,), ((CAPABILITY, 12),), ((CAPABILITY,),))))
+    grades = list(current.curriculum.grades)
+    for index, grade in enumerate(grades):
+        if grade.grade_id != "D" or any(
+                item.difficulty != capability.difficulty
+                for item in grade.capabilities):
+            continue
+        grades[index] = replace(
+            grade,
+            capabilities=(*grade.capabilities, capability),
+            exam_item_counts=(*grade.exam_item_counts, (CAPABILITY, 12)),
+            teaching_stages=(*grade.teaching_stages, (CAPABILITY,)),
+        )
+        break
+    else:
+        used = {grade.grade_id for grade in grades}
+        target_grade = next(
+            (grade_id for grade_id in GRADE_IDS if grade_id not in used), None)
+        if target_grade is None:
+            ErrorBus.raise_(
+                FACTORY.SEMANTIC_RULE.INVALID,
+                reason="COPULAR_GRADE_CAPACITY_EXHAUSTED",
+            )
+        grades.append(GradeSpec(
+            target_grade, (capability,), ((CAPABILITY, 12),), ((CAPABILITY,),)))
+    curriculum = replace(current.curriculum, grades=tuple(grades))
     bindings = replace(current.source_bindings, bindings=(*current.source_bindings.bindings,
         CapabilitySourceBinding(CAPABILITY, candidate_source_anchor(frontier, candidate_id),
                                 GENERATOR, ORACLE)))

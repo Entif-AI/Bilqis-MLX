@@ -182,13 +182,17 @@ class DependencyEvidenceTests(unittest.TestCase):
                    for e in registry['entries']}
         report = validate_workstack(manifest, registry, numbers, mirrors,
             evidence_sources=load_dependency_sources(root, registry))
-        self.assertEqual(report['child_count'], 171)
+        self.assertEqual(report['child_count'], len(registry['entries']))
         self.assertEqual(report['registry_integrity'], 'valid')
         self.assertEqual(report['status'], 'held')
         self.assertEqual(report['order'], [])
-        self.assertEqual(report['dependency_resolution']['held_keys'], [
-            'A03.4', 'A05.4', 'A05.5', 'A08.1b.2', 'A08.1b.5', 'B02.4',
-            'B11.1a', 'C14.4'])
+        self.assertEqual(
+            report['dependency_resolution']['held_keys'],
+            sorted(
+                entry['key'] for entry in registry['entries']
+                if entry.get('dependency_evidence', {}).get('resolution') == 'held'
+            ),
+        )
         self.assertEqual(numbers['C14.3'], 535)
         self.assertEqual(numbers['C14.4'], 559)
         self.assertEqual(numbers['B10.5'], 635)

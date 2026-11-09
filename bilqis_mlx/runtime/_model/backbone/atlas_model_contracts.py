@@ -13,6 +13,8 @@ from bilqis_mlx.learning.atlas_readout import LossParts, ModelOutput
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.learning.source_atoms.inputs import SourceAtomRow
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
+from bilqis_mlx.runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
 from bilqis_mlx.runtime.atlas_training_authority import BamfTrainingAuthority
 
 
@@ -206,6 +208,7 @@ class BamfCompiledBatch:
     feature_schema: FeatureSchema
     training_authority: BamfTrainingAuthority | None = None
     schema_version: str = "bilqis.mlx.b11-compiled-batch/v1"
+    atlas_feature_artifact_owner: AtlasFeatureArtifactOwner = field(init=False, compare=False)
 
     def __post_init__(self) -> None:
         if (
@@ -221,6 +224,34 @@ class BamfCompiledBatch:
         ):
             _invalid("B11_COMPILED_BATCH_INVALID")
         self.compiled.__post_init__()
+        if self.training_authority is not None:
+            row = self.compiled.compiled.rows[0]
+            frame_nodes = self.compiled.packed_frame_artifact_owner.require_row(row)
+            contextual_kinds = {
+                DependencyKind.POLICY, DependencyKind.RIGHTS, DependencyKind.TIME,
+            }
+            current_context = {
+                ref
+                for node in frame_nodes
+                for ref in node.immediate_dependencies
+                if ref.kind in contextual_kinds
+            }
+            authority_context = {
+                ref for ref in self.training_authority.immediate_dependencies
+                if ref.kind in contextual_kinds
+            }
+            if not current_context.issubset(authority_context):
+                _invalid("B11_TRAINING_AUTHORITY_CONTEXT_DRIFT")
+        owner = getattr(self, "atlas_feature_artifact_owner", None)
+        if owner is None:
+            object.__setattr__(
+                self,
+                "atlas_feature_artifact_owner",
+                AtlasFeatureArtifactOwner(
+                    self.compiled.features, self.feature_schema),
+            )
+        else:
+            owner.require(self.compiled.features)
 
 
 __all__ = (

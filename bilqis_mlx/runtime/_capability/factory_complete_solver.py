@@ -155,6 +155,7 @@ def factory_complete_solver(
             parameters, batch, plan, authority)
         context = SolveContext(
             authority.binding, neural_proposer=proposer)
+        source_context.register_solve_context(context)
         contexts[goal.goal_id] = context
         return context
 

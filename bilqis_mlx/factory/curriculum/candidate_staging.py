@@ -25,7 +25,7 @@ def _target(frontier, candidate_id):
     candidate = next((item for item in frontier.candidates
                       if item.candidate_id == candidate_id), None)
     if (candidate is None or not candidate.proposed_capability_id or
-            not candidate.target_sense_id or not candidate.source_evidence_ids):
+            not candidate.target_sense_id):
         raise ValueError("CANDIDATE_STAGING_EXACT_TARGET_REQUIRED")
     sense = next(item for item in frontier.senses
                  if item.sense_id == candidate.target_sense_id)

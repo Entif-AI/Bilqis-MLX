@@ -97,6 +97,15 @@ class StaleReplayTests(unittest.TestCase):
             correction, index, ledger))
         with self.assertRaises(BilqisError) as caught:
             escalate_stale_replay(
+                replace(remediation, affected_artifact_ids=("feature:beta",)),
+                replace(stale, derived_path=("feature:beta",)),
+                correction, index, ledger)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C09_REMEDIATION_AFFECTED_ROOT_INVALID",
+        )
+        with self.assertRaises(BilqisError) as caught:
+            escalate_stale_replay(
                 remediation, replace(stale, derived_path=(
                     "feature:beta", "motif:alpha")),
                 correction, index, ledger)
