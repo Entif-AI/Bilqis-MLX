@@ -173,7 +173,9 @@ def _reset_state(parent: CandidateState, parameters, slices):
                  for row in parent.policy.row_ages)
     policy = PlasticityPolicy(
         mode=parent.policy.mode, accepted_fast_since_full=0, row_ages=ages,
-        policy_version=parent.policy.policy_version, schema_version=parent.policy.schema_version)
+        policy_version=parent.policy.policy_version,
+        schema_version=parent.policy.schema_version,
+        mode_transition=parent.policy.mode_transition)
     optimizer = AdamWStateTree(parameters, first, second, counts)
     candidate = object.__new__(CandidateState)
     for name, value in (
