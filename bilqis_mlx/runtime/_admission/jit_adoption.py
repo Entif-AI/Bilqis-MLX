@@ -11,6 +11,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 from ..factory.jit_curriculum import ProposalDisposition, propose_curriculum_delta
+from .atlas_lease_contracts import _invalid, _sha
 
 
 def resolve_ready_candidate(frontier, current, ledger, plan, checkpoint, proposal, staged):
@@ -43,6 +44,62 @@ def verify_current_implementations(successor, source_registry, answer_registry):
     if tuple(answer_registry.require(item.kind).descriptor
              for item in successor.answer_modalities) != successor.answer_modalities:
         raise ValueError("JIT_ADOPTION_ANSWER_IMPLEMENTATION_DRIFT")
+
+
+def _authenticate_native_staged_candidate(
+        run_dir: Path, candidate, *, expected_candidate_identity_sha256: str,
+        expected_parent_feature_receipt_sha256: str):
+    """Bind one opaque A02-staged candidate to the live accepted B13 parent.
+
+    The two supplied digests are only cross-owner anchors. They grant no
+    admission or publication authority by themselves; the future A02 adapter
+    must first verify its own typed staging receipt before calling this helper.
+    """
+    from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+    from bilqis_mlx.runtime.bamf_bundle import (
+        BamfBundleCandidate, load_bamf_generation_authority,
+        read_accepted_generation_feature_receipt,
+    )
+
+    if (not isinstance(run_dir, Path) or type(candidate) is not BamfBundleCandidate
+            or not _sha(expected_candidate_identity_sha256)
+            or not _sha(expected_parent_feature_receipt_sha256)):
+        _invalid("BAMF_ATLAS_NATIVE_STAGING_ARGUMENT_INVALID")
+
+    pointer = run_dir / "bamf-state.json"
+    parent, parent_manifest_sha256 = load_bamf_generation_authority(pointer)
+    parent_feature = read_accepted_generation_feature_receipt(pointer)
+    parent_state = parent.retained_state
+    state = candidate.retained_state
+    transition = dict(candidate.transition)
+
+    if (parent_feature.generation_manifest_sha256 != parent_manifest_sha256
+            or parent_feature.digest != expected_parent_feature_receipt_sha256):
+        _invalid("BAMF_ATLAS_ACCEPTED_PARENT_FEATURE_DRIFT")
+    if (parent.run_identity is None
+            or candidate.run_identity != parent.run_identity
+            or candidate.run_id != parent.run_id
+            or candidate.generation != parent.generation + 1
+            or candidate.parent_manifest_sha256 != parent_manifest_sha256
+            or candidate.implementation_sha256 != parent.implementation_sha256
+            or candidate.topology != parent.topology
+            or candidate.optimizer_hyperparameters != parent.optimizer_hyperparameters
+            or candidate.provenance != parent.provenance
+            or dict(candidate.compiler_features) != dict(parent.compiler_features)
+            or dict(candidate.correction_frontier) != dict(parent.correction_frontier)
+            or dict(candidate.teacher_state) != dict(parent.teacher_state)
+            or dict(candidate.evaluation_contract) != dict(parent.evaluation_contract)):
+        _invalid("BAMF_ATLAS_ACCEPTED_PARENT_DRIFT")
+    if (transition != {
+            "schema": "bilqis.mlx.bamf-generation-transition/v1",
+            "kind": "PARAMETER_EXTENSION",
+            "invalidate_derived_caches": True,
+    } or state.optimizer_step != parent_state.optimizer_step
+            or state.allocations != parent_state.allocations
+            or state.step_proofs != parent_state.step_proofs
+            or candidate_identity_digest(state) != expected_candidate_identity_sha256):
+        _invalid("BAMF_ATLAS_NATIVE_STAGING_DRIFT")
+    return candidate
 
 
 @dataclass(frozen=True)

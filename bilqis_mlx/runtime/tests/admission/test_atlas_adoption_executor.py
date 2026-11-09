@@ -1,21 +1,99 @@
 """C07.1b concrete executor uses the native prepared-successor transaction."""
-from dataclasses import asdict, replace
+from dataclasses import asdict, fields, replace
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.autonomy import compile_autonomy_plan, initial_evidence_ledger
 from bilqis_mlx.factory.jit_curriculum import propose_curriculum_delta
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.runtime import release_adoption
+from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate, CompleteStudent
+from bilqis_mlx.runtime.bamf_bundle.genesis import BamfRunIdentity
 from bilqis_mlx.runtime.jit_adoption import (
-    _PreparedSuccessorRuntime, _execute_prepared_successor_adoption,
+    _PreparedSuccessorRuntime, _authenticate_native_staged_candidate,
+    _execute_prepared_successor_adoption,
 )
 from bilqis_mlx.runtime.tests.admission.prepared_successor_fixtures import (
     PreparedSuccessorFixture,
 )
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import candidate, parent_state
 
 
 class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
+    def _native_parent_and_candidate(self):
+        identity = BamfRunIdentity(
+            "fixture-run", 17, "1" * 64, "bundles/foundation-origin", 0,
+            "2" * 64, "3" * 64, "4" * 64, "5" * 64, "6" * 64,
+            "7" * 64, "fixture-source", "8" * 64, "fixture-teacher", 0)
+        base = candidate(parent_state())
+        values = {item.name: getattr(base, item.name) for item in fields(BamfBundleCandidate)}
+        values["run_identity"] = identity
+        parent = CompleteStudent(**values)
+        staged = replace(
+            base, generation=1, parent_manifest_sha256="a" * 64,
+            transition={
+                "schema": "bilqis.mlx.bamf-generation-transition/v1",
+                "kind": "PARAMETER_EXTENSION",
+                "invalidate_derived_caches": True,
+            },
+            run_identity=identity,
+        )
+        return parent, staged
+
+    def test_native_candidate_preflight_requires_exact_b13_parent_and_a02_anchors(self):
+        parent, staged = self._native_parent_and_candidate()
+        parent_feature = SimpleNamespace(
+            generation_manifest_sha256="a" * 64, digest="b" * 64)
+        with patch(
+                "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
+                return_value=(parent, "a" * 64)), patch(
+                "bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt",
+                return_value=parent_feature):
+            self.assertIs(
+                _authenticate_native_staged_candidate(
+                    self.root, staged,
+                    expected_candidate_identity_sha256=candidate_identity_digest(
+                        staged.retained_state),
+                    expected_parent_feature_receipt_sha256=parent_feature.digest,
+                ),
+                staged,
+            )
+
+            with self.assertRaises(BilqisError) as failure:
+                _authenticate_native_staged_candidate(
+                    self.root, staged,
+                    expected_candidate_identity_sha256="c" * 64,
+                    expected_parent_feature_receipt_sha256=parent_feature.digest,
+                )
+            self.assertEqual(
+                failure.exception.context["reason"],
+                "BAMF_ATLAS_NATIVE_STAGING_DRIFT",
+            )
+
+    def test_native_candidate_preflight_rejects_parent_drift_before_mutation(self):
+        parent, staged = self._native_parent_and_candidate()
+        parent_feature = SimpleNamespace(
+            generation_manifest_sha256="a" * 64, digest="b" * 64)
+        drifted = replace(staged, parent_manifest_sha256="d" * 64)
+        with patch(
+                "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
+                return_value=(parent, "a" * 64)), patch(
+                "bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt",
+                return_value=parent_feature):
+            with self.assertRaises(BilqisError) as failure:
+                _authenticate_native_staged_candidate(
+                    self.root, drifted,
+                    expected_candidate_identity_sha256=candidate_identity_digest(
+                        drifted.retained_state),
+                    expected_parent_feature_receipt_sha256=parent_feature.digest,
+                )
+            self.assertEqual(
+                failure.exception.context["reason"],
+                "BAMF_ATLAS_ACCEPTED_PARENT_DRIFT",
+            )
+
     def _proposal(self, staged):
         plan = compile_autonomy_plan(self.current)
         ledger = initial_evidence_ledger(self.current, plan=plan)
