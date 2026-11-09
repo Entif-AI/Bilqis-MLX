@@ -29,13 +29,14 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 )
 
 
-GRAPH = {
-    "tokens": [
-        "fixture.padding", "cogal.value.false", "cogal.value.true",
-        "cogal.operator.NOT", "cogal.operator.AND", "cogal.operator.OR",
-        "cogal.operator.XOR", "cogal.operator.IMPLIES", "cogal.operator.IFF",
-    ],
-}
+def _graph():
+    return {
+        "tokens": [
+            "fixture.padding", "cogal.value.false", "cogal.value.true",
+            "cogal.operator.NOT", "cogal.operator.AND", "cogal.operator.OR",
+            "cogal.operator.XOR", "cogal.operator.IMPLIES", "cogal.operator.IFF",
+        ],
+    }
 
 
 class PlasticityPromotionGradeNeutralityTests(TestCase):
@@ -65,7 +66,7 @@ class PlasticityPromotionGradeNeutralityTests(TestCase):
             curriculum, bindings,
             CurriculumProfile("foundation-only", (
                 GradeProfile("B", enabled_capabilities=()),)),
-            self.registry, _boolean_answers(), source_root=None, graph=GRAPH,
+            self.registry, _boolean_answers(), source_root=None, graph=_graph(),
             verification_seed=91)
         self.foundation = tuple(
             item.capability_id
@@ -77,7 +78,7 @@ class PlasticityPromotionGradeNeutralityTests(TestCase):
         curriculum, bindings = from_legacy_course(course)
         return compile_executable_factory_release(
             curriculum, bindings, CurriculumProfile.full(),
-            self.registry, _boolean_answers(), source_root=None, graph=GRAPH,
+            self.registry, _boolean_answers(), source_root=None, graph=_graph(),
             verification_seed=97)
 
     def _issue(self, runtime_release):
