@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
-  "updated_at": "2026-11-09T06:11:42Z",
+  "observed_unified": "e206ec0e957e24823f3136c0f3bffe1fc950013e",
+  "updated_at": "2026-11-09T21:08:55Z",
   "exception": null,
   "items": [
     {
@@ -52,14 +52,14 @@
     {
       "issue": 454,
       "pr": null,
-      "state": "WAITING",
-      "head_sha": "89819d6d1cf58cabadf324775d7bbd0c23130bd0",
-      "summary": "B06.3 has current-unified conflict and source-positive witness remediation outstanding.",
-      "resume_trigger": "Remediations #735 and #736 are resolved, the candidate is synchronized once to current reviewed unified, and it is selected for final merge-readiness review.",
+      "state": "ACTIVE",
+      "head_sha": "e206ec0e957e24823f3136c0f3bffe1fc950013e",
+      "summary": "B06.3 repaired #365/#454 design amendments passed fresh pinned EGM. Reconcile current task/flow/receipt state on a fresh branch from reviewed unified; historical PR #684 remains provenance only.",
+      "resume_trigger": null,
       "closed_pr": 684,
-      "preserved_branch": "codex/b06-454-refinement-20261101",
+      "preserved_branch": "codex/454-b06-3-reconcile-20261109",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
-      "close_reason": "EGM-Failed; remediations #735/#736"
+      "close_reason": "Historical PR #684 remains closed; #735/#736 resolved and fresh #454 reconciliation now proceeds from current reviewed unified"
     },
     {
       "issue": 697,
