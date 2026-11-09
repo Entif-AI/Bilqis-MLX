@@ -195,11 +195,11 @@
     },
     {
       "issue": 378,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "d7c018e6",
-      "summary": "Scoped C05 evaluation source-custody integration is qualified on reviewed unified 4bfcbd5a: exact source AST plus A05 partial-visible-forest receipt are preserved in CompiledEncoderInput and current batch registration is retained. Source-positive/current-owner ring is 9 passed + 7 subtests; quality/legacy-trainer/flow/contracts are green. Fresh merge-readiness review pending.",
-      "resume_trigger": null,
+      "pr": 937,
+      "state": "TURNED_IN",
+      "head_sha": "c69dc4b9066f6312d3ce5bdf0833981adff18dd5",
+      "summary": "Scoped C05 evaluation source-custody repair is turned in as ready PR #937 after current-unified qualification and fresh independent PASS 0 Blockers / 0 Majors / 0 Nits. Exact source AST plus A05 partial-visible-forest receipt reach CompiledEncoderInput while current source-context batch registration is preserved.",
+      "resume_trigger": "Human review/merge PR #937 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
       "preserved_branch": "codex/378-c05-eval-ast-20261107"
     }
   ]

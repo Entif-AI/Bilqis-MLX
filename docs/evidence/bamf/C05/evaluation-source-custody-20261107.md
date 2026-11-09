@@ -110,3 +110,7 @@ source AST plus A05 receipt are carried into `CompiledEncoderInput`, and the
 validated `BamfCompiledBatch` is then registered with the current source owner.
 No B06 policy, caller credential, retention/publication behavior, or C05 parent
 closeout was introduced.
+
+Ready PR **#937** turns this scoped repair in to
+`codex/bamf-unified-base-20261028`. Human review/merge remains the integration
+authority; no self-merge is authorized.
