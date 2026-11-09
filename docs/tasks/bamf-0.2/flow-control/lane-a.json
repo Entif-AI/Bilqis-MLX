@@ -1,13 +1,13 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "bcc82f86e2c409e22329d38c14b757d7e5a0d517",
-  "updated_at": "2026-11-09T21:32:24Z",
+  "observed_unified": "516725b6170f258ad86b0c5d4ca050907238e59d",
+  "updated_at": "2026-11-09T23:55:18Z",
   "exception": null,
   "items": [
     {
       "issue": 429,
-      "pr": null,
+      "pr": 952,
       "state": "TURNED_IN",
       "head_sha": "eb4219907dfc738c843cbba00765e4294426d351",
       "summary": "A12.3 completed across accepted PR #871 plus post-merge boundary remediation PR #874. PR #874 final head eb421990 merged into reviewed unified as 4cffd8c7 after fresh pinned EGM CLEAN at exact semantic head 97300f46 and hosted portable-core/portable/Semantic ABI PASS; the only post-EGM delta was Lane A PR bookkeeping. The remediation directly proves SOURCE_HELD refusal before trainable-row staging and before BamfTarget construction with the exact source-owned reason. Earlier #871 data-only successor/F17 source evidence remains accepted; custody PR #873 merged as 22d23ddf.",
@@ -107,6 +107,16 @@
       "closed_pr": 887,
       "closed_under": "BAMF WAITING issue/branch queue; open implementation PRs are reserved for merge-ready candidates or active remediation delivery.",
       "close_reason": "Historical waiting reason was C07.1b/#510 persisted-lease-gated adoption; bounded A02 implementation resumed against exact upstream branch interface while final integration still waits reviewed C07 authority."
+    },
+    {
+      "issue": 400,
+      "pr": null,
+      "state": "READY",
+      "head_sha": "8b3f071215b27b98f8ae15a9d0b02fc72b7fc80d",
+      "head_sha_role": "post-merge A02.2 candidate after reviewed-unified 516725b6 synchronization; full composed runtime proof complete; independent exact-head review pending",
+      "summary": "A02.2 is reconciled through reviewed #399/#510 integration and current reviewed unified 516725b6. The issue revalidates the A02-sealed conservative disk requirement immediately before first C07 Factory/B13 persistence, preserves exact accepted-retry idempotency, proves UINT32_MAX+1 refusal, and defers inactive future ABI banks until accepted A02 admission. Post-merge qualification is green: semantics 14 PASS with 2 explicit opt-in skips, generation-zero/feature-authority/cold-resume 38 PASS, C07/lease-policy 14 PASS, smell 0, structure/governance/error-control/flow/contracts/docs/diff PASS. Detached v6 full-topology proof passed in 633.718s from immutable snapshot eed6f34f with source_mutated=false, proving real one-bank -> two-bank staging, B13 pre-pointer crash/cold read, exact retry, old weight/m/v preservation, zero new-row moments, bundle reuse and successor Factory acceptance. Fresh independent exact-head review at evidence head 7011f83d reports 0 Blockers / 0 Majors / 0 Nits and READY_FOR_HUMAN_REVIEW. Human-review PR #952 is open.",
+      "resume_trigger": "Human review/merge PR #952 into codex/bamf-unified-base-20261028. Do not self-merge.",
+      "preserved_branch": "codex/bamf02-a-semantics"
     },
     {
       "issue": 888,

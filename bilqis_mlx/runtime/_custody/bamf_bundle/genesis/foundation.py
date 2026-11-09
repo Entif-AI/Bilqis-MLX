@@ -100,7 +100,9 @@ def initial_foundation_sidecars(
     plan = release.execution_plan
     projections = plan.projection_digests
     feature = _replay_features(feature_authority)
-    bank_count = max(1, feature.snapshot.counts.abi_banks)
+    active_banks = tuple(
+        entry.bank for entry in feature.snapshot.abi_entries if entry.active)
+    bank_count = max(1, max(active_banks, default=0) + 1)
     semantic = {
         "schema": "bilqis.mlx.bamf-semantic-abi/v1",
         "active_set_sha256": feature.snapshot.active_set_sha256,
