@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "7d9e0e8209e2d077e4fc30f65a3ebf3f29a91f3f",
-  "updated_at": "2026-11-09T03:00:19Z",
+  "updated_at": "2026-11-09T03:12:52Z",
   "exception": null,
   "items": [
     {
@@ -142,11 +142,11 @@
     {
       "issue": 510,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "d8bc2171f78851b403db1090e8e22d116cb373cb",
+      "state": "WAITING",
+      "head_sha": "db790df2b7b12e53172805847a1e696c36a68cdc",
       "preserved_branch": "codex/510-c07-atomic-adoption-20261107",
-      "summary": "Resume trigger satisfied: A09.5 PR #891 and B13.6 PR #931 are accepted through reviewed unified 7d9e0e82. Resume the preserved package-private C07.1b executor, bind it to accepted B13 runtime custody, and replace legacy successor materialization with the exact native staged BAMF candidate without introducing a second admission state machine.",
-      "resume_trigger": null
+      "summary": "Scoped #510 progress at db790df2 adds a package-private native staged-candidate preflight that binds the exact A02 candidate identity and parent feature receipt anchors to the live accepted B13 parent before mutation; focused C07 policy/executor proof is 10/10 green. Production adoption remains fail-closed because the human operator still owns legacy state.json/Checkpoint+MLX AdamW custody and C16.1b #543 has not yet bound the fresh operator foundation into the accepted B13 lineage. No lossy B13-to-legacy projection or C05 authority substitution was introduced.",
+      "resume_trigger": "C16.1b #543 is implemented/accepted so a real human-started operator foundation is bound through B13.6 into accepted B13 run custody. Then resume #510 against the frozen A02 #399 staging interface, complete the exact native candidate adoption transaction, and consume #399's actual reviewed receipt before final turn-in."
     },
     {
       "issue": 746,
