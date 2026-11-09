@@ -14,6 +14,9 @@ from bilqis_mlx.presentation.school_telemetry import SchoolTelemetry, LETTER_TAB
 from bilqis_mlx.presentation.progression_projection import GraduationProjection
 from bilqis_mlx.profiles.catalog import displayed_numeric_maximum
 from bilqis_mlx.runtime.disk import headroom_snapshot
+from bilqis_mlx.runtime.bamf_first_student import (
+    load_bamf_foundation_dashboard_projection,
+)
 from bilqis_mlx.state_dag import read_current
 from bilqis_mlx.source import AUDITED_PARENT
 from ..compatibility.historical_live_release import historical_rubric_description
@@ -21,36 +24,22 @@ from bilqis_mlx.presentation.spiral_dashboard import Dashboard
 
 
 def _bamf_foundation_dashboard_state(run_dir: Path):
-    pointer = run_dir / "bamf-state.json"
-    if not pointer.is_file():
-        return None
-    from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
-
-    student, _ = load_bamf_generation_authority(pointer)
-    grades = student.compiler_features.get("factory_grade_ids")
-    identity = student.run_identity
-    if (student.generation != 0 or student.retained_state.optimizer_step != 0
-            or identity is None or not isinstance(grades, list) or not grades
-            or any(type(grade) is not str or not grade for grade in grades)):
+    projection = load_bamf_foundation_dashboard_projection(run_dir)
+    if projection is None:
         return None
     return {
         "generation": 0,
-        "run_id": student.run_id,
-        "factory_release_sha256": identity.factory_release_sha256,
-        "teacher": {
-            "events": 0,
-            "identity": student.teacher_state.get("teacher_identity"),
-        },
-        "result": "NOT_STARTED",
+        "factory_release_sha256": projection.factory_release_sha256,
+        "teacher": {"events": projection.teacher_events},
+        "result": projection.last_run_status,
         "school": {
             "current_student": {
-                "sha256": identity.initial_candidate_identity_sha256,
-                "optimizer_step": 0,
+                "optimizer_step": projection.optimizer_step,
             },
-            "active_grades": list(grades),
-            "grade_index": 0,
-            "visits": 0,
-            "stage": "READY_FOR_HUMAN_START",
+            "active_grades": list(projection.active_grades),
+            "grade_index": projection.active_grades.index(projection.current_grade),
+            "visits": projection.grade_visits,
+            "stage": projection.stage,
         },
     }
 

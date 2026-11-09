@@ -120,6 +120,33 @@ class DashboardMetrics:
 
 
 @dataclass(frozen=True)
+class BamfFoundationDashboardProjection:
+    """Read-only generation-zero facts projected from accepted B13 custody."""
+
+    factory_release_sha256: str
+    optimizer_step: int
+    grade_visits: int
+    teacher_events: int
+    stage: str
+    active_grades: tuple[str, ...]
+    current_grade: str
+    last_run_status: str
+
+    def __post_init__(self) -> None:
+        if (not _sha256(self.factory_release_sha256)
+                or self.optimizer_step != 0
+                or self.grade_visits != 0
+                or self.teacher_events != 0
+                or self.stage != "READY_FOR_HUMAN_START"
+                or type(self.active_grades) is not tuple or not self.active_grades
+                or len(set(self.active_grades)) != len(self.active_grades)
+                or any(type(grade) is not str or not grade for grade in self.active_grades)
+                or self.current_grade != self.active_grades[0]
+                or self.last_run_status != "NOT_STARTED"):
+            _invalid("BAMF_FIRST_STUDENT_DASHBOARD_PROJECTION_INVALID")
+
+
+@dataclass(frozen=True)
 class LaunchReceipt:
     """Non-authorizing report of the exact generation-zero launch binding."""
 
@@ -178,16 +205,54 @@ def _canonical_disjoint_run_paths(source_run_dir: str, new_run_dir) -> tuple[Pat
     return source, target
 
 
-def _launch_dashboard_metrics(release: ExecutableFactoryRelease) -> DashboardMetrics:
-    active = tuple(grade.grade_id for grade in release.execution_plan.grades)
-    if not active:
-        _invalid("BAMF_FIRST_STUDENT_DASHBOARD_SCOPE_INVALID")
+def _dashboard_metrics_from_projection(
+        projection: BamfFoundationDashboardProjection) -> DashboardMetrics:
     return DashboardMetrics(
+        optimizer_step=projection.optimizer_step,
+        grade_visits=projection.grade_visits,
+        stage=projection.stage,
+        active_grades=projection.active_grades,
+        current_grade=projection.current_grade,
+        last_run_status=projection.last_run_status,
+    )
+
+
+def load_bamf_foundation_dashboard_projection(
+        run_dir) -> BamfFoundationDashboardProjection | None:
+    """Project newborn dashboard facts from the accepted B13 pointer only."""
+    pointer = _resolved_run_path(run_dir, reason="BAMF_FIRST_STUDENT_DASHBOARD_PATH_INVALID") / "bamf-state.json"
+    if not pointer.exists() and not pointer.is_symlink():
+        return None
+    student, _manifest_sha256 = load_bamf_generation_authority(pointer)
+    identity = getattr(student, "run_identity", None)
+    retained = getattr(student, "retained_state", None)
+    compiler = getattr(student, "compiler_features", None)
+    teacher = getattr(student, "teacher_state", None)
+    grades = compiler.get("factory_grade_ids") if isinstance(compiler, Mapping) else None
+    if (getattr(student, "generation", None) != 0
+            or type(identity) is not BamfRunIdentity
+            or getattr(student, "run_id", None) != identity.run_id
+            or getattr(retained, "optimizer_step", None) != 0
+            or identity.initial_teacher_epoch != 0
+            or not isinstance(compiler, Mapping)
+            or compiler.get("factory_release_sha256") != identity.factory_release_sha256
+            or not isinstance(grades, list) or not grades
+            or len(set(grades)) != len(grades)
+            or any(type(grade) is not str or not grade for grade in grades)
+            or not isinstance(teacher, Mapping)
+            or teacher.get("cursor") != "GENESIS"
+            or teacher.get("teacher_epoch") != 0
+            or teacher.get("teacher_identity") != identity.initial_teacher_identity
+            or teacher.get("next_seed") != identity.run_seed):
+        _invalid("BAMF_FIRST_STUDENT_DASHBOARD_PROJECTION_INVALID")
+    return BamfFoundationDashboardProjection(
+        factory_release_sha256=identity.factory_release_sha256,
         optimizer_step=0,
         grade_visits=0,
+        teacher_events=0,
         stage="READY_FOR_HUMAN_START",
-        active_grades=active,
-        current_grade=active[0],
+        active_grades=tuple(grades),
+        current_grade=grades[0],
         last_run_status="NOT_STARTED",
     )
 
@@ -249,22 +314,25 @@ def preflight_bamf_foundation(
             "optimizer_step": 0,
         },),
     )
-    metrics = _launch_dashboard_metrics(admitted_release)
     _fresh_run_dir(target)
     pointer = publish_initial_generation(target, prepared)
+    projection = load_bamf_foundation_dashboard_projection(target)
+    if projection is None:
+        _invalid("BAMF_FIRST_STUDENT_PERSISTED_FOUNDATION_DRIFT")
     student, manifest_sha256 = load_bamf_generation_authority(target / "bamf-state.json")
     if (student.run_identity != prepared.candidate.run_identity
             or student.retained_state.optimizer_step != 0
-            or manifest_sha256 != pointer["manifest_sha256"]):
+            or manifest_sha256 != pointer["manifest_sha256"]
+            or projection.factory_release_sha256 != admitted_release.release_sha256):
         _invalid("BAMF_FIRST_STUDENT_PERSISTED_FOUNDATION_DRIFT")
 
     return LaunchReceipt(
         run_identity=student.run_identity,
         manifest_sha256=manifest_sha256,
-        factory_release_sha256=admitted_release.release_sha256,
+        factory_release_sha256=projection.factory_release_sha256,
         atlas_artifact=config.atlas_artifact,
         optimizer_hyperparameters=student.optimizer_hyperparameters,
-        dashboard_metrics=metrics,
+        dashboard_metrics=_dashboard_metrics_from_projection(projection),
         input_schema_versions=(
             ("config", BAMF_FOUNDATION_CONFIG_SCHEMA),
             ("factory_release", admitted_release.schema),
@@ -285,6 +353,7 @@ def preflight_bamf_foundation(
 __all__ = (
     "BAMF_FOUNDATION_CONFIG_SCHEMA", "BAMF_DASHBOARD_METRICS_SCHEMA",
     "BAMF_LAUNCH_RECEIPT_SCHEMA",
-    "BamfFoundationConfig", "DashboardMetrics", "LaunchReceipt",
-    "preflight_bamf_foundation",
+    "BamfFoundationConfig", "BamfFoundationDashboardProjection",
+    "DashboardMetrics", "LaunchReceipt",
+    "load_bamf_foundation_dashboard_projection", "preflight_bamf_foundation",
 )

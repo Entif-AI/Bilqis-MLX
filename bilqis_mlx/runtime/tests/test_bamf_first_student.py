@@ -26,6 +26,7 @@ from bilqis_mlx.runtime.bamf_first_student import (
     BAMF_LAUNCH_RECEIPT_SCHEMA,
     BamfFoundationConfig,
     LaunchReceipt,
+    load_bamf_foundation_dashboard_projection,
     preflight_bamf_foundation,
 )
 from bilqis_mlx.runtime.state import _fingerprint
@@ -190,6 +191,27 @@ class BamfFirstStudentTests(unittest.TestCase):
         self.assertEqual(receipt.dashboard_metrics.grade_visits, 0)
         self.assertEqual(receipt.dashboard_metrics.stage, "READY_FOR_HUMAN_START")
         self.assertEqual(receipt.dashboard_metrics.last_run_status, "NOT_STARTED")
+        with shape_patch():
+            projection = load_bamf_foundation_dashboard_projection(target)
+        self.assertIsNotNone(projection)
+        self.assertEqual(
+            (
+                receipt.dashboard_metrics.optimizer_step,
+                receipt.dashboard_metrics.grade_visits,
+                receipt.dashboard_metrics.stage,
+                receipt.dashboard_metrics.active_grades,
+                receipt.dashboard_metrics.current_grade,
+                receipt.dashboard_metrics.last_run_status,
+            ),
+            (
+                projection.optimizer_step,
+                projection.grade_visits,
+                projection.stage,
+                projection.active_grades,
+                projection.current_grade,
+                projection.last_run_status,
+            ),
+        )
         self.assertEqual(
             receipt.dashboard_metrics.schema_version, BAMF_DASHBOARD_METRICS_SCHEMA)
         self.assertEqual(receipt.input_schema_versions, (
@@ -345,6 +367,7 @@ class BamfFirstStudentTests(unittest.TestCase):
         self.assertEqual(board.state["stop"], "NOT_STARTED")
         self.assertEqual(board.state["phase"], "READY_FOR_HUMAN_START")
         self.assertEqual(board.state["prefix"], admitted_grades[0])
+        self.assertEqual(board.grade_program, admitted_grades)
         mastery = board.rows["GRADES & MASTERY"][-1]
         self.assertEqual(mastery["grade"], admitted_grades[0])
         self.assertEqual(mastery["step"], 0)
