@@ -10,6 +10,9 @@ Current remotely verified post-merge candidate head:
 
 Status: **READY_FOR_HUMAN_REVIEW**.
 
+Human-review PR: **#952** into
+`codex/bamf-unified-base-20261028`. No self-merge is authorized.
+
 ## Integrated ownership boundary
 
 The historical A02.2 staging adapter is no longer an isolated prospective API.
