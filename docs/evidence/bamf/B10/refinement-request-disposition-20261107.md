@@ -10,6 +10,10 @@ production owner derived those semantics from the source-owned task contract.
 This patch does not modify B06 policy or compose B11. Accepted B10 children remain
 closed; this is a scoped B10-parent integration repair.
 
+Canonical latest legacy-trainer adaptation source:
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
+Prometheus remains historical evidence only and is not the current adaptation source.
+
 ## Exact identity
 
 - reviewed unified base: `bd3657e170c8bdc046a7bb28524c0fb829ca7ce9`
@@ -63,3 +67,25 @@ B11/#471 must consume this disposition only after reviewed integration and must
 not reintroduce caller booleans. The remaining independent B06 production gap is
 durable operator `run_seed` plus true source/visit identity; the C05 AST and
 A05/A13 prefix-authority seams are separately implemented on their own branches.
+
+## Reviewed-unified refresh — 2026-11-09
+
+The preserved branch consumed current reviewed unified
+`4bfcbd5a9aaa22a1bc2bca4c7a64ec203df07044` exactly once at merge checkpoint
+`d4e67cc9`. The only merge conflict was the shared Lane B flow ledger; current
+reviewed-unified entries were preserved and the scoped #367 integration was
+reactivated without changing B10 semantics.
+
+Current-head qualification:
+
+- `test_refinement_request.py`: **3 passed** (the same typed disposition cases;
+  prior receipt counted subtests separately);
+- BAMF contract verifier: **43/43** exact issue mirrors, **216** indexed identities;
+- `quality:changed`: PASS, zero new changed-file findings;
+- current Microspenics legacy-trainer authority and its 7 tests: PASS;
+- BAMF flow-control and its 15 tests: PASS;
+- `git diff --check`: clean.
+
+No B06 policy, B11 composition, caller credential, learner, optimizer, source
+publication, or parent-closeout semantics were added. Fresh merge-readiness review
+remains the next gate.

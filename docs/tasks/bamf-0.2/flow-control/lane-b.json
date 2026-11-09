@@ -382,8 +382,8 @@
       "issue": 367,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "d63bd8f9f4699087d67a6f4c740a9120a58ddf2a",
-      "summary": "Scoped B10 request-disposition integration selected to unblock B11/#471; current reviewed unified 4bfcbd5a is being consumed while preserving the typed ORDINARY / EXPLICIT_MEMBER / UNRESOLVED_NESTED owner contract and forbidding caller booleans.",
+      "head_sha": "d4e67cc9",
+      "summary": "Scoped B10 request-disposition integration is qualified on reviewed unified 4bfcbd5a: typed ORDINARY / EXPLICIT_MEMBER / UNRESOLVED_NESTED remains owner-derived from validated TaskGoal with no caller boolean; focused proof and current quality/legacy-trainer/flow/contracts are green. Fresh merge-readiness review pending.",
       "resume_trigger": null,
       "preserved_branch": "codex/367-b10-refinement-disposition-20261107"
     }
