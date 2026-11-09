@@ -179,8 +179,8 @@
       "issue": 905,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "b05873bb3ddf2d64c8960ea03ef6052a0d6a8bfa",
-      "summary": "C02.5 consumed reviewed unified 2c26d4ac with #904/#376 accepted; dependency-sensitive proof and all owned gates are green. Fresh scoped final EGM pending before turn-in.",
+      "head_sha": "e78e44a6bafa6c078f039b902254e48bfe01ba4b",
+      "summary": "C02.5 consumed reviewed unified 2c26d4ac and fresh scoped EGM passed after one test-only proof repair; 0 Blockers / 0 Majors / 0 Nits. Differential leaf and aggregate quality are green; repository premerge gate pending before ready PR turn-in.",
       "resume_trigger": null,
       "preserved_branch": "codex/905-c02-5-visit-provenance-20261107"
     }

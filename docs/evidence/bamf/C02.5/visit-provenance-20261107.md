@@ -4,7 +4,7 @@ Issue #905. Branch `codex/905-c02-5-visit-provenance-20261107`.
 Reviewed unified consumed for this scoped implementation:
 `bd3657e170c8bdc046a7bb28524c0fb829ca7ce9`.
 
-Status: **SEMANTICALLY_QUALIFIED; FRESH_FINAL_EGM_PENDING**.
+Status: **SEMANTICALLY_QUALIFIED; FRESH_FINAL_EGM_PASSED; PREMERGE_PENDING**.
 
 ## Authority boundary
 
@@ -155,6 +155,15 @@ DOCS_CHECK_OK
 git diff --check: PASS
 ```
 
+Fresh #905 EGM round 1 found one Major proof gap only: the production capability
+mismatch rejection lacked the issue-required focused negative witness. Test-only
+repair `e78e44a6bafa6c078f039b902254e48bfe01ba4b` adds that exact witness and
+also replaces unserializable lambda-valued `subTest` labels exposed by the xdist
+differential runner. Targeted evidence is 21 passed / 4 subtests; the repository
+differential leaf gate is green at 6 passed / 4 subtests. The same independent
+reviewer then returned **PASS — 0 Blockers / 0 Majors / 0 Nits** and
+`READY_FOR_HUMAN_REVIEW`.
+
 No live learner, durable optimizer update, source promotion or accepted production
-generation was started. The only remaining engineering gate is one genuinely fresh
-scoped #905 turn-in EGM on the exact resumed candidate before PR turn-in.
+generation was started. The remaining turn-in gates are the repository pre-merge
+proof, ready PR creation, and hosted CI. Merge remains human-authorized only.
