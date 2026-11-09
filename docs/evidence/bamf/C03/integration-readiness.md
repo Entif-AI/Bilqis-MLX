@@ -1,9 +1,9 @@
 # C03 parent integration readiness — 2026-11-07
 
-Issue: #376  
-Branch: `codex/bamf02-c03-376-20261107`  
-Reviewed-unified baseline consumed: `bb8e83f03e38b64018cfe357addd90a0a6d67297`  
-C03 candidate head: `31582efffc422628ac9b64a50859801fa066d346`  
+Issue: #376
+Branch: `codex/bamf02-c03-376-20261107`
+Reviewed-unified baseline consumed: `bb8e83f03e38b64018cfe357addd90a0a6d67297`
+C03 candidate head: `31582efffc422628ac9b64a50859801fa066d346`
 Status: **IMPLEMENTED_WAITING_B13_ADOPTION**
 
 ## Scope completed on the C03 owner

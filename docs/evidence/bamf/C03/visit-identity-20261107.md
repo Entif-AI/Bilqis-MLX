@@ -4,6 +4,8 @@
 
 This scoped C03 integration repair defines the true teacher-visit identity required by B06 refinement determinism. It does not reopen completed C03 children, does not mint run authority, and does not reinterpret `run_id`, `episode_id`, or `optimizer_step_seed` as the B06 seed/visit contract.
 
+Canonical latest legacy-trainer adaptation source: `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`; this receipt binds its separately observed authority record. Prometheus is historical evidence only and not the current adaptation source.
+
 ## Exact identity
 
 - reviewed unified consumed: `bd3657e170c8bdc046a7bb28524c0fb829ca7ce9`
