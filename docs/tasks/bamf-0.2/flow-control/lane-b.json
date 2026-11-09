@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "e206ec0e957e24823f3136c0f3bffe1fc950013e",
-  "updated_at": "2026-11-09T21:13:04Z",
+  "observed_unified": "f8f4bbafaa87056bda8665599f81c1c5284dcfd0",
+  "updated_at": "2026-11-09T22:24:39Z",
   "exception": null,
   "items": [
     {
@@ -26,6 +26,15 @@
       "preserved_branch": "codex/b09-465-participation-20261101",
       "closed_under": "Issue-label EGM queue; PR not an active review/mitigation-delivery/merge vehicle",
       "close_reason": "EGM-Failed; remediation #711"
+    },
+    {
+      "issue": 466,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "f8f4bbafaa87056bda8665599f81c1c5284dcfd0",
+      "summary": "B09.3 #466 is active on a fresh current-unified branch after pinned design EGM PASS 0/0/0 across Design/Structural, Implementation Readiness and Codebase Details. Implement owner-issued C05 promotion receipt -> persisted grade-neutral B09 ModeTransition; historical #466 branches remain provenance only.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/466-b09-promotion-transition-20261109"
     },
     {
       "issue": 456,
