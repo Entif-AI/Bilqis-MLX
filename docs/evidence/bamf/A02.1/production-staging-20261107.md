@@ -5,7 +5,7 @@
 - Issue: #399 — A02.1 | Allocate stable semantic banks and activate admitted identity rows
 - Branch: `codex/bamf02-a-399-production-admission-20261106`
 - Historical PR #887: closed unmerged after the earlier A02 publication-authority overreach was corrected.
-- Reviewed integration trunk consumed for the current candidate: `9385ac7f336dca090cdd746fe8b87904ff2e5415`
+- Reviewed integration trunk consumed for the current candidate: `636ac8ffdeece7d6f8b24e9d1f46596396848db7`
 - Dependency authority consumed: reviewed B13 accepted-generation feature authority from #708/#809.
 - Additional B13 integration repair in this branch: recursive accepted-generation feature lineage is rederived through the same accepted source authority, while the immediate parent generation's effective feature map is kept distinct from the current feature artifact's last distinct construction predecessor. A02 therefore does not mint a parallel factor-map authority or mistake retained reuse for a new feature transition.
 - Rejected historical PR #698 lineage was not revived or used as current authority.
@@ -23,7 +23,9 @@ The staged candidate binds:
 - source-allocation digest, complete plan digest and admitted IDs;
 - exact prepared extents and active-mask identity;
 - zero moments/counts for newly staged identity rows;
-- exact preservation of all pre-existing parameter, moment and count bytes;
+- exact preservation of all previously active/non-admitted parameter rows and all
+  pre-existing moment/count bytes; newly admitted reserved parameter rows are
+  deterministically initialized while their moments/counts are reset to zero;
 - source-derived Registry mirror and conservative bank resource estimate;
 - accepted active semantic ABI separately from immutable source feature-map authority.
 
@@ -42,6 +44,8 @@ Preflight review found material defects in the earlier turn-in. They were accept
 7. **Accepted run-seed drift.** Fresh exact-head review found that the production staging adapter passed `ModelTopologySpecV2.default_run_seed` (fixed at zero) into new identity-row initialization instead of the accepted generation's `BamfRunIdentity.run_seed`. The adapter now fails closed without accepted run identity and passes the accepted run seed. The full-topology witness deliberately uses a nonzero accepted seed and independently recomputes the new row bytes from that seed and the source-derived factor.
 8. **Authenticated full-parent validation.** The authenticated full-tree staging path now performs the same explicit `VocabularyBankParent` type guard as the ordinary staging path, so malformed authenticated input fails through the typed ErrorBus boundary rather than leaking an attribute error.
 9. **Initial and retained same-map staging.** Fresh exact-head EGM found that the production adapter conflated the immediate parent generation's feature map with the current feature artifact's own predecessor. That rejected generation zero outright and also broke ordinary retained descendants that reused an unchanged map. B13 replay now exposes both relationships distinctly. A02 uses source-replayed predecessor-free validation when the accepted feature artifact has no construction predecessor, and authenticated predecessor validation only when the artifact actually records one. The full-topology witness now stages directly from accepted generation zero instead of manufacturing a generation-one feature transition first.
+10. **C07-accepted A02 replay — Blocker.** Fresh turn-in EGM found that a lawfully adopted A02 active-set extension would be rejected by B13's accepted feature reader because the factor-map digest remains unchanged while the active semantic digest advances. B13 replay now permits that difference only when the accepted generation carries the exact A02 `PARAMETER_EXTENSION` staging receipt and the accepted binding anchors that receipt digest. A forged/mismatched staging anchor still fails closed. Focused red→green proof covers the accepted-reader seam while generic retention publication remains forbidden.
+11. **Owner-surface coupling — Major.** The A02 adapter had imported private B12 parameter-extension issuance and private B13 feature-context/schema helpers. Those dependencies now have explicit public owner seams: `issue_parameter_extension_state(...)`, `AcceptedGenerationFeatureContext` / `read_accepted_generation_feature_context(...)`, and `feature_schema_from_compiler_features(...)`. A02 consumes only those public surfaces.
 
 The previous claim that C07 governed only new Atlas releases was incorrect and is withdrawn. C07 explicitly governs subsequent source-valid additions under a persisted lease.
 

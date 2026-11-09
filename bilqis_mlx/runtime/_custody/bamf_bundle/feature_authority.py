@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
 from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactIdentity, AtlasArtifactSelection, load_pinned_atlas_snapshot,
@@ -26,11 +27,49 @@ from .feature.acceptance import (
     parent_acceptance_anchor_from_manifest,
 )
 from .feature.receipt import AcceptedGenerationFeatureReceipt, is_digest
+from ._vocabulary_admission_records import (
+    A02VocabularyStagingReceipt, STAGED_EVENT,
+)
 
 FEATURE_SOURCE_KEYS = frozenset({
     "atlas_bundle_id", "release_sha256", "source_bundle_id"})
 FEATURE_SCHEMA_KEYS = frozenset({"role_ids", "schema_ids", "source_bindings"})
 SOURCE_BINDING_WIDTH = 2
+
+
+def _accepted_a02_active_set_extension(child, binding, features) -> bool:
+    """Recognize an accepted C07-bound A02 parameter extension during replay."""
+    if dict(child.transition) != {
+            "schema": "bilqis.mlx.bamf-generation-transition/v1",
+            "kind": "PARAMETER_EXTENSION",
+            "invalidate_derived_caches": True}:
+        return False
+    events = tuple(
+        event for event in child.outbox
+        if isinstance(event, dict) and event.get("event") == STAGED_EVENT)
+    if len(events) != 1:
+        return False
+    record = events[0].get("staging_receipt")
+    if not isinstance(record, dict):
+        return False
+    payload = dict(record)
+    receipt_sha256 = payload.pop("receipt_sha256", None)
+    try:
+        receipt = A02VocabularyStagingReceipt(**payload)
+    except (TypeError, BilqisError):
+        return False
+    return (
+        receipt.digest == receipt_sha256
+        and getattr(binding, "staging_receipt_sha256", None) == receipt.digest
+        and receipt.run_id == child.run_id
+        and receipt.generation == child.generation
+        and receipt.parent_manifest_sha256 == child.parent_manifest_sha256
+        and receipt.candidate_identity_sha256
+        == candidate_identity_digest(child.retained_state)
+        and receipt.prepared_extents_sha256 == child.extents.digest
+        and receipt.active_set_sha256 == child.extents.active_semantic_digest
+        and receipt.feature_sha256 == features.digest
+        and receipt.semantic_bank_count == child.extents.semantic_bank_count)
 
 
 @dataclass(frozen=True)
@@ -53,6 +92,16 @@ class AuthenticatedCandidateFeatureContext:
                 or self.snapshot.bundle_id != self.selection.bundle_id
                 or self.snapshot.source_bundle_id != self.selection.source_bundle_id):
             invalid("BAMF_FEATURE_CONTEXT_INVALID")
+
+
+@dataclass(frozen=True)
+class AcceptedGenerationFeatureContext:
+    """Typed B13 replay context for one accepted generation."""
+
+    receipt: AcceptedGenerationFeatureReceipt
+    features: object
+    predecessor_features: object | None
+    construction_predecessor: object | None
 
 
 def _feature_source(compiler_features: dict) -> dict:
@@ -85,6 +134,11 @@ def _feature_schema(compiler_features: dict) -> FeatureSchema:
             source_bindings=tuple((row[0], row[1]) for row in bindings))
     except BilqisError:
         invalid("BAMF_FEATURE_SCHEMA_BINDING_INVALID")
+
+
+def feature_schema_from_compiler_features(compiler_features: dict) -> FeatureSchema:
+    """Public B13 owner seam for a recorded compiler feature schema."""
+    return _feature_schema(compiler_features)
 
 
 def _artifact_identity(source: dict) -> AtlasArtifactIdentity:
@@ -169,12 +223,14 @@ def _accepted_feature_context(run_dir: Path, manifest_sha256: str, student, *,
     result_binding = history[0][1]
     if result_binding is None:
         invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
-    for child, _ in reversed(history[:-1]):
+    for child, child_binding in reversed(history[:-1]):
         parent = current
         predecessor = features
         if child.extents.factor_map_digest == parent.extents.factor_map_digest:
             if (child.extents.active_semantic_digest
-                    != parent.extents.active_semantic_digest):
+                    != parent.extents.active_semantic_digest
+                    and not _accepted_a02_active_set_extension(
+                        child, child_binding, features)):
                 invalid("BAMF_FEATURE_ACTIVE_SET_DRIFT")
             source = _feature_source(child.compiler_features)
             if (child.compiler_features.get("factor_map_sha256") != features.digest
@@ -271,6 +327,15 @@ def _read_accepted_generation_feature_context(pointer_path: Path):
         source_source_bundle_id=features.source_bundle_id,
     )
     return receipt, features, predecessor_features, construction_predecessor
+
+
+def read_accepted_generation_feature_context(
+        pointer_path: Path) -> AcceptedGenerationFeatureContext:
+    """Return typed accepted feature replay plus construction ancestry."""
+    receipt, features, predecessor, construction = (
+        _read_accepted_generation_feature_context(pointer_path))
+    return AcceptedGenerationFeatureContext(
+        receipt, features, predecessor, construction)
 
 
 def read_accepted_generation_feature_lineage(pointer_path: Path):

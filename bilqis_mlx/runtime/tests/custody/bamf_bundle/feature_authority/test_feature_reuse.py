@@ -3,15 +3,20 @@ from dataclasses import replace
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.runtime.bamf_bundle import (
     publish_bamf_generation, read_accepted_generation_feature_receipt,
 )
 from bilqis_mlx.runtime.bamf_bundle import feature_authority
+from bilqis_mlx.runtime.bamf_bundle._vocabulary_admission_records import (
+    A02VocabularyStagingReceipt, STAGED_EVENT,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.feature_authority_test_support import (
     ATLAS_BUNDLE, RELEASE, SOURCE_BUNDLE, SUCCESSOR_ATLAS_BUNDLE,
     SUCCESSOR_RELEASE, SUCCESSOR_SOURCE_BUNDLE, feature_bound,
@@ -92,6 +97,86 @@ class FeatureReuseTests(unittest.TestCase):
         self.assertEqual(receipt.generation, 1)
         self.assertEqual(receipt.feature_sha256, successor_features.digest)
         self.assertEqual(receipt.predecessor_feature_sha256, root_features.digest)
+
+    def test_c07_accepted_a02_active_set_growth_replays_unchanged_features(self):
+        root_features = source_features()
+        parent = feature_bound(candidate(parent_state()), root_features)
+        parent = replace(parent, generation=0, parent_manifest_sha256=None)
+        child_state = accepted_state(parent_state())
+        child = feature_bound(candidate(child_state, 1, "a" * 64), root_features)
+        active = "8" * 64
+        child = replace(
+            child,
+            extents=replace(child.extents, active_semantic_digest=active),
+            semantic_abi={**child.semantic_abi, "active_set_sha256": active},
+            transition={**child.transition, "kind": "PARAMETER_EXTENSION",
+                        "invalidate_derived_caches": True},
+        )
+        staging = A02VocabularyStagingReceipt(
+            run_id=child.run_id,
+            generation=child.generation,
+            parent_manifest_sha256=child.parent_manifest_sha256,
+            parent_feature_receipt_sha256="1" * 64,
+            candidate_identity_sha256=candidate_identity_digest(child.retained_state),
+            source_allocation_sha256="2" * 64,
+            plan_sha256="3" * 64,
+            prepared_extents_sha256=child.extents.digest,
+            active_mask_sha256="4" * 64,
+            registry_mirror_sha256="5" * 64,
+            resource_estimate_sha256="6" * 64,
+            active_set_sha256=active,
+            feature_sha256=root_features.digest,
+            semantic_bank_count=child.extents.semantic_bank_count,
+        )
+        child = replace(child, outbox=({
+            "event": STAGED_EVENT,
+            "staging_receipt": staging.to_record(),
+        },))
+        child_binding = SimpleNamespace(
+            digest="7" * 64,
+            staging_receipt_sha256=staging.digest,
+        )
+        parent_binding = SimpleNamespace(digest="9" * 64)
+
+        def binding_for(_run_dir, manifest_sha256, *_args, **_kwargs):
+            return child_binding if manifest_sha256 == "b" * 64 else parent_binding
+
+        with patch.object(
+                feature_authority, "accepted_binding_for_manifest",
+                side_effect=binding_for), patch.object(
+                feature_authority, "parent_acceptance_anchor_from_manifest",
+                return_value="9" * 64), patch.object(
+                feature_authority, "load_bamf_bundle", return_value=parent), patch.object(
+                feature_authority, "_authenticate_features", return_value=root_features):
+            features, binding, predecessor, construction = (
+                feature_authority._accepted_feature_context(
+                    self.run, "b" * 64, child,
+                    expected_acceptance_sha256=child_binding.digest))
+        self.assertEqual(features, root_features)
+        self.assertIs(binding, child_binding)
+        self.assertEqual(predecessor, root_features)
+        self.assertIsNone(construction)
+
+        forged_binding = SimpleNamespace(
+            digest="7" * 64,
+            staging_receipt_sha256="0" * 64,
+        )
+
+        def forged_binding_for(_run_dir, manifest_sha256, *_args, **_kwargs):
+            return forged_binding if manifest_sha256 == "b" * 64 else parent_binding
+
+        with patch.object(
+                feature_authority, "accepted_binding_for_manifest",
+                side_effect=forged_binding_for), patch.object(
+                feature_authority, "parent_acceptance_anchor_from_manifest",
+                return_value="9" * 64), patch.object(
+                feature_authority, "load_bamf_bundle", return_value=parent), patch.object(
+                feature_authority, "_authenticate_features", return_value=root_features):
+            from bilqis_mlx.errors import BilqisError
+            with self.assertRaises(BilqisError):
+                feature_authority._accepted_feature_context(
+                    self.run, "b" * 64, child,
+                    expected_acceptance_sha256=forged_binding.digest)
 
 
 if __name__ == "__main__":

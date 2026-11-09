@@ -9,9 +9,7 @@ import mlx.core as mx
 import numpy as np
 
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
-from bilqis_mlx.learning._atlas_candidate.state import (
-    _issue_parameter_extension_state,
-)
+from bilqis_mlx.learning.atlas_candidate import issue_parameter_extension_state
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
@@ -38,7 +36,7 @@ from ._vocabulary_admission_records import (
     _issue_a02_staged_vocabulary_extension,
 )
 from .feature_authority import (
-    _feature_schema, _read_accepted_generation_feature_context,
+    feature_schema_from_compiler_features, read_accepted_generation_feature_context,
 )
 from .publication import load_bamf_generation_authority
 from .records import BamfBundleCandidate, canonical, invalid, sha
@@ -128,7 +126,7 @@ def _successor_state(parent, prepared):
         old_policy.mode, old_policy.accepted_fast_since_full,
         tuple(ages[key] for key in sorted(ages)),
         old_policy.policy_version, old_policy.schema_version)
-    return _issue_parameter_extension_state(
+    return issue_parameter_extension_state(
         parent.retained_state, optimizer, policy)
 
 
@@ -150,8 +148,10 @@ def stage_vocabulary_extension(
     """Prepare one exact A02 successor without granting C07 admission authority."""
     run_dir = Path(run_dir)
     pointer_path = run_dir / "bamf-state.json"
-    parent_receipt, features, _, predecessor = (
-        _read_accepted_generation_feature_context(pointer_path))
+    feature_context = read_accepted_generation_feature_context(pointer_path)
+    parent_receipt = feature_context.receipt
+    features = feature_context.features
+    predecessor = feature_context.construction_predecessor
     parent, parent_manifest = load_bamf_generation_authority(pointer_path)
     if parent_manifest != parent_receipt.generation_manifest_sha256:
         invalid("BAMF_A02_PARENT_AUTHORITY_DRIFT")
@@ -159,7 +159,7 @@ def stage_vocabulary_extension(
         str(artifact_path), features.atlas_bundle_id,
         features.semantic_release, features.source_bundle_id)
     snapshot = load_pinned_atlas_snapshot(selection)
-    recorded = _feature_schema(parent.compiler_features)
+    recorded = feature_schema_from_compiler_features(parent.compiler_features)
     schema = FeatureSchema(
         recorded.role_ids, recorded.schema_ids, predecessor,
         recorded.source_bindings)
