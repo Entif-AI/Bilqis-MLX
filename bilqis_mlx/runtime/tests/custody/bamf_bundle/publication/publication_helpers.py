@@ -108,7 +108,9 @@ def acceptance(bundle, *, parent=None) -> object:
         retention_decision(parent=parent, retained=bundle.retained_state),
         bundle.retained_state, run_id=bundle.run_id,
         generation=bundle.generation,
-        feature_sha256=bundle.extents.factor_map_digest)
+        feature_sha256=bundle.extents.factor_map_digest,
+        source_authority_registry_sha256=bundle.correction_frontier.get(
+            "source_authority_registry_sha256"))
 
 
 def _publish_initial_candidate(run_dir, bundle, foundation_features):

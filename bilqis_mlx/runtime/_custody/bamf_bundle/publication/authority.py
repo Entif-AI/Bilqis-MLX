@@ -39,7 +39,10 @@ def require_acceptance(
             or acceptance.candidate_identity_sha256
             != candidate_identity_digest(candidate.retained_state)
             or acceptance.step_proof_sha256 != tuple(
-                proof.digest for proof in candidate.retained_state.step_proofs)):
+                proof.digest for proof in candidate.retained_state.step_proofs)
+            or acceptance.source_authority_registry_sha256
+            != candidate.correction_frontier.get(
+                "source_authority_registry_sha256")):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     return acceptance
 
@@ -186,7 +189,10 @@ def require_published_acceptance(
             or acceptance.candidate_identity_sha256
             != candidate_identity_digest(student.retained_state)
             or acceptance.step_proof_sha256 != tuple(
-                proof.digest for proof in student.retained_state.step_proofs)):
+                proof.digest for proof in student.retained_state.step_proofs)
+            or acceptance.source_authority_registry_sha256
+            != student.correction_frontier.get(
+                "source_authority_registry_sha256")):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     manifest = live_manifest(run_dir, pointer)
     legacy_student = manifest.get("schema") != ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA

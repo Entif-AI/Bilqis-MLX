@@ -112,7 +112,17 @@ def _authorize_publication_candidate(
         run_dir: Path, candidate: BamfBundleCandidate, authority):
     """Validate generation-specific authority before entering shared publication."""
     if candidate.generation > 0:
-        return _require_acceptance(candidate, authority), None, None
+        from ..source_authority_custody import (
+            require_provisioned_source_authority_registry,
+        )
+
+        accepted = _require_acceptance(candidate, authority)
+        trusted = require_provisioned_source_authority_registry(
+            run_dir, candidate.correction_frontier)
+        trusted_digest = trusted.digest if trusted is not None else None
+        if accepted.source_authority_registry_sha256 != trusted_digest:
+            invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH")
+        return accepted, None, None
     from ..genesis import (
         PreparedInitialGeneration, validate_initial_generation_binding,
         validate_initial_generation_preparation,

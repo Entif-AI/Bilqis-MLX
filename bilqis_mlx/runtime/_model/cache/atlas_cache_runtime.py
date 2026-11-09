@@ -134,12 +134,10 @@ def bind_cache_artifact_owner(authority, artifact, binding):
         from bilqis_mlx.runtime.accepted_corrections import (
             register_accepted_target,
         )
-        from bilqis_mlx.runtime._atlas_owner_ingress import _route
         register_accepted_target(
             accepted_cache._run_dir,
             accepted_cache.accepted_manifest_sha256,
             "EXACT_CACHE", owner,
-            lambda current, event, registry: _route(current, event, registry),
         )
     return owner
 

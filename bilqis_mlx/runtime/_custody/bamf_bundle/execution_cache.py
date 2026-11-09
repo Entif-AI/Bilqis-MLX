@@ -110,11 +110,9 @@ def bind_motif_artifact_owner(cache, compiled):
         from bilqis_mlx.runtime.accepted_corrections import (
             register_accepted_target,
         )
-        from bilqis_mlx.runtime._atlas_owner_ingress import _route
         register_accepted_target(
             cache._run_dir, cache.accepted_manifest_sha256,
             "MOTIF", owner,
-            lambda current, event, registry: _route(current, event, registry),
         )
     owner.require(cache, compiled)
     return owner

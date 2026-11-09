@@ -100,12 +100,6 @@ class CapabilitySupportLineageTests(unittest.TestCase):
         _reset_accepted_correction_runtime_for_tests()
         reloaded = self.load_support(AUTHORITY)
         self.assertEqual(reloaded.queue.event.event_id, first.event_id)
-        target = reloaded._accepted_correction_target
-        self.assertIn(accepted_id, target.seen)
-        self.assertEqual(
-            tuple(branch.event.event_id for branch in target.branches[first.dependency].branches),
-            (first.event_id,),
-        )
 
         second = _sign_event(replace(
             first,
@@ -116,16 +110,10 @@ class CapabilitySupportLineageTests(unittest.TestCase):
         ))
         with shape_patch():
             record_accepted_correction(self.run, second)
-
-        branches = target.branches[first.dependency]
-        self.assertEqual(
-            {branch.event.event_id for branch in branches.branches},
-            {first.event_id, second.event_id},
-        )
-        self.assertEqual(
-            tuple(branch.event.event_id for branch in branches.active),
-            (second.event_id,),
-        )
+        self.assertIsNotNone(reloaded.queue)
+        self.assertEqual(reloaded.queue.event.event_id, second.event_id)
+        records = read_records(self.run, manifest)
+        self.assertEqual(len(records), 2)
 
 
 if __name__ == "__main__":

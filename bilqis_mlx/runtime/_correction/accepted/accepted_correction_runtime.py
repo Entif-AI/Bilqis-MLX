@@ -4,6 +4,7 @@ from __future__ import annotations
 from contextvars import ContextVar
 from pathlib import Path
 from threading import RLock
+import weakref
 
 from .accepted_correction_dispatch import AcceptedCorrectionRuntime
 from .atlas_revalidation_common import _invalid
@@ -14,6 +15,7 @@ def _make_runtime_core():
     entries = {}
     lock = RLock()
     active_owner = ContextVar("bamf_c09_active_accepted_owner", default=None)
+    superseded_owners = weakref.WeakSet()
 
     def require_owned(retained) -> None:
         if not any(candidate is retained for candidate in entries.values()):
@@ -25,6 +27,12 @@ def _make_runtime_core():
             return action()
         finally:
             active_owner.reset(token)
+
+    def retire_owner(owner) -> None:
+        superseded_owners.add(owner)
+
+    def owner_is_superseded(owner) -> bool:
+        return owner in superseded_owners
 
     def require_bound_registry(owner, registry):
         from .atlas_source_authority import SourceAuthorityRegistry
@@ -46,6 +54,20 @@ def _make_runtime_core():
             _invalid("BAMF_C09_CALLER_SELECTED_AUTHORITY_FORBIDDEN")
         return bound
 
+    def target_for_owner(owner):
+        matched = [
+            target
+            for retained in entries.values()
+            for target in retained.targets.values()
+            if target.owner is owner
+        ]
+        if not matched:
+            return None
+        target = matched[0]
+        if any(candidate is not target for candidate in matched):
+            _invalid("BAMF_C09_ACCEPTED_TARGET_IDENTITY_CONFLICT")
+        return target
+
     def retained(run_dir: Path, manifest_sha256: str) -> AcceptedCorrectionRuntime:
         from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
             _accepted_correction_registry,
@@ -60,14 +82,14 @@ def _make_runtime_core():
             if current is None:
                 current = AcceptedCorrectionRuntime(
                     Path(run_dir), manifest_sha256, registry,
-                    require_owned, authorize_owner)
+                    require_owned, authorize_owner, retire_owner)
                 entries[key] = current
             elif current.registry != registry:
                 _invalid("BAMF_C09_CORRECTION_AUTHORITY_DRIFT")
             return current
 
     def refresh(owner) -> None:
-        target = getattr(owner, "_accepted_correction_target", None)
+        target = target_for_owner(owner)
         if target is None:
             return
         current = next((
@@ -77,16 +99,25 @@ def _make_runtime_core():
         if current is not None:
             current.refresh_target(target)
 
-    def register(run_dir: Path, manifest_sha256: str, kind: str, owner, apply,
+    def register(run_dir: Path, manifest_sha256: str, kind: str, owner, *,
                  seen_event_ids: tuple[str, ...] = ()) -> None:
+        if type(seen_event_ids) is not tuple or any(
+                not isinstance(event_id, str) or not event_id
+                for event_id in seen_event_ids):
+            _invalid("BAMF_C09_ACCEPTED_TARGET_IDENTITY_CONFLICT")
+        from bilqis_mlx.runtime._atlas_owner_ingress import _route
+
         retained(run_dir, manifest_sha256).register(
-            kind, owner, apply, seen_event_ids)
+            kind, owner, _route, seen_event_ids)
 
     def reset_for_tests() -> None:
         with lock:
             entries.clear()
 
-    return require_bound_registry, refresh, register, retained, reset_for_tests
+    return (
+        require_bound_registry, refresh, register, retained, reset_for_tests,
+        target_for_owner, owner_is_superseded,
+    )
 
 
 def _require_persisted(
@@ -153,10 +184,31 @@ def _make_delivery_api(retained):
 
 def _make_runtime_boundary():
     """Compose public closures without exposing the retained runtime getter."""
-    require_bound_registry, refresh, register, retained, reset = _make_runtime_core()
+    (
+        require_bound_registry, refresh, register, retained, reset,
+        target_for_owner, owner_is_superseded,
+    ) = _make_runtime_core()
+
+    def require_pending(owner, artifact_id: str) -> None:
+        """Fail closed when accepted correction state blocks this physical owner."""
+        if owner_is_superseded(owner):
+            _invalid("BAMF_C09_ARTIFACT_OWNER_SUPERSEDED")
+        refresh(owner)
+        target = target_for_owner(owner)
+        if target is None:
+            return
+        if artifact_id in target.context_holds:
+            _invalid("BAMF_C09_ARTIFACT_HELD")
+        if artifact_id in target.process_fault_holds:
+            _invalid("BAMF_C09_PROPAGATION_REPAIR_FAILED")
+        node = owner.index.node(artifact_id)
+        for event in target.pending:
+            if event.dependency in node.immediate_dependencies:
+                _invalid("BAMF_C09_ARTIFACT_HELD")
+
     return (
         require_bound_registry, refresh, register,
-        *_make_delivery_api(retained), reset,
+        *_make_delivery_api(retained), reset, require_pending,
     )
 
 
@@ -170,30 +222,12 @@ def _make_runtime_boundary():
     deliver_accepted_context_revalidation,
     replay_accepted_stale_evidence,
     _reset_accepted_correction_runtime_for_tests,
+    require_pending_corrections,
 ) = _make_runtime_boundary()
-
-
-def require_pending_corrections(owner, artifact_id: str) -> None:
-    """Fail closed when accepted correction state blocks this physical owner."""
-    if getattr(owner, "_accepted_owner_superseded", False):
-        _invalid("BAMF_C09_ARTIFACT_OWNER_SUPERSEDED")
-    refresh_owner_corrections(owner)
-    target = getattr(owner, "_accepted_correction_target", None)
-    if target is None:
-        return
-    if artifact_id in target.context_holds:
-        _invalid("BAMF_C09_ARTIFACT_HELD")
-    if artifact_id in target.process_fault_holds:
-        _invalid("BAMF_C09_PROPAGATION_REPAIR_FAILED")
-    node = owner.index.node(artifact_id)
-    for event in target.pending:
-        if event.dependency in node.immediate_dependencies:
-            _invalid("BAMF_C09_ARTIFACT_HELD")
 
 
 def register_compiled_batch(run_dir: Path, batch) -> None:
     from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
-    from bilqis_mlx.runtime._atlas_owner_ingress import _route
 
     cache = bind_accepted_execution_cache(run_dir)
     owners = (
@@ -203,19 +237,16 @@ def register_compiled_batch(run_dir: Path, batch) -> None:
     for kind, owner in owners:
         register_accepted_target(
             run_dir, cache.accepted_manifest_sha256, kind, owner,
-            lambda current, event, authority: _route(current, event, authority),
         )
 
 
 def register_solve_context(run_dir: Path, context) -> None:
     from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
-    from bilqis_mlx.runtime._atlas_owner_ingress import _route
 
     cache = bind_accepted_execution_cache(run_dir)
     owner = context.operator_composition_artifact_owner
     register_accepted_target(
-        run_dir, cache.accepted_manifest_sha256, "OPERATOR_COMPOSITION", owner,
-        lambda current, event, authority: _route(current, event, authority))
+        run_dir, cache.accepted_manifest_sha256, "OPERATOR_COMPOSITION", owner)
 
 
 __all__ = (

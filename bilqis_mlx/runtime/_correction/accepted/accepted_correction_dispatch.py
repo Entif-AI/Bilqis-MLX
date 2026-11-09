@@ -23,10 +23,12 @@ from .atlas_source_authority import SourceAuthorityRegistry
 
 class AcceptedCorrectionRuntime:
     def __init__(self, run_dir: Path, manifest_sha256: str,
-                 registry: SourceAuthorityRegistry, require_live, authorize_owner):
+                 registry: SourceAuthorityRegistry, require_live, authorize_owner,
+                 retire_owner):
         if not isinstance(registry, SourceAuthorityRegistry):
             _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
-        if not callable(require_live) or not callable(authorize_owner):
+        if (not callable(require_live) or not callable(authorize_owner)
+                or not callable(retire_owner)):
             _invalid("BAMF_C09_ACCEPTED_RUNTIME_REQUIRED")
         self.run_dir = Path(run_dir)
         self.manifest_sha256 = manifest_sha256
@@ -36,6 +38,7 @@ class AcceptedCorrectionRuntime:
         self._accepted_support_census = None
         self._require_runtime = require_live
         self._authorize_owner = authorize_owner
+        self._retire_owner = retire_owner
 
     def _require_live(self) -> None:
         self._require_runtime(self)
@@ -97,7 +100,6 @@ class AcceptedCorrectionRuntime:
                 self.targets[key] = target
             elif target.owner is not owner:
                 _invalid("BAMF_C09_ACCEPTED_TARGET_IDENTITY_CONFLICT")
-            setattr(owner, "_accepted_correction_target", target)
             def hydrate():
                 self._restore_branches(target)
                 target.seen.update(seen_event_ids)
@@ -146,7 +148,7 @@ class AcceptedCorrectionRuntime:
             )
             if not artifact_ids or artifact_ids != existing_ids or equivalent:
                 continue
-            setattr(existing, "_accepted_owner_superseded", True)
+            self._retire_owner(existing)
             self.targets.pop(key, None)
 
     def _new_target(self, key, owner, apply) -> AcceptedCorrectionTarget:

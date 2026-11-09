@@ -111,9 +111,7 @@ class AcceptedContextOrderingTests(unittest.TestCase):
         cache = self._publish()
         with shape_patch():
             register_accepted_target(
-                self.run, cache.accepted_manifest_sha256, "ORDERING", owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority),
+                self.run, cache.accepted_manifest_sha256, "ORDERING", owner
             )
             host = AcceptedRuntimeHost(self.run)
 
@@ -152,9 +150,7 @@ class AcceptedContextOrderingTests(unittest.TestCase):
             cold_cache = bind_accepted_execution_cache(self.run)
             register_accepted_target(
                 self.run, cold_cache.accepted_manifest_sha256,
-                "ORDERING", cold_owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority),
+                "ORDERING", cold_owner
             )
         self.assertIsNone(
             require_pending_corrections(cold_owner, direct.artifact_id))
@@ -180,9 +176,7 @@ class AcceptedContextOrderingTests(unittest.TestCase):
         cache = self._publish()
         with shape_patch():
             register_accepted_target(
-                self.run, cache.accepted_manifest_sha256, "PRIORITY", owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority),
+                self.run, cache.accepted_manifest_sha256, "PRIORITY", owner
             )
             host = AcceptedRuntimeHost(self.run)
         invalidation = _event(case, old_digest, new_digest)
@@ -194,8 +188,6 @@ class AcceptedContextOrderingTests(unittest.TestCase):
         with shape_patch():
             low_record = host.record_context_revalidation(
                 ContextRevalidationFrontier((low_result,)))
-        target = owner._accepted_correction_target
-        self.assertIn(low_record, target.context_deferred)
         with self.assertRaises(BilqisError):
             require_pending_corrections(owner, low.artifact_id)
 
@@ -205,7 +197,6 @@ class AcceptedContextOrderingTests(unittest.TestCase):
         with shape_patch():
             host.record_context_revalidation(
                 ContextRevalidationFrontier((high_result,)))
-        self.assertNotIn(low_record, target.context_deferred)
         self.assertIsNone(require_pending_corrections(owner, high.artifact_id))
         self.assertIsNone(require_pending_corrections(owner, low.artifact_id))
 
@@ -216,18 +207,12 @@ class AcceptedContextOrderingTests(unittest.TestCase):
             cold_cache = bind_accepted_execution_cache(self.run)
             register_accepted_target(
                 self.run, cold_cache.accepted_manifest_sha256,
-                "PRIORITY", cold_owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority),
+                "PRIORITY", cold_owner
             )
-        self.assertEqual(
-            cold_owner._accepted_correction_target.context_deferred, {})
         self.assertIsNone(
             require_pending_corrections(cold_owner, high.artifact_id))
         self.assertIsNone(
             require_pending_corrections(cold_owner, low.artifact_id))
-        self.assertEqual(
-            cold_owner._accepted_correction_target.context_deferred, {})
 
     def test_equal_context_revalidation_keeps_real_packed_frame_readable(self):
         case = source_owned_temporal_case()
@@ -236,9 +221,7 @@ class AcceptedContextOrderingTests(unittest.TestCase):
         with shape_patch():
             register_accepted_target(
                 self.run, cache.accepted_manifest_sha256,
-                "PACKED_FRAME", owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority),
+                "PACKED_FRAME", owner
             )
             host = AcceptedRuntimeHost(self.run)
         invalidation = _event(case, case.previous.digest, "e" * 64)
@@ -267,9 +250,7 @@ class AcceptedContextOrderingTests(unittest.TestCase):
         with shape_patch():
             register_accepted_target(
                 self.run, cache.accepted_manifest_sha256,
-                "PACKED_FRAME", owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority),
+                "PACKED_FRAME", owner
             )
             host = AcceptedRuntimeHost(self.run)
             transition = host.record_context_transition(

@@ -104,9 +104,7 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
             cache = bind_accepted_execution_cache(self.run)
             register_accepted_target(
                 self.run, cache.accepted_manifest_sha256,
-                "PACKED_FRAME", owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority),
+                "PACKED_FRAME", owner
             )
             self.assertTrue(owner.require_row(case.row))
             host = AcceptedRuntimeHost(self.run)
@@ -135,9 +133,7 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
             cold_cache = bind_accepted_execution_cache(self.run)
             register_accepted_target(
                 self.run, cold_cache.accepted_manifest_sha256,
-                "PACKED_FRAME", cold_owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority),
+                "PACKED_FRAME", cold_owner
             )
         with self.assertRaises(BilqisError) as cold_held:
             cold_owner.require_row(case.row)
@@ -152,9 +148,7 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
             cache = bind_accepted_execution_cache(self.run)
             register_accepted_target(
                 self.run, cache.accepted_manifest_sha256,
-                "PACKED_FRAME", owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority),
+                "PACKED_FRAME", owner
             )
             host = AcceptedRuntimeHost(self.run)
             forged_task = replace(
@@ -199,8 +193,7 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
         with shape_patch():
             cache = bind_accepted_execution_cache(self.run)
             register_accepted_target(
-                self.run, cache.accepted_manifest_sha256, "TEST_CONTEXT", owner,
-                lambda current, event, source_authority: current,
+                self.run, cache.accepted_manifest_sha256, "TEST_CONTEXT", owner
             )
             AcceptedRuntimeHost(self.run).record_context_transition(
                 case.previous, case.contexts)
@@ -209,3 +202,82 @@ class AcceptedCorrectionRuntimeTests(unittest.TestCase):
             require_pending_corrections(owner, direct.artifact_id)
         self.assertEqual(held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
         self.assertIsNone(require_pending_corrections(owner, descendant.artifact_id))
+
+    def test_caller_cannot_detach_accepted_correction_custody_from_registered_owner(self):
+        case = source_owned_temporal_case()
+        direct = ArtifactNode(
+            "frame:tamper-direct", ArtifactKind.PACKED_FRAME, "c" * 64, True,
+            (DependencyRef(
+                DependencyKind.TIME,
+                "time:asof:context:" + case.previous.digest),),
+            impact=3, exigency=3,
+        )
+
+        class Owner:
+            def __init__(self):
+                self.index = DependencyIndex.build((direct,))
+
+        owner = Owner()
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+            register_accepted_target(
+                self.run, cache.accepted_manifest_sha256, "TEST_TAMPER", owner
+            )
+            AcceptedRuntimeHost(self.run).record_context_transition(
+                case.previous, case.contexts)
+
+        owner._accepted_correction_target = None
+        with self.assertRaises(BilqisError) as held:
+            require_pending_corrections(owner, direct.artifact_id)
+        self.assertEqual(
+            held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
+
+    def test_caller_cannot_select_accepted_correction_dispatch(self):
+        case = source_owned_temporal_case()
+        owner = case.owner()
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+        with self.assertRaises(TypeError):
+            register_accepted_target(
+                self.run, cache.accepted_manifest_sha256, "PACKED_FRAME", owner,
+                lambda current, event, source_authority: current,
+            )
+
+    def test_caller_cannot_revive_superseded_accepted_owner(self):
+        case = source_owned_temporal_case()
+        direct = ArtifactNode(
+            "frame:superseded-owner", ArtifactKind.PACKED_FRAME, "d" * 64, True,
+            (DependencyRef(
+                DependencyKind.TIME,
+                "time:asof:context:" + case.previous.digest),),
+            impact=3, exigency=3,
+        )
+
+        class Owner:
+            def __init__(self, ledger):
+                self.index = DependencyIndex.build((direct,))
+                self.ledger = ledger
+
+        old_owner = Owner(("old",))
+        replacement = Owner(("replacement",))
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+            register_accepted_target(
+                self.run, cache.accepted_manifest_sha256,
+                "TEST_SUPERSEDED", old_owner,
+            )
+            register_accepted_target(
+                self.run, cache.accepted_manifest_sha256,
+                "TEST_SUPERSEDED", replacement,
+            )
+
+        old_owner._accepted_owner_superseded = False
+        with self.assertRaises(BilqisError) as rejected:
+            require_pending_corrections(old_owner, direct.artifact_id)
+        self.assertEqual(
+            rejected.exception.context["reason"],
+            "BAMF_C09_ARTIFACT_OWNER_SUPERSEDED",
+        )

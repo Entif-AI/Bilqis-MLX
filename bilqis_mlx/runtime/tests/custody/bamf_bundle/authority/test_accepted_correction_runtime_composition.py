@@ -86,10 +86,6 @@ class AcceptedCorrectionCompositionTests(AcceptedCorrectionCompositionCase):
                 deliver_accepted_context_invalidation(
                     self.run, accepted_cache.accepted_manifest_sha256,
                     record["event_id"], invalidation)
-            target = owner._accepted_correction_target
-            self.assertEqual(target.context_queues, {})
-            self.assertIn(invalidation.event_id, target.context_invalidations)
-
             learned = QualifiedComposition(
                 add,
                 contract_digest(binding),

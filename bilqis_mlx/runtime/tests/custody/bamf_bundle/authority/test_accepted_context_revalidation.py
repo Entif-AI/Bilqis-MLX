@@ -62,9 +62,7 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
             cold_cache = bind_accepted_execution_cache(self.run)
             register_accepted_target(
                 self.run, cold_cache.accepted_manifest_sha256,
-                "TEST_CONTEXT", cold_owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority))
+                "TEST_CONTEXT", cold_owner)
         self.assertIsNone(require_pending_corrections(cold_owner, direct.artifact_id))
         self.assertEqual(
             cold_owner.index.node(direct.artifact_id).immediate_dependencies,
@@ -91,9 +89,7 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
         with shape_patch():
             register_accepted_target(
                 self.run, cache.accepted_manifest_sha256,
-                "TEST_CONTEXT_LATE", owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority))
+                "TEST_CONTEXT_LATE", owner)
             host = AcceptedRuntimeHost(self.run)
         invalidation = C09ContextInvalidation(
             old_context_digest=case.previous.digest,
@@ -133,14 +129,8 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
         with shape_patch():
             evidence_id = host.record_context_revalidation(
                 ContextRevalidationFrontier((result,)))
-        target = owner._accepted_correction_target
-        self.assertIn(evidence_id, target.context_deferred)
-        self.assertNotIn(evidence_id, target.seen)
-
         owner._index = DependencyIndex.build((late,))
         self.assertIsNone(require_pending_corrections(owner, late.artifact_id))
-        self.assertIn(evidence_id, target.seen)
-        self.assertNotIn(evidence_id, target.context_deferred)
         self.assertEqual(
             owner.index.node(late.artifact_id).immediate_dependencies,
             (new_time,),

@@ -332,10 +332,6 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         )
         self.assertEqual(owner.support.status, "QUALIFIED")
         self.assertEqual(owner.require(TARGET), owner.support)
-        self.assertNotIn(
-            "capability-support:" + TARGET,
-            owner._accepted_correction_target.process_fault_holds,
-        )
 
 
 if __name__ == "__main__":

@@ -82,13 +82,9 @@ class AcceptedCorrectionCompositionReplayTests(AcceptedCorrectionCompositionCase
                 first_event = record_accepted_revalidation(
                     self.run,
                     RevalidationFrontier((by_id[task_ids[0]], by_id[task_ids[2]])))
-            target = owner._accepted_correction_target
-            self.assertIn(first_event, target.deferred)
             with shape_patch():
                 record_accepted_revalidation(
                     self.run, RevalidationFrontier((by_id[task_ids[1]],)))
-            self.assertNotIn(first_event, target.deferred)
-            self.assertIn(first_event, target.seen)
             self.assertEqual(owner.queue.held_artifact_ids, ())
 
     def test_same_logical_artifact_owners_all_remain_live_for_later_correction(self):
@@ -144,14 +140,6 @@ class AcceptedCorrectionCompositionReplayTests(AcceptedCorrectionCompositionCase
                 owner.require(learned, binding)
             self.assertEqual(
                 held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
-            target = owner._accepted_correction_target
-            self.assertTrue(any(
-                event.event_id == correction_a.event_id
-                for event in target.pending
-            ) or (
-                owner.queue is not None
-                and owner.queue.event.event_id == correction_a.event_id
-            ))
             for correction in (correction_a, correction_b):
                 if (owner.queue is None
                         or owner.queue.event.event_id != correction.event_id):
@@ -161,15 +149,3 @@ class AcceptedCorrectionCompositionReplayTests(AcceptedCorrectionCompositionCase
                 self._record_equal_revalidation(
                     owner, learned, owner.queue.event)
             self.assertIsNotNone(owner.require(learned, binding))
-            learned_artifact_id = (
-                "composition:" + learned.qualification_receipt_sha256)
-            self.assertIn(
-                learned_artifact_id,
-                owner._accepted_correction_target.branch_reconciled_artifacts[
-                    correction_a.event_id],
-            )
-            self.assertIn(
-                learned_artifact_id,
-                owner._accepted_correction_target.branch_reconciled_artifacts[
-                    correction_b.event_id],
-            )

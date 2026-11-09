@@ -240,10 +240,8 @@ def load_capability_support_owner(
     from bilqis_mlx.runtime.accepted_corrections import (
         register_accepted_target,
     )
-    from ._atlas_owner_ingress import _route
     register_accepted_target(
         run_dir, manifest_sha256, "CAPABILITY_SUPPORT", rehydrated,
-        lambda current, event, registry: _route(current, event, registry),
         seen_event_ids=seen_event_ids,
     )
     return rehydrated

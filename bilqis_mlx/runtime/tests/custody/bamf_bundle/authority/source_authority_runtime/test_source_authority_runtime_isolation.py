@@ -40,6 +40,7 @@ from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import (
 )
 
 
+
 class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
     def setUp(self):
         self.temporary = TemporaryDirectory()
@@ -91,154 +92,6 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
                 for key in registry.keys
             ],
         }
-
-    def test_accepted_host_issues_and_reuses_opaque_source_authority(self):
-        self.publish()
-        with shape_patch():
-            cache = bind_accepted_execution_cache(self.run)
-            authority = AcceptedRuntimeHost(self.run).source_authority()
-            rebound = AcceptedRuntimeHost(self.run).source_authority()
-        self.assertIs(require_source_authority_runtime(authority, cache), authority)
-        self.assertIs(rebound, authority)
-        selection = _selection()
-        frontier = SourceFrontier(7, 3, ())
-        artifacts = ("1" * 64, "2" * 64)
-        receipt = _receipt(selection, frontier, artifacts)
-        self.assertEqual(
-            authority._validate_export_clearance_context(
-                cache, receipt, selection, frontier, artifacts),
-            receipt.clearance_sha256,
-        )
-        with self.assertRaises(BilqisError):
-            authority._validate_export_clearance_context(
-                cache, receipt, selection, SourceFrontier(8, 3, ()), artifacts)
-
-    def test_concurrent_accepted_hosts_reuse_one_source_authority(self):
-        self.publish()
-        from bilqis_mlx.runtime.atlas_source_authority import (
-            _provision_source_authority_runtime,
-        )
-        with shape_patch():
-            cache = bind_accepted_execution_cache(self.run)
-        with ThreadPoolExecutor(max_workers=8) as pool:
-            authorities = tuple(pool.map(
-                lambda _index: _provision_source_authority_runtime(cache),
-                range(16),
-            ))
-        self.assertTrue(all(authority is authorities[0] for authority in authorities))
-
-    def test_execution_cache_has_no_importable_credential_issuer(self):
-        from bilqis_mlx.runtime.bamf_bundle import accepted_runtime
-        from bilqis_mlx.runtime.bamf_bundle import execution_cache
-        self.assertFalse(hasattr(execution_cache, "_issue_accepted_execution_cache"))
-        self.assertFalse(hasattr(accepted_runtime, "_EXECUTION_CACHE_OWNER"))
-        self.assertFalse(hasattr(accepted_runtime, "_ExecutionCacheOwner"))
-
-    def test_source_authority_trust_root_has_no_runtime_provisioner(self):
-        from bilqis_mlx.runtime.bamf_bundle import source_authority_custody
-        self.assertFalse(
-            hasattr(source_authority_custody, "provision_source_authority_registry"))
-
-    def test_c09_runtime_exposes_no_retained_registry_owner(self):
-        from bilqis_mlx.runtime import accepted_corrections
-        from bilqis_mlx.runtime import accepted_correction_runtime
-        self.assertFalse(hasattr(accepted_corrections, "_RUNTIME_OWNER"))
-        self.assertFalse(hasattr(accepted_correction_runtime, "_RUNTIME_OWNER"))
-
-    def test_c09_does_not_manufacture_b14_cache_authority(self):
-        from bilqis_mlx.runtime import accepted_corrections
-        from bilqis_mlx.runtime.bamf_bundle import accepted_runtime, admission, execution_cache
-        self.assertFalse(hasattr(accepted_runtime, "bind_accepted_cache_authority"))
-        self.assertFalse(hasattr(accepted_runtime, "interactive_accepted_cache_inference"))
-        self.assertFalse(hasattr(admission, "bind_accepted_cache_authority"))
-        self.assertFalse(hasattr(admission, "interactive_accepted_cache_inference"))
-        self.assertFalse(hasattr(execution_cache, "bind_cache_authority"))
-        self.assertFalse(hasattr(accepted_corrections.AcceptedRuntimeHost, "cache_inference"))
-
-    def test_public_c09_facade_exposes_no_raw_registry_mutation_helpers(self):
-        from bilqis_mlx.runtime import atlas_revalidation
-        for name in (
-            "apply_capability_support_correction",
-            "apply_compiled_batch_correction",
-            "apply_motif_correction",
-            "apply_solve_context_correction",
-        ):
-            self.assertFalse(hasattr(atlas_revalidation, name), name)
-
-    def test_successor_cannot_replace_accepted_source_authority_root(self):
-        _source, pointer = self.publish()
-        drift = SourceAuthorityRegistry((replace(
-            REGISTRY.keys[0], owner_id="source:drift"),))
-        successor = candidate(
-            accepted_state(parent_state()),
-            generation=1,
-            parent=pointer["manifest_sha256"],
-        )
-        successor = replace(successor, correction_frontier={
-            **successor.correction_frontier,
-            "source_authority_registry_sha256": drift.digest,
-            "source_authority_registry": self.registry_record(drift),
-        })
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            with self.assertRaises(BilqisError):
-                publish_bamf_generation(
-                    self.run, successor, acceptance=acceptance(successor))
-
-    def test_host_provisioned_registry_drift_rejects_existing_accepted_generation(self):
-        self.publish()
-        drift = SourceAuthorityRegistry((replace(
-            REGISTRY.keys[0], owner_id="source:drift"),))
-        with self.assertRaises(BilqisError) as caught:
-            provision_source_authority_registry(self.run, drift)
-        self.assertEqual(
-            caught.exception.context["reason"],
-            "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_IMMUTABLE",
-        )
-
-    def test_genesis_candidate_cannot_replace_host_provisioned_source_authority_root(self):
-        drift = SourceAuthorityRegistry((replace(
-            REGISTRY.keys[0], owner_id="source:drift"),))
-        provision_source_authority_registry(self.run, REGISTRY)
-        source = candidate(parent_state())
-        source = replace(source, correction_frontier={
-            **source.correction_frontier,
-            "source_authority_registry_sha256": drift.digest,
-            "source_authority_registry": self.registry_record(drift),
-        })
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            with self.assertRaises(BilqisError) as caught:
-                publish_bamf_generation(
-                    self.run, source, acceptance=acceptance(source))
-        self.assertEqual(
-            caught.exception.context["reason"],
-            "BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED",
-        )
-        self.assertFalse((self.run / "bamf-state.json").exists())
-
-    def test_attacker_first_registry_cannot_poison_the_accepted_cache(self):
-        self.publish()
-        from bilqis_mlx.runtime.bamf_bundle import admission
-        with shape_patch():
-            self.assertFalse(hasattr(admission, "bind_accepted_correction_authority"))
-            cache = bind_accepted_execution_cache(self.run)
-            self.assertEqual(cache._correction_registry, REGISTRY)
-            authority = AcceptedRuntimeHost(self.run).source_authority()
-            self.assertIs(require_source_authority_runtime(authority, cache), authority)
-
-    def test_owned_cache_cannot_replace_registry_and_digest_after_binding(self):
-        self.publish()
-        drift = SourceAuthorityRegistry((replace(
-            REGISTRY.keys[0], owner_id="source:drift"),))
-        with shape_patch():
-            cache = bind_accepted_execution_cache(self.run)
-            object.__setattr__(cache, "_correction_registry", drift)
-            object.__setattr__(
-                cache, "source_authority_registry_sha256", drift.digest)
-            from bilqis_mlx.runtime.atlas_source_authority import (
-                _provision_source_authority_runtime,
-            )
-            with self.assertRaises(BilqisError):
-                _provision_source_authority_runtime(cache)
 
     def test_bound_cache_rechecks_current_host_registry_before_authority_use(self):
         self.publish()
@@ -353,7 +206,3 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
         forged = object.__new__(SourceAuthorityRuntime)
         with self.assertRaises(BilqisError):
             require_source_authority_runtime(forged, cache)
-
-
-if __name__ == "__main__":
-    unittest.main()

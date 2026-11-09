@@ -111,9 +111,7 @@ class AcceptedContextFixture(unittest.TestCase):
         cache = self.publish()
         with shape_patch():
             register_accepted_target(
-                self.run, cache.accepted_manifest_sha256, "TEST_CONTEXT", owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority),
+                self.run, cache.accepted_manifest_sha256, "TEST_CONTEXT", owner
             )
             host = AcceptedRuntimeHost(self.run)
         invalidation = C09ContextInvalidation(
