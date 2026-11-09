@@ -10,7 +10,8 @@ from dataclasses import asdict, dataclass
 from collections.abc import Mapping
 
 from .teacher_lineage_records import (
-    TeacherCustodyProjection, canonical, digest, invalid, valid_hex,
+    SHA256_HEX_LENGTH, TeacherCustodyProjection, canonical, digest, invalid,
+    valid_hex,
 )
 
 VISIT_IDENTITY_SCHEMA = "bilqis.bamf.c03-teacher-visit-identity/v1"
@@ -37,13 +38,13 @@ class TeacherVisitIdentity:
 
     def __post_init__(self) -> None:
         if (self.schema != VISIT_IDENTITY_SCHEMA
-                or not valid_hex(self.run_identity_sha256, 64)
+                or not valid_hex(self.run_identity_sha256, SHA256_HEX_LENGTH)
                 or type(self.run_seed) is not int or self.run_seed < 0
                 or type(self.generation) is not int or self.generation < 0
-                or not valid_hex(self.accepted_manifest_sha256, 64)
-                or not valid_hex(self.teacher_identity, 64)
+                or not valid_hex(self.accepted_manifest_sha256, SHA256_HEX_LENGTH)
+                or not valid_hex(self.teacher_identity, SHA256_HEX_LENGTH)
                 or type(self.teacher_epoch) is not int or self.teacher_epoch < 0
-                or not valid_hex(self.student_sha256, 64)
+                or not valid_hex(self.student_sha256, SHA256_HEX_LENGTH)
                 or type(self.selection_seed) is not int or self.selection_seed < 0
                 or not all(_name(value) for value in (
                     self.cursor, self.capability_id, self.policy_key))):

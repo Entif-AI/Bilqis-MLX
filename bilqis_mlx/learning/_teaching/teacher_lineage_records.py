@@ -13,6 +13,8 @@ ADAPTATION_SCHEMA = "bilqis.bamf.teacher-adaptation-authority-ref/v1"
 TEACHER_STATE_SCHEMA = "bilqis.mlx.bamf-teacher-state/v1"
 HISTORICAL_REPLAY_HEAD = "d21797e72365bf93ea7cad3a4ef9020ec9817f23"
 IDENTITY_SCHEMA = "bilqis.bamf.c03-teacher-lineage-identity/v1"
+SHA256_HEX_LENGTH = hashlib.sha256().digest_size * 2
+GIT_COMMIT_HEX_LENGTH = hashlib.sha1().digest_size * 2
 
 
 def invalid(reason: str):
@@ -44,7 +46,7 @@ def adaptation_authority_ref(
             or not authority_record["version"]
             or not isinstance(authority_record.get("source_branch"), str)
             or not authority_record["source_branch"]
-            or not valid_hex(observed_source_head, 40)):
+            or not valid_hex(observed_source_head, GIT_COMMIT_HEX_LENGTH)):
         invalid("ADAPTATION_AUTHORITY_INVALID")
     return {
         "schema": ADAPTATION_SCHEMA,
@@ -58,10 +60,10 @@ def adaptation_ref(record: object) -> dict:
     expected = {"schema", "authority_sha256", "source_branch", "observed_source_head"}
     if (not isinstance(record, Mapping) or set(record) != expected
             or record.get("schema") != ADAPTATION_SCHEMA
-            or not valid_hex(record.get("authority_sha256"), 64)
+            or not valid_hex(record.get("authority_sha256"), SHA256_HEX_LENGTH)
             or not isinstance(record.get("source_branch"), str)
             or not record["source_branch"]
-            or not valid_hex(record.get("observed_source_head"), 40)):
+            or not valid_hex(record.get("observed_source_head"), GIT_COMMIT_HEX_LENGTH)):
         invalid("ADAPTATION_AUTHORITY_INVALID")
     return dict(record)
 
@@ -70,7 +72,7 @@ def student_ref(record: object) -> dict:
     expected = {"schema", "student_sha256", "region"}
     if (not isinstance(record, Mapping) or set(record) != expected
             or record.get("schema") != "bilqis.bamf.student-reference/v1"
-            or not valid_hex(record.get("student_sha256"), 64)
+            or not valid_hex(record.get("student_sha256"), SHA256_HEX_LENGTH)
             or not isinstance(record.get("region"), str) or not record["region"]):
         invalid("STUDENT_REFERENCE_INVALID")
     return dict(record)
@@ -97,6 +99,6 @@ class TeacherCustodyProjection:
         if (not isinstance(self.teacher_state, Mapping)
                 or self.teacher_state.get("teacher_identity") != self.teacher_identity
                 or self.teacher_state.get("teacher_epoch") != self.teacher_epoch
-                or not valid_hex(self.teacher_identity, 64)
+                or not valid_hex(self.teacher_identity, SHA256_HEX_LENGTH)
                 or type(self.teacher_epoch) is not int or self.teacher_epoch < 0):
             invalid("TEACHER_CUSTODY_PROJECTION_INVALID")

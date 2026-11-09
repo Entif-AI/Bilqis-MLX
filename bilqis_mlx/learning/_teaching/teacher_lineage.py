@@ -5,8 +5,9 @@ from collections.abc import Mapping
 
 from .teacher_lineage_records import (
     ADAPTATION_SCHEMA, HISTORICAL_REPLAY_HEAD, LINEAGE_SCHEMA, TEACHER_STATE_SCHEMA,
-    TeacherCustodyProjection, adaptation_authority_ref, adaptation_ref, canonical,
-    digest, invalid, lineage_identity, student_ref, valid_hex,
+    SHA256_HEX_LENGTH, TeacherCustodyProjection, adaptation_authority_ref,
+    adaptation_ref, canonical, digest, invalid, lineage_identity, student_ref,
+    valid_hex,
 )
 from .teacher_vnext_replay import (
     TeacherEpoch, bind_teacher_successor, refresh_teacher_region,
@@ -89,7 +90,7 @@ def restore_teacher_lineage(
     if (not isinstance(teacher_state, Mapping)
             or actual_outer not in (expected_outer, expected_outer | {"last_visit"})
             or teacher_state.get("schema") != TEACHER_STATE_SCHEMA
-            or not valid_hex(teacher_state.get("teacher_identity"), 64)
+            or not valid_hex(teacher_state.get("teacher_identity"), SHA256_HEX_LENGTH)
             or type(teacher_state.get("teacher_epoch")) is not int
             or teacher_state["teacher_epoch"] < 0
             or type(teacher_state.get("next_seed")) is not int
@@ -107,8 +108,8 @@ def restore_teacher_lineage(
     if (not isinstance(lineage, Mapping) or set(lineage) != expected_lineage
             or lineage.get("schema") != LINEAGE_SCHEMA
             or lineage.get("historical_replay") != {"head": HISTORICAL_REPLAY_HEAD}
-            or not valid_hex(lineage.get("student_sha256"), 64)
-            or not valid_hex(lineage.get("source_teacher_sha256"), 64)
+            or not valid_hex(lineage.get("student_sha256"), SHA256_HEX_LENGTH)
+            or not valid_hex(lineage.get("source_teacher_sha256"), SHA256_HEX_LENGTH)
             or not isinstance(lineage.get("prior_region"), str)
             or not isinstance(lineage.get("current_region"), str)
             or lineage.get("prior_region") == lineage.get("current_region")
