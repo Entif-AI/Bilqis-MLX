@@ -73,6 +73,8 @@ class FactoryTrainingBridgeTests(FactoryTrainingBridgeFixture):
                         training_row.provenance.immediate_dependencies)
                     self.assertEqual(training_row.provenance.requested_count, each + 2)
                     self.assertEqual(training_row.provenance.delivered_count, each)
+                    self.assertEqual(training_row.provenance.visit.capability_id, capability)
+                    self.assertEqual(training_row.provenance.visit.run_seed, 17)
                     self.assertEqual(
                         training_row.provenance.teacher_strategy,
                         (("policy", "c02-parent-integration"),))
@@ -154,7 +156,7 @@ class FactoryTrainingBridgeTests(FactoryTrainingBridgeFixture):
                     self.assertTrue(bool(mx.all(mx.isfinite(decision.logits))))
 
     def test_live_b11_proposer_routes_source_binding_into_pure_operator(self):
-        rows, prepared = self.prepare("A.IDENTITY", 37118, 1)
+        rows, prepared = self.prepare("A.IDENTITY", 37118, 2)
         compiled = prepared.compiled_rows[0]
         authority, plan = self.route_context(compiled)
         proposer = b11_task_goal_proposer(
