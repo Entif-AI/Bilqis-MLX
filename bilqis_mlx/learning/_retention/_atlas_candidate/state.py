@@ -225,7 +225,10 @@ def _issue_parameter_extension_state(
                    for identity, age in next_rows.items())
             or policy.mode != parent.policy.mode
             or policy.accepted_fast_since_full
-            != parent.policy.accepted_fast_since_full):
+            != parent.policy.accepted_fast_since_full
+            or policy.policy_version != parent.policy.policy_version
+            or policy.schema_version != parent.policy.schema_version
+            or policy.mode_transition != parent.policy.mode_transition):
         invalid()
     _validate_parameter_extension_optimizer(parent, optimizer, new_rows)
     state = object.__new__(CandidateState)
