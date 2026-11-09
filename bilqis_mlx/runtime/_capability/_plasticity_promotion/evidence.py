@@ -3,7 +3,16 @@ from __future__ import annotations
 from fractions import Fraction
 from pathlib import Path
 
+from bilqis_mlx.curriculum.promotion import (
+    PROMOTION_SWEEP_ENTRY_FLOOR,
+    PROMOTION_SWEEP_FAILURE_FLOOR,
+)
+
 from .common import digest, invalid, is_digest
+
+SCORE_RECORD_FIELDS = 3
+SCORE_CORRECT_INDEX = 1
+SCORE_TOTAL_INDEX = 2
 
 
 def _mean_score(records) -> Fraction:
@@ -11,12 +20,14 @@ def _mean_score(records) -> Fraction:
         invalid()
     values = []
     for item in records:
-        if (not isinstance(item, (tuple, list)) or len(item) != 3
+        if (not isinstance(item, (tuple, list)) or len(item) != SCORE_RECORD_FIELDS
                 or not isinstance(item[0], str) or not item[0]
-                or type(item[1]) is not int or type(item[2]) is not int
-                or item[2] <= 0 or not 0 <= item[1] <= item[2]):
+                or type(item[SCORE_CORRECT_INDEX]) is not int
+                or type(item[SCORE_TOTAL_INDEX]) is not int
+                or item[SCORE_TOTAL_INDEX] <= 0
+                or not 0 <= item[SCORE_CORRECT_INDEX] <= item[SCORE_TOTAL_INDEX]):
             invalid()
-        values.append(Fraction(item[1], item[2]))
+        values.append(Fraction(item[SCORE_CORRECT_INDEX], item[SCORE_TOTAL_INDEX]))
     return sum(values, Fraction()) / len(values)
 
 
@@ -110,7 +121,7 @@ def validate_sweep_evidence(
     entry_school = evidence[0][2]
     final_receipt = evidence[-1][1]
     final_school = evidence[-1][2]
-    if _mean_score(entry_school.promotion_sweep_scores) < Fraction(92, 100):
+    if _mean_score(entry_school.promotion_sweep_scores) < PROMOTION_SWEEP_ENTRY_FLOOR:
         invalid()
 
     compressed = []
@@ -122,7 +133,8 @@ def validate_sweep_evidence(
         last_projection = projection
         compressed.append((school.stage, tuple(school.queue)))
         if school.promotion_sweep_scores and (
-                _mean_score(school.promotion_sweep_scores) < Fraction(87, 100)):
+                _mean_score(school.promotion_sweep_scores)
+                < PROMOTION_SWEEP_FAILURE_FLOOR):
             invalid()
     expected = [("PROMOTION_SWEEP", foundation)]
     for index in range(len(foundation)):
@@ -164,7 +176,8 @@ def validate_sweep_evidence(
     prior[foundation[-1]] = _score_record(last_exam.get("scores"), foundation[-1])[1:]
     final_scores = tuple((capability, *prior[capability]) for capability in foundation
                          if capability in prior)
-    if len(final_scores) != len(foundation) or _mean_score(final_scores) < Fraction(87, 100):
+    if (len(final_scores) != len(foundation)
+            or _mean_score(final_scores) < PROMOTION_SWEEP_FAILURE_FLOOR):
         invalid()
 
     outcome = "PROMOTED_WITH_DEBT" if final_school.carried_mastery_debt else "PROMOTED"

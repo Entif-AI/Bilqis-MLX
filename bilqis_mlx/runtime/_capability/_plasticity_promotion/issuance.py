@@ -11,15 +11,12 @@ from .evidence import (
     validate_sweep_evidence,
 )
 from .receipt import (
-    AcceptedPromotionTransitionReceipt,
     RECEIPT_SCHEMA,
-    _raw_issue_receipt,
 )
 
 
-def issue_accepted_promotion_transition(
-        run_dir: Path, retained_state, decision) -> AcceptedPromotionTransitionReceipt:
-    """Mint C05 promotion authority only from current immutable runtime custody."""
+def validated_promotion_transition_fields(run_dir: Path, retained_state, decision):
+    """Validate current immutable runtime custody and return exact receipt fields."""
     from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
     from bilqis_mlx.learning.atlas_candidate import CandidateState
     from bilqis_mlx.learning.atlas_retention_decision import (
@@ -70,7 +67,7 @@ def issue_accepted_promotion_transition(
     )
     outcome, debt = validate_sweep_evidence(evidence, foundation)
     final_school = evidence[-1][2]
-    return _raw_issue_receipt((
+    return (
         ("run_id", parent.run_id),
         ("parent_generation", parent.generation),
         ("candidate_generation", parent.generation + 1),
@@ -87,4 +84,44 @@ def issue_accepted_promotion_transition(
         ("outcome", outcome),
         ("carried_debt", debt),
         ("schema_version", RECEIPT_SCHEMA),
-    ))
+    )
+
+
+def promotion_transition_pending(run_dir: Path, retained_state) -> bool:
+    """Report a real retained-candidate promotion attempt, never a grade label."""
+    from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+    from bilqis_mlx.learning.atlas_candidate import CandidateState
+    from bilqis_mlx.learning.atlas_plasticity import FOUNDATION_MODE
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        bind_accepted_execution_cache, load_accepted_generation,
+    )
+    from bilqis_mlx.state_dag import read_current
+
+    run_dir = Path(run_dir).resolve()
+    if type(retained_state) is not CandidateState:
+        invalid()
+    if retained_state.policy.mode != FOUNDATION_MODE:
+        return False
+    parent = load_accepted_generation(run_dir)
+    cache = bind_accepted_execution_cache(run_dir)
+    if cache.run_id != parent.run_id or cache.generation != parent.generation:
+        invalid()
+    if retained_state.optimizer_step <= parent.retained_state.optimizer_step:
+        return False
+    current = read_current(run_dir)
+    if current.get("run_id") != parent.run_id or type(current.get("generation")) is not int:
+        invalid()
+    school = _school_for_receipt(run_dir, current)
+    attempt_student = school.promotion_sweep_attempt_student_sha256
+    attempt_scope = tuple(school.promotion_sweep_attempt_scope)
+    if attempt_student is None and not attempt_scope:
+        return False
+    candidate_identity = candidate_identity_digest(retained_state)
+    foundation = _foundation_capabilities(
+        run_dir, parent.run_identity.factory_release_sha256)
+    return (
+        school.current_student.sha256 == candidate_identity
+        and school.current_student.optimizer_step == retained_state.optimizer_step
+        and attempt_student == candidate_identity
+        and attempt_scope == foundation
+    )

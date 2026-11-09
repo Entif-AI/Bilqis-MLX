@@ -150,6 +150,22 @@ class ParsedPromotionTransitionReceipt:
 _require_accepted_promotion_transition, _raw_issue_receipt = _new_receipt_owner()
 
 
+def _bind_receipt_issuer(raw_issue):
+    def issue_accepted_promotion_transition(run_dir, retained_state, decision):
+        """Mint only from the C05-owned validated immutable-evidence path."""
+        from .issuance import validated_promotion_transition_fields
+        return raw_issue(
+            validated_promotion_transition_fields(run_dir, retained_state, decision))
+    return issue_accepted_promotion_transition
+
+
+issue_accepted_promotion_transition = _bind_receipt_issuer(_raw_issue_receipt)
+
+
+del _raw_issue_receipt
+del _bind_receipt_issuer
+
+
 def require_accepted_promotion_transition(value) -> AcceptedPromotionTransitionReceipt:
     if type(value) is not AcceptedPromotionTransitionReceipt:
         invalid()

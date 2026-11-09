@@ -250,7 +250,13 @@ def _issue_promotion_transition_state(parent: CandidateState, receipt) -> Candid
     if type(parent) is not CandidateState:
         invalid()
     require_accepted_promotion_transition(receipt)
-    if (receipt.candidate_identity_sha256 != candidate_identity_digest(parent)
+    custody = parent.custody
+    if (custody is None
+            or receipt.run_id != custody.run_id
+            or receipt.parent_generation != custody.generation
+            or receipt.candidate_generation != custody.generation + 1
+            or receipt.parent_manifest_sha256 != custody.manifest_sha256
+            or receipt.candidate_identity_sha256 != candidate_identity_digest(parent)
             or receipt.optimizer_step != parent.optimizer_step):
         invalid()
     policy = apply_promotion_transition(parent.policy, receipt)

@@ -11,7 +11,7 @@ from bilqis_mlx import state_dag
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import (
-    CandidateState, issue_promotion_transition_state,
+    CandidateCustodyIdentity, CandidateState, issue_promotion_transition_state,
 )
 from bilqis_mlx.learning.atlas_plasticity import PlasticityPolicy
 from bilqis_mlx.generated_assessment import PROMOTION_ATTEMPT_LIFECYCLE
@@ -20,6 +20,7 @@ from bilqis_mlx.runtime.plasticity_promotion import (
     AcceptedPromotionTransitionReceipt,
     ParsedPromotionTransitionReceipt,
     issue_accepted_promotion_transition,
+    promotion_transition_pending,
     require_accepted_promotion_transition,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
@@ -29,7 +30,6 @@ from bilqis_mlx.runtime.tests.capability.factory.plasticity_promotion_support im
     FOUNDATION, INITIAL_RELEASE, PARENT_MANIFEST, RUNTIME_RELEASE,
     ordinary_schools as _ordinary_schools, school as _school,
 )
-
 
 class PlasticityPromotionAuthorityTests(TestCase):
     def setUp(self):
@@ -44,7 +44,15 @@ class PlasticityPromotionAuthorityTests(TestCase):
             fixture_parent.custody,
             fixture_parent.step_proofs,
         )
-        self.retained = accepted_state(self.parent_state)
+        retained = accepted_state(self.parent_state)
+        self.retained = CandidateState(
+            retained.optimizer, retained.policy, retained.allocations,
+            retained.optimizer_step,
+            CandidateCustodyIdentity(
+                "fixture-run", 4, PARENT_MANIFEST,
+                retained.custody.topology_digest, retained.custody.extents_digest),
+            retained.step_proofs,
+        )
         self.parent_identity = candidate_identity_digest(self.parent_state)
         self.candidate_identity = candidate_identity_digest(self.retained)
         self.decision = retention_decision(
@@ -113,6 +121,7 @@ class PlasticityPromotionAuthorityTests(TestCase):
                 side_effect=lambda _root, receipt: schools[receipt["generation"]],
             ),
         ):
+            self.assertTrue(promotion_transition_pending(self.run_dir, self.retained))
             return issue_accepted_promotion_transition(
                 self.run_dir, self.retained, self.decision)
 
