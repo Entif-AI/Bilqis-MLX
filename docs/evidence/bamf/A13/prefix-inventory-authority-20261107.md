@@ -103,7 +103,7 @@ module split had reintroduced a second `PREFIX_INVENTORY_SCHEMA`,
 That violated the existing owner contract even though the active selector already
 used A05 identities.
 
-The bounded repair removes the duplicate definitions and imports the A05
+The bounded repair at `37417f9e80921e0b9be040eaf48da8f0940e8ed9` removes the duplicate definitions and imports the A05
 `frame_compiler` identities into the split B06 contract module. A regression now
 asserts object identity across the public refinement API, split contract module,
 ranking module, and A05 owner.
