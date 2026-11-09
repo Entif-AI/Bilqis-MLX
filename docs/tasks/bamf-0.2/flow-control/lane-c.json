@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "636ac8ffdeece7d6f8b24e9d1f46596396848db7",
-  "updated_at": "2026-11-09T19:42:39Z",
+  "updated_at": "2026-11-09T19:48:08Z",
   "exception": null,
   "items": [
     {
@@ -78,8 +78,9 @@
       "issue": 526,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "81d2f176120beb4a070bd006aa9bb089f05eb4f1",
-      "summary": "#718/#526 resumed after merged #917 supplied the missing production AcceptedRuntimeHost/SourceAuthorityRuntime seam. Sync reviewed unified 636ac8ff, consume its host-owned SourceExecutionContext authority path, prove C05/A12/B12/B13 acceptance and then run the reserved fresh #718 EGM.",
+      "head_sha": "f85c65707614e9e96e3fd360feeadc298ffb4087",
+      "head_sha_role": "latest implementation/proof head after consuming reviewed unified 636ac8ff; any following lane bookkeeping commit is docs/flow-only and must be included in final exact-head qualification",
+      "summary": "#718/#526 consumed reviewed unified 636ac8ff, including merged #917 host-owned AcceptedRuntimeHost/SourceAuthorityRuntime custody. The obsolete branch-local caller-passed authority design was discarded during sync. Exact focused authority proof is 37/37 PASS across C12 operator/adoption/delta/receiver plus C09 runtime core/isolation, including caller-retargeted retention rejection and an explicit forged SourceRights rejection. Structure/governance/flow/diff gates are green. Fresh reserved #718 whole-candidate EGM is the next gate.",
       "resume_trigger": null,
       "closed_pr": 680,
       "preserved_branch": "codex/bamf02-c12-526-exchange-20261101",
