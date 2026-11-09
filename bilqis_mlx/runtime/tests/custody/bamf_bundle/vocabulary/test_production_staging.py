@@ -18,7 +18,6 @@ from bilqis_mlx.runtime.bamf_bundle import (
     publish_bamf_generation, publish_initial_generation, stage_vocabulary_extension,
 )
 from bilqis_mlx.runtime.bamf_bundle.genesis import foundation as genesis_foundation
-from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
 from bilqis_mlx.runtime.model_topology_v2 import (
     expected_bamf_shapes, initialize_bamf_row,
 )
@@ -53,73 +52,31 @@ class A02ProductionStagingTests(unittest.TestCase):
             acceptance=acceptance(bundle, parent=parent_state), reserve_gib=0.)
 
     def _publish_source_parent(self):
-        root_base, _ = _allocation_fixture(highest=8191)
         current_base, _ = _allocation_fixture(highest=8192)
-        root_snapshot = replace(
-            root_base, bundle_id="1" * 64, release_sha256="2" * 64,
-            source_bundle_id="3" * 64, prior_abi_sha256=None)
-        root_features = build_feature_manifest(root_snapshot, FeatureSchema((), ()))
         current_snapshot = replace(
             current_base, bundle_id="4" * 64, release_sha256="5" * 64,
-            source_bundle_id="6" * 64, prior_abi_sha256=root_snapshot.bundle_id)
-        current_features = build_feature_manifest(
-            current_snapshot, FeatureSchema((), (), root_features))
+            source_bundle_id="6" * 64, prior_abi_sha256=None)
+        current_features = build_feature_manifest(current_snapshot, FeatureSchema((), ()))
         selection = AtlasArtifactSelection(
-            "/artifact", root_snapshot.bundle_id, root_snapshot.release_sha256,
-            root_snapshot.source_bundle_id)
-        root_schema = FeatureSchema((), ())
+            "/artifact", current_snapshot.bundle_id, current_snapshot.release_sha256,
+            current_snapshot.source_bundle_id)
+        current_schema = FeatureSchema((), ())
         foundation_replay = patch.multiple(
             genesis_foundation,
-            _source_owned_feature_schema=lambda _selection: (root_snapshot, root_schema),
-            build_feature_manifest=lambda _snapshot, _schema: root_features,
+            _source_owned_feature_schema=lambda _selection: (current_snapshot, current_schema),
+            build_feature_manifest=lambda _snapshot, _schema: current_features,
         )
         with foundation_replay:
             authority = issue_initial_foundation_feature_authority(selection)
             prepared = genesis_preparation(
                 run_id="a02-production-fixture", foundation_features=authority)
             with patch.object(mlx_checkpoint, "assert_headroom"):
-                first = publish_initial_generation(
-                    self.run, prepared, reserve_gib=0.)
+                publish_initial_generation(self.run, prepared, reserve_gib=0.)
         parent = load_bamf_generation(self.pointer, publish_missing_outbox=False)
-        current = derive_successor_bundle(
-            parent, parent.retained_state,
-            parent_manifest_sha256=first["manifest_sha256"],
-            delivery_events=({"event": "A02_SOURCE_GENERATION", "generation": 1},),
-        )
-        current = replace(
-            current,
-            extents=replace(parent.extents, factor_map_digest=current_features.digest),
-            provenance=replace(parent.provenance, release_digest=current_snapshot.release_sha256),
-            compiler_features={
-                **parent.compiler_features,
-                "factor_map_sha256": current_features.digest,
-                "feature_source": {
-                    "atlas_bundle_id": current_snapshot.bundle_id,
-                    "release_sha256": current_snapshot.release_sha256,
-                    "source_bundle_id": current_snapshot.source_bundle_id,
-                },
-            },
-            correction_frontier={
-                **parent.correction_frontier,
-                "release_digest": current_snapshot.release_sha256,
-            },
-            transition={
-                "schema": "bilqis.mlx.bamf-generation-transition/v1",
-                "kind": "PARAMETER_EXTENSION",
-                "invalidate_derived_caches": True,
-            },
-        )
-        self._accept(current, parent_state=parent.retained_state)
-        return (
-            root_snapshot, current_snapshot, current_features,
-            parent.retained_state.optimizer,
-        )
+        self.assertEqual(parent.generation, 0)
+        return current_snapshot, current_features, parent.retained_state.optimizer
 
-    def _source_patches(self, root_snapshot, current_snapshot):
-        def source_snapshot(selection):
-            return (root_snapshot if selection.release_sha256 == root_snapshot.release_sha256
-                    else current_snapshot)
-
+    def _source_patches(self, current_snapshot):
         source_nt = (
             '<urn:concept:8192> <http://www.w3.org/2004/02/skos/core#definition> '
             '"semantic role 8192"@en .\n').encode("utf-8")
@@ -135,17 +92,16 @@ class A02ProductionStagingTests(unittest.TestCase):
                 "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission.load_pinned_atlas_snapshot",
                 "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
                 "bilqis_mlx.semantics.atlas.vocabulary_resources.load_pinned_atlas_snapshot"):
-            stack.enter_context(patch(target, side_effect=source_snapshot))
+            stack.enter_context(patch(target, return_value=current_snapshot))
         stack.enter_context(patch(
             "bilqis_mlx.semantics.atlas.vocabulary_resources._verify_bundle",
             return_value=(current_snapshot.source_bundle_id, {"canonical.nt": source_nt})))
         return stack
 
     def test_stages_bank_extension_without_granting_admission(self):
-        root_snapshot, current_snapshot, current_features, optimizer = (
-            self._publish_source_parent())
+        current_snapshot, current_features, optimizer = self._publish_source_parent()
         parent = load_bamf_generation(self.pointer, publish_missing_outbox=False)
-        with self._source_patches(root_snapshot, current_snapshot):
+        with self._source_patches(current_snapshot):
             with self.assertRaises(BilqisError):
                 stage_vocabulary_extension(
                     self.run, "/artifact", Path("/source"),
@@ -153,8 +109,8 @@ class A02ProductionStagingTests(unittest.TestCase):
             staged = stage_vocabulary_extension(
                 self.run, "/artifact", Path("/source"), ("urn:concept:8192",))
         self.assertEqual(
-            load_bamf_generation(self.pointer, publish_missing_outbox=False).generation, 1)
-        self.assertEqual(staged.receipt.generation, 2)
+            load_bamf_generation(self.pointer, publish_missing_outbox=False).generation, 0)
+        self.assertEqual(staged.receipt.generation, 1)
         self.assertEqual(staged.receipt.semantic_bank_count, 2)
         self.assertEqual(staged.receipt.status, "STAGED_NOT_ADMITTED")
         self.assertNotEqual(

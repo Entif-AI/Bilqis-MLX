@@ -127,9 +127,9 @@ def _authenticate_features(student, artifact_path: str | None = None, *, predece
     return features
 
 
-def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student, *,
-                            expected_acceptance_sha256: str):
-    """Rebuild feature ancestry only from accepted B13 generation custody."""
+def _accepted_feature_context(run_dir: Path, manifest_sha256: str, student, *,
+                              expected_acceptance_sha256: str):
+    """Rebuild generation and feature-construction ancestry from accepted custody."""
     history = []
     current_sha = manifest_sha256
     current = student
@@ -165,6 +165,7 @@ def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student, *,
     genesis, _, = history[-1]
     features = _authenticate_features(genesis)
     predecessor = None
+    construction_predecessor = None
     result_binding = history[0][1]
     if result_binding is None:
         invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
@@ -186,11 +187,21 @@ def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student, *,
                     or source["source_bundle_id"] != features.source_bundle_id):
                 invalid("BAMF_FEATURE_SOURCE_REPLAY_MISMATCH")
         else:
+            construction_predecessor = features
             features = _authenticate_features(child, predecessor=features)
             if features.predecessor_digest != predecessor.digest:
                 invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
         current = child
-    return features, result_binding, predecessor
+    return features, result_binding, predecessor, construction_predecessor
+
+
+def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student, *,
+                            expected_acceptance_sha256: str):
+    """Return current features plus the immediate parent generation's feature map."""
+    features, binding, predecessor, _ = _accepted_feature_context(
+        run_dir, manifest_sha256, student,
+        expected_acceptance_sha256=expected_acceptance_sha256)
+    return features, binding, predecessor
 
 
 def authenticate_bamf_candidate_features(
@@ -226,14 +237,15 @@ def authenticate_bamf_candidate_feature_context(
     return context
 
 
-def read_accepted_generation_feature_lineage(pointer_path: Path):
-    """Return the accepted receipt plus source-replayed current/predecessor maps."""
+def _read_accepted_generation_feature_context(pointer_path: Path):
+    """Return accepted receipt plus generation and feature-construction ancestry."""
     pointer, student = accepted_generation(pointer_path)
     current_binding = _require_published_acceptance(
         pointer_path.parent, pointer, student)
-    features, binding, predecessor_features = _accepted_feature_chain(
+    features, binding, predecessor_features, construction_predecessor = (
+        _accepted_feature_context(
         pointer_path.parent, pointer["manifest_sha256"], student,
-        expected_acceptance_sha256=pointer["acceptance_sha256"])
+        expected_acceptance_sha256=pointer["acceptance_sha256"]))
     if binding != current_binding:
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     predecessor = None if predecessor_features is None else predecessor_features.digest
@@ -258,7 +270,14 @@ def read_accepted_generation_feature_lineage(pointer_path: Path):
         source_release_sha256=features.semantic_release,
         source_source_bundle_id=features.source_bundle_id,
     )
-    return receipt, features, predecessor_features
+    return receipt, features, predecessor_features, construction_predecessor
+
+
+def read_accepted_generation_feature_lineage(pointer_path: Path):
+    """Return the accepted receipt plus current/immediate-parent generation maps."""
+    receipt, features, predecessor, _ = _read_accepted_generation_feature_context(
+        pointer_path)
+    return receipt, features, predecessor
 
 
 def read_accepted_generation_feature_receipt(

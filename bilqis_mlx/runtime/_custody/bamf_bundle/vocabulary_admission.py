@@ -24,20 +24,21 @@ from bilqis_mlx.semantics.atlas_projection import (
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
 from bilqis_mlx.semantics.atlas.vocabulary import VocabularyBankParent, VocabularyPrior
 from bilqis_mlx.semantics.atlas.vocabulary_planning import (
-    _plan_authenticated_vocabulary_extension,
+    _plan_authenticated_vocabulary_extension, plan_vocabulary_extension,
 )
 from bilqis_mlx.semantics.atlas.vocabulary_resources import (
-    _build_authenticated_registry_mirror_delta,
+    _build_authenticated_registry_mirror_delta, build_registry_mirror_delta,
 )
 from bilqis_mlx.semantics.atlas.vocabulary_transaction import (
     FullVocabularyParent, _stage_authenticated_full_vocabulary_extension,
+    stage_full_vocabulary_extension,
 )
 from ._vocabulary_admission_records import (
     A02StagedVocabularyExtension, A02VocabularyStagingReceipt, STAGED_EVENT,
     _issue_a02_staged_vocabulary_extension,
 )
 from .feature_authority import (
-    _feature_schema, read_accepted_generation_feature_lineage,
+    _feature_schema, _read_accepted_generation_feature_context,
 )
 from .publication import load_bamf_generation_authority
 from .records import BamfBundleCandidate, canonical, invalid, sha
@@ -149,10 +150,8 @@ def stage_vocabulary_extension(
     """Prepare one exact A02 successor without granting C07 admission authority."""
     run_dir = Path(run_dir)
     pointer_path = run_dir / "bamf-state.json"
-    parent_receipt, features, predecessor = read_accepted_generation_feature_lineage(
-        pointer_path)
-    if predecessor is None:
-        invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
+    parent_receipt, features, _, predecessor = (
+        _read_accepted_generation_feature_context(pointer_path))
     parent, parent_manifest = load_bamf_generation_authority(pointer_path)
     if parent_manifest != parent_receipt.generation_manifest_sha256:
         invalid("BAMF_A02_PARENT_AUTHORITY_DRIFT")
@@ -168,15 +167,24 @@ def stage_vocabulary_extension(
     prior = VocabularyPrior(
         selection, parent.extents, features, schema, active_ids,
         parent_manifest)
-    plan = _plan_authenticated_vocabulary_extension(
-        prior, admissions, parent.topology, features, predecessor)
     available = int(shutil.disk_usage(run_dir).free)
-    prepared = _stage_authenticated_full_vocabulary_extension(
-        _full_parent(parent, prior, available), plan,
-        accepted_features=features, predecessor=predecessor)
-    mirror = _build_authenticated_registry_mirror_delta(
-        prior, plan, source_bundle_path=Path(source_bundle_path),
-        accepted_features=features, predecessor=predecessor)
+    full_parent = _full_parent(parent, prior, available)
+    if predecessor is None:
+        if features.predecessor_digest is not None:
+            invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
+        plan = plan_vocabulary_extension(prior, admissions, parent.topology)
+        prepared = stage_full_vocabulary_extension(full_parent, plan)
+        mirror = build_registry_mirror_delta(
+            prior, plan, source_bundle_path=Path(source_bundle_path))
+    else:
+        plan = _plan_authenticated_vocabulary_extension(
+            prior, admissions, parent.topology, features, predecessor)
+        prepared = _stage_authenticated_full_vocabulary_extension(
+            full_parent, plan, accepted_features=features,
+            predecessor=predecessor)
+        mirror = _build_authenticated_registry_mirror_delta(
+            prior, plan, source_bundle_path=Path(source_bundle_path),
+            accepted_features=features, predecessor=predecessor)
     successor_state = _successor_state(parent, prepared)
     resource_record = _resource_requirement(prepared.resource_estimate)
     receipt = A02VocabularyStagingReceipt(

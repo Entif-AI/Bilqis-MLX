@@ -78,14 +78,17 @@ class FeatureReuseTests(unittest.TestCase):
             from bilqis_mlx.errors import BilqisError
             with self.assertRaises(BilqisError):
                 publish_bamf_generation(self.run, third_candidate, acceptance=binding)
+        def replay_features(student, *args, **kwargs):
+            if student.generation == 0:
+                return root_features
+            self.assertEqual(student.generation, 1)
+            self.assertEqual(kwargs.get("predecessor"), root_features)
+            self.assertEqual(successor_features.predecessor_digest, root_features.digest)
+            return successor_features
         with shape_patch(), patch.object(
-                feature_authority, "load_pinned_atlas_snapshot",
-                side_effect=source_snapshot), patch.object(
-                feature_authority, "build_feature_manifest",
-                side_effect=lambda snapshot, schema: (
-                    root_features if snapshot.release_sha256 == RELEASE
-                    else successor_features)):
-            receipt = read_accepted_generation_feature_receipt(self.pointer, "/artifact")
+                feature_authority, "_authenticate_features",
+                side_effect=replay_features):
+            receipt = read_accepted_generation_feature_receipt(self.pointer)
         self.assertEqual(receipt.generation, 1)
         self.assertEqual(receipt.feature_sha256, successor_features.digest)
         self.assertEqual(receipt.predecessor_feature_sha256, root_features.digest)
