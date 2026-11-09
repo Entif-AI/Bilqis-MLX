@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.learning.atlas_engram import MotifManifest
+from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.learning.tests.frames.nested_fixtures import _case as _nested_case
 from bilqis_mlx.runtime.atlas_artifact_owner import PackedFrameArtifactOwner
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
@@ -86,6 +87,44 @@ class MotifContextViewTests(unittest.TestCase):
         )
         self.assertIs(
             first_owner, bind_motif_artifact_owner(self.cache, self.nested))
+
+    def test_live_single_context_owner_is_replaced_on_non_context_drift(self):
+        fixture = FrameEncoderTests()
+        fixture.setUp()
+        compiled, _vectors, _ast = fixture.compiled_inputs()
+        compiled = replace(
+            compiled,
+            extents=replace(
+                compiled.extents,
+                motif_key_map_digest=self.manifest.digest,
+            ),
+        )
+        first_owner = bind_motif_artifact_owner(self.cache, compiled)
+        row = compiled.compiled.rows[0]
+        version = (
+            row.policy_version[0], row.policy_version[1] + 1,
+            row.policy_version[2], row.policy_version[3],
+        )
+        changed_row = replace(
+            row,
+            policy_version=version,
+            cache_key=_prefix_digest(
+                row.source_instance_id, row.semantic_release,
+                row.visible_end, row.schema_map, row.context_digest,
+                row.positions, row.scope, version),
+        )
+        changed_rows = replace(compiled.compiled, rows=(changed_row,))
+        changed = replace(compiled)
+        object.__setattr__(
+            changed, "packed_frame_artifact_owner",
+            PackedFrameArtifactOwner(changed_rows),
+        )
+
+        second_owner = bind_motif_artifact_owner(self.cache, changed)
+
+        self.assertIsNot(first_owner, second_owner)
+        self.assertIs(
+            second_owner, bind_motif_artifact_owner(self.cache, changed))
 
 
 if __name__ == "__main__":

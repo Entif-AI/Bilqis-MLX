@@ -100,6 +100,25 @@ class MotifArtifactOwner:
             if ref.kind is DependencyKind.SOURCE
         }))
 
+    def accepts_packed_owner(self, packed_owner) -> bool:
+        """Whether cached custody matches the incoming immutable frame contract."""
+        frame_nodes = packed_owner.physical_nodes
+        if tuple(node.artifact_id for node in frame_nodes) != self._frame_ids:
+            return False
+        for expected in frame_nodes:
+            current = self._index.node(expected.artifact_id)
+            if current.content_digest != expected.content_digest:
+                return False
+            current_immutable = tuple(
+                ref for ref in current.immediate_dependencies
+                if ref.kind is not DependencyKind.TIME)
+            expected_immutable = tuple(
+                ref for ref in expected.immediate_dependencies
+                if ref.kind is not DependencyKind.TIME)
+            if current_immutable != expected_immutable:
+                return False
+        return True
+
     def require(self, cache, compiled: CompiledEncoderInput) -> ArtifactNode:
         expected, frame_ids = _motif_node(cache, compiled)
         if frame_ids != self._frame_ids or expected.artifact_id != self._artifact_id:
