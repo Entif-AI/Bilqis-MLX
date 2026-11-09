@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "6a770f10074df6f4f8889d439f783ad42f5efe63",
-  "updated_at": "2026-11-09T23:01:17Z",
+  "updated_at": "2026-11-09T23:06:33Z",
   "exception": null,
   "items": [
     {
@@ -31,9 +31,9 @@
       "issue": 466,
       "pr": 945,
       "state": "ACTIVE",
-      "head_sha": "ef40e18e2a0c7688b079142ea1bb09b4d8921024",
-      "summary": "B09.3 #466 implementation is locally complete and under review in PR #945. C05 promotion authority is closure-bound and derived from immutable State-DAG evidence; B09 binds run/generation/parent-manifest custody and persists a one-way grade-neutral FOUNDATION -> ADAPTIVE transition. The production retained boundary now composes owner-derived promotion detection -> strict C05 receipt -> neural-inert B09 transition before B13 publication, while historical attempt residue is an exact no-op. Local focused/broader suites and repository guards are green; fresh pinned implementation EGM and hosted CI remain required before TURNED_IN/merge readiness.",
-      "resume_trigger": "Fresh independent pinned implementation EGM reviews semantic head ef40e18e2a0c7688b079142ea1bb09b4d8921024 with 0 blockers/majors and hosted required checks are green; then record TURNED_IN. Human merge remains external authority.",
+      "head_sha": "a6e6d3e23ae9e91bc6ac92cdd7aa4d05345ec11f",
+      "summary": "B09.3 #466 semantic implementation is complete at a6e6d3e2 and under review in PR #945. C05 exposes a closure-bound live promotion receipt derived from immutable State-DAG/B13/Factory evidence; B09 binds the receipt to exact retained run/generation/parent-manifest custody and persists a one-way grade-neutral FOUNDATION -> ADAPTIVE transition without neural mutation. Universal B13 publication remains untouched, matching the approved owner map: the retained-boundary caller composes the C05 receipt and B09 transitioned-state APIs inside the human-started candidate flow. Local direct, regression, training, publication, candidate, structure and authority checks are green. Hosted portable-core and semantic ABI are green; full portable and fresh pinned Goldfish implementation EGM remain required before TURNED_IN.",
+      "resume_trigger": "Hosted full portable is green and fresh independent pinned Goldfish implementation EGM reviews semantic head a6e6d3e23ae9e91bc6ac92cdd7aa4d05345ec11f with 0 blockers/majors; then record TURNED_IN. Human merge remains external authority.",
       "preserved_branch": "codex/466-b09-promotion-transition-20261109",
       "head_sha_role": "semantic/test proof head; subsequent flow-control-only bookkeeping may reuse this proof if no production/test semantics change"
     },
