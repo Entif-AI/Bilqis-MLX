@@ -3,15 +3,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bilqis_mlx.runtime.atlas_revalidation import require_source_authority_runtime
 from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate
-from bilqis_mlx.runtime.bamf_bundle.admission import accept_and_publish
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    accept_and_publish, bind_accepted_execution_cache,
+)
 from bilqis_mlx.runtime.bamf_bundle.package_import_transition import (
     _issue_package_import_transition,
 )
-from bilqis_mlx.semantics.atlas_release_audit import (
-    ExportClearanceReceipt,
-)
+from bilqis_mlx.semantics.atlas_release_audit import ExportClearanceReceipt
 
 from .contracts import SourceRights, require
 from .delta import ScreenedDeltaCandidate
@@ -23,12 +22,23 @@ def _artifact_digests(package):
 
 
 def _verify_export_clearance(
-        package, parent, receipt, atlas_selection, source_frontier, source_authority):
+        package, parent, receipt, atlas_selection, source_frontier,
+        source_context, run_dir):
+    from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+    from bilqis_mlx.runtime.atlas_source_authority import (
+        require_source_authority_runtime,
+    )
     require(type(receipt) is ExportClearanceReceipt, "A12 export clearance required")
-    source_authority = require_source_authority_runtime(source_authority)
+    require(type(source_context) is SourceExecutionContext,
+            "accepted source execution context required")
+    run_dir = Path(run_dir)
+    source_context.require_accepted_runtime(run_dir)
+    cache = bind_accepted_execution_cache(run_dir)
+    authority = require_source_authority_runtime(
+        source_context.source_authority(), cache)
     digests = _artifact_digests(package)
-    clearance = source_authority._validate_export_clearance_context(
-        receipt, atlas_selection, source_frontier, digests)
+    clearance = authority._validate_export_clearance_context(
+        cache, receipt, atlas_selection, source_frontier, digests)
     expected = SourceRights(
         receipt.source_owner, clearance, receipt.export_artifact_digests,
         receipt.revoked_artifact_digests, receipt.revocation_lineage)
@@ -39,7 +49,13 @@ def _verify_export_clearance(
     require(correction.get("rights_epoch") == receipt.rights_epoch
             and correction.get("correction_generation") == receipt.correction_generation,
             "receiver rights frontier differs from A12 clearance")
-    return clearance
+    require(cache.source_authority_registry_sha256 is not None,
+            "accepted source authority registry required")
+    return (
+        clearance,
+        cache.accepted_manifest_sha256,
+        cache.source_authority_registry_sha256,
+    )
 
 
 def _require_exact_parent(screened, pointer, parent):
@@ -78,12 +94,13 @@ def _successor(parent, pointer, screened, transaction, clearance):
         parent.implementation_sha256, parent.topology, parent.extents,
         transaction.candidate, parent.optimizer_hyperparameters, parent.provenance,
         parent.semantic_abi, parent.compiler_features, parent.correction_frontier,
-        parent.teacher_state, parent.evaluation_contract, transition, (event,))
+        parent.teacher_state, parent.evaluation_contract, transition, (event,),
+        parent.run_identity)
 
 
 def publish_screened_delta_import(
         screened, run_dir, *, export_clearance, atlas_selection, source_frontier,
-        source_authority, reserve_gib: float = 100.0,
+        source_context, reserve_gib: float = 100.0,
 ):
     """Publish only an owner-issued, C05-eligible, A12-cleared exact-parent import."""
     require(type(screened) is ScreenedDeltaCandidate, "issued screened delta candidate required")
@@ -91,9 +108,9 @@ def publish_screened_delta_import(
     require(screened.decision.accepted, "C05 rejected package import")
     pointer, parent = _load_current_generation(Path(run_dir))
     _require_exact_parent(screened, pointer, parent)
-    clearance = _verify_export_clearance(
+    clearance, _manifest_sha256, _registry_sha256 = _verify_export_clearance(
         screened.candidate.package, parent, export_clearance, atlas_selection,
-        source_frontier, source_authority)
+        source_frontier, source_context, run_dir)
     transaction = screened.transaction
     successor = _successor(parent, pointer, screened, transaction, clearance)
     return accept_and_publish(

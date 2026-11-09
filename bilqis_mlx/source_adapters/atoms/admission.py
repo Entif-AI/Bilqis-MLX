@@ -8,7 +8,10 @@ from ...semantics.context_eligibility import (
     PUBLIC_FORMAL, ContextPolicy, SourceFrontier, SourceGrant, TaskScope,
 )
 from ...semantics.frame_codec import SchemaTagMap
-from ...semantics.frame_compiler import FrameCompilerConfig, atom_evidence_digest
+from ...semantics.frame_compiler import (
+    CompiledFrameBatch, FrameCompilerConfig, StreamingAST, atom_evidence_digest,
+    compile_prefix, prefix_inventory_evidence_digest, prefix_inventory_handle,
+)
 from ...semantics.source_atom_binding.common import invalid
 from .authority import project_verified_row, require_canonical_graph
 
@@ -65,3 +68,41 @@ def public_formal_atom_context(
         (), SchemaTagMap.from_schemas(task.semantic_release, ()),
         None, task, current, policy)
     return source.ast, config
+
+
+def authorize_public_formal_prefix(
+    ast: StreamingAST, compiled: CompiledFrameBatch, config: FrameCompilerConfig,
+) -> FrameCompilerConfig:
+    """Issue A13 rights for the exact A05-compiled complete p-local inventory."""
+    if (type(ast) is not StreamingAST or type(compiled) is not CompiledFrameBatch
+            or type(config) is not FrameCompilerConfig
+            or compiled.source_instance_id != ast.source_instance_id
+            or compiled.semantic_release != config.task.semantic_release
+            or compiled.visible_end != config.task.causal_prefix_end):
+        invalid("SOURCE_ATOM_PREFIX_AUTHORITY_INVALID")
+    replay = compile_prefix(
+        ast, compiled.visible_end, compiled.semantic_release, config)
+    if replay != compiled:
+        invalid("SOURCE_ATOM_PREFIX_AUTHORITY_REPLAY_MISMATCH")
+    task, frontier, policy = config.task, config.frontier, config.policy
+    if (task.purpose not in policy.allowed_purposes
+            or PUBLIC_FORMAL not in policy.allowed_regimes
+            or PUBLIC_FORMAL not in policy.allowed_join_classes
+            or task.jurisdiction not in policy.allowed_jurisdictions
+            or task.scope not in policy.allowed_scopes
+            or policy.rights_epoch != frontier.rights_epoch):
+        invalid("SOURCE_ATOM_PREFIX_AUTHORITY_POLICY_INVALID")
+    grant = SourceGrant(
+        prefix_inventory_handle(ast.source_instance_id, compiled.visible_end),
+        task.principal_id, task.tenant_id, PUBLIC_FORMAL, task.semantic_release,
+        prefix_inventory_evidence_digest(compiled),
+        (task.purpose,), (task.jurisdiction,), (task.scope,),
+        frontier.rights_epoch, frontier.correction_generation, 0, 0)
+    grants = {item.source_handle: item for item in frontier.grants}
+    prior = grants.get(grant.source_handle)
+    if prior is not None and prior != grant:
+        invalid("SOURCE_ATOM_PREFIX_AUTHORITY_GRANT_COLLISION")
+    grants[grant.source_handle] = grant
+    current = replace(frontier, grants=tuple(sorted(
+        grants.values(), key=lambda item: item.source_handle)))
+    return replace(config, frontier=current)

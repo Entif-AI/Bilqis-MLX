@@ -11,7 +11,6 @@ from unittest.mock import patch
 import numpy as np
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime import mlx_checkpoint
 from bilqis_mlx.runtime.atlas_cache_codec import (
     HEAD_WIDTH, CacheBinding, CacheQualityObservation, CacheQualityPolicy,
     codec_manifest, decode_cache, encode_cold_cache, interactive_cache_inference,
@@ -23,16 +22,13 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, parent_state, shape_patch,
-)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import candidate, parent_state
 from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
     OWNER_ID, PUBLIC_KEY_HEX, authority_for_registry, install_test_owner,
 )
-from bilqis_mlx.runtime.tests.model.attention.cache.test_atlas_cache_authority_integration import (
+from bilqis_mlx.runtime.tests.model.attention.cache.cache_authority_integration_fixture import (
     _A12_OWNER, _A12_PUBLIC, _EXPORTED, _cache_shape_patch, _clearance,
-    _context, _selection,
+    _context, _publish_cache_fixture, _selection,
 )
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 from bilqis_mlx.semantics.context_eligibility import project_context
@@ -72,8 +68,7 @@ def _source(selection, frontier, *, run_id="fixture-run"):
 
 
 def _publish(run, source):
-    with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-        return publish_bamf_generation(run, source, acceptance=acceptance(source))
+    return _publish_cache_fixture(run, source)
 
 
 def _inputs(run, clearance, selection, frontier, frames, task, policy):
@@ -125,7 +120,7 @@ class CacheAuthorityCurrentnessTests(unittest.TestCase):
     def _run(self, root, *, run_id="fixture-run"):
         run = Path(root) / run_id
         source = _source(self.selection, self.frontier, run_id=run_id)
-        pointer = _publish(run, source)
+        pointer, source = _publish(run, source)
         binding = _binding_for(
             pointer, source, self.selection, self.clearance, self.frontier,
             self.frames, self.task, self.policy,

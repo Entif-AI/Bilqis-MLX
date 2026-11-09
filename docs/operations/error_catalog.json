@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 248,
-  "legacy_raw_raise_count": 2071,
+  "legacy_raw_file_count": 253,
+  "legacy_raw_raise_count": 2073,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -7437,6 +7437,55 @@
       "path": "bilqis_mlx/learning/_championship/mentor_epoch.py"
     },
     {
+      "code_hint": "HUMAN_TRAINER_INVALID_LESSON_BATCH_SIZE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_INVALID_LESSON_BATCH_SIZE'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/selection.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_MISSING_BINARY_TRAINING_CLASS",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_MISSING_BINARY_TRAINING_CLASS'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/selection.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/selection.py"
+    },
+    {
+      "code_hint": "HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/selection.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_CHAMPION_CUSTODY_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_CHAMPION_CUSTODY_DRIFT'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/soups.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_INGREDIENT_GRAPH_DIGEST_COLLISION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_INGREDIENT_GRAPH_DIGEST_COLLISION'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/soups.py"
+    },
+    {
+      "code_hint": "GRADE_SOUP_UNSAFE_CHAMPION_BUNDLE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'GRADE_SOUP_UNSAFE_CHAMPION_BUNDLE'",
+      "path": "bilqis_mlx/learning/_lesson_guidance/soups.py"
+    },
+    {
       "code_hint": "FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE",
       "count": 1,
       "exception": "ValueError",
@@ -8291,13 +8340,6 @@
       "path": "bilqis_mlx/learning/lesson_guidance.py"
     },
     {
-      "code_hint": "GRADE_SOUP_CHAMPION_CUSTODY_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_CHAMPION_CUSTODY_DRIFT'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
       "code_hint": "GRADE_SOUP_FROZEN_MODEL_SHAPE_DRIFT",
       "count": 1,
       "exception": "ValueError",
@@ -8312,13 +8354,6 @@
       "path": "bilqis_mlx/learning/lesson_guidance.py"
     },
     {
-      "code_hint": "GRADE_SOUP_INGREDIENT_GRAPH_DIGEST_COLLISION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_INGREDIENT_GRAPH_DIGEST_COLLISION'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
       "code_hint": "GRADE_SOUP_SAVED_ARTIFACT_CHANGED",
       "count": 1,
       "exception": "ValueError",
@@ -8326,45 +8361,10 @@
       "path": "bilqis_mlx/learning/lesson_guidance.py"
     },
     {
-      "code_hint": "GRADE_SOUP_UNSAFE_CHAMPION_BUNDLE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_SOUP_UNSAFE_CHAMPION_BUNDLE'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
       "code_hint": "GRADE_SOUP_UNSAFE_SAVED_PATH",
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADE_SOUP_UNSAFE_SAVED_PATH'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_INVALID_LESSON_BATCH_SIZE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_INVALID_LESSON_BATCH_SIZE'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_MISSING_BINARY_TRAINING_CLASS",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_MISSING_BINARY_TRAINING_CLASS'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY'",
-      "path": "bilqis_mlx/learning/lesson_guidance.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH'",
       "path": "bilqis_mlx/learning/lesson_guidance.py"
     },
     {
@@ -11249,7 +11249,7 @@
       "count": 1,
       "exception": "AssertionError",
       "expression": "'model-input planning entered before A06 authority rejection'",
-      "path": "bilqis_mlx/runtime/tests/batch/test_atlas_training_real_source.py"
+      "path": "bilqis_mlx/runtime/tests/batch/training/test_atlas_training_real_source.py"
     },
     {
       "code_hint": "C05 fixed diagnostic Factory release drift",
@@ -11546,18 +11546,18 @@
       "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
     },
     {
-      "code_hint": "exact cached route must preempt neural",
-      "count": 1,
-      "exception": "AssertionError",
-      "expression": "'exact cached route must preempt neural'",
-      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py"
-    },
-    {
       "code_hint": "malformed decoder payload",
       "count": 1,
       "exception": "ValueError",
       "expression": "'malformed decoder payload'",
       "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py"
+    },
+    {
+      "code_hint": "exact cached route must preempt neural",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'exact cached route must preempt neural'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver_retention.py"
     },
     {
       "code_hint": "missing source manifest",
@@ -11574,6 +11574,13 @@
       "path": "bilqis_mlx/runtime/tests/capability/test_capability_evidence_history.py"
     },
     {
+      "code_hint": "source-owned context was not approved",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'source-owned context was not approved'",
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/accepted_correction_runtime_temporal_support.py"
+    },
+    {
       "code_hint": "COLD_RESUME_CONTINUATION_REJECTED before=",
       "count": 1,
       "exception": "ValueError",
@@ -11581,11 +11588,18 @@
       "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/cold_resume_probe.py"
     },
     {
+      "code_hint": "generation-zero sidecars are owner-derived",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'generation-zero sidecars are owner-derived: ' + ','.join(sorted(forbidden))",
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/helpers.py"
+    },
+    {
       "code_hint": "test synchronization timed out",
       "count": 1,
       "exception": "RuntimeError",
       "expression": "'test synchronization timed out'",
-      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/test_publication_durability.py"
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_recovery.py"
     },
     {
       "code_hint": "pointer interrupted",
@@ -15552,6 +15566,20 @@
       "recovery_key": "errors.school.checkpoint_custody.missing_or_extra_tensors.recovery",
       "self_heal_owner": null,
       "title": "BAMF tensor census mismatch"
+    },
+    {
+      "code": "SCHOOL.BAMF_FIRST_STUDENT.INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_first_student.invalid.message",
+      "message_template": "The BAMF first-student preflight is invalid: {reason}",
+      "next_action": "Keep the admitted source run unchanged; reconcile the launch config, Factory/Atlas bindings and empty target before retrying.",
+      "operator_steps": [],
+      "owner": "runtime.bamf_first_student",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_first_student.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF first-student preflight is invalid"
     },
     {
       "code": "SCHOOL.BAMF_PACKAGE.INVALID",

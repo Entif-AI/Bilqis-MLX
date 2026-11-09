@@ -28,6 +28,8 @@ from bilqis_mlx.semantics.tests.test_cognitive_operators import (
 )
 
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _result
+from bilqis_mlx.runtime._atlas_owner_ingress import apply_solve_context_correction
 
 class CognitiveSolverTests(unittest.TestCase):
     def test_applicable_exact_operator_wins_with_full_score_no_neural(self):
@@ -40,37 +42,8 @@ class CognitiveSolverTests(unittest.TestCase):
         self.assertEqual(result.score, 1.0)
         self.assertEqual(result.neural_calls, 0)
 
-    def test_qualified_cached_composition_precedes_neural_and_ties_stably(self):
-        binding, generation, budget, add, ambiguous = _fixture()
-        cached = QualifiedComposition(
-            goal=add,
-            source_binding_digest=generation.source_binding_digest,
-            rights_epoch=binding.frontier.rights_epoch,
-            correction_generation=binding.frontier.correction_generation,
-            qualification_receipt_sha256="a" * 64,
-        )
-        calls = []
 
-        def neural(request):
-            calls.append(request)
-            raise AssertionError("exact cached route must preempt neural")
 
-        context = SolveContext(
-            binding, qualified_compositions=(cached,),
-            qualification_verifier=lambda item: (
-                item.qualification_receipt_sha256 == "a" * 64),
-            neural_proposer=neural)
-        result = solve_task(ambiguous, context, generation, budget)
-        self.assertEqual(result.route, RouteKind.CACHED_COMPOSITION)
-        self.assertEqual(result.answer.value, 5)
-        self.assertEqual(result.score, 1.0)
-        self.assertEqual(calls, [])
-        rejected = solve_task(
-            ambiguous, SolveContext(
-                binding, qualified_compositions=(cached,),
-                qualification_verifier=lambda item: False),
-            generation, budget)
-        self.assertEqual(rejected.route, RouteKind.UNRESOLVED)
 
     def test_neural_proposes_only_a_source_bound_dag_for_unresolved_part(self):
         binding, generation, budget, add, ambiguous = _fixture()
@@ -95,6 +68,41 @@ class CognitiveSolverTests(unittest.TestCase):
         self.assertIsNone(result.score)
         self.assertEqual(result.neural_calls, 1)
         self.assertEqual(len(calls), 1)
+
+
+
+    def test_neural_materialization_cannot_exceed_cached_candidate_budget(self):
+        binding, generation, _budget, add, ambiguous = _fixture()
+        cached = QualifiedComposition(
+            add, generation.source_binding_digest,
+            generation.generation_digest,
+            binding.frontier.rights_epoch,
+            binding.frontier.correction_generation, "a" * 64)
+        calls = []
+
+        def neural(request):
+            calls.append(request)
+            return NeuralProposal(
+                add, request.source_binding_digest,
+                request.generation_digest,
+                request.unresolved_signature,
+                "b" * 64)
+
+        context = SolveContext(
+            binding, qualified_compositions=(cached,),
+            qualification_verifier=lambda item: False,
+            neural_proposer=neural)
+        budget = SolveBudget(
+            DAGBudget(), max_neural_calls=1, max_cached_candidates=1)
+        first = solve_task(ambiguous, context, generation, budget)
+        self.assertEqual(first.route, RouteKind.NEURAL_COMPOSITION)
+        self.assertEqual(
+            len(context.operator_composition_artifact_owner.compositions), 1)
+        second = solve_task(ambiguous, context, generation, budget)
+        self.assertEqual(second.route, RouteKind.NEURAL_COMPOSITION)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(
+            len(context.operator_composition_artifact_owner.compositions), 1)
 
     def test_neural_foreign_source_binding_rejects_before_dag_execution(self):
         binding, generation, budget, add, ambiguous = _fixture()
@@ -121,6 +129,7 @@ class CognitiveSolverTests(unittest.TestCase):
         binding, generation, budget, add, ambiguous = _fixture()
         fallback = QualifiedComposition(
             add, generation.source_binding_digest,
+            generation.generation_digest,
             binding.frontier.rights_epoch,
             binding.frontier.correction_generation,
             "a" * 64)
@@ -159,6 +168,7 @@ class CognitiveSolverTests(unittest.TestCase):
             node, operands=(node.operands[0], node.operands[0]))))
         cached = QualifiedComposition(
             changed, generation.source_binding_digest,
+            generation.generation_digest,
             binding.frontier.rights_epoch,
             binding.frontier.correction_generation, "a" * 64)
         for context in (
@@ -174,6 +184,7 @@ class CognitiveSolverTests(unittest.TestCase):
         binding, generation, budget, add, ambiguous = _fixture()
         fallback = QualifiedComposition(
             add, generation.source_binding_digest,
+            generation.generation_digest,
             binding.frontier.rights_epoch,
             binding.frontier.correction_generation, "a" * 64)
         for malformed_digest in (False, True):

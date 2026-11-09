@@ -5,13 +5,42 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 from bilqis_mlx.cli import main
 from bilqis_mlx.presentation.spiral_dashboard import TABLES, Dashboard
 from bilqis_mlx.presentation.dashboard import build, ingest
 from bilqis_mlx.presentation.school_telemetry import SchoolTelemetry, LETTER_TABLES
+from bilqis_mlx.runtime.bamf_first_student import BamfFoundationDashboardProjection
 
 
 class OperatorTests(unittest.TestCase):
+    def test_dashboard_consumes_only_lightweight_bamf_foundation_projection(self):
+        projection = BamfFoundationDashboardProjection(
+            factory_release_sha256="a" * 64,
+            optimizer_step=0,
+            grade_visits=0,
+            teacher_events=0,
+            stage="READY_FOR_HUMAN_START",
+            active_grades=("A", "B", "C"),
+            current_grade="A",
+            last_run_status="NOT_STARTED",
+        )
+        with tempfile.TemporaryDirectory() as tmp, patch(
+                "bilqis_mlx.presentation.dashboard."
+                "load_bamf_foundation_dashboard_projection",
+                return_value=projection) as load_projection:
+            run = Path(tmp)
+            board = build(run, stream=io.StringIO(), reserve_gib=0.)
+
+        load_projection.assert_called_once_with(run)
+        self.assertEqual(board.state["step"], 0)
+        self.assertEqual(board.state["visits"], 0)
+        self.assertEqual(board.state["stop"], "NOT_STARTED")
+        self.assertEqual(board.state["phase"], "READY_FOR_HUMAN_START")
+        self.assertEqual(board.state["prefix"], "A")
+        self.assertEqual(board.grade_program, ("A", "B", "C"))
+        self.assertFalse((run / "state.json").exists())
+
     def test_live_visit_projects_rows_once_before_durable_replay(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True)
         board.state["attempted_steps"] = 0

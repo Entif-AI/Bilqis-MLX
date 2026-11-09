@@ -32,7 +32,7 @@ OBSOLETE_LIVE_POLICY = (
     "Keep B debt and numeric scope from the real run manifest",
 )
 INTEGRATION_BRANCH = "codex/bamf-unified-base-20261028"
-EGM_POLICY_MARKER = "<!-- BAMF02:EGM-MERGE-READINESS-GATE:20261102 -->"
+EGM_POLICY_MARKER = "<!-- BAMF02:DESIGN-VERIFY-DRIFT-LIFECYCLE:20261108 -->"
 OBSOLETE_EGM_POLICY = "One repair pass and one targeted re-audit are the default budget."
 EGM_OPERATIONAL_DOCS = (
     "docs/tasks/bamf-0.2/EGM_EXECUTION.md",
@@ -247,13 +247,21 @@ def main() -> None:
     agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     egm_policy = (TASKS / "EGM_EXECUTION.md").read_text(encoding="utf-8")
     if EGM_POLICY_MARKER not in agents or EGM_POLICY_MARKER not in egm_policy:
-        errors.append("BAMF EGM merge-readiness policy marker missing from AGENTS.md or EGM_EXECUTION.md")
+        errors.append("BAMF design/verification/drift lifecycle marker missing from AGENTS.md or EGM_EXECUTION.md")
+    if "EGM review occurs before implementation." not in egm_policy:
+        errors.append("BAMF EGM lifecycle must keep design review before implementation")
+    if "minimum sufficient evidence set" not in egm_policy:
+        errors.append("BAMF verification lifecycle must retain proof-economy rule")
     for filename in EGM_OPERATIONAL_DOCS:
         text = (ROOT / filename).read_text(encoding="utf-8")
         if OBSOLETE_EGM_POLICY in text:
             errors.append(f"{filename}: obsolete per-fix EGM re-audit policy")
-        if "merge-readiness" not in text.lower():
-            errors.append(f"{filename}: missing EGM merge-readiness gate")
+    for filename in EGM_OPERATIONAL_DOCS[1:]:
+        text = (ROOT / filename).read_text(encoding="utf-8")
+        if "docs/tasks/bamf-0.2/EGM_EXECUTION.md" not in text:
+            errors.append(f"{filename}: missing canonical EGM lifecycle reference")
+        if "before substantive implementation" not in text.lower():
+            errors.append(f"{filename}: missing design-first EGM lifecycle")
     for filename in ("README.md", "AGENTS.md", "docs/architecture/BAMF_0_2.md"):
         text = (ROOT / filename).read_text(encoding="utf-8")
         if "ADR-BAMF02-004" not in text:
@@ -268,7 +276,7 @@ def main() -> None:
     spec_count = len(ITEMS) + (len(entries) if registry_path.exists() else len(CHILDREN))
     print(f"PASS: all {spec_count} BAMF owner/child specs retain indexed identity and source fingerprints")
     print("PASS: 12 owner issues and 3 repository entrypoints carry ADR-BAMF02-004")
-    print("PASS: BAMF EGM operational policy reserves fresh Goldfish review for merge readiness")
+    print("PASS: BAMF EGM policy reviews design before implementation and routes later proof through differential verification and drift")
     print(f"PASS: {len(CHILDREN)} recursive A09 sub-issues retain exact indexed mirrors, linked ownership and acyclic dependencies")
     if registry_path.exists():
         print(f"PASS: {len(entries)} total indexed recursive child mirrors have correct SHA, parent identity and lossless source partitions")

@@ -1,5 +1,7 @@
 """B12.2 disposable candidate rollback and accepted-clock witnesses."""
+import hashlib
 import inspect
+import json
 from dataclasses import replace
 from pathlib import Path
 from unittest import TestCase
@@ -27,8 +29,32 @@ from bilqis_mlx.factory.teaching import content_digest
 from bilqis_mlx.runtime.atlas_training_contracts import (
     BamfDeliveryProvenance, BamfTrainingRow, _issue_training_batch,
 )
+from bilqis_mlx.runtime.atlas_visit_provenance import BamfVisitProvenance
 from bilqis_mlx.runtime.atlas_training_authority import _issue as issue_training_authority
 from bilqis_mlx.runtime.source_execution import source_content_digest
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    DependencyKind, DependencyRef,
+)
+
+
+def _visit_provenance(capability_id: str) -> BamfVisitProvenance:
+    payload = {
+        "run_identity_sha256": "1" * 64,
+        "run_seed": 17,
+        "generation": 0,
+        "accepted_manifest_sha256": "2" * 64,
+        "teacher_identity": "3" * 64,
+        "teacher_epoch": 0,
+        "student_sha256": "4" * 64,
+        "selection_seed": 42,
+        "cursor": "lesson:7",
+        "capability_id": capability_id,
+        "policy_key": "p-strong",
+        "schema": "bilqis.bamf.c03-teacher-visit-identity/v1",
+    }
+    wire = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return BamfVisitProvenance.from_c03_record({
+        **payload, "visit_id": hashlib.sha256(wire.encode()).hexdigest()})
 
 
 class CandidateTransactionTests(TestCase):
@@ -96,7 +122,13 @@ class CandidateTransactionTests(TestCase):
         source_row = {"id": "row-1", "capability": "A.TEST", "payload": "fixture"}
         delivery = BamfDeliveryProvenance(
             "row-1", source_content_digest((source_row,)), "source-1", "A.TEST", "op-1", (), 1, 1, None, 0,
-            "family-1", "episode-1")
+            _visit_provenance("A.TEST"), "family-1", "episode-1", tuple(sorted((
+                DependencyRef(DependencyKind.SOURCE, "row-1"),
+                DependencyRef(DependencyKind.OPERATOR, "operator:op-1"),
+                DependencyRef(DependencyKind.RELEASE, "source-release:" + "4" * 64),
+                DependencyRef(DependencyKind.POLICY, "policy:fixture"),
+                DependencyRef(DependencyKind.RIGHTS, "rights:fixture"),
+            ))))
         batch = _issue_training_batch(
             "4" * 64, "5" * 64, content_digest((source_row,)), "A.TEST",
             (BamfTrainingRow(None, None, None, delivery),))

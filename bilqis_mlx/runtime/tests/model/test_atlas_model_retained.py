@@ -1,5 +1,6 @@
 """Retained B08 reads must flow through the same B11/B09 execution trace."""
 from unittest import skipUnless
+from unittest.mock import patch
 
 import mlx.core as mx
 
@@ -27,8 +28,9 @@ from bilqis_mlx.runtime.atlas_model import BamfCompiledBatch, bamf_value_and_gra
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
-    _issue_accepted_execution_cache,
+    _new_execution_cache,
 )
+import bilqis_mlx.runtime.atlas_model_forward as forward_impl
 from bilqis_mlx.runtime.topology_v2.ledger import bamf_parameter_census
 from bilqis_mlx.runtime.model_topology_v2 import Initializer, expected_bamf_shapes
 from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
@@ -119,7 +121,7 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
             SourceSpan(0, 0),
             generation,
         )
-        cache = _issue_accepted_execution_cache(
+        cache = _new_execution_cache(
             run_id="test-retained",
             generation=1,
             accepted_manifest_sha256="8" * 64,
@@ -204,14 +206,20 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
     def test_retained_b08_hit_enters_the_same_loss_bearing_b09_trace(self):
         (compiled, parameters, source, feature_schema, plan, cache,
          spec, extents, _manifest, slot_id) = self._runtime_fixture()
-        execution = bamf_value_and_grad(
-            parameters,
-            BamfCompiledBatch(compiled, (source,), feature_schema),
-            plan,
-            (DecisionOutput("finish", ControlAction.END_FRAME),),
-            {"finish": True},
-            cache=cache,
-        ).execution
+        with patch.object(
+                forward_impl, "require_accepted_execution_cache",
+                return_value=cache), patch(
+            "bilqis_mlx.runtime.bamf_bundle.execution_cache.require_accepted_execution_cache",
+            return_value=cache,
+        ):
+            execution = bamf_value_and_grad(
+                parameters,
+                BamfCompiledBatch(compiled, (source,), feature_schema),
+                plan,
+                (DecisionOutput("finish", ControlAction.END_FRAME),),
+                {"finish": True},
+                cache=cache,
+            ).execution
         self.assertEqual(len(execution.motif_reads), 1)
         self.assertEqual(
             execution.motif_reads[0].participating_slots, (slot_id,))
@@ -243,12 +251,18 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
     def test_real_b11_retained_motif_execution_reaches_b12_transaction(self):
         (compiled, parameters, source, feature_schema, plan, cache,
          spec, extents, manifest, slot_id) = self._runtime_fixture()
-        gradient = bamf_value_and_grad(
-            parameters,
-            BamfCompiledBatch(compiled, (source,), feature_schema),
-            plan,
-            (DecisionOutput("finish", ControlAction.END_FRAME),),
-            {"finish": True}, cache=cache)
+        with patch.object(
+                forward_impl, "require_accepted_execution_cache",
+                return_value=cache), patch(
+            "bilqis_mlx.runtime.bamf_bundle.execution_cache.require_accepted_execution_cache",
+            return_value=cache,
+        ):
+            gradient = bamf_value_and_grad(
+                parameters,
+                BamfCompiledBatch(compiled, (source,), feature_schema),
+                plan,
+                (DecisionOutput("finish", ControlAction.END_FRAME),),
+                {"finish": True}, cache=cache)
         execution = gradient.execution
         self.assertEqual(execution.motif_reads[0].participating_slots, (slot_id,))
         self.assertEqual(float(mx.abs(gradient.gradients["motif.page.0"]).sum()), 0.0)

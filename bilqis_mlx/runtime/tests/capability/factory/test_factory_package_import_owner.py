@@ -24,7 +24,12 @@ class FactoryPackageImportOwnerTests(unittest.TestCase):
                 capability_map={item.capability_id: item for item in capabilities},
             ),
         )
-        source = SimpleNamespace(__post_init__=lambda: None, release=release)
+        accepted_runtime = Mock()
+        source = SimpleNamespace(
+            __post_init__=lambda: None,
+            require_accepted_runtime=accepted_runtime,
+            release=release,
+        )
         transaction = object.__new__(PackageImportTransaction)
         fixed = (SimpleNamespace(case=SimpleNamespace()),)
         foundation = Mock(return_value="evaluation")
@@ -42,6 +47,7 @@ class FactoryPackageImportOwnerTests(unittest.TestCase):
                 run_dir=Path("unused"))
 
         self.assertEqual(result, "evaluation")
+        accepted_runtime.assert_called_once_with(Path("unused"))
         foundation.assert_called_once()
         args = foundation.call_args.args
         self.assertEqual(args[7], ((), ()))
@@ -51,6 +57,20 @@ class FactoryPackageImportOwnerTests(unittest.TestCase):
             evaluate_factory_package_import(
                 object(), object(), "artifact", "B.IDBOOLOPS",
                 run_dir=Path("unused"), policy=object(), cohorts=())
+
+    def test_package_import_custody_failure_stops_before_c05_work(self):
+        transaction = object.__new__(PackageImportTransaction)
+        source = SimpleNamespace(
+            __post_init__=lambda: None,
+            require_accepted_runtime=Mock(side_effect=RuntimeError("held")),
+        )
+        with patch.object(
+                owner, "_package_import_from_live_parent",
+                side_effect=AssertionError("C05 work started before accepted custody")):
+            with self.assertRaisesRegex(RuntimeError, "held"):
+                evaluate_factory_package_import(
+                    source, transaction, "artifact", "B.IDBOOLOPS",
+                    run_dir=Path("unused"))
 
 
 if __name__ == "__main__":

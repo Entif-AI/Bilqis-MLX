@@ -101,18 +101,35 @@ class SourceExecutionContext:
     source_root: Path | None
     source_registry: SourceAdapterRegistry
     answer_registry: AnswerModalityRegistry
+    run_dir: Path | None = None
+    _accepted_runtime_host: object | None = field(
+        default=None, init=False, repr=False, compare=False)
 
     @classmethod
     def from_admitted_release(
             cls, run_dir: Path, receipt: dict, *, graph: dict,
             source_root: Path | None, source_registry: SourceAdapterRegistry,
-            answer_registry: AnswerModalityRegistry) -> SourceExecutionContext:
+            answer_registry: AnswerModalityRegistry,
+            accepted_runtime_host=None,
+    ) -> SourceExecutionContext:
         from .admission import (
             _read_executable_factory_release_artifact as _read_executable_factory_release)
 
         release = _read_executable_factory_release(run_dir, receipt)
-        return cls(release=release, graph=graph, source_root=source_root,
-                   source_registry=source_registry, answer_registry=answer_registry)
+        if accepted_runtime_host is not None:
+            from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+            if (type(accepted_runtime_host) is not AcceptedRuntimeHost
+                    or accepted_runtime_host.run_dir.resolve()
+                    != Path(run_dir).resolve()):
+                _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
+            accepted_runtime_host.source_authority()
+        context = cls(
+            release=release, graph=graph, source_root=source_root,
+            source_registry=source_registry, answer_registry=answer_registry,
+            run_dir=Path(run_dir))
+        if accepted_runtime_host is not None:
+            object.__setattr__(context, "_accepted_runtime_host", accepted_runtime_host)
+        return context
 
     def __post_init__(self) -> None:
         if not isinstance(self.release, ExecutableFactoryRelease):
@@ -121,6 +138,8 @@ class SourceExecutionContext:
             raise TypeError(FACTORY.EXECUTION.EXPECTED_A_SOURCEADAPTERREGISTRY.legacy_codes[0])
         if not isinstance(self.answer_registry, AnswerModalityRegistry):
             raise TypeError(FACTORY.EXECUTION.EXPECTED_AN_ANSWERMODALITYREGISTRY.legacy_codes[0])
+        if self.run_dir is not None and not isinstance(self.run_dir, Path):
+            _invalid_source_batch("FACTORY_SOURCE_RUN_DIR_INVALID")
         self.release.verify()
         self.release.verify_semantic_catalog(self.graph)
         bindings = self.release.source_bindings.by_capability
@@ -128,6 +147,63 @@ class SourceExecutionContext:
             binding = bindings[capability.capability_id]
             self.source_registry.require(binding.generator_id, binding.oracle_id)
         self.answer_registry.validate_plan(self.release.execution_plan)
+
+    def register_compiled_batch(self, batch) -> None:
+        if self.run_dir is None:
+            return
+        self.require_accepted_runtime(self.run_dir)
+        from bilqis_mlx.runtime.accepted_corrections import (
+            register_compiled_batch,
+        )
+        register_compiled_batch(
+            self.run_dir, batch)
+
+    def register_solve_context(self, context) -> None:
+        if self.run_dir is None:
+            return
+        self.require_accepted_runtime(self.run_dir)
+        from bilqis_mlx.runtime.accepted_corrections import (
+            register_solve_context,
+        )
+        register_solve_context(
+            self.run_dir, context)
+
+    def record_correction(self, event) -> str:
+        if self.run_dir is None:
+            _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
+        self.require_accepted_runtime(self.run_dir)
+        return self._accepted_runtime_host.record_correction(event)
+
+    def record_revalidation(self, frontier) -> str:
+        if self.run_dir is None:
+            _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
+        self.require_accepted_runtime(self.run_dir)
+        return self._accepted_runtime_host.record_revalidation(frontier)
+
+    def record_remediation(self, remediation) -> str:
+        self.require_accepted_runtime(self.run_dir)
+        return self._accepted_runtime_host.record_remediation(remediation)
+
+    def record_derived_claim(self, claim):
+        self.require_accepted_runtime(self.run_dir)
+        return self._accepted_runtime_host.record_derived_claim(claim)
+
+    def require_accepted_runtime(self, run_dir: Path | None) -> None:
+        """Require host-owned accepted-run correction custody before execution."""
+        from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+
+        host = self._accepted_runtime_host
+        if (self.run_dir is None or run_dir is None
+                or Path(self.run_dir).resolve() != Path(run_dir).resolve()
+                or type(host) is not AcceptedRuntimeHost
+                or host.run_dir.resolve() != Path(run_dir).resolve()):
+            _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
+        host.source_authority()
+
+    def source_authority(self):
+        """Return the opaque authority owned by this context's current accepted host."""
+        self.require_accepted_runtime(self.run_dir)
+        return self._accepted_runtime_host.source_authority()
 
     def require_capabilities(self, capabilities: tuple[str, ...]) -> None:
         """Check a complete host request before any of its providers run."""

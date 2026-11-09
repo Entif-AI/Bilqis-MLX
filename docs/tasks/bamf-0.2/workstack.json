@@ -892,7 +892,8 @@
         "B13.1",
         "B13.2",
         "B13.3",
-        "B13.4"
+        "B13.4",
+        "B13.6"
       ],
       "execution_role": "integration_parent_after_recursive_decomposition"
     },
@@ -1001,7 +1002,8 @@
         "C02.1",
         "C02.2",
         "C02.3",
-        "C02.4"
+        "C02.4",
+        "C02.5"
       ],
       "execution_role": "integration_parent_after_recursive_decomposition"
     },

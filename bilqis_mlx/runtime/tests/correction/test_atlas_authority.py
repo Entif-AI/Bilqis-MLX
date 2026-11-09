@@ -11,6 +11,25 @@ from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
 
 
 class AuthorityTests(unittest.TestCase):
+    def test_registry_digest_is_canonical_and_changes_with_trust_material(self):
+        scope = SourceAuthorityScope(DependencyKind.ARTIFACT, "feature:")
+        first = SourceAuthorityRegistry((
+            SourceAuthorityKey(_SOURCE_OWNER, _TEST_PUBLIC, (scope,)),
+        ))
+        same = SourceAuthorityRegistry((
+            SourceAuthorityKey(_SOURCE_OWNER, _TEST_PUBLIC, (scope,)),
+        ))
+        changed = SourceAuthorityRegistry((
+            SourceAuthorityKey(
+                _SOURCE_OWNER, _TEST_PUBLIC,
+                (SourceAuthorityScope(DependencyKind.ARTIFACT, "cache:"),),
+            ),
+        ))
+
+        self.assertEqual(len(first.digest), 64)
+        self.assertEqual(first.digest, same.digest)
+        self.assertNotEqual(first.digest, changed.digest)
+
     def test_authentic_old_revalidation_receipt_cannot_clear_new_correction_hold(self):
         index, source, _ = _chain()
         current = _event(source)

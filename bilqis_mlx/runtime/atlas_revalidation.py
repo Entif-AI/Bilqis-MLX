@@ -40,6 +40,7 @@ from .atlas_source_authority import (
     SourceAuthorityScope,
     require_source_authority_runtime,
 )
+from .atlas_cache_owner import ExactCacheArtifactOwner, cache_artifact_digest
 
 __all__ = [
     "CORRECTION_EVENT_SCHEMA",

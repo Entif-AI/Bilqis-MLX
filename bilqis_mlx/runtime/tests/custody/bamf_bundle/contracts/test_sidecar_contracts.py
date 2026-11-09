@@ -67,6 +67,24 @@ class SidecarContractTests(unittest.TestCase):
                 with self.subTest(name=name, field=field, replacement=replacement):
                     self.assertHeldBeforeTensorSave(replace(value, **{name: raw}))
 
+    def test_malformed_feature_bindings_hold_before_tensor_save(self):
+        value = source()
+        for field in ('feature_source', 'feature_schema'):
+            raw = {**value.compiler_features, field: {}}
+            with self.subTest(field=field):
+                self.assertHeldBeforeTensorSave(
+                    replace(value, compiler_features=raw))
+
+    def test_malformed_source_authority_anchor_holds_before_tensor_save(self):
+        value = source()
+        self.assertHeldBeforeTensorSave(replace(
+            value,
+            correction_frontier={
+                **value.correction_frontier,
+                'source_authority_registry_sha256': 'not-a-digest',
+            },
+        ))
+
     def test_boolean_or_negative_epochs_are_not_integer_identity(self):
         original = source()
         value = replace(original,
@@ -107,3 +125,32 @@ class SidecarContractTests(unittest.TestCase):
                               side_effect=AssertionError('unsafe tensor construction reached')):
                 with self.assertRaises(BilqisError):
                     load_bamf_bundle(root)
+
+    def test_rehashed_malformed_feature_bindings_reject_before_tensor_load(self):
+        for field in ('feature_source', 'feature_schema'):
+            with self.subTest(field=field), TemporaryDirectory() as tmp, \
+                    patch.dict(os.environ, {'BILQIS_DATA_PLANE': tmp + '/plane.db'}):
+                root = Path(tmp) / 'bundle'
+                with shape_patch(), patch.object(mlx_checkpoint, 'assert_headroom'):
+                    save_bamf_bundle(source(), root)
+                sidecar = root / 'compiler-features.json'
+                record = json.loads(sidecar.read_bytes())
+                record[field] = {}
+                raw = canonical(record)
+                digest = sha(raw)
+                data_plane().put_object(digest, raw)
+                sidecar.write_bytes(raw)
+                manifest_path = root / 'manifest.json'
+                manifest = json.loads(manifest_path.read_bytes())
+                manifest['sidecars']['compiler_features'].update(
+                    sha256=digest, object_sha256=digest)
+                manifest_raw = canonical(manifest)
+                data_plane().put_node(
+                    sha(manifest_raw), manifest_raw, manifest["generation"],
+                    manifest["parent_manifest_sha256"])
+                manifest_path.write_bytes(manifest_raw)
+                with patch.object(
+                        codec._mlx_checkpoint, 'load_bamf_state_payload',
+                        side_effect=AssertionError('unsafe tensor construction reached')):
+                    with self.assertRaises(BilqisError):
+                        load_bamf_bundle(root)
