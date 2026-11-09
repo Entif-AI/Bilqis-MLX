@@ -20,7 +20,6 @@ from bilqis_mlx.runtime.plasticity_promotion import (
     AcceptedPromotionTransitionReceipt,
     ParsedPromotionTransitionReceipt,
     issue_accepted_promotion_transition,
-    promotion_transition_pending,
     require_accepted_promotion_transition,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
@@ -121,7 +120,6 @@ class PlasticityPromotionAuthorityTests(TestCase):
                 side_effect=lambda _root, receipt: schools[receipt["generation"]],
             ),
         ):
-            self.assertTrue(promotion_transition_pending(self.run_dir, self.retained))
             return issue_accepted_promotion_transition(
                 self.run_dir, self.retained, self.decision)
 

@@ -11,7 +11,7 @@ another candidate, generation, step, topology or extents state.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 import sys
 
@@ -22,16 +22,12 @@ from bilqis_mlx.learning.atlas_retention_decision import (
     CandidateRetentionDecision,
 )
 from bilqis_mlx.learning.atlas_candidate import (
-    CandidateState, CandidateTransaction, begin_candidate,
-    issue_promotion_transition_state, resolve_candidate,
+    CandidateState, CandidateTransaction, begin_candidate, resolve_candidate,
 )
 from bilqis_mlx.learning.atlas_plasticity import group_eligibility, next_update_mode
 from bilqis_mlx.learning.atlas_participation import ActiveAdmittedRows
 from bilqis_mlx.runtime.atlas_candidate_step import production_candidate_step
 from bilqis_mlx.runtime.model_topology_v2 import ParameterCensus
-from bilqis_mlx.runtime.plasticity_promotion import (
-    issue_accepted_promotion_transition, promotion_transition_pending,
-)
 
 from .accepted_runtime import (
     AcceptedGenerationIdentity, _identity_from_pointer,
@@ -178,8 +174,6 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
     binding from that decision, and B13 custody publishes the generation only
     when the binding matches the candidate it publishes.
     """
-    bundle, retained_state = _apply_promotion_transition_if_due(
-        run_dir, bundle, retained_state, decision)
     from .source_authority_custody import (
         require_provisioned_source_authority_registry,
     )
@@ -193,14 +187,3 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
             trusted_registry.digest if trusted_registry is not None else None))
     return publish_bamf_generation(
         run_dir, bundle, acceptance=binding, reserve_gib=reserve_gib)
-
-
-def _apply_promotion_transition_if_due(
-        run_dir: Path, bundle: BamfBundleCandidate, retained_state: CandidateState,
-        decision: CandidateRetentionDecision):
-    """Compose C05 -> B09 at the retained boundary before B13 publication."""
-    if not promotion_transition_pending(run_dir, retained_state):
-        return bundle, retained_state
-    receipt = issue_accepted_promotion_transition(run_dir, retained_state, decision)
-    transitioned = issue_promotion_transition_state(retained_state, receipt)
-    return replace(bundle, retained_state=transitioned), transitioned
