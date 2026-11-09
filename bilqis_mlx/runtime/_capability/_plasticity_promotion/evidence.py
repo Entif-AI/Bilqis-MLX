@@ -212,6 +212,7 @@ def evidence_digest(evidence) -> str:
             }
         records.append({
             "generation": generation,
+            "factory_release_sha256": receipt.get("factory_release_sha256"),
             "school": {
                 "stage": school.stage,
                 "queue": tuple(school.queue),

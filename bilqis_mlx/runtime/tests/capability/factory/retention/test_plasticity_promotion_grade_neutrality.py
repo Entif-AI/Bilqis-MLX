@@ -72,16 +72,14 @@ class PlasticityPromotionGradeNeutralityTests(TestCase):
             item.capability_id
             for item in self.initial_release.execution_plan.capabilities)
 
-    def _runtime_release(self, next_grade_id: str):
-        grade = replace(self.course.grades[1], id=next_grade_id)
-        course = replace(self.course, grades=(self.course.grades[0], grade))
-        curriculum, bindings = from_legacy_course(course)
+    def _runtime_release(self):
+        curriculum, bindings = from_legacy_course(self.course)
         return compile_executable_factory_release(
             curriculum, bindings, CurriculumProfile.full(),
             self.registry, _boolean_answers(), source_root=None, graph=_graph(),
             verification_seed=97)
 
-    def _issue(self, runtime_release):
+    def _issue(self, runtime_release, *, grade_visit_order):
         with tempfile.TemporaryDirectory(prefix="b09-948-grade-neutral-") as temp:
             root = Path(temp)
             _persist_executable_factory_release(root, self.initial_release)
@@ -103,6 +101,7 @@ class PlasticityPromotionGradeNeutralityTests(TestCase):
                 grade.assessment_sha256, scores,
                 evaluation_id="b09-948-grade-neutral")
             state = assess(program, state, snapshot)
+            state = replace(state, main_sweep_visited=tuple(grade_visit_order))
             states = [state]
             while state.stage == "PROMOTION_SWEEP":
                 state = visit(program, state, state.queue[0], student)
@@ -152,19 +151,30 @@ class PlasticityPromotionGradeNeutralityTests(TestCase):
                 receipt = issue_accepted_promotion_transition(
                     root, self.retained, self.decision)
             transitioned = issue_promotion_transition_state(self.retained, receipt)
-            return receipt, transitioned.policy.mode_transition, asdict(states[-1])
+            return (
+                receipt,
+                transitioned.policy.mode_transition,
+                asdict(states[0]),
+                runtime_release.release_sha256,
+            )
 
-    def test_real_future_grade_relabel_does_not_change_transition_authority(self):
-        baseline_receipt, baseline_transition, baseline_final = self._issue(
-            self._runtime_release("B"))
-        relabeled_receipt, relabeled_transition, relabeled_final = self._issue(
-            self._runtime_release("Z"))
+    def test_real_grade_metadata_does_not_change_transition_authority(self):
+        runtime_release = self._runtime_release()
+        baseline_receipt, baseline_transition, baseline_entry, baseline_release = (
+            self._issue(runtime_release, grade_visit_order=("A", "B")))
+        permuted_receipt, permuted_transition, permuted_entry, permuted_release = (
+            self._issue(runtime_release, grade_visit_order=("B", "A")))
 
+        self.assertEqual(baseline_release, permuted_release)
+        self.assertEqual(
+            baseline_entry["course_digest"], permuted_entry["course_digest"])
         self.assertNotEqual(
-            baseline_final["course_digest"], relabeled_final["course_digest"])
-        self.assertNotEqual(
-            baseline_final["active_grades"], relabeled_final["active_grades"])
+            baseline_entry["main_sweep_visited"],
+            permuted_entry["main_sweep_visited"])
+        self.assertEqual(
+            set(baseline_entry["main_sweep_visited"]),
+            set(permuted_entry["main_sweep_visited"]))
         self.assertEqual(
             baseline_receipt.promotion_evidence_sha256,
-            relabeled_receipt.promotion_evidence_sha256)
-        self.assertEqual(baseline_transition, relabeled_transition)
+            permuted_receipt.promotion_evidence_sha256)
+        self.assertEqual(baseline_transition, permuted_transition)
