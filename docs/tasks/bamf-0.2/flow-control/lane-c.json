@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "6b085f875ab781a3771c89916a1e42653f73e882",
-  "updated_at": "2026-11-09T20:37:58Z",
+  "observed_unified": "f8f4bbafaa87056bda8665599f81c1c5284dcfd0",
+  "updated_at": "2026-11-09T22:01:37Z",
   "exception": null,
   "items": [
     {
@@ -227,9 +227,9 @@
       "issue": 510,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "587bb61e07885cafd356329ad8b6db15bce4c3f9",
+      "head_sha": "04f4fc3f6e63fb316ebb02004ae57f60973dcebf",
       "preserved_branch": "codex/510-c07-atomic-adoption-20261107",
-      "summary": "C07.1b semantic repair head 587bb61e persists the exact selected ExecutableFactoryRelease before B13 publication, binds it into non-caller-mintable AtlasAdmissionBinding authority, re-resolves that release only through accepted B13 custody, converges exact already-published retries, and retains reviewed accepted-run SourceAuthorityRuntime custody. Current reviewed unified 636ac8ff is being consumed for the latest C09 context/source-authority repair. Final turn-in still requires the real owner-issued A02 handoff through reviewed unified; no sibling Lane A merge is authorized.",
+      "summary": "C07.1b exact semantic head 04f4fc3f consumes merged A02/#399 through reviewed unified f8f4bbaf and now requires the real owner-issued A02StagedVocabularyExtension. Native current-Factory authority is derived only from accepted B13 lineage (genesis BamfRunIdentity, accepted AtlasAdmissionBinding, or inherited acceptance-bound ancestry), not the legacy operator receipt. Generic C05/B13 vocabulary growth remains fail-closed. The exact successor Factory artifact is persisted before C07-bound B13 publication; accepted cold Factory replay and exact retry are proven, including B13 custody/outbox normalization and no legacy state.json. Expanded affected ring is 55/55 PASS; composed transaction witness PASS; quality/governance/smell/legacy-trainer/flow/contracts/diff gates are green. Fresh independent exact-head review remains before human-review PR turn-in.",
       "resume_trigger": null
     }
   ]
