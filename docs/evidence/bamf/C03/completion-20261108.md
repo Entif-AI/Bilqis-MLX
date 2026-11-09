@@ -52,4 +52,6 @@ Blockers / 0 Majors / 0 Nits**, with disposition
 
 ## Remaining gate
 
-Only human PR review and merge remain. No self-merge is authorized.
+Ready human-review PR #932 is open against
+`codex/bamf-unified-base-20261028`. Only hosted integration checks, human PR
+review and merge remain. No self-merge is authorized.
