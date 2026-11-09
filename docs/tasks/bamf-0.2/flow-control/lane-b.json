@@ -256,12 +256,13 @@
     },
     {
       "issue": 736,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "7bae93aad41a3bbfd1fbaec85ddd2f24270798ba",
-      "summary": "B06.3 source-positive production witness is implemented on the current B11 seam with no production-byte change: pinned-A01 Factory training proves exact frame/occurrence/member custody and nonzero gradients through source identity, B03 frame encoding, and B06 refinement. Focused ring 31 pass + 34 subtests; current cheap gates green. Fresh exact-head independent review remains.",
-      "resume_trigger": null,
-      "preserved_branch": "codex/736-b06-source-positive-20261109"
+      "pr": 940,
+      "state": "TURNED_IN",
+      "head_sha": "f749a0a1226e975fb01881c6ca6ad2ecfd9799ff",
+      "summary": "B06.3 source-positive verification remediation is turned in as ready PR #940. Pinned-A01 production witness proves exact frame/occurrence/member custody and nonzero gradients through source identity, B03 frame encoding, and B06 refinement on the loss-bearing B11 path. Focused ring 31 pass + 34 subtests; BAMF contracts 43/43 and quality/governance/legacy-trainer/flow gates green; hosted portable-core, portable and semantic-ABI checks passed on semantic head f749a0a1. ADR-125/127 leave aggregate pinned EGM with parent #454; human merge remains external.",
+      "resume_trigger": "Human review/merge PR #940 into codex/bamf-unified-base-20261028. Parent #454 then consumes the remediation and owns aggregate merge-readiness EGM.",
+      "preserved_branch": "codex/736-b06-source-positive-20261109",
+      "head_sha_role": "semantic/test proof head; subsequent TURNED_IN bookkeeping is flow-control-only and reuses f749a0a1 proof under ADR-129"
     },
     {
       "issue": 783,
