@@ -4,7 +4,7 @@ Issue: #376
 Branch: `codex/bamf02-c03-376-20261107`
 Reviewed unified consumed: `7d9e0e8209e2d077e4fc30f65a3ebf3f29a91f3f`
 Exact semantic head: `b5603ebe2587521bc0eb556904435a5006711e8a`
-Status: **SEMANTICALLY_QUALIFIED_EGM_PENDING**
+Status: **EGM_PASS_READY_FOR_HUMAN_REVIEW**
 
 ## Completed integration boundary
 
@@ -43,6 +43,13 @@ On exact semantic head `b5603ebe2587521bc0eb556904435a5006711e8a`:
 
 Canonical latest adaptation source remains `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`. Prometheus is historical evidence only and not the current adaptation source.
 
+## Fresh turn-in EGM
+
+Fresh independent review against the exact candidate returned **PASS — 0
+Blockers / 0 Majors / 0 Nits**, with disposition
+**READY_FOR_HUMAN_REVIEW**. The durable review receipt is
+`docs/evidence/bamf/C03/egm.md`.
+
 ## Remaining gate
 
-One fresh independent C03 turn-in EGM must review the exact candidate under the issue's original acceptance plus the explicitly parked B13 integration boundary. Unrelated repository debt is not C03 acceptance. After a clean EGM, only bookkeeping/flow-state updates and a human-review PR remain. No self-merge is authorized.
+Only human PR review and merge remain. No self-merge is authorized.

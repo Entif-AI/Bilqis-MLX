@@ -27,10 +27,10 @@
     {
       "issue": 376,
       "pr": null,
-      "state": "ACTIVE",
+      "state": "TURNED_IN",
       "head_sha": "b5603ebe2587521bc0eb556904435a5006711e8a",
-      "summary": "C03 accepted-custody semantic head qualified; fresh scoped EGM pending before turn-in.",
-      "resume_trigger": null,
+      "summary": "C03 accepted-custody semantic head qualified and fresh scoped EGM passed 0 Blockers / 0 Majors / 0 Nits; ready for human-review PR to reviewed unified.",
+      "resume_trigger": "Human review/merge of the #376 PR into codex/bamf-unified-base-20261028. Do not self-merge.",
       "preserved_branch": "codex/bamf02-c03-376-20261107"
     },
     {
