@@ -110,6 +110,44 @@ class FactoryTrainingRefinementTests(FactoryTrainingBridgeFixture):
             with self.subTest(name=name):
                 self.assertGreater(float(mx.sum(mx.abs(gradient.gradients[name]))), 0.0)
 
+    def test_pinned_a01_training_witness_keeps_b03_bindings_and_gradients(self):
+        compiled, authority, plan = self.owned(seed=37101)
+        params = dict(self.candidate.retained_state.optimizer.parameters)
+        producer, _ = forward_impl._source_producer(
+            params, compiled, self.generation, None)
+        row = compiled.compiled.compiled.rows[0]
+        index, position = next(
+            (index, item) for index, item in enumerate(row.positions)
+            if item.kind is PositionKind.CLOSURE)
+        envelope = next(
+            item for item in compiled.compiled.compiler_configs[0].approved.envelopes
+            if item.frame_handle == position.frame_handle)
+        requests = tuple(
+            item for item in compiled.compiled.member_requests[0]
+            if item.frame_handle == position.frame_handle)
+
+        self.assertEqual(producer._encoded.handles[0][index], position)
+        self.assertEqual(
+            position.packed.sidecar.occurrence_id, envelope.frame.occurrence_id)
+        self.assertEqual(
+            tuple(item.member_handle for item in requests),
+            tuple(item.source_handle for item in envelope.members))
+        self.assertEqual(
+            producer._encoded.members[0][index].shape[0], len(envelope.members))
+
+        resolved = factory_task_training_goal(self.context, compiled, authority)
+        targets, mask = task_goal_training_targets(authority.goal, resolved)
+        execution = bamf_value_and_grad(
+            params, compiled, plan, targets, mask, None)
+        token_rows = mx.array(compiled.sources[0].source_row["tokens"])
+        self.assertGreater(float(mx.sum(mx.abs(
+            execution.gradients["identity.bank.0"][token_rows]))), 0.0)
+        for name in ("features.project_type", "frame.project_output", "refine.output"):
+            with self.subTest(name=name):
+                self.assertGreater(
+                    float(mx.sum(mx.abs(execution.gradients[name]))), 0.0)
+        self.assertIn("refine.output", execution.execution.dense_parameter_names)
+
     def test_zero_pass_selection_keeps_refinement_gradient_dark(self):
         gradient = self.gradient(37103)
         for name in (
