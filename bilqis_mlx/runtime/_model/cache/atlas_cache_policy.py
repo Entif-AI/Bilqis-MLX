@@ -18,6 +18,7 @@ from .atlas_cache_binding import (
 
 
 FALLBACK_BINDING = "BINDING_MISMATCH"
+FALLBACK_CORRECTION = "CORRECTION_HOLD_OR_OWNER_REQUIRED"
 FALLBACK_DECODE = "DECODE_INVALID"
 FALLBACK_TYPED_ANSWER = "TYPED_ANSWER_INVALID"
 FALLBACK_SCORE_DRIFT = "SCORE_DRIFT_EXCEEDED"
@@ -90,6 +91,7 @@ def _interactive_cache_inference(
     artifact: CacheArtifact,
     expected_binding: CacheBinding,
     *,
+    artifact_owner=None,
     cached_infer: Callable[[np.ndarray], object],
     fp32_recompute: Callable[[], object],
     quality_check: Callable[[object], CacheQualityObservation],
@@ -106,6 +108,15 @@ def _interactive_cache_inference(
         _require_cache_binding(artifact, expected_binding, authority)
     except BilqisError:
         return _fallback(fp32_recompute, FALLBACK_BINDING)
+    if artifact_owner is None:
+        return _fallback(fp32_recompute, FALLBACK_CORRECTION)
+    from bilqis_mlx.runtime.atlas_cache_owner import ExactCacheArtifactOwner
+    if not isinstance(artifact_owner, ExactCacheArtifactOwner):
+        _invalid()
+    try:
+        artifact_owner.require(authority, artifact, expected_binding)
+    except BilqisError:
+        return _fallback(fp32_recompute, FALLBACK_CORRECTION)
     from .atlas_cache_records import _decode_cache
     try:
         approximate = _decode_cache(

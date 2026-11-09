@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 248,
-  "legacy_raw_raise_count": 2072,
+  "legacy_raw_file_count": 251,
+  "legacy_raw_raise_count": 2073,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -11546,18 +11546,18 @@
       "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
     },
     {
-      "code_hint": "exact cached route must preempt neural",
-      "count": 1,
-      "exception": "AssertionError",
-      "expression": "'exact cached route must preempt neural'",
-      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py"
-    },
-    {
       "code_hint": "malformed decoder payload",
       "count": 1,
       "exception": "ValueError",
       "expression": "'malformed decoder payload'",
       "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py"
+    },
+    {
+      "code_hint": "exact cached route must preempt neural",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'exact cached route must preempt neural'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver_retention.py"
     },
     {
       "code_hint": "missing source manifest",
@@ -11574,6 +11574,13 @@
       "path": "bilqis_mlx/runtime/tests/capability/test_capability_evidence_history.py"
     },
     {
+      "code_hint": "source-owned context was not approved",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'source-owned context was not approved'",
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/accepted_correction_runtime_temporal_support.py"
+    },
+    {
       "code_hint": "COLD_RESUME_CONTINUATION_REJECTED before=",
       "count": 1,
       "exception": "ValueError",
@@ -11581,11 +11588,18 @@
       "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/cold_resume_probe.py"
     },
     {
+      "code_hint": "generation-zero sidecars are owner-derived",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'generation-zero sidecars are owner-derived: ' + ','.join(sorted(forbidden))",
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/helpers.py"
+    },
+    {
       "code_hint": "test synchronization timed out",
       "count": 1,
       "exception": "RuntimeError",
       "expression": "'test synchronization timed out'",
-      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/test_publication_durability.py"
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_recovery.py"
     },
     {
       "code_hint": "pointer interrupted",
@@ -12257,13 +12271,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'EVENT_FRAME_INVALID_DRAW'",
-      "path": "bilqis_mlx/source_adapters/_events/event_frames.py"
-    },
-    {
-      "code_hint": "EVENT_FRAME_SOURCE_PDF_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'EVENT_FRAME_SOURCE_PDF_DRIFT'",
       "path": "bilqis_mlx/source_adapters/_events/event_frames.py"
     },
     {

@@ -14,10 +14,19 @@ import bilqis_mlx.runtime.bamf_bundle.codec as codec
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.data_plane import DataPlane, data_plane
-from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
+from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
+from bilqis_mlx.runtime.bamf_bundle import (
+    load_bamf_generation, publish_bamf_generation,
+)
+from bilqis_mlx.runtime.bamf_bundle.codec import save_bamf_bundle
+from bilqis_mlx.runtime.bamf_bundle.records import (
+    ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BAMF_POINTER_SCHEMA, canonical,
+)
 from bilqis_mlx.runtime.tests.custody.data_plane.base import DataPlaneCase, historical_module
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, parent_state, publish_candidate, shape_patch,
+    acceptance, accepted_state, candidate, next_accepted_step, parent_state,
+    publish_candidate, retention_decision, shape_patch,
 )
 
 PRE_CAS = "dfc0c7586c23b6477c08d4db486ade3deeb79fae"
@@ -51,7 +60,6 @@ class PreCasCompatibilityTests(DataPlaneCase):
             "bd0ac8d7c8488af69e92a837530c129f9d8df7ee9a525de4627f865c8cb218b1")
         run, descriptors = self.root / "legacy-cas-run", []
         source = candidate(parent_state())
-        expected = numerical_observation(source)
         save = mlx_checkpoint.save_bamf_state_payload
 
         def retained_descriptor(path, *args, **kwargs):
@@ -67,6 +75,8 @@ class PreCasCompatibilityTests(DataPlaneCase):
                     patch.object(mlx_checkpoint, "save_bamf_state_payload", side_effect=retained_descriptor):
                 pointer = publish_candidate(run, source)
             bundle = run / pointer["bundle"]
+            with shape_patch():
+                expected = numerical_observation(writer.load_bamf_bundle(bundle))
             before = {path.name: path.read_bytes() for path in bundle.iterdir()}
             digest = json.loads(before["manifest.json"])["tensors"]["object_sha256"]
             plane = data_plane()
@@ -106,11 +116,12 @@ class PreCasCompatibilityTests(DataPlaneCase):
         spec.loader.exec_module(writer)
         run = self.root / "run"
         initial = candidate(parent_state())
-        expected = numerical_observation(initial)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
                 patch.object(publication, "save_bamf_bundle", side_effect=writer.save_bamf_bundle):
             pointer = publish_candidate(run, initial)
         bundle = run / pointer["bundle"]
+        with shape_patch():
+            expected = numerical_observation(load_bamf_generation(run / "bamf-state.json"))
         before = {path.name: path.read_bytes() for path in bundle.iterdir()}
         manifest = json.loads(before["manifest.json"])
         self.assertNotIn("object_sha256", manifest["tensors"])
@@ -130,3 +141,83 @@ class PreCasCompatibilityTests(DataPlaneCase):
                                 check=True, capture_output=True, text=True)
         self.assertEqual(json.loads(result.stdout), expected)
         self.assertEqual({path.name: path.read_bytes() for path in bundle.iterdir()}, before)
+
+    def test_pinned_old_writer_cannot_publish_fresh_accepted_successor(self):
+        repository = Path(__file__).resolve().parents[5]
+        source = subprocess.run(
+            ["git", "show", PRE_CAS + ":bilqis_mlx/runtime/_custody/bamf_bundle/codec.py"],
+            cwd=repository, check=True, capture_output=True).stdout
+        self.assertEqual(hashlib.sha256(source).hexdigest(), WRITER_SHA256)
+        writer_path = self.root / "pre_cas_codec.py"
+        writer_path.write_bytes(source)
+        spec = importlib.util.spec_from_file_location(
+            "bilqis_mlx.runtime.bamf_bundle.pre_cas_successor_fixture", writer_path)
+        writer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(writer)
+
+        run = self.root / "successor-run"
+        parent = candidate(parent_state())
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            pointer = publish_candidate(run, parent)
+        successor = candidate(
+            accepted_state(parent_state()), 1, pointer["manifest_sha256"])
+
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
+                patch.object(publication, "save_bamf_bundle",
+                             side_effect=writer.save_bamf_bundle), \
+                self.assertRaises(BilqisError):
+            publish_candidate(run, successor)
+        self.assertEqual(json.loads((run / "bamf-state.json").read_text())["generation"], 0)
+
+    def test_live_v2_non_genesis_parent_migrates_to_acceptance_bound_successor(self):
+        run = self.root / "v2-upgrade-run"
+        genesis = candidate(parent_state())
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            first = publish_candidate(run, genesis)
+
+        generation_one = candidate(
+            accepted_state(parent_state()), 1, first["manifest_sha256"])
+        stage = run / "legacy-v2-stage"
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            manifest = save_bamf_bundle(generation_one, stage)
+        target = run / "bamf-bundles" / manifest["manifest_sha256"]
+        stage.rename(target)
+        accepted_one = acceptance(generation_one)
+        acceptance_dir = run / "bamf-acceptance"
+        acceptance_dir.mkdir(exist_ok=True)
+        (acceptance_dir / f"{manifest['manifest_sha256']}.json").write_bytes(
+            canonical(accepted_one.to_record()))
+        pointer = {
+            "schema": BAMF_POINTER_SCHEMA,
+            "run_id": generation_one.run_id,
+            "generation": generation_one.generation,
+            "parent_manifest_sha256": generation_one.parent_manifest_sha256,
+            "bundle": f"bamf-bundles/{manifest['manifest_sha256']}",
+            "manifest_sha256": manifest["manifest_sha256"],
+            "acceptance_sha256": accepted_one.digest,
+        }
+        (run / "bamf-state.json").write_bytes(canonical(pointer))
+
+        generation_two = candidate(
+            next_accepted_step(generation_one.retained_state), 2,
+            manifest["manifest_sha256"])
+        accepted_two = mint_acceptance_binding(
+            retention_decision(
+                parent=generation_one.retained_state,
+                retained=generation_two.retained_state),
+            generation_two.retained_state,
+            run_id=generation_two.run_id,
+            generation=generation_two.generation,
+            feature_sha256=generation_two.extents.factor_map_digest)
+
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            successor = publish_bamf_generation(
+                run, generation_two, acceptance=accepted_two)
+
+        self.assertEqual(successor["generation"], 2)
+        child_manifest = json.loads(
+            (run / successor["bundle"] / "manifest.json").read_text())
+        self.assertEqual(
+            child_manifest["schema"], ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA)
+        self.assertEqual(
+            child_manifest["parent_acceptance_sha256"], accepted_one.digest)

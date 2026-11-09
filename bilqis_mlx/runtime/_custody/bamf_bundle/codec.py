@@ -10,7 +10,9 @@ import bilqis_mlx.runtime.mlx_checkpoint as _mlx_checkpoint
 from bilqis_mlx.data_plane import DataPlaneError, data_plane
 from bilqis_mlx.runtime.disk import assert_headroom
 from .records import (
-    SIDECARS, BamfBundleCandidate, BamfGenerationManifest, CompleteStudent,
+    ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BAMF_BUNDLE_SCHEMA, SIDECARS,
+    BamfBundleCandidate,
+    BamfGenerationManifest, CompleteStudent,
     canonical, invalid, sha, sidecar_records, validate_sidecars,
 )
 
@@ -29,6 +31,7 @@ class _ValidatedBundleParts:
     motif: object
     policy: object
     optimizer_step: int
+    run_identity: object | None
 
 
 def _write_file(path: Path, raw: bytes) -> str:
@@ -39,9 +42,18 @@ def _write_file(path: Path, raw: bytes) -> str:
     return sha(raw)
 
 
+_UNBOUND_PARENT_ACCEPTANCE = object()
+
+
 def save_bamf_bundle(candidate: BamfBundleCandidate, destination: Path, *,
-                     reserve_gib: float = 100.0) -> dict:
-    """Write and read back one immutable v2 generation without publishing it."""
+                     reserve_gib: float = 100.0,
+                     parent_acceptance_sha256=_UNBOUND_PARENT_ACCEPTANCE) -> dict:
+    """Write and read back one immutable generation without publishing it.
+
+    Publication passes the exact accepted-parent digest explicitly. Standalone
+    unbound custody writes remain v2 so they cannot masquerade as acceptance-bound
+    publication evidence.
+    """
     destination = Path(destination)
     if destination.exists() or destination.is_symlink():
         invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
@@ -77,12 +89,16 @@ def save_bamf_bundle(candidate: BamfBundleCandidate, destination: Path, *,
             "object_sha256": digest,
         }
     hp = candidate.optimizer_hyperparameters
+    publication_bound = parent_acceptance_sha256 is not _UNBOUND_PARENT_ACCEPTANCE
     manifest = BamfGenerationManifest(
         candidate.run_id, candidate.generation, candidate.parent_manifest_sha256,
         candidate.implementation_sha256, candidate.topology.to_record(),
         candidate.extents.to_record(), candidate.provenance.to_record(), tensor,
         {"schema": retained.optimizer.schema_version, "step": retained.optimizer_step,
-         "hyperparameters": asdict(hp)}, candidate.transition, bindings).to_record()
+         "hyperparameters": asdict(hp)}, candidate.transition, bindings,
+        parent_acceptance_sha256 if publication_bound else None,
+        ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA if publication_bound
+        else BAMF_BUNDLE_SCHEMA).to_record()
     raw = canonical(manifest)
     digest = _write_file(destination / "manifest.json", raw)
     plane.put_node(digest, raw, candidate.generation, candidate.parent_manifest_sha256)
@@ -133,7 +149,9 @@ def validate_bamf_bundle_custody(
     except (ValueError, json.JSONDecodeError, KeyError, TypeError):
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
     recorded = set(manifest.get("sidecars", {}))
-    if (recorded not in (set(SIDECARS), set(SIDECARS) - {"step_proofs"})
+    required = set(SIDECARS) - {"run_identity"}
+    if (recorded not in (set(SIDECARS), set(SIDECARS) - {"step_proofs"},
+                         required, required - {"step_proofs"})
             or set(manifest["optimizer"]) != {"schema", "step", "hyperparameters"}
             or manifest["optimizer"]["step"] != manifest.get("tensors", {}).get("optimizer_step")):
         invalid()
@@ -207,9 +225,15 @@ def _load_validated_bundle_parts(
     tensor_path, tensor_binding = _tensor_read_path(root, manifest["tensors"])
     numerical = _mlx_checkpoint.load_bamf_state_payload(
         tensor_path, tensor_binding, spec, extents)
+    run_identity = None
+    if "run_identity" in records:
+        from .genesis import BamfRunIdentity
+        run_identity = BamfRunIdentity.from_record(records["run_identity"])
+        if run_identity.run_id != manifest["run_id"]:
+            invalid("BAMF_RUN_IDENTITY_DRIFT")
     return _ValidatedBundleParts(
         manifest, spec, extents, provenance, records, hp, numerical, motif, policy,
-        manifest["optimizer"]["step"])
+        manifest["optimizer"]["step"], run_identity)
 
 
 def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None) -> CompleteStudent:
@@ -225,10 +249,24 @@ def load_bamf_bundle(root: Path, *, expected_manifest_sha256: str | None = None)
     retained, parts = _load_retained_candidate_state_with_parts(
         root, expected_manifest_sha256=expected_manifest_sha256)
     manifest = parts.manifest
-    return CompleteStudent(
+    student = CompleteStudent(
         manifest["run_id"], manifest["generation"], manifest["parent_manifest_sha256"],
         manifest["implementation_sha256"], parts.spec, parts.extents, retained, parts.hp,
         parts.provenance, parts.records["semantic_abi"], parts.records["compiler_features"],
         parts.records["correction_frontier"], parts.records["teacher_state"],
         parts.records["evaluation_contract"], manifest["transition"],
-        tuple(parts.records["outbox"]))
+        tuple(parts.records["outbox"]), parts.run_identity)
+    if student.run_identity is not None and student.generation == 0:
+        from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+        identity = student.run_identity
+        if (identity.initial_candidate_identity_sha256
+                != candidate_identity_digest(student.retained_state)
+                or identity.initial_topology_digest != student.topology.digest
+                or identity.initial_extents_digest != student.extents.digest
+                or identity.initial_implementation_sha256 != student.implementation_sha256
+                or identity.initial_source_identity != student.provenance.source_identity
+                or identity.initial_release_digest != student.provenance.release_digest
+                or identity.initial_teacher_identity != student.provenance.teacher_identity
+                or identity.initial_teacher_epoch != student.provenance.teacher_epoch):
+            invalid("BAMF_RUN_IDENTITY_DRIFT")
+    return student

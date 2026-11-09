@@ -32,15 +32,27 @@ over-limit exception must name its reason, authority and expiry in the lane file
 
 ## Implementation posture
 
-Read root README.md and AGENTS.md once per fresh execution session, this issue plus its live amendments, direct dependency receipts and the listed source files. Work on the assigned lane branch with one writer; shared-file edits go through the integration owner. Preserve unrelated work. Use package-local unit tests and one smallest real integration witness; run the repository aggregate checks at an integration boundary, not after every tiny edit. Change only what the prescribed outcome needs. Any stale dependency label is rechecked against its exact branch/commit receipt. On completion commit and push the feature branch, read back its SHA, comment on this issue and the lane PR, and add `Closes #<this issue>` to that PR's Development section. Include changed paths, commands/results, EGM disposition, exact dependencies and next ready leaf. Keep branch work alive across page boundaries; checkpoint instead of stopping solely because quota is low. Live training is operator-started; disposable finite test students are permitted. No main merge is delegated by this issue.
+Read root README.md and AGENTS.md once per fresh execution session, this issue plus its live amendments, direct dependency receipts and the listed source files. Work on the assigned lane branch with one writer; shared-file edits go through the integration owner. Preserve unrelated work. Use package-local unit tests and one smallest real integration witness; run the repository aggregate checks at an integration boundary, not after every tiny edit. Change only what the prescribed outcome needs. Any stale dependency label is rechecked against its exact branch/commit receipt. On completion commit and push the feature branch, read back its SHA, comment on this issue and the lane PR, and add `Closes #<this issue>` to that PR's Development section. Include changed paths, commands/results, design-review disposition, exact dependencies and next ready leaf. Keep branch work alive across page boundaries; checkpoint instead of stopping solely because quota is low. Live training is operator-started; disposable finite test students are permitted. No main merge is delegated by this issue.
 
 Treat the selected shape, source authority, whole-system capability policy, plasticity and generated curriculum as settled. Implement the specified behavior. Where a small non-contract detail is unspecified, choose the smallest locally consistent implementation, record it in the leaf receipt and proceed. Escalate only an actual incompatible contract or unavailable permission; keep independent work moving.
 
-## EGM
+## EGM and verification
 
-Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c` under the canonical merge-readiness policy in `docs/tasks/bamf-0.2/EGM_EXECUTION.md`. Keep the implementer as the Elephant and spend a genuinely fresh-context Goldfish review only when the exact PR head is otherwise ready for human merge: all known Blocker/Major remediation is complete, required dependency/current-unified authority is consumed, and affected local/hosted proof is green. Do not spend fresh EGM after each individual fix or remediation issue. If a final EGM finds new Blocker/Major work, record it, repair the complete known set with ordinary engineering review/proof, then request one new fresh EGM pass on the next whole merge candidate. One cohesive batch may contain at most three merge-ready leaves with findings attributed to each issue. Cosmetic nits never delay delivery. If fresh independent review is unavailable at merge readiness, record `EGM_PENDING`; never substitute same-context self-review.
+Follow the canonical lifecycle in `docs/tasks/bamf-0.2/EGM_EXECUTION.md`.
 
-Fetch EGM once into a tool cache outside the public source and pin `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Use the actual `agents/implementation_readiness.md`, `agents/codebase_details.md`, `agents/comprehension.md` and their referenced standards. The fresh reviewer receives the leaf, necessary source, diff and receipts, not the implementer's full session. Reuse an approved specification review; spend fresh review on the actual implementation or at most three cohesive leaves.
+EGM review happens before substantive implementation and targets the issue,
+specification, or implementation plan. Reuse an approved design review unless the
+design meaning changes. During implementation, use claim-first differential
+verification and reuse passing evidence whose assumptions remain unchanged. When the
+implementation is stable, run bounded design-to-code drift analysis, then the
+applicable premerge gate before PR turn-in.
+
+Use fresh Goldfish context only for the design-review work defined by the selected EGM
+persona and standard. Do not use a post-implementation Goldfish code review as a
+substitute for differential tests, drift analysis, or premerge verification.
+
+Record the design-review disposition, exact verification receipts, drift disposition,
+and next ready leaf in the closeout.
 
 ## Machine resources
 
@@ -48,4 +60,4 @@ M3 Ultra owns real MLX work. The second workstation may perform source generatio
 
 ## Finish a leaf, continue
 
-Push and read back the SHA. Open a PR from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for this completed issue, add `Closes #<leaf>` to the PR Development section, and comment on the leaf with the PR and exact branch/head receipt. Human sign-off is required; do not self-merge. Include exact changed paths, test commands and totals, EGM disposition and next ready leaf. After accepted work lands on unified, the next leaf starts by syncing unified again. Checkpoint every coherent unit and continue until the lane has no executable independent work. A low quota warning alone is not a blocker.
+Push and read back the SHA. Open a PR from `codex/bamf02-c-runtime` into `codex/bamf-unified-base-20261028` for this completed issue, add `Closes #<leaf>` to the PR Development section, and comment on the leaf with the PR and exact branch/head receipt. Human sign-off is required; do not self-merge. Include exact changed paths, test commands and totals, design-review disposition and next ready leaf. After accepted work lands on unified, the next leaf starts by syncing unified again. Checkpoint every coherent unit and continue until the lane has no executable independent work. A low quota warning alone is not a blocker.

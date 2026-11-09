@@ -1,16 +1,13 @@
-"""Three exploratory Ithkuil senses share a finite before/after event adapter.
+"""Three source-qualified Ithkuil senses share a finite before/after event adapter.
 
 This models observed occurrence, inactive-to-active commencement and active-to-
 inactive termination. It does not realize morphology, causation or origination.
-Prototype token admissions belong only to issue349 experiments.
+Catalog additions remain neural-inert proposals until the BAMF admission owner
+accepts them; this module owns only source semantics, generation and checking.
 """
 from dataclasses import replace
-from functools import lru_cache
 from pathlib import Path
-import csv
-import hashlib
 import random
-from types import MappingProxyType
 
 from ..curriculum import AnswerFamily, BINARY
 from ..factory.adapters import RegisteredSourceAdapter
@@ -28,56 +25,24 @@ from ..factory.semantic_contrast.teaching import (
     contrast_semantic_footprint,
     enrich_contrasts,
 )
-from ..vocabulary_growth import AdmittedToken, append_catalog, digest
-
-DIALECT = 'bilqis.finite-event-frame/v1'
-GENERATOR = 'bilqis.issue349.event-frames/v1'
-ROOT = Path(__file__).resolve().parents[3]
-_BALANCE_MODULUS = 2
-SPECS = MappingProxyType({
-    'D.EVENT_OCCURRENCE': ('LEXSENSE-294d00be074a56', ('A.IDENTITY',)),
-    'D.COMMENCEMENT': ('LEXSENSE-45453409b348c4', ('D.EVENT_OCCURRENCE',)),
-    'D.TERMINATION': ('LEXSENSE-fb0402389745d0', ('D.EVENT_OCCURRENCE','D.COMMENCEMENT')),
-})
-SYMBOLS = {cap: 'experiment.ithkuil.op.' + cap.split('.')[1] for cap in SPECS}
-TRUE, FALSE = 'cogal.value.true', 'cogal.value.false'
-PROVIDER_IMPLEMENTATION_FILES = (
-    'source_adapters/event_frames.py',
-    'verification/event_frames.py',
-    'factory/semantic_contrast/teaching.py',
-    'factory/semantic_contrast/checker.py',
-    'factory/semantic_contrast/models.py',
-    'factory/semantic_contrast/transform.py',
-    'factory/semantic_contrast/types.py',
+from ..vocabulary_growth import digest
+from .event_authority import (
+    SEMANTIC_IDS, SOURCE_SPECS, SPECS, SYMBOLS, atlas_semantic_id,
+    provider_implementation_digest, source_contract_digest, source_invalid as _source_invalid,
+    source_senses, _verify_source_row,
+)
+from .event_staging import (
+    capability_definition, event_grade_id, expanded_graph, projected_graph, stage_capability,
 )
 
-
-def provider_implementation_digest(overrides=None):
-    overrides = {} if overrides is None else overrides
-    def source_bytes(name):
-        if name in overrides:
-            return overrides[name]
-        if name == 'source_adapters/event_frames.py':
-            return Path(__file__).read_bytes()
-        return (ROOT/'bilqis_mlx'/name).read_bytes()
-    return digest({
-        name: hashlib.sha256(source_bytes(name)).hexdigest()
-        for name in PROVIDER_IMPLEMENTATION_FILES
-    })
+DIALECT = 'bilqis.finite-event-frame/v1'
+GENERATOR = 'bilqis.ithkuil-event-frame-constructor/v1'
+ADAPTER_ID = 'source.ithkuil-event-frames/v1'
+ROOT = Path(__file__).resolve().parents[3]
+_BALANCE_MODULUS = 2
 
 
-@lru_cache(maxsize=1)
-def source_senses():
-    with (ROOT/'lib/ithkuil/_data/csv/lexicon_root_senses.csv').open() as stream:
-        rows = {r['lexicon_sense_id']: r for r in csv.DictReader(stream)}
-    result = {}
-    for cap, (sense, _) in SPECS.items():
-        row = rows[sense]
-        pdf = ROOT/'lib/ithkuil/_data/pdf'/row['tracked_pdf_name']
-        if hashlib.sha256(pdf.read_bytes()).hexdigest() != row['tracked_pdf_sha256']:
-            raise ValueError('EVENT_FRAME_SOURCE_PDF_DRIFT')
-        result[cap] = row
-    return result
+TRUE, FALSE = 'cogal.value.true', 'cogal.value.false'
 
 
 def expression(graph, capability, before, after):
@@ -163,7 +128,7 @@ def semantic_footprint(row):
 
 
 def registered_adapter():
-    return RegisteredSourceAdapter(SourceAdapter('source.issue349.event-frames/v1',
+    return RegisteredSourceAdapter(SourceAdapter(ADAPTER_ID,
         GENERATOR,(ORACLE,),provider_implementation_digest(),
         variation_axes=('event-identity','before-state','after-state','fact-order','fresh-seed'),
         teaching_option_ids=(SEMANTIC_CONTRAST_OPTION,)),
@@ -175,33 +140,19 @@ def registered_adapter():
         semantic_footprint=semantic_footprint)
 
 
-def expanded_graph(parent):
-    sources = source_senses(); admissions = []
-    for cap, (sense, prereqs) in SPECS.items():
-        if SYMBOLS[cap] in parent['tokens']:
-            continue
-        row = sources[cap]; proof = digest((GENERATOR, sense, row['source_text_sha256']))
-        admissions.append(AdmittedToken(SYMBOLS[cap], 'experiment:349/'+sense+'/event-frame/v1',
-            row['sense_summary']+'; exploratory finite event observation/transition only',
-            'new_ithkuil','compositional',row['source_url'],row['source_text_sha256'],
-            proof,registered_adapter().descriptor.implementation_sha256,
-            ('development.Event.E0',),cap,proof,signature='Boolean*Boolean->Boolean',arity=2))
-    return append_catalog(parent,tuple(admissions),allow_disposable_fixtures=True)[0] if admissions else parent
-
-
 def compile_tranche(current, graph, *, source_root, source_registry, answer_registry):
-    """A small experimental factory instance; existing runtime owns execution."""
+    """Compile the three source-qualified event capabilities without admitting them."""
     sources = source_senses()
     caps = tuple(CapabilitySpec(cap,'finite-event-frame',(SYMBOLS[cap],),(SYMBOLS[cap],),
         prerequisites,(),(AnswerFamily('binary',BINARY),))
         for cap,(_,prerequisites) in SPECS.items())
-    grade = GradeSpec('D',caps,tuple((cap,12) for cap in SPECS),
+    grade = GradeSpec(event_grade_id(current.curriculum),caps,tuple((cap,12) for cap in SPECS),
         tuple((cap,) for cap in SPECS))
     curriculum = replace(current.curriculum,grades=(*current.curriculum.grades,grade))
     bindings = replace(current.source_bindings,bindings=(*current.source_bindings.bindings,
         *(CapabilitySourceBinding(cap,'ithkuil:sense/'+sense+'@sha256:'+sources[cap]['source_text_sha256'],
             GENERATOR,ORACLE) for cap,(sense,_) in SPECS.items())))
     return compile_executable_factory_release(curriculum,bindings,
-        CurriculumProfile('issue349/pathfinding-events/v1',grades=current.profile.grades),
+        CurriculumProfile('bamf/event-frames/v1',grades=current.profile.grades),
         source_registry,answer_registry,source_root=source_root,graph=graph,
-        verification_seed=349,predecessor=current)
+        verification_seed=2026110703,predecessor=current)

@@ -27,7 +27,7 @@ GROUPS = MappingProxyType({
                  "teacher_policy_selection"),
     "_depth": ("atlas_refinement", "block_attnres", "refinement_contracts",
                "refinement_policy", "refinement_ranking"),
-    "_correction": ("atlas_requalification", "atlas_temporal_revalidation",
+    "_correction": ("atlas_artifact_owner", "atlas_requalification", "atlas_temporal_revalidation",
                     "atlas_correction_branches", "atlas_requalification_contracts",
                     "atlas_temporal_contracts", "atlas_stale_replay"),
     "_batch": ("atlas_training_adapter", "candidate_evidence", "atlas_memory_retry",

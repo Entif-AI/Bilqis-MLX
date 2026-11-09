@@ -75,7 +75,11 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
                 capability_map={item.capability_id: item for item in capabilities},
             ),
         )
-        source = SimpleNamespace(__post_init__=lambda: None, release=release)
+        source = SimpleNamespace(
+            __post_init__=lambda: None,
+            release=release,
+            require_accepted_runtime=Mock(),
+        )
         candidate = object.__new__(CandidateTransaction)
         object.__setattr__(candidate, "training_authorities", (
             SimpleNamespace(delivery_capability=target, release_sha256=release_sha),
