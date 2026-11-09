@@ -109,15 +109,9 @@ class BamfFirstStudentTests(unittest.TestCase):
                 patch.object(mlx_checkpoint, "assert_headroom"):
             return preflight_bamf_foundation(config, release, target)
 
-    def test_preflight_publishes_exact_owner_bound_zero_update_foundation(self):
-        target = self.root / "new-run"
-        receipt = self.preflight(target)
-        with shape_patch():
-            student, manifest_sha256 = load_bamf_generation_authority(
-                target / "bamf-state.json")
-            declared = model_topology_v2.expected_bamf_shapes(
-                student.topology, student.extents)
-
+    def assert_owner_identity(self, receipt, student, manifest_sha256):
+        source_identity = (self.release.source_bindings.source_attestation_sha256
+                           or self.release.source_bindings.digest())
         self.assertEqual(receipt.schema_version, BAMF_LAUNCH_RECEIPT_SCHEMA)
         self.assertEqual(receipt.config_schema_version, BAMF_FOUNDATION_CONFIG_SCHEMA)
         self.assertEqual(receipt.run_identity, student.run_identity)
@@ -131,8 +125,6 @@ class BamfFirstStudentTests(unittest.TestCase):
         self.assertEqual(
             receipt.run_identity.initial_implementation_sha256,
             student.implementation_sha256)
-        source_identity = (self.release.source_bindings.source_attestation_sha256
-                           or self.release.source_bindings.digest())
         self.assertEqual(receipt.run_identity.initial_source_identity, source_identity)
         self.assertEqual(student.provenance.source_identity, source_identity)
         self.assertEqual(
@@ -147,6 +139,8 @@ class BamfFirstStudentTests(unittest.TestCase):
         self.assertEqual(
             receipt.run_identity.factory_release_sha256,
             self.release.release_sha256)
+
+    def assert_zero_optimizer_and_semantics(self, receipt, student, declared):
         self.assertEqual(receipt.optimizer_hyperparameters, self.hp)
         self.assertEqual(student.optimizer_hyperparameters, self.hp)
         self.assertEqual(student.retained_state.optimizer_step, 0)
@@ -173,6 +167,8 @@ class BamfFirstStudentTests(unittest.TestCase):
         self.assertTrue(all(
             not bool(mx.any(count))
             for count in student.retained_state.optimizer.update_counts.values()))
+
+    def assert_teacher_and_dashboard(self, receipt, student, target):
         self.assertEqual(
             student.teacher_state["teacher_identity"],
             self.release.execution_plan.projection_digests.teaching)
@@ -225,6 +221,18 @@ class BamfFirstStudentTests(unittest.TestCase):
         self.assertEqual(receipt.optional_services_required, ())
         for optional in ("akasha", "low-bit-cache", "private-journal"):
             self.assertFalse((target / optional).exists())
+
+    def test_preflight_publishes_exact_owner_bound_zero_update_foundation(self):
+        target = self.root / "new-run"
+        receipt = self.preflight(target)
+        with shape_patch():
+            student, manifest_sha256 = load_bamf_generation_authority(
+                target / "bamf-state.json")
+            declared = model_topology_v2.expected_bamf_shapes(
+                student.topology, student.extents)
+        self.assert_owner_identity(receipt, student, manifest_sha256)
+        self.assert_zero_optimizer_and_semantics(receipt, student, declared)
+        self.assert_teacher_and_dashboard(receipt, student, target)
 
     def test_preflight_rejects_occupied_run_directory_without_touching_it(self):
         target = self.root / "old-run"
