@@ -96,6 +96,9 @@ Current branch-local checks after activation and receipt creation:
   the repository's expected `held` status rather than an executable order.
 - `npm run quality:structure` with base `e206ec0e`: **PASS**, zero structure
   or governance-integrity violations.
+- `npm run quality:changed` with base `e206ec0e`: **PASS**. This includes
+  structure/governance, zero new changed-file smell findings, legacy-trainer
+  authority plus 7 tests, flow-control validation, and 15 flow-control tests.
 - `git diff --check`: **PASS**.
 
 ## Closure boundary
