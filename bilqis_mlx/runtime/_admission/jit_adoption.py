@@ -203,6 +203,7 @@ def _publish_native_staged_candidate(
         runtime, selected, proposal, native_staged, atlas_lease,
         source_authority):
     """Publish the exact A02 state after C07 and B13 authority replay."""
+    from . import admission as runtime_admission
     from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_lease
     from bilqis_mlx.runtime.bamf_bundle import (
         load_bamf_generation_authority, publish_atlas_admission_generation,
@@ -228,6 +229,12 @@ def _publish_native_staged_candidate(
         runtime.run_dir, source_authority=source_authority)
     if persisted is None or persisted != atlas_lease:
         _invalid("BAMF_ATLAS_PERSISTED_LEASE_REQUIRED")
+    release_file = runtime_admission._persist_executable_factory_release(
+        runtime.run_dir, selected.successor)
+    expected_release_file = (
+        "factory-releases/" + selected.successor.release_sha256 + ".json")
+    if release_file != expected_release_file:
+        _invalid("BAMF_ATLAS_FACTORY_RELEASE_DURABLE_DRIFT")
     retry_pointer = _accepted_native_retry(
         runtime.run_dir, candidate, candidate_identity=candidate_identity,
         parent_feature=parent_feature, staging_digest=staging_digest,

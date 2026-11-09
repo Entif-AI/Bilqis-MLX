@@ -199,6 +199,9 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
         plan, ledger, proposal = self._proposal(self.staged)
         fixture = self.fixture.fixture
         pointer = {"schema": "bilqis.mlx.bamf-state/v2", "generation": 1}
+        ordering = []
+        persisted_file = (
+            "factory-releases/" + self.staged.successor.release_sha256 + ".json")
         with self.admitted_boundary(), patch(
                 "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
                 return_value=(parent, "a" * 64)), patch(
@@ -208,8 +211,10 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
                 return_value=parent_feature), patch(
                 "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_lease",
                 return_value=lease), patch(
+                "bilqis_mlx.runtime.admission._persist_executable_factory_release",
+                side_effect=lambda _run_dir, _release: ordering.append("factory") or persisted_file) as persist, patch(
                 "bilqis_mlx.runtime.bamf_bundle.publish_atlas_admission_generation",
-                return_value=pointer) as publish, patch.object(
+                side_effect=lambda *args, **kwargs: ordering.append("b13") or pointer) as publish, patch.object(
                 release_adoption, "_adopt_prepared_successor",
                 side_effect=AssertionError("legacy materialization")):
             result = _execute_prepared_successor_adoption(
@@ -227,6 +232,8 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
         self.assertEqual(binding.lease_sha256, lease.digest())
         self.assertEqual(binding.factory_release_sha256,
                          self.staged.successor.release_sha256)
+        persist.assert_called_once_with(self.root, self.staged.successor)
+        self.assertEqual(ordering, ["factory", "b13"])
         self.assertEqual(result.native_pointer, pointer)
         self.assertIs(result.optimizer, self.optimizer)
 
@@ -284,6 +291,10 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
 
         self.assertEqual(result.native_pointer, pointer)
         publish.assert_not_called()
+        self.assertTrue((
+            self.root / "factory-releases" /
+            (self.staged.successor.release_sha256 + ".json")
+        ).is_file())
 
 
 if __name__ == "__main__":
