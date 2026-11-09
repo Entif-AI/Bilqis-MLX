@@ -1,10 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "7d9e0e8209e2d077e4fc30f65a3ebf3f29a91f3f",
-  "updated_at": "2026-11-09T03:16:54Z",
+  "observed_unified": "2c26d4aca90f275e1c255aa6a197ab63e0528480",
+  "updated_at": "2026-11-09T05:10:22Z",
   "exception": null,
   "items": [
+    {
+      "issue": 917,
+      "pr": 927,
+      "state": "ACTIVE",
+      "head_sha": "f4686d1211790130e7cc0296aceddd7a5e60bdd1",
+      "summary": "C09 remediation is active on draft PR #927 after repairing the hosted portable-core long-function regression at f4686d12. Current hosted portable-core, portable, and semantic-abi-integrity checks are green. The leaf remains EGM-Failed and non-ready while it consumes the newly merged reviewed-unified head and undergoes fresh exact-head three-lens review.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/917-c09-source-authority-runtime-r3-20261108"
+    },
     {
       "issue": 516,
       "pr": 915,
