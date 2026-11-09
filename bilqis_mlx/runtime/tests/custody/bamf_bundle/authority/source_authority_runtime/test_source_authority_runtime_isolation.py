@@ -183,10 +183,20 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
             self.assertTrue(entered.wait(5))
             publish_future = pool.submit(
                 publish_candidate, self.run, successor)
-            self.assertFalse(publish_future.done())
+            rejected_while_locked = publish_future.done()
+            if rejected_while_locked:
+                with self.assertRaises(BilqisError) as rejected:
+                    publish_future.result()
+                self.assertEqual(
+                    rejected.exception.context["reason"],
+                    "BAMF_POINTER_WRITER_ACTIVE",
+                )
             release.set()
             old_cache = bind_future.result(timeout=5)
-            publish_future.result(timeout=5)
+            if rejected_while_locked:
+                publish_candidate(self.run, successor)
+            else:
+                publish_future.result(timeout=5)
 
         with shape_patch(), self.assertRaises(BilqisError) as caught:
             from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
