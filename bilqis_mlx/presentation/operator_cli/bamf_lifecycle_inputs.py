@@ -3,8 +3,10 @@ from __future__ import annotations
 
 from hashlib import sha256
 import json
+import math
 from pathlib import Path
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.paths import active_run_dir
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactIdentity
 from bilqis_mlx.semantics.atlas.snapshot_contracts import (
@@ -15,7 +17,7 @@ from bilqis_mlx.semantics.atlas_projection import ATLAS_MANIFEST_SCHEMA, _canoni
 
 
 def invalid(reason: str):
-    raise ValueError(reason)
+    ErrorBus.Raise(SCHOOL.BAMF_OPERATOR.INVALID, reason=reason)
 
 
 def fresh_target(path: Path) -> Path:
@@ -84,9 +86,16 @@ def foundation_hyperparameters(args, *, required: bool, materialize: bool = True
         "weight_decay": args.weight_decay,
     }
     if not materialize:
-        values = (record["learning_rate"], *record["betas"], record["eps"],
-                  record["weight_decay"])
-        if any(type(value) not in (int, float) for value in values):
+        learning_rate = record["learning_rate"]
+        beta1, beta2 = record["betas"]
+        eps = record["eps"]
+        weight_decay = record["weight_decay"]
+        values = (learning_rate, beta1, beta2, eps, weight_decay)
+        if (any(type(value) not in (int, float) or not math.isfinite(value)
+                for value in values)
+                or learning_rate <= 0
+                or not 0 <= beta1 < 1 or not 0 <= beta2 < 1
+                or eps <= 0 or weight_decay < 0):
             invalid("BAMF_OPERATOR_FOUNDATION_OPTIMIZER_INVALID")
         return record
     from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
@@ -122,7 +131,24 @@ def source_foundation():
     return source, release, graph
 
 
+def validate_foundation_authority(source, release, graph, atlas) -> None:
+    """Replay the read-only B13 and A01 authorities used by real create."""
+    from bilqis_mlx.runtime.bamf_bundle import (
+        issue_initial_factory_foundation_authority,
+        issue_initial_foundation_feature_authority,
+    )
+    from bilqis_mlx.semantics.atlas.snapshot import resolve_atlas_artifact_selection
+
+    authority = issue_initial_factory_foundation_authority(source, graph)
+    if authority.release != release:
+        invalid("BAMF_OPERATOR_SOURCE_FACTORY_AUTHORITY_DRIFT")
+    selection = resolve_atlas_artifact_selection(atlas)
+    feature_authority = issue_initial_foundation_feature_authority(selection)
+    if feature_authority.selection.identity != atlas:
+        invalid("BAMF_OPERATOR_ATLAS_SOURCE_AUTHORITY_DRIFT")
+
+
 __all__ = (
     "atlas_manifest_identity", "foundation_hyperparameters", "fresh_target",
-    "invalid", "source_foundation",
+    "invalid", "source_foundation", "validate_foundation_authority",
 )

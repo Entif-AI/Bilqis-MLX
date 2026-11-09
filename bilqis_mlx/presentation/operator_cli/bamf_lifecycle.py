@@ -8,7 +8,7 @@ from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactIdentity
 from .bamf_lifecycle_inputs import (
     atlas_manifest_identity, foundation_hyperparameters, fresh_target, invalid,
-    source_foundation,
+    source_foundation, validate_foundation_authority,
 )
 
 
@@ -24,7 +24,9 @@ def _foundation_inputs(args, topology: ModelTopologySpecV2, *, materialize_hp: b
         invalid("BAMF_OPERATOR_FOUNDATION_IDENTITY_REQUIRED")
     if args.atlas_release_manifest is None:
         invalid("BAMF_OPERATOR_ATLAS_MANIFEST_REQUIRED")
-    if args.admission_policy != "staged" or args.atlas_admission_scope is not None:
+    if args.admission_policy != "atlas-release":
+        invalid("BAMF_OPERATOR_ATLAS_MANIFEST_POLICY_CONFLICT")
+    if args.atlas_admission_scope is not None:
         invalid("BAMF_ATLAS_ACCEPTED_RUN_AUTHORITY_UNAVAILABLE")
     hp = foundation_hyperparameters(
         args, required=True, materialize=materialize_hp)
@@ -76,6 +78,8 @@ def _report(*, result, run_id, run_seed, topology, atlas, policy, hp,
 
 
 def _resume(args, requested_topology):
+    if args.atlas_admission_scope is not None:
+        invalid("BAMF_OPERATOR_RESUME_ATLAS_SCOPE_OVERRIDE_FORBIDDEN")
     from bilqis_mlx.runtime.bamf_bundle import (
         load_bamf_generation_authority, read_accepted_generation_feature_receipt,
     )
@@ -125,6 +129,7 @@ def bamf_lifecycle(args, topology):
     if args.dry_run:
         source, release, graph, atlas, hp = _foundation_inputs(
             args, topology, materialize_hp=False)
+        validate_foundation_authority(source, release, graph, atlas)
         return _report(
             result="READY_TO_CREATE", run_id=args.run_id, run_seed=args.run_seed,
             topology=topology, atlas=atlas, policy="staged", hp=hp,

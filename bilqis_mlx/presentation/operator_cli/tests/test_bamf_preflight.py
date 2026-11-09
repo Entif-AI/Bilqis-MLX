@@ -59,7 +59,8 @@ class BamfPreflightTests(unittest.TestCase):
             manifest.write_bytes(raw)
             before = manifest.stat()
             code, output, errors = self.invoke([
-                '--run-dir', str(root / 'new'), '--atlas-release-manifest', str(manifest),
+                '--run-dir', str(root / 'new'), '--admission-policy', 'atlas-release',
+                '--atlas-release-manifest', str(manifest),
                 '--run-id', 'dry-run', '--run-seed', '7',
                 '--learning-rate', '0.001', '--adam-beta1', '0.9',
                 '--adam-beta2', '0.95', '--adam-eps', '1e-8', '--weight-decay', '0.1'])
@@ -78,7 +79,8 @@ class BamfPreflightTests(unittest.TestCase):
                 'release_sha256': '0' * 64,
             }))
             code, output, errors = self.invoke([
-                '--run-dir', str(root / 'new'), '--atlas-release-manifest', str(manifest),
+                '--run-dir', str(root / 'new'), '--admission-policy', 'atlas-release',
+                '--atlas-release-manifest', str(manifest),
                 '--run-id', 'source-pin-test', '--run-seed', '7',
                 '--learning-rate', '0.001', '--adam-beta1', '0.9',
                 '--adam-beta2', '0.95', '--adam-eps', '1e-8', '--weight-decay', '0.1'])

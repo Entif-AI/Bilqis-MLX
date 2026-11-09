@@ -63,6 +63,8 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
                 return_value=(self.source, self.release, self.graph)), patch(
                 "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.atlas_manifest_identity",
                 return_value=self.identity), shape_patch(), genesis_feature_source_patch(), patch(
+                "bilqis_mlx.semantics.atlas.snapshot.resolve_atlas_artifact_selection",
+                return_value=self.selection), patch(
                 "bilqis_mlx.runtime.bamf_first_student.resolve_atlas_artifact_selection",
                 return_value=self.selection), patch.object(
                 mlx_checkpoint, "assert_headroom"):
@@ -72,13 +74,10 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         target = self.root / "new-bamf"
         manifest = self.root / "manifest.json"
         manifest.write_text("{}", encoding="utf-8")
-        with patch(
-                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.source_foundation",
-                return_value=(self.source, self.release, self.graph)), patch(
-                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.atlas_manifest_identity",
-                return_value=self.identity):
+        with self.foundation_create_context():
             code, output, errors = self.invoke([
                 "--dry-run", "--model-topology", str(TOPOLOGY),
+                "--admission-policy", "atlas-release",
                 "--atlas-release-manifest", str(manifest),
                 "--run-dir", str(target), "--source-prefetch-workers", "0",
                 *self.FOUNDATION_ARGS,
@@ -101,6 +100,42 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         self.assertEqual(report["neural_updates"], 0)
         self.assertFalse(target.exists())
 
+    def test_fresh_bamf_manifest_requires_explicit_atlas_release_policy(self):
+        target = self.root / "new-bamf"
+        manifest = self.root / "manifest.json"
+        manifest.write_text("{}", encoding="utf-8")
+        with patch(
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.atlas_manifest_identity",
+                return_value=self.identity):
+            code, output, errors = self.invoke([
+                "--dry-run", "--model-topology", str(TOPOLOGY),
+                "--atlas-release-manifest", str(manifest),
+                "--run-dir", str(target), *self.FOUNDATION_ARGS,
+            ])
+
+        self.assertEqual((code, output), (2, ""))
+        self.assertIn("BAMF_OPERATOR_ATLAS_MANIFEST_POLICY_CONFLICT", errors)
+        self.assertFalse(target.exists())
+
+    def test_fresh_bamf_dry_run_rejects_invalid_optimizer_before_writes(self):
+        target = self.root / "new-bamf"
+        manifest = self.root / "manifest.json"
+        manifest.write_text("{}", encoding="utf-8")
+        code, output, errors = self.invoke([
+            "--dry-run", "--model-topology", str(TOPOLOGY),
+            "--admission-policy", "atlas-release",
+            "--atlas-release-manifest", str(manifest),
+            "--run-dir", str(target),
+            "--run-id", "operator-first-student", "--run-seed", "543",
+            "--learning-rate", "-0.1", "--adam-beta1", "0.88",
+            "--adam-beta2", "0.97", "--adam-eps", "1e-7",
+            "--weight-decay", "0.03",
+        ])
+
+        self.assertEqual((code, output), (2, ""))
+        self.assertIn("BAMF_OPERATOR_FOUNDATION_OPTIMIZER_INVALID", errors)
+        self.assertFalse(target.exists())
+
     def test_human_create_publishes_generation_zero_without_optimizer_update(self):
         target = self.root / "created-bamf"
         manifest = self.root / "manifest.json"
@@ -108,6 +143,7 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         with self.foundation_create_context():
             code, output, errors = self.invoke([
                 "--human-run", "--model-topology", str(TOPOLOGY),
+                "--admission-policy", "atlas-release",
                 "--atlas-release-manifest", str(manifest),
                 "--run-dir", str(target), *self.FOUNDATION_ARGS,
             ])
@@ -115,6 +151,7 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         self.assertEqual((code, errors), (0, ""))
         self.assertIn('"result": "CREATED"', output)
         self.assertTrue((target / "bamf-state.json").is_file())
+        self.assertFalse((target / "autonomy/atlas-admission/current.json").exists())
         with self.accepted_read_context():
             from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
             student, _manifest_sha = load_bamf_generation_authority(
@@ -154,14 +191,49 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         self.preflight(target)
         before = _tree_snapshot(target)
 
+        for policy_args in (("--admission-policy", "atlas-release"),
+                            ("--admission-policy=atlas-release",)):
+            with self.subTest(policy_args=policy_args), self.accepted_read_context():
+                code, output, errors = self.invoke([
+                    "--dry-run", "--resume", "--run-dir", str(target),
+                    *policy_args,
+                ])
+
+            self.assertEqual((code, output), (2, ""))
+            self.assertIn("BAMF_OPERATOR_RESUME_ADMISSION_POLICY_CONFLICT", errors)
+            self.assertEqual(_tree_snapshot(target), before)
+
+    def test_resume_rejects_atlas_scope_override_before_writes(self):
+        target = self.root / "accepted-bamf"
+        self.preflight(target)
+        before = _tree_snapshot(target)
+        scope = self.root / "scope.json"
+        scope.write_text("{}", encoding="utf-8")
+
         with self.accepted_read_context():
             code, output, errors = self.invoke([
                 "--dry-run", "--resume", "--run-dir", str(target),
-                "--admission-policy", "atlas-release",
+                "--atlas-admission-scope", str(scope),
             ])
 
         self.assertEqual((code, output), (2, ""))
-        self.assertIn("BAMF_OPERATOR_RESUME_ADMISSION_POLICY_CONFLICT", errors)
+        self.assertIn("BAMF_OPERATOR_RESUME_ATLAS_SCOPE_OVERRIDE_FORBIDDEN", errors)
+        self.assertEqual(_tree_snapshot(target), before)
+
+    def test_human_resume_is_cold_validation_only_and_neural_inert(self):
+        target = self.root / "accepted-bamf"
+        self.preflight(target)
+        before = _tree_snapshot(target)
+
+        with self.accepted_read_context(), patch(
+                "bilqis_mlx.presentation.operator_cli.command._invoke_learner",
+                side_effect=AssertionError("C16.2 owns later neural execution")):
+            code, output, errors = self.invoke([
+                "--human-run", "--resume", "--run-dir", str(target),
+            ])
+
+        self.assertEqual((code, errors), (0, ""))
+        self.assertEqual(json.loads(output)["result"], "READY_TO_RESUME")
         self.assertEqual(_tree_snapshot(target), before)
 
     def test_resume_conflicting_seed_and_optimizer_reject_before_writes(self):

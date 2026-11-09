@@ -109,5 +109,8 @@ def parse_args(argv=None):
     parsed = parser.parse_args(raw_argv)
     # C07's historical parser default is intentionally preserved for callers,
     # but BAMF resume must distinguish omission from an explicit policy override.
-    parsed.admission_policy_explicit = "--admission-policy" in raw_argv
+    parsed.admission_policy_explicit = any(
+        value == "--admission-policy" or value.startswith("--admission-policy=")
+        for value in raw_argv
+    )
     return parsed
