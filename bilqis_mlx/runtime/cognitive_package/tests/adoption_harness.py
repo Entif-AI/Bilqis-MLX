@@ -23,7 +23,6 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
-from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_correction_authority
 from bilqis_mlx.runtime.cognitive_package import (
     DeltaSlice, PackageArtifact, PackageBinding, PackageKind, ReceiverTensor, SourceRights,
     apply_plastic_delta, encode_plastic_delta, export_capability,
@@ -35,7 +34,9 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures imp
     genesis_feature_source_patch, issue_feature_authority, source_features,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    NAME, candidate, parent_state, publish_candidate, retention_decision, shape_patch,
+    NAME, candidate, parent_state, provision_source_authority_registry,
+    publish_candidate, retention_decision, shape_patch,
+    with_source_authority_registry,
 )
 from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_release_audit import ExportClearanceReceipt
@@ -98,8 +99,10 @@ class AdoptionHarness(TestCase):
             correction_frontier={**base.correction_frontier,
                                  "release_digest": self.selection.release_sha256,
                                  "source_authority_registry_sha256": self.registry.digest})
+        self.initial = with_source_authority_registry(self.initial, self.registry)
         foundation_features = issue_feature_authority(
             source_features(release=self.selection.release_sha256))
+        provision_source_authority_registry(self.run, self.registry)
         with shape_patch(), genesis_feature_source_patch(
                 source_features(release=self.selection.release_sha256)), \
                 patch.object(mlx_checkpoint, "assert_headroom"):
@@ -162,8 +165,6 @@ class AdoptionHarness(TestCase):
                 source_context=self.source_context())
 
     def source_context(self):
-        with shape_patch():
-            bind_accepted_correction_authority(self.run, self.registry)
         host = AcceptedRuntimeHost(self.run)
         receipt = {"factory_release_sha256": self.factory_release.release_sha256}
         with patch(

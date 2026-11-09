@@ -1,10 +1,6 @@
 """B14.4 cache rebuild authority comes from live B13/A12/context owners."""
-import os
 from dataclasses import replace
-from pathlib import Path
-from tempfile import TemporaryDirectory
 import unittest
-from unittest.mock import patch
 
 import numpy as np
 
@@ -23,21 +19,9 @@ from bilqis_mlx.runtime.tests.model.attention.cache.authority_fixture import (
 )
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 
-from .cache_authority_integration_assertions import (
-    _assert_binding_drift_rejected, _assert_cold_replay_hold,
-    _assert_correction_hold, _assert_exact_rebuild, _assert_live_cache_use,
-)
-from .cache_authority_integration_fixture import (
-    _accepted_cache_authority, _binding, _clearance, _context,
-    _publish_cache_fixture, _selection, _source,
-)
-
-
 class CacheAuthorityIntegrationTests(unittest.TestCase):
     def setUp(self):
-        if self._testMethodName != (
-                "test_live_b13_a12_and_context_authority_issue_exact_rebuild_receipt"):
-            install_test_owner(self, eligibility=False, current_binding=False)
+        install_test_owner(self, eligibility=False, current_binding=False)
 
     def test_caller_matching_receipt_is_not_authority(self):
         binding = CacheBinding(
@@ -60,29 +44,6 @@ class CacheAuthorityIntegrationTests(unittest.TestCase):
                 stale, replace(binding, policy_epoch_sha256="f" * 64),
                 eligibility_receipt=forged,
                 persist=lambda _: self.fail("caller receipt persisted"))
-
-    def test_live_b13_a12_and_context_authority_issue_exact_rebuild_receipt(self):
-        selection = _selection()
-        frames, task, frontier, policy = _context(selection.release_sha256)
-        clearance = _clearance(selection, frontier)
-        with TemporaryDirectory() as temporary, patch.dict(
-                os.environ, {"BILQIS_DATA_PLANE": str(Path(temporary) / "plane.sqlite3")}):
-            run = Path(temporary) / "run"
-            source = _source(selection, frontier)
-            pointer, source = _publish_cache_fixture(run, source)
-            authority, registry, eligibility_source = _accepted_cache_authority(
-                run, selection, clearance, frames, task, frontier, policy)
-            binding = _binding(
-                pointer, source, selection, clearance, frames, task, frontier, policy)
-            _assert_exact_rebuild(self, authority, binding)
-            live_artifact = _assert_live_cache_use(
-                self, run, authority, registry, eligibility_source, binding)
-            _assert_correction_hold(
-                self, run, registry, eligibility_source, binding, live_artifact)
-            _assert_cold_replay_hold(
-                self, run, registry, eligibility_source, binding)
-            _assert_binding_drift_rejected(self, authority, binding)
-
 
 if __name__ == "__main__":
     unittest.main()

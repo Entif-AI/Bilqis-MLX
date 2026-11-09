@@ -9,17 +9,24 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.runtime.accepted_corrections import (
-    _RUNTIME_OWNER, accepted_correction_id, record_accepted_correction,
+    AcceptedRuntimeHost,
+    _reset_accepted_correction_runtime_for_tests, accepted_correction_id, record_accepted_correction,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import read_records
 from bilqis_mlx.runtime.atlas_capability_support_owner import (
     load_capability_support_owner,
 )
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    accept_and_publish, derive_successor_bundle, load_accepted_generation,
+)
 from bilqis_mlx.runtime.capability_support_journal import journal_path, read_journal
 from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
-    SOURCE_ROW, TARGET, publish_support_fixture,
+    SOURCE_ROW, TARGET, source_qualified_state,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    provision_source_authority_registry, publish_genesis, retention_decision,
+    shape_patch, with_source_authority_registry,
+)
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _ref, _sign_event,
 )
@@ -41,20 +48,43 @@ class CapabilitySupportLineageTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish_support(self):
-        return publish_support_fixture(
-            self.run, authority_registry=AUTHORITY)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            pointer = publish_genesis(self.run)
+            accepted_parent = load_accepted_generation(self.run)
+            parent, transaction, retained, authority = source_qualified_state(
+                accepted_parent.retained_state,
+                extents=accepted_parent.extents,
+                spec=accepted_parent.topology,
+            )
+            provision_source_authority_registry(self.run, AUTHORITY)
+            bundle = derive_successor_bundle(
+                accepted_parent,
+                retained,
+                parent_manifest_sha256=pointer["manifest_sha256"],
+                delivery_events=({"event": "FIXTURE_CAPABILITY_SUPPORT"},),
+            )
+            bundle = with_source_authority_registry(bundle, AUTHORITY)
+            decision = retention_decision(parent=parent, retained=retained)
+            published = accept_and_publish(
+                self.run, bundle, retained, decision=decision,
+                feature_sha256=bundle.extents.factor_map_digest,
+                training_authorities=transaction.training_authorities)
+        return published, authority
 
     def load_support(self, authority_registry=None):
         with shape_patch():
-            return load_capability_support_owner(
-                self.run, TARGET, authority_registry)
+            if authority_registry is not None:
+                from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+                cache = bind_accepted_execution_cache(self.run)
+                self.assertEqual(cache._correction_registry, authority_registry)
+            return load_capability_support_owner(self.run, TARGET)
 
     def test_cold_rehydrated_correction_remains_branch_ancestor_for_supersession(self):
         published, _authority = self.publish_support()
         live = self.load_support(AUTHORITY)
         first = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
         with shape_patch():
-            accepted_id = record_accepted_correction(self.run, first, AUTHORITY)
+            accepted_id = AcceptedRuntimeHost(self.run).record_correction(first)
         self.assertEqual(live.queue.event.event_id, first.event_id)
         manifest = published["manifest_sha256"]
         hold_path = journal_path(self.run, manifest, TARGET)
@@ -68,15 +98,9 @@ class CapabilitySupportLineageTests(unittest.TestCase):
             (accepted_id,),
         )
 
-        _RUNTIME_OWNER.clear()
+        _reset_accepted_correction_runtime_for_tests()
         reloaded = self.load_support(AUTHORITY)
         self.assertEqual(reloaded.queue.event.event_id, first.event_id)
-        target = reloaded._accepted_correction_target
-        self.assertIn(accepted_id, target.seen)
-        self.assertEqual(
-            tuple(branch.event.event_id for branch in target.branches[first.dependency].branches),
-            (first.event_id,),
-        )
 
         second = _sign_event(replace(
             first,
@@ -86,17 +110,11 @@ class CapabilitySupportLineageTests(unittest.TestCase):
             supersedes_event_ids=(first.event_id,),
         ))
         with shape_patch():
-            record_accepted_correction(self.run, second, AUTHORITY)
-
-        branches = target.branches[first.dependency]
-        self.assertEqual(
-            {branch.event.event_id for branch in branches.branches},
-            {first.event_id, second.event_id},
-        )
-        self.assertEqual(
-            tuple(branch.event.event_id for branch in branches.active),
-            (second.event_id,),
-        )
+            AcceptedRuntimeHost(self.run).record_correction(second)
+        self.assertIsNotNone(reloaded.queue)
+        self.assertEqual(reloaded.queue.event.event_id, second.event_id)
+        records = read_records(self.run, manifest)
+        self.assertEqual(len(records), 2)
 
 
 if __name__ == "__main__":

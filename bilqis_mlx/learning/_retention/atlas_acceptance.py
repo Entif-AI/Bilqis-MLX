@@ -16,7 +16,8 @@ from .atlas_retention_decision import CandidateRetentionDecision
 LEGACY_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v1"
 PREVIOUS_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v2"
 PREVIOUS_SOURCE_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v3"
-ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v4"
+PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v4"
+ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v5"
 DIGEST_HEX_LENGTH = 64
 _BINDING_ISSUER = object()
 _LEGACY_FIELDS = (
@@ -31,7 +32,9 @@ _V2_BINDING_FIELDS = (
     "evidence_sha256", "policy_sha256", "schema_version",
 )
 _V3_BINDING_FIELDS = _V2_BINDING_FIELDS[:-1] + ("source_anchors", "schema_version")
-_BINDING_FIELDS = _V3_BINDING_FIELDS
+_V4_BINDING_FIELDS = _V3_BINDING_FIELDS
+_BINDING_FIELDS = _V4_BINDING_FIELDS[:-1] + (
+    "source_authority_registry_sha256", "schema_version")
 _V3_SOURCE_ANCHOR_WIDTH = 9
 _SOURCE_ANCHOR_WIDTH = 10
 _DEPENDENCY_RECORD_WIDTH = 2
@@ -112,7 +115,7 @@ def _normalize_source_anchors(value, schema):
         if not isinstance(anchor, (tuple, list)):
             _invalid()
         anchor = tuple(anchor)
-        if schema == ACCEPTANCE_SCHEMA:
+        if schema in (PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA, ACCEPTANCE_SCHEMA):
             if len(anchor) != _SOURCE_ANCHOR_WIDTH:
                 _invalid()
             dependencies = anchor[-1]
@@ -128,7 +131,8 @@ def _normalize_source_anchors(value, schema):
 def _valid_source_anchors(value, schema=ACCEPTANCE_SCHEMA) -> bool:
     if type(value) is not tuple:
         return False
-    width = (_SOURCE_ANCHOR_WIDTH if schema == ACCEPTANCE_SCHEMA
+    width = (_SOURCE_ANCHOR_WIDTH if schema in (
+                 PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA, ACCEPTANCE_SCHEMA)
              else _V3_SOURCE_ANCHOR_WIDTH)
     for anchor in value:
         if type(anchor) is not tuple or len(anchor) != width:
@@ -138,7 +142,7 @@ def _valid_source_anchors(value, schema=ACCEPTANCE_SCHEMA) -> bool:
                 or not all(_is_digest(strings[index])
                            for index in _SOURCE_ANCHOR_DIGEST_INDEXES)):
             return False
-        if (schema == ACCEPTANCE_SCHEMA
+        if (schema in (PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA, ACCEPTANCE_SCHEMA)
                 and not _dependency_records(
                     anchor[_SOURCE_ANCHOR_DEPENDENCIES_INDEX])):
             return False
@@ -174,6 +178,7 @@ class AcceptedCandidateBinding:
     policy_sha256: str
     step_proof_sha256: tuple = ()
     source_anchors: tuple = ()
+    source_authority_registry_sha256: str | None = None
     schema_version: str = ACCEPTANCE_SCHEMA
     _issuance: object = field(init=False, default=None, repr=False, compare=False)
 
@@ -191,6 +196,8 @@ class AcceptedCandidateBinding:
                 or any(not _is_digest(value) for value in self.step_proof_sha256)
                 or not _valid_source_anchors(
                     self.source_anchors, ACCEPTANCE_SCHEMA)
+                or (self.source_authority_registry_sha256 is not None
+                    and not _is_digest(self.source_authority_registry_sha256))
                 or self.schema_version != ACCEPTANCE_SCHEMA):
             _invalid()
 
@@ -214,6 +221,8 @@ class AcceptedCandidateBinding:
                  else _V2_BINDING_FIELDS if schema == PREVIOUS_ACCEPTANCE_SCHEMA
                  else _V3_BINDING_FIELDS
                  if schema == PREVIOUS_SOURCE_ACCEPTANCE_SCHEMA
+                 else _V4_BINDING_FIELDS
+                 if schema == PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA
                  else _BINDING_FIELDS if schema == ACCEPTANCE_SCHEMA else ())
         if not names or set(record) != set(names) | {"binding_sha256"}:
             _invalid()
@@ -229,17 +238,21 @@ class AcceptedCandidateBinding:
                     "candidate_identity_sha256", "feature_sha256",
                     "decision_sha256"))):
             _invalid()
-        if names in (_V2_BINDING_FIELDS, _BINDING_FIELDS) and any(
+        if names in (_V2_BINDING_FIELDS, _V4_BINDING_FIELDS, _BINDING_FIELDS) and any(
                 not _is_digest(record[name]) for name in (
                     "parent_candidate_identity_sha256", "evidence_sha256",
                     "policy_sha256")):
             _invalid()
-        if names in (_V3_BINDING_FIELDS, _BINDING_FIELDS):
+        if names in (_V3_BINDING_FIELDS, _V4_BINDING_FIELDS, _BINDING_FIELDS):
             anchors = _normalize_source_anchors(record.get("source_anchors"), schema)
             if not _valid_source_anchors(anchors, schema):
                 _invalid()
+        if (names == _BINDING_FIELDS
+                and record["source_authority_registry_sha256"] is not None
+                and not _is_digest(record["source_authority_registry_sha256"])):
+            _invalid()
         payload = {name: record[name] for name in names}
-        if names in (_V3_BINDING_FIELDS, _BINDING_FIELDS):
+        if names in (_V3_BINDING_FIELDS, _V4_BINDING_FIELDS, _BINDING_FIELDS):
             payload["source_anchors"] = anchors
         if record["binding_sha256"] != hashlib.sha256(_canonical(payload)).hexdigest():
             _invalid()
@@ -254,7 +267,8 @@ class ParsedAcceptedCandidateBinding:
 
     def __getattr__(self, name: str):
         if (name in _LEGACY_FIELDS or name in _V2_BINDING_FIELDS
-                or name in _V3_BINDING_FIELDS or name in _BINDING_FIELDS):
+                or name in _V3_BINDING_FIELDS or name in _V4_BINDING_FIELDS
+                or name in _BINDING_FIELDS):
             return self.fields.get(name)
         raise AttributeError(name)
 
@@ -269,7 +283,9 @@ class ParsedAcceptedCandidateBinding:
 def mint_acceptance_binding(decision: CandidateRetentionDecision, state, *,
                             run_id: str, generation: int,
                             feature_sha256: str,
-                            training_authorities=None) -> AcceptedCandidateBinding:
+                            training_authorities=None,
+                            source_authority_registry_sha256: str | None = None,
+                            ) -> AcceptedCandidateBinding:
     """Bind a C05-approved decision to the exact B12 optimizer state."""
     state_digest = candidate_identity_digest(state)
     if (type(decision) is not CandidateRetentionDecision or not decision.accepted
@@ -289,6 +305,8 @@ def mint_acceptance_binding(decision: CandidateRetentionDecision, state, *,
             ("evidence_sha256", decision.evidence_sha256),
             ("policy_sha256", decision.policy_sha256),
             ("source_anchors", source_anchors),
+            ("source_authority_registry_sha256",
+             source_authority_registry_sha256),
             ("schema_version", ACCEPTANCE_SCHEMA),
             ("_issuance", _BINDING_ISSUER)):
         object.__setattr__(binding, name, value)

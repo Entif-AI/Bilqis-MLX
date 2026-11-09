@@ -304,7 +304,7 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
             _source_producer(
                 None, None, fresh_cache.generation_binding, stale_cache)
         self.assertEqual(mismatch.exception.context["reason"],
-                         "B11_ACCEPTED_CACHE_GENERATION_MISMATCH")
+                         "B13_EXECUTION_CACHE_STALE")
 
         object.__setattr__(stale_cache, "generation_binding", "corrupt")
         with self.assertRaises(BilqisError):

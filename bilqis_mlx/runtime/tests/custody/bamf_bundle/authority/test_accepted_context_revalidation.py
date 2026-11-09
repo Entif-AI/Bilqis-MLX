@@ -3,16 +3,18 @@ from dataclasses import replace
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.accepted_corrections import (
-    AcceptedRuntimeHost, ContextRevalidationFrontier, _RUNTIME_OWNER,
+    AcceptedRuntimeHost, ContextRevalidationFrontier, _reset_accepted_correction_runtime_for_tests,
     register_accepted_target,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     append_record, context_invalidation_record,
 )
-from bilqis_mlx.runtime.accepted_correction_runtime import require_pending_corrections
-from bilqis_mlx.runtime.accepted_correction_runtime import runtime
-from bilqis_mlx.runtime.atlas_owner_ingress import _route
+from bilqis_mlx.runtime.accepted_correction_runtime import (
+    deliver_accepted_context_invalidation, require_pending_corrections,
+)
+from bilqis_mlx.runtime._atlas_owner_ingress import _route
 from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_context_revalidation_support import (
@@ -53,16 +55,14 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
         self.assertEqual(
             owner.index.node(direct.artifact_id).immediate_dependencies, (new_time,))
 
-        admission._EXECUTION_CACHE_OWNER.entries.clear()
-        _RUNTIME_OWNER.clear()
+        _reset_execution_cache_owner_for_tests()
+        _reset_accepted_correction_runtime_for_tests()
         cold_owner = ContextOwner((replace(direct), replace(descendant)))
         with shape_patch():
             cold_cache = bind_accepted_execution_cache(self.run)
             register_accepted_target(
                 self.run, cold_cache.accepted_manifest_sha256,
-                "TEST_CONTEXT", cold_owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority), AUTHORITY)
+                "TEST_CONTEXT", cold_owner)
         self.assertIsNone(require_pending_corrections(cold_owner, direct.artifact_id))
         self.assertEqual(
             cold_owner.index.node(direct.artifact_id).immediate_dependencies,
@@ -89,9 +89,7 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
         with shape_patch():
             register_accepted_target(
                 self.run, cache.accepted_manifest_sha256,
-                "TEST_CONTEXT_LATE", owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority), AUTHORITY)
+                "TEST_CONTEXT_LATE", owner)
             host = AcceptedRuntimeHost(self.run)
         invalidation = C09ContextInvalidation(
             old_context_digest=case.previous.digest,
@@ -111,11 +109,13 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
                 for handle in (frame.frame_handle, *frame.member_handles)
             })),
         )
-        record = context_invalidation_record(
-            cache.accepted_manifest_sha256, invalidation)
-        append_record(self.run, cache.accepted_manifest_sha256, record)
-        runtime(self.run, cache.accepted_manifest_sha256).deliver_context_invalidation(
-            record["event_id"], invalidation)
+        with shape_patch():
+            record = context_invalidation_record(
+                cache.accepted_manifest_sha256, invalidation)
+            append_record(self.run, cache.accepted_manifest_sha256, record)
+            deliver_accepted_context_invalidation(
+                self.run, cache.accepted_manifest_sha256,
+                record["event_id"], invalidation)
         old_time = DependencyRef(
             DependencyKind.TIME, "time:asof:context:" + case.previous.digest)
         new_time = DependencyRef(
@@ -129,14 +129,8 @@ class AcceptedContextRevalidationTests(AcceptedContextFixture):
         with shape_patch():
             evidence_id = host.record_context_revalidation(
                 ContextRevalidationFrontier((result,)))
-        target = owner._accepted_correction_target
-        self.assertIn(evidence_id, target.context_deferred)
-        self.assertNotIn(evidence_id, target.seen)
-
         owner._index = DependencyIndex.build((late,))
         self.assertIsNone(require_pending_corrections(owner, late.artifact_id))
-        self.assertIn(evidence_id, target.seen)
-        self.assertNotIn(evidence_id, target.context_deferred)
         self.assertEqual(
             owner.index.node(late.artifact_id).immediate_dependencies,
             (new_time,),

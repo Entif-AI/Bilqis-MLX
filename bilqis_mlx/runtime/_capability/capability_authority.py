@@ -247,10 +247,10 @@ def evaluate_accepted_progression_authority(
         _invalid("BAMF_PROGRESSION_ACCEPTED_RUN_REQUIRED")
     if "capability_support_owner" in authority_inputs:
         _invalid("BAMF_PROGRESSION_CALLER_SUPPORT_FORBIDDEN")
-    correction_registry = authority_inputs.pop("correction_authority_registry", None)
+    if "correction_authority_registry" in authority_inputs:
+        _invalid("BAMF_PROGRESSION_CALLER_CORRECTION_AUTHORITY_FORBIDDEN")
     try:
-        owner = load_capability_support_owner(
-            run_dir, capability_id, correction_registry)
+        owner = load_capability_support_owner(run_dir, capability_id)
     except (BilqisError, AttributeError):
         owner = None
     return evaluate_progression_authority(

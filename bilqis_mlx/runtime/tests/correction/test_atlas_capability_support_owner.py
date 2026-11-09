@@ -10,7 +10,11 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_capability_support_owner import CapabilitySupportArtifactOwner
 from bilqis_mlx.runtime.atlas_training_authority import extend_training_dependencies
 from bilqis_mlx.runtime.accepted_corrections import (
-    AcceptedRuntimeHost, ContextRevalidationFrontier, _RUNTIME_OWNER,
+    AcceptedRuntimeHost, ContextRevalidationFrontier, _reset_accepted_correction_runtime_for_tests,
+    record_accepted_correction,
+)
+from bilqis_mlx.runtime.accepted_correction_runtime import (
+    deliver_accepted_context_invalidation,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     CONTEXT_INVALIDATION_EVENT, CORRECTION_EVENT,
@@ -19,8 +23,8 @@ from bilqis_mlx.runtime.accepted_correction_ledger import (
 from bilqis_mlx.runtime.capability_support_loading import accepted_support_census
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
-    apply_capability_support_correction,
 )
+from bilqis_mlx.runtime._atlas_owner_ingress import apply_capability_support_correction
 from bilqis_mlx.runtime.context_revalidation import ContextStateTransition
 from bilqis_mlx.runtime.atlas_requalification_contracts import (
     RequalificationStatus,
@@ -29,7 +33,7 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
     accept_and_publish, derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle import admission
-from bilqis_mlx.runtime.accepted_correction_runtime import runtime
+from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     retention_decision, shape_patch,
 )
@@ -56,7 +60,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_
 
 class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
     def test_b13_acceptance_persists_exact_source_anchor_and_materializes_owner(self):
-        published, authority = self.publish_support()
+        published, authority = self.publish_support(authority_registry=AUTHORITY)
         acceptance_path = (
             self.run / "bamf-acceptance" / f"{published['manifest_sha256']}.json")
         record = json.loads(acceptance_path.read_text())
@@ -69,7 +73,7 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
             tuple((ref.kind.value, ref.key)
                   for ref in authority.immediate_dependencies))
 
-        owner = self.load_support()
+        owner = self.load_support(AUTHORITY)
         self.assertEqual(owner.support.source_anchor_ids, (SOURCE_ROW,))
         self.assertEqual(
             owner.support.retained_generation_sha256,
@@ -98,47 +102,44 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
         for dependency in IMMEDIATE_DEPENDENCIES:
             self.assertIn(dependency, owner.current_node.immediate_dependencies)
         self.assertEqual(
-            self.load_support().support,
+            self.load_support(AUTHORITY).support,
             owner.support)
         with self.assertRaises(BilqisError):
             CapabilitySupportArtifactOwner()
 
     def test_operator_correction_holds_lossless_learned_support(self):
-        self.publish_support()
         authority = SourceAuthorityRegistry((SourceAuthorityKey(
             _SOURCE_OWNER,
             _TEST_PUBLIC,
             (SourceAuthorityScope(DependencyKind.OPERATOR, "operator:"),),
         ),))
+        self.publish_support(authority_registry=authority)
         owner = self.load_support(authority)
         dependency = next(
             ref for ref in owner.current_node.immediate_dependencies
             if ref.kind is DependencyKind.OPERATOR)
-        self.assertTrue(apply_capability_support_correction(
-            owner, _event(dependency), authority))
+        with shape_patch():
+            AcceptedRuntimeHost(self.run).record_correction(_event(dependency))
         with self.assertRaises(BilqisError) as caught:
             owner.require(TARGET)
         self.assertEqual(
             caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
     def test_concrete_source_correction_holds_learned_support_across_row_identity(self):
-        self.publish_support()
         authority = SourceAuthorityRegistry((SourceAuthorityKey(
             _SOURCE_OWNER,
             _TEST_PUBLIC,
             (SourceAuthorityScope(DependencyKind.SOURCE, SOURCE_ID),),
         ),))
+        self.publish_support(authority_registry=authority)
         owner = self.load_support(authority)
         self.assertIn(
             DependencyRef(DependencyKind.SOURCE, SOURCE_ID),
             owner.current_node.immediate_dependencies,
         )
         self.assertNotEqual(SOURCE_ID, SOURCE_ROW)
-        self.assertTrue(apply_capability_support_correction(
-            owner,
-            _event(DependencyRef(DependencyKind.SOURCE, SOURCE_ID)),
-            authority,
-        ))
+        with shape_patch():
+            AcceptedRuntimeHost(self.run).record_correction(_event(DependencyRef(DependencyKind.SOURCE, SOURCE_ID)))
         with self.assertRaises(BilqisError) as caught:
             owner.require(TARGET)
         self.assertEqual(
@@ -149,24 +150,24 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
             DependencyKind.SOURCE, "source:retained-motif-independent")
         authority = extend_training_dependencies(
             training_authority(), (motif_source,))
-        self.publish_support(authority=authority)
         registry = SourceAuthorityRegistry((SourceAuthorityKey(
             _SOURCE_OWNER,
             _TEST_PUBLIC,
             (SourceAuthorityScope(
                 DependencyKind.SOURCE, "source:retained-motif-independent"),),
         ),))
+        self.publish_support(authority=authority, authority_registry=registry)
         owner = self.load_support(registry)
         self.assertIn(motif_source, owner.current_node.immediate_dependencies)
-        self.assertTrue(apply_capability_support_correction(
-            owner, _event(motif_source), registry))
+        with shape_patch():
+            AcceptedRuntimeHost(self.run).record_correction(_event(motif_source))
         with self.assertRaises(BilqisError) as caught:
             owner.require(TARGET)
         self.assertEqual(
             caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
     def test_changed_context_revalidation_requires_capability_requalification(self):
-        self.publish_support()
+        self.publish_support(authority_registry=AUTHORITY)
         owner = self.load_support(AUTHORITY)
         prior = owner.current_node
         updated = replace(prior, content_digest="d" * 64)
@@ -238,13 +239,14 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
                 for handle in (frame.frame_handle, *frame.member_handles)
             })),
         )
-        record = context_invalidation_record(
-            published["manifest_sha256"], invalidation)
-        append_record(
-            self.run, published["manifest_sha256"], record)
-        runtime(
-            self.run, published["manifest_sha256"],
-        ).deliver_context_invalidation(record["event_id"], invalidation)
+        with shape_patch():
+            record = context_invalidation_record(
+                published["manifest_sha256"], invalidation)
+            append_record(
+                self.run, published["manifest_sha256"], record)
+            deliver_accepted_context_invalidation(
+                self.run, published["manifest_sha256"],
+                record["event_id"], invalidation)
         prior = owner.current_node
         new_time = DependencyRef(
             DependencyKind.TIME,
@@ -267,8 +269,8 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
             owner.support.status,
             RequalificationStatus.REQUALIFICATION_REQUIRED)
 
-        admission._EXECUTION_CACHE_OWNER.entries.clear()
-        _RUNTIME_OWNER.clear()
+        _reset_execution_cache_owner_for_tests()
+        _reset_accepted_correction_runtime_for_tests()
         cold_owner = self.load_support(AUTHORITY)
         self.assertIs(
             cold_owner.support.status,
@@ -287,7 +289,7 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
             item["event"] for item in records})
 
     def test_retained_capability_provenance_survives_unrelated_successor_acceptance(self):
-        first, _authority_a = self.publish_support()
+        first, _authority_a = self.publish_support(authority_registry=AUTHORITY)
         first_manifest = first["manifest_sha256"]
         with shape_patch():
             accepted_parent = load_accepted_generation(self.run)
@@ -331,8 +333,8 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
             first_manifest,
         )
         correction = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
-        self.assertTrue(apply_capability_support_correction(
-            inherited, correction, AUTHORITY))
+        with shape_patch():
+            AcceptedRuntimeHost(self.run).record_correction(correction)
         with self.assertRaises(BilqisError):
             inherited.require(TARGET)
 

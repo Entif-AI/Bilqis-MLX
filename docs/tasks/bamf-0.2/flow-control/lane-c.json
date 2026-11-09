@@ -1,10 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "2c26d4aca90f275e1c255aa6a197ab63e0528480",
-  "updated_at": "2026-11-09T04:54:20Z",
+  "observed_unified": "4bfcbd5a9aaa22a1bc2bca4c7a64ec203df07044",
+  "updated_at": "2026-11-09T05:38:25Z",
   "exception": null,
   "items": [
+    {
+      "issue": 917,
+      "pr": 927,
+      "state": "ACTIVE",
+      "head_sha": "5209c230f67cd55ed4e919fe62bc954b665d306b",
+      "summary": "C09 remediation remains ACTIVE on draft PR #927 after fresh exact-head EGM of b6232012 failed at 1 Blocker / 1 Major / 1 Nit. Repair head 5209c230 closes the production-importable accepted-correction reset bypass by retiring live owners before runtime reset, restores the cold capability-history fixture through accepted custody, and forbids caller-supplied correction authority. Reviewed unified 4bfcbd5a has now been consumed; full exact-head proof, hosted CI, and a completely fresh three-lens EGM are required before readiness.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/917-c09-source-authority-runtime-r3-20261108"
+    },
     {
       "issue": 543,
       "pr": 933,

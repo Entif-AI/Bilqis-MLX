@@ -14,15 +14,13 @@ from bilqis_mlx.factory.execution import CurriculumProfile
 from bilqis_mlx.factory.tests.test_executable_release import _answers
 from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_course, _synthetic_registry
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
-from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_correction_authority
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, parent_state, shape_patch,
+    candidate, next_accepted_step, parent_state, provision_source_authority_registry,
+    publish_candidate, shape_patch, with_source_authority_registry,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
-    publish_candidate,
-)
-from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY
+from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _ref
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 
 
 class SourceExecutionContextTests(unittest.TestCase):
@@ -55,8 +53,7 @@ class SourceExecutionContextTests(unittest.TestCase):
     def test_structurally_forged_context_cannot_claim_host_custody(self):
         from pathlib import Path
         run_dir = Path("fixture-run")
-        context = SourceExecutionContext(
-            **self.arguments, run_dir=run_dir, correction_registry=AUTHORITY)
+        context = SourceExecutionContext(**self.arguments, run_dir=run_dir)
         with self.assertRaises(BilqisError) as caught:
             context.require_accepted_runtime(run_dir)
         self.assertEqual(
@@ -69,14 +66,11 @@ class SourceExecutionContextTests(unittest.TestCase):
         with TemporaryDirectory() as temporary, patch.dict(
                 os.environ, {"BILQIS_DATA_PLANE": str(Path(temporary) / "plane.sqlite3")}):
             run_dir = Path(temporary) / "run"
-            source = candidate(parent_state())
-            source = replace(source, correction_frontier={
-                **source.correction_frontier,
-                "source_authority_registry_sha256": AUTHORITY.digest,
-            })
+            provision_source_authority_registry(run_dir, AUTHORITY)
+            source = with_source_authority_registry(
+                candidate(parent_state()), AUTHORITY)
             with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
                 publish_candidate(run_dir, source)
-                bind_accepted_correction_authority(run_dir, AUTHORITY)
             receipt = {"factory_release_sha256": self.release.release_sha256}
             with patch(
                 "bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
@@ -96,6 +90,68 @@ class SourceExecutionContextTests(unittest.TestCase):
                 self.assertIs(
                     context.source_authority(),
                     AcceptedRuntimeHost(run_dir).source_authority())
+
+    def test_stale_source_context_cannot_roll_forward_correction_into_successor(self):
+        from pathlib import Path
+        with TemporaryDirectory() as temporary, patch.dict(
+                os.environ, {"BILQIS_DATA_PLANE": str(Path(temporary) / "plane.sqlite3")}):
+            run_dir = Path(temporary) / "run"
+            provision_source_authority_registry(run_dir, AUTHORITY)
+            source = with_source_authority_registry(
+                candidate(parent_state()), AUTHORITY)
+            with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+                pointer = publish_candidate(run_dir, source)
+            receipt = {"factory_release_sha256": self.release.release_sha256}
+            with patch(
+                "bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
+                return_value=self.release,
+            ), patch(
+                "bilqis_mlx.source_adapters.school.live_source_registry",
+                return_value=self.sources,
+            ), patch(
+                "bilqis_mlx.factory.live_answers.live_answer_registry",
+                return_value=self.answers,
+            ), shape_patch():
+                context = AcceptedRuntimeHost(run_dir).source_context(
+                    receipt, graph=self.graph, source_root=None)
+            successor = candidate(
+                next_accepted_step(parent_state()), generation=1,
+                parent=pointer["manifest_sha256"],
+            )
+            successor = with_source_authority_registry(successor, AUTHORITY)
+            with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+                publish_candidate(run_dir, successor)
+            correction = _event(_ref(DependencyKind.RIGHTS, "rights:stale-context"))
+            with shape_patch(), self.assertRaises(BilqisError):
+                context.record_correction(correction)
+
+    def test_forged_accepted_runtime_host_subclass_cannot_mint_live_context(self):
+        from pathlib import Path
+
+        class ForgedHost(AcceptedRuntimeHost):
+            def __post_init__(self):
+                pass
+
+            @property
+            def registry(self):
+                return AUTHORITY
+
+            def source_authority(self):
+                return object()
+
+        run_dir = Path("fixture-run")
+        forged = ForgedHost(run_dir)
+        receipt = {"factory_release_sha256": self.release.release_sha256}
+        with patch(
+            "bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
+            return_value=self.release,
+        ):
+            with self.assertRaises(BilqisError):
+                SourceExecutionContext.from_admitted_release(
+                    run_dir, receipt, graph=self.graph, source_root=None,
+                    source_registry=self.sources, answer_registry=self.answers,
+                    accepted_runtime_host=forged,
+                )
 
     def test_admitted_context_uses_the_cold_read_authority(self):
         from pathlib import Path

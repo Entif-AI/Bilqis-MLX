@@ -214,6 +214,10 @@ class OperatorCompositionArtifactOwner:
     def apply_correction(
         self, event: CorrectionEvent, authority_registry: SourceAuthorityRegistry,
     ) -> RevalidationQueue:
+        from bilqis_mlx.runtime.accepted_correction_runtime import (
+            require_bound_owner_registry,
+        )
+        authority_registry = require_bound_owner_registry(self, authority_registry)
         self._queue = apply_correction(event, self._index, authority_registry)
         return self._queue
 
@@ -228,6 +232,10 @@ class OperatorCompositionArtifactOwner:
                 or artifact_ids != tuple(sorted(set(artifact_ids)))
                 or not isinstance(authority_registry, SourceAuthorityRegistry)):
             _invalid("BAMF_C09_OPERATOR_COMPOSITION_LATE_HOLD_INVALID")
+        from bilqis_mlx.runtime.accepted_correction_runtime import (
+            require_bound_owner_registry,
+        )
+        authority_registry = require_bound_owner_registry(self, authority_registry)
         authority_registry.verify_correction(event)
         tasks = []
         for artifact_id in artifact_ids:
@@ -263,6 +271,10 @@ class OperatorCompositionArtifactOwner:
         self, frontier: RevalidationFrontier,
         authority_registry: SourceAuthorityRegistry,
     ) -> RevalidationProgress:
+        from bilqis_mlx.runtime.accepted_correction_runtime import (
+            require_bound_owner_registry,
+        )
+        authority_registry = require_bound_owner_registry(self, authority_registry)
         if self._queue is None:
             _invalid("BAMF_C09_OPERATOR_COMPOSITION_REVALIDATION_NOT_HELD")
         task = next_revalidation_task(self._index, self._queue)

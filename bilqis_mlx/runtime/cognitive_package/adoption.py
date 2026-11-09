@@ -24,11 +24,18 @@ def _artifact_digests(package):
 def _verify_export_clearance(
         package, parent, receipt, atlas_selection, source_frontier,
         source_context, run_dir):
+    from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+    from bilqis_mlx.runtime.atlas_source_authority import (
+        require_source_authority_runtime,
+    )
     require(type(receipt) is ExportClearanceReceipt, "A12 export clearance required")
+    require(type(source_context) is SourceExecutionContext,
+            "accepted source execution context required")
     run_dir = Path(run_dir)
     source_context.require_accepted_runtime(run_dir)
-    authority = source_context.source_authority()
     cache = bind_accepted_execution_cache(run_dir)
+    authority = require_source_authority_runtime(
+        source_context.source_authority(), cache)
     digests = _artifact_digests(package)
     clearance = authority._validate_export_clearance_context(
         cache, receipt, atlas_selection, source_frontier, digests)
@@ -42,7 +49,13 @@ def _verify_export_clearance(
     require(correction.get("rights_epoch") == receipt.rights_epoch
             and correction.get("correction_generation") == receipt.correction_generation,
             "receiver rights frontier differs from A12 clearance")
-    return clearance
+    require(cache.source_authority_registry_sha256 is not None,
+            "accepted source authority registry required")
+    return (
+        clearance,
+        cache.accepted_manifest_sha256,
+        cache.source_authority_registry_sha256,
+    )
 
 
 def _require_exact_parent(screened, pointer, parent):
@@ -95,7 +108,7 @@ def publish_screened_delta_import(
     require(screened.decision.accepted, "C05 rejected package import")
     pointer, parent = _load_current_generation(Path(run_dir))
     _require_exact_parent(screened, pointer, parent)
-    clearance = _verify_export_clearance(
+    clearance, _manifest_sha256, _registry_sha256 = _verify_export_clearance(
         screened.candidate.package, parent, export_clearance, atlas_selection,
         source_frontier, source_context, run_dir)
     transaction = screened.transaction
