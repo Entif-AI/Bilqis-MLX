@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
-  "updated_at": "2026-11-09T07:34:37Z",
+  "updated_at": "2026-11-09T07:52:00Z",
   "exception": null,
   "items": [
     {
@@ -19,9 +19,9 @@
       "issue": 930,
       "pr": 938,
       "state": "ACTIVE",
-      "head_sha": "f0faed7f62b71d2a3b21a81931635e9a88249f4f",
-      "head_sha_role": "implementation plus mandatory S0 companion-test structure head; this lane/PR bookkeeping commit is docs/flow-only and must be included in the final exact-head qualification range",
-      "summary": "C09 packed-frame/context-view integration repair remains ACTIVE on serialized-writer branch codex/930-c09-packed-frame-context-views-20261109 and is represented by open PR #938. Governing R3 design passed 0B/0M/0N. Candidate e05256de closed the prior semantic/readiness proof gaps but fresh successor EGM failed readiness 0B/2M on mandatory S0 companion-test structure and stale flow/PR bookkeeping, while codebase and authority each passed 0B/0M/0N. Structural successor f0faed7f moves focused context-view tests into mirrored submodules so all encountered companion files are below 240 LoC without changing production semantics. Final docs/flow reconciliation, exact-head proof, fresh implementation EGM and human-review turn-in remain pending.",
+      "head_sha": "6b5aef0a7c798bc3b5b77ddbb930725e19ff93eb",
+      "head_sha_role": "latest implementation/proof head; any following lane bookkeeping commit is docs/flow-only and must be included in final exact-head qualification",
+      "summary": "C09 packed-frame/context-view integration repair remains ACTIVE on serialized-writer branch codex/930-c09-packed-frame-context-views-20261109 and is represented by open PR #938. Governing R3 design passed 0B/0M/0N. Failed implementation candidates bbba88eb, e05256de and 27afb804 remain preserved. The 27afb804 final authority EGM found one live-owner rematerialization Major: a cached single-context MotifArtifactOwner could survive immutable physical content/non-TIME dependency drift until GC. Head 6b5aef0 adds a red-to-green regression and makes cached motif-owner reuse validate incoming physical content plus non-TIME dependencies while preserving authorized mutable TIME rebinding. Focused motif/context proof is green, correction 58/58 passes, accepted runtime 8/8 passes, multi-context cold replay 1/1 passes, cache currentness 5/5 passes, learned-support projection 1/1 passes, and structure/smell/static-flow/diff gates are green. Exact-head hosted CI and a completely fresh final implementation EGM remain pending before human-review turn-in.",
       "resume_trigger": null,
       "preserved_branch": "codex/930-c09-packed-frame-context-views-20261109"
     },
