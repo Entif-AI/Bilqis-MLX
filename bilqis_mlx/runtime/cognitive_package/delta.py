@@ -124,8 +124,10 @@ class ScreenedDeltaCandidate:
         require(type(self.transaction) is PackageImportTransaction,
                 "invalid package import transaction")
         self.transaction.__post_init__()
-        require(type(self.decision) is CandidateRetentionDecision
-                and self.decision.parent_generation
+        require(type(self.decision) is CandidateRetentionDecision,
+                "invalid screened decision")
+        self.decision.__post_init__()
+        require(self.decision.parent_generation
                 == candidate_identity_digest(self.transaction.parent)
                 and self.decision.candidate_generation
                 == candidate_identity_digest(self.transaction.candidate),

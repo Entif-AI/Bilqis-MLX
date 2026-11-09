@@ -8,10 +8,12 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_candidate import begin_candidate, candidate_step, resolve_candidate
+from bilqis_mlx.learning.atlas_retention_decision import CandidateRetentionDecision
 from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
 from bilqis_mlx.runtime.cognitive_package import publish_screened_delta_import
 from bilqis_mlx.runtime.cognitive_package.adoption import _verify_export_clearance
+from bilqis_mlx.runtime.cognitive_package.delta import _issue_screened
 from bilqis_mlx.runtime.cognitive_package.receiver import _load_current_generation
 from bilqis_mlx.runtime.cognitive_package.tests.adoption_harness import (
     AdoptionHarness, KEY_OWNER, SCOPE_OWNER, _receipt,
@@ -118,6 +120,15 @@ class PackageImportAdoptionTests(AdoptionHarness):
                 forged, parent, receipt, self.selection, self.frontier,
                 self.source_context(), self.run,
             )
+
+    def test_screening_rejects_exact_type_forged_retention_decision(self):
+        screened, _ = self.screened()
+        forged = object.__new__(CandidateRetentionDecision)
+        for name, value in screened.decision._public_record().items():
+            object.__setattr__(forged, name, value)
+
+        with self.assertRaises(BilqisError):
+            _issue_screened(screened.candidate, screened.transaction, forged)
 
     def test_host_bound_authority_rejects_scope_key_and_stale_frontier_before_publish(self):
         screened, receipt = self.screened()

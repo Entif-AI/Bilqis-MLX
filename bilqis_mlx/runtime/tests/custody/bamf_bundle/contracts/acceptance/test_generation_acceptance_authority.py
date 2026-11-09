@@ -29,6 +29,29 @@ class GenerationAcceptanceAuthorityTests(GenerationAcceptanceFixture, unittest.T
         with self.assertRaises(BilqisError):
             AcceptedCandidateBinding(**binding._public_record())
 
+    def test_exact_type_forged_retention_decision_cannot_mint_acceptance(self):
+        source = candidate(parent_state())
+        decision = retention_decision(retained=source.retained_state)
+        forged = object.__new__(CandidateRetentionDecision)
+        for name, value in decision._public_record().items():
+            object.__setattr__(forged, name, value)
+
+        with self.assertRaises(BilqisError):
+            mint_acceptance_binding(
+                forged, source.retained_state, run_id=source.run_id,
+                generation=source.generation,
+                feature_sha256=source.extents.factor_map_digest)
+
+    def test_exact_type_forged_acceptance_binding_cannot_publish(self):
+        source = self.source()
+        binding = self.binding(source)
+        forged = object.__new__(AcceptedCandidateBinding)
+        for name, value in binding._public_record().items():
+            object.__setattr__(forged, name, value)
+
+        with self.assertRaises(BilqisError):
+            self.publish(source, acceptance=forged)
+
     def test_accepted_c05_decision_cannot_transfer_to_different_optimizer(self):
         source = candidate(parent_state())
         decision = retention_decision(retained=source.retained_state)

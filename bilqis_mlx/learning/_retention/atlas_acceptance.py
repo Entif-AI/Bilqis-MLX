@@ -288,8 +288,10 @@ def mint_acceptance_binding(decision: CandidateRetentionDecision, state, *,
                             ) -> AcceptedCandidateBinding:
     """Bind a C05-approved decision to the exact B12 optimizer state."""
     state_digest = candidate_identity_digest(state)
-    if (type(decision) is not CandidateRetentionDecision or not decision.accepted
-            or decision.candidate_generation != state_digest):
+    if type(decision) is not CandidateRetentionDecision:
+        _invalid()
+    decision.__post_init__()
+    if (not decision.accepted or decision.candidate_generation != state_digest):
         _invalid()
     source_anchors = _source_anchors(training_authorities, state)
     binding = object.__new__(AcceptedCandidateBinding)

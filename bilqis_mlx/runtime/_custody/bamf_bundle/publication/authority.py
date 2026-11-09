@@ -31,6 +31,7 @@ def require_acceptance(
         invalid("BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED")
     if type(acceptance) is not AcceptedCandidateBinding:
         invalid("BAMF_GENERATION_ACCEPTANCE_REQUIRED")
+    acceptance.__post_init__()
     if (acceptance.schema_version != ACCEPTANCE_SCHEMA
             or acceptance.run_id != candidate.run_id
             or acceptance.generation != candidate.generation
