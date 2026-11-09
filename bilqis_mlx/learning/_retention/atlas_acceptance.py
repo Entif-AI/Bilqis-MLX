@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
@@ -19,7 +19,6 @@ PREVIOUS_SOURCE_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v3"
 PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v4"
 ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v5"
 DIGEST_HEX_LENGTH = 64
-_BINDING_ISSUER = object()
 _LEGACY_FIELDS = (
     "run_id", "generation", "candidate_identity_sha256", "feature_sha256",
     "optimizer_step", "retention_reason", "step_proof_sha256",
@@ -40,6 +39,26 @@ _SOURCE_ANCHOR_WIDTH = 10
 _DEPENDENCY_RECORD_WIDTH = 2
 _SOURCE_ANCHOR_DIGEST_INDEXES = (2, 5, 6, 7, 8)
 _SOURCE_ANCHOR_DEPENDENCIES_INDEX = 9
+
+
+def _new_binding_owner():
+    """Track live acceptance bindings by mint-owned object identity."""
+    issued = {}
+
+    def require(value):
+        if issued.get(id(value)) is not value:
+            _invalid()
+        return value
+
+    def issue(values):
+        binding = object.__new__(AcceptedCandidateBinding)
+        for name, value in values:
+            object.__setattr__(binding, name, value)
+        issued[id(binding)] = binding
+        binding.__post_init__()
+        return binding
+
+    return require, issue
 
 
 def _invalid() -> None:
@@ -180,11 +199,10 @@ class AcceptedCandidateBinding:
     source_anchors: tuple = ()
     source_authority_registry_sha256: str | None = None
     schema_version: str = ACCEPTANCE_SCHEMA
-    _issuance: object = field(init=False, default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
-        if (getattr(self, "_issuance", None) is not _BINDING_ISSUER
-                or not isinstance(self.run_id, str) or not self.run_id
+        _require_issued_binding(self)
+        if (not isinstance(self.run_id, str) or not self.run_id
                 or type(self.generation) is not int or self.generation < 0
                 or any(not _is_digest(value) for value in (
                     self.candidate_identity_sha256,
@@ -280,20 +298,28 @@ class ParsedAcceptedCandidateBinding:
         return {**self.fields, "binding_sha256": self.digest}
 
 
-def mint_acceptance_binding(decision: CandidateRetentionDecision, state, *,
-                            run_id: str, generation: int,
-                            feature_sha256: str,
-                            training_authorities=None,
-                            source_authority_registry_sha256: str | None = None,
-                            ) -> AcceptedCandidateBinding:
-    """Bind a C05-approved decision to the exact B12 optimizer state."""
-    state_digest = candidate_identity_digest(state)
-    if (type(decision) is not CandidateRetentionDecision or not decision.accepted
-            or decision.candidate_generation != state_digest):
-        _invalid()
-    source_anchors = _source_anchors(training_authorities, state)
-    binding = object.__new__(AcceptedCandidateBinding)
-    for name, value in (
+_require_issued_binding, _raw_issue_binding = _new_binding_owner()
+
+
+def _make_acceptance_minter(raw_issue):
+    def mint_acceptance_binding(
+            decision: CandidateRetentionDecision, state, *,
+            run_id: str, generation: int, feature_sha256: str,
+            training_authorities=None,
+            source_authority_registry_sha256: str | None = None,
+    ) -> AcceptedCandidateBinding:
+        """Bind a C05-approved decision to the exact B12 optimizer state."""
+        from .atlas_retention_decision import _require_issued_decision
+
+        state_digest = candidate_identity_digest(state)
+        if type(decision) is not CandidateRetentionDecision:
+            _invalid()
+        _require_issued_decision(decision)
+        decision.__post_init__()
+        if (not decision.accepted or decision.candidate_generation != state_digest):
+            _invalid()
+        source_anchors = _source_anchors(training_authorities, state)
+        return raw_issue((
             ("run_id", run_id), ("generation", generation),
             ("candidate_identity_sha256", state_digest),
             ("parent_candidate_identity_sha256", decision.parent_generation),
@@ -308,7 +334,10 @@ def mint_acceptance_binding(decision: CandidateRetentionDecision, state, *,
             ("source_authority_registry_sha256",
              source_authority_registry_sha256),
             ("schema_version", ACCEPTANCE_SCHEMA),
-            ("_issuance", _BINDING_ISSUER)):
-        object.__setattr__(binding, name, value)
-    binding.__post_init__()
-    return binding
+        ))
+
+    return mint_acceptance_binding
+
+
+mint_acceptance_binding = _make_acceptance_minter(_raw_issue_binding)
+del _raw_issue_binding

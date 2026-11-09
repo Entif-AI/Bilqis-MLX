@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from bilqis_mlx.fixed_frontier import load_frontier_cohort
 from bilqis_mlx.learning.atlas_candidate import CandidateTransaction, resolve_candidate
@@ -35,7 +35,30 @@ from .factory_complete_solver import (
 
 CURRENT_EVIDENCE_STAGE = EvidenceStage.FOUNDATION_ACQUISITION
 SHA256_HEX_LENGTH = 64
-_OWNER_ISSUER = object()
+
+
+def _new_factory_evaluation_owner():
+    """Keep live C05 evaluation authority in closure-owned object identity."""
+    issued = {}
+
+    def require(value):
+        if issued.get(id(value)) is not value:
+            _invalid("BAMF_C05_FACTORY_EVALUATION_INVALID")
+        return value
+
+    def issue(decision, parent, candidate):
+        item = object.__new__(FactoryRetentionEvaluation)
+        for name, value in (
+            ("decision", decision),
+            ("parent_candidate_sha256", candidate_identity_digest(parent.retained_state)),
+            ("candidate_candidate_sha256", candidate_identity_digest(candidate.retained_state)),
+        ):
+            object.__setattr__(item, name, value)
+        issued[id(item)] = item
+        item.__post_init__()
+        return item
+
+    return require, issue
 
 
 @dataclass(frozen=True, init=False)
@@ -44,14 +67,13 @@ class FactoryRetentionEvaluation:
     decision: Decision
     parent_candidate_sha256: str
     candidate_candidate_sha256: str
-    _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         _invalid("BAMF_C05_FACTORY_EVALUATION_CALLER_CONSTRUCTION_FORBIDDEN")
 
     def __post_init__(self):
-        if (getattr(self, "_issuance", None) is not _OWNER_ISSUER
-                or type(self.decision) is not Decision
+        _require_factory_evaluation(self)
+        if (type(self.decision) is not Decision
                 or not all(isinstance(value, str)
                            and len(value) == SHA256_HEX_LENGTH
                            for value in (self.parent_candidate_sha256,
@@ -59,17 +81,7 @@ class FactoryRetentionEvaluation:
             _invalid("BAMF_C05_FACTORY_EVALUATION_INVALID")
 
 
-def _issue_owner_evaluation(decision, parent, candidate):
-    item = object.__new__(FactoryRetentionEvaluation)
-    for name, value in (
-        ("decision", decision),
-        ("parent_candidate_sha256", candidate_identity_digest(parent.retained_state)),
-        ("candidate_candidate_sha256", candidate_identity_digest(candidate.retained_state)),
-        ("_issuance", _OWNER_ISSUER),
-    ):
-        object.__setattr__(item, name, value)
-    item.__post_init__()
-    return item
+_require_factory_evaluation, _raw_issue_owner_evaluation = _new_factory_evaluation_owner()
 
 
 
@@ -98,7 +110,7 @@ def _fixed_school_instruments(
         seed=fixed.seed)
 
 
-def _foundation_retention_evaluation(
+def _foundation_retention_screen(
     source_context, parent, candidate_bundle, artifact_path, target_capability,
     release, groups, training, fixed_instruments,
 ):
@@ -118,10 +130,10 @@ def _foundation_retention_evaluation(
     decision = evaluate_foundation_fixed_school_candidate(
         parent_solver, candidate_solver, target_capability, policy, fixed_cohort,
         parent_generation, candidate_generation)
-    return _issue_owner_evaluation(decision, parent, candidate_bundle)
+    return decision, parent, candidate_bundle
 
 
-def _adaptive_retention_evaluation(
+def _adaptive_retention_screen(
     source_context, parent, candidate_bundle, candidate_state, artifact_path,
     target_capability, target_group, lesson_capabilities, release, groups,
     training, fixed_instruments, cache,
@@ -156,7 +168,23 @@ def _adaptive_retention_evaluation(
     decision = evaluate_retention_candidate(
         parent_solver, candidate_solver, target_capability, policy,
         cohorts, parent_generation, candidate_generation)
-    return _issue_owner_evaluation(decision, parent, candidate_bundle)
+    return decision, parent, candidate_bundle
+
+
+def _bind_factory_evaluation_issuer(raw_issue):
+    """Bind issuance to the two Factory-owned screens without exporting a mint."""
+    def foundation(*args, **kwargs):
+        return raw_issue(*_foundation_retention_screen(*args, **kwargs))
+
+    def adaptive(*args, **kwargs):
+        return raw_issue(*_adaptive_retention_screen(*args, **kwargs))
+
+    return foundation, adaptive
+
+
+_foundation_retention_evaluation, _adaptive_retention_evaluation = (
+    _bind_factory_evaluation_issuer(_raw_issue_owner_evaluation))
+del _raw_issue_owner_evaluation
 
 
 def evaluate_factory_retention_candidate(

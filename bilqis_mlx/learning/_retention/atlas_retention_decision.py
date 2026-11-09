@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
@@ -18,11 +18,30 @@ DECISION_SCHEMA = "bilqis.mlx.candidate-retention-decision/v2"
 ACCEPTED_DECISION = "PROVISIONAL"
 REJECTED_DECISION = "REJECT"
 ACCEPTING_REASON = "PAIRED_SCREEN_WITHIN_BUDGET"
-_DECISION_ISSUER = object()
 _DECISION_FIELDS = (
     "decision", "reason", "parent_generation", "candidate_generation",
     "evidence_sha256", "policy_sha256", "schema_version",
 )
+
+
+def _new_decision_owner():
+    """Track live C05 decisions by owner-issued object identity, not a token."""
+    issued = {}
+
+    def require(value):
+        if issued.get(id(value)) is not value:
+            _invalid()
+        return value
+
+    def issue(values):
+        decision = object.__new__(CandidateRetentionDecision)
+        for name, value in values:
+            object.__setattr__(decision, name, value)
+        issued[id(decision)] = decision
+        decision.__post_init__()
+        return decision
+
+    return require, issue
 _LEGACY_FIELDS = (
     "decision", "reason", "target_gain", "protected_net_gain", "schema_version",
 )
@@ -53,11 +72,10 @@ class CandidateRetentionDecision:
     evidence_sha256: str
     policy_sha256: str
     schema_version: str = DECISION_SCHEMA
-    _issuance: object = field(init=False, default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
-        if (getattr(self, "_issuance", None) is not _DECISION_ISSUER
-                or self.decision not in {ACCEPTED_DECISION, REJECTED_DECISION}
+        _require_issued_decision(self)
+        if (self.decision not in {ACCEPTED_DECISION, REJECTED_DECISION}
                 or not isinstance(self.reason, str) or not self.reason
                 or (self.decision == ACCEPTED_DECISION)
                 != (self.reason == ACCEPTING_REASON)
@@ -151,28 +169,37 @@ def decide_candidate_retention(
     )
 
 
-def issue_factory_retention_decision(owner_evaluation) -> CandidateRetentionDecision:
-    """Issue live acceptance authority only from the unforgeable Factory C05 owner."""
-    from bilqis_mlx.runtime.factory_retention_owner import FactoryRetentionEvaluation
-    from bilqis_mlx.runtime.capability_retention import DecisionStatus
+_require_issued_decision, _raw_issue_decision = _new_decision_owner()
 
-    if type(owner_evaluation) is not FactoryRetentionEvaluation:
-        _invalid()
-    owner_evaluation.__post_init__()
-    result = owner_evaluation.decision
-    decision = object.__new__(CandidateRetentionDecision)
-    status = (ACCEPTED_DECISION if result.status is DecisionStatus.ELIGIBLE
-              else REJECTED_DECISION)
-    for name, value in (
-        ("decision", status),
-        ("reason", result.reason),
-        ("parent_generation", owner_evaluation.parent_candidate_sha256),
-        ("candidate_generation", owner_evaluation.candidate_candidate_sha256),
-        ("evidence_sha256", result.evidence_sha256),
-        ("policy_sha256", result.policy_sha256),
-        ("schema_version", DECISION_SCHEMA),
-        ("_issuance", _DECISION_ISSUER),
-    ):
-        object.__setattr__(decision, name, value)
-    decision.__post_init__()
-    return decision
+
+def _make_factory_retention_issuer(raw_issue):
+    def issue_factory_retention_decision(owner_evaluation) -> CandidateRetentionDecision:
+        """Issue live acceptance authority only from the Factory C05 owner."""
+        from bilqis_mlx.runtime.factory_retention_owner import (
+            FactoryRetentionEvaluation, _require_factory_evaluation,
+        )
+        from bilqis_mlx.runtime.capability_retention import DecisionStatus
+
+        if type(owner_evaluation) is not FactoryRetentionEvaluation:
+            _invalid()
+        _require_factory_evaluation(owner_evaluation)
+        owner_evaluation.__post_init__()
+        result = owner_evaluation.decision
+        status = (ACCEPTED_DECISION if result.status is DecisionStatus.ELIGIBLE
+                  else REJECTED_DECISION)
+        return raw_issue((
+            ("decision", status),
+            ("reason", result.reason),
+            ("parent_generation", owner_evaluation.parent_candidate_sha256),
+            ("candidate_generation", owner_evaluation.candidate_candidate_sha256),
+            ("evidence_sha256", result.evidence_sha256),
+            ("policy_sha256", result.policy_sha256),
+            ("schema_version", DECISION_SCHEMA),
+        ))
+
+    return issue_factory_retention_decision
+
+
+issue_factory_retention_decision = _make_factory_retention_issuer(
+    _raw_issue_decision)
+del _raw_issue_decision
