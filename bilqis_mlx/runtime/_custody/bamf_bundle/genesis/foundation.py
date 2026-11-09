@@ -120,6 +120,7 @@ def initial_foundation_sidecars(
         "correction_generation": 0,
         "factory_release_sha256": release.release_sha256,
         "factory_semantic_catalog_sha256": release.semantic_catalog_sha256,
+        "factory_grade_ids": [grade.grade_id for grade in plan.grades],
         "feature_source": {
             "atlas_bundle_id": feature.features.atlas_bundle_id,
             "release_sha256": feature.features.semantic_release,
