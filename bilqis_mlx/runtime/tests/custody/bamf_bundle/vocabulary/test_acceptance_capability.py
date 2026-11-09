@@ -10,6 +10,7 @@ import mlx.core as mx
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning.atlas_candidate import CandidateCustodyIdentity
 from bilqis_mlx.learning._atlas_candidate.state import _issue_parameter_extension_state
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
 from bilqis_mlx.runtime.bamf_bundle import (
@@ -88,7 +89,13 @@ class A02StagingCapabilityTests(unittest.TestCase):
 
         for mutated in (
                 replace(bundle, outbox=()),
-                replace(bundle, run_identity=replace(run_identity, run_seed=18))):
+                replace(bundle, run_identity=replace(run_identity, run_seed=18)),
+                replace(bundle, retained_state=replace(
+                    bundle.retained_state,
+                    custody=CandidateCustodyIdentity(
+                        bundle.run_id, 9, "9" * 64,
+                        bundle.topology.digest, bundle.extents.digest))),
+        ):
             object.__setattr__(staged, "candidate", mutated)
             with self.assertRaises(BilqisError):
                 require_issued_a02_staged_vocabulary_extension(staged)

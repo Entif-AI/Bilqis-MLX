@@ -23,8 +23,10 @@ def _hex(value: object) -> bool:
 
 def _candidate_handoff_digest(candidate: BamfBundleCandidate) -> str:
     """Seal the complete staged candidate, not only its optimizer tensors."""
+    custody = candidate.retained_state.custody
     return sha(canonical({
         "authority_sha256": initial_generation_candidate_identity_digest(candidate),
+        "custody": None if custody is None else asdict(custody),
         "outbox": candidate.outbox,
     }))
 
