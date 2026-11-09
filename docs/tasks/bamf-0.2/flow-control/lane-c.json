@@ -197,8 +197,8 @@
       "issue": 378,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "7db57cdca52457403fd26a936f09b6944ce53ccc",
-      "summary": "Scoped C05 evaluation source-custody integration selected to unblock B11/#471; current reviewed unified 4bfcbd5a is being consumed while preserving the exact source AST plus A05 partial-visible-forest receipt in CompiledEncoderInput.",
+      "head_sha": "d7c018e6",
+      "summary": "Scoped C05 evaluation source-custody integration is qualified on reviewed unified 4bfcbd5a: exact source AST plus A05 partial-visible-forest receipt are preserved in CompiledEncoderInput and current batch registration is retained. Source-positive/current-owner ring is 9 passed + 7 subtests; quality/legacy-trainer/flow/contracts are green. Fresh merge-readiness review pending.",
       "resume_trigger": null,
       "preserved_branch": "codex/378-c05-eval-ast-20261107"
     }

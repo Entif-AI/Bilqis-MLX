@@ -7,6 +7,10 @@ Factory evaluation compiler already received the canonical source AST from the
 source owner, but discarded that AST before constructing the B11
 `CompiledEncoderInput`. Training already preserved the same source material.
 
+Canonical latest legacy-trainer adaptation source:
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
+Prometheus remains historical evidence only and is not the current adaptation source.
+
 This is not C05 parent completion, B06 composition, or a new source authority.
 Completed child #501 remains closed.
 
@@ -65,3 +69,27 @@ upstream authorities before B11 may compose B06.2 into B06.3:
 The C05 evaluation AST/partial-forest custody gap is no longer one of those
 missing implementation seams on this branch, but downstream work must consume it
 through reviewed integration rather than a sibling merge.
+
+## Reviewed-unified refresh — 2026-11-09
+
+The preserved branch consumed current reviewed unified
+`4bfcbd5a9aaa22a1bc2bca4c7a64ec203df07044` exactly once at merge checkpoint
+`d7c018e6`. The shared Lane C ledger was reconciled to current unified. The
+evaluation compiler composed cleanly with current unified's
+`source_context.register_compiled_batch(batch)` requirement: the exact source AST
+and A05 partial-visible-forest receipt are preserved in `CompiledEncoderInput`,
+then the resulting batch is registered through the current owner.
+
+Current source-positive qualification used the accepted A01 artifact at
+`/Users/emilie/Code/371-c02-complete-20261106/.local/c02-a01-rebuild/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`:
+
+- evaluation custody + current source-execution ring: **9 passed + 7 subtests**;
+- BAMF contract verifier: **43/43** exact issue mirrors, **216** indexed identities;
+- changed-file structure/governance/smell checks: green, zero new findings;
+- `git diff --check`: clean.
+
+The only initial current-governance failure was this receipt's missing canonical
+Microspenics source declaration; that documentation-only provenance requirement
+was added above. No B06 policy, caller credential, learner, optimizer, retention
+rule, publication authority, or C05 parent-closeout semantics were added. Fresh
+merge-readiness review remains the next gate.
