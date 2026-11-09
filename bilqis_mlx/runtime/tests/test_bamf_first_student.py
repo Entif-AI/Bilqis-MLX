@@ -215,6 +215,53 @@ class BamfFirstStudentTests(unittest.TestCase):
         self.assertEqual(sentinel.read_text(), "keep")
         self.assertEqual(tuple(target.iterdir()), (sentinel,))
 
+    def test_preflight_rejects_source_or_descendant_target_before_factory_replay(self):
+        def file_digests():
+            return {
+                str(path.relative_to(self.source)): hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in sorted(self.source.rglob("*")) if path.is_file()
+            }
+
+        before = file_digests()
+        for target in (self.source, self.source / "new-child"):
+            with self.subTest(target=target), \
+                    patch("bilqis_mlx.runtime.bamf_first_student."
+                          "issue_initial_factory_foundation_authority") as factory_replay:
+                with self.assertRaises(BilqisError) as failure:
+                    self.preflight(target)
+
+                self.assertEqual(
+                    failure.exception.context["reason"],
+                    "BAMF_FIRST_STUDENT_TARGET_OVERLAPS_SOURCE")
+                factory_replay.assert_not_called()
+                self.assertEqual(file_digests(), before)
+                if target != self.source:
+                    self.assertFalse(target.exists())
+
+    def test_preflight_rejects_symlink_parent_target_resolving_inside_source(self):
+        alias = self.root / "source-alias"
+        alias.symlink_to(self.source, target_is_directory=True)
+        target = alias / "new-child"
+        before = {
+            str(path.relative_to(self.source)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(self.source.rglob("*")) if path.is_file()
+        }
+
+        with patch("bilqis_mlx.runtime.bamf_first_student."
+                   "issue_initial_factory_foundation_authority") as factory_replay:
+            with self.assertRaises(BilqisError) as failure:
+                self.preflight(target)
+
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_FIRST_STUDENT_TARGET_OVERLAPS_SOURCE")
+        factory_replay.assert_not_called()
+        self.assertFalse((self.source / "new-child").exists())
+        self.assertEqual({
+            str(path.relative_to(self.source)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(self.source.rglob("*")) if path.is_file()
+        }, before)
+
     def test_preflight_rejects_release_not_owned_by_current_factory_state(self):
         target = self.root / "new-run"
         foreign = replace(self.release, release_sha256="9" * 64)

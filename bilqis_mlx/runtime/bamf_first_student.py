@@ -158,6 +158,14 @@ def _fresh_run_dir(new_run_dir) -> Path:
     return path.resolve()
 
 
+def _canonical_disjoint_run_paths(source_run_dir: str, new_run_dir) -> tuple[Path, Path]:
+    source = Path(source_run_dir).expanduser().resolve()
+    target = Path(new_run_dir).expanduser().resolve()
+    if target == source or source in target.parents:
+        _invalid("BAMF_FIRST_STUDENT_TARGET_OVERLAPS_SOURCE")
+    return source, target
+
+
 def _launch_dashboard_metrics(release: ExecutableFactoryRelease) -> DashboardMetrics:
     active = tuple(grade.grade_id for grade in release.execution_plan.grades)
     if not active:
@@ -195,9 +203,13 @@ def preflight_bamf_foundation(
     if type(config) is not BamfFoundationConfig:
         _invalid("BAMF_FIRST_STUDENT_CONFIG_INVALID")
     config.validate()
+    source, canonical_target = _canonical_disjoint_run_paths(
+        config.source_run_dir, new_run_dir)
     target = _fresh_run_dir(new_run_dir)
+    if target != canonical_target:
+        _invalid("BAMF_FIRST_STUDENT_TARGET_PATH_DRIFT")
     graph = deepcopy(dict(config.semantic_graph))
-    factory = issue_initial_factory_foundation_authority(config.source_run_dir, graph)
+    factory = issue_initial_factory_foundation_authority(source, graph)
     if type(admitted_release) is not ExecutableFactoryRelease or admitted_release != factory.release:
         _invalid("BAMF_FIRST_STUDENT_FACTORY_RELEASE_DRIFT")
 
