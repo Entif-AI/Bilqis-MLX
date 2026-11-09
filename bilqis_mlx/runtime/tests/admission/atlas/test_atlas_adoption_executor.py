@@ -220,6 +220,8 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
                 return_value=parent_feature), patch(
                 "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_lease",
                 return_value=lease), patch(
+                "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_factory_release",
+                return_value=self.staged.successor), patch(
                 "bilqis_mlx.runtime.bamf_bundle.publish_atlas_admission_generation",
                 side_effect=publish_after_factory) as publish, patch.object(
                 release_adoption, "_adopt_prepared_successor",
@@ -282,6 +284,8 @@ class AtlasAdoptionExecutorTests(PreparedSuccessorFixture, unittest.TestCase):
         with self.admitted_boundary(), patch(
                 "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_lease",
                 return_value=lease), patch(
+                "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_factory_release",
+                return_value=self.staged.successor), patch(
                 "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_generation",
                 return_value=(pointer, accepted)), patch(
                 "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_binding_for_manifest",

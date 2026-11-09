@@ -160,6 +160,30 @@ def read_accepted_atlas_lease(run_dir, *, source_authority):
         run_dir, expected, registry=registry, fixture_authority=False)
 
 
+def read_accepted_atlas_factory_release(run_dir):
+    """Resolve the current Factory release only through accepted C07/B13 custody."""
+    from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
+        ParsedAtlasAdmissionBinding,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
+        accepted_binding_for_manifest, accepted_generation,
+    )
+    from . import admission as factory_admission
+
+    root = Path(run_dir)
+    pointer, student = accepted_generation(root / "bamf-state.json")
+    binding = accepted_binding_for_manifest(
+        root, pointer["manifest_sha256"], student,
+        expected_acceptance_sha256=pointer["acceptance_sha256"])
+    if not isinstance(binding, ParsedAtlasAdmissionBinding):
+        _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
+    digest = binding.factory_release_sha256
+    return factory_admission._read_executable_factory_release_artifact(root, {
+        "factory_release_sha256": digest,
+        "factory_release_file": "factory-releases/" + digest + ".json",
+    })
+
+
 def renew_atlas_lease(run_dir, lease, *, independently_loaded_run, registry,
                       expected_prior_lease_sha256, human_started):
     """Renew disposable scope explicitly; caller assertions do not prove human identity."""

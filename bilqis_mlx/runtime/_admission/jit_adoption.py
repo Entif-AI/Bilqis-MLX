@@ -204,7 +204,9 @@ def _publish_native_staged_candidate(
         source_authority):
     """Publish the exact A02 state after C07 and B13 authority replay."""
     from . import admission as runtime_admission
-    from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_lease
+    from bilqis_mlx.runtime.atlas_admission import (
+        read_accepted_atlas_factory_release, read_accepted_atlas_lease,
+    )
     from bilqis_mlx.runtime.bamf_bundle import (
         load_bamf_generation_authority, publish_atlas_admission_generation,
     )
@@ -240,6 +242,9 @@ def _publish_native_staged_candidate(
         parent_feature=parent_feature, staging_digest=staging_digest,
         atlas_lease=atlas_lease, proposal=proposal, selected=selected)
     if retry_pointer is not None:
+        accepted_release = read_accepted_atlas_factory_release(runtime.run_dir)
+        if accepted_release.release_sha256 != selected.successor.release_sha256:
+            _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_RELEASE_DRIFT")
         return retry_pointer
     candidate = _authenticate_native_staged_candidate(
         runtime.run_dir, candidate,
@@ -256,9 +261,13 @@ def _publish_native_staged_candidate(
         staging_receipt_sha256=staging_digest,
         parent_feature_receipt_sha256=parent_feature,
     )
-    return publish_atlas_admission_generation(
+    pointer = publish_atlas_admission_generation(
         runtime.run_dir, candidate, admission=binding,
         reserve_gib=float(runtime.reserve_gib))
+    accepted_release = read_accepted_atlas_factory_release(runtime.run_dir)
+    if accepted_release.release_sha256 != selected.successor.release_sha256:
+        _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_RELEASE_DRIFT")
+    return pointer
 
 
 def _execute_prepared_successor_adoption(

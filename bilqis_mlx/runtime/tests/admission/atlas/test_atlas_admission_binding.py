@@ -16,6 +16,7 @@ from bilqis_mlx.runtime.bamf_bundle.publication import _authorize_publication_ca
 from bilqis_mlx.runtime.atlas_admission import (
     persist_accepted_atlas_lease, read_accepted_atlas_lease,
 )
+import bilqis_mlx.runtime.atlas_admission as atlas_admission
 from bilqis_mlx.runtime.jit_adoption import _accepted_lease_run_identity
 from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import _lease, _REGISTRY
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import candidate, parent_state
@@ -138,6 +139,48 @@ class AtlasAdmissionBindingTests(unittest.TestCase):
             self.assertEqual(
                 failure.exception.context["reason"],
                 "BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
+
+    def test_accepted_b13_binding_is_the_cold_factory_release_authority(self):
+        from bilqis_mlx.runtime import admission as factory_admission
+        from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
+
+        parent, staged = self._parent_and_candidate()
+        release, _graph = _executable_fixture()
+        binding = _issue_atlas_admission_binding(
+            staged, parent,
+            lease_sha256="9" * 64,
+            source_approval_sha256="8" * 64,
+            proposal_sha256="7" * 64,
+            factory_release_sha256=release.release_sha256,
+            staging_receipt_sha256="5" * 64,
+            parent_feature_receipt_sha256="4" * 64,
+        )
+        historical = AtlasAdmissionBinding.from_record(binding.to_record())
+        pointer = {
+            "schema": "bilqis.mlx.bamf-generation-pointer/v2",
+            "run_id": staged.run_id,
+            "generation": staged.generation,
+            "parent_manifest_sha256": staged.parent_manifest_sha256,
+            "bundle": "bamf-bundles/" + "c" * 64,
+            "manifest_sha256": "c" * 64,
+            "acceptance_sha256": binding.digest,
+        }
+        accepted = CompleteStudent(**staged.__dict__)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            factory_admission._persist_executable_factory_release(root, release)
+            with patch(
+                    "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_generation",
+                    return_value=(pointer, accepted)), patch(
+                    "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_binding_for_manifest",
+                    return_value=historical):
+                resolved = atlas_admission.read_accepted_atlas_factory_release(root)
+                artifact = root / "factory-releases" / (release.release_sha256 + ".json")
+                artifact.unlink()
+                with self.assertRaisesRegex(
+                        ValueError, "FACTORY_EXECUTABLE_RELEASE_DURABLE_ARTIFACT_MISSING"):
+                    atlas_admission.read_accepted_atlas_factory_release(root)
+        self.assertEqual(resolved, release)
 
 
 if __name__ == "__main__":
