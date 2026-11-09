@@ -20,7 +20,12 @@ from bilqis_mlx.runtime.atlas_attention import (
     ATTENTION_PARAMETER_NAMES, AttentionScope, ccgqa,
 )
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import (
+    publish_atlas_admission_generation, publish_bamf_generation,
+)
+from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
+    _issue_atlas_admission_binding,
+)
 from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.model_topology_v2 import (
     Initializer, ModelTopologySpecV2, ParameterGroup, ParameterSpec,
@@ -175,9 +180,16 @@ class CacheSeparationTests(unittest.TestCase):
             transition={**successor.transition, "kind": "PARAMETER_EXTENSION",
                         "invalidate_derived_caches": True})
         with _shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            second = _publish(
-                run, successor,
-                parent_state_for_acceptance=parent.retained_state)
+            admission = _issue_atlas_admission_binding(
+                successor, parent,
+                lease_sha256="9" * 64,
+                source_approval_sha256="8" * 64,
+                proposal_sha256="7" * 64,
+                factory_release_sha256="6" * 64,
+                staging_receipt_sha256="5" * 64,
+                parent_feature_receipt_sha256="4" * 64)
+            second = publish_atlas_admission_generation(
+                run, successor, admission=admission, reserve_gib=0.)
             student, authority, params, _, _ = _cache_for(
                 run, self.hidden, self.ids, self.valid)
         self.assertEqual(student.transition["kind"], "PARAMETER_EXTENSION")

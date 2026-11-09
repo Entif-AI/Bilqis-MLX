@@ -8,6 +8,9 @@ from pathlib import Path
 from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.learning.atlas_acceptance import AcceptedCandidateBinding
 
+from ..atlas_admission import (
+    AtlasAdmissionBinding, require_atlas_admission_binding,
+)
 from ..codec import load_bamf_bundle, save_bamf_bundle
 from ..records import (
     BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, invalid,
@@ -59,7 +62,7 @@ def _load_generation_locked(pointer_path: Path) -> tuple[CompleteStudent, dict]:
 
 def _parent_acceptance_for_publication(
         run_dir: Path, candidate: BamfBundleCandidate,
-        accepted: AcceptedCandidateBinding):
+        accepted):
     return _parent_acceptance_for_publication_impl(
         run_dir, candidate, accepted,
         pointer_lock=_pointer_lock, read_pointer=_read_pointer,
@@ -94,6 +97,15 @@ def publish_bamf_generation(
         run_dir, candidate, accepted, reserve_gib=reserve_gib)
 
 
+def publish_atlas_admission_generation(
+        run_dir: Path, candidate: BamfBundleCandidate, *,
+        admission: AtlasAdmissionBinding, reserve_gib: float = 100.0) -> dict:
+    """Publish one C07-authorized parameter extension through B13 custody."""
+    admitted = require_atlas_admission_binding(candidate, admission)
+    return _publish_authorized_generation(
+        run_dir, candidate, admitted, reserve_gib=reserve_gib)
+
+
 def _existing_initial_generation_retry(
         run_dir: Path, candidate: BamfBundleCandidate, prepared):
     """Converge an exact sealed genesis retry without depending on mutable upstream."""
@@ -112,6 +124,8 @@ def _authorize_publication_candidate(
         run_dir: Path, candidate: BamfBundleCandidate, authority):
     """Validate generation-specific authority before entering shared publication."""
     if candidate.generation > 0:
+        if type(authority) is AtlasAdmissionBinding:
+            return require_atlas_admission_binding(candidate, authority), None, None
         return _require_acceptance(candidate, authority), None, None
     from ..genesis import (
         PreparedInitialGeneration, validate_initial_generation_binding,

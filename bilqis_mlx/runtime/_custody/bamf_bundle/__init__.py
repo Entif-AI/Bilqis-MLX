@@ -11,7 +11,8 @@ from .feature_authority import (
 )
 from .publication import (
     load_bamf_generation, load_bamf_generation_authority,
-    publish_bamf_generation, record_bamf_rejection,
+    publish_atlas_admission_generation, publish_bamf_generation,
+    record_bamf_rejection,
 )
 from .package_import_transition import PackageImportTransition
 from .source_continuation import continue_source_qualified_motifs_from_bundle
@@ -47,6 +48,7 @@ __all__ = (
     "BamfGenerationManifest", "CompleteStudent", "save_bamf_bundle", "load_bamf_bundle",
     "continue_source_qualified_motifs_from_bundle",
     "publish_bamf_generation", "load_bamf_generation",
+    "publish_atlas_admission_generation",
     "load_bamf_generation_authority", "record_bamf_rejection",
     "PackageImportTransition",
     "AcceptedGenerationFeatureReceipt", "AuthenticatedCandidateFeatureContext",

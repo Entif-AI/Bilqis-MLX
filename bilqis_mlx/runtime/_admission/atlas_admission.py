@@ -1,7 +1,8 @@
-"""C07 lease contracts and disposable persistence, pending accepted run authority.
+"""C07 lease contracts plus fixture and accepted-run persistence boundaries.
 
-These C-owned boundary records do not implement A09, A12 or B13. Their explicit
-contract-fixture provenance cannot authorize a saved human learner.
+The historical ``DISPOSABLE_CONTRACT`` shape remains non-authoritative. Production
+lease persistence independently replays accepted B13 birth identity before that
+shape may be attached to a saved run.
 """
 from __future__ import annotations
 
@@ -58,8 +59,8 @@ def validate_atlas_command_request(args):
         _lease_from_json(json.loads(path.read_text(encoding='utf-8')))
     except (OSError, ValueError):
         _invalid('BAMF_ATLAS_SCOPE_FILE_INVALID')
-    # B13's accepted BAMF run owner and the actual A12 authority audit have not
-    # arrived through unified. Disposable projections cannot authorize this CLI.
+    # A scope file alone still cannot authorize the CLI: this parser-level check
+    # has neither accepted B13 run custody nor the typed A02 staged candidate.
     _invalid('BAMF_ATLAS_ACCEPTED_RUN_AUTHORITY_UNAVAILABLE')
 
 
@@ -110,6 +111,36 @@ def persist_atlas_lease(run_dir, lease, *, independently_loaded_run, registry):
     with _atlas_lease_lock(run_dir):
         return _persist_atlas_lease_locked(run_dir, lease,
             independently_loaded_run=independently_loaded_run, registry=registry)
+
+
+def _accepted_run_lease_identity(run_dir):
+    """Re-derive the lease comparison identity from live accepted B13 custody."""
+    from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
+    from .jit_adoption import _accepted_lease_run_identity
+
+    student, _manifest_sha256 = load_bamf_generation_authority(
+        Path(run_dir) / 'bamf-state.json')
+    if student.run_identity is None:
+        _invalid('BAMF_ATLAS_ACCEPTED_RUN_IDENTITY_REQUIRED')
+    return _accepted_lease_run_identity(student.run_identity)
+
+
+def persist_accepted_atlas_lease(run_dir, lease, *, registry):
+    """Persist a human lease only after independent accepted-run identity replay."""
+    expected = _accepted_run_lease_identity(run_dir)
+    if not isinstance(lease, AtlasAdmissionLease) or lease.run_identity != expected:
+        _invalid('BAMF_ATLAS_LEASE_RUN_IDENTITY_DRIFT')
+    with _atlas_lease_lock(run_dir, fixture_authority=False):
+        return _persist_atlas_lease_locked(
+            run_dir, lease, independently_loaded_run=expected, registry=registry,
+            fixture_authority=False)
+
+
+def read_accepted_atlas_lease(run_dir, *, registry):
+    """Read the current production lease only through accepted B13 run identity."""
+    expected = _accepted_run_lease_identity(run_dir)
+    return _read_atlas_lease(
+        run_dir, expected, registry=registry, fixture_authority=False)
 
 
 def renew_atlas_lease(run_dir, lease, *, independently_loaded_run, registry,

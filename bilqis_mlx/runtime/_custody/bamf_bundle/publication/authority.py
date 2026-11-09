@@ -10,6 +10,9 @@ from bilqis_mlx.learning.atlas_acceptance import (
     ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
 )
 
+from ..atlas_admission import (
+    ATLAS_ADMISSION_SCHEMA, AtlasAdmissionBinding, ParsedAtlasAdmissionBinding,
+)
 from ..package_import_transition import (
     is_package_import_transition, require_issued_package_import_transition,
 )
@@ -83,7 +86,7 @@ def validate_parent_transition(
 
 def require_accepted_parent(
         run_dir: Path, candidate: BamfBundleCandidate,
-        acceptance: AcceptedCandidateBinding, *, load_bundle) -> None:
+        acceptance, *, load_bundle) -> None:
     """Verify the C05 parent identity against immutable B13 parent custody."""
     if candidate.generation == 0:
         return
@@ -99,11 +102,17 @@ def require_accepted_parent(
             or acceptance.parent_candidate_identity_sha256
             != candidate_identity_digest(parent.retained_state)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    vocabulary_changed = (
+        parent.extents.semantic_bank_count != candidate.extents.semantic_bank_count
+        or parent.extents.active_semantic_digest
+        != candidate.extents.active_semantic_digest)
+    if vocabulary_changed and type(acceptance) is not AtlasAdmissionBinding:
+        invalid("BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED")
 
 
 def parent_acceptance_for_publication(
         run_dir: Path, candidate: BamfBundleCandidate,
-        accepted: AcceptedCandidateBinding, *, pointer_lock, read_pointer,
+        accepted, *, pointer_lock, read_pointer,
         live_manifest, load_bundle, require_published_acceptance):
     """Read the exact parent acceptance that the new immutable manifest must bind."""
     pointer_path = Path(run_dir) / "bamf-state.json"
@@ -170,23 +179,27 @@ def require_published_acceptance(
             validate_parsed_initial_generation_binding(
                 student, acceptance, pointer["acceptance_sha256"])
         else:
-            acceptance = AcceptedCandidateBinding.from_record(record)
+            if record.get("schema_version") == ATLAS_ADMISSION_SCHEMA:
+                acceptance = AtlasAdmissionBinding.from_record(record)
+            else:
+                acceptance = AcceptedCandidateBinding.from_record(record)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, BilqisError):
         invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
     if student.generation == 0:
         from .genesis_trust import require_initial_generation_trust_root
         require_initial_generation_trust_root(pointer, student, acceptance)
         return acceptance
-    if (acceptance.schema_version != ACCEPTANCE_SCHEMA
-            or acceptance.digest != pointer["acceptance_sha256"]
+    if (acceptance.digest != pointer["acceptance_sha256"]
             or acceptance.run_id != student.run_id
             or acceptance.generation != student.generation
             or acceptance.feature_sha256 != student.extents.factor_map_digest
             or acceptance.optimizer_step != student.retained_state.optimizer_step
             or acceptance.candidate_identity_sha256
             != candidate_identity_digest(student.retained_state)
-            or acceptance.step_proof_sha256 != tuple(
-                proof.digest for proof in student.retained_state.step_proofs)):
+            or (not isinstance(acceptance, ParsedAtlasAdmissionBinding)
+                and (acceptance.schema_version != ACCEPTANCE_SCHEMA
+                     or acceptance.step_proof_sha256 != tuple(
+                         proof.digest for proof in student.retained_state.step_proofs)))):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     manifest = live_manifest(run_dir, pointer)
     legacy_student = manifest.get("schema") != ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA
@@ -199,6 +212,9 @@ def require_published_acceptance(
     if (parent.run_id != student.run_id
             or parent.generation + 1 != student.generation
             or (not legacy_student
-                and parent.run_identity != student.run_identity)):
+                and parent.run_identity != student.run_identity)
+            or (isinstance(acceptance, ParsedAtlasAdmissionBinding)
+                and acceptance.parent_candidate_identity_sha256
+                != candidate_identity_digest(parent.retained_state))):
         invalid("BAMF_RUN_IDENTITY_DRIFT")
     return acceptance

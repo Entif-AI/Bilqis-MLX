@@ -1,9 +1,9 @@
 """Revalidate and commit a selected JIT proposal through the native transaction.
 
-This module does not issue Atlas-admission authority.  The public C07 policy owns
-lease/source checks; this owner only removes the old executor gap after those
-checks have succeeded.  In particular, the provisional ``DISPOSABLE_CONTRACT``
-lease cannot reach this executor through ``advance_atlas_frontier``.
+The public C07 policy owns lease/source scope. This owner removes the old executor
+gap after those checks have succeeded: its native path independently replays the
+persisted lease and accepted B13 parent, then publishes the exact A02-staged
+candidate. A provisional ``DISPOSABLE_CONTRACT`` value by itself is never authority.
 """
 from __future__ import annotations
 
@@ -11,7 +11,32 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 from ..factory.jit_curriculum import ProposalDisposition, propose_curriculum_delta
-from .atlas_lease_contracts import _invalid, _sha
+from .atlas_lease_contracts import LeaseRunIdentity, _invalid, _sha
+
+
+def _accepted_lease_run_identity(run_identity) -> LeaseRunIdentity:
+    """Project accepted B13 birth identity into the lease's frozen identity shape.
+
+    The projection is a comparison value only.  It does not turn the
+    ``DISPOSABLE_CONTRACT`` record into B13 authority; the accepted run remains
+    authoritative and must be reloaded independently before mutation.
+    """
+    from bilqis_mlx.learning.champions import Checkpoint
+    from bilqis_mlx.runtime.bamf_bundle.genesis import BamfRunIdentity
+
+    if type(run_identity) is not BamfRunIdentity:
+        _invalid("BAMF_ATLAS_ACCEPTED_RUN_IDENTITY_REQUIRED")
+    return LeaseRunIdentity(
+        run_identity.run_id,
+        run_identity.initial_candidate_identity_sha256,
+        run_identity.initial_topology_digest,
+        Checkpoint(
+            run_identity.origin_checkpoint_sha256,
+            run_identity.origin_checkpoint_filename,
+            run_identity.origin_optimizer_step,
+            True,
+        ),
+    )
 
 
 def resolve_ready_candidate(frontier, current, ledger, plan, checkpoint, proposal, staged):
@@ -120,18 +145,70 @@ class _PreparedSuccessorRuntime:
     parameters: object
     optimizer: object
     reserve_gib: float
+    native_pointer: dict | None = None
 
     def __post_init__(self):
         if (not isinstance(self.run_dir, Path) or not isinstance(self.receipt, dict)
                 or not isinstance(self.graph, dict)
                 or not isinstance(self.reserve_gib, (int, float))
-                or self.reserve_gib < 0):
-            raise ValueError("JIT_ADOPTION_EXECUTOR_CONTEXT_INVALID")
+                or self.reserve_gib < 0
+                or (self.native_pointer is not None
+                    and not isinstance(self.native_pointer, dict))):
+            _invalid("BAMF_ATLAS_EXECUTOR_CONTEXT_INVALID")
+
+
+def _publish_native_staged_candidate(
+        runtime, selected, proposal, native_staged, atlas_lease, atlas_registry):
+    """Publish the exact A02 state after C07 and B13 authority replay."""
+    from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_lease
+    from bilqis_mlx.runtime.bamf_bundle import (
+        load_bamf_generation_authority, publish_atlas_admission_generation,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
+        _issue_atlas_admission_binding,
+    )
+    from bilqis_mlx.semantics.domains import contract_digest
+
+    candidate = getattr(native_staged, "candidate", None)
+    staging_receipt = getattr(native_staged, "receipt", None)
+    candidate_identity = getattr(
+        staging_receipt, "candidate_identity_sha256", None)
+    parent_feature = getattr(
+        staging_receipt, "parent_feature_receipt_sha256", None)
+    staging_digest = getattr(staging_receipt, "digest", None)
+    if (candidate is None or staging_receipt is None
+            or not _sha(candidate_identity) or not _sha(parent_feature)
+            or not _sha(staging_digest)):
+        _invalid("BAMF_ATLAS_NATIVE_STAGING_ARGUMENT_INVALID")
+
+    candidate = _authenticate_native_staged_candidate(
+        runtime.run_dir, candidate,
+        expected_candidate_identity_sha256=candidate_identity,
+        expected_parent_feature_receipt_sha256=parent_feature)
+    persisted = read_accepted_atlas_lease(
+        runtime.run_dir, registry=atlas_registry)
+    if persisted is None or persisted != atlas_lease:
+        _invalid("BAMF_ATLAS_PERSISTED_LEASE_REQUIRED")
+    parent, _parent_manifest = load_bamf_generation_authority(
+        runtime.run_dir / "bamf-state.json")
+    binding = _issue_atlas_admission_binding(
+        candidate, parent,
+        lease_sha256=atlas_lease.digest(),
+        source_approval_sha256=contract_digest(atlas_lease.source_approval),
+        proposal_sha256=proposal.proposal_sha256,
+        factory_release_sha256=selected.successor.release_sha256,
+        staging_receipt_sha256=staging_digest,
+        parent_feature_receipt_sha256=parent_feature,
+    )
+    return publish_atlas_admission_generation(
+        runtime.run_dir, candidate, admission=binding,
+        reserve_gib=float(runtime.reserve_gib))
 
 
 def _execute_prepared_successor_adoption(
         runtime: _PreparedSuccessorRuntime, *, frontier, current, ledger, plan,
-        checkpoint, proposal, staged, source_registry, answer_registry):
+        checkpoint, proposal, staged, source_registry, answer_registry,
+        native_staged=None, atlas_lease=None, atlas_registry=None):
     """Freshly revalidate then enter the existing atomic prepared-successor owner.
 
     This is deliberately a concrete owner, not a caller callback.  It cannot
@@ -139,7 +216,7 @@ def _execute_prepared_successor_adoption(
     C07 contract is production run authority.
     """
     if not isinstance(runtime, _PreparedSuccessorRuntime):
-        raise ValueError("JIT_ADOPTION_EXECUTOR_RUNTIME_INVALID")
+        _invalid("BAMF_ATLAS_EXECUTOR_RUNTIME_INVALID")
     selected = resolve_ready_candidate(
         frontier, current, ledger, plan, checkpoint, proposal, staged)
     verify_current_implementations(
@@ -155,7 +232,16 @@ def _execute_prepared_successor_adoption(
     school = runtime_state._state_from_json(runtime.receipt["school"], program)
     if (admitted.release_sha256 != current.release_sha256
             or school.current_student != checkpoint):
-        raise ValueError("JIT_ADOPTION_RUNTIME_CONTEXT_CHANGED")
+        _invalid("BAMF_ATLAS_RUNTIME_CONTEXT_CHANGED")
+
+    native_inputs = (native_staged, atlas_lease, atlas_registry)
+    if any(value is not None for value in native_inputs):
+        if any(value is None for value in native_inputs):
+            _invalid("BAMF_ATLAS_NATIVE_ADOPTION_ARGUMENT_INVALID")
+        pointer = _publish_native_staged_candidate(
+            runtime, selected, proposal, native_staged, atlas_lease,
+            atlas_registry)
+        return replace(runtime, native_pointer=pointer)
 
     parameters, optimizer, graph, receipt, course = (
         release_adoption._adopt_prepared_successor(
