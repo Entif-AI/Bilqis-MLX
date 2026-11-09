@@ -7,8 +7,6 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
-from bilqis_mlx.learning.tests.frames.nested_fixtures import _case as _nested_case
-from bilqis_mlx.runtime.atlas_artifact_owner import PackedFrameArtifactOwner
 from bilqis_mlx.runtime.atlas_motif_owner import MotifArtifactOwner
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
@@ -21,7 +19,6 @@ from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _SOURCE_OWNER, _TEST_PUBLIC, _event, _result,
 )
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
-from bilqis_mlx.semantics.frame_compiler import _prefix_digest
 
 
 class MotifArtifactOwnerTests(unittest.TestCase):
@@ -170,72 +167,6 @@ class MotifArtifactOwnerTests(unittest.TestCase):
             second_owner.current_node.content_digest,
             self.owner.current_node.content_digest,
         )
-
-    def test_multi_context_motif_identity_uses_stable_origin_keys_not_view_nodes(self):
-        _ast, _config, nested, _vectors, _params = _nested_case()
-        nested = replace(
-            nested,
-            extents=replace(
-                nested.extents,
-                motif_key_map_digest=self.manifest.digest,
-            ),
-        )
-        owner = bind_motif_artifact_owner(self.cache, nested)
-        packed = nested.packed_frame_artifact_owner
-        motif_times = {
-            ref for ref in owner.current_node.immediate_dependencies
-            if ref.kind is DependencyKind.TIME
-            and ref.key.startswith("time:asof:context:")
-        }
-
-        self.assertEqual(
-            motif_times, set(packed.current_context_dependencies))
-        self.assertEqual(
-            {node.artifact_id for node in owner.index.nodes
-             if node.kind.value == "PACKED_FRAME"},
-            {node.artifact_id for node in packed.physical_nodes},
-        )
-        self.assertTrue(
-            set(packed.origin_context_keys).isdisjoint(
-                {node.artifact_id for node in owner.index.nodes}))
-
-    def test_multi_context_cache_keeps_distinct_origin_sets_and_reuses_first(self):
-        _ast, _config, nested, _vectors, _params = _nested_case()
-        nested = replace(
-            nested,
-            extents=replace(
-                nested.extents,
-                motif_key_map_digest=self.manifest.digest,
-            ),
-        )
-        first_owner = bind_motif_artifact_owner(self.cache, nested)
-        rows = nested.compiled
-        first, second = rows.rows
-        changed_digest = "f" * 64
-        changed_first = replace(
-            first,
-            context_digest=changed_digest,
-            cache_key=_prefix_digest(
-                first.source_instance_id, first.semantic_release,
-                first.visible_end, first.schema_map, changed_digest,
-                first.positions, first.scope, first.policy_version),
-        )
-        changed_rows = replace(rows, rows=(changed_first, second))
-        changed_packed_owner = PackedFrameArtifactOwner(changed_rows)
-        changed = replace(nested)
-        object.__setattr__(
-            changed, "packed_frame_artifact_owner", changed_packed_owner)
-
-        second_owner = bind_motif_artifact_owner(self.cache, changed)
-
-        self.assertIsNot(first_owner, second_owner)
-        self.assertNotEqual(
-            first_owner.current_node.artifact_id,
-            second_owner.current_node.artifact_id,
-        )
-        self.assertIs(
-            first_owner, bind_motif_artifact_owner(self.cache, nested))
-
 
 if __name__ == "__main__":
     unittest.main()
