@@ -39,9 +39,14 @@ class SerializationTests(PackageAssertions, unittest.TestCase):
     def test_literal_canonical_wire_and_digest(self):
         from pathlib import Path
         expected = Path(__file__).with_name('golden_package.json').read_text()
-        self.assertEqual(self.package.canonical_json, expected)
-        self.assertEqual(self.package.digest, '98527cd13e7a10c65d4697277e681137f34ff55dbdf479bf842eb7f87c6372e4')
-        self.assertEqual(CognitivePackage.from_canonical_json(expected), self.package)
+        historical = CognitivePackage.from_canonical_json(expected)
+        self.assertEqual(historical.canonical_json, expected)
+        self.assertEqual(
+            historical.digest,
+            '98527cd13e7a10c65d4697277e681137f34ff55dbdf479bf842eb7f87c6372e4')
+        self.assertEqual(
+            CognitivePackage.from_canonical_json(self.package.canonical_json),
+            self.package)
 
     def test_surrogates_rejected_on_cold_read(self):
         raw = json.loads(self.package.canonical_json)

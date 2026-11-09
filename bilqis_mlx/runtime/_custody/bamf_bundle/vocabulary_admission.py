@@ -125,9 +125,12 @@ def _successor_state(parent, prepared):
         ages.setdefault((item.bank, item.row), IdentityRowAge(item.bank, item.row, 0))
     old_policy = parent.retained_state.policy
     policy = PlasticityPolicy(
-        old_policy.mode, old_policy.accepted_fast_since_full,
-        tuple(ages[key] for key in sorted(ages)),
-        old_policy.policy_version, old_policy.schema_version)
+        mode=old_policy.mode,
+        accepted_fast_since_full=old_policy.accepted_fast_since_full,
+        row_ages=tuple(ages[key] for key in sorted(ages)),
+        policy_version=old_policy.policy_version,
+        schema_version=old_policy.schema_version,
+        mode_transition=old_policy.mode_transition)
     return issue_parameter_extension_state(
         parent.retained_state, optimizer, policy)
 

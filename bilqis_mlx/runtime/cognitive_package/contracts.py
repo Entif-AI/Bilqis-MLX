@@ -1,5 +1,5 @@
 """Immutable package address, payload and source-clearance contracts."""
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from enum import Enum
 from hashlib import sha256
 import re
@@ -37,6 +37,13 @@ class PackageKind(str, Enum):
     FIXTURE = 'fixture'
     COUNTEREXAMPLE = 'counterexample'
     BEHAVIORAL_DIFF = 'behavioral_diff'
+
+
+class ExportClassification(str, Enum):
+    PUBLIC_FIXTURE = 'PUBLIC_FIXTURE'
+    PUBLIC_DERIVED = 'PUBLIC_DERIVED'
+    PRIVATE_REAL = 'PRIVATE_REAL'
+    UNCLASSIFIED = 'UNCLASSIFIED'
 
 
 @dataclass(frozen=True)
@@ -91,3 +98,45 @@ class SourceRights:
                     'artifact clearance revoked')
             require(artifact.digest in self.public_artifact_digests,
                     'artifact lacks public clearance')
+
+
+_PUBLIC_EXPORT_GRANT_ISSUER = object()
+
+
+@dataclass(frozen=True, init=False)
+class PublicExportGrant:
+    rights: SourceRights
+    artifact_classifications: tuple[tuple[str, ExportClassification], ...]
+    _issuance: object = field(init=False, repr=False, compare=False)
+
+    def __init__(self, *args, **kwargs):
+        invalid('public export grant caller construction forbidden')
+
+    def __post_init__(self):
+        classes = self.artifact_classifications
+        require(
+            getattr(self, '_issuance', None) is _PUBLIC_EXPORT_GRANT_ISSUER
+            and type(self.rights) is SourceRights
+            and type(classes) is tuple
+            and all(type(item) is tuple and len(item) == 2
+                    and digest_string(item[0])
+                    and item[1] in {
+                        ExportClassification.PUBLIC_FIXTURE,
+                        ExportClassification.PUBLIC_DERIVED,
+                    } for item in classes)
+            and classes == tuple(sorted(classes, key=lambda item: item[0]))
+            and len({item[0] for item in classes}) == len(classes),
+            'invalid public export grant',
+        )
+        self.rights.__post_init__()
+
+
+def _issue_public_export_grant(rights, artifact_classifications):
+    value = object.__new__(PublicExportGrant)
+    for field_name, field_value in (
+            ('rights', rights),
+            ('artifact_classifications', artifact_classifications),
+            ('_issuance', _PUBLIC_EXPORT_GRANT_ISSUER)):
+        object.__setattr__(value, field_name, field_value)
+    value.__post_init__()
+    return value

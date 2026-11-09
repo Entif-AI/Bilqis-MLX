@@ -1,6 +1,7 @@
 """C12 bridge from authoritative screening into B12/B13 package-import custody."""
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate
@@ -9,6 +10,9 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 )
 from bilqis_mlx.runtime.bamf_bundle.package_import_transition import (
     _issue_package_import_transition,
+)
+from bilqis_mlx.runtime.accepted_teacher_custody import (
+    rebind_package_import_teacher_custody,
 )
 from bilqis_mlx.semantics.atlas_release_audit import ExportClearanceReceipt
 
@@ -89,12 +93,21 @@ def _successor(parent, pointer, screened, transaction, clearance):
         "source_clearance_sha256": clearance,
         "optimizer_step": transaction.candidate.optimizer_step,
     }
+    teacher = rebind_package_import_teacher_custody(
+        parent, transaction.candidate)
+    provenance = parent.provenance
+    teacher_state = parent.teacher_state
+    if teacher is not None:
+        provenance = replace(
+            provenance, teacher_identity=teacher.teacher_identity,
+            teacher_epoch=teacher.teacher_epoch)
+        teacher_state = dict(teacher.teacher_state)
     return BamfBundleCandidate(
         parent.run_id, parent.generation + 1, pointer["manifest_sha256"],
         parent.implementation_sha256, parent.topology, parent.extents,
-        transaction.candidate, parent.optimizer_hyperparameters, parent.provenance,
+        transaction.candidate, parent.optimizer_hyperparameters, provenance,
         parent.semantic_abi, parent.compiler_features, parent.correction_frontier,
-        parent.teacher_state, parent.evaluation_contract, transition, (event,),
+        teacher_state, parent.evaluation_contract, transition, (event,),
         parent.run_identity)
 
 

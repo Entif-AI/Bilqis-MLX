@@ -10,7 +10,11 @@ import mlx.core as mx
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
-from bilqis_mlx.learning.atlas_candidate import CandidateCustodyIdentity
+from bilqis_mlx.learning.atlas_candidate import CandidateCustodyIdentity, CandidateState
+from bilqis_mlx.learning.atlas_plasticity import (
+    ModeTransition, PlasticityPolicy,
+    TRANSITIONED_POLICY_STATE_SCHEMA, TRANSITIONED_POLICY_VERSION,
+)
 from bilqis_mlx.learning._atlas_candidate.state import _issue_parameter_extension_state
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
 from bilqis_mlx.runtime.bamf_bundle import (
@@ -44,6 +48,33 @@ class A02StagingCapabilityTests(unittest.TestCase):
             state.optimizer.update_counts)
         with self.assertRaises(BilqisError):
             _issue_parameter_extension_state(state, altered, state.policy)
+
+    def test_parameter_extension_preserves_transitioned_policy_authority(self):
+        state = parent_state()
+        proof = ModeTransition(
+            run_id="fixture-run", parent_generation=0, candidate_generation=1,
+            candidate_identity_sha256="1" * 64, optimizer_step=state.optimizer_step,
+            decision_sha256="2" * 64, initial_factory_release_sha256="3" * 64,
+            foundation_capability_ids=("A.ONE",), promotion_evidence_sha256="4" * 64,
+            assessment_epoch=1, outcome="PROMOTED", carried_debt=(),
+            promotion_receipt_sha256="5" * 64)
+        policy = PlasticityPolicy(
+            "ADAPTIVE", state.policy.accepted_fast_since_full,
+            state.policy.row_ages, TRANSITIONED_POLICY_VERSION,
+            TRANSITIONED_POLICY_STATE_SCHEMA, proof)
+        parent = CandidateState(
+            state.optimizer, policy, state.allocations, state.optimizer_step,
+            state.custody, state.step_proofs)
+        for altered in (
+            PlasticityPolicy("ADAPTIVE", policy.accepted_fast_since_full,
+                             policy.row_ages),
+            replace(policy, mode_transition=replace(
+                proof, promotion_receipt_sha256="6" * 64)),
+        ):
+            with self.assertRaises(BilqisError):
+                _issue_parameter_extension_state(parent, parent.optimizer, altered)
+        preserved = _issue_parameter_extension_state(parent, parent.optimizer, policy)
+        self.assertEqual(preserved.policy, policy)
 
     def test_only_a02_owner_can_issue_live_staged_handoff(self):
         state = parent_state()

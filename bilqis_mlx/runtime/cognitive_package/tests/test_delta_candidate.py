@@ -12,6 +12,7 @@ from bilqis_mlx.runtime.cognitive_package import (
     receiver_parameter_schema_digest, receiver_weight_digest, screen_delta_candidate,
 )
 from bilqis_mlx.runtime.cognitive_package.delta import _apply_delta_tensors, _issue_candidate
+from bilqis_mlx.runtime.cognitive_package.tests.export_authority_fixtures import grant
 from bilqis_mlx.runtime.cognitive_package.tests.fixtures import digest, snapshot
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import _evidence
 
@@ -26,7 +27,7 @@ def _tensor(name, values):
 
 
 def _package(tensors):
-    source, rights = snapshot(PackageKind.WEIGHT_DELTA)
+    source, _ = snapshot(PackageKind.WEIGHT_DELTA)
     by_name = {value.parameter_name: value for value in tensors}
     parent = np.frombuffer(by_name["weights"].values_fp32, dtype="<f4")
     changed = parent[1:3].tobytes()
@@ -39,9 +40,7 @@ def _package(tensors):
         parameter_schema_digest=receiver_parameter_schema_digest(tensors),
     )
     source = replace(source, binding=binding, artifacts=(artifact,) + source.artifacts[1:])
-    rights = replace(rights, public_artifact_digests=tuple(sorted(
-        value.digest for value in source.artifacts)))
-    return export_capability(source, source.signature, rights), source
+    return export_capability(source, source.signature, grant(source)), source
 
 
 def apply_plastic_delta(package, binding, parent, tensors):
@@ -153,12 +152,10 @@ class DisposableDeltaCandidateTests(unittest.TestCase):
         payload = encode_plastic_delta((DeltaSlice(
             "weights", 0, 1, "a" * 64,
             np.asarray((1.0,), dtype="<f4").tobytes()),)) + b" "
-        source, rights = snapshot(PackageKind.WEIGHT_DELTA)
+        source, _ = snapshot(PackageKind.WEIGHT_DELTA)
         artifact = PackageArtifact("weights", PackageKind.WEIGHT_DELTA, payload)
         source = replace(source, artifacts=(artifact,) + source.artifacts[1:])
-        rights = replace(rights, public_artifact_digests=tuple(sorted(
-            value.digest for value in source.artifacts)))
-        package = export_capability(source, source.signature, rights)
+        package = export_capability(source, source.signature, grant(source))
         with self.assertRaises(BilqisError):
             apply_plastic_delta(package, source.binding, "a" * 64,
                                 (_tensor("weights", (1.0,)),))

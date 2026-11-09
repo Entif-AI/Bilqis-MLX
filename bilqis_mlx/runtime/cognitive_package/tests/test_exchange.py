@@ -169,3 +169,9 @@ print(p.artifacts[0].payload.decode())
             capture_output=True, text=True, timeout=20)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.splitlines(), [self.package.digest, 'x + 1'])
+
+    def test_cold_decoded_package_cannot_be_republished_as_source_authority(self):
+        decoded = type(self.package).from_canonical_json(self.package.canonical_json)
+        with self.assertPackageError('source export authority'):
+            publish_package(decoded, self.sender)
+        self.assertFalse(self.sender.exists())

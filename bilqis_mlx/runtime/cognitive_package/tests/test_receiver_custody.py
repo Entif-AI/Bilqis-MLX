@@ -13,10 +13,11 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime import mlx_checkpoint
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation, publication
 from bilqis_mlx.runtime.cognitive_package import (
-    DeltaSlice, PackageArtifact, PackageBinding, PackageKind, ReceiverTensor,
-    apply_plastic_delta, encode_plastic_delta, export_capability,
+    DeltaSlice, PackageArtifact, PackageBinding, PackageKind,
+    ReceiverTensor, apply_plastic_delta, encode_plastic_delta, export_capability,
     receiver_parameter_schema_digest, receiver_weight_digest,
 )
+from bilqis_mlx.runtime.cognitive_package.tests.export_authority_fixtures import grant
 from bilqis_mlx.runtime.cognitive_package.tests.fixtures import snapshot
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     NAME, candidate, parent_state, publish_candidate, shape_patch,
@@ -45,14 +46,17 @@ class ReceiverCustodyTests(TestCase):
             self.student.extents.motif_key_map_digest)
 
     def package(self, binding):
-        source, rights = snapshot(PackageKind.WEIGHT_DELTA)
+        source, _ = snapshot(PackageKind.WEIGHT_DELTA)
         parent = np.frombuffer(self.tensor.values_fp32, dtype='<f4')
         delta = np.asarray([.5], dtype='<f4').tobytes()
-        artifact = PackageArtifact('weights', PackageKind.WEIGHT_DELTA,
-            encode_plastic_delta((DeltaSlice(NAME, 0, 1, sha256(parent[:1].tobytes()).hexdigest(), delta),)))
+        artifact = PackageArtifact(
+            'weights', PackageKind.WEIGHT_DELTA,
+            encode_plastic_delta((
+                DeltaSlice(NAME, 0, 1, sha256(parent[:1].tobytes()).hexdigest(), delta),
+            )),
+        )
         source = replace(source, binding=binding, artifacts=(artifact,) + source.artifacts[1:])
-        rights = replace(rights, public_artifact_digests=tuple(sorted(a.digest for a in source.artifacts)))
-        return export_capability(source, source.signature, rights)
+        return export_capability(source, source.signature, grant(source))
 
     def test_current_pointer_is_the_parent_of_a_compatible_candidate(self):
         parent_value = np.frombuffer(self.tensor.values_fp32, dtype='<f4')[0]
