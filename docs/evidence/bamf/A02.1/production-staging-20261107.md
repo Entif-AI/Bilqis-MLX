@@ -5,7 +5,7 @@
 - Issue: #399 — A02.1 | Allocate stable semantic banks and activate admitted identity rows
 - Branch: `codex/bamf02-a-399-production-admission-20261106`
 - Historical PR #887: closed unmerged after the earlier A02 publication-authority overreach was corrected.
-- Reviewed integration trunk consumed for the current candidate: `e206ec0e957e24823f3136c0f3bffe1fc950013e`
+- Reviewed integration trunk consumed for the current candidate: `bcc82f86e2c409e22329d38c14b757d7e5a0d517`
 - Repaired A02 semantic head: `d64df31416712b51a24c45417b05893c923642cd`.
 - Dependency authority consumed: reviewed B13 accepted-generation feature authority from #708/#809.
 - Additional B13 integration repair in this branch: recursive accepted-generation feature lineage is rederived through the same accepted source authority, while the immediate parent generation's effective feature map is kept distinct from the current feature artifact's last distinct construction predecessor. A02 therefore does not mint a parallel factor-map authority or mistake retained reuse for a new feature transition.
@@ -95,9 +95,13 @@ This post-seal witness proves that the ordinary initial accepted generation can 
 ## 2026-11-09 current-unified qualification
 
 The repaired A02 owner branch consumed reviewed unified
-`e206ec0e957e24823f3136c0f3bffe1fc950013e` exactly once at the turn-in boundary.
+`bcc82f86e2c409e22329d38c14b757d7e5a0d517` exactly once at the turn-in boundary.
 The resulting semantic integration head is
 `d64df31416712b51a24c45417b05893c923642cd`.
+
+The subsequent reviewed-unified delta from `e206ec0e` to `bcc82f86` is B06.3
+receipt/flow-control documentation only and does not change A02 or B13 runtime
+semantics. It is consumed in merge head `474e2f583e746d87c3e32eebd04c9c7d477f0671`.
 
 The current sync exposed one A02-owned integration regression that focused staging
 tests had not exercised: exporting the MLX-heavy `stage_vocabulary_extension`
