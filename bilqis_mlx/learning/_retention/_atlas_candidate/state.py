@@ -5,7 +5,9 @@ import mlx.core as mx
 import numpy as np
 from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
-from bilqis_mlx.learning.atlas_plasticity import PlasticityPolicy
+from bilqis_mlx.learning.atlas_plasticity import (
+    PlasticityPolicy, apply_promotion_transition,
+)
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
 from .common import RETAINED_STATE_ISSUER, STATE_SCHEMA, invalid, is_digest
 from .proofs import CandidateStepProof
@@ -229,6 +231,38 @@ def _issue_parameter_extension_state(
     state = object.__new__(CandidateState)
     for name, value in (
             ('optimizer', optimizer), ('policy', policy),
+            ('allocations', parent.allocations),
+            ('optimizer_step', parent.optimizer_step),
+            ('custody', parent.custody), ('step_proofs', parent.step_proofs),
+            ('schema_version', STATE_SCHEMA), ('_issuance', RETAINED_STATE_ISSUER)):
+        object.__setattr__(state, name, value)
+    state.__post_init__()
+    return state
+
+
+def _issue_promotion_transition_state(parent: CandidateState, receipt) -> CandidateState:
+    """Persist one B09 cadence transition without changing neural state."""
+    from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+    from bilqis_mlx.runtime.plasticity_promotion import (
+        require_accepted_promotion_transition,
+    )
+
+    if type(parent) is not CandidateState:
+        invalid()
+    require_accepted_promotion_transition(receipt)
+    custody = parent.custody
+    if (custody is None
+            or receipt.run_id != custody.run_id
+            or receipt.parent_generation != custody.generation
+            or receipt.candidate_generation != custody.generation + 1
+            or receipt.parent_manifest_sha256 != custody.manifest_sha256
+            or receipt.candidate_identity_sha256 != candidate_identity_digest(parent)
+            or receipt.optimizer_step != parent.optimizer_step):
+        invalid()
+    policy = apply_promotion_transition(parent.policy, receipt)
+    state = object.__new__(CandidateState)
+    for name, value in (
+            ('optimizer', parent.optimizer), ('policy', policy),
             ('allocations', parent.allocations),
             ('optimizer_step', parent.optimizer_step),
             ('custody', parent.custody), ('step_proofs', parent.step_proofs),
