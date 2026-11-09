@@ -177,6 +177,10 @@ class GenerationZeroSourceAuthorityTests(unittest.TestCase):
                 **candidate.semantic_abi, "active_set_sha256": "1" * 64}),
             replace(candidate, compiler_features={
                 **candidate.compiler_features, "compiler_sha256": "2" * 64}),
+            replace(candidate, compiler_features={
+                **candidate.compiler_features,
+                "factory_grade_ids": [
+                    *candidate.compiler_features["factory_grade_ids"], "CALLER"]}),
             replace(candidate, correction_frontier={
                 **candidate.correction_frontier,
                 "frontier": [{"caller_authored": True}]}),

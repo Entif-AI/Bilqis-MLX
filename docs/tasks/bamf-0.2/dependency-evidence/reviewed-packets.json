@@ -758,6 +758,38 @@
         ],
         "unresolved": "C16.1b remains held until B13.6 provides accepted generation-zero custody; inherited C02/C03/C05/C08 interfaces may be implemented against their exact reviewed receipts without making their OPEN parent state a caller credential."
       }
+    },
+    {
+      "key": "C02.5",
+      "number": 905,
+      "parent_key": "C02",
+      "parent_number": 371,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "resolved",
+        "body_sha256": "ef5a5c8afef45e96c5b1376342cc800a47b21dc667ecdcfe75dec1424eca800c",
+        "clause": "**Direct prerequisites:** C02.3, B13.6, C03",
+        "known_edges": [
+          "C02.3",
+          "B13.6",
+          "C03"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "C02.5.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/905",
+            "sha256": "ef5a5c8afef45e96c5b1376342cc800a47b21dc667ecdcfe75dec1424eca800c",
+            "excerpt": "B13.6 #904 frozen run-identity/seed interface."
+          }
+        ],
+        "obligations": [
+          "Transport the exact upstream record as non-authorizing provenance; preserve optimizer_step_seed and episode_id as separate existing meanings; final turn-in consumes accepted #904/#376 receipts through reviewed unified.",
+          "Reviewed unified 2c26d4aca90f275e1c255aa6a197ab63e0528480 contains B13.6/#904 through PR #931 and C03/#376 through PR #932; C02.5 may proceed to final review without minting upstream authority."
+        ],
+        "unresolved": null
+      }
     }
   ]
 }

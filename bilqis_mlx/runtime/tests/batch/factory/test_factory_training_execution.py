@@ -39,6 +39,10 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import acceptance
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
+from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import (
+    visit_provenance,
+)
+
 from .factory_training_bridge_support import FactoryTrainingBridgeFixture
 
 
@@ -145,6 +149,7 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
                 capability="B.IDBOOLOPS", delivery=delivery,
                 requested_count=2, source_seed=37116, source_each=1,
                 optimizer_step_seed=17,
+                visit_provenance=visit_provenance("B.IDBOOLOPS"),
                 teacher_strategy={"policy": "c02-parent-production"},
                 teacher_hparams=HP, max_norm=1.0, observation=observation)
             self.assertEqual(result.transaction.update_steps, 1)
@@ -177,6 +182,7 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
                     capability="B.IDBOOLOPS", delivery=delivery,
                     requested_count=2, source_seed=37118, source_each=1,
                     optimizer_step_seed=19,
+                    visit_provenance=visit_provenance("B.IDBOOLOPS"),
                     teacher_strategy={"policy": "c09-correction-hold"},
                     teacher_hparams=HP, max_norm=1.0, observation=observation)
             self.assertEqual(caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
@@ -197,6 +203,7 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
                     capability="A.IDENTITY", delivery=delivery,
                     requested_count=2, source_seed=37117, source_each=2,
                     optimizer_step_seed=18,
+                    visit_provenance=visit_provenance("A.IDENTITY"),
                     teacher_strategy={"policy": "c02-parent-production"},
                     teacher_hparams=HP, max_norm=1.0, observation=observation)
 

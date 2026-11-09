@@ -31,6 +31,7 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     HP, NAME, parent_state, publish_genesis, retention_decision, shape_patch,
 )
+from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
@@ -67,7 +68,8 @@ def training_authority(
     provenance = BamfDeliveryProvenance(
         source_row, source_content_digest((row,)), source_id, capability,
         None, (), 1, 1, None, 0,
-        source_family, episode, immediate_dependencies(source_row, source_id))
+        visit_provenance(capability), source_family, episode,
+        immediate_dependencies(source_row, source_id))
     training_row = BamfTrainingRow(None, None, None, provenance)
     batch = _issue_training_batch(
         SOURCE_RELEASE, generation_binding, content_digest((row,)), capability,

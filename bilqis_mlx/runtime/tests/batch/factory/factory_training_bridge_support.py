@@ -13,6 +13,7 @@ from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_candidate_feature_context
 from bilqis_mlx.runtime.factory_training_bridge import prepare_factory_training_batch
+from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
     genesis_bundle, live_factory_context,
 )
@@ -56,6 +57,7 @@ class FactoryTrainingBridgeFixture(SourceBackboneTestBase):
             capability=capability, delivery=delivery, requested_count=each + 2,
             source_seed=seed, source_each=each,
             optimizer_step_seed=7,
+            visit_provenance=visit_provenance(capability),
             teacher_strategy={"policy": "c02-parent-integration"})
 
     def accepted_source_context(self, run_dir: Path):

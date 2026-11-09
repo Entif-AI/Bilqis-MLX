@@ -1002,7 +1002,8 @@
         "C02.1",
         "C02.2",
         "C02.3",
-        "C02.4"
+        "C02.4",
+        "C02.5"
       ],
       "execution_role": "integration_parent_after_recursive_decomposition"
     },
