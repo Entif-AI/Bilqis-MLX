@@ -150,4 +150,5 @@ def bind_compiled_training_batch(batch, compiled, sources, feature_schema, *, ro
         _invalid("B11_TRAINING_SOURCE_ROW_MISMATCH")
     return BamfCompiledBatch(
         compiled, sources, feature_schema,
-        training_authority=_issue(batch, source, provenance))
+        training_authority=_issue(batch, source, provenance),
+        visit_provenance=provenance.visit)

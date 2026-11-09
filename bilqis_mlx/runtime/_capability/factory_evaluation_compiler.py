@@ -16,7 +16,9 @@ from bilqis_mlx.semantics.context_eligibility import (
 from bilqis_mlx.semantics.frame_compiler import (
     compile_prefix_rows, validate_partial_visible_forest,
 )
-from bilqis_mlx.source_adapters.atoms.admission import public_formal_atom_context
+from bilqis_mlx.source_adapters.atoms.admission import (
+    authorize_public_formal_prefix, public_formal_atom_context,
+)
 from bilqis_mlx.source_adapters.atoms.authority import canonical_graph_for
 
 from .capability_evaluation import _invalid
@@ -85,6 +87,7 @@ def compile_factory_evaluation_batch(
     )
     rows = compile_prefix_rows(
         ((ast, len(ast.atoms), config),), authenticated.features.semantic_release)
+    config = authorize_public_formal_prefix(ast, rows.rows[0], config)
     receipt = validate_partial_visible_forest(rows.rows[0], ast, config)
     compiled = CompiledEncoderInput(
         rows, (config,), authenticated.features, candidate.extents,

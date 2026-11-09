@@ -64,8 +64,8 @@ class AdmissionTests(TestCase):
             frames=(), source_ast=ast, compiler_config=authorized,
             task_scope=authorized.task, source_frontier=authorized.frontier,
             policy=authorized.policy, input_generation="generation:fixture",
-            query_id="query:fixture", requested_roles=(), run_seed="seed:fixture",
-            visit_id="visit:fixture", training=False,
+            query_id="query:fixture", requested_roles=(), run_seed=None,
+            visit_id=None, training=False,
             explicit_member_question=False, unresolved_nested_query=False)
         self.assertEqual(selected.eligible_count, 0)
         self.assertEqual(selected.quota, 0)

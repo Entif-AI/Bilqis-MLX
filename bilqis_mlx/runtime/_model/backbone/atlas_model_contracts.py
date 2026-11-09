@@ -16,6 +16,7 @@ from bilqis_mlx.semantics.atlas_features import FeatureSchema
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 from bilqis_mlx.runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
 from bilqis_mlx.runtime.atlas_training_authority import BamfTrainingAuthority
+from bilqis_mlx.runtime.atlas_visit_provenance import BamfVisitProvenance
 
 
 def _invalid(reason: str) -> None:
@@ -207,6 +208,7 @@ class BamfCompiledBatch:
     sources: tuple[SourceAtomRow, ...]
     feature_schema: FeatureSchema
     training_authority: BamfTrainingAuthority | None = None
+    visit_provenance: BamfVisitProvenance | None = None
     schema_version: str = "bilqis.mlx.b11-compiled-batch/v1"
     atlas_feature_artifact_owner: AtlasFeatureArtifactOwner = field(init=False, compare=False)
 
@@ -221,10 +223,17 @@ class BamfCompiledBatch:
             or type(self.feature_schema) is not FeatureSchema
             or (self.training_authority is not None
                 and type(self.training_authority) is not BamfTrainingAuthority)
+            or (self.visit_provenance is not None
+                and type(self.visit_provenance) is not BamfVisitProvenance)
+            or ((self.training_authority is None) != (self.visit_provenance is None))
         ):
             _invalid("B11_COMPILED_BATCH_INVALID")
         self.compiled.__post_init__()
         if self.training_authority is not None:
+            self.visit_provenance.__post_init__()
+            if (self.visit_provenance.capability_id
+                    != self.training_authority.delivery_capability):
+                _invalid("B11_VISIT_PROVENANCE_CAPABILITY_MISMATCH")
             row = self.compiled.compiled.rows[0]
             frame_nodes = self.compiled.packed_frame_artifact_owner.require_row(row)
             contextual_kinds = {
