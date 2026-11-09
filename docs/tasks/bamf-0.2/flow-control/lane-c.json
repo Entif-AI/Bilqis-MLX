@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "bd3657e170c8bdc046a7bb28524c0fb829ca7ce9",
-  "updated_at": "2026-11-07T15:40:00+00:00",
+  "observed_unified": "7d9e0e8209e2d077e4fc30f65a3ebf3f29a91f3f",
+  "updated_at": "2026-11-09T02:58:43Z",
   "exception": null,
   "items": [
     {
@@ -20,10 +20,10 @@
     {
       "issue": 376,
       "pr": null,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "ee8c6ef916826be2b991294371ee55e3211f3ba1",
-      "summary": "C03 true teacher-visit identity is implemented and exact-head proven: derives from B13 run identity/run_seed plus persisted C03 selection state; records no caller seed/cursor alias.",
-      "resume_trigger": "B13.6/#904 run identity lands through reviewed unified; then wire the identity at the real C03 visit-selection event and consume it into B13.2/C02 without run_id/episode/optimizer-seed substitution.",
+      "summary": "C03 resumed after B13.6/#904 merged through reviewed unified; completing real visit-selection wiring and B13.2 cold-resume persistence only.",
+      "resume_trigger": null,
       "preserved_branch": "codex/bamf02-c03-376-20261107"
     },
     {
