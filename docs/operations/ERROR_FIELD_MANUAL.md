@@ -1683,6 +1683,18 @@ Recovery: Keep the retained generation; reconcile every weight, moment and updat
 
 Legacy aliases: `BAMF_BUNDLE_MISSING_OR_EXTRA_TENSORS`
 
+### `SCHOOL.BAMF_FIRST_STUDENT.INVALID`
+
+BAMF first-student preflight is invalid.
+
+Owner: `runtime.bamf_first_student`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: The BAMF first-student preflight is invalid: {reason}
+
+Recovery: Keep the admitted source run unchanged; reconcile the launch config, Factory/Atlas bindings and empty target before retrying.
+
 ### `SCHOOL.BAMF_PACKAGE.INVALID`
 
 BAMF cognitive package invalid.
