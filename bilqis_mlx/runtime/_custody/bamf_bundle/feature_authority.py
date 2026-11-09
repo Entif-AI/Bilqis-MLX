@@ -28,7 +28,6 @@ from .feature.context import (
     AcceptedGenerationFeatureContext, AuthenticatedCandidateFeatureContext,
 )
 from .feature.replay_support import (
-    accepted_a02_active_set_extension as _accepted_a02_active_set_extension,
     artifact_identity as _artifact_identity,
     authenticate_features as _authenticate_features_with,
     feature_schema as _feature_schema,
@@ -89,14 +88,12 @@ def _accepted_feature_context(run_dir: Path, manifest_sha256: str, student, *,
     result_binding = history[0][1]
     if result_binding is None:
         invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
-    for child, child_binding in reversed(history[:-1]):
+    for child, _ in reversed(history[:-1]):
         parent = current
         predecessor = features
         if child.extents.factor_map_digest == parent.extents.factor_map_digest:
             if (child.extents.active_semantic_digest
-                    != parent.extents.active_semantic_digest
-                    and not _accepted_a02_active_set_extension(
-                        child, child_binding, features)):
+                    != parent.extents.active_semantic_digest):
                 invalid("BAMF_FEATURE_ACTIVE_SET_DRIFT")
             source = _feature_source(child.compiler_features)
             if (child.compiler_features.get("factor_map_sha256") != features.digest

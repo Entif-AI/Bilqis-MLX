@@ -2,15 +2,11 @@
 from __future__ import annotations
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
 from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactIdentity, AtlasArtifactSelection,
 )
 
-from .._vocabulary_admission_records import (
-    A02VocabularyStagingReceipt, STAGED_EVENT,
-)
 from ..records import invalid
 from .receipt import is_digest
 
@@ -18,41 +14,6 @@ FEATURE_SOURCE_KEYS = frozenset({
     "atlas_bundle_id", "release_sha256", "source_bundle_id"})
 FEATURE_SCHEMA_KEYS = frozenset({"role_ids", "schema_ids", "source_bindings"})
 SOURCE_BINDING_WIDTH = 2
-
-
-def accepted_a02_active_set_extension(child, binding, features) -> bool:
-    """Recognize an accepted C07-bound A02 parameter extension during replay."""
-    if dict(child.transition) != {
-            "schema": "bilqis.mlx.bamf-generation-transition/v1",
-            "kind": "PARAMETER_EXTENSION",
-            "invalidate_derived_caches": True}:
-        return False
-    events = tuple(
-        event for event in child.outbox
-        if isinstance(event, dict) and event.get("event") == STAGED_EVENT)
-    if len(events) != 1:
-        return False
-    record = events[0].get("staging_receipt")
-    if not isinstance(record, dict):
-        return False
-    payload = dict(record)
-    receipt_sha256 = payload.pop("receipt_sha256", None)
-    try:
-        receipt = A02VocabularyStagingReceipt(**payload)
-    except (TypeError, BilqisError):
-        return False
-    return (
-        receipt.digest == receipt_sha256
-        and getattr(binding, "staging_receipt_sha256", None) == receipt.digest
-        and receipt.run_id == child.run_id
-        and receipt.generation == child.generation
-        and receipt.parent_manifest_sha256 == child.parent_manifest_sha256
-        and receipt.candidate_identity_sha256
-        == candidate_identity_digest(child.retained_state)
-        and receipt.prepared_extents_sha256 == child.extents.digest
-        and receipt.active_set_sha256 == child.extents.active_semantic_digest
-        and receipt.feature_sha256 == features.digest
-        and receipt.semantic_bank_count == child.extents.semantic_bank_count)
 
 
 def feature_source(compiler_features: dict) -> dict:
