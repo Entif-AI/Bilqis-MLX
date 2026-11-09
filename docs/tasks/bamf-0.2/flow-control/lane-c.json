@@ -142,11 +142,11 @@
     {
       "issue": 510,
       "pr": null,
-      "state": "WAITING",
+      "state": "ACTIVE",
       "head_sha": "db790df2b7b12e53172805847a1e696c36a68cdc",
       "preserved_branch": "codex/510-c07-atomic-adoption-20261107",
-      "summary": "Scoped #510 progress at db790df2 adds a package-private native staged-candidate preflight that binds the exact A02 candidate identity and parent feature receipt anchors to the live accepted B13 parent before mutation; focused C07 policy/executor proof is 10/10 green. Production adoption remains fail-closed because the human operator still owns legacy state.json/Checkpoint+MLX AdamW custody and C16.1b #543 has not yet bound the fresh operator foundation into the accepted B13 lineage. No lossy B13-to-legacy projection or C05 authority substitution was introduced.",
-      "resume_trigger": "C16.1b #543 is implemented/accepted so a real human-started operator foundation is bound through B13.6 into accepted B13 run custody. Then resume #510 against the frozen A02 #399 staging interface, complete the exact native candidate adoption transaction, and consume #399's actual reviewed receipt before final turn-in."
+      "summary": "Resumed after C16.1b #543 / PR #933 merged reviewed B13 production-foundation custody. Continue the preserved C07.1b native staged-candidate adoption transaction; consume current reviewed unified before semantic edits and preserve the exact A02 #399 staging boundary.",
+      "resume_trigger": null
     },
     {
       "issue": 746,
