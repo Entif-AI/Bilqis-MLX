@@ -19,7 +19,7 @@ _MAX_REGISTRY_BYTES = 256 * 1024
 @contextlib.contextmanager
 def source_authority_registry_lock(run_dir: Path):
     """Serialize the project-owned trust-root provisioner with authority leases."""
-    from ._publication_storage import _require_run_root
+    from .publication.storage import _require_run_root
 
     root = Path(run_dir)
     _require_run_root(root)

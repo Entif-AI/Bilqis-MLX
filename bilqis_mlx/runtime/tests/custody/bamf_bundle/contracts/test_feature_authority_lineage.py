@@ -6,7 +6,8 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
 from bilqis_mlx.runtime.bamf_bundle import (
-    publish_bamf_generation, read_accepted_generation_feature_lineage,
+    load_bamf_generation, publish_bamf_generation,
+    read_accepted_generation_feature_lineage,
     verify_accepted_generation_feature_receipt,
 )
 from bilqis_mlx.runtime.bamf_bundle import feature_authority
@@ -26,7 +27,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 class AcceptedFeatureLineageTests(FeatureLineageCase):
     def test_successor_receipt_replays_accepted_predecessor_lineage(self):
         root = source_features()
-        first = self.publish(feature_bound(candidate(parent_state()), root))
+        first = self.publish_feature_genesis(root)
         successor = replace(
             root, semantic_release=SUCCESSOR_RELEASE,
             atlas_bundle_id=SUCCESSOR_ATLAS_BUNDLE,
@@ -73,7 +74,7 @@ class AcceptedFeatureLineageTests(FeatureLineageCase):
 
     def test_retained_successor_binds_the_feature_map_its_parent_consumed(self):
         root = source_features()
-        first = self.publish(feature_bound(candidate(parent_state()), root))
+        first = self.publish_feature_genesis(root)
         retained = feature_bound(
             candidate(accepted_state(parent_state()), 1, first["manifest_sha256"]),
             root)
@@ -90,7 +91,7 @@ class AcceptedFeatureLineageTests(FeatureLineageCase):
 
     def test_retained_successor_allows_independent_correction_epoch_advance(self):
         root = source_features()
-        first = self.publish(feature_bound(candidate(parent_state()), root))
+        first = self.publish_feature_genesis(root)
         retained = feature_bound(
             candidate(accepted_state(parent_state()), 1, first["manifest_sha256"]),
             root)
@@ -118,7 +119,7 @@ class AcceptedFeatureLineageTests(FeatureLineageCase):
 
     def test_retained_descendant_preserves_changed_map_construction_lineage(self):
         root = source_features()
-        first = self.publish(feature_bound(candidate(parent_state()), root))
+        first = self.publish_feature_genesis(root)
         changed = replace(
             root, semantic_release=SUCCESSOR_RELEASE,
             atlas_bundle_id=SUCCESSOR_ATLAS_BUNDLE,
@@ -133,22 +134,17 @@ class AcceptedFeatureLineageTests(FeatureLineageCase):
             **changed_candidate.transition, "kind": "PARAMETER_EXTENSION",
             "invalidate_derived_caches": True})
         second = self.publish(changed_candidate)
+        with shape_patch():
+            accepted_parent = load_bamf_generation(self.pointer)
         retained = feature_bound(
             candidate(
-                next_accepted_step(accepted_state(parent_state())), 2,
-                second["manifest_sha256"]),
+                next_accepted_step(
+                    accepted_parent.retained_state, accepted_parent.extents),
+                2, second["manifest_sha256"]),
             changed, release=SUCCESSOR_RELEASE,
             atlas_bundle=SUCCESSOR_ATLAS_BUNDLE,
             source_bundle=SUCCESSOR_SOURCE_BUNDLE)
-        binding = mint_acceptance_binding(
-            retention_decision(
-                parent=changed_candidate.retained_state,
-                retained=retained.retained_state),
-            retained.retained_state, run_id=retained.run_id,
-            generation=retained.generation,
-            feature_sha256=retained.extents.factor_map_digest)
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            publish_bamf_generation(self.run, retained, acceptance=binding)
+        self.publish(retained)
 
         def replay(snapshot, schema):
             return changed if schema.predecessor is not None else root

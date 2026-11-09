@@ -23,7 +23,7 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
-from bilqis_mlx.runtime.bamf_bundle import admission, publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import admission
 from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_candidate_step, bind_accepted_execution_cache,
@@ -34,7 +34,7 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     require_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, next_accepted_step, parent_state, shape_patch,
+    candidate, next_accepted_step, parent_state, publish_candidate, shape_patch,
     provision_source_authority_registry, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
@@ -60,9 +60,7 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
             provision_source_authority_registry(self.run, registry)
             source = with_source_authority_registry(source, registry)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            pointer = publish_bamf_generation(
-                self.run, source, acceptance=acceptance(source))
-            return pointer
+            return publish_candidate(self.run, source)
 
     def test_only_accepted_b13_custody_mints_live_execution_cache(self):
         self.publish(candidate(parent_state()))
@@ -72,9 +70,11 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         self.assertIs(require_accepted_execution_cache(cache), cache)
         self.assertIs(rebound, cache)
         self.assertEqual(cache.run_id, "fixture-run")
+        with shape_patch():
+            accepted = load_accepted_generation(self.run)
         self.assertEqual(
             cache.motif_manifest.digest,
-            parent_state().allocations.manifest.digest,
+            accepted.retained_state.allocations.manifest.digest,
         )
         with self.assertRaises(BilqisError):
             AcceptedExecutionCache()

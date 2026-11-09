@@ -67,6 +67,23 @@ class DataPlaneStoreMixin:
             conflicted INTEGER NOT NULL,
             PRIMARY KEY(run_dir, event_id)
         ) WITHOUT ROWID;
+        CREATE TABLE IF NOT EXISTS bamf_genesis_trust(
+            run_id TEXT PRIMARY KEY,
+            generation INTEGER NOT NULL CHECK(generation = 0),
+            manifest_sha256 TEXT NOT NULL UNIQUE,
+            payload_sha256 TEXT NOT NULL,
+            payload BLOB NOT NULL
+        ) WITHOUT ROWID;
+        CREATE TRIGGER IF NOT EXISTS bamf_genesis_trust_no_update
+        BEFORE UPDATE ON bamf_genesis_trust
+        BEGIN
+            SELECT RAISE(ABORT, 'BAMF_GENESIS_TRUST_IMMUTABLE');
+        END;
+        CREATE TRIGGER IF NOT EXISTS bamf_genesis_trust_no_delete
+        BEFORE DELETE ON bamf_genesis_trust
+        BEGIN
+            SELECT RAISE(ABORT, 'BAMF_GENESIS_TRUST_IMMUTABLE');
+        END;
         """)
         row = self._db.execute(
             "SELECT value FROM meta WHERE key='schema_version'").fetchone()

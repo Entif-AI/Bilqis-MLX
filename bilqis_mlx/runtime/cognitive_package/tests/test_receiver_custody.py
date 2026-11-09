@@ -11,7 +11,7 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime import mlx_checkpoint
-from bilqis_mlx.runtime.bamf_bundle import publication
+from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation, publication
 from bilqis_mlx.runtime.cognitive_package import (
     DeltaSlice, PackageArtifact, PackageBinding, PackageKind, ReceiverTensor,
     apply_plastic_delta, encode_plastic_delta, export_capability,
@@ -35,6 +35,7 @@ class ReceiverCustodyTests(TestCase):
         self.student = candidate(parent_state())
         with shape_patch(), patch.object(mlx_checkpoint, 'assert_headroom'):
             self.pointer = publish_candidate(self.run, self.student)
+            self.student = load_bamf_generation(self.run / 'bamf-state.json')
         array = np.asarray(self.student.retained_state.optimizer.parameters[NAME], dtype='<f4')
         self.tensor = ReceiverTensor(NAME, array.shape, array.tobytes())
         self.binding = PackageBinding(
@@ -54,11 +55,15 @@ class ReceiverCustodyTests(TestCase):
         return export_capability(source, source.signature, rights)
 
     def test_current_pointer_is_the_parent_of_a_compatible_candidate(self):
+        parent_value = np.frombuffer(self.tensor.values_fp32, dtype='<f4')[0]
         with shape_patch():
             result = apply_plastic_delta(self.package(self.binding), self.run)
         self.assertEqual(result.parent_generation, self.pointer['manifest_sha256'])
         self.assertEqual(result.binding, self.binding)
-        self.assertEqual(np.frombuffer(result.tensors[0].values_fp32, dtype='<f4')[0], 1.)
+        self.assertAlmostEqual(
+            np.frombuffer(result.tensors[0].values_fp32, dtype='<f4')[0],
+            parent_value + .5,
+        )
 
     def test_forged_matching_motif_and_arbitrary_parent_cannot_authorize(self):
         forged = replace(self.binding, motif_key_map_digest='1' * 64)

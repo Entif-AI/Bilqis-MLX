@@ -666,6 +666,98 @@
         ],
         "unresolved": null
       }
+    },
+    {
+      "key": "B13.6",
+      "number": 904,
+      "parent_key": "B13",
+      "parent_number": 372,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "9b52a41e078ef9b26e8f4248c4e4ae004c6f1215eda9ea749da1ce3263dd3bc4",
+        "clause": "## Direct prerequisites",
+        "known_edges": [
+          "B13.1",
+          "B13.4"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "B13.6.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/904",
+            "sha256": "9b52a41e078ef9b26e8f4248c4e4ae004c6f1215eda9ea749da1ce3263dd3bc4",
+            "excerpt": "The current production publication code already states that genesis admission is a distinct source/bootstrap gate, but generation zero is still published only by supplying a C05 `AcceptedCandidateBinding`; tests manufacture that token through a disposable retention helper. That test-only retention authority is not a lawful production genesis gate."
+          }
+        ],
+        "obligations": [
+          "Consume the existing B13.1 publication and B13.4/B01 parameter-schema interfaces without treating their open parent state as a caller-mintable authority. Final turn-in must record the actual accepted dependency receipts."
+        ],
+        "unresolved": "B13.1 parent acceptance remains open even though the required publication interface exists on reviewed unified; implementation may proceed against that frozen interface, but final turn-in must consume the accepted receipt."
+      }
+    },
+    {
+      "key": "C16.1a",
+      "number": 542,
+      "parent_key": "C16.1",
+      "parent_number": 541,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "764077af4df16098d1839d7d0c54f816c634b6876542fe0fcd47a8eb5b549b39",
+        "clause": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`.",
+        "known_edges": [
+          "C16.1b"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "C16.1a.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/542",
+            "sha256": "764077af4df16098d1839d7d0c54f816c634b6876542fe0fcd47a8eb5b549b39",
+            "excerpt": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`."
+          }
+        ],
+        "obligations": [
+          "Preserve every original C16/C16.1 acceptance clause; this pinned record changes executable dependency order only and grants no production authority."
+        ],
+        "unresolved": "C16.1a remains held until C16.1b consumes accepted B13.6 generation-zero custody and records the inherited C16 dependency receipts."
+      }
+    },
+    {
+      "key": "C16.1b",
+      "number": 543,
+      "parent_key": "C16.1",
+      "parent_number": 541,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "7a04dd8f68f0ac289394e390bc1be3a9fa7159f5cde614ce84ecc416d5c39475",
+        "clause": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`.",
+        "known_edges": [
+          "B13.6",
+          "C02",
+          "C03",
+          "C05",
+          "C08"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "C16.1b.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/543",
+            "sha256": "7a04dd8f68f0ac289394e390bc1be3a9fa7159f5cde614ce84ecc416d5c39475",
+            "excerpt": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`."
+          }
+        ],
+        "obligations": [
+          "Preserve every original C16/C16.1 acceptance clause; this pinned record changes executable dependency order only and grants no production authority."
+        ],
+        "unresolved": "C16.1b remains held until B13.6 provides accepted generation-zero custody; inherited C02/C03/C05/C08 interfaces may be implemented against their exact reviewed receipts without making their OPEN parent state a caller credential."
+      }
     }
   ]
 }

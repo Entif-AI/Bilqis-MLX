@@ -14,11 +14,10 @@ from bilqis_mlx.factory.execution import CurriculumProfile
 from bilqis_mlx.factory.tests.test_executable_release import _answers
 from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_course, _synthetic_registry
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, candidate, next_accepted_step, parent_state,
-    provision_source_authority_registry, shape_patch,
+    candidate, next_accepted_step, parent_state, provision_source_authority_registry,
+    publish_candidate, shape_patch, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _ref
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
@@ -68,15 +67,10 @@ class SourceExecutionContextTests(unittest.TestCase):
                 os.environ, {"BILQIS_DATA_PLANE": str(Path(temporary) / "plane.sqlite3")}):
             run_dir = Path(temporary) / "run"
             provision_source_authority_registry(run_dir, AUTHORITY)
-            source = candidate(parent_state())
-            source = replace(source, correction_frontier={
-                **source.correction_frontier,
-                "source_authority_registry_sha256": AUTHORITY.digest,
-                "source_authority_registry": AUTHORITY.to_record(),
-            })
+            source = with_source_authority_registry(
+                candidate(parent_state()), AUTHORITY)
             with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-                publish_bamf_generation(
-                    run_dir, source, acceptance=acceptance(source))
+                publish_candidate(run_dir, source)
             receipt = {"factory_release_sha256": self.release.release_sha256}
             with patch(
                 "bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
@@ -103,15 +97,10 @@ class SourceExecutionContextTests(unittest.TestCase):
                 os.environ, {"BILQIS_DATA_PLANE": str(Path(temporary) / "plane.sqlite3")}):
             run_dir = Path(temporary) / "run"
             provision_source_authority_registry(run_dir, AUTHORITY)
-            source = candidate(parent_state())
-            source = replace(source, correction_frontier={
-                **source.correction_frontier,
-                "source_authority_registry_sha256": AUTHORITY.digest,
-                "source_authority_registry": AUTHORITY.to_record(),
-            })
+            source = with_source_authority_registry(
+                candidate(parent_state()), AUTHORITY)
             with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-                pointer = publish_bamf_generation(
-                    run_dir, source, acceptance=acceptance(source))
+                pointer = publish_candidate(run_dir, source)
             receipt = {"factory_release_sha256": self.release.release_sha256}
             with patch(
                 "bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
@@ -129,14 +118,9 @@ class SourceExecutionContextTests(unittest.TestCase):
                 next_accepted_step(parent_state()), generation=1,
                 parent=pointer["manifest_sha256"],
             )
-            successor = replace(successor, correction_frontier={
-                **successor.correction_frontier,
-                "source_authority_registry_sha256": AUTHORITY.digest,
-                "source_authority_registry": AUTHORITY.to_record(),
-            })
+            successor = with_source_authority_registry(successor, AUTHORITY)
             with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-                publish_bamf_generation(
-                    run_dir, successor, acceptance=acceptance(successor))
+                publish_candidate(run_dir, successor)
             correction = _event(_ref(DependencyKind.RIGHTS, "rights:stale-context"))
             with shape_patch(), self.assertRaises(BilqisError):
                 context.record_correction(correction)

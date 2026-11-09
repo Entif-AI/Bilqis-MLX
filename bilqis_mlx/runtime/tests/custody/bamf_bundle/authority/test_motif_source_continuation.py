@@ -63,7 +63,7 @@ class MotifSourceContinuationTests(unittest.TestCase):
                 loaded = load_bamf_bundle(
                     bundle0, expected_manifest_sha256=manifest['manifest_sha256'])
                 self.assertEqual(loaded.retained_state.allocations, allocations)
-                continued = next_accepted_step(loaded.retained_state)
+                continued = next_accepted_step(loaded.retained_state, loaded.extents)
                 self.assertEqual(continued.optimizer_step, parent.optimizer_step + 1)
                 self.assertEqual(continued.allocations, allocations)
                 bundle1 = root / 'bundle-1'

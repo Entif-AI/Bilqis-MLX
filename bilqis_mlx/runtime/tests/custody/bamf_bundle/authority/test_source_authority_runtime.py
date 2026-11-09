@@ -16,18 +16,21 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityRuntime,
     require_source_authority_runtime,
 )
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_execution_cache,
+    bind_accepted_execution_cache, derive_successor_bundle,
+    load_accepted_generation,
 )
+from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     accepted_state,
     acceptance,
     candidate,
     parent_state,
+    publish_candidate,
     provision_source_authority_registry,
     shape_patch,
+    with_source_authority_registry,
 )
 from bilqis_mlx.semantics.context_eligibility import SourceFrontier
 from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import (
@@ -62,14 +65,9 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
             )
         if anchored:
             provision_source_authority_registry(run_dir, registry)
-            source = replace(source, correction_frontier={
-                **source.correction_frontier,
-                "source_authority_registry_sha256": registry.digest,
-                "source_authority_registry": self.registry_record(registry),
-            })
+            source = with_source_authority_registry(source, registry)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            pointer = publish_bamf_generation(
-                run_dir, source, acceptance=acceptance(source))
+            pointer = publish_candidate(run_dir, source)
         return source, pointer
 
     @staticmethod
@@ -213,7 +211,7 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
                     self.run, source, acceptance=acceptance(source))
         self.assertEqual(
             caught.exception.context["reason"],
-            "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH",
+            "BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED",
         )
         self.assertFalse((self.run / "bamf-state.json").exists())
 
@@ -296,15 +294,24 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
         from bilqis_mlx.runtime.bamf_bundle import accepted_runtime
 
         _source, pointer = self.publish()
-        successor = candidate(
-            accepted_state(parent_state()), generation=1,
-            parent=pointer["manifest_sha256"])
+        with shape_patch():
+            accepted = load_accepted_generation(self.run)
+        successor_state = accepted_state(
+            accepted.retained_state,
+            extents=accepted.extents,
+            spec=accepted.topology,
+        )
+        successor = derive_successor_bundle(
+            accepted,
+            successor_state,
+            parent_manifest_sha256=pointer["manifest_sha256"],
+            delivery_events=({"event": "FIXTURE_ACCEPTED"},),
+        )
         successor = replace(successor, correction_frontier={
             **successor.correction_frontier,
             "source_authority_registry_sha256": REGISTRY.digest,
             "source_authority_registry": self.registry_record(REGISTRY),
         })
-        successor_acceptance = acceptance(successor)
         entered = Event()
         release = Event()
         original = accepted_runtime._accepted_source_authority_registry
@@ -322,8 +329,7 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
             bind_future = pool.submit(bind_accepted_execution_cache, self.run)
             self.assertTrue(entered.wait(5))
             publish_future = pool.submit(
-                publish_bamf_generation, self.run, successor,
-                acceptance=successor_acceptance)
+                publish_candidate, self.run, successor)
             self.assertFalse(publish_future.done())
             release.set()
             old_cache = bind_future.result(timeout=5)

@@ -1,4 +1,7 @@
 """Versioned BAMF generation bundle custody."""
+from importlib import import_module
+from types import MappingProxyType
+
 from .codec import load_bamf_bundle, save_bamf_bundle
 from .feature_authority import (
     AcceptedGenerationFeatureReceipt, AuthenticatedCandidateFeatureContext,
@@ -17,6 +20,28 @@ from .records import (
     BamfGenerationManifest, CompleteStudent,
 )
 
+_LAZY_EXPORTS = MappingProxyType({
+    "BamfRunIdentity": ".genesis",
+    "InitialGenerationBinding": ".genesis",
+    "PreparedInitialGeneration": ".genesis",
+    "prepare_initial_generation": ".genesis",
+    "publish_initial_generation": ".genesis",
+    "InitialFoundationFeatureAuthority": ".genesis.foundation",
+    "issue_initial_foundation_feature_authority": ".genesis.foundation",
+    "InitialFactoryFoundationAuthority": ".genesis.origin",
+    "issue_initial_factory_foundation_authority": ".genesis.origin",
+})
+
+
+def __getattr__(name: str):
+    module_name = _LAZY_EXPORTS.get(name)
+    if module_name is None:
+        raise AttributeError(name)
+    value = getattr(import_module(module_name, __name__), name)
+    globals()[name] = value
+    return value
+
+
 __all__ = (
     "BAMF_BUNDLE_SCHEMA", "BAMF_POINTER_SCHEMA", "BamfBundleCandidate",
     "BamfGenerationManifest", "CompleteStudent", "save_bamf_bundle", "load_bamf_bundle",
@@ -29,4 +54,8 @@ __all__ = (
     "read_accepted_generation_feature_receipt",
     "authenticate_bamf_candidate_features",
     "verify_accepted_generation_feature_receipt",
+    "BamfRunIdentity", "InitialGenerationBinding", "PreparedInitialGeneration",
+    "InitialFactoryFoundationAuthority", "issue_initial_factory_foundation_authority",
+    "InitialFoundationFeatureAuthority", "issue_initial_foundation_feature_authority",
+    "prepare_initial_generation", "publish_initial_generation",
 )

@@ -7,12 +7,10 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.learning.capability_championship import ReplayBinding
 from bilqis_mlx.runtime.accepted_corrections import (
     _reset_accepted_correction_runtime_for_tests, record_accepted_correction,
 )
-from bilqis_mlx.runtime.bamf_bundle.admission import accept_and_publish
 from bilqis_mlx.runtime.capability_authority import (
     AuthorityKind, evaluate_accepted_progression_authority,
 )
@@ -20,11 +18,9 @@ from bilqis_mlx.runtime.tests.capability.test_capability_authority import (
     GENERATION, GRAPH, _authority, _evidence, _release,
 )
 from bilqis_mlx.runtime.tests.correction.capability_support_owner_support import (
-    source_qualified_state,
+    publish_support_fixture,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, retention_decision, shape_patch,
-)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _ref,
 )
@@ -48,20 +44,15 @@ class AcceptedProgressionHistoryTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def _publish_support_and_correction(self):
-        parent, transaction, retained, _training_authority = source_qualified_state(
-            capability="target",
-            source_row=SOURCE_ROW,
-            source_family="source-family:accepted-progression",
-            episode="episode:accepted-progression",
-            generation_binding=GENERATION,
-        )
-        bundle = candidate(retained)
-        decision = retention_decision(parent=parent, retained=retained)
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            accept_and_publish(
-                self.run, bundle, retained, decision=decision,
-                feature_sha256=bundle.extents.factor_map_digest,
-                training_authorities=transaction.training_authorities,
+        with shape_patch():
+            publish_support_fixture(
+                self.run,
+                capability="target",
+                source_row=SOURCE_ROW,
+                source_family="source-family:accepted-progression",
+                episode="episode:accepted-progression",
+                generation_binding=GENERATION,
+                authority_registry=AUTHORITY,
             )
             record_accepted_correction(
                 self.run,

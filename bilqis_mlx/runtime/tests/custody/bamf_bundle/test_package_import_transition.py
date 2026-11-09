@@ -44,7 +44,10 @@ class PackageImportTransitionTests(TestCase):
 
     def initial(self):
         state = parent_state()
-        return state, self.publish(candidate(state))
+        pointer = self.publish(candidate(state))
+        with shape_patch():
+            published = load_bamf_generation(self.run / "bamf-state.json")
+        return published.retained_state, pointer
 
     def import_candidate(self, state, parent, transition=None):
         base = candidate(state, 1, parent)

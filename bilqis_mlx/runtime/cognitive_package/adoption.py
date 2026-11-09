@@ -94,7 +94,8 @@ def _successor(parent, pointer, screened, transaction, clearance):
         parent.implementation_sha256, parent.topology, parent.extents,
         transaction.candidate, parent.optimizer_hyperparameters, parent.provenance,
         parent.semantic_abi, parent.compiler_features, parent.correction_frontier,
-        parent.teacher_state, parent.evaluation_contract, transition, (event,))
+        parent.teacher_state, parent.evaluation_contract, transition, (event,),
+        parent.run_identity)
 
 
 def publish_screened_delta_import(

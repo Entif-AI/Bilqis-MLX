@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, fields
 
-from .records import canonical, invalid, sha
+from ..records import canonical, invalid, sha
 
 RECEIPT_SCHEMA = "bilqis.mlx.bamf-accepted-generation-feature-receipt/v1"
 

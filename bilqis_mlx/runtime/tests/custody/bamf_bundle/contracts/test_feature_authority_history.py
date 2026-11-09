@@ -22,7 +22,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 class AcceptedFeatureHistoryTests(FeatureLineageCase):
     def test_successor_rejects_resigned_historical_parent_acceptance(self):
         root = source_features()
-        first = self.publish(feature_bound(candidate(parent_state()), root))
+        first = self.publish_feature_genesis(root)
         retained = feature_bound(
             candidate(accepted_state(parent_state()), 1, first["manifest_sha256"]),
             root)

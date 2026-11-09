@@ -10,10 +10,8 @@ import uuid
 from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError, SHA256_HEX_LENGTH
-from bilqis_mlx.learning.atlas_acceptance import AcceptedCandidateBinding
-
-from .codec import validate_bamf_bundle_custody
-from .records import (
+from ..codec import validate_bamf_bundle_custody
+from ..records import (
     BAMF_POINTER_SCHEMA, LEGACY_BAMF_POINTER_SCHEMA, canonical, invalid,
 )
 
@@ -164,7 +162,7 @@ def _acceptance_path(run_dir: Path, manifest_sha256: str) -> Path:
 
 
 def _write_acceptance(run_dir: Path, manifest_sha256: str,
-                      acceptance: AcceptedCandidateBinding) -> None:
+                      acceptance) -> None:
     path = _acceptance_path(run_dir, manifest_sha256)
     raw = canonical(acceptance.to_record())
     if path.is_symlink():

@@ -298,6 +298,8 @@ class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
         source_b = "source:capability-support:row-b"
         parent_state_b, transaction_b, retained_b, _authority_b = source_qualified_state(
             accepted_parent.retained_state,
+            extents=accepted_parent.extents,
+            spec=accepted_parent.topology,
             capability=capability_b,
             source_row=source_b,
             source_family="source-family:capability-support-b",

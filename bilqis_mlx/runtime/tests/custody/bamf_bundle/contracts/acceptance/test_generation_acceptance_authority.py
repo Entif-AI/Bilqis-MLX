@@ -1,87 +1,31 @@
-"""B13.5 accepted-generation acceptance-provenance witnesses.
-
-Publication is not acceptance. A generation may only be published, and may only
-mint accepted-generation authority, when the retention owner has accepted the
-exact candidate state.
-"""
-from __future__ import annotations
-
-import os
-import hashlib
-import json
-import unittest
-from pathlib import Path
-from tempfile import TemporaryDirectory
-from unittest.mock import patch
-
-import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
-from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.atlas_acceptance import (
-    LEGACY_ACCEPTANCE_SCHEMA, PREVIOUS_SOURCE_ACCEPTANCE_SCHEMA,
-    AcceptedCandidateBinding, mint_acceptance_binding,
-)
-from bilqis_mlx.learning.atlas_retention_decision import (
-    LEGACY_DECISION_SCHEMA, CandidateRetentionDecision, decide_candidate_retention,
-)
-from bilqis_mlx.runtime.bamf_bundle import (
-    publish_bamf_generation, load_bamf_generation, load_bamf_generation_authority,
-    read_accepted_generation_feature_receipt,
-)
-from bilqis_mlx.runtime.bamf_bundle import admission
-from bilqis_mlx.runtime.bamf_bundle.records import (
-    LEGACY_BAMF_POINTER_SCHEMA,
+"""Split B13.5 acceptance-provenance witnesses."""
+from ._generation_acceptance_support import *
+import bilqis_mlx.runtime.bamf_bundle.feature_authority as feature_authority
+import bilqis_mlx.runtime.bamf_bundle.publication as publication
+import bilqis_mlx.runtime.bamf_bundle.feature.acceptance as feature_acceptance
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
+    frozen_snapshot as genesis_frozen_snapshot,
+    source_features as genesis_source_features,
 )
 
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, accepted_state, candidate, parent_state, retention_decision,
-    shape_patch,
-)
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.test_feature_authority import (
-    RELEASE, source_features, feature_bound,
-)
-from bilqis_mlx.runtime.bamf_bundle.records import canonical
 
-
-class GenerationAcceptanceProvenanceTests(unittest.TestCase):
-    def setUp(self):
-        self.temporary = TemporaryDirectory()
-        self.root = Path(self.temporary.name)
-        self.run = self.root / "run"
-        self.environment = patch.dict(
-            os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
-        self.environment.start()
-
-    def tearDown(self):
-        self.environment.stop()
-        self.temporary.cleanup()
-
-    def publish(self, source, **kwargs):
+class GenerationAcceptanceAuthorityTests(GenerationAcceptanceFixture, unittest.TestCase):
+    def test_shared_publication_sink_rejects_arbitrary_successor_authority(self):
+        source = self.source()
+        before = json.loads((self.run / "bamf-state.json").read_text())
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(self.run, source, **kwargs)
-
-    def test_historical_pointer_can_cold_load_without_minting_new_authority(self):
-        features = source_features()
-        source = feature_bound(candidate(parent_state()), features)
-        self.publish(source, acceptance=acceptance(source))
-        pointer_path = self.run / "bamf-state.json"
-        pointer = json.loads(pointer_path.read_text())
-        pointer["schema"] = LEGACY_BAMF_POINTER_SCHEMA
-        pointer.pop("acceptance_sha256")
-        pointer_path.write_text(json.dumps(pointer))
-        with shape_patch():
-            self.assertEqual(
-                load_bamf_generation(pointer_path).run_id, source.run_id)
-        with shape_patch(), \
-                patch("bilqis_mlx.runtime.bamf_bundle.feature_authority."
-                      "build_feature_manifest", return_value=features), \
-                patch("bilqis_mlx.runtime.bamf_bundle.feature_authority."
-                      "load_pinned_atlas_snapshot", side_effect=lambda selection: selection):
-            with self.assertRaises(BilqisError):
-                read_accepted_generation_feature_receipt(pointer_path)
+            with self.assertRaises(BilqisError) as failure:
+                publication._publish_authorized_generation(
+                    self.run, source, object(), reserve_gib=0.)
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_GENERATION_ACCEPTANCE_REQUIRED")
+        self.assertEqual(
+            json.loads((self.run / "bamf-state.json").read_text()), before)
 
     def test_caller_cannot_construct_an_acceptance_binding(self):
-        source = candidate(parent_state())
-        binding = acceptance(source)
+        source = self.source()
+        binding = self.binding(source)
         with self.assertRaises(BilqisError):
             AcceptedCandidateBinding(**binding._public_record())
 
@@ -96,10 +40,8 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
                 feature_sha256=source.extents.factor_map_digest)
 
     def test_parent_custody_rejects_a_screen_for_another_parent(self):
-        initial = parent_state()
-        first = self.publish(candidate(initial), acceptance=acceptance(candidate(initial)))
-        successor = candidate(accepted_state(initial), 1, first["manifest_sha256"])
-        wrong_parent = accepted_state(initial)
+        successor = self.source()
+        wrong_parent = self.source(alternate=True).retained_state
         binding = mint_acceptance_binding(
             retention_decision(parent=wrong_parent, retained=successor.retained_state),
             successor.retained_state, run_id=successor.run_id,
@@ -160,8 +102,8 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
 
     def test_receipt_refuses_a_generation_without_acceptance_custody(self):
         features = source_features()
-        source = feature_bound(candidate(parent_state()), features)
-        self.publish(source, acceptance=acceptance(source))
+        source = self.feature_source(features)
+        self.publish(source, acceptance=self.binding(source))
         binding_path = (self.run / "bamf-acceptance"
                         / f"{json_manifest_sha(self.run)}.json")
         binding_path.unlink()
@@ -178,8 +120,8 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
             "BAMF_GENERATION_ACCEPTANCE_MISSING")
 
     def test_accepted_authority_loaders_require_acceptance_custody(self):
-        source = candidate(parent_state())
-        self.publish(source, acceptance=acceptance(source))
+        source = self.source()
+        self.publish(source, acceptance=self.binding(source))
         binding_path = (self.run / "bamf-acceptance"
                         / f"{json_manifest_sha(self.run)}.json")
         binding_path.unlink()
@@ -196,8 +138,8 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
                         "BAMF_GENERATION_ACCEPTANCE_MISSING")
 
     def test_accepted_authority_loaders_reject_rehashed_acceptance_drift(self):
-        source = candidate(parent_state())
-        self.publish(source, acceptance=acceptance(source))
+        source = self.source()
+        self.publish(source, acceptance=self.binding(source))
         binding_path = (self.run / "bamf-acceptance"
                         / f"{json_manifest_sha(self.run)}.json")
         record = json.loads(binding_path.read_text())
@@ -219,10 +161,59 @@ class GenerationAcceptanceProvenanceTests(unittest.TestCase):
                         failure.exception.context["reason"],
                         "BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
+    def test_authoritative_successor_reads_reject_run_identity_drift(self):
+        features = genesis_source_features()
+        source = self.source()
+        self.publish(source, acceptance=self.binding(source))
+        pointer_path = self.run / "bamf-state.json"
+        real_load = publication.load_bamf_bundle
 
-def json_manifest_sha(run_dir: Path) -> str:
-    import json
-    return json.loads((run_dir / "bamf-state.json").read_text())["manifest_sha256"]
+        def drifted_load(path, *, expected_manifest_sha256=None):
+            student = real_load(
+                path, expected_manifest_sha256=expected_manifest_sha256)
+            if student.generation > 0:
+                identity = replace(
+                    student.run_identity,
+                    run_seed=student.run_identity.run_seed + 1,
+                )
+                return replace(student, run_identity=identity)
+            return student
+
+        with shape_patch(), patch.object(
+                publication, "load_bamf_bundle", side_effect=drifted_load):
+            with self.assertRaises(BilqisError) as failure:
+                load_bamf_generation_authority(pointer_path)
+            self.assertEqual(
+                failure.exception.context["reason"],
+                "BAMF_RUN_IDENTITY_DRIFT")
+
+        real_feature_load = feature_acceptance.load_bamf_bundle
+
+        def drifted_feature_load(path, *, expected_manifest_sha256=None):
+            student = real_feature_load(
+                path, expected_manifest_sha256=expected_manifest_sha256)
+            if student.generation > 0:
+                identity = replace(
+                    student.run_identity,
+                    run_seed=student.run_identity.run_seed + 1,
+                )
+                return replace(student, run_identity=identity)
+            return student
+
+        with shape_patch(), \
+                patch.object(feature_acceptance, "load_bamf_bundle",
+                             side_effect=drifted_feature_load), \
+                patch.object(feature_authority, "resolve_atlas_artifact_selection",
+                             side_effect=lambda identity: identity), \
+                patch.object(feature_authority, "build_feature_manifest",
+                             return_value=features), \
+                patch.object(feature_authority, "load_pinned_atlas_snapshot",
+                             side_effect=genesis_frozen_snapshot):
+            with self.assertRaises(BilqisError) as failure:
+                read_accepted_generation_feature_receipt(pointer_path)
+            self.assertEqual(
+                failure.exception.context["reason"],
+                "BAMF_RUN_IDENTITY_DRIFT")
 
 
 if __name__ == "__main__":
