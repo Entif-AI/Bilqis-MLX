@@ -2,6 +2,10 @@
 from __future__ import annotations
 
 from contextlib import nullcontext
+from dataclasses import replace
+import os
+from pathlib import Path
+import tempfile
 
 import mlx.core as mx
 
@@ -227,6 +231,46 @@ def candidate(state: CandidateState, generation=0, parent=None) -> BamfBundleCan
          "teacher_epoch": 3, "next_seed": 42, "cursor": "lesson:7"},
         {"schema": "bilqis.mlx.bamf-evaluation-contract/v1", "contract_sha256": "9" * 64},
         transition, ({"event": "FIXTURE_ACCEPTED", "optimizer_step": state.optimizer_step},))
+
+
+def provision_source_authority_registry(run_dir: Path, registry) -> Path:
+    """Install test-only C09 host-root material outside generation custody."""
+    from bilqis_mlx.runtime.bamf_bundle.records import canonical, invalid
+    from bilqis_mlx.runtime.bamf_bundle.source_authority_custody import (
+        SOURCE_AUTHORITY_REGISTRY_FILE, source_authority_registry_lock,
+    )
+
+    root = Path(run_dir)
+    root.mkdir(parents=True, exist_ok=True)
+    raw = canonical(registry.to_record())
+    with source_authority_registry_lock(root):
+        target = root / SOURCE_AUTHORITY_REGISTRY_FILE
+        if target.exists():
+            if target.read_bytes() != raw:
+                invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_IMMUTABLE")
+            return target
+        fd, temporary = tempfile.mkstemp(
+            prefix=".source-authority-registry.", suffix=".tmp", dir=root)
+        temporary_path = Path(temporary)
+        try:
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(raw)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary_path, target)
+            return target
+        finally:
+            if temporary_path.exists():
+                temporary_path.unlink()
+
+
+def with_source_authority_registry(bundle, registry):
+    """Bind accepted candidate material to the separately provisioned host root."""
+    return replace(bundle, correction_frontier={
+        **bundle.correction_frontier,
+        "source_authority_registry_sha256": registry.digest,
+        "source_authority_registry": registry.to_record(),
+    })
 
 
 from .publication.publication_helpers import (

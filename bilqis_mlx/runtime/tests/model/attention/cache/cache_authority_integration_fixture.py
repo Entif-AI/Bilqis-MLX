@@ -13,18 +13,14 @@ import numpy as np
 
 from bilqis_mlx.runtime import mlx_checkpoint
 from bilqis_mlx.runtime.atlas_cache_codec import HEAD_WIDTH, CacheBinding, codec_manifest
-from bilqis_mlx.runtime.atlas_cache_eligibility import CacheEligibilityInputs
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation, publish_bamf_generation
-from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_cache_authority, bind_accepted_correction_authority,
-)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     DECLARED, acceptance, accepted_state, candidate, genesis_preparation, parent_state,
-    shape_patch,
+    provision_source_authority_registry, shape_patch,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
     genesis_feature_source_patch, issue_feature_authority, source_features,
@@ -157,6 +153,7 @@ def _source(selection, frontier):
             "rights_epoch": frontier.rights_epoch,
             "correction_generation": frontier.correction_generation,
             "source_authority_registry_sha256": _accepted_registry().digest,
+            "source_authority_registry": _accepted_registry().to_record(),
         },
         compiler_features={
             **source.compiler_features,
@@ -212,8 +209,13 @@ def _publish_cache_fixture(run, source):
         }
         source_registry = source.correction_frontier.get(
             "source_authority_registry_sha256")
-        if source_registry is not None:
-            correction_frontier["source_authority_registry_sha256"] = source_registry
+        source_registry_record = source.correction_frontier.get(
+            "source_authority_registry")
+        for name, value in (
+                ("source_authority_registry_sha256", source_registry),
+                ("source_authority_registry", source_registry_record)):
+            if value is not None:
+                correction_frontier[name] = value
         successor = replace(
             successor,
             correction_frontier=correction_frontier,
@@ -224,25 +226,10 @@ def _publish_cache_fixture(run, source):
                     "correction_generation"],
             },
         )
+        if source_registry is not None or source_registry_record is not None:
+            provision_source_authority_registry(run, _accepted_registry())
         published = publish_bamf_generation(
             run, successor,
             acceptance=acceptance(successor, parent=parent.retained_state),
             reserve_gib=0.)
         return published, load_bamf_generation(Path(run) / "bamf-state.json")
-
-
-def _accepted_cache_authority(
-    run, selection, clearance, frames, task, frontier, policy,
-):
-    inputs = CacheEligibilityInputs(
-        run / "bamf-state.json", clearance, selection, frontier,
-        _EXPORTED, frames, task, policy,
-        lambda binding: np.zeros((256, HEAD_WIDTH), dtype=np.float32),
-    )
-    registry = _accepted_registry()
-    eligibility_source = lambda: inputs
-    with _cache_shape_patch():
-        _cache, authority = bind_accepted_cache_authority(
-            run, registry, eligibility_source)
-        bind_accepted_correction_authority(run, registry)
-    return authority, registry, eligibility_source

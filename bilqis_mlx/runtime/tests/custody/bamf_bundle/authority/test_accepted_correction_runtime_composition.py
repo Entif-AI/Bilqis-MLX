@@ -5,14 +5,17 @@ from types import SimpleNamespace
 from bilqis_mlx.curriculum import AnswerFamily, BINARY
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.accepted_corrections import (
+    AcceptedRuntimeHost,
     record_accepted_correction, register_solve_context,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     append_record, context_invalidation_record,
 )
-from bilqis_mlx.runtime.accepted_correction_runtime import runtime
+from bilqis_mlx.runtime.accepted_correction_runtime import (
+    deliver_accepted_context_invalidation,
+)
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_correction_authority, bind_accepted_execution_cache,
+    bind_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     candidate, parent_state, shape_patch,
@@ -41,13 +44,12 @@ class AcceptedCorrectionCompositionTests(AcceptedCorrectionCompositionCase):
             binding, generation, _budget, add, _ambiguous = _fixture()
             context = SolveContext(binding)
             with shape_patch():
-                bind_accepted_correction_authority(self.run, AUTHORITY)
-                register_solve_context(self.run, context, AUTHORITY)
+                register_solve_context(self.run, context)
             dependency = DependencyRef(
                 DependencyKind.SOURCE, "source:binding:" + contract_digest(binding))
             correction = _event(dependency)
             with shape_patch():
-                record_accepted_correction(self.run, correction, AUTHORITY)
+                AcceptedRuntimeHost(self.run).record_correction(correction)
             owner = context.operator_composition_artifact_owner
             self.assertIsNone(owner.queue)
             learned = QualifiedComposition(
@@ -72,23 +74,19 @@ class AcceptedCorrectionCompositionTests(AcceptedCorrectionCompositionCase):
             )
             context = SolveContext(binding)
             with shape_patch():
-                bind_accepted_correction_authority(self.run, AUTHORITY)
-                register_solve_context(self.run, context, AUTHORITY)
+                register_solve_context(self.run, context)
             owner = context.operator_composition_artifact_owner
             invalidation = self._context_invalidation(case, "e" * 64)
             # Persist through the same accepted-run ledger/dispatch path used in production.
             from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
             with shape_patch():
                 accepted_cache = bind_accepted_execution_cache(self.run)
-            record = context_invalidation_record(
-                accepted_cache.accepted_manifest_sha256, invalidation)
-            append_record(self.run, accepted_cache.accepted_manifest_sha256, record)
-            runtime(self.run, accepted_cache.accepted_manifest_sha256).deliver_context_invalidation(
-                record["event_id"], invalidation)
-            target = owner._accepted_correction_target
-            self.assertEqual(target.context_queues, {})
-            self.assertIn(invalidation.event_id, target.context_invalidations)
-
+                record = context_invalidation_record(
+                    accepted_cache.accepted_manifest_sha256, invalidation)
+                append_record(self.run, accepted_cache.accepted_manifest_sha256, record)
+                deliver_accepted_context_invalidation(
+                    self.run, accepted_cache.accepted_manifest_sha256,
+                    record["event_id"], invalidation)
             learned = QualifiedComposition(
                 add,
                 contract_digest(binding),
@@ -119,13 +117,12 @@ class AcceptedCorrectionCompositionTests(AcceptedCorrectionCompositionCase):
 
             context = SolveContext(binding, neural_proposer=neural)
             with shape_patch():
-                bind_accepted_correction_authority(self.run, AUTHORITY)
-                register_solve_context(self.run, context, AUTHORITY)
+                register_solve_context(self.run, context)
             correction = _event(DependencyRef(
                 DependencyKind.SOURCE,
                 "source:binding:" + contract_digest(binding)))
             with shape_patch():
-                record_accepted_correction(self.run, correction, AUTHORITY)
+                AcceptedRuntimeHost(self.run).record_correction(correction)
             self.assertIsNone(context.operator_composition_artifact_owner.queue)
 
             with self.assertRaises(BilqisError) as caught:
@@ -144,14 +141,10 @@ class AcceptedCorrectionCompositionTests(AcceptedCorrectionCompositionCase):
             binding, context, compositions = self._composition_context(1)
             source_reference = binding.operands[0].source_reference
             with shape_patch():
-                bind_accepted_correction_authority(
-                    self.run, SYNTHETIC_SOURCE_AUTHORITY)
-                register_solve_context(
-                    self.run, context, SYNTHETIC_SOURCE_AUTHORITY)
+                register_solve_context(self.run, context)
                 correction = _event(DependencyRef(
                     DependencyKind.SOURCE, source_reference))
-                record_accepted_correction(
-                    self.run, correction, SYNTHETIC_SOURCE_AUTHORITY)
+                AcceptedRuntimeHost(self.run).record_correction(correction)
 
             owner = context.operator_composition_artifact_owner
             self.assertIsNotNone(owner.queue)
@@ -192,14 +185,10 @@ class AcceptedCorrectionCompositionTests(AcceptedCorrectionCompositionCase):
                 qualification_verifier=lambda item: True,
             )
             with shape_patch():
-                bind_accepted_correction_authority(
-                    self.run, SYNTHETIC_SOURCE_AUTHORITY)
-                register_solve_context(
-                    self.run, context, SYNTHETIC_SOURCE_AUTHORITY)
+                register_solve_context(self.run, context)
                 correction = _event(DependencyRef(
                     DependencyKind.SOURCE, source_id))
-                record_accepted_correction(
-                    self.run, correction, SYNTHETIC_SOURCE_AUTHORITY)
+                AcceptedRuntimeHost(self.run).record_correction(correction)
 
             owner = context.operator_composition_artifact_owner
             self.assertIn(

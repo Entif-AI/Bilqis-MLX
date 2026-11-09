@@ -7,13 +7,13 @@ import unittest
 from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
-from bilqis_mlx.runtime.accepted_corrections import record_accepted_revalidation
+from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
-from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_correction_authority
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    publish_candidate, shape_patch,
+    candidate, parent_state, provision_source_authority_registry,
+    publish_candidate, shape_patch, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _SOURCE_OWNER, _TEST_PUBLIC, _event, _result, _sign_event,
@@ -48,13 +48,10 @@ class AcceptedCorrectionCompositionCase(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish(self, source, registry=AUTHORITY):
-        source = replace(source, correction_frontier={
-            **source.correction_frontier,
-            "source_authority_registry_sha256": registry.digest,
-        })
+        provision_source_authority_registry(self.run, registry)
+        source = with_source_authority_registry(source, registry)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             pointer = publish_candidate(self.run, source)
-            bind_accepted_correction_authority(self.run, registry)
             return pointer
 
     def _composition_context(self, count):
@@ -91,12 +88,9 @@ class AcceptedCorrectionCompositionCase(unittest.TestCase):
     def _record_equal_revalidation(self, owner, composition, correction):
         node = owner.node_for(composition)
         with shape_patch():
-            return record_accepted_revalidation(
-                self.run,
-                _result(
+            return AcceptedRuntimeHost(self.run).record_revalidation(_result(
                     node, digest=node.content_digest,
                     correction=correction),
-                AUTHORITY,
             )
 
     def _context_invalidation(self, case, new_digest):

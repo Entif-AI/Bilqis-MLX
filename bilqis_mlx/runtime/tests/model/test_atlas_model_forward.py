@@ -29,13 +29,13 @@ from bilqis_mlx.runtime.atlas_model import (
     BamfCompiledBatch, BamfGradientExecution, BamfLossExecution,
     bamf_value_and_grad, forward_bamf,
 )
-from bilqis_mlx.runtime.atlas_revalidation import apply_compiled_batch_correction
+from bilqis_mlx.runtime._atlas_owner_ingress import apply_compiled_batch_correction
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 import bilqis_mlx.runtime.atlas_model_forward as forward_impl
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
-    _issue_accepted_execution_cache,
+    _new_execution_cache,
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     Initializer, ModelTopologySpecV2, expected_bamf_shapes,
@@ -195,20 +195,23 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
         batch = BamfCompiledBatch(compiled, (self.source,), self.schema)
         plan = self._answer_plan(
             compiled=compiled, parameters=self.parameters)
-        cache = _issue_accepted_execution_cache(
+        cache = _new_execution_cache(
             run_id="source-backed-forward",
             generation=0,
             accepted_manifest_sha256="6" * 64,
             generation_binding=plan.generation_binding,
             motif_manifest=genesis.manifest,
         )
-        gradient_execution = bamf_value_and_grad(
-            self.parameters, batch,
-            plan,
-            (DecisionOutput("finish", ControlAction.END_FRAME),),
-            {"finish": True},
-            cache=cache,
-        )
+        with patch.object(
+                forward_impl, "require_accepted_execution_cache",
+                return_value=cache):
+            gradient_execution = bamf_value_and_grad(
+                self.parameters, batch,
+                plan,
+                (DecisionOutput("finish", ControlAction.END_FRAME),),
+                {"finish": True},
+                cache=cache,
+            )
         execution = gradient_execution.execution
         self.assertEqual(execution.custody_run_id, "source-backed-forward")
         self.assertEqual(execution.custody_generation, 0)

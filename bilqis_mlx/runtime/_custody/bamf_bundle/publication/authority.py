@@ -42,7 +42,10 @@ def require_acceptance(
             or acceptance.candidate_identity_sha256
             != candidate_identity_digest(candidate.retained_state)
             or acceptance.step_proof_sha256 != tuple(
-                proof.digest for proof in candidate.retained_state.step_proofs)):
+                proof.digest for proof in candidate.retained_state.step_proofs)
+            or acceptance.source_authority_registry_sha256
+            != candidate.correction_frontier.get(
+                "source_authority_registry_sha256")):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     return acceptance
 
@@ -112,7 +115,7 @@ def require_accepted_parent(
 
 def parent_acceptance_for_publication(
         run_dir: Path, candidate: BamfBundleCandidate,
-        accepted, *, pointer_lock, read_pointer,
+        accepted: AcceptedCandidateBinding, *, pointer_lock, read_pointer,
         live_manifest, load_bundle, require_published_acceptance):
     """Read the exact parent acceptance that the new immutable manifest must bind."""
     pointer_path = Path(run_dir) / "bamf-state.json"
@@ -189,7 +192,8 @@ def require_published_acceptance(
         from .genesis_trust import require_initial_generation_trust_root
         require_initial_generation_trust_root(pointer, student, acceptance)
         return acceptance
-    if (acceptance.digest != pointer["acceptance_sha256"]
+    if (acceptance.schema_version != ACCEPTANCE_SCHEMA
+            or acceptance.digest != pointer["acceptance_sha256"]
             or acceptance.run_id != student.run_id
             or acceptance.generation != student.generation
             or acceptance.feature_sha256 != student.extents.factor_map_digest
@@ -199,7 +203,10 @@ def require_published_acceptance(
             or (not isinstance(acceptance, ParsedAtlasAdmissionBinding)
                 and (acceptance.schema_version != ACCEPTANCE_SCHEMA
                      or acceptance.step_proof_sha256 != tuple(
-                         proof.digest for proof in student.retained_state.step_proofs)))):
+                         proof.digest for proof in student.retained_state.step_proofs)
+                     or acceptance.source_authority_registry_sha256
+                     != student.correction_frontier.get(
+                         "source_authority_registry_sha256")))):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     manifest = live_manifest(run_dir, pointer)
     legacy_student = manifest.get("schema") != ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA

@@ -10,19 +10,22 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.runtime.accepted_corrections import (
-    AcceptedRuntimeHost, ContextRevalidatedArtifact, _RUNTIME_OWNER,
+    AcceptedRuntimeHost, ContextRevalidatedArtifact, _reset_accepted_correction_runtime_for_tests,
     register_accepted_target,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import (
     append_record, context_invalidation_record,
 )
-from bilqis_mlx.runtime.accepted_correction_runtime import runtime
-from bilqis_mlx.runtime.atlas_owner_ingress import _route
+from bilqis_mlx.runtime.accepted_correction_runtime import (
+    deliver_accepted_context_invalidation,
+)
+from bilqis_mlx.runtime._atlas_owner_ingress import _route
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_correction_authority, bind_accepted_execution_cache,
+    bind_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, parent_state, publish_candidate, shape_patch,
+    candidate, parent_state, provision_source_authority_registry,
+    publish_candidate, shape_patch, with_source_authority_registry,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
     source_owned_temporal_case,
@@ -85,14 +88,11 @@ class AcceptedContextFixture(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish(self):
-        source = candidate(parent_state())
-        source = replace(source, correction_frontier={
-            **source.correction_frontier,
-            "source_authority_registry_sha256": AUTHORITY.digest,
-        })
+        provision_source_authority_registry(self.run, AUTHORITY)
+        source = with_source_authority_registry(candidate(parent_state()), AUTHORITY)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             publish_candidate(self.run, source)
-            return bind_accepted_correction_authority(self.run, AUTHORITY)
+            return bind_accepted_execution_cache(self.run)
 
     def registered_owner(self):
         case = source_owned_temporal_case()
@@ -111,10 +111,7 @@ class AcceptedContextFixture(unittest.TestCase):
         cache = self.publish()
         with shape_patch():
             register_accepted_target(
-                self.run, cache.accepted_manifest_sha256, "TEST_CONTEXT", owner,
-                lambda current, event, source_authority: _route(
-                    current, event, source_authority),
-                AUTHORITY,
+                self.run, cache.accepted_manifest_sha256, "TEST_CONTEXT", owner
             )
             host = AcceptedRuntimeHost(self.run)
         invalidation = C09ContextInvalidation(
@@ -135,10 +132,11 @@ class AcceptedContextFixture(unittest.TestCase):
                 for handle in (frame.frame_handle, *frame.member_handles)
             })),
         )
-        record = context_invalidation_record(
-            cache.accepted_manifest_sha256, invalidation)
-        append_record(self.run, cache.accepted_manifest_sha256, record)
-        runtime(
-            self.run, cache.accepted_manifest_sha256,
-        ).deliver_context_invalidation(record["event_id"], invalidation)
+        with shape_patch():
+            record = context_invalidation_record(
+                cache.accepted_manifest_sha256, invalidation)
+            append_record(self.run, cache.accepted_manifest_sha256, record)
+            deliver_accepted_context_invalidation(
+                self.run, cache.accepted_manifest_sha256,
+                record["event_id"], invalidation)
         return case, owner, host, invalidation, record["event_id"]

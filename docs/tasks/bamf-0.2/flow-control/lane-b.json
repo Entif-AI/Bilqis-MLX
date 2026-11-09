@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "9795a3edff705ff6e44eec29dc60fed74d2abc74",
-  "updated_at": "2026-11-08T02:31:45-05:00",
+  "observed_unified": "4bfcbd5a9aaa22a1bc2bca4c7a64ec203df07044",
+  "updated_at": "2026-11-09T05:43:34Z",
   "exception": null,
   "items": [
     {
@@ -377,6 +377,15 @@
       "summary": "Ready PR #892 turns in B12.4 against reviewed unified 38996495. Fresh whole-candidate Chat on Steroids EGM round 2 passed semantic head c7747196 with 0 Blockers / 0 Majors / 0 Nits after repairing the round-1 TARGET_LOCAL decay-authority Major. Candidate-owned proof is green; representative aggregate failures reproduce on exact reviewed unified and are disclosed as inherited base debt. ADR-128 governs admission at twelve total PRs with no per-lane PR cap.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b12-4-477-complete-20261106"
+    },
+    {
+      "issue": 367,
+      "pr": 935,
+      "state": "TURNED_IN",
+      "head_sha": "8523823509393f80c6125e61297c486f1d78b7e9",
+      "summary": "Scoped B10 request-disposition owner is turned in as ready PR #935 after current-unified qualification and fresh independent PASS 0 Blockers / 0 Majors / 0 Nits. C04 TaskGoal yields ORDINARY / EXPLICIT_MEMBER / UNRESOLVED_NESTED without caller booleans; B06/B11 composition remains downstream #471 work.",
+      "resume_trigger": "Human review/merge PR #935 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
+      "preserved_branch": "codex/367-b10-refinement-disposition-20261107"
     }
   ]
 }

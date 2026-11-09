@@ -264,7 +264,7 @@ class CapabilityAuthorityTests(unittest.TestCase):
                 promotion_policy=_authority(AuthorityKind.PROMOTION_POLICY),
                 admission_lease=_authority(AuthorityKind.ADMISSION_LEASE),
             )
-        loader.assert_called_once_with(Path("/accepted-run"), "target", None)
+        loader.assert_called_once_with(Path("/accepted-run"), "target")
         self.assertEqual(gate.status, "ELIGIBLE")
 
     def test_accepted_progression_fails_closed_when_support_replay_lacks_authority(self):

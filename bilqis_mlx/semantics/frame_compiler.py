@@ -50,6 +50,10 @@ from ._frame_compiler.positions import (
     PositionKind, CompiledPosition, _prefix_digest,
     _canonical_position_order,
 )
+from ._frame_compiler.prefix_inventory import (
+    PREFIX_INVENTORY_SCHEMA, prefix_inventory_handle,
+    prefix_inventory_evidence_digest,
+)
 from ._frame_compiler.prefix import (
     compile_prefix,
 )
@@ -94,6 +98,7 @@ for _public in (
     StreamingAST, FrameCompilerConfig, _grant_allows,
     _segment_authority, PositionKind, CompiledPosition,
     _prefix_digest, _canonical_position_order, CompiledFrameBatch,
+    prefix_inventory_handle, prefix_inventory_evidence_digest,
     CompileStats, SourcePosition,
     ScopeBoundary, RoleAccess, ExpansionHandle,
     PrefixMaps, _derive_maps, VisibleAST,

@@ -23,7 +23,7 @@ from .capability_support_journal import (
 )
 from .capability_support_loading import load_current_support
 from .capability_support_requalification import (
-    install_requalification, rehydrate_support_hold,
+    install_requalification,
 )
 
 
@@ -117,6 +117,10 @@ class CapabilitySupportArtifactOwner:
     def apply_correction(
         self, event: CorrectionEvent, authority_registry: SourceAuthorityRegistry,
     ) -> RevalidationQueue:
+        from bilqis_mlx.runtime.accepted_correction_runtime import (
+            require_bound_owner_registry,
+        )
+        authority_registry = require_bound_owner_registry(self, authority_registry)
         self._queue = apply_correction(event, self._index, authority_registry)
         if self._journal_path is not None and self._queue.held_artifact_ids:
             write_journal(
@@ -131,6 +135,10 @@ class CapabilitySupportArtifactOwner:
         self, frontier: RevalidationFrontier,
         authority_registry: SourceAuthorityRegistry,
     ) -> RevalidationProgress:
+        from bilqis_mlx.runtime.accepted_correction_runtime import (
+            require_bound_owner_registry,
+        )
+        authority_registry = require_bound_owner_registry(self, authority_registry)
         if self._queue is None:
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_REVALIDATION_NOT_HELD")
         task = next_revalidation_task(self._index, self._queue)
@@ -189,7 +197,6 @@ def _issue_owner(
 
 def load_capability_support_owner(
     run_dir: Path, capability_id: str,
-    authority_registry: SourceAuthorityRegistry | None = None,
 ) -> CapabilitySupportArtifactOwner:
     """Materialize current support only from accepted B13 lossless source anchors."""
     run_dir = Path(run_dir)
@@ -206,7 +213,6 @@ def load_capability_support_owner(
         artifact_id=node.artifact_id,
     )
     if hold is None:
-        rehydrated = owner
         seen_event_ids = ()
     else:
         if (hold.get("capability_id") != capability_id
@@ -215,8 +221,6 @@ def load_capability_support_owner(
                 or hold.get("state") not in {
                     "HELD", "CLEARED", "REQUALIFICATION_REQUIRED"}):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
-        rehydrated = rehydrate_support_hold(
-            owner, hold, node, authority_registry)
         from bilqis_mlx.runtime.accepted_corrections import (
             accepted_correction_id,
         )
@@ -225,17 +229,12 @@ def load_capability_support_owner(
                 manifest_sha256, event_from_record(hold.get("event"))),
         )
     from bilqis_mlx.runtime.accepted_corrections import (
-        register_accepted_target,
+        register_accepted_support_target,
     )
-    from .atlas_owner_ingress import apply_capability_support_correction
-    register_accepted_target(
-        run_dir, manifest_sha256, "CAPABILITY_SUPPORT", rehydrated,
-        lambda current, event, registry: apply_capability_support_correction(
-            current, event, registry),
-        authority_registry,
-        seen_event_ids=seen_event_ids,
-    )
-    return rehydrated
+    register_accepted_support_target(
+        run_dir, manifest_sha256, owner, hold, node,
+        seen_event_ids=seen_event_ids)
+    return owner
 
 
 __all__ = ("CapabilitySupportArtifactOwner", "load_capability_support_owner")

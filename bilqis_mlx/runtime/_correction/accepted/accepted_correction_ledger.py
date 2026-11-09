@@ -96,14 +96,17 @@ def accepted_correction_id(
 
 def accepted_corrections(
     run_dir: Path, manifest_sha256: str,
-    registry: SourceAuthorityRegistry | None,
 ) -> tuple[tuple[str, CorrectionEvent], ...]:
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        _accepted_correction_registry,
+    )
+    cache, registry = _accepted_correction_registry(run_dir)
+    if cache.accepted_manifest_sha256 != manifest_sha256:
+        _invalid("BAMF_C09_ACCEPTED_RUNTIME_STALE")
     records = tuple(
         item for item in read_records(run_dir, manifest_sha256)
         if item["event"] == CORRECTION_EVENT
     )
-    if records and not isinstance(registry, SourceAuthorityRegistry):
-        _invalid("BAMF_C09_CORRECTION_AUTHORITY_REQUIRED")
     result = []
     for item in records:
         event = event_from_record(item["correction"])
@@ -163,11 +166,26 @@ def append_record(run_dir: Path, manifest_sha256: str, record: dict) -> None:
         commit_history_and_clear(run_dir, manifest_sha256, target)
 
 
+def append_current_record(
+    run_dir: Path, manifest_sha256: str, record: dict,
+) -> None:
+    """Append only while ``manifest_sha256`` is still the accepted generation."""
+    from bilqis_mlx.runtime.bamf_bundle.publication import _pointer_lock, _read_pointer
+
+    run_dir = Path(run_dir)
+    with _pointer_lock(run_dir):
+        pointer = _read_pointer(run_dir / "bamf-state.json")
+        if (pointer is None
+                or pointer.get("manifest_sha256") != manifest_sha256):
+            _invalid("BAMF_C09_ACCEPTED_RUNTIME_STALE")
+        append_record(run_dir, manifest_sha256, record)
+
+
 __all__ = (
     "CONTEXT_INVALIDATION_EVENT", "CONTEXT_REVALIDATION_EVENT",
     "CORRECTION_EVENT", "REVALIDATION_EVENT", "REMEDIATION_EVENT",
     "DERIVED_CLAIM_EVENT", "PROCESS_FAULT_EVENT", "accepted_correction_id",
-    "accepted_corrections", "append_record", "correction_record",
+    "accepted_corrections", "append_current_record", "append_record", "correction_record",
     "context_frontier_from_record", "context_revalidation_record",
     "context_invalidation_from_record", "context_invalidation_record",
     "context_temporal_identity_from_record",

@@ -1,4 +1,4 @@
-"""Production C09 correction ingress for stateful artifact owners."""
+"""Internal C09 correction routing for stateful artifact owners."""
 from __future__ import annotations
 
 from .atlas_revalidation_common import _invalid
@@ -12,6 +12,10 @@ def _route(owner, event, authority_registry) -> bool:
             or not hasattr(owner, "index")
             or not hasattr(owner, "apply_correction")):
         _invalid("BAMF_C09_OWNER_INGRESS_INVALID")
+    from bilqis_mlx.runtime.accepted_correction_runtime import (
+        require_bound_owner_registry,
+    )
+    authority_registry = require_bound_owner_registry(owner, authority_registry)
     authority_registry.verify_correction(event)
     if not owner.index.direct_dependents(event.dependency):
         return False

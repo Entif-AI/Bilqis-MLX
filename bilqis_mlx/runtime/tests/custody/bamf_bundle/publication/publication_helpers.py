@@ -108,7 +108,9 @@ def acceptance(bundle, *, parent=None) -> object:
         retention_decision(parent=parent, retained=bundle.retained_state),
         bundle.retained_state, run_id=bundle.run_id,
         generation=bundle.generation,
-        feature_sha256=bundle.extents.factor_map_digest)
+        feature_sha256=bundle.extents.factor_map_digest,
+        source_authority_registry_sha256=bundle.correction_frontier.get(
+            "source_authority_registry_sha256"))
 
 
 def _publish_initial_candidate(run_dir, bundle, foundation_features):
@@ -121,6 +123,8 @@ def _publish_initial_candidate(run_dir, bundle, foundation_features):
     pointer = publish_initial_generation(run_dir, prepared, reserve_gib=0.)
     source_authority = bundle.correction_frontier.get(
         "source_authority_registry_sha256")
+    source_authority_record = bundle.correction_frontier.get(
+        "source_authority_registry")
     if source_authority is None:
         return pointer
     parent = load_bamf_generation(Path(run_dir) / "bamf-state.json")
@@ -131,6 +135,7 @@ def _publish_initial_candidate(run_dir, bundle, foundation_features):
     bundle = replace(bundle, correction_frontier={
         **bundle.correction_frontier,
         "source_authority_registry_sha256": source_authority,
+        "source_authority_registry": source_authority_record,
     })
     return publish_bamf_generation(
         run_dir, bundle,
