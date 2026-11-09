@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "636ac8ffdeece7d6f8b24e9d1f46596396848db7",
-  "updated_at": "2026-11-09T20:04:52Z",
+  "observed_unified": "8899f7d2cf0c4c89b992d9fdc72242944d7531c2",
+  "updated_at": "2026-11-09T20:08:18Z",
   "exception": null,
   "items": [
     {
@@ -80,7 +80,7 @@
       "state": "ACTIVE",
       "head_sha": "5311e66853988e60485df12d88ce4752f366b6a0",
       "head_sha_role": "latest implementation/proof head after consuming reviewed unified 636ac8ff; any following lane bookkeeping commit is docs/flow-only and must be included in final exact-head qualification",
-      "summary": "#718/#526 consumed reviewed unified 636ac8ff and all dependency remediations. Candidate f31a8a19 failed fresh whole-candidate EGM at 0B/2M because exact-type forged CandidateRetentionDecision and AcceptedCandidateBinding objects could bypass owner issuance. Semantic head 5311e668 re-authenticates the existing private issuer sentinels at C12 screening, C05-to-B13 acceptance minting and B13 publication. Red 12/14 became 14/14 green; acceptance custody/history/source is 46/46, C12 adoption 7/7 and expanded C12/C05/B13 ring 84/84. Fresh exact-head hosted proof and a completely new EGM family remain required.",
+      "summary": "#718/#526 consumed current reviewed unified 8899f7d2 and all dependency remediations. Candidate f31a8a19 failed fresh whole-candidate EGM at 0B/2M because exact-type forged CandidateRetentionDecision and AcceptedCandidateBinding objects could bypass owner issuance. Semantic head 5311e668 re-authenticates the existing private issuer sentinels at C12 screening, C05-to-B13 acceptance minting and B13 publication. Red 12/14 became 14/14 green; acceptance custody/history/source is 46/46, C12 adoption 7/7 and expanded pre-refresh C12/C05/B13 ring 84/84. After B11.1 advanced unified, the affected authority/retention/import ring reran 63/63 PASS against 8899f7d2. Fresh exact-head hosted proof and a completely new EGM family remain required.",
       "resume_trigger": null,
       "closed_pr": 680,
       "preserved_branch": "codex/bamf02-c12-526-exchange-20261101",
