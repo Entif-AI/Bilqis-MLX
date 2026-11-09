@@ -122,13 +122,28 @@ def _make_runtime_core():
         retained(run_dir, manifest_sha256).register(
             kind, owner, _route, seen_event_ids)
 
+    def register_support(run_dir: Path, manifest_sha256: str, owner, hold, node, *,
+                         seen_event_ids: tuple[str, ...] = ()) -> None:
+        if type(seen_event_ids) is not tuple or any(
+                not isinstance(event_id, str) or not event_id
+                for event_id in seen_event_ids):
+            _invalid("BAMF_C09_ACCEPTED_TARGET_IDENTITY_CONFLICT")
+        from bilqis_mlx.runtime._atlas_owner_ingress import _route
+        from .capability_support_requalification import _rehydrate_support_hold
+
+        retained(run_dir, manifest_sha256).register(
+            "CAPABILITY_SUPPORT", owner, _route, seen_event_ids,
+            prepare=lambda registry: _rehydrate_support_hold(
+                owner, hold, node, registry),
+        )
+
     def reset_for_tests() -> None:
         with lock:
             entries.clear()
 
     return (
-        require_bound_registry, refresh, register, retained, reset_for_tests,
-        target_for_owner, owner_is_superseded,
+        require_bound_registry, refresh, register, register_support, retained,
+        reset_for_tests, target_for_owner, owner_is_superseded,
     )
 
 
@@ -197,7 +212,7 @@ def _make_delivery_api(retained):
 def _make_runtime_boundary():
     """Compose public closures without exposing the retained runtime getter."""
     (
-        require_bound_registry, refresh, register, retained, reset,
+        require_bound_registry, refresh, register, register_support, retained, reset,
         target_for_owner, owner_is_superseded,
     ) = _make_runtime_core()
 
@@ -219,7 +234,7 @@ def _make_runtime_boundary():
                 _invalid("BAMF_C09_ARTIFACT_HELD")
 
     return (
-        require_bound_registry, refresh, register,
+        require_bound_registry, refresh, register, register_support,
         *_make_delivery_api(retained), reset, require_pending,
     )
 
@@ -228,6 +243,7 @@ def _make_runtime_boundary():
     require_bound_owner_registry,
     refresh_owner_corrections,
     register_accepted_target,
+    register_accepted_support_target,
     deliver_accepted_correction,
     deliver_accepted_revalidation,
     deliver_accepted_context_invalidation,
@@ -266,6 +282,7 @@ __all__ = (
     "deliver_accepted_context_revalidation",
     "deliver_accepted_correction", "deliver_accepted_revalidation",
     "register_accepted_target", "refresh_owner_corrections",
+    "register_accepted_support_target",
     "register_compiled_batch", "register_solve_context",
     "replay_accepted_stale_evidence", "require_bound_owner_registry",
     "require_pending_corrections",

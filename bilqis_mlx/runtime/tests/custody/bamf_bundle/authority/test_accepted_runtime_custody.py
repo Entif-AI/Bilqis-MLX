@@ -101,7 +101,7 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         cache, compiled, owner = self._motif_fixture()
         correction = _event(owner.source_dependencies[0])
         with shape_patch():
-            record_accepted_correction(self.run, correction)
+            AcceptedRuntimeHost(self.run).record_correction(correction)
         self.assertTrue(owner.queue.held_artifact_ids)
         with self.assertRaises(BilqisError):
             owner.require(cache, compiled)
@@ -143,7 +143,7 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         _cache, compiled, owner = self._motif_fixture()
         correction = _event(owner.source_dependencies[0])
         with shape_patch():
-            record_accepted_correction(self.run, correction)
+            AcceptedRuntimeHost(self.run).record_correction(correction)
         (self.run / "events.jsonl").unlink()
         _reset_execution_cache_owner_for_tests()
         _reset_accepted_correction_runtime_for_tests()
@@ -166,8 +166,8 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
             new_evidence_sha256="d" * 64,
         ))
         with shape_patch():
-            record_accepted_correction(self.run, first)
-            record_accepted_correction(self.run, second)
+            AcceptedRuntimeHost(self.run).record_correction(first)
+            AcceptedRuntimeHost(self.run).record_correction(second)
         ledger = self.run / "events.jsonl"
         lines = ledger.read_text(encoding="utf-8").splitlines(keepends=True)
         ledger.write_text("".join(lines[:-1]), encoding="utf-8")

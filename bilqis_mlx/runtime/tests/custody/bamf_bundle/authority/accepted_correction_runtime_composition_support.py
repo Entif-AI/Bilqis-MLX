@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
-from bilqis_mlx.runtime.accepted_corrections import record_accepted_revalidation
+from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.atlas_revalidation import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
@@ -88,9 +88,7 @@ class AcceptedCorrectionCompositionCase(unittest.TestCase):
     def _record_equal_revalidation(self, owner, composition, correction):
         node = owner.node_for(composition)
         with shape_patch():
-            return record_accepted_revalidation(
-                self.run,
-                _result(
+            return AcceptedRuntimeHost(self.run).record_revalidation(_result(
                     node, digest=node.content_digest,
                     correction=correction),
             )

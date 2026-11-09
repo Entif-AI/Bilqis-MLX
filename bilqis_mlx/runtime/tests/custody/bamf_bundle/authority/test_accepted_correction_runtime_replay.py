@@ -154,21 +154,19 @@ class AcceptedCorrectionReplayTests(unittest.TestCase):
             first, event_id="correction:synthetic:2",
             source_receipt_sha256="e" * 64, new_evidence_sha256="d" * 64))
         with shape_patch():
-            record_accepted_correction(self.run, first)
-            record_accepted_correction(self.run, second)
+            AcceptedRuntimeHost(self.run).record_correction(first)
+            AcceptedRuntimeHost(self.run).record_correction(second)
         self.assertEqual(owner.queue.event.event_id, first.event_id)
         with self.assertRaises(BilqisError):
             owner.require(cache, compiled)
         first_node = owner.index.node(owner.queue.held_artifact_ids[0])
         with shape_patch():
-            record_accepted_revalidation(
-                self.run, _result(
+            AcceptedRuntimeHost(self.run).record_revalidation(_result(
                     first_node, digest=first_node.content_digest, correction=first))
         self.assertEqual(owner.queue.event.event_id, second.event_id)
         second_node = owner.index.node(owner.queue.held_artifact_ids[0])
         with shape_patch():
-            record_accepted_revalidation(
-                self.run, _result(
+            AcceptedRuntimeHost(self.run).record_revalidation(_result(
                     second_node, digest=second_node.content_digest, correction=second))
         self.assertEqual(owner.queue.held_artifact_ids, ())
         self.assertIs(owner.require(cache, compiled), owner.current_node)

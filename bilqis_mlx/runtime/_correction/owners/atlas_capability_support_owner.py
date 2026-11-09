@@ -23,7 +23,7 @@ from .capability_support_journal import (
 )
 from .capability_support_loading import load_current_support
 from .capability_support_requalification import (
-    install_requalification, rehydrate_support_hold,
+    install_requalification,
 )
 
 
@@ -200,14 +200,8 @@ def load_capability_support_owner(
 ) -> CapabilitySupportArtifactOwner:
     """Materialize current support only from accepted B13 lossless source anchors."""
     run_dir = Path(run_dir)
-    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
-        _accepted_correction_registry,
-    )
     manifest_sha256, support, node, generation_bindings = load_current_support(
         run_dir, capability_id)
-    cache, authority_registry = _accepted_correction_registry(run_dir)
-    if cache.accepted_manifest_sha256 != manifest_sha256:
-        _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTED_GENERATION_DRIFT")
     hold_path = journal_path(run_dir, manifest_sha256, capability_id)
     owner = _issue_owner(
         support, node, generation_bindings, hold_path,
@@ -219,7 +213,6 @@ def load_capability_support_owner(
         artifact_id=node.artifact_id,
     )
     if hold is None:
-        rehydrated = owner
         seen_event_ids = ()
     else:
         if (hold.get("capability_id") != capability_id
@@ -228,8 +221,6 @@ def load_capability_support_owner(
                 or hold.get("state") not in {
                     "HELD", "CLEARED", "REQUALIFICATION_REQUIRED"}):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_HOLD_DRIFT")
-        rehydrated = rehydrate_support_hold(
-            owner, hold, node, authority_registry)
         from bilqis_mlx.runtime.accepted_corrections import (
             accepted_correction_id,
         )
@@ -238,13 +229,12 @@ def load_capability_support_owner(
                 manifest_sha256, event_from_record(hold.get("event"))),
         )
     from bilqis_mlx.runtime.accepted_corrections import (
-        register_accepted_target,
+        register_accepted_support_target,
     )
-    register_accepted_target(
-        run_dir, manifest_sha256, "CAPABILITY_SUPPORT", rehydrated,
-        seen_event_ids=seen_event_ids,
-    )
-    return rehydrated
+    register_accepted_support_target(
+        run_dir, manifest_sha256, owner, hold, node,
+        seen_event_ids=seen_event_ids)
+    return owner
 
 
 __all__ = ("CapabilitySupportArtifactOwner", "load_capability_support_owner")

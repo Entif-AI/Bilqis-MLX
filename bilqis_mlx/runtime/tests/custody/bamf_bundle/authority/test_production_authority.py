@@ -45,6 +45,7 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     require_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.accepted_corrections import (
+    AcceptedRuntimeHost,
     _reset_accepted_correction_runtime_for_tests, record_accepted_correction, record_accepted_revalidation,
 )
 from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
@@ -149,7 +150,7 @@ class ProductionAuthorityTests(unittest.TestCase):
             owner = bind_motif_artifact_owner(cache, compiled)
         correction = _event(owner.source_dependencies[0])
         with shape_patch():
-            record_accepted_correction(self.run, correction)
+            AcceptedRuntimeHost(self.run).record_correction(correction)
         self.assertTrue(owner.queue.held_artifact_ids)
         with self.assertRaises(BilqisError):
             owner.require(cache, compiled)

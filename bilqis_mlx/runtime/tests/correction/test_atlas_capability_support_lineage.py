@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.runtime.accepted_corrections import (
+    AcceptedRuntimeHost,
     _reset_accepted_correction_runtime_for_tests, accepted_correction_id, record_accepted_correction,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import read_records
@@ -83,7 +84,7 @@ class CapabilitySupportLineageTests(unittest.TestCase):
         live = self.load_support(AUTHORITY)
         first = _event(_ref(DependencyKind.SOURCE, SOURCE_ROW))
         with shape_patch():
-            accepted_id = record_accepted_correction(self.run, first)
+            accepted_id = AcceptedRuntimeHost(self.run).record_correction(first)
         self.assertEqual(live.queue.event.event_id, first.event_id)
         manifest = published["manifest_sha256"]
         hold_path = journal_path(self.run, manifest, TARGET)
@@ -109,7 +110,7 @@ class CapabilitySupportLineageTests(unittest.TestCase):
             supersedes_event_ids=(first.event_id,),
         ))
         with shape_patch():
-            record_accepted_correction(self.run, second)
+            AcceptedRuntimeHost(self.run).record_correction(second)
         self.assertIsNotNone(reloaded.queue)
         self.assertEqual(reloaded.queue.event.event_id, second.event_id)
         records = read_records(self.run, manifest)

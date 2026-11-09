@@ -88,7 +88,7 @@ class AcceptedCorrectionRuntime:
 
     def register(
         self, kind: str, owner, apply,
-        seen_event_ids: tuple[str, ...] = (),
+        seen_event_ids: tuple[str, ...] = (), prepare=None,
     ) -> None:
         self._require_live()
         with self.lock:
@@ -103,6 +103,8 @@ class AcceptedCorrectionRuntime:
             def hydrate():
                 self._restore_branches(target)
                 target.seen.update(seen_event_ids)
+                if prepare is not None:
+                    prepare(self.registry)
                 self._replay(target)
                 target.reconcile_late_materializations(self.registry)
                 target.activate_pending(self.registry)

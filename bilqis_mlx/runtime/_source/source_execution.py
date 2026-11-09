@@ -172,37 +172,21 @@ class SourceExecutionContext:
         if self.run_dir is None:
             _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
         self.require_accepted_runtime(self.run_dir)
-        from bilqis_mlx.runtime.accepted_corrections import (
-            record_accepted_correction,
-        )
-        return record_accepted_correction(
-            self.run_dir, event)
+        return self._accepted_runtime_host.record_correction(event)
 
     def record_revalidation(self, frontier) -> str:
         if self.run_dir is None:
             _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
         self.require_accepted_runtime(self.run_dir)
-        from bilqis_mlx.runtime.accepted_corrections import (
-            record_accepted_revalidation,
-        )
-        return record_accepted_revalidation(
-            self.run_dir, frontier)
+        return self._accepted_runtime_host.record_revalidation(frontier)
 
     def record_remediation(self, remediation) -> str:
         self.require_accepted_runtime(self.run_dir)
-        from bilqis_mlx.runtime.accepted_corrections import (
-            record_accepted_remediation,
-        )
-        return record_accepted_remediation(
-            self.run_dir, remediation)
+        return self._accepted_runtime_host.record_remediation(remediation)
 
     def record_derived_claim(self, claim):
         self.require_accepted_runtime(self.run_dir)
-        from bilqis_mlx.runtime.accepted_corrections import (
-            record_accepted_derived_claim,
-        )
-        return record_accepted_derived_claim(
-            self.run_dir, claim)
+        return self._accepted_runtime_host.record_derived_claim(claim)
 
     def require_accepted_runtime(self, run_dir: Path | None) -> None:
         """Require host-owned accepted-run correction custody before execution."""

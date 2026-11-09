@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from bilqis_mlx.curriculum import AnswerFamily, BINARY
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.accepted_corrections import (
+    AcceptedRuntimeHost,
     record_accepted_correction, register_solve_context,
 )
 from bilqis_mlx.runtime.accepted_correction_ledger import (
@@ -48,7 +49,7 @@ class AcceptedCorrectionCompositionTests(AcceptedCorrectionCompositionCase):
                 DependencyKind.SOURCE, "source:binding:" + contract_digest(binding))
             correction = _event(dependency)
             with shape_patch():
-                record_accepted_correction(self.run, correction)
+                AcceptedRuntimeHost(self.run).record_correction(correction)
             owner = context.operator_composition_artifact_owner
             self.assertIsNone(owner.queue)
             learned = QualifiedComposition(
@@ -121,7 +122,7 @@ class AcceptedCorrectionCompositionTests(AcceptedCorrectionCompositionCase):
                 DependencyKind.SOURCE,
                 "source:binding:" + contract_digest(binding)))
             with shape_patch():
-                record_accepted_correction(self.run, correction)
+                AcceptedRuntimeHost(self.run).record_correction(correction)
             self.assertIsNone(context.operator_composition_artifact_owner.queue)
 
             with self.assertRaises(BilqisError) as caught:
@@ -143,7 +144,7 @@ class AcceptedCorrectionCompositionTests(AcceptedCorrectionCompositionCase):
                 register_solve_context(self.run, context)
                 correction = _event(DependencyRef(
                     DependencyKind.SOURCE, source_reference))
-                record_accepted_correction(self.run, correction)
+                AcceptedRuntimeHost(self.run).record_correction(correction)
 
             owner = context.operator_composition_artifact_owner
             self.assertIsNotNone(owner.queue)
@@ -187,7 +188,7 @@ class AcceptedCorrectionCompositionTests(AcceptedCorrectionCompositionCase):
                 register_solve_context(self.run, context)
                 correction = _event(DependencyRef(
                     DependencyKind.SOURCE, source_id))
-                record_accepted_correction(self.run, correction)
+                AcceptedRuntimeHost(self.run).record_correction(correction)
 
             owner = context.operator_composition_artifact_owner
             self.assertIn(

@@ -9,6 +9,7 @@ import unittest
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.accepted_corrections import (
+    AcceptedRuntimeHost,
     _reset_accepted_correction_runtime_for_tests, record_accepted_correction, record_accepted_derived_claim,
     record_accepted_remediation, record_accepted_revalidation,
     register_solve_context,
@@ -133,10 +134,8 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         owner = context.operator_composition_artifact_owner
         node = owner.node_for(cached)
         with shape_patch():
-            record_accepted_correction(self.run, correction)
-            record_accepted_revalidation(
-                self.run,
-                _result(node, digest=node.content_digest, correction=correction),
+            AcceptedRuntimeHost(self.run).record_correction(correction)
+            AcceptedRuntimeHost(self.run).record_revalidation(_result(node, digest=node.content_digest, correction=correction),
             )
         self.assertEqual(owner.require(cached, binding), node)
 
@@ -165,9 +164,8 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
             derived_path=(node.artifact_id,),
         )
         with shape_patch():
-            record_accepted_remediation(self.run, remediation)
-            _event_id, faults = record_accepted_derived_claim(
-                self.run, stale)
+            AcceptedRuntimeHost(self.run).record_remediation(remediation)
+            _event_id, faults = AcceptedRuntimeHost(self.run).record_derived_claim(stale)
         self.assertEqual(len(faults), 1)
         self.assertEqual(
             faults[0].fault.reason_code,
@@ -199,14 +197,10 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         owner = context.operator_composition_artifact_owner
         node = owner.node_for(cached)
         with shape_patch():
-            record_accepted_correction(self.run, correction)
-            record_accepted_revalidation(
-                self.run,
-                _result(node, digest=node.content_digest, correction=correction),
+            AcceptedRuntimeHost(self.run).record_correction(correction)
+            AcceptedRuntimeHost(self.run).record_revalidation(_result(node, digest=node.content_digest, correction=correction),
             )
-            record_accepted_remediation(
-                self.run,
-                RemediationReceipt(
+            AcceptedRuntimeHost(self.run).record_remediation(RemediationReceipt(
                     remediation_id="remediation:accepted-runtime-independent",
                     correction_event_id=correction.event_id,
                     correction_receipt_sha256=correction.source_receipt_sha256,
@@ -221,9 +215,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
                     status=RemediationStatus.COMPLETED,
                 ),
             )
-            _event_id, faults = record_accepted_derived_claim(
-                self.run,
-                DerivedClaim(
+            _event_id, faults = AcceptedRuntimeHost(self.run).record_derived_claim(DerivedClaim(
                     claim_id="claim:accepted-runtime-independent",
                     actor_id="actor:later-independent",
                     source_event_id="event:later-independent",
@@ -243,9 +235,9 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         correction, remediation, stale, later = self._late_support_evidence(
             accepted_manifest)
         with shape_patch():
-            record_accepted_correction(run, correction)
-            record_accepted_remediation(run, remediation)
-            _event_id, faults = record_accepted_derived_claim(run, stale)
+            AcceptedRuntimeHost(run).record_correction(correction)
+            AcceptedRuntimeHost(run).record_remediation(remediation)
+            _event_id, faults = AcceptedRuntimeHost(run).record_derived_claim(stale)
         self.assertEqual(len(faults), 1)
         update = faults[0].requalification
         self.assertEqual(update.affected_capability_ids, (TARGET,))
@@ -277,8 +269,7 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         self.assertEqual(len(pending_events(outbox)), 1)
 
         with shape_patch():
-            _event_id, later_faults = record_accepted_derived_claim(
-                run, later)
+            _event_id, later_faults = AcceptedRuntimeHost(run).record_derived_claim(later)
         self.assertEqual(later_faults, ())
         with shape_patch():
             self.assertEqual(
@@ -292,10 +283,9 @@ class AcceptedStaleReplayRuntimeTests(unittest.TestCase):
         correction, remediation, stale, _later = self._late_support_evidence(
             first_manifest)
         with shape_patch():
-            record_accepted_correction(run, correction)
-            record_accepted_remediation(run, remediation)
-            _event_id, faults = record_accepted_derived_claim(
-                run, stale)
+            AcceptedRuntimeHost(run).record_correction(correction)
+            AcceptedRuntimeHost(run).record_remediation(remediation)
+            _event_id, faults = AcceptedRuntimeHost(run).record_derived_claim(stale)
         self.assertEqual(len(faults), 1)
 
         with shape_patch():
