@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "bcc82f86e2c409e22329d38c14b757d7e5a0d517",
-  "updated_at": "2026-11-09T21:32:24Z",
+  "observed_unified": "6a770f10074df6f4f8889d439f783ad42f5efe63",
+  "updated_at": "2026-11-09T23:04:19Z",
   "exception": null,
   "items": [
     {
@@ -107,6 +107,16 @@
       "closed_pr": 887,
       "closed_under": "BAMF WAITING issue/branch queue; open implementation PRs are reserved for merge-ready candidates or active remediation delivery.",
       "close_reason": "Historical waiting reason was C07.1b/#510 persisted-lease-gated adoption; bounded A02 implementation resumed against exact upstream branch interface while final integration still waits reviewed C07 authority."
+    },
+    {
+      "issue": 400,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "4f5972b12fe933ee19701b17ba138a93a5bb7404",
+      "head_sha_role": "current A02.2 production repair after reviewed-unified 6a770f10 sync; issue-specific full composition witness pending",
+      "summary": "A02.2 historical staging implementation is reconciled through reviewed #399/#510 integration. Current issue-owned repair revalidates the A02-sealed conservative disk requirement immediately before first C07 Factory/B13 persistence while exact accepted retries remain idempotent, and adds direct UINT32_MAX+1 refusal coverage. Focused integrated ring is 32 PASS with 3 explicit opt-in skips; changed-file smell is 0 findings; structure/governance/error-control/docs/flow/diff gates are green. A detached real full-topology A02 -> C07/B13 crash/cold-read/accepted-preservation witness and fresh exact-head independent review remain before turn-in.",
+      "resume_trigger": "Read the detached full-topology witness receipt after its completion notification. If green, commit the issue-specific witness/evidence, rerun final changed-head gates, obtain fresh independent exact-head review, then open the normal human-review PR into codex/bamf-unified-base-20261028. Do not self-merge.",
+      "preserved_branch": "codex/bamf02-a-semantics"
     },
     {
       "issue": 888,
