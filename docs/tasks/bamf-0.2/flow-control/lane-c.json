@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "81a9e4e24fcca307cb0019db4e4c07737a8b744b",
-  "updated_at": "2026-11-08T07:48:27Z",
+  "observed_unified": "7d9e0e8209e2d077e4fc30f65a3ebf3f29a91f3f",
+  "updated_at": "2026-11-09T03:16:54Z",
   "exception": null,
   "items": [
     {
@@ -23,6 +23,15 @@
       "summary": "C10 context-native requalification is turned in as PR #921 against reviewed unified 81a9e4e2. Fresh EGM round 2 passed with 0 Blockers / 0 Majors after round-1 repair ae0b1318 closed TARGET_LOCAL task-membership authority and MECHANICAL_PROOF cold-replay isolation. The projector now requires exact C09 pending_source_tasks membership before durable receipt resolution/minting; the literal cold witness deletes the derived outbox and reconstructs the identical canonical Akasha event. Projection family: 42 passed / 3 expected skips / 139 subtests; owner ring: 24 passed / 17 subtests; differential leaf 7/7 PASS; structure/governance/smell/error-control/legacy-trainer source /Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay and flow green. Correction-backed v1 and canonical Akasha identity/store remain unchanged.",
       "resume_trigger": "Human review/merge PR #921 into codex/bamf-unified-base-20261028. Do not self-merge. After merge, verify unified receipt, close #911 if not closed automatically, and advance Lane C.",
       "preserved_branch": "codex/911-c10-context-requalification-20261108"
+    },
+    {
+      "issue": 376,
+      "pr": 932,
+      "state": "TURNED_IN",
+      "head_sha": "b5603ebe2587521bc0eb556904435a5006711e8a",
+      "summary": "C03 accepted-custody semantic head qualified; fresh scoped EGM passed 0 Blockers / 0 Majors / 0 Nits and ready PR #932 is turned in to reviewed unified.",
+      "resume_trigger": "Human review/merge of PR #932 into codex/bamf-unified-base-20261028. Do not self-merge.",
+      "preserved_branch": "codex/bamf02-c03-376-20261107"
     },
     {
       "issue": 347,
