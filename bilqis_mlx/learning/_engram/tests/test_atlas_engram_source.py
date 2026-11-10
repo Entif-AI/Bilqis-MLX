@@ -199,8 +199,12 @@ class SourceQualifiedMotifTests(TestCase):
 
     def test_forged_schema_grant_cannot_replace_owner_evidence(self):
         _, frontier = self._prepare()
+        schema_index = next(
+            index for index, grant in enumerate(frontier.grants)
+            if grant.source_handle.startswith("source:motif-schema:"))
         forged = replace(frontier, grants=tuple(
-            replace(grant, evidence_digest="f" * 64) if index == 0 else grant
+            replace(grant, evidence_digest="f" * 64)
+            if index == schema_index else grant
             for index, grant in enumerate(frontier.grants)))
         with self.assertRaises(BilqisError):
             self._prepare(frontier=forged)
