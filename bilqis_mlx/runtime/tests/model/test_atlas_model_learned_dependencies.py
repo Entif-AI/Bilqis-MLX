@@ -56,7 +56,10 @@ class AtlasModelLearnedDependencyTests(TestCase):
             parameters, batch, plan,
             (DecisionOutput("finish", ControlAction.END_FRAME),),
             {"finish": True}, cache=cache).execution
-        self.assertEqual(execution.motif_reads[0].participating_slots, (slot_id,))
+        self.assertEqual(
+            tuple(read.participating_slots for read in execution.motif_reads),
+            ((slot_id,), (slot_id,)),
+        )
         motif_owner = bind_motif_artifact_owner(cache, compiled)
         learned = set(execution.training_authority.immediate_dependencies)
         for dependency in motif_owner.source_dependencies:
