@@ -29,7 +29,6 @@ from .feature.context import (
     AcceptedGenerationFeatureContext, AuthenticatedCandidateFeatureContext,
     AuthenticatedGenerationFeatureContext,
 )
-from .accepted_runtime import _published_in_memory_identity
 from .feature.replay_support import (
     artifact_identity as _artifact_identity,
     authenticate_features as _authenticate_features_with,
@@ -176,6 +175,10 @@ def authenticate_bamf_generation_feature_context(
     """Replay feature inputs for one exact accepted generation through B13 custody."""
     if type(student) is not CompleteStudent or not isinstance(pointer_path, Path):
         invalid("BAMF_ACCEPTED_FEATURE_GENERATION_REQUIRED")
+    # Keep B13 feature authority importable on portable/non-MLX hosts. The
+    # accepted-runtime owner is needed only when replaying an accepted neural
+    # generation, not while importing custody/release contracts.
+    from .accepted_runtime import _published_in_memory_identity
     _published_in_memory_identity(pointer_path.parent, student)
     accepted = read_accepted_generation_feature_context(pointer_path)
     receipt = accepted.receipt
