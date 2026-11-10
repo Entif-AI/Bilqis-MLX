@@ -1,10 +1,20 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "905018b0ece7613843570dc2c2e72a74dae4e91d",
-  "updated_at": "2026-11-10T19:53:08Z",
+  "observed_unified": "937dcfc82cfbc03fcb8220fd318a20019bfa005e",
+  "updated_at": "2026-11-10T20:40:20Z",
   "exception": null,
   "items": [
+    {
+      "issue": 440,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "937dcfc82cfbc03fcb8220fd318a20019bfa005e",
+      "head_sha_role": "issue-boundary reviewed-unified sync head before #440 requalification edits",
+      "summary": "B02.2 resumed after #439/#970 human merge. The historical provisional initializer/gather/loss implementation is being requalified against A02's final typed staging candidate so deterministic new-row initialization is proven on the actual upstream contract without moving A02 staging or C07 admission authority.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-neural"
+    },
     {
       "issue": 970,
       "pr": null,
