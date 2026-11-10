@@ -312,7 +312,8 @@ C16/C11 implement and parser-test these command forms before they become executa
 ```sh
 npm run train -- --dry-run --verify-source \
   --model-topology configs/models/bamf-0.2.json \
-  --run-dir runs/bamf-0.2 --source-prefetch-workers 2
+  --run-dir runs/bamf-0.2 --source-prefetch-workers 2 \
+  --atlas-release-manifest <approved-manifest>
 
 npm run train -- --dry-run --human-run \
   --model-topology configs/models/bamf-0.2.json \
@@ -335,7 +336,9 @@ npm run train -- --human-run --resume \
   --atlas-admission-scope <enrollment-request.json>
 ```
 
-The initial foundation command may remain `staged` and omit Atlas enrollment. For
+The initial foundation command may remain `staged` and omit Atlas enrollment, but
+every fresh BAMF v2 dry-run/create still requires the Atlas release manifest because
+B13 generation-zero identity binds the source-qualified Atlas artifact. For
 `atlas-release`, the scope is a non-authoritative C07 v2 enrollment request: it does not
 carry accepted B13 identity or select C09 trust-root authority. Fresh
 `atlas-release` dry-run and create both require that request so they validate the
@@ -348,6 +351,11 @@ remains separately gated. The resulting authority is the separate v2 lease epoch
 historical v1 lease semantics remain unchanged. The new directory is distinct from current live and
 frozen qualification runs. These are implementation targets, not a statement that
 historical v1 routing uses BAMF v2 fields.
+
+Historical accepted BAMF runs with only v1 C07 authority remain read-only compatible
+on resume. They are not silently treated as staged, cannot acquire a first v2 lease
+through this surface, and a run exposing both v1 and v2 current authority fails
+closed pending an explicit future migration contract.
 
 ## 20. Completion and useful outcomes
 
