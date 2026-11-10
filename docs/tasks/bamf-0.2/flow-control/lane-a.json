@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "8b03be4881d4450f4f6cba94cfda9b21a2dd2711",
-  "updated_at": "2026-11-10T01:48:00Z",
+  "updated_at": "2026-11-10T01:57:00Z",
   "exception": null,
   "items": [
     {
@@ -136,10 +136,10 @@
     },
     {
       "issue": 959,
-      "pr": null,
+      "pr": 961,
       "state": "ACTIVE",
-      "head_sha": "549473724f6b0a15c33ff9a315f3b1c1ab784e17",
-      "summary": "Atlas source-location remediation activated from reviewed unified 8b03be488. #959 owns only host storage location from accepted source_bundle_id to candidate bytes beneath A01 source authority; A02 remains the canonical byte verifier and #509 is a consumer. No semantic/source authority is granted by locator configuration and no host path may enter accepted C07/B13 identity.",
+      "head_sha": "4ac234c80f9dbae2c1b40cdff4d8aba4aeea74af",
+      "summary": "#959 source-location remediation is implemented at exact head 4ac234c8 in draft PR #961. Host configuration supplies storage location only: a 64-hex source_bundle_id resolves to root/<id>, the existing canonical _verify_bundle proves exact bytes/manifest/member identity, and A02 re-verifies against the accepted snapshot before staging. The additive A02 identity-first wrapper removes caller source paths from the production handoff while existing pathful staging remains compatible. Locator/adversarial proof is 4/4 PASS; adjacent vocabulary/custody ring is 15 PASS / 3 explicit skips; structure/governance, smell, live flow-control, 43/43 contract mirrors and diff checks are green. Exact-head full A02 topology witness is detached and terminal receipt is pending; fresh independent EGM is pending because worker transport is unavailable during conversation transfer.",
       "resume_trigger": null,
       "preserved_branch": "codex/959-atlas-source-locator-20261109"
     },
