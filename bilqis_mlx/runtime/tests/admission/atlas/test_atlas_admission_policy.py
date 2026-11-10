@@ -1,8 +1,9 @@
 """Lease scope uses actual native proposals/packages, with no adoption executor."""
 from dataclasses import replace
+from pathlib import Path
 from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_admission import advance_atlas_frontier
@@ -33,8 +34,11 @@ class AtlasAdmissionPolicyTests(unittest.TestCase):
         self.envelope = self.envelope_for(self.native.proposal)
 
     def envelope_for(self, proposal):
+        introduced = len(
+            self.native.staged.successor.semantic_catalog[
+                len(self.native.current.semantic_catalog):])
         return _signed(AtlasDeltaEnvelope(proposal, self.native.staged, ('family:one',),
-            ('operator:one',), PostAdmissionTotals(1, 1, 8, 1024, 2048), 1,
+            ('operator:one',), PostAdmissionTotals(1, 1, 8, 1024, 2048), introduced,
             contract_digest(self.lease.source_approval), 'fixture:salience-owner', '0' * 128))
 
     def test_no_lease_and_authorized_fixture_stage_without_adoption_claim(self):
@@ -94,6 +98,121 @@ class AtlasAdmissionPolicyTests(unittest.TestCase):
             advance_atlas_frontier(context, self.envelope, self.lease)
         self.assertEqual(caught.exception.context['reason'],
                          'BAMF_ATLAS_CURRENT_IMPLEMENTATION_REGISTRIES_REQUIRED')
+
+    def test_accepted_run_context_delegates_exact_native_handoff_to_executor(self):
+        runtime = SimpleNamespace(run_dir=Path('/fixture/run'))
+        added = tuple(
+            self.native.staged.successor.semantic_catalog[
+                len(self.native.current.semantic_catalog):])
+        native_staged = SimpleNamespace(candidate=SimpleNamespace(outbox=({
+            'event': 'BAMF_A02_VOCABULARY_STAGED',
+            'plan': {'allocations': tuple(
+                {'semantic_id': semantic_id} for semantic_id in added)},
+        },)))
+        source_authority = object()
+        accepted = SimpleNamespace(native_pointer={
+            'generation': 1, 'manifest_sha256': '9' * 64})
+        context = replace(
+            self.context, runtime=runtime, native_staged=native_staged,
+            source_authority=source_authority,
+            source_registry=object(), answer_registry=object())
+        cache = SimpleNamespace(
+            source_authority_registry_sha256=self.context.registry.digest)
+        with patch(
+                'bilqis_mlx.runtime.bamf_bundle.admission.bind_accepted_execution_cache',
+                return_value=cache), patch(
+                'bilqis_mlx.runtime.bamf_bundle.require_issued_a02_staged_vocabulary_extension',
+                return_value=native_staged), patch(
+                'bilqis_mlx.runtime.atlas_admission_policy.native_post_admission_totals',
+                return_value=self.envelope.post_admission_totals), patch(
+                'bilqis_mlx.source_adapters.school.live_source_registry',
+                return_value=self.context.source_registry), patch(
+                'bilqis_mlx.factory.live_answers.live_answer_registry',
+                return_value=self.context.answer_registry), patch(
+                'bilqis_mlx.runtime.jit_adoption._execute_prepared_successor_adoption',
+                return_value=accepted) as execute:
+            result = advance_atlas_frontier(context, self.envelope, self.lease)
+        self.assertEqual(result.status.value, 'ADOPTED')
+        self.assertTrue(result.state_adopted)
+        self.assertTrue(result.requires_cold_resume)
+        self.assertEqual(result.accepted_generation, 1)
+        self.assertEqual(result.accepted_manifest_sha256, '9' * 64)
+        self.assertEqual(result.actual_neural_updates, 0)
+        self.assertEqual(
+            result.retained_release_sha256,
+            self.native.staged.successor.release_sha256)
+        execute.assert_called_once_with(
+            runtime, frontier=self.native.frontier, current=self.native.current,
+            ledger=self.native.ledger, plan=self.native.plan,
+            checkpoint=self.native.checkpoint, proposal=self.native.proposal,
+            staged=(self.native.staged,), source_registry=self.context.source_registry,
+            answer_registry=self.context.answer_registry,
+            native_staged=native_staged, atlas_lease=self.lease,
+            source_authority=source_authority)
+
+    def test_a02_semantic_plan_must_match_factory_delta_before_executor(self):
+        native_staged = SimpleNamespace(candidate=SimpleNamespace(outbox=({
+            'event': 'BAMF_A02_VOCABULARY_STAGED',
+            'plan': {'allocations': ({'semantic_id': 'foreign:semantic'},)},
+        },)))
+        context = replace(
+            self.context, runtime=SimpleNamespace(run_dir=Path('/fixture/run')),
+            native_staged=native_staged,
+            source_authority=object())
+        cache = SimpleNamespace(
+            source_authority_registry_sha256=self.context.registry.digest)
+        with patch(
+                'bilqis_mlx.runtime.bamf_bundle.admission.bind_accepted_execution_cache',
+                return_value=cache), patch(
+                'bilqis_mlx.runtime.bamf_bundle.require_issued_a02_staged_vocabulary_extension',
+                return_value=native_staged), patch(
+                'bilqis_mlx.runtime.jit_adoption._execute_prepared_successor_adoption') as execute, \
+                self.assertRaises(BilqisError) as caught:
+            advance_atlas_frontier(context, self.envelope, self.lease)
+        self.assertEqual(
+            caught.exception.context['reason'],
+            'BAMF_ATLAS_A02_FACTORY_SEMANTIC_MISMATCH')
+        execute.assert_not_called()
+
+    def test_native_resource_totals_must_match_envelope_before_executor(self):
+        native_staged = SimpleNamespace(candidate=SimpleNamespace(outbox=({
+            'event': 'BAMF_A02_VOCABULARY_STAGED', 'plan': {'allocations': ()},
+        },)))
+        context = replace(
+            self.context,
+            runtime=SimpleNamespace(run_dir=Path('/fixture/run')),
+            native_staged=native_staged, source_authority=object())
+        cache = SimpleNamespace(
+            source_authority_registry_sha256=self.context.registry.digest)
+        owner_totals = replace(self.envelope.post_admission_totals, semantic_banks=2)
+        with patch(
+                'bilqis_mlx.runtime.bamf_bundle.admission.bind_accepted_execution_cache',
+                return_value=cache), patch(
+                'bilqis_mlx.runtime.bamf_bundle.require_issued_a02_staged_vocabulary_extension',
+                return_value=native_staged), patch(
+                'bilqis_mlx.runtime.atlas_admission_policy.native_post_admission_totals',
+                return_value=owner_totals), patch(
+                'bilqis_mlx.runtime.jit_adoption._execute_prepared_successor_adoption') as execute, \
+                self.assertRaises(BilqisError) as caught:
+            advance_atlas_frontier(context, self.envelope, self.lease)
+        self.assertEqual(
+            caught.exception.context['reason'],
+            'BAMF_ATLAS_POST_ADMISSION_TOTALS_DRIFT')
+        execute.assert_not_called()
+
+    def test_production_delta_registry_must_equal_accepted_b13_registry(self):
+        context = replace(
+            self.context,
+            runtime=SimpleNamespace(run_dir=Path('/fixture/run')),
+            native_staged=object(), source_authority=object())
+        accepted = SimpleNamespace(source_authority_registry_sha256='f' * 64)
+        with patch(
+                'bilqis_mlx.runtime.bamf_bundle.admission.bind_accepted_execution_cache',
+                return_value=accepted), self.assertRaises(BilqisError) as caught:
+            advance_atlas_frontier(context, self.envelope, self.lease)
+        self.assertEqual(
+            caught.exception.context['reason'],
+            'BAMF_ATLAS_ACCEPTED_DELTA_REGISTRY_DRIFT')
 
     def test_source_and_answer_code_drift_fail_before_any_adoption(self):
         fixture = self.native.fixture.fixture
