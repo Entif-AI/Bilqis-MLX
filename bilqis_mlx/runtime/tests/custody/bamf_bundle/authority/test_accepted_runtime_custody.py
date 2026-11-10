@@ -24,6 +24,7 @@ from bilqis_mlx.runtime.atlas_revalidation import (
 )
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 from bilqis_mlx.runtime.bamf_bundle import admission
+from bilqis_mlx.runtime.bamf_bundle import source_authority_custody as custody
 from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _reset_execution_cache_owner_for_tests
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_candidate_step, bind_accepted_execution_cache,
@@ -34,12 +35,20 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     require_accepted_execution_cache,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, next_accepted_step, parent_state, publish_candidate, shape_patch,
-    provision_source_authority_registry, with_source_authority_registry,
+    candidate, next_accepted_step, parent_state, publish_candidate,
+    shape_patch as _shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
     AUTHORITY, _event, _sign_event,
 )
+
+
+def shape_patch():
+    stack = _shape_patch()
+    stack.enter_context(patch.object(
+        custody, "read_host_system_source_authority_registry",
+        return_value=AUTHORITY))
+    return stack
 
 
 class AcceptedRuntimeCustodyTests(unittest.TestCase):
@@ -57,8 +66,9 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
 
     def publish(self, source, registry=None):
         if registry is not None:
-            provision_source_authority_registry(self.run, registry)
-            source = with_source_authority_registry(source, registry)
+            self.assertEqual(
+                registry, AUTHORITY,
+                "this suite binds its synthetic signer as the HOST registry")
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             return publish_candidate(self.run, source)
 
@@ -67,8 +77,8 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         with shape_patch():
             cache = bind_accepted_execution_cache(self.run)
             rebound = bind_accepted_execution_cache(self.run)
-        self.assertIs(require_accepted_execution_cache(cache), cache)
-        self.assertIs(rebound, cache)
+            self.assertIs(require_accepted_execution_cache(cache), cache)
+            self.assertIs(rebound, cache)
         self.assertEqual(cache.run_id, "fixture-run")
         with shape_patch():
             accepted = load_accepted_generation(self.run)

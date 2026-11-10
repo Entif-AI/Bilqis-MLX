@@ -45,12 +45,21 @@ historical `SourceRights`; they cannot reconstruct or invent source-export
 authority and cannot republish the cold-decoded object through the sender API.
 Do not pass private metadata to the public export API.
 
-The accepted-run host provisions C09 registry material independently at
-`<run_dir>/source-authority-registry.json`. Generation publication and accepted
-runtime binding require the candidate registry record and digest to match that host
-trust root exactly. A candidate cannot establish, replace, or repair the trust root.
-Historical generations without a C09 root remain readable but cannot mint live
-source authority.
+For a C16.1c-born lineage, the host administrator provisions C09 registry material
+independently at the fixed Darwin path
+`/etc/entif-ai/bilqis/source-authority-registry.json`. Bilqis runtime reads and
+validates that fixed root but never provisions it and exposes no package, CLI,
+configuration, environment, or run-directory selector for it. New generation zero
+records the exact registry record, digest, and `HOST_SYSTEM_V1` origin in accepted
+custody; every later authority consumer derives system-vs-legacy behavior from that
+authenticated custody rather than from caller input.
+
+Historical pre-#950 lineages preserve the #917 run-local registry contract. A
+verified historical parent that genuinely lacks origin, record, and digest may bind
+the existing run-local registry only on its first ordinary non-C07 retained
+successor. Atlas/C07 publication cannot establish that anchor. Once a legacy tuple
+exists, descendants inherit it exactly. Explicit null/unknown origins, half-bindings,
+replacement, HOST downgrade, and forged HOST upgrade fail closed.
 
 `CognitivePackage.canonical_json` is the portable representation. JSON uses sorted
 keys, compact separators, UTF-8 without normalization, arrays for tuples and
@@ -150,7 +159,8 @@ rejected candidate is discarded and the current B13 pointer remains unchanged.
 
 `publish_screened_delta_import(...)` is the durable acceptance boundary. It re-reads
 the current B13 receiver, rejects stale parent drift, revalidates the signed A12
-export-clearance receipt through C09's host-provisioned source-authority registry,
+export-clearance receipt through the C09 registry selected by authenticated accepted
+custody (fixed HOST root for `HOST_SYSTEM_V1`, run-local #917 root for legacy),
 and consumes the B12 transaction already bound into the internally issued screened
 candidate. B12 accepts tensor changes only inside the package's declared slices. It
 resets `m` and `v` on those slices, resets the owner-supported update count for the
@@ -190,6 +200,13 @@ generation, inspects bounded local package bytes without staging, refuses any de
 that is not `EXACT_BINDING`, verifies the current A12/C09 source authority, and only
 then stages the package. It next constructs the disposable B12 candidate, obtains the C05 owner-issued
 decision, and delegates accepted publication to the B13 boundary above.
+
+The final pre-staging currentness check owns the B13 pointer lock, authenticates the
+exact current accepted student, confirms its correction-frontier registry digest is
+the digest cleared earlier, and resolves C09 through that accepted frontier. A HOST
+lineage rereads the fixed system root without taking the run-local registry lock; a
+legacy lineage preserves the established pointer-lock -> registry-lock order. Host
+root drift after clearance therefore rejects before durable package staging.
 
 The operator is orchestration, not a new authority. An `ExportClearanceReceipt`,
 Atlas selection, and source frontier supplied to the call are revalidated against

@@ -79,19 +79,28 @@ def validate_identity_sidecars(extents, provenance, records, invalid):
             or len(set(banks)) != len(banks)):
         invalid()
     _validate_feature_binding(compiler, invalid)
+    origin_present = 'source_authority_registry_origin' in correction
+    source_authority_origin = correction.get('source_authority_registry_origin')
+    anchor_present = 'source_authority_registry_sha256' in correction
+    record_present = 'source_authority_registry' in correction
     source_authority_anchor = correction.get('source_authority_registry_sha256')
-    if (source_authority_anchor is not None and not _digest(source_authority_anchor)):
-        invalid()
     source_authority_record = correction.get('source_authority_registry')
-    if source_authority_record is not None:
+    if origin_present:
+        if (source_authority_origin != 'HOST_SYSTEM_V1'
+                or not anchor_present or not record_present):
+            invalid()
+    elif anchor_present != record_present:
+        invalid()
+    if anchor_present:
+        if not _digest(source_authority_anchor) or source_authority_record is None:
+            invalid()
         from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
         try:
             source_authority_registry = SourceAuthorityRegistry.from_record(
                 source_authority_record)
         except Exception:
             invalid()
-        if (source_authority_anchor is None
-                or source_authority_registry.digest != source_authority_anchor):
+        if source_authority_registry.digest != source_authority_anchor:
             invalid()
     if (compiler.get('factor_map_sha256') != extents.factor_map_digest
             or not _digest(compiler.get('compiler_sha256'))

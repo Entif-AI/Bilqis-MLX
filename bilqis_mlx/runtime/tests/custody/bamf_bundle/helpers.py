@@ -132,9 +132,11 @@ def genesis_preparation(*, run_id="fixture-run", run_seed=17,
         )
 def publish_genesis(run_dir, *, run_seed=17, **overrides):
     """Publish a real production generation zero, never a test-minted C05 token."""
-    return publish_initial_generation(
-        run_dir, genesis_preparation(run_seed=run_seed, **overrides),
-        reserve_gib=0.)
+    from .publication.publication_helpers import host_source_authority_patch
+    with host_source_authority_patch():
+        return publish_initial_generation(
+            run_dir, genesis_preparation(run_seed=run_seed, **overrides),
+            reserve_gib=0.)
 def parent_state() -> CandidateState:
     values = mx.array([[.5, -.25], [1., 2.]], dtype=mx.float32)
     optimizer = AdamWStateTree(

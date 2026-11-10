@@ -34,9 +34,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures imp
     genesis_feature_source_patch, issue_feature_authority, source_features,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    NAME, candidate, parent_state, provision_source_authority_registry,
-    publish_candidate, retention_decision, shape_patch,
-    with_source_authority_registry,
+    NAME, candidate, parent_state, publish_candidate, retention_decision, shape_patch,
 )
 from bilqis_mlx.semantics.atlas.snapshot_contracts import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_release_audit import ExportClearanceReceipt
@@ -90,6 +88,12 @@ class AdoptionHarness(TestCase):
         self.addCleanup(self.env.stop)
         self.run = self.root / "run"
         self.registry = REGISTRY
+        from bilqis_mlx.runtime.bamf_bundle import source_authority_custody as custody
+        self.host_authority = patch.object(
+            custody, "read_host_system_source_authority_registry",
+            return_value=self.registry)
+        self.host_authority.start()
+        self.addCleanup(self.host_authority.stop)
         self.selection = _selection()
         self.state = parent_state()
         base = candidate(self.state)
@@ -97,12 +101,9 @@ class AdoptionHarness(TestCase):
             base,
             provenance=replace(base.provenance, release_digest=self.selection.release_sha256),
             correction_frontier={**base.correction_frontier,
-                                 "release_digest": self.selection.release_sha256,
-                                 "source_authority_registry_sha256": self.registry.digest})
-        self.initial = with_source_authority_registry(self.initial, self.registry)
+                                 "release_digest": self.selection.release_sha256})
         foundation_features = issue_feature_authority(
             source_features(release=self.selection.release_sha256))
-        provision_source_authority_registry(self.run, self.registry)
         with shape_patch(), genesis_feature_source_patch(
                 source_features(release=self.selection.release_sha256)), \
                 patch.object(mlx_checkpoint, "assert_headroom"):

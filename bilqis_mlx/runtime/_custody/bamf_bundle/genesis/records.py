@@ -164,18 +164,23 @@ def optimizer_hyperparameters_digest(hyperparameters) -> str:
     return sha(canonical(asdict(hyperparameters)))
 
 
-def initial_generation_candidate_identity_digest(candidate) -> str:
-    """Digest every authority-relevant field of one exact generation-zero candidate."""
+def _candidate_identity_payload(candidate, *, allow_missing_run_identity: bool) -> dict:
     from ..motif_codec import snapshot_to_record
 
     state = candidate.retained_state
     identity = candidate.run_identity
     try:
-        payload = {
+        if identity is None:
+            if not allow_missing_run_identity:
+                invalid("BAMF_INITIAL_GENERATION_BINDING_INVALID")
+            identity_digest = None
+        else:
+            identity_digest = identity.digest
+        return {
             "run_id": candidate.run_id,
             "generation": candidate.generation,
             "parent_manifest_sha256": candidate.parent_manifest_sha256,
-            "run_identity_sha256": identity.digest,
+            "run_identity_sha256": identity_digest,
             "optimizer_state_sha256": candidate_identity_digest(state),
             "optimizer_hyperparameters_sha256": optimizer_hyperparameters_digest(
                 candidate.optimizer_hyperparameters),
@@ -196,7 +201,18 @@ def initial_generation_candidate_identity_digest(candidate) -> str:
         }
     except (AttributeError, KeyError, TypeError, ValueError):
         invalid("BAMF_INITIAL_GENERATION_BINDING_INVALID")
-    return sha(canonical(payload))
+
+
+def initial_generation_candidate_identity_digest(candidate) -> str:
+    """Digest every authority-relevant field of one exact generation-zero candidate."""
+    return sha(canonical(_candidate_identity_payload(
+        candidate, allow_missing_run_identity=False)))
+
+
+def successor_candidate_identity_digest(candidate) -> str:
+    """Digest an exact successor while preserving historical missing run identity."""
+    return sha(canonical(_candidate_identity_payload(
+        candidate, allow_missing_run_identity=True)))
 
 
 def _mint_initial_generation_binding(candidate) -> InitialGenerationBinding:

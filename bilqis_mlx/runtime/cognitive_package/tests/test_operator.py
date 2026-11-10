@@ -10,6 +10,71 @@ from bilqis_mlx.runtime.cognitive_package import operator as subject
 
 
 class CognitivePackageOperatorTests(unittest.TestCase):
+    def test_current_host_bound_staging_uses_resolver_without_outer_registry_lock(self):
+        inspected = SimpleNamespace(package=object())
+        student = SimpleNamespace(correction_frontier={
+            "source_authority_registry_sha256": "b" * 64,
+            "source_authority_registry_origin": "HOST_SYSTEM_V1",
+        })
+        pointer = {"manifest_sha256": "a" * 64}
+        registry = SimpleNamespace(digest="b" * 64)
+        staged = object()
+        stage = Mock(return_value=staged)
+        resolver = Mock(return_value=registry)
+        outer_lock = Mock(side_effect=AssertionError("unexpected outer registry lock"))
+
+        with patch.object(subject, "stage_received_package", stage), patch(
+            "bilqis_mlx.runtime.bamf_bundle.publication._pointer_lock",
+            return_value=nullcontext(),
+        ), patch(
+            "bilqis_mlx.runtime.bamf_bundle.publication._load_generation_locked",
+            return_value=(student, pointer),
+        ), patch(
+            "bilqis_mlx.runtime.bamf_bundle.publication._require_published_acceptance",
+            return_value=object(),
+        ), patch(
+            "bilqis_mlx.runtime.bamf_bundle.source_authority_custody."
+            "resolve_source_authority_registry",
+            resolver,
+        ), patch(
+            "bilqis_mlx.runtime.bamf_bundle.source_authority_custody."
+            "source_authority_registry_lock",
+            outer_lock,
+        ):
+            result = subject._stage_received_package_if_current(
+                inspected, "staging", Path("run"), "a" * 64, "b" * 64)
+
+        self.assertIs(result, staged)
+        resolver.assert_called_once_with(Path("run"), student.correction_frontier)
+        outer_lock.assert_not_called()
+        stage.assert_called_once_with(inspected, "staging")
+
+    def test_host_root_drift_after_clearance_rejects_before_staging(self):
+        inspected = SimpleNamespace(package=object())
+        student = SimpleNamespace(correction_frontier={
+            "source_authority_registry_sha256": "b" * 64,
+            "source_authority_registry_origin": "HOST_SYSTEM_V1",
+        })
+        stage = Mock(side_effect=AssertionError("drifted staging mutation reached"))
+        with patch.object(subject, "stage_received_package", stage), patch(
+            "bilqis_mlx.runtime.bamf_bundle.publication._pointer_lock",
+            return_value=nullcontext(),
+        ), patch(
+            "bilqis_mlx.runtime.bamf_bundle.publication._load_generation_locked",
+            return_value=(student, {"manifest_sha256": "a" * 64}),
+        ), patch(
+            "bilqis_mlx.runtime.bamf_bundle.publication._require_published_acceptance",
+            return_value=object(),
+        ), patch(
+            "bilqis_mlx.runtime.bamf_bundle.source_authority_custody."
+            "resolve_source_authority_registry",
+            return_value=SimpleNamespace(digest="c" * 64),
+        ):
+            with self.assertRaises(BilqisError):
+                subject._stage_received_package_if_current(
+                    inspected, "staging", Path("run"), "a" * 64, "b" * 64)
+        stage.assert_not_called()
+
     def test_receive_screen_publish_uses_exact_owner_chain(self):
         binding = object()
         package = object()
