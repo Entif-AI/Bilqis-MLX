@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.source_adapters import copular, event_frames, world_rules
 from bilqis_mlx.source_adapters.formal_identity import (
@@ -84,6 +85,15 @@ class SourceOperatorDispositionTests(unittest.TestCase):
     def test_unknown_source_has_no_operator_authority(self):
         self.assertIsNone(source_operator_disposition(
             "Z.UNKNOWN", "source.unknown/v1"))
+
+    def test_new_known_world_capability_is_not_inferred_non_operator(self):
+        with patch.object(
+            world_rules,
+            "CAPABILITIES",
+            world_rules.CAPABILITIES + ("WORLD.UNCLASSIFIED",),
+        ):
+            self.assertIsNone(source_operator_disposition(
+                "WORLD.UNCLASSIFIED", "source.bamf.qualified-world/v1"))
 
 
 if __name__ == "__main__":
