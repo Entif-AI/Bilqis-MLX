@@ -2,15 +2,15 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
   "observed_unified": "905018b0ece7613843570dc2c2e72a74dae4e91d",
-  "updated_at": "2026-11-10T18:45:00Z",
+  "updated_at": "2026-11-10T19:29:18Z",
   "exception": null,
   "items": [
     {
       "issue": 970,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "3abe93ad85b78684c69e9c737f9389090c25da4e",
-      "head_sha_role": "exact current-unified integration proof head before final evidence/witness bookkeeping",
+      "head_sha": "1175bd750817783bb9d48d7dfc2fd4c32dfd514b",
+      "head_sha_role": "exact current-unified semantic/test proof head after source-gated fixture reconciliation; subsequent evidence/flow bookkeeping is non-semantic",
       "summary": "B13 new_acceptance=false remediation discovered by #439's real A02 staging witness. It separates exact pre-admission candidate source-feature replay from accepted CompleteStudent replay through B13/C07 acceptance custody, preserving C07 as the sole active-set admission owner while allowing B02 to consume generation activity without source-era active flags.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b-neural"
@@ -19,8 +19,8 @@
       "issue": 439,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "3abe93ad85b78684c69e9c737f9389090c25da4e",
-      "head_sha_role": "exact current-unified integration proof head before final evidence/witness bookkeeping",
+      "head_sha": "1175bd750817783bb9d48d7dfc2fd4c32dfd514b",
+      "head_sha_role": "exact current-unified semantic/test proof head after source-gated fixture reconciliation; subsequent evidence/flow bookkeeping is non-semantic",
       "summary": "B02.1 resumed after A02 #348 and its implementation children reached reviewed unified. This epoch requalifies the existing source-factorized embedding and tied sparse readout against A02's accepted typed vocabulary staging contract without moving admission authority into Lane B.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b-neural"
