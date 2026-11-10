@@ -1,15 +1,23 @@
 # C16.1c host trust-source repair proposal
 
-Status: PROPOSED v6 / fresh EGM re-review required before implementation.
+Status: PROPOSED v7 / fresh EGM re-review required before implementation.
 
-Review note: v6 retains v5's fixed-host architecture and closes two source-mapping details
+Review note: v7 retains v6's fixed-host architecture and closes one call-site precondition
+found during read-only admission tracing: ordinary `accept_and_publish()` mints its acceptance
+binding before B13 publication and therefore does not already hold the B13 pointer lock. V7
+specifies a pointer-lock-owning pre-binding wrapper that authenticates the current parent and
+invokes the same successor-authority gate before minting; B13 repeats the gate under its final
+publication transaction as TOCTOU defense.
+
+V6 retained v5's fixed-host architecture and closed two source-mapping details
 found during read-only implementation-feasibility mapping: the failed fresh-target exception
 lives in `_bamf_first_student_support.py`, and the shared `genesis_preparation()` fixture
 still passes `source_authority_run_dir`. V6 adds those exact Phase-B edit/test-fixture surfaces
 and makes the host fd opener receive the existing registry byte limit explicitly rather than
 duplicating a custody constant. It also closes the fresh-v5 Design Critic Major by preserving
 the one lawful pre-#950 #926 transition: a verified historical unanchored generation may bind
-the existing #917 run-local registry on its first retained successor. New C16.1c-born HOST
+the existing #917 run-local registry on the first successor that actually performs the anchor.
+New C16.1c-born HOST
 lineages cannot use that compatibility transition.
 
 V5 retained v4's fixed-host architecture and corrected a Darwin behavior observed
@@ -294,7 +302,7 @@ It owns only host-filesystem verification. Its callable surface is exactly:
     )
     def open_host_source_authority_registry_fd(*, max_bytes: int) -> int: ...
     def read_extended_acl(fd: int) -> tuple[DarwinAclEntry, ...]: ...
-    def require_safe_host_descriptor(fd: int, *, directory: bool) -> None: ...
+    def require_safe_host_descriptor(fd: int, *, directory: bool) -> os.stat_result: ...
 
 DarwinAclEntry is a private frozen dataclass with:
 
@@ -306,13 +314,25 @@ DarwinAclEntry is a private frozen dataclass with:
 The module loads libSystem.B.dylib privately and uses the Darwin C interfaces
 acl_get_fd_np(fd, ACL_TYPE_EXTENDED), acl_get_entry, acl_get_tag_type,
 acl_get_qualifier, acl_get_permset, acl_get_perm_np, acl_free, and
-mbr_uuid_to_id. ID_TYPE_UID is 0; ID_TYPE_GID is 1. ACL entry iteration treats
-acl_get_entry == 1 as an entry, 0 as end, and -1 as failure.
+mbr_uuid_to_id. The adapter pins the current Darwin SDK constants exactly:
+`ACL_TYPE_EXTENDED = 0x00000100`, `ACL_FIRST_ENTRY = 0`, `ACL_NEXT_ENTRY = -1`,
+`ACL_EXTENDED_ALLOW = 1`, `ACL_EXTENDED_DENY = 2`, `ID_TYPE_UID = 0`, and
+`ID_TYPE_GID = 1`. ACL entry iteration treats
+the first call as `acl_get_entry(acl, ACL_FIRST_ENTRY, ...)`, every later call as
+`acl_get_entry(acl, ACL_NEXT_ENTRY, ...)`, and treats return 1 as an entry, 0 as end,
+and -1 as failure. Every non-NULL qualifier allocation returned by `acl_get_qualifier`
+is released with `acl_free` after UUID resolution, and the ACL handle itself is released
+with `acl_free` on every successful-handle path, including parse failure paths.
+For each permission constant, `acl_get_perm_np` return 1 means present, 0 means absent, and
+any negative/error return fails closed. `acl_get_tag_type`, `acl_get_permset`, and
+`mbr_uuid_to_id` must return their documented success code before their outputs are consumed.
 
 The current Darwin host was probed directly before implementation: both /private/etc and
 /private/etc/hosts return NULL from acl_get_fd_np(fd, ACL_TYPE_EXTENDED) with errno ENOENT
 when no extended ACL is present. Therefore read_extended_acl has one and only one successful
-NULL-handle case: NULL plus errno == ENOENT returns the empty tuple. NULL with any other errno
+NULL-handle case: the private `ctypes.CDLL(..., use_errno=True)` adapter calls
+`ctypes.set_errno(0)` immediately before `acl_get_fd_np`, reads `ctypes.get_errno()` immediately
+after a NULL return, and NULL plus errno == ENOENT returns the empty tuple. NULL with any other errno
 fails closed. Once an ACL handle is returned, qualifier or permset failure, unknown tag, failed
 UUID resolution, unexpected ID type, acl_get_entry == -1, or any other libSystem error fails
 closed with BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_INVALID.
@@ -327,6 +347,12 @@ The mutation permission set is exactly:
     ACL_WRITE_EXTATTRIBUTES
     ACL_WRITE_SECURITY
     ACL_CHANGE_OWNER
+
+The numeric Darwin permission values are pinned from the SDK as:
+`ACL_WRITE_DATA = 1 << 2`, `ACL_DELETE = 1 << 4`,
+`ACL_APPEND_DATA = 1 << 5`, `ACL_DELETE_CHILD = 1 << 6`,
+`ACL_WRITE_ATTRIBUTES = 1 << 8`, `ACL_WRITE_EXTATTRIBUTES = 1 << 10`,
+`ACL_WRITE_SECURITY = 1 << 12`, and `ACL_CHANGE_OWNER = 1 << 13`.
 
 Darwin aliases ACL_ADD_FILE to ACL_WRITE_DATA and ACL_ADD_SUBDIRECTORY to
 ACL_APPEND_DATA, so those are covered. DENY entries do not grant authority and may remain.
@@ -349,12 +375,24 @@ pathname as authority:
 6. Compare st_dev and st_ino of the fd-opened physical private/etc directory with
    stat("/etc"); mismatch rejects.
 7. Open the final registry fd relative to verified bilqis with O_RDONLY | O_NOFOLLOW;
-   call require_safe_host_descriptor(..., directory=False).
+   call require_safe_host_descriptor(..., directory=False), then require the returned
+   `st_size` to be in `1..max_bytes`.
 
-require_safe_host_descriptor uses fstat: expected directory or final regular-file type,
-st_uid == 0, no S_IWGRP | S_IWOTH, and the ACL rule above. The final file additionally
-requires size 1..max_bytes as supplied to the opener. All opened fds are closed on every
-failure path.
+Host-path error mapping is exact. ENOENT while opening the expected `entif-ai`, `bilqis`, or
+final registry component means the host trust root is absent and raises
+`BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED`. The fixed platform anchors `/`, `/private`,
+`/private/etc`, and `/etc` are part of the supported Darwin host contract; any mismatch,
+replacement, unexpected object type, ELOOP, permission denial, ownership/mode/ACL violation,
+invalid `max_bytes`, or other traversal/stat/read error raises
+`BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_INVALID`. A malformed registry after successful safe-file
+read is likewise `...TRUST_ROOT_INVALID`. Record/digest disagreement with accepted custody is
+not an opener error and remains `...TRUST_ROOT_MISMATCH` in the semantic custody layer.
+
+require_safe_host_descriptor uses fstat and returns that exact `os.stat_result` after proving:
+expected directory or final regular-file type, `st_uid == 0`, no `S_IWGRP | S_IWOTH`, and the
+ACL rule above. It does not own the byte-limit policy. The opener applies `1..max_bytes` to the
+returned final-file stat, so `_MAX_REGISTRY_BYTES` remains custody-layer policy rather than a
+duplicated Darwin-module constant. All opened fds are closed on every failure path.
 
 The ordinary no-extended-ACL case is the observed NULL + ENOENT result above or an otherwise
 successful enumeration containing zero entries. No other errno is interpreted as absence.
@@ -427,8 +465,32 @@ Its branch table is exact:
 
 This is the only exception to exact parent->child tuple equality, and it exists solely to
 preserve #926's pre-#950 behavior where lawful generation zero was intentionally C09-unanchored
-and the first retained successor could bind the #917 run-local registry. It cannot be used by a
+and a later retained successor could become the first successor that actually performs the #917
+run-local anchor. It cannot be used by a
 new C16.1c-born generation zero because those are unconditionally HOST_SYSTEM_V1.
+
+The low-level successor gate above has one strict precondition: its caller already holds the
+B13 pointer lock and has authenticated the exact parent whose correction frontier it supplies.
+It is not called directly from ordinary admission before binding mint.
+
+Add one admission-owned wrapper in `admission.py`:
+
+    def _require_current_parent_source_authority(
+        run_dir: Path,
+        candidate: BamfBundleCandidate,
+    ) -> SourceAuthorityRegistry | None:
+        ...
+
+The wrapper owns `_pointer_lock(run_dir)`, calls `_read_accepted_locked(run_dir)`, and requires
+the candidate's run id, generation, parent manifest hash, and run identity to match that exact
+current accepted parent/pointer before invoking
+`require_source_authority_successor_inheritance(run_dir, parent.correction_frontier,
+candidate.correction_frontier)`. It returns that gate's registry result while the lock is still
+held, then releases the pointer lock before acceptance-binding minting. A stale or foreign
+candidate therefore cannot borrow a registry digest from an unrelated current parent.
+`admission.py` imports `_read_accepted_locked` from `accepted_runtime.py` and `_pointer_lock`
+from the existing publication facade for this wrapper; it does not call the locking
+`load_accepted_generation()` from inside another pointer-lock scope.
 
 ### Exact publication and admission ownership
 
@@ -449,10 +511,13 @@ Only after those checks may the existing ordinary-vs-Atlas authority-specific lo
 Thus ordinary and Atlas publication share one C09 parent gate and no candidate metadata selects
 the branch.
 
-admission.py::accept_and_publish(...) performs the same read-only inheritance/root check
-against load_accepted_generation(run_dir) before minting the ordinary acceptance binding so
-the binding's registry digest is not self-asserted by the candidate. B13 publication repeats
-the check under its final pointer transaction; this repetition is intentional TOCTOU defense.
+`admission.py::accept_and_publish(...)` calls
+`_require_current_parent_source_authority(run_dir, bundle)` before minting the ordinary
+acceptance binding and supplies the returned registry digest, if any, to
+`mint_acceptance_binding`. It does not call the low-level successor gate outside the pointer
+lock. B13 publication repeats the parent authentication plus successor/root check under its
+final pointer transaction; this repetition is intentional TOCTOU defense against the accepted
+parent advancing between pre-binding and publication.
 publish_atlas_admission_generation(...) does not mint an ordinary acceptance binding and
 relies on the same final B13 parent gate before its Atlas-specific branch.
 
@@ -639,12 +704,22 @@ still recovers after Factory advance; host drift after seal cannot install/retur
 and a HOST gen0 is immediately usable/revalidatable through accepted-runtime cache ownership
 without a run-local registry file.
 
-The shared test helper `genesis_preparation()` removes its
-`source_authority_run_dir` override. It enters an explicit private test context that patches
-only `read_host_system_source_authority_registry()` to return the canonical test registry.
-Individual adversarial tests that exercise missing, invalid, or drifted host custody bypass or
-override that helper context deliberately. This is test-only substitution of the private host
-reader, not a production path or registry selector.
+The shared test helper file adds exactly one private context manager:
+
+    @contextmanager
+    def host_source_authority_patch():
+        ...
+
+It imports the existing canonical test `REGISTRY` from
+`bilqis_mlx.semantics.tests.core.test_atlas_export_clearance` and patches only
+`bilqis_mlx.runtime.bamf_bundle.source_authority_custody.read_host_system_source_authority_registry`
+to return that registry for the duration of the context. `genesis_preparation()` removes its
+`source_authority_run_dir` override and enters `host_source_authority_patch()` around the
+production `prepare_initial_generation()` call. Individual adversarial tests that exercise
+missing, invalid, or drifted host custody bypass that helper context or patch the same private
+reader explicitly. This is test-only substitution of the private host reader, not a production
+path or registry selector. The helper never writes `/etc`, never provisions a run-local file,
+and never accepts registry/path data from production callers.
 
 Phase-B gate:
 
@@ -689,8 +764,13 @@ exchange opaque capabilities; post-acceptance root drift disables mint/reuse and
 and already-pointed exact retries for both ordinary and Atlas successors authenticate the current
 child plus referenced historical parent, reject HOST drift before reconcile/return, and preserve
 verified legacy retry compatibility. A verified pre-#950 unanchored parent may bind exactly the
-currently provisioned #917 run-local registry on its first retained successor; forged HOST
+currently provisioned #917 run-local registry on the first successor that actually performs the
+anchor; forged HOST
 upgrade, explicit-null origin, half-binding, or later legacy registry replacement rejects.
+Ordinary `accept_and_publish()` pre-binding also proves that a stale/foreign candidate cannot
+borrow the current parent's registry digest: the pointer-locked pre-binding wrapper rejects
+candidate parent/run/run-identity mismatch, and a parent advance between binding mint and B13
+publication is caught by B13's repeated final parent/source-authority gate before pointer change.
 
 Phase-C gate:
 
@@ -755,9 +835,9 @@ known inherited evidence failures as baseline debt if they remain byte-identical
   origin/record/digest tuple and revalidate its selected root; a HOST lineage cannot downgrade
   to absent/null legacy metadata.
 - The sole historical exception is a verified pre-#950 parent with genuinely absent origin,
-  record, and digest: its first retained successor may remain origin-absent while adding exactly
-  the currently provisioned #917 run-local registry record/digest. Later descendants inherit
-  that legacy tuple exactly.
+  record, and digest: successors may remain unanchored until the first successor that actually
+  performs the anchor, which remains origin-absent while adding exactly the currently provisioned
+  #917 run-local registry record/digest. Later descendants inherit that legacy tuple exactly.
 - Two different fresh run roots on the same host may bind the same fixed root but their opaque runtime capabilities remain run/cache-bound and non-interchangeable.
 - Exact cold resume reconstructs the same accepted C09 authority without caller input.
 - Existing #917 attacker-first, forged capability, foreign capability, stale generation, wrong-scope/wrong-key, retry, and historical-read tests remain green.
