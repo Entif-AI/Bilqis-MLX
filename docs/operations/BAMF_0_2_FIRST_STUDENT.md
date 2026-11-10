@@ -40,15 +40,17 @@ C16.1c generation zero.
 Provisioning the fixed C09 root is an operating-system administration task, not a
 Bilqis command. Derive the registry record from the separately governed C09
 key/rights source; Bilqis neither generates those keys nor decides their rights.
-Before installation, verify the physical `/private/etc/entif-ai/bilqis` directory
-chain is UID 0 owned, not group/world writable, and has no extended ACL ALLOW grant
+Before installation, create any missing administered `entif-ai` / `bilqis`
+directories as root, then verify the complete physical
+`/private/etc/entif-ai/bilqis` directory chain is UID 0 owned, not group/world writable,
+and has no extended ACL ALLOW grant
 that gives a non-root principal mutation rights. `/etc` itself must be the standard
 UID-0 Darwin symlink whose relative target is exactly `private/etc`.
 
 Install only a complete registry. Create the temporary file inside the already
-verified `bilqis` directory, write the canonical registry bytes, set UID 0 ownership
-and the approved non-group/world-writable mode/ACL, `fsync` the file, atomically
-rename it to `source-authority-registry.json`, then `fsync` the containing directory.
+verified `bilqis` directory, write the canonical registry bytes, `fsync` the file,
+then set UID 0 ownership and the approved non-group/world-writable mode/ACL, atomically
+rename it to `source-authority-registry.json`, and `fsync` the containing directory.
 Do not install through a symlink, a caller-selected path, or a Bilqis runtime helper.
 After installation, preserve the exact bytes, canonical record, and digest in the
 host backup/recovery system so an accepted lineage can be recovered without changing
