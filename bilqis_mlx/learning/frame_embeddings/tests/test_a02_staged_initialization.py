@@ -1,10 +1,12 @@
 """B02.2 qualification against A02's final typed staging candidate."""
 from dataclasses import replace
+import hashlib
 import unittest
 from unittest.mock import patch
 
 import mlx.core as mx
 import numpy as np
+from lib.ithkuil.src.skos.publication import json_bytes
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.frame_embeddings import qualify_staged_identity_initialization
@@ -61,6 +63,28 @@ class A02StagedInitializationTests(unittest.TestCase):
 
         with self.assertRaises(BilqisError):
             qualify_staged_identity_initialization(parent, forged, plan, snapshot)
+
+    def test_self_consistent_wrong_abi_allocation_cannot_self_ratify(self):
+        snapshot, parent, plan, candidate = self._stage()
+        allocation = replace(plan.allocations[0], abi_index=8193, row=1)
+        active = (0, 8193)
+        active_digest = hashlib.sha256(json_bytes(list(active))).hexdigest()
+        forged_plan = replace(
+            plan, allocations=(allocation,), active_indices=active,
+            active_semantic_digest=active_digest)
+        bank1 = candidate.weights[1].at[1].add(candidate.weights[1][0])
+        forged_candidate = replace(
+            candidate,
+            extents=replace(candidate.extents, active_semantic_digest=active_digest),
+            weights=(candidate.weights[0], bank1),
+            active_indices=active,
+            output_domain=(candidate.output_domain[0], (8193, "urn:concept:8192")),
+            registry_mirror_delta=(allocation,),
+        )
+
+        with self.assertRaises(BilqisError):
+            qualify_staged_identity_initialization(
+                parent, forged_candidate, forged_plan, snapshot)
 
 
 if __name__ == "__main__":

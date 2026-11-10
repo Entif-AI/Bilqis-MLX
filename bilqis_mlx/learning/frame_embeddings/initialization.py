@@ -13,6 +13,7 @@ from bilqis_mlx.semantics.atlas.vocabulary import (
     CandidateState, VocabularyBankParent, VocabularyExtension,
 )
 from bilqis_mlx.semantics.atlas.vocabulary_factors import prepare_identity_factors
+from bilqis_mlx.semantics.atlas.vocabulary_planning import _plan_from_snapshot
 from .common import BANK_ROWS, FactorGate, IDENTITY_FACTOR_POLICY, IDENTITY_PROPOSAL_SCHEMA, _invalid
 from .requests import FeatureRequest
 from .composition import _released_factor_terms, _validate_composer
@@ -107,8 +108,11 @@ def qualify_staged_identity_initialization(
             or snapshot.release_sha256 != parent.prior.source_selection.release_sha256
             or snapshot.source_bundle_id != parent.prior.source_selection.source_bundle_id):
         _invalid()
-    semantic_bank_views_from_vocabulary_candidate(candidate, plan)
     semantic_ids = tuple(item.semantic_id for item in plan.allocations)
+    if plan != _plan_from_snapshot(
+            parent.prior, semantic_ids, ModelTopologySpecV2(), snapshot):
+        _invalid()
+    semantic_bank_views_from_vocabulary_candidate(candidate, plan)
     source_plan, factors = prepare_identity_factors(
         snapshot, parent.prior.features, semantic_ids,
         parent.feature_parameters, extents=parent.prior.extents)
