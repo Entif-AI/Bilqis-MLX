@@ -195,8 +195,8 @@ def next_atlas_delta(
     coverage_epoch: AtlasCoverageEpoch,
     learner_evidence: AtlasLearnerEvidence,
     existing_plan: AutonomyPlan,
-) -> CurriculumDeltaProposal | FrontierStatus:
-    """Return the next JIT proposal or a typed frontier status without admission."""
+) -> "AtlasDeltaScopeHandoff | FrontierStatus":
+    """Return an authority-bound staged handoff or typed status without admission."""
     if (type(coverage_epoch) is not AtlasCoverageEpoch
             or type(learner_evidence) is not AtlasLearnerEvidence
             or type(existing_plan) is not AutonomyPlan):
@@ -255,4 +255,5 @@ def next_atlas_delta(
             or proposal.selected_successor_sha256 != staged.successor.release_sha256):
         _fail("BAMF_PLANNER_ADAPTER_SELECTION_DRIFT")
     from .atlas_delta_scope import build_atlas_delta_scope_handoff
-    return build_atlas_delta_scope_handoff(receipt, staged, proposal)
+    return build_atlas_delta_scope_handoff(
+        coverage_epoch.candidate_frontier, receipt, staged, proposal)

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from types import MappingProxyType
 
 from bilqis_mlx.grade_b_oracle import CONNECTIVES, VERSION as BOOLEAN_ORACLE
 from bilqis_mlx.live_grade_b import constructor_digest as boolean_provider_digest
@@ -11,7 +12,18 @@ from bilqis_mlx.numeric_curriculum import ORACLE as NUMERIC_ORACLE
 
 
 _BOOLEAN_ADAPTER = "source.micro.boolean-connectives/v1"
+_BOOLEAN_COMPOSITE_ADAPTER = "source.micro.boolean-composite/v1"
+_BOOLEAN_IDENTIFICATION_ADAPTER = "source.micro.boolean-identification/v1"
 _NUMERIC_ADAPTER = "source.finite-numeric/v2"
+_WORLD_ADAPTER = "source.bamf.qualified-world/v1"
+_WORLD_OPERATOR_COORDINATES = MappingProxyType({
+    "WORLD.IS_OCCURRED": ("ithkuil:LEXSENSE-294d00be074a56", "IS_OCCURRED"),
+})
+_WORLD_NON_OPERATOR_CAPABILITIES = frozenset({
+    "WORLD.ACTOR_OF",
+    "WORLD.BEFORE",
+    "WORLD.DIRECT_CAUSE",
+})
 
 
 @dataclass(frozen=True)
@@ -78,6 +90,83 @@ def _local_capability_id(capability_id: str) -> str:
     return capability_id.rsplit(".", 1)[-1]
 
 
+def _numeric_non_operator_disposition(
+        capability_id: str, source_adapter_id: str) -> SourceOperatorDisposition | None:
+    if source_adapter_id != _NUMERIC_ADAPTER:
+        return None
+    matches = tuple(
+        plan for plan in PLANS
+        if _local_capability_id(plan.capability) == _local_capability_id(capability_id))
+    if len(matches) != 1 or matches[0].operation != "NUMBER":
+        return None
+    return SourceOperatorDisposition(
+        capability_id=capability_id,
+        source_adapter_id=source_adapter_id,
+        kind=OperatorDispositionKind.NON_OPERATOR,
+        operator_id=None,
+        semantic_root=None,
+        generator_id="bilqis_mlx.numeric_curriculum.draw_numeric",
+        accepted_oracle_ids=(NUMERIC_ORACLE,),
+        implementation_sha256=numeric_provider_digest(),
+    )
+
+
+def _derived_boolean_non_operator_disposition(
+        capability_id: str, source_adapter_id: str) -> SourceOperatorDisposition | None:
+    if source_adapter_id == _BOOLEAN_COMPOSITE_ADAPTER:
+        from bilqis_mlx import boolean_composite
+        if capability_id != boolean_composite.CAPABILITY:
+            return None
+        return SourceOperatorDisposition(
+            capability_id=capability_id,
+            source_adapter_id=source_adapter_id,
+            kind=OperatorDispositionKind.NON_OPERATOR,
+            operator_id=None,
+            semantic_root=None,
+            generator_id=boolean_composite.GENERATOR,
+            accepted_oracle_ids=(BOOLEAN_ORACLE, boolean_composite.ORACLE),
+            implementation_sha256=boolean_composite.constructor_digest(),
+        )
+    if source_adapter_id != _BOOLEAN_IDENTIFICATION_ADAPTER:
+        return None
+    from bilqis_mlx import boolean_composite, boolean_identification
+    if capability_id != boolean_identification.CAPABILITY:
+        return None
+    return SourceOperatorDisposition(
+        capability_id=capability_id,
+        source_adapter_id=source_adapter_id,
+        kind=OperatorDispositionKind.NON_OPERATOR,
+        operator_id=None,
+        semantic_root=None,
+        generator_id=boolean_identification.GENERATOR,
+        accepted_oracle_ids=(
+            BOOLEAN_ORACLE,
+            boolean_composite.ORACLE,
+            boolean_identification.ORACLE,
+        ),
+        implementation_sha256=boolean_identification.constructor_digest(),
+    )
+
+
+def _world_operator_disposition(
+        capability_id: str, source_adapter_id: str) -> SourceOperatorDisposition | None:
+    if source_adapter_id != _WORLD_ADAPTER:
+        return None
+    from bilqis_mlx.source_adapters import world_rules
+    if capability_id not in world_rules.CAPABILITIES:
+        return None
+    coordinate = _WORLD_OPERATOR_COORDINATES.get(capability_id)
+    if coordinate is not None:
+        semantic_root, operator_id = coordinate
+        return _disposition_from_descriptor(
+            capability_id, world_rules.registered_adapter().descriptor,
+            operator_id=operator_id, semantic_root=semantic_root)
+    if capability_id in _WORLD_NON_OPERATOR_CAPABILITIES:
+        return _disposition_from_descriptor(
+            capability_id, world_rules.registered_adapter().descriptor)
+    return None
+
+
 def source_formal_coordinate(
     capability_id: str, source_adapter_id: str,
 ) -> SourceFormalAuthority | None:
@@ -127,6 +216,15 @@ def source_operator_disposition(
             implementation_sha256=coordinate.implementation_sha256,
         )
 
+    known_non_operator = _numeric_non_operator_disposition(
+        capability_id, source_adapter_id)
+    if known_non_operator is not None:
+        return known_non_operator
+    known_non_operator = _derived_boolean_non_operator_disposition(
+        capability_id, source_adapter_id)
+    if known_non_operator is not None:
+        return known_non_operator
+
     if source_adapter_id == "source.ithkuil-reference-identity/v1":
         from bilqis_mlx.source_adapters import copular
         if capability_id != copular.CAPABILITY:
@@ -144,17 +242,8 @@ def source_operator_disposition(
             operator_id=event_frames.SYMBOLS[capability_id],
             semantic_root=event_frames.SYMBOLS[capability_id])
 
-    if source_adapter_id == "source.bamf.qualified-world/v1":
-        from bilqis_mlx.source_adapters import world_rules
-        if capability_id not in world_rules.CAPABILITIES:
-            return None
-        coordinate = world_rules.OPERATOR_COORDINATES.get(capability_id)
-        if coordinate is not None:
-            semantic_root, operator_id = coordinate
-            return _disposition_from_descriptor(
-                capability_id, world_rules.registered_adapter().descriptor,
-                operator_id=operator_id, semantic_root=semantic_root)
-        return _disposition_from_descriptor(
-            capability_id, world_rules.registered_adapter().descriptor)
+    world = _world_operator_disposition(capability_id, source_adapter_id)
+    if world is not None:
+        return world
 
     return None

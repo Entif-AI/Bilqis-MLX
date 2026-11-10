@@ -11,6 +11,7 @@ from bilqis_mlx.source_adapters.formal_identity import (
 
 from .atlas_frontier_contracts import _bytes, _fail
 from .atlas_frontier_progress_contracts import StagedSelectionReceipt
+from .candidate_frontier import CandidateFrontierRelease
 from .candidate_staging import StagedCandidate
 from .executable_release import ExecutableFactoryRelease
 from .jit_curriculum import CurriculumDeltaProposal, ProposalDisposition
@@ -99,6 +100,7 @@ def resolve_v2_operator_scopes(
 
 @dataclass(frozen=True)
 class AtlasDeltaScopeHandoff:
+    candidate_frontier: CandidateFrontierRelease
     receipt: StagedSelectionReceipt
     staged_candidate: StagedCandidate
     proposal: CurriculumDeltaProposal
@@ -123,6 +125,7 @@ class AtlasDeltaScopeHandoff:
 
     def verify(self) -> None:
         if (self.schema != HANDOFF_SCHEMA
+                or type(self.candidate_frontier) is not CandidateFrontierRelease
                 or type(self.receipt) is not StagedSelectionReceipt
                 or type(self.staged_candidate) is not StagedCandidate
                 or type(self.proposal) is not CurriculumDeltaProposal
@@ -132,10 +135,16 @@ class AtlasDeltaScopeHandoff:
                 or type(self.operator_scopes) is not tuple
                 or not self.operator_scopes):
             _fail("BAMF_ATLAS_DELTA_SCOPE_HANDOFF_INVALID")
+        self.candidate_frontier.verify()
         self.receipt.verify()
         self.proposal.verify()
         staged = self.staged_candidate
-        if staged.staged_sha256 != staged.expected_digest():
+        try:
+            staged.verify(
+                self.candidate_frontier,
+                self.receipt.predecessor_release,
+            )
+        except (TypeError, ValueError):
             _fail("BAMF_ATLAS_DELTA_SCOPE_STAGED_CANDIDATE_DRIFT")
         selection = self.receipt.selection
         successor = self.receipt.staged_successor
@@ -145,6 +154,8 @@ class AtlasDeltaScopeHandoff:
         expected_scopes = resolve_v2_operator_scopes(
             successor, selection.introduced_capability_ids)
         if (staged.successor != successor
+                or self.candidate_frontier.release_sha256
+                   != self.proposal.frontier_sha256
                 or staged.frontier_sha256 != self.proposal.frontier_sha256
                 or self.proposal.disposition is not ProposalDisposition.PROPOSAL
                 or self.proposal.current_release_sha256
@@ -162,11 +173,13 @@ class AtlasDeltaScopeHandoff:
 
 
 def build_atlas_delta_scope_handoff(
+        candidate_frontier: CandidateFrontierRelease,
         receipt: StagedSelectionReceipt,
         staged_candidate: StagedCandidate,
         proposal: CurriculumDeltaProposal) -> AtlasDeltaScopeHandoff:
     """Bind existing A09 selection and Factory v2 authority without a signer."""
-    if type(receipt) is not StagedSelectionReceipt:
+    if (type(candidate_frontier) is not CandidateFrontierRelease
+            or type(receipt) is not StagedSelectionReceipt):
         _fail("BAMF_ATLAS_DELTA_SCOPE_RECEIPT_REQUIRED")
     families = tuple(sorted({
         item.family_id for item in receipt.selection.selected_obligations
@@ -174,9 +187,10 @@ def build_atlas_delta_scope_handoff(
     scopes = resolve_v2_operator_scopes(
         receipt.staged_successor, receipt.selection.introduced_capability_ids)
     provisional = AtlasDeltaScopeHandoff(
-        receipt, staged_candidate, proposal, families, scopes, "0" * 64)
+        candidate_frontier, receipt, staged_candidate, proposal,
+        families, scopes, "0" * 64)
     handoff = AtlasDeltaScopeHandoff(
-        receipt, staged_candidate, proposal, families, scopes,
+        candidate_frontier, receipt, staged_candidate, proposal, families, scopes,
         provisional.expected_digest())
     handoff.verify()
     return handoff

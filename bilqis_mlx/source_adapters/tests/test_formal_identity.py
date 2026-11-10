@@ -21,6 +21,22 @@ class SourceOperatorDispositionTests(unittest.TestCase):
         self.assertEqual(numeric.operator_id, "ADD")
         self.assertEqual(numeric.semantic_root, "school.op.ADD")
 
+        number = source_operator_disposition(
+            "C.NUMBER", "source.finite-numeric/v2")
+        self.assertIs(number.kind, OperatorDispositionKind.NON_OPERATOR)
+        self.assertIsNone(number.operator_id)
+        self.assertIsNone(number.semantic_root)
+
+        for capability_id, adapter_id in (
+            ("B.COMPOSITE", "source.micro.boolean-composite/v1"),
+            ("B.IDBOOLOPS", "source.micro.boolean-identification/v1"),
+        ):
+            with self.subTest(capability_id=capability_id):
+                derived = source_operator_disposition(capability_id, adapter_id)
+                self.assertIs(derived.kind, OperatorDispositionKind.NON_OPERATOR)
+                self.assertIsNone(derived.operator_id)
+                self.assertIsNone(derived.semantic_root)
+
     def test_event_and_copular_operators_are_source_owned(self):
         event = source_operator_disposition(
             "D.EVENT_OCCURRENCE", event_frames.ADAPTER_ID)
@@ -45,7 +61,7 @@ class SourceOperatorDispositionTests(unittest.TestCase):
         self.assertEqual(occurred.operator_id, "IS_OCCURRED")
         self.assertEqual(
             occurred.semantic_root,
-            world_rules.OPERATOR_COORDINATES["WORLD.IS_OCCURRED"][0])
+            "ithkuil:LEXSENSE-294d00be074a56")
 
         disposition = source_operator_disposition(
             "WORLD.ACTOR_OF", "source.bamf.qualified-world/v1")
@@ -54,6 +70,16 @@ class SourceOperatorDispositionTests(unittest.TestCase):
         self.assertIsNone(disposition.semantic_root)
         self.assertEqual(disposition.generator_id, world_rules.GENERATOR)
         self.assertEqual(disposition.accepted_oracle_ids, (world_rules.ORACLE,))
+
+        for capability_id in (
+            "WORLD.ACTOR_OF", "WORLD.BEFORE", "WORLD.DIRECT_CAUSE",
+        ):
+            with self.subTest(capability_id=capability_id):
+                non_operator = source_operator_disposition(
+                    capability_id, "source.bamf.qualified-world/v1")
+                self.assertIs(
+                    non_operator.kind, OperatorDispositionKind.NON_OPERATOR)
+                self.assertIsNone(non_operator.operator_id)
 
     def test_unknown_source_has_no_operator_authority(self):
         self.assertIsNone(source_operator_disposition(
