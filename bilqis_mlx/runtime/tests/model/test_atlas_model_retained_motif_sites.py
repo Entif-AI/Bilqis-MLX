@@ -1,12 +1,13 @@
 """B08 parent acceptance for both retained motif read sites in the real B11 path."""
 from dataclasses import replace
+import hashlib
 from unittest import TestCase, skipUnless
 from unittest.mock import patch
 import mlx.core as mx
 import numpy as np
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import begin_candidate, resolve_candidate
-from bilqis_mlx.learning.atlas_engram import MotifManifest
+from bilqis_mlx.learning.atlas_engram import MotifManifest, MotifSlot
 from bilqis_mlx.learning.atlas_engram_reads.source_owner import _B13_EXECUTION_SEAL
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, group_eligibility
 from bilqis_mlx.learning.atlas_readout import (
@@ -205,6 +206,102 @@ class RetainedMotifSiteIntegrationTests(TestCase):
         for site_index in (0, 1):
             self.assertEqual(int(transaction.optimizer.update_counts[
                 f"motif.site.{site_index}.projection"]), 0)
+        for name in parent.optimizer.parameters:
+            if name.startswith("motif."):
+                for field in ("parameters", "m", "v", "update_counts"):
+                    np.testing.assert_array_equal(
+                        np.asarray(getattr(transaction.optimizer, field)[name]),
+                        np.asarray(getattr(parent.optimizer, field)[name]))
+    def test_same_frame_exact_hit_vs_nonmatching_key_is_safe_at_both_sites(self):
+        case = retained_tests.AtlasModelRetainedMotifTests(
+            "test_retained_b08_hit_enters_the_same_loss_bearing_b09_trace")
+        (compiled, parameters, source, feature_schema, plan, _cache,
+         spec, extents, manifest, slot_id) = case._runtime_fixture()
+        miss_manifest = MotifManifest(
+            manifest.semantic_release,
+            tuple(
+                MotifSlot(
+                    slot.slot_id,
+                    replace(
+                        slot.key,
+                        relation_signature=hashlib.sha256(
+                            f"b08-miss-{slot.slot_id}".encode()).hexdigest(),
+                    ),
+                )
+                for slot in manifest.slots
+            ),
+            capacity=manifest.capacity,
+        )
+        miss_extents = GenerationExtents(
+            extents.semantic_bank_count, extents.motif_page_count,
+            extents.active_semantic_digest, miss_manifest.digest,
+            extents.factor_map_digest)
+        miss_compiled = replace(compiled, extents=miss_extents)
+
+        hit_owner = AtlasFeatureArtifactOwner(compiled.features, feature_schema)
+        hit = start_retained_source_backbone_producer(
+            compiled, parameters, (source,), feature_schema, manifest,
+            hit_owner, seal=_B13_EXECUTION_SEAL)
+        hit_g1 = hit.advance()
+
+        miss_owner = AtlasFeatureArtifactOwner(
+            miss_compiled.features, feature_schema)
+        missed = start_retained_source_backbone_producer(
+            miss_compiled, parameters, (source,), feature_schema,
+            miss_manifest, miss_owner, seal=_B13_EXECUTION_SEAL)
+        missed_g1 = missed.advance()
+
+        self.assertEqual(
+            (hit._input_motif_read.participating_slots,
+             hit._motif_read.participating_slots),
+            ((slot_id,), (slot_id,)),
+        )
+        self.assertGreater(float(mx.abs(
+            hit._input_motif_read.hidden - hit._encoded.global_seeds).sum()), 0.0)
+        self.assertGreater(float(mx.abs(
+            hit._motif_read.hidden - hit._session.results[0].hidden).sum()), 0.0)
+        self.assertEqual(hit.receipts[0].motif_disposition, "SOURCE_QUALIFIED_HIT")
+        self.assertEqual(hit_g1.motif_disposition, "SOURCE_QUALIFIED_HIT")
+
+        self.assertEqual(missed._input_motif_read.participating_slots, ())
+        self.assertEqual(missed._motif_read.participating_slots, ())
+        np.testing.assert_array_equal(
+            np.asarray(missed._input_motif_read.hidden),
+            np.asarray(missed._encoded.global_seeds))
+        np.testing.assert_array_equal(
+            np.asarray(missed._motif_read.hidden),
+            np.asarray(missed._session.results[0].hidden))
+        self.assertEqual(missed.receipts[0].motif_disposition, QUALIFIED_MISS)
+        self.assertEqual(missed_g1.motif_disposition, QUALIFIED_MISS)
+
+        generation = execution_generation_digest(
+            parameters, spec=spec, extents=miss_extents)
+        miss_plan = replace(plan, generation_binding=generation)
+        cache = _new_execution_cache(
+            run_id="test-retained", generation=1,
+            accepted_manifest_sha256="8" * 64,
+            generation_binding=generation, motif_manifest=miss_manifest)
+        with patch.object(
+                forward_impl, "require_accepted_execution_cache",
+                return_value=cache), patch(
+            "bilqis_mlx.runtime.bamf_bundle.execution_cache.require_accepted_execution_cache",
+            return_value=cache,
+        ):
+            gradient = bamf_value_and_grad(
+                parameters,
+                BamfCompiledBatch(miss_compiled, (source,), feature_schema),
+                miss_plan,
+                (DecisionOutput("finish", ControlAction.END_FRAME),),
+                {"finish": True}, cache=cache)
+        self.assertEqual(
+            tuple(read.participating_slots for read in gradient.execution.motif_reads),
+            ((), ()),
+        )
+        self.assertFalse(any(
+            name.startswith("motif.site.")
+            for name in gradient.execution.dense_parameter_names))
+        parent, transaction, _eligibility, _kwargs = self._candidate_step(
+            case, parameters, miss_manifest, spec, miss_extents, gradient)
         for name in parent.optimizer.parameters:
             if name.startswith("motif."):
                 for field in ("parameters", "m", "v", "update_counts"):

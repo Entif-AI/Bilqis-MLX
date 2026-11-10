@@ -190,14 +190,20 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
             plan.allowed_output_schema, snapshot, plan.source_span,
             plan.generation_binding,
         )
-        gradient = bamf_value_and_grad(
-            parameters,
-            BamfCompiledBatch(compiled, (source,), feature_schema),
-            value_plan,
-            (DecisionOutput("value", candidate),),
-            {"value": True},
-            cache=cache,
-        )
+        with patch.object(
+                forward_impl, "require_accepted_execution_cache",
+                return_value=cache), patch(
+            "bilqis_mlx.runtime.bamf_bundle.execution_cache.require_accepted_execution_cache",
+            return_value=cache,
+        ):
+            gradient = bamf_value_and_grad(
+                parameters,
+                BamfCompiledBatch(compiled, (source,), feature_schema),
+                value_plan,
+                (DecisionOutput("value", candidate),),
+                {"value": True},
+                cache=cache,
+            )
         return (
             parameters, manifest, spec, extents, gradient,
             (denominator,), unrelated,
