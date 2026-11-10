@@ -220,9 +220,11 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
                 {"finish": True},
                 cache=cache,
             ).execution
-        self.assertEqual(len(execution.motif_reads), 1)
+        self.assertEqual(len(execution.motif_reads), 2)
         self.assertEqual(
-            execution.motif_reads[0].participating_slots, (slot_id,))
+            tuple(read.participating_slots for read in execution.motif_reads),
+            ((slot_id,), (slot_id,)),
+        )
         ages = tuple(
             IdentityRowAge(bank, row, 0)
             for bank, row in execution.visible_identity_rows
@@ -264,7 +266,10 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
                 (DecisionOutput("finish", ControlAction.END_FRAME),),
                 {"finish": True}, cache=cache)
         execution = gradient.execution
-        self.assertEqual(execution.motif_reads[0].participating_slots, (slot_id,))
+        self.assertEqual(
+            tuple(read.participating_slots for read in execution.motif_reads),
+            ((slot_id,), (slot_id,)),
+        )
         self.assertEqual(float(mx.abs(gradient.gradients["motif.page.0"]).sum()), 0.0)
 
         ages = tuple(

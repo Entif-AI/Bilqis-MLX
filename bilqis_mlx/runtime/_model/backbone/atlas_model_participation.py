@@ -12,6 +12,13 @@ from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 from .atlas_model_contracts import BamfCompiledBatch, _ForwardRecord, _invalid
 
 
+def _motif_reads(producer):
+    return tuple(
+        read for read in (
+            getattr(producer, "_input_motif_read", None), producer._motif_read)
+        if read is not None)
+
+
 def _active_banks(parameters, batch: BamfCompiledBatch, plan: AnswerPlan):
     source = batch.sources[0]
     snapshot = load_pinned_atlas_snapshot(source.selection)
@@ -73,9 +80,9 @@ def _execution_dependencies(batch, producer, accepted_cache):
         dependencies.update(
             ref for ref in node.immediate_dependencies
             if ref.kind is not DependencyKind.ARTIFACT)
-    motif = producer._motif_read
-    if (accepted_cache is not None and motif is not None
-            and motif.participating_slots):
+    motif_reads = _motif_reads(producer)
+    if (accepted_cache is not None
+            and any(read.participating_slots for read in motif_reads)):
         owner = bind_motif_artifact_owner(accepted_cache, batch.compiled)
         node = owner.current_node
         dependencies.update(
@@ -105,6 +112,7 @@ def _forward_participation(
         feature_rows.add(("role", factors.role_row))
         feature_rows.add(("schema", factors.schema_row))
     feature_rows.add(("role", dict(batch.compiled.features.role_map)["NONE"]))
+    motif_reads = _motif_reads(producer)
 
     dense = {
         item.name for item in expected_bamf_shapes(
@@ -116,6 +124,15 @@ def _forward_participation(
         "features.project_schema", "features.project_graph", "features.norm",
     ))
     dense.update(_executed_readout_parameters(plan, output))
+    for site_index, read in enumerate(motif_reads):
+        if read.participating_slots:
+            dense.update((
+                f"motif.site.{site_index}.projection",
+                f"motif.site.{site_index}.norm",
+                f"motif.site.{site_index}.gate_hidden",
+                f"motif.site.{site_index}.gate_feature",
+                f"motif.site.{site_index}.bias",
+            ))
     if refinement_roles:
         feature_rows.update(
             ("role", dict(batch.compiled.features.role_map)[role])
@@ -139,7 +156,7 @@ def _forward_participation(
         tuple(sorted(feature_rows)),
         (0,),
         tuple(sorted(dense)),
-        (() if producer._motif_read is None else (producer._motif_read,)),
+        motif_reads,
         batch.compiled.features.role_map,
         (None if batch.training_authority is None else extend_training_dependencies(
             batch.training_authority,

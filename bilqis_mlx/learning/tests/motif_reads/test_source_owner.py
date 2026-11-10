@@ -99,12 +99,14 @@ class SourceOwnedMotifReadTests(unittest.TestCase):
         parameters = {
             item.name: mx.zeros(item.shape, dtype=mx.float32)
             for item in expected_bamf_shapes(spec, extents)}
-        parameters["motif.site.1.norm"] = mx.ones((768,), dtype=mx.float32)
         slot_id = next(slot.slot_id for slot in manifest.slots if slot.key.kind == "EXACT")
         parameters["motif.page.0"] = parameters["motif.page.0"].at[
             slot_id, 0].add(2.0)
-        parameters["motif.site.1.projection"] = parameters[
-            "motif.site.1.projection"].at[0, 0].add(1.0)
+        for site_index in (0, 1):
+            parameters[f"motif.site.{site_index}.norm"] = mx.ones(
+                (768,), dtype=mx.float32)
+            projection = f"motif.site.{site_index}.projection"
+            parameters[projection] = parameters[projection].at[0, 0].add(1.0)
         source = SourceAtomRow(selection, row, graph, root, seed, each, None, profile)
         hidden = mx.zeros(
             (1, len(rows.rows[0].positions), 768), dtype=mx.float32)
