@@ -4,8 +4,8 @@ Status: **READY_FOR_HUMAN_REVIEW; PR #961; exact-head full witness and fresh re-
 
 ## Authority boundary
 
-Reviewed unified base: `7a6c048e9325a877b9b3451c731be3545a11ee69`.
-Current-unified flow reconciliation: `b9ce1e73fbc196532642635ba5f08d73d2eca885`.
+Reviewed unified base: `eaa73be82cf1adac32786d4242868b8e360af5d2`.
+Current synchronized semantic candidate: `dbd78411021b70179eb4e831770fa968b59d1ae5`.
 Initial semantic implementation: `236cfad999e7f6ea24dd90281af639ed161f807b`.
 Accepted-ID ordering repair: `bc5c524ec3828b67661b44e8e576338ee7e46068`.
 
@@ -86,6 +86,22 @@ The witness ran the real
 `A02ProductionStagingTests.test_stages_from_content_id_through_real_source_bundle_verifier`
 path with `BILQIS_BAMF_FULL_WITNESS=1` and finished `OK`.
 
+After reviewed unified advanced through #460 B08/engram work, #959 was synchronized
+to `eaa73be82cf1adac32786d4242868b8e360af5d2`. The nine-file base delta changes no
+#959 locator/A02 source or test file; those files are byte-identical across the sync.
+The synchronized focused ring passed 10 tests with 2 expected gated skips and 12
+subtests. The exact synchronized frozen witness then completed successfully from
+`dbd78411021b70179eb4e831770fa968b59d1ae5`:
+
+```text
+label: 959 synchronized full content-id A02 staging
+status: PASS
+command return code: 0
+test runtime: 237.685s
+source_mutated: false
+snapshot/source SHA-256: 9b435dacd5544f333d95194379736badba8d93a46f770f0ec6e216207b60fc0a
+```
+
 Repository checks on the committed candidate:
 
 ```text
@@ -106,7 +122,17 @@ resource or tensor staging, reuses the same accepted-parent tuple after the chec
 keeps synthetic headroom test-only, and introduces no host-path or portable-authority
 leakage.
 
-Hosted exact-head checks are also green: `portable`, `portable-core`, and
+Fresh differential re-review of synchronized head
+`dbd78411021b70179eb4e831770fa968b59d1ae5` against current reviewed unified
+`eaa73be82cf1adac32786d4242868b8e360af5d2` also returned
+**READY — 0 Blockers / 0 Majors / 0 Nits**. The reviewer confirmed that #460's
+B08/engram/formal-grant changes have no callable or data-authority edge into the
+source-bundle resolver, accepted-parent reconstruction, accepted-ID comparison,
+vocabulary planning, resource estimation, Registry-mirror verification or staging.
+The prior accidental #401 Lane A closeout mutation is fully absent from the net
+#959 closeout delta.
+
+Hosted synchronized-head checks are also green: `portable`, `portable-core`, and
 `semantic-abi-integrity` all PASS. The PR is cleanly mergeable. Human merge remains
 a separate authority gate.
 
