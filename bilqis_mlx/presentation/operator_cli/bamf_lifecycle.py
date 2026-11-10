@@ -24,14 +24,26 @@ def _foundation_inputs(args, topology: ModelTopologySpecV2, *, materialize_hp: b
         invalid("BAMF_OPERATOR_FOUNDATION_IDENTITY_REQUIRED")
     if args.atlas_release_manifest is None:
         invalid("BAMF_OPERATOR_ATLAS_MANIFEST_REQUIRED")
-    if args.admission_policy != "staged" or args.atlas_admission_scope is not None:
-        from bilqis_mlx.runtime.atlas_admission import validate_atlas_command_request
-        validate_atlas_command_request(args)
+    lease = None
+    if args.admission_policy == "staged":
+        if args.atlas_admission_scope is not None:
+            from bilqis_mlx.runtime.atlas_admission import validate_atlas_command_request
+            validate_atlas_command_request(args)
+    else:
+        from bilqis_mlx.runtime.atlas_admission import validate_atlas_lease_request
+        lease = validate_atlas_lease_request(args)
     hp = foundation_hyperparameters(
         args, required=True, materialize=materialize_hp)
     atlas = atlas_manifest_identity(args.atlas_release_manifest)
+    if lease is not None:
+        if lease.source_approval.atlas_release_sha256 != atlas.release_sha256:
+            invalid("BAMF_OPERATOR_ATLAS_LEASE_MANIFEST_CONFLICT")
+        if lease.run_identity.lineage_id != args.run_id:
+            invalid("BAMF_OPERATOR_ATLAS_LEASE_RUN_ID_CONFLICT")
+        if lease.run_identity.topology_digest != topology.digest:
+            invalid("BAMF_OPERATOR_ATLAS_LEASE_TOPOLOGY_CONFLICT")
     source, release, graph = source_foundation()
-    return source, release, graph, atlas, hp
+    return source, release, graph, atlas, hp, lease
 
 
 def _saved_policy(run_dir: Path) -> str:
@@ -126,17 +138,18 @@ def bamf_lifecycle(args, topology):
         return _resume(args, topology)
     target = fresh_target(args.run_dir)
     if args.dry_run:
-        source, release, graph, atlas, hp = _foundation_inputs(
+        source, release, graph, atlas, hp, lease = _foundation_inputs(
             args, topology, materialize_hp=False)
         validate_foundation_authority(source, release, graph, atlas)
         return _report(
             result="READY_TO_CREATE", run_id=args.run_id, run_seed=args.run_seed,
-            topology=topology, atlas=atlas, policy="staged", hp=hp,
+            topology=topology, atlas=atlas,
+            policy="staged" if lease is None else lease.admission_policy, hp=hp,
             source_prefetch_workers=args.source_prefetch_workers,
         )
     if args.human_run is not True:
         invalid("BAMF_OPERATOR_CREATE_EXPLICIT_HUMAN_REQUEST_REQUIRED")
-    source, release, graph, atlas, hp = _foundation_inputs(
+    source, release, graph, atlas, hp, lease = _foundation_inputs(
         args, topology, materialize_hp=True)
     from bilqis_mlx.runtime.bamf_first_student import (
         BamfFoundationConfig, preflight_bamf_foundation,
@@ -146,10 +159,18 @@ def bamf_lifecycle(args, topology):
     receipt = preflight_bamf_foundation(config, release, target)
     if receipt.run_identity.initial_topology_digest != topology.digest:
         invalid("BAMF_OPERATOR_CREATED_TOPOLOGY_DRIFT")
+    policy = "staged"
+    if lease is not None:
+        from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+        from bilqis_mlx.runtime.atlas_admission import persist_accepted_atlas_lease
+        host = AcceptedRuntimeHost(target)
+        persist_accepted_atlas_lease(
+            target, lease, source_authority=host.source_authority())
+        policy = lease.admission_policy
     return _report(
         result="CREATED", run_id=receipt.run_identity.run_id,
         run_seed=receipt.run_identity.run_seed, topology=topology,
-        atlas=receipt.atlas_artifact, policy="staged",
+        atlas=receipt.atlas_artifact, policy=policy,
         hp=receipt.optimizer_hyperparameters,
         source_prefetch_workers=args.source_prefetch_workers,
         manifest_sha256=receipt.manifest_sha256,

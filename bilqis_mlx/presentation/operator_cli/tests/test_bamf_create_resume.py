@@ -116,25 +116,6 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         self.assertIn("BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED", errors)
         self.assertFalse(target.exists())
 
-    def test_fresh_bamf_atlas_release_scope_still_requires_accepted_run_authority(self):
-        target = self.root / "new-bamf"
-        manifest = self.root / "manifest.json"
-        manifest.write_text("{}", encoding="utf-8")
-        scope = self.root / "scope.json"
-        scope.write_text(json.dumps(asdict(_lease())), encoding="utf-8")
-
-        code, output, errors = self.invoke([
-            "--human-run", "--model-topology", str(TOPOLOGY),
-            "--admission-policy", "atlas-release",
-            "--atlas-release-manifest", str(manifest),
-            "--atlas-admission-scope", str(scope),
-            "--run-dir", str(target), *self.FOUNDATION_ARGS,
-        ])
-
-        self.assertEqual((code, output), (2, ""))
-        self.assertIn("BAMF_ATLAS_ACCEPTED_RUN_AUTHORITY_UNAVAILABLE", errors)
-        self.assertFalse(target.exists())
-
     def test_fresh_bamf_dry_run_rejects_invalid_optimizer_before_writes(self):
         target = self.root / "new-bamf"
         manifest = self.root / "manifest.json"

@@ -27,6 +27,7 @@ def _bamf_or_topology(args):
     """Route BAMF v2 before legacy training while preserving C07 early failure."""
     bamf_pointer = Path(args.run_dir).expanduser() / "bamf-state.json"
     if ((args.admission_policy != "staged" or args.atlas_admission_scope is not None)
+            and args.model_topology is None
             and not bamf_pointer.exists() and not bamf_pointer.is_symlink()):
         from bilqis_mlx.runtime.atlas_admission import validate_atlas_command_request
         validate_atlas_command_request(args)

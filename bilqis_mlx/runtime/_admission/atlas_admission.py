@@ -43,22 +43,33 @@ def add_atlas_admission_arguments(parser):
                         help='Exact versioned Atlas lease request; accepted run/source authority is required.')
 
 
+def read_atlas_lease_request(path):
+    """Parse one caller-supplied lease request without granting run authority."""
+    path = Path(path)
+    if path.is_symlink() or not path.is_file():
+        _invalid('BAMF_ATLAS_SCOPE_FILE_INVALID')
+    try:
+        payload = json.loads(path.read_text(encoding='utf-8'))
+    except (OSError, ValueError, UnicodeError):
+        _invalid('BAMF_ATLAS_SCOPE_FILE_INVALID')
+    return _lease_from_json(payload)
+
+
+def validate_atlas_lease_request(args):
+    """Validate explicit human selection and return request data only."""
+    if args.human_run is not True:
+        _invalid('BAMF_ATLAS_EXPLICIT_HUMAN_REQUEST_REQUIRED')
+    if args.atlas_admission_scope is None:
+        _invalid('BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED')
+    return read_atlas_lease_request(args.atlas_admission_scope)
+
+
 def validate_atlas_command_request(args):
     if args.admission_policy == 'staged':
         if args.atlas_admission_scope is not None:
             _invalid('BAMF_ATLAS_SCOPE_REQUIRES_EXPLICIT_POLICY')
         return
-    if args.human_run is not True:
-        _invalid('BAMF_ATLAS_EXPLICIT_HUMAN_REQUEST_REQUIRED')
-    if args.atlas_admission_scope is None:
-        _invalid('BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED')
-    path = Path(args.atlas_admission_scope)
-    if path.is_symlink() or not path.is_file():
-        _invalid('BAMF_ATLAS_SCOPE_FILE_INVALID')
-    try:
-        _lease_from_json(json.loads(path.read_text(encoding='utf-8')))
-    except (OSError, ValueError):
-        _invalid('BAMF_ATLAS_SCOPE_FILE_INVALID')
+    validate_atlas_lease_request(args)
     # A scope file alone still cannot authorize the CLI: this parser-level check
     # has neither accepted B13 run custody nor the typed A02 staged candidate.
     _invalid('BAMF_ATLAS_ACCEPTED_RUN_AUTHORITY_UNAVAILABLE')

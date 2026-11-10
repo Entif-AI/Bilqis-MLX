@@ -56,44 +56,75 @@ explicit synthetic receipts and do not establish producer acceptance or learning
 
 ## Preflight, launch and resume boundary
 
-C11.1's read-only v2 configuration inspection is integrated through PR #678.
-Run these commands from the repository root in an environment with the project's
-Python dependencies installed. Inspect the checked-in topology and a new,
-explicit run path without creating that directory:
+C16.1a/#542 owns the human-facing persistent v2 lifecycle over the generation-zero
+boundary documented in `BAMF_0_2_FIRST_STUDENT.md`. Run these commands from the
+repository root in an environment with the project's Python dependencies installed.
+A fresh dry-run requires the complete foundation identity but does not create the
+target directory:
 
 ```sh
-npm run train -- --dry-run --model-topology configs/models/bamf-0.2.json --run-dir /absolute/path/to/new-bamf-run --source-prefetch-workers 0
+npm run train -- --dry-run --model-topology configs/models/bamf-0.2.json \
+  --atlas-release-manifest /absolute/path/to/manifest.json \
+  --run-dir /absolute/path/to/new-bamf-run --run-id example-run --run-seed 543 \
+  --learning-rate 0.0007 --adam-beta1 0.88 --adam-beta2 0.97 \
+  --adam-eps 1e-7 --weight-decay 0.03 --source-prefetch-workers 0
 ```
 
-Expected: exit **2**, with JSON schema `bilqis.bamf.operator-preflight/v1`, result
-`HELD_PENDING_SOURCE_AND_GENERATION_AUTHORITY`, `ready_for_training: false` and
-`neural_updates: 0`. Exit 2 with that report means configuration inspection
-completed and training remains held. Exit 2 with `BLOCKED` on stderr and no report
-means a request was refused. Neither result grants training or admission authority.
-The npm wrapper prints its command banner before the JSON report.
+Expected: exit **0** with JSON schema `bilqis.bamf.operator-lifecycle/v1`, result
+`READY_TO_CREATE`, `ready_for_training: false`, `neural_updates: 0`, and the exact
+run identity, topology, source-qualified Atlas identity, optimizer hyperparameters,
+and prefetch setting. Dry-run replays the source/Factory and Atlas foundation
+authority but publishes no generation and performs no optimizer update.
 
-The default admission policy is `staged`. To inspect an existing Atlas manifest
-reference, select its distinct policy explicitly:
+The default admission policy is `staged`. An actual create requires the same
+foundation fields plus the explicit human gate:
 
 ```sh
-npm run train -- --dry-run --model-topology configs/models/bamf-0.2.json --run-dir /absolute/path/to/new-bamf-run --source-prefetch-workers 0 --admission-policy atlas-release --atlas-release-manifest /absolute/path/to/manifest.json
+npm run train -- --human-run --model-topology configs/models/bamf-0.2.json \
+  --atlas-release-manifest /absolute/path/to/manifest.json \
+  --run-dir /absolute/path/to/new-bamf-run --run-id example-run --run-seed 543 \
+  --learning-rate 0.0007 --adam-beta1 0.88 --adam-beta2 0.97 \
+  --adam-eps 1e-7 --weight-decay 0.03
 ```
 
-The manifest must be an existing regular file, not a symlink. Inspection hashes
-its raw bytes without interpreting its contents. The report records its absolute
-path and SHA-256 with `qualification: NOT_VERIFIED`; a matching digest does not
-qualify source rights, release semantics or generation custody. Supplying this
-reference with `staged`, or selecting `atlas-release` without it, fails closed.
-`--atlas-admission-scope` is a separate C07 lease request and is refused by this
-configuration inspector.
+This publishes B13 generation zero at optimizer step `0` and returns `CREATED`; it
+still does not enter the learner. The Atlas manifest must be a canonical,
+source-pinned release manifest. The target must be absent or empty. Existing BAMF
+or legacy custody is never overwritten or coerced.
 
-For an existing BAMF run directory, add `--resume` to the same inspection command.
-It checks only for a `bamf-state.json` path or symlink, including a dangling
-symlink; it does not establish that the path is a valid pointer file. It does not
-load or validate the pointer, checkpoint arrays, saved policy or optimizer. The
-report stays held. An
-existing BAMF pointer without `--resume`, a missing pointer with `--resume`, or
-any legacy `state.json` is refused; inspection never coerces a legacy lineage.
+To enroll the new lineage in the C07 `atlas-release` admission policy, add both the
+explicit policy and a versioned lease request:
+
+```sh
+npm run train -- --human-run --model-topology configs/models/bamf-0.2.json \
+  --admission-policy atlas-release --atlas-admission-scope /absolute/path/to/lease.json \
+  --atlas-release-manifest /absolute/path/to/manifest.json \
+  --run-dir /absolute/path/to/new-bamf-run --run-id example-run --run-seed 543 \
+  --learning-rate 0.0007 --adam-beta1 0.88 --adam-beta2 0.97 \
+  --adam-eps 1e-7 --weight-decay 0.03
+```
+
+The scope file is request data, not authority. The lifecycle validates its known
+lineage/topology/Atlas fields before publication, publishes generation zero through
+B13, then obtains an opaque C09 capability from `AcceptedRuntimeHost` and asks the
+C07 owner to persist and read back the exact lease against accepted run custody.
+The CLI never receives or constructs a raw source-authority registry. Generation-zero
+publication and C07 persistence remain sequential existing transactions: if the
+post-genesis lease check fails, no `atlas-release` current reference is installed;
+the lawful generation-zero run remains staged rather than being counterfeited as
+admitted.
+
+Resume derives saved settings from accepted custody and performs no neural update:
+
+```sh
+npm run train -- --dry-run --resume --run-dir /absolute/path/to/bamf-run
+```
+
+Expected: `READY_TO_RESUME` with the saved run id/seed, topology, Atlas identity,
+optimizer hyperparameters, and effective admission policy. Explicit topology,
+run-id, seed, optimizer, Atlas-manifest, or policy overrides must equal the saved
+values or fail before writes. A caller may not substitute an Atlas lease scope on
+resume. Historical v1 state is not coerced to v2.
 
 Existing trainer help can also be inspected without a neural update:
 
@@ -101,13 +132,10 @@ Existing trainer help can also be inspected without a neural update:
 npm run train -- --help
 ```
 
-C11.2's bounded reader is integrated and closed under ADR-121. Production C11
-acceptance still requires #522's actual create/resume path, persisted admission
-policy and conflicting-override proof, accepted A12/B13/C05/C07 source/custody
-receipts, and a real operator-state readback. These inspection commands do not
-start or resume a learner, verify saved topology compatibility or measure runtime
-memory and disk headroom. The operator alone starts or resumes the durable
-student. The existing 100 GiB reserve remains unchanged.
+C11.2's bounded reader remains available for historical inspection. The persistent
+v2 lifecycle above consumes accepted B13/C09/C07 custody and validates saved
+topology/admission settings, but C16.1a still stops before later learner execution.
+The existing 100 GiB reserve remains unchanged.
 
 The resource/rubric panel describes current Factory assessment as fresh routine,
 fixed promotion and inactive generalization. Historical rubric descriptions are

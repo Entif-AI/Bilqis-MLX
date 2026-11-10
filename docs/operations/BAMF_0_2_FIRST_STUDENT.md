@@ -77,6 +77,31 @@ generation-zero outputs. The persisted B13 bundle remains the source of truth fo
 the active ABI, source/Factory/teacher provenance, topology, extents, implementation
 identity, parameter ledger, optimizer moments/counts, and run seed.
 
+### Human create, Atlas enrollment, and resume
+
+C16.1a/#542 layers the persistent operator lifecycle over this owner API. Fresh
+`--dry-run` validates the complete foundation identity and returns
+`READY_TO_CREATE` without creating the target. Fresh `--human-run` calls this
+preflight and returns `CREATED` after generation zero is current; the operator does
+not enter the learner in this leaf.
+
+The default effective admission policy is `staged`. For an explicit
+`atlas-release` request, the CLI parses the versioned C07 lease only as request
+data and validates its known run/topology/Atlas fields before publication. After
+generation zero is accepted, it creates `AcceptedRuntimeHost(run_dir)`, obtains the
+opaque generation-bound C09 `SourceAuthorityRuntime`, and delegates exact lease
+persistence/readback to C07. It never accepts a raw registry or uses the launch
+receipt, CLI fields, target path, or lease file as a C09 trust root. A failed
+post-genesis lease validation installs no C07 current reference; the accepted
+generation zero remains a valid staged run.
+
+Resume cold-loads the accepted B13 generation and feature receipt, derives saved
+run id/seed, topology, Atlas identity and optimizer hyperparameters, and derives
+the effective admission policy through authenticated C07 lease readback. Omitted
+settings use those saved values. Conflicting explicit overrides reject before
+writes, and a caller-supplied Atlas lease scope is not a resume authority surface.
+Both dry-run and resume remain neural-inert here.
+
 The dashboard snapshot describes the newborn lineage. Admitted grade scope comes
 from the Factory execution plan. Optimizer step and visits are `0`, stage is
 `READY_FOR_HUMAN_START`, and status is `NOT_STARTED`; predecessor progress is not
