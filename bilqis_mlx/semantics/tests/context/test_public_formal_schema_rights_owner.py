@@ -17,7 +17,7 @@ from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
 )
 from bilqis_mlx.semantics.context_eligibility import (
-    PUBLIC_FORMAL, ContextPolicy, TaskScope,
+    PUBLIC_FORMAL, ApprovedContextProjection, ContextPolicy, TaskScope,
 )
 from bilqis_mlx.semantics.frame_adapters.common import (
     BOOLEAN_CONNECTIVE_ADAPTER,
@@ -196,6 +196,13 @@ class PublicFormalSchemaRightsOwnerTests(unittest.TestCase):
         self.assertNotIn("revision", parameters)
         with self.assertRaises(BilqisError):
             rights.SourceSchemaRightsAuthority()
+        forged_projection = ApprovedContextProjection(
+            projection.eligible, projection.envelopes)
+        self.assertEqual(forged_projection, projection)
+        with self.assertRaises(BilqisError):
+            rights.current_source_schema_grant(
+                authority, self.adapter.descriptor.adapter_id,
+                forged_projection, frame)
         with self.assertRaises(BilqisError):
             rights.current_source_schema_grant(
                 authority, BOOLEAN_CONNECTIVE_ADAPTER, projection, frame)

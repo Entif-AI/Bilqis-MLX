@@ -18,6 +18,7 @@ _ROOT_REGISTRY_SHA256 = (
 _REGISTRY_SHA256 = _ROOT_REGISTRY_SHA256
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _FAMILIES = frozenset(("boolean", "micro", "numeric"))
+_MAX_REGISTRY_CHAIN_LENGTH = 256
 _ENTRY_KEYS = frozenset((
     "family", "schema_id", "revision", "evidence_sha256", "decisions",
 ))
@@ -166,7 +167,7 @@ def _load_registry() -> dict:
     chain = []
     seen = set()
     while True:
-        if digest in seen or len(chain) >= 256:
+        if digest in seen or len(chain) >= _MAX_REGISTRY_CHAIN_LENGTH:
             _fail("BAMF_CONTEXT_SCHEMA_RIGHTS_LINEAGE_INVALID")
         seen.add(digest)
         snapshot = _read_snapshot(digest)

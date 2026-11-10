@@ -10,7 +10,8 @@ from ..context_eligibility import (
 )
 from ..frame_schema import FrameInstance, FrameSchema, SourceSpan
 from ..released_frame_schemas import lookup_source_pinned_frame_schema
-from .common import PUBLIC_FORMAL_TIMELESS_EPOCH, _SHA256, _adapter_fail
+from .common import _adapter_fail
+from .public_formal_sources import _require_public_formal_projection_authority
 from . import public_formal_schema_rights_registry as _registry
 
 
@@ -145,6 +146,7 @@ def current_source_schema_grant(
             or type(frame) is not FrameInstance):
         _fail("BAMF_CONTEXT_SCHEMA_RIGHTS_SCOPE_INVALID", source_adapter_id)
     projection.__post_init__()
+    _require_public_formal_projection_authority(projection, source_adapter_id)
     envelopes = tuple(
         envelope for envelope in projection.envelopes
         if envelope.frame == frame
