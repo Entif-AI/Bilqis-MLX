@@ -39,6 +39,9 @@ _LAZY_EXPORTS = MappingProxyType({
     "InitialFactoryFoundationAuthority": ".genesis.origin",
     "issue_initial_factory_foundation_authority": ".genesis.origin",
     "stage_vocabulary_extension": ".vocabulary_admission",
+    "require_staged_vocabulary_admission_headroom": ".vocabulary_admission",
+    "AcceptedVocabularyRegistryExport": ".vocabulary_registry_export",
+    "read_accepted_vocabulary_registry_export": ".vocabulary_registry_export",
 })
 
 
@@ -60,6 +63,8 @@ __all__ = (
     "load_bamf_generation_authority", "record_bamf_rejection",
     "A02StagedVocabularyExtension", "A02VocabularyStagingReceipt",
     "require_issued_a02_staged_vocabulary_extension", "stage_vocabulary_extension",
+    "require_staged_vocabulary_admission_headroom",
+    "AcceptedVocabularyRegistryExport", "read_accepted_vocabulary_registry_export",
     "PackageImportTransition",
     "AcceptedGenerationFeatureContext", "AcceptedGenerationFeatureReceipt",
     "AuthenticatedCandidateFeatureContext",

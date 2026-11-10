@@ -164,6 +164,7 @@ Registration does not assert readiness, source qualification or owner completion
 - [C16.1 #541](https://github.com/Entif-AI/Bilqis-MLX/issues/541): Own persistent student create and correctly bound initial generation (group; parent C16)
 - [C16.1a #542](https://github.com/Entif-AI/Bilqis-MLX/issues/542): Implement persistent BAMF create dry-run and resume entrypoints (leaf; parent C16.1)
 - [C16.1b #543](https://github.com/Entif-AI/Bilqis-MLX/issues/543): Bind fresh student topology teacher optimizer and admitted foundations (leaf; parent C16.1)
+- [C16.1c #950](https://github.com/Entif-AI/Bilqis-MLX/issues/950): Bind host-owned C09 source authority into generation-zero custody (leaf; parent C16.1)
 - [C16.2 #544](https://github.com/Entif-AI/Bilqis-MLX/issues/544): Expose earliest lawful learning readiness without optional blockers (leaf; parent C16)
 - [C16.3 #545](https://github.com/Entif-AI/Bilqis-MLX/issues/545): Handoff the exact durable human-started student lineage (leaf; parent C16)
 

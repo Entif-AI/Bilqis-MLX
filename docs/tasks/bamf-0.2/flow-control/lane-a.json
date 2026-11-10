@@ -1,13 +1,13 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "bcc82f86e2c409e22329d38c14b757d7e5a0d517",
-  "updated_at": "2026-11-09T21:32:24Z",
+  "observed_unified": "0338f334388a01389163fb0cba74614c2bcdb83a",
+  "updated_at": "2026-11-10T00:11:08Z",
   "exception": null,
   "items": [
     {
       "issue": 429,
-      "pr": null,
+      "pr": 952,
       "state": "TURNED_IN",
       "head_sha": "eb4219907dfc738c843cbba00765e4294426d351",
       "summary": "A12.3 completed across accepted PR #871 plus post-merge boundary remediation PR #874. PR #874 final head eb421990 merged into reviewed unified as 4cffd8c7 after fresh pinned EGM CLEAN at exact semantic head 97300f46 and hosted portable-core/portable/Semantic ABI PASS; the only post-EGM delta was Lane A PR bookkeeping. The remediation directly proves SOURCE_HELD refusal before trainable-row staging and before BamfTarget construction with the exact source-owned reason. Earlier #871 data-only successor/F17 source evidence remains accepted; custody PR #873 merged as 22d23ddf.",
@@ -97,16 +97,38 @@
     },
     {
       "issue": 399,
-      "pr": 943,
-      "state": "READY",
-      "head_sha": "d64df31416712b51a24c45417b05893c923642cd",
-      "head_sha_role": "current A02 semantic head after reviewed-unified e206ec0 sync and cold-import/publication-boundary repair",
-      "summary": "A02.1 staging-only owner implementation is synchronized through reviewed unified bcc82f86 and turned in as human-review PR #943. The exact owner-issued staged handoff seals run identity, complete authority-bearing candidate state, retained B12 custody and outbox/receipt; generic B13 publication remains fail-closed at BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED until #510 consumes the typed handoff. Current integration repaired one A02-caused cold checkpoint-import regression by lazy-loading the MLX-heavy staging executor and updated stale generic publication tests to assert the C07 boundary. The affected final-head ring is 13/13 PASS; docs, flow-control and diff hygiene pass; fresh independent exact-head review reports 0 Blockers / 0 Majors / 0 Nits. GitHub reports PR #943 mergeable. Human merge remains the gate before #510 consumes the handoff through reviewed unified.",
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "006c6f6cf2d09b6c8b66c0682fa135542c58b176",
+      "head_sha_role": "final A02.1 PR head consumed by reviewed unified f8f4bbaf",
+      "summary": "A02.1 owner-issued staging handoff completed and merged through PR #943 as reviewed unified f8f4bbaf. The typed handoff seals run identity, complete staged candidate state, retained custody and outbox/receipt; generic B13 publication remains fail-closed and #510 later consumed the exact owner-issued object through C07.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-399-production-admission-20261106",
+      "merged_pr": 943,
       "closed_pr": 887,
       "closed_under": "BAMF WAITING issue/branch queue; open implementation PRs are reserved for merge-ready candidates or active remediation delivery.",
       "close_reason": "Historical waiting reason was C07.1b/#510 persisted-lease-gated adoption; bounded A02 implementation resumed against exact upstream branch interface while final integration still waits reviewed C07 authority."
+    },
+    {
+      "issue": 400,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "3d3db158c9a0f69e04477fa89b6825926ad750f0",
+      "head_sha_role": "final A02.2 PR head consumed by reviewed unified 0338f334",
+      "summary": "A02.2 completed through PR #952 and merged as reviewed unified 0338f334 after full one-bank -> two-bank A02/C07/B13 crash/cold-read/retry proof, admission-time resource revalidation, generation-zero inactive-bank deferral and fresh exact-head review with 0 Blockers / 0 Majors / 0 Nits.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a-semantics",
+      "merged_pr": 952
+    },
+    {
+      "issue": 401,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "db0bde381eccca4207623014cb1f728258bf4d3e",
+      "head_sha_role": "A02.3 accepted Registry-mirror/resource export semantic candidate on reviewed unified 0338f334; independent exact-head review pending",
+      "summary": "Historical A02.3 source-derived Registry mirror and conservative bank resource estimate remain intact. Current integration closes the previously explicit persistence/readback gap by recovering the persisted plan, mirror and resource requirement from accepted C07/B13 custody, revalidating the A02 staging receipt and allocation/source/active-set lineage, and returning a typed navigation/evidence export with semantic_authority=false and training_authorized=false. The composed accepted cold-read/retry witness passes; focused A02/C07 ring, structure/governance/smell/error-control/flow/contracts/docs/diff gates are green. Fresh independent exact-head review remains before human-review PR turn-in.",
+      "resume_trigger": "Obtain fresh independent exact-head review of db0bde38. If clean, synchronize any newer reviewed unified, rerun affected gates, set #401 READY, open the normal human-review PR, bind its number and post the durable issue checkpoint. Do not self-merge.",
+      "preserved_branch": "codex/bamf02-a-semantics"
     },
     {
       "issue": 888,

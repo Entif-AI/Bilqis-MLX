@@ -25,7 +25,8 @@ from bilqis_mlx.semantics.atlas.vocabulary_planning import (
     _plan_authenticated_vocabulary_extension, plan_vocabulary_extension,
 )
 from bilqis_mlx.semantics.atlas.vocabulary_resources import (
-    _build_authenticated_registry_mirror_delta, build_registry_mirror_delta,
+    RESOURCE_SCHEMA, _build_authenticated_registry_mirror_delta,
+    build_registry_mirror_delta,
 )
 from bilqis_mlx.semantics.atlas.vocabulary_transaction import (
     FullVocabularyParent, _stage_authenticated_full_vocabulary_extension,
@@ -34,6 +35,7 @@ from bilqis_mlx.semantics.atlas.vocabulary_transaction import (
 from ._vocabulary_admission_records import (
     A02StagedVocabularyExtension, A02VocabularyStagingReceipt, STAGED_EVENT,
     _issue_a02_staged_vocabulary_extension,
+    require_issued_a02_staged_vocabulary_extension,
 )
 from .feature_authority import (
     feature_schema_from_compiler_features, read_accepted_generation_feature_context,
@@ -143,6 +145,46 @@ def _resource_requirement(resource) -> dict:
     record.pop("observed_available_bytes")
     record.pop("fits")
     return record
+
+
+def _sealed_resource_requirement(staged: A02StagedVocabularyExtension) -> int:
+    staged = require_issued_a02_staged_vocabulary_extension(staged)
+    events = tuple(
+        event for event in staged.candidate.outbox
+        if isinstance(event, dict) and event.get("event") == STAGED_EVENT)
+    if len(events) != 1:
+        invalid("BAMF_A02_STAGED_RESOURCE_REQUIREMENT_INVALID")
+    record = events[0].get("resource_estimate")
+    integer_fields = (
+        "previous_bank_count", "next_bank_count", "added_bank_bytes",
+        "complete_checkpoint_bytes_lower_bound", "disk_reserve_bytes",
+        "extra_planning_bytes", "required_available_bytes_lower_bound",
+    )
+    if (not isinstance(record, dict)
+            or record.get("schema_version") != RESOURCE_SCHEMA
+            or set(record) != set(integer_fields) | {"schema_version"}
+            or any(type(record.get(name)) is not int or record[name] < 0
+                   for name in integer_fields)
+            or record["previous_bank_count"] > record["next_bank_count"]
+            or record["next_bank_count"] != staged.receipt.semantic_bank_count
+            or record["required_available_bytes_lower_bound"]
+            != record["complete_checkpoint_bytes_lower_bound"]
+            + record["disk_reserve_bytes"] + record["extra_planning_bytes"]
+            or _digest_record(record) != staged.receipt.resource_estimate_sha256):
+        invalid("BAMF_A02_STAGED_RESOURCE_REQUIREMENT_INVALID")
+    return record["required_available_bytes_lower_bound"]
+
+
+def require_staged_vocabulary_admission_headroom(
+        run_dir: Path,
+        staged: A02StagedVocabularyExtension) -> int:
+    """Recheck the A02-sealed disk requirement immediately before first commit."""
+    run_dir = Path(run_dir)
+    required = _sealed_resource_requirement(staged)
+    available = int(shutil.disk_usage(run_dir).free)
+    if available < required:
+        invalid("BAMF_VOCABULARY_ADMISSION_DISK_BUDGET_EXCEEDED")
+    return available
 
 
 def _accepted_vocabulary_parent(run_dir: Path, artifact_path: str):
