@@ -287,7 +287,12 @@
       "head_sha_role": "exact pushed semantic/test candidate before flow-control evidence-only checkpoint",
       "summary": "#958 A09/Factory scope remediation is implementation-complete at exact remote head 5677d4df on reviewed unified 2c572202. The v2 path carries a digest-bound A09 receipt/staged-candidate handoff, derives source-owned operator/non-operator scope, cross-binds A09 graph-token selection to A01/A02 Atlas identities, keeps v1 lease semantics historical, uses a separately human-authorized v2 lease, derives neural/resource facts only from owner-issued A02 evidence, and binds the same accepted B13 run before policy. Final local owner ring is 60/60 PASS; structure/governance/smell/error-control/BAMF contracts/flow-control are green; hosted PR #967 portable-core, portable and Semantic ABI are green. Fresh independent Goldfish remains EGM_PENDING because Chat On Steroids reports PRIME_TRANSFER_IN_PROGRESS; PR remains Draft and integration is not qualified until a genuine fresh 0B/0M review lands.",
       "resume_trigger": "Run a fresh pinned EGM exact-head review of semantic candidate 5677d4df08b604b86cdc45d39e7b2e59882107ac. If it returns 0 Blockers / 0 Majors, reconcile any evidence-only flow-control head, mark PR #967 ready for human review, and preserve no-self-merge authority.",
-      "preserved_branch": "codex/958-a09-c07-scope-20261109"
+      "preserved_branch": "codex/958-a09-c07-scope-20261109",
+      "open_pr_exception": {
+        "reason": "Draft PR #967 is implementation-complete and CI-green but intentionally parked because the mandatory fresh independent EGM cannot currently be launched while the worker transport reports PRIME_TRANSFER_IN_PROGRESS.",
+        "authority": "Issue #958 fresh-Goldfish turn-in contract permits EGM_PENDING when no fresh-subagent facility is available; integration still requires the real fresh review.",
+        "expires_when": "A fresh pinned EGM exact-head review of semantic candidate 5677d4df08b604b86cdc45d39e7b2e59882107ac returns a disposition and PR #967 is either advanced to review or repaired."
+      }
     },
     {
       "issue": 959,
