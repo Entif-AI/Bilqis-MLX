@@ -82,6 +82,30 @@ class AtlasProjectionBundleTests(unittest.TestCase):
                     with self.assertRaises(BilqisError):
                         resolve_atlas_source_bundle(requested)
 
+    def test_source_bundle_locator_rejects_unsafe_or_missing_host_roots(self):
+        source_bundle_id = "a" * 64
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            real_root = root / "real"
+            real_root.mkdir()
+            symlink_root = root / "alias"
+            symlink_root.symlink_to(real_root, target_is_directory=True)
+            with patch.dict(
+                    os.environ,
+                    {ATLAS_SOURCE_BUNDLE_ROOT_ENV: "relative/source-root"},
+                    clear=False):
+                with self.assertRaises(BilqisError):
+                    resolve_atlas_source_bundle(source_bundle_id)
+            with patch.dict(
+                    os.environ,
+                    {ATLAS_SOURCE_BUNDLE_ROOT_ENV: str(symlink_root)},
+                    clear=False):
+                with self.assertRaises(BilqisError):
+                    resolve_atlas_source_bundle(source_bundle_id)
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(BilqisError):
+                resolve_atlas_source_bundle(source_bundle_id)
+
     def test_bundle_admission_rejects_census_gate_manifest_and_symlink_attacks(self):
         cases = (
             ("census_wrong_identity", "ATLAS_SOURCE_CENSUS_IDENTITY_MISMATCH"),
