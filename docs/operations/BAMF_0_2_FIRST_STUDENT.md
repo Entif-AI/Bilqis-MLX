@@ -12,13 +12,28 @@ The optimizer values have no hidden default. B13 seals the exact supplied values
 B01 still owns parameter and decay geometry, and B12/B13 construct fresh zero
 moments and update counts. Historical optimizer state is never migrated.
 
-Preflight accepts an absent or empty target directory, or a target containing only
-the independently host-provisioned C09 `source-authority-registry.json` and its
-lock. The CLI and package never create or select that trust root. When present,
-C16.1c/#950 snapshots its exact record and digest into the owner-derived generation-
-zero correction frontier; the B13 bootstrap binding therefore seals it with the
-same accepted run identity. A copied host file without the matching generation-zero
-binding cannot mint `SourceAuthorityRuntime`.
+Preflight accepts only an absent or empty target directory. C16.1c/#950 moves new
+generation-zero C09 authority completely outside that target: on Darwin the host
+administrator provisions `/etc/entif-ai/bilqis/source-authority-registry.json`
+independently of Bilqis. The path is fixed in production; the CLI, config,
+environment, package API, and target run directory cannot select it. Runtime may
+read and validate the host file but never creates, replaces, repairs, relocates, or
+populates it.
+
+During generation-zero preparation B13 snapshots the exact validated host registry
+record, digest, and origin `HOST_SYSTEM_V1` into the owner-derived correction
+frontier. Publication rereads the fixed host root before pointer installation and
+requires exact equality with that prepared binding. Missing, unsafe, malformed, or
+drifted host authority therefore fails before a new run becomes current. A copied
+registry inside the target run directory has no authority for a new lineage.
+
+Host-root rotation is not supported by #950. Administrators must not rotate the file
+concurrently with Bilqis operations; later authority boundaries reread the selected
+root and fail closed on drift. Historical pre-#950 lineages retain their recorded
+run-local #917 custody semantics and may use the narrowly defined one-time ordinary
+retained-successor compatibility anchor. That historical path is derived from
+authenticated accepted custody and is never selected by a caller or used by a new
+C16.1c generation zero.
 
 Preflight replays the current Factory admission from the source run, resolves the
 source-owned Atlas artifact, derives the ordinary Factory teacher projection and B01

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import errno
 import os
 import stat
+from types import MappingProxyType
 
 from .records import invalid
 
@@ -18,7 +19,7 @@ ACL_EXTENDED_DENY = 2
 ID_TYPE_UID = 0
 ID_TYPE_GID = 1
 
-_PERMISSIONS = {
+_PERMISSIONS = MappingProxyType({
     "ACL_WRITE_DATA": 1 << 2,
     "ACL_DELETE": 1 << 4,
     "ACL_APPEND_DATA": 1 << 5,
@@ -27,7 +28,7 @@ _PERMISSIONS = {
     "ACL_WRITE_EXTATTRIBUTES": 1 << 10,
     "ACL_WRITE_SECURITY": 1 << 12,
     "ACL_CHANGE_OWNER": 1 << 13,
-}
+})
 _MUTATION_PERMISSIONS = frozenset(_PERMISSIONS)
 _INVALID = "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_INVALID"
 _REQUIRED = "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED"

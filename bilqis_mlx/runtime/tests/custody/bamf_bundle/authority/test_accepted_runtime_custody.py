@@ -65,8 +65,10 @@ class AcceptedRuntimeCustodyTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish(self, source, registry=None):
-        if registry is not None and registry != AUTHORITY:
-            raise AssertionError("this suite binds its synthetic signer as the HOST registry")
+        if registry is not None:
+            self.assertEqual(
+                registry, AUTHORITY,
+                "this suite binds its synthetic signer as the HOST registry")
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             return publish_candidate(self.run, source)
 
