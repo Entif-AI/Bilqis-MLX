@@ -87,8 +87,10 @@ from .atlas_projection_parts.coverage import (
     _validate_source_census,
 )
 from .atlas_projection_parts.bundle import (
+    ATLAS_SOURCE_BUNDLE_ROOT_ENV,
     _validated_gates,
     _verify_bundle,
+    resolve_atlas_source_bundle,
 )
 from .atlas_projection_parts.rdf import (
     _concept,

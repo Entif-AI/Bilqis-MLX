@@ -3,7 +3,37 @@ from __future__ import annotations
 from collections.abc import Mapping
 from pathlib import Path
 import json
+import os
 from .common import GATE_VERSIONS, HEX64, REQUIRED_BUNDLE_FILES, REQUIRED_GATES, _canonical_bytes, _digest, _fail
+
+
+ATLAS_SOURCE_BUNDLE_ROOT_ENV = "BILQIS_A01_SOURCE_BUNDLE_ROOT"
+
+
+def resolve_atlas_source_bundle(source_bundle_id: str) -> Path:
+    """Locate and verify one raw Atlas source bundle by content identity.
+
+    Host placement is configuration, never source authority.  The returned path
+    is usable only after the canonical bundle verifier proves that its bytes
+    actually hash to the requested source-bundle identity.
+    """
+    if type(source_bundle_id) is not str or not HEX64.fullmatch(source_bundle_id):
+        _fail("ATLAS_SOURCE_BUNDLE_ID_INVALID")
+    root_value = os.environ.get(ATLAS_SOURCE_BUNDLE_ROOT_ENV)
+    if not root_value:
+        current = os.environ.get("BILQIS_A01_SOURCE_BUNDLE")
+        if not current:
+            _fail("ATLAS_SOURCE_BUNDLE_ROOT_MISSING")
+        root = Path(current).expanduser().parent
+    else:
+        root = Path(root_value).expanduser()
+    if not root.is_absolute() or root.is_symlink() or not root.is_dir():
+        _fail("ATLAS_SOURCE_BUNDLE_ROOT_INVALID")
+    candidate = root / source_bundle_id
+    verified_id, _payloads = _verify_bundle(candidate)
+    if verified_id != source_bundle_id:
+        _fail("ATLAS_SOURCE_BUNDLE_ID_MISMATCH")
+    return candidate
 
 
 def _verify_bundle(root: Path) -> tuple[str, dict[str, bytes]]:

@@ -6,7 +6,10 @@ from ..atlas_projection import FrozenAtlasSnapshot
 from ..context_eligibility import ApprovedContextProjection, ContextHold, ContextPolicy, SourceFrontier, TaskScope
 from ..frame_schema import SourceSpan
 from .common import _adapter_fail
-from .public_formal_sources import canonical_adapter, canonical_graph, validate_policy, verify_draw
+from .public_formal_sources import (
+    _issue_public_formal_projection_authority, canonical_adapter, canonical_graph,
+    validate_policy, verify_draw,
+)
 from .public_formal_grants import admit_tree
 from .registry import bind_registered_source_row, released_frame_adapter
 
@@ -45,5 +48,10 @@ def public_formal_context(
     tree = bind_registered_source_row(
         source_adapter, row, snapshot, source_root=source_root, graph=graph,
         source_span=span, causal_prefix_end=span.end, course=course)
-    return admit_tree(tree, row, released.source_adapter_id,
-                      task_scope, source_frontier, policy, span)
+    admitted = admit_tree(tree, row, released.source_adapter_id,
+                          task_scope, source_frontier, policy, span)
+    if isinstance(admitted, ContextHold):
+        return admitted
+    projection, frontier = admitted
+    _issue_public_formal_projection_authority(projection, released.source_adapter_id)
+    return projection, frontier
