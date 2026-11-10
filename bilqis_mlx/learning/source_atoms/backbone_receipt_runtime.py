@@ -35,49 +35,45 @@ def _motif_read_digest(
     ))
 
 
-def receipt_values(producer, result=None):
-    """Replay owned execution and project the requested B11 boundary."""
+def _h0_receipt_values(
+    producer, source_digest, topology, generation, prefix, replay,
+):
     from .backbone_receipts import (
-        HIT, INPUT_MOTIF_POSITION, MOTIF_POSITION, NO_HIT, NOT_APPLICABLE,
-        QUALIFIED_MISS,
+        HIT, INPUT_MOTIF_POSITION, NOT_APPLICABLE, QUALIFIED_MISS,
+    )
+    hidden = producer._initial_hidden
+    output = _content_digest(hidden)
+    execution_digest = contract_digest(("h0", output, replay.parameter_tree_digest))
+    motif = producer._input_motif_read
+    if motif is None:
+        motif_disposition = NOT_APPLICABLE
+        motif_position = ""
+        motif_read_digest = contract_digest(())
+    else:
+        motif_disposition = HIT if motif.participating_slots else QUALIFIED_MISS
+        motif_position = INPUT_MOTIF_POSITION
+        motif_read_digest = _motif_read_digest(
+            motif, hidden, source_digest, prefix, generation,
+            execution_digest, motif_position)
+    return dict(
+        source_id="h0", completed_layer=0, hidden=hidden,
+        source_handoff_digest=source_digest, topology_digest=topology.digest,
+        generation_digest=generation,
+        parameter_tree_digest=replay.parameter_tree_digest,
+        prefix_digest=prefix,
+        scope_digest=contract_digest((source_digest, prefix, generation)),
+        input_digest=source_digest, output_digest=output,
+        output_shape=tuple(hidden.shape), output_dtype=str(hidden.dtype),
+        cache_chain_digest=contract_digest(()),
+        numerical_execution_digest=execution_digest,
+        predecessor_receipt_digest=source_digest,
+        motif_disposition=motif_disposition,
+        motif_read_position=motif_position,
+        motif_read_digest=motif_read_digest,
     )
 
-    _encoded, source_digest, topology, generation, prefix, replay = (
-        producer._receipt_replay())
-    if result is None:
-        hidden = producer._initial_hidden
-        output = _content_digest(hidden)
-        execution_digest = contract_digest((
-            "h0", output, replay.parameter_tree_digest))
-        motif = producer._input_motif_read
-        if motif is None:
-            motif_disposition = NOT_APPLICABLE
-            motif_position = ""
-            motif_read_digest = contract_digest(())
-        else:
-            motif_disposition = (
-                HIT if motif.participating_slots else QUALIFIED_MISS)
-            motif_position = INPUT_MOTIF_POSITION
-            motif_read_digest = _motif_read_digest(
-                motif, hidden, source_digest, prefix, generation,
-                execution_digest, motif_position)
-        return dict(
-            source_id="h0", completed_layer=0, hidden=hidden,
-            source_handoff_digest=source_digest, topology_digest=topology.digest,
-            generation_digest=generation,
-            parameter_tree_digest=replay.parameter_tree_digest,
-            prefix_digest=prefix,
-            scope_digest=contract_digest((source_digest, prefix, generation)),
-            input_digest=source_digest, output_digest=output,
-            output_shape=tuple(hidden.shape), output_dtype=str(hidden.dtype),
-            cache_chain_digest=contract_digest(()),
-            numerical_execution_digest=execution_digest,
-            predecessor_receipt_digest=source_digest,
-            motif_disposition=motif_disposition,
-            motif_read_position=motif_position,
-            motif_read_digest=motif_read_digest,
-        )
 
+def _replay_to_result(producer, replay, topology, result):
     target = result.group_index
     if (
         target < 1
@@ -120,6 +116,16 @@ def receipt_values(producer, result=None):
     ):
         _invalid()
 
+    return target, expected
+
+
+def _group_receipt_values(
+    producer, result, source_digest, topology, generation, prefix, replay,
+):
+    from .backbone_receipts import (
+        HIT, MOTIF_POSITION, NO_HIT, NOT_APPLICABLE, QUALIFIED_MISS,
+    )
+    target, expected = _replay_to_result(producer, replay, topology, result)
     source_id = SOURCE_ORDER[target]
     hidden = expected.hidden
     motif_disposition = NO_HIT if source_id == "g1" else NOT_APPLICABLE
@@ -167,3 +173,14 @@ def receipt_values(producer, result=None):
         motif_disposition=motif_disposition, motif_read_position=motif_position,
         motif_read_digest=motif_read_digest,
     )
+
+
+def receipt_values(producer, result=None):
+    """Replay owned execution and project the requested B11 boundary."""
+    _encoded, source_digest, topology, generation, prefix, replay = (
+        producer._receipt_replay())
+    if result is None:
+        return _h0_receipt_values(
+            producer, source_digest, topology, generation, prefix, replay)
+    return _group_receipt_values(
+        producer, result, source_digest, topology, generation, prefix, replay)
