@@ -1,10 +1,20 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "937dcfc82cfbc03fcb8220fd318a20019bfa005e",
-  "updated_at": "2026-11-10T20:49:08Z",
+  "observed_unified": "e8d28a9ed6bc46282eca702ad4c69a23964d1cf8",
+  "updated_at": "2026-11-10T21:08:48Z",
   "exception": null,
   "items": [
+    {
+      "issue": 441,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "e8d28a9ed6bc46282eca702ad4c69a23964d1cf8",
+      "head_sha_role": "issue-boundary reviewed-unified sync head before #441 requalification edits",
+      "summary": "B02.3 resumed after #440 PR #977 human merge. Historical provisional registry/update-coverage implementation 807a9b87 is already present on reviewed unified and is being requalified against the landed B02.1/B02.2/A02/B01 contracts before final turn-in.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-neural"
+    },
     {
       "issue": 440,
       "pr": 977,
