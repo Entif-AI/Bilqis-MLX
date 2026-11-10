@@ -17,6 +17,7 @@ from bilqis_mlx.runtime import admission as factory_admission
 from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_factory_release
 from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, load_bamf_generation_authority,
+    read_accepted_vocabulary_registry_export,
     require_issued_a02_staged_vocabulary_extension, stage_vocabulary_extension,
 )
 from bilqis_mlx.runtime.jit_adoption import (
@@ -155,6 +156,23 @@ class A02C07ProductionAdoptionTests(unittest.TestCase):
         new_bank = accepted.retained_state.optimizer
         self.assertTrue(np.all(np.asarray(new_bank.m["identity.bank.1"][0]) == 0))
         self.assertTrue(np.all(np.asarray(new_bank.v["identity.bank.1"][0]) == 0))
+        export = read_accepted_vocabulary_registry_export(self.run)
+        self.assertEqual(export.run_id, accepted.run_id)
+        self.assertEqual(export.generation, 1)
+        self.assertEqual(export.manifest_sha256, pointer["manifest_sha256"])
+        self.assertEqual(
+            export.registry_mirror_sha256,
+            staged.receipt.registry_mirror_sha256)
+        self.assertEqual(export.active_indices, (0, 8192))
+        self.assertEqual(
+            tuple((row.semantic_id, row.abi_index, row.bank, row.row)
+                  for row in export.rows),
+            (("urn:concept:8192", 8192, 1, 0),))
+        self.assertEqual(export.previous_bank_count, 1)
+        self.assertEqual(export.next_bank_count, 2)
+        self.assertGreater(export.added_bank_bytes, 0)
+        self.assertFalse(export.semantic_authority)
+        self.assertFalse(export.training_authorized)
         self.assertEqual(
             read_accepted_atlas_factory_release(self.run).release_sha256,
             successor.release_sha256)

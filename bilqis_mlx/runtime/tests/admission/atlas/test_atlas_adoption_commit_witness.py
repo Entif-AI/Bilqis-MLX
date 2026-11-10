@@ -88,6 +88,28 @@ def _assert_normalized_accepted(test_case, native_staged, accepted_pointer, acce
         native_staged.candidate.extents.digest)
 
 
+def _assert_registry_export(test_case, run_dir, accepted_pointer, native_staged):
+    from bilqis_mlx.runtime.bamf_bundle import read_accepted_vocabulary_registry_export
+
+    export = read_accepted_vocabulary_registry_export(run_dir)
+    test_case.assertEqual(export.run_id, native_staged.candidate.run_id)
+    test_case.assertEqual(export.generation, native_staged.candidate.generation)
+    test_case.assertEqual(export.manifest_sha256, accepted_pointer["manifest_sha256"])
+    test_case.assertEqual(export.registry_mirror_sha256,
+                          native_staged.receipt.registry_mirror_sha256)
+    test_case.assertEqual(export.active_indices, (0,))
+    test_case.assertEqual(export.previous_bank_count, 0)
+    test_case.assertEqual(export.next_bank_count, 1)
+    test_case.assertEqual(export.required_available_bytes_lower_bound, 1)
+    test_case.assertFalse(export.semantic_authority)
+    test_case.assertFalse(export.training_authorized)
+    record = export.to_record()
+    test_case.assertEqual(record["schema_version"], export.schema_version)
+    test_case.assertEqual(record["export_sha256"], export.digest)
+    test_case.assertFalse(record["semantic_authority"])
+    test_case.assertFalse(record["training_authorized"])
+
+
 class AtlasAdoptionCommitWitnessTests(
         AtlasAdoptionExecutorFixture, unittest.TestCase):
     def test_factory_persist_b13_publish_cold_read_and_exact_retry(self):
@@ -158,6 +180,8 @@ class AtlasAdoptionCommitWitnessTests(
                 self.root / "bamf-state.json")
             _assert_normalized_accepted(
                 self, native_staged, accepted_pointer, accepted)
+            _assert_registry_export(
+                self, self.root, accepted_pointer, native_staged)
             pointer2 = _publish_native_staged_candidate(
                 runtime, selected, proposal, native_staged, lease, object(),
                 current=current, checkpoint=origin)
