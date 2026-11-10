@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.grade_b_oracle import CONNECTIVES, VERSION as BOOLEAN_ORACLE
 from bilqis_mlx.live_grade_b import constructor_digest as boolean_provider_digest
 from bilqis_mlx.live_grade_c import PLANS, provider_implementation_digest as numeric_provider_digest
@@ -58,7 +59,10 @@ class SourceOperatorDisposition:
                     and (not isinstance(self.operator_id, str) or not self.operator_id))
                 or (self.semantic_root is not None
                     and (not isinstance(self.semantic_root, str) or not self.semantic_root))):
-            raise ValueError("SOURCE_OPERATOR_DISPOSITION_INVALID")
+            ErrorBus.raise_(
+                SCHOOL.BAMF_ATLAS_ADMISSION.INVALID,
+                reason="BAMF_ATLAS_SOURCE_OPERATOR_DISPOSITION_INVALID",
+            )
 
 
 def _disposition_from_descriptor(

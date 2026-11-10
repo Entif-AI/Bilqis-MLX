@@ -12,8 +12,9 @@ from pathlib import Path
 
 from ..semantics.domains import contract_digest
 from .atlas_lease_contracts import (
-    AtlasAdmissionLease, AtlasSourceApproval, DeltaBudgetPolicy, LeaseRunIdentity,
-    ResourceCeiling, _invalid, _sha, _name, _names,
+    AtlasAdmissionLease, AtlasAdmissionLeaseV2, AtlasSourceApproval,
+    DeltaBudgetPolicy, LeaseRunIdentity, ResourceCeiling, ResourceCeilingV2,
+    _invalid, _sha, _name, _names,
 )
 from .atlas_lease_storage import (
     _atlas_lease_lock, _lease_from_json, _persist_atlas_lease_locked,
@@ -34,6 +35,11 @@ def issue_atlas_lease(lease_id, run_identity, source_approval, resource_ceiling,
 def advance_atlas_frontier(current, proposal, lease):
     from .atlas_admission_policy import advance_atlas_frontier as advance
     return advance(current, proposal, lease)
+
+
+def advance_atlas_frontier_v2(current, delta, lease):
+    from .atlas_admission_policy_v2 import advance_atlas_frontier_v2 as advance
+    return advance(current, delta, lease)
 
 
 def add_atlas_admission_arguments(parser):
@@ -311,3 +317,20 @@ def renew_atlas_lease(run_dir, lease, *, independently_loaded_run, registry,
         if read_atlas_lease(run_dir, independently_loaded_run, registry=registry) != lease:
             _invalid('BAMF_ATLAS_LEASE_READBACK_DRIFT')
         return reference
+
+
+# V2 is deliberately a separate human-authority epoch.  Re-export its public
+# entrypoints here without changing the v1 storage or policy contracts above.
+from .atlas_lease_v2 import (
+    issue_atlas_lease_v2,
+    persist_accepted_atlas_lease_v2,
+    persist_atlas_lease_v2,
+    read_accepted_atlas_lease_v2,
+    read_atlas_lease_v2,
+    renew_atlas_lease_v2,
+)
+from .atlas_admission_policy_v2 import (
+    AtlasAdmissionContextV2,
+    AtlasDeltaEnvelopeV2,
+    AtlasDerivedAdmissionFactsV2,
+)
