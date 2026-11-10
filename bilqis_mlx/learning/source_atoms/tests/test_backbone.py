@@ -73,4 +73,5 @@ class SourceBackboneTests(SourceBackboneTestBase):
                          {"prefix_digest": "a" * 64}):
             with self.subTest(injected=tuple(injected)), self.assertRaises(TypeError):
                 start_source_backbone_numerical(
-                    self.compiled, self.parameters, (self.source,), self.schema, **injected)
+                    self.compiled, self.parameters, (self.source,), self.schema,
+                    self.banks(), self.artifact_owner, **injected)

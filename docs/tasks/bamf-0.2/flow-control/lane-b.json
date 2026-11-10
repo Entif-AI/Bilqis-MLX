@@ -1,10 +1,30 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "6a770f10074df6f4f8889d439f783ad42f5efe63",
-  "updated_at": "2026-11-10T01:20:54Z",
+  "observed_unified": "905018b0ece7613843570dc2c2e72a74dae4e91d",
+  "updated_at": "2026-11-10T19:53:08Z",
   "exception": null,
   "items": [
+    {
+      "issue": 970,
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "77e787df7846e16767c2fa20f776f22c0e340aab",
+      "head_sha_role": "hosted-CI-qualified feature head; semantic/test proof remains 1175bd750817783bb9d48d7dfc2fd4c32dfd514b and is reused across the import-timing-only portability repair; subsequent turn-in bookkeeping is docs/flow-only",
+      "summary": "B13 new_acceptance=false remediation discovered by #439's real A02 staging witness is turned in as bundled remediation included in #439 PR #976. Exact pre-admission candidate replay remains separate from accepted CompleteStudent replay through B13/C07 custody; C07 remains sole active-set admission owner. Hosted portable-core, portable, and semantic-ABI checks pass on 77e787df; human merge remains external.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-neural"
+    },
+    {
+      "issue": 439,
+      "pr": 976,
+      "state": "TURNED_IN",
+      "head_sha": "77e787df7846e16767c2fa20f776f22c0e340aab",
+      "head_sha_role": "hosted-CI-qualified feature head; semantic/test proof remains 1175bd750817783bb9d48d7dfc2fd4c32dfd514b and is reused across the import-timing-only portability repair; subsequent turn-in bookkeeping is docs/flow-only",
+      "summary": "B02.1 is turned in through PR #976 after A02 requalification, exact semantic-head review, retained 3/3 detached A02 witness, and hosted portable-core/portable/semantic-ABI success on 77e787df. Generation-owned active semantic rows feed the existing tied sparse readout without moving C07 admission authority; parent B02 #359 remains open and human merge remains external.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-neural"
+    },
     {
       "issue": 475,
       "pr": null,
@@ -292,12 +312,13 @@
     },
     {
       "issue": 460,
-      "pr": 953,
-      "state": "ACTIVE",
-      "head_sha": "d613d25d841b2ac8da3d75d37ebfc797c3975794",
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "6868e129b51343fb3a3fab366c93d2ba5485c396",
       "preserved_branch": "codex/460-b08-qualified-motif-20261109",
-      "summary": "B08.1 resumed after its recorded A03/B13 authority blockers reached reviewed unified. Draft PR #953 carries source-owned schema rights into motif read identity with exact accepted-cache/source-owner custody; hosted portable checks are green and the exact branch advanced on 2026-11-10, so this remains live implementation/review WIP rather than parked WAITING state.",
-      "resume_trigger": null
+      "summary": "B08.1 is accepted and closed after human merge of PR #953. Exact merged PR head 6868e129 carried the source-owned schema-right and accepted-cache/source-owner custody repair with green hosted checks and converged exact-head review.",
+      "resume_trigger": null,
+      "merged_pr": 953
     },
     {
       "issue": 481,
@@ -412,11 +433,12 @@
     {
       "issue": 471,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
-      "summary": "B11.1 composition leaf activated after reviewed integration of A05/A13 prefix authority (#936), B10/C04 request disposition (#935), C05/A05 evaluation source custody (#937), and accepted run_seed/visit transport. Lane branch is exactly current reviewed unified; implementation is limited to canonical B06.2 selection -> B06.3 local refinement -> typed readout and existing backend dispatch obligations.",
+      "state": "TURNED_IN",
+      "head_sha": "26bcc2657e20d231ec9a6692b57d2c75b182d7a7",
+      "summary": "B11.1 is accepted and closed after human merge of PR #939. The merged exact head composes canonical B06.2 selection, B06.3 local refinement and typed readout using the accepted A05/A13, B10/C04, C05/A05 and B13/C03/C02 authority paths.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b-neural"
+      "preserved_branch": "codex/bamf02-b-neural",
+      "merged_pr": 939
     },
     {
       "issue": 948,

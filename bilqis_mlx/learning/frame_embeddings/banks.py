@@ -6,6 +6,7 @@ from typing import Mapping
 import mlx.core as mx
 from lib.ithkuil.src.skos.publication import json_bytes
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2, SHA256_HEX_LENGTH
+from bilqis_mlx.semantics.atlas.vocabulary import CandidateState, STAGED_ONLY, VocabularyExtension
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
 from .common import ACTIVE_BANK_SCHEMA, BANK_ROWS, EMBEDDING_INPUT_SCHEMA, INDEXED_LOGITS_SCHEMA, UINT32_MAX, WIDTH, _invalid
 from .requests import FeatureRequest
@@ -64,6 +65,59 @@ def _validate_banks(banks):
     digest = hashlib.sha256(json_bytes(indices)).hexdigest()
     if banks[0].active_semantic_digest != digest:
         _invalid()
+
+
+def semantic_bank_views(
+    parameters: Mapping[str, mx.array], extents: GenerationExtents,
+    semantic_release: str, active_indices: tuple[int, ...],
+) -> tuple[SemanticBankView, ...]:
+    """Project one generation's owner-bound active ABI into read-only bank views."""
+    if (not isinstance(parameters, Mapping) or type(extents) is not GenerationExtents
+            or not isinstance(semantic_release, str)
+            or len(semantic_release) != SHA256_HEX_LENGTH
+            or any(character not in "0123456789abcdef" for character in semantic_release)
+            or type(active_indices) is not tuple or not active_indices
+            or active_indices != tuple(sorted(set(active_indices)))
+            or any(type(index) is not int or not 0 <= index
+                   < extents.semantic_bank_count * BANK_ROWS for index in active_indices)):
+        _invalid()
+    rows = [[] for _ in range(extents.semantic_bank_count)]
+    for index in active_indices:
+        bank, row = divmod(index, BANK_ROWS)
+        rows[bank].append(row)
+    banks = tuple(
+        SemanticBankView(
+            bank, parameters.get(f"identity.bank.{bank}"), tuple(active_rows),
+            semantic_release, extents.active_semantic_digest,
+        )
+        for bank, active_rows in enumerate(rows)
+    )
+    _validate_banks(banks)
+    if tuple(bank.bank_index * BANK_ROWS + row
+             for bank in banks for row in bank.active_rows) != active_indices:
+        _invalid()
+    return banks
+
+
+def semantic_bank_views_from_vocabulary_candidate(
+    candidate: CandidateState, plan: VocabularyExtension,
+) -> tuple[SemanticBankView, ...]:
+    """Borrow A02's staged bank tensors without turning the view into authority."""
+    if (type(candidate) is not CandidateState or type(plan) is not VocabularyExtension or
+            candidate.status != STAGED_ONLY or plan.status != STAGED_ONLY or
+            candidate.parent_generation_id != plan.parent_generation_id or
+            candidate.source_allocation_digest != plan.source_allocation_digest or
+            candidate.extents.semantic_bank_count != plan.bank_count or
+            candidate.extents.active_semantic_digest != plan.active_semantic_digest or
+            candidate.active_indices != plan.active_indices or
+            tuple(index for index, _ in candidate.output_domain) != candidate.active_indices or
+            candidate.registry_mirror_delta != plan.allocations or
+            len(candidate.weights) != plan.bank_count):
+        _invalid()
+    return semantic_bank_views(
+        {f"identity.bank.{index}": weights
+         for index, weights in enumerate(candidate.weights)},
+        candidate.extents, plan.semantic_release, candidate.active_indices)
 
 def embed_atoms(
     parameters: Mapping[str, mx.array], batch: ConceptBatch, features: AtlasFeatures,

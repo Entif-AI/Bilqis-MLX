@@ -5,7 +5,9 @@ from unittest import skipUnless
 import mlx.core as mx
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.frame_embeddings import FeatureRequest, motif_gate_features
+from bilqis_mlx.learning.frame_embeddings import (
+    FeatureRequest, motif_gate_features, semantic_bank_views,
+)
 from bilqis_mlx.learning.frame_embeddings.tests import test_public_formal_types as formal_fixtures
 from bilqis_mlx.learning.source_atoms.backbone import start_source_backbone_producer
 from bilqis_mlx.runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
@@ -54,6 +56,8 @@ class BackboneFormalSelectionTests(SourceBackboneTestBase):
                             == "ADMITTED_FORMAL_ABI_UNTYPED" for request in requests))
         producer = start_source_backbone_producer(
             compiled, params, (self.source,), schema,
+            semantic_bank_views(
+                params, extents, features.semantic_release, self.active_indices),
             AtlasFeatureArtifactOwner(features, schema))
         producer.advance()
         frame = DepthFrameFeatures(((requests, requests),), features, 1, atlas_selection=selection)

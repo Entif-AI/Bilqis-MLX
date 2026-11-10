@@ -13,6 +13,7 @@ from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, group_eligibili
 from bilqis_mlx.learning.atlas_readout import (
     AnswerPlan, ControlAction, DecisionKind, DecisionOutput, DecisionSpec,
 )
+from bilqis_mlx.learning.frame_embeddings import semantic_bank_views
 from bilqis_mlx.learning.source_atoms.backbone import (
     start_retained_source_backbone_producer, start_source_backbone_producer,
 )
@@ -25,6 +26,9 @@ from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import _new_execution_cache
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents
+from bilqis_mlx.runtime.tests.model.execution.active_semantic_rows_support import (
+    snapshot_active_semantic_rows,
+)
 import bilqis_mlx.runtime.atlas_model_forward as forward_impl
 import bilqis_mlx.runtime.tests.model.test_atlas_model_retained as retained_tests
 from bilqis_mlx.runtime.topology_v2.ledger import bamf_parameter_census
@@ -97,7 +101,11 @@ class RetainedMotifSiteIntegrationTests(TestCase):
         ):
             gradient = bamf_value_and_grad(
                 parameters,
-                BamfCompiledBatch(compiled, (source,), feature_schema),
+                BamfCompiledBatch(
+                    compiled, (source,), feature_schema,
+                    snapshot_active_semantic_rows(
+                        compiled, value_plan.snapshot,
+                        run_id=cache.run_id, generation=cache.generation)),
                 value_plan,
                 (DecisionOutput("value", first),),
                 {"value": True}, cache=cache)

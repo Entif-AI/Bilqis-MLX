@@ -7,14 +7,17 @@ import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 import mlx.core as mx
 import numpy as np
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.frame_embeddings import ConceptBatch, FeatureRequest, SemanticBankView, _local_position, compose_factor_features, embed_atoms, semantic_logits, IndexedLogits, gather_constituents, masked_semantic_loss, plan_identity_initialization, embedding_parameter_view
+from bilqis_mlx.learning.frame_embeddings import ConceptBatch, FeatureRequest, SemanticBankView, _local_position, compose_factor_features, embed_atoms, semantic_logits, IndexedLogits, gather_constituents, masked_semantic_loss, plan_identity_initialization, embedding_parameter_view, semantic_bank_views_from_vocabulary_candidate
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes
 from bilqis_mlx.runtime.model_topology import DEFAULT_OPTIMIZER
+from bilqis_mlx.semantics.atlas.vocabulary import VocabularyBankParent, apply_vocabulary_extension, plan_vocabulary_extension
 from bilqis_mlx.semantics.frame_schema import ConceptRef, FrameSchema, RoleOccurrence, RoleSpec, SourceSpan, make_frame_instance
 from bilqis_mlx.semantics.context_eligibility import ContextMember, frame_evidence_digest, member_evidence_digest, project_context
+from bilqis_mlx.semantics.tests.atlas.vocabulary_fixtures import _allocation_fixture
 from bilqis_mlx.semantics.tests.test_context_eligibility import _case
 from bilqis_mlx.semantics.tests.test_atlas_features import _features, _snapshot
 from bilqis_mlx.learning.tests.test_frame_embeddings import _context_for, FactorCompositionTests
@@ -129,6 +132,36 @@ class FactorCompositionTests1(FactorCompositionTests):
             np.testing.assert_array_equal(np.asarray(gradient), expected)
         with self.assertRaises(BilqisError):
             semantic_logits(hidden, (replace(banks((first, second))[0], active_rows=()),))
+
+    def test_semantics_extension_candidate_adapts_without_copying_identity_banks(self):
+        snapshot, prior = _allocation_fixture()
+        factors = {
+            "features.type": mx.zeros((512, 128), dtype=mx.float32),
+            "features.project_type": mx.ones((768, 128), dtype=mx.float32) / 128,
+            "features.project_graph": mx.zeros((768, 64), dtype=mx.float32),
+            "features.gates": mx.zeros((4,), dtype=mx.float32),
+        }
+        original = mx.zeros((8192, 768), dtype=mx.float32)
+        moment = mx.zeros((8192, 768), dtype=mx.float32)
+        parent = VocabularyBankParent(
+            prior, (original,), (moment,), (moment,), ((0, 0),),
+            factors, 7, 100_000_000)
+        with patch(
+            "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
+            return_value=snapshot,
+        ):
+            plan = plan_vocabulary_extension(
+                prior, ("urn:concept:8192",), ModelTopologySpecV2())
+            candidate = apply_vocabulary_extension(parent, plan)
+        banks = semantic_bank_views_from_vocabulary_candidate(candidate, plan)
+        self.assertEqual(tuple(bank.active_rows for bank in banks), ((0,), (0,)))
+        self.assertIs(banks[0].weights, candidate.weights[0])
+        self.assertIs(banks[1].weights, candidate.weights[1])
+        self.assertEqual(semantic_logits(mx.ones((1, 768), dtype=mx.float32), banks).indices,
+                         candidate.active_indices)
+        with self.assertRaises(BilqisError):
+            semantic_bank_views_from_vocabulary_candidate(
+                candidate, replace(plan, active_indices=(0, 8193)))
 
     def test_masked_logsumexp_loss_is_stable_and_illegal_rows_have_zero_gradient(self):
         values = mx.array([[10000, 9999, 50000]], dtype=mx.float32)

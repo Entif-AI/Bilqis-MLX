@@ -24,7 +24,7 @@ from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.learning.atlas_candidate import CandidateState
 from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
-from bilqis_mlx.learning.atlas_plasticity import PlasticityPolicy
+from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.live_grade_c import registry_graph
 from bilqis_mlx.profiles.catalog import numeric_entry_transition
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
@@ -179,7 +179,12 @@ def genesis_bundle(base, snapshot, schema, artifact_path):
         {name: mx.zeros_like(value) for name, value in parameters.items()},
         counts)
     state = CandidateState(
-        optimizer, PlasticityPolicy("FOUNDATION", 0, ()), allocations, 0)
+        optimizer,
+        PlasticityPolicy(
+            "FOUNDATION", 0,
+            tuple(IdentityRowAge(entry.bank, entry.row, 0)
+                  for entry in snapshot.abi_entries if entry.active)),
+        allocations, 0)
     compiler_features = {
         "schema": "bilqis.mlx.bamf-compiler-features/v1",
         "factor_map_sha256": extents.factor_map_digest,

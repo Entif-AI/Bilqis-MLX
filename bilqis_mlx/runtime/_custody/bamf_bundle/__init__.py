@@ -5,7 +5,9 @@ from types import MappingProxyType
 from .codec import load_bamf_bundle, save_bamf_bundle
 from .feature_authority import (
     AcceptedGenerationFeatureContext, AcceptedGenerationFeatureReceipt,
-    AuthenticatedCandidateFeatureContext,
+    AuthenticatedCandidateFeatureContext, AuthenticatedGenerationFeatureContext,
+    authenticate_bamf_execution_feature_context,
+    authenticate_bamf_generation_feature_context,
     authenticate_bamf_candidate_feature_context, authenticate_bamf_candidate_features,
     feature_schema_from_compiler_features,
     read_accepted_generation_feature_context,
@@ -69,8 +71,10 @@ __all__ = (
     "AcceptedVocabularyRegistryExport", "read_accepted_vocabulary_registry_export",
     "PackageImportTransition",
     "AcceptedGenerationFeatureContext", "AcceptedGenerationFeatureReceipt",
-    "AuthenticatedCandidateFeatureContext",
+    "AuthenticatedCandidateFeatureContext", "AuthenticatedGenerationFeatureContext",
     "authenticate_bamf_candidate_feature_context", "read_accepted_generation_feature_lineage",
+    "authenticate_bamf_execution_feature_context",
+    "authenticate_bamf_generation_feature_context",
     "read_accepted_generation_feature_context", "feature_schema_from_compiler_features",
     "read_accepted_generation_feature_receipt",
     "authenticate_bamf_candidate_features",

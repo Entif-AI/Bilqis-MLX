@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle import (
-    BamfBundleCandidate, authenticate_bamf_candidate_feature_context,
+    BamfBundleCandidate, authenticate_bamf_execution_feature_context,
 )
 from bilqis_mlx.runtime.capability_retention import CompleteSolver, EvaluationCase
 from bilqis_mlx.runtime.cognitive_solver import SolveBudget, SolveContext
@@ -128,8 +128,8 @@ def factory_complete_solver(
         _invalid("BAMF_C05_FACTORY_INSTRUMENT_GOAL_CONFLICT")
     contexts = {}
     parameters = candidate.retained_state.optimizer.parameters
-    feature_context = authenticate_bamf_candidate_feature_context(
-        candidate, artifact_path)
+    feature_context = authenticate_bamf_execution_feature_context(
+        candidate, artifact_path, source_context.run_dir)
 
     def context_for(goal, requested_generation):
         instrument = by_goal.get(goal.goal_id)
