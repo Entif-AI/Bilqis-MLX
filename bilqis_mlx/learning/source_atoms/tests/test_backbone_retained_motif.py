@@ -43,7 +43,7 @@ class RetainedBackboneMotifTests(unittest.TestCase):
             seal=_B13_EXECUTION_SEAL).advance()
         mx.eval(plain.hidden, retained.hidden)
         retained_producer = start_retained_source_backbone_producer(
-            compiled, parameters, (source,), feature_schema, manifest, owner,
+            compiled, parameters, (source,), feature_schema, banks, manifest, owner,
             seal=_B13_EXECUTION_SEAL)
         h0 = retained_producer.receipts[0]
         g1 = retained_producer.advance()
