@@ -28,9 +28,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     candidate,
     parent_state,
     publish_candidate,
-    provision_source_authority_registry,
     shape_patch,
-    with_source_authority_registry,
 )
 from bilqis_mlx.semantics.context_eligibility import SourceFrontier
 from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import (
@@ -54,8 +52,7 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
         self.environment.stop()
         self.temporary.cleanup()
 
-    def publish(self, run_dir=None, *, anchored=True, generation=0, parent=None,
-                state=None, registry=REGISTRY):
+    def publish(self, run_dir=None, *, generation=0, parent=None, state=None):
         run_dir = self.run if run_dir is None else Path(run_dir)
         source = candidate(parent_state())
         if state is not None or generation or parent is not None:
@@ -64,9 +61,6 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
                 generation=generation,
                 parent=parent,
             )
-        if anchored:
-            provision_source_authority_registry(run_dir, registry)
-            source = with_source_authority_registry(source, registry)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             pointer = publish_candidate(run_dir, source)
         return source, pointer
@@ -99,20 +93,21 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
             cache = bind_accepted_execution_cache(self.run)
             authority = AcceptedRuntimeHost(self.run).source_authority()
             rebound = AcceptedRuntimeHost(self.run).source_authority()
-        self.assertIs(require_source_authority_runtime(authority, cache), authority)
-        self.assertIs(rebound, authority)
-        selection = _selection()
-        frontier = SourceFrontier(7, 3, ())
-        artifacts = ("1" * 64, "2" * 64)
-        receipt = _receipt(selection, frontier, artifacts)
-        self.assertEqual(
-            authority._validate_export_clearance_context(
-                cache, receipt, selection, frontier, artifacts),
-            receipt.clearance_sha256,
-        )
-        with self.assertRaises(BilqisError):
-            authority._validate_export_clearance_context(
-                cache, receipt, selection, SourceFrontier(8, 3, ()), artifacts)
+        with shape_patch():
+            self.assertIs(require_source_authority_runtime(authority, cache), authority)
+            self.assertIs(rebound, authority)
+            selection = _selection()
+            frontier = SourceFrontier(7, 3, ())
+            artifacts = ("1" * 64, "2" * 64)
+            receipt = _receipt(selection, frontier, artifacts)
+            self.assertEqual(
+                authority._validate_export_clearance_context(
+                    cache, receipt, selection, frontier, artifacts),
+                receipt.clearance_sha256,
+            )
+            with self.assertRaises(BilqisError):
+                authority._validate_export_clearance_context(
+                    cache, receipt, selection, SourceFrontier(8, 3, ()), artifacts)
 
     def test_concurrent_accepted_hosts_reuse_one_source_authority(self):
         self.publish()
@@ -121,11 +116,9 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
         )
         with shape_patch():
             cache = bind_accepted_execution_cache(self.run)
-        with ThreadPoolExecutor(max_workers=8) as pool:
+        with shape_patch(), ThreadPoolExecutor(max_workers=8) as pool:
             authorities = tuple(pool.map(
-                lambda _index: _provision_source_authority_runtime(cache),
-                range(16),
-            ))
+                lambda _index: _provision_source_authority_runtime(cache), range(16)))
         self.assertTrue(all(authority is authorities[0] for authority in authorities))
 
     def test_execution_cache_has_no_importable_credential_issuer(self):

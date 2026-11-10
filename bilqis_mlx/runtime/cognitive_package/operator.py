@@ -16,34 +16,31 @@ def _stage_received_package_if_current(
     """Stage only while full accepted B13/source custody remains authenticated."""
     from bilqis_mlx.runtime.bamf_bundle import publication
     from bilqis_mlx.runtime.bamf_bundle.source_authority_custody import (
-        _require_provisioned_source_authority_registry_unlocked,
-        source_authority_registry_lock,
+        resolve_source_authority_registry,
     )
 
     run_dir = Path(run_dir)
     with publication._pointer_lock(run_dir):
-        with source_authority_registry_lock(run_dir):
-            student, pointer = publication._load_generation_locked(
-                run_dir / "bamf-state.json")
-            require(
-                pointer.get("manifest_sha256") == accepted_manifest_sha256,
-                "receiver accepted generation advanced after source clearance",
-            )
-            acceptance = publication._require_published_acceptance(
-                run_dir, pointer, student)
-            require(
-                acceptance.source_authority_registry_sha256
-                == source_authority_registry_sha256,
-                "receiver acceptance authority changed after source clearance",
-            )
-            registry = _require_provisioned_source_authority_registry_unlocked(
-                run_dir, student.correction_frontier)
-            require(
-                registry is not None
-                and registry.digest == source_authority_registry_sha256,
-                "receiver source authority root changed after source clearance",
-            )
-            return stage_received_package(inspected, staging_dir)
+        student, pointer = publication._load_generation_locked(
+            run_dir / "bamf-state.json")
+        require(
+            pointer.get("manifest_sha256") == accepted_manifest_sha256,
+            "receiver accepted generation advanced after source clearance",
+        )
+        publication._require_published_acceptance(run_dir, pointer, student)
+        require(
+            student.correction_frontier.get("source_authority_registry_sha256")
+            == source_authority_registry_sha256,
+            "receiver acceptance authority changed after source clearance",
+        )
+        registry = resolve_source_authority_registry(
+            run_dir, student.correction_frontier)
+        require(
+            registry is not None
+            and registry.digest == source_authority_registry_sha256,
+            "receiver source authority root changed after source clearance",
+        )
+        return stage_received_package(inspected, staging_dir)
 
 
 def receive_screen_and_publish_package(
