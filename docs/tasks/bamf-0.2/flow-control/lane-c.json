@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "905018b0ece7613843570dc2c2e72a74dae4e91d",
-  "updated_at": "2026-11-10T19:40:28Z",
+  "updated_at": "2026-11-10T19:50:03Z",
   "exception": null,
   "items": [
     {
@@ -19,9 +19,9 @@
       "issue": 542,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "de0bfa0355b2960088f95a12d9a94a39bf6662a9",
-      "summary": "C16.1a/#542 remains design-held with historical implementation candidate 291f7a39 and the later local 78da04bbd/3e547b198 candidate preserved as evidence; no PR is open. Fresh R5 review failed against reviewed unified 905018b0: Structural 0B/2M/0N, Codebase Details 1B/1M/0N, Implementation Readiness 0B/3M/4N. R6 repairs the complete material set: it freezes explicit fresh/resume run-id, run-seed and complete AdamW CLI semantics; makes accepted v1/v2 current-authority mutation bidirectionally exclusive under one shared epoch lock with fixed lock order; strengthens source/target ancestry rejection symmetrically; requires positive acquired-or-retained developmental evidence in the cohesive first-start witness; adds a literal post-generation-zero C07/C09 failure-and-recovery witness; requires both dry-run and create persisted-source byte preservation; and expands cold-recovery/resume mismatch proofs. Release-boundary correction #971 remains consumed: staged first-student launch depends on #543, while #950 is required only when the atlas-release enrollment path is exercised. R6 proposal is pinned at de0bfa03 against reviewed unified 905018b0, SHA-256 82a24fd765aa20f036668db911c3b9d867f57cecc621a766fdc353c41c030763. Production mutation remains frozen pending a genuinely fresh R6 review.",
-      "resume_trigger": "Freshly review R6 proposal content commit de0bfa0355b2960088f95a12d9a94a39bf6662a9 / SHA-256 82a24fd765aa20f036668db911c3b9d867f57cecc621a766fdc353c41c030763 against reviewed unified 905018b0ece7613843570dc2c2e72a74dae4e91d. Require 0 Blockers / 0 Majors before production mutation resumes; do not treat preserved local implementation commits as authority.",
+      "head_sha": "8c616abce9da33674cb5958ee4ae4b2c21f5e558",
+      "summary": "C16.1a/#542 remains design-held with historical implementation candidate 291f7a39 and the later local 78da04bbd/3e547b198 candidate preserved as evidence; no PR is open. R5 failed materially and R6 repaired that set. Fresh R6 review against reviewed unified 905018b0 then returned Structural 0B/1M/0N, Codebase Details 0B/0M/0N, Implementation Readiness 0B/0M/0N. The sole R6 Major was a low-level C07 fixture-writer bypass: generic v1/v2 storage APIs could still attach authority to accepted B13 custody outside the proposed shared epoch invariant. R7 closes that bypass mechanically by extending the fixture-custody guard to both legacy and B13 custody markers, making generic v1/v2 persist/renew fixture-only on real B13 runs while preserving marker-free fixture compatibility, and keeping accepted v1/v2 first persistence behind separately named B13/C09-replayed owners plus the shared cross-epoch lock. R7 deliberately does not invent accepted-run renewal authority. All prior R6 repairs remain: explicit fresh/resume foundation inputs, symmetric source/target ancestry rejection, positive developmental evidence, post-genesis C07/C09 failure-and-recovery proof, source-tree byte preservation, and expanded cold-recovery/resume mismatch witnesses. Release-boundary correction #971 remains consumed: staged first-student launch depends on #543, while #950 is required only when atlas-release enrollment is exercised. R7 proposal is pinned at 8c616abc against reviewed unified 905018b0, SHA-256 d973348c893739fdd811a6dd2e0a630d9c0c9c30313f68f63a36ad662b394593. Production mutation remains frozen pending genuinely fresh R7 review.",
+      "resume_trigger": "Freshly review R7 proposal content commit 8c616abce9da33674cb5958ee4ae4b2c21f5e558 / SHA-256 d973348c893739fdd811a6dd2e0a630d9c0c9c30313f68f63a36ad662b394593 against reviewed unified 905018b0ece7613843570dc2c2e72a74dae4e91d. Require 0 Blockers / 0 Majors before production mutation resumes; do not treat preserved local implementation commits as authority.",
       "preserved_branch": "codex/bamf02-c-runtime"
     },
     {
