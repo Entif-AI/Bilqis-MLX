@@ -41,12 +41,19 @@ class A02StagedInitializationTests(unittest.TestCase):
             candidate = apply_vocabulary_extension(parent, plan)
         return snapshot, parent, plan, candidate
 
+    def _qualify(self, snapshot, parent, candidate, plan):
+        with patch(
+            "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
+            return_value=snapshot,
+        ):
+            return qualify_staged_identity_initialization(
+                parent, candidate, plan)
+
     def test_final_a02_candidate_matches_b02_deterministic_new_row_contract(self):
         snapshot, parent, plan, candidate = self._stage()
         before = np.asarray(parent.weights[0]).copy()
 
-        proposals = qualify_staged_identity_initialization(
-            parent, candidate, plan, snapshot)
+        proposals = self._qualify(snapshot, parent, candidate, plan)
 
         self.assertEqual(len(proposals), 1)
         self.assertEqual(proposals[0].semantic_id, "urn:concept:8192")
@@ -62,7 +69,7 @@ class A02StagedInitializationTests(unittest.TestCase):
         forged = replace(candidate, weights=(candidate.weights[0], tampered))
 
         with self.assertRaises(BilqisError):
-            qualify_staged_identity_initialization(parent, forged, plan, snapshot)
+            self._qualify(snapshot, parent, forged, plan)
 
     def test_self_consistent_wrong_abi_allocation_cannot_self_ratify(self):
         snapshot, parent, plan, candidate = self._stage()
@@ -83,8 +90,20 @@ class A02StagedInitializationTests(unittest.TestCase):
         )
 
         with self.assertRaises(BilqisError):
+            self._qualify(snapshot, parent, forged_candidate, forged_plan)
+
+    def test_qualifier_does_not_accept_caller_supplied_snapshot_authority(self):
+        snapshot, parent, plan, candidate = self._stage()
+        forged = replace(
+            snapshot,
+            release_sha256=snapshot.release_sha256,
+            bundle_id=snapshot.bundle_id,
+            source_bundle_id=snapshot.source_bundle_id,
+        )
+
+        with self.assertRaises(TypeError):
             qualify_staged_identity_initialization(
-                parent, forged_candidate, forged_plan, snapshot)
+                parent, candidate, plan, forged)
 
 
 if __name__ == "__main__":

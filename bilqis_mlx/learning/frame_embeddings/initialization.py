@@ -8,12 +8,13 @@ import numpy as np
 from lib.ithkuil.src.skos.publication import json_bytes
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes, initialize_bamf_row, initializer_seed
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
-from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
 from bilqis_mlx.semantics.atlas.vocabulary import (
     CandidateState, VocabularyBankParent, VocabularyExtension,
 )
 from bilqis_mlx.semantics.atlas.vocabulary_factors import prepare_identity_factors
-from bilqis_mlx.semantics.atlas.vocabulary_planning import _plan_from_snapshot
+from bilqis_mlx.semantics.atlas.vocabulary_planning import (
+    _plan_from_snapshot, _verified_authenticated_prior, _verified_prior,
+)
 from .common import BANK_ROWS, FactorGate, IDENTITY_FACTOR_POLICY, IDENTITY_PROPOSAL_SCHEMA, _invalid
 from .requests import FeatureRequest
 from .composition import _released_factor_terms, _validate_composer
@@ -95,18 +96,22 @@ def qualify_staged_identity_initialization(
         parent: VocabularyBankParent,
         candidate: CandidateState,
         plan: VocabularyExtension,
-        snapshot: FrozenAtlasSnapshot) -> tuple[IdentityRowInitialization, ...]:
+        *, accepted_features: AtlasFeatures | None = None,
+        predecessor: AtlasFeatures | None = None) -> tuple[IdentityRowInitialization, ...]:
     """Prove A02's staged rows satisfy B02.2 without mutating staging custody."""
     if (type(parent) is not VocabularyBankParent
             or type(candidate) is not CandidateState
             or type(plan) is not VocabularyExtension
-            or type(snapshot) is not FrozenAtlasSnapshot
             or parent.prior.generation_id != plan.parent_generation_id
             or candidate.parent_generation_id != plan.parent_generation_id
-            or plan.parent_extents_digest != parent.prior.extents.digest
-            or snapshot.bundle_id != parent.prior.source_selection.bundle_id
-            or snapshot.release_sha256 != parent.prior.source_selection.release_sha256
-            or snapshot.source_bundle_id != parent.prior.source_selection.source_bundle_id):
+            or plan.parent_extents_digest != parent.prior.extents.digest):
+        _invalid()
+    if accepted_features is None and predecessor is None:
+        snapshot = _verified_prior(parent.prior)
+    elif accepted_features is not None and predecessor is not None:
+        snapshot = _verified_authenticated_prior(
+            parent.prior, accepted_features, predecessor)
+    else:
         _invalid()
     semantic_ids = tuple(item.semantic_id for item in plan.allocations)
     if plan != _plan_from_snapshot(
