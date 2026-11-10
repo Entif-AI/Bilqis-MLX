@@ -14,6 +14,7 @@ from .autonomy_hold import _hold_autonomy
 class DispatchControl(Enum):
     PROCEED = auto()
     CONTINUE = auto()
+    COLD_RESUME = auto()
     STOP = auto()
 
 

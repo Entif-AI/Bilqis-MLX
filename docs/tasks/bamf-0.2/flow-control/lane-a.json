@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "516725b6170f258ad86b0c5d4ca050907238e59d",
-  "updated_at": "2026-11-09T23:55:18Z",
+  "observed_unified": "7a6c048e9325a877b9b3451c731be3545a11ee69",
+  "updated_at": "2026-11-10T15:28:08Z",
   "exception": null,
   "items": [
     {
@@ -97,13 +97,14 @@
     },
     {
       "issue": 399,
-      "pr": 943,
-      "state": "READY",
-      "head_sha": "d64df31416712b51a24c45417b05893c923642cd",
-      "head_sha_role": "current A02 semantic head after reviewed-unified e206ec0 sync and cold-import/publication-boundary repair",
-      "summary": "A02.1 staging-only owner implementation is synchronized through reviewed unified bcc82f86 and turned in as human-review PR #943. The exact owner-issued staged handoff seals run identity, complete authority-bearing candidate state, retained B12 custody and outbox/receipt; generic B13 publication remains fail-closed at BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED until #510 consumes the typed handoff. Current integration repaired one A02-caused cold checkpoint-import regression by lazy-loading the MLX-heavy staging executor and updated stale generic publication tests to assert the C07 boundary. The affected final-head ring is 13/13 PASS; docs, flow-control and diff hygiene pass; fresh independent exact-head review reports 0 Blockers / 0 Majors / 0 Nits. GitHub reports PR #943 mergeable. Human merge remains the gate before #510 consumes the handoff through reviewed unified.",
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "006c6f6cf2d09b6c8b66c0682fa135542c58b176",
+      "head_sha_role": "final A02.1 PR head consumed by reviewed unified f8f4bbaf",
+      "summary": "A02.1 owner-issued staging handoff completed and merged through PR #943 as reviewed unified f8f4bbaf. The typed handoff seals run identity, complete staged candidate state, retained custody and outbox/receipt; generic B13 publication remains fail-closed and #510 later consumed the exact owner-issued object through C07.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a-399-production-admission-20261106",
+      "merged_pr": 943,
       "closed_pr": 887,
       "closed_under": "BAMF WAITING issue/branch queue; open implementation PRs are reserved for merge-ready candidates or active remediation delivery.",
       "close_reason": "Historical waiting reason was C07.1b/#510 persisted-lease-gated adoption; bounded A02 implementation resumed against exact upstream branch interface while final integration still waits reviewed C07 authority."
@@ -111,11 +112,22 @@
     {
       "issue": 400,
       "pr": null,
-      "state": "READY",
-      "head_sha": "8b3f071215b27b98f8ae15a9d0b02fc72b7fc80d",
-      "head_sha_role": "post-merge A02.2 candidate after reviewed-unified 516725b6 synchronization; full composed runtime proof complete; independent exact-head review pending",
-      "summary": "A02.2 is reconciled through reviewed #399/#510 integration and current reviewed unified 516725b6. The issue revalidates the A02-sealed conservative disk requirement immediately before first C07 Factory/B13 persistence, preserves exact accepted-retry idempotency, proves UINT32_MAX+1 refusal, and defers inactive future ABI banks until accepted A02 admission. Post-merge qualification is green: semantics 14 PASS with 2 explicit opt-in skips, generation-zero/feature-authority/cold-resume 38 PASS, C07/lease-policy 14 PASS, smell 0, structure/governance/error-control/flow/contracts/docs/diff PASS. Detached v6 full-topology proof passed in 633.718s from immutable snapshot eed6f34f with source_mutated=false, proving real one-bank -> two-bank staging, B13 pre-pointer crash/cold read, exact retry, old weight/m/v preservation, zero new-row moments, bundle reuse and successor Factory acceptance. Fresh independent exact-head review at evidence head 7011f83d reports 0 Blockers / 0 Majors / 0 Nits and READY_FOR_HUMAN_REVIEW. Human-review PR #952 is open.",
-      "resume_trigger": "Human review/merge PR #952 into codex/bamf-unified-base-20261028. Do not self-merge.",
+      "state": "TURNED_IN",
+      "head_sha": "3d3db158c9a0f69e04477fa89b6825926ad750f0",
+      "head_sha_role": "final A02.2 PR head consumed by reviewed unified 0338f334",
+      "summary": "A02.2 completed through PR #952 and merged as reviewed unified 0338f334 after full one-bank -> two-bank A02/C07/B13 crash/cold-read/retry proof, admission-time resource revalidation, generation-zero inactive-bank deferral and fresh exact-head review with 0 Blockers / 0 Majors / 0 Nits.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-a-semantics",
+      "merged_pr": 952
+    },
+    {
+      "issue": 401,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "db0bde381eccca4207623014cb1f728258bf4d3e",
+      "head_sha_role": "A02.3 accepted Registry-mirror/resource export semantic candidate on reviewed unified 0338f334; independent exact-head review pending",
+      "summary": "Historical A02.3 source-derived Registry mirror and conservative bank resource estimate remain intact. Current integration closes the previously explicit persistence/readback gap by recovering the persisted plan, mirror and resource requirement from accepted C07/B13 custody, revalidating the A02 staging receipt and allocation/source/active-set lineage, and returning a typed navigation/evidence export with semantic_authority=false and training_authorized=false. The composed accepted cold-read/retry witness passes; focused A02/C07 ring, structure/governance/smell/error-control/flow/contracts/docs/diff gates are green. Fresh independent exact-head review remains before human-review PR turn-in.",
+      "resume_trigger": "Obtain fresh independent exact-head review of db0bde38. If clean, synchronize any newer reviewed unified, rerun affected gates, set #401 READY, open the normal human-review PR, bind its number and post the durable issue checkpoint. Do not self-merge.",
       "preserved_branch": "codex/bamf02-a-semantics"
     },
     {
@@ -266,6 +278,16 @@
       "summary": "Scoped A13/A05 compiled-prefix authority repair is turned in as ready PR #936 after current-unified qualification, one shared-contract Major repair, and targeted reinspection PASS 0 Blockers / 0 Majors / 0 Nits. A05 is the sole prefix identity owner; A13 issues only after exact replay.",
       "resume_trigger": "Human review/merge PR #936 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
       "preserved_branch": "codex/354-a13-prefix-inventory-20261107"
+    },
+    {
+      "issue": 959,
+      "pr": 961,
+      "state": "READY",
+      "head_sha": "bc5c524ec3828b67661b44e8e576338ee7e46068",
+      "head_sha_role": "semantic/test repair head after independent exact-head review found the accepted source-ID ordering Major",
+      "summary": "#959 source-location remediation is READY for human review in PR #961 on reviewed unified eaa73be8, synchronized candidate dbd78411. A host-owned content-addressed locator resolves source_bundle_id beneath an approved root and canonical A01 verification authenticates exact bytes/membership. The accepted-ID ordering Major is repaired at bc5c524e: a valid-but-wrong content ID is rejected against accepted A01/A02 source selection before planning/resource/tensor staging, and the same accepted parent is reused through the staging transaction. #460's synchronized B08/engram delta leaves #959 code/tests byte-identical and has no authority edge into the path. Focused proof, synchronized detached full content-ID witness, hosted portable/portable-core/Semantic ABI checks, and fresh synchronized differential re-review are green; final review disposition is 0 Blockers / 0 Majors / 0 Nits. Human merge remains external authority.",
+      "resume_trigger": "Human review/merge PR #961 into codex/bamf-unified-base-20261028. Do not self-merge; downstream work consumes only after reviewed integration.",
+      "preserved_branch": "codex/959-atlas-source-locator-20261109"
     }
   ]
 }

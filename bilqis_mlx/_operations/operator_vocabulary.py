@@ -76,7 +76,24 @@ ATLAS_ADMISSION_STAGED = OperationalTerm(
 )
 
 
+ATLAS_ADMISSION_ADOPTED_COLD_RESUME = OperationalTerm(
+    code="ATLAS_ADMISSION_ADOPTED_COLD_RESUME",
+    kind=OperationalKind.STOP_REASON,
+    owner="runtime.atlas_admission",
+    meaning=(
+        "The exact staged successor is accepted in B13 custody and this process "
+        "must not reuse its pre-adoption in-memory learner state."),
+    next_action=(
+        "Cold-resume from the accepted generation before any further neural, "
+        "optimizer, assessment, or curriculum work."),
+    neural_effect=(
+        "The admission transaction performs no neural update and the stale "
+        "pre-adoption learner is not flushed."),
+)
+
+
 OPERATIONAL_TERMS = (
+    ATLAS_ADMISSION_ADOPTED_COLD_RESUME,
     ATLAS_ADMISSION_STAGED,
     AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED,
     STAGED_SUCCESSOR_BINDING_REQUIRED,

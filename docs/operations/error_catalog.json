@@ -13614,6 +13614,15 @@
   "operational_terms": [
     {
       "aliases": [],
+      "code": "ATLAS_ADMISSION_ADOPTED_COLD_RESUME",
+      "kind": "STOP_REASON",
+      "meaning": "The exact staged successor is accepted in B13 custody and this process must not reuse its pre-adoption in-memory learner state.",
+      "neural_effect": "The admission transaction performs no neural update and the stale pre-adoption learner is not flushed.",
+      "next_action": "Cold-resume from the accepted generation before any further neural, optimizer, assessment, or curriculum work.",
+      "owner": "runtime.atlas_admission"
+    },
+    {
+      "aliases": [],
       "code": "ATLAS_ADMISSION_STAGED",
       "kind": "STOP_REASON",
       "meaning": "An exact source successor remains staged without current Atlas admission authority.",
