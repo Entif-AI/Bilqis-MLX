@@ -956,7 +956,7 @@
         "projection"
       ],
       "number": 347,
-      "body_sha256": "3beb54e2ed9f69222610fe693d7eece51e667b97bf1ca752be4ff4fa5cfa21c8",
+      "body_sha256": "1be6636da570a6c4f69bca9304f75ce44d5d93d7878adfc3836d852355bb6505",
       "children": [
         "C01.1",
         "C01.2",
@@ -1217,12 +1217,11 @@
         "learning"
       ],
       "number": 374,
-      "body_sha256": "3611d3ed9dad3108e9708e412549082689e856b850f711463c353394f9ea0401",
+      "body_sha256": "7533433c24484977a27db7ea4fbe39d3b8ac19eb4cbc743750e1659cb0e69bd2",
       "children": [
         "C08.1",
         "C08.2",
-        "C08.3",
-        "C08.4"
+        "C08.3"
       ],
       "execution_role": "integration_parent_after_recursive_decomposition"
     },
@@ -1453,12 +1452,11 @@
         "bravo_fixture"
       ],
       "number": 386,
-      "body_sha256": "df7b2270def04f33a3f46eca095bdc9426fb3d3fa595f31e282074f607182505",
+      "body_sha256": "809ccfe96a3265814f2bb7e04588d5ab864618c59ac11692977ba40d6bca4e8d",
       "children": [
         "C14.1",
         "C14.2",
-        "C14.3",
-        "C14.4"
+        "C14.3"
       ],
       "execution_role": "integration_parent_after_recursive_decomposition"
     },
@@ -1494,7 +1492,7 @@
         "coverage_completion"
       ],
       "number": 387,
-      "body_sha256": "74e87356b3269b5a31f3c319aa5a0cd3f1f0e01b4ecada916a835f5c12a02abd",
+      "body_sha256": "329846f08e8280520cf1accec858eea5981f5d4b3166f3d4a89e206eda79fb9f",
       "children": [
         "C15.1",
         "C15.2",
@@ -1534,7 +1532,7 @@
         "learning_witness"
       ],
       "number": 382,
-      "body_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e",
+      "body_sha256": "a32cfaa07ba7c542c388d7102d3284b3105a5cf08afb57a9ce4573eef65c8f34",
       "children": [
         "C16.1",
         "C16.2",

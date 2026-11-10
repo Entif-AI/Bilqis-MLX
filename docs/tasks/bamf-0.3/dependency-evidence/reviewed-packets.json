@@ -1,0 +1,69 @@
+{
+  "schema": "bilqis.bamf.deferred-packets/v1",
+  "source_release": "BAMF-0.2",
+  "target_release": "BAMF-0.3",
+  "migration_issue": 966,
+  "packets": [
+    {
+      "key": "C08.4",
+      "number": 558,
+      "parent_key": "C08",
+      "parent_number": 374,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "resolved",
+        "body_sha256": "b33f20e07dd1947c377e2c1af235d83bf0df5276672ced1661ba8cca7808cb19",
+        "clause": "## Direct prerequisites\n\n- [B11 #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) architecture/backend dispatch.\n- [C08.1 #513](https://github.com/Entif-AI/Bilqis-MLX/issues/513) deterministic batching and activation estimates.\n- [C08.3 #515](https://github.com/Entif-AI/Bilqis-MLX/issues/515) isolated worker/resource-floor contract.\n- B12/B13 state custody remains authoritative for accepted optimizer/checkpoint state.",
+        "known_edges": [
+          "B11",
+          "C08.1",
+          "C08.3"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "C08.4.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/558",
+            "sha256": "b33f20e07dd1947c377e2c1af235d83bf0df5276672ced1661ba8cca7808cb19",
+            "excerpt": "## Direct prerequisites\n\n- [B11 #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) architecture/backend dispatch.\n- [C08.1 #513](https://github.com/Entif-AI/Bilqis-MLX/issues/513) deterministic batching and activation estimates.\n- [C08.3 #515](https://github.com/Entif-AI/Bilqis-MLX/issues/515) isolated worker/resource-floor contract.\n- B12/B13 state custody remains authoritative for accepted optimizer/checkpoint state."
+          }
+        ],
+        "obligations": [
+          "B12/B13 remain authoritative custody owners, not expressly additional blocking edges; single-host equivalence and fastest/synchronous/auxiliary comparison remain required."
+        ],
+        "unresolved": null
+      }
+    },
+    {
+      "key": "C14.4",
+      "number": 559,
+      "parent_key": "C14",
+      "parent_number": 386,
+      "dependency_evidence": {
+        "schema": "bilqis.bamf.dependency-evidence/v1",
+        "resolution": "held",
+        "body_sha256": "495bce9b46cbd862a635699923cdcd92a0a012513a594c3283ebdd11ce8a4a00",
+        "clause": "## Direct prerequisites\n\n- [B13 #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372) complete generation persistence/cold resume.\n- [C05 #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378) retention/admission safeguards.\n- [C12 #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381) bounded capability/plastic delta packaging where applicable.\n- Local tightly coupled multi-device execution is owned by C08.4, not this issue.",
+        "known_edges": [
+          "B13",
+          "C05"
+        ],
+        "external_receipts": [],
+        "source_records": [
+          {
+            "source_id": "C14.4.body",
+            "kind": "body",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/559",
+            "sha256": "495bce9b46cbd862a635699923cdcd92a0a012513a594c3283ebdd11ce8a4a00",
+            "excerpt": "## Direct prerequisites\n\n- [B13 #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372) complete generation persistence/cold resume.\n- [C05 #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378) retention/admission safeguards.\n- [C12 #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381) bounded capability/plastic delta packaging where applicable.\n- Local tightly coupled multi-device execution is owned by C08.4, not this issue."
+          }
+        ],
+        "obligations": [
+          "C12 dependency is conditional: bounded capability/plastic delta packaging where applicable. C14 is explicitly nonblocking parent context; C08.4 owns tightly coupled execution."
+        ],
+        "unresolved": "C12 is conditional where packaging applies; a global unconditional edge must not replace that condition."
+      }
+    }
+  ]
+}
