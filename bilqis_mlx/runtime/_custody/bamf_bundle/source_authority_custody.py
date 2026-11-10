@@ -72,6 +72,31 @@ def read_provisioned_source_authority_registry(run_dir: Path):
         return _read_provisioned_source_authority_registry_unlocked(run_dir)
 
 
+def _bind_host_source_authority_registry(run_dir: Path, correction_frontier):
+    """Project an already-provisioned host trust root into accepted custody material.
+
+    This never writes or selects registry material.  The only authority source is the
+    host-owned file already present under ``run_dir``; callers can supply only the run
+    root and the owner-derived correction frontier that will be bound to it.
+    """
+    if not isinstance(correction_frontier, dict):
+        invalid("BAMF_C09_SOURCE_AUTHORITY_BINDING_INVALID")
+    if (correction_frontier.get("source_authority_registry") is not None
+            or correction_frontier.get("source_authority_registry_sha256") is not None):
+        invalid("BAMF_C09_SOURCE_AUTHORITY_BINDING_INVALID")
+    registry_path = Path(run_dir) / SOURCE_AUTHORITY_REGISTRY_FILE
+    if not registry_path.exists() and not registry_path.is_symlink():
+        return dict(correction_frontier)
+    trusted = read_provisioned_source_authority_registry(run_dir)
+    if trusted is None:
+        return dict(correction_frontier)
+    return {
+        **correction_frontier,
+        "source_authority_registry_sha256": trusted.digest,
+        "source_authority_registry": trusted.to_record(),
+    }
+
+
 def require_provisioned_source_authority_registry(
         run_dir: Path, correction_frontier):
     """Bind candidate/live C09 material to an independent host-provisioned root."""

@@ -12,12 +12,20 @@ The optimizer values have no hidden default. B13 seals the exact supplied values
 B01 still owns parameter and decay geometry, and B12/B13 construct fresh zero
 moments and update counts. Historical optimizer state is never migrated.
 
-Preflight accepts only an absent or empty target directory. It replays the current
-Factory admission from the source run, resolves the source-owned Atlas artifact,
-derives the ordinary Factory teacher projection and B01 generation authority, and
-enters B13's existing `prepare_initial_generation` / `publish_initial_generation`
-transaction. The source run is read-only. The target receives generation zero at
-optimizer step `0`; preflight performs no candidate or training update.
+Preflight accepts an absent or empty target directory, or a target containing only
+the independently host-provisioned C09 `source-authority-registry.json` and its
+lock. The CLI and package never create or select that trust root. When present,
+C16.1c/#950 snapshots its exact record and digest into the owner-derived generation-
+zero correction frontier; the B13 bootstrap binding therefore seals it with the
+same accepted run identity. A copied host file without the matching generation-zero
+binding cannot mint `SourceAuthorityRuntime`.
+
+Preflight replays the current Factory admission from the source run, resolves the
+source-owned Atlas artifact, derives the ordinary Factory teacher projection and B01
+generation authority, and enters B13's existing `prepare_initial_generation` /
+`publish_initial_generation` transaction. The source run is read-only. The target
+receives generation zero at optimizer step `0`; preflight performs no candidate or
+training update.
 
 `LaunchReceipt` is observational, not authority. It records the immutable B13 run
 identity, published manifest, Factory release, Atlas identity, exact optimizer

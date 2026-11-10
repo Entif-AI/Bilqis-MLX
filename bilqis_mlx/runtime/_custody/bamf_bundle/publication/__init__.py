@@ -145,6 +145,10 @@ def _authorize_publication_candidate(
             or authority.candidate is not candidate):
         invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
     authority.__post_init__()
+    if (authority.source_authority_run_dir is not None
+            and Path(run_dir).expanduser().resolve()
+            != authority.source_authority_run_dir):
+        invalid("BAMF_C09_SOURCE_AUTHORITY_RUN_IDENTITY_DRIFT")
     validate_initial_generation_binding(candidate, authority.binding)
     existing = _existing_initial_generation_retry(run_dir, candidate, authority)
     if existing is not None:

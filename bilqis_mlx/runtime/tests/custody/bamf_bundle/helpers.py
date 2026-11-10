@@ -92,6 +92,7 @@ def genesis_preparation(*, run_id="fixture-run", run_seed=17,
                         delivery_events=None, **overrides):
     """Enter B13 generation zero through the production constructor and issuer."""
     foundation_features = overrides.pop("foundation_features", None)
+    source_authority_run_dir = overrides.pop("source_authority_run_dir", None)
     from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
     release, graph = _executable_fixture()
     origin = Checkpoint("7" * 64, "bundles/foundation-origin", 0, True)
@@ -126,6 +127,7 @@ def genesis_preparation(*, run_id="fixture-run", run_seed=17,
             optimizer_hyperparameters=HP,
             provenance=values["provenance"],
             foundation_features=foundation_features,
+            source_authority_run_dir=source_authority_run_dir,
             delivery_events=(
                 ({"event": "FIXTURE_GENESIS", "optimizer_step": 0},)
                 if delivery_events is None else delivery_events),

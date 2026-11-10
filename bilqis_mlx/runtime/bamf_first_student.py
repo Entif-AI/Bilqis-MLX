@@ -180,9 +180,17 @@ class LaunchReceipt:
 def _fresh_run_dir(new_run_dir) -> Path:
     try:
         path = Path(new_run_dir).expanduser()
-        if (path.is_symlink() or (path.exists() and not path.is_dir())
-                or (path.is_dir() and next(path.iterdir(), None) is not None)):
+        if path.is_symlink() or (path.exists() and not path.is_dir()):
             _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
+        if path.is_dir():
+            from bilqis_mlx.runtime.bamf_bundle.source_authority_custody import (
+                SOURCE_AUTHORITY_REGISTRY_FILE, SOURCE_AUTHORITY_REGISTRY_LOCK,
+            )
+            allowed = {SOURCE_AUTHORITY_REGISTRY_FILE, SOURCE_AUTHORITY_REGISTRY_LOCK}
+            entries = tuple(path.iterdir())
+            if any(entry.name not in allowed or entry.is_symlink() or not entry.is_file()
+                   for entry in entries):
+                _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
         return path.resolve()
     except (TypeError, OSError, PermissionError, RuntimeError):
         _invalid("BAMF_FIRST_STUDENT_TARGET_PATH_INVALID")
@@ -309,6 +317,7 @@ def preflight_bamf_foundation(
         optimizer_hyperparameters=config.optimizer_hyperparameters,
         provenance=provenance,
         foundation_features=features,
+        source_authority_run_dir=target,
         delivery_events=({
             "event": "BAMF_GENERATION_ACCEPTED",
             "optimizer_step": 0,

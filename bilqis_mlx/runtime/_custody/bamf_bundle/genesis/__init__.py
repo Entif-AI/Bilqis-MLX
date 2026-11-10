@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Mapping
 
 from bilqis_mlx.factory.executable_release import (
@@ -47,13 +48,16 @@ class PreparedInitialGeneration:
     factory_authority: InitialFactoryFoundationAuthority
     graph: dict
     foundation_features: InitialFoundationFeatureAuthority
+    source_authority_run_dir: Path | None
     _issuance: object = field(init=False, default=None, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs) -> None:
         invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
 
     def __post_init__(self) -> None:
-        if getattr(self, "_issuance", None) is not _PREPARED_INITIAL_GENERATION_ISSUER:
+        if (getattr(self, "_issuance", None) is not _PREPARED_INITIAL_GENERATION_ISSUER
+                or (self.source_authority_run_dir is not None
+                    and not isinstance(self.source_authority_run_dir, Path))):
             invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
 
     @property
@@ -100,7 +104,8 @@ def _validate_candidate_source_authority(
         admission: ExecutableAdmissionReceipt, graph: dict,
         origin_checkpoint: Checkpoint,
         factory_authority: InitialFactoryFoundationAuthority | None = None,
-        foundation_features: InitialFoundationFeatureAuthority | None = None) -> None:
+        foundation_features: InitialFoundationFeatureAuthority | None = None,
+        source_authority_run_dir: Path | None = None) -> None:
     """Re-prove Factory/source/teacher authority for a generation-zero candidate."""
     authority = _validated_factory_origin(
         factory_authority, graph, release=release, admission=admission,
@@ -114,9 +119,14 @@ def _validate_candidate_source_authority(
     if type(identity) is not BamfRunIdentity:
         invalid("BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT")
     expected = _factory_generation_provenance(release, foundation_features)
-    expected_sidecars = initial_foundation_sidecars(
+    expected_sidecars = list(initial_foundation_sidecars(
         release, admission, graph, run_seed=identity.run_seed,
-        feature_authority=foundation_features)
+        feature_authority=foundation_features))
+    if source_authority_run_dir is not None:
+        from ..source_authority_custody import _bind_host_source_authority_registry
+        expected_sidecars[2] = _bind_host_source_authority_registry(
+            source_authority_run_dir, expected_sidecars[2])
+    expected_sidecars = tuple(expected_sidecars)
     teacher = candidate.teacher_state
     correction = candidate.correction_frontier
     if (candidate.generation != 0 or candidate.parent_manifest_sha256 is not None
@@ -155,12 +165,14 @@ def _issue_binding(
         origin_checkpoint: Checkpoint,
         factory_authority: InitialFactoryFoundationAuthority | None = None,
         foundation_features: InitialFoundationFeatureAuthority | None = None,
+        source_authority_run_dir: Path | None = None,
         ) -> InitialGenerationBinding:
     _validate_candidate_source_authority(
         candidate, release=release, admission=admission, graph=graph,
         origin_checkpoint=origin_checkpoint,
         factory_authority=factory_authority,
-        foundation_features=foundation_features)
+        foundation_features=foundation_features,
+        source_authority_run_dir=source_authority_run_dir)
     _validate_candidate_b01_authority(candidate, foundation_features)
     return _mint_initial_generation_binding(candidate)
 
@@ -218,6 +230,7 @@ def prepare_initial_generation(
         admission: ExecutableAdmissionReceipt | None = None,
         origin_checkpoint: Checkpoint | None = None,
         foundation_features: InitialFoundationFeatureAuthority | None = None,
+        source_authority_run_dir: Path | None = None,
         delivery_events: tuple = ()) -> PreparedInitialGeneration:
     """Construct one source-bound generation-zero candidate and live B13 capability."""
     authority = _validated_factory_origin(
@@ -242,6 +255,14 @@ def prepare_initial_generation(
      teacher_state, evaluation_contract) = initial_foundation_sidecars(
         release, admission, graph, run_seed=run_seed,
         feature_authority=foundation_features)
+    if source_authority_run_dir is not None:
+        try:
+            source_authority_run_dir = Path(source_authority_run_dir).expanduser().resolve()
+        except (TypeError, OSError, RuntimeError):
+            invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_INVALID")
+        from ..source_authority_custody import _bind_host_source_authority_registry
+        correction_frontier = _bind_host_source_authority_registry(
+            source_authority_run_dir, correction_frontier)
     allocations = MotifAllocationSnapshot(MotifManifest(provenance.release_digest))
     try:
         extents = b01_generation_extents(
@@ -279,12 +300,14 @@ def prepare_initial_generation(
         candidate, release=release, admission=admission, graph=graph,
         origin_checkpoint=origin_checkpoint,
         factory_authority=authority,
-        foundation_features=foundation_features)
+        foundation_features=foundation_features,
+        source_authority_run_dir=source_authority_run_dir)
     prepared = object.__new__(PreparedInitialGeneration)
     for name, value in (
             ("candidate", candidate), ("binding", binding),
             ("factory_authority", authority), ("graph", dict(graph)),
             ("foundation_features", foundation_features),
+            ("source_authority_run_dir", source_authority_run_dir),
             ("_issuance", _PREPARED_INITIAL_GENERATION_ISSUER)):
         object.__setattr__(prepared, name, value)
     prepared.__post_init__()
@@ -320,7 +343,8 @@ def validate_initial_generation_preparation(prepared: PreparedInitialGeneration)
         admission=prepared.admission, graph=prepared.graph,
         origin_checkpoint=prepared.origin_checkpoint,
         factory_authority=prepared.factory_authority,
-        foundation_features=prepared.foundation_features)
+        foundation_features=prepared.foundation_features,
+        source_authority_run_dir=prepared.source_authority_run_dir)
     _validate_candidate_b01_authority(
         prepared.candidate, prepared.foundation_features)
     validate_initial_generation_binding(prepared.candidate, prepared.binding)
