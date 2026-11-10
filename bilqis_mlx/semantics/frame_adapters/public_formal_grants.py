@@ -45,14 +45,16 @@ def _envelope(frame, prefix, task, frontier, policy):
 def schema_source_handle(schema: FrameSchema) -> str:
     """Canonical source-rights handle for one released frame schema."""
     if type(schema) is not FrameSchema:
-        raise TypeError("FRAME_SCHEMA_REQUIRED")
+        _adapter_fail(
+            "FRAME_SCHEMA_REQUIRED", "<schema>", SourceSpan(0, 0), "<schema>")
     return f"source:motif-schema:{schema.identity}"
 
 
 def schema_evidence_digest(schema: FrameSchema) -> str:
     """Canonical A03 schema-body evidence used by source rights."""
     if type(schema) is not FrameSchema:
-        raise TypeError("FRAME_SCHEMA_REQUIRED")
+        _adapter_fail(
+            "FRAME_SCHEMA_REQUIRED", "<schema>", SourceSpan(0, 0), "<schema>")
     return hashlib.sha256(schema.canonical_bytes()).hexdigest()
 
 
