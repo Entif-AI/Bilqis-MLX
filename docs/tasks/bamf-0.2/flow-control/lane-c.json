@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "2c572202978df9542e379cfb975007cdea3f05ad",
-  "updated_at": "2026-11-10T16:49:15Z",
+  "updated_at": "2026-11-10T17:26:52Z",
   "exception": null,
   "items": [
     {
@@ -19,9 +19,9 @@
       "issue": 542,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "2c572202978df9542e379cfb975007cdea3f05ad",
-      "summary": "C16.1a/#542 is activated after human merge of prerequisite C16.1c/#950. Lane-C branch codex/bamf02-c-runtime consumed and pushed exact reviewed unified 2c572202; pre-edit first-student owner baseline is 12/12 PASS and flow-control/diff hygiene are green. Active scope is persistent BAMF create/dry-run/resume plus saved admission-setting validation, consuming accepted B13/C09/C07 custody without minting trust roots or starting a real learner.",
-      "resume_trigger": null,
+      "head_sha": "61486479e256f1af3db75dcf9a82d1d1629029a1",
+      "summary": "C16.1a/#542 implementation candidate 291f7a39 is preserved but not turn-in valid after fresh EGM exposed a shared enrollment lifecycle gap: a pre-genesis complete C07 lease cannot lawfully contain target accepted B13 identity, retry/recovery across gen0 -> C07 persistence was underspecified, dry-run did not expose exact B13 identity, and required first-start/persisted-source proofs were incomplete. Production mutation is frozen at the affected seam. SHARED_CONTRACT design amendment create-resume-enrollment-proposal.md is durable at 61486479 / SHA-256 866fee6b4e9c953c08dcac36bdca9a65cc3d24db47e0e6e08d75e8fb696c4481 and is EGM-pending. No PR is open.",
+      "resume_trigger": "Freshly review the exact C16.1a SHARED_CONTRACT amendment to 0 Blockers / 0 Majors before resuming production mutation; then implement only the reviewed enrollment request, owner-derived lease issuance/retry, exact dry-run B13 identity, readiness correction and acceptance-proof gaps.",
       "preserved_branch": "codex/bamf02-c-runtime"
     },
     {
