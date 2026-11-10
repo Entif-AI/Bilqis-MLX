@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "905018b0ece7613843570dc2c2e72a74dae4e91d",
-  "updated_at": "2026-11-10T18:50:41Z",
+  "updated_at": "2026-11-10T19:40:28Z",
   "exception": null,
   "items": [
     {
@@ -19,9 +19,9 @@
       "issue": 542,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "703b913c2dc6ff7e86b38f62e55dc9712f33563c",
-      "summary": "C16.1a/#542 remains design-held with historical implementation candidate 291f7a39 preserved and no PR open. Fresh R4 review failed: Structural 0B/1M/2N, Codebase Details 1B/2M/0N, Implementation Readiness 0B/3M/0N. R5 repairs the full material set: read-only atlas-release dry-run no longer consumes human-start authority; historical acceptance reconstruction restores the required binding checksum without minting live authority; file/test actions and target ownership are rebased on reviewed unified rather than the rejected candidate; parser option presence is explicitly introduced; interrupted no-pointer v2 resume is intercepted before legacy learner routing; ordinary-resume optimizer conflict and exact-byte orphan negatives are mandatory. Release-boundary correction #971 is consumed: staged first-student launch depends on #543, while #950 is required only when the atlas-release enrollment path is exercised. R5 proposal is pinned at 703b913c against reviewed unified 905018b0, SHA-256 f263d9fa0d3e8e59f8d79578c3cecd3acf2bcc215e5602c5f1d5d1f1312cb77b. Production mutation remains frozen pending a genuinely fresh review.",
-      "resume_trigger": "Freshly review proposal content commit 703b913c2dc6ff7e86b38f62e55dc9712f33563c / SHA-256 f263d9fa0d3e8e59f8d79578c3cecd3acf2bcc215e5602c5f1d5d1f1312cb77b against reviewed unified 905018b0ece7613843570dc2c2e72a74dae4e91d. Require 0 Blockers / 0 Majors before production mutation resumes.",
+      "head_sha": "de0bfa0355b2960088f95a12d9a94a39bf6662a9",
+      "summary": "C16.1a/#542 remains design-held with historical implementation candidate 291f7a39 and the later local 78da04bbd/3e547b198 candidate preserved as evidence; no PR is open. Fresh R5 review failed against reviewed unified 905018b0: Structural 0B/2M/0N, Codebase Details 1B/1M/0N, Implementation Readiness 0B/3M/4N. R6 repairs the complete material set: it freezes explicit fresh/resume run-id, run-seed and complete AdamW CLI semantics; makes accepted v1/v2 current-authority mutation bidirectionally exclusive under one shared epoch lock with fixed lock order; strengthens source/target ancestry rejection symmetrically; requires positive acquired-or-retained developmental evidence in the cohesive first-start witness; adds a literal post-generation-zero C07/C09 failure-and-recovery witness; requires both dry-run and create persisted-source byte preservation; and expands cold-recovery/resume mismatch proofs. Release-boundary correction #971 remains consumed: staged first-student launch depends on #543, while #950 is required only when the atlas-release enrollment path is exercised. R6 proposal is pinned at de0bfa03 against reviewed unified 905018b0, SHA-256 82a24fd765aa20f036668db911c3b9d867f57cecc621a766fdc353c41c030763. Production mutation remains frozen pending a genuinely fresh R6 review.",
+      "resume_trigger": "Freshly review R6 proposal content commit de0bfa0355b2960088f95a12d9a94a39bf6662a9 / SHA-256 82a24fd765aa20f036668db911c3b9d867f57cecc621a766fdc353c41c030763 against reviewed unified 905018b0ece7613843570dc2c2e72a74dae4e91d. Require 0 Blockers / 0 Majors before production mutation resumes; do not treat preserved local implementation commits as authority.",
       "preserved_branch": "codex/bamf02-c-runtime"
     },
     {
