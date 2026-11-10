@@ -64,25 +64,22 @@ def validate_atlas_command_request(args):
     _invalid('BAMF_ATLAS_ACCEPTED_RUN_AUTHORITY_UNAVAILABLE')
 
 
-def stage_unleased_atlas_proposal(run_dir, proposal):
-    from dataclasses import asdict
+def _validated_frontier_proposal(proposal):
     from ..factory.jit_curriculum import CurriculumDeltaProposal, ProposalDisposition
-    from .atlas_admission_policy import AdmissionResult, AdmissionStatus
     if not isinstance(proposal, CurriculumDeltaProposal) or proposal.disposition is not ProposalDisposition.PROPOSAL:
         _invalid('BAMF_ATLAS_STAGED_PROPOSAL_REQUIRED')
     try:
         proposal.verify()
     except (ValueError, TypeError):
         _invalid('BAMF_ATLAS_NATIVE_PROPOSAL_CONTEXT_DRIFT')
+    return proposal
+
+
+def _persist_staged_atlas_result(run_dir, result):
+    from .atlas_admission_policy import AdmissionResult, AdmissionStatus
+    if not isinstance(result, AdmissionResult) or result.status is not AdmissionStatus.STAGED:
+        _invalid('BAMF_ATLAS_STAGED_RESULT_REQUIRED')
     directory = _store(run_dir, fixture_authority=False)
-    reference = directory / 'current.json'
-    if reference.exists() or reference.is_symlink():
-        # An unreadable/unverifiable lease is not equivalent to absence of one.
-        _invalid('BAMF_ATLAS_ACCEPTED_RUN_OWNER_REQUIRED_FOR_REFERENCED_LEASE')
-    result = AdmissionResult(AdmissionStatus.STAGED, proposal.proposal_sha256, None,
-        proposal.current_release_sha256, proposal.selected_successor_sha256,
-        'EXPLICIT_ATLAS_LEASE_REQUIRED',
-        'Keep the exact successor staged; request an approved Atlas scope after accepted run authority and the #510 executor are available.')
     staged = directory / 'staged'
     if staged.is_symlink() or (staged.exists() and not staged.is_dir()):
         _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
@@ -101,6 +98,51 @@ def stage_unleased_atlas_proposal(run_dir, proposal):
     if json.loads(path.read_text(encoding='utf-8')) != payload:
         _invalid('BAMF_ATLAS_STAGED_DECISION_READBACK_DRIFT')
     return result
+
+
+def stage_unleased_atlas_proposal(run_dir, proposal):
+    from .atlas_admission_policy import AdmissionResult, AdmissionStatus
+    proposal = _validated_frontier_proposal(proposal)
+    directory = _store(run_dir, fixture_authority=False)
+    reference = directory / 'current.json'
+    if reference.exists() or reference.is_symlink():
+        # An unreadable/unverifiable lease is not equivalent to absence of one.
+        _invalid('BAMF_ATLAS_ACCEPTED_RUN_OWNER_REQUIRED_FOR_REFERENCED_LEASE')
+    return _persist_staged_atlas_result(run_dir, AdmissionResult(
+        AdmissionStatus.STAGED, proposal.proposal_sha256, None,
+        proposal.current_release_sha256, proposal.selected_successor_sha256,
+        'EXPLICIT_ATLAS_LEASE_REQUIRED',
+        'Keep the exact successor staged; request an approved Atlas scope after accepted run authority is available.'))
+
+
+def dispatch_atlas_frontier_proposal(run_dir, proposal):
+    """Route one frontier proposal through accepted lease custody or safe staging.
+
+    A persisted lease is authority only after B13/C09 replay.  Until the owner
+    handoffs for production delta scope and source-bundle location are available,
+    an authenticated lease therefore remains a precise STAGED hold rather than a
+    caller-selected adoption shortcut.
+    """
+    from .atlas_admission_policy import AdmissionResult, AdmissionStatus
+    proposal = _validated_frontier_proposal(proposal)
+    directory = _store(run_dir, fixture_authority=False)
+    reference = directory / 'current.json'
+    if reference.is_symlink():
+        _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
+    if not reference.exists():
+        return stage_unleased_atlas_proposal(run_dir, proposal)
+
+    from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+    host = AcceptedRuntimeHost(Path(run_dir))
+    lease = read_accepted_atlas_lease(
+        run_dir, source_authority=host.source_authority())
+    if lease is None:
+        _invalid('BAMF_ATLAS_ACCEPTED_RUN_OWNER_REQUIRED_FOR_REFERENCED_LEASE')
+    return _persist_staged_atlas_result(run_dir, AdmissionResult(
+        AdmissionStatus.STAGED, proposal.proposal_sha256, lease.digest(),
+        proposal.current_release_sha256, proposal.selected_successor_sha256,
+        'PRODUCTION_DELTA_AUTHORITY_UNAVAILABLE',
+        'Keep the exact successor staged until owner-derived delta scope and source-bundle location are available.'))
 
 
 def read_atlas_lease(run_dir, independently_loaded_run, *, registry):

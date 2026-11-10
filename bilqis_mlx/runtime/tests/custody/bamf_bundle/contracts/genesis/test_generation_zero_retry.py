@@ -1,6 +1,7 @@
 """Generation-zero retries authenticate exact state and recover durable custody."""
 from __future__ import annotations
 
+from dataclasses import replace
 import json
 import os
 from pathlib import Path
@@ -14,9 +15,13 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation_authority, publish_initial_generation,
 )
+from bilqis_mlx.runtime.bamf_bundle import source_authority_custody as custody
+from bilqis_mlx.runtime.bamf_bundle.records import invalid
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     genesis_preparation, shape_patch,
 )
+from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
+from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import REGISTRY
 from bilqis_mlx.state_dag import persist, read_current
 
 
@@ -127,6 +132,51 @@ class GenerationZeroRetryTests(unittest.TestCase):
                 self.run / "bamf-state.json")
         self.assertEqual(manifest, durable_manifest)
         self.assertEqual(student.run_identity.run_seed, 3111)
+
+    def test_sealed_genesis_retry_requires_exact_host_root_after_factory_advance(self):
+        prepared = self._prepare(run_seed=3112)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
+                patch.object(
+                    publication, "_write_acceptance",
+                    side_effect=RuntimeError("acceptance crash")):
+            with self.assertRaisesRegex(RuntimeError, "acceptance crash"):
+                publish_initial_generation(self.run, prepared, reserve_gib=0.)
+
+        self.assertFalse((self.run / "bamf-state.json").exists())
+        durable_manifest = next((self.run / "bamf-bundles").iterdir()).name
+        self._advance_factory_source(prepared)
+
+        def missing_root():
+            invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED")
+
+        with shape_patch(), patch.object(
+                custody, "read_host_system_source_authority_registry",
+                side_effect=missing_root), patch.object(
+                mlx_checkpoint, "assert_headroom"), \
+                self.assertRaises(BilqisError) as missing:
+            publish_initial_generation(self.run, prepared, reserve_gib=0.)
+        self.assertEqual(
+            missing.exception.context["reason"],
+            "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED")
+        self.assertFalse((self.run / "bamf-state.json").exists())
+
+        drift = SourceAuthorityRegistry((replace(
+            REGISTRY.keys[0], owner_id="source:drifted-host-root"),))
+        with shape_patch(), patch.object(
+                custody, "read_host_system_source_authority_registry",
+                return_value=drift), patch.object(
+                mlx_checkpoint, "assert_headroom"), \
+                self.assertRaises(BilqisError) as mismatch:
+            publish_initial_generation(self.run, prepared, reserve_gib=0.)
+        self.assertEqual(
+            mismatch.exception.context["reason"],
+            "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH")
+        self.assertFalse((self.run / "bamf-state.json").exists())
+
+        recovered = self._publish(prepared)
+        self.assertEqual(recovered["manifest_sha256"], durable_manifest)
+        self.assertEqual(
+            json.loads((self.run / "bamf-state.json").read_text()), recovered)
 
     def test_post_pointer_crash_retry_reconciles_pending_delivery_before_success(self):
         prepared = self._prepare(run_seed=312)

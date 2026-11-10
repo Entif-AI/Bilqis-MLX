@@ -22,9 +22,9 @@ from .records import (
 
 def _accepted_source_authority_registry(run_dir: Path, student: CompleteStudent):
     from .source_authority_custody import (
-        require_provisioned_source_authority_registry,
+        resolve_source_authority_registry,
     )
-    return require_provisioned_source_authority_registry(
+    return resolve_source_authority_registry(
         run_dir, student.correction_frontier)
 
 
@@ -187,16 +187,17 @@ def _make_execution_cache_runtime():
             invalid("B13_EXECUTION_CACHE_REQUIRED")
         run_dir = Path(key).resolve()
         with _pointer_lock(run_dir):
-            pointer = _read_pointer(run_dir / "bamf-state.json")
+            pointer, student = _read_accepted_locked(run_dir)
             if (pointer is None
                     or pointer.get("manifest_sha256") != cache.accepted_manifest_sha256
                     or pointer.get("run_id") != cache.run_id
                     or pointer.get("generation") != cache.generation):
                 invalid("B13_EXECUTION_CACHE_STALE")
             from .source_authority_custody import (
-                read_provisioned_source_authority_registry,
+                resolve_source_authority_registry,
             )
-            current_registry = read_provisioned_source_authority_registry(run_dir)
+            current_registry = resolve_source_authority_registry(
+                run_dir, student.correction_frontier)
             with lock:
                 _require_retained_entry(
                     entries.get(str(run_dir)), cache, current_registry)

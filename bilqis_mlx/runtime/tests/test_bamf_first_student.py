@@ -18,6 +18,7 @@ from bilqis_mlx.runtime.bamf_first_student import (
 )
 from bilqis_mlx.runtime.tests._bamf_first_student_support import BamfFirstStudentCase
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
+from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import REGISTRY
 
 
 class BamfFirstStudentTests(BamfFirstStudentCase):
@@ -39,6 +40,34 @@ class BamfFirstStudentTests(BamfFirstStudentCase):
         self.assert_owner_identity(receipt, student, manifest_sha256)
         self.assert_zero_optimizer_and_semantics(receipt, student, declared)
         self.assert_teacher_and_dashboard(receipt, student, target)
+
+    def test_preflight_consumes_fixed_host_source_authority_without_target_provisioning(self):
+        target = self.root / "host-rooted-run"
+        self.preflight(target)
+
+        with shape_patch():
+            student, _manifest_sha256 = load_bamf_generation_authority(
+                target / "bamf-state.json")
+            from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+            authority = AcceptedRuntimeHost(target).source_authority()
+            from bilqis_mlx.runtime.bamf_bundle.admission import (
+                bind_accepted_execution_cache,
+            )
+            cache = bind_accepted_execution_cache(target)
+            from bilqis_mlx.runtime.atlas_revalidation import (
+                require_source_authority_runtime,
+            )
+            self.assertIs(require_source_authority_runtime(authority, cache), authority)
+
+        self.assertEqual(
+            student.correction_frontier["source_authority_registry_sha256"],
+            REGISTRY.digest,
+        )
+        self.assertEqual(
+            student.correction_frontier["source_authority_registry_origin"],
+            "HOST_SYSTEM_V1",
+        )
+        self.assertFalse((target / "source-authority-registry.json").exists())
 
     def test_preflight_rejects_occupied_run_directory_without_touching_it(self):
         target = self.root / "old-run"

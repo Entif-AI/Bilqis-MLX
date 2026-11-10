@@ -16,7 +16,8 @@ from pathlib import Path
 import sys
 
 from bilqis_mlx.learning.atlas_acceptance import (
-    candidate_identity_digest, mint_acceptance_binding,
+    ParsedAcceptedCandidateBinding, candidate_identity_digest,
+    mint_acceptance_binding,
 )
 from bilqis_mlx.learning.atlas_retention_decision import (
     CandidateRetentionDecision,
@@ -31,11 +32,15 @@ from bilqis_mlx.runtime.model_topology_v2 import ParameterCensus
 
 from .accepted_runtime import (
     AcceptedGenerationIdentity, _identity_from_pointer,
-    _published_in_memory_identity, _read_accepted,
+    _published_in_memory_identity, _read_accepted, _read_accepted_locked,
     bind_accepted_execution_cache,
     load_accepted_generation,
 )
-from .publication import publish_bamf_generation
+from .codec import load_bamf_bundle
+from .publication import (
+    _pointer_lock, _require_published_acceptance, publish_bamf_generation,
+)
+from .publication.authority import authenticate_current_successor_retry
 from .records import (
     BamfBundleCandidate, CompleteStudent, invalid,
 )
@@ -161,6 +166,52 @@ def admit_candidate_step(run_dir: Path, gradients=None, *,
         teacher_hparams=teacher_hparams, max_norm=max_norm)
 
 
+def _require_source_authority_for_acceptance(
+        run_dir: Path, candidate: BamfBundleCandidate):
+    """Authenticate current custody and derive the ordinary successor C09 root."""
+    from .source_authority_custody import (
+        require_source_authority_successor_inheritance,
+    )
+
+    run_dir = Path(run_dir)
+    with _pointer_lock(run_dir):
+        current, current_child = _read_accepted_locked(run_dir)
+        if current_child.generation == candidate.generation - 1:
+            if (candidate.run_id != current_child.run_id
+                    or candidate.generation != current_child.generation + 1
+                    or candidate.parent_manifest_sha256
+                    != current["manifest_sha256"]
+                    or candidate.run_identity != current_child.run_identity):
+                invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+            return require_source_authority_successor_inheritance(
+                run_dir,
+                current_child.correction_frontier,
+                candidate.correction_frontier,
+                allow_historical_anchor=(
+                    candidate.transition.get("kind") == "RETAINED_CANDIDATE"),
+            )
+        if current_child.generation == candidate.generation:
+            parent, persisted = authenticate_current_successor_retry(
+                run_dir, current, candidate, current_child,
+                load_bundle=load_bamf_bundle,
+                require_published_acceptance=_require_published_acceptance,
+            )
+            if not isinstance(persisted, ParsedAcceptedCandidateBinding):
+                invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+            registry = require_source_authority_successor_inheritance(
+                run_dir,
+                parent.correction_frontier,
+                current_child.correction_frontier,
+                allow_historical_anchor=(
+                    current_child.transition.get("kind") == "RETAINED_CANDIDATE"),
+            )
+            digest = registry.digest if registry is not None else None
+            if digest != persisted.source_authority_registry_sha256:
+                invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH")
+            return registry
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+
+
 def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
                        retained_state: CandidateState, *,
                        decision: CandidateRetentionDecision,
@@ -174,11 +225,7 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
     binding from that decision, and B13 custody publishes the generation only
     when the binding matches the candidate it publishes.
     """
-    from .source_authority_custody import (
-        require_provisioned_source_authority_registry,
-    )
-    trusted_registry = require_provisioned_source_authority_registry(
-        run_dir, bundle.correction_frontier)
+    trusted_registry = _require_source_authority_for_acceptance(run_dir, bundle)
     binding = mint_acceptance_binding(
         decision, retained_state, run_id=bundle.run_id,
         generation=bundle.generation, feature_sha256=feature_sha256,

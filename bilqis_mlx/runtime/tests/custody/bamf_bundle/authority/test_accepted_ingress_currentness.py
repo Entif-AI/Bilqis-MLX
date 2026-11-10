@@ -16,8 +16,7 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
     derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, next_accepted_step, parent_state, provision_source_authority_registry,
-    publish_candidate, shape_patch, with_source_authority_registry,
+    candidate, next_accepted_step, parent_state, publish_candidate, shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
@@ -37,14 +36,17 @@ class AcceptedIngressCurrentnessTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish(self, source):
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+        from bilqis_mlx.runtime.bamf_bundle import source_authority_custody as custody
+        with shape_patch(), patch.object(
+                custody, "read_host_system_source_authority_registry",
+                return_value=AUTHORITY), patch.object(mlx_checkpoint, "assert_headroom"):
             return publish_candidate(self.run, source)
 
     def test_pointer_advance_between_validation_and_append_rejects_before_write(self):
-        provision_source_authority_registry(self.run, AUTHORITY)
-        pointer = self.publish(with_source_authority_registry(
-            candidate(parent_state()), AUTHORITY))
-        with shape_patch():
+        pointer = self.publish(candidate(parent_state()))
+        from bilqis_mlx.runtime.bamf_bundle import source_authority_custody as custody
+        with shape_patch(), patch.object(
+                custody, "read_host_system_source_authority_registry", return_value=AUTHORITY):
             accepted = load_accepted_generation(self.run)
         correction = _event(DependencyRef(DependencyKind.SOURCE, "source:race"))
         entered = Event()
@@ -62,12 +64,9 @@ class AcceptedIngressCurrentnessTests(unittest.TestCase):
             parent_manifest_sha256=pointer["manifest_sha256"],
             delivery_events=({"event": "FIXTURE_ACCEPTED"},),
         )
-        successor = replace(successor, correction_frontier={
-            **successor.correction_frontier,
-            "source_authority_registry_sha256": AUTHORITY.digest,
-            "source_authority_registry": AUTHORITY.to_record(),
-        })
         with shape_patch(), patch.object(
+                custody, "read_host_system_source_authority_registry",
+                return_value=AUTHORITY), patch.object(
                 accepted_corrections, "append_current_record",
                 side_effect=paused_append), ThreadPoolExecutor(max_workers=1) as pool:
             host = accepted_corrections.AcceptedRuntimeHost(self.run)

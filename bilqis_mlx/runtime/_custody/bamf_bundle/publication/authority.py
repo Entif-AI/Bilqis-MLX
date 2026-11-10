@@ -55,11 +55,11 @@ def require_acceptance(
 
 def validate_parent_transition(
         run_dir: Path, pointer: dict | None, candidate: BamfBundleCandidate, *,
-        load_bundle, reconcile) -> None:
+        load_bundle, reconcile) -> CompleteStudent | None:
     if pointer is None:
         if candidate.generation != 0 or candidate.parent_manifest_sha256 is not None:
             invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
-        return
+        return None
     if (pointer["run_id"] != candidate.run_id
             or pointer["generation"] != candidate.generation - 1
             or pointer["manifest_sha256"] != candidate.parent_manifest_sha256):
@@ -88,6 +88,49 @@ def validate_parent_transition(
         if candidate.transition.get("kind") != kind:
             invalid("BAMF_GENERATION_TRANSITION_INVALID")
     reconcile(run_dir, parent)
+    return parent
+
+
+def authenticate_current_successor_retry(
+        run_dir: Path,
+        current: dict,
+        candidate: BamfBundleCandidate,
+        current_child: CompleteStudent,
+        *,
+        load_bundle,
+        require_published_acceptance,
+):
+    """Authenticate one already-pointed exact successor retry from accepted custody."""
+    from ..genesis.records import successor_candidate_identity_digest
+
+    if (not isinstance(current, dict)
+            or type(candidate) is not BamfBundleCandidate
+            or type(current_child) is not CompleteStudent
+            or current.get("run_id") != current_child.run_id
+            or current.get("generation") != current_child.generation
+            or current.get("parent_manifest_sha256")
+            != current_child.parent_manifest_sha256
+            or candidate.run_id != current_child.run_id
+            or candidate.generation != current_child.generation
+            or candidate.parent_manifest_sha256
+            != current_child.parent_manifest_sha256
+            or successor_candidate_identity_digest(current_child)
+            != successor_candidate_identity_digest(candidate)):
+        invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+    persisted = require_published_acceptance(run_dir, current, current_child)
+    parent_sha = current_child.parent_manifest_sha256
+    if parent_sha is None:
+        invalid("BAMF_RUN_IDENTITY_DRIFT")
+    parent = load_bundle(
+        Path(run_dir) / "bamf-bundles" / parent_sha,
+        expected_manifest_sha256=parent_sha)
+    if (parent.run_id != current_child.run_id
+            or parent.generation + 1 != current_child.generation
+            or parent.run_identity != current_child.run_identity
+            or persisted.parent_candidate_identity_sha256
+            != candidate_identity_digest(parent.retained_state)):
+        invalid("BAMF_RUN_IDENTITY_DRIFT")
+    return parent, persisted
 
 
 def require_accepted_parent(

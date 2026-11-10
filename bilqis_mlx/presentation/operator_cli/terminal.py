@@ -14,6 +14,7 @@ def human_stop_summary(result: dict) -> str:
         "AWAITING_TEACHER_SOUP": "Whole-school consolidation requires a separately verified frozen teacher-soup continuation.",
         "STAGNATION_REVIEW_REQUIRED": "The remaining required capabilities showed no fresh measured improvement for the full stagnation window and also failed repeated recovery rounds; they remain unqualified mastery debt for the next measured recovery run.",
         "DISK_RESERVE_REACHED": "Free space cannot cover the protected disk reserve plus another checkpoint.",
+        "ATLAS_ADMISSION_ADOPTED_COLD_RESUME": "The admitted successor is now accepted B13 custody; the process stopped before stale in-memory model or optimizer state could be reused.",
     }
     reason = result["stop_reason"]
     grade_wait = (
