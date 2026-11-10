@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Mapping
 
 from bilqis_mlx.factory.executable_release import (
@@ -42,16 +41,13 @@ class PreparedInitialGeneration:
     factory_authority: InitialFactoryFoundationAuthority
     graph: dict
     foundation_features: InitialFoundationFeatureAuthority
-    source_authority_run_dir: Path | None
     _issuance: object = field(init=False, default=None, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs) -> None:
         invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
 
     def __post_init__(self) -> None:
-        if (getattr(self, "_issuance", None) is not _PREPARED_INITIAL_GENERATION_ISSUER
-                or (self.source_authority_run_dir is not None
-                    and not isinstance(self.source_authority_run_dir, Path))):
+        if getattr(self, "_issuance", None) is not _PREPARED_INITIAL_GENERATION_ISSUER:
             invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
 
     @property
@@ -93,13 +89,46 @@ def _factory_generation_provenance(
         release.execution_plan.projection_digests.teaching, 0)
 
 
+def _host_bound_frontier(correction_frontier: Mapping[str, object]) -> dict:
+    from ..source_authority_custody import (
+        HOST_SYSTEM_SOURCE_AUTHORITY_ORIGIN,
+        read_host_system_source_authority_registry,
+    )
+
+    trusted = read_host_system_source_authority_registry()
+    return {
+        **dict(correction_frontier),
+        "source_authority_registry": trusted.to_record(),
+        "source_authority_registry_sha256": trusted.digest,
+        "source_authority_registry_origin": HOST_SYSTEM_SOURCE_AUTHORITY_ORIGIN,
+    }
+
+
+def validate_initial_generation_source_authority(candidate: BamfBundleCandidate):
+    """Narrow C09 replay for generation-zero publication and retry custody."""
+    from ..source_authority_custody import (
+        HOST_SYSTEM_SOURCE_AUTHORITY_ORIGIN,
+        read_host_system_source_authority_registry,
+    )
+
+    correction = candidate.correction_frontier
+    if (not isinstance(correction, Mapping)
+            or correction.get("source_authority_registry_origin")
+            != HOST_SYSTEM_SOURCE_AUTHORITY_ORIGIN):
+        invalid("BAMF_C09_SOURCE_AUTHORITY_BINDING_REQUIRED")
+    trusted = read_host_system_source_authority_registry()
+    if (correction.get("source_authority_registry") != trusted.to_record()
+            or correction.get("source_authority_registry_sha256") != trusted.digest):
+        invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH")
+    return trusted
+
+
 def _validate_candidate_source_authority(
         candidate: BamfBundleCandidate, *, release: ExecutableFactoryRelease,
         admission: ExecutableAdmissionReceipt, graph: dict,
         origin_checkpoint: Checkpoint,
         factory_authority: InitialFactoryFoundationAuthority | None = None,
-        foundation_features: InitialFoundationFeatureAuthority | None = None,
-        source_authority_run_dir: Path | None = None) -> None:
+        foundation_features: InitialFoundationFeatureAuthority | None = None) -> None:
     """Re-prove Factory/source/teacher authority for a generation-zero candidate."""
     authority = _validated_factory_origin(
         factory_authority, graph, release=release, admission=admission,
@@ -116,10 +145,7 @@ def _validate_candidate_source_authority(
     expected_sidecars = list(initial_foundation_sidecars(
         release, admission, graph, run_seed=identity.run_seed,
         feature_authority=foundation_features))
-    if source_authority_run_dir is not None:
-        from ..source_authority_custody import _bind_host_source_authority_registry
-        expected_sidecars[2] = _bind_host_source_authority_registry(
-            source_authority_run_dir, expected_sidecars[2])
+    expected_sidecars[2] = _host_bound_frontier(expected_sidecars[2])
     expected_sidecars = tuple(expected_sidecars)
     teacher = candidate.teacher_state
     correction = candidate.correction_frontier
@@ -159,14 +185,12 @@ def _issue_binding(
         origin_checkpoint: Checkpoint,
         factory_authority: InitialFactoryFoundationAuthority | None = None,
         foundation_features: InitialFoundationFeatureAuthority | None = None,
-        source_authority_run_dir: Path | None = None,
         ) -> InitialGenerationBinding:
     _validate_candidate_source_authority(
         candidate, release=release, admission=admission, graph=graph,
         origin_checkpoint=origin_checkpoint,
         factory_authority=factory_authority,
-        foundation_features=foundation_features,
-        source_authority_run_dir=source_authority_run_dir)
+        foundation_features=foundation_features)
     _validate_candidate_b01_authority(candidate, foundation_features)
     return _mint_initial_generation_binding(candidate)
 

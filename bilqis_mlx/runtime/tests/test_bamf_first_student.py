@@ -18,9 +18,6 @@ from bilqis_mlx.runtime.bamf_first_student import (
 )
 from bilqis_mlx.runtime.tests._bamf_first_student_support import BamfFirstStudentCase
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    provision_source_authority_registry,
-)
 from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import REGISTRY
 
 
@@ -44,10 +41,8 @@ class BamfFirstStudentTests(BamfFirstStudentCase):
         self.assert_zero_optimizer_and_semantics(receipt, student, declared)
         self.assert_teacher_and_dashboard(receipt, student, target)
 
-    def test_preflight_consumes_preprovisioned_host_source_authority_without_owning_it(self):
+    def test_preflight_consumes_fixed_host_source_authority_without_target_provisioning(self):
         target = self.root / "host-rooted-run"
-        provision_source_authority_registry(target, REGISTRY)
-
         self.preflight(target)
 
         with shape_patch():
@@ -62,12 +57,17 @@ class BamfFirstStudentTests(BamfFirstStudentCase):
             from bilqis_mlx.runtime.atlas_revalidation import (
                 require_source_authority_runtime,
             )
+            self.assertIs(require_source_authority_runtime(authority, cache), authority)
 
         self.assertEqual(
             student.correction_frontier["source_authority_registry_sha256"],
             REGISTRY.digest,
         )
-        self.assertIs(require_source_authority_runtime(authority, cache), authority)
+        self.assertEqual(
+            student.correction_frontier["source_authority_registry_origin"],
+            "HOST_SYSTEM_V1",
+        )
+        self.assertFalse((target / "source-authority-registry.json").exists())
 
     def test_preflight_rejects_occupied_run_directory_without_touching_it(self):
         target = self.root / "old-run"

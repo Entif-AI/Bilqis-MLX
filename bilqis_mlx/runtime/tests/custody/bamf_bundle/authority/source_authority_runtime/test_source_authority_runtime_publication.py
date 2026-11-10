@@ -17,7 +17,7 @@ from bilqis_mlx.runtime.atlas_revalidation import (
     require_source_authority_runtime,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_execution_cache, derive_successor_bundle,
+    accept_and_publish, bind_accepted_execution_cache, derive_successor_bundle,
     load_accepted_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
@@ -28,9 +28,8 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     candidate,
     parent_state,
     publish_candidate,
-    provision_source_authority_registry,
+    retention_decision,
     shape_patch,
-    with_source_authority_registry,
 )
 from bilqis_mlx.semantics.context_eligibility import SourceFrontier
 from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import (
@@ -54,8 +53,7 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
         self.environment.stop()
         self.temporary.cleanup()
 
-    def publish(self, run_dir=None, *, anchored=True, generation=0, parent=None,
-                state=None, registry=REGISTRY):
+    def publish(self, run_dir=None, *, generation=0, parent=None, state=None):
         run_dir = self.run if run_dir is None else Path(run_dir)
         source = candidate(parent_state())
         if state is not None or generation or parent is not None:
@@ -64,9 +62,6 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
                 generation=generation,
                 parent=parent,
             )
-        if anchored:
-            provision_source_authority_registry(run_dir, registry)
-            source = with_source_authority_registry(source, registry)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             pointer = publish_candidate(run_dir, source)
         return source, pointer
@@ -112,6 +107,38 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
                 publish_bamf_generation(
                     self.run, successor, acceptance=acceptance(successor))
 
+    def test_host_genesis_publishes_ordinary_successor_without_run_local_registry(self):
+        _source, pointer = self.publish()
+        self.assertFalse((self.run / "source-authority-registry.json").exists())
+        with shape_patch():
+            parent = load_accepted_generation(self.run)
+        retained = accepted_state(
+            parent.retained_state, parent.extents, parent.topology)
+        successor = derive_successor_bundle(
+            parent, retained,
+            parent_manifest_sha256=pointer["manifest_sha256"],
+            delivery_events=({"event": "FIXTURE_ORDINARY_SUCCESSOR"},),
+        )
+        decision = retention_decision(
+            parent=parent.retained_state, retained=retained)
+
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            published = accept_and_publish(
+                self.run, successor, retained,
+                decision=decision,
+                feature_sha256=successor.extents.factor_map_digest,
+                reserve_gib=0.,
+            )
+
+        self.assertEqual(published["generation"], 1)
+        self.assertFalse((self.run / "source-authority-registry.json").exists())
+        with shape_patch():
+            accepted = load_accepted_generation(self.run)
+        self.assertEqual(
+            accepted.correction_frontier["source_authority_registry_origin"],
+            "HOST_SYSTEM_V1",
+        )
+
     def test_direct_publication_cannot_bypass_host_source_authority_root(self):
         _source, pointer = self.publish()
         with shape_patch():
@@ -140,24 +167,26 @@ class SourceAuthorityRuntimeCustodyTests(unittest.TestCase):
                 )
         self.assertEqual(
             caught.exception.context["reason"],
-            "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH",
+            "BAMF_C09_SOURCE_AUTHORITY_BINDING_INVALID",
         )
 
     def test_host_provisioned_registry_drift_rejects_existing_accepted_generation(self):
         self.publish()
         drift = SourceAuthorityRegistry((replace(
             REGISTRY.keys[0], owner_id="source:drift"),))
-        with self.assertRaises(BilqisError) as caught:
-            provision_source_authority_registry(self.run, drift)
+        from bilqis_mlx.runtime.bamf_bundle import source_authority_custody as custody
+        with shape_patch(), patch.object(
+                custody, "read_host_system_source_authority_registry",
+                return_value=drift), self.assertRaises(BilqisError) as caught:
+            bind_accepted_execution_cache(self.run)
         self.assertEqual(
             caught.exception.context["reason"],
-            "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_IMMUTABLE",
+            "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH",
         )
 
     def test_genesis_candidate_cannot_replace_host_provisioned_source_authority_root(self):
         drift = SourceAuthorityRegistry((replace(
             REGISTRY.keys[0], owner_id="source:drift"),))
-        provision_source_authority_registry(self.run, REGISTRY)
         source = candidate(parent_state())
         source = replace(source, correction_frontier={
             **source.correction_frontier,

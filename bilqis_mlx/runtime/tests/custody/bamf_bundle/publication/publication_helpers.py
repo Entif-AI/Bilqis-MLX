@@ -1,7 +1,7 @@
 """Publication and mutation helpers shared by BAMF custody tests."""
 from __future__ import annotations
 
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from copy import deepcopy
 from dataclasses import replace
 import os
@@ -18,6 +18,17 @@ from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
 from bilqis_mlx.runtime.bamf_bundle.motif_codec import snapshot_to_record
 from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ParameterCensus
+from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import REGISTRY
+
+
+@contextmanager
+def host_source_authority_patch():
+    """Substitute the fixed host reader for one complete test scenario."""
+    with patch(
+            "bilqis_mlx.runtime.bamf_bundle.source_authority_custody."
+            "read_host_system_source_authority_registry",
+            return_value=REGISTRY):
+        yield
 
 
 def rewrite_motif_bundle_fixture(
@@ -68,6 +79,7 @@ def shape_patch():
     from ..genesis_authority_fixtures import genesis_feature_source_patch
 
     stack = ExitStack()
+    stack.enter_context(host_source_authority_patch())
     stack.enter_context(genesis_feature_source_patch())
     for target in ("bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
                    "bilqis_mlx.runtime.topology_v2.ledger.expected_bamf_shapes",
@@ -235,6 +247,6 @@ def publish_candidate(run_dir, bundle, *, foundation_features=None):
 
 
 __all__ = (
-    "acceptance", "publish_candidate", "retention_decision",
+    "acceptance", "host_source_authority_patch", "publish_candidate", "retention_decision",
     "rewrite_motif_bundle_fixture", "shape_patch",
 )

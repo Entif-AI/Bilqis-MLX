@@ -6,10 +6,13 @@ import shutil
 from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError
-from bilqis_mlx.learning.atlas_acceptance import AcceptedCandidateBinding
+from bilqis_mlx.learning.atlas_acceptance import (
+    AcceptedCandidateBinding, ParsedAcceptedCandidateBinding,
+)
 
 from ..atlas_admission import (
-    AtlasAdmissionBinding, require_atlas_admission_binding,
+    AtlasAdmissionBinding, ParsedAtlasAdmissionBinding,
+    require_atlas_admission_binding,
 )
 from ..codec import load_bamf_bundle, save_bamf_bundle
 from ..records import (
@@ -17,6 +20,7 @@ from ..records import (
 )
 from .authority import (
     _UNBOUND_RETRY,
+    authenticate_current_successor_retry,
     load_generation_locked as _load_generation_locked_impl,
     parent_acceptance_for_publication as _parent_acceptance_for_publication_impl,
     require_acceptance as _require_acceptance,
@@ -126,35 +130,80 @@ def _authorize_publication_candidate(
     if candidate.generation > 0:
         if type(authority) is AtlasAdmissionBinding:
             return require_atlas_admission_binding(candidate, authority), None, None
-        from ..source_authority_custody import (
-            require_provisioned_source_authority_registry,
-        )
-
         accepted = _require_acceptance(candidate, authority)
-        trusted = require_provisioned_source_authority_registry(
-            run_dir, candidate.correction_frontier)
-        trusted_digest = trusted.digest if trusted is not None else None
-        if accepted.source_authority_registry_sha256 != trusted_digest:
-            invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH")
         return accepted, None, None
     from ..genesis import (
         PreparedInitialGeneration, validate_initial_generation_binding,
         validate_initial_generation_preparation,
+        validate_initial_generation_source_authority,
     )
     if (type(authority) is not PreparedInitialGeneration
             or authority.candidate is not candidate):
         invalid("BAMF_INITIAL_GENERATION_PREPARATION_REQUIRED")
     authority.__post_init__()
-    if (authority.source_authority_run_dir is not None
-            and Path(run_dir).expanduser().resolve()
-            != authority.source_authority_run_dir):
-        invalid("BAMF_C09_SOURCE_AUTHORITY_RUN_IDENTITY_DRIFT")
     validate_initial_generation_binding(candidate, authority.binding)
+    validate_initial_generation_source_authority(candidate)
     existing = _existing_initial_generation_retry(run_dir, candidate, authority)
     if existing is not None:
         return None, authority, existing
     validate_initial_generation_preparation(authority)
     return authority.binding, authority, None
+
+
+def _require_successor_source_authority(run_dir, parent, child, authority):
+    from ..source_authority_custody import require_source_authority_successor_inheritance
+
+    trusted = require_source_authority_successor_inheritance(
+        run_dir,
+        parent.correction_frontier,
+        child.correction_frontier,
+        allow_historical_anchor=(
+            type(authority) is AcceptedCandidateBinding
+            and child.transition.get("kind") == "RETAINED_CANDIDATE"),
+    )
+    trusted_digest = trusted.digest if trusted is not None else None
+    if trusted_digest != child.correction_frontier.get(
+            "source_authority_registry_sha256"):
+        invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH")
+    return trusted
+
+
+def _require_retry_acceptance_family(authority, persisted) -> None:
+    if type(authority) is AcceptedCandidateBinding:
+        valid = isinstance(persisted, ParsedAcceptedCandidateBinding)
+    elif type(authority) is AtlasAdmissionBinding:
+        valid = isinstance(persisted, ParsedAtlasAdmissionBinding)
+    else:
+        valid = False
+    if (not valid or persisted.digest != authority.digest
+            or persisted.schema_version != authority.schema_version):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+
+
+def _reconcile_already_pointed_retry(
+        run_dir, current, candidate, authority, prepared, digest, stage):
+    if (current["run_id"] != candidate.run_id
+            or current["manifest_sha256"] != digest
+            or current["parent_manifest_sha256"] != candidate.parent_manifest_sha256
+            or current["schema"] != BAMF_POINTER_SCHEMA
+            or current["acceptance_sha256"] != authority.digest):
+        invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+    student = load_bamf_bundle(
+        run_dir / current["bundle"], expected_manifest_sha256=digest)
+    if prepared is not None:
+        require_initial_generation_trust_root(current, student, authority)
+    else:
+        parent, persisted = authenticate_current_successor_retry(
+            run_dir, current, candidate, student,
+            load_bundle=load_bamf_bundle,
+            require_published_acceptance=_require_published_acceptance,
+        )
+        _require_retry_acceptance_family(authority, persisted)
+        _require_successor_source_authority(run_dir, parent, student, authority)
+    shutil.rmtree(stage)
+    _write_acceptance(run_dir, digest, authority)
+    reconcile_bamf_outbox(run_dir, student)
+    return current
 
 
 def _publish_authorized_generation(
@@ -177,34 +226,22 @@ def _publish_authorized_generation(
         pointer_path = run_dir / "bamf-state.json"
         with _pointer_lock(run_dir):
             current = _read_pointer(pointer_path)
-            if candidate.generation > 0:
-                _require_accepted_parent_impl(
-                    run_dir, candidate, authority, load_bundle=load_bamf_bundle)
             if current is not None and current["generation"] == candidate.generation:
-                if (current["run_id"] != candidate.run_id
-                        or current["manifest_sha256"] != digest
-                        or current["parent_manifest_sha256"] != candidate.parent_manifest_sha256
-                        or current["schema"] != BAMF_POINTER_SCHEMA
-                        or current["acceptance_sha256"] != authority.digest):
-                    invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
-                shutil.rmtree(stage)
-                student = load_bamf_bundle(
-                    run_dir / current["bundle"], expected_manifest_sha256=digest)
-                if prepared is not None:
-                    require_initial_generation_trust_root(current, student, authority)
-                _write_acceptance(run_dir, digest, authority)
-                reconcile_bamf_outbox(run_dir, student)
-                return current
+                return _reconcile_already_pointed_retry(
+                    run_dir, current, candidate, authority, prepared, digest, stage)
             if prepared is not None:
                 from ..genesis import validate_initial_generation_preparation
                 validate_initial_generation_preparation(prepared)
-            _validate_parent_transition_impl(
+            parent = _validate_parent_transition_impl(
                 run_dir, current, candidate,
                 load_bundle=load_bamf_bundle, reconcile=reconcile_bamf_outbox)
             if candidate.generation > 0:
-                parent = load_bamf_bundle(
-                    run_dir / current["bundle"],
-                    expected_manifest_sha256=current["manifest_sha256"])
+                if parent is None:
+                    invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+                _require_successor_source_authority(
+                    run_dir, parent, candidate, authority)
+                _require_accepted_parent_impl(
+                    run_dir, candidate, authority, load_bundle=load_bamf_bundle)
                 live_parent_acceptance = _require_published_acceptance(
                     run_dir, current, parent)
                 if live_parent_acceptance.digest != parent_acceptance:

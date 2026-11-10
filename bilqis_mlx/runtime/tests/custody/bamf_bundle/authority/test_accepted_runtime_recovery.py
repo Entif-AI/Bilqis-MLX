@@ -18,12 +18,21 @@ from bilqis_mlx.runtime.accepted_correction_ledger import (
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache, derive_successor_bundle, load_accepted_generation,
 )
+from bilqis_mlx.runtime.bamf_bundle import source_authority_custody as custody
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_motif_artifact_owner
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    candidate, next_accepted_step, parent_state, publish_candidate, shape_patch,
-    provision_source_authority_registry, with_source_authority_registry,
+    candidate, next_accepted_step, parent_state, publish_candidate,
+    shape_patch as _shape_patch,
 )
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _sign_event
+
+
+def shape_patch():
+    stack = _shape_patch()
+    stack.enter_context(patch.object(
+        custody, "read_host_system_source_authority_registry",
+        return_value=AUTHORITY))
+    return stack
 
 
 class AcceptedRuntimeRecoveryTests(unittest.TestCase):
@@ -44,8 +53,7 @@ class AcceptedRuntimeRecoveryTests(unittest.TestCase):
             return publish_candidate(self.run, source)
 
     def _motif_fixture(self):
-        provision_source_authority_registry(self.run, AUTHORITY)
-        self.publish(with_source_authority_registry(candidate(parent_state()), AUTHORITY))
+        self.publish(candidate(parent_state()))
         with shape_patch():
             cache = bind_accepted_execution_cache(self.run)
         fixture = FrameEncoderTests()

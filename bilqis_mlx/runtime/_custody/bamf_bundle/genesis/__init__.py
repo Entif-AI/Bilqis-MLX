@@ -13,7 +13,10 @@ from .preparation import (
     prepare_initial_generation, validate_initial_generation_binding,
     validate_initial_generation_preparation, validate_parsed_initial_generation_binding,
 )
-from .preparation_authority import PreparedInitialGeneration, _issue_binding
+from .preparation_authority import (
+    PreparedInitialGeneration, _issue_binding,
+    validate_initial_generation_source_authority,
+)
 from .records import (
     BamfRunIdentity, InitialGenerationBinding, ParsedInitialGenerationBinding,
 )
@@ -33,4 +36,5 @@ __all__ = (
     "issue_initial_factory_foundation_authority", "prepare_initial_generation",
     "publish_initial_generation", "validate_initial_generation_binding",
     "validate_initial_generation_preparation", "validate_parsed_initial_generation_binding",
+    "validate_initial_generation_source_authority",
 )

@@ -109,7 +109,6 @@ def preflight_bamf_foundation(
         optimizer_hyperparameters=config.optimizer_hyperparameters,
         provenance=provenance,
         foundation_features=features,
-        source_authority_run_dir=target,
         delivery_events=({
             "event": "BAMF_GENERATION_ACCEPTED",
             "optimizer_step": 0,

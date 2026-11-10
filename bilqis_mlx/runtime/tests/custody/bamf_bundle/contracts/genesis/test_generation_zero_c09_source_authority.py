@@ -20,7 +20,7 @@ from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
     _reset_execution_cache_owner_for_tests,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
-from bilqis_mlx.runtime.bamf_bundle.records import canonical
+from bilqis_mlx.runtime.bamf_bundle import source_authority_custody as custody
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     genesis_preparation, provision_source_authority_registry, shape_patch,
 )
@@ -42,21 +42,20 @@ class GenerationZeroC09SourceAuthorityTests(unittest.TestCase):
         self.environment.stop()
         self.temporary.cleanup()
 
-    def _prepared(self, *, run_dir=None):
+    def _prepared(self):
         with shape_patch():
-            return genesis_preparation(
-                run_seed=950,
-                source_authority_run_dir=(self.run if run_dir is None else run_dir),
-            )
+            return genesis_preparation(run_seed=950)
 
-    def _publish(self, prepared):
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+    def _publish(self, prepared, *, host_registry=REGISTRY):
+        with shape_patch(), patch.object(
+                custody, "read_host_system_source_authority_registry",
+                return_value=host_registry), patch.object(mlx_checkpoint, "assert_headroom"):
             return publish_initial_generation(self.run, prepared, reserve_gib=0.)
 
     def test_host_registry_binds_genesis_and_cold_host_issues_opaque_runtime(self):
-        provision_source_authority_registry(self.run, REGISTRY)
         prepared = self._prepared()
         correction = prepared.candidate.correction_frontier
+        self.assertEqual(correction["source_authority_registry_origin"], "HOST_SYSTEM_V1")
         self.assertEqual(correction["source_authority_registry_sha256"], REGISTRY.digest)
         self.assertEqual(
             SourceAuthorityRegistry.from_record(
@@ -64,6 +63,7 @@ class GenerationZeroC09SourceAuthorityTests(unittest.TestCase):
             REGISTRY,
         )
         self._publish(prepared)
+        self.assertFalse((self.run / "source-authority-registry.json").exists())
 
         _reset_execution_cache_owner_for_tests()
         close_data_planes()
@@ -71,59 +71,48 @@ class GenerationZeroC09SourceAuthorityTests(unittest.TestCase):
             cache = bind_accepted_execution_cache(self.run)
             authority = AcceptedRuntimeHost(self.run).source_authority()
             rebound = AcceptedRuntimeHost(self.run).source_authority()
+            self.assertEqual(cache.source_authority_registry_sha256, REGISTRY.digest)
+            self.assertIs(require_source_authority_runtime(authority, cache), authority)
+            self.assertIs(rebound, authority)
 
-        self.assertEqual(cache.source_authority_registry_sha256, REGISTRY.digest)
-        self.assertIs(require_source_authority_runtime(authority, cache), authority)
-        self.assertIs(rebound, authority)
-
-    def test_host_file_without_generation_zero_binding_cannot_mint_runtime(self):
-        provision_source_authority_registry(self.run, REGISTRY)
-        with shape_patch():
-            unbound = genesis_preparation(run_seed=951)
-        self._publish(unbound)
-
-        _reset_execution_cache_owner_for_tests()
-        with shape_patch(), self.assertRaises(BilqisError) as failure:
-            AcceptedRuntimeHost(self.run)
-        self.assertEqual(
-            failure.exception.context["reason"],
-            "BAMF_C09_SOURCE_AUTHORITY_BINDING_REQUIRED",
-        )
+    def test_generation_zero_cannot_be_prepared_without_host_binding(self):
+        prepared = self._prepared()
+        correction = prepared.candidate.correction_frontier
+        self.assertEqual(set((
+            "source_authority_registry_origin",
+            "source_authority_registry",
+            "source_authority_registry_sha256",
+        )) - set(correction), set())
 
     def test_host_registry_drift_rejects_before_generation_zero_pointer(self):
-        provision_source_authority_registry(self.run, REGISTRY)
         prepared = self._prepared()
         drift = SourceAuthorityRegistry((replace(
             REGISTRY.keys[0], owner_id="fixture:drift-owner"),))
-        registry_path = self.run / "source-authority-registry.json"
-        registry_path.write_bytes(canonical(drift.to_record()))
-
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
-                self.assertRaises(BilqisError) as failure:
-            publish_initial_generation(self.run, prepared, reserve_gib=0.)
+        with self.assertRaises(BilqisError) as failure:
+            self._publish(prepared, host_registry=drift)
 
         self.assertEqual(
             failure.exception.context["reason"],
-            "BAMF_INITIAL_GENERATION_SOURCE_AUTHORITY_DRIFT",
+            "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH",
         )
         self.assertFalse((self.run / "bamf-state.json").exists())
         self.assertFalse((self.run / "bamf-bundles").exists())
 
-    def test_prepared_host_root_cannot_be_replayed_into_another_run(self):
-        provision_source_authority_registry(self.run, REGISTRY)
+    def test_attacker_preplaced_run_local_registry_cannot_select_genesis_authority(self):
+        drift = SourceAuthorityRegistry((replace(
+            REGISTRY.keys[0], owner_id="fixture:attacker-owner"),))
+        provision_source_authority_registry(self.run, drift)
         prepared = self._prepared()
-        other = self.root / "other"
-        provision_source_authority_registry(other, REGISTRY)
-
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
-                self.assertRaises(BilqisError) as failure:
-            publish_initial_generation(other, prepared, reserve_gib=0.)
-
+        correction = prepared.candidate.correction_frontier
         self.assertEqual(
-            failure.exception.context["reason"],
-            "BAMF_C09_SOURCE_AUTHORITY_RUN_IDENTITY_DRIFT",
+            SourceAuthorityRegistry.from_record(correction["source_authority_registry"]),
+            REGISTRY,
         )
-        self.assertFalse((other / "bamf-state.json").exists())
+        self._publish(prepared)
+        _reset_execution_cache_owner_for_tests()
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+        self.assertEqual(cache.source_authority_registry_sha256, REGISTRY.digest)
 
 
 if __name__ == "__main__":

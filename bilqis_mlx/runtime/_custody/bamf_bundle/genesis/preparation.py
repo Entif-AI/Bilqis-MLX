@@ -1,8 +1,6 @@
 """Construct and validate owner-issued BAMF generation zero."""
 from __future__ import annotations
 
-from pathlib import Path
-
 from bilqis_mlx.factory.executable_release import (
     ExecutableAdmissionReceipt, ExecutableFactoryRelease,
 )
@@ -28,7 +26,7 @@ from .foundation import (
 from .origin import InitialFactoryFoundationAuthority
 from .preparation_authority import (
     PreparedInitialGeneration, _PREPARED_INITIAL_GENERATION_ISSUER,
-    _factory_generation_provenance, _issue_binding,
+    _factory_generation_provenance, _host_bound_frontier, _issue_binding,
     _validate_candidate_b01_authority, _validate_candidate_source_authority,
     _validated_factory_origin,
 )
@@ -36,17 +34,6 @@ from .records import (
     BamfRunIdentity, InitialGenerationBinding, ParsedInitialGenerationBinding,
     initial_generation_candidate_identity_digest, optimizer_hyperparameters_digest,
 )
-
-def _host_bound_frontier(run_dir, correction_frontier):
-    if run_dir is None:
-        return None, correction_frontier
-    try:
-        run_dir = Path(run_dir).expanduser().resolve()
-    except (TypeError, OSError, RuntimeError):
-        invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_INVALID")
-    from ..source_authority_custody import _bind_host_source_authority_registry
-    return run_dir, _bind_host_source_authority_registry(run_dir, correction_frontier)
-
 
 def _build_initial_candidate(
         *, run_id, run_seed, release, admission, origin_checkpoint, model_authority,
@@ -95,7 +82,6 @@ def prepare_initial_generation(
         admission: ExecutableAdmissionReceipt | None = None,
         origin_checkpoint: Checkpoint | None = None,
         foundation_features: InitialFoundationFeatureAuthority | None = None,
-        source_authority_run_dir: Path | None = None,
         delivery_events: tuple = ()) -> PreparedInitialGeneration:
     """Construct one source-bound generation-zero candidate and live B13 capability."""
     authority = _validated_factory_origin(
@@ -118,8 +104,7 @@ def prepare_initial_generation(
     sidecars = list(initial_foundation_sidecars(
         release, admission, graph, run_seed=run_seed,
         feature_authority=foundation_features))
-    source_authority_run_dir, sidecars[2] = _host_bound_frontier(
-        source_authority_run_dir, sidecars[2])
+    sidecars[2] = _host_bound_frontier(sidecars[2])
     candidate = _build_initial_candidate(
         run_id=run_id, run_seed=run_seed, release=release, admission=admission,
         origin_checkpoint=origin_checkpoint, model_authority=model_authority,
@@ -132,14 +117,12 @@ def prepare_initial_generation(
     binding = _issue_binding(
         candidate, release=release, admission=admission, graph=graph,
         origin_checkpoint=origin_checkpoint, factory_authority=authority,
-        foundation_features=foundation_features,
-        source_authority_run_dir=source_authority_run_dir)
+        foundation_features=foundation_features)
     prepared = object.__new__(PreparedInitialGeneration)
     for name, value in (
             ("candidate", candidate), ("binding", binding),
             ("factory_authority", authority), ("graph", dict(graph)),
             ("foundation_features", foundation_features),
-            ("source_authority_run_dir", source_authority_run_dir),
             ("_issuance", _PREPARED_INITIAL_GENERATION_ISSUER)):
         object.__setattr__(prepared, name, value)
     prepared.__post_init__()
@@ -175,8 +158,7 @@ def validate_initial_generation_preparation(prepared: PreparedInitialGeneration)
         admission=prepared.admission, graph=prepared.graph,
         origin_checkpoint=prepared.origin_checkpoint,
         factory_authority=prepared.factory_authority,
-        foundation_features=prepared.foundation_features,
-        source_authority_run_dir=prepared.source_authority_run_dir)
+        foundation_features=prepared.foundation_features)
     _validate_candidate_b01_authority(
         prepared.candidate, prepared.foundation_features)
     validate_initial_generation_binding(prepared.candidate, prepared.binding)

@@ -20,6 +20,7 @@ from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
     accepted_binding_for_manifest,
 )
 from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle, save_bamf_bundle
+from bilqis_mlx.runtime.bamf_bundle.admission import accept_and_publish
 from bilqis_mlx.runtime.bamf_bundle.records import BAMF_POINTER_SCHEMA, canonical
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, accepted_state, candidate, genesis_preparation,
@@ -128,6 +129,49 @@ class RunIdentityCutoverTests(unittest.TestCase):
         self.assertEqual(pointer["generation"], 2)
         self.assertEqual(manifest, pointer["manifest_sha256"])
         self.assertIsNone(loaded.run_identity)
+
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            retried = publish_bamf_generation(
+                self.run, successor, acceptance=binding, reserve_gib=0.)
+        self.assertEqual(retried, pointer)
+
+    def test_identityless_historical_successor_ordinary_retry_converges(self):
+        parent, parent_manifest, _parent_acceptance = self._install_identityless_v2_parent()
+        successor = self._successor(parent, parent_manifest, run_identity=None)
+        decision = retention_decision(
+            parent=parent.retained_state, retained=successor.retained_state)
+
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            first = accept_and_publish(
+                self.run, successor, successor.retained_state,
+                decision=decision,
+                feature_sha256=successor.extents.factor_map_digest,
+                reserve_gib=0.)
+            retried = accept_and_publish(
+                self.run, successor, successor.retained_state,
+                decision=decision,
+                feature_sha256=successor.extents.factor_map_digest,
+                reserve_gib=0.)
+
+        self.assertEqual(retried, first)
+        with shape_patch():
+            loaded = load_bamf_generation(self.run / "bamf-state.json")
+        self.assertIsNone(loaded.run_identity)
+
+    def test_identityless_historical_successor_retry_rejects_identity_introduction(self):
+        parent, parent_manifest, _parent_acceptance = self._install_identityless_v2_parent()
+        successor = self._successor(parent, parent_manifest, run_identity=None)
+        binding = self._binding(parent, successor)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            publish_bamf_generation(
+                self.run, successor, acceptance=binding, reserve_gib=0.)
+            forged_identity = genesis_preparation(run_seed=1023).candidate.run_identity
+        forged_retry = replace(successor, run_identity=forged_identity)
+
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
+                self.assertRaises(BilqisError):
+            publish_bamf_generation(
+                self.run, forged_retry, acceptance=binding, reserve_gib=0.)
 
     def test_forged_current_successor_is_not_authoritative_on_readback(self):
         parent, parent_manifest, parent_acceptance = self._install_identityless_v2_parent()
