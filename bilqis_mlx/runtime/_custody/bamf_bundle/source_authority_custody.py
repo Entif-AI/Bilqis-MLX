@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import stat
+from collections.abc import Mapping
 
 from .records import invalid
 
@@ -14,6 +15,12 @@ from .records import invalid
 SOURCE_AUTHORITY_REGISTRY_FILE = "source-authority-registry.json"
 SOURCE_AUTHORITY_REGISTRY_LOCK = ".source-authority-registry.lock"
 _MAX_REGISTRY_BYTES = 256 * 1024
+HOST_SYSTEM_SOURCE_AUTHORITY_ORIGIN = "HOST_SYSTEM_V1"
+
+_BINDING_INVALID = "BAMF_C09_SOURCE_AUTHORITY_BINDING_INVALID"
+_BINDING_REQUIRED = "BAMF_C09_SOURCE_AUTHORITY_BINDING_REQUIRED"
+_TRUST_ROOT_INVALID = "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_INVALID"
+_TRUST_ROOT_MISMATCH = "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH"
 
 
 @contextlib.contextmanager
@@ -97,6 +104,134 @@ def _bind_host_source_authority_registry(run_dir: Path, correction_frontier):
     }
 
 
+def read_host_system_source_authority_registry():
+    """Read the one fixed host-administered C09 root without a caller-selected path."""
+    from ._darwin_source_authority import open_host_source_authority_registry_fd
+
+    fd = open_host_source_authority_registry_fd(max_bytes=_MAX_REGISTRY_BYTES)
+    try:
+        info = os.fstat(fd)
+        chunks = []
+        remaining = info.st_size + 1
+        while remaining:
+            chunk = os.read(fd, remaining)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        raw = b"".join(chunks)
+        if len(raw) != info.st_size:
+            invalid(_TRUST_ROOT_INVALID)
+    except OSError:
+        invalid(_TRUST_ROOT_INVALID)
+    finally:
+        os.close(fd)
+    try:
+        record = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        invalid(_TRUST_ROOT_INVALID)
+    from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
+    try:
+        return SourceAuthorityRegistry.from_record(record)
+    except Exception:
+        invalid(_TRUST_ROOT_INVALID)
+
+
+def _binding_parts(frontier: Mapping[str, object]):
+    if not isinstance(frontier, Mapping):
+        invalid(_BINDING_INVALID)
+    origin_present = "source_authority_registry_origin" in frontier
+    record_present = "source_authority_registry" in frontier
+    digest_present = "source_authority_registry_sha256" in frontier
+    origin = frontier.get("source_authority_registry_origin")
+    record = frontier.get("source_authority_registry")
+    digest = frontier.get("source_authority_registry_sha256")
+    return origin_present, origin, record_present, record, digest_present, digest
+
+
+def _registry_from_binding(record, digest):
+    if record is None or not isinstance(digest, str):
+        invalid(_BINDING_INVALID)
+    from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
+    try:
+        registry = SourceAuthorityRegistry.from_record(record)
+    except Exception:
+        invalid(_BINDING_INVALID)
+    if registry.digest != digest:
+        invalid(_BINDING_INVALID)
+    return registry
+
+
+def resolve_source_authority_registry(
+        run_dir: Path, correction_frontier: Mapping[str, object]):
+    """Resolve C09 from authenticated custody metadata, never caller branch selection."""
+    (origin_present, origin, record_present, record,
+     digest_present, digest) = _binding_parts(correction_frontier)
+    if origin_present:
+        if origin != HOST_SYSTEM_SOURCE_AUTHORITY_ORIGIN:
+            invalid(_BINDING_INVALID)
+        if not record_present or not digest_present:
+            invalid(_BINDING_REQUIRED)
+        candidate = _registry_from_binding(record, digest)
+        trusted = read_host_system_source_authority_registry()
+        if candidate != trusted or candidate.digest != trusted.digest:
+            invalid(_TRUST_ROOT_MISMATCH)
+        return trusted
+    if record_present != digest_present:
+        invalid(_BINDING_INVALID)
+    if not record_present:
+        return None
+    if record is None or digest is None:
+        invalid(_BINDING_INVALID)
+    with source_authority_registry_lock(run_dir):
+        return _require_provisioned_source_authority_registry_unlocked(
+            run_dir, correction_frontier)
+
+
+def require_source_authority_successor_inheritance(
+        run_dir: Path,
+        parent_frontier: Mapping[str, object],
+        candidate_frontier: Mapping[str, object],
+        *,
+        allow_historical_anchor: bool,
+):
+    """Verify one successor against the authenticated parent's exact C09 branch."""
+    if type(allow_historical_anchor) is not bool:
+        invalid(_BINDING_INVALID)
+    parent = _binding_parts(parent_frontier)
+    candidate = _binding_parts(candidate_frontier)
+    p_origin_present, p_origin, p_record_present, p_record, p_digest_present, p_digest = parent
+    c_origin_present, c_origin, c_record_present, c_record, c_digest_present, c_digest = candidate
+
+    if p_origin_present:
+        if (p_origin != HOST_SYSTEM_SOURCE_AUTHORITY_ORIGIN
+                or not p_record_present or not p_digest_present
+                or not c_origin_present or c_origin != p_origin
+                or not c_record_present or not c_digest_present
+                or c_record != p_record or c_digest != p_digest):
+            invalid(_BINDING_INVALID)
+        return resolve_source_authority_registry(run_dir, candidate_frontier)
+
+    if p_record_present != p_digest_present:
+        invalid(_BINDING_INVALID)
+    if p_record_present:
+        if p_record is None or p_digest is None:
+            invalid(_BINDING_INVALID)
+        if (c_origin_present or not c_record_present or not c_digest_present
+                or c_record != p_record or c_digest != p_digest):
+            invalid(_BINDING_INVALID)
+        return resolve_source_authority_registry(run_dir, candidate_frontier)
+
+    if c_origin_present:
+        invalid(_BINDING_INVALID)
+    if not c_record_present and not c_digest_present:
+        return None
+    if (not allow_historical_anchor or not c_record_present or not c_digest_present
+            or c_record is None or c_digest is None):
+        invalid(_BINDING_INVALID)
+    return resolve_source_authority_registry(run_dir, candidate_frontier)
+
+
 def require_provisioned_source_authority_registry(
         run_dir: Path, correction_frontier):
     """Bind candidate/live C09 material to an independent host-provisioned root."""
@@ -124,10 +259,14 @@ def _require_provisioned_source_authority_registry_unlocked(
 
 
 __all__ = (
+    "HOST_SYSTEM_SOURCE_AUTHORITY_ORIGIN",
     "SOURCE_AUTHORITY_REGISTRY_FILE",
     "SOURCE_AUTHORITY_REGISTRY_LOCK",
     "_require_provisioned_source_authority_registry_unlocked",
+    "read_host_system_source_authority_registry",
     "read_provisioned_source_authority_registry",
+    "require_source_authority_successor_inheritance",
     "require_provisioned_source_authority_registry",
+    "resolve_source_authority_registry",
     "source_authority_registry_lock",
 )

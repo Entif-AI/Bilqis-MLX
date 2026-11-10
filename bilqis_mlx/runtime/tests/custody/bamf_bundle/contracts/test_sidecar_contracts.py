@@ -15,6 +15,7 @@ from bilqis_mlx.runtime.bamf_bundle import load_bamf_bundle, save_bamf_bundle
 from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
 from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import candidate, parent_state, shape_patch
+from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import REGISTRY
 
 SCHEMAS = MappingProxyType({
     'semantic_abi': 'bilqis.mlx.bamf-semantic-abi/v1',
@@ -84,6 +85,56 @@ class SidecarContractTests(unittest.TestCase):
                 'source_authority_registry_sha256': 'not-a-digest',
             },
         ))
+
+    def test_source_authority_origin_contract_distinguishes_host_legacy_and_history(self):
+        value = source()
+        record = REGISTRY.to_record()
+        digest = REGISTRY.digest
+        valid = (
+            {},
+            {
+                'source_authority_registry': record,
+                'source_authority_registry_sha256': digest,
+            },
+            {
+                'source_authority_registry_origin': 'HOST_SYSTEM_V1',
+                'source_authority_registry': record,
+                'source_authority_registry_sha256': digest,
+            },
+        )
+        for fields in valid:
+            with self.subTest(fields=fields), TemporaryDirectory() as tmp, \
+                    patch.dict(os.environ, {'BILQIS_DATA_PLANE': tmp + '/plane.db'}), \
+                    shape_patch(), patch.object(mlx_checkpoint, 'assert_headroom'):
+                save_bamf_bundle(replace(
+                    value,
+                    correction_frontier={**value.correction_frontier, **fields}),
+                    Path(tmp) / 'bundle', reserve_gib=0.)
+
+    def test_source_authority_origin_rejects_null_unknown_half_and_mismatched_binding(self):
+        value = source()
+        record = REGISTRY.to_record()
+        invalid_variants = (
+            {'source_authority_registry_origin': None},
+            {'source_authority_registry_origin': 'UNKNOWN'},
+            {'source_authority_registry_origin': 'HOST_SYSTEM_V1'},
+            {'source_authority_registry_sha256': REGISTRY.digest},
+            {'source_authority_registry': record},
+            {
+                'source_authority_registry_origin': 'HOST_SYSTEM_V1',
+                'source_authority_registry': record,
+                'source_authority_registry_sha256': 'f' * 64,
+            },
+            {
+                'source_authority_registry': None,
+                'source_authority_registry_sha256': None,
+            },
+        )
+        for fields in invalid_variants:
+            raw = {**value.correction_frontier, **fields}
+            with self.subTest(fields=fields):
+                self.assertHeldBeforeTensorSave(replace(
+                    value, correction_frontier=raw))
 
     def test_boolean_or_negative_epochs_are_not_integer_identity(self):
         original = source()
