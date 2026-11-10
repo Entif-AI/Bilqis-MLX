@@ -7,6 +7,7 @@ import errno
 import os
 import stat
 from types import MappingProxyType
+from typing import Literal
 
 from .records import invalid
 
@@ -18,6 +19,11 @@ ACL_EXTENDED_ALLOW = 1
 ACL_EXTENDED_DENY = 2
 ID_TYPE_UID = 0
 ID_TYPE_GID = 1
+
+HOST_SOURCE_AUTHORITY_LOGICAL_PATH = (
+    "/etc/entif-ai/bilqis/source-authority-registry.json")
+_HOST_SOURCE_AUTHORITY_COMPONENTS = (
+    "private", "etc", "entif-ai", "bilqis", "source-authority-registry.json")
 
 _PERMISSIONS = MappingProxyType({
     "ACL_WRITE_DATA": 1 << 2,
@@ -36,8 +42,8 @@ _REQUIRED = "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED"
 
 @dataclass(frozen=True)
 class DarwinAclEntry:
-    tag: int
-    principal_kind: str
+    tag: Literal["ALLOW", "DENY"]
+    principal_kind: Literal["UID", "GID"]
     principal_id: int
     permissions: frozenset[str]
 
@@ -105,7 +111,7 @@ def _acl_entry(library, raw_entry) -> DarwinAclEntry:
         if result == 1:
             present.append(name)
     return DarwinAclEntry(
-        tag.value,
+        "ALLOW" if tag.value == ACL_EXTENDED_ALLOW else "DENY",
         "UID" if principal_type.value == ID_TYPE_UID else "GID",
         principal.value,
         frozenset(present),
@@ -152,7 +158,7 @@ def require_safe_host_descriptor(fd: int, *, directory: bool) -> os.stat_result:
             or info.st_mode & (stat.S_IWGRP | stat.S_IWOTH)):
         _fail()
     for entry in read_extended_acl(fd):
-        if (entry.tag == ACL_EXTENDED_ALLOW
+        if (entry.tag == "ALLOW"
                 and entry.permissions & _MUTATION_PERMISSIONS
                 and (entry.principal_kind != "UID" or entry.principal_id != 0)):
             _fail()
@@ -187,8 +193,8 @@ def open_host_source_authority_registry_fd(*, max_bytes: int) -> int:
     try:
         require_safe_host_descriptor(root_fd, directory=True)
         parent = root_fd
-        for name, required in (("private", False), ("etc", False),
-                               ("entif-ai", True), ("bilqis", True)):
+        for name in _HOST_SOURCE_AUTHORITY_COMPONENTS[:-1]:
+            required = name in {"entif-ai", "bilqis"}
             child = _open_component(parent, name, directory=True, required=required)
             opened.append(child)
             require_safe_host_descriptor(child, directory=True)
@@ -198,7 +204,8 @@ def open_host_source_authority_registry_fd(*, max_bytes: int) -> int:
                 if (physical.st_dev, physical.st_ino) != (etc_target.st_dev, etc_target.st_ino):
                     _fail()
         final_fd = _open_component(
-            parent, "source-authority-registry.json", directory=False, required=True)
+            parent, _HOST_SOURCE_AUTHORITY_COMPONENTS[-1],
+            directory=False, required=True)
         info = require_safe_host_descriptor(final_fd, directory=False)
         if not 1 <= info.st_size <= max_bytes:
             _fail()

@@ -107,19 +107,19 @@ class DarwinHostBoundaryTests(unittest.TestCase):
         self.assertEqual(entries[0].principal_kind, "UID")
         self.assertEqual(entries[0].principal_id, 0)
         self.assertEqual(entries[0].permissions, frozenset({"ACL_WRITE_DATA"}))
-        self.assertEqual(entries[1].tag, darwin.ACL_EXTENDED_DENY)
+        self.assertEqual(entries[1].tag, "DENY")
 
     def test_descriptor_rejects_non_root_mode_and_mutating_allow(self):
         safe = _info()
         dangerous = darwin.DarwinAclEntry(
-            darwin.ACL_EXTENDED_ALLOW, "UID", 501,
+            "ALLOW", "UID", 501,
             frozenset({"ACL_WRITE_SECURITY"}))
         for info, acl in (
             (_info(uid=501), ()),
             (_info(mode=0o620), ()),
             (safe, (dangerous,)),
             (safe, (darwin.DarwinAclEntry(
-                darwin.ACL_EXTENDED_ALLOW, "GID", 0,
+                "ALLOW", "GID", 0,
                 frozenset({"ACL_APPEND_DATA"})),)),
         ):
             with self.subTest(info=info, acl=acl), \
@@ -132,7 +132,7 @@ class DarwinHostBoundaryTests(unittest.TestCase):
         info = _info()
         for permission in sorted(darwin._MUTATION_PERMISSIONS):
             acl = (darwin.DarwinAclEntry(
-                darwin.ACL_EXTENDED_ALLOW, "UID", 501,
+                "ALLOW", "UID", 501,
                 frozenset({permission})),)
             with self.subTest(permission=permission), \
                     patch.object(darwin.os, "fstat", return_value=info), \
@@ -150,9 +150,9 @@ class DarwinHostBoundaryTests(unittest.TestCase):
 
     def test_descriptor_allows_read_only_user_and_mutating_root_allow(self):
         acl = (
-            darwin.DarwinAclEntry(darwin.ACL_EXTENDED_ALLOW, "UID", 501, frozenset()),
+            darwin.DarwinAclEntry("ALLOW", "UID", 501, frozenset()),
             darwin.DarwinAclEntry(
-                darwin.ACL_EXTENDED_ALLOW, "UID", 0,
+                "ALLOW", "UID", 0,
                 frozenset({"ACL_DELETE_CHILD"})),
         )
         info = _info()
