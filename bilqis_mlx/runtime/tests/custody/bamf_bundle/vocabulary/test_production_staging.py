@@ -208,9 +208,12 @@ class A02ProductionStagingTests(unittest.TestCase):
                     "feature_schema": forged_schema,
                 },
             )
-            with self.assertRaises(BilqisError):
+            with self.assertRaises(BilqisError) as forged_failure:
                 authenticate_bamf_generation_feature_context(
                     forged_parent, "/artifact", self.pointer)
+            self.assertEqual(
+                forged_failure.exception.context["reason"],
+                "BAMF_GENERATION_POINTER_DRIFT")
             with self.assertRaises(BilqisError):
                 stage_vocabulary_extension(
                     self.run, "/artifact", Path("/source"),

@@ -1,15 +1,16 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "2c572202978df9542e379cfb975007cdea3f05ad",
-  "updated_at": "2026-11-10T16:59:41Z",
+  "observed_unified": "1a1bcbf3c58b0d851e40dbdee847c3fb3c00ec3a",
+  "updated_at": "2026-11-10T18:30:00Z",
   "exception": null,
   "items": [
     {
       "issue": 970,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "2c572202978df9542e379cfb975007cdea3f05ad",
+      "head_sha": "57652f40973bbf099947a94229f73856aaccdfa4",
+      "head_sha_role": "exact semantic/test proof head before final evidence and flow-control bookkeeping",
       "summary": "B13 new_acceptance=false remediation discovered by #439's real A02 staging witness. It separates exact pre-admission candidate source-feature replay from accepted CompleteStudent replay through B13/C07 acceptance custody, preserving C07 as the sole active-set admission owner while allowing B02 to consume generation activity without source-era active flags.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b-neural"
@@ -18,7 +19,8 @@
       "issue": 439,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "2c572202978df9542e379cfb975007cdea3f05ad",
+      "head_sha": "57652f40973bbf099947a94229f73856aaccdfa4",
+      "head_sha_role": "exact semantic/test proof head before final evidence and flow-control bookkeeping",
       "summary": "B02.1 resumed after A02 #348 and its implementation children reached reviewed unified. This epoch requalifies the existing source-factorized embedding and tied sparse readout against A02's accepted typed vocabulary staging contract without moving admission authority into Lane B.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-b-neural"
