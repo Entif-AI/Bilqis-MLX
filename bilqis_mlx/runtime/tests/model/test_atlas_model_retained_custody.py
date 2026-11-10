@@ -27,10 +27,11 @@ from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
 from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import _new_execution_cache
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, genesis_preparation, provision_source_authority_registry,
-    with_source_authority_registry,
+    acceptance, genesis_preparation,
 )
-from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
+    host_source_authority_patch,
+)
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
 
 
@@ -100,8 +101,6 @@ class RetainedB13CustodyTests(unittest.TestCase):
                 "invalidate_derived_caches": True,
             },
         )
-        provision_source_authority_registry(run, AUTHORITY)
-        successor = with_source_authority_registry(successor, AUTHORITY)
         publish_bamf_generation(
             run, successor,
             acceptance=acceptance(successor, parent=parent.retained_state),
@@ -146,7 +145,7 @@ class RetainedB13CustodyTests(unittest.TestCase):
         with TemporaryDirectory() as temporary, patch.dict(
             os.environ,
             {"BILQIS_DATA_PLANE": str(Path(temporary) / "plane.sqlite3")},
-        ), patch.object(mlx_checkpoint, "assert_headroom"):
+        ), patch.object(mlx_checkpoint, "assert_headroom"), host_source_authority_patch():
             run = Path(temporary) / "run"
             cache, parameters = self._publish_retained_generation(
                 run, source, compiled, manifest)
