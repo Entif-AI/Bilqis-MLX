@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import shutil
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -187,13 +188,25 @@ class A02ProductionStagingTests(unittest.TestCase):
                 {"BILQIS_A01_SOURCE_BUNDLE_ROOT": str(bundle.parent)},
                 clear=False), self._source_patches(
                     current_snapshot, patch_bundle=False):
-            with self.assertRaises(BilqisError):
-                stage_vocabulary_extension_from_source_id(
-                    self.run, "/artifact", attacker.name,
+            with patch(
+                    "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                    "shutil.disk_usage",
+                    return_value=SimpleNamespace(free=0)):
+                with self.assertRaises(BilqisError) as failure:
+                    stage_vocabulary_extension_from_source_id(
+                        self.run, "/artifact", attacker.name,
+                        ("urn:concept:8192",))
+            self.assertEqual(
+                failure.exception.context["reason"],
+                "BAMF_A02_SOURCE_BUNDLE_ID_MISMATCH",
+            )
+            with patch(
+                    "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                    "shutil.disk_usage",
+                    return_value=SimpleNamespace(free=1 << 50)):
+                staged = stage_vocabulary_extension_from_source_id(
+                    self.run, "/artifact", current_snapshot.source_bundle_id,
                     ("urn:concept:8192",))
-            staged = stage_vocabulary_extension_from_source_id(
-                self.run, "/artifact", current_snapshot.source_bundle_id,
-                ("urn:concept:8192",))
         self.assertEqual(staged.receipt.generation, 1)
         self.assertEqual(staged.receipt.semantic_bank_count, 2)
         self.assertEqual(staged.receipt.status, "STAGED_NOT_ADMITTED")
@@ -205,6 +218,41 @@ class A02ProductionStagingTests(unittest.TestCase):
             load_bamf_generation(
                 self.pointer, publish_missing_outbox=False).generation,
             0)
+
+
+class A02ContentIdentityBoundaryTests(unittest.TestCase):
+    def test_wrong_content_id_is_rejected_before_staging_entry(self):
+        requested = "7" * 64
+        accepted = "8" * 64
+        prior = SimpleNamespace(
+            source_selection=SimpleNamespace(source_bundle_id=accepted))
+        accepted_parent = (
+            object(), "1" * 64, object(), object(), None, prior)
+        with (
+            patch(
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                "resolve_atlas_source_bundle",
+                return_value=Path("/host") / requested,
+            ),
+            patch(
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                "_accepted_vocabulary_parent",
+                return_value=accepted_parent,
+            ),
+            patch(
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                "stage_vocabulary_extension",
+                side_effect=AssertionError("wrong source ID reached staging"),
+            ),
+        ):
+            with self.assertRaises(BilqisError) as failure:
+                stage_vocabulary_extension_from_source_id(
+                    Path("/run"), "/artifact", requested,
+                    ("urn:concept:8192",))
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_A02_SOURCE_BUNDLE_ID_MISMATCH",
+        )
 
 
 if __name__ == "__main__":

@@ -233,13 +233,12 @@ def _prepare_vocabulary_extension(
     return plan, prepared, mirror
 
 
-def stage_vocabulary_extension(
-        run_dir: Path, artifact_path: str, source_bundle_path: Path,
-        admissions: tuple[str, ...]) -> A02StagedVocabularyExtension:
-    """Prepare one exact A02 successor without granting C07 admission authority."""
+def _stage_vocabulary_extension_from_accepted(
+        run_dir: Path, source_bundle_path: Path, admissions: tuple[str, ...],
+        accepted_parent) -> A02StagedVocabularyExtension:
     run_dir = Path(run_dir)
     parent, parent_manifest, parent_receipt, features, predecessor, prior = (
-        _accepted_vocabulary_parent(run_dir, artifact_path))
+        accepted_parent)
     plan, prepared, mirror = _prepare_vocabulary_extension(
         run_dir, Path(source_bundle_path), admissions, parent, features,
         predecessor, prior)
@@ -288,10 +287,25 @@ def stage_vocabulary_extension(
     return _issue_a02_staged_vocabulary_extension(candidate, receipt)
 
 
+def stage_vocabulary_extension(
+        run_dir: Path, artifact_path: str, source_bundle_path: Path,
+        admissions: tuple[str, ...]) -> A02StagedVocabularyExtension:
+    """Prepare one exact A02 successor without granting C07 admission authority."""
+    run_dir = Path(run_dir)
+    accepted_parent = _accepted_vocabulary_parent(run_dir, artifact_path)
+    return _stage_vocabulary_extension_from_accepted(
+        run_dir, Path(source_bundle_path), admissions, accepted_parent)
+
+
 def stage_vocabulary_extension_from_source_id(
         run_dir: Path, artifact_path: str, source_bundle_id: str,
         admissions: tuple[str, ...]) -> A02StagedVocabularyExtension:
     """Stage through host storage without accepting a caller-owned source path."""
+    run_dir = Path(run_dir)
     source_bundle_path = resolve_atlas_source_bundle(source_bundle_id)
-    return stage_vocabulary_extension(
-        run_dir, artifact_path, source_bundle_path, admissions)
+    accepted_parent = _accepted_vocabulary_parent(run_dir, artifact_path)
+    prior = accepted_parent[-1]
+    if source_bundle_id != prior.source_selection.source_bundle_id:
+        invalid("BAMF_A02_SOURCE_BUNDLE_ID_MISMATCH")
+    return _stage_vocabulary_extension_from_accepted(
+        run_dir, source_bundle_path, admissions, accepted_parent)
