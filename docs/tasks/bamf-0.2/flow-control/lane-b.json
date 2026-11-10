@@ -1,10 +1,20 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "905018b0ece7613843570dc2c2e72a74dae4e91d",
-  "updated_at": "2026-11-10T19:53:08Z",
+  "observed_unified": "937dcfc82cfbc03fcb8220fd318a20019bfa005e",
+  "updated_at": "2026-11-10T20:49:08Z",
   "exception": null,
   "items": [
+    {
+      "issue": 440,
+      "pr": 977,
+      "state": "TURNED_IN",
+      "head_sha": "e0abdb5f537df680c32ba56ab341f8240d41ffba",
+      "head_sha_role": "exact semantic/test proof head after A02 canonical-allocation and pinned-source-authority repairs; subsequent turn-in bookkeeping is docs/flow-only",
+      "summary": "B02.2 is turned in through PR #977 after requalifying the historical deterministic initializer/gather/loss implementation against A02's final typed staging contract. Exact-head review is 0 Blocker / 0 Major / 0 Nit; hosted portable-core, portable and semantic-ABI checks pass; focused A02 handoff is 4/4 and the full frame-embedding package is 30 PASS / 1 explicit real-A01 skip. A02 staging and C07 admission authority remain unchanged; human merge remains external.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-neural"
+    },
     {
       "issue": 970,
       "pr": null,
