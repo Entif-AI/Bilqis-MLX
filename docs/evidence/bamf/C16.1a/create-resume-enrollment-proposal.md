@@ -141,6 +141,22 @@ durable, and exposes one C07-owned read-only epoch precheck that must run before
 mutation remains forbidden until R13 freshly clears **0 Blockers / 0 Majors** across
 all three required lenses.
 
+R13 did **not** clear the gate. Before the replacement independent reviewers could
+complete, local reconciliation found one internal ordering contradiction in the frozen
+R13 text: the accepted-run contract required the C07 read-only epoch precheck before
+any `AcceptedRuntimeHost` / C09 capability construction, and explicit resume-enrollment
+followed that order, but the atlas-release **fresh-create** subsection still said to
+construct `AcceptedRuntimeHost` immediately after generation-zero publication and only
+then call enrollment. That would reintroduce the same C09-before-C07 precedence seam on
+the fresh-create route. Several revived reviewer chats also lost their prior isolated
+worktree allocation (`WORKTREE_OWNER_UNAVAILABLE` / browser handoff failure), so no
+substantive R13 pass is inferred from incomplete reviews. R14 repairs the fresh-create
+ordering explicitly: after accepted generation-zero publication it runs the same
+C07-owned read-only epoch precheck, then constructs the C09 host, then enters accepted
+enrollment; the mandatory under-lock epoch recheck remains unchanged. Production
+mutation remains forbidden until R14 freshly clears **0 Blockers / 0 Majors** across
+all three required lenses.
+
 ## Why this amendment exists
 
 C16.1a owns the human create/dry-run/resume surface. The staged launch path consumes
@@ -606,10 +622,15 @@ No C07 lease exists.
 
 1. Parse/validate the non-authoritative enrollment request before writes.
 2. Publish generation zero through existing C16.1b/B13/#950 custody.
-3. Construct `AcceptedRuntimeHost(target)` and obtain opaque
+3. Call C07-owned `require_accepted_atlas_epoch_available_v2(target)` **before** any
+   `AcceptedRuntimeHost` / C09 capability construction. This is the same read-only
+   epoch precheck required by explicit resume-enrollment; a concurrent v1/dual
+   authority winner therefore fails with the pinned C07 epoch error before any C09
+   provisioning or accepted-enrollment mutation.
+4. Construct `AcceptedRuntimeHost(target)` and obtain opaque
    `source_authority()`.
-4. Call `enroll_accepted_atlas_lease_v2(...)`.
-5. Exact authenticated lease readback succeeds -> report `CREATED` with effective
+5. Call `enroll_accepted_atlas_lease_v2(...)`.
+6. Exact authenticated lease readback succeeds -> report `CREATED` with effective
    policy `atlas-release`, `ready_for_training=false`.
 
 No lifecycle step invokes the learner.
@@ -1579,6 +1600,12 @@ mirrored test owner:
 - mixed-invalid accepted enrollment with pre-existing dual or v1-only epoch authority
   plus invalid C09 cache/capability state proves the C07 read-only epoch precheck runs
   before `AcceptedRuntimeHost` construction and the pinned epoch error wins.
+- atlas-release fresh create proves the same ordering after generation-zero
+  publication: if pre-existing/concurrently established v1 or dual authority is
+  visible before C09 host construction, the C07 epoch error wins; if the competing
+  epoch lands only after the read-only precheck, the mandatory under-lock epoch
+  recheck rejects before any v2 lease/current mutation. Neither route may fall back to
+  learner dispatch or perform an optimizer step.
 
 Regression owners retained:
 
