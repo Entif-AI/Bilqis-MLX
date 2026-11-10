@@ -1,10 +1,19 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-R5-PENDING
+Status: DESIGN AMENDMENT / EGM-R6-PENDING
 Issue: #542 / C16.1a
 Reviewed unified base: `905018b0ece7613843570dc2c2e72a74dae4e91d`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
 Pinned EGM: `b3a35956759bf7f024af2ff061b2e0b44b438e4c`
+
+R5 review record: the frozen R5 proposal at `703b913c2dc6ff7e86b38f62e55dc9712f33563c`
+failed fresh independent review against reviewed unified
+`905018b0ece7613843570dc2c2e72a74dae4e91d`: Structural **0 Blockers / 2 Majors /
+0 Nits**; Codebase Details **1 Blocker / 1 Major / 0 Nits**; Implementation
+Readiness **0 Blockers / 3 Majors / 4 Nits**. R6 repairs that complete material set.
+The later local implementation commits remain preserved historical evidence only and
+do not authorize implementation before R6 itself clears a fresh `0 Blockers / 0
+Majors` gate.
 
 ## Why this amendment exists
 
@@ -138,6 +147,62 @@ create/resume uses only the separate v2 lease epoch.
 
 ## Pre-generation validation
 
+### Canonical foundation-input contract
+
+R6 freezes the previously missing operator source for every mandatory
+`BamfFoundationConfig` field. The production `train` parser owns these BAMF-v2
+foundation arguments:
+
+```text
+--run-id <nonempty-string>
+--run-seed <integer >= 0>
+--learning-rate <finite > 0>
+--adam-beta1 <finite 0 <= x < 1>
+--adam-beta2 <finite 0 <= x < 1>
+--adam-eps <finite > 0>
+--weight-decay <finite >= 0>
+```
+
+For **every fresh BAMF-v2 dry-run or create**, `--run-id`, `--run-seed` and all five
+AdamW flags are explicit required operator inputs. C16.1a does not silently consume
+the architecture document's `run_seed=0` default and does not invent optimizer
+defaults. Explicit `--run-seed 0` is valid. The five optimizer flags are one atomic
+input group and materialize exactly one typed `AdamWHyperparameters` before B13
+preview/preparation.
+
+Fresh input failures are pinned:
+
+- missing/empty run id, missing seed, or negative seed:
+  `BAMF_OPERATOR_FOUNDATION_IDENTITY_REQUIRED`;
+- none of the five optimizer fields supplied:
+  `BAMF_OPERATOR_FOUNDATION_OPTIMIZER_REQUIRED`;
+- only a proper subset supplied:
+  `BAMF_OPERATOR_FOUNDATION_OPTIMIZER_INCOMPLETE`;
+- non-finite or out-of-domain optimizer value:
+  `BAMF_OPERATOR_FOUNDATION_OPTIMIZER_INVALID`.
+
+For **accepted BAMF-v2 resume**, omitted foundation values are not defaults: they mean
+"use accepted saved custody." `--run-id` and `--run-seed` are independently optional
+equality assertions. The five optimizer flags are optional only as one all-or-none
+group; any supplied subset rejects as incomplete before mutation. If the complete
+group is supplied it is materialized and compared exactly with the accepted saved
+optimizer hyperparameters. The topology and Atlas-manifest flags retain the same
+omitted-versus-explicit equality semantics. Pinned resume conflicts are:
+
+- run id: `BAMF_OPERATOR_RESUME_RUN_ID_CONFLICT`;
+- run seed: `BAMF_OPERATOR_RESUME_RUN_SEED_CONFLICT`;
+- topology: `BAMF_OPERATOR_RESUME_TOPOLOGY_CONFLICT`;
+- optimizer group: `BAMF_OPERATOR_RESUME_OPTIMIZER_CONFLICT`;
+- Atlas identity: `BAMF_OPERATOR_RESUME_ATLAS_MANIFEST_CONFLICT`.
+
+An interrupted no-pointer generation-zero retry is still a **fresh create command**,
+not accepted resume. The operator must repeat the same explicit run id, seed, complete
+optimizer group, topology and Atlas manifest so B13 cold recovery can use them only
+as equality expectations against sealed custody. Parser tests must prove fresh
+requiredness, optimizer all-or-none behavior, valid explicit seed zero, and resume
+omission/presence semantics. No historical implementation candidate supplies any of
+these semantics by implication.
+
 Before any target-run write, a fresh `atlas-release` create parses the enrollment
 request and validates only facts already knowable before generation zero. A fresh
 `atlas-release` dry-run performs the same request/run/topology/Atlas compatibility
@@ -164,7 +229,9 @@ Pinned pre-write errors:
 - topology mismatch: `BAMF_OPERATOR_ATLAS_REQUEST_TOPOLOGY_CONFLICT`;
 - Atlas release mismatch: `BAMF_OPERATOR_ATLAS_REQUEST_MANIFEST_CONFLICT`.
 
-All of these leave the fresh target absent.
+If the target was absent, all of these leave it absent. If the caller supplied an
+existing empty directory, all entries and file bytes remain unchanged; validation
+never creates a marker merely to classify that directory.
 
 ## Exact dry-run B13 identity
 
@@ -190,8 +257,10 @@ The implementation may use a private shared prepared-foundation helper, but the
 semantic requirements are fixed:
 
 1. canonicalize source and target paths with the same
-   `_canonical_disjoint_run_paths(...)` owner guard used by create, so dry-run
-   rejects source-overlapping targets exactly as create does;
+   `_canonical_disjoint_run_paths(...)` owner guard used by create. R6 strengthens
+   that owner guard symmetrically: reject `target == source`, source inside target,
+   **or target inside source**. Dry-run, fresh create and interrupted-genesis recovery
+   therefore reject either direction of source/target ancestry before target mutation;
 2. canonicalize and authenticate the existing source run;
 3. rederive Factory foundation authority from its persisted State-DAG receipt;
 4. resolve source-qualified Atlas feature authority;
@@ -543,29 +612,61 @@ authority rejects `BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`. C16.1a performs no
 automatic migration or coexistence. A future explicit migration owner may define
 that transition separately.
 
-This epoch guard is owned by `atlas_enrollment_v2.py`, not only by the CLI. Before
-`issue_atlas_lease_v2(...)` or any v2 storage mutation, the public
-`enroll_accepted_atlas_lease_v2(...)` owner itself inspects the canonical v1 current
-reference path. A symlink/unsafe v1 path retains the v1 storage error; an existing
-regular v1 current reference rejects `BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`.
-Likewise, the lifecycle epoch classifier checks both v1 and v2 current references;
-both present rejects `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT`. Existing low-level C07
-v2 fixture/storage tests may continue proving the two storage epochs are physically
-separate; C16.1a's owner-level admission contract is the layer that forbids their
-simultaneous authority on one accepted BAMF run.
+R6 makes epoch exclusion a **shared C07 mutation invariant**, not a one-sided v2
+caller check. The two immutable lease histories remain physically separate, but every
+accepted-run mutation that may install or replace a v1 or v2 `current.json` is
+serialized by one cross-epoch authority lock owned under the existing
+`autonomy/atlas-admission/` root at
+`autonomy/atlas-admission/authority-epoch.lock`. The lock file is a no-follow regular
+file with the same host-local `flock` discipline as the existing writers. Lock order
+is fixed: cross-epoch authority lock first, then the epoch-specific v1 or v2 writer
+lock. No caller may acquire them in the reverse order.
+
+While holding that cross-epoch lock:
+
+- accepted v2 first enrollment or v2 renewal checks canonical v1 current authority
+  before v2 current-reference mutation; a regular v1 current rejects
+  `BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`;
+- accepted v1 persistence or v1 renewal checks canonical v2 current authority before
+  v1 current-reference mutation; a regular v2 current rejects
+  `BAMF_ATLAS_V1_SUCCESSOR_AUTHORITY_PRESENT`;
+- unsafe/symlink current-reference paths retain the owning epoch's storage/path error;
+- if both current references already exist on entry, no writer attempts repair and
+  the owner reports `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT`.
+
+This changes accepted-run mutation admission only. Historical v1 read compatibility,
+immutable v1 lease bytes, v1 renewal history, and physically separate v2 storage are
+preserved. Low-level fixture-only storage remains usable for isolated epoch tests, but
+no production accepted-run writer can construct dual-current authority sequentially
+or concurrently.
+
+Request parsing has deterministic precedence. The enrollment scope file is first
+parsed for syntax/schema safety. Before request-vs-saved identity/Atlas comparison or
+C09 signature/rights verification, the accepted-run epoch classifier runs under the
+shared authority boundary: pre-existing dual authority reports
+`BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT`; v1-only authority reports
+`BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`. Only a run eligible for first v2 enrollment
+continues to request-vs-saved comparisons, then C09 signature/rights validation and
+issuance.
+
+Required regressions cover sequential v1->v2 and v2->v1 attempts plus a synchronized
+concurrent race. Exactly one epoch may win; the losing writer must reject before its
+other-epoch `current.json` becomes authoritative. Existing low-level C07 v2
+fixture/storage tests may continue proving the epochs' immutable histories are
+physically separate.
 
 ## CLI mode matrix and dispatch ownership
 
 The shared C11/C16 operator contract is exact:
 
-| Mode | Required policy/scope behavior | Mutation |
+| Mode | Required identity/optimizer + policy/scope behavior | Mutation |
 | --- | --- | --- |
-| fresh staged dry-run | `--atlas-release-manifest ...`; policy omitted or explicit `staged`; scope forbidden | none |
-| fresh atlas-release dry-run | `--admission-policy atlas-release --atlas-release-manifest ... --atlas-admission-scope <enrollment-request.json>` | none |
-| fresh staged create | `--human-run --atlas-release-manifest ...`; scope forbidden | generation-zero only |
-| fresh atlas-release create | `--human-run --admission-policy atlas-release --atlas-release-manifest ... --atlas-admission-scope <enrollment-request.json>` | generation-zero, then first C07 enrollment |
-| normal BAMF resume | scope omitted; omitted settings inherit saved custody; explicit settings must match | none in C16.1a |
-| first post-genesis enrollment | `--human-run --resume --admission-policy atlas-release --atlas-admission-scope <enrollment-request.json>` | first C07 enrollment only |
+| fresh staged dry-run | explicit `--run-id`, `--run-seed`, complete five-field AdamW group, `--model-topology`, `--atlas-release-manifest`; policy omitted or explicit `staged`; scope forbidden | none |
+| fresh atlas-release dry-run | same explicit foundation inputs plus `--admission-policy atlas-release --atlas-admission-scope <enrollment-request.json>` | none |
+| fresh staged create | same explicit foundation inputs plus `--human-run`; scope forbidden | generation-zero only |
+| fresh atlas-release create | same explicit foundation inputs plus `--human-run --admission-policy atlas-release --atlas-admission-scope <enrollment-request.json>` | generation-zero, then first C07 enrollment |
+| normal BAMF resume | scope omitted; run id/seed/topology/Atlas/policy omitted means accepted saved custody; complete optimizer group omitted means accepted saved optimizer; any explicit value/group must match | none in C16.1a |
+| first post-genesis enrollment | `--human-run --resume --admission-policy atlas-release --atlas-admission-scope <enrollment-request.json>`; other omitted settings come from accepted custody and any explicit equality assertion must match | first C07 enrollment only |
 
 Every fresh v2 dry-run/create requires `--atlas-release-manifest` because B13
 generation-zero identity always contains the source-qualified Atlas artifact. An
@@ -630,6 +731,12 @@ the operator to resume. Existing fresh B13 callers retain `_fresh_run_dir()`.
 No presentation helper is allowed to decide that arbitrary nonempty content is a
 recoverable B13 generation.
 
+Before this target-state branch, `_canonical_disjoint_run_paths(source, target)` is
+always evaluated and now rejects ancestry in **both directions**. A BAMF-looking
+nonempty target that is an ancestor of the source is therefore rejected as
+`BAMF_FIRST_STUDENT_TARGET_OVERLAPS_SOURCE` and cannot reach B13 recovery. A literal
+regression snapshots that ancestor tree and proves zero mutation.
+
 ## Saved-setting conflict contract
 
 Ordinary resume with omitted values uses accepted saved settings. Explicit values
@@ -642,9 +749,11 @@ must exactly match:
 - Atlas identity;
 - effective admission policy.
 
-Literal regressions must cover run-id mismatch, optimizer-hyperparameter mismatch,
-and the reverse policy mismatch where an accepted `atlas-release` run is resumed
-with explicit `staged`. Every mismatch rejects before mutation or learner dispatch.
+Literal regressions must cover run-id, run-seed, topology, complete
+optimizer-hyperparameter group and Atlas-identity mismatches, plus the reverse policy
+mismatch where an accepted `atlas-release` run is resumed with explicit `staged`.
+Every mismatch rejects before mutation or learner dispatch. An incomplete optimizer
+override group rejects before equality comparison.
 
 ## Training-readiness contract
 
@@ -690,7 +799,13 @@ prove in one witness:
    the current B13 manifest plus complete serialized parent state remain unchanged;
 7. the same accepted run cold-loads with identical retained optimizer identity and
    the next C03 teacher visit selected from accepted custody equals uninterrupted
-   selection.
+   selection;
+8. the same cohesive witness includes one **positive developmental evidence** result
+   from an existing source-qualified package-local fixture: either acquired taught
+   behavior or retained taught behavior is observed and the witness records which
+   evidence kind satisfied the gate. This is evidence about the admitted
+   Factory/teacher/retention path, not permission to run a fresh real learner and not
+   a requirement that generation zero itself improve.
 
 The witness may use existing package-local source/teacher fixtures. It must call the
 real C16.1a lifecycle and real B13/C03/C09-source-authority functions; it must not
@@ -698,17 +813,42 @@ mock the observed behavior under test or run a real learner.
 
 ## Persisted-source recovery witness
 
-At least one happy-path dry-run/create test must not patch
-`bamf_lifecycle.source_foundation`. It builds a disposable canonical source run with:
+Both one happy-path **dry-run** and one happy-path **create** test must not patch
+`bamf_lifecycle.source_foundation`. Each builds or reuses a disposable canonical
+source run with:
 
 - current State-DAG receipt;
 - immutable executable Factory release artifact;
 - model-bundle semantic catalog + digest binding;
 - exact semantic graph fingerprint.
 
-The test points `BILQIS_STORAGE_ROOT` at that disposable source, traverses the real
+Each test points `BILQIS_STORAGE_ROOT` at that disposable source, traverses the real
 `active_run_dir() -> read_current() -> executable release -> semantic catalog`
-recovery path, and proves every source-run file byte is unchanged afterward.
+recovery path, snapshots every source-run directory entry and file byte before the
+command, and proves the entire source tree is unchanged afterward. The create test may
+mutate only its disjoint target run.
+
+## Required post-genesis enrollment-failure witness
+
+The two-transaction boundary is tested literally. One fresh `atlas-release` create
+uses valid pre-generation inputs, successfully publishes accepted B13 generation
+zero, then injects a real-owner C07/C09 enrollment failure such as signature, rights,
+or source-authority rejection **after** generation-zero acceptance. The witness must
+prove all of the following in one disposable run:
+
+1. the accepted B13 pointer, bundle and generation-zero acceptance remain exact and
+   readable; C16.1a never rolls back lawful generation zero merely because first C07
+   enrollment failed;
+2. no authoritative v2 `current.json` or accepted v2 lease is minted by the failed
+   transaction and no learner/optimizer dispatch occurs;
+3. a subsequent no-scope resume classifies the run as `staged`;
+4. after correcting only the C07/C09 enrollment input/authority, explicit
+   `--human-run --resume --admission-policy atlas-release --atlas-admission-scope ...`
+   converges to one exact v2 lease without republishing generation zero.
+
+This test uses the real B13/C07/C09 owner boundary. It may use package-local signing
+and authority fixtures but must not replace the enrollment operation with a mocked
+success/failure return value.
 
 ## Implementation surface after EGM pass
 
@@ -721,23 +861,35 @@ Production, with required file action:
     human-start propagation, accepted-run/Atlas comparison, v1-authority exclusion
     and issuance; no storage reconciliation logic;
 - **Modify** `bilqis_mlx/runtime/_admission/atlas_admission.py`
-  - retain existing frontier/lease compatibility responsibilities and re-export the
-    bounded enrollment owner without absorbing its implementation;
+  - retain existing frontier/lease compatibility responsibilities, re-export the
+    bounded enrollment owner without absorbing its implementation, and make accepted
+    v1 persistence/renewal participate in the shared cross-epoch authority lock with
+    reciprocal v2-current exclusion;
+- **Modify** `bilqis_mlx/runtime/_admission/atlas_lease_storage.py`
+  - own the shared cross-epoch authority lock/path safety primitive used before any
+    accepted v1/v2 current-reference mutation; preserve the existing v1 writer lock as
+    the second lock for v1 storage;
+- **Modify** `bilqis_mlx/runtime/_admission/atlas_lease_v2.py`
+  - make accepted v2 persistence/renewal acquire the shared cross-epoch authority lock
+    before the existing v2 writer lock and enforce reciprocal v1-current exclusion;
 - **Modify** `bilqis_mlx/runtime/_admission/atlas_lease_storage_v2.py`
   - required: exact `_durable_json` byte comparison for orphan reuse plus bounded
-    same-lock post-reference reconciliation as the sole reconciliation owner without
-    changing lock order or lease authority;
+    same-lock post-reference reconciliation as the sole v2 storage reconciliation
+    owner; retain the epoch-specific lock as the second lock beneath the new shared
+    authority lock;
 - **Create** `bilqis_mlx/presentation/operator_cli/bamf_lifecycle.py`
   - fresh request validation, post-genesis enrollment, resume-enrollment completion,
     exact preview identity, training-readiness false, and recovery-aware nonempty
     target routing before mutable-source reconstruction;
 - **Create** `bilqis_mlx/presentation/operator_cli/bamf_lifecycle_inputs.py`
-  - own CLI-only source/manifest/optimizer input recovery while consuming the
-    runtime target classifier instead of defining a second target-path authority;
+  - own CLI-only source/manifest/optimizer input recovery and the exact fresh/resume
+    identity/AdamW presence semantics pinned above while consuming the runtime target
+    classifier instead of defining a second target-path authority;
 - **Modify** `bilqis_mlx/runtime/_bamf_first_student_support.py`
   - factor `_fresh_run_dir(...)` into `_canonical_run_dir_shape(...)` plus the
-    existing empty-target requirement so BAMF v2 routing can inspect a safe nonempty
-    target without weakening fresh B13 publication;
+    existing empty-target requirement, and strengthen
+    `_canonical_disjoint_run_paths(...)` so source/target ancestry is rejected in both
+    directions before BAMF v2 routing can inspect a nonempty target;
 - **Modify** `bilqis_mlx/runtime/bamf_first_student.py`
   - factor deterministic pre-publication preparation and expose exact run-identity
     preview with source/target disjointness, plus recovery-aware fresh target handling;
@@ -753,8 +905,9 @@ Production, with required file action:
     acceptance-sidecar write path, reusing existing canonical/atomic/fsync semantics;
 - **Modify** `bilqis_mlx/presentation/operator_cli/command.py` and **Modify**
   `bilqis_mlx/presentation/operator_cli/parser.py` only as required for
-  the pinned v2 dispatch/presence-bit routing; no new trust-source flag and no change
-  to historical `--admission-policy` default/action semantics;
+  the pinned v2 dispatch/presence-bit routing **and** the explicit BAMF-v2 foundation
+  input flags frozen in this R6 contract; no new trust-source flag and no change to
+  historical `--admission-policy` default/action semantics;
 - **Modify** `docs/tasks/bamf-0.2/children/C11.1.md` and **Modify**
   `docs/architecture/BAMF_0_2.md`
   - align the affected shared operator command contract with the exact scope matrix.
@@ -792,27 +945,37 @@ mirrored test owner:
   pinned error precedence;
 - v1 historical accepted-run resume, v1+v2 epoch conflict, and rejection of v2 first
   enrollment on a v1-authorized run;
+- shared epoch serialization: sequential v1->v2 and v2->v1 mutations plus a
+  synchronized concurrent race prove exactly one current-authority epoch can win;
 - B13 cold unpointed recovery after source advance both with persisted acceptance and
   with a missing sidecar reconstructed exactly from trust-row + sealed student;
-- interrupted cold recovery with an explicitly changed AdamW setting rejects before
-  acceptance/pointer/outbox mutation;
+- interrupted cold recovery with each independently changed run id, run seed,
+  topology, Atlas identity and AdamW setting rejects before acceptance/pointer/outbox
+  mutation;
 - command-level nonempty/no-pointer interrupted create reaches B13 recovery, while an
   arbitrary occupied target still rejects;
+- source/target overlap is symmetric: source-under-target and target-under-source both
+  reject before dry-run/create/recovery mutation, including an ancestor target with
+  BAMF-looking contents;
 - command-level `--resume` against BAMF-v2 custody artifacts with no pointer is
   intercepted before historical learner dispatch and either enters governed recovery
   classification or fails with explicit interrupted-genesis guidance;
 - saved atlas-release -> explicit staged rejection;
-- ordinary resume with an explicit optimizer override mismatch rejects before any
-  mutation or learner dispatch;
+- ordinary resume literal mismatches for run id, run seed, topology, complete
+  optimizer override and Atlas identity each reject before any mutation or learner
+  dispatch; partial optimizer override rejects as incomplete;
 - parser presence-bit proof distinguishes omitted admission policy from explicit
   `staged` without changing argparse's historical default;
-- run-id mismatch;
 - dry-run exact B13 identity equals subsequent create identity;
 - parser-help text preserved across helper extraction;
-- cohesive first-start Functional Factory/rollback/cold-resume witness;
+- cohesive first-start Functional Factory/rollback/cold-resume witness including one
+  source-valid positive acquired-or-retained taught-behavior evidence kind;
+- post-generation-zero C07/C09 fault witness proving accepted staged genesis survives
+  failed enrollment and corrected explicit resume-enrollment later converges;
 - dashboard `READY_FOR_HUMAN_START` remains non-authorizing while lifecycle
   `ready_for_training` is false and learner dispatch is unreachable;
-- unmocked persisted-source recovery + byte preservation.
+- unmocked persisted-source recovery + complete source-tree byte preservation for
+  both dry-run and create.
 
 Regression owners retained:
 
