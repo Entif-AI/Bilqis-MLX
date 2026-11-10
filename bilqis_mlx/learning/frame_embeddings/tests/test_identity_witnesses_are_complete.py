@@ -23,6 +23,30 @@ from bilqis_mlx.semantics.tests.test_atlas_features import _features, _snapshot
 from bilqis_mlx.learning.tests.test_frame_embeddings import _context_for, FactorCompositionTests
 
 class FactorCompositionTests2(FactorCompositionTests):
+    def test_same_identity_changed_role_changes_embedding_without_changing_identity_row(self):
+        identity = mx.zeros((8192, 768), dtype=mx.float32).at[11, 0].add(1)
+        params = {
+            **self.params,
+            "identity.bank.0": identity,
+            "features.local_slot": mx.zeros_like(self.params["features.local_slot"]),
+        }
+        bank = SemanticBankView(
+            0, identity, (11,), self.features.semantic_release,
+            self.extents.active_semantic_digest)
+        left_request, right_request = self.request("left"), self.request("right")
+        self.assertEqual(left_request.concept.semantic_id, right_request.concept.semantic_id)
+        self.assertEqual(left_request.concept.abi_index, right_request.concept.abi_index)
+        before = np.asarray(params["identity.bank.0"][11]).copy()
+
+        left = embed_atoms(
+            params, ConceptBatch(((left_request,),), (bank,), self.extents), self.features)
+        right = embed_atoms(
+            params, ConceptBatch(((right_request,),), (bank,), self.extents), self.features)
+
+        self.assertIs(bank.weights, params["identity.bank.0"])
+        np.testing.assert_array_equal(np.asarray(params["identity.bank.0"][11]), before)
+        self.assertFalse(np.array_equal(np.asarray(left), np.asarray(right)))
+
     def test_identity_witnesses_are_complete_and_canonical_under_source_reordering(self):
         weights = mx.zeros((8192, 768), dtype=mx.float32)
         params = {**self.params, "identity.bank.0": weights}

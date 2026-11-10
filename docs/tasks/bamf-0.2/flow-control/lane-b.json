@@ -1,10 +1,20 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "e8d28a9ed6bc46282eca702ad4c69a23964d1cf8",
-  "updated_at": "2026-11-10T21:16:20Z",
+  "observed_unified": "555171ae3d4ac3132221dac59a893f5c08ccdbbf",
+  "updated_at": "2026-11-10T23:07:01Z",
   "exception": null,
   "items": [
+    {
+      "issue": 979,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "555171ae3d4ac3132221dac59a893f5c08ccdbbf",
+      "head_sha_role": "parent-review remediation base equal to reviewed unified before #979 acceptance-test edit",
+      "summary": "B02 parent #359 integration review found one evidence-only Major: no single durable test directly proves that changing only the source-qualified role changes the final embedding while the same semantic identity row/object stays fixed. #979 is a new_acceptance=false mitigation adding that literal witness only.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-neural"
+    },
     {
       "issue": 441,
       "pr": 978,
