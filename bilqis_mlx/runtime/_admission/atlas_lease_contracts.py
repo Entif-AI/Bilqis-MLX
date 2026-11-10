@@ -128,6 +128,21 @@ class ResourceCeiling:
 
 
 @dataclass(frozen=True)
+class ResourceCeilingV2:
+    """Human-authorized ceilings for owner-derived Atlas/A02 v2 facts."""
+
+    max_semantic_banks: int
+    max_motif_pages: int
+    max_total_atlas_semantic_identities: int
+    max_checkpoint_bytes_lower_bound: int
+    max_required_available_bytes_lower_bound: int
+
+    def __post_init__(self):
+        if any(type(value) is not int or value < 1 for value in asdict(self).values()):
+            _invalid('BAMF_ATLAS_RESOURCE_CEILING_V2_INVALID')
+
+
+@dataclass(frozen=True)
 class AtlasAdmissionLease:
     lease_id: str
     run_identity: LeaseRunIdentity
@@ -145,6 +160,32 @@ class AtlasAdmissionLease:
                 or type(self.requested_at) is not int or self.requested_at < 0
                 or not _sha(self.human_command_sha256)):
             _invalid('BAMF_ATLAS_ADMISSION_LEASE_INVALID')
+
+    def digest(self):
+        return contract_digest(self)
+
+
+@dataclass(frozen=True)
+class AtlasAdmissionLeaseV2:
+    """Explicit v2 consent; v1 resource semantics are never reinterpreted."""
+
+    lease_id: str
+    run_identity: LeaseRunIdentity
+    source_approval: AtlasSourceApproval
+    resource_ceiling: ResourceCeilingV2
+    requested_at: str
+    human_command_sha256: str
+    admission_policy: str = field(default='atlas-release', init=False)
+    schema_version: str = field(default='bilqis.c07.atlas-admission-lease/v2', init=False)
+
+    def __post_init__(self):
+        if (not _name(self.lease_id)
+                or not isinstance(self.run_identity, LeaseRunIdentity)
+                or not isinstance(self.source_approval, AtlasSourceApproval)
+                or not isinstance(self.resource_ceiling, ResourceCeilingV2)
+                or not _name(self.requested_at)
+                or not _sha(self.human_command_sha256)):
+            _invalid('BAMF_ATLAS_ADMISSION_LEASE_V2_INVALID')
 
     def digest(self):
         return contract_digest(self)
