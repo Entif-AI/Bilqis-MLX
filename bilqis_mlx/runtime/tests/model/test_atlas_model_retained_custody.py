@@ -32,7 +32,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
     host_source_authority_patch,
 )
-from bilqis_mlx.runtime.tests.model.active_semantic_rows_support import snapshot_active_semantic_rows
+from bilqis_mlx.runtime.tests.model.execution.active_semantic_rows_support import snapshot_active_semantic_rows
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
 
 

@@ -31,7 +31,7 @@ from bilqis_mlx.runtime.atlas_model import (
 )
 from bilqis_mlx.runtime._atlas_owner_ingress import apply_compiled_batch_correction
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
-from bilqis_mlx.runtime.tests.model.active_semantic_rows_support import active_semantic_rows
+from bilqis_mlx.runtime.tests.model.execution.active_semantic_rows_support import active_semantic_rows
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 import bilqis_mlx.runtime.atlas_model_forward as forward_impl

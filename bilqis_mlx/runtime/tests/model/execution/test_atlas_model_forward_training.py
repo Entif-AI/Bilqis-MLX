@@ -32,7 +32,7 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import _new_execution_cache
 from bilqis_mlx.runtime.model_topology_v2 import (
     Initializer, ModelTopologySpecV2, expected_bamf_shapes,
 )
-from bilqis_mlx.runtime.tests.model.active_semantic_rows_support import active_semantic_rows
+from bilqis_mlx.runtime.tests.model.execution.active_semantic_rows_support import active_semantic_rows
 from bilqis_mlx.runtime.topology_v2.ledger import bamf_parameter_census
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
 from bilqis_mlx.semantics.frame_schema import FrameSchema, RoleSpec, SourceSpan

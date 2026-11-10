@@ -13,7 +13,7 @@ from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.runtime.atlas_model import BamfCompiledBatch
 from bilqis_mlx.runtime.atlas_model_participation import _active_banks
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents
-from bilqis_mlx.runtime.tests.model.active_semantic_rows_support import active_semantic_rows
+from bilqis_mlx.runtime.tests.model.execution.active_semantic_rows_support import active_semantic_rows
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
 from bilqis_mlx.semantics.tests.atlas.vocabulary_fixtures import _allocation_fixture

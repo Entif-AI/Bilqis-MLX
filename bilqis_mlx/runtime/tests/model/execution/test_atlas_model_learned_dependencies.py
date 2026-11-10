@@ -12,7 +12,7 @@ from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.runtime.tests.model.test_atlas_model_retained import (
     AtlasModelRetainedMotifTests,
 )
-from bilqis_mlx.runtime.tests.model.active_semantic_rows_support import snapshot_active_semantic_rows
+from bilqis_mlx.runtime.tests.model.execution.active_semantic_rows_support import snapshot_active_semantic_rows
 from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE

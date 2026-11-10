@@ -125,6 +125,69 @@ class A02ProductionStagingTests(unittest.TestCase):
             b'"semantic role 8192"@en .\n')
         return _rewrite_bundle(bundle, "canonical.nt", canonical)
 
+    def _assert_staged_bank_extension(
+        self, current_snapshot, current_features, optimizer, parent, staged,
+        authenticated, active_rows,
+    ):
+        self.assertEqual(
+            load_bamf_generation(self.pointer, publish_missing_outbox=False).generation, 0)
+        self.assertEqual(staged.receipt.generation, 1)
+        self.assertEqual(staged.receipt.semantic_bank_count, 2)
+        self.assertEqual(staged.receipt.status, "STAGED_NOT_ADMITTED")
+        self.assertFalse(current_snapshot.abi(8192).active)
+        self.assertEqual(active_rows.active_indices, (0, 8192))
+        self.assertEqual(
+            active_rows.active_semantic_digest, staged.receipt.active_set_sha256)
+        banks = semantic_bank_views(
+            staged.candidate.retained_state.optimizer.parameters,
+            staged.candidate.extents,
+            authenticated.features.semantic_release,
+            active_rows.active_indices,
+        )
+        self.assertEqual(tuple(bank.active_rows for bank in banks), ((0,), (0,)))
+        self.assertIs(
+            banks[1].weights,
+            staged.candidate.retained_state.optimizer.parameters["identity.bank.1"])
+        self.assertNotEqual(parent.run_identity.run_seed, parent.topology.default_run_seed)
+        feature_names = (
+            "features.type", "features.project_type",
+            "features.project_graph", "features.gates",
+        )
+        _, factors = prepare_identity_factors(
+            current_snapshot, current_features, ("urn:concept:8192",),
+            {name: parent.retained_state.optimizer.parameters[name]
+             for name in feature_names},
+            extents=parent.extents,
+        )
+        specs = {
+            item.name: item for item in expected_bamf_shapes(
+                parent.topology, staged.candidate.extents)
+        }
+        expected_row = initialize_bamf_row(
+            specs["identity.bank.1"], run_seed=parent.run_identity.run_seed,
+            row_id="urn:concept:8192", factor=factors[0][1],
+        )
+        np.testing.assert_array_equal(
+            np.asarray(staged.candidate.retained_state.optimizer.parameters[
+                "identity.bank.1"][0]),
+            expected_row,
+        )
+        np.testing.assert_array_equal(
+            np.asarray(staged.candidate.retained_state.optimizer.parameters["identity.bank.0"]),
+            np.asarray(optimizer.parameters["identity.bank.0"]))
+        self.assertTrue(bool(mx.all(
+            staged.candidate.retained_state.optimizer.update_counts["identity.bank.1"] == 0)))
+        self.assertIn(
+            IdentityRowAge(1, 0, 0), staged.candidate.retained_state.policy.row_ages)
+        with self.assertRaises(BilqisError) as failure:
+            publish_bamf_generation(
+                self.run, staged.candidate,
+                acceptance=acceptance(
+                    staged.candidate, parent=parent.retained_state),
+                reserve_gib=0.)
+        self.assertEqual(
+            failure.exception.context["reason"], "BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED")
+
     def test_stages_bank_extension_without_granting_admission(self):
         current_snapshot, current_features, optimizer = self._publish_source_parent()
         parent = load_bamf_generation(self.pointer, publish_missing_outbox=False)
@@ -158,64 +221,9 @@ class A02ProductionStagingTests(unittest.TestCase):
                 staged.candidate, "/artifact")
             active_rows = bind_candidate_active_semantic_rows(
                 staged.candidate, authenticated)
-        self.assertEqual(
-            load_bamf_generation(self.pointer, publish_missing_outbox=False).generation, 0)
-        self.assertEqual(staged.receipt.generation, 1)
-        self.assertEqual(staged.receipt.semantic_bank_count, 2)
-        self.assertEqual(staged.receipt.status, "STAGED_NOT_ADMITTED")
-        self.assertFalse(current_snapshot.abi(8192).active)
-        self.assertEqual(active_rows.active_indices, (0, 8192))
-        self.assertEqual(
-            active_rows.active_semantic_digest, staged.receipt.active_set_sha256)
-        banks = semantic_bank_views(
-            staged.candidate.retained_state.optimizer.parameters,
-            staged.candidate.extents,
-            authenticated.features.semantic_release,
-            active_rows.active_indices,
-        )
-        self.assertEqual(tuple(bank.active_rows for bank in banks), ((0,), (0,)))
-        self.assertIs(
-            banks[1].weights,
-            staged.candidate.retained_state.optimizer.parameters["identity.bank.1"])
-        self.assertNotEqual(
-            parent.run_identity.run_seed, parent.topology.default_run_seed)
-        feature_names = (
-            "features.type", "features.project_type",
-            "features.project_graph", "features.gates",
-        )
-        _, factors = prepare_identity_factors(
-            current_snapshot, current_features, ("urn:concept:8192",),
-            {name: parent.retained_state.optimizer.parameters[name]
-             for name in feature_names},
-            extents=parent.extents,
-        )
-        specs = {
-            item.name: item for item in expected_bamf_shapes(
-                parent.topology, staged.candidate.extents)
-        }
-        expected_row = initialize_bamf_row(
-            specs["identity.bank.1"], run_seed=parent.run_identity.run_seed,
-            row_id="urn:concept:8192", factor=factors[0][1],
-        )
-        np.testing.assert_array_equal(
-            np.asarray(staged.candidate.retained_state.optimizer.parameters[
-                "identity.bank.1"][0]),
-            expected_row,
-        )
-        np.testing.assert_array_equal(
-            np.asarray(staged.candidate.retained_state.optimizer.parameters["identity.bank.0"]),
-            np.asarray(optimizer.parameters["identity.bank.0"]))
-        self.assertTrue(bool(mx.all(
-            staged.candidate.retained_state.optimizer.update_counts["identity.bank.1"] == 0)))
-        self.assertIn(IdentityRowAge(1, 0, 0), staged.candidate.retained_state.policy.row_ages)
-        with self.assertRaises(BilqisError) as failure:
-            publish_bamf_generation(
-                self.run, staged.candidate,
-                acceptance=acceptance(
-                    staged.candidate, parent=parent.retained_state),
-                reserve_gib=0.)
-        self.assertEqual(
-            failure.exception.context["reason"], "BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED")
+        self._assert_staged_bank_extension(
+            current_snapshot, current_features, optimizer, parent, staged,
+            authenticated, active_rows)
 
     def test_stages_from_content_id_through_real_source_bundle_verifier(self):
         bundle = self._real_source_bundle()
