@@ -13,6 +13,7 @@ from bilqis_mlx.learning.atlas_engram import MotifManifest, MotifSlot
 from bilqis_mlx.learning.atlas_engram_reads.source_owner import _B13_EXECUTION_SEAL
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, group_eligibility
 from bilqis_mlx.learning.atlas_readout import ControlAction, DecisionOutput
+from bilqis_mlx.learning.frame_embeddings import semantic_bank_views
 from bilqis_mlx.learning.source_atoms.backbone import start_retained_source_backbone_producer
 from bilqis_mlx.learning.source_atoms.backbone_receipts import QUALIFIED_MISS
 from bilqis_mlx.runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
@@ -22,6 +23,9 @@ from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import _new_execution_cache
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents
+from bilqis_mlx.runtime.tests.model.execution.active_semantic_rows_support import (
+    snapshot_active_semantic_rows,
+)
 from bilqis_mlx.runtime.topology_v2.ledger import bamf_parameter_census
 import bilqis_mlx.runtime.atlas_model_forward as forward_impl
 import bilqis_mlx.runtime.tests.model.test_atlas_model_retained as retained_tests
@@ -68,7 +72,11 @@ def _miss_gradient(parameters, compiled, source, feature_schema, plan, spec, ext
         "bilqis_mlx.runtime.bamf_bundle.execution_cache.require_accepted_execution_cache",
         return_value=cache):
         return bamf_value_and_grad(
-            parameters, BamfCompiledBatch(compiled, (source,), feature_schema),
+            parameters, BamfCompiledBatch(
+                compiled, (source,), feature_schema,
+                snapshot_active_semantic_rows(
+                    compiled, plan.snapshot, run_id=cache.run_id,
+                    generation=cache.generation)),
             replace(plan, generation_binding=generation),
             (DecisionOutput("finish", ControlAction.END_FRAME),),
             {"finish": True}, cache=cache)
@@ -87,13 +95,24 @@ class RetainedMotifDiscriminatorTests(TestCase):
             extents.active_semantic_digest, miss_manifest.digest,
             extents.factor_map_digest)
         miss_compiled = replace(compiled, extents=miss_extents)
+        hit_active_rows = snapshot_active_semantic_rows(
+            compiled, plan.snapshot, run_id="test-retained", generation=1)
+        hit_banks = semantic_bank_views(
+            parameters, extents, compiled.features.semantic_release,
+            hit_active_rows.active_indices)
+        miss_active_rows = snapshot_active_semantic_rows(
+            miss_compiled, plan.snapshot, run_id="test-retained", generation=1)
+        miss_banks = semantic_bank_views(
+            parameters, miss_extents, miss_compiled.features.semantic_release,
+            miss_active_rows.active_indices)
         hit = start_retained_source_backbone_producer(
-            compiled, parameters, (source,), feature_schema, manifest,
+            compiled, parameters, (source,), feature_schema, hit_banks, manifest,
             AtlasFeatureArtifactOwner(compiled.features, feature_schema),
             seal=_B13_EXECUTION_SEAL)
         hit_g1 = hit.advance()
         missed = start_retained_source_backbone_producer(
-            miss_compiled, parameters, (source,), feature_schema, miss_manifest,
+            miss_compiled, parameters, (source,), feature_schema, miss_banks,
+            miss_manifest,
             AtlasFeatureArtifactOwner(miss_compiled.features, feature_schema),
             seal=_B13_EXECUTION_SEAL)
         missed_g1 = missed.advance()

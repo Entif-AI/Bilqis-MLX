@@ -12,6 +12,7 @@ from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram_reads.source_owner import _B13_EXECUTION_SEAL
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, group_eligibility
 from bilqis_mlx.learning.atlas_readout import ControlAction, DecisionOutput
+from bilqis_mlx.learning.frame_embeddings import semantic_bank_views
 from bilqis_mlx.learning.source_atoms.backbone import (
     start_retained_source_backbone_producer, start_source_backbone_producer,
 )
@@ -24,6 +25,9 @@ from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import _new_execution_cache
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents
+from bilqis_mlx.runtime.tests.model.execution.active_semantic_rows_support import (
+    snapshot_active_semantic_rows,
+)
 from bilqis_mlx.runtime.topology_v2.ledger import bamf_parameter_census
 import bilqis_mlx.runtime.atlas_model_forward as forward_impl
 import bilqis_mlx.runtime.tests.model.test_atlas_model_retained as retained_tests
@@ -66,10 +70,15 @@ class RetainedMotifMissTests(TestCase):
             extents.active_semantic_digest, empty.digest, extents.factor_map_digest)
         miss_compiled = replace(compiled, extents=miss_extents)
         owner = AtlasFeatureArtifactOwner(miss_compiled.features, feature_schema)
+        active_rows = snapshot_active_semantic_rows(
+            miss_compiled, plan.snapshot, run_id="test-retained", generation=1)
+        banks = semantic_bank_views(
+            parameters, miss_extents, miss_compiled.features.semantic_release,
+            active_rows.active_indices)
         plain = start_source_backbone_producer(
-            miss_compiled, parameters, (source,), feature_schema, owner)
+            miss_compiled, parameters, (source,), feature_schema, banks, owner)
         retained = start_retained_source_backbone_producer(
-            miss_compiled, parameters, (source,), feature_schema, empty,
+            miss_compiled, parameters, (source,), feature_schema, banks, empty,
             owner, seal=_B13_EXECUTION_SEAL)
         plain_g1, retained_g1 = plain.advance(), retained.advance()
         np.testing.assert_array_equal(
@@ -91,7 +100,8 @@ class RetainedMotifMissTests(TestCase):
             "bilqis_mlx.runtime.bamf_bundle.execution_cache.require_accepted_execution_cache",
             return_value=cache):
             gradient = bamf_value_and_grad(
-                parameters, BamfCompiledBatch(miss_compiled, (source,), feature_schema),
+                parameters, BamfCompiledBatch(
+                    miss_compiled, (source,), feature_schema, active_rows),
                 replace(plan, generation_binding=generation),
                 (DecisionOutput("finish", ControlAction.END_FRAME),),
                 {"finish": True}, cache=cache)
@@ -124,8 +134,13 @@ class RetainedMotifMissTests(TestCase):
     def test_owner_revocation_is_a_safe_miss_at_both_sites(self):
         case = retained_tests.AtlasModelRetainedMotifTests(
             "test_retained_b08_hit_enters_the_same_loss_bearing_b09_trace")
-        (compiled, parameters, source, feature_schema, _plan, _cache,
-         _spec, _extents, manifest, _slot_id) = case._runtime_fixture()
+        (compiled, parameters, source, feature_schema, plan, _cache,
+         _spec, extents, manifest, _slot_id) = case._runtime_fixture()
+        active_rows = snapshot_active_semantic_rows(
+            compiled, plan.snapshot, run_id="test-retained", generation=1)
+        banks = semantic_bank_views(
+            parameters, extents, compiled.features.semantic_release,
+            active_rows.active_indices)
         rights_case = rights_tests.PublicFormalSchemaRightsOwnerTests(
             "test_same_epoch_revocation_survives_fresh_and_cold_owner_reissue")
         rights_case.setUp()
@@ -133,7 +148,7 @@ class RetainedMotifMissTests(TestCase):
             frame, _handle = rights_case._target()
             rights_case._revoke(rights_registry._REGISTRY_SHA256, frame)
             producer = start_retained_source_backbone_producer(
-                compiled, parameters, (source,), feature_schema, manifest,
+                compiled, parameters, (source,), feature_schema, banks, manifest,
                 AtlasFeatureArtifactOwner(compiled.features, feature_schema),
                 seal=_B13_EXECUTION_SEAL)
             g1 = producer.advance()
