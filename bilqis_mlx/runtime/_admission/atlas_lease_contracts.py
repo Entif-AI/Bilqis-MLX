@@ -189,3 +189,31 @@ class AtlasAdmissionLeaseV2:
 
     def digest(self):
         return contract_digest(self)
+
+
+@dataclass(frozen=True)
+class AtlasAdmissionEnrollmentRequestV2:
+    """Non-authoritative human request for post-genesis v2 enrollment."""
+
+    lease_id: str
+    requested_run_id: str
+    requested_run_seed: int
+    requested_topology_digest: str
+    source_approval: AtlasSourceApproval
+    resource_ceiling: ResourceCeilingV2
+    requested_at: str
+    human_command_sha256: str
+    admission_policy: str = field(default='atlas-release', init=False)
+    schema_version: str = field(
+        default='bilqis.c07.atlas-admission-enrollment-request/v2', init=False)
+
+    def __post_init__(self):
+        if (not _name(self.lease_id) or not _name(self.requested_run_id)
+                or type(self.requested_run_seed) is not int
+                or self.requested_run_seed < 0
+                or not _sha(self.requested_topology_digest)
+                or not isinstance(self.source_approval, AtlasSourceApproval)
+                or not isinstance(self.resource_ceiling, ResourceCeilingV2)
+                or not _name(self.requested_at)
+                or not _sha(self.human_command_sha256)):
+            _invalid('BAMF_ATLAS_ENROLLMENT_REQUEST_INVALID')

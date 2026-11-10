@@ -1,4 +1,4 @@
-"""#751 production BAMF create/resume operator contract."""
+"""#542 production BAMF create/resume operator contract."""
 from __future__ import annotations
 
 from contextlib import redirect_stderr, redirect_stdout
@@ -19,6 +19,7 @@ from bilqis_mlx.runtime.tests._bamf_first_student_support import BamfFirstStuden
 from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import _lease
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactIdentity
+from bilqis_mlx.state_dag import persist, read_current
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -99,6 +100,43 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         })
         self.assertEqual(report["source_prefetch_workers"], 0)
         self.assertEqual(report["neural_updates"], 0)
+        self.assertFalse(report["ready_for_training"])
+        self.assertEqual(report["run_identity"]["run_id"], report["run_id"])
+        self.assertFalse(target.exists())
+
+    def test_dry_run_uses_persisted_source_foundation_owner_without_lifecycle_stub(self):
+        target = self.root / "real-source-dry-run"
+        manifest = self.root / "manifest.json"
+        manifest.write_text("{}", encoding="utf-8")
+        source_bundle = self.source / "bundles/source-fixture"
+        source_bundle.mkdir(parents=True)
+        (source_bundle / "manifest.json").write_text(
+            json.dumps({"semantic_catalog": {}}), encoding="utf-8")
+        source_state = read_current(self.source)
+        source_state["generation"] += 1
+        source_state["model_bundle"] = "bundles/source-fixture"
+        persist(self.source, source_state)
+        with patch(
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle_inputs.active_run_dir",
+                return_value=self.source), patch(
+                "bilqis_mlx.runtime.mlx_checkpoint._read_catalog",
+                return_value=self.graph), patch(
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.atlas_manifest_identity",
+                return_value=self.identity), shape_patch(), genesis_feature_source_patch(), patch(
+                "bilqis_mlx.semantics.atlas.snapshot.resolve_atlas_artifact_selection",
+                return_value=self.selection), patch(
+                "bilqis_mlx.runtime.bamf_first_student.resolve_atlas_artifact_selection",
+                return_value=self.selection):
+            code, output, errors = self.invoke([
+                "--dry-run", "--model-topology", str(TOPOLOGY),
+                "--atlas-release-manifest", str(manifest),
+                "--run-dir", str(target), *self.FOUNDATION_ARGS,
+            ])
+        self.assertEqual((code, errors), (0, ""))
+        report = json.loads(output)
+        self.assertEqual(report["result"], "READY_TO_CREATE")
+        self.assertEqual(report["run_id"], "operator-first-student")
+        self.assertFalse(report["ready_for_training"])
         self.assertFalse(target.exists())
 
     def test_fresh_bamf_atlas_release_requires_scope_before_any_run_write(self):
@@ -230,7 +268,55 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
             ])
 
         self.assertEqual((code, errors), (0, ""))
-        self.assertEqual(json.loads(output)["result"], "READY_TO_RESUME")
+        report = json.loads(output)
+        self.assertEqual(report["result"], "READY_TO_RESUME")
+        self.assertFalse(report["ready_for_training"])
+        self.assertEqual(_tree_snapshot(target), before)
+
+    def test_human_resume_run_id_conflict_never_reaches_learner(self):
+        target = self.root / "accepted-bamf"
+        self.preflight(target)
+        before = _tree_snapshot(target)
+        with self.accepted_read_context(), patch(
+                "bilqis_mlx.presentation.operator_cli.command._invoke_learner",
+                side_effect=AssertionError("C16.2 owns later neural execution")):
+            code, output, errors = self.invoke([
+                "--human-run", "--resume", "--run-dir", str(target),
+                "--run-id", "wrong-run",
+            ])
+        self.assertEqual((code, output), (2, ""))
+        self.assertIn("BAMF_OPERATOR_RESUME_RUN_ID_CONFLICT", errors)
+        self.assertEqual(_tree_snapshot(target), before)
+
+    def test_human_resume_optimizer_conflict_never_reaches_learner(self):
+        target = self.root / "accepted-bamf"
+        self.preflight(target)
+        before = _tree_snapshot(target)
+        with self.accepted_read_context(), patch(
+                "bilqis_mlx.presentation.operator_cli.command._invoke_learner",
+                side_effect=AssertionError("C16.2 owns later neural execution")):
+            code, output, errors = self.invoke([
+                "--human-run", "--resume", "--run-dir", str(target),
+                "--learning-rate", "0.0008", "--adam-beta1", "0.88",
+                "--adam-beta2", "0.97", "--adam-eps", "1e-7",
+                "--weight-decay", "0.03",
+            ])
+        self.assertEqual((code, output), (2, ""))
+        self.assertIn("BAMF_OPERATOR_RESUME_OPTIMIZER_CONFLICT", errors)
+        self.assertEqual(_tree_snapshot(target), before)
+
+    def test_no_pointer_bamf_v2_custody_resume_is_intercepted_before_learner(self):
+        target = self.root / "interrupted-bamf"
+        (target / "bamf-bundles").mkdir(parents=True)
+        before = _tree_snapshot(target)
+        with patch(
+                "bilqis_mlx.presentation.operator_cli.command._invoke_learner",
+                side_effect=AssertionError("legacy learner must not inspect BAMF v2 custody")):
+            code, output, errors = self.invoke([
+                "--human-run", "--resume", "--run-dir", str(target),
+            ])
+        self.assertEqual((code, output), (2, ""))
+        self.assertIn("BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY", errors)
         self.assertEqual(_tree_snapshot(target), before)
 
     def test_resume_conflicting_seed_and_optimizer_reject_before_writes(self):

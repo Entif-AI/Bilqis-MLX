@@ -1,9 +1,12 @@
 """Atlas lease v2 is a separate human authority epoch from historical v1."""
-from dataclasses import replace
+from dataclasses import asdict, replace
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
+
+from bilqis_mlx.errors import BilqisError
 
 from bilqis_mlx.runtime.atlas_admission import (
     AtlasAdmissionLeaseV2,
@@ -14,6 +17,7 @@ from bilqis_mlx.runtime.atlas_admission import (
     read_atlas_lease_v2,
     renew_atlas_lease_v2,
 )
+import bilqis_mlx.runtime.atlas_lease_storage_v2 as lease_storage_v2
 from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import (
     _REGISTRY, _lease, _run, _scope,
 )
@@ -29,6 +33,54 @@ def _lease_v2(*, lease_id="fixture-v2", requested_at="2026-11-10T16:00:00Z",
 
 
 class AtlasLeaseV2Tests(unittest.TestCase):
+    def test_typed_equal_but_byte_different_orphan_is_immutable_drift(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            lease = _lease_v2()
+            lease_dir = root / 'autonomy/atlas-admission/v2/leases'
+            lease_dir.mkdir(parents=True)
+            orphan = lease_dir / (lease.digest() + '.json')
+            # Semantically identical JSON, intentionally not the durable writer bytes.
+            raw = json.dumps(asdict(lease), sort_keys=True, separators=(',', ':')).encode()
+            orphan.write_bytes(raw)
+
+            with self.assertRaises(BilqisError) as raised:
+                persist_atlas_lease_v2(
+                    root, lease, independently_loaded_run=_run(), registry=_REGISTRY)
+
+            self.assertEqual(
+                raised.exception.context.get('reason'),
+                'BAMF_ATLAS_LEASE_V2_IMMUTABLE_DRIFT')
+            self.assertEqual(orphan.read_bytes(), raw)
+            self.assertFalse((root / 'autonomy/atlas-admission/v2/current.json').exists())
+
+    def test_post_reference_readback_uncertainty_reconciles_exact_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            lease = _lease_v2()
+            real_read = lease_storage_v2._read_atlas_lease_v2
+            calls = 0
+
+            def uncertain_once(*args, **kwargs):
+                nonlocal calls
+                calls += 1
+                if calls == 1:
+                    return None
+                if calls == 2:
+                    from bilqis_mlx.runtime.atlas_lease_contracts import _invalid
+                    _invalid('BAMF_ATLAS_LEASE_V2_READ_FAILED')
+                return real_read(*args, **kwargs)
+
+            with patch.object(lease_storage_v2, '_read_atlas_lease_v2',
+                              side_effect=uncertain_once):
+                reference = persist_atlas_lease_v2(
+                    root, lease, independently_loaded_run=_run(), registry=_REGISTRY)
+
+            self.assertEqual(
+                reference, root / 'autonomy/atlas-admission/v2/current.json')
+            self.assertEqual(
+                read_atlas_lease_v2(root, _run(), registry=_REGISTRY), lease)
+
     def test_v2_persists_separately_without_reinterpreting_v1_current(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

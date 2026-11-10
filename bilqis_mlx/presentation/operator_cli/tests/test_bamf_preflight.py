@@ -146,8 +146,34 @@ class BamfPreflightTests(unittest.TestCase):
         self.assertTrue(args.human_run)
         self.assertEqual(args.source_prefetch_workers, 1)
         self.assertEqual(args.atlas_release_manifest, Path('/manifest.json'))
-        self.assertTrue(parse_args(['train', '--admission-policy', 'staged']).admission_policy_explicit)
-        self.assertFalse(parse_args(['train']).admission_policy_explicit)
+        explicit = parse_args(['train', '--admission-policy', 'staged'])
+        equals = parse_args(['train', '--admission-policy=staged'])
+        omitted = parse_args(['train'])
+        self.assertEqual((explicit.admission_policy, equals.admission_policy,
+                          omitted.admission_policy), ('staged', 'staged', 'staged'))
+        self.assertTrue(explicit.admission_policy_explicit)
+        self.assertTrue(equals.admission_policy_explicit)
+        self.assertFalse(omitted.admission_policy_explicit)
+
+    def test_train_help_preserves_operator_descriptions_after_parser_factoring(self):
+        output = io.StringIO()
+        with redirect_stdout(output), self.assertRaises(SystemExit) as stopped:
+            parse_args(['train', '--help'])
+        self.assertEqual(stopped.exception.code, 0)
+        help_text = ' '.join(output.getvalue().split())
+        for text in (
+            'PROVISIONAL max new wrong answers on any protected capability',
+            'Explicitly authorizes actual optimizer steps by the human operator',
+            'autonomously measure, teach, and remeasure factory evidence',
+            'Optional complete visit cap',
+            'low-overhead nanosecond timing markers',
+            'Pure host-side lesson prep workers',
+            'Defer expensive assessments while training',
+            'stagnation quarantine actuator',
+            'one-time next-grade admission',
+            'Global weakest-three recovery',
+        ):
+            self.assertIn(text, help_text)
 
     def test_lease_scope_or_missing_resume_pointer_stays_blocked(self):
         with tempfile.TemporaryDirectory() as tmp:

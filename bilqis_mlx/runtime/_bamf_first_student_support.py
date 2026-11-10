@@ -13,15 +13,23 @@ from ._bamf_first_student_contracts import (
     BamfFoundationDashboardProjection, DashboardMetrics, _invalid,
 )
 
-def _fresh_run_dir(new_run_dir) -> Path:
+def _canonical_run_dir_shape(new_run_dir) -> Path:
     try:
         path = Path(new_run_dir).expanduser()
         if path.is_symlink() or (path.exists() and not path.is_dir()):
             _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
-        if path.is_dir() and any(path.iterdir()):
-            _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
         return path.resolve()
     except (TypeError, OSError, PermissionError, RuntimeError):
+        _invalid("BAMF_FIRST_STUDENT_TARGET_PATH_INVALID")
+
+
+def _fresh_run_dir(new_run_dir) -> Path:
+    path = _canonical_run_dir_shape(new_run_dir)
+    try:
+        if path.is_dir() and any(path.iterdir()):
+            _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
+        return path
+    except (OSError, PermissionError, RuntimeError):
         _invalid("BAMF_FIRST_STUDENT_TARGET_PATH_INVALID")
 
 

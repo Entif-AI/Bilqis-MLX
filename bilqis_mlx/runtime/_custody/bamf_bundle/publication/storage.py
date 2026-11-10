@@ -161,10 +161,10 @@ def _acceptance_path(run_dir: Path, manifest_sha256: str) -> Path:
     return root / f"{manifest_sha256}.json"
 
 
-def _write_acceptance(run_dir: Path, manifest_sha256: str,
-                      acceptance) -> None:
+def _write_acceptance_record(run_dir: Path, manifest_sha256: str,
+                             record: dict) -> None:
     path = _acceptance_path(run_dir, manifest_sha256)
-    raw = canonical(acceptance.to_record())
+    raw = canonical(record)
     if path.is_symlink():
         invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
     if path.exists():
@@ -183,3 +183,24 @@ def _write_acceptance(run_dir: Path, manifest_sha256: str,
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
+
+
+def _write_acceptance(run_dir: Path, manifest_sha256: str,
+                      acceptance) -> None:
+    _write_acceptance_record(
+        run_dir, manifest_sha256, acceptance.to_record())
+
+
+def _write_parsed_initial_generation_acceptance(
+        run_dir: Path, manifest_sha256: str, binding, *,
+        expected_acceptance_sha256: str) -> None:
+    """Restore only already-authenticated historical generation-zero evidence."""
+    from ..genesis.records import ParsedInitialGenerationBinding
+
+    if (type(binding) is not ParsedInitialGenerationBinding
+            or binding.digest != expected_acceptance_sha256):
+        invalid("BAMF_INITIAL_GENERATION_BINDING_INVALID")
+    _write_acceptance_record(run_dir, manifest_sha256, {
+        **binding.fields,
+        "binding_sha256": binding.digest,
+    })

@@ -59,34 +59,52 @@ def _add_training_policy_args(parser) -> None:
                         dest='experiment_probe_each', type=int, default=6,
                         help='Source-oracled same-cohort rows per admitted capability')
     parser.add_argument('--retention-mature-max-loss', '--experiment-mature-max-loss',
-                        dest='experiment_mature_max_loss', type=int, default=1)
+                        dest='experiment_mature_max_loss', type=int, default=1,
+                        help='PROVISIONAL max new wrong answers on any protected capability')
     parser.add_argument('--retention-introduction-extra-loss', '--experiment-introduction-extra-loss',
-                        dest='experiment_introduction_extra_loss', type=int, default=2)
+                        dest='experiment_introduction_extra_loss', type=int, default=2,
+                        help='Additional tolerable losses during first acquisition')
     parser.add_argument('--retention-protected-cap-limit', '--experiment-protected-cap-limit',
-                        dest='experiment_protected_cap_limit', type=int, default=8)
+                        dest='experiment_protected_cap_limit', type=int, default=8,
+                        help='Bounded grade-stratified sentinel panel per visit')
 
 
 def _add_training_execution_args(parser) -> None:
-    parser.add_argument("--legacy-code-root", type=Path)
-    parser.add_argument("--champion-checkpoint", type=Path)
-    parser.add_argument("--verify-source", action="store_true")
-    parser.add_argument("--human-run", action="store_true")
-    parser.add_argument("--autonomous-curriculum", action="store_true")
-    parser.add_argument("--issue-349-experiment-root", type=Path)
+    parser.add_argument("--legacy-code-root", type=Path,
+                        help="Explicit pinned predecessor source for an independent worktree")
+    parser.add_argument("--champion-checkpoint", type=Path,
+                        help="Explicit original checkpoint; the existing source fingerprint still applies")
+    parser.add_argument("--verify-source", action="store_true",
+                        help="Recheck all 216 candidate records against the pinned source (neural-inert)")
+    parser.add_argument("--human-run", action="store_true",
+                        help="Explicitly authorizes actual optimizer steps by the human operator")
+    parser.add_argument("--autonomous-curriculum", action="store_true",
+                        help="After --human-run authorization, autonomously measure, teach, and remeasure factory evidence while preserving the school scheduler")
+    parser.add_argument("--issue-349-experiment-root", type=Path,
+                        help="Register/enforce this run under issue #349's <=2-run, 100-GB collective experiment custody root")
     parser.add_argument("--minutes", type=int, default=90)
     parser.add_argument("--steps-per-visit", type=int, default=16)
-    parser.add_argument("--max-visits", type=int, default=0)
-    parser.add_argument("--timing-trace", action="store_true")
-    parser.add_argument("--source-prefetch-workers", type=int, choices=(0, 1, 2), default=2)
-    parser.add_argument("--flash-mode", action="store_true")
+    parser.add_argument("--max-visits", type=int, default=0,
+                        help="Optional complete visit cap (default 0: use --minutes and disk reserve)")
+    parser.add_argument("--timing-trace", action="store_true",
+                        help="Write low-overhead nanosecond timing markers under runs/.timing-traces")
+    parser.add_argument("--source-prefetch-workers", type=int, choices=(0, 1, 2), default=2,
+                        help="Pure host-side lesson prep workers; 2 workers + main MLX lane = 3 lanes")
+    parser.add_argument("--flash-mode", action="store_true",
+                        help="Defer expensive assessments while training; stop owing a real assessment")
     parser.add_argument("--source-teaching-enrichment", "--boolean-association-bridge",
-                        dest="boolean_association_bridge", action="store_true")
+                        dest="boolean_association_bridge", action="store_true",
+                        help="Add optional source-owned lessons declared by the admitted factory release")
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--reserve-gib", type=float, default=100.)
-    parser.add_argument("--stagnation-grace-grade", type=str, default=None)
-    parser.add_argument("--stagnation-grace-steps", type=int, default=0)
-    parser.add_argument("--admit-next-grade-with-debt", action="store_true")
-    parser.add_argument("--triplets", "--triples", dest="triples", action="store_true")
+    parser.add_argument("--stagnation-grace-grade", type=str, default=None,
+                        help="Human-authorized grade whose stagnation quarantine actuator is temporarily suppressed")
+    parser.add_argument("--stagnation-grace-steps", type=int, default=0,
+                        help="Retained optimizer-step budget for the persisted stagnation grace")
+    parser.add_argument("--admit-next-grade-with-debt", action="store_true",
+                        help="Human-authorized one-time next-grade admission after substantial rehabilitation; preserves unresolved prior mastery debt")
+    parser.add_argument("--triplets", "--triples", dest="triples", action="store_true",
+                        help="Global weakest-three recovery is intrinsic to the new scheduler")
 
 
 def parse_args(argv=None):

@@ -20,14 +20,6 @@ def invalid(reason: str):
     ErrorBus.Raise(SCHOOL.BAMF_OPERATOR.INVALID, reason=reason)
 
 
-def fresh_target(path: Path) -> Path:
-    target = Path(path).expanduser()
-    if (target.is_symlink() or (target.exists() and not target.is_dir())
-            or (target.is_dir() and next(target.iterdir(), None) is not None)):
-        invalid("BAMF_OPERATOR_CREATE_RUN_DIRECTORY_OCCUPIED")
-    return target.resolve()
-
-
 def _source_pin_identity(bundle_id: str, release_sha256: str) -> AtlasArtifactIdentity:
     path = Path(__file__).resolve().parents[2] / "semantics/atlas_source_pins_v1.json"
     raw = path.read_bytes()
@@ -85,18 +77,18 @@ def foundation_hyperparameters(args, *, required: bool, materialize: bool = True
         "eps": args.adam_eps,
         "weight_decay": args.weight_decay,
     }
+    learning_rate = record["learning_rate"]
+    beta1, beta2 = record["betas"]
+    eps = record["eps"]
+    weight_decay = record["weight_decay"]
+    values = (learning_rate, beta1, beta2, eps, weight_decay)
+    if (any(type(value) not in (int, float) or not math.isfinite(value)
+            for value in values)
+            or learning_rate <= 0
+            or not 0 <= beta1 < 1 or not 0 <= beta2 < 1
+            or eps <= 0 or weight_decay < 0):
+        invalid("BAMF_OPERATOR_FOUNDATION_OPTIMIZER_INVALID")
     if not materialize:
-        learning_rate = record["learning_rate"]
-        beta1, beta2 = record["betas"]
-        eps = record["eps"]
-        weight_decay = record["weight_decay"]
-        values = (learning_rate, beta1, beta2, eps, weight_decay)
-        if (any(type(value) not in (int, float) or not math.isfinite(value)
-                for value in values)
-                or learning_rate <= 0
-                or not 0 <= beta1 < 1 or not 0 <= beta2 < 1
-                or eps <= 0 or weight_decay < 0):
-            invalid("BAMF_OPERATOR_FOUNDATION_OPTIMIZER_INVALID")
         return record
     from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
     return AdamWHyperparameters(
@@ -149,6 +141,6 @@ def validate_foundation_authority(source, release, graph, atlas) -> None:
 
 
 __all__ = (
-    "atlas_manifest_identity", "foundation_hyperparameters", "fresh_target",
+    "atlas_manifest_identity", "foundation_hyperparameters",
     "invalid", "source_foundation", "validate_foundation_authority",
 )

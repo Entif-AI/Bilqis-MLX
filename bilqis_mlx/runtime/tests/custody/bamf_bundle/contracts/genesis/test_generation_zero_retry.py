@@ -14,6 +14,10 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation_authority, publish_initial_generation,
+    recover_sealed_initial_generation,
+)
+from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
+    InitialGenerationBinding, optimizer_hyperparameters_digest,
 )
 from bilqis_mlx.runtime.bamf_bundle import source_authority_custody as custody
 from bilqis_mlx.runtime.bamf_bundle.records import invalid
@@ -21,6 +25,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     genesis_preparation, shape_patch,
 )
 from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactIdentity
 from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import REGISTRY
 from bilqis_mlx.state_dag import persist, read_current
 
@@ -61,6 +66,24 @@ class GenerationZeroRetryTests(unittest.TestCase):
         advanced["school"] = school
         persist(source, advanced)
 
+    def _cold_recover(self, prepared, *, optimizer_digest=None):
+        student = prepared.candidate
+        feature_source = student.compiler_features["feature_source"]
+        return recover_sealed_initial_generation(
+            self.run,
+            expected_run_id=student.run_id,
+            expected_run_seed=student.run_identity.run_seed,
+            expected_topology_digest=student.topology.digest,
+            expected_atlas_artifact=AtlasArtifactIdentity(
+                feature_source["atlas_bundle_id"],
+                feature_source["release_sha256"],
+                feature_source["source_bundle_id"],
+            ),
+            expected_optimizer_hyperparameters_sha256=(
+                optimizer_digest
+                or optimizer_hyperparameters_digest(student.optimizer_hyperparameters)),
+        )
+
     def test_completed_retry_rejects_post_publication_numerical_mutation(self):
         prepared = self._prepare(run_seed=307)
         first = self._publish(prepared)
@@ -96,7 +119,8 @@ class GenerationZeroRetryTests(unittest.TestCase):
         durable_manifest = bundles[0].name
 
         self._advance_factory_source(prepared)
-        recovered = self._publish(prepared)
+        with shape_patch():
+            recovered = self._cold_recover(prepared)
 
         self.assertEqual(recovered["manifest_sha256"], durable_manifest)
         self.assertEqual(
@@ -123,10 +147,15 @@ class GenerationZeroRetryTests(unittest.TestCase):
         durable_manifest = bundles[0].name
 
         self._advance_factory_source(prepared)
-        recovered = self._publish(prepared)
+        with shape_patch():
+            recovered = self._cold_recover(prepared)
 
         self.assertEqual(recovered["manifest_sha256"], durable_manifest)
         self.assertEqual(len(tuple((self.run / "bamf-acceptance").iterdir())), 1)
+        acceptance = json.loads(next((self.run / "bamf-acceptance").iterdir()).read_text())
+        self.assertIn("binding_sha256", acceptance)
+        parsed = InitialGenerationBinding.from_record(acceptance)
+        self.assertEqual(parsed.digest, acceptance["binding_sha256"])
         with shape_patch():
             student, manifest = load_bamf_generation_authority(
                 self.run / "bamf-state.json")
@@ -154,7 +183,7 @@ class GenerationZeroRetryTests(unittest.TestCase):
                 side_effect=missing_root), patch.object(
                 mlx_checkpoint, "assert_headroom"), \
                 self.assertRaises(BilqisError) as missing:
-            publish_initial_generation(self.run, prepared, reserve_gib=0.)
+            self._cold_recover(prepared)
         self.assertEqual(
             missing.exception.context["reason"],
             "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED")
@@ -167,13 +196,14 @@ class GenerationZeroRetryTests(unittest.TestCase):
                 return_value=drift), patch.object(
                 mlx_checkpoint, "assert_headroom"), \
                 self.assertRaises(BilqisError) as mismatch:
-            publish_initial_generation(self.run, prepared, reserve_gib=0.)
+            self._cold_recover(prepared)
         self.assertEqual(
             mismatch.exception.context["reason"],
             "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH")
         self.assertFalse((self.run / "bamf-state.json").exists())
 
-        recovered = self._publish(prepared)
+        with shape_patch():
+            recovered = self._cold_recover(prepared)
         self.assertEqual(recovered["manifest_sha256"], durable_manifest)
         self.assertEqual(
             json.loads((self.run / "bamf-state.json").read_text()), recovered)
@@ -217,6 +247,31 @@ class GenerationZeroRetryTests(unittest.TestCase):
         self.assertFalse((self.run / "bamf-state.json").exists())
         self.assertEqual(len(tuple((self.run / "bamf-bundles").iterdir())), 1)
         self.assertEqual(len(tuple((self.run / "bamf-acceptance").iterdir())), 1)
+
+    def test_cold_recovery_optimizer_digest_mismatch_is_read_only(self):
+        prepared = self._prepare(run_seed=319)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
+                patch.object(
+                    publication, "_write_acceptance",
+                    side_effect=RuntimeError("acceptance crash")):
+            with self.assertRaisesRegex(RuntimeError, "acceptance crash"):
+                publish_initial_generation(self.run, prepared, reserve_gib=0.)
+        before = tuple(
+            (str(path.relative_to(self.run)), path.is_dir(),
+             None if path.is_dir() else path.read_bytes())
+            for path in (self.run, *sorted(self.run.rglob("*")))
+        )
+
+        with shape_patch(), self.assertRaises(BilqisError):
+            self._cold_recover(prepared, optimizer_digest="0" * 64)
+
+        after = tuple(
+            (str(path.relative_to(self.run)), path.is_dir(),
+             None if path.is_dir() else path.read_bytes())
+            for path in (self.run, *sorted(self.run.rglob("*")))
+        )
+        self.assertEqual(after, before)
+        self.assertFalse((self.run / "bamf-state.json").exists())
 
 
 if __name__ == "__main__":

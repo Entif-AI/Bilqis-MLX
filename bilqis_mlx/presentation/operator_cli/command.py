@@ -31,8 +31,28 @@ def _bamf_or_topology(args):
             and not bamf_pointer.exists() and not bamf_pointer.is_symlink()):
         from bilqis_mlx.runtime.atlas_admission import validate_atlas_command_request
         validate_atlas_command_request(args)
+    if args.model_topology is not None and not args.resume:
+        if not args.run_id or type(args.run_seed) is not int or args.run_seed < 0:
+            from .bamf_lifecycle_inputs import invalid
+            invalid("BAMF_OPERATOR_FOUNDATION_IDENTITY_REQUIRED")
+        # BAMF v2 optimizer shape is independent of the topology file. Reject bad
+        # human input before model-file parsing or any target/source inspection.
+        from .bamf_lifecycle_inputs import foundation_hyperparameters
+        foundation_hyperparameters(args, required=True, materialize=True)
     from bilqis_mlx.runtime.topology_lifecycle import topology_from_file
     topology = topology_from_file(args.model_topology)
+    run_dir = Path(args.run_dir).expanduser()
+    interrupted_v2 = any(
+        path.exists() or path.is_symlink()
+        for path in (
+            run_dir / "bamf-bundles",
+            run_dir / "bamf-acceptance",
+            run_dir / ".bamf-pointer.lock",
+        )
+    )
+    if (args.resume and not bamf_pointer.exists() and not bamf_pointer.is_symlink()
+            and interrupted_v2):
+        raise ValueError("BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY")
     from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
     if (args.resume and isinstance(topology, ModelTopologySpecV2)
             and not bamf_pointer.exists() and not bamf_pointer.is_symlink()):

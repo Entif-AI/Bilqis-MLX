@@ -340,3 +340,8 @@ from .atlas_lease_v2 import (
     read_atlas_lease_v2,
     renew_atlas_lease_v2,
 )
+from .atlas_enrollment_v2 import (
+    AtlasAdmissionEnrollmentRequestV2,
+    enroll_accepted_atlas_lease_v2,
+    read_atlas_enrollment_request_v2,
+)
