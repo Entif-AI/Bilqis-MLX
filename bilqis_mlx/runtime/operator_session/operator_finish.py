@@ -1,4 +1,6 @@
 """Flush and record the end of an operator session."""
+from pathlib import Path
+
 import bilqis_mlx.learning.stagnation_control as _learning_stagnation_control
 import bilqis_mlx.runtime.boundary_commit as _runtime_boundary_commit
 import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
@@ -8,6 +10,50 @@ import bilqis_mlx.runtime.session as _runtime_session
 import bilqis_mlx.runtime.state as _runtime_state
 import bilqis_mlx.runtime.timing_trace as _runtime_timing_trace
 import time as _time
+
+
+def cold_resume_operator_result(*, run_dir, source_root, learning_settings,
+                                visits, start, source_prefetch_workers,
+                                boolean_association_bridge, autonomous_curriculum):
+    """Exit after B13 adoption without flushing stale pre-adoption memory."""
+    from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
+
+    student, manifest_sha256 = load_bamf_generation_authority(
+        Path(run_dir) / "bamf-state.json")
+    elapsed_seconds = round(_time.monotonic() - start, 3)
+    reason = "ATLAS_ADMISSION_ADOPTED_COLD_RESUME"
+    _runtime_checkpoints._record(run_dir, {
+        "event": "SCHOOL_SESSION_COLD_RESUME_REQUIRED",
+        "stop_reason": reason,
+        "generation": student.generation,
+        "accepted_manifest_sha256": manifest_sha256,
+        "optimizer_step": student.retained_state.optimizer_step,
+        "visits_this_command": visits,
+        "elapsed_seconds": elapsed_seconds,
+        "cold_resume_required": True,
+        "actual_neural_updates": 0,
+    })
+    _runtime_timing_trace.trace_mark(
+        "OPERATE_END", stop_reason=reason, visits=visits,
+        optimizer_step=student.retained_state.optimizer_step)
+    return {
+        "status": "ADOPTED",
+        "stop_reason": reason,
+        "elapsed_seconds": elapsed_seconds,
+        "visits_this_command": visits,
+        "optimizer_step": student.retained_state.optimizer_step,
+        "accepted_generation": student.generation,
+        "accepted_manifest_sha256": manifest_sha256,
+        "cold_resume_required": True,
+        "retention_enabled": learning_settings is not None,
+        "source_prefetch_workers": source_prefetch_workers,
+        "safe_resume_command": _runtime_session._resume_command(
+            run_dir, source_root, learning_settings,
+            boolean_association_bridge=boolean_association_bridge,
+            autonomous_curriculum=autonomous_curriculum,
+            source_prefetch_workers=source_prefetch_workers),
+        "original_source_checkpoint_modified": False,
+    }
 
 
 def finish_operator_session(*, mx, run_dir, receipt, manifest, course, params,

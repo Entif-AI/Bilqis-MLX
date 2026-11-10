@@ -1,4 +1,5 @@
 """Advance and assess one operator loop iteration."""
+import bilqis_mlx.operator_vocabulary as _operator_vocabulary
 import bilqis_mlx.factory.schedule as _factory_schedule
 import bilqis_mlx.runtime.admission as _runtime_admission
 import bilqis_mlx.runtime.boundary_commit as _runtime_boundary_commit
@@ -13,13 +14,40 @@ import time as _time
 from .operator_autonomy import DispatchControl
 
 
+def _dispatch_atlas_frontier_attempt(
+        run_dir, receipt, proposal, proposal_file,
+        *, record=_runtime_checkpoints._record):
+    from bilqis_mlx.runtime.atlas_admission import dispatch_atlas_frontier_proposal
+    from bilqis_mlx.runtime.atlas_admission_policy import AdmissionResult, AdmissionStatus
+
+    result = dispatch_atlas_frontier_proposal(run_dir, proposal)
+    if not isinstance(result, AdmissionResult):
+        raise TypeError("atlas admission result required")
+    adopted = result.status is AdmissionStatus.ADOPTED
+    if adopted:
+        return (
+            DispatchControl.COLD_RESUME,
+            _operator_vocabulary.ATLAS_ADMISSION_ADOPTED_COLD_RESUME.code,
+        )
+    record(run_dir, {
+        "event": "SCHOOL_ATLAS_ADMISSION_STAGED",
+        "generation": receipt["generation"],
+        "proposal_sha256": result.proposal_sha256,
+        "proposal_file": proposal_file,
+        "lease_sha256": result.lease_sha256,
+        "reason": result.reason,
+        "operator_action": result.operator_action,
+        "actual_neural_updates": result.actual_neural_updates,
+    })
+    return DispatchControl.STOP, _operator_vocabulary.ATLAS_ADMISSION_STAGED.code
+
+
 def prepare_operator_iteration(*, experiment_budget, run_dir, receipt, course_a,
                                source_root, graph, course, executable_release,
                                schedule_program, numeric_staircase, mx, manifest,
                                params, optimizer, reserve_gib, full_grade_b,
                                autonomy_session, start, minutes, visits, max_visits,
-                               flash_mode, source_checkpoint,
-                               _stage_atlas_frontier_attempt):
+                               flash_mode, source_checkpoint):
     if experiment_budget is not None:
         experiment_budget.assert_can_allocate(600_000_000)
     receipt, course, executable_release, schedule_program = (
@@ -52,9 +80,9 @@ def prepare_operator_iteration(*, experiment_budget, run_dir, receipt, course_a,
         proposal, proposal_file = autonomy_session.propose_source_frontier_work(
             school.current_student, graph)
         if proposal.disposition.value == "PROPOSAL":
-            reason = _stage_atlas_frontier_attempt(
+            control, reason = _dispatch_atlas_frontier_attempt(
                 run_dir, receipt, proposal, proposal_file)
-            return DispatchControl.STOP, reason, receipt, course, executable_release, schedule_program, params, optimizer, graph, school, autonomy_teaching_work
+            return control, reason, receipt, course, executable_release, schedule_program, params, optimizer, graph, school, autonomy_teaching_work
     reason = _runtime_session.session_stop_reason(
         stage=("MAIN" if autonomy_session is not None and
                school.stage == "AWAITING_NEXT_GRADE" else school.stage),

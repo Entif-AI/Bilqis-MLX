@@ -1,5 +1,6 @@
 """Finish flushes before publishing the stop receipt."""
 from contextlib import contextmanager
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
@@ -17,6 +18,46 @@ def finish_operator_session(**kwargs):
 
 
 class FinishTest(TestCase):
+    def test_cold_resume_result_reads_accepted_b13_without_flushing_stale_state(self):
+        events = []
+        accepted = SimpleNamespace(
+            generation=8,
+            retained_state=SimpleNamespace(optimizer_step=17),
+        )
+        with patch(
+            "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
+            return_value=(accepted, "a" * 64),
+        ), patch.multiple(
+            subject,
+            _runtime_checkpoints=SimpleNamespace(
+                _record=lambda _run, event: events.append(event)
+            ),
+            _runtime_session=SimpleNamespace(_resume_command=lambda *a, **k: "resume"),
+            _runtime_timing_trace=SimpleNamespace(
+                trace_mark=lambda *a, **k: events.append({"trace": a[0]})
+            ),
+            _time=SimpleNamespace(monotonic=lambda: 12.5),
+        ):
+            result = subject.cold_resume_operator_result(
+                run_dir=Path("/fixture/run"),
+                source_root=Path("/fixture/source"),
+                learning_settings=None,
+                visits=3,
+                start=10.0,
+                source_prefetch_workers=2,
+                boolean_association_bridge=False,
+                autonomous_curriculum=True,
+            )
+        self.assertEqual(result["stop_reason"], "ATLAS_ADMISSION_ADOPTED_COLD_RESUME")
+        self.assertEqual(result["accepted_generation"], 8)
+        self.assertEqual(result["accepted_manifest_sha256"], "a" * 64)
+        self.assertEqual(result["optimizer_step"], 17)
+        self.assertTrue(result["cold_resume_required"])
+        self.assertEqual(result["safe_resume_command"], "resume")
+        self.assertEqual(events[0]["event"], "SCHOOL_SESSION_COLD_RESUME_REQUIRED")
+        self.assertEqual(events[0]["actual_neural_updates"], 0)
+        self.assertNotIn("flush", events)
+
     def test_normal_finish_flushes_then_records_stop(self):
         events = []
         receipt = {"result": "OK", "school": {}, "generation": 2, "run_id": "r", "last_exam": None}

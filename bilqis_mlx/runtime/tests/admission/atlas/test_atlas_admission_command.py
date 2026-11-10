@@ -4,12 +4,16 @@ from io import StringIO
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
 from bilqis_mlx import cli
-from bilqis_mlx.runtime import operating_loop, release_adoption
+from bilqis_mlx.runtime import release_adoption
+import bilqis_mlx.runtime.atlas_admission as atlas_admission
 from bilqis_mlx.runtime.atlas_admission import stage_unleased_atlas_proposal
+from bilqis_mlx.runtime.operator_session import operator_iteration
+from bilqis_mlx.runtime.operator_session.operator_autonomy import DispatchControl
 from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import _lease
 from bilqis_mlx.runtime.tests import test_jit_adoption as native_fixture
 from dataclasses import asdict
@@ -44,14 +48,53 @@ class AtlasAdmissionCommandTests(unittest.TestCase):
             records = []
             with patch.object(release_adoption, '_adopt_jit_proposal',
                               side_effect=AssertionError('unleased adoption')):
-                reason = operating_loop._stage_atlas_frontier_attempt(root, {'generation': 1},
+                control, reason = operator_iteration._dispatch_atlas_frontier_attempt(
+                    root, {'generation': 1},
                     fixture.proposal, 'autonomy/proposals/fixture.json',
                     record=lambda path, event: records.append(event))
             first = stage_unleased_atlas_proposal(root, fixture.proposal)
             second = stage_unleased_atlas_proposal(root, fixture.proposal)
             self.assertEqual(first, second)
+            self.assertIs(control, DispatchControl.STOP)
             self.assertEqual(reason, 'ATLAS_ADMISSION_STAGED')
             self.assertEqual(records[0]['proposal_sha256'], fixture.proposal.proposal_sha256)
             self.assertEqual(records[0]['actual_neural_updates'], 0)
             self.assertEqual(saved.read_bytes(), before)
             self.assertEqual(len(tuple((root / 'autonomy/atlas-admission/staged').glob('*.json'))), 1)
+
+    def test_frontier_dispatch_without_lease_preserves_staged_semantics(self):
+        fixture = native_fixture.JitAdoptionTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        self.addCleanup(fixture.fixture.doCleanups)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            dispatched = atlas_admission.dispatch_atlas_frontier_proposal(
+                root, fixture.proposal)
+            self.assertEqual(
+                dispatched,
+                stage_unleased_atlas_proposal(root, fixture.proposal),
+            )
+
+    def test_frontier_dispatch_authenticates_persisted_lease_before_holding(self):
+        fixture = native_fixture.JitAdoptionTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        self.addCleanup(fixture.fixture.doCleanups)
+        lease = _lease()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            reference = root / 'autonomy' / 'atlas-admission' / 'current.json'
+            reference.parent.mkdir(parents=True)
+            reference.write_text('{"fixture":"lease-reference"}')
+            authority = object()
+            host = SimpleNamespace(source_authority=lambda: authority)
+            with patch(
+                    'bilqis_mlx.runtime.accepted_corrections.AcceptedRuntimeHost',
+                    return_value=host), patch.object(
+                    atlas_admission, 'read_accepted_atlas_lease', return_value=lease):
+                result = atlas_admission.dispatch_atlas_frontier_proposal(
+                    root, fixture.proposal)
+            self.assertEqual(result.lease_sha256, lease.digest())
+            self.assertEqual(result.reason, 'PRODUCTION_DELTA_AUTHORITY_UNAVAILABLE')
+            self.assertFalse(result.state_adopted)
