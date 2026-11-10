@@ -1,6 +1,6 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-R3-PENDING
+Status: DESIGN AMENDMENT / EGM-R4-PENDING
 Issue: #542 / C16.1a
 Reviewed unified base: `1a1bcbf3c58b0d851e40dbdee847c3fb3c00ec3a`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
@@ -355,6 +355,7 @@ def recover_sealed_initial_generation(
     expected_run_seed: int,
     expected_topology_digest: str,
     expected_atlas_artifact: AtlasArtifactIdentity,
+    expected_optimizer_hyperparameters_sha256: str,
 ) -> dict | None:
     ...
 ```
@@ -368,21 +369,27 @@ Factory replay. It:
 1. requires no current pointer and authenticates the stored genesis-trust row,
    including generation, payload hash, manifest digest and acceptance digest;
 2. loads exactly the trust-row manifest-bound bundle and compares caller run id,
-   seed, topology and Atlas-artifact inputs only as equality expectations;
+   seed, topology, Atlas-artifact and optimizer-hyperparameter digest inputs only as
+   equality expectations; optimizer mismatch rejects before any sidecar, pointer or
+   outbox mutation;
 3. runs the existing narrow host/C09 `validate_initial_generation_source_authority`
    check, but never `validate_initial_generation_preparation` or
    `replay_initial_factory_foundation_authority`;
 4. reconstructs the **historical binding record** from the sealed student's
-   run-identity digest, candidate identity, optimizer-hyperparameter digest,
-   factor-map digest and optimizer step zero, requires the reconstructed binding
-   digest to equal the trust row's `acceptance_sha256`, then parses it as historical
+   run-identity digest,
+   `initial_generation_candidate_identity_digest(student)`,
+   `optimizer_hyperparameters_digest(student.optimizer_hyperparameters)`,
+   factor-map digest and optimizer step zero; the generic retained-state
+   `candidate_identity_digest(...)` is explicitly not valid for this binding field.
+   Require the reconstructed binding digest to equal the trust row's
+   `acceptance_sha256`, then parse it as historical
    `ParsedInitialGenerationBinding`;
 5. builds the recovery pointer solely from trusted bundle/trust values and requires
    `require_initial_generation_trust_root(pointer, student, parsed_binding)` before
    mutation;
 6. if the acceptance sidecar is absent, writes exactly the reconstructed canonical
-   historical binding record through a B13-owned raw-record acceptance writer; if it
-   exists, requires exact bytes; then re-runs `require_published_acceptance`;
+   historical binding through the B13 storage-owner API below; if it exists, requires
+   exact bytes; then re-runs `require_published_acceptance`;
 7. only after those checks installs the pointer and reconciles the outbox.
 
 This cold path never creates a bundle or trust seal, never creates a live binding,
@@ -393,6 +400,31 @@ source-independent cold recovery for a nonempty no-pointer target, then may use
 prepared retry only when the current source can lawfully reconstruct the exact
 original preparation. It never falls through from an occupied target into normal
 fresh publication.
+
+The historical-acceptance storage API is pinned and deliberately narrow:
+
+```python
+def _write_parsed_initial_generation_acceptance(
+    run_dir: Path,
+    manifest_sha256: str,
+    binding: ParsedInitialGenerationBinding,
+    *,
+    expected_acceptance_sha256: str,
+) -> None:
+    ...
+```
+
+Owner: `bilqis_mlx/runtime/_custody/bamf_bundle/publication/storage.py`.
+The helper accepts only the already-validated historical parsed binding, serializes
+exactly `binding.fields`, requires `binding.digest == expected_acceptance_sha256`
+before opening a write path, and then reuses the existing `_acceptance_path`,
+symlink checks, canonical bytes, exact-byte idempotency, temporary-file + `fsync`,
+atomic `os.replace`, and directory-`fsync` semantics of `_write_acceptance`. It must
+not accept arbitrary mappings/bytes, call a minting API, add `.to_record()` to
+`ParsedInitialGenerationBinding`, or duplicate the durability algorithm in retry
+code. `_write_acceptance(...)` may be refactored to delegate to one shared private
+canonical-byte primitive, but live-authority and historical-evidence entrypoints
+remain type-distinct.
 
 Because the existing C07 writer publishes immutable lease bytes before the current
 reference, an orphan lease file without current reference is non-authoritative. The
@@ -487,6 +519,17 @@ authority rejects `BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`. C16.1a performs no
 automatic migration or coexistence. A future explicit migration owner may define
 that transition separately.
 
+This epoch guard is owned by `atlas_enrollment_v2.py`, not only by the CLI. Before
+`issue_atlas_lease_v2(...)` or any v2 storage mutation, the public
+`enroll_accepted_atlas_lease_v2(...)` owner itself inspects the canonical v1 current
+reference path. A symlink/unsafe v1 path retains the v1 storage error; an existing
+regular v1 current reference rejects `BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`.
+Likewise, the lifecycle epoch classifier checks both v1 and v2 current references;
+both present rejects `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT`. Existing low-level C07
+v2 fixture/storage tests may continue proving the two storage epochs are physically
+separate; C16.1a's owner-level admission contract is the layer that forbids their
+simultaneous authority on one accepted BAMF run.
+
 ## CLI mode matrix and dispatch ownership
 
 The shared C11/C16 operator contract is exact:
@@ -517,14 +560,37 @@ Dispatch is pinned before implementation:
    custody supplies the saved topology;
 3. an interrupted generation-zero publication with no pointer is retried by
    repeating the fresh v2 create command with the same topology/source/seed/Atlas
-   manifest inputs; target-state handling attempts source-independent sealed B13
-   cold recovery before any mutable-source reconstruction and never enters the
-   historical learner-resume path;
+   manifest **and optimizer** inputs; target-state handling attempts
+   source-independent sealed B13 cold recovery before any mutable-source
+   reconstruction and never enters the historical learner-resume path;
 4. commands with neither a v2 topology nor an accepted BAMF pointer retain the
    historical v1 routing;
 5. when `bamf_lifecycle` owns the command, `command._main` returns its lifecycle
    result before `_invoke_learner` can run. `--human-run --resume` does not by itself
    authorize learner entry for a BAMF v2 run in C16.1a.
+
+Presentation target classification is also pinned. The existing `fresh_target()`
+helper is split into two responsibilities:
+
+```python
+def canonical_target(path: Path) -> Path:
+    """Reject symlink/non-directory unsafe shape, but do not reject nonempty dirs."""
+    ...
+
+def require_empty_fresh_target(path: Path) -> Path:
+    """Historical/fresh-only helper: canonical_target + empty-directory requirement."""
+    ...
+```
+
+`bamf_lifecycle` uses `canonical_target()` for BAMF v2 create/dry-run routing. For
+dry-run, normal empty-target validation still applies because no recovery mutation is
+needed. For actual create, an empty target proceeds to ordinary B13 preparation;
+a nonempty target with no accepted pointer is passed to the B13 recovery-aware owner,
+which alone may classify it as exact sealed interrupted genesis versus arbitrary
+occupied state. A nonempty target with an accepted pointer is not create and directs
+the operator to resume. Historical v1 callers retain `require_empty_fresh_target()`.
+No presentation helper is allowed to decide that arbitrary nonempty content is a
+recoverable B13 generation.
 
 ## Saved-setting conflict contract
 
@@ -607,40 +673,68 @@ recovery path, and proves every source-run file byte is unchanged afterward.
 
 ## Implementation surface after EGM pass
 
-Production:
+Production, with required file action:
 
-- `bilqis_mlx/runtime/_admission/atlas_lease_contracts.py`
+- **Modify** `bilqis_mlx/runtime/_admission/atlas_lease_contracts.py`
   - add immutable non-authoritative enrollment request;
-- `bilqis_mlx/runtime/_admission/atlas_enrollment_v2.py` (new)
+- **Create** `bilqis_mlx/runtime/_admission/atlas_enrollment_v2.py`
   - own enrollment-request parsing, accepted-run first enrollment, explicit
-    human-start propagation, accepted-run/Atlas comparison and issuance; no storage
-    reconciliation logic;
-- `bilqis_mlx/runtime/_admission/atlas_admission.py`
+    human-start propagation, accepted-run/Atlas comparison, v1-authority exclusion
+    and issuance; no storage reconciliation logic;
+- **Modify** `bilqis_mlx/runtime/_admission/atlas_admission.py`
   - retain existing frontier/lease compatibility responsibilities and re-export the
     bounded enrollment owner without absorbing its implementation;
-- `bilqis_mlx/runtime/_admission/atlas_lease_storage_v2.py`
+- **Modify** `bilqis_mlx/runtime/_admission/atlas_lease_storage_v2.py`
   - required: exact `_durable_json` byte comparison for orphan reuse plus bounded
     same-lock post-reference reconciliation as the sole reconciliation owner without
     changing lock order or lease authority;
-- `bilqis_mlx/presentation/operator_cli/bamf_lifecycle.py`
+- **Modify** `bilqis_mlx/presentation/operator_cli/bamf_lifecycle.py`
   - fresh request validation, post-genesis enrollment, resume-enrollment completion,
-    exact preview identity, training-readiness false;
-- `bilqis_mlx/runtime/bamf_first_student.py`
+    exact preview identity, training-readiness false, and recovery-aware nonempty
+    target routing before mutable-source reconstruction;
+- **Modify** `bilqis_mlx/presentation/operator_cli/bamf_lifecycle_inputs.py`
+  - split unsafe-path canonicalization from empty-target enforcement so BAMF v2 can
+    route a nonempty/no-pointer target to B13 while historical fresh-only callers
+    retain occupied-target rejection;
+- **Modify** `bilqis_mlx/runtime/bamf_first_student.py`
   - factor deterministic pre-publication preparation and expose exact run-identity
     preview with source/target disjointness, plus recovery-aware fresh target handling;
-- `bilqis_mlx/runtime/_custody/bamf_bundle/genesis/__init__.py` and existing B13
-  publication retry owner
+- **Modify** `bilqis_mlx/runtime/_custody/bamf_bundle/genesis/__init__.py` and
+  **Modify** `bilqis_mlx/runtime/_custody/bamf_bundle/publication/retry.py`
   - expose prepared retry plus source-independent cold recovery for an exact sealed
     unpointed generation zero; reconstruct a missing historical acceptance record
-    only from trust-row digest + sealed student, never from current Factory replay;
-- `bilqis_mlx/presentation/operator_cli/command.py` / parser only as required for
+    only from trust-row digest + sealed student, using
+    `initial_generation_candidate_identity_digest(student)` and exact optimizer
+    digest equality, never from current Factory replay;
+- **Modify** `bilqis_mlx/runtime/_custody/bamf_bundle/publication/storage.py`
+  - add `_write_parsed_initial_generation_acceptance(...)` as the only historical
+    acceptance-sidecar write path, reusing existing canonical/atomic/fsync semantics;
+- **Modify** `bilqis_mlx/presentation/operator_cli/command.py` and **Modify**
+  `bilqis_mlx/presentation/operator_cli/parser.py` only as required for
   the pinned v2 dispatch/presence-bit routing; no new trust-source flag and no change
   to historical `--admission-policy` default/action semantics;
-- `docs/tasks/bamf-0.2/children/C11.1.md`, `docs/architecture/BAMF_0_2.md` and
-  operations docs
+- **Modify** `docs/tasks/bamf-0.2/children/C11.1.md` and **Modify**
+  `docs/architecture/BAMF_0_2.md`
   - align the affected shared operator command contract with the exact scope matrix.
 
 Tests:
+
+- **Modify** `bilqis_mlx/presentation/operator_cli/tests/test_bamf_create_resume.py`;
+- **Modify** `bilqis_mlx/presentation/operator_cli/tests/test_bamf_atlas_release_create.py`;
+- **Modify** `bilqis_mlx/presentation/operator_cli/tests/test_bamf_resume_admission_policy.py`;
+- **Modify** `bilqis_mlx/presentation/operator_cli/tests/test_bamf_preflight.py`;
+- **Modify** `bilqis_mlx/presentation/operator_cli/tests/test_bamf_first_start_neutrality.py`;
+- **Modify** `bilqis_mlx/runtime/tests/admission/atlas/test_atlas_lease_v2.py`;
+- **Modify**
+  `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_retry.py`;
+- **Modify**
+  `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_cold_trust.py`;
+- **Modify**
+  `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_recovery.py`.
+
+Those files own the following required regressions; new test files are not required
+unless implementation decomposition makes a new production owner otherwise lack a
+mirrored test owner:
 
 - request shape/round-trip and caller-no-authority tests;
 - fresh staged and atlas-release create/dry-run;
@@ -654,6 +748,10 @@ Tests:
   enrollment on a v1-authorized run;
 - B13 cold unpointed recovery after source advance both with persisted acceptance and
   with a missing sidecar reconstructed exactly from trust-row + sealed student;
+- interrupted cold recovery with an explicitly changed AdamW setting rejects before
+  acceptance/pointer/outbox mutation;
+- command-level nonempty/no-pointer interrupted create reaches B13 recovery, while an
+  arbitrary occupied target still rejects;
 - saved atlas-release -> explicit staged rejection;
 - run-id mismatch;
 - dry-run exact B13 identity equals subsequent create identity;
