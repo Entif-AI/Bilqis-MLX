@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "7a6c048e9325a877b9b3451c731be3545a11ee69",
-  "updated_at": "2026-11-10T15:28:08Z",
+  "observed_unified": "2c572202978df9542e379cfb975007cdea3f05ad",
+  "updated_at": "2026-11-10T17:24:27Z",
   "exception": null,
   "items": [
     {
@@ -278,6 +278,17 @@
       "summary": "Scoped A13/A05 compiled-prefix authority repair is turned in as ready PR #936 after current-unified qualification, one shared-contract Major repair, and targeted reinspection PASS 0 Blockers / 0 Majors / 0 Nits. A05 is the sole prefix identity owner; A13 issues only after exact replay.",
       "resume_trigger": "Human review/merge PR #936 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
       "preserved_branch": "codex/354-a13-prefix-inventory-20261107"
+    },
+    {
+      "issue": 958,
+      "pr": 967,
+      "state": "READY",
+      "head_sha": "aa0555b7c3df753d901c3cee57c86623a420067f",
+      "head_sha_role": "fresh exact-head EGM-clean semantic/test candidate before final flow-control evidence-only checkpoint",
+      "summary": "#958 A09/Factory scope remediation is READY for human review at exact semantic/test head aa0555b7 on reviewed unified 2c572202. The v2 path carries a digest-bound A09 receipt/staged-candidate handoff, derives source-owned operator/non-operator scope, cross-binds A09 capability selection to owner-derived A01/A02 Atlas identities, preserves v1 lease semantics, uses a separately human-authorized persisted v2 lease, derives neural/resource facts only from owner-issued A02 evidence, and binds the same accepted B13 run before policy. Fresh adversarial review first found one stale-consent Major: a superseded broad v2 lease could be supplied after renewal. aa0555b7 repairs that root cause by re-reading current persisted v2 lease authority and requiring exact equality before policy, with a regression proving L1 -> tighter L2 renewal rejects stale L1. Repaired-head hosted portable-core/portable/Semantic ABI PASS and fresh exact-head independent review is 0 Blockers / 0 Majors / 0 Nits, READY_FOR_HUMAN_REVIEW. Human merge remains external authority.",
+      "resume_trigger": "Human review/merge PR #967 into codex/bamf-unified-base-20261028. Do not self-merge; #509 consumes only after reviewed integration.",
+      "preserved_branch": "codex/958-a09-c07-scope-20261109",
+      "open_pr_exception": null
     },
     {
       "issue": 959,

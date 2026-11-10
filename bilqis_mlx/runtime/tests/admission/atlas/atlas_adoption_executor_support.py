@@ -48,9 +48,10 @@ class AtlasAdoptionExecutorFixture(PreparedSuccessorFixture):
 
     def _a02_staged(
             self, candidate, *, parent_feature="b" * 64,
-            required_available_bytes=1):
+            required_available_bytes=1,
+            semantic_id="urn:fixture:active"):
         allocation = {
-            "semantic_id": "urn:fixture:active",
+            "semantic_id": semantic_id,
             "abi_index": 0,
             "bank": 0,
             "row": 0,

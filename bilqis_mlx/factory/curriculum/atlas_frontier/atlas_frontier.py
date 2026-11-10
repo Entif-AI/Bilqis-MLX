@@ -297,3 +297,7 @@ from .atlas_delta_adapter import (
     AtlasCoverageEpoch, AtlasLearnerEvidence, bind_realized_snapshot, next_atlas_delta,
     staged_selection_receipt,
 )
+from .atlas_delta_scope import (
+    AtlasDeltaScopeHandoff, CapabilityOperatorScope,
+    build_atlas_delta_scope_handoff, resolve_v2_operator_scopes,
+)
