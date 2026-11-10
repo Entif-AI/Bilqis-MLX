@@ -1,6 +1,6 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-R6-PENDING
+Status: DESIGN AMENDMENT / EGM-R7-PENDING
 Issue: #542 / C16.1a
 Reviewed unified base: `905018b0ece7613843570dc2c2e72a74dae4e91d`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
@@ -14,6 +14,17 @@ Readiness **0 Blockers / 3 Majors / 4 Nits**. R6 repairs that complete material 
 The later local implementation commits remain preserved historical evidence only and
 do not authorize implementation before R6 itself clears a fresh `0 Blockers / 0
 Majors` gate.
+
+R6 review record: the frozen R6 proposal at
+`de0bfa0355b2960088f95a12d9a94a39bf6662a9` / SHA-256
+`82a24fd765aa20f036668db911c3b9d867f57cecc621a766fdc353c41c030763` received
+Structural **0 Blockers / 1 Major / 0 Nits**, Codebase Details **0 Blockers / 0
+Majors / 0 Nits**, and Implementation Readiness **0 Blockers / 0 Majors / 0 Nits**.
+The sole material R6 finding was that low-level v1/v2 fixture writers were not
+mechanically excluded from accepted B13 custody and could bypass the proposed shared
+accepted-run epoch invariant. R7 repairs that localized bypass without introducing a
+new accepted-run renewal surface. Production mutation remains forbidden until this
+R7 revision is frozen and freshly clears `0 Blockers / 0 Majors` review.
 
 ## Why this amendment exists
 
@@ -624,11 +635,11 @@ lock. No caller may acquire them in the reverse order.
 
 While holding that cross-epoch lock:
 
-- accepted v2 first enrollment or v2 renewal checks canonical v1 current authority
-  before v2 current-reference mutation; a regular v1 current rejects
+- accepted v2 first enrollment checks canonical v1 current authority before v2
+  current-reference mutation; a regular v1 current rejects
   `BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`;
-- accepted v1 persistence or v1 renewal checks canonical v2 current authority before
-  v1 current-reference mutation; a regular v2 current rejects
+- accepted v1 persistence checks canonical v2 current authority before v1
+  current-reference mutation; a regular v2 current rejects
   `BAMF_ATLAS_V1_SUCCESSOR_AUTHORITY_PRESENT`;
 - unsafe/symlink current-reference paths retain the owning epoch's storage/path error;
 - if both current references already exist on entry, no writer attempts repair and
@@ -636,9 +647,46 @@ While holding that cross-epoch lock:
 
 This changes accepted-run mutation admission only. Historical v1 read compatibility,
 immutable v1 lease bytes, v1 renewal history, and physically separate v2 storage are
-preserved. Low-level fixture-only storage remains usable for isolated epoch tests, but
-no production accepted-run writer can construct dual-current authority sequentially
-or concurrently.
+preserved. Low-level fixture storage remains usable only on roots that are provably
+not run custody. R7 makes that statement mechanical: the shared v1 `_store(...)`
+fixture guard and the v2 fixture storage entrypoint reject before creating any
+directory, lock, immutable lease, renewal edge or current reference when the root
+contains or symlinks **any** recognized run-custody marker:
+
+```text
+state.json
+bundles
+generations
+bamf-state.json
+bamf-bundles
+bamf-acceptance
+```
+
+The first three retain historical saved-run protection; the last three are the B13
+custody family relevant here. A B13 root therefore cannot call
+`persist_atlas_lease(...)`, `renew_atlas_lease(...)`,
+`persist_atlas_lease_v2(...)`, or `renew_atlas_lease_v2(...)` through the fixture
+boundary at all. C16.1a does **not** create a new accepted-run renewal API for either
+epoch. Historical renewal artifacts remain readable, and any future accepted-run
+renewal must be introduced by its owning C07 work through a separately named
+accepted-run owner that takes the same shared epoch lock. The accepted persistence
+APIs used here bypass fixture authority only after independent B13
+identity/source-authority replay and then take the shared epoch lock.
+Fixture roots without any custody marker may still deliberately host v1 and v2
+fixtures side by side for compatibility tests; those fixture refs carry no accepted
+run authority.
+
+Implementation ownership is exact. `atlas_lease_storage.py` exposes one internal
+`_reject_fixture_run_custody(root)` helper containing the marker set above. Historical
+v1 `_store(..., fixture_authority=True)` calls it before directory creation. Generic
+v2 `persist_atlas_lease_v2(...)` and `renew_atlas_lease_v2(...)` call the same helper
+**before** acquiring `_atlas_lease_v2_lock`; `_store_v2(...)` remains the storage/path
+owner and is not reclassified as accepted-run authority. This avoids making the v2
+reader unusable on accepted runs while still making every generic v2 writer
+mechanically fixture-only. The accepted v1/v2 persistence paths bypass the fixture
+guard only through their separately named accepted-run APIs after B13/C09 replay and
+the shared epoch lock. No boolean flag exposed to presentation code can select that
+bypass.
 
 Request parsing has deterministic precedence. The enrollment scope file is first
 parsed for syntax/schema safety. Before request-vs-saved identity/Atlas comparison or
@@ -653,7 +701,11 @@ Required regressions cover sequential v1->v2 and v2->v1 attempts plus a synchron
 concurrent race. Exactly one epoch may win; the losing writer must reject before its
 other-epoch `current.json` becomes authoritative. Existing low-level C07 v2
 fixture/storage tests may continue proving the epochs' immutable histories are
-physically separate.
+physically separate on a marker-free fixture root. A separate negative regression
+builds an accepted B13 generation-zero root and calls each low-level v1/v2
+persist/renew entrypoint directly; each must reject as fixture authority forbidden
+before any Atlas storage mutation, proving the fixture API cannot bypass the shared
+accepted-run epoch invariant.
 
 ## CLI mode matrix and dispatch ownership
 
@@ -863,15 +915,20 @@ Production, with required file action:
 - **Modify** `bilqis_mlx/runtime/_admission/atlas_admission.py`
   - retain existing frontier/lease compatibility responsibilities, re-export the
     bounded enrollment owner without absorbing its implementation, and make accepted
-    v1 persistence/renewal participate in the shared cross-epoch authority lock with
-    reciprocal v2-current exclusion;
+    v1 persistence participate in the shared cross-epoch authority lock with
+    reciprocal v2-current exclusion; keep generic v1 renewal fixture-only on B13
+    custody rather than inventing a new accepted renewal surface here;
 - **Modify** `bilqis_mlx/runtime/_admission/atlas_lease_storage.py`
   - own the shared cross-epoch authority lock/path safety primitive used before any
     accepted v1/v2 current-reference mutation; preserve the existing v1 writer lock as
-    the second lock for v1 storage;
+    the second lock for v1 storage; expand the fixture-authority saved-run guard to the
+    exact legacy+B13 custody marker set pinned above before any fixture mutation;
 - **Modify** `bilqis_mlx/runtime/_admission/atlas_lease_v2.py`
-  - make accepted v2 persistence/renewal acquire the shared cross-epoch authority lock
-    before the existing v2 writer lock and enforce reciprocal v1-current exclusion;
+  - make accepted v2 persistence acquire the shared cross-epoch authority lock before
+    the existing v2 writer lock and enforce reciprocal v1-current exclusion;
+    ensure generic fixture persistence/renewal consumes the same custody-marker
+    rejection before it can reach v2 storage; do not introduce accepted v2 renewal in
+    C16.1a;
 - **Modify** `bilqis_mlx/runtime/_admission/atlas_lease_storage_v2.py`
   - required: exact `_durable_json` byte comparison for orphan reuse plus bounded
     same-lock post-reference reconciliation as the sole v2 storage reconciliation
@@ -947,6 +1004,9 @@ mirrored test owner:
   enrollment on a v1-authorized run;
 - shared epoch serialization: sequential v1->v2 and v2->v1 mutations plus a
   synchronized concurrent race prove exactly one current-authority epoch can win;
+- low-level fixture APIs remain compatible on marker-free roots but every low-level
+  v1/v2 persist/renew call against a real accepted B13 root rejects before Atlas
+  storage mutation, closing the authority-lock bypass;
 - B13 cold unpointed recovery after source advance both with persisted acceptance and
   with a missing sidecar reconstructed exactly from trust-row + sealed student;
 - interrupted cold recovery with each independently changed run id, run seed,
