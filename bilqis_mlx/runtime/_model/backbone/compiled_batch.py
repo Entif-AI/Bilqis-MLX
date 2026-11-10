@@ -117,4 +117,8 @@ class BamfCompiledBatch:
             owner.require(self.compiled.features)
 
 
+# Keep the pre-extraction public identity stable for introspection and pickle.
+BamfCompiledBatch.__module__ = "bilqis_mlx.runtime.atlas_model_contracts"
+
+
 __all__ = ("BamfCompiledBatch",)

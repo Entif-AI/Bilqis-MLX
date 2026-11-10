@@ -67,6 +67,12 @@ class BamfActiveSemanticRows:
             _invalid("B02_ACTIVE_SEMANTIC_ROWS_INVALID")
 
 
+# Preserve the original public type identity after extracting this owner from
+# atlas_model_contracts. Existing imports and both old/new pickle globals then
+# converge on the same class instead of minting a new public serialization name.
+BamfActiveSemanticRows.__module__ = "bilqis_mlx.runtime.atlas_model_contracts"
+
+
 def _issue_bamf_active_semantic_rows(
         run_id: str, generation: int, extents: GenerationExtents,
         features: AtlasFeatures, active_indices: tuple[int, ...]) -> BamfActiveSemanticRows:

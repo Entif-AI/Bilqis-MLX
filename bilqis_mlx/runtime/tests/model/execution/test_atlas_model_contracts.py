@@ -10,7 +10,9 @@ from lib.ithkuil.src.skos.publication import json_bytes
 
 from bilqis_mlx.learning.source_atoms import SourceAtomRow
 from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
-from bilqis_mlx.runtime.atlas_model import BamfCompiledBatch
+from bilqis_mlx.runtime.atlas_model_contracts import (
+    BamfActiveSemanticRows, BamfCompiledBatch,
+)
 from bilqis_mlx.runtime.atlas_model_participation import _active_banks
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents
 from bilqis_mlx.runtime.tests.model.execution.active_semantic_rows_support import active_semantic_rows
@@ -20,6 +22,16 @@ from bilqis_mlx.semantics.tests.atlas.vocabulary_fixtures import _allocation_fix
 
 
 class BamfCompiledBatchOwnerTests(unittest.TestCase):
+    def test_extracted_contracts_preserve_public_type_identity(self):
+        self.assertEqual(
+            BamfActiveSemanticRows.__module__,
+            "bilqis_mlx.runtime.atlas_model_contracts",
+        )
+        self.assertEqual(
+            BamfCompiledBatch.__module__,
+            "bilqis_mlx.runtime.atlas_model_contracts",
+        )
+
     def test_generation_active_rows_supersede_immutable_source_active_flags(self):
         snapshot, _prior = _allocation_fixture(highest=8192)
         self.assertFalse(snapshot.abi(8192).active)
