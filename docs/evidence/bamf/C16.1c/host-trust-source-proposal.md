@@ -1,8 +1,15 @@
 # C16.1c host trust-source repair proposal
 
-Status: PROPOSED v4 / fresh EGM re-review required before implementation.
+Status: PROPOSED v5 / fresh EGM re-review required before implementation.
 
-Review note: v4 retains v3's fixed-host architecture and closes the fresh-v3 EGM
+Review note: v5 retains v4's fixed-host architecture and corrects a Darwin behavior observed
+during read-only feasibility proof: on ordinary files/directories with no extended ACL,
+acl_get_fd_np(fd, ACL_TYPE_EXTENDED) returns NULL with errno ENOENT on the current host.
+V5 treats exactly that result as an empty extended ACL and keeps every other ACL retrieval
+failure fail-closed. It also verifies the root anchor descriptor before fd-relative traversal.
+Fresh EGM review remains required before implementation.
+
+V4 retained v3's fixed-host architecture and closed the fresh-v3 EGM
 findings around exact Darwin path/ACL enforcement, callable custody APIs, phase-stable
 accepted-runtime behavior, caller threat model, exact file/test scope, and the remaining
 TOCTOU wording mismatch. Production code remains frozen until this amended shared contract
@@ -285,9 +292,15 @@ The module loads libSystem.B.dylib privately and uses the Darwin C interfaces
 acl_get_fd_np(fd, ACL_TYPE_EXTENDED), acl_get_entry, acl_get_tag_type,
 acl_get_qualifier, acl_get_permset, acl_get_perm_np, acl_free, and
 mbr_uuid_to_id. ID_TYPE_UID is 0; ID_TYPE_GID is 1. ACL entry iteration treats
-acl_get_entry == 1 as an entry, 0 as end or empty ACL, and -1 as failure. A NULL ACL
-handle, qualifier or permset failure, unknown tag, failed UUID resolution, unexpected ID type,
-or any libSystem error fails closed with BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_INVALID.
+acl_get_entry == 1 as an entry, 0 as end, and -1 as failure.
+
+The current Darwin host was probed directly before implementation: both /private/etc and
+/private/etc/hosts return NULL from acl_get_fd_np(fd, ACL_TYPE_EXTENDED) with errno ENOENT
+when no extended ACL is present. Therefore read_extended_acl has one and only one successful
+NULL-handle case: NULL plus errno == ENOENT returns the empty tuple. NULL with any other errno
+fails closed. Once an ACL handle is returned, qualifier or permset failure, unknown tag, failed
+UUID resolution, unexpected ID type, acl_get_entry == -1, or any other libSystem error fails
+closed with BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_INVALID.
 
 The mutation permission set is exactly:
 
@@ -312,7 +325,8 @@ pathname as authority:
 
 1. lstat("/etc") must report a UID-0 symlink.
 2. readlink("/etc") must equal the exact relative target "private/etc".
-3. Open "/" as the anchor directory.
+3. Open "/" as the anchor directory and call require_safe_host_descriptor on that fd with
+   directory=True.
 4. Open private, then etc, then entif-ai, then bilqis fd-relatively with
    O_RDONLY | O_DIRECTORY | O_NOFOLLOW.
 5. For each opened directory call require_safe_host_descriptor(..., directory=True).
@@ -325,9 +339,8 @@ require_safe_host_descriptor uses fstat: expected directory or final regular-fil
 st_uid == 0, no S_IWGRP | S_IWOTH, and the ACL rule above. The final file additionally
 requires size 1.._MAX_REGISTRY_BYTES. All opened fds are closed on every failure path.
 
-The ordinary no-extended-ACL case is an empty tuple from successful ACL enumeration. It is
-not represented by an ACL API error. Any ACL API error fails closed rather than being guessed
-to mean no ACL.
+The ordinary no-extended-ACL case is the observed NULL + ENOENT result above or an otherwise
+successful enumeration containing zero entries. No other errno is interpreted as absence.
 
 ### Exact custody API
 
@@ -403,6 +416,64 @@ relies on the same final B13 parent gate before its Atlas-specific branch.
 No separate inheritance-result object is introduced: the pure inheritance function's result is
 success or failure; the authenticated parent object remains the existing CompleteStudent; the
 root-resolution result is SourceAuthorityRegistry | None.
+
+### Exact generation>0 already-pointed retry custody
+
+The shared parent gate above covers the normal state where the live pointer still names
+candidate.generation - 1. B13 also has a lawful exact-retry state where the live pointer already
+names candidate.generation. That state has a separate custody proof and MUST NOT be forced
+through validate_parent_transition, whose live-pointer precondition is the parent generation.
+
+Add this private helper to publication/authority.py:
+
+    def validate_current_successor_retry(
+        run_dir: Path,
+        current: dict,
+        candidate: BamfBundleCandidate,
+        authority: AcceptedCandidateBinding | AtlasAdmissionBinding,
+        *,
+        load_bundle,
+        require_published_acceptance,
+    ) -> tuple[CompleteStudent, CompleteStudent]:
+        ...
+
+It is called only while the B13 pointer lock is held and only after the existing retry branch has
+proved current.run_id, current.generation, current.manifest_sha256,
+current.parent_manifest_sha256, current.schema, and current.acceptance_sha256 exactly match the
+candidate/digest/authority being retried.
+
+The helper then:
+
+1. loads the current accepted child from current["bundle"] at current["manifest_sha256"];
+2. requires child run/generation/parent identity to equal the current pointer and candidate;
+3. calls require_published_acceptance(run_dir, current, child), requires the parsed binding
+   digest to equal authority.digest, and requires its parent_candidate_identity_sha256 to equal
+   authority.parent_candidate_identity_sha256;
+4. loads the historical parent bundle by child.parent_manifest_sha256 from bamf-bundles;
+5. requires parent.run_id == child.run_id, parent.generation + 1 == child.generation, and
+   parent.run_identity == child.run_identity;
+6. requires authority.parent_candidate_identity_sha256 ==
+   candidate_identity_digest(parent.retained_state);
+7. returns (child, parent).
+
+This proof deliberately uses the accepted current child's immutable parent manifest hash plus
+the accepted child's parent-candidate identity binding. It does not require the historical
+parent to be the live pointer, and it does not invent a second current-pointer fiction.
+
+In publication/__init__.py's already-pointed generation>0 branch, before deleting the stage,
+rewriting/reconciling acceptance, reconciling the outbox, or returning:
+
+1. call validate_current_successor_retry(...);
+2. call require_source_authority_successor_inheritance(
+   parent.correction_frontier, child.correction_frontier);
+3. call resolve_source_authority_registry(run_dir, parent.correction_frontier);
+4. when a registry is returned, require its digest to equal the child's accepted
+   source_authority_registry_sha256.
+
+Only then may the existing exact retry reconcile/return. This applies identically to ordinary
+AcceptedCandidateBinding and AtlasAdmissionBinding retries. A HOST root drift therefore blocks
+an already-pointed retry before reconcile/return; a verified historical legacy parent continues
+through the legacy resolver.
 
 ### Phase-stable accepted-runtime ownership
 
@@ -562,7 +633,10 @@ HOST descendants cannot omit/null/change origin or registry tuple; Atlas-admissi
 also revalidate the fixed root; legacy descendants are accepted only from verified legacy
 parents; cache reuse reloads accepted metadata; pointer -> legacy-registry lock ordering remains;
 system-host reads take no run-local registry lock; two runs sharing one host root still cannot
-exchange opaque capabilities; post-acceptance root drift disables mint/reuse and package staging.
+exchange opaque capabilities; post-acceptance root drift disables mint/reuse and package staging;
+and already-pointed exact retries for both ordinary and Atlas successors authenticate the current
+child plus referenced historical parent, reject HOST drift before reconcile/return, and preserve
+verified legacy retry compatibility.
 
 Phase-C gate:
 
