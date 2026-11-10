@@ -146,5 +146,3 @@ class LaunchReceipt:
                 or not _schema_inventory(self.output_schema_versions)
                 or self.optional_services_required != ()):
             _invalid("BAMF_FIRST_STUDENT_LAUNCH_RECEIPT_INVALID")
-
-

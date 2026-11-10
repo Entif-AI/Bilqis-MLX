@@ -196,5 +196,3 @@ def validate_parsed_initial_generation_binding(student, binding, expected_digest
             or binding.feature_sha256 != student.extents.factor_map_digest
             or binding.optimizer_step != student.retained_state.optimizer_step):
         invalid("BAMF_INITIAL_GENERATION_BINDING_DRIFT")
-
-

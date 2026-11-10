@@ -74,5 +74,3 @@ def _model_authority(release, admission, graph, run_seed, foundation_features,
         motif_key_map_digest=allocations.manifest.digest,
     )
     return b01_generation_authority(extents)
-
-

@@ -212,5 +212,3 @@ def _validate_candidate_b01_authority(
             or candidate_identity_digest(candidate.retained_state)
             != candidate_identity_digest(expected_state)):
         invalid("BAMF_INITIAL_GENERATION_MODEL_AUTHORITY_DRIFT")
-
-
