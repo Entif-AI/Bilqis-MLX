@@ -90,6 +90,24 @@ class AtlasDeltaAdapterTests(AtlasDeltaAdapterFixture):
             relabeled_proposal,
             proposal_sha256=relabeled_proposal.expected_digest(),
         )
+        forged_profile_proposal = replace(
+            handoff.proposal,
+            intended_profile_id="profile-forged",
+            proposal_sha256="0" * 64,
+        )
+        forged_profile_proposal = replace(
+            forged_profile_proposal,
+            proposal_sha256=forged_profile_proposal.expected_digest(),
+        )
+        forged_geometry_proposal = replace(
+            handoff.proposal,
+            abi_geometry="geometry-forged",
+            proposal_sha256="0" * 64,
+        )
+        forged_geometry_proposal = replace(
+            forged_geometry_proposal,
+            proposal_sha256=forged_geometry_proposal.expected_digest(),
+        )
         substitutions = (
             self._rehash_handoff(handoff, staged_candidate=forged_candidate),
             self._rehash_handoff(handoff, staged_candidate=forged_sense),
@@ -99,6 +117,8 @@ class AtlasDeltaAdapterTests(AtlasDeltaAdapterFixture):
                 staged_candidate=relabeled_candidate,
                 proposal=relabeled_proposal,
             ),
+            self._rehash_handoff(handoff, proposal=forged_profile_proposal),
+            self._rehash_handoff(handoff, proposal=forged_geometry_proposal),
             self._rehash_handoff(handoff, family_ids=("family:forged",)),
             self._rehash_handoff(handoff, operator_scopes=(replace(
                 handoff.operator_scopes[0],

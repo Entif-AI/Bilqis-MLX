@@ -162,6 +162,8 @@ class AtlasDeltaScopeHandoff:
                    != self.receipt.predecessor_release.release_sha256
                 or self.proposal.selected_candidate_ids != (staged.candidate_id,)
                 or self.proposal.selected_successor_sha256 != successor.release_sha256
+                or self.proposal.intended_profile_id != successor.profile.profile_id
+                or self.proposal.abi_geometry != successor.transition.semantic_geometry
                 or selection.introduced_capability_ids
                    != successor.transition.added_capabilities
                 or staged.target_capability_id
