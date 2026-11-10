@@ -1,7 +1,8 @@
 """Typed A02 staging evidence for a C07-owned admission boundary."""
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
+from typing import Mapping
 
 from .records import BamfBundleCandidate, canonical, invalid, sha
 
@@ -81,6 +82,17 @@ class A02VocabularyStagingReceipt:
 
     def to_record(self) -> dict:
         return {**asdict(self), "receipt_sha256": self.digest}
+
+    @classmethod
+    def from_record(cls, record: Mapping) -> "A02VocabularyStagingReceipt":
+        names = {item.name for item in fields(cls)}
+        if (not isinstance(record, Mapping)
+                or set(record) != names | {"receipt_sha256"}):
+            invalid("BAMF_A02_STAGING_RECEIPT_INVALID")
+        receipt = cls(**{name: record[name] for name in names})
+        if record["receipt_sha256"] != receipt.digest:
+            invalid("BAMF_A02_STAGING_RECEIPT_INVALID")
+        return receipt
 
 
 @dataclass(frozen=True)
