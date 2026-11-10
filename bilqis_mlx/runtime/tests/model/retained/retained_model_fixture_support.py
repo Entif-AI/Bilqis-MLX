@@ -195,4 +195,3 @@ class RetainedModelFixtureSupport:
             parameters, manifest, spec, extents, gradient,
             (denominator,), unrelated,
         )
-
