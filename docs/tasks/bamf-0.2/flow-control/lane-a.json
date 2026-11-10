@@ -282,17 +282,13 @@
     {
       "issue": 958,
       "pr": 967,
-      "state": "WAITING",
-      "head_sha": "5677d4df08b604b86cdc45d39e7b2e59882107ac",
-      "head_sha_role": "exact pushed semantic/test candidate before flow-control evidence-only checkpoint",
-      "summary": "#958 A09/Factory scope remediation is implementation-complete at exact remote head 5677d4df on reviewed unified 2c572202. The v2 path carries a digest-bound A09 receipt/staged-candidate handoff, derives source-owned operator/non-operator scope, cross-binds A09 graph-token selection to A01/A02 Atlas identities, keeps v1 lease semantics historical, uses a separately human-authorized v2 lease, derives neural/resource facts only from owner-issued A02 evidence, and binds the same accepted B13 run before policy. Final local owner ring is 60/60 PASS; structure/governance/smell/error-control/BAMF contracts/flow-control are green; hosted PR #967 portable-core, portable and Semantic ABI are green. Fresh independent Goldfish remains EGM_PENDING because Chat On Steroids reports PRIME_TRANSFER_IN_PROGRESS; PR remains Draft and integration is not qualified until a genuine fresh 0B/0M review lands.",
-      "resume_trigger": "Run a fresh pinned EGM exact-head review of semantic candidate 5677d4df08b604b86cdc45d39e7b2e59882107ac. If it returns 0 Blockers / 0 Majors, reconcile any evidence-only flow-control head, mark PR #967 ready for human review, and preserve no-self-merge authority.",
+      "state": "READY",
+      "head_sha": "aa0555b7c3df753d901c3cee57c86623a420067f",
+      "head_sha_role": "fresh exact-head EGM-clean semantic/test candidate before final flow-control evidence-only checkpoint",
+      "summary": "#958 A09/Factory scope remediation is READY for human review at exact semantic/test head aa0555b7 on reviewed unified 2c572202. The v2 path carries a digest-bound A09 receipt/staged-candidate handoff, derives source-owned operator/non-operator scope, cross-binds A09 capability selection to owner-derived A01/A02 Atlas identities, preserves v1 lease semantics, uses a separately human-authorized persisted v2 lease, derives neural/resource facts only from owner-issued A02 evidence, and binds the same accepted B13 run before policy. Fresh adversarial review first found one stale-consent Major: a superseded broad v2 lease could be supplied after renewal. aa0555b7 repairs that root cause by re-reading current persisted v2 lease authority and requiring exact equality before policy, with a regression proving L1 -> tighter L2 renewal rejects stale L1. Repaired-head hosted portable-core/portable/Semantic ABI PASS and fresh exact-head independent review is 0 Blockers / 0 Majors / 0 Nits, READY_FOR_HUMAN_REVIEW. Human merge remains external authority.",
+      "resume_trigger": "Human review/merge PR #967 into codex/bamf-unified-base-20261028. Do not self-merge; #509 consumes only after reviewed integration.",
       "preserved_branch": "codex/958-a09-c07-scope-20261109",
-      "open_pr_exception": {
-        "reason": "Draft PR #967 is implementation-complete and CI-green but intentionally parked because the mandatory fresh independent EGM cannot currently be launched while the worker transport reports PRIME_TRANSFER_IN_PROGRESS.",
-        "authority": "Issue #958 fresh-Goldfish turn-in contract permits EGM_PENDING when no fresh-subagent facility is available; integration still requires the real fresh review.",
-        "expires_when": "A fresh pinned EGM exact-head review of semantic candidate 5677d4df08b604b86cdc45d39e7b2e59882107ac returns a disposition and PR #967 is either advanced to review or repaired."
-      }
+      "open_pr_exception": null
     },
     {
       "issue": 959,
