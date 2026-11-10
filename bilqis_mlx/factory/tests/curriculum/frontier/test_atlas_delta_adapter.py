@@ -10,6 +10,7 @@ from bilqis_mlx.factory.atlas_frontier import (
 from bilqis_mlx.factory.atlas_delta_adapter import (
     _credited_requested_keys,
 )
+from bilqis_mlx.factory.atlas_delta_scope import AtlasDeltaScopeHandoff
 from bilqis_mlx.factory.atlas_frontier_progress import FrontierStatus, plan_frontier_progress
 from bilqis_mlx.factory.atlas_frontier_closure import ClosureReason, ClosureStatus
 from bilqis_mlx.factory.atlas_frontier_selection import select_frontier_delta
@@ -23,6 +24,9 @@ from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_selection 
     _candidate, _closure, _snapshot,
 )
 from bilqis_mlx.factory.tests.curriculum.frontier.test_candidate_staging import CandidateStagingFixture
+from bilqis_mlx.source_adapters.formal_identity import (
+    OperatorDispositionKind, SourceOperatorDisposition,
+)
 
 
 class AtlasDeltaAdapterTests(unittest.TestCase):
@@ -44,6 +48,23 @@ class AtlasDeltaAdapterTests(unittest.TestCase):
         self.plan = compile_autonomy_plan(self.current)
         self.learner = AtlasLearnerEvidence(
             initial_evidence_ledger(self.current, plan=self.plan), "e" * 64, 0)
+        execution = self.staged.successor.execution_plan.capability_map["Z.C6"]
+        descriptor = next(
+            item for item in self.staged.successor.source_adapters
+            if item.adapter_id == execution.provider_id)
+        fixture_disposition = SourceOperatorDisposition(
+            capability_id="Z.C6", source_adapter_id=descriptor.adapter_id,
+            kind=OperatorDispositionKind.NON_OPERATOR,
+            operator_id=None, semantic_root=None,
+            generator_id=descriptor.generator_id,
+            accepted_oracle_ids=descriptor.accepted_oracle_ids,
+            implementation_sha256=descriptor.implementation_sha256,
+        )
+        operator_patch = patch(
+            "bilqis_mlx.factory.atlas_delta_scope.source_operator_disposition",
+            return_value=fixture_disposition)
+        operator_patch.start()
+        self.addCleanup(operator_patch.stop)
 
     def _authority(self, semantic_id, current):
         if current.release_sha256 != self.current.release_sha256:
@@ -63,6 +84,24 @@ class AtlasDeltaAdapterTests(unittest.TestCase):
         values.update(changes)
         return AtlasCoverageEpoch(**values)
 
+    def _handoff(self):
+        with patch(
+            "bilqis_mlx.factory.candidate_realizations.project_realized_target",
+            side_effect=self._authority,
+        ), patch(
+            "bilqis_mlx.factory.atlas_frontier_progress_validation.project_realized_target",
+            side_effect=self._authority,
+        ), patch(
+            "bilqis_mlx.factory.candidate_realizations.realized_source_sense_id",
+            return_value=self.staged.source_sense_id,
+        ):
+            return next_atlas_delta(self._epoch(), self.learner, self.plan)
+
+    @staticmethod
+    def _rehash_handoff(handoff, **changes):
+        changed = replace(handoff, handoff_sha256="0" * 64, **changes)
+        return replace(changed, handoff_sha256=changed.expected_digest())
+
     def test_pure_selection_drives_existing_jit_binding_without_admission(self):
         with patch(
             "bilqis_mlx.factory.candidate_realizations.project_realized_target",
@@ -74,12 +113,56 @@ class AtlasDeltaAdapterTests(unittest.TestCase):
             "bilqis_mlx.factory.candidate_realizations.realized_source_sense_id",
             return_value=self.staged.source_sense_id,
         ):
-            proposal = next_atlas_delta(self._epoch(), self.learner, self.plan)
-        self.assertIsInstance(proposal, CurriculumDeltaProposal)
+            handoff = next_atlas_delta(self._epoch(), self.learner, self.plan)
+        self.assertIsInstance(handoff, AtlasDeltaScopeHandoff)
+        proposal = handoff.proposal
+        handoff.verify()
         self.assertEqual(proposal.selected_candidate_ids, (self.staged.candidate_id,))
         self.assertEqual(
             proposal.selected_successor_sha256, self.staged.successor.release_sha256)
         self.assertEqual(proposal.current_release_sha256, self.current.release_sha256)
+
+    def test_handoff_rejects_self_consistent_candidate_family_and_operator_substitution(self):
+        handoff = self._handoff()
+        forged_candidate = replace(
+            handoff.staged_candidate,
+            candidate_id="candidate-forged",
+            staged_sha256="0" * 64,
+        )
+        forged_candidate = replace(
+            forged_candidate, staged_sha256=forged_candidate.expected_digest())
+        substitutions = (
+            self._rehash_handoff(handoff, staged_candidate=forged_candidate),
+            self._rehash_handoff(handoff, family_ids=("family:forged",)),
+            self._rehash_handoff(handoff, operator_scopes=(replace(
+                handoff.operator_scopes[0],
+                source_adapter_id="source.forged/v1"),)),
+        )
+        for forged in substitutions:
+            with self.subTest(field=forged):
+                with self.assertRaises(BilqisError):
+                    forged.verify()
+
+    def test_missing_source_operator_authority_fails_closed(self):
+        with patch(
+            "bilqis_mlx.factory.atlas_delta_scope.source_operator_disposition",
+            return_value=None,
+        ), patch(
+            "bilqis_mlx.factory.candidate_realizations.project_realized_target",
+            side_effect=self._authority,
+        ), patch(
+            "bilqis_mlx.factory.atlas_frontier_progress_validation.project_realized_target",
+            side_effect=self._authority,
+        ), patch(
+            "bilqis_mlx.factory.candidate_realizations.realized_source_sense_id",
+            return_value=self.staged.source_sense_id,
+        ):
+            with self.assertRaises(BilqisError) as caught:
+                next_atlas_delta(self._epoch(), self.learner, self.plan)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_ATLAS_DELTA_OPERATOR_SCOPE_UNSUPPORTED",
+        )
 
     def test_lower_ranked_unrealized_semantic_does_not_starve_realized_winner(self):
         calls = []
@@ -100,8 +183,9 @@ class AtlasDeltaAdapterTests(unittest.TestCase):
             "bilqis_mlx.factory.candidate_realizations.realized_source_sense_id",
             return_value=self.staged.source_sense_id,
         ):
-            proposal = next_atlas_delta(self._epoch(), self.learner, self.plan)
-        self.assertIsInstance(proposal, CurriculumDeltaProposal)
+            handoff = next_atlas_delta(self._epoch(), self.learner, self.plan)
+        self.assertIsInstance(handoff, AtlasDeltaScopeHandoff)
+        proposal = handoff.proposal
         self.assertEqual(calls, ["z.op.0"])
 
     def test_missing_winner_realization_returns_typed_implementation_debt(self):

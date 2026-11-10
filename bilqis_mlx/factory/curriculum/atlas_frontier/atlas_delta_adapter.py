@@ -239,7 +239,8 @@ def next_atlas_delta(
     staged = _staged_for_projection(coverage_epoch, projection)
     if staged is None:
         return FrontierStatus.IMPLEMENTATION_UNCOVERED
-    staged_selection_receipt(coverage_epoch, selection, projection, staged)
+    receipt = staged_selection_receipt(
+        coverage_epoch, selection, projection, staged)
     deferred = tuple(sorted(
         item.candidate_id for item in coverage_epoch.candidate_frontier.candidates
         if item.candidate_id != staged.candidate_id))
@@ -253,4 +254,5 @@ def next_atlas_delta(
     if (proposal.selected_candidate_ids != (staged.candidate_id,)
             or proposal.selected_successor_sha256 != staged.successor.release_sha256):
         _fail("BAMF_PLANNER_ADAPTER_SELECTION_DRIFT")
-    return proposal
+    from .atlas_delta_scope import build_atlas_delta_scope_handoff
+    return build_atlas_delta_scope_handoff(receipt, staged, proposal)

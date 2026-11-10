@@ -30,6 +30,9 @@ _CAPABILITY_ROOTS = MappingProxyType({
     "WORLD.IS_OCCURRED": "ithkuil:LEXSENSE-294d00be074a56",
     "WORLD.DIRECT_CAUSE": "ithkuil:LEXSENSE-59819df75e3137",
 })
+OPERATOR_COORDINATES = MappingProxyType({
+    "WORLD.IS_OCCURRED": (_CAPABILITY_ROOTS["WORLD.IS_OCCURRED"], "IS_OCCURRED"),
+})
 _TOKENS = (
     "bamf.world.syntax.actors", "bamf.world.syntax.causes",
     "bamf.world.actor.A0", "bamf.world.actor.A1", "bamf.world.actor.A2",

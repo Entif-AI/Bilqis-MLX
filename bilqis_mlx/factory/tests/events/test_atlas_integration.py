@@ -14,6 +14,7 @@ from bilqis_mlx.factory.atlas_frontier_events import FactoryAdmissionEvent, reco
 from bilqis_mlx.factory.atlas_frontier_progress import plan_frontier_progress
 from bilqis_mlx.factory.atlas_frontier_progress_contracts import FrontierStatus
 from bilqis_mlx.factory.atlas_frontier_progress_validation import requested_keys
+from bilqis_mlx.factory.atlas_delta_scope import AtlasDeltaScopeHandoff
 from bilqis_mlx.factory.atlas_frontier_selection import select_frontier_delta_for_projection
 from bilqis_mlx.factory.autonomy import (
     EvidenceReceipt,
@@ -89,11 +90,27 @@ class EventCandidateAtlasIntegrationTests(EventCandidateRealizationFixture, unit
             snapshot=snapshot, closure=closure, candidate_frontier=self.frontier,
             current_release=current, staged_candidates=(staged,), prior=prior,
         )
-        proposal = next_atlas_delta(epoch, learner, plan)
+        handoff = next_atlas_delta(epoch, learner, plan)
+        self.assertIsInstance(handoff, AtlasDeltaScopeHandoff)
+        handoff.verify()
+        proposal = handoff.proposal
         self.assertIsInstance(proposal, CurriculumDeltaProposal)
         self.assertEqual(proposal.selected_candidate_ids, (staged.candidate_id,))
         self.assertEqual(
             proposal.selected_successor_sha256, staged.successor.release_sha256)
+        self.assertEqual(handoff.staged_candidate.staged_sha256, staged.staged_sha256)
+        self.assertEqual(
+            tuple(scope.capability_id for scope in handoff.operator_scopes),
+            handoff.receipt.selection.introduced_capability_ids,
+        )
+        for scope in handoff.operator_scopes:
+            self.assertEqual(
+                scope.operator_id, event_frames.SYMBOLS[scope.capability_id])
+        self.assertEqual(
+            handoff.operator_ids,
+            tuple(sorted(event_frames.SYMBOLS[capability]
+                         for capability in handoff.receipt.selection.introduced_capability_ids)),
+        )
         rows = tuple(item for item in closure.candidates if item.semantic_id == semantic_id)
         requested = tuple(sorted(requested_keys(
             prior.staged_receipts if prior is not None else ())))
