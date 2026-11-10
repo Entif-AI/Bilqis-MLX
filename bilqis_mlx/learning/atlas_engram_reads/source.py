@@ -1,10 +1,11 @@
-"""Existing schema/grant evidence helpers for experimental reads."""
+"""B08 validation over source-owned schema-rights evidence."""
 from __future__ import annotations
 
-import hashlib
-
-
 from bilqis_mlx.semantics.context_eligibility import ContextEligibility, SourceFrontier, TaskScope
+from bilqis_mlx.semantics.frame_adapters.public_formal_grants import (
+    schema_evidence_digest as _source_schema_evidence_digest,
+    schema_source_handle as _source_schema_source_handle,
+)
 from bilqis_mlx.semantics.frame_schema import FrameSchema
 
 
@@ -13,13 +14,13 @@ from .records import _invalid
 def schema_source_handle(schema: FrameSchema) -> str:
     if type(schema) is not FrameSchema:
         _invalid()
-    return f"source:motif-schema:{schema.identity}"
+    return _source_schema_source_handle(schema)
 
 
 def schema_evidence_digest(schema: FrameSchema) -> str:
     if type(schema) is not FrameSchema:
         _invalid()
-    return hashlib.sha256(schema.canonical_bytes()).hexdigest()
+    return _source_schema_evidence_digest(schema)
 
 
 def _schema_grant_live(

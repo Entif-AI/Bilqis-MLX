@@ -1,10 +1,16 @@
 """Create collision-checked grants for already verified source frame trees."""
+from dataclasses import replace
+import hashlib
+
 from ...generated_assessment import digest
+from ..atlas.snapshot import AtlasArtifactSelection
 from ..context_eligibility import (
-    PUBLIC_FORMAL, ContextEligibility, ContextHold, ContextMember, SourceFrontier,
-    SourceGrant, frame_evidence_digest, member_evidence_digest, project_context,
+    PUBLIC_FORMAL, ApprovedContextProjection, ContextEligibility, ContextHold,
+    ContextMember, ContextPolicy, SourceFrontier, SourceGrant, TaskScope,
+    frame_evidence_digest, member_evidence_digest, project_context,
 )
-from ..frame_schema import FrameInstance
+from ..frame_schema import FrameInstance, FrameSchema, SourceSpan
+from ..released_frame_schemas import lookup_source_pinned_frame_schema
 from .common import PUBLIC_FORMAL_TIMELESS_EPOCH, _adapter_fail
 
 
@@ -34,6 +40,82 @@ def _envelope(frame, prefix, task, frontier, policy):
         observed_at=PUBLIC_FORMAL_TIMELESS_EPOCH,
         effective_from=PUBLIC_FORMAL_TIMELESS_EPOCH, effective_until=None,
         causal_prefix_end=frame.causal_prefix_end)
+
+
+def schema_source_handle(schema: FrameSchema) -> str:
+    """Canonical source-rights handle for one released frame schema."""
+    if type(schema) is not FrameSchema:
+        raise TypeError("FRAME_SCHEMA_REQUIRED")
+    return f"source:motif-schema:{schema.identity}"
+
+
+def schema_evidence_digest(schema: FrameSchema) -> str:
+    """Canonical A03 schema-body evidence used by source rights."""
+    if type(schema) is not FrameSchema:
+        raise TypeError("FRAME_SCHEMA_REQUIRED")
+    return hashlib.sha256(schema.canonical_bytes()).hexdigest()
+
+
+def issue_source_schema_grants(
+    projection: ApprovedContextProjection,
+    *,
+    source_family: str,
+    atlas_selection: AtlasArtifactSelection,
+    task_scope: TaskScope,
+    source_frontier: SourceFrontier,
+    policy: ContextPolicy,
+) -> SourceFrontier:
+    """Issue motif-schema rights only from the source-owned A01/A03 boundary."""
+    span = SourceSpan(0, 0)
+    if (type(projection) is not ApprovedContextProjection
+            or not isinstance(source_family, str) or not source_family
+            or type(atlas_selection) is not AtlasArtifactSelection
+            or type(task_scope) is not TaskScope
+            or type(source_frontier) is not SourceFrontier
+            or type(policy) is not ContextPolicy
+            or task_scope.purpose is None
+            or atlas_selection.release_sha256 != task_scope.semantic_release):
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_SCHEMA_AUTHORITY_INVALID",
+            source_family if isinstance(source_family, str) else "<unknown>",
+            span, "<schema>")
+    atlas_selection.__post_init__()
+    current = project_context(
+        projection.envelopes, task_scope, source_frontier, policy)
+    if type(current) is not ApprovedContextProjection or current != projection:
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_SCHEMA_CONTEXT_DRIFT",
+            source_family, span, "<schema>")
+
+    grants = {item.source_handle: item for item in source_frontier.grants}
+    for envelope in projection.envelopes:
+        frame = envelope.frame
+        if type(frame) is not FrameInstance:
+            continue
+        span = frame.source_span
+        schema, _witness = lookup_source_pinned_frame_schema(
+            frame.frame_schema_id, frame.frame_schema_revision,
+            source_family=source_family, atlas_selection=atlas_selection)
+        grant = SourceGrant(
+            schema_source_handle(schema), task_scope.principal_id,
+            task_scope.tenant_id, envelope.source_regime,
+            task_scope.semantic_release, schema_evidence_digest(schema),
+            (task_scope.purpose,), (task_scope.jurisdiction,),
+            (task_scope.scope,), source_frontier.rights_epoch,
+            source_frontier.correction_generation, envelope.observed_at,
+            envelope.effective_from, envelope.effective_until)
+        prior = grants.get(grant.source_handle)
+        if prior is not None:
+            if replace(prior, revoked=False) != grant:
+                _adapter_fail(
+                    "BAMF_CONTEXT_PUBLIC_FORMAL_SCHEMA_GRANT_COLLISION",
+                    source_family, span, "<schema>")
+            grant = prior
+        grants[grant.source_handle] = grant
+    return replace(
+        source_frontier,
+        grants=tuple(sorted(
+            grants.values(), key=lambda item: item.source_handle)))
 
 
 def admit_tree(tree, row, source_adapter_id, task, source_frontier, policy, source_span):

@@ -18,6 +18,9 @@ from bilqis_mlx.semantics.frame_adapters.common import (
     MICRO_PREDICATE_ADAPTER,
 )
 from bilqis_mlx.semantics.frame_adapters.public_formal import public_formal_context
+from bilqis_mlx.semantics.frame_adapters.public_formal_grants import (
+    issue_source_schema_grants,
+)
 from bilqis_mlx.semantics.frame_adapters.public_formal_sources import canonical_graph
 from bilqis_mlx.semantics.frame_schema import FrameInstance, validate_frame_bindings
 from bilqis_mlx.semantics.released_frame_schemas import (
@@ -151,6 +154,14 @@ def source_qualified_motif_context(
     if isinstance(admitted, ContextHold):
         return admitted
     projection, issued_frontier = admitted
+    issued_frontier = issue_source_schema_grants(
+        projection,
+        source_family=_source_family(source_adapter.descriptor.adapter_id),
+        atlas_selection=atlas_selection,
+        task_scope=task_scope,
+        source_frontier=issued_frontier,
+        policy=policy,
+    )
     qualified = _qualified_motif_inputs(
         projection, snapshot, source_adapter, atlas_selection, source_root, graph)
     return projection, qualified, issued_frontier

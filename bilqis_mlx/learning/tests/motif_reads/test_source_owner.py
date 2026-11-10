@@ -37,6 +37,14 @@ from bilqis_mlx.semantics.released_frame_schemas import (
 from bilqis_mlx.source_adapters.atoms.admission import public_formal_atom_context
 
 
+class SourceOwnedMotifReadBoundaryTests(unittest.TestCase):
+    def test_wrong_private_seal_rejects_before_read_inputs_can_authorize(self):
+        with self.assertRaises(BilqisError):
+            _read_retained_compiled_motifs(
+                None, None, (), None, spec=None, extents=None,
+                site_index=1, hidden=None, seal=object())
+
+
 @unittest.skipUnless(
     os.environ.get("BILQIS_ATLAS_REAL_ARTIFACT"),
     "real repo-pinned A01 artifact supplied at source turn-in",

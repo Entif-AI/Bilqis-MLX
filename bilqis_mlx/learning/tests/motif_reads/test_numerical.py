@@ -131,3 +131,39 @@ class NumericalReadTests(TestCase):
             self.assertIs(result.hidden, before)
             self.assertEqual(result.dispositions, (("HELD", "MISS"),))
             self.assertEqual(result.participating_slots, ())
+
+    def test_schema_rights_state_changes_read_identity_and_cannot_structural_borrow(self):
+        position, task, frontier, policy = _source()
+        _exact, structural = motif_keys(
+            MotifFrameInput(position.envelope.frame, position.schema), RELEASE)
+        manifest = MotifManifest(RELEASE, (MotifSlot(0, structural),))
+        _spec, _extents, _params, view = _parameters()
+        _before, live = _read(
+            position, task, frontier, policy, manifest, view)
+        handle = schema_source_handle(position.schema)
+        self.assertEqual(live.dispositions, (("STRUCTURAL", "MISS"),))
+        self.assertEqual(live.participating_slots, (0,))
+
+        altered = (
+            replace(frontier, grants=tuple(
+                grant for grant in frontier.grants
+                if grant.source_handle != handle)),
+            replace(frontier, grants=tuple(
+                replace(grant, revoked=True)
+                if grant.source_handle == handle else grant
+                for grant in frontier.grants)),
+            replace(frontier, grants=tuple(
+                replace(grant, evidence_digest="b" * 64)
+                if grant.source_handle == handle else grant
+                for grant in frontier.grants)),
+        )
+        identities = []
+        for rights in altered:
+            before, held = _read(
+                position, task, rights, policy, manifest, view)
+            self.assertIs(held.hidden, before)
+            self.assertEqual(held.dispositions, (("HELD", "MISS"),))
+            self.assertEqual(held.participating_slots, ())
+            self.assertNotEqual(live.context_digests, held.context_digests)
+            identities.append(held.context_digests)
+        self.assertEqual(len(set(identities)), len(identities))
