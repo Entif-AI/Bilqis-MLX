@@ -33,6 +33,7 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
 import bilqis_mlx.runtime.atlas_model_forward as forward_impl
 from bilqis_mlx.runtime.topology_v2.ledger import bamf_parameter_census
 from bilqis_mlx.runtime.model_topology_v2 import Initializer, expected_bamf_shapes
+from bilqis_mlx.runtime.tests.model.execution.active_semantic_rows_support import snapshot_active_semantic_rows
 from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
 from bilqis_mlx.semantics.frame_adapters import bind_registered_source_row
 from bilqis_mlx.semantics.frame_codec import SchemaTagMap
@@ -192,7 +193,11 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
         )
         gradient = bamf_value_and_grad(
             parameters,
-            BamfCompiledBatch(compiled, (source,), feature_schema),
+            BamfCompiledBatch(
+                compiled, (source,), feature_schema,
+                snapshot_active_semantic_rows(
+                    compiled, snapshot, run_id=cache.run_id,
+                    generation=cache.generation)),
             value_plan,
             (DecisionOutput("value", candidate),),
             {"value": True},
@@ -214,7 +219,11 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
         ):
             execution = bamf_value_and_grad(
                 parameters,
-                BamfCompiledBatch(compiled, (source,), feature_schema),
+                BamfCompiledBatch(
+                    compiled, (source,), feature_schema,
+                    snapshot_active_semantic_rows(
+                        compiled, plan.snapshot, run_id=cache.run_id,
+                        generation=cache.generation)),
                 plan,
                 (DecisionOutput("finish", ControlAction.END_FRAME),),
                 {"finish": True},
@@ -261,7 +270,11 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
         ):
             gradient = bamf_value_and_grad(
                 parameters,
-                BamfCompiledBatch(compiled, (source,), feature_schema),
+                BamfCompiledBatch(
+                    compiled, (source,), feature_schema,
+                    snapshot_active_semantic_rows(
+                        compiled, plan.snapshot, run_id=cache.run_id,
+                        generation=cache.generation)),
                 plan,
                 (DecisionOutput("finish", ControlAction.END_FRAME),),
                 {"finish": True}, cache=cache)

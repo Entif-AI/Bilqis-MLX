@@ -131,15 +131,19 @@ def extend_training_dependencies(
     return extended
 
 
-def bind_compiled_training_batch(batch, compiled, sources, feature_schema, *, row_index=0):
+def bind_compiled_training_batch(
+        batch, compiled, sources, feature_schema, *, active_semantic_rows, row_index=0):
     """Issue one B11 row from an exact source-owned C02 delivery batch."""
-    from bilqis_mlx.runtime.atlas_model_contracts import BamfCompiledBatch
+    from bilqis_mlx.runtime.atlas_model_contracts import (
+        BamfActiveSemanticRows, BamfCompiledBatch,
+    )
 
     if (type(batch) is not BamfTrainingBatch
             or type(compiled) is not CompiledEncoderInput
             or type(sources) is not tuple or len(sources) != 1
             or type(sources[0]) is not SourceAtomRow
             or type(feature_schema) is not FeatureSchema
+            or type(active_semantic_rows) is not BamfActiveSemanticRows
             or type(row_index) is not int
             or not 0 <= row_index < len(batch.rows)):
         _invalid("B11_TRAINING_AUTHORITY_INPUT_INVALID")
@@ -152,6 +156,6 @@ def bind_compiled_training_batch(batch, compiled, sources, feature_schema, *, ro
             or source_row.get("capability") != provenance.capability_id):
         _invalid("B11_TRAINING_SOURCE_ROW_MISMATCH")
     return BamfCompiledBatch(
-        compiled, sources, feature_schema,
+        compiled, sources, feature_schema, active_semantic_rows,
         training_authority=_issue(batch, source, provenance),
         visit_provenance=provenance.visit)

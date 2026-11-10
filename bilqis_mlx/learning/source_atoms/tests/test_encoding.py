@@ -7,6 +7,7 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
+from bilqis_mlx.learning.frame_embeddings import semantic_bank_views
 from bilqis_mlx.learning.source_atoms import SourceAtomRow, encode_source_compiled
 from bilqis_mlx.runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
@@ -27,6 +28,8 @@ class SourceEncodingTests(TestCase):
         ast, self.config, _, _, selection, row, graph, args = source_case(visible_end=2)
         self.source = SourceAtomRow(selection, row, graph, **args)
         self.snapshot = load_pinned_atlas_snapshot(selection)
+        self.active_indices = tuple(
+            entry.index for entry in self.snapshot.abi_entries if entry.active)
         self.schema = FeatureSchema((), ())
         features = build_feature_manifest(self.snapshot, self.schema)
         extents = GenerationExtents(
@@ -46,10 +49,16 @@ class SourceEncodingTests(TestCase):
             self.parameters["features.project_type"].at[2, 0].add(1))
 
     def encode(self, parameters=None, compiled=None, source=None):
+        actual_parameters = self.parameters if parameters is None else parameters
+        actual_compiled = self.compiled if compiled is None else compiled
+        banks = semantic_bank_views(
+            actual_parameters, actual_compiled.extents,
+            actual_compiled.features.semantic_release, self.active_indices)
         return encode_source_compiled(
-            self.compiled if compiled is None else compiled,
-            self.parameters if parameters is None else parameters,
+            actual_compiled,
+            actual_parameters,
             (self.source if source is None else source,), self.schema,
+            banks,
             self.artifact_owner)
 
     def test_real_b03_result_matches_literal_source_owned_identity_and_factor_equation(self):
@@ -131,6 +140,9 @@ class SourceEncodingTests(TestCase):
         with self.assertRaises(BilqisError) as caught:
             encode_source_compiled(
                 self.compiled, self.parameters, (self.source,), self.schema,
+                semantic_bank_views(
+                    self.parameters, self.compiled.extents,
+                    self.compiled.features.semantic_release, self.active_indices),
                 changed_owner)
         self.assertEqual(caught.exception.context["reason"],
                          "BAMF_C09_ATLAS_FEATURE_CONTENT_DRIFT")
@@ -143,5 +155,8 @@ class SourceEncodingTests(TestCase):
         with self.assertRaises(TypeError):
             encode_source_compiled(
                 self.compiled, self.parameters, (self.source,), self.schema,
+                semantic_bank_views(
+                    self.parameters, self.compiled.extents,
+                    self.compiled.features.semantic_release, self.active_indices),
                 self.artifact_owner,
                 atom_vectors=mx.zeros((1, 2, 768)))

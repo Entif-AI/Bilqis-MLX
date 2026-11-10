@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import mlx.core as mx
 
-from bilqis_mlx.learning.frame_embeddings import FeatureRequest
+from bilqis_mlx.learning.frame_embeddings import FeatureRequest, semantic_bank_views
 from bilqis_mlx.learning.source_atoms.backbone import (
     start_source_backbone_numerical, start_source_backbone_producer,
 )
@@ -45,16 +45,27 @@ class SourceBackboneTestBase(TestCase):
             for member in envelope.members)
 
     def start(self, parameters=None, compiled=None, sources=None):
+        actual_parameters = self.parameters if parameters is None else parameters
+        actual_compiled = self.compiled if compiled is None else compiled
         return start_source_backbone_numerical(
-            self.compiled if compiled is None else compiled,
-            self.parameters if parameters is None else parameters,
+            actual_compiled,
+            actual_parameters,
             (self.source,) if sources is None else sources, self.schema,
+            self.banks(actual_parameters, actual_compiled),
             self.artifact_owner)
 
     def producer(self, parameters=None):
+        actual_parameters = self.parameters if parameters is None else parameters
         return start_source_backbone_producer(
-            self.compiled, self.parameters if parameters is None else parameters,
-            (self.source,), self.schema, self.artifact_owner)
+            self.compiled, actual_parameters,
+            (self.source,), self.schema, self.banks(actual_parameters), self.artifact_owner)
+
+    def banks(self, parameters=None, compiled=None):
+        actual_parameters = self.parameters if parameters is None else parameters
+        actual_compiled = self.compiled if compiled is None else compiled
+        return semantic_bank_views(
+            actual_parameters, actual_compiled.extents,
+            actual_compiled.features.semantic_release, self.active_indices)
 
     def _depth_context(self):
         formal_fixtures.PublicFormalTypeCompositionTests.setUpClass()
