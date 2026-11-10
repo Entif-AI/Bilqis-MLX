@@ -117,6 +117,12 @@ finalizer, command/dispatcher, and terminal set is 13/13 PASS.
 
 Repository gates:
 
+The authoritative legacy-trainer adaptation source used by the repository gate
+is the preserved run at
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`;
+this checkpoint does not treat historical Prometheus trainer state as current
+authority.
+
 ```text
 /tmp/bamf-c05-venv/bin/python -B scripts/check_bamf_flow_control.py --live
 BAMF_FLOW_CONTROL_OK

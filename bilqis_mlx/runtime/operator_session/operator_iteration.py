@@ -11,6 +11,7 @@ import bilqis_mlx.runtime.session as _runtime_session
 import bilqis_mlx.runtime.state as _runtime_state
 import bilqis_mlx.runtime.timing_trace as _runtime_timing_trace
 import time as _time
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from .operator_autonomy import DispatchControl
 
 
@@ -22,7 +23,10 @@ def _dispatch_atlas_frontier_attempt(
 
     result = dispatch_atlas_frontier_proposal(run_dir, proposal)
     if not isinstance(result, AdmissionResult):
-        raise TypeError("atlas admission result required")
+        ErrorBus.raise_(
+            SCHOOL.BAMF_ATLAS_ADMISSION.INVALID,
+            reason="BAMF_ATLAS_ADMISSION_RESULT_REQUIRED",
+        )
     adopted = result.status is AdmissionStatus.ADOPTED
     if adopted:
         return (

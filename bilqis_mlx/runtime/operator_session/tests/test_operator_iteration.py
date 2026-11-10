@@ -3,12 +3,30 @@ from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
 
+from bilqis_mlx.errors import BilqisError, SCHOOL
 from bilqis_mlx.runtime.atlas_admission_policy import AdmissionResult, AdmissionStatus
 from bilqis_mlx.runtime.operator_session import operator_iteration as subject
 from bilqis_mlx.runtime.operator_session.operator_autonomy import DispatchControl
 
 
 class IterationTest(TestCase):
+    def test_atlas_dispatch_rejects_non_admission_result_with_typed_error(self):
+        with patch(
+            "bilqis_mlx.runtime.atlas_admission.dispatch_atlas_frontier_proposal",
+            return_value=object(),
+        ), self.assertRaises(BilqisError) as caught:
+            subject._dispatch_atlas_frontier_attempt(
+                "run",
+                {"generation": 7},
+                object(),
+                "autonomy/proposals/fixture.json",
+            )
+        self.assertIs(caught.exception.spec, SCHOOL.BAMF_ATLAS_ADMISSION.INVALID)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_ATLAS_ADMISSION_RESULT_REQUIRED",
+        )
+
     def test_adopted_atlas_result_requires_cold_resume(self):
         adopted = AdmissionResult(
             AdmissionStatus.ADOPTED,
