@@ -1,6 +1,6 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-R10-PENDING
+Status: DESIGN AMENDMENT / EGM-R11-PENDING
 Issue: #542 / C16.1a
 Reviewed unified base: `905018b0ece7613843570dc2c2e72a74dae4e91d`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
@@ -83,6 +83,25 @@ in a small dedicated `runtime/_coordination/` package rather than the crowded
 runtime root, and pinning truthful `--human-run` help semantics. Production
 mutation remains forbidden until R10
 freshly clears **0 Blockers / 0 Majors** across the required affected-scope lenses.
+
+R10 review record: the frozen R10 proposal at
+`5689e0fdfa0f219c818ea1039d1070e3b9152647` / SHA-256
+`273056ae8319cbe4aabcfa37e5e017ee1b9e328b920e843415cef6453b5dbf53`
+received Design/Structural **0 Blockers / 1 Major / 0 Nits**, Codebase Details
+**0 Blockers / 2 Majors / 0 Nits**, and Implementation Readiness **0 Blockers / 4
+Majors / 0 Nits**. The material union is five seams: interrupted no-pointer
+`--resume` was allowed to enter a recovery classification whose only concrete owner
+could mutate custody even though the command contract says resume must reject; the new
+coordination owner lacked a mirrored package-local unit test; the proposed
+multi-candidate cold-recovery ambiguity cannot exist under the reviewed Data Plane's
+one immutable genesis-trust row per run id; the shared claim API did not pin
+acquire/body/release precedence or post-mutation release failure; and explicit
+resume-enrollment had competing validation-order descriptions. R11 removes the
+invented multi-candidate state, makes interrupted no-pointer resume a read-only
+marker-level rejection, pins one ten-step enrollment order, specifies the exact
+namespace-free directory-fd claim API and release semantics, and adds the package-local
+coordination test owner. Production mutation remains forbidden until R11 freshly
+clears **0 Blockers / 0 Majors** across all three required lenses.
 
 ## Why this amendment exists
 
@@ -524,9 +543,12 @@ The cross-owner boundary has four **nominal valid** durable states:
    the exact historical parsed binding record derived from the sealed student and
    checked against that trust-row digest; this never restores or fabricates a live
    `InitialGenerationBinding`. A conflicting B13 artifact retains its existing
-   B13 trust/identity/acceptance error. More than one otherwise plausible sealed
-   generation-zero candidate rejects
-   `BAMF_FIRST_STUDENT_GENESIS_RECOVERY_AMBIGUOUS`. If
+   B13 trust/identity/acceptance error. The cold-recovery candidate universe is not
+   discovered by scanning `bamf-bundles/`: the reviewed Data Plane has exactly one
+   immutable `bamf_genesis_trust` row per `run_id` and a unique
+   `manifest_sha256`. Therefore `_stored_trust(expected_run_id)` is the sole
+   candidate selector and, when present, its committed manifest is the only bundle
+   cold recovery is allowed to authenticate. If
    no exact recoverable B13 genesis exists, any other nonempty target remains
    `BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED`. A fresh create never treats an
    arbitrary occupied directory as writable merely because `bamf-state.json` is
@@ -603,13 +625,18 @@ Factory replay. It:
 7. only after those checks installs the pointer and reconciles the outbox.
 
 This cold path never creates a bundle or trust seal, never creates a live binding,
-and never replays current Factory state. Zero plausible sealed candidates return
-`None`; more than one plausible candidate raises
-`BAMF_FIRST_STUDENT_GENESIS_RECOVERY_AMBIGUOUS`; and a malformed or contradictory
-candidate raises the first existing B13 trust/identity/acceptance error encountered
-while authenticating that candidate rather than being downgraded to ordinary
-occupancy. Only a nonempty no-pointer target for which no sealed candidate exists and
-no malformed B13 custody evidence was encountered falls through to
+and never replays current Factory state. Candidate selection is deterministic:
+`_stored_trust(expected_run_id)` is read under the existing Data Plane lock. If no
+row exists, cold recovery returns `None`. If a row exists, it is authenticated
+before any bundle/sidecar/pointer mutation; malformed, drifted, contradictory, or
+missing row-referenced evidence raises the existing B13 trust/identity/acceptance or
+Data Plane error at the first numbered authentication step above. No directory scan,
+lexical sort, heuristic selection, or fallback candidate is permitted. Therefore a
+mixed target cannot create a second “plausible” cold-recovery candidate: extra
+unreferenced bundles are not candidates and do not outrank the trust-row-bound
+authentication result. Only a nonempty no-pointer target with **no trust row for the
+expected run id**, no exact prepared retry, and no independently recognized malformed
+B13 custody condition falls through to
 `BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED`. A command-level `--resume` with
 recognized interrupted BAMF-v2 custody but no accepted pointer never performs this
 fresh-create recovery implicitly; it rejects
@@ -708,17 +735,31 @@ An explicit enrollment retry is allowed only as:
 --atlas-admission-scope <enrollment-request.json>
 ```
 
-This path:
+This path has one normative validation order. The first failing step wins and steps
+1-8 are read-only:
 
-1. cold-loads accepted B13 custody first;
-2. never accepts topology/run/optimizer/Atlas overrides that conflict with saved
-   accepted state;
-3. parses the request, validates its run id/seed/topology/Atlas release against the
-   accepted state, obtains opaque C09 authority from `AcceptedRuntimeHost`, and calls
-   `enroll_accepted_atlas_lease_v2(..., human_started=args.human_run, ...)`;
-4. if no current C07 lease exists, may establish the requested first lease;
-5. if the exact lease already exists, converges idempotently;
-6. if a different accepted lease exists, rejects as explicit renewal required.
+1. require the exact command shape above, including parser-owned explicit
+   `atlas-release` policy and scope presence;
+2. parse the enrollment scope for syntax/schema safety;
+3. cold-load and authenticate accepted B13 pointer, student/run identity, optimizer
+   settings and accepted Atlas feature receipt; invalid/drifted custody fails here;
+4. compare any explicit run/topology/optimizer/Atlas CLI equality assertions with the
+   accepted state; mismatch fails here;
+5. perform the read-only cross-epoch classifier: pre-existing dual authority reports
+   `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT`, v1-only reports
+   `BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`;
+6. compare the parsed enrollment request's run id/seed/topology/Atlas release with
+   the authenticated accepted state;
+7. construct `AcceptedRuntimeHost(target)`, obtain opaque C09 authority and validate
+   source approval/signature/rights without mutation;
+8. construct the owner-derived proposed v2 lease and validate every non-mutating
+   equality/precondition;
+9. only now enter the accepted-run mutation transaction, acquire/create the shared
+   epoch lock, repeat the epoch classifier under lock, acquire the epoch-local writer
+   lock, and call the accepted enrollment persistence owner;
+10. exact existing lease converges idempotently; absent lease may establish the first
+    accepted v2 lease; different accepted v2 lease rejects as explicit renewal
+    required.
 
 Therefore resume scope is not a general policy override or trust-root selector. It
 is a narrowly typed retry/completion surface for the first C07 enrollment after
@@ -792,7 +833,7 @@ bamf-bundles
 bamf-acceptance
 ```
 
-R10 closes the remaining **pre-marker race** without reserving a child filename.
+R11 closes the remaining **pre-marker race** without reserving a child filename.
 Marker inspection alone is insufficient
 because B13 may have claimed a fresh root after its final empty-directory check but
 before `bamf-bundles` or `bamf-state.json` exists. B13 mutating create/recovery and
@@ -811,32 +852,57 @@ Unicode-normalization aliases on macOS/APFS.
 The parent itself is resolved and opened as a real directory before lock acquisition;
 the helper never derives lock identity from the caller's string spelling. Different
 path aliases that resolve through the same physical parent therefore lock the same
-directory inode. If the target parent does not yet exist, the B13
-mutating create owner may create/fsync the parent chain exactly as publication already
-permits, then resolves/opens that now-existing physical parent and takes the
-directory-descriptor claim. Generic fixture mutation still requires its root and
-parent to already be safe directories and never creates a missing fixture root merely
+directory inode. If the target parent does not yet exist, B13 calls the shared helper
+with `create_parent=True`; parent-chain creation/fsync is therefore part of claim
+acquisition and still occurs before target creation or classification. Generic fixture
+mutation calls the same helper with `create_parent=False`, still requires its root
+parent to exist as a safe directory, and never creates a missing fixture parent merely
 to lock it.
 
-The shared helper has one literal failure surface:
-`BAMF_RUN_ROOT_CLAIM_UNAVAILABLE`. It is raised before target mutation when the
-physical parent cannot be resolved/opened as a real directory, when a symlink or
-non-directory is encountered at the parent boundary, when `fstat` does not confirm
-the opened descriptor is a directory, or when the host cannot acquire/release the
-directory `flock`. B13 and C07 callers propagate this reason unchanged; neither
-translates it into occupancy, lease, source-authority, or retry errors. Path
-disjointness and caller-input validation that occur before claim acquisition retain
-their earlier pinned errors; once claim acquisition begins, claim failure wins before
-any final target classification or mutation.
+The shared API is exact:
+
+```python
+@contextmanager
+def run_root_claim(target: Path, *, create_parent: bool) -> Iterator[None]:
+    ...
+```
+
+`target` is the candidate run root, not its parent. The helper **never creates
+`target`**. When `create_parent=True`, used only by B13 fresh create/recovery, it
+may create the missing `target.parent` chain, fsync each newly created directory plus
+the nearest pre-existing ancestor, and then continue. When `create_parent=False`,
+required for generic C07 fixture mutation, a missing parent is a claim-acquisition
+failure and nothing is created. The helper then resolves `target.parent` strictly to
+its physical directory, opens that resolved directory with
+`O_RDONLY|O_DIRECTORY|O_NOFOLLOW` where supported, verifies the opened
+`fstat` is a directory, takes blocking `flock(LOCK_EX)`, yields exactly `None`,
+then releases and closes the descriptor.
+
+Acquire-phase failures before `yield` have one literal surface:
+`BAMF_RUN_ROOT_CLAIM_UNAVAILABLE`. This includes strict parent resolution,
+open/fstat/type validation, and lock acquisition. It occurs before protected target
+classification/mutation. B13 and C07 propagate it unchanged.
+
+Release-phase failures are different because the protected body may already have
+mutated durable state. If the body completed successfully but `LOCK_UN` or descriptor
+close reports failure, raise `BAMF_RUN_ROOT_CLAIM_RELEASE_FAILED`. That error means
+**postcondition unknown, reconcile before retry**; it never implies rollback and must
+not trigger automatic replay. If the protected body itself raised an exception and
+release also fails, preserve the body exception as the primary semantic failure,
+attempt descriptor close, and attach or chain the release failure as secondary
+diagnostic context; do not replace the body error with a claim-release error. A clean
+release returns normally. Path disjointness and caller-input validation that occur
+before claim acquisition retain their earlier pinned errors.
 
 Lock coverage is exact:
 
 - B13 fresh create/recovery acquires the run-root claim **before its final target
-  emptiness/recovery classification** and holds it through generation-zero
+  emptiness/recovery classification** with `create_parent=True` and holds it through generation-zero
   publication/recovery until either an accepted B13 custody marker exists or the
   operation has failed without acceptance;
 - generic v1/v2 fixture persist/renew acquires the same run-root claim before the
-  recognized-custody-marker guard and holds it through the complete fixture mutation;
+  recognized-custody-marker guard with `create_parent=False` and holds it through
+  the complete fixture mutation;
 - accepted v1/v2 persistence on an already accepted B13 run does not need the root
   claim; it uses the separately pinned shared epoch lock because the B13 root claim is
   no longer contested once accepted custody exists.
@@ -881,10 +947,11 @@ the shared epoch lock. No boolean flag exposed to presentation code can select t
 bypass.
 
 Request parsing has deterministic precedence without creating synchronization state
-for validation-only failures. The enrollment scope file is first parsed for
-syntax/schema safety. The accepted-run epoch classifier then performs a **read-only
-precheck** before request-vs-saved identity/Atlas comparison or C09 signature/rights
-verification: pre-existing dual authority reports
+for validation-only failures. The complete explicit resume-enrollment order is the
+ten-step sequence above. In particular, scope syntax/schema parsing precedes accepted
+custody load; accepted custody and explicit saved-setting equality precede the epoch
+precheck; and the epoch precheck precedes request-vs-saved identity/Atlas comparison
+or C09 signature/rights verification. Pre-existing dual authority reports
 `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT`; v1-only authority reports
 `BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`. A request that fails this precheck or any
 subsequent request/custody/signature validation creates no `authority-epoch.lock` and
@@ -960,10 +1027,13 @@ Dispatch is pinned before implementation:
 4. `--resume` against a target with no pointer but with BAMF-v2 genesis custody
    artifacts (genesis-trust row, generation-zero bundle/acceptance evidence, or the
    v2 BAMF bundle directory shape) is intercepted before historical learner routing.
-   It must either invoke the B13 sealed-genesis classifier with sufficient saved or
-   explicit equality inputs, or reject with explicit interrupted-genesis recovery
-   guidance; it can never reach `_invoke_learner` merely because `bamf-state.json`
-   is absent;
+   This command path is **classification-only and non-mutating**: marker presence is
+   sufficient to reject
+   `BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY` before any B13
+   prepared/cold-recovery owner, acceptance-sidecar writer, pointer writer, outbox
+   reconciliation or mutable-source replay is invoked. The operator must repeat the
+   original fresh create command with the equality inputs. It can never reach
+   `_invoke_learner` merely because `bamf-state.json` is absent;
 5. an interrupted generation-zero publication with no pointer is retried by
    repeating the fresh v2 create command with the same topology/source/seed/Atlas
    manifest **and optimizer** inputs; target-state handling attempts
@@ -1142,8 +1212,11 @@ Production, with required file action:
   - own the neutral host-local run-root claim by applying `flock` directly to an
     opened physical target-parent directory descriptor; expose only a bounded context
     manager usable by B13 fresh publication/recovery and C07 generic fixture mutation;
-    create no child lock path, deliberately use no target-path-text hash, raise only
-    `BAMF_RUN_ROOT_CLAIM_UNAVAILABLE` for claim-boundary failures, and carry no
+    create no child lock path, deliberately use no target-path-text hash, expose
+    exactly `run_root_claim(target: Path, *, create_parent: bool) -> Iterator[None]`,
+    where only B13 may pass true and the helper never creates the target; distinguish pre-yield
+    `BAMF_RUN_ROOT_CLAIM_UNAVAILABLE` from post-body
+    `BAMF_RUN_ROOT_CLAIM_RELEASE_FAILED`, and carry no
     semantic or admission authority; the dedicated package keeps the reviewed
     `bilqis_mlx/runtime/` directory below its mandatory 18-direct-code-file trigger
     and is not a broader runtime reorganization;
@@ -1211,7 +1284,7 @@ Production, with required file action:
 - **Modify** `bilqis_mlx/presentation/operator_cli/command.py` and **Modify**
   `bilqis_mlx/presentation/operator_cli/parser.py` only as required for
   the pinned v2 dispatch/presence-bit routing **and** the explicit BAMF-v2 foundation
-  input flags frozen in this R9 contract; parser-owned explicit-store actions must
+  input flags frozen in this R11 contract; parser-owned explicit-store actions must
   preserve argparse abbreviations while making any accepted explicit v2-only
   foundation option intercept before historical learner dispatch even when topology
   is omitted or invalid; `--admission-policy` uses the same parser-owned explicitness
@@ -1223,6 +1296,10 @@ Production, with required file action:
 
 Tests:
 
+- **Create** `bilqis_mlx/runtime/_coordination/tests/test_run_root_claim.py`
+  - mirrored unit owner for physical-parent alias convergence, no-child-lock
+    namespace behavior, acquire failure, successful release, post-body release
+    failure, and body-error-plus-release-error precedence;
 - **Create** `bilqis_mlx/presentation/operator_cli/tests/test_bamf_create_resume.py`;
 - **Create** `bilqis_mlx/presentation/operator_cli/tests/test_bamf_atlas_release_create.py`;
 - **Create** `bilqis_mlx/presentation/operator_cli/tests/test_bamf_resume_admission_policy.py`;
@@ -1275,7 +1352,7 @@ mirrored test owner:
   serialized by the neutral physical-parent directory claim: accepted B13 custody and
   fixture-created C07 current authority can never coexist from the race; a legal run
   basename that formerly would have matched `.bamf-root-claim.lock` remains legal
-  because R10 creates no lock child; on case-insensitive hosts, repeat with
+  because R11 creates no lock child; on case-insensitive hosts, repeat with
   case-distinct aliases to the same physical target and, where supported,
   composed/decomposed Unicode aliases;
 - B13 cold unpointed recovery after source advance both with persisted acceptance and
@@ -1283,11 +1360,12 @@ mirrored test owner:
 - interrupted cold recovery with each independently changed run id, run seed,
   topology, Atlas identity and AdamW setting rejects before acceptance/pointer/outbox
   mutation;
-- command-level nonempty/no-pointer interrupted create reaches B13 recovery; multiple
-  plausible sealed candidates reject
-  `BAMF_FIRST_STUDENT_GENESIS_RECOVERY_AMBIGUOUS`; malformed trust/acceptance
-  evidence preserves the existing B13 error; and an arbitrary occupied target with no
-  candidate/malformed B13 evidence rejects
+- command-level nonempty/no-pointer interrupted create reaches B13 recovery; the sole
+  candidate is the immutable Data Plane genesis-trust row selected by expected
+  `run_id`; malformed/drifted row-bound trust/acceptance/bundle evidence preserves
+  the existing B13/Data Plane error; extra unreferenced bundles are never alternate
+  candidates; and an arbitrary occupied target with no trust row, exact prepared
+  retry, or recognized malformed B13 evidence rejects
   `BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED`;
 - source/target overlap is symmetric: source-under-target and target-under-source both
   reject before dry-run/create/recovery mutation, including an ancestor target with
@@ -1295,8 +1373,10 @@ mirrored test owner:
   are repeated through case-distinct aliases and, where supported, Unicode-normalized
   aliases, proving the guard follows filesystem identity rather than path spelling;
 - command-level `--resume` against BAMF-v2 custody artifacts with no pointer is
-  intercepted before historical learner dispatch and either enters governed recovery
-  classification or fails with explicit interrupted-genesis guidance;
+  intercepted before historical learner dispatch and rejects
+  `BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY` from marker-level
+  classification only; snapshots prove zero acceptance/pointer/outbox/lease mutation
+  and the mutating B13 recovery owners are unreachable;
 - saved atlas-release -> explicit staged rejection;
 - ordinary resume literal mismatches for run id, run seed, topology, complete
   optimizer override and Atlas identity each reject before any mutation or learner
