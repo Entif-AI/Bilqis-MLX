@@ -134,6 +134,21 @@ def _derive_v2_facts(delta: AtlasDeltaEnvelopeV2) -> AtlasDerivedAdmissionFactsV
     )
 
 
+def _require_current_v2_lease(
+        current: AtlasAdmissionContextV2,
+        lease: AtlasAdmissionLeaseV2) -> None:
+    """Reject superseded consent epochs before any v2 policy decision."""
+    from .atlas_lease_v2 import read_atlas_lease_v2
+
+    persisted = read_atlas_lease_v2(
+        current.run_dir,
+        current.legacy.run_identity,
+        registry=current.legacy.registry,
+    )
+    if persisted is None or persisted != lease:
+        _invalid('BAMF_ATLAS_V2_LEASE_CURRENT_AUTHORITY_DRIFT')
+
+
 def _replay_a09_proposal(current: AtlasAdmissionContextV2, handoff):
     from ..factory.jit_curriculum import propose_curriculum_delta
 
@@ -180,6 +195,7 @@ def advance_atlas_frontier_v2(current, delta, lease):
             'semantics are never reinterpreted.')
     if lease.run_identity != legacy.run_identity:
         _invalid('BAMF_ATLAS_V2_LEASE_RUN_IDENTITY_DRIFT')
+    _require_current_v2_lease(current, lease)
     lease.source_approval.verify_signature(legacy.registry)
     approval = legacy.source_approval
     if not approval.audit_passed or not approval.rights_compatible:

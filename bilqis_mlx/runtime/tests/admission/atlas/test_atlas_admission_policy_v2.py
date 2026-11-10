@@ -2,6 +2,7 @@
 from dataclasses import fields, replace
 from pathlib import Path
 from types import SimpleNamespace
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -21,6 +22,8 @@ from bilqis_mlx.runtime.atlas_admission import (
     ResourceCeilingV2,
     advance_atlas_frontier_v2,
     issue_atlas_lease_v2,
+    persist_atlas_lease_v2,
+    renew_atlas_lease_v2,
 )
 from bilqis_mlx.runtime.atlas_admission_policy import AtlasAdmissionContext
 from bilqis_mlx.runtime.atlas_admission_policy_v2 import (
@@ -110,7 +113,9 @@ class AtlasAdmissionPolicyV2Tests(EventCandidateRealizationFixture, unittest.Tes
         context = self._context(handoff, plan, ledger, checkpoint, approval)
 
         with patch(
-                "bilqis_mlx.runtime.atlas_admission_policy_v2._accepted_run_bindings"):
+                "bilqis_mlx.runtime.atlas_admission_policy_v2._accepted_run_bindings"), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_admission_policy_v2._require_current_v2_lease"):
             result = advance_atlas_frontier_v2(
                 context, AtlasDeltaEnvelopeV2(handoff, native), lease)
 
@@ -126,6 +131,8 @@ class AtlasAdmissionPolicyV2Tests(EventCandidateRealizationFixture, unittest.Tes
         wrong = self._a02_staged("urn:foreign:atlas-identity")
         with patch(
                 "bilqis_mlx.runtime.atlas_admission_policy_v2._accepted_run_bindings"), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_admission_policy_v2._require_current_v2_lease"), \
                 self.assertRaises(BilqisError) as caught:
             advance_atlas_frontier_v2(
                 context, AtlasDeltaEnvelopeV2(handoff, wrong), lease)
@@ -136,6 +143,8 @@ class AtlasAdmissionPolicyV2Tests(EventCandidateRealizationFixture, unittest.Tes
         native = self._a02_staged(semantic_id)
         with patch(
                 "bilqis_mlx.runtime.atlas_admission_policy_v2._accepted_run_bindings"), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_admission_policy_v2._require_current_v2_lease"), \
                 patch(
                     "bilqis_mlx.factory.candidate_realizations.realized_atlas_semantic_id",
                     side_effect=ValueError), \
@@ -176,7 +185,9 @@ class AtlasAdmissionPolicyV2Tests(EventCandidateRealizationFixture, unittest.Tes
             required_available_bytes=4096)
 
         with patch(
-                "bilqis_mlx.runtime.atlas_admission_policy_v2._accepted_run_bindings"):
+                "bilqis_mlx.runtime.atlas_admission_policy_v2._accepted_run_bindings"), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_admission_policy_v2._require_current_v2_lease"):
             result = advance_atlas_frontier_v2(
                 context, AtlasDeltaEnvelopeV2(handoff, native), lease)
 
@@ -224,12 +235,47 @@ class AtlasAdmissionPolicyV2Tests(EventCandidateRealizationFixture, unittest.Tes
         native = self._a02_staged(semantic_id)
         with patch(
                 "bilqis_mlx.runtime.atlas_admission_policy_v2._accepted_run_bindings"), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_admission_policy_v2._require_current_v2_lease"), \
                 self.assertRaises(BilqisError) as caught:
             advance_atlas_frontier_v2(
                 stale, AtlasDeltaEnvelopeV2(handoff, native), lease)
         self.assertEqual(
             caught.exception.context["reason"],
             "BAMF_ATLAS_V2_PROPOSAL_CONTEXT_DRIFT")
+
+    def test_superseded_v2_lease_cannot_reclaim_broader_authority(self):
+        _capability, semantic_id, handoff, plan, ledger, checkpoint = self._event_handoff()
+        approval, prior = self._authority(handoff)
+        native = self._a02_staged(semantic_id)
+        with tempfile.TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            persist_atlas_lease_v2(
+                run_dir, prior,
+                independently_loaded_run=_run(), registry=_REGISTRY)
+            replacement = issue_atlas_lease_v2(
+                "fixture-v2-renewed", _run(), approval,
+                ResourceCeilingV2(1, 1, 1, 1, 1),
+                requested_at="2026-11-10T17:00:00Z",
+                human_command_sha256="8" * 64, human_started=True,
+                registry=_REGISTRY)
+            renew_atlas_lease_v2(
+                run_dir, replacement,
+                independently_loaded_run=_run(), registry=_REGISTRY,
+                expected_prior_lease_sha256=prior.digest(), human_started=True)
+            context = AtlasAdmissionContextV2(
+                self._context(handoff, plan, ledger, checkpoint, approval).legacy,
+                run_dir)
+
+            with patch(
+                    "bilqis_mlx.runtime.atlas_admission_policy_v2._accepted_run_bindings"), \
+                    self.assertRaises(BilqisError) as caught:
+                advance_atlas_frontier_v2(
+                    context, AtlasDeltaEnvelopeV2(handoff, native), prior)
+
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_ATLAS_V2_LEASE_CURRENT_AUTHORITY_DRIFT")
 
 
 if __name__ == "__main__":
