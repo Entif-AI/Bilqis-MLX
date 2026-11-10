@@ -1,8 +1,8 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-REPAIR-PENDING
+Status: DESIGN AMENDMENT / EGM-REVIEW-PENDING
 Issue: #542 / C16.1a
-Reviewed unified base: `2c572202978df9542e379cfb975007cdea3f05ad`
+Reviewed unified base: `1a1bcbf3c58b0d851e40dbdee847c3fb3c00ec3a`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
 Pinned EGM: `b3a35956759bf7f024af2ff061b2e0b44b438e4c`
 
@@ -17,9 +17,13 @@ the accepted target generation-zero `BamfRunIdentity.initial_candidate_identity_
 The human can choose the requested run id, run seed, topology and source-approved
 Atlas release, but cannot precompute or select accepted B13 identity.
 
-This amendment changes only the C16.1a/C07 enrollment handshake and its recovery
+Current reviewed unified now includes #958 / PR #967's C07 **v2** human-authority
+epoch. Fresh BAMF v2 enrollment therefore issues `AtlasAdmissionLeaseV2`; the v1
+lease/storage path remains historical compatibility and is not reinterpreted.
+
+This amendment changes only the C16.1a/C07 v2 enrollment handshake and its recovery
 surface. It does not change #950 trust-root ownership, B13 generation-zero custody,
-C07 lease meaning, source-approval signatures, C07 adoption, learner execution,
+C07 v2 lease meaning, source-approval signatures, C07 adoption, learner execution,
 optimizer ownership, or historical v1 routing.
 
 Classification under `EGM_EXECUTION.md`: **SHARED_CONTRACT**. The affected contract
@@ -30,7 +34,7 @@ review before production mutation resumes.
 
 1. A caller may request Atlas enrollment but never supply accepted B13 identity.
 2. A caller never receives or supplies a raw C09 registry or authoritative path.
-3. The final `AtlasAdmissionLease.run_identity` is derived only from the accepted
+3. The final `AtlasAdmissionLeaseV2.run_identity` is derived only from the accepted
    generation-zero bundle through the existing C07/B13 owner projection.
 4. Source approval is authenticated only with the registry reached through an
    accepted-run opaque `SourceAuthorityRuntime`.
@@ -53,18 +57,18 @@ Add one immutable request record in the C07 contract owner:
 
 ```python
 @dataclass(frozen=True)
-class AtlasAdmissionEnrollmentRequest:
+class AtlasAdmissionEnrollmentRequestV2:
     lease_id: str
     requested_run_id: str
     requested_run_seed: int
     requested_topology_digest: str
     source_approval: AtlasSourceApproval
-    resource_ceiling: ResourceCeiling
-    requested_at: int
+    resource_ceiling: ResourceCeilingV2
+    requested_at: str
     human_command_sha256: str
     admission_policy: str = field(default="atlas-release", init=False)
     schema_version: str = field(
-        default="bilqis.c07.atlas-admission-enrollment-request/v1", init=False)
+        default="bilqis.c07.atlas-admission-enrollment-request/v2", init=False)
 ```
 
 The request intentionally has **no** `LeaseRunIdentity`, initial generation digest,
@@ -73,22 +77,24 @@ capability. It is human request data, not admission authority.
 
 The request also does not smuggle the human-run gate into persisted data. Explicit
 human intent remains a live operator-boundary fact. The C16.1a caller passes that
-fact separately to the C07 enrollment owner, and C07 preserves the existing
-`issue_atlas_lease(..., human_started=...)` requirement exactly.
+fact separately to the C07 enrollment owner, and C07 preserves the current
+`issue_atlas_lease_v2(..., human_started=...)` requirement exactly.
 
 Exact shape rules:
 
 - `lease_id` and `requested_run_id` are nonempty strings;
 - `requested_run_seed` is an integer in the same accepted domain as B13 run seeds;
 - `requested_topology_digest` and `human_command_sha256` are lower-case SHA-256;
-- `source_approval` and `resource_ceiling` are the existing immutable C07 records;
-- `requested_at` is a non-negative integer;
+- `source_approval` is the existing immutable C07 source approval and
+  `resource_ceiling` is exactly `ResourceCeilingV2`;
+- `requested_at` is a nonempty string exactly as required by
+  `AtlasAdmissionLeaseV2`;
 - schema and admission policy are exact literals;
 - unknown fields, explicit nulls, malformed nested records and symlink/non-regular
   scope files reject.
 
 The request reader owns one public parse failure surface. Any JSON, schema, unknown
-field, explicit-null, or nested `AtlasSourceApproval` / `ResourceCeiling`
+field, explicit-null, or nested `AtlasSourceApproval` / `ResourceCeilingV2`
 construction failure is normalized to
 `BAMF_ATLAS_ENROLLMENT_REQUEST_INVALID`. This normalization applies only while
 deserializing the caller request. Post-genesis signature, rights, accepted-run and
@@ -97,7 +103,8 @@ being collapsed into the parse error.
 
 `--atlas-admission-scope` remains the CLI flag for compatibility, but its fresh-v2
 meaning is this enrollment request schema, not a pre-issued lease. Existing lower
-level C07 tests and APIs that consume an actual `AtlasAdmissionLease` remain valid.
+level C07 v1 tests and APIs remain valid historical compatibility; fresh BAMF v2
+create/resume uses only the separate v2 lease epoch.
 
 ## Pre-generation validation
 
@@ -190,13 +197,13 @@ Add one C07-owned operation whose caller supplies only the request plus opaque
 accepted-run C09 authority:
 
 ```python
-def enroll_accepted_atlas_lease(
+def enroll_accepted_atlas_lease_v2(
     run_dir: Path,
-    request: AtlasAdmissionEnrollmentRequest,
+    request: AtlasAdmissionEnrollmentRequestV2,
     *,
     human_started: bool,
     source_authority: SourceAuthorityRuntime,
-) -> AtlasAdmissionLease:
+) -> AtlasAdmissionLeaseV2:
     ...
 ```
 
@@ -209,7 +216,7 @@ The owner performs, in order, while preserving existing lock order:
 3. require request run id, seed and topology to equal that accepted identity;
 4. authenticate `source_authority` against the accepted execution cache and obtain
    the registry only inside the C07/C09 owner;
-5. call existing `issue_atlas_lease(...)` with the owner-derived
+5. call existing `issue_atlas_lease_v2(...)` with the owner-derived
    `LeaseRunIdentity`, request approval/resource/time/command data and the internal
    accepted registry, passing the same explicit `human_started=True` proof rather
    than weakening or deleting that gate;
@@ -217,11 +224,11 @@ The owner performs, in order, while preserving existing lock order:
    - no current reference: persist the immutable lease then the current reference;
    - exact current lease already present: return it idempotently;
    - a different current lease: reject with
-     `BAMF_ATLAS_LEASE_EXPLICIT_RENEWAL_REQUIRED`;
+     `BAMF_ATLAS_LEASE_V2_EXPLICIT_RENEWAL_REQUIRED`;
 7. authenticate readback through the same accepted B13/C09 owner before returning.
 
 The enrollment operation lives in a new cohesive
-`bilqis_mlx/runtime/_admission/atlas_enrollment.py` owner module. Request parsing,
+`bilqis_mlx/runtime/_admission/atlas_enrollment_v2.py` owner module. Request parsing,
 accepted-run enrollment and post-write reconciliation live there rather than growing
 the already-large `atlas_admission.py`; the established public import surface may
 re-export the new owner symbols. `atlas_admission.py` retains the existing frontier,
@@ -231,10 +238,11 @@ large-module trigger as a consequence of this amendment.
 Pinned accepted-identity drift error:
 
 - request versus accepted run identity mismatch after publication:
-  `BAMF_ATLAS_ENROLLMENT_RUN_IDENTITY_DRIFT`.
+  `BAMF_ATLAS_V2_ENROLLMENT_RUN_IDENTITY_DRIFT`.
 
-The final lease remains the existing `bilqis.c07.atlas-admission-lease/v1`; no lease
-schema migration is introduced.
+The final lease is the reviewed-unified `bilqis.c07.atlas-admission-lease/v2`.
+Historical v1 lease semantics and current reference remain untouched; v2 uses its
+separate `autonomy/atlas-admission/v2/` custody epoch.
 
 ## Fresh create state machine
 
@@ -252,7 +260,7 @@ No C07 lease exists.
 2. Publish generation zero through existing C16.1b/B13/#950 custody.
 3. Construct `AcceptedRuntimeHost(target)` and obtain opaque
    `source_authority()`.
-4. Call `enroll_accepted_atlas_lease(...)`.
+4. Call `enroll_accepted_atlas_lease_v2(...)`.
 5. Exact authenticated lease readback succeeds -> report `CREATED` with effective
    policy `atlas-release`, `ready_for_training=false`.
 
@@ -311,7 +319,8 @@ that `_durable_json` would write for `asdict(owner_derived_lease)`; typed-object
 equality after reparsing is insufficient for this recovery rule. An exact-byte
 orphan may be reused. A formatting-different or otherwise byte-different orphan
 rejects as immutable drift and does not change effective policy. This makes
-`atlas_lease_storage.py` an explicit implementation surface for C16.1a.
+`atlas_lease_storage_v2.py` an explicit implementation surface for C16.1a. The v1
+storage path is unchanged.
 
 After the current-reference write succeeds, the storage owner performs its normal
 authenticated readback. Only failures from that post-reference readback stage are
@@ -325,7 +334,7 @@ writer lock, perform exactly one reconciliation read: validate the canonical
 require the lease file's exact canonical bytes, parse/verify the lease through the
 same accepted registry, and require typed equality with the owner-derived lease. If
 all checks pass, converge to success. Otherwise raise
-`BAMF_ATLAS_LEASE_RECONCILIATION_FAILED` and preserve the durable evidence for a
+`BAMF_ATLAS_LEASE_V2_RECONCILIATION_FAILED` and preserve the durable evidence for a
 later cold retry. A later resume with no scope may authenticate a valid current
 reference; it never silently downgrades a present but invalid reference to staged.
 
@@ -355,7 +364,7 @@ This path:
    accepted state;
 3. parses the request, validates its run id/seed/topology/Atlas release against the
    accepted state, obtains opaque C09 authority from `AcceptedRuntimeHost`, and calls
-   `enroll_accepted_atlas_lease(..., human_started=args.human_run, ...)`;
+   `enroll_accepted_atlas_lease_v2(..., human_started=args.human_run, ...)`;
 4. if no current C07 lease exists, may establish the requested first lease;
 5. if the exact lease already exists, converges idempotently;
 6. if a different accepted lease exists, rejects as explicit renewal required.
@@ -492,13 +501,13 @@ Production:
 
 - `bilqis_mlx/runtime/_admission/atlas_lease_contracts.py`
   - add immutable non-authoritative enrollment request;
-- `bilqis_mlx/runtime/_admission/atlas_enrollment.py` (new)
+- `bilqis_mlx/runtime/_admission/atlas_enrollment_v2.py` (new)
   - own enrollment-request parsing, accepted-run first enrollment, explicit
     human-start propagation and post-reference reconciliation;
 - `bilqis_mlx/runtime/_admission/atlas_admission.py`
   - retain existing frontier/lease compatibility responsibilities and re-export the
     bounded enrollment owner without absorbing its implementation;
-- `bilqis_mlx/runtime/_admission/atlas_lease_storage.py`
+- `bilqis_mlx/runtime/_admission/atlas_lease_storage_v2.py`
   - required: exact `_durable_json` byte comparison for orphan reuse plus bounded
     same-lock post-reference reconciliation without changing lock order or lease
     authority;

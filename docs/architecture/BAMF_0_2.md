@@ -336,7 +336,7 @@ npm run train -- --human-run --resume \
 ```
 
 The initial foundation command may remain `staged` and omit Atlas enrollment. For
-`atlas-release`, the scope is a non-authoritative enrollment request: it does not
+`atlas-release`, the scope is a non-authoritative C07 v2 enrollment request: it does not
 carry accepted B13 identity or select C09 trust-root authority. Fresh
 `atlas-release` dry-run and create both require that request so they validate the
 same human-selected run/seed/topology/Atlas-release inputs. Ordinary resume takes no
@@ -344,7 +344,8 @@ scope and uses saved topology, source, optimizer, teacher and lease; an explicit
 conflicting override rejects. The final command form above is the only first
 post-genesis `staged -> atlas-release` enrollment completion path. These C16.1a
 lifecycle commands perform zero learner/optimizer updates; later training ownership
-remains separately gated. The new directory is distinct from current live and
+remains separately gated. The resulting authority is the separate v2 lease epoch;
+historical v1 lease semantics remain unchanged. The new directory is distinct from current live and
 frozen qualification runs. These are implementation targets, not a statement that
 historical v1 routing uses BAMF v2 fields.
 
