@@ -643,11 +643,11 @@
       "parent_number": 541,
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
-        "body_sha256": "ef68b0d12d04d2b2ab33673083e85391c58cf3aef6454df39ab7ffeea4d8cd98",
-        "clause": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1c #950 -> C16.1a #542`.",
+        "resolution": "resolved",
+        "body_sha256": "f76d0597d428918c94bd5297daccd1d221e600df01b53ebdbba402d426adeea5",
+        "clause": "**Direct prerequisites:** C16.1b",
         "known_edges": [
-          "C16.1c"
+          "C16.1b"
         ],
         "external_receipts": [],
         "source_records": [
@@ -655,14 +655,15 @@
             "source_id": "C16.1a.body",
             "kind": "body",
             "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/542",
-            "sha256": "ef68b0d12d04d2b2ab33673083e85391c58cf3aef6454df39ab7ffeea4d8cd98",
-            "excerpt": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1c #950 -> C16.1a #542`."
+            "sha256": "f76d0597d428918c94bd5297daccd1d221e600df01b53ebdbba402d426adeea5",
+            "excerpt": "**Direct prerequisites:** C16.1b"
           }
         ],
         "obligations": [
-          "Preserve every original C16/C16.1 acceptance clause; this pinned record changes executable dependency order only and grants no production authority."
+          "Preserve the original C16 launch custody and create/resume acceptance while keeping later C07 atlas-release authority outside the first-student launch edge.",
+          "C16.1c #950 remains valid downstream authority for C07/C11 full-delivery operation and is not erased by this launch-boundary correction."
         ],
-        "unresolved": "C16.1a remains held until C16.1c binds host-owned C09 source authority into accepted generation-zero custody; C16.1a consumes that authority and does not mint it."
+        "unresolved": null
       }
     },
     {
@@ -672,9 +673,9 @@
       "parent_number": 541,
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
-        "body_sha256": "7a04dd8f68f0ac289394e390bc1be3a9fa7159f5cde614ce84ecc416d5c39475",
-        "clause": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`.",
+        "resolution": "resolved",
+        "body_sha256": "5f34c103da6a4ba9f0c53cbd8dc5ea65764e0200d46054a19da2e34e5694791c",
+        "clause": "**Direct prerequisites:** B13.6, C02, C03, C05, C08",
         "known_edges": [
           "B13.6",
           "C02",
@@ -688,14 +689,15 @@
             "source_id": "C16.1b.body",
             "kind": "body",
             "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/543",
-            "sha256": "7a04dd8f68f0ac289394e390bc1be3a9fa7159f5cde614ce84ecc416d5c39475",
-            "excerpt": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`."
+            "sha256": "5f34c103da6a4ba9f0c53cbd8dc5ea65764e0200d46054a19da2e34e5694791c",
+            "excerpt": "**Direct prerequisites:** B13.6, C02, C03, C05, C08"
           }
         ],
         "obligations": [
-          "Preserve every original C16/C16.1 acceptance clause; this pinned record changes executable dependency order only and grants no production authority."
+          "Preserve the accepted generation-zero foundation/topology/teacher/optimizer binding and its original C16 external contracts.",
+          "Fresh-target improvement remains non-authorizing under the current parent FOUNDATION_EVIDENCE_POLICY_ACTIVE."
         ],
-        "unresolved": "C16.1b remains held until B13.6 provides accepted generation-zero custody; inherited C02/C03/C05/C08 interfaces may be implemented against their exact reviewed receipts without making their OPEN parent state a caller credential."
+        "unresolved": null
       }
     },
     {

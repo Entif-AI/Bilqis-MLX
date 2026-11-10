@@ -1455,7 +1455,7 @@
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 B11.2 | Unify direct inference gradient retention and championship dispatch",
-      "body_sha256": "af5936913ec0a6eb0151124caf3b1f8d6675984e82d87fc6a6950670e4d5ab32",
+      "body_sha256": "fbf9f69eeed64c547f6f4a6aa5e3c47434fb1a2e6f0f6911c9193642ed746023",
       "clause_span": [
         3,
         7
@@ -1576,7 +1576,7 @@
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 B13.2 | Validate complete generation and cold-resume exact training state",
-      "body_sha256": "f42f85bdd607471c3ad980f7dbce48571ab59870130a11b67971001de5d1562e",
+      "body_sha256": "fde183f877534ea99626de3a5e47ca323dda3c6a426ccf3f4fb8f2dcf2085f56",
       "clause_span": [
         3,
         6
@@ -2529,7 +2529,7 @@
         0,
         4
       ],
-      "source_parent_sha256": "30675a0feba3b2c61cdb6f914940c2d64de6e8887485476e192a0ec4dabaf8b7"
+      "source_parent_sha256": "7c4359ea99c617dd556ca1a88c54e22e85865e0e19d7e3fea0e897910994f12d"
     },
     {
       "key": "C13.2",
@@ -2546,7 +2546,7 @@
         4,
         8
       ],
-      "source_parent_sha256": "30675a0feba3b2c61cdb6f914940c2d64de6e8887485476e192a0ec4dabaf8b7"
+      "source_parent_sha256": "7c4359ea99c617dd556ca1a88c54e22e85865e0e19d7e3fea0e897910994f12d"
     },
     {
       "key": "C13.3",
@@ -2563,7 +2563,7 @@
         8,
         13
       ],
-      "source_parent_sha256": "30675a0feba3b2c61cdb6f914940c2d64de6e8887485476e192a0ec4dabaf8b7"
+      "source_parent_sha256": "7c4359ea99c617dd556ca1a88c54e22e85865e0e19d7e3fea0e897910994f12d"
     },
     {
       "key": "C14.1",
@@ -2672,7 +2672,7 @@
       "title": "BAMF-0.2 C15.1 | Own three-lane integration and immutable delivery-manifest preparation",
       "body_sha256": "d5f3e384717f1698ea2249ef123f1afa8378e0b6efb3b7dea086cc431ce66b09",
       "clause_span": [],
-      "source_parent_sha256": "329846f08e8280520cf1accec858eea5981f5d4b3166f3d4a89e206eda79fb9f"
+      "source_parent_sha256": "3c200c791392ee24cc6d517cdf23452cbaa9bd5cdcbccbeedd67f903e9ab99b1"
     },
     {
       "key": "C15.1a",
@@ -2728,7 +2728,7 @@
         8,
         11
       ],
-      "source_parent_sha256": "329846f08e8280520cf1accec858eea5981f5d4b3166f3d4a89e206eda79fb9f"
+      "source_parent_sha256": "3c200c791392ee24cc6d517cdf23452cbaa9bd5cdcbccbeedd67f903e9ab99b1"
     },
     {
       "key": "C15.3",
@@ -2745,7 +2745,7 @@
         11,
         14
       ],
-      "source_parent_sha256": "329846f08e8280520cf1accec858eea5981f5d4b3166f3d4a89e206eda79fb9f"
+      "source_parent_sha256": "3c200c791392ee24cc6d517cdf23452cbaa9bd5cdcbccbeedd67f903e9ab99b1"
     },
     {
       "key": "C16.1",
@@ -2761,9 +2761,9 @@
       ],
       "kind": "group",
       "title": "BAMF-0.2 C16.1 | Own persistent student create and correctly bound initial generation",
-      "body_sha256": "67170c53e7ce634008cc5a136e41a68a85b2b3984fb4fba515eda65cf6f99ee5",
+      "body_sha256": "994be33bb6ce60119b15aef0edf1433e66a0d654d9967bf0d892c5aa434da662",
       "clause_span": [],
-      "source_parent_sha256": "a32cfaa07ba7c542c388d7102d3284b3105a5cf08afb57a9ce4573eef65c8f34"
+      "source_parent_sha256": "ddb161bdc3b83eb800bcf1b9af409e7ca12ab5e2a9a7348bfe868501a9109111"
     },
     {
       "key": "C16.1a",
@@ -2771,23 +2771,23 @@
       "parent_key": "C16.1",
       "parent_number": 541,
       "deps": [
-        "C16.1c"
+        "C16.1b"
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 C16.1a | Implement persistent BAMF create dry-run and resume entrypoints",
-      "body_sha256": "ef68b0d12d04d2b2ab33673083e85391c58cf3aef6454df39ab7ffeea4d8cd98",
+      "body_sha256": "f76d0597d428918c94bd5297daccd1d221e600df01b53ebdbba402d426adeea5",
       "clause_span": [
         0,
         4
       ],
-      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e",
+      "source_parent_sha256": "994be33bb6ce60119b15aef0edf1433e66a0d654d9967bf0d892c5aa434da662",
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
-        "body_sha256": "ef68b0d12d04d2b2ab33673083e85391c58cf3aef6454df39ab7ffeea4d8cd98",
-        "clause": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1c #950 -> C16.1a #542`.",
+        "resolution": "resolved",
+        "body_sha256": "f76d0597d428918c94bd5297daccd1d221e600df01b53ebdbba402d426adeea5",
+        "clause": "**Direct prerequisites:** C16.1b",
         "known_edges": [
-          "C16.1c"
+          "C16.1b"
         ],
         "external_receipts": [],
         "source_records": [
@@ -2795,14 +2795,15 @@
             "source_id": "C16.1a.body",
             "kind": "body",
             "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/542",
-            "sha256": "ef68b0d12d04d2b2ab33673083e85391c58cf3aef6454df39ab7ffeea4d8cd98",
-            "excerpt": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1c #950 -> C16.1a #542`."
+            "sha256": "f76d0597d428918c94bd5297daccd1d221e600df01b53ebdbba402d426adeea5",
+            "excerpt": "**Direct prerequisites:** C16.1b"
           }
         ],
         "obligations": [
-          "Preserve every original C16/C16.1 acceptance clause; this pinned record changes executable dependency order only and grants no production authority."
+          "Preserve the original C16 launch custody and create/resume acceptance while keeping later C07 atlas-release authority outside the first-student launch edge.",
+          "C16.1c #950 remains valid downstream authority for C07/C11 full-delivery operation and is not erased by this launch-boundary correction."
         ],
-        "unresolved": "C16.1a remains held until C16.1c binds host-owned C09 source authority into accepted generation-zero custody; C16.1a consumes that authority and does not mint it."
+        "unresolved": null
       }
     },
     {
@@ -2819,17 +2820,17 @@
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 C16.1b | Bind fresh student topology teacher optimizer and admitted foundations",
-      "body_sha256": "7a04dd8f68f0ac289394e390bc1be3a9fa7159f5cde614ce84ecc416d5c39475",
+      "body_sha256": "5f34c103da6a4ba9f0c53cbd8dc5ea65764e0200d46054a19da2e34e5694791c",
       "clause_span": [
         4,
         8
       ],
-      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e",
+      "source_parent_sha256": "994be33bb6ce60119b15aef0edf1433e66a0d654d9967bf0d892c5aa434da662",
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
-        "body_sha256": "7a04dd8f68f0ac289394e390bc1be3a9fa7159f5cde614ce84ecc416d5c39475",
-        "clause": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`.",
+        "resolution": "resolved",
+        "body_sha256": "5f34c103da6a4ba9f0c53cbd8dc5ea65764e0200d46054a19da2e34e5694791c",
+        "clause": "**Direct prerequisites:** B13.6, C02, C03, C05, C08",
         "known_edges": [
           "B13.6",
           "C02",
@@ -2843,14 +2844,15 @@
             "source_id": "C16.1b.body",
             "kind": "body",
             "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/543",
-            "sha256": "7a04dd8f68f0ac289394e390bc1be3a9fa7159f5cde614ce84ecc416d5c39475",
-            "excerpt": "Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`."
+            "sha256": "5f34c103da6a4ba9f0c53cbd8dc5ea65764e0200d46054a19da2e34e5694791c",
+            "excerpt": "**Direct prerequisites:** B13.6, C02, C03, C05, C08"
           }
         ],
         "obligations": [
-          "Preserve every original C16/C16.1 acceptance clause; this pinned record changes executable dependency order only and grants no production authority."
+          "Preserve the accepted generation-zero foundation/topology/teacher/optimizer binding and its original C16 external contracts.",
+          "Fresh-target improvement remains non-authorizing under the current parent FOUNDATION_EVIDENCE_POLICY_ACTIVE."
         ],
-        "unresolved": "C16.1b remains held until B13.6 provides accepted generation-zero custody; inherited C02/C03/C05/C08 interfaces may be implemented against their exact reviewed receipts without making their OPEN parent state a caller credential."
+        "unresolved": null
       }
     },
     {
@@ -2863,9 +2865,9 @@
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 C16.1c | Bind host-owned C09 source authority into generation-zero custody",
-      "body_sha256": "63cf142d818e9a5ec884fa35237a0b414f2377f3248abed94dcd71d21a98cd41",
+      "body_sha256": "7f36b7f750aaaa4be30f003766596aceecc56059a5659668a96493613005838b",
       "clause_span": [],
-      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e"
+      "source_parent_sha256": "994be33bb6ce60119b15aef0edf1433e66a0d654d9967bf0d892c5aa434da662"
     },
     {
       "key": "C16.2",
@@ -2877,12 +2879,12 @@
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 C16.2 | Expose earliest lawful learning readiness without optional blockers",
-      "body_sha256": "aba57d607de3c40c4c65398d11bbd3f435184e8476007f44b25a567ccb97fb41",
+      "body_sha256": "152550e8d5622c2657a4559ad1427a9a85a520c0f60839d290de3b42c79cbf61",
       "clause_span": [
         8,
         12
       ],
-      "source_parent_sha256": "a32cfaa07ba7c542c388d7102d3284b3105a5cf08afb57a9ce4573eef65c8f34"
+      "source_parent_sha256": "ddb161bdc3b83eb800bcf1b9af409e7ca12ab5e2a9a7348bfe868501a9109111"
     },
     {
       "key": "C16.3",
@@ -2894,12 +2896,12 @@
       ],
       "kind": "leaf",
       "title": "BAMF-0.2 C16.3 | Handoff the exact durable human-started student lineage",
-      "body_sha256": "df4523a2a74296c834139c32fb53fba27d757e289d5ed708a358a3e34c55a00e",
+      "body_sha256": "947494df85e005ba0e5986b76b6a1019b3859ae3d002c6ff557758763745b983",
       "clause_span": [
         12,
         17
       ],
-      "source_parent_sha256": "a32cfaa07ba7c542c388d7102d3284b3105a5cf08afb57a9ce4573eef65c8f34"
+      "source_parent_sha256": "ddb161bdc3b83eb800bcf1b9af409e7ca12ab5e2a9a7348bfe868501a9109111"
     },
     {
       "key": "A08.1b.1",
