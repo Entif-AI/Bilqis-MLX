@@ -1,11 +1,19 @@
 """Create collision-checked grants for already verified source frame trees."""
+from dataclasses import replace
+
 from ...generated_assessment import digest
+from ..atlas.snapshot import AtlasArtifactSelection
 from ..context_eligibility import (
-    PUBLIC_FORMAL, ContextEligibility, ContextHold, ContextMember, SourceFrontier,
-    SourceGrant, frame_evidence_digest, member_evidence_digest, project_context,
+    PUBLIC_FORMAL, ApprovedContextProjection, ContextEligibility, ContextHold,
+    ContextMember, ContextPolicy, SourceFrontier, SourceGrant, TaskScope,
+    frame_evidence_digest, member_evidence_digest, project_context,
 )
-from ..frame_schema import FrameInstance
+from ..frame_schema import FrameInstance, SourceSpan
 from .common import PUBLIC_FORMAL_TIMELESS_EPOCH, _adapter_fail
+from .public_formal_schema_rights import (
+    current_source_schema_grant, issue_source_schema_rights_authority,
+    schema_evidence_digest, schema_source_handle, source_schema_rights_frontier,
+)
 
 
 def _walk(node):
@@ -34,6 +42,66 @@ def _envelope(frame, prefix, task, frontier, policy):
         observed_at=PUBLIC_FORMAL_TIMELESS_EPOCH,
         effective_from=PUBLIC_FORMAL_TIMELESS_EPOCH, effective_until=None,
         causal_prefix_end=frame.causal_prefix_end)
+
+
+def issue_source_schema_grants(
+    projection: ApprovedContextProjection,
+    *,
+    source_adapter_id: str,
+    atlas_selection: AtlasArtifactSelection,
+    task_scope: TaskScope,
+    source_frontier: SourceFrontier,
+    policy: ContextPolicy,
+) -> SourceFrontier:
+    """Issue motif-schema rights only from the source-owned A01/A03 boundary."""
+    span = SourceSpan(0, 0)
+    if (type(projection) is not ApprovedContextProjection
+            or not isinstance(source_adapter_id, str) or not source_adapter_id
+            or type(atlas_selection) is not AtlasArtifactSelection
+            or type(task_scope) is not TaskScope
+            or type(source_frontier) is not SourceFrontier
+            or type(policy) is not ContextPolicy
+            or task_scope.purpose is None
+            or atlas_selection.release_sha256 != task_scope.semantic_release):
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_SCHEMA_AUTHORITY_INVALID",
+            source_adapter_id if isinstance(source_adapter_id, str) else "<unknown>",
+            span, "<schema>")
+    atlas_selection.__post_init__()
+    authority = issue_source_schema_rights_authority(atlas_selection)
+    owner_frontier = source_schema_rights_frontier(authority)
+    if (source_frontier.rights_epoch != owner_frontier.rights_epoch
+            or source_frontier.correction_generation
+            != owner_frontier.correction_generation
+            or policy.rights_epoch != owner_frontier.rights_epoch):
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_SCHEMA_OWNER_VERSION_DRIFT",
+            source_adapter_id, span, "<schema>")
+    current = project_context(
+        projection.envelopes, task_scope, source_frontier, policy)
+    if type(current) is not ApprovedContextProjection or current != projection:
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_SCHEMA_CONTEXT_DRIFT",
+            source_adapter_id, span, "<schema>")
+
+    grants = {item.source_handle: item for item in source_frontier.grants}
+    for envelope in projection.envelopes:
+        frame = envelope.frame
+        if type(frame) is not FrameInstance:
+            continue
+        span = frame.source_span
+        grant = current_source_schema_grant(
+            authority, source_adapter_id, projection, frame)
+        prior = grants.get(grant.source_handle)
+        if prior is not None and prior != grant:
+            _adapter_fail(
+                "BAMF_CONTEXT_PUBLIC_FORMAL_SCHEMA_GRANT_COLLISION",
+                source_adapter_id, span, "<schema>")
+        grants[grant.source_handle] = grant
+    return replace(
+        source_frontier,
+        grants=tuple(sorted(
+            grants.values(), key=lambda item: item.source_handle)))
 
 
 def admit_tree(tree, row, source_adapter_id, task, source_frontier, policy, source_span):

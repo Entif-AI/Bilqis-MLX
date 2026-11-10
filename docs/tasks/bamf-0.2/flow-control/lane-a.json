@@ -1,23 +1,19 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "0338f334388a01389163fb0cba74614c2bcdb83a",
-  "updated_at": "2026-11-10T01:20:54Z",
+  "observed_unified": "7a6c048e9325a877b9b3451c731be3545a11ee69",
+  "updated_at": "2026-11-10T15:28:08Z",
   "exception": null,
   "items": [
     {
       "issue": 429,
-      "pr": null,
+      "pr": 952,
       "state": "TURNED_IN",
       "head_sha": "eb4219907dfc738c843cbba00765e4294426d351",
       "summary": "A12.3 completed across accepted PR #871 plus post-merge boundary remediation PR #874. PR #874 final head eb421990 merged into reviewed unified as 4cffd8c7 after fresh pinned EGM CLEAN at exact semantic head 97300f46 and hosted portable-core/portable/Semantic ABI PASS; the only post-EGM delta was Lane A PR bookkeeping. The remediation directly proves SOURCE_HELD refusal before trainable-row staging and before BamfTarget construction with the exact source-owned reason. Earlier #871 data-only successor/F17 source evidence remains accepted; custody PR #873 merged as 22d23ddf.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-a12-3-429-boundary-proof-20261105",
-      "merged_pr": 952,
-      "merged_pr_history": [
-        874,
-        952
-      ]
+      "merged_pr": 874
     },
     {
       "issue": 428,
@@ -163,13 +159,12 @@
     },
     {
       "issue": 395,
-      "pr": null,
-      "state": "TURNED_IN",
+      "pr": 891,
+      "state": "READY",
       "head_sha": "3bedf7c3ddf1e536261aeb5b0830441cd399dca5",
       "summary": "A09.5 parent is review-ready at semantic head 3bedf7c3 after consuming #889/#890 and closing #888. Real pinned A01/A08 replay, three successive source-qualified next_atlas_delta proposals, restart/source-order/grade-label behavior, current-credit filtering, source-authority failure closure, and fixed-point behavior are accepted. Fresh targeted EGM PASS 0 Blockers/0 Majors; hosted portable-core/portable/Semantic ABI PASS; PR #891 MERGEABLE/CLEAN and out of draft. Human merge and issue closure remain separate.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-a09-5-395-20261105",
-      "merged_pr": 891
+      "preserved_branch": "codex/bamf02-a09-5-395-20261105"
     },
     {
       "issue": 420,
@@ -241,13 +236,12 @@
     },
     {
       "issue": 842,
-      "pr": null,
+      "pr": 846,
       "state": "TURNED_IN",
       "head_sha": "eead07f2c2b01cf43e5916bd934b04cfd9c2c9ff",
       "preserved_branch": "codex/bamf02-a-842-execution-structure-20261105",
       "summary": "PR846 consumed reviewed unified70a4ef1e after PR847. Conflicts were flow-control-only; Factory diff from the prior candidate is empty. Extraction proof, focused30/30, historical17/17 and pinned real-source4/4 all pass under the merged runner, so prior whole-candidate EGM PASS remains applicable.",
-      "resume_trigger": null,
-      "merged_pr": 846
+      "resume_trigger": null
     },
     {
       "issue": 845,
@@ -260,33 +254,40 @@
     },
     {
       "issue": 906,
-      "pr": null,
+      "pr": 907,
       "state": "TURNED_IN",
       "head_sha": "48c2dbad85137b0589d64a9df8a1c2b062d48232",
       "summary": "A13 EGM-Mitigation follow-on turned in as PR #907. Round 1 EGM rejected caller-owned temporal authority and a skipped real-A01 witness; repair 3b80a76c replaces that seam with a hash-pinned opaque source/policy authority. Current-unified proof: source-context 10/10, C09 boundary 5/5, real A01 3/3 zero skips, changed-scope quality green. Disposable join with authoritative #752 consumer 03e7a3c0 proves hold-before-reuse and cold replay; accepted-runtime 9/9. Targeted EGM re-audit PASS at 4e3b8826 with zero Blocker/Major/Minor/Nit. Remote turn-in head 48c2dbad includes EGM evidence only after the reviewed head.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-a-906-temporal-context-20261107",
-      "merged_pr": 907
+      "preserved_branch": "codex/bamf02-a-906-temporal-context-20261107"
     },
     {
       "issue": 916,
-      "pr": null,
+      "pr": 918,
       "state": "TURNED_IN",
       "head_sha": "326c443e2d790ca23264cb9c5aa7135082bcf8e5",
       "summary": "A13 four-time temporal identity remediation turned in as PR #918 after pinned EGM round 1 PASS (0 Blockers / 0 Majors). Typed C09 invalidation v2 binds source/effective/observed/recorded time plus source temporal-authority digest; v2 live persistence requires opaque A13 authority and cold decode independently revalidates the tuple against the hash-pinned source registry. Historical v1 identity/decoding and the correction-backed bridge remain unchanged. Widened ring 42/42 PASS; structure/governance/smell/flow/error-control green. Human merge remains external authority; downstream #911 is the consumer.",
       "resume_trigger": null,
-      "preserved_branch": "codex/916-a13-four-time-context-20261108",
-      "merged_pr": 918
+      "preserved_branch": "codex/916-a13-four-time-context-20261108"
     },
     {
       "issue": 354,
-      "pr": null,
+      "pr": 936,
       "state": "TURNED_IN",
       "head_sha": "fc3a32f59f2f77eb352d586a3b43ddff1d2a0c53",
       "summary": "Scoped A13/A05 compiled-prefix authority repair is turned in as ready PR #936 after current-unified qualification, one shared-contract Major repair, and targeted reinspection PASS 0 Blockers / 0 Majors / 0 Nits. A05 is the sole prefix identity owner; A13 issues only after exact replay.",
-      "resume_trigger": null,
-      "preserved_branch": "codex/354-a13-prefix-inventory-20261107",
-      "merged_pr": 936
+      "resume_trigger": "Human review/merge PR #936 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
+      "preserved_branch": "codex/354-a13-prefix-inventory-20261107"
+    },
+    {
+      "issue": 959,
+      "pr": 961,
+      "state": "READY",
+      "head_sha": "bc5c524ec3828b67661b44e8e576338ee7e46068",
+      "head_sha_role": "semantic/test repair head after independent exact-head review found the accepted source-ID ordering Major",
+      "summary": "#959 source-location remediation is READY for human review in PR #961 on reviewed unified eaa73be8, synchronized candidate dbd78411. A host-owned content-addressed locator resolves source_bundle_id beneath an approved root and canonical A01 verification authenticates exact bytes/membership. The accepted-ID ordering Major is repaired at bc5c524e: a valid-but-wrong content ID is rejected against accepted A01/A02 source selection before planning/resource/tensor staging, and the same accepted parent is reused through the staging transaction. #460's synchronized B08/engram delta leaves #959 code/tests byte-identical and has no authority edge into the path. Focused proof, synchronized detached full content-ID witness, hosted portable/portable-core/Semantic ABI checks, and fresh synchronized differential re-review are green; final review disposition is 0 Blockers / 0 Majors / 0 Nits. Human merge remains external authority.",
+      "resume_trigger": "Human review/merge PR #961 into codex/bamf-unified-base-20261028. Do not self-merge; downstream work consumes only after reviewed integration.",
+      "preserved_branch": "codex/959-atlas-source-locator-20261109"
     }
   ]
 }
