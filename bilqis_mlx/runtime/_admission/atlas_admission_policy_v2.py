@@ -108,7 +108,7 @@ def _accepted_run_bindings(current: AtlasAdmissionContextV2, delta: AtlasDeltaEn
 
 def _derive_v2_facts(delta: AtlasDeltaEnvelopeV2) -> AtlasDerivedAdmissionFactsV2:
     from bilqis_mlx.factory.candidate_realizations import realized_atlas_semantic_id
-    from bilqis_mlx.runtime.bamf_bundle.vocabulary_admission import (
+    from bilqis_mlx.runtime.bamf_bundle.vocabulary.admission_facts import (
         read_issued_a02_staged_admission_facts_v2,
     )
 
