@@ -80,6 +80,9 @@ class FactorCompositionTests2(FactorCompositionTests):
             self.assertEqual(record["initializer"], item.initializer.value)
             self.assertEqual(record["group"], item.group.value)
             self.assertEqual(record["decay"], item.decay)
+            self.assertEqual(record["dtype"], item.dtype)
+            self.assertEqual(record["parameters"], item.parameter_count)
+            self.assertEqual(record["category"], item.category.value)
         view = embedding_parameter_view(parameters, spec=spec, extents=self.extents)
         owned = tuple(
             item.name for item in declared
