@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "0338f334388a01389163fb0cba74614c2bcdb83a",
-  "updated_at": "2026-11-10T00:11:08Z",
+  "observed_unified": "7a6c048e9325a877b9b3451c731be3545a11ee69",
+  "updated_at": "2026-11-10T15:28:08Z",
   "exception": null,
   "items": [
     {
@@ -278,6 +278,16 @@
       "summary": "Scoped A13/A05 compiled-prefix authority repair is turned in as ready PR #936 after current-unified qualification, one shared-contract Major repair, and targeted reinspection PASS 0 Blockers / 0 Majors / 0 Nits. A05 is the sole prefix identity owner; A13 issues only after exact replay.",
       "resume_trigger": "Human review/merge PR #936 into codex/bamf-unified-base-20261028. Do not self-merge; #471 consumes only after reviewed integration.",
       "preserved_branch": "codex/354-a13-prefix-inventory-20261107"
+    },
+    {
+      "issue": 959,
+      "pr": 961,
+      "state": "READY",
+      "head_sha": "bc5c524ec3828b67661b44e8e576338ee7e46068",
+      "head_sha_role": "semantic/test repair head after independent exact-head review found the accepted source-ID ordering Major",
+      "summary": "#959 source-location remediation is READY for human review in PR #961 on reviewed unified eaa73be8, synchronized candidate dbd78411. A host-owned content-addressed locator resolves source_bundle_id beneath an approved root and canonical A01 verification authenticates exact bytes/membership. The accepted-ID ordering Major is repaired at bc5c524e: a valid-but-wrong content ID is rejected against accepted A01/A02 source selection before planning/resource/tensor staging, and the same accepted parent is reused through the staging transaction. #460's synchronized B08/engram delta leaves #959 code/tests byte-identical and has no authority edge into the path. Focused proof, synchronized detached full content-ID witness, hosted portable/portable-core/Semantic ABI checks, and fresh synchronized differential re-review are green; final review disposition is 0 Blockers / 0 Majors / 0 Nits. Human merge remains external authority.",
+      "resume_trigger": "Human review/merge PR #961 into codex/bamf-unified-base-20261028. Do not self-merge; downstream work consumes only after reviewed integration.",
+      "preserved_branch": "codex/959-atlas-source-locator-20261109"
     }
   ]
 }
