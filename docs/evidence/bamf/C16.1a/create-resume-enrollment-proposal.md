@@ -1,6 +1,6 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-PENDING
+Status: DESIGN AMENDMENT / EGM-REPAIR-PENDING
 Issue: #542 / C16.1a
 Reviewed unified base: `2c572202978df9542e379cfb975007cdea3f05ad`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
@@ -71,6 +71,11 @@ The request intentionally has **no** `LeaseRunIdentity`, initial generation dige
 origin checkpoint, accepted manifest, C09 registry, run path or source-authority
 capability. It is human request data, not admission authority.
 
+The request also does not smuggle the human-run gate into persisted data. Explicit
+human intent remains a live operator-boundary fact. The C16.1a caller passes that
+fact separately to the C07 enrollment owner, and C07 preserves the existing
+`issue_atlas_lease(..., human_started=...)` requirement exactly.
+
 Exact shape rules:
 
 - `lease_id` and `requested_run_id` are nonempty strings;
@@ -81,6 +86,14 @@ Exact shape rules:
 - schema and admission policy are exact literals;
 - unknown fields, explicit nulls, malformed nested records and symlink/non-regular
   scope files reject.
+
+The request reader owns one public parse failure surface. Any JSON, schema, unknown
+field, explicit-null, or nested `AtlasSourceApproval` / `ResourceCeiling`
+construction failure is normalized to
+`BAMF_ATLAS_ENROLLMENT_REQUEST_INVALID`. This normalization applies only while
+deserializing the caller request. Post-genesis signature, rights, accepted-run and
+source-authority validation keeps the existing C07/C09 owner errors rather than
+being collapsed into the parse error.
 
 `--atlas-admission-scope` remains the CLI flag for compatibility, but its fresh-v2
 meaning is this enrollment request schema, not a pre-issued lease. Existing lower
@@ -128,6 +141,7 @@ pre-publication constructor. The owner shape is:
 def preview_bamf_foundation_run_identity(
     config: BamfFoundationConfig,
     admitted_release: ExecutableFactoryRelease,
+    new_run_dir: Path,
 ) -> BamfRunIdentity:
     ...
 ```
@@ -135,12 +149,15 @@ def preview_bamf_foundation_run_identity(
 The implementation may use a private shared prepared-foundation helper, but the
 semantic requirements are fixed:
 
-1. canonicalize and authenticate the existing source run;
-2. rederive Factory foundation authority from its persisted State-DAG receipt;
-3. resolve source-qualified Atlas feature authority;
-4. derive B01 model authority, zero AdamW state, sidecars and fixed-host C09 binding;
-5. call the same `prepare_initial_generation(...)` used by create;
-6. return only the resulting `candidate.run_identity`; do not create the target,
+1. canonicalize source and target paths with the same
+   `_canonical_disjoint_run_paths(...)` owner guard used by create, so dry-run
+   rejects source-overlapping targets exactly as create does;
+2. canonicalize and authenticate the existing source run;
+3. rederive Factory foundation authority from its persisted State-DAG receipt;
+4. resolve source-qualified Atlas feature authority;
+5. derive B01 model authority, zero AdamW state, sidecars and fixed-host C09 binding;
+6. call the same `prepare_initial_generation(...)` used by create;
+7. return only the resulting `candidate.run_identity`; do not create the target,
    save tensors, install a pointer, emit an accepted event, or perform an optimizer
    update.
 
@@ -148,6 +165,10 @@ The preview is allowed to allocate/evaluate the deterministic in-memory generati
 zero tensors required to derive exact candidate identity. `dry-run` means no durable
 target mutation and no learner/optimizer step, not a promise that model preparation
 allocates no arrays.
+
+Dry-run materializes the same typed `AdamWHyperparameters` used by create before it
+constructs `BamfFoundationConfig`; the historical dictionary-only validation helper
+is not the input to this owner preview.
 
 Create must use the same owner preparation logic and assert the persisted student's
 `run_identity` equals the preview identity for identical inputs. A literal test runs
@@ -160,7 +181,7 @@ Lifecycle reports add one field:
 run_identity: <BamfRunIdentity.to_record()>
 ```
 
-for `READY_TO_CREATE`, `CREATED` and `READY_TO_RESUME`. Existing top-level `run_id`
+for `READY_TO_CREATE`, `CREATED`, `READY_TO_RESUME` and `ENROLLED`. Existing top-level `run_id`
 and `run_seed` remain convenience projections and must equal this record.
 
 ## Accepted-run enrollment owner
@@ -173,6 +194,7 @@ def enroll_accepted_atlas_lease(
     run_dir: Path,
     request: AtlasAdmissionEnrollmentRequest,
     *,
+    human_started: bool,
     source_authority: SourceAuthorityRuntime,
 ) -> AtlasAdmissionLease:
     ...
@@ -180,20 +202,31 @@ def enroll_accepted_atlas_lease(
 
 The owner performs, in order, while preserving existing lock order:
 
-1. authenticate current accepted B13 custody and derive the current
+1. require `human_started is True`; this value is supplied directly from the live
+   `--human-run` operator invocation and is not inferred from request-file presence;
+2. authenticate current accepted B13 custody and derive the current
    `BamfRunIdentity` plus existing `_accepted_run_lease_identity(run_dir)`;
-2. require request run id, seed and topology to equal that accepted identity;
-3. authenticate `source_authority` against the accepted execution cache and obtain
+3. require request run id, seed and topology to equal that accepted identity;
+4. authenticate `source_authority` against the accepted execution cache and obtain
    the registry only inside the C07/C09 owner;
-4. call existing `issue_atlas_lease(...)` with the owner-derived
+5. call existing `issue_atlas_lease(...)` with the owner-derived
    `LeaseRunIdentity`, request approval/resource/time/command data and the internal
-   accepted registry;
-5. under the existing Atlas lease writer lock, converge to the exact derived lease:
+   accepted registry, passing the same explicit `human_started=True` proof rather
+   than weakening or deleting that gate;
+6. under the existing Atlas lease writer lock, converge to the exact derived lease:
    - no current reference: persist the immutable lease then the current reference;
    - exact current lease already present: return it idempotently;
    - a different current lease: reject with
      `BAMF_ATLAS_LEASE_EXPLICIT_RENEWAL_REQUIRED`;
-6. authenticate readback through the same accepted B13/C09 owner before returning.
+7. authenticate readback through the same accepted B13/C09 owner before returning.
+
+The enrollment operation lives in a new cohesive
+`bilqis_mlx/runtime/_admission/atlas_enrollment.py` owner module. Request parsing,
+accepted-run enrollment and post-write reconciliation live there rather than growing
+the already-large `atlas_admission.py`; the established public import surface may
+re-export the new owner symbols. `atlas_admission.py` retains the existing frontier,
+lease-read and compatibility responsibilities and must not cross the repository's
+large-module trigger as a consequence of this amendment.
 
 Pinned accepted-identity drift error:
 
@@ -227,30 +260,86 @@ No lifecycle step invokes the learner.
 
 ## Interruption and retry contract
 
-The cross-owner boundary has three durable states and no hidden fourth state:
+The cross-owner boundary has four durable states:
 
-1. **No gen0 pointer.** Fresh create may be retried normally.
-2. **Accepted gen0, no C07 current reference.** The run is lawfully `staged`.
-   Enrollment may be completed by an explicit human resume-enrollment request.
-3. **Accepted gen0 plus valid C07 current reference.** The effective policy is
+1. **No generation-zero artifacts.** Fresh create may begin normally.
+2. **Exact sealed generation-zero artifacts, no pointer.** This is an interrupted
+   B13 publication, not an ordinary empty target. C16.1a prepares the exact same
+   generation-zero candidate first, then invokes a B13-owned recovery-only helper
+   that delegates to the existing `existing_initial_generation_retry(...)`. Exact
+   sealed bundle/trust/acceptance identity may install the missing pointer and
+   reconcile outbox; a conflicting B13 artifact rejects. If no exact recoverable
+   B13 genesis exists, any other nonempty target remains
+   `BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED`. A fresh create never treats an
+   arbitrary occupied directory as writable merely because `bamf-state.json` is
+   absent.
+3. **Accepted gen0 pointer, no C07 current reference.** The run is lawfully
+   `staged`. Enrollment may be completed by an explicit human resume-enrollment
+   request.
+4. **Accepted gen0 plus valid C07 current reference.** The effective policy is
    `atlas-release`; resume validates/readbacks that lease without caller input.
 
-Because the existing C07 writer publishes immutable lease bytes before the current
-reference, an orphan lease file without current reference is non-authoritative and
-may be reused only if its exact bytes equal the owner-derived lease. It does not by
-itself change effective policy.
+`bamf_first_student` therefore factors deterministic preparation from target-state
+handling. The fresh path still requires an empty/absent target. The interrupted
+genesis path is admitted only after the exact prepared candidate exists and only
+through B13's authenticated exact-retry owner. A target with an already installed
+generation-zero pointer is not a fresh create; the operator must use resume.
 
-If a write/readback exception occurs after the current reference was installed,
-the operation must make one same-lock authenticated reconciliation attempt. If the
-current lease is the exact owner-derived lease, the operation converges to success.
-If readback remains unavailable or inconsistent, fail closed. A later resume with
-no scope may authenticate the current reference if it is valid; it never silently
-downgrades a present but invalid reference to staged.
+The B13 recovery-only owner is explicit:
+
+```python
+def recover_prepared_initial_generation(
+    run_dir: Path,
+    prepared: PreparedInitialGeneration,
+) -> dict | None:
+    ...
+```
+
+It validates the preparation, delegates to the existing exact initial-generation
+retry machinery, and may mutate only by completing the missing accepted pointer and
+outbox reconciliation for an exact already-sealed genesis. It returns `None` when
+no sealed initial generation exists and raises the existing B13 identity/acceptance
+errors for conflicting B13 artifacts. It never stages or writes a new bundle.
+C16.1a calls this helper only for a nonempty target with no pointer; `None` is then
+mapped back to the occupied-directory failure rather than followed by normal fresh
+publication.
+
+Because the existing C07 writer publishes immutable lease bytes before the current
+reference, an orphan lease file without current reference is non-authoritative. The
+storage owner must compare the existing file bytes with the exact canonical bytes
+that `_durable_json` would write for `asdict(owner_derived_lease)`; typed-object
+equality after reparsing is insufficient for this recovery rule. An exact-byte
+orphan may be reused. A formatting-different or otherwise byte-different orphan
+rejects as immutable drift and does not change effective policy. This makes
+`atlas_lease_storage.py` an explicit implementation surface for C16.1a.
+
+After the current-reference write succeeds, the storage owner performs its normal
+authenticated readback. Only failures from that post-reference readback stage are
+reconcilable. Unsafe path, immutable drift, different-current-lease/renewal,
+accepted-run identity, source-authority, signature and rights failures are never
+swallowed or converted into reconciliation.
+
+For a post-reference read failure or readback mismatch, while retaining the same
+writer lock, perform exactly one reconciliation read: validate the canonical
+`current.json` reference fields/digest, require it to name the owner-derived lease,
+require the lease file's exact canonical bytes, parse/verify the lease through the
+same accepted registry, and require typed equality with the owner-derived lease. If
+all checks pass, converge to success. Otherwise raise
+`BAMF_ATLAS_LEASE_RECONCILIATION_FAILED` and preserve the durable evidence for a
+later cold retry. A later resume with no scope may authenticate a valid current
+reference; it never silently downgrades a present but invalid reference to staged.
 
 ## Resume and post-genesis enrollment
 
 Normal resume with no scope remains read-only and derives effective policy only from
 accepted custody.
+
+The parser keeps the historical `--admission-policy` default of `staged`, but the
+operator boundary also preserves the existing `admission_policy_explicit` presence
+bit derived from raw argv. Resume inheritance is based on that presence bit, not on
+the parsed default value: omitted policy inherits accepted custody, while an
+explicit `--admission-policy staged` against an accepted `atlas-release` run is a
+conflicting override and rejects.
 
 An explicit enrollment retry is allowed only as:
 
@@ -266,7 +355,7 @@ This path:
    accepted state;
 3. parses the request, validates its run id/seed/topology/Atlas release against the
    accepted state, obtains opaque C09 authority from `AcceptedRuntimeHost`, and calls
-   `enroll_accepted_atlas_lease`;
+   `enroll_accepted_atlas_lease(..., human_started=args.human_run, ...)`;
 4. if no current C07 lease exists, may establish the requested first lease;
 5. if the exact lease already exists, converges idempotently;
 6. if a different accepted lease exists, rejects as explicit renewal required.
@@ -275,6 +364,55 @@ Therefore resume scope is not a general policy override or trust-root selector. 
 is a narrowly typed retry/completion surface for the first C07 enrollment after
 generation-zero custody exists. `staged -> atlas-release` is permitted only through
 this explicit human enrollment path. `atlas-release -> staged` remains forbidden.
+
+The accepted Atlas identity used for resume and enrollment comparison is the
+authenticated B13 feature receipt (`read_accepted_generation_feature_receipt`) that
+reconstructs `AtlasArtifactIdentity`. The owner also requires its
+`source_release_sha256` to equal `BamfRunIdentity.initial_release_digest`; divergence
+is accepted-custody drift and rejects before request comparison. CLI input is never
+the source of saved Atlas identity.
+
+Successful explicit resume-enrollment returns lifecycle result `ENROLLED`. Its
+report has the same complete `run_identity`, generation manifest, topology, Atlas
+identity, optimizer hyperparameters and convenience run id/seed projections as
+`READY_TO_RESUME`, with `admission_policy="atlas-release"`,
+`ready_for_training=false`, and `neural_updates=0`. Normal resume without enrollment
+continues to return `READY_TO_RESUME`.
+
+## CLI mode matrix and dispatch ownership
+
+The shared C11/C16 operator contract is exact:
+
+| Mode | Required policy/scope behavior | Mutation |
+| --- | --- | --- |
+| fresh staged dry-run | policy omitted or explicit `staged`; scope forbidden | none |
+| fresh atlas-release dry-run | `--human-run --admission-policy atlas-release --atlas-release-manifest ... --atlas-admission-scope <enrollment-request.json>` | none |
+| fresh staged create | `--human-run`; scope forbidden | generation-zero only |
+| fresh atlas-release create | `--human-run --admission-policy atlas-release --atlas-release-manifest ... --atlas-admission-scope <enrollment-request.json>` | generation-zero, then first C07 enrollment |
+| normal BAMF resume | scope omitted; omitted settings inherit saved custody; explicit settings must match | none in C16.1a |
+| first post-genesis enrollment | `--human-run --resume --admission-policy atlas-release --atlas-admission-scope <enrollment-request.json>` | first C07 enrollment only |
+
+An `atlas-release` fresh dry-run therefore requires and validates the enrollment
+request even though it does not persist a lease; this is what allows the dry-run to
+prove the same request/run/topology/Atlas-release compatibility that create will
+consume. A scope with `staged` is always invalid. A fresh `atlas-release` create or
+dry-run without scope is always invalid. Normal resume never requires a scope.
+
+Dispatch is pinned before implementation:
+
+1. a fresh command with an explicit `ModelTopologySpecV2` is owned by
+   `bamf_lifecycle`;
+2. `--resume` against a run directory with `bamf-state.json` is owned by
+   `bamf_lifecycle` even when `--model-topology` is omitted, because accepted B13
+   custody supplies the saved topology;
+3. an interrupted generation-zero publication with no pointer is retried by
+   repeating the fresh v2 create command with the same topology/source/seed inputs,
+   not by entering the historical learner-resume path;
+4. commands with neither a v2 topology nor an accepted BAMF pointer retain the
+   historical v1 routing;
+5. when `bamf_lifecycle` owns the command, `command._main` returns its lifecycle
+   result before `_invoke_learner` can run. `--human-run --resume` does not by itself
+   authorize learner entry for a BAMF v2 run in C16.1a.
 
 ## Saved-setting conflict contract
 
@@ -331,7 +469,7 @@ prove in one witness:
    selection.
 
 The witness may use existing package-local source/teacher fixtures. It must call the
-real C16.1a lifecycle and real B13/C03/C03-source-authority functions; it must not
+real C16.1a lifecycle and real B13/C03/C09-source-authority functions; it must not
 mock the observed behavior under test or run a real learner.
 
 ## Persisted-source recovery witness
@@ -354,20 +492,31 @@ Production:
 
 - `bilqis_mlx/runtime/_admission/atlas_lease_contracts.py`
   - add immutable non-authoritative enrollment request;
+- `bilqis_mlx/runtime/_admission/atlas_enrollment.py` (new)
+  - own enrollment-request parsing, accepted-run first enrollment, explicit
+    human-start propagation and post-reference reconciliation;
 - `bilqis_mlx/runtime/_admission/atlas_admission.py`
-  - parse request; add accepted-run enrollment owner; retain existing lease APIs;
+  - retain existing frontier/lease compatibility responsibilities and re-export the
+    bounded enrollment owner without absorbing its implementation;
 - `bilqis_mlx/runtime/_admission/atlas_lease_storage.py`
-  - only if needed to expose exact idempotent/readback convergence without changing
-    lock order or lease authority;
+  - required: exact `_durable_json` byte comparison for orphan reuse plus bounded
+    same-lock post-reference reconciliation without changing lock order or lease
+    authority;
 - `bilqis_mlx/presentation/operator_cli/bamf_lifecycle.py`
   - fresh request validation, post-genesis enrollment, resume-enrollment completion,
     exact preview identity, training-readiness false;
 - `bilqis_mlx/runtime/bamf_first_student.py`
   - factor deterministic pre-publication preparation and expose exact run-identity
-    preview without target mutation;
+    preview with source/target disjointness, plus recovery-aware fresh target handling;
+- `bilqis_mlx/runtime/_custody/bamf_bundle/genesis/__init__.py` and existing B13
+  publication retry owner
+  - expose the recovery-only wrapper for exact sealed unpointed generation zero;
 - `bilqis_mlx/presentation/operator_cli/command.py` / parser only as required for
-  existing flag routing; no new trust-source flag;
-- operations docs for exact request and recovery semantics.
+  the pinned v2 dispatch/presence-bit routing; no new trust-source flag and no change
+  to historical `--admission-policy` default/action semantics;
+- `docs/tasks/bamf-0.2/children/C11.1.md`, `docs/architecture/BAMF_0_2.md` and
+  operations docs
+  - align the affected shared operator command contract with the exact scope matrix.
 
 Tests:
 

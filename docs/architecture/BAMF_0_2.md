@@ -314,16 +314,39 @@ npm run train -- --dry-run --verify-source \
   --model-topology configs/models/bamf-0.2.json \
   --run-dir runs/bamf-0.2 --source-prefetch-workers 2
 
+npm run train -- --dry-run --human-run \
+  --model-topology configs/models/bamf-0.2.json \
+  --run-dir runs/bamf-0.2 --source-prefetch-workers 2 \
+  --admission-policy atlas-release --atlas-release-manifest <approved-manifest> \
+  --atlas-admission-scope <enrollment-request.json>
+
 npm run train -- --human-run \
   --model-topology configs/models/bamf-0.2.json \
   --run-dir runs/bamf-0.2 --source-prefetch-workers 2 \
-  --admission-policy atlas-release --atlas-release-manifest <approved-manifest>
+  --admission-policy atlas-release --atlas-release-manifest <approved-manifest> \
+  --atlas-admission-scope <enrollment-request.json>
 
 npm run train -- --human-run --resume \
   --run-dir runs/bamf-0.2 --source-prefetch-workers 2
+
+npm run train -- --human-run --resume \
+  --run-dir runs/bamf-0.2 --source-prefetch-workers 2 \
+  --admission-policy atlas-release \
+  --atlas-admission-scope <enrollment-request.json>
 ```
 
-The initial foundation command can omit the atlas lease and train only its current admitted release. The operator selects a session budget using the repository's supported time/visit switches. Resume uses saved topology, source, optimizer, teacher and lease. The new directory is distinct from current live and frozen qualification runs. These are implementation targets, not a statement that today's v1 parser already supports the BAMF fields.
+The initial foundation command may remain `staged` and omit Atlas enrollment. For
+`atlas-release`, the scope is a non-authoritative enrollment request: it does not
+carry accepted B13 identity or select C09 trust-root authority. Fresh
+`atlas-release` dry-run and create both require that request so they validate the
+same human-selected run/seed/topology/Atlas-release inputs. Ordinary resume takes no
+scope and uses saved topology, source, optimizer, teacher and lease; an explicit
+conflicting override rejects. The final command form above is the only first
+post-genesis `staged -> atlas-release` enrollment completion path. These C16.1a
+lifecycle commands perform zero learner/optimizer updates; later training ownership
+remains separately gated. The new directory is distinct from current live and
+frozen qualification runs. These are implementation targets, not a statement that
+historical v1 routing uses BAMF v2 fields.
 
 ## 20. Completion and useful outcomes
 
