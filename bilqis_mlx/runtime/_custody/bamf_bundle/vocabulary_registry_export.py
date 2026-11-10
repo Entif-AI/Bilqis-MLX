@@ -11,6 +11,7 @@ from bilqis_mlx.semantics.atlas.vocabulary_resources import (
     REGISTRY_DELTA_SCHEMA, RESOURCE_SCHEMA, RegistryMirrorDelta,
     RegistryMirrorRow,
 )
+from bilqis_mlx.semantics.atlas_projection import BANK_SIZE
 
 from ._vocabulary_admission_records import (
     A02VocabularyStagingReceipt, STAGED_EVENT,
@@ -82,7 +83,7 @@ class AcceptedVocabularyRegistryExport:
                 or type(self.rows) is not tuple or not self.rows
                 or any(type(row) is not RegistryMirrorRow for row in self.rows)
                 or any(row.abi_index not in self.active_indices
-                       or row.abi_index != 8192 * row.bank + row.row
+                       or row.abi_index != BANK_SIZE * row.bank + row.row
                        for row in self.rows)
                 or any(type(value) is not int or value < 0 for value in (
                     self.previous_bank_count, self.next_bank_count,
@@ -139,7 +140,7 @@ def _mirror_from_record(record: Mapping) -> RegistryMirrorDelta:
                    or type(row.abi_index) is not int or row.abi_index < 0
                    or row.abi_index > UINT32_MAX
                    or type(row.bank) is not int or row.bank < 0
-                   or type(row.row) is not int or row.row < 0 or row.row >= 8192
+                   or type(row.row) is not int or row.row < 0 or row.row >= BANK_SIZE
                    or not isinstance(row.source_status, str) or not row.source_status
                    or not isinstance(row.description, str) or not row.description
                    or not _hex(row.source_record_digest)
