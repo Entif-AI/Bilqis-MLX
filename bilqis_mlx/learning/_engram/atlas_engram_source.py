@@ -156,7 +156,7 @@ def source_qualified_motif_context(
     projection, issued_frontier = admitted
     issued_frontier = issue_source_schema_grants(
         projection,
-        source_family=_source_family(source_adapter.descriptor.adapter_id),
+        source_adapter_id=source_adapter.descriptor.adapter_id,
         atlas_selection=atlas_selection,
         task_scope=task_scope,
         source_frontier=issued_frontier,

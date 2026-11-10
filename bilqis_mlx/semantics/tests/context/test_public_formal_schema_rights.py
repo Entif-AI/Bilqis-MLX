@@ -11,6 +11,7 @@ from bilqis_mlx.semantics.context_eligibility import (
 from bilqis_mlx.semantics.frame_adapters.public_formal_grants import (
     issue_source_schema_grants, schema_evidence_digest, schema_source_handle,
 )
+from bilqis_mlx.semantics.frame_adapters.common import MICRO_PREDICATE_ADAPTER
 from bilqis_mlx.semantics.frame_schema import FrameSchema, RoleSpec
 from bilqis_mlx.semantics.tests.test_context_eligibility import (
     RELEASE, _case,
@@ -38,7 +39,7 @@ class PublicFormalSchemaRightsTests(TestCase):
             return_value=(schema, object()),
         ):
             return issue_source_schema_grants(
-                projection, source_family="synthetic",
+                projection, source_adapter_id=MICRO_PREDICATE_ADAPTER,
                 atlas_selection=selection, task_scope=task,
                 source_frontier=frontier, policy=policy)
 
