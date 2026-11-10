@@ -123,7 +123,7 @@
     {
       "issue": 401,
       "pr": null,
-      "state": "READY",
+      "state": "ACTIVE",
       "head_sha": "db0bde381eccca4207623014cb1f728258bf4d3e",
       "head_sha_role": "A02.3 accepted Registry-mirror/resource export semantic candidate on reviewed unified 0338f334; independent exact-head review pending",
       "summary": "Historical A02.3 source-derived Registry mirror and conservative bank resource estimate remain intact. Current integration closes the previously explicit persistence/readback gap by recovering the persisted plan, mirror and resource requirement from accepted C07/B13 custody, revalidating the A02 staging receipt and allocation/source/active-set lineage, and returning a typed navigation/evidence export with semantic_authority=false and training_authorized=false. The composed accepted cold-read/retry witness passes; focused A02/C07 ring, structure/governance/smell/error-control/flow/contracts/docs/diff gates are green. Fresh independent exact-head review remains before human-review PR turn-in.",
@@ -282,7 +282,7 @@
     {
       "issue": 959,
       "pr": 961,
-      "state": "ACTIVE",
+      "state": "READY",
       "head_sha": "bc5c524ec3828b67661b44e8e576338ee7e46068",
       "head_sha_role": "semantic/test repair head after independent exact-head review found the accepted source-ID ordering Major",
       "summary": "#959 source-location remediation is READY for human review in PR #961 on reviewed unified 7a6c048e. A host-owned content-addressed locator resolves source_bundle_id beneath an approved root and canonical A01 verification authenticates exact bytes/membership. The accepted-ID ordering Major found by exact-head review is repaired at bc5c524e: a valid-but-wrong content ID is rejected against accepted A01/A02 source selection before planning/resource/tensor staging, and the same accepted parent is reused through the staging transaction. Focused red-to-green proof, ordinary affected ring, corrected detached full content-ID witness, hosted portable/portable-core/Semantic ABI checks, and fresh exact-head re-review are all green; final review disposition is 0 Blockers / 0 Majors / 0 Nits. Human merge remains external authority.",
