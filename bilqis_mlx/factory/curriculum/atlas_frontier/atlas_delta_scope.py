@@ -154,6 +154,8 @@ class AtlasDeltaScopeHandoff:
         expected_scopes = resolve_v2_operator_scopes(
             successor, selection.introduced_capability_ids)
         if (staged.successor != successor
+                or self.receipt.selection_snapshot.candidate_frontier_sha256
+                   != self.candidate_frontier.release_sha256
                 or self.candidate_frontier.release_sha256
                    != self.proposal.frontier_sha256
                 or staged.frontier_sha256 != self.proposal.frontier_sha256

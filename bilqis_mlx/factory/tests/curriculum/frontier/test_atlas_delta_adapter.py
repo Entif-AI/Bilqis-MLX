@@ -108,6 +108,29 @@ class AtlasDeltaAdapterTests(AtlasDeltaAdapterFixture):
             forged_geometry_proposal,
             proposal_sha256=forged_geometry_proposal.expected_digest(),
         )
+        forged_snapshot = rehash(
+            handoff.receipt.selection_snapshot,
+            candidate_frontier_sha256="f" * 64,
+        )
+        forged_selection = replace(
+            handoff.receipt.selection,
+            snapshot_sha256=forged_snapshot.snapshot_sha256,
+            selection_sha256="0" * 64,
+        )
+        forged_selection = replace(
+            forged_selection,
+            selection_sha256=forged_selection.expected_digest(),
+        )
+        forged_receipt = replace(
+            handoff.receipt,
+            selection=forged_selection,
+            selection_snapshot=forged_snapshot,
+            receipt_sha256="0" * 64,
+        )
+        forged_receipt = replace(
+            forged_receipt,
+            receipt_sha256=forged_receipt.expected_digest(),
+        )
         substitutions = (
             self._rehash_handoff(handoff, staged_candidate=forged_candidate),
             self._rehash_handoff(handoff, staged_candidate=forged_sense),
@@ -119,6 +142,7 @@ class AtlasDeltaAdapterTests(AtlasDeltaAdapterFixture):
             ),
             self._rehash_handoff(handoff, proposal=forged_profile_proposal),
             self._rehash_handoff(handoff, proposal=forged_geometry_proposal),
+            self._rehash_handoff(handoff, receipt=forged_receipt),
             self._rehash_handoff(handoff, family_ids=("family:forged",)),
             self._rehash_handoff(handoff, operator_scopes=(replace(
                 handoff.operator_scopes[0],
