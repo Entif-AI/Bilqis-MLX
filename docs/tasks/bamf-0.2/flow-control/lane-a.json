@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
   "observed_unified": "8b03be4881d4450f4f6cba94cfda9b21a2dd2711",
-  "updated_at": "2026-11-10T01:48:00Z",
+  "updated_at": "2026-11-10T02:02:00Z",
   "exception": null,
   "items": [
     {
@@ -136,10 +136,10 @@
     },
     {
       "issue": 959,
-      "pr": null,
+      "pr": 961,
       "state": "ACTIVE",
-      "head_sha": "549473724f6b0a15c33ff9a315f3b1c1ab784e17",
-      "summary": "Atlas source-location remediation activated from reviewed unified 8b03be488. #959 owns only host storage location from accepted source_bundle_id to candidate bytes beneath A01 source authority; A02 remains the canonical byte verifier and #509 is a consumer. No semantic/source authority is granted by locator configuration and no host path may enter accepted C07/B13 identity.",
+      "head_sha": "a74d30dce672c2597fef027211d19131526bbbfa",
+      "summary": "#959 source-location remediation is implemented in draft PR #961: semantic head 236cfad9, adversarial-root test head 4ac234c8, current evidence/readback head a74d30dc. Host configuration supplies storage location only; the existing canonical _verify_bundle and accepted A01/A02 source identity remain authoritative. Exact-head full A02 topology witness and fresh independent EGM remain pending.",
       "resume_trigger": null,
       "preserved_branch": "codex/959-atlas-source-locator-20261109"
     },
@@ -147,10 +147,19 @@
       "issue": 956,
       "pr": 960,
       "state": "ACTIVE",
-      "head_sha": "39d75ce0593f7a8cf74a4c152f83089a8a9a05bc",
+      "head_sha": "efbde03820d8b6a0924d90f8897ba201d2349c77",
       "summary": "A13 schema-right continuity remediation is live in draft PR #960. It preserves hash-pinned PUBLIC_FORMAL motif-schema rights, current A01/A03 source evidence, exact rights/correction epochs, and revocation across fresh/cold owner reissue; the draft remains active while disposable #460 integration and independent exact-head review run.",
       "resume_trigger": null,
       "preserved_branch": "codex/956-a13-schema-rights-20261109"
+    },
+    {
+      "issue": 958,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "995b115b49741f73071c74000af008d9289d95d8",
+      "summary": "A09/Factory production-scope remediation activated from reviewed unified 8b03be488 with current live Lane A control state. #958 will carry the already-content-addressed StagedSelectionReceipt, exact StagedCandidate identity, and owner-derived v2 family/operator or explicit non-operator disposition into the C07 consumer boundary. It must not introduce a signer, C09 authority, caller-declared scope, learner work, or optimizer mutation.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/958-a09-c07-scope-20261109"
     },
     {
       "issue": 888,
