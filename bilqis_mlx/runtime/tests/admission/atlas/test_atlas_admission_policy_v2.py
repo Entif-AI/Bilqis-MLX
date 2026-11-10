@@ -205,6 +205,30 @@ class AtlasAdmissionPolicyV2Tests(EventCandidateRealizationFixture, unittest.Tes
         self.assertEqual(
             caught.exception.context["reason"], "BAMF_ATLAS_V2_ACCEPTED_RUN_DRIFT")
 
+    def test_stale_current_learner_evidence_rejects_before_policy(self):
+        _capability, semantic_id, handoff, plan, ledger, checkpoint = self._event_handoff()
+        approval, lease = self._authority(handoff)
+        context = self._context(handoff, plan, ledger, checkpoint, approval)
+        stale = replace(
+            context,
+            legacy=replace(
+                context.legacy,
+                checkpoint=replace(
+                    context.legacy.checkpoint,
+                    optimizer_step=context.legacy.checkpoint.optimizer_step + 1,
+                ),
+            ),
+        )
+        native = self._a02_staged(semantic_id)
+        with patch(
+                "bilqis_mlx.runtime.atlas_admission_policy_v2._accepted_run_bindings"), \
+                self.assertRaises(BilqisError) as caught:
+            advance_atlas_frontier_v2(
+                stale, AtlasDeltaEnvelopeV2(handoff, native), lease)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_ATLAS_V2_PROPOSAL_CONTEXT_DRIFT")
+
 
 if __name__ == "__main__":
     unittest.main()

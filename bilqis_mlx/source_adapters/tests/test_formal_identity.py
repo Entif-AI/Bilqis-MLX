@@ -16,17 +16,28 @@ class SourceOperatorDispositionTests(unittest.TestCase):
         self.assertEqual(boolean.operator_id, "BOOL_AND")
         self.assertEqual(boolean.semantic_root, "cogal.operator.AND")
 
-        numeric = source_operator_disposition(
-            "C.ADD", "source.finite-numeric/v2")
-        self.assertIs(numeric.kind, OperatorDispositionKind.OPERATOR)
-        self.assertEqual(numeric.operator_id, "ADD")
-        self.assertEqual(numeric.semantic_root, "school.op.ADD")
+        for capability_id, operator_id in (
+            ("C.COUNT", "COUNT"),
+            ("C.SUCCESSOR", "SUCC"),
+            ("C.ADD", "ADD"),
+            ("C.SUB", "SUB"),
+            ("C.MUL", "MUL"),
+            ("C.DIV", "DIV"),
+        ):
+            with self.subTest(capability_id=capability_id):
+                numeric = source_operator_disposition(
+                    capability_id, "source.finite-numeric/v2")
+                self.assertIs(numeric.kind, OperatorDispositionKind.OPERATOR)
+                self.assertEqual(numeric.operator_id, operator_id)
+                self.assertEqual(numeric.semantic_root, "school.op." + operator_id)
 
         number = source_operator_disposition(
             "C.NUMBER", "source.finite-numeric/v2")
         self.assertIs(number.kind, OperatorDispositionKind.NON_OPERATOR)
         self.assertIsNone(number.operator_id)
         self.assertIsNone(number.semantic_root)
+        self.assertIsNone(source_operator_disposition(
+            "C.MOD", "source.finite-numeric/v2"))
 
         for capability_id, adapter_id in (
             ("B.COMPOSITE", "source.micro.boolean-composite/v1"),
