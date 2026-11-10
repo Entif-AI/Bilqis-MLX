@@ -1,8 +1,14 @@
 # C16.1c host trust-source repair proposal
 
-Status: PROPOSED v9 / fresh EGM SHARED_CONTRACT re-review required before implementation.
+Status: PROPOSED v10 / fresh EGM SHARED_CONTRACT re-review required before implementation.
 
-Review note: v9 retains v8's fixed-host architecture and closes the complete fresh-v8 review
+Review note: v10 retains v9's fixed-host architecture and closes the complete fresh-v9 review
+packet before any production implementation. It separates the shared successor-retry helper's
+common authenticated-custody preconditions from the additional staged-manifest and live-authority
+checks owned only by final B13 publication, so ordinary admission can lawfully authenticate an
+already-pointed exact retry before minting its replacement acceptance binding. It also normalizes
+the admission wrapper name to `_require_source_authority_for_acceptance`. V9 retained v8's
+fixed-host architecture and closed the complete fresh-v8 review
 packet before any production implementation. It introduces one successor-specific full-candidate
 identity digest that preserves authenticated historical `run_identity=None` without permitting
 identity introduction/removal; moves the ordinary successor authority cutover into Phase B so a
@@ -543,7 +549,9 @@ exactly two lawful live-pointer states:
    every other ordinary transition passes False.
 2. **Already-child-pointed ordinary retry.** `current.generation == candidate.generation`.
    Call the shared `authenticate_current_successor_retry` helper defined below using the already
-   authenticated current child. Require the persisted acceptance to be the ordinary parsed
+   authenticated current child. This admission caller supplies no staged manifest and no newly
+   minted live authority; the helper itself proves exact candidate identity from accepted custody.
+   Require the persisted acceptance to be the ordinary parsed
    `AcceptedCandidateBinding` family, require the persisted child to be the exact candidate,
    and call the same successor gate over historical parent -> persisted child. Historical-anchor
    permission is derived from the already-accepted child's ordinary RETAINED_CANDIDATE
@@ -613,11 +621,28 @@ Add this private helper to publication/authority.py:
     ) -> tuple[CompleteStudent, object]:
         ...
 
-It is called only while the B13 pointer lock is held and only after the existing retry branch has
-proved current.run_id, current.generation, current.manifest_sha256,
-current.parent_manifest_sha256, current.schema, and current.acceptance_sha256 exactly match the
-candidate/digest being retried. The B13 caller separately compares the supplied live authority
-to the persisted acceptance returned by this helper.
+It is called only while the B13 pointer lock is held. Its common caller precondition is that
+`current` is the live pointer and `current_child` has already been loaded and authenticated from
+that pointer by the custody owner. The helper itself proves the candidate-specific replay facts:
+current/child run id, generation and parent-manifest identity; exact full-candidate identity via
+`successor_candidate_identity_digest`; the persisted acceptance bound by the live pointer; and
+the historical-parent linkage described below.
+
+The two callers have different additional obligations and MUST NOT be conflated:
+
+- **ordinary admission before binding mint:** `_require_source_authority_for_acceptance(...)`
+  calls the helper with authenticated current custody only. It has no staged candidate manifest
+  and no new live acceptance yet. After the helper returns, admission requires the persisted
+  acceptance to be the ordinary parsed `AcceptedCandidateBinding` family, revalidates the
+  historical-parent/source-authority branch, and uses that persisted registry digest when minting
+  the replacement ordinary acceptance. The newly minted binding must be byte/digest-identical to
+  the persisted acceptance for the same decision/state inputs or publication rejects later.
+- **final B13 already-pointed publication:** before reconcile/return, the B13 caller additionally
+  requires `current.schema`, `current.manifest_sha256`, and the staged candidate manifest digest
+  to match exactly, and requires `current.acceptance_sha256 == authority.digest`. It then calls
+  the same helper and separately requires the supplied live authority to equal the persisted
+  acceptance returned by the helper. These final-publication checks are never waived merely
+  because admission already authenticated the candidate.
 
 The helper then:
 
@@ -809,7 +834,7 @@ still recovers after Factory advance; host drift after seal cannot install/retur
 and a HOST gen0 is immediately usable/revalidatable through accepted-runtime cache ownership
 without a run-local registry file. Phase B also completes the ordinary successor cutover: remove
 the old unconditional `require_provisioned_source_authority_registry()` pre-transaction check,
-use the pointer-lock-owning `_require_current_parent_source_authority(...)` admission wrapper,
+use the pointer-lock-owning `_require_source_authority_for_acceptance(...)` admission wrapper,
 repeat the shared parent/source-authority gate under B13's final pointer transaction, and permit
 the reviewed ordinary-only historical anchor rule. A HOST gen0 must therefore publish an ordinary
 retained successor with no run-local registry file before Phase B is green.
