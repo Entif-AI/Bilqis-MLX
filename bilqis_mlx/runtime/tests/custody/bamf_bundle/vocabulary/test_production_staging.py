@@ -15,8 +15,13 @@ import numpy as np
 from bilqis_mlx.errors import BilqisError
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge
+from bilqis_mlx.learning.frame_embeddings import semantic_bank_views
+from bilqis_mlx.runtime.atlas_model_contracts import bind_candidate_active_semantic_rows
 from bilqis_mlx.runtime.bamf_bundle import (
-    issue_initial_foundation_feature_authority, load_bamf_generation,
+    authenticate_bamf_candidate_feature_context,
+    authenticate_bamf_generation_feature_context,
+    issue_initial_foundation_feature_authority,
+    load_bamf_generation,
     publish_bamf_generation, publish_initial_generation, stage_vocabulary_extension,
     stage_vocabulary_extension_from_source_id,
 )
@@ -26,6 +31,9 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, genesis_preparation,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
+    host_source_authority_patch,
 )
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
@@ -47,8 +55,11 @@ class A02ProductionStagingTests(unittest.TestCase):
         self.environment = patch.dict(
             os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
         self.environment.start()
+        self.host_authority = host_source_authority_patch()
+        self.host_authority.__enter__()
 
     def tearDown(self):
+        self.host_authority.__exit__(None, None, None)
         self.environment.stop()
         self.temporary.cleanup()
 
@@ -118,17 +129,54 @@ class A02ProductionStagingTests(unittest.TestCase):
         current_snapshot, current_features, optimizer = self._publish_source_parent()
         parent = load_bamf_generation(self.pointer, publish_missing_outbox=False)
         with self._source_patches(current_snapshot):
+            parent_authenticated = authenticate_bamf_generation_feature_context(
+                parent, "/artifact", self.pointer)
+            parent_active_rows = bind_candidate_active_semantic_rows(
+                parent, parent_authenticated)
+            self.assertEqual(parent_active_rows.active_indices, (0,))
+            forged_schema = {
+                **parent.compiler_features["feature_schema"],
+                "role_ids": ["urn:role:forged"],
+            }
+            forged_parent = replace(
+                parent,
+                compiler_features={
+                    **parent.compiler_features,
+                    "feature_schema": forged_schema,
+                },
+            )
+            with self.assertRaises(BilqisError):
+                authenticate_bamf_generation_feature_context(
+                    forged_parent, "/artifact", self.pointer)
             with self.assertRaises(BilqisError):
                 stage_vocabulary_extension(
                     self.run, "/artifact", Path("/source"),
                     ("urn:concept:not-present",))
             staged = stage_vocabulary_extension(
                 self.run, "/artifact", Path("/source"), ("urn:concept:8192",))
+            authenticated = authenticate_bamf_candidate_feature_context(
+                staged.candidate, "/artifact")
+            active_rows = bind_candidate_active_semantic_rows(
+                staged.candidate, authenticated)
         self.assertEqual(
             load_bamf_generation(self.pointer, publish_missing_outbox=False).generation, 0)
         self.assertEqual(staged.receipt.generation, 1)
         self.assertEqual(staged.receipt.semantic_bank_count, 2)
         self.assertEqual(staged.receipt.status, "STAGED_NOT_ADMITTED")
+        self.assertFalse(current_snapshot.abi(8192).active)
+        self.assertEqual(active_rows.active_indices, (0, 8192))
+        self.assertEqual(
+            active_rows.active_semantic_digest, staged.receipt.active_set_sha256)
+        banks = semantic_bank_views(
+            staged.candidate.retained_state.optimizer.parameters,
+            staged.candidate.extents,
+            authenticated.features.semantic_release,
+            active_rows.active_indices,
+        )
+        self.assertEqual(tuple(bank.active_rows for bank in banks), ((0,), (0,)))
+        self.assertIs(
+            banks[1].weights,
+            staged.candidate.retained_state.optimizer.parameters["identity.bank.1"])
         self.assertNotEqual(
             parent.run_identity.run_seed, parent.topology.default_run_seed)
         feature_names = (

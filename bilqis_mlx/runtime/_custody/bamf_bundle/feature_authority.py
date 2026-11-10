@@ -18,7 +18,7 @@ from bilqis_mlx.semantics.atlas.snapshot import (
 
 from .codec import load_bamf_bundle
 from .publication import _require_published_acceptance
-from .records import BamfBundleCandidate, invalid
+from .records import BamfBundleCandidate, CompleteStudent, invalid
 from .feature.acceptance import (
     accepted_binding_for_manifest, accepted_generation,
     parent_acceptance_anchor_from_manifest,
@@ -27,7 +27,9 @@ from .atlas_admission import ParsedAtlasAdmissionBinding
 from .feature.receipt import AcceptedGenerationFeatureReceipt, is_digest
 from .feature.context import (
     AcceptedGenerationFeatureContext, AuthenticatedCandidateFeatureContext,
+    AuthenticatedGenerationFeatureContext,
 )
+from .accepted_runtime import _published_in_memory_identity
 from .feature.replay_support import (
     artifact_identity as _artifact_identity,
     authenticate_features as _authenticate_features_with,
@@ -37,12 +39,15 @@ from .feature.replay_support import (
 )
 
 
-def _authenticate_features(student, artifact_path: str | None = None, *, predecessor=None):
+def _authenticate_features(
+        student, artifact_path: str | None = None, *, predecessor=None,
+        require_active_set_match: bool = True):
     return _authenticate_features_with(
         student, artifact_path, predecessor=predecessor,
         resolve_selection=resolve_atlas_artifact_selection,
         load_snapshot=load_pinned_atlas_snapshot,
-        build_manifest=build_feature_manifest)
+        build_manifest=build_feature_manifest,
+        require_active_set_match=require_active_set_match)
 
 
 
@@ -142,7 +147,7 @@ def authenticate_bamf_candidate_feature_context(
         candidate: BamfBundleCandidate,
         artifact_path: str) -> AuthenticatedCandidateFeatureContext:
     """Return the exact source selection, schema and replayed feature map."""
-    if not isinstance(candidate, BamfBundleCandidate):
+    if type(candidate) is not BamfBundleCandidate:
         invalid("BAMF_FEATURE_CANDIDATE_REQUIRED")
     source = _feature_source(candidate.compiler_features)
     schema = _feature_schema(candidate.compiler_features)
@@ -151,11 +156,59 @@ def authenticate_bamf_candidate_feature_context(
         str(artifact_path), identity.bundle_id,
         identity.release_sha256, identity.source_bundle_id)
     snapshot = load_pinned_atlas_snapshot(selection)
-    features = _authenticate_features(candidate, artifact_path)
+    # A02 may stage an append-only identity row into the candidate generation
+    # before C07 admits it.  The immutable source snapshot therefore still
+    # carries the parent active set while the candidate extents carry the staged
+    # generation set.  Candidate feature authentication proves source identity
+    # and factor construction only; accepted-generation replay below remains
+    # strict about active-set drift and C07 still owns admission.
+    features = _authenticate_features(
+        candidate, artifact_path, require_active_set_match=False)
     context = AuthenticatedCandidateFeatureContext(
         selection, snapshot, schema, features)
     context.__post_init__()
     return context
+
+
+def authenticate_bamf_generation_feature_context(
+        student: CompleteStudent, artifact_path: str,
+        pointer_path: Path) -> AuthenticatedGenerationFeatureContext:
+    """Replay feature inputs for one exact accepted generation through B13 custody."""
+    if type(student) is not CompleteStudent or not isinstance(pointer_path, Path):
+        invalid("BAMF_ACCEPTED_FEATURE_GENERATION_REQUIRED")
+    _published_in_memory_identity(pointer_path.parent, student)
+    accepted = read_accepted_generation_feature_context(pointer_path)
+    receipt = accepted.receipt
+    if (receipt.run_id != student.run_id
+            or receipt.generation != student.generation
+            or receipt.active_set_sha256 != student.extents.active_semantic_digest
+            or receipt.feature_sha256 != student.extents.factor_map_digest):
+        invalid("BAMF_ACCEPTED_FEATURE_GENERATION_DRIFT")
+    source = _feature_source(student.compiler_features)
+    identity = _artifact_identity(source)
+    selection = AtlasArtifactSelection(
+        str(artifact_path), identity.bundle_id,
+        identity.release_sha256, identity.source_bundle_id)
+    snapshot = load_pinned_atlas_snapshot(selection)
+    schema = _feature_schema(student.compiler_features)
+    context = AuthenticatedGenerationFeatureContext(
+        selection, snapshot, schema, accepted.features, receipt)
+    context.__post_init__()
+    return context
+
+
+def authenticate_bamf_execution_feature_context(
+        candidate: BamfBundleCandidate, artifact_path: str,
+        run_dir: Path | None = None):
+    """Dispatch feature replay by lifecycle class without collapsing authority."""
+    if type(candidate) is CompleteStudent:
+        if not isinstance(run_dir, Path):
+            invalid("BAMF_ACCEPTED_FEATURE_POINTER_REQUIRED")
+        return authenticate_bamf_generation_feature_context(
+            candidate, artifact_path, run_dir / "bamf-state.json")
+    if type(candidate) is BamfBundleCandidate:
+        return authenticate_bamf_candidate_feature_context(candidate, artifact_path)
+    invalid("BAMF_FEATURE_CANDIDATE_REQUIRED")
 
 
 def _read_accepted_generation_feature_context(pointer_path: Path):

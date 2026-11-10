@@ -33,6 +33,9 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, accepted_state, genesis_preparation, publish_candidate, candidate,
     parent_state, shape_patch,
 )
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
+    host_source_authority_patch,
+)
 from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
 from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture
 
@@ -276,6 +279,30 @@ class AcceptedGenerationFeatureAuthorityTests(unittest.TestCase):
             read_accepted_generation_feature_receipt(self.pointer)
         self.assertEqual(
             failure.exception.context["reason"], "BAMF_FEATURE_ACTIVE_SET_DRIFT")
+
+    def test_candidate_feature_replay_allows_pre_admission_active_set_delta(self):
+        features = source_features()
+        authority = self.foundation_authority(features)
+        with host_source_authority_patch(), self.foundation_replay(features):
+            prepared = genesis_preparation(foundation_features=authority)
+        candidate = replace(
+            prepared.candidate,
+            extents=replace(
+                prepared.candidate.extents, active_semantic_digest=ARBITRARY),
+            semantic_abi={
+                **prepared.candidate.semantic_abi,
+                "active_set_sha256": ARBITRARY,
+            },
+        )
+        with shape_patch(), self.source_replay(features):
+            context = feature_authority.authenticate_bamf_candidate_feature_context(
+                candidate, "/artifact")
+        self.assertEqual(context.features.digest, features.digest)
+        self.assertEqual(
+            context.snapshot.active_set_sha256,
+            prepared.candidate.extents.active_semantic_digest,
+        )
+        self.assertEqual(candidate.extents.active_semantic_digest, ARBITRARY)
 
     def test_same_feature_child_active_set_drift_requires_c07_admission(self):
         features = source_features()

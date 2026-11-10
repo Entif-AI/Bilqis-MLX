@@ -32,6 +32,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
     host_source_authority_patch,
 )
+from bilqis_mlx.runtime.tests.model.active_semantic_rows_support import snapshot_active_semantic_rows
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
 
 
@@ -152,7 +153,11 @@ class RetainedB13CustodyTests(unittest.TestCase):
             generation = execution_generation_digest(
                 parameters, spec=spec, extents=compiled.extents)
             self.assertEqual(generation, cache.generation_binding)
-            batch = BamfCompiledBatch(compiled, (source,), feature_schema)
+            batch = BamfCompiledBatch(
+                compiled, (source,), feature_schema,
+                snapshot_active_semantic_rows(
+                    compiled, _plan.snapshot, run_id=cache.run_id,
+                    generation=cache.generation))
             self._assert_live_and_nonowned_paths(
                 parameters, batch, cache, generation, slot_id)
             self._assert_absent_path(parameters, batch, generation)

@@ -1,10 +1,28 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "6a770f10074df6f4f8889d439f783ad42f5efe63",
-  "updated_at": "2026-11-10T01:20:54Z",
+  "observed_unified": "2c572202978df9542e379cfb975007cdea3f05ad",
+  "updated_at": "2026-11-10T16:59:41Z",
   "exception": null,
   "items": [
+    {
+      "issue": 970,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "2c572202978df9542e379cfb975007cdea3f05ad",
+      "summary": "B13 new_acceptance=false remediation discovered by #439's real A02 staging witness. It separates exact pre-admission candidate source-feature replay from accepted CompleteStudent replay through B13/C07 acceptance custody, preserving C07 as the sole active-set admission owner while allowing B02 to consume generation activity without source-era active flags.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-neural"
+    },
+    {
+      "issue": 439,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "2c572202978df9542e379cfb975007cdea3f05ad",
+      "summary": "B02.1 resumed after A02 #348 and its implementation children reached reviewed unified. This epoch requalifies the existing source-factorized embedding and tied sparse readout against A02's accepted typed vocabulary staging contract without moving admission authority into Lane B.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-b-neural"
+    },
     {
       "issue": 475,
       "pr": null,
@@ -292,12 +310,13 @@
     },
     {
       "issue": 460,
-      "pr": 953,
-      "state": "ACTIVE",
-      "head_sha": "d613d25d841b2ac8da3d75d37ebfc797c3975794",
+      "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "6868e129b51343fb3a3fab366c93d2ba5485c396",
       "preserved_branch": "codex/460-b08-qualified-motif-20261109",
-      "summary": "B08.1 resumed after its recorded A03/B13 authority blockers reached reviewed unified. Draft PR #953 carries source-owned schema rights into motif read identity with exact accepted-cache/source-owner custody; hosted portable checks are green and the exact branch advanced on 2026-11-10, so this remains live implementation/review WIP rather than parked WAITING state.",
-      "resume_trigger": null
+      "summary": "B08.1 is accepted and closed after human merge of PR #953. Exact merged PR head 6868e129 carried the source-owned schema-right and accepted-cache/source-owner custody repair with green hosted checks and converged exact-head review.",
+      "resume_trigger": null,
+      "merged_pr": 953
     },
     {
       "issue": 481,
@@ -412,11 +431,12 @@
     {
       "issue": 471,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "9385ac7f336dca090cdd746fe8b87904ff2e5415",
-      "summary": "B11.1 composition leaf activated after reviewed integration of A05/A13 prefix authority (#936), B10/C04 request disposition (#935), C05/A05 evaluation source custody (#937), and accepted run_seed/visit transport. Lane branch is exactly current reviewed unified; implementation is limited to canonical B06.2 selection -> B06.3 local refinement -> typed readout and existing backend dispatch obligations.",
+      "state": "TURNED_IN",
+      "head_sha": "26bcc2657e20d231ec9a6692b57d2c75b182d7a7",
+      "summary": "B11.1 is accepted and closed after human merge of PR #939. The merged exact head composes canonical B06.2 selection, B06.3 local refinement and typed readout using the accepted A05/A13, B10/C04, C05/A05 and B13/C03/C02 authority paths.",
       "resume_trigger": null,
-      "preserved_branch": "codex/bamf02-b-neural"
+      "preserved_branch": "codex/bamf02-b-neural",
+      "merged_pr": 939
     },
     {
       "issue": 948,

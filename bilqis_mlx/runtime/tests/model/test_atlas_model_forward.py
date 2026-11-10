@@ -31,6 +31,7 @@ from bilqis_mlx.runtime.atlas_model import (
 )
 from bilqis_mlx.runtime._atlas_owner_ingress import apply_compiled_batch_correction
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
+from bilqis_mlx.runtime.tests.model.active_semantic_rows_support import active_semantic_rows
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 import bilqis_mlx.runtime.atlas_model_forward as forward_impl
@@ -52,11 +53,14 @@ from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
 class AtlasModelOwnerThreadingTests(TestCase):
     def _batch(self, owner):
         compiled = SimpleNamespace(
-            extents=SimpleNamespace(motif_key_map_digest="motif-digest"))
+            extents=SimpleNamespace(motif_key_map_digest="motif-digest"),
+            features=SimpleNamespace(semantic_release="semantic-release"))
         return SimpleNamespace(
             compiled=compiled,
             sources=("source",),
             feature_schema=object(),
+            active_semantic_rows=SimpleNamespace(
+                active_indices=(0,), run_id="test-run", generation=0),
             atlas_feature_artifact_owner=owner,
         )
 
@@ -66,6 +70,7 @@ class AtlasModelOwnerThreadingTests(TestCase):
         params = object()
         producer = object()
         with patch.object(
+                forward_impl, "semantic_bank_views", return_value=("banks",)), patch.object(
                 forward_impl, "start_source_backbone_producer",
                 return_value=producer) as start:
             actual, accepted = forward_impl._source_producer(
@@ -75,10 +80,12 @@ class AtlasModelOwnerThreadingTests(TestCase):
         self.assertIs(start.call_args.args[-1], owner)
 
         empty_cache = SimpleNamespace(
+            run_id="test-run", generation=0,
             generation_binding="generation",
             motif_manifest=SimpleNamespace(digest="motif-digest", slots=()),
         )
         with patch.object(
+                forward_impl, "semantic_bank_views", return_value=("banks",)), patch.object(
                 forward_impl, "require_accepted_execution_cache",
                 return_value=empty_cache), patch.object(
                 forward_impl, "start_source_backbone_producer",
@@ -89,12 +96,27 @@ class AtlasModelOwnerThreadingTests(TestCase):
         self.assertIs(accepted, empty_cache)
         self.assertIs(start.call_args.args[-1], owner)
 
+        foreign_cache = SimpleNamespace(
+            run_id="foreign-run", generation=0,
+            generation_binding="generation",
+            motif_manifest=SimpleNamespace(digest="motif-digest", slots=()),
+        )
+        with patch.object(
+                forward_impl, "semantic_bank_views", return_value=("banks",)), patch.object(
+                forward_impl, "require_accepted_execution_cache",
+                return_value=foreign_cache):
+            with self.assertRaises(BilqisError):
+                forward_impl._source_producer(
+                    params, batch, "generation", object())
+
         retained_cache = SimpleNamespace(
+            run_id="test-run", generation=0,
             generation_binding="generation",
             motif_manifest=SimpleNamespace(
                 digest="motif-digest", slots=(object(),)),
         )
         with patch.object(
+                forward_impl, "semantic_bank_views", return_value=("banks",)), patch.object(
                 forward_impl, "require_accepted_execution_cache",
                 return_value=retained_cache), patch.object(
                 forward_impl, "bind_motif_artifact_owner") as bind, patch.object(
@@ -154,7 +176,8 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
 
     def test_forward_bamf_owns_source_backbone_and_typed_readout(self):
         batch = BamfCompiledBatch(
-            self.compiled, (self.source,), self.schema)
+            self.compiled, (self.source,), self.schema,
+            active_semantic_rows(self.compiled, self.active_indices))
         output = forward_bamf(
             self.parameters, batch, self._answer_plan(),
             ExecutionMode.INFERENCE, None)
@@ -167,7 +190,8 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
 
     def test_forward_preserves_atlas_feature_correction_hold_until_real_source_read(self):
         batch = BamfCompiledBatch(
-            self.compiled, (self.source,), self.schema)
+            self.compiled, (self.source,), self.schema,
+            active_semantic_rows(self.compiled, self.active_indices))
         event = _event(batch.atlas_feature_artifact_owner.source_dependency)
         self.assertIn(
             "ATLAS_FEATURE",
@@ -192,7 +216,9 @@ class AtlasModelSourceForwardTests(SourceBackboneTestBase):
                 motif_key_map_digest=genesis.manifest.digest,
             ),
         )
-        batch = BamfCompiledBatch(compiled, (self.source,), self.schema)
+        batch = BamfCompiledBatch(
+            compiled, (self.source,), self.schema,
+            active_semantic_rows(compiled, self.active_indices))
         plan = self._answer_plan(
             compiled=compiled, parameters=self.parameters)
         cache = _new_execution_cache(

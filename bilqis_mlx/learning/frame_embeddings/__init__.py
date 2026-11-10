@@ -64,6 +64,8 @@ from .banks import (
     ConceptBatch,
     IndexedLogits,
     _validate_banks,
+    semantic_bank_views,
+    semantic_bank_views_from_vocabulary_candidate,
     embed_atoms,
     semantic_logits,
 )

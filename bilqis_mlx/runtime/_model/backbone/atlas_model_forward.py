@@ -6,6 +6,7 @@ from bilqis_mlx.learning.atlas_readout import (
     AnswerPlan, DecoderMemory, ExecutionMode, ModelOutput,
     ReadoutSemantics, predict_typed,
 )
+from bilqis_mlx.learning.frame_embeddings import semantic_bank_views
 from bilqis_mlx.learning.source_atoms.backbone import (
     finalize_source_backbone_hidden,
     start_retained_source_backbone_producer,
@@ -29,17 +30,24 @@ from .atlas_model_refinement import _prediction_local_refinement
 
 
 def _source_producer(params, compiled_batch, generation, cache):
-    if cache is None:
+    accepted_cache = None if cache is None else require_accepted_execution_cache(cache)
+    banks = semantic_bank_views(
+        params, compiled_batch.compiled.extents,
+        compiled_batch.compiled.features.semantic_release,
+        compiled_batch.active_semantic_rows.active_indices)
+    if accepted_cache is None:
         return start_source_backbone_producer(
             compiled_batch.compiled,
             params,
             compiled_batch.sources,
             compiled_batch.feature_schema,
+            banks,
             compiled_batch.atlas_feature_artifact_owner,
         ), None
-    accepted_cache = require_accepted_execution_cache(cache)
     if (
-        accepted_cache.generation_binding != generation
+        accepted_cache.run_id != compiled_batch.active_semantic_rows.run_id
+        or accepted_cache.generation != compiled_batch.active_semantic_rows.generation
+        or accepted_cache.generation_binding != generation
         or accepted_cache.motif_manifest.digest
         != compiled_batch.compiled.extents.motif_key_map_digest
     ):
@@ -50,6 +58,7 @@ def _source_producer(params, compiled_batch, generation, cache):
             params,
             compiled_batch.sources,
             compiled_batch.feature_schema,
+            banks,
             compiled_batch.atlas_feature_artifact_owner,
         ), accepted_cache
     bind_motif_artifact_owner(accepted_cache, compiled_batch.compiled)
@@ -58,6 +67,7 @@ def _source_producer(params, compiled_batch, generation, cache):
         params,
         compiled_batch.sources,
         compiled_batch.feature_schema,
+        banks,
         accepted_cache.motif_manifest,
         compiled_batch.atlas_feature_artifact_owner,
         seal=_B13_EXECUTION_SEAL,

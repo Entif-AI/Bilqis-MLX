@@ -34,6 +34,25 @@ class AuthenticatedCandidateFeatureContext:
 
 
 @dataclass(frozen=True)
+class AuthenticatedGenerationFeatureContext:
+    """Source-replayed feature inputs backed by accepted-generation custody."""
+
+    selection: AtlasArtifactSelection
+    snapshot: FrozenAtlasSnapshot
+    schema: FeatureSchema
+    features: object
+    receipt: AcceptedGenerationFeatureReceipt
+
+    def __post_init__(self) -> None:
+        AuthenticatedCandidateFeatureContext(
+            self.selection, self.snapshot, self.schema, self.features)
+        if (type(self.receipt) is not AcceptedGenerationFeatureReceipt
+                or self.receipt.semantic_release != self.features.semantic_release
+                or self.receipt.feature_sha256 != self.features.digest):
+            invalid("BAMF_ACCEPTED_FEATURE_CONTEXT_INVALID")
+
+
+@dataclass(frozen=True)
 class AcceptedGenerationFeatureContext:
     """Typed B13 replay context for one accepted generation."""
 

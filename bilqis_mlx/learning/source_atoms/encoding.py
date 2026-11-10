@@ -8,7 +8,7 @@ from .embedding import source_atom_vectors
 
 
 def encode_source_compiled_with_handoffs(
-    compiled, parameters, sources, feature_schema, artifact_owner,
+    compiled, parameters, sources, feature_schema, banks, artifact_owner,
 ):
     """Encode actual A05 rows and return the verified source handoff closure.
 
@@ -27,14 +27,14 @@ def encode_source_compiled_with_handoffs(
     for row, config, source, requests in zip(
             compiled.compiled.rows, compiled.compiler_configs,
             sources, compiled.member_requests):
-        vectors, banks, handoff = source_atom_vectors(
+        vectors, row_banks, handoff = source_atom_vectors(
             parameters, row, config, source, compiled.features,
-            feature_schema, compiled.extents, artifact_owner)
+            feature_schema, compiled.extents, banks, artifact_owner)
         atom_rows.append(vectors)
         handoffs.append(handoff)
         if requests:
             members = embed_atoms(
-                parameters, ConceptBatch((requests,), banks, compiled.extents),
+                parameters, ConceptBatch((requests,), row_banks, compiled.extents),
                 compiled.features, atlas_selection=source.selection)[0]
             member_rows.append(tuple(MemberEmbedding(request, members[index])
                                      for index, request in enumerate(requests)))
@@ -46,8 +46,9 @@ def encode_source_compiled_with_handoffs(
         atlas_selections=tuple(source.selection for source in sources)), tuple(handoffs)
 
 
-def encode_source_compiled(compiled, parameters, sources, feature_schema, artifact_owner):
+def encode_source_compiled(
+        compiled, parameters, sources, feature_schema, banks, artifact_owner):
     """Compatibility surface returning only the differentiable encoded frames."""
     encoded, _ = encode_source_compiled_with_handoffs(
-        compiled, parameters, sources, feature_schema, artifact_owner)
+        compiled, parameters, sources, feature_schema, banks, artifact_owner)
     return encoded

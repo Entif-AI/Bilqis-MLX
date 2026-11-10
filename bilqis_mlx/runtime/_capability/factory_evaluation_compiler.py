@@ -5,9 +5,11 @@ from pathlib import Path
 
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.learning.source_atoms import SourceAtomRow
-from bilqis_mlx.runtime.atlas_model_contracts import BamfCompiledBatch
+from bilqis_mlx.runtime.atlas_model_contracts import (
+    BamfCompiledBatch, bind_candidate_active_semantic_rows,
+)
 from bilqis_mlx.runtime.bamf_bundle import (
-    BamfBundleCandidate, authenticate_bamf_candidate_feature_context,
+    BamfBundleCandidate, authenticate_bamf_execution_feature_context,
 )
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.semantics.context_eligibility import (
@@ -65,8 +67,8 @@ def compile_factory_evaluation_batch(
         _invalid("BAMF_C05_EVALUATION_COMPILE_INPUT_INVALID")
     source_context.release.verify()
     source_context.release.verify_semantic_catalog(source_context.graph)
-    authenticated = authenticate_bamf_candidate_feature_context(
-        candidate, artifact_path)
+    authenticated = authenticate_bamf_execution_feature_context(
+        candidate, artifact_path, source_context.run_dir)
     execution = source_context.release.execution_plan.capability_map[
         row["capability"]]
     profile_parameters = (dict(execution.provider_parameters)
@@ -97,7 +99,8 @@ def compile_factory_evaluation_batch(
         Path(source_context.source_root), source_seed, source_each,
         source_context.release.curriculum, profile_parameters)
     batch = BamfCompiledBatch(
-        compiled, (source,), authenticated.schema)
+        compiled, (source,), authenticated.schema,
+        bind_candidate_active_semantic_rows(candidate, authenticated))
     batch.__post_init__()
     source_context.register_compiled_batch(batch)
     return batch

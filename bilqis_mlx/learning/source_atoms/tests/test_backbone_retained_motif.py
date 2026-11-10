@@ -5,11 +5,13 @@ import unittest
 import mlx.core as mx
 
 from bilqis_mlx.learning.atlas_engram_reads.source_owner import _B13_EXECUTION_SEAL
+from bilqis_mlx.learning.frame_embeddings import semantic_bank_views
 from bilqis_mlx.learning.source_atoms.backbone import (
     start_retained_source_backbone_producer, start_source_backbone_producer,
 )
 from bilqis_mlx.learning.source_atoms.backbone_receipts import HIT, NO_HIT
 from bilqis_mlx.runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
+from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
 from bilqis_mlx.learning.tests.motif_reads.test_source_owner import (
     SourceOwnedMotifReadTests,
 )
@@ -25,10 +27,15 @@ class RetainedBackboneMotifTests(unittest.TestCase):
         (compiled, parameters, source, feature_schema, manifest, _spec, _extents,
          _hidden, _slot_id) = SourceOwnedMotifReadTests()._fixture()
         owner = AtlasFeatureArtifactOwner(compiled.features, feature_schema)
+        active = tuple(entry.index for entry in
+                       load_pinned_atlas_snapshot(source.selection).abi_entries
+                       if entry.active)
+        banks = semantic_bank_views(
+            parameters, compiled.extents, compiled.features.semantic_release, active)
         plain = start_source_backbone_producer(
-            compiled, parameters, (source,), feature_schema, owner).advance()
+            compiled, parameters, (source,), feature_schema, banks, owner).advance()
         retained = start_retained_source_backbone_producer(
-            compiled, parameters, (source,), feature_schema, manifest, owner,
+            compiled, parameters, (source,), feature_schema, banks, manifest, owner,
             seal=_B13_EXECUTION_SEAL).advance()
         mx.eval(plain.hidden, retained.hidden)
         self.assertEqual(plain.motif_disposition, NO_HIT)
@@ -42,8 +49,13 @@ class RetainedBackboneMotifTests(unittest.TestCase):
         (compiled, parameters, source, feature_schema, manifest, spec, extents,
          _hidden, _slot_id) = SourceOwnedMotifReadTests()._fixture()
         owner = AtlasFeatureArtifactOwner(compiled.features, feature_schema)
+        active = tuple(entry.index for entry in
+                       load_pinned_atlas_snapshot(source.selection).abi_entries
+                       if entry.active)
+        banks = semantic_bank_views(
+            parameters, compiled.extents, compiled.features.semantic_release, active)
         producer = start_retained_source_backbone_producer(
-            compiled, parameters, (source,), feature_schema, manifest, owner,
+            compiled, parameters, (source,), feature_schema, banks, manifest, owner,
             seal=_B13_EXECUTION_SEAL)
         first = producer.advance()
         second = producer.advance(depth_parameters=depth_parameter_view(
