@@ -28,9 +28,7 @@ from bilqis_mlx.runtime.topology_v2.ledger import bamf_parameter_census
 import bilqis_mlx.runtime.atlas_model_forward as forward_impl
 import bilqis_mlx.runtime.tests.model.test_atlas_model_retained as retained_tests
 import bilqis_mlx.semantics.frame_adapters.public_formal_schema_rights_registry as rights_registry
-from bilqis_mlx.semantics.tests.context.test_public_formal_schema_rights_owner import (
-    PublicFormalSchemaRightsOwnerTests,
-)
+import bilqis_mlx.semantics.tests.context.test_public_formal_schema_rights_owner as rights_tests
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
 
 
@@ -128,7 +126,7 @@ class RetainedMotifMissTests(TestCase):
             "test_retained_b08_hit_enters_the_same_loss_bearing_b09_trace")
         (compiled, parameters, source, feature_schema, _plan, _cache,
          _spec, _extents, manifest, _slot_id) = case._runtime_fixture()
-        rights_case = PublicFormalSchemaRightsOwnerTests(
+        rights_case = rights_tests.PublicFormalSchemaRightsOwnerTests(
             "test_same_epoch_revocation_survives_fresh_and_cold_owner_reissue")
         rights_case.setUp()
         try:

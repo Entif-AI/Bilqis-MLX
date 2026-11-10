@@ -28,10 +28,6 @@ from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents
 import bilqis_mlx.runtime.atlas_model_forward as forward_impl
 import bilqis_mlx.runtime.tests.model.test_atlas_model_retained as retained_tests
 from bilqis_mlx.runtime.topology_v2.ledger import bamf_parameter_census
-import bilqis_mlx.semantics.frame_adapters.public_formal_schema_rights_registry as rights_registry
-from bilqis_mlx.semantics.tests.context.test_public_formal_schema_rights_owner import (
-    PublicFormalSchemaRightsOwnerTests,
-)
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE
 @skipUnless(REAL_BUNDLE, "real pinned A01 artifact not mounted")
 class RetainedMotifSiteIntegrationTests(TestCase):

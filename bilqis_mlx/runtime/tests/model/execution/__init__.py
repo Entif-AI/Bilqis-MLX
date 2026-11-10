@@ -1,1 +1,0 @@
-"""Model execution contract tests."""
