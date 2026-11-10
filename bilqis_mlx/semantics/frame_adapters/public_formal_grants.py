@@ -1,6 +1,5 @@
 """Create collision-checked grants for already verified source frame trees."""
 from dataclasses import replace
-import hashlib
 
 from ...generated_assessment import digest
 from ..atlas.snapshot import AtlasArtifactSelection
@@ -9,9 +8,12 @@ from ..context_eligibility import (
     ContextMember, ContextPolicy, SourceFrontier, SourceGrant, TaskScope,
     frame_evidence_digest, member_evidence_digest, project_context,
 )
-from ..frame_schema import FrameInstance, FrameSchema, SourceSpan
-from ..released_frame_schemas import lookup_source_pinned_frame_schema
+from ..frame_schema import FrameInstance, SourceSpan
 from .common import PUBLIC_FORMAL_TIMELESS_EPOCH, _adapter_fail
+from .public_formal_schema_rights import (
+    current_source_schema_grant, issue_source_schema_rights_authority,
+    schema_evidence_digest, schema_source_handle, source_schema_rights_frontier,
+)
 
 
 def _walk(node):
@@ -42,22 +44,6 @@ def _envelope(frame, prefix, task, frontier, policy):
         causal_prefix_end=frame.causal_prefix_end)
 
 
-def schema_source_handle(schema: FrameSchema) -> str:
-    """Canonical source-rights handle for one released frame schema."""
-    if type(schema) is not FrameSchema:
-        _adapter_fail(
-            "FRAME_SCHEMA_REQUIRED", "<schema>", SourceSpan(0, 0), "<schema>")
-    return f"source:motif-schema:{schema.identity}"
-
-
-def schema_evidence_digest(schema: FrameSchema) -> str:
-    """Canonical A03 schema-body evidence used by source rights."""
-    if type(schema) is not FrameSchema:
-        _adapter_fail(
-            "FRAME_SCHEMA_REQUIRED", "<schema>", SourceSpan(0, 0), "<schema>")
-    return hashlib.sha256(schema.canonical_bytes()).hexdigest()
-
-
 def issue_source_schema_grants(
     projection: ApprovedContextProjection,
     *,
@@ -81,9 +67,16 @@ def issue_source_schema_grants(
             "BAMF_CONTEXT_PUBLIC_FORMAL_SCHEMA_AUTHORITY_INVALID",
             source_adapter_id if isinstance(source_adapter_id, str) else "<unknown>",
             span, "<schema>")
-    from ..atlas_features.formal import source_family_for_adapter
-    source_family = source_family_for_adapter(source_adapter_id)
     atlas_selection.__post_init__()
+    authority = issue_source_schema_rights_authority(atlas_selection)
+    owner_frontier = source_schema_rights_frontier(authority)
+    if (source_frontier.rights_epoch != owner_frontier.rights_epoch
+            or source_frontier.correction_generation
+            != owner_frontier.correction_generation
+            or policy.rights_epoch != owner_frontier.rights_epoch):
+        _adapter_fail(
+            "BAMF_CONTEXT_PUBLIC_FORMAL_SCHEMA_OWNER_VERSION_DRIFT",
+            source_adapter_id, span, "<schema>")
     current = project_context(
         projection.envelopes, task_scope, source_frontier, policy)
     if type(current) is not ApprovedContextProjection or current != projection:
@@ -97,24 +90,13 @@ def issue_source_schema_grants(
         if type(frame) is not FrameInstance:
             continue
         span = frame.source_span
-        schema, _witness = lookup_source_pinned_frame_schema(
-            frame.frame_schema_id, frame.frame_schema_revision,
-            source_family=source_family, atlas_selection=atlas_selection)
-        grant = SourceGrant(
-            schema_source_handle(schema), task_scope.principal_id,
-            task_scope.tenant_id, envelope.source_regime,
-            task_scope.semantic_release, schema_evidence_digest(schema),
-            (task_scope.purpose,), (task_scope.jurisdiction,),
-            (task_scope.scope,), source_frontier.rights_epoch,
-            source_frontier.correction_generation, envelope.observed_at,
-            envelope.effective_from, envelope.effective_until)
+        grant = current_source_schema_grant(
+            authority, source_adapter_id, projection, frame)
         prior = grants.get(grant.source_handle)
-        if prior is not None:
-            if replace(prior, revoked=False) != grant:
-                _adapter_fail(
-                    "BAMF_CONTEXT_PUBLIC_FORMAL_SCHEMA_GRANT_COLLISION",
-                    source_adapter_id, span, "<schema>")
-            grant = prior
+        if prior is not None and prior != grant:
+            _adapter_fail(
+                "BAMF_CONTEXT_PUBLIC_FORMAL_SCHEMA_GRANT_COLLISION",
+                source_adapter_id, span, "<schema>")
         grants[grant.source_handle] = grant
     return replace(
         source_frontier,

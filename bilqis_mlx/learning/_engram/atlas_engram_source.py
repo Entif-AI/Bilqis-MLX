@@ -21,6 +21,9 @@ from bilqis_mlx.semantics.frame_adapters.public_formal import public_formal_cont
 from bilqis_mlx.semantics.frame_adapters.public_formal_grants import (
     issue_source_schema_grants,
 )
+from bilqis_mlx.semantics.frame_adapters.public_formal_schema_rights import (
+    issue_source_schema_rights_authority, source_schema_rights_frontier,
+)
 from bilqis_mlx.semantics.frame_adapters.public_formal_sources import canonical_graph
 from bilqis_mlx.semantics.frame_schema import FrameInstance, validate_frame_bindings
 from bilqis_mlx.semantics.released_frame_schemas import (
@@ -146,6 +149,18 @@ def source_qualified_motif_context(
     snapshot = load_pinned_atlas_snapshot(atlas_selection)
     if snapshot.release_sha256 != task_scope.semantic_release:
         _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
+    rights_authority = issue_source_schema_rights_authority(atlas_selection)
+    owner_frontier = source_schema_rights_frontier(rights_authority)
+    if not source_frontier.grants:
+        source_frontier = owner_frontier
+    elif (
+        source_frontier.rights_epoch != owner_frontier.rights_epoch
+        or source_frontier.correction_generation
+        != owner_frontier.correction_generation
+    ):
+        _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_STALE")
+    if policy.rights_epoch != owner_frontier.rights_epoch:
+        _invalid("BAMF_MOTIF_SOURCE_POLICY_STALE")
     admitted = public_formal_context(
         source_adapter, row, snapshot, source_root=source_root, graph=graph,
         task_scope=task_scope, source_frontier=source_frontier, policy=policy,
