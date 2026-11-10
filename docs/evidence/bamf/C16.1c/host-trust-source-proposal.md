@@ -1,8 +1,14 @@
 # C16.1c host trust-source repair proposal
 
-Status: PROPOSED v3 / fresh EGM re-review required before implementation.
+Status: PROPOSED v4 / fresh EGM re-review required before implementation.
 
-Review note: v3 closes the fresh-v2 EGM findings around host path custody, lineage
+Review note: v4 retains v3's fixed-host architecture and closes the fresh-v3 EGM
+findings around exact Darwin path/ACL enforcement, callable custody APIs, phase-stable
+accepted-runtime behavior, caller threat model, exact file/test scope, and the remaining
+TOCTOU wording mismatch. Production code remains frozen until this amended shared contract
+reaches 0 Blockers / 0 Majors.
+
+V3 closed the fresh-v2 EGM findings around host path custody, lineage
 inheritance, resolver lock ownership, generation-zero retry ordering, correction-frontier
 compatibility, cache revalidation, Atlas-admission successors, and implementation/test
 phasing. Production code remains frozen until this amended shared contract reaches
@@ -233,88 +239,375 @@ The operations docs must describe the privileged step rather than leaving it as 
 5. recovery for an accepted lineage is restore-the-exact-old-root or stop. Installing a new
    root is migration/rotation and is forbidden until a separate governed protocol authorizes it.
 
+## V4 normative closure: exact host and custody contracts
+
+This section supersedes any less-specific wording above. It is the implementation contract for
+the remaining shared seams.
+
+### Trusted-process boundary
+
+The threat model trusts the integrity of the Bilqis Python package, interpreter process, and
+loaded project code. Arbitrary in-process code execution, monkeypatching, debugger injection,
+or replacement of private module globals is equivalent to compromise of the trusted Bilqis
+process and is outside C16.1c. The guarantee is against ordinary callers that can invoke public
+Bilqis APIs, choose run paths, create run-directory contents, set environment/configuration, or
+control package payloads without already controlling the trusted process. Test-only patching of
+private constants or syscall adapters exercises branches; it is not a supported authority
+surface.
+
+If hostile same-process code must be defended against later, the fixed-root reader must move
+behind a separately protected process or OS capability boundary. This leaf does not claim that.
+
+### Exact Darwin path and ACL adapter
+
+Add one private Darwin-only module:
+
+    bilqis_mlx/runtime/_custody/bamf_bundle/_darwin_source_authority.py
+
+It owns only host-filesystem verification. Its callable surface is exactly:
+
+    HOST_SOURCE_AUTHORITY_LOGICAL_PATH = "/etc/entif-ai/bilqis/source-authority-registry.json"
+    _HOST_SOURCE_AUTHORITY_COMPONENTS = (
+        "private", "etc", "entif-ai", "bilqis", "source-authority-registry.json",
+    )
+    def open_host_source_authority_registry_fd() -> int: ...
+    def read_extended_acl(fd: int) -> tuple[DarwinAclEntry, ...]: ...
+    def require_safe_host_descriptor(fd: int, *, directory: bool) -> None: ...
+
+DarwinAclEntry is a private frozen dataclass with:
+
+    tag: Literal["ALLOW", "DENY"]
+    principal_kind: Literal["UID", "GID", "UNKNOWN"]
+    principal_id: int | None
+    permissions: frozenset[str]
+
+The module loads libSystem.B.dylib privately and uses the Darwin C interfaces
+acl_get_fd_np(fd, ACL_TYPE_EXTENDED), acl_get_entry, acl_get_tag_type,
+acl_get_qualifier, acl_get_permset, acl_get_perm_np, acl_free, and
+mbr_uuid_to_id. ID_TYPE_UID is 0; ID_TYPE_GID is 1. ACL entry iteration treats
+acl_get_entry == 1 as an entry, 0 as end or empty ACL, and -1 as failure. A NULL ACL
+handle, qualifier or permset failure, unknown tag, failed UUID resolution, unexpected ID type,
+or any libSystem error fails closed with BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_INVALID.
+
+The mutation permission set is exactly:
+
+    ACL_WRITE_DATA
+    ACL_APPEND_DATA
+    ACL_DELETE
+    ACL_DELETE_CHILD
+    ACL_WRITE_ATTRIBUTES
+    ACL_WRITE_EXTATTRIBUTES
+    ACL_WRITE_SECURITY
+    ACL_CHANGE_OWNER
+
+Darwin aliases ACL_ADD_FILE to ACL_WRITE_DATA and ACL_ADD_SUBDIRECTORY to
+ACL_APPEND_DATA, so those are covered. DENY entries do not grant authority and may remain.
+An ALLOW entry intersecting the mutation set is accepted only when its principal resolves to
+principal_kind == "UID" and principal_id == 0. Mutating ALLOW entries for a group,
+including gid 0, an unresolved principal, or any non-root UID reject. Non-mutating/read-only
+ALLOW entries may remain.
+
+open_host_source_authority_registry_fd() verifies /etc without treating a Python-resolved
+pathname as authority:
+
+1. lstat("/etc") must report a UID-0 symlink.
+2. readlink("/etc") must equal the exact relative target "private/etc".
+3. Open "/" as the anchor directory.
+4. Open private, then etc, then entif-ai, then bilqis fd-relatively with
+   O_RDONLY | O_DIRECTORY | O_NOFOLLOW.
+5. For each opened directory call require_safe_host_descriptor(..., directory=True).
+6. Compare st_dev and st_ino of the fd-opened physical private/etc directory with
+   stat("/etc"); mismatch rejects.
+7. Open the final registry fd relative to verified bilqis with O_RDONLY | O_NOFOLLOW;
+   call require_safe_host_descriptor(..., directory=False).
+
+require_safe_host_descriptor uses fstat: expected directory or final regular-file type,
+st_uid == 0, no S_IWGRP | S_IWOTH, and the ACL rule above. The final file additionally
+requires size 1.._MAX_REGISTRY_BYTES. All opened fds are closed on every failure path.
+
+The ordinary no-extended-ACL case is an empty tuple from successful ACL enumeration. It is
+not represented by an ACL API error. Any ACL API error fails closed rather than being guessed
+to mean no ACL.
+
+### Exact custody API
+
+source_authority_custody.py owns the semantic branch and exposes these production-private
+functions:
+
+    HOST_SYSTEM_SOURCE_AUTHORITY_ORIGIN = "HOST_SYSTEM_V1"
+    def read_host_system_source_authority_registry() -> SourceAuthorityRegistry: ...
+    def resolve_source_authority_registry(
+        run_dir: Path,
+        correction_frontier: Mapping[str, object],
+    ) -> SourceAuthorityRegistry | None: ...
+    def require_source_authority_successor_inheritance(
+        parent_frontier: Mapping[str, object],
+        candidate_frontier: Mapping[str, object],
+    ) -> None: ...
+
+read_host_system_source_authority_registry() calls the Darwin fd opener, reads exactly the
+already-bounded bytes from that fd, parses SourceAuthorityRegistry, and never accepts a path
+argument.
+
+resolve_source_authority_registry() requires that its caller is already operating on
+authenticated custody when the frontier is being used as authority. The resolver itself does
+not acquire the B13 pointer lock. It owns any legacy registry lock it needs:
+
+- origin HOST_SYSTEM_V1: require record+digest, read fixed host registry, exact-match it,
+  acquire no run-local registry lock;
+- origin field genuinely absent + record+digest both present: acquire
+  source_authority_registry_lock(run_dir) and run the existing legacy exact-match check;
+- origin genuinely absent + both record/digest absent: return None only for historical
+  read compatibility; it cannot mint C09 runtime authority;
+- explicit null, unknown origin, half-binding, or digest mismatch: reject.
+
+No production caller using resolve_source_authority_registry() may already hold the legacy
+registry lock. The only retained unlocked legacy helper is private to the legacy-lock
+implementation. The global nesting remains B13 pointer lock -> resolver -> optional legacy
+registry lock.
+
+require_source_authority_successor_inheritance() is a pure validator and returns None; it
+does not read a filesystem root and does not accept a run path. It requires the candidate's
+origin/record/digest tuple to equal the authenticated parent's tuple exactly, with the v4
+legacy rule that explicit null never equals historical field absence. A HOST_SYSTEM_V1
+parent therefore cannot be downgraded. The caller then resolves and revalidates the parent's
+selected root before publication.
+
+### Exact publication and admission ownership
+
+publication/authority.py::validate_parent_transition(...) changes its return value from None
+to CompleteStudent | None: None for generation zero, otherwise the exact parent bundle that it
+already loads and validates against the live pointer. It remains the owner of parent identity
+and transition validation.
+
+publication/__init__.py::_publish_authorized_generation(...) consumes that returned
+authenticated parent inside the final pointer transaction. Before any authority-type-specific
+branch, including AtlasAdmissionBinding, it:
+
+1. calls require_source_authority_successor_inheritance(parent.correction_frontier,
+   candidate.correction_frontier);
+2. calls resolve_source_authority_registry(run_dir, parent.correction_frontier);
+3. requires the resolved registry digest, when present, to equal the candidate frontier digest.
+
+Only after those checks may the existing ordinary-vs-Atlas authority-specific logic continue.
+Thus ordinary and Atlas publication share one C09 parent gate and no candidate metadata selects
+the branch.
+
+admission.py::accept_and_publish(...) performs the same read-only inheritance/root check
+against load_accepted_generation(run_dir) before minting the ordinary acceptance binding so
+the binding's registry digest is not self-asserted by the candidate. B13 publication repeats
+the check under its final pointer transaction; this repetition is intentional TOCTOU defense.
+publish_atlas_admission_generation(...) does not mint an ordinary acceptance binding and
+relies on the same final B13 parent gate before its Atlas-specific branch.
+
+No separate inheritance-result object is introduced: the pure inheritance function's result is
+success or failure; the authenticated parent object remains the existing CompleteStudent; the
+root-resolution result is SourceAuthorityRegistry | None.
+
+### Phase-stable accepted-runtime ownership
+
+The accepted-runtime and cache cutover is part of Phase B, not Phase C. Phase B is not complete
+until a newly created HOST_SYSTEM_V1 generation zero can be loaded and revalidated through
+AcceptedRuntimeHost without any run-local C09 file.
+
+accepted_runtime.py changes both cache install and cache reuse:
+
+- while holding _pointer_lock, load and authenticate the current accepted bundle with
+  _read_accepted_locked;
+- resolve from that accepted student's correction frontier with
+  resolve_source_authority_registry;
+- compare the returned registry and accepted digest with the retained private cache entry;
+- never call read_provisioned_source_authority_registry(run_dir) directly during cache reuse.
+
+execution_cache.py remains unchanged. No origin selector is copied into the public cache schema.
+
+### Conditional drift guarantee
+
+Every claim that host-root drift between preparation and pointer publication is rejected before
+pointer mutation is conditional on the explicit host-admin precondition that the root is not
+rotated, replaced, or relinked concurrently with Bilqis operations. There is intentionally no
+cross-process lock spanning final host-root read through pointer commit. If the trusted host
+administrator violates that precondition inside that window, a commit may complete and the
+next C09/B13 authority boundary detects the mismatch. C16.1c does not claim otherwise.
+
+### Recovery boundary
+
+Recovery restores the exact old registry content into a newly verified safe fixed-host boundary:
+the physical directory chain, final owner, POSIX mode, ACLs, file type, and size must all pass
+the same live reader before the restored bytes may satisfy an accepted lineage. Possessing the
+old bytes or digest alone is insufficient.
+
 ## Implementation locations
 
-- Modify `bilqis_mlx/runtime/_custody/bamf_bundle/source_authority_custody.py`: add the fixed system-host path/reader, UID/mode/file-shape validation, `HOST_SYSTEM_V1` origin handling, and unified authoritative-registry resolver while preserving legacy run-local validation/locking.
-- Modify `bilqis_mlx/runtime/_custody/bamf_bundle/genesis/preparation.py` and `preparation_authority.py`: delete `source_authority_run_dir` from signatures/state, bind the fixed host root unconditionally for new gen0, and expose the narrow C09 replay used by publication retry.
-- Modify `bilqis_mlx/runtime/_custody/bamf_bundle/accepted_runtime.py`: choose fixed-host versus legacy run-local root strictly from authenticated accepted custody for cache install and revalidation; reload accepted custody on cache reuse. `execution_cache.py` is intentionally unchanged.
-- Modify `bilqis_mlx/runtime/_custody/bamf_bundle/publication/__init__.py`: run narrow C09 replay before every gen0 retry transaction; remove target-path identity checks; and enforce accepted-parent origin/record/digest inheritance plus root revalidation for every generation>0 path, including `AtlasAdmissionBinding`.
-- `bilqis_mlx/runtime/_custody/bamf_bundle/publication/retry.py` and `publication/genesis_trust.py` retain their sealed-genesis identity roles. No new host selector is added there; regression tests prove their mutation paths are gated by the publication entry point's C09 replay. If implementation cannot preserve those signatures, that is a design amendment, not an implementation improvisation.
-- Modify `bilqis_mlx/runtime/_custody/bamf_bundle/admission.py`: acceptance consumes the authenticated-parent inheritance/result rather than allowing candidate metadata to select legacy/system authority.
-- Modify `bilqis_mlx/runtime/cognitive_package/operator.py`: preserve pointer-locked source-root revalidation while resolving system-vs-legacy authority from accepted custody rather than assuming a run-local file. The existing run-local lock remains for legacy custody; the fixed-host path is read-only and has no runtime writer.
-- Modify `bilqis_mlx/runtime/_custody/bamf_bundle/sidecar_contracts.py`: validate `source_authority_registry_origin` as absent/legacy or exact `HOST_SYSTEM_V1`, and require record+digest when system-host origin is present.
-- Modify `bilqis_mlx/runtime/bamf_first_student.py` / private support: restore absent-or-empty fresh target semantics; do not allow pre-existing registry files to bootstrap authority.
+- Add `bilqis_mlx/runtime/_custody/bamf_bundle/_darwin_source_authority.py` with the exact private fd/ACL contract above.
+- Modify `bilqis_mlx/runtime/_custody/bamf_bundle/source_authority_custody.py` with the exact fixed-host reader, resolver, and pure successor-inheritance APIs above while preserving the legacy run-local reader/lock behind the resolver.
+- Modify `bilqis_mlx/runtime/_custody/bamf_bundle/sidecar_contracts.py`: distinguish genuinely absent origin from explicit null; validate unanchored historical absence, legacy absence+record+digest, and exact `HOST_SYSTEM_V1` according to the literal table above.
+- Modify `bilqis_mlx/runtime/_custody/bamf_bundle/genesis/preparation.py` and `bilqis_mlx/runtime/_custody/bamf_bundle/genesis/preparation_authority.py`: delete `source_authority_run_dir` from signatures/state, bind the fixed host root unconditionally for new gen0, and expose the narrow C09 replay used by publication retry.
+- Modify `bilqis_mlx/runtime/_custody/bamf_bundle/publication/__init__.py`: run narrow C09 replay before every gen0 retry transaction; remove target-path identity checks; and run the shared accepted-parent C09 gate before every generation>0 authority-specific branch.
+- Modify `bilqis_mlx/runtime/_custody/bamf_bundle/publication/authority.py`: return the authenticated parent `CompleteStudent | None` from `validate_parent_transition` as specified above.
+- `bilqis_mlx/runtime/_custody/bamf_bundle/publication/retry.py` and `bilqis_mlx/runtime/_custody/bamf_bundle/publication/genesis_trust.py` are regression-read surfaces only and remain byte-unchanged unless implementation proves their existing signatures cannot support the reviewed entry-point gate. Such a required change is a design amendment.
+- Modify `bilqis_mlx/runtime/_custody/bamf_bundle/accepted_runtime.py` in Phase B: cache install/reuse reloads authenticated accepted custody and uses the unified resolver. `bilqis_mlx/runtime/_custody/bamf_bundle/execution_cache.py` remains byte-unchanged.
+- Modify `bilqis_mlx/runtime/_custody/bamf_bundle/admission.py`: ordinary acceptance validates exact accepted-parent inheritance/root before minting its binding.
+- Modify `bilqis_mlx/runtime/cognitive_package/operator.py`: remove its manual outer legacy-registry lock and, while retaining pointer-lock ownership, use the unified resolver.
+- Modify `bilqis_mlx/runtime/bamf_first_student.py`: remove the failed target-run trust argument and restore ordinary absent-or-empty target semantics. `bilqis_mlx/runtime/_bamf_first_student_support.py` is not a planned production edit.
 - Update `docs/operations/BAMF_0_2_FIRST_STUDENT.md` and `docs/operations/BAMF_0_2_PACKAGES.md` to distinguish system-host genesis authority from historical run-local custody.
-- Update focused tests explicitly listed below. Private syscall/stat/ACL seams may be patched in tests; no alternate production path selector is introduced.
+- Add or modify only the exact focused tests listed by phase below. Private syscall/stat/ACL seams may be patched in tests; no alternate production path selector is introduced.
 
 ## Stable implementation phases and exact focused proof
 
 ### Phase A: host reader, resolver, sidecar
 
-Change only `source_authority_custody.py`, `sidecar_contracts.py`, and focused tests. Prove
+Production scope:
+
+- `bilqis_mlx/runtime/_custody/bamf_bundle/_darwin_source_authority.py` (new)
+- `bilqis_mlx/runtime/_custody/bamf_bundle/source_authority_custody.py`
+- `bilqis_mlx/runtime/_custody/bamf_bundle/sidecar_contracts.py`
+
+Test scope:
+
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_host_source_authority_custody.py` (new)
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/test_sidecar_contracts.py`
+
+Prove
 fd-relative `O_NOFOLLOW` traversal, expected `/etc` -> `/private/etc` alias, regular-file and
 size bounds, UID-0 and POSIX-mode rejection, unsafe Darwin ACL rejection, malformed registry,
-origin validation table, and legacy locking. UID/ACL logic is tested at the private descriptor-
-metadata adapter boundary rather than pretending an ordinary temp file is root-owned; symlink,
-nonregular, mode, size, malformed-content and ancestor-substitution cases use real filesystem
-fixtures. A privileged opt-in host smoke may read an actually installed root, but is not a CI
-precondition.
+origin validation table, legacy locking, ALLOW/DENY handling, UID/GID/unresolved principals,
+every named mutation right, empty ACL, ACL API failure, raw `/etc` symlink mismatch, physical
+inode mismatch, writable/symlinked ancestors, and fd cleanup. UID/ACL logic is tested at the
+private descriptor-metadata/libSystem adapter boundary rather than pretending an ordinary temp
+file is root-owned; symlink, nonregular, mode, size, malformed-content and ancestor-substitution
+cases use real filesystem fixtures. A privileged opt-in host smoke may read an actually
+installed root, but is not a CI precondition.
 
-Focused files:
+Phase-A gate:
 
-- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/test_sidecar_contracts.py`
-- new or existing focused custody tests under
-  `bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/`
+    ../Bilqis-485-venv/bin/python -B scripts/run_tests.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_host_source_authority_custody.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/test_sidecar_contracts.py
+    python3 scripts/check_module_size.py --changed-from 0338f334388a01389163fb0cba74614c2bcdb83a
+    python3 scripts/code_smell_audit.py --changed-from 0338f334388a01389163fb0cba74614c2bcdb83a
+    git diff --check
 
 ### Phase B: generation-zero bind and retry gate
 
-Change genesis preparation/preparation-authority and publication entry wiring. Prove new gen0
+Production scope:
+
+- `bilqis_mlx/runtime/_custody/bamf_bundle/genesis/preparation.py`
+- `bilqis_mlx/runtime/_custody/bamf_bundle/genesis/preparation_authority.py`
+- `bilqis_mlx/runtime/_custody/bamf_bundle/publication/__init__.py`
+- `bilqis_mlx/runtime/_custody/bamf_bundle/accepted_runtime.py`
+- `bilqis_mlx/runtime/bamf_first_student.py`
+
+Regression-read, no planned edit:
+
+- `bilqis_mlx/runtime/_custody/bamf_bundle/publication/retry.py`
+- `bilqis_mlx/runtime/_custody/bamf_bundle/publication/genesis_trust.py`
+- `bilqis_mlx/runtime/_custody/bamf_bundle/execution_cache.py`
+
+Test scope:
+
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_c09_source_authority.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_preparation_authority.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_retry.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_authority.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_cold_trust.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_source_authority.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/test_accepted_runtime_custody.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/test_accepted_runtime_recovery.py`
+- `bilqis_mlx/runtime/tests/test_bamf_first_student.py`
+
+Prove new gen0
 always carries `HOST_SYSTEM_V1`; `source_authority_run_dir` is gone; missing/unsafe/drifted
 host root rejects before target publication mutation; full first publish still replays
 Factory/B01 authority; sealed unpointed/already-pointed retry revalidates only C09 and therefore
-still recovers after Factory advance; host drift after seal cannot install/return a pointer.
+still recovers after Factory advance; host drift after seal cannot install/return a pointer;
+and a HOST gen0 is immediately usable/revalidatable through accepted-runtime cache ownership
+without a run-local registry file.
 
-Focused files:
+Phase-B gate:
 
-- `.../contracts/genesis/test_generation_zero_c09_source_authority.py`
-- `.../contracts/genesis/test_generation_zero_preparation_authority.py`
-- `.../contracts/genesis/test_generation_zero_retry.py`
-- `.../contracts/genesis/test_generation_zero_authority.py`
-- `.../contracts/genesis/test_generation_zero_cold_trust.py`
-- `.../contracts/genesis/test_generation_zero_source_authority.py`
-- `.../publication/test_publication.py`
+    ../Bilqis-485-venv/bin/python -B scripts/run_tests.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_c09_source_authority.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_preparation_authority.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_retry.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_authority.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_cold_trust.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_source_authority.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/test_accepted_runtime_custody.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/test_accepted_runtime_recovery.py +      bilqis_mlx/runtime/tests/test_bamf_first_student.py
+    python3 scripts/check_module_size.py --changed-from 0338f334388a01389163fb0cba74614c2bcdb83a
+    python3 scripts/code_smell_audit.py --changed-from 0338f334388a01389163fb0cba74614c2bcdb83a
+    git diff --check
 
 ### Phase C: accepted-parent consumer cutover
 
-Change successor publication, admission, accepted runtime, and cognitive-package staging. Prove
+Production scope:
+
+- `bilqis_mlx/runtime/_custody/bamf_bundle/publication/authority.py`
+- `bilqis_mlx/runtime/_custody/bamf_bundle/publication/__init__.py`
+- `bilqis_mlx/runtime/_custody/bamf_bundle/admission.py`
+- `bilqis_mlx/runtime/cognitive_package/operator.py`
+
+Test scope:
+
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_core.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_isolation.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_publication.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/test_accepted_ingress_currentness.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_authority.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_custody.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_history.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_sources.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_atlas_admission_publication.py`
+- `bilqis_mlx/runtime/cognitive_package/tests/test_adoption.py`
+- `bilqis_mlx/runtime/cognitive_package/tests/test_adoption_recovery.py`
+- `bilqis_mlx/runtime/cognitive_package/tests/test_operator.py`
+- `bilqis_mlx/runtime/cognitive_package/tests/test_receiver_custody.py`
+- `bilqis_mlx/runtime/cognitive_package/tests/test_staging.py`
+
+Prove
 HOST descendants cannot omit/null/change origin or registry tuple; Atlas-admission successors
 also revalidate the fixed root; legacy descendants are accepted only from verified legacy
 parents; cache reuse reloads accepted metadata; pointer -> legacy-registry lock ordering remains;
 system-host reads take no run-local registry lock; two runs sharing one host root still cannot
 exchange opaque capabilities; post-acceptance root drift disables mint/reuse and package staging.
 
-Focused files:
+Phase-C gate:
 
-- all tests in `.../authority/source_authority_runtime/`
-- `.../authority/test_accepted_runtime_custody.py`
-- `.../authority/test_accepted_runtime_recovery.py`
-- `.../authority/test_accepted_ingress_currentness.py`
-- `.../contracts/acceptance/test_generation_acceptance.py`
-- `.../contracts/acceptance/test_atlas_admission_publication.py`
-- `bilqis_mlx/runtime/cognitive_package/tests/adoption_harness.py` plus the package adoption/
-  recovery tests that exercise `_stage_received_package_if_current`
+    ../Bilqis-485-venv/bin/python -B scripts/run_tests.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_core.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_isolation.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_publication.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/test_accepted_ingress_currentness.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_authority.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_custody.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_history.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_sources.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_atlas_admission_publication.py +      bilqis_mlx/runtime/cognitive_package/tests/test_adoption.py +      bilqis_mlx/runtime/cognitive_package/tests/test_adoption_recovery.py +      bilqis_mlx/runtime/cognitive_package/tests/test_operator.py +      bilqis_mlx/runtime/cognitive_package/tests/test_receiver_custody.py +      bilqis_mlx/runtime/cognitive_package/tests/test_staging.py
+    python3 scripts/check_module_size.py --changed-from 0338f334388a01389163fb0cba74614c2bcdb83a
+    python3 scripts/code_smell_audit.py --changed-from 0338f334388a01389163fb0cba74614c2bcdb83a
+    git diff --check
 
 ### Phase D: first-student and regression closure
 
-Restore normal absent/empty fresh-target rules, replace the failed pre-provisioned-target positive
-test with fixed-host authority tests, update operations docs/admin recovery procedure, then run
+Production scope: no new runtime semantics. Phase D is documentation and regression closure.
+
+Documentation scope:
+
+- `docs/operations/BAMF_0_2_FIRST_STUDENT.md`
+- `docs/operations/BAMF_0_2_PACKAGES.md`
+
+Additional test scope:
+
+- `bilqis_mlx/runtime/tests/test_bamf_foundation_dashboard_projection.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_durability.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_recovery.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_rejection.py`
+
+Phase B already restored normal absent/empty fresh-target rules and replaced the failed
+pre-provisioned-target positive test. Phase D updates operations docs/admin recovery procedure
+and then runs
 the #917 authority ring, #904/#923/#926 genesis regressions, no-C05-genesis proof, no-C07 and
 no-neural-mutation assertions, structural/governance/error-control gates, and the differential
 leaf gate with inherited baseline failures reported rather than edited.
 
-Focused files include `bilqis_mlx/runtime/tests/test_bamf_first_student.py` and
-`bilqis_mlx/runtime/tests/test_bamf_foundation_dashboard_projection.py` in addition to the
-rings above.
+Phase-D focused gate:
+
+    ../Bilqis-485-venv/bin/python -B scripts/run_tests.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_host_source_authority_custody.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_core.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_isolation.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_publication.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_c09_source_authority.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_preparation_authority.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_retry.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_authority.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_cold_trust.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_source_authority.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_durability.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_recovery.py +      bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_rejection.py +      bilqis_mlx/runtime/tests/test_bamf_first_student.py +      bilqis_mlx/runtime/tests/test_bamf_foundation_dashboard_projection.py
+    python3 scripts/check_module_size.py --changed-from 0338f334388a01389163fb0cba74614c2bcdb83a
+    python3 scripts/code_smell_audit.py --changed-from 0338f334388a01389163fb0cba74614c2bcdb83a
+    python3 scripts/quality/check_governance_integrity.py --base-ref 0338f334388a01389163fb0cba74614c2bcdb83a
+    python3 -B scripts/check_bamf_flow_control.py
+    python3 -B scripts/error_control_plane.py --check --base-ref 0338f334388a01389163fb0cba74614c2bcdb83a
+    python3 -B scripts/verify_bamf_0_2_contracts.py
+    git diff --check
+
+Only after the focused/structural gates are green run the leaf aggregate with
+`BILQIS_QUALITY_BASE_REF=0338f334388a01389163fb0cba74614c2bcdb83a`; preserve the two
+known inherited evidence failures as baseline debt if they remain byte-identical to base.
 
 ## Acceptance proof
 
@@ -322,7 +615,10 @@ rings above.
 - Missing fixed host file rejects before any new run pointer/bundle/lease mutation.
 - Caller-created run-local registry cannot establish gen0 authority.
 - No public/package/CLI/config/environment path or raw-registry provisioner exists.
-- Fixed host root drift between prepare/publish rejects before pointer mutation.
+- Fixed host root drift between prepare/publish rejects before pointer mutation when the
+  explicit no-concurrent-host-rotation precondition is honored. A prohibited administrator
+  change inside the final-read/pointer window may commit and is detected at the next
+  C09/B13 authority boundary.
 - Fixed host root drift after acceptance prevents `SourceAuthorityRuntime` mint/reuse.
 - Crash after genesis trust seal but before pointer, followed by missing/drifted host root,
   cannot recover/install the pointer; restoring the exact old root permits exact retry even if
