@@ -1,8 +1,18 @@
 # C16.1c host trust-source repair proposal
 
-Status: PROPOSED v7 / fresh EGM re-review required before implementation.
+Status: PROPOSED v8 / fresh EGM re-review required before implementation.
 
-Review note: v7 retains v6's fixed-host architecture and closes one call-site precondition
+Review note: v8 retains v7's fixed-host architecture and closes the complete fresh-v7 review
+packet before any production implementation. It corrects the Darwin `acl_get_entry` success/end
+contract; makes ordinary admission pre-binding state-aware for both parent-pointed and
+already-child-pointed retry states; narrows the historical #926 one-time anchor to ordinary
+non-C07 retained successors; explicitly leaves the production C07/JIT retry owner unchanged;
+extends deterministic host-reader test custody across prepare, publish, retry and accepted-runtime
+revalidation; adds the historical run-identity cutover regression to focused proof; makes the
+leaf aggregate command literal; and pins cognitive-package staging to accepted student custody
+rather than assuming every acceptance schema carries a C09 digest.
+
+V7 retained v6's fixed-host architecture and closed one call-site precondition
 found during read-only admission tracing: ordinary `accept_and_publish()` mints its acceptance
 binding before B13 publication and therefore does not already hold the B13 pointer lock. V7
 specifies a pointer-lock-owning pre-binding wrapper that authenticates the current parent and
@@ -139,7 +149,8 @@ New C16.1c generation zero MUST carry `source_authority_registry_origin ==
 For every generation greater than zero, the authority branch is selected from the verified
 currently accepted parent, never from the candidate. Before successor acceptance/publication,
 the candidate must inherit the parent's source-authority tuple exactly except for one narrowly
-authenticated historical #926 upgrade:
+authenticated historical #926 upgrade owned only by the ordinary non-C07 retained-successor
+path:
 
 - `HOST_SYSTEM_V1` parent -> candidate must carry the same origin, registry record, and
   digest; then the fixed host root is reread and must still match;
@@ -147,17 +158,20 @@ authenticated historical #926 upgrade:
   are already present -> candidate must omit the origin field and preserve that legacy tuple
   exactly; the existing #917 run-local root is then revalidated;
 - verified pre-#950 historical parent whose origin, record, and digest are all genuinely absent
-  -> candidate may remain unanchored or may perform the one-time #917 anchor by remaining
-  origin-absent while adding exactly the currently provisioned run-local registry record/digest;
-  after that anchor, descendants preserve the legacy tuple exactly;
+  -> every successor may remain unanchored. Only an ordinary non-C07 retained successor whose
+  publication authority is `AcceptedCandidateBinding` may additionally perform the one-time
+  #917 anchor by remaining origin-absent while adding exactly the currently provisioned
+  run-local registry record/digest; after that anchor, descendants preserve the legacy tuple
+  exactly;
 - explicit JSON `null`, an unknown origin, a newly authored absent origin with no verified
   legacy parent, or any origin/record/digest downgrade/change -> reject before pointer
   mutation.
 
-This rule applies equally to ordinary B13 successors and `AtlasAdmissionBinding` / C07
-successors. The Atlas-admission branch may no longer return from publication authorization
-before C09 inheritance and root revalidation have completed under the accepted-parent
-boundary.
+Exact inheritance/root revalidation applies to both ordinary B13 successors and direct
+`AtlasAdmissionBinding` publication. The historical unanchored -> #917 anchor exception does
+not apply to C07/Atlas publication. C07 candidates preserve their parent's correction frontier
+under the existing A02/JIT contract, and #950 does not modify C07 adoption or its pre-B13 retry
+owner.
 
 ### Cold accepted runtime
 
@@ -199,6 +213,24 @@ stale cache cannot choose legacy/system behavior.
 The same resolver/inheritance contract covers B13 successor publication, Atlas-admission
 successor publication, `accept_and_publish`, accepted execution-cache install/revalidation,
 and cognitive-package staging. Callers never choose the branch.
+
+For cognitive-package staging, `_require_published_acceptance` remains an authentication step,
+not the universal source of the C09 digest. `InitialGenerationBinding` and
+`AtlasAdmissionBinding` do not carry `source_authority_registry_sha256`, while ordinary
+`AcceptedCandidateBinding` does. Therefore, while holding the pointer lock,
+`cognitive_package/operator.py::_stage_received_package_if_current`:
+
+1. loads the exact current student/pointer and authenticates its published acceptance;
+2. requires the current pointer manifest to equal the previously cleared accepted manifest;
+3. requires `student.correction_frontier["source_authority_registry_sha256"]` to equal the
+   previously cleared registry digest;
+4. calls `resolve_source_authority_registry(run_dir, student.correction_frontier)` and requires
+   the resolved registry digest to equal that same digest;
+5. only then stages the package.
+
+It does not read `acceptance.source_authority_registry_sha256` unconditionally and does not
+special-case binding schema to choose the host-vs-legacy branch. The accepted student custody
+chooses that branch.
 
 The correction-frontier sidecar remains schema
 `bilqis.mlx.bamf-correction-frontier/v1`; C16.1c is an additive optional-field extension, not
@@ -319,8 +351,13 @@ mbr_uuid_to_id. The adapter pins the current Darwin SDK constants exactly:
 `ACL_EXTENDED_ALLOW = 1`, `ACL_EXTENDED_DENY = 2`, `ID_TYPE_UID = 0`, and
 `ID_TYPE_GID = 1`. ACL entry iteration treats
 the first call as `acl_get_entry(acl, ACL_FIRST_ENTRY, ...)`, every later call as
-`acl_get_entry(acl, ACL_NEXT_ENTRY, ...)`, and treats return 1 as an entry, 0 as end,
-and -1 as failure. Every non-NULL qualifier allocation returned by `acl_get_qualifier`
+`acl_get_entry(acl, ACL_NEXT_ENTRY, ...)`. A return value of `0` means one entry was
+successfully obtained. For `ACL_FIRST_ENTRY`, any `-1` is a trust-root error. After at least
+one successful entry, `ACL_NEXT_ENTRY` returning `-1` with `errno == EINVAL` means iteration
+is complete; any other `-1` is a trust-root error. The adapter clears errno immediately before
+every `acl_get_entry` call and reads it immediately after a `-1` return. This follows the
+current Darwin `acl_get_entry(3)` contract; it must not use Linux-style 1/0 iterator semantics.
+Every non-NULL qualifier allocation returned by `acl_get_qualifier`
 is released with `acl_free` after UUID resolution, and the ACL handle itself is released
 with `acl_free` on every successful-handle path, including parse failure paths.
 For each permission constant, `acl_get_perm_np` return 1 means present, 0 means absent, and
@@ -412,6 +449,8 @@ functions:
         run_dir: Path,
         parent_frontier: Mapping[str, object],
         candidate_frontier: Mapping[str, object],
+        *,
+        allow_historical_anchor: bool,
     ) -> SourceAuthorityRegistry | None: ...
 
 read_host_system_source_authority_registry() calls the Darwin fd opener with the existing
@@ -441,7 +480,11 @@ require_source_authority_successor_inheritance() is the single authenticated-par
 gate. Its caller already holds the B13 pointer lock and MUST NOT hold the legacy registry lock.
 It owns any legacy registry lock required by the branch and returns the trusted registry used by
 the successor, or None only for a verified historical unanchored lineage that remains
-unanchored.
+unanchored. `allow_historical_anchor` is not caller policy: B13 derives it from the verified
+publication authority type and transition. It is True only for an ordinary
+`AcceptedCandidateBinding` with `transition.kind == "RETAINED_CANDIDATE"`; it is False for
+`AtlasAdmissionBinding`, package-import/other transitions, and retry paths whose persisted child
+did not already perform the anchor.
 
 Its branch table is exact:
 
@@ -453,10 +496,11 @@ Its branch table is exact:
 - parent origin genuinely absent + record/digest both absent: this is the narrowly authenticated
   historical #926 unanchored state. The candidate may either:
   1. remain origin-absent + record/digest absent, returning None; or
-  2. perform the one-time historical #917 anchor by remaining origin-absent while adding both a
-     registry record and matching digest. In that case acquire the legacy run-local registry
-     lock, require the candidate tuple to equal the currently provisioned run-local registry
-     exactly, and return that registry.
+  2. when and only when `allow_historical_anchor` is True, perform the one-time historical #917
+     anchor by remaining origin-absent while adding both a registry record and matching digest.
+     In that case acquire the legacy run-local registry lock, require the candidate tuple to equal
+     the currently provisioned run-local registry exactly, and return that registry. If the
+     candidate adds a tuple while `allow_historical_anchor` is False, reject.
 - once the historical anchor above succeeds, every later descendant is the ordinary legacy
   exact-inheritance branch; it cannot change registry bytes/digest without a separately governed
   migration;
@@ -473,21 +517,35 @@ The low-level successor gate above has one strict precondition: its caller alrea
 B13 pointer lock and has authenticated the exact parent whose correction frontier it supplies.
 It is not called directly from ordinary admission before binding mint.
 
-Add one admission-owned wrapper in `admission.py`:
+Add one state-aware admission-owned wrapper in `admission.py`:
 
-    def _require_current_parent_source_authority(
+    def _require_source_authority_for_acceptance(
         run_dir: Path,
         candidate: BamfBundleCandidate,
     ) -> SourceAuthorityRegistry | None:
         ...
 
-The wrapper owns `_pointer_lock(run_dir)`, calls `_read_accepted_locked(run_dir)`, and requires
-the candidate's run id, generation, parent manifest hash, and run identity to match that exact
-current accepted parent/pointer before invoking
-`require_source_authority_successor_inheritance(run_dir, parent.correction_frontier,
-candidate.correction_frontier)`. It returns that gate's registry result while the lock is still
-held, then releases the pointer lock before acceptance-binding minting. A stale or foreign
-candidate therefore cannot borrow a registry digest from an unrelated current parent.
+The wrapper owns `_pointer_lock(run_dir)` and calls `_read_accepted_locked(run_dir)`. It has
+exactly two lawful live-pointer states:
+
+1. **Parent-pointed first publication.** `current.generation == candidate.generation - 1`.
+   Require candidate run id, parent manifest hash, run identity, and generation to match that
+   exact authenticated parent. Then call `require_source_authority_successor_inheritance` with
+   `allow_historical_anchor=True` only when `candidate.transition.kind == "RETAINED_CANDIDATE"`;
+   every other ordinary transition passes False.
+2. **Already-child-pointed ordinary retry.** `current.generation == candidate.generation`.
+   Call the shared `authenticate_current_successor_retry` helper defined below using the already
+   authenticated current child. Require the persisted acceptance to be the ordinary parsed
+   `AcceptedCandidateBinding` family, require the persisted child to be the exact candidate,
+   and call the same successor gate over historical parent -> persisted child. Historical-anchor
+   permission is derived from the already-accepted child's ordinary RETAINED_CANDIDATE
+   transition, never from new caller metadata. Require the returned registry digest, if any, to
+   equal the persisted ordinary acceptance's `source_authority_registry_sha256`.
+
+Any other live generation or identity relation rejects. The wrapper returns the registry result
+while the pointer lock is still held, then releases the lock before acceptance-binding minting.
+A stale or foreign candidate therefore cannot borrow a registry digest from an unrelated current
+parent, while a lawful post-pointer crash retry remains reachable.
 `admission.py` imports `_read_accepted_locked` from `accepted_runtime.py` and `_pointer_lock`
 from the existing publication facade for this wrapper; it does not call the locking
 `load_accepted_generation()` from inside another pointer-lock scope.
@@ -504,7 +562,9 @@ authenticated parent inside the final pointer transaction. Before any authority-
 branch, including AtlasAdmissionBinding, it:
 
 1. calls require_source_authority_successor_inheritance(
-   run_dir, parent.correction_frontier, candidate.correction_frontier);
+   run_dir, parent.correction_frontier, candidate.correction_frontier,
+   allow_historical_anchor=(type(authority) is AcceptedCandidateBinding
+                            and candidate.transition.get("kind") == "RETAINED_CANDIDATE"));
 2. requires the returned registry digest, when present, to equal the candidate frontier digest.
 
 Only after those checks may the existing ordinary-vs-Atlas authority-specific logic continue.
@@ -512,7 +572,7 @@ Thus ordinary and Atlas publication share one C09 parent gate and no candidate m
 the branch.
 
 `admission.py::accept_and_publish(...)` calls
-`_require_current_parent_source_authority(run_dir, bundle)` before minting the ordinary
+`_require_source_authority_for_acceptance(run_dir, bundle)` before minting the ordinary
 acceptance binding and supplies the returned registry digest, if any, to
 `mint_acceptance_binding`. It does not call the low-level successor gate outside the pointer
 lock. B13 publication repeats the parent authentication plus successor/root check under its
@@ -534,35 +594,39 @@ through validate_parent_transition, whose live-pointer precondition is the paren
 
 Add this private helper to publication/authority.py:
 
-    def validate_current_successor_retry(
+    def authenticate_current_successor_retry(
         run_dir: Path,
         current: dict,
         candidate: BamfBundleCandidate,
-        authority: AcceptedCandidateBinding | AtlasAdmissionBinding,
+        current_child: CompleteStudent,
         *,
         load_bundle,
         require_published_acceptance,
-    ) -> tuple[CompleteStudent, CompleteStudent]:
+    ) -> tuple[CompleteStudent, object]:
         ...
 
 It is called only while the B13 pointer lock is held and only after the existing retry branch has
 proved current.run_id, current.generation, current.manifest_sha256,
 current.parent_manifest_sha256, current.schema, and current.acceptance_sha256 exactly match the
-candidate/digest/authority being retried.
+candidate/digest being retried. The B13 caller separately compares the supplied live authority
+to the persisted acceptance returned by this helper.
 
 The helper then:
 
-1. loads the current accepted child from current["bundle"] at current["manifest_sha256"];
-2. requires child run/generation/parent identity to equal the current pointer and candidate;
-3. calls require_published_acceptance(run_dir, current, child), requires the parsed binding
-   digest to equal authority.digest, and requires its parent_candidate_identity_sha256 to equal
-   authority.parent_candidate_identity_sha256;
-4. loads the historical parent bundle by child.parent_manifest_sha256 from bamf-bundles;
-5. requires parent.run_id == child.run_id, parent.generation + 1 == child.generation, and
-   parent.run_identity == child.run_identity;
-6. requires authority.parent_candidate_identity_sha256 ==
+1. requires the supplied authenticated `current_child` run/generation/parent identity to equal
+   the current pointer and candidate, and requires
+   `initial_generation_candidate_identity_digest(current_child) ==
+   initial_generation_candidate_identity_digest(candidate)` as the existing exact full-candidate
+   replay identity used elsewhere in BAMF retry custody;
+2. calls `require_published_acceptance(run_dir, current, current_child)` and retains the parsed
+   persisted acceptance;
+3. loads the historical parent bundle by current_child.parent_manifest_sha256 from bamf-bundles;
+4. requires parent.run_id == current_child.run_id,
+   parent.generation + 1 == current_child.generation, and
+   parent.run_identity == current_child.run_identity;
+5. requires persisted_acceptance.parent_candidate_identity_sha256 ==
    candidate_identity_digest(parent.retained_state);
-7. returns (child, parent).
+6. returns (parent, persisted_acceptance).
 
 This proof deliberately uses the accepted current child's immutable parent manifest hash plus
 the accepted child's parent-candidate identity binding. It does not require the historical
@@ -571,16 +635,32 @@ parent to be the live pointer, and it does not invent a second current-pointer f
 In publication/__init__.py's already-pointed generation>0 branch, before deleting the stage,
 rewriting/reconciling acceptance, reconciling the outbox, or returning:
 
-1. call validate_current_successor_retry(...);
-2. call require_source_authority_successor_inheritance(
-   run_dir, parent.correction_frontier, child.correction_frontier);
-3. when a registry is returned, require its digest to equal the child's accepted
+1. load/authenticate the current child from the live pointer and call
+   `authenticate_current_successor_retry(...)`;
+2. require the supplied live publication authority to have the same schema family and exact
+   digest as the persisted acceptance;
+3. call require_source_authority_successor_inheritance(
+   run_dir, parent.correction_frontier, child.correction_frontier,
+   allow_historical_anchor=(persisted acceptance is ordinary
+                            and child.transition.kind == "RETAINED_CANDIDATE"));
+4. when a registry is returned, require its digest to equal the child's accepted
    source_authority_registry_sha256.
 
 Only then may the existing exact retry reconcile/return. This applies identically to ordinary
-AcceptedCandidateBinding and AtlasAdmissionBinding retries. A HOST root drift therefore blocks
-an already-pointed retry before reconcile/return; a verified historical legacy parent continues
-through the legacy resolver.
+`AcceptedCandidateBinding` and direct callers of B13's `publish_atlas_admission_generation` that
+actually reach this already-pointed branch. A HOST root drift therefore blocks such a B13 retry
+before reconcile/return; a verified historical legacy parent continues through the legacy
+resolver.
+
+This helper is **not** the production C07/JIT retry owner. Existing
+`bilqis_mlx/runtime/_admission/jit_adoption.py::_accepted_native_retry` authenticates an already
+published C07 generation and may return its pointer before re-entering B13. That production path
+already requires the persisted Atlas lease to be read through the caller's accepted
+`SourceAuthorityRuntime`, which revalidates accepted C09 cache/root custody before the retry
+check. C16.1c does not modify that C07/JIT owner, does not route it through B13 merely for this
+leaf, and does not claim the historical #926 anchor can be established by C07. The B13
+Atlas-specific tests in this leaf prove only the direct B13 publication boundary remains
+fail-closed when it is entered.
 
 ### Phase-stable accepted-runtime ownership
 
@@ -695,6 +775,7 @@ Test scope:
 - `bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/test_accepted_runtime_recovery.py`
 - `bilqis_mlx/runtime/tests/test_bamf_first_student.py`
 - `bilqis_mlx/runtime/tests/custody/bamf_bundle/helpers.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/publication_helpers.py`
 
 Prove new gen0
 always carries `HOST_SYSTEM_V1`; `source_authority_run_dir` is gone; missing/unsafe/drifted
@@ -704,7 +785,9 @@ still recovers after Factory advance; host drift after seal cannot install/retur
 and a HOST gen0 is immediately usable/revalidatable through accepted-runtime cache ownership
 without a run-local registry file.
 
-The shared test helper file adds exactly one private context manager:
+The shared publication-test helper file
+`bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/publication_helpers.py` adds exactly one
+private context manager:
 
     @contextmanager
     def host_source_authority_patch():
@@ -713,13 +796,24 @@ The shared test helper file adds exactly one private context manager:
 It imports the existing canonical test `REGISTRY` from
 `bilqis_mlx.semantics.tests.core.test_atlas_export_clearance` and patches only
 `bilqis_mlx.runtime.bamf_bundle.source_authority_custody.read_host_system_source_authority_registry`
-to return that registry for the duration of the context. `genesis_preparation()` removes its
-`source_authority_run_dir` override and enters `host_source_authority_patch()` around the
-production `prepare_initial_generation()` call. Individual adversarial tests that exercise
-missing, invalid, or drifted host custody bypass that helper context or patch the same private
-reader explicitly. This is test-only substitution of the private host reader, not a production
-path or registry selector. The helper never writes `/etc`, never provisions a run-local file,
-and never accepts registry/path data from production callers.
+to return that registry for the duration of the context.
+
+`shape_patch()` enters `host_source_authority_patch()` in the same ExitStack as its existing
+topology/feature test patches. That lifetime therefore spans every production host read made
+inside the standard BAMF fixture context: preparation, publication replay/retry, accepted-runtime
+cache bind/reuse, and package staging. `publish_genesis()` also enters
+`host_source_authority_patch()` around its complete prepare+publish sequence for callers that use
+the helper without an outer `shape_patch()`. `genesis_preparation()` itself removes its
+`source_authority_run_dir` override but does not open and close a shorter host patch of its own.
+
+Tests that exercise accepted-runtime or retry behavior after the helper returns keep an outer
+`shape_patch()` or explicit `host_source_authority_patch()` alive across the entire scenario.
+Individual adversarial tests that exercise missing, invalid, drifted, or raw Darwin host custody
+either do not enter this canonical patch or install a nested patch of the same private reader/
+lower-level Darwin adapter after `shape_patch()`, so the adversarial override wins. This is
+test-only substitution of the private host reader, not a production path or registry selector.
+The helper never writes `/etc`, never provisions a run-local file, and never accepts registry or
+path data from production callers.
 
 Phase-B gate:
 
@@ -749,6 +843,7 @@ Test scope:
 - `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_history.py`
 - `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_sources.py`
 - `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_atlas_admission_publication.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_run_identity_cutover.py`
 - `bilqis_mlx/runtime/cognitive_package/tests/test_adoption.py`
 - `bilqis_mlx/runtime/cognitive_package/tests/test_adoption_recovery.py`
 - `bilqis_mlx/runtime/cognitive_package/tests/test_operator.py`
@@ -756,25 +851,30 @@ Test scope:
 - `bilqis_mlx/runtime/cognitive_package/tests/test_staging.py`
 
 Prove
-HOST descendants cannot omit/null/change origin or registry tuple; Atlas-admission successors
-also revalidate the fixed root; legacy descendants are accepted only from verified legacy
+HOST descendants cannot omit/null/change origin or registry tuple; direct B13 Atlas-admission
+publication exact-inherits and revalidates an already-anchored root but cannot establish the
+historical anchor; legacy descendants are accepted only from verified legacy
 parents; cache reuse reloads accepted metadata; pointer -> legacy-registry lock ordering remains;
 system-host reads take no run-local registry lock; two runs sharing one host root still cannot
 exchange opaque capabilities; post-acceptance root drift disables mint/reuse and package staging;
-and already-pointed exact retries for both ordinary and Atlas successors authenticate the current
-child plus referenced historical parent, reject HOST drift before reconcile/return, and preserve
-verified legacy retry compatibility. A verified pre-#950 unanchored parent may bind exactly the
-currently provisioned #917 run-local registry on the first successor that actually performs the
-anchor; forged HOST
+ordinary `accept_and_publish()` post-pointer crash retry and any direct B13 already-pointed retry
+authenticate the current child plus referenced historical parent, reject HOST drift before
+reconcile/return, and preserve verified legacy retry compatibility. A verified pre-#950
+unanchored parent may bind exactly the currently provisioned #917 run-local registry only on the
+first ordinary non-C07 retained successor that actually performs the anchor; forged HOST
 upgrade, explicit-null origin, half-binding, or later legacy registry replacement rejects.
 Ordinary `accept_and_publish()` pre-binding also proves that a stale/foreign candidate cannot
 borrow the current parent's registry digest: the pointer-locked pre-binding wrapper rejects
 candidate parent/run/run-identity mismatch, and a parent advance between binding mint and B13
 publication is caught by B13's repeated final parent/source-authority gate before pointer change.
+`test_source_authority_runtime_publication.py` adds a literal crash-after-pointer-before-reconcile
+retry through `accept_and_publish()` itself; the retry must re-mint the identical ordinary
+acceptance and converge without bypassing C09 revalidation. `test_run_identity_cutover.py`
+remains in the focused ring to prove the identityless historical-successor boundary still holds.
 
 Phase-C gate:
 
-    ../Bilqis-485-venv/bin/python -B scripts/run_tests.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_core.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_isolation.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_publication.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/test_accepted_ingress_currentness.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_authority.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_custody.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_history.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_sources.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_atlas_admission_publication.py bilqis_mlx/runtime/cognitive_package/tests/test_adoption.py bilqis_mlx/runtime/cognitive_package/tests/test_adoption_recovery.py bilqis_mlx/runtime/cognitive_package/tests/test_operator.py bilqis_mlx/runtime/cognitive_package/tests/test_receiver_custody.py bilqis_mlx/runtime/cognitive_package/tests/test_staging.py
+    ../Bilqis-485-venv/bin/python -B scripts/run_tests.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_core.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_isolation.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_publication.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/test_accepted_ingress_currentness.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_authority.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_custody.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_history.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_generation_acceptance_sources.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/acceptance/test_atlas_admission_publication.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_run_identity_cutover.py bilqis_mlx/runtime/cognitive_package/tests/test_adoption.py bilqis_mlx/runtime/cognitive_package/tests/test_adoption_recovery.py bilqis_mlx/runtime/cognitive_package/tests/test_operator.py bilqis_mlx/runtime/cognitive_package/tests/test_receiver_custody.py bilqis_mlx/runtime/cognitive_package/tests/test_staging.py
     python3 scripts/check_module_size.py --changed-from 0338f334388a01389163fb0cba74614c2bcdb83a
     python3 scripts/code_smell_audit.py --changed-from 0338f334388a01389163fb0cba74614c2bcdb83a
     git diff --check
@@ -794,6 +894,7 @@ Additional test scope:
 - `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_durability.py`
 - `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_recovery.py`
 - `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_rejection.py`
+- `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_run_identity_cutover.py`
 
 Phase B already restored normal absent/empty fresh-target rules and replaced the failed
 pre-provisioned-target positive test. Phase D updates operations docs/admin recovery procedure
@@ -804,7 +905,7 @@ leaf gate with inherited baseline failures reported rather than edited.
 
 Phase-D focused gate:
 
-    ../Bilqis-485-venv/bin/python -B scripts/run_tests.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_host_source_authority_custody.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_core.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_isolation.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_publication.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_c09_source_authority.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_preparation_authority.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_retry.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_authority.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_cold_trust.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_source_authority.py bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_durability.py bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_recovery.py bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_rejection.py bilqis_mlx/runtime/tests/test_bamf_first_student.py bilqis_mlx/runtime/tests/test_bamf_foundation_dashboard_projection.py
+    ../Bilqis-485-venv/bin/python -B scripts/run_tests.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_host_source_authority_custody.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_core.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_isolation.py bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/source_authority_runtime/test_source_authority_runtime_publication.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_c09_source_authority.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_preparation_authority.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_retry.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_authority.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_cold_trust.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_source_authority.py bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_run_identity_cutover.py bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_durability.py bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_recovery.py bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_rejection.py bilqis_mlx/runtime/tests/test_bamf_first_student.py bilqis_mlx/runtime/tests/test_bamf_foundation_dashboard_projection.py
     python3 scripts/check_module_size.py --changed-from 0338f334388a01389163fb0cba74614c2bcdb83a
     python3 scripts/code_smell_audit.py --changed-from 0338f334388a01389163fb0cba74614c2bcdb83a
     python3 scripts/quality/check_governance_integrity.py --base-ref 0338f334388a01389163fb0cba74614c2bcdb83a
@@ -813,9 +914,12 @@ Phase-D focused gate:
     python3 -B scripts/verify_bamf_0_2_contracts.py
     git diff --check
 
-Only after the focused/structural gates are green run the leaf aggregate with
-`BILQIS_QUALITY_BASE_REF=0338f334388a01389163fb0cba74614c2bcdb83a`; preserve the two
-known inherited evidence failures as baseline debt if they remain byte-identical to base.
+Only after the focused/structural gates are green run the exact leaf aggregate:
+
+    PATH="../Bilqis-485-venv/bin:$PATH" BILQIS_QUALITY_BASE_REF=0338f334388a01389163fb0cba74614c2bcdb83a npm run verify:leaf
+
+Preserve the two known inherited evidence failures as baseline debt if they remain
+byte-identical to base.
 
 ## Acceptance proof
 
@@ -835,15 +939,17 @@ known inherited evidence failures as baseline debt if they remain byte-identical
   origin/record/digest tuple and revalidate its selected root; a HOST lineage cannot downgrade
   to absent/null legacy metadata.
 - The sole historical exception is a verified pre-#950 parent with genuinely absent origin,
-  record, and digest: successors may remain unanchored until the first successor that actually
-  performs the anchor, which remains origin-absent while adding exactly the currently provisioned
-  #917 run-local registry record/digest. Later descendants inherit that legacy tuple exactly.
+  record, and digest: successors may remain unanchored until the first ordinary non-C07 retained
+  successor that actually performs the anchor, which remains origin-absent while adding exactly
+  the currently provisioned #917 run-local registry record/digest. C07/Atlas publication cannot
+  perform this compatibility upgrade. Later descendants inherit the legacy tuple exactly.
 - Two different fresh run roots on the same host may bind the same fixed root but their opaque runtime capabilities remain run/cache-bound and non-interchangeable.
 - Exact cold resume reconstructs the same accepted C09 authority without caller input.
 - Existing #917 attacker-first, forged capability, foreign capability, stale generation, wrong-scope/wrong-key, retry, and historical-read tests remain green.
 - Existing #904/#923 generation-zero trust and no-C05-genesis invariants remain green.
 - #950 explicitly supersedes only #926's historical assertion that current generation zero has no C09 registry digest. The #926 regression is amended for C16.1c-born lineages to require `HOST_SYSTEM_V1` + exact registry record/digest at generation zero while preserving its no-C05-bootstrap, authenticated run-identity, and successor-lineage guarantees. Historical pre-#950 generations remain readable under their recorded custody.
-- No C07 lease/adoption or neural/optimizer/teacher mutation occurs.
+- No C07 lease/adoption or neural/optimizer/teacher mutation occurs. The existing production
+  C07/JIT retry owner remains outside this leaf and is not rewritten merely to route through B13.
 
 ## Risks and limits
 

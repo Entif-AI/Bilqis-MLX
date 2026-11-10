@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "0338f334388a01389163fb0cba74614c2bcdb83a",
-  "updated_at": "2026-11-10T01:13:24Z",
+  "updated_at": "2026-11-10T01:28:20Z",
   "exception": null,
   "items": [
     {
@@ -10,8 +10,8 @@
       "pr": null,
       "state": "ACTIVE",
       "head_sha": "fb18a4056abf6ee4be2c94c9773275882439e16b",
-      "summary": "C16.1c candidate fb18a405 remains invalidated by pinned EGM post-implementation drift. No PR is open. Fresh proposal-v6 review converged to Design Critic PASS 0B/0M/2N, Codebase Details PASS 0B/0M/0N, and Implementation Readiness FAIL 0B/1M/0N. The sole Major was ordinary admission pre-mint lock ownership: v6 required the low-level successor gate to run under B13 pointer lock but described accept_and_publish using load_accepted_generation after that lock had been released. Proposal v7 closes this with an admission-owned pointer-locking wrapper over _read_accepted_locked, candidate parent/run/run-identity authentication, and the same successor-authority gate before binding mint; B13 repeats the gate under final publication lock. V7 also incorporates the v6 Design Critic nits and tightens exact Darwin ACL/errno/descriptor APIs and test fixture custody. Production code remains frozen pending fresh v7 EGM review.",
-      "resume_trigger": "Fresh EGM SHARED_CONTRACT review of proposal v7 reaches 0 Blockers / 0 Majors; then record v7 as implementation authority and implement only that approved repair in phases A-D.",
+      "summary": "C16.1c candidate fb18a405 remains invalidated by pinned EGM post-implementation drift. No PR is open. Fresh proposal-v7 review found: Design Critic 0B/1M, Codebase Details 1B/3M, Implementation Readiness 0B/1M/1N. Material findings were incorrect Darwin acl_get_entry iterator semantics; ordinary accept_and_publish post-pointer retry blocked by the pre-binding parent-only wrapper; deterministic host-reader test patch lifetime too short; omitted historical run-identity cutover regression; and overclaiming C07/JIT retry and historical anchoring outside #950 ownership. Proposal v8 consolidates the full packet: correct Darwin iterator/end/error semantics; state-aware ordinary admission pre-binding for parent-pointed and already-child-pointed states; historical #917 anchor limited to ordinary non-C07 retained successors; production C07/JIT retry explicitly unchanged; host test patch lifetime spans prepare/publish/retry/runtime; run-identity cutover is in focused gates; exact verify:leaf command is pinned; cognitive-package staging resolves C09 from accepted student custody rather than assuming every acceptance schema carries a digest. Production code remains frozen.",
+      "resume_trigger": "Fresh EGM SHARED_CONTRACT review of proposal v8 reaches 0 Blockers / 0 Majors; then record v8 as implementation authority and implement only that approved repair in phases A-D.",
       "preserved_branch": "codex/950-c09-genesis-source-authority-20261109"
     },
     {
