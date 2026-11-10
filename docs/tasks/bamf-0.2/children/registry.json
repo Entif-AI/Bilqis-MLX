@@ -1737,7 +1737,7 @@
         0,
         4
       ],
-      "source_parent_sha256": "3beb54e2ed9f69222610fe693d7eece51e667b97bf1ca752be4ff4fa5cfa21c8"
+      "source_parent_sha256": "1be6636da570a6c4f69bca9304f75ce44d5d93d7878adfc3836d852355bb6505"
     },
     {
       "key": "C01.2",
@@ -1754,7 +1754,7 @@
         4,
         8
       ],
-      "source_parent_sha256": "3beb54e2ed9f69222610fe693d7eece51e667b97bf1ca752be4ff4fa5cfa21c8"
+      "source_parent_sha256": "1be6636da570a6c4f69bca9304f75ce44d5d93d7878adfc3836d852355bb6505"
     },
     {
       "key": "C01.3",
@@ -1771,7 +1771,7 @@
         8,
         11
       ],
-      "source_parent_sha256": "3beb54e2ed9f69222610fe693d7eece51e667b97bf1ca752be4ff4fa5cfa21c8"
+      "source_parent_sha256": "1be6636da570a6c4f69bca9304f75ce44d5d93d7878adfc3836d852355bb6505"
     },
     {
       "key": "C01.4",
@@ -1788,7 +1788,7 @@
         11,
         14
       ],
-      "source_parent_sha256": "3beb54e2ed9f69222610fe693d7eece51e667b97bf1ca752be4ff4fa5cfa21c8"
+      "source_parent_sha256": "1be6636da570a6c4f69bca9304f75ce44d5d93d7878adfc3836d852355bb6505"
     },
     {
       "key": "C02.1",
@@ -2256,7 +2256,7 @@
         0,
         3
       ],
-      "source_parent_sha256": "3611d3ed9dad3108e9708e412549082689e856b850f711463c353394f9ea0401"
+      "source_parent_sha256": "7533433c24484977a27db7ea4fbe39d3b8ac19eb4cbc743750e1659cb0e69bd2"
     },
     {
       "key": "C08.2",
@@ -2273,7 +2273,7 @@
         3,
         5
       ],
-      "source_parent_sha256": "3611d3ed9dad3108e9708e412549082689e856b850f711463c353394f9ea0401"
+      "source_parent_sha256": "7533433c24484977a27db7ea4fbe39d3b8ac19eb4cbc743750e1659cb0e69bd2"
     },
     {
       "key": "C08.3",
@@ -2290,7 +2290,7 @@
         5,
         8
       ],
-      "source_parent_sha256": "3611d3ed9dad3108e9708e412549082689e856b850f711463c353394f9ea0401"
+      "source_parent_sha256": "7533433c24484977a27db7ea4fbe39d3b8ac19eb4cbc743750e1659cb0e69bd2"
     },
     {
       "key": "C09.1",
@@ -2581,7 +2581,7 @@
       "title": "BAMF-0.2 C14.1 | Own the source-defined developmental program and interleaved scheduling policy",
       "body_sha256": "4b2a63f37fce41bc17f0db6a87cbec1046c3ef7592f5533d37f07ce5c906e782",
       "clause_span": [],
-      "source_parent_sha256": "df7b2270def04f33a3f46eca095bdc9426fb3d3fa595f31e282074f607182505"
+      "source_parent_sha256": "809ccfe96a3265814f2bb7e04588d5ab864618c59ac11692977ba40d6bca4e8d"
     },
     {
       "key": "C14.1a",
@@ -2636,7 +2636,7 @@
         10,
         15
       ],
-      "source_parent_sha256": "df7b2270def04f33a3f46eca095bdc9426fb3d3fa595f31e282074f607182505"
+      "source_parent_sha256": "809ccfe96a3265814f2bb7e04588d5ab864618c59ac11692977ba40d6bca4e8d"
     },
     {
       "key": "C14.3",
@@ -2653,7 +2653,7 @@
         15,
         20
       ],
-      "source_parent_sha256": "df7b2270def04f33a3f46eca095bdc9426fb3d3fa595f31e282074f607182505"
+      "source_parent_sha256": "809ccfe96a3265814f2bb7e04588d5ab864618c59ac11692977ba40d6bca4e8d"
     },
     {
       "key": "C15.1",
@@ -2672,7 +2672,7 @@
       "title": "BAMF-0.2 C15.1 | Own three-lane integration and immutable delivery-manifest preparation",
       "body_sha256": "d5f3e384717f1698ea2249ef123f1afa8378e0b6efb3b7dea086cc431ce66b09",
       "clause_span": [],
-      "source_parent_sha256": "74e87356b3269b5a31f3c319aa5a0cd3f1f0e01b4ecada916a835f5c12a02abd"
+      "source_parent_sha256": "329846f08e8280520cf1accec858eea5981f5d4b3166f3d4a89e206eda79fb9f"
     },
     {
       "key": "C15.1a",
@@ -2728,7 +2728,7 @@
         8,
         11
       ],
-      "source_parent_sha256": "74e87356b3269b5a31f3c319aa5a0cd3f1f0e01b4ecada916a835f5c12a02abd"
+      "source_parent_sha256": "329846f08e8280520cf1accec858eea5981f5d4b3166f3d4a89e206eda79fb9f"
     },
     {
       "key": "C15.3",
@@ -2745,7 +2745,7 @@
         11,
         14
       ],
-      "source_parent_sha256": "74e87356b3269b5a31f3c319aa5a0cd3f1f0e01b4ecada916a835f5c12a02abd"
+      "source_parent_sha256": "329846f08e8280520cf1accec858eea5981f5d4b3166f3d4a89e206eda79fb9f"
     },
     {
       "key": "C16.1",
@@ -2763,7 +2763,7 @@
       "title": "BAMF-0.2 C16.1 | Own persistent student create and correctly bound initial generation",
       "body_sha256": "67170c53e7ce634008cc5a136e41a68a85b2b3984fb4fba515eda65cf6f99ee5",
       "clause_span": [],
-      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e"
+      "source_parent_sha256": "a32cfaa07ba7c542c388d7102d3284b3105a5cf08afb57a9ce4573eef65c8f34"
     },
     {
       "key": "C16.1a",
@@ -2882,7 +2882,7 @@
         8,
         12
       ],
-      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e"
+      "source_parent_sha256": "a32cfaa07ba7c542c388d7102d3284b3105a5cf08afb57a9ce4573eef65c8f34"
     },
     {
       "key": "C16.3",
@@ -2899,7 +2899,7 @@
         12,
         17
       ],
-      "source_parent_sha256": "1c838a92bba99aeb2bf605a7ab79de63e5378dc742f96e707c223d61893bfd1e"
+      "source_parent_sha256": "a32cfaa07ba7c542c388d7102d3284b3105a5cf08afb57a9ce4573eef65c8f34"
     },
     {
       "key": "A08.1b.1",
@@ -3142,84 +3142,6 @@
           "Consume A08.1a frozen census and four family EGM receipts; source owners issue SourceSpan/FrameInstance/ContextEligibility/SourceGrant; final projection uses A13 project_context."
         ],
         "unresolved": "Preserve A08.1a census and additional unnamed source-owner obligations; range alone does not settle them."
-      }
-    },
-    {
-      "key": "C08.4",
-      "number": 558,
-      "parent_key": "C08",
-      "parent_number": 374,
-      "deps": [
-        "B11",
-        "C08.1",
-        "C08.3"
-      ],
-      "kind": "leaf",
-      "title": "BAMF-0.2 C08.4 | Execute one logical school step across heterogeneous MLX workers",
-      "body_sha256": "b33f20e07dd1947c377e2c1af235d83bf0df5276672ced1661ba8cca7808cb19",
-      "source_parent_sha256": "3611d3ed9dad3108e9708e412549082689e856b850f711463c353394f9ea0401",
-      "dependency_evidence": {
-        "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "resolved",
-        "body_sha256": "b33f20e07dd1947c377e2c1af235d83bf0df5276672ced1661ba8cca7808cb19",
-        "clause": "## Direct prerequisites\n\n- [B11 #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) architecture/backend dispatch.\n- [C08.1 #513](https://github.com/Entif-AI/Bilqis-MLX/issues/513) deterministic batching and activation estimates.\n- [C08.3 #515](https://github.com/Entif-AI/Bilqis-MLX/issues/515) isolated worker/resource-floor contract.\n- B12/B13 state custody remains authoritative for accepted optimizer/checkpoint state.",
-        "known_edges": [
-          "B11",
-          "C08.1",
-          "C08.3"
-        ],
-        "external_receipts": [],
-        "source_records": [
-          {
-            "source_id": "C08.4.body",
-            "kind": "body",
-            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/558",
-            "sha256": "b33f20e07dd1947c377e2c1af235d83bf0df5276672ced1661ba8cca7808cb19",
-            "excerpt": "## Direct prerequisites\n\n- [B11 #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) architecture/backend dispatch.\n- [C08.1 #513](https://github.com/Entif-AI/Bilqis-MLX/issues/513) deterministic batching and activation estimates.\n- [C08.3 #515](https://github.com/Entif-AI/Bilqis-MLX/issues/515) isolated worker/resource-floor contract.\n- B12/B13 state custody remains authoritative for accepted optimizer/checkpoint state."
-          }
-        ],
-        "obligations": [
-          "B12/B13 remain authoritative custody owners, not expressly additional blocking edges; single-host equivalence and fastest/synchronous/auxiliary comparison remain required."
-        ],
-        "unresolved": null
-      }
-    },
-    {
-      "key": "C14.4",
-      "number": 559,
-      "parent_key": "C14",
-      "parent_number": 386,
-      "deps": [
-        "B13",
-        "C05"
-      ],
-      "kind": "leaf",
-      "title": "BAMF-0.2 C14.4 | Admit untrusted asynchronous swarm learning contributions",
-      "body_sha256": "495bce9b46cbd862a635699923cdcd92a0a012513a594c3283ebdd11ce8a4a00",
-      "source_parent_sha256": "7ef262560752bdfb1ce6ebe2e0da3d5aa69c2e7a5e767dc7a839ac0f6e66c4c2",
-      "dependency_evidence": {
-        "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
-        "body_sha256": "495bce9b46cbd862a635699923cdcd92a0a012513a594c3283ebdd11ce8a4a00",
-        "clause": "## Direct prerequisites\n\n- [B13 #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372) complete generation persistence/cold resume.\n- [C05 #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378) retention/admission safeguards.\n- [C12 #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381) bounded capability/plastic delta packaging where applicable.\n- Local tightly coupled multi-device execution is owned by C08.4, not this issue.",
-        "known_edges": [
-          "B13",
-          "C05"
-        ],
-        "external_receipts": [],
-        "source_records": [
-          {
-            "source_id": "C14.4.body",
-            "kind": "body",
-            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/559",
-            "sha256": "495bce9b46cbd862a635699923cdcd92a0a012513a594c3283ebdd11ce8a4a00",
-            "excerpt": "## Direct prerequisites\n\n- [B13 #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372) complete generation persistence/cold resume.\n- [C05 #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378) retention/admission safeguards.\n- [C12 #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381) bounded capability/plastic delta packaging where applicable.\n- Local tightly coupled multi-device execution is owned by C08.4, not this issue."
-          }
-        ],
-        "obligations": [
-          "C12 dependency is conditional: bounded capability/plastic delta packaging where applicable. C14 is explicitly nonblocking parent context; C08.4 owns tightly coupled execution."
-        ],
-        "unresolved": "C12 is conditional where packaging applies; a global unconditional edge must not replace that condition."
       }
     },
     {

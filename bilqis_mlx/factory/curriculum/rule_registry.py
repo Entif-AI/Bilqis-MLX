@@ -19,12 +19,31 @@ WORLD_COVERAGE = ("state",)
 _BOOLEAN = ("BOOL_AND", "BOOL_IFF", "BOOL_IMPLIES", "BOOL_OR", "BOOL_XOR")
 _NUMERIC = ("ADD", "DIV", "MOD", "MUL", "SUB")
 _WORLD = ("IS_OCCURRED",)
-_WORLD_SOURCE_CAPABILITIES = ("WORLD.IS_OCCURRED",)
+_WORLD_SOURCE_COORDINATES = (
+    ("WORLD.IS_OCCURRED", "ithkuil:LEXSENSE-294d00be074a56", "IS_OCCURRED"),
+)
+_WORLD_SOURCE_CAPABILITIES = tuple(item[0] for item in _WORLD_SOURCE_COORDINATES)
+_WORLD_SOURCE_NON_OPERATOR_CAPABILITIES = (
+    "WORLD.ACTOR_OF", "WORLD.BEFORE", "WORLD.DIRECT_CAUSE",
+)
 SOURCE_COORDINATE_WIDTH = 3
 
 
 def _fail(reason: str) -> None:
     ErrorBus.raise_(FACTORY.SEMANTIC_RULE.INVALID, reason=reason)
+
+
+def world_source_operator_classification(
+        capability_id: str) -> tuple[str, str | None, str | None] | None:
+    """Project the Factory-owned qualified-world operator classification."""
+    matches = tuple(item for item in _WORLD_SOURCE_COORDINATES
+                    if item[0] == capability_id)
+    if len(matches) == 1:
+        _, semantic_root, operator_id = matches[0]
+        return ("OPERATOR", semantic_root, operator_id)
+    if capability_id in _WORLD_SOURCE_NON_OPERATOR_CAPABILITIES:
+        return ("NON_OPERATOR", None, None)
+    return None
 
 
 @dataclass(frozen=True)
@@ -131,8 +150,5 @@ def world_rule_profile(
         "source.bamf.qualified-world/v1",
         None if source is None else source.descriptor.implementation_sha256,
         tuple(sorted(_WORLD_SOURCE_CAPABILITIES)),
-        tuple(sorted((
-            ("WORLD.IS_OCCURRED", "ithkuil:LEXSENSE-294d00be074a56",
-             "IS_OCCURRED"),
-        ))),
+        tuple(sorted(_WORLD_SOURCE_COORDINATES)),
     )

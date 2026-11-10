@@ -8,6 +8,7 @@ from bilqis_mlx.factory.curriculum.rule_registry import (
     WORLD_COVERAGE,
     SemanticRuleRegistry,
     default_semantic_rule_registry,
+    world_source_operator_classification,
     world_rule_profile,
 )
 from bilqis_mlx.semantics.cognitive_operators.registry import default_registry
@@ -17,6 +18,24 @@ from bilqis_mlx.source_adapters.world_rules import registered_adapter
 
 class SemanticRuleRegistryTests(unittest.TestCase):
     RELEASE = "a" * 64
+
+    def test_world_operator_classification_covers_source_capabilities(self):
+        from bilqis_mlx.source_adapters import world_rules
+
+        classified = {
+            capability_id: world_source_operator_classification(capability_id)
+            for capability_id in world_rules.CAPABILITIES
+        }
+        self.assertTrue(all(item is not None for item in classified.values()))
+        self.assertEqual(
+            classified["WORLD.IS_OCCURRED"],
+            ("OPERATOR", "ithkuil:LEXSENSE-294d00be074a56", "IS_OCCURRED"),
+        )
+        for capability_id in (
+            "WORLD.ACTOR_OF", "WORLD.BEFORE", "WORLD.DIRECT_CAUSE",
+        ):
+            self.assertEqual(
+                classified[capability_id], ("NON_OPERATOR", None, None))
 
     def test_boolean_and_integer_rules_are_keyed_without_grade(self):
         registry = default_semantic_rule_registry(self.RELEASE)
