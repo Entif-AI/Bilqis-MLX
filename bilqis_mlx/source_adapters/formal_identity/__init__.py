@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from types import MappingProxyType
 
 from bilqis_mlx.grade_b_oracle import CONNECTIVES, VERSION as BOOLEAN_ORACLE
 from bilqis_mlx.live_grade_b import constructor_digest as boolean_provider_digest
@@ -16,14 +15,6 @@ _BOOLEAN_COMPOSITE_ADAPTER = "source.micro.boolean-composite/v1"
 _BOOLEAN_IDENTIFICATION_ADAPTER = "source.micro.boolean-identification/v1"
 _NUMERIC_ADAPTER = "source.finite-numeric/v2"
 _WORLD_ADAPTER = "source.bamf.qualified-world/v1"
-_WORLD_OPERATOR_COORDINATES = MappingProxyType({
-    "WORLD.IS_OCCURRED": ("ithkuil:LEXSENSE-294d00be074a56", "IS_OCCURRED"),
-})
-_WORLD_NON_OPERATOR_CAPABILITIES = frozenset({
-    "WORLD.ACTOR_OF",
-    "WORLD.BEFORE",
-    "WORLD.DIRECT_CAUSE",
-})
 
 
 @dataclass(frozen=True)
@@ -152,16 +143,21 @@ def _world_operator_disposition(
         capability_id: str, source_adapter_id: str) -> SourceOperatorDisposition | None:
     if source_adapter_id != _WORLD_ADAPTER:
         return None
+    from bilqis_mlx.factory.curriculum.rule_registry import (
+        world_source_operator_classification,
+    )
     from bilqis_mlx.source_adapters import world_rules
     if capability_id not in world_rules.CAPABILITIES:
         return None
-    coordinate = _WORLD_OPERATOR_COORDINATES.get(capability_id)
-    if coordinate is not None:
-        semantic_root, operator_id = coordinate
+    classification = world_source_operator_classification(capability_id)
+    if classification is None:
+        return None
+    kind, semantic_root, operator_id = classification
+    if kind == "OPERATOR":
         return _disposition_from_descriptor(
             capability_id, world_rules.registered_adapter().descriptor,
             operator_id=operator_id, semantic_root=semantic_root)
-    if capability_id in _WORLD_NON_OPERATOR_CAPABILITIES:
+    if kind == "NON_OPERATOR":
         return _disposition_from_descriptor(
             capability_id, world_rules.registered_adapter().descriptor)
     return None
