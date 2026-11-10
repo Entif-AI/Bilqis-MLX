@@ -18,6 +18,7 @@ from bilqis_mlx.semantics.atlas.snapshot import (
 )
 from bilqis_mlx.semantics.atlas_projection import (
     _canonical_bytes as _atlas_bytes, _digest as _atlas_sha256,
+    resolve_atlas_source_bundle,
 )
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
 from bilqis_mlx.semantics.atlas.vocabulary import VocabularyBankParent, VocabularyPrior
@@ -285,3 +286,12 @@ def stage_vocabulary_extension(
          "kind": "PARAMETER_EXTENSION", "invalidate_derived_caches": True},
         (event,), parent.run_identity)
     return _issue_a02_staged_vocabulary_extension(candidate, receipt)
+
+
+def stage_vocabulary_extension_from_source_id(
+        run_dir: Path, artifact_path: str, source_bundle_id: str,
+        admissions: tuple[str, ...]) -> A02StagedVocabularyExtension:
+    """Stage through host storage without accepting a caller-owned source path."""
+    source_bundle_path = resolve_atlas_source_bundle(source_bundle_id)
+    return stage_vocabulary_extension(
+        run_dir, artifact_path, source_bundle_path, admissions)
