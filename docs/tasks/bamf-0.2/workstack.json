@@ -1411,7 +1411,7 @@
         "learning_witness"
       ],
       "number": 385,
-      "body_sha256": "30675a0feba3b2c61cdb6f914940c2d64de6e8887485476e192a0ec4dabaf8b7",
+      "body_sha256": "7c4359ea99c617dd556ca1a88c54e22e85865e0e19d7e3fea0e897910994f12d",
       "children": [
         "C13.1",
         "C13.2",
@@ -1492,7 +1492,7 @@
         "coverage_completion"
       ],
       "number": 387,
-      "body_sha256": "329846f08e8280520cf1accec858eea5981f5d4b3166f3d4a89e206eda79fb9f",
+      "body_sha256": "3c200c791392ee24cc6d517cdf23452cbaa9bd5cdcbccbeedd67f903e9ab99b1",
       "children": [
         "C15.1",
         "C15.2",
@@ -1532,7 +1532,7 @@
         "learning_witness"
       ],
       "number": 382,
-      "body_sha256": "a32cfaa07ba7c542c388d7102d3284b3105a5cf08afb57a9ce4573eef65c8f34",
+      "body_sha256": "ddb161bdc3b83eb800bcf1b9af409e7ca12ab5e2a9a7348bfe868501a9109111",
       "children": [
         "C16.1",
         "C16.2",

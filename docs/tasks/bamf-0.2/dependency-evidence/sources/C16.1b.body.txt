@@ -96,3 +96,22 @@ C16.1b no longer waits on C16.1a. Its effective direct custody prerequisite is *
 This leaf does not mint a B13 bootstrap token, C07 lease authority, or B06 visit identity. C03 remains the owner of the actual teacher-visit selection identity; C16.1a #542 consumes this leaf afterward to expose the human create/dry-run/resume surface.
 
 Canonical machine-readable dependency order is `B13.6 #904 -> C16.1b #543 -> C16.1a #542`.
+
+
+<!-- BAMF02:C16-1-C09-GENESIS-AUTHORITY-AMENDMENT:20261109 -->
+## Downstream authority refinement | 9 November 2026
+
+This leaf's accepted C16.1b result remains unchanged. A newly decomposed downstream leaf, **C16.1c #950**, now consumes that generation-zero foundation and binds the host-owned C09 source-authority trust root into accepted genesis custody before C16.1a exposes the final create/resume `atlas-release` path.
+
+This changes downstream sequencing only and adds no C16.1b acceptance. Canonical order is `B13.6 #904 -> C16.1b #543 -> C16.1c #950 -> C16.1a #542`.
+
+
+
+<!-- BAMF02:FOUNDATION-EVIDENCE-POLICY-SYNC-20261110 -->
+## Current C16 evidence policy | 10 November 2026
+
+**Direct prerequisites:** B13.6, C02, C03, C05, C08
+
+This closed leaf's accepted generation-zero result remains unchanged. Any inherited text requiring fresh seeds, a newly learned gap, or a strictly improved fresh complete-solver target score is historical and superseded by parent C16's `FOUNDATION_EVIDENCE_POLICY_ACTIVE`.
+
+Source-valid acquired or retained taught behavior, with required custody/rollback/cold-resume proof, is sufficient for BAMF-0.2 alpha acceptance. Fresh/novel variants remain non-authorizing diagnostics. C16.1c #950 is downstream authority for later C07/C11 operation and is not a prerequisite for preserving or consuming this leaf's accepted result.

@@ -45,12 +45,14 @@ class AtlasModelOwnerThreadingTests(TestCase):
                 forward_impl, "semantic_bank_views", return_value=("banks",)), patch.object(
                 forward_impl, "require_accepted_execution_cache",
                 return_value=empty_cache), patch.object(
-                forward_impl, "start_source_backbone_producer",
+                forward_impl, "bind_motif_artifact_owner") as bind, patch.object(
+                forward_impl, "start_retained_source_backbone_producer",
                 return_value=producer) as start:
             actual, accepted = forward_impl._source_producer(
                 params, batch, "generation", object())
         self.assertIs(actual, producer)
         self.assertIs(accepted, empty_cache)
+        bind.assert_called_once_with(empty_cache, batch.compiled)
         self.assertIs(start.call_args.args[-1], owner)
 
         foreign_cache = SimpleNamespace(

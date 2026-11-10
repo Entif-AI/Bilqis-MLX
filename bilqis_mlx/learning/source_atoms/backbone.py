@@ -5,6 +5,7 @@ from ..atlas_engram import MotifManifest
 from ..atlas_engram_reads.source_owner import (
     _B13_EXECUTION_SEAL, _read_retained_compiled_motifs,
 )
+from ..atlas_engram_reads.records import MotifReadResult
 from ..atlas_plasticity import adapter_forward, adapter_parameter_view
 from ...runtime.backbone_group_numerical import (
     UnadmittedBackboneSession, _content_digest,
@@ -15,7 +16,6 @@ from ...runtime.block_attnres import depth_parameter_view
 from ...runtime.model_topology_v2 import ModelTopologySpecV2
 from ...semantics.domains import contract_digest
 from .backbone_receipts import (
-    HIT, MOTIF_POSITION, NO_HIT, NOT_APPLICABLE,
     _invalid as _invalid_producer_receipt, _issue_from_producer,
 )
 from .backbone_identity import compiled_prefix_digest
@@ -25,7 +25,10 @@ from .encoding import encode_source_compiled, encode_source_compiled_with_handof
 class _SourceBackboneProducerSession:
     """Own source h0 and the only legal sequential group-receipt construction."""
 
-    def __init__(self, encoded, handoffs, parameters, compiled, artifact_owner):
+    def __init__(
+        self, encoded, handoffs, parameters, compiled, artifact_owner, *,
+        input_motif_read=None,
+    ):
         self._compiled = compiled
         self._encoded = encoded
         self._handoffs = tuple(handoffs)
@@ -40,8 +43,22 @@ class _SourceBackboneProducerSession:
         self._prefix = compiled_prefix_digest(compiled)
         valid = mx.array([[position is not None for position in row]
                           for row in encoded.handles], dtype=mx.bool_)
+        if input_motif_read is not None and type(input_motif_read) is not MotifReadResult:
+            _invalid_producer_receipt()
+        self._input_motif_read = input_motif_read
+        self._initial_hidden = (
+            encoded.global_seeds
+            if input_motif_read is None
+            else input_motif_read.hidden
+        )
+        if (
+            type(self._initial_hidden) is not mx.array
+            or self._initial_hidden.shape != encoded.global_seeds.shape
+            or self._initial_hidden.dtype != mx.float32
+        ):
+            _invalid_producer_receipt()
         self._session = UnadmittedBackboneSession(
-            encoded.global_seeds, self._parameters,
+            self._initial_hidden, self._parameters,
             spec=self._topology, extents=compiled.extents,
             scope_ids=mx.zeros(valid.shape, dtype=mx.int32), valid=valid,
             generation=self._generation, prefix_digest=self._prefix)
@@ -75,105 +92,30 @@ class _SourceBackboneProducerSession:
             _invalid_producer_receipt()
         valid = mx.array([[position is not None for position in row]
                           for row in encoded.handles], dtype=mx.bool_)
+        initial_hidden = encoded.global_seeds
+        if self._motif_manifest is not None:
+            motif = _read_retained_compiled_motifs(
+                self._compiled, self._parameters, self._sources,
+                self._motif_manifest, spec=topology,
+                extents=self._compiled.extents, site_index=0,
+                hidden=encoded.global_seeds, seal=self._motif_seal)
+            if (
+                self._input_motif_read is None
+                or motif.dispositions != self._input_motif_read.dispositions
+                or motif.participating_slots
+                != self._input_motif_read.participating_slots
+                or motif.context_digests != self._input_motif_read.context_digests
+                or _content_digest(motif.hidden)
+                != _content_digest(self._input_motif_read.hidden)
+            ):
+                _invalid_producer_receipt()
+            initial_hidden = motif.hidden
         replay = UnadmittedBackboneSession(
-            encoded.global_seeds, self._parameters,
+            initial_hidden, self._parameters,
             spec=topology, extents=self._compiled.extents,
             scope_ids=mx.zeros(valid.shape, dtype=mx.int32), valid=valid,
             generation=generation, prefix_digest=prefix)
         return encoded, source_digest, topology, generation, prefix, replay
-
-    def _motif_receipt_fields(
-        self, source_id, expected, hidden, source_digest, prefix, generation, topology,
-    ):
-        motif_disposition = NO_HIT if source_id == "g1" else NOT_APPLICABLE
-        motif_position = MOTIF_POSITION if source_id == "g1" else ""
-        if source_id == "g1" and self._motif_manifest is not None:
-            motif = _read_retained_compiled_motifs(
-                self._compiled, self._parameters, self._sources,
-                self._motif_manifest, spec=topology, extents=self._compiled.extents,
-                site_index=1, hidden=expected.hidden, seal=self._motif_seal)
-            self._motif_read = motif
-            hidden = motif.hidden
-            motif_disposition = HIT if motif.participating_slots else NO_HIT
-            motif_read_digest = contract_digest((
-                "B08_SOURCE_QUALIFIED_READ_V1", motif.dispositions,
-                motif.participating_slots, motif.context_digests,
-                _content_digest(hidden), source_digest, prefix, generation,
-                expected.execution_digest, MOTIF_POSITION))
-        else:
-            motif_read_digest = (
-                contract_digest(("B08_QUARANTINED_NO_HIT", source_digest, prefix,
-                                 generation, expected.execution_digest, MOTIF_POSITION))
-                if source_id == "g1" else contract_digest(()))
-        return hidden, motif_disposition, motif_position, motif_read_digest
-
-    def _receipt_values(self, result=None):
-        encoded, source_digest, topology, generation, prefix, replay = (
-            self._receipt_replay())
-        if result is None:
-            hidden = encoded.global_seeds
-            output = _content_digest(hidden)
-            return dict(
-                source_id="h0", completed_layer=0, hidden=hidden,
-                source_handoff_digest=source_digest, topology_digest=topology.digest,
-                generation_digest=generation,
-                parameter_tree_digest=replay.parameter_tree_digest,
-                prefix_digest=prefix,
-                scope_digest=contract_digest((source_digest, prefix, generation)),
-                input_digest=source_digest, output_digest=output,
-                output_shape=tuple(hidden.shape), output_dtype=str(hidden.dtype),
-                cache_chain_digest=contract_digest(()),
-                numerical_execution_digest=contract_digest((
-                    "h0", output, replay.parameter_tree_digest)),
-                predecessor_receipt_digest=source_digest,
-                motif_disposition=NOT_APPLICABLE, motif_read_position="",
-                motif_read_digest=contract_digest(()))
-        target = result.group_index
-        if (target < 1 or target > len(self._session.results)
-                or result is not self._session.results[target - 1]
-                or len(self._depth_inputs) < target - 1):
-            _invalid_producer_receipt()
-        expected = None
-        for group_index in range(1, target + 1):
-            if group_index == 1:
-                expected = replay.advance()
-            else:
-                features, view = self._depth_inputs[group_index - 2]
-                selected = (source_depth_select(self, view) if features is None
-                            else depth_select(self, features, view))
-                selected = adapter_forward(selected, adapter_parameter_view(
-                    self._parameters, spec=topology, extents=self._compiled.extents,
-                    group_index=group_index - 2))
-                expected = replay.advance(next_input=selected)
-        fields = (
-            "group_index", "layer_start", "layer_end", "parameter_content_digest",
-            "full_parameter_tree_digest", "scope_content_digest", "input_content_digest",
-            "cache_chain_digest", "predecessor_digest", "execution_digest")
-        if (any(getattr(result, name) != getattr(expected, name) for name in fields)
-                or result.hidden.shape != expected.hidden.shape
-                or result.hidden.dtype != expected.hidden.dtype
-                or _content_digest(result.hidden) != _content_digest(expected.hidden)):
-            _invalid_producer_receipt()
-        source_id = SOURCE_ORDER[target]
-        hidden = expected.hidden
-        hidden, motif_disposition, motif_position, motif_read_digest = (
-            self._motif_receipt_fields(
-                source_id, expected, hidden, source_digest, prefix, generation, topology))
-        return dict(
-            source_id=source_id, completed_layer=expected.layer_end,
-            hidden=hidden, source_handoff_digest=source_digest,
-            topology_digest=topology.digest, generation_digest=generation,
-            parameter_tree_digest=expected.full_parameter_tree_digest,
-            prefix_digest=prefix, scope_digest=expected.scope_content_digest,
-            input_digest=expected.input_content_digest,
-            output_digest=_content_digest(hidden),
-            output_shape=tuple(hidden.shape),
-            output_dtype=str(hidden.dtype),
-            cache_chain_digest=expected.cache_chain_digest,
-            numerical_execution_digest=expected.execution_digest,
-            predecessor_receipt_digest=self._receipts[target - 1].receipt_digest,
-            motif_disposition=motif_disposition, motif_read_position=motif_position,
-            motif_read_digest=motif_read_digest)
 
     def _validated_receipts(self, boundary_group):
         if (not isinstance(boundary_group, int) or isinstance(boundary_group, bool)
@@ -273,9 +215,35 @@ def start_source_backbone_producer(
     """Create the B11 producer only by replaying and revalidating actual source rows."""
     encoded, handoffs = encode_source_compiled_with_handoffs(
         compiled, parameters, sources, feature_schema, banks, artifact_owner)
+    return _start_encoded_source_backbone_producer(
+        encoded, handoffs, parameters, compiled, sources, feature_schema,
+        artifact_owner)
+
+
+def _start_encoded_source_backbone_producer(
+    encoded, handoffs, parameters, compiled, sources, feature_schema,
+    artifact_owner, *, motif_manifest=None, motif_seal=None,
+    input_motif_read=None,
+):
+    retained = (
+        motif_manifest is not None,
+        motif_seal is not None,
+        input_motif_read is not None,
+    )
+    if any(retained) and not all(retained):
+        _invalid_producer_receipt()
+    if all(retained) and (
+        type(motif_manifest) is not MotifManifest
+        or motif_seal is not _B13_EXECUTION_SEAL
+        or type(input_motif_read) is not MotifReadResult
+    ):
+        _invalid_producer_receipt()
     producer = _SourceBackboneProducerSession(
-        encoded, handoffs, parameters, compiled, artifact_owner)
+        encoded, handoffs, parameters, compiled, artifact_owner,
+        input_motif_read=input_motif_read)
     producer._bind_authoritative_inputs(sources, feature_schema)
+    producer._motif_manifest = motif_manifest
+    producer._motif_seal = motif_seal
     producer._receipts = ()
     receipt = _issue_from_producer(producer)
     producer._receipts = (receipt,)
@@ -338,13 +306,19 @@ def start_retained_source_backbone_producer(
     compiled, parameters, sources, feature_schema, banks, manifest,
     artifact_owner, *, seal,
 ):
-    """B13-only B11 producer whose g1 boundary executes the retained B08 read."""
+    """B13-only B11 producer whose input and g1 boundaries execute B08 reads."""
     if seal is not _B13_EXECUTION_SEAL or type(manifest) is not MotifManifest:
         _invalid_producer_receipt()
-    producer = start_source_backbone_producer(
-        compiled, parameters, sources, feature_schema, banks, artifact_owner)
     if manifest.digest != compiled.extents.motif_key_map_digest:
         _invalid_producer_receipt()
-    producer._motif_manifest = manifest
-    producer._motif_seal = seal
-    return producer
+    encoded, handoffs = encode_source_compiled_with_handoffs(
+        compiled, parameters, sources, feature_schema, banks, artifact_owner)
+    topology = ModelTopologySpecV2()
+    input_motif_read = _read_retained_compiled_motifs(
+        compiled, parameters, sources, manifest,
+        spec=topology, extents=compiled.extents, site_index=0,
+        hidden=encoded.global_seeds, seal=seal)
+    return _start_encoded_source_backbone_producer(
+        encoded, handoffs, parameters, compiled, sources, feature_schema,
+        artifact_owner, motif_manifest=manifest, motif_seal=seal,
+        input_motif_read=input_motif_read)

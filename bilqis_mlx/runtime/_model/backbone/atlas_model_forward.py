@@ -52,15 +52,6 @@ def _source_producer(params, compiled_batch, generation, cache):
         != compiled_batch.compiled.extents.motif_key_map_digest
     ):
         _invalid("B11_ACCEPTED_CACHE_GENERATION_MISMATCH")
-    if not accepted_cache.motif_manifest.slots:
-        return start_source_backbone_producer(
-            compiled_batch.compiled,
-            params,
-            compiled_batch.sources,
-            compiled_batch.feature_schema,
-            banks,
-            compiled_batch.atlas_feature_artifact_owner,
-        ), accepted_cache
     bind_motif_artifact_owner(accepted_cache, compiled_batch.compiled)
     return start_retained_source_backbone_producer(
         compiled_batch.compiled,

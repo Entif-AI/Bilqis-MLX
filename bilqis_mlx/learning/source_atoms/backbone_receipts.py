@@ -14,7 +14,9 @@ from ...semantics.domains import contract_digest
 
 NO_HIT = "NO_HIT_QUARANTINED"
 HIT = "SOURCE_QUALIFIED_HIT"
+QUALIFIED_MISS = "SOURCE_QUALIFIED_MISS"
 NOT_APPLICABLE = "NOT_APPLICABLE"
+INPUT_MOTIF_POSITION = "AFTER_FRAME_ENCODER_BEFORE_LAYER_1"
 MOTIF_POSITION = "AFTER_LAYER_4_BEFORE_CAPTURE"
 _HIDDEN_FRAME_RANK = 3
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -26,7 +28,7 @@ def _invalid() -> None:
 
 def receipt_projection(values):
     return (
-        "bilqis.mlx.backbone-boundary-receipt/v2", values["source_id"],
+        "bilqis.mlx.backbone-boundary-receipt/v3", values["source_id"],
         values["completed_layer"], values["source_handoff_digest"],
         values["topology_digest"], values["generation_digest"],
         values["parameter_tree_digest"], values["prefix_digest"],
@@ -72,9 +74,17 @@ class ProducedBackboneBoundary:
             self.numerical_execution_digest, self.predecessor_receipt_digest,
             self.motif_read_digest, self.receipt_digest,
         )
-        expected_motif = ({NO_HIT, HIT} if self.source_id == "g1"
-                          else {NOT_APPLICABLE})
-        expected_position = MOTIF_POSITION if self.source_id == "g1" else ""
+        if self.source_id == "h0":
+            expected_motif = {NOT_APPLICABLE, QUALIFIED_MISS, HIT}
+            expected_position = (
+                "" if self.motif_disposition == NOT_APPLICABLE
+                else INPUT_MOTIF_POSITION)
+        elif self.source_id == "g1":
+            expected_motif = {NO_HIT, QUALIFIED_MISS, HIT}
+            expected_position = MOTIF_POSITION
+        else:
+            expected_motif = {NOT_APPLICABLE}
+            expected_position = ""
         if (expected_index < 0
                 or self.completed_layer != COMPLETED_LAYERS[expected_index]
                 or type(self.hidden) is not mx.array or self.hidden.dtype != mx.float32
@@ -96,8 +106,9 @@ class ProducedBackboneBoundary:
 def _issue_from_producer(producer, result=None):
     """Replay authoritative execution and capture the resulting evidence object."""
     from .backbone import _SourceBackboneProducerSession
+    from .backbone_receipt_runtime import receipt_values
     if type(producer) is not _SourceBackboneProducerSession:
         _invalid()
-    values = _SourceBackboneProducerSession._receipt_values(producer, result)
+    values = receipt_values(producer, result)
     return ProducedBackboneBoundary(
         **values, receipt_digest=contract_digest(receipt_projection(values)))
