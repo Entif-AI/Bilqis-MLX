@@ -1711,6 +1711,17 @@ Recovery: Preserve the receiver generation; inspect exact bindings and source cl
 
 These terms are not exceptions. They describe a controlled stop, handoff, or gate.
 
+### `ATLAS_ADMISSION_ADOPTED_COLD_RESUME`
+
+Kind: `STOP_REASON`
+Owner: `runtime.atlas_admission`
+
+Meaning: The exact staged successor is accepted in B13 custody and this process must not reuse its pre-adoption in-memory learner state.
+
+Neural effect: The admission transaction performs no neural update and the stale pre-adoption learner is not flushed.
+
+Next action: Cold-resume from the accepted generation before any further neural, optimizer, assessment, or curriculum work.
+
 ### `ATLAS_ADMISSION_STAGED`
 
 Kind: `STOP_REASON`

@@ -8,9 +8,21 @@ import unittest
 from unittest.mock import patch
 from bilqis_mlx.cli import main
 from bilqis_mlx.presentation.dashboard import build
+from bilqis_mlx.presentation.operator_cli.terminal import human_stop_summary
 
 
 class OperatorTests(unittest.TestCase):
+    def test_cold_resume_stop_explains_accepted_generation_restart(self):
+        summary = human_stop_summary({
+            "stop_reason": "ATLAS_ADMISSION_ADOPTED_COLD_RESUME",
+            "visits_this_command": 0,
+            "elapsed_seconds": 1.25,
+            "optimizer_step": 17,
+            "safe_resume_command": "npm run train -- --human-run --resume",
+        })
+        self.assertIn("accepted B13", summary)
+        self.assertIn("--resume", summary)
+
     def test_resume_terminal_clears_previous_session_stop_before_training(self):
         class Terminal(io.StringIO):
             def isatty(self):

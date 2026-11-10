@@ -4,7 +4,9 @@ from __future__ import annotations
 from .topology_lifecycle import operator_topology
 from .operator_session.operator_preflight import validate_operator_preflight
 from .operator_session.operator_disk import operator_disk_ready
-from .operator_session.operator_finish import finish_operator_session
+from .operator_session.operator_finish import (
+    cold_resume_operator_result, finish_operator_session,
+)
 from .operator_session.operator_stagnation import start_stagnation_session
 from .operator_session.operator_setup import prepare_operator_session, configure_operator_session
 from .operator_session.operator_visit import execute_operator_visit
@@ -14,8 +16,6 @@ from .operator_session.operator_iteration import prepare_operator_iteration
 
 
 import bilqis_mlx.compatibility.live_releases as _compatibility_live_releases
-import bilqis_mlx.operator_vocabulary as _bilqis_mlx_operator_vocabulary
-import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
 import bilqis_mlx.runtime.experiment_runs as _runtime_experiment_runs
 import bilqis_mlx.runtime.mlx_memory as _runtime_mlx_memory
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
@@ -24,19 +24,6 @@ import bilqis_mlx.runtime.timing_trace as _runtime_timing_trace
 import contextlib as _contextlib
 import pathlib as _pathlib
 import time as _time
-
-
-def _stage_atlas_frontier_attempt(run_dir, receipt, proposal, proposal_file, *,
-                                  record=_runtime_checkpoints._record):
-    from .atlas_admission import stage_unleased_atlas_proposal
-    result = stage_unleased_atlas_proposal(run_dir, proposal)
-    record(run_dir, {
-        "event": "SCHOOL_ATLAS_ADMISSION_STAGED", "generation": receipt["generation"],
-        "proposal_sha256": result.proposal_sha256, "proposal_file": proposal_file,
-        "lease_sha256": result.lease_sha256, "reason": result.reason,
-        "operator_action": result.operator_action, "actual_neural_updates": 0,
-    })
-    return _bilqis_mlx_operator_vocabulary.ATLAS_ADMISSION_STAGED.code
 
 
 def _numeric_entry_transition(release, graph, *, full_grade_b, experiment_budget):
@@ -153,7 +140,14 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                 numeric_staircase=numeric_staircase, mx=mx, manifest=manifest, params=params,
                 optimizer=optimizer, reserve_gib=reserve_gib, full_grade_b=full_grade_b,
                 autonomy_session=autonomy_session, start=start, minutes=minutes, visits=visits,
-                max_visits=max_visits, flash_mode=flash_mode, source_checkpoint=source_checkpoint, _stage_atlas_frontier_attempt=_stage_atlas_frontier_attempt)
+                max_visits=max_visits, flash_mode=flash_mode, source_checkpoint=source_checkpoint)
+            if control is DispatchControl.COLD_RESUME:
+                return cold_resume_operator_result(
+                    run_dir=run_dir, source_root=source_root,
+                    learning_settings=learning_settings, visits=visits, start=start,
+                    source_prefetch_workers=source_prefetch_workers,
+                    boolean_association_bridge=boolean_association_bridge,
+                    autonomous_curriculum=autonomous_curriculum)
             if control is DispatchControl.STOP:
                 break
             if control is DispatchControl.CONTINUE:
