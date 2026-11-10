@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "331db08d7c89824f7f6d78562ee75c807f0456f3",
-  "updated_at": "2026-11-10T16:16:00Z",
+  "observed_unified": "2c572202978df9542e379cfb975007cdea3f05ad",
+  "updated_at": "2026-11-10T17:24:27Z",
   "exception": null,
   "items": [
     {
@@ -281,12 +281,12 @@
     },
     {
       "issue": 958,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "3495b6572e0189777872009bffde6bde0456de78",
-      "head_sha_role": "semantic implementation head before current reviewed-unified synchronization",
-      "summary": "#958 A09/Factory scope remediation has a bounded semantic implementation at 3495b657: next_atlas_delta carries the existing StagedSelectionReceipt and exact StagedCandidate into a digest-bound handoff, derives family scope from the receipt, and resolves source-owned operator/non-operator disposition from exact ExecutableFactoryRelease bindings. Focused tests pass in the repository test environment; current reviewed-unified synchronization and independent exact-head review remain before turn-in.",
-      "resume_trigger": null,
+      "pr": 967,
+      "state": "WAITING",
+      "head_sha": "5677d4df08b604b86cdc45d39e7b2e59882107ac",
+      "head_sha_role": "exact pushed semantic/test candidate before flow-control evidence-only checkpoint",
+      "summary": "#958 A09/Factory scope remediation is implementation-complete at exact remote head 5677d4df on reviewed unified 2c572202. The v2 path carries a digest-bound A09 receipt/staged-candidate handoff, derives source-owned operator/non-operator scope, cross-binds A09 graph-token selection to A01/A02 Atlas identities, keeps v1 lease semantics historical, uses a separately human-authorized v2 lease, derives neural/resource facts only from owner-issued A02 evidence, and binds the same accepted B13 run before policy. Final local owner ring is 60/60 PASS; structure/governance/smell/error-control/BAMF contracts/flow-control are green; hosted PR #967 portable-core, portable and Semantic ABI are green. Fresh independent Goldfish remains EGM_PENDING because Chat On Steroids reports PRIME_TRANSFER_IN_PROGRESS; PR remains Draft and integration is not qualified until a genuine fresh 0B/0M review lands.",
+      "resume_trigger": "Run a fresh pinned EGM exact-head review of semantic candidate 5677d4df08b604b86cdc45d39e7b2e59882107ac. If it returns 0 Blockers / 0 Majors, reconcile any evidence-only flow-control head, mark PR #967 ready for human review, and preserve no-self-merge authority.",
       "preserved_branch": "codex/958-a09-c07-scope-20261109"
     },
     {
