@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "0338f334388a01389163fb0cba74614c2bcdb83a",
-  "updated_at": "2026-11-10T01:28:20Z",
+  "updated_at": "2026-11-10T15:23:45Z",
   "exception": null,
   "items": [
     {
@@ -10,8 +10,8 @@
       "pr": null,
       "state": "ACTIVE",
       "head_sha": "fb18a4056abf6ee4be2c94c9773275882439e16b",
-      "summary": "C16.1c candidate fb18a405 remains invalidated by pinned EGM post-implementation drift. No PR is open. Fresh proposal-v7 review found: Design Critic 0B/1M, Codebase Details 1B/3M, Implementation Readiness 0B/1M/1N. Material findings were incorrect Darwin acl_get_entry iterator semantics; ordinary accept_and_publish post-pointer retry blocked by the pre-binding parent-only wrapper; deterministic host-reader test patch lifetime too short; omitted historical run-identity cutover regression; and overclaiming C07/JIT retry and historical anchoring outside #950 ownership. Proposal v8 consolidates the full packet: correct Darwin iterator/end/error semantics; state-aware ordinary admission pre-binding for parent-pointed and already-child-pointed states; historical #917 anchor limited to ordinary non-C07 retained successors; production C07/JIT retry explicitly unchanged; host test patch lifetime spans prepare/publish/retry/runtime; run-identity cutover is in focused gates; exact verify:leaf command is pinned; cognitive-package staging resolves C09 from accepted student custody rather than assuming every acceptance schema carries a digest. Production code remains frozen.",
-      "resume_trigger": "Fresh EGM SHARED_CONTRACT review of proposal v8 reaches 0 Blockers / 0 Majors; then record v8 as implementation authority and implement only that approved repair in phases A-D.",
+      "summary": "C16.1c failed implementation fb18a405 remains preserved and invalidated. Proposal v10 at f3832960e2af6ae07f696efd1effb909166b1341 / SHA-256 20960ff497c593270e6b28d643b37e21535f35b6c0e3690fc2e031ecb4756edb completed genuinely fresh pinned-EGM design review with Design Critic, Codebase Details, and Implementation Readiness all PASS at 0 Blockers / 0 Majors / 0 Nits. The exact v10 proposal is now implementation authority. No PR is open. Implementation must follow reviewed phases A-D; fresh post-implementation EGM drift remains required.",
+      "resume_trigger": "Implement reviewed proposal v10 Phase A only: fixed Darwin host reader, accepted-custody source-authority resolver/successor inheritance, and sidecar origin validation; satisfy the named Phase-A focused/structural gate before Phase B.",
       "preserved_branch": "codex/950-c09-genesis-source-authority-20261109"
     },
     {
