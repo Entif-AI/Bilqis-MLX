@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "0338f334388a01389163fb0cba74614c2bcdb83a",
-  "updated_at": "2026-11-10T01:06:00Z",
+  "updated_at": "2026-11-10T01:04:48Z",
   "exception": null,
   "items": [
     {
@@ -10,8 +10,8 @@
       "pr": null,
       "state": "ACTIVE",
       "head_sha": "fb18a4056abf6ee4be2c94c9773275882439e16b",
-      "summary": "C16.1c candidate fb18a405 remains invalidated by pinned EGM post-implementation drift. No PR is open. Fresh proposal-v3 review produced Codebase Details PASS, Design Critic 0 Blockers/3 Majors, and Implementation Readiness 0 Blockers/4 Majors. Proposal v4 closed those findings, but a direct read-only Darwin feasibility probe then found that ordinary no-extended-ACL objects return NULL+ENOENT from acl_get_fd_np rather than an empty ACL handle. Proposal v5 corrects that observed platform contract while retaining v4's exact fd/ACL semantics, trusted-process scope, callable custody/inheritance APIs, phase-B accepted-runtime cutover, explicit per-phase files/commands, conditional final-read/pointer drift language, and recovery boundary. Production code remains frozen.",
-      "resume_trigger": "Fresh EGM SHARED_CONTRACT review of proposal v5 reaches 0 Blockers / 0 Majors; then record v5 as implementation authority and implement only that approved repair in phases A-D.",
+      "summary": "C16.1c candidate fb18a405 remains invalidated by pinned EGM post-implementation drift. No PR is open. Fresh proposal-v5 Design Critic returned 0 Blockers/1 Major: exact successor inheritance stranded lawful pre-#950 #926 lineages whose generation zero was intentionally C09-unanchored and historically bound #917 only on the first retained successor. Proposal v6 preserves one narrowly authenticated compatibility transition for that exact historical state while keeping new C16.1c generation zero HOST_SYSTEM_V1-only, HOST downgrade impossible, explicit-null/unknown origins invalid, and later legacy descendants exact-inheritance. V6 also closes source-mapping details for _bamf_first_student_support.py and the shared genesis_preparation fixture, retains the direct Darwin NULL+ENOENT no-ACL observation, and preserves exact fd/ACL, retry, accepted-runtime and per-phase proof contracts. Production code remains frozen.",
+      "resume_trigger": "Fresh EGM SHARED_CONTRACT review of proposal v6 reaches 0 Blockers / 0 Majors; then record v6 as implementation authority and implement only that approved repair in phases A-D.",
       "preserved_branch": "codex/950-c09-genesis-source-authority-20261109"
     },
     {
