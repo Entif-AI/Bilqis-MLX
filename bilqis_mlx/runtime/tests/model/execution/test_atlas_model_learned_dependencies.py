@@ -53,7 +53,9 @@ class AtlasModelLearnedDependencyTests(TestCase):
         authority = _training_authority(compiled, source, plan.generation_binding)
         batch = BamfCompiledBatch(
             compiled, (source,), feature_schema,
-            snapshot_active_semantic_rows(compiled, plan.snapshot, generation=1),
+            snapshot_active_semantic_rows(
+                compiled, plan.snapshot, run_id=cache.run_id,
+                generation=cache.generation),
             training_authority=authority)
         execution = bamf_value_and_grad(
             parameters, batch, plan,

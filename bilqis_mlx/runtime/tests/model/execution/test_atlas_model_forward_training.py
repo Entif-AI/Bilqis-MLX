@@ -79,9 +79,6 @@ class AtlasModelTrainingExecutionTests(SourceBackboneTestBase):
             extents=replace(
                 self.compiled.extents, motif_key_map_digest=genesis.manifest.digest),
         )
-        batch = BamfCompiledBatch(
-            compiled, (self.source,), self.schema,
-            active_semantic_rows(compiled, self.active_indices))
         plan = self._answer_plan(compiled=compiled, parameters=self.parameters)
         cache = _new_execution_cache(
             run_id="source-backed-forward", generation=0,
@@ -89,6 +86,11 @@ class AtlasModelTrainingExecutionTests(SourceBackboneTestBase):
             generation_binding=plan.generation_binding,
             motif_manifest=genesis.manifest,
         )
+        batch = BamfCompiledBatch(
+            compiled, (self.source,), self.schema,
+            active_semantic_rows(
+                compiled, self.active_indices, run_id=cache.run_id,
+                generation=cache.generation))
         with patch.object(
                 forward_impl, "require_accepted_execution_cache", return_value=cache):
             gradient_execution = bamf_value_and_grad(

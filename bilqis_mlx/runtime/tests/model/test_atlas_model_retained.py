@@ -195,7 +195,9 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
             parameters,
             BamfCompiledBatch(
                 compiled, (source,), feature_schema,
-                snapshot_active_semantic_rows(compiled, snapshot, generation=1)),
+                snapshot_active_semantic_rows(
+                    compiled, snapshot, run_id=cache.run_id,
+                    generation=cache.generation)),
             value_plan,
             (DecisionOutput("value", candidate),),
             {"value": True},
@@ -219,7 +221,9 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
                 parameters,
                 BamfCompiledBatch(
                     compiled, (source,), feature_schema,
-                    snapshot_active_semantic_rows(compiled, plan.snapshot, generation=1)),
+                    snapshot_active_semantic_rows(
+                        compiled, plan.snapshot, run_id=cache.run_id,
+                        generation=cache.generation)),
                 plan,
                 (DecisionOutput("finish", ControlAction.END_FRAME),),
                 {"finish": True},
@@ -268,7 +272,9 @@ class AtlasModelRetainedMotifTests(SourceOwnedMotifReadTests):
                 parameters,
                 BamfCompiledBatch(
                     compiled, (source,), feature_schema,
-                    snapshot_active_semantic_rows(compiled, plan.snapshot, generation=1)),
+                    snapshot_active_semantic_rows(
+                        compiled, plan.snapshot, run_id=cache.run_id,
+                        generation=cache.generation)),
                 plan,
                 (DecisionOutput("finish", ControlAction.END_FRAME),),
                 {"finish": True}, cache=cache)
