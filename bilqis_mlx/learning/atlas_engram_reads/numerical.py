@@ -119,6 +119,14 @@ def _read_row(
     context_digest = (
         projection.cache_key("B08_SCHEMA_RIGHTS_V1", schema_rights)
         if schema_rights else projection.digest)
+    live_schema_handles = {}
+    for item in row:
+        if item is None or type(item.envelope.frame) is AtomicFrame:
+            continue
+        handle = schema_source_handle(item.schema)
+        live_schema_handles[handle] = _schema_grant_live(
+            item.schema, item.envelope, task, frontier)
+    row_schema_live = all(live_schema_handles.values())
     output, status, participating = [], [], set()
     for index, item in enumerate(row):
         state = hidden[row_index, index]
@@ -132,7 +140,8 @@ def _read_row(
             continue
         if projection.frame(item.envelope.frame_handle) != item.envelope.frame:
             _invalid()
-        if not _schema_grant_live(item.schema, item.envelope, task, frontier):
+        if (not row_schema_live
+                or not live_schema_handles[schema_source_handle(item.schema)]):
             output.append(state)
             status.append("HELD")
             continue
