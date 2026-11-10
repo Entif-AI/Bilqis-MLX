@@ -120,6 +120,27 @@ mixed resume/enrollment mismatches. R12 repairs all six while preserving the com
 R5-R11 safety contract. Production mutation remains forbidden until R12 freshly clears
 **0 Blockers / 0 Majors** across all three required lenses.
 
+R12 review record: the frozen R12 proposal at
+`97c9e15f8ecb94315cd1066581de854496bccb8d` / SHA-256
+`7006ce2962fc20e180900a66b4bc568b996fd8a72aa1665ebe1773792d4fff34`
+received Design/Structural **0 Blockers / 1 Major / 0 Nits**, Codebase Details
+**1 Blocker / 0 Majors / 0 Nits**, and Implementation Readiness **0 Blockers / 1
+Major / 0 Nits**. The material union is three seams. Design found that the claimed
+stage-root-only pre-seal residue contradicts the real B13 owner order because
+`_pointer_lock` persistently creates `.bamf-pointer.lock` before `_stage()`. Codebase
+found that `.bamf-staging/` was not crash-durable at the point R12 relied on it as the
+sole BAMF-v2 pre-pointer marker because `_stage()` did not fsync the run root and
+stage-child cleanup did not fsync the staging parent. Readiness found that the promised
+C07 epoch-before-C09 error precedence was impossible with the frozen call order because
+`AcceptedRuntimeHost` provisions/validates C09 authority before the enrollment owner
+could run its epoch classifier. R13 repairs all three: it pins the exact safe
+`.bamf-pointer.lock` + empty `.bamf-staging/` residue produced by the real B13 owner
+sequence, makes staging-root creation and retained-root child cleanup explicitly
+durable, and exposes one C07-owned read-only epoch precheck that must run before
+`AcceptedRuntimeHost` construction and is reused under the shared epoch lock. Production
+mutation remains forbidden until R13 freshly clears **0 Blockers / 0 Majors** across
+all three required lenses.
+
 ## Why this amendment exists
 
 C16.1a owns the human create/dry-run/resume surface. The staged launch path consumes
@@ -476,8 +497,19 @@ and `run_seed` remain convenience projections and must equal this record.
 
 ## Accepted-run enrollment owner
 
-Add one C07-owned operation whose caller supplies only the request plus opaque
-accepted-run C09 authority:
+Add one C07-owned read-only epoch precheck plus one enrollment operation. The
+precheck exists so current v1/v2 epoch authority is classified before C09 capability
+provisioning can itself fail; presentation may call it, but the classification logic
+and error ownership remain C07:
+
+```python
+def require_accepted_atlas_epoch_available_v2(run_dir: Path) -> None:
+    """Read-only current-epoch classifier; creates no synchronization state."""
+    ...
+```
+
+The enrollment caller then supplies the request plus opaque accepted-run C09
+authority:
 
 ```python
 def enroll_accepted_atlas_lease_v2(
@@ -490,39 +522,47 @@ def enroll_accepted_atlas_lease_v2(
     ...
 ```
 
-The owner performs, in order, while preserving existing lock order:
+The command path and owner perform, in order, while preserving existing lock order:
 
 1. require `human_started is True`; this value is supplied directly from the live
    `--human-run` operator invocation and is not inferred from request-file presence;
 2. authenticate current accepted B13 custody and derive the current
    `BamfRunIdentity` plus existing `_accepted_run_lease_identity(run_dir)`;
-3. perform the **read-only cross-epoch classifier inside this accepted C07 owner**,
-   before request comparison or C09/source-rights validation: pre-existing dual
-   current authority rejects `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT`; v1-only current
-   authority rejects `BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`; neither case creates
-   `authority-epoch.lock` or any other synchronization state;
-4. compare request identity in one fixed suborder: first compare the run-id/seed/
+3. before `AcceptedRuntimeHost` or any `SourceAuthorityRuntime` is constructed, call
+   the C07-owned `require_accepted_atlas_epoch_available_v2(run_dir)` read-only
+   classifier: pre-existing dual current authority rejects
+   `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT`; v1-only current authority rejects
+   `BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`; neither case creates
+   `authority-epoch.lock`, provisions C09 authority or creates any other target state;
+4. construct `AcceptedRuntimeHost(run_dir)` and obtain its opaque
+   `SourceAuthorityRuntime`; only after the epoch precheck may C09 capability/cache
+   validation run;
+5. compare request identity in one fixed suborder: first compare the run-id/seed/
    topology tuple and reject `BAMF_ATLAS_V2_ENROLLMENT_RUN_IDENTITY_DRIFT` if any
    member differs; only if that tuple matches compare source Atlas release and reject
    `BAMF_ATLAS_V2_ENROLLMENT_ATLAS_RELEASE_DRIFT` on mismatch;
-5. authenticate `source_authority` against the accepted execution cache and obtain
+6. authenticate `source_authority` against the accepted execution cache and obtain
    the registry only inside the C07/C09 owner;
-6. call existing `issue_atlas_lease_v2(...)` with the owner-derived
+7. call existing `issue_atlas_lease_v2(...)` with the owner-derived
    `LeaseRunIdentity`, request approval/resource/time/command data and the internal
    accepted registry, passing the same explicit `human_started=True` proof rather
    than weakening or deleting that gate;
-7. enter the accepted-run mutation transaction, acquire/create the shared cross-epoch
-   authority lock, **repeat the same epoch classifier while holding it**, then acquire
+8. enter the accepted-run mutation transaction, acquire/create the shared cross-epoch
+   authority lock, **repeat the same C07-owned epoch classifier while holding it**,
+   then acquire
    the v2 epoch-local writer lock and converge to the exact derived lease:
    - no current reference: persist the immutable lease then the current reference;
    - exact current lease already present: return it idempotently;
    - a different current lease: reject with
      `BAMF_ATLAS_LEASE_V2_EXPLICIT_RENEWAL_REQUIRED`;
-8. authenticate readback through the same accepted B13/C09 owner before returning.
+9. authenticate readback through the same accepted B13/C09 owner before returning.
 
-The read-only and under-lock epoch checks are one C07-owned classifier with two call
-sites, not parallel presentation logic. Presentation code never decides v1/v2
-authority precedence and never acquires either epoch lock.
+The pre-C09 and under-lock epoch checks are one C07-owned classifier with two call
+sites, not parallel presentation logic. Presentation only invokes the exported
+read-only precheck before constructing the C09 host; it never decides v1/v2 authority
+precedence and never acquires either epoch lock. This ordering is literal: in a
+mixed-invalid accepted run with pre-existing v1/dual authority and broken C09
+cache/capability state, the C07 epoch error wins before any C09 error.
 
 The enrollment operation lives in a new cohesive
 `bilqis_mlx/runtime/_admission/atlas_enrollment_v2.py` owner module. Request parsing,
@@ -610,11 +650,20 @@ The cross-owner boundary has four **nominal valid** durable states:
    `atlas-release`; resume validates/readbacks that lease without caller input.
 
 There is also one bounded **pre-seal crash residue**, not a fifth valid lifecycle
-state: a real run directory whose only entry is a real, empty `.bamf-staging/`
-directory, with no B13 pointer, bundle, acceptance, genesis-trust row, C07 authority,
-or other entry. Existing B13 publication can leave exactly this shape after it creates
-the stage root but fails before durable sealing, because its exception cleanup removes
-the generation-specific stage child but not the stage root.
+state: a real run directory containing exactly B13's benign persistent synchronization
+file `.bamf-pointer.lock` plus a real, empty `.bamf-staging/` directory, with no B13
+pointer, bundle, acceptance, genesis-trust row, C07 authority, or other entry. The
+pointer lock must be a real regular file, never a symlink or non-file. This is the
+actual reviewed B13 owner sequence: generation-zero retry acquires/creates the
+persistent pointer lock before `_stage()` creates the staging root.
+
+The staging root is promoted to an explicit durable lifecycle marker. On first
+creation, B13 `_stage()` must fsync the new staging directory and then the run root
+**before any generation-specific staging work begins**. Every path that removes a
+generation-specific stage child while retaining `.bamf-staging/` must fsync that
+staging parent after removal. Therefore a crash after stage-root publication can
+reliably leave the exact recoverable lock+empty-stage residue rather than relying on
+an un-fsynced directory entry.
 
 - `--resume` treats any present/symlinked `.bamf-staging` marker as BAMF-v2
   lifecycle evidence and never falls through to the historical learner. A real
@@ -623,11 +672,15 @@ the generation-specific stage child but not the stage root.
   symlink/non-directory marker preserves the B13 unsafe-entry error.
 - A repeated **fresh create**, under the shared run-root claim and only after all
   pre-write equality/configuration validation succeeds, may reclaim the exact
-  stage-root-only residue by requiring `.bamf-staging` to be a real empty directory,
-  calling `rmdir()` on that directory only, fsyncing the run root, then re-running
-  the final target-empty classification before publication.
+  lock+stage residue by requiring `.bamf-pointer.lock` to be a real regular file and
+  `.bamf-staging` to be a real empty directory, calling `rmdir()` on the staging
+  directory only, fsyncing the run root, then re-running the final target classifier.
+  That final classifier treats the safe persistent `.bamf-pointer.lock` as B13
+  synchronization residue rather than arbitrary user content; no other sibling is
+  permitted.
 - It never recursively deletes staging contents. A nonempty stage root, a target with
-  any sibling entry, or any unsafe stage marker rejects
+  any sibling entry other than the safe regular `.bamf-pointer.lock`, any unsafe
+  pointer-lock shape, or any unsafe stage marker rejects
   `BAMF_FIRST_STUDENT_PRESEAL_STAGING_RESIDUE` (or the owning B13 unsafe-entry error
   for symlink/non-directory shape) and requires operator reconciliation. No trust row
   means cold sealed-genesis recovery is not attempted for this state.
@@ -809,7 +862,7 @@ An explicit enrollment retry is allowed only as:
 ```
 
 This path has one normative validation order. The first failing step wins. Presentation
-owns steps 1-5 and they are read-only; the accepted C07 owner then owns steps 6-10:
+owns steps 1-6 and they are read-only; the accepted C07 owner then owns steps 7-11:
 
 1. require the exact command shape above, including parser-owned explicit
    `atlas-release` policy and scope presence;
@@ -819,23 +872,26 @@ owns steps 1-5 and they are read-only; the accepted C07 owner then owns steps 6-
 4. compare any explicit run/topology/optimizer/Atlas CLI equality assertions with the
    accepted state in the already pinned order run id -> run seed -> topology ->
    optimizer group -> Atlas identity; the first mismatch short-circuits;
-5. construct `AcceptedRuntimeHost(target)` and obtain its opaque
+5. call C07-owned `require_accepted_atlas_epoch_available_v2(target)` before any C09
+   host/capability provisioning; pre-existing dual/v1 authority therefore wins over
+   any mixed-invalid C09 cache/capability condition and this precheck creates no lock
+   or target state;
+6. construct `AcceptedRuntimeHost(target)` and obtain its opaque
    `SourceAuthorityRuntime` capability **without presentation validating the request
    approval/signature/rights itself**;
-6. call `enroll_accepted_atlas_lease_v2(...)`; inside that owner, repeat accepted B13
-   custody authentication and perform the read-only epoch classifier, so dual/v1
-   authority wins before request identity comparison or source-authority validation;
-7. still inside that owner, compare request run-id/seed/topology as one run-identity
+7. call `enroll_accepted_atlas_lease_v2(...)`; inside that owner, repeat accepted B13
+   custody authentication;
+8. still inside that owner, compare request run-id/seed/topology as one run-identity
    tuple first; only if it matches compare Atlas release, so
    `BAMF_ATLAS_V2_ENROLLMENT_RUN_IDENTITY_DRIFT` wins over
    `BAMF_ATLAS_V2_ENROLLMENT_ATLAS_RELEASE_DRIFT` when both are wrong;
-8. still inside that owner, authenticate the opaque C09 capability, validate
+9. still inside that owner, authenticate the opaque C09 capability, validate
    source approval/signature/rights, construct the owner-derived proposed v2 lease and
    validate every remaining non-mutating precondition;
-9. only now enter the accepted-run mutation transaction, acquire/create the shared
+10. only now enter the accepted-run mutation transaction, acquire/create the shared
    epoch lock, repeat the same epoch classifier under lock, acquire the epoch-local
    v2 writer lock, and persist/converge through the accepted persistence owner;
-10. exact existing lease converges idempotently; absent lease may establish the first
+11. exact existing lease converges idempotently; absent lease may establish the first
     accepted v2 lease; different accepted v2 lease rejects as explicit renewal
     required.
 
@@ -1031,15 +1087,17 @@ bypass.
 
 Request parsing has deterministic precedence without creating synchronization state
 for validation-only failures. The complete explicit resume-enrollment order is the
-ten-step sequence above. In particular, scope syntax/schema parsing precedes accepted
-custody load; presentation-level custody and explicit saved-setting equality precede
-construction of the opaque C09 capability; then the accepted C07 owner independently
-re-authenticates custody and owns the read-only epoch precheck before request identity
-comparison or C09 signature/rights verification. Pre-existing dual authority reports
+eleven-step sequence above. In particular, scope syntax/schema parsing precedes
+accepted custody load; presentation-level custody and explicit saved-setting equality
+precede the **C07-owned read-only epoch precheck**, and that precheck precedes
+construction of the opaque C09 capability. The accepted C07 enrollment owner then
+re-authenticates custody and owns request comparison, C09 validation and the final
+under-lock epoch recheck. Pre-existing dual authority reports
 `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT`; v1-only authority reports
-`BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`. A request that fails this precheck or any
-subsequent request/custody/signature validation creates no `authority-epoch.lock` and
-no other target artifact merely to reject.
+`BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`, including when C09 state is independently
+invalid. A request that fails this precheck or any subsequent
+request/custody/signature validation creates no `authority-epoch.lock` and no other
+target artifact merely to reject.
 
 Only after all non-mutating enrollment validation succeeds does the accepted-run
 writer enter its mutation transaction. It acquires/creates the shared epoch lock,
@@ -1363,9 +1421,15 @@ Production, with required file action:
     only from trust-row digest + sealed student, using
     `initial_generation_candidate_identity_digest(student)` and exact optimizer
     digest equality, never from current Factory replay;
-- **Modify** `bilqis_mlx/runtime/_custody/bamf_bundle/publication/storage.py`
+- **Modify** `bilqis_mlx/runtime/_custody/bamf_bundle/publication/storage.py` and
+  **Modify** `bilqis_mlx/runtime/_custody/bamf_bundle/publication/__init__.py`
   - add `_write_parsed_initial_generation_acceptance(...)` as the only historical
     acceptance-sidecar write path, reusing existing canonical/atomic/fsync semantics;
+  - make first creation of `.bamf-staging/` durable before generation-specific work by
+    fsyncing the new staging directory and run root, and route every retained-root
+    stage-child cleanup through one helper that fsyncs `.bamf-staging/` after child
+    removal; preserve `.bamf-pointer.lock` as the existing persistent B13
+    synchronization file rather than pretending the pre-seal residue is stage-only;
 - **Modify** `bilqis_mlx/presentation/operator_cli/command.py` and **Modify**
   `bilqis_mlx/presentation/operator_cli/parser.py` only as required for
   the pinned v2 dispatch/presence-bit routing **and** the explicit BAMF-v2 foundation
@@ -1463,14 +1527,18 @@ mirrored test owner:
 - interrupted cold recovery with each independently changed run id, run seed,
   topology, Atlas identity and AdamW setting rejects before acceptance/pointer/outbox
   mutation;
-- a stage-root-only pre-seal crash residue is lifecycle-owned: no-pointer
-  `--resume` with a real `.bamf-staging/` rejects
+- a real-owner lock+stage pre-seal crash residue is lifecycle-owned: B13 durably
+  publishes `.bamf-staging/` by fsyncing it and the run root before staging children,
+  and fsyncs the staging parent after generation-child cleanup; a no-pointer
+  `--resume` with a safe regular `.bamf-pointer.lock` plus real `.bamf-staging/` rejects
   `BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY` with
   `_invoke_learner` and both mutating B13 recovery owners unreachable; repeated
   fresh create under the root claim may remove only an empty real stage root, fsync
-  the run root, re-check target emptiness and continue; a nonempty,
-  sibling-containing, symlink or non-directory stage residue fails closed without
-  recursive deletion;
+  the run root, re-check the target while ignoring only the safe persistent pointer
+  lock, and continue; a nonempty stage, any additional sibling, unsafe pointer lock,
+  symlink or non-directory stage residue fails closed without recursive deletion; the
+  regression must enter the real `_pointer_lock` -> `_stage` owner order before
+  simulating the crash so the residue shape cannot be invented by a fixture;
 - command-level nonempty/no-pointer interrupted create reaches B13 recovery; the sole
   candidate is the immutable Data Plane genesis-trust row selected by expected
   `run_id`; malformed/drifted row-bound trust/acceptance/bundle evidence preserves
@@ -1508,6 +1576,9 @@ mirrored test owner:
 - validation-only enrollment mismatches do not create `authority-epoch.lock`; after
   validation succeeds, the accepted writer acquires the shared lock and repeats epoch
   classification under lock before any lease/current mutation.
+- mixed-invalid accepted enrollment with pre-existing dual or v1-only epoch authority
+  plus invalid C09 cache/capability state proves the C07 read-only epoch precheck runs
+  before `AcceptedRuntimeHost` construction and the pinned epoch error wins.
 
 Regression owners retained:
 
