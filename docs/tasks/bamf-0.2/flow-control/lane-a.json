@@ -283,8 +283,9 @@
       "issue": 959,
       "pr": 961,
       "state": "ACTIVE",
-      "head_sha": "000e53e174eea703a9adb0aabcca2b5ec1707af8",
-      "summary": "#959 source-location remediation is active in draft PR #961 after synchronization with current reviewed unified. A host-owned content-addressed locator resolves accepted source_bundle_id beneath an approved root, then the existing canonical A01/A02 verifier re-authenticates exact bytes, membership, manifest identity and symlink/path safety before staging. The branch is being requalified on the synchronized candidate; full A02 topology witness and fresh independent exact-head review remain the final gates.",
+      "head_sha": "bc5c524ec3828b67661b44e8e576338ee7e46068",
+      "head_sha_role": "semantic/test repair head after independent exact-head review found the accepted source-ID ordering Major",
+      "summary": "#959 source-location remediation is active in draft PR #961 on reviewed unified 7a6c048e. A host-owned content-addressed locator resolves source_bundle_id beneath an approved root and the canonical A01 verifier authenticates exact bytes/membership. Fresh exact-head review found one Major: a valid-but-wrong content ID could reach full A02 staging before accepted-snapshot rejection. Repair bc5c524e now compares the requested ID with accepted A01/A02 source selection before planning/resource/tensor staging and reuses that same accepted parent through the staging transaction. Focused red-to-green regression and the ordinary affected ring are green; a corrected detached full content-ID witness and fresh independent re-review remain the final gates.",
       "resume_trigger": null,
       "preserved_branch": "codex/959-atlas-source-locator-20261109"
     }
