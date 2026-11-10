@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "2c572202978df9542e379cfb975007cdea3f05ad",
-  "updated_at": "2026-11-10T17:26:52Z",
+  "updated_at": "2026-11-10T17:59:04Z",
   "exception": null,
   "items": [
     {
@@ -19,9 +19,9 @@
       "issue": 542,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "61486479e256f1af3db75dcf9a82d1d1629029a1",
-      "summary": "C16.1a/#542 implementation candidate 291f7a39 is preserved but not turn-in valid after fresh EGM exposed a shared enrollment lifecycle gap: a pre-genesis complete C07 lease cannot lawfully contain target accepted B13 identity, retry/recovery across gen0 -> C07 persistence was underspecified, dry-run did not expose exact B13 identity, and required first-start/persisted-source proofs were incomplete. Production mutation is frozen at the affected seam. SHARED_CONTRACT design amendment create-resume-enrollment-proposal.md is durable at 61486479 / SHA-256 866fee6b4e9c953c08dcac36bdca9a65cc3d24db47e0e6e08d75e8fb696c4481 and is EGM-pending. No PR is open.",
-      "resume_trigger": "Freshly review the exact C16.1a SHARED_CONTRACT amendment to 0 Blockers / 0 Majors before resuming production mutation; then implement only the reviewed enrollment request, owner-derived lease issuance/retry, exact dry-run B13 identity, readiness correction and acceptance-proof gaps.",
+      "head_sha": "2fdce514928672c5491513cb4c446aea97f902aa",
+      "summary": "C16.1a/#542 remains SAFE_HOLD with historical implementation candidate 291f7a39 preserved and no PR open. Genuine fresh design EGM against proposal 61486479 / SHA-256 866fee6b... failed the gate: Design/Structural 0B/2M/1N, Codebase Details 1B/3M/1N, Implementation Readiness 0B/7M/0N. The complete known finding set was repaired design-only at 2fdce514: explicit live human-start propagation, target-aware exact dry-run identity, typed optimizer materialization, exact-byte orphan policy, bounded post-reference reconciliation, four-state B13 interruption recovery, parser presence-bit policy inheritance, accepted Atlas identity authority, ENROLLED report shape, exact v2 dispatch, C11 scope matrix, module decomposition, and C09 witness ownership. Repaired proposal SHA-256 is 95d8605ca5e23a3e0f3321bf44bd8bfdb392c8b26442fd5ab2ef16eff3597f08. Production mutation remains frozen pending fresh scoped re-review.",
+      "resume_trigger": "Freshly re-review proposal content commit 2fdce514928672c5491513cb4c446aea97f902aa / SHA-256 95d8605ca5e23a3e0f3321bf44bd8bfdb392c8b26442fd5ab2ef16eff3597f08 plus the amended C11.1 and BAMF operator-command consumer contract. Require 0 Blockers / 0 Majors before resuming production mutation.",
       "preserved_branch": "codex/bamf02-c-runtime"
     },
     {
