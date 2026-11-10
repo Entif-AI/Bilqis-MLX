@@ -73,6 +73,7 @@ from .initialization import (
     SourceFactorWitness,
     IdentityRowInitialization,
     plan_identity_initialization,
+    qualify_staged_identity_initialization,
 )
 from .gather import (
     gather_constituents,
