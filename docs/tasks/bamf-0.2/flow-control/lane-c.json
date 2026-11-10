@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "1a1bcbf3c58b0d851e40dbdee847c3fb3c00ec3a",
-  "updated_at": "2026-11-10T18:03:15Z",
+  "updated_at": "2026-11-10T18:23:13Z",
   "exception": null,
   "items": [
     {
@@ -19,9 +19,9 @@
       "issue": 542,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "791ef1de74291a271788de8d9b652f53523d1b59",
-      "summary": "C16.1a/#542 remains SAFE_HOLD with historical implementation candidate 291f7a39 preserved and no PR open. Genuine fresh design EGM against proposal 61486479 / SHA-256 866fee6b... failed the gate: Design/Structural 0B/2M/1N, Codebase Details 1B/3M/1N, Implementation Readiness 0B/7M/0N. The complete known finding set was repaired design-only, then reviewed unified advanced to 1a1bcbf3 with #958/PR #967 C07 v2 admission authority. Lane C consumed that reviewed trunk before push, and the repaired SHARED_CONTRACT was rebased onto the separate AtlasAdmissionLeaseV2 authority epoch at 791ef1de. The contract now pins live human-start propagation, target-aware exact dry-run identity, typed optimizer materialization, exact-byte v2 orphan policy, bounded post-reference v2 reconciliation, four-state B13 interruption recovery, parser presence-bit policy inheritance, accepted Atlas identity authority, ENROLLED report shape, exact v2 dispatch, C11 scope matrix, module decomposition, and C09 witness ownership. Proposal SHA-256 is 5f1cd66ff4172f7d6e7696b1879886cf3bb98103922e6c6f76c6d8f90ddaf179. Production mutation remains frozen pending fresh scoped re-review.",
-      "resume_trigger": "Freshly re-review proposal content commit 791ef1de74291a271788de8d9b652f53523d1b59 / SHA-256 5f1cd66ff4172f7d6e7696b1879886cf3bb98103922e6c6f76c6d8f90ddaf179 plus the amended C11.1 and BAMF operator-command consumer contract against reviewed unified 1a1bcbf3. Require 0 Blockers / 0 Majors before resuming production mutation.",
+      "head_sha": "d98beee7314a88c8c9ae9f1a16d8db47814899f9",
+      "summary": "C16.1a/#542 remains SAFE_HOLD with historical implementation candidate 291f7a39 preserved and no PR open. First fresh design EGM failed and was repaired; reviewed unified then advanced to 1a1bcbf3 with #958/PR #967 C07 v2 authority and the contract was rebased. A second genuinely fresh EGM against 791ef1de / SHA-256 5f1cd66f... also failed: Design/Structural 1B/2M/1N, Codebase Details 1B/2M/0N, Implementation Readiness 0B/2M/0N. The complete material R2 set is repaired design-only at d98beee7: all fresh v2 modes require source-qualified Atlas manifest, B13 READY_FOR_HUMAN_START is explicitly non-authorizing, viable alternatives are recorded, v2 storage solely owns same-lock reconciliation, accepted-Atlas mismatch reason codes and precedence are pinned, cold sealed-genesis recovery works before mutable Factory replay and can reconstruct only the historical parsed acceptance record from trust-row digest plus sealed student, and historical v1 accepted runs remain read-only without silent v2 coexistence/migration. C11 consumer commands and mirrors are aligned. Proposal SHA-256 is a6dae5891c9936453de718ac3d1dec7e7300377097571d9bb5c7c6210343c89a. Production mutation remains frozen pending a third genuinely fresh review.",
+      "resume_trigger": "Freshly review proposal content commit d98beee7314a88c8c9ae9f1a16d8db47814899f9 / SHA-256 a6dae5891c9936453de718ac3d1dec7e7300377097571d9bb5c7c6210343c89a plus amended C11.1/BAMF operator contract against current reviewed unified. Require 0 Blockers / 0 Majors before production mutation resumes.",
       "preserved_branch": "codex/bamf02-c-runtime"
     },
     {
