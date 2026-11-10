@@ -1,6 +1,6 @@
 # #959 Atlas source-bundle locator checkpoint — 2026-11-09
 
-Status: **repair checkpoint; Draft PR #961; exact-head full witness and fresh re-review pending.**
+Status: **READY_FOR_HUMAN_REVIEW; PR #961; exact-head full witness and fresh re-review PASS.**
 
 ## Authority boundary
 
@@ -68,8 +68,23 @@ actual disk-staging budget before the valid path could complete. Its receipt pro
 `source_mutated=false`; this was a witness-fixture headroom issue, not a production
 authority failure. The fixture now supplies synthetic disposable headroom on the
 valid path while deliberately supplying zero headroom to the wrong-ID path, which
-must still fail on accepted source identity first. A fresh detached exact-head run
-remains required before this checkpoint becomes review-ready.
+must still fail on accepted source identity first.
+
+The corrected detached exact-head witness completed successfully from the frozen
+`e32b9b305e236488d7a7da4fac1ffa8eae964721` candidate:
+
+```text
+label: 959 repaired full content-id A02 staging
+status: PASS
+command return code: 0
+test runtime: 238.071s
+source_mutated: false
+snapshot/source SHA-256: b70000f7ee192954efc0fea905be3f45571ccbb508850d23651ebc9fb783d7c9
+```
+
+The witness ran the real
+`A02ProductionStagingTests.test_stages_from_content_id_through_real_source_bundle_verifier`
+path with `BILQIS_BAMF_FULL_WITNESS=1` and finished `OK`.
 
 Repository checks on the committed candidate:
 
@@ -82,9 +97,18 @@ BAMF contract mirrors: 43/43 PASS
 git diff --check: PASS
 ```
 
-Fresh independent exact-head review found the accepted-ID ordering Major described
-above. That Major is repaired at `bc5c524e`; fresh independent re-review of the
-repaired exact candidate remains required before human merge.
+Fresh independent exact-head re-review of `e32b9b305e236488d7a7da4fac1ffa8eae964721`
+against reviewed unified `7a6c048e9325a877b9b3451c731be3545a11ee69` returned
+**READY — 0 Blockers / 0 Majors / 0 Nits** in Structural, Codebase Details and
+Comprehension. The reviewer independently confirmed that the repaired entrypoint
+reads accepted parent custody once, rejects a valid-but-wrong source ID before any
+resource or tensor staging, reuses the same accepted-parent tuple after the check,
+keeps synthetic headroom test-only, and introduces no host-path or portable-authority
+leakage.
+
+Hosted exact-head checks are also green: `portable`, `portable-core`, and
+`semantic-abi-integrity` all PASS. The PR is cleanly mergeable. Human merge remains
+a separate authority gate.
 
 No learner, optimizer step, C07 adoption, PRIVATE_REAL input, force push or
 self-merge was performed.
