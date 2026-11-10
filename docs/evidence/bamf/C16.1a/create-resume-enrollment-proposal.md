@@ -602,7 +602,7 @@ Dispatch is pinned before implementation:
    result before `_invoke_learner` can run. `--human-run --resume` does not by itself
    authorize learner entry for a BAMF v2 run in C16.1a.
 
-Target classification is pinned against the reviewed unified owner. At `c501d505`,
+Target classification is pinned against the reviewed unified owner. At `905018b0`,
 the existing fresh-only helper is
 `bilqis_mlx/runtime/_bamf_first_student_support.py:_fresh_run_dir`; there is no
 pre-existing presentation `fresh_target()` helper. C16.1a factors that runtime path
