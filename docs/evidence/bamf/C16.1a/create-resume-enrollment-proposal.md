@@ -1,9 +1,9 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-PENDING  
-Issue: #542 / C16.1a  
-Reviewed unified base: `2c572202978df9542e379cfb975007cdea3f05ad`  
-Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`  
+Status: DESIGN AMENDMENT / EGM-PENDING
+Issue: #542 / C16.1a
+Reviewed unified base: `2c572202978df9542e379cfb975007cdea3f05ad`
+Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
 Pinned EGM: `b3a35956759bf7f024af2ff061b2e0b44b438e4c`
 
 ## Why this amendment exists
