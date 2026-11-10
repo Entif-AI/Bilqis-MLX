@@ -1,20 +1,28 @@
 # C07.1a production adoption bridge checkpoint — 2026-11-09
 
 Status: **PARTIAL; #509 remains open.** This checkpoint extends the earlier
-C07.1a lease/staging slice after reviewed #510 and A02.2 integration. It does
-not claim the human command can yet enroll a production Atlas lease, and it
-does not claim the parent C07 three-successor/resume acceptance.
+C07.1a lease/staging slice through reviewed #510, A02.2/A02.3 integration,
+accepted-lease operating-loop dispatch, and a no-stale-flush cold-resume
+terminal. It does not claim the human command can yet enroll a production Atlas
+lease, and it does not claim the parent C07 three-successor/resume acceptance.
 
 ## Reviewed baseline and consumed owners
 
 - reviewed unified consumed by Lane C:
-  `0338f334388a01389163fb0cba74614c2bcdb83a`
+  `8b03be4881d4450f4f6cba94cfda9b21a2dd2711`
+- flow-control reconciliation checkpoints:
+  `b685f5939601a47be0f55195e25a2a9c7421a765`,
+  `f50c42c481885b1506a708d086c62e80913f1beb`
+- current #509 semantic head:
+  `8212c6aa3b13a335fa1ce93be78d184555b3398a`
 - #509 / PR #550 integration is an ancestor:
   `4fdb3dc069e6c1f5a156cbf0c2551f2d8161e7f5`
 - #510 / PR #944 native adoption integration is an ancestor:
   `6a770f10074df6f4f8889d439f783ad42f5efe63`
 - current reviewed unified also contains the A02.2 production-staging work
-  qualified through PR #952.
+  qualified through PR #952 and A02.3 accepted Registry-export work. The A02.3
+  export is readback/navigation evidence only; it grants no C07, source, or
+  training authority.
 
 ## Bounded change in this checkpoint
 
@@ -49,6 +57,28 @@ count. This closes the cross-owner mismatch in which a valid A02 parameter
 extension for one semantic delta could otherwise accompany a different Factory
 successor.
 
+The human operating loop now has a direct Atlas frontier dispatcher rather
+than an injected staging callback. With no current lease reference, the exact
+existing unleased staging behavior remains unchanged. With a persisted lease
+reference, the dispatcher constructs an `AcceptedRuntimeHost`, obtains its
+opaque C09 source-authority capability, and re-reads the persisted lease through
+accepted B13/C09 custody. A valid lease is therefore authority evidence, not a
+caller boolean. Until #958 and #959 provide the missing owner-derived production
+delta scope and source-bundle location, that validated lease yields a precise
+`STAGED / PRODUCTION_DELTA_AUTHORITY_UNAVAILABLE` result with the exact lease
+digest rather than fabricating an issuer, source path, or A02 input.
+
+The operator loop also now distinguishes `ADOPTED` from an ordinary stop. A
+successful admission returns `DispatchControl.COLD_RESUME` before the ordinary
+`finish_operator_session()` path can run. The cold-resume finalizer deliberately
+accepts no live parameters, optimizer, graph, or pre-adoption receipt. It
+cold-loads the accepted generation from `bamf-state.json` and reports only that
+B13-owned generation, manifest, and optimizer step. This prevents the normal
+session finalizer from flushing stale pre-adoption student/AdamW state after a
+new generation has already been accepted. The iteration layer emits no
+post-adoption event from the stale receipt; the single post-adoption session
+event is emitted only from freshly loaded B13 authority.
+
 ## Verification
 
 Focused policy ring after the semantic, registry, resource and cold-resume
@@ -69,23 +99,28 @@ binding or resource-total derivation):
 TEST_TOTALS total=1 passed=1 failed=0 skipped=0 errors=0
 ```
 
-Complete Atlas-admission package:
+Current affected ring on semantic head `8212c6aa...`:
 
 ```text
 /tmp/bamf-c05-venv/bin/python -B scripts/run_tests.py \
-  bilqis_mlx/runtime/tests/admission/atlas
-TEST_TOTALS total=46 passed=45 failed=0 skipped=1 errors=0
+  bilqis_mlx/runtime/tests/admission/atlas \
+  bilqis_mlx/runtime/operator_session/tests \
+  bilqis_mlx/presentation/operator_cli/tests/test_terminal.py \
+  bilqis_mlx/runtime/tests/operator/test_explain_cli.py
+TEST_TOTALS total=72 passed=71 failed=0 skipped=1 errors=0
 ```
 
 The one skip is the existing explicitly gated full A02 -> C07/B13 environment
 witness. The concrete #510 Factory-persist -> B13-publish -> cold-read -> exact
-retry witness runs and passes inside this package.
+retry witness runs and passes inside this package. The focused cold-resume,
+finalizer, command/dispatcher, and terminal set is 13/13 PASS.
 
 Repository gates:
 
 ```text
-/tmp/bamf-c05-venv/bin/python -B scripts/check_bamf_flow_control.py
+/tmp/bamf-c05-venv/bin/python -B scripts/check_bamf_flow_control.py --live
 BAMF_FLOW_CONTROL_OK
+Integration inventory: OPEN 4/12; mode NORMAL
 
 /tmp/bamf-c05-venv/bin/python -B scripts/verify_bamf_0_2_contracts.py
 PASS: 43/43 exact checked-in issue mirrors
@@ -97,6 +132,21 @@ git diff --check
 PASS
 ```
 
+Changed-file structure/governance checks report zero violations. The code-smell
+audit scans 11 changed files with zero new findings; the only reported smell is
+the pre-existing `operate()` long-function baseline. The repository-wide
+legacy-trainer authority check still reports exactly two older evidence defects
+(`C07.1b/atomic-adoption-20261109.md` and `C12.3/drift.md`), and the identical
+two defects reproduce on the untouched pre-patch head `f50c42c...`; they are
+inherited rather than caused by this #509 patch. The default `test:changed`
+launcher uses bare Homebrew Python in this environment and fails broadly because
+`rdflib` is absent there; the repository venv affected ring above is green.
+
+Fresh post-implementation Goldfish review could not be launched because the
+Chat On Steroids worker pool was locked by conversation transfer. Per the BAMF
+EGM policy, this checkpoint is therefore **EGM_PENDING**, not self-reviewed as a
+substitute. Integration still requires a genuinely fresh independent review.
+
 No live learner, optimizer step, or PRIVATE_REAL payload was started or read.
 
 ## Remaining #509 acceptance gaps
@@ -106,9 +156,9 @@ This checkpoint deliberately does not close #509.
 1. The historical `AtlasDeltaEnvelope` is still a signed disposable C07
    projection. There is no production issuer for its detached per-delta
    signature. C09 verifies source authority but must not be repurposed as a
-   signer. Production must either consume an already-authoritative A09/A02
-   handoff for these fields or gain an explicit source-owner issuer; fixture
-   signatures are not production authority.
+   signer. #958 now owns the exact A09/Factory handoff of the existing
+   `StagedSelectionReceipt`, exact `StagedCandidate`, and owner-derived v2
+   family/operator scope that will replace fixture-only caller authority.
 2. The current human `--admission-policy atlas-release` command still rejects
    before learner initialization because accepted BAMF create/resume authority
    is not yet available at that CLI boundary. This is now explicitly owned by
@@ -116,16 +166,18 @@ This checkpoint deliberately does not close #509.
    guard or consume an unreviewed sibling branch directly.
 3. A production source bundle is content-verified by A02 but still arrives by
    mounted path; no accepted content-addressed `source_bundle_id -> Path`
-   resolver exists. This checkpoint consumes an already owner-issued A02
-   handoff and therefore does not invent or persist a host path.
+   locator exists. #959 owns the host storage locator beneath A01 source
+   authority. Locator configuration grants no semantic/source authority, and
+   this checkpoint does not invent or persist a host path.
 4. A09 can lawfully produce a Factory successor which adds an executable
    capability while introducing **zero** semantic catalog rows. The current
    #510/B13 native mutation path, however, accepts an owner-issued A02
    `PARAMETER_EXTENSION`; A02 correctly cannot issue an empty vocabulary
    extension. The current #510 native fixture itself demonstrates this case
    (`Z.C6` is added with an empty semantic-catalog suffix). This capability-only
-   transition therefore needs an explicit C07/B13 owner path; it must not be
-   counterfeited as an empty A02 parameter extension.
+   transition therefore needs an explicit C07/B13 owner path; #955 owns that
+   remediation and it must not be counterfeited as an empty A02 parameter
+   extension or fake optimizer update.
 5. Recursive repetition, rebind after each B13 generation, three-successor
    admission, and cold resume after the second successor remain the downstream
    integration/flywheel proof. In particular, current C09 source authority is

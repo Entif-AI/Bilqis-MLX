@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "8b03be4881d4450f4f6cba94cfda9b21a2dd2711",
-  "updated_at": "2026-11-10T01:20:54Z",
+  "updated_at": "2026-11-10T01:40:00Z",
   "exception": null,
   "items": [
     {
@@ -270,8 +270,8 @@
       "issue": 509,
       "pr": 954,
       "state": "ACTIVE",
-      "head_sha": "c061455ffaffb471f7c3d77dd96641ddc4222d41",
-      "summary": "C07.1a/#509 resumed on the preserved Lane C worktree after consuming reviewed unified 8b03be488. The owner explicitly authorized repairing whatever control-plane state is necessary to keep #509 moving. Draft PR #954 remains the live partial checkpoint; the next bounded mutation is the COLD_RESUME terminal that prevents stale pre-adoption student/AdamW flush after accepted B13 publication.",
+      "head_sha": "8212c6aa3b13a335fa1ce93be78d184555b3398a",
+      "summary": "C07.1a/#509 semantic head 8212c6aa consumes reviewed unified 8b03be488 and repairs the live operating-loop admission seam. Frontier proposals now dispatch directly: no lease preserves immutable STAGED behavior; a referenced lease is authenticated through AcceptedRuntimeHost/B13/C09 and remains STAGED with exact lease digest until #958/#959 owner evidence exists. ADOPTED now exits through a distinct COLD_RESUME terminal before normal finalization, and the cold finalizer accepts no stale params/AdamW/graph/receipt, cold-loading accepted B13 generation/manifest/optimizer authority instead. Exact affected ring is 71/71 PASS plus 1 explicit gated skip; structure/governance, live flow-control, 43/43 BAMF mirrors and diff checks are green. Two global legacy-trainer evidence failures reproduce unchanged on pristine pre-patch head. Fresh Goldfish is EGM_PENDING because the worker pool is unavailable during conversation transfer. #509 remains active and open; actual leased adoption still awaits #958/#959, human generation-zero enrollment awaits #950/#542, and capability-only zero-row adoption awaits #955.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-c-runtime"
     }
