@@ -1,18 +1,28 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "0338f334388a01389163fb0cba74614c2bcdb83a",
-  "updated_at": "2026-11-10T15:23:45Z",
+  "observed_unified": "2c572202978df9542e379cfb975007cdea3f05ad",
+  "updated_at": "2026-11-10T16:49:15Z",
   "exception": null,
   "items": [
     {
       "issue": 950,
       "pr": null,
+      "state": "TURNED_IN",
+      "head_sha": "c698512d15d0f0494f7a6f702d274d9c2a9183a0",
+      "summary": "C16.1c completed reviewed v10 implementation, drift repair and hosted turn-in at exact feature head c698512d. Fresh final affected-scope review was NO_DRIFT 0 Blockers / 0 Majors / 0 Nits; revised Phase-D focused proof was 125/125 PASS and hosted Semantic ABI plus portable verification passed. Human PR #963 merged as reviewed unified 2c572202 and issue #950 is closed completed. Historical failed implementation fb18a405 remains preserved and invalid.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/950-c09-genesis-source-authority-20261109",
+      "merged_pr": 963
+    },
+    {
+      "issue": 542,
+      "pr": null,
       "state": "ACTIVE",
-      "head_sha": "fb18a4056abf6ee4be2c94c9773275882439e16b",
-      "summary": "C16.1c failed implementation fb18a405 remains preserved and invalidated. Proposal v10 at f3832960e2af6ae07f696efd1effb909166b1341 / SHA-256 20960ff497c593270e6b28d643b37e21535f35b6c0e3690fc2e031ecb4756edb completed genuinely fresh pinned-EGM design review with Design Critic, Codebase Details, and Implementation Readiness all PASS at 0 Blockers / 0 Majors / 0 Nits. The exact v10 proposal is now implementation authority. No PR is open. Implementation must follow reviewed phases A-D; fresh post-implementation EGM drift remains required.",
-      "resume_trigger": "Implement reviewed proposal v10 Phase A only: fixed Darwin host reader, accepted-custody source-authority resolver/successor inheritance, and sidecar origin validation; satisfy the named Phase-A focused/structural gate before Phase B.",
-      "preserved_branch": "codex/950-c09-genesis-source-authority-20261109"
+      "head_sha": "2c572202978df9542e379cfb975007cdea3f05ad",
+      "summary": "C16.1a/#542 is activated after human merge of prerequisite C16.1c/#950. Lane-C branch codex/bamf02-c-runtime consumed and pushed exact reviewed unified 2c572202; pre-edit first-student owner baseline is 12/12 PASS and flow-control/diff hygiene are green. Active scope is persistent BAMF create/dry-run/resume plus saved admission-setting validation, consuming accepted B13/C09/C07 custody without minting trust roots or starting a real learner.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-c-runtime"
     },
     {
       "issue": 917,
