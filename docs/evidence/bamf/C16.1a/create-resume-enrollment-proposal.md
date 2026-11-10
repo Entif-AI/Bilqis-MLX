@@ -2,7 +2,7 @@
 
 Status: DESIGN AMENDMENT / EGM-R4-PENDING
 Issue: #542 / C16.1a
-Reviewed unified base: `1a1bcbf3c58b0d851e40dbdee847c3fb3c00ec3a`
+Reviewed unified base: `c501d5053f64b1cbb29bd2fc8fc9549137dddce2`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
 Pinned EGM: `b3a35956759bf7f024af2ff061b2e0b44b438e4c`
 
