@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "A",
-  "observed_unified": "0338f334388a01389163fb0cba74614c2bcdb83a",
-  "updated_at": "2026-11-10T01:20:54Z",
+  "observed_unified": "8b03be4881d4450f4f6cba94cfda9b21a2dd2711",
+  "updated_at": "2026-11-10T01:48:00Z",
   "exception": null,
   "items": [
     {
@@ -133,6 +133,24 @@
       "summary": "Historical A02.3 source-derived Registry mirror and conservative bank resource estimate remain intact. Current integration closes the previously explicit persistence/readback gap by recovering the persisted plan, mirror and resource requirement from accepted C07/B13 custody, revalidating the A02 staging receipt and allocation/source/active-set lineage, and returning a typed navigation/evidence export with semantic_authority=false and training_authorized=false. The composed accepted cold-read/retry witness passes; focused A02/C07 ring, structure/governance/smell/error-control/flow/contracts/docs/diff gates are green. Fresh independent exact-head review remains before human-review PR turn-in.",
       "resume_trigger": "Obtain fresh independent exact-head review of db0bde38. If clean, synchronize any newer reviewed unified, rerun affected gates, set #401 READY, open the normal human-review PR, bind its number and post the durable issue checkpoint. Do not self-merge.",
       "preserved_branch": "codex/bamf02-a-semantics"
+    },
+    {
+      "issue": 959,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "549473724f6b0a15c33ff9a315f3b1c1ab784e17",
+      "summary": "Atlas source-location remediation activated from reviewed unified 8b03be488. #959 owns only host storage location from accepted source_bundle_id to candidate bytes beneath A01 source authority; A02 remains the canonical byte verifier and #509 is a consumer. No semantic/source authority is granted by locator configuration and no host path may enter accepted C07/B13 identity.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/959-atlas-source-locator-20261109"
+    },
+    {
+      "issue": 956,
+      "pr": 960,
+      "state": "ACTIVE",
+      "head_sha": "39d75ce0593f7a8cf74a4c152f83089a8a9a05bc",
+      "summary": "A13 schema-right continuity remediation is live in draft PR #960. It preserves hash-pinned PUBLIC_FORMAL motif-schema rights, current A01/A03 source evidence, exact rights/correction epochs, and revocation across fresh/cold owner reissue; the draft remains active while disposable #460 integration and independent exact-head review run.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/956-a13-schema-rights-20261109"
     },
     {
       "issue": 888,
