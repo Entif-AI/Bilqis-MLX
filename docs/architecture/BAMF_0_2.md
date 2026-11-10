@@ -315,7 +315,7 @@ npm run train -- --dry-run --verify-source \
   --run-dir runs/bamf-0.2 --source-prefetch-workers 2 \
   --atlas-release-manifest <approved-manifest>
 
-npm run train -- --dry-run --human-run \
+npm run train -- --dry-run \
   --model-topology configs/models/bamf-0.2.json \
   --run-dir runs/bamf-0.2 --source-prefetch-workers 2 \
   --admission-policy atlas-release --atlas-release-manifest <approved-manifest> \

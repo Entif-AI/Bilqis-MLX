@@ -97,7 +97,7 @@ explicit policy and a versioned lease request:
 
 ```sh
 npm run train -- --human-run --model-topology configs/models/bamf-0.2.json \
-  --admission-policy atlas-release --atlas-admission-scope /absolute/path/to/lease.json \
+  --admission-policy atlas-release --atlas-admission-scope /absolute/path/to/enrollment-request.json \
   --atlas-release-manifest /absolute/path/to/manifest.json \
   --run-dir /absolute/path/to/new-bamf-run --run-id example-run --run-seed 543 \
   --learning-rate 0.0007 --adam-beta1 0.88 --adam-beta2 0.97 \
@@ -114,7 +114,7 @@ post-genesis lease check fails, no `atlas-release` current reference is installe
 the lawful generation-zero run remains staged rather than being counterfeited as
 admitted.
 
-Resume derives saved settings from accepted custody and performs no neural update:
+Ordinary resume derives saved settings from accepted custody and performs no neural update:
 
 ```sh
 npm run train -- --dry-run --resume --run-dir /absolute/path/to/bamf-run
@@ -123,8 +123,22 @@ npm run train -- --dry-run --resume --run-dir /absolute/path/to/bamf-run
 Expected: `READY_TO_RESUME` with the saved run id/seed, topology, Atlas identity,
 optimizer hyperparameters, and effective admission policy. Explicit topology,
 run-id, seed, optimizer, Atlas-manifest, or policy overrides must equal the saved
-values or fail before writes. A caller may not substitute an Atlas lease scope on
-resume. Historical v1 state is not coerced to v2.
+values or fail before writes. Ordinary resume takes no scope. Historical v1 state
+is not coerced to v2.
+
+A staged accepted run may complete its **first** C07 v2 enrollment later, still
+without entering the learner:
+
+```sh
+npm run train -- --human-run --resume --run-dir /absolute/path/to/bamf-run \
+  --admission-policy atlas-release \
+  --atlas-admission-scope /absolute/path/to/enrollment-request.json
+```
+
+Expected: `ENROLLED`, `ready_for_training: false`, and `neural_updates: 0`. The
+scope remains non-authoritative request data; C07 derives the persisted lease from
+accepted B13/C09 custody. A second unequal request is an explicit-renewal case and
+is rejected by this first-enrollment surface.
 
 Existing trainer help can also be inspected without a neural update:
 

@@ -86,8 +86,9 @@ preflight and returns `CREATED` after generation zero is current; the operator d
 not enter the learner in this leaf.
 
 The default effective admission policy is `staged`. For an explicit
-`atlas-release` request, the CLI parses the versioned C07 lease only as request
-data and validates its known run/topology/Atlas fields before publication. After
+`atlas-release` request, the CLI parses the versioned non-authoritative C07 v2
+enrollment request as request data and validates its known run/topology/Atlas fields
+before publication. It is not itself a lease or authority. After
 generation zero is accepted, it creates `AcceptedRuntimeHost(run_dir)`, obtains the
 opaque generation-bound C09 `SourceAuthorityRuntime`, and delegates exact lease
 persistence/readback to C07. It never accepts a raw registry or uses the launch
@@ -95,12 +96,15 @@ receipt, CLI fields, target path, or lease file as a C09 trust root. A failed
 post-genesis lease validation installs no C07 current reference; the accepted
 generation zero remains a valid staged run.
 
-Resume cold-loads the accepted B13 generation and feature receipt, derives saved
+Ordinary resume cold-loads the accepted B13 generation and feature receipt, derives saved
 run id/seed, topology, Atlas identity and optimizer hyperparameters, and derives
 the effective admission policy through authenticated C07 lease readback. Omitted
 settings use those saved values. Conflicting explicit overrides reject before
-writes, and a caller-supplied Atlas lease scope is not a resume authority surface.
-Both dry-run and resume remain neural-inert here.
+writes, and ordinary resume takes no scope. The one first-enrollment resume form is
+explicitly `--human-run --resume --admission-policy atlas-release
+--atlas-admission-scope <enrollment-request.json>`; the request remains
+non-authoritative and C07 derives authority only from accepted run custody. Both
+dry-run and resume/enrollment remain neural-inert here.
 
 The dashboard snapshot describes the newborn lineage. Admitted grade scope comes
 from the Factory execution plan. Optimizer step and visits are `0`, stage is
