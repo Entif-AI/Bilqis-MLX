@@ -1,6 +1,6 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-R9-PENDING
+Status: DESIGN AMENDMENT / EGM-R10-PENDING
 Issue: #542 / C16.1a
 Reviewed unified base: `905018b0ece7613843570dc2c2e72a74dae4e91d`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
@@ -59,6 +59,30 @@ actual case-insensitive macOS host. Codebase Details additionally found that exa
 token scans for explicitness miss argparse-accepted long-option abbreviations. R9
 removes target-path-text identity from locking/disjointness and makes option
 explicitness parser-owned, while preserving historical abbreviation behavior.
+
+R9 review record: the frozen R9 proposal at
+`7908ac1e80f711b3dca44ea6dc3c2ff6c1ae2581` / SHA-256
+`43c4a21f62bea85e027c780b2595dc193f942bb1fb70c5ee26727302d6aa2d11`
+received Design/Structural **0 Blockers / 1 Major / 0 Nits**, Codebase Details
+**0 Blockers / 1 Major / 0 Nits**, and Implementation Readiness **0 Blockers / 3
+Majors / 1 Nit**. The material set is: the fixed
+`.bamf-root-claim.lock` child name can collide with a legal run-directory name;
+the design did not pin the shared claim helper's failure surface; the regression
+contract incorrectly demanded a shorter argparse abbreviation for both
+`--adam-beta1` and `--adam-beta2`, which have no shorter unambiguous spelling; and
+sealed-genesis ambiguity did not have a literal error/precedence contract. The
+Codebase Details lens additionally proved that creating a new direct module under
+`bilqis_mlx/runtime/` would make that directory hit the repository's mandatory
+`>=18` direct-code-file structural interruption threshold. The readiness Nit also
+exposed misleading historical `--human-run` help text now that
+C16.1a uses the flag for neural-inert create/enrollment mutation. R10 repairs the
+complete known material set by using a namespace-free physical-parent directory
+flock, pinning claim/recovery failures and precedence, making abbreviation coverage
+conditional on an abbreviation actually existing, placing the neutral claim owner
+in a small dedicated `runtime/_coordination/` package rather than the crowded
+runtime root, and pinning truthful `--human-run` help semantics. Production
+mutation remains forbidden until R10
+freshly clears **0 Blockers / 0 Majors** across the required affected-scope lenses.
 
 ## Why this amendment exists
 
@@ -259,9 +283,15 @@ because the historical parser keeps argparse long-option abbreviation enabled. A
 private parser `Action` owns explicitness: every one of the seven foundation options
 uses an action that stores its already-type-converted value and sets the parser-owned
 boolean `bamf_v2_foundation_explicit=True`. The parser default is false. The action is
-invoked equally for the full option name, `--flag=value`, or an unambiguous argparse
-abbreviation such as `--run-i`, so accepted abbreviations cannot bypass lifecycle
-ownership. Native argparse scalar-conversion failures remain ordinary parse failures
+invoked equally for the full option name, `--flag=value`, or any shorter
+unambiguous argparse abbreviation that actually exists, such as `--run-i`. The
+regression contract therefore exercises full-name and equals-form spelling for all
+seven options and one shorter unambiguous abbreviation only for options for which
+argparse exposes one. `--adam-beta1` and `--adam-beta2` intentionally have no
+shorter unambiguous abbreviation because their names differ only at the final
+character; their full names are the shortest accepted unique spellings. No alias is
+invented merely to manufacture an abbreviation test. Native argparse
+scalar-conversion failures remain ordinary parse failures
 and therefore also occur before learner dispatch. Once lifecycle-owned
 foundation values are otherwise valid, a missing, unreadable, or non-v2
 `--model-topology` rejects as `BAMF_OPERATOR_V2_TOPOLOGY_REQUIRED`; it can never fall
@@ -493,7 +523,10 @@ The cross-owner boundary has four **nominal valid** durable states:
    acceptance digest, so a missing acceptance sidecar may be reconstructed only as
    the exact historical parsed binding record derived from the sealed student and
    checked against that trust-row digest; this never restores or fabricates a live
-   `InitialGenerationBinding`. A conflicting or ambiguous B13 artifact rejects. If
+   `InitialGenerationBinding`. A conflicting B13 artifact retains its existing
+   B13 trust/identity/acceptance error. More than one otherwise plausible sealed
+   generation-zero candidate rejects
+   `BAMF_FIRST_STUDENT_GENESIS_RECOVERY_AMBIGUOUS`. If
    no exact recoverable B13 genesis exists, any other nonempty target remains
    `BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED`. A fresh create never treats an
    arbitrary occupied directory as writable merely because `bamf-state.json` is
@@ -570,9 +603,18 @@ Factory replay. It:
 7. only after those checks installs the pointer and reconciles the outbox.
 
 This cold path never creates a bundle or trust seal, never creates a live binding,
-and never replays current Factory state. Zero or multiple plausible sealed candidates
-return `None` or reject as occupied/ambiguous respectively; any mismatch raises the
-existing B13 trust/identity/acceptance errors. C16.1a first attempts this
+and never replays current Factory state. Zero plausible sealed candidates return
+`None`; more than one plausible candidate raises
+`BAMF_FIRST_STUDENT_GENESIS_RECOVERY_AMBIGUOUS`; and a malformed or contradictory
+candidate raises the first existing B13 trust/identity/acceptance error encountered
+while authenticating that candidate rather than being downgraded to ordinary
+occupancy. Only a nonempty no-pointer target for which no sealed candidate exists and
+no malformed B13 custody evidence was encountered falls through to
+`BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED`. A command-level `--resume` with
+recognized interrupted BAMF-v2 custody but no accepted pointer never performs this
+fresh-create recovery implicitly; it rejects
+`BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY` and directs the operator
+to repeat the original create command with the equality inputs. C16.1a first attempts this
 source-independent cold recovery for a nonempty no-pointer target, then may use
 prepared retry only when the current source can lawfully reconstruct the exact
 original preparation. It never falls through from an occupied target into normal
@@ -750,27 +792,42 @@ bamf-bundles
 bamf-acceptance
 ```
 
-R9 closes the remaining **pre-marker race**. Marker inspection alone is insufficient
+R10 closes the remaining **pre-marker race** without reserving a child filename.
+Marker inspection alone is insufficient
 because B13 may have claimed a fresh root after its final empty-directory check but
 before `bamf-bundles` or `bamf-state.json` exists. B13 mutating create/recovery and
 generic C07 fixture mutation therefore share one host-local **run-root claim lock**
-that lives outside the target directory. The lock is deliberately **not keyed by
-target path text**. Its exact path is the target's physical parent directory plus the
-fixed filename `.bamf-root-claim.lock`. The lock is a no-follow regular file opened
-with host-local `flock` through a directory-file-descriptor-safe helper. All candidate
-run roots beneath one physical parent therefore share one short-lived claim mutex.
+that lives outside the target namespace. The lock is deliberately **not keyed by
+target path text and creates no filesystem child at all**. The helper resolves and
+opens the target's physical parent directory with `O_DIRECTORY|O_NOFOLLOW`, verifies
+the opened descriptor is a directory, and applies host-local `flock(LOCK_EX)`
+directly to that physical-parent directory descriptor. All candidate
+run roots beneath one physical parent therefore share one short-lived claim mutex
+without reserving any legal run-directory basename.
 This is intentionally coarser than per-target locking: it trades a small amount of
 same-parent create concurrency for filesystem-identity correctness across case and
 Unicode-normalization aliases on macOS/APFS.
 
 The parent itself is resolved and opened as a real directory before lock acquisition;
 the helper never derives lock identity from the caller's string spelling. Different
-path aliases that resolve through the same physical parent therefore open the same
-`.bamf-root-claim.lock` inode. If the target parent does not yet exist, the B13
+path aliases that resolve through the same physical parent therefore lock the same
+directory inode. If the target parent does not yet exist, the B13
 mutating create owner may create/fsync the parent chain exactly as publication already
-permits, then resolves/opens that now-existing physical parent and takes the fixed
-claim lock. Generic fixture mutation still requires its root and parent to already be
-safe directories and never creates a missing fixture root merely to lock it.
+permits, then resolves/opens that now-existing physical parent and takes the
+directory-descriptor claim. Generic fixture mutation still requires its root and
+parent to already be safe directories and never creates a missing fixture root merely
+to lock it.
+
+The shared helper has one literal failure surface:
+`BAMF_RUN_ROOT_CLAIM_UNAVAILABLE`. It is raised before target mutation when the
+physical parent cannot be resolved/opened as a real directory, when a symlink or
+non-directory is encountered at the parent boundary, when `fstat` does not confirm
+the opened descriptor is a directory, or when the host cannot acquire/release the
+directory `flock`. B13 and C07 callers propagate this reason unchanged; neither
+translates it into occupancy, lease, source-authority, or retry errors. Path
+disjointness and caller-input validation that occur before claim acquisition retain
+their earlier pinned errors; once claim acquisition begins, claim failure wins before
+any final target classification or mutation.
 
 Lock coverage is exact:
 
@@ -988,13 +1045,19 @@ has `ready_for_training is False` and cannot reach `_invoke_learner`.
 ## CLI help compatibility
 
 The parser refactor remains an implementation detail. Every pre-existing operator
-argument that moved into a helper must retain its established `--help` description,
-default and action semantics. In particular, retention bounds, `--human-run`,
+argument that moved into a helper must retain its established default and action
+semantics. Existing help text is retained except where this issue makes the old text
+factually false. In particular, `--human-run` is updated to the pinned truthful
+description:
+
+`Explicit human authorization for mutating operator actions; legacy learner paths may perform optimizer steps, while BAMF v2 create/enrollment remains neural-inert.`
+
+Retention bounds,
 autonomous curriculum, max visits, timing trace, source prefetch workers, flash
 mode, stagnation grace and debt-admission help text may not silently disappear.
 Add a parser-help regression that checks the affected option descriptions remain
-present in `train --help`; do not weaken the operator documentation to match a
-regressed parser.
+present in `train --help` and that `--human-run` uses the exact wording above; do
+not weaken the operator documentation to match a regressed parser.
 
 ## Required disposable first-start witness
 
@@ -1074,12 +1137,16 @@ success/failure return value.
 
 Production, with required file action:
 
-- **Create** `bilqis_mlx/runtime/_run_root_claim.py`
-  - own the neutral host-local run-root claim lock as the fixed
-    `.bamf-root-claim.lock` file in the physical target-parent directory; expose only a
-    bounded context manager usable by B13 fresh publication/recovery and C07 generic
-    fixture mutation; lock storage is outside the target root, deliberately uses no
-    target-path-text hash, and carries no semantic or admission authority;
+- **Create** `bilqis_mlx/runtime/_coordination/__init__.py` and
+  **Create** `bilqis_mlx/runtime/_coordination/run_root_claim.py`
+  - own the neutral host-local run-root claim by applying `flock` directly to an
+    opened physical target-parent directory descriptor; expose only a bounded context
+    manager usable by B13 fresh publication/recovery and C07 generic fixture mutation;
+    create no child lock path, deliberately use no target-path-text hash, raise only
+    `BAMF_RUN_ROOT_CLAIM_UNAVAILABLE` for claim-boundary failures, and carry no
+    semantic or admission authority; the dedicated package keeps the reviewed
+    `bilqis_mlx/runtime/` directory below its mandatory 18-direct-code-file trigger
+    and is not a broader runtime reorganization;
 - **Modify** `bilqis_mlx/runtime/_admission/atlas_lease_contracts.py`
   - add immutable non-authoritative enrollment request;
 - **Create** `bilqis_mlx/runtime/_admission/atlas_enrollment_v2.py`
@@ -1175,9 +1242,12 @@ mirrored test owner:
 
 - request shape/round-trip and caller-no-authority tests;
 - fresh staged and atlas-release create/dry-run;
-- full-name, `--flag=value`, and unambiguous abbreviated spellings of every
-  BAMF-v2-only foundation flag set parser-owned v2 explicitness and intercept before
-  historical learner dispatch; missing/invalid/non-v2 topology reports
+- full-name and `--flag=value` spellings of every BAMF-v2-only foundation flag,
+  plus one shorter unambiguous abbreviation for each option where argparse actually
+  exposes one, set parser-owned v2 explicitness and intercept before historical
+  learner dispatch; `--adam-beta1` and `--adam-beta2` have no shorter
+  unambiguous spelling and are explicitly exempt from the abbreviation subcase;
+  missing/invalid/non-v2 topology reports
   `BAMF_OPERATOR_V2_TOPOLOGY_REQUIRED` with `_invoke_learner` unreachable;
 - full-name and abbreviated `--admission-policy` spellings set
   `admission_policy_explicit`; omitted policy remains false and inherits accepted
@@ -1202,17 +1272,23 @@ mirrored test owner:
   v1/v2 persist/renew call against a real accepted B13 root rejects before Atlas
   storage mutation, closing the authority-lock bypass;
 - synchronized B13-fresh-create versus generic v1/v2 fixture-writer races are
-  serialized by the neutral run-root claim: accepted B13 custody and fixture-created
-  C07 current authority can never coexist from the race; on case-insensitive hosts,
-  repeat with case-distinct aliases to the same physical target and, where supported,
+  serialized by the neutral physical-parent directory claim: accepted B13 custody and
+  fixture-created C07 current authority can never coexist from the race; a legal run
+  basename that formerly would have matched `.bamf-root-claim.lock` remains legal
+  because R10 creates no lock child; on case-insensitive hosts, repeat with
+  case-distinct aliases to the same physical target and, where supported,
   composed/decomposed Unicode aliases;
 - B13 cold unpointed recovery after source advance both with persisted acceptance and
   with a missing sidecar reconstructed exactly from trust-row + sealed student;
 - interrupted cold recovery with each independently changed run id, run seed,
   topology, Atlas identity and AdamW setting rejects before acceptance/pointer/outbox
   mutation;
-- command-level nonempty/no-pointer interrupted create reaches B13 recovery, while an
-  arbitrary occupied target still rejects;
+- command-level nonempty/no-pointer interrupted create reaches B13 recovery; multiple
+  plausible sealed candidates reject
+  `BAMF_FIRST_STUDENT_GENESIS_RECOVERY_AMBIGUOUS`; malformed trust/acceptance
+  evidence preserves the existing B13 error; and an arbitrary occupied target with no
+  candidate/malformed B13 evidence rejects
+  `BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED`;
 - source/target overlap is symmetric: source-under-target and target-under-source both
   reject before dry-run/create/recovery mutation, including an ancestor target with
   BAMF-looking contents; on case-insensitive hosts the same equality/ancestry cases
