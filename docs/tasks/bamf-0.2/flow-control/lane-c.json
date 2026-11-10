@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "0338f334388a01389163fb0cba74614c2bcdb83a",
-  "updated_at": "2026-11-10T00:26:40Z",
+  "updated_at": "2026-11-10T00:38:00Z",
   "exception": null,
   "items": [
     {
@@ -10,8 +10,8 @@
       "pr": null,
       "state": "ACTIVE",
       "head_sha": "fb18a4056abf6ee4be2c94c9773275882439e16b",
-      "summary": "C16.1c candidate fb18a405 is invalidated by pinned EGM post-implementation drift: caller-selected fresh-target file placement still selects the C09 genesis trust root, and authoritative generation zero can still publish without C09 binding. No PR is open. A fixed host-administered system trust-source repair is proposed on issue #950, but production code is frozen until fresh EGM design review approves the changed trust boundary.",
-      "resume_trigger": "Fresh EGM design review of the C16.1c host trust-source repair reaches 0 Blockers / 0 Majors; then implement only that approved repair and rerun focused authority proof.",
+      "summary": "C16.1c candidate fb18a405 remains invalidated by pinned EGM post-implementation drift: caller-selected fresh-target file placement still selects the C09 genesis trust root, and authoritative generation zero can still publish without C09 binding. No PR is open. Fresh design review of repair proposal v2 found 1 Blocker and 7 Majors across codebase-details, implementation-readiness and design-critic lenses. Proposal v3 is now a SHARED_CONTRACT amendment that closes retry gating, accepted-parent inheritance/downgrade prevention, resolver lock ownership, Atlas-admission successor revalidation, sidecar compatibility, Darwin path/ACL custody, cache replay and exact implementation/test phases. Production code remains frozen pending fresh v3 EGM re-review.",
+      "resume_trigger": "Fresh EGM SHARED_CONTRACT re-review of proposal v3 reaches 0 Blockers / 0 Majors; then record v3 as implementation authority and implement only that approved repair in the declared stable phases.",
       "preserved_branch": "codex/950-c09-genesis-source-authority-20261109"
     },
     {
