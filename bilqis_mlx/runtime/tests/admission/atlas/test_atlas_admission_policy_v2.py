@@ -16,15 +16,17 @@ from bilqis_mlx.factory.atlas_frontier_closure import resolve_frontier_closure
 from bilqis_mlx.factory.tests.events.support import EventCandidateRealizationFixture, LEGACY
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.atlas_admission import (
-    AtlasAdmissionContextV2,
     AtlasAdmissionLeaseV2,
-    AtlasDeltaEnvelopeV2,
     AtlasSourceApproval,
     ResourceCeilingV2,
     advance_atlas_frontier_v2,
     issue_atlas_lease_v2,
 )
 from bilqis_mlx.runtime.atlas_admission_policy import AtlasAdmissionContext
+from bilqis_mlx.runtime.atlas_admission_policy_v2 import (
+    AtlasAdmissionContextV2,
+    AtlasDeltaEnvelopeV2,
+)
 from bilqis_mlx.runtime.tests.admission.atlas.atlas_adoption_executor_support import (
     AtlasAdoptionExecutorFixture,
 )
