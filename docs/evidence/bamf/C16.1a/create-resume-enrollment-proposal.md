@@ -1,6 +1,6 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-R7-PENDING
+Status: DESIGN AMENDMENT / EGM-R8-PENDING
 Issue: #542 / C16.1a
 Reviewed unified base: `905018b0ece7613843570dc2c2e72a74dae4e91d`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
@@ -25,6 +25,28 @@ mechanically excluded from accepted B13 custody and could bypass the proposed sh
 accepted-run epoch invariant. R7 repairs that localized bypass without introducing a
 new accepted-run renewal surface. Production mutation remains forbidden until this
 R7 revision is frozen and freshly clears `0 Blockers / 0 Majors` review.
+
+Late R6 readiness correction: a second independent readiness lens returned **0
+Blockers / 3 Majors / 2 Nits** after R7 had already been frozen. Those findings remain
+authoritative historical review evidence rather than being discarded. R7 repaired the
+shared low-level v1/v2 fixture-writer backdoor, but did not yet freeze three additional
+operator/proof details: raw v2-intent interception when topology is omitted, one
+top-level fresh validation precedence, and disposable Data Plane isolation for the
+persisted-source witness. It also left ambiguous whether creation of the shared epoch
+lock counted as mutation during validation-only rejection. R8 repairs that remaining
+set. Production mutation remains forbidden.
+
+R7 review record: the frozen R7 proposal at
+`8c616abce9da33674cb5958ee4ae4b2c21f5e558` / SHA-256
+`d973348c893739fdd811a6dd2e0a630d9c0c9c30313f68f63a36ad662b394593` received
+Structural **0 Blockers / 1 Major / 0 Nits**, Codebase Details **0 Blockers / 0
+Majors / 0 Nits**, and Implementation Readiness **0 Blockers / 0 Majors / 0 Nits**.
+The sole fresh R7 Major was a pre-marker TOCTOU race: generic fixture mutation could
+pass the custody-marker guard after B13's last empty-root check but before B13 created
+its first recognized custody marker. R8 therefore serializes the root claim itself,
+not merely the marker check. This result also independently confirms the late R6
+readiness concerns must remain repaired in R8 even though the fresh R7 readiness lens
+did not rediscover them.
 
 ## Why this amendment exists
 
@@ -213,6 +235,48 @@ as equality expectations against sealed custody. Parser tests must prove fresh
 requiredness, optimizer all-or-none behavior, valid explicit seed zero, and resume
 omission/presence semantics. No historical implementation candidate supplies any of
 these semantics by implication.
+
+### Fresh-v2 ownership and validation precedence
+
+The seven foundation arguments above are BAMF-v2-only operator intent. On a **fresh**
+command, raw presence of **any one** of `--run-id`, `--run-seed`,
+`--learning-rate`, `--adam-beta1`, `--adam-beta2`, `--adam-eps`, or
+`--weight-decay` transfers command ownership to `bamf_lifecycle` before historical
+learner dispatch. That interception is based on argv presence, not on successful
+topology classification. `parse_args()` records a non-authorizing boolean
+`bamf_v2_foundation_explicit` from raw argv, using the same `--flag` / `--flag=value`
+presence rule already used for `admission_policy_explicit`; it does not infer intent
+from defaulted values. Native argparse scalar-conversion failures remain ordinary
+parse failures and therefore also occur before learner dispatch. Once lifecycle-owned
+foundation values are otherwise valid, a missing, unreadable, or non-v2
+`--model-topology` rejects as `BAMF_OPERATOR_V2_TOPOLOGY_REQUIRED`; it can never fall
+through to `_invoke_learner`. Historical commands that contain none of these seven
+v2-only arguments retain their existing routing unless another already-pinned BAMF-v2
+signal owns them (accepted `bamf-state.json`, interrupted v2 custody, or an explicitly
+loaded `ModelTopologySpecV2`).
+
+For fresh BAMF-v2 dry-run/create, validation order is normative and shared by both
+modes. The first failing step wins:
+
+1. raw v2-intent interception and foundation identity presence/domain (`run_id`,
+   `run_seed`);
+2. AdamW group requiredness/completeness/domain;
+3. `--model-topology` presence, load, and exact `ModelTopologySpecV2` type;
+4. `--atlas-release-manifest` presence and source-qualified Atlas identity resolution;
+5. admission-policy/scope shape, including scope-file parse/schema validation when
+   policy is `atlas-release` and scope-forbidden rejection when policy is `staged`;
+6. fresh request-versus-run/topology/Atlas compatibility and, for mutating create,
+   the explicit human-start gate;
+7. source/target canonical disjointness in both ancestry directions;
+8. target path shape and absent/empty/interrupted-genesis classification;
+9. B13 preview/preparation and any deeper owner validation.
+
+No later step may be evaluated merely to choose a more specific error. Literal
+mixed-invalid regressions freeze representative precedence edges: incomplete optimizer
+beats missing topology; invalid/non-v2 topology beats missing Atlas manifest; invalid
+Atlas manifest beats invalid scope; invalid scope beats overlapping target; and an
+overlapping target beats occupied-target classification. Every such rejection proves
+`_invoke_learner` unreachable.
 
 Before any target-run write, a fresh `atlas-release` create parses the enrollment
 request and validates only facts already knowable before generation zero. A fresh
@@ -662,6 +726,41 @@ bamf-bundles
 bamf-acceptance
 ```
 
+R8 closes the remaining **pre-marker race**. Marker inspection alone is insufficient
+because B13 may have claimed a fresh root after its final empty-directory check but
+before `bamf-bundles` or `bamf-state.json` exists. B13 mutating create/recovery and
+generic C07 fixture mutation therefore share one host-local **run-root claim lock**
+that lives outside the target directory and is keyed by the canonical target path.
+The lock path is the canonical target's parent plus
+`.bamf-root-claim.<sha256(canonical-target-path)>.lock`; it is a no-follow regular file
+opened with host-local `flock`. If the target parent does not yet exist, the B13
+mutating create owner may create/fsync the parent chain exactly as publication already
+permits before taking the claim; generic fixture mutation still requires its root to
+already be a safe directory and never creates a missing fixture root merely to lock it.
+
+Lock coverage is exact:
+
+- B13 fresh create/recovery acquires the run-root claim **before its final target
+  emptiness/recovery classification** and holds it through generation-zero
+  publication/recovery until either an accepted B13 custody marker exists or the
+  operation has failed without acceptance;
+- generic v1/v2 fixture persist/renew acquires the same run-root claim before the
+  recognized-custody-marker guard and holds it through the complete fixture mutation;
+- accepted v1/v2 persistence on an already accepted B13 run does not need the root
+  claim; it uses the separately pinned shared epoch lock because the B13 root claim is
+  no longer contested once accepted custody exists.
+
+This yields a deterministic race result. If a fixture writer wins the claim first,
+its Atlas fixture content makes the target nonempty and B13 subsequently rejects fresh
+creation rather than accepting mixed custody. If B13 wins first, the fixture writer
+waits, then observes accepted/interrupted B13 custody and rejects before Atlas fixture
+mutation. Adding more marker names is not relied upon for this guarantee.
+
+Lock order is disjoint and fixed: root-claim -> B13 pointer lock for initial
+publication/recovery; root-claim -> epoch-local fixture writer lock for generic fixture
+mutation; shared accepted-run epoch lock -> epoch-local accepted writer lock for later
+accepted C07 persistence. No path acquires these in reverse order.
+
 The first three retain historical saved-run protection; the last three are the B13
 custody family relevant here. A B13 root therefore cannot call
 `persist_atlas_lease(...)`, `renew_atlas_lease(...)`,
@@ -688,14 +787,24 @@ guard only through their separately named accepted-run APIs after B13/C09 replay
 the shared epoch lock. No boolean flag exposed to presentation code can select that
 bypass.
 
-Request parsing has deterministic precedence. The enrollment scope file is first
-parsed for syntax/schema safety. Before request-vs-saved identity/Atlas comparison or
-C09 signature/rights verification, the accepted-run epoch classifier runs under the
-shared authority boundary: pre-existing dual authority reports
+Request parsing has deterministic precedence without creating synchronization state
+for validation-only failures. The enrollment scope file is first parsed for
+syntax/schema safety. The accepted-run epoch classifier then performs a **read-only
+precheck** before request-vs-saved identity/Atlas comparison or C09 signature/rights
+verification: pre-existing dual authority reports
 `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT`; v1-only authority reports
-`BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`. Only a run eligible for first v2 enrollment
-continues to request-vs-saved comparisons, then C09 signature/rights validation and
-issuance.
+`BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`. A request that fails this precheck or any
+subsequent request/custody/signature validation creates no `authority-epoch.lock` and
+no other target artifact merely to reject.
+
+Only after all non-mutating enrollment validation succeeds does the accepted-run
+writer enter its mutation transaction. It acquires/creates the shared epoch lock,
+then **repeats the epoch classification while holding that lock** before acquiring the
+epoch-local writer lock or writing any lease/current authority. A concurrent other-
+epoch winner discovered by this mandatory under-lock recheck rejects with the same
+epoch error before lease/current mutation. The lock file itself is synchronization
+state created only after the command has passed validation and entered the authorized
+mutation transaction; it is not an accepted lease/current authority artifact.
 
 Required regressions cover sequential v1->v2 and v2->v1 attempts plus a synchronized
 concurrent race. Exactly one epoch may win; the losing writer must reject before its
@@ -705,7 +814,16 @@ physically separate on a marker-free fixture root. A separate negative regressio
 builds an accepted B13 generation-zero root and calls each low-level v1/v2
 persist/renew entrypoint directly; each must reject as fixture authority forbidden
 before any Atlas storage mutation, proving the fixture API cannot bypass the shared
-accepted-run epoch invariant.
+accepted-run epoch invariant. Validation-only request mismatches also snapshot the
+target before/after and prove no epoch-lock artifact is created.
+
+A separate synchronized race starts B13 fresh generation-zero publication and a
+generic v1 or v2 fixture writer against the same initially empty target. The test
+forces the interleaving around B13's final empty-root check and proves the only legal
+outcomes are: B13 accepted and fixture rejected with no Atlas fixture current, or
+fixture committed and B13 rejected as occupied with no accepted B13 pointer. It must
+never observe accepted B13 custody coexisting with fixture-created C07 current
+authority.
 
 ## CLI mode matrix and dispatch ownership
 
@@ -731,27 +849,33 @@ dry-run without scope is always invalid. Normal resume never requires a scope.
 
 Dispatch is pinned before implementation:
 
-1. a fresh command with an explicit `ModelTopologySpecV2` is owned by
-   `bamf_lifecycle`;
-2. `--resume` against a run directory with `bamf-state.json` is owned by
+1. a fresh command with raw presence of any BAMF-v2-only foundation argument is
+   intercepted by `bamf_lifecycle` before historical learner routing; if its topology
+   is missing, unreadable, or not `ModelTopologySpecV2`, it rejects
+   `BAMF_OPERATOR_V2_TOPOLOGY_REQUIRED` rather than falling through;
+2. a fresh command with an explicit successfully loaded `ModelTopologySpecV2` is
+   owned by `bamf_lifecycle` even if the foundation group is incomplete, so lifecycle
+   validation reports the pinned foundation error rather than historical learner
+   behavior;
+3. `--resume` against a run directory with `bamf-state.json` is owned by
    `bamf_lifecycle` even when `--model-topology` is omitted, because accepted B13
    custody supplies the saved topology;
-3. `--resume` against a target with no pointer but with BAMF-v2 genesis custody
+4. `--resume` against a target with no pointer but with BAMF-v2 genesis custody
    artifacts (genesis-trust row, generation-zero bundle/acceptance evidence, or the
    v2 BAMF bundle directory shape) is intercepted before historical learner routing.
    It must either invoke the B13 sealed-genesis classifier with sufficient saved or
    explicit equality inputs, or reject with explicit interrupted-genesis recovery
    guidance; it can never reach `_invoke_learner` merely because `bamf-state.json`
    is absent;
-4. an interrupted generation-zero publication with no pointer is retried by
+5. an interrupted generation-zero publication with no pointer is retried by
    repeating the fresh v2 create command with the same topology/source/seed/Atlas
    manifest **and optimizer** inputs; target-state handling attempts
    source-independent sealed B13 cold recovery before any mutable-source
    reconstruction and never enters the historical learner-resume path;
-5. commands with neither a v2 topology, accepted BAMF pointer, nor BAMF-v2 custody
-   artifacts retain the
+6. commands with no v2-only foundation argument, no v2 topology, no accepted BAMF
+   pointer, and no BAMF-v2 custody artifacts retain the
    historical v1 routing;
-6. when `bamf_lifecycle` owns the command, `command._main` returns its lifecycle
+7. when `bamf_lifecycle` owns the command, `command._main` returns its lifecycle
    result before `_invoke_learner` can run. `--human-run --resume` does not by itself
    authorize learner entry for a BAMF v2 run in C16.1a.
 
@@ -874,11 +998,15 @@ source run with:
 - model-bundle semantic catalog + digest binding;
 - exact semantic graph fingerprint.
 
-Each test points `BILQIS_STORAGE_ROOT` at that disposable source, traverses the real
+Each test points `BILQIS_STORAGE_ROOT` at that disposable source **and** points
+`BILQIS_DATA_PLANE` at a disposable test-local Data Plane created for that witness.
+No source-recovery test may read or write the workstation-global State-DAG SQLite or
+other ambient Data Plane state. The witness traverses the real
 `active_run_dir() -> read_current() -> executable release -> semantic catalog`
 recovery path, snapshots every source-run directory entry and file byte before the
 command, and proves the entire source tree is unchanged afterward. The create test may
-mutate only its disjoint target run.
+mutate only its disjoint target run and its test-local Data Plane; the dry-run may
+perform no target mutation. Test teardown removes both disposable roots.
 
 ## Required post-genesis enrollment-failure witness
 
@@ -906,6 +1034,11 @@ success/failure return value.
 
 Production, with required file action:
 
+- **Create** `bilqis_mlx/runtime/_run_root_claim.py`
+  - own the neutral host-local run-root claim lock keyed by canonical target path;
+    expose only a bounded context manager usable by B13 fresh publication/recovery and
+    C07 generic fixture mutation; lock storage is outside the target root and carries
+    no semantic or admission authority;
 - **Modify** `bilqis_mlx/runtime/_admission/atlas_lease_contracts.py`
   - add immutable non-authoritative enrollment request;
 - **Create** `bilqis_mlx/runtime/_admission/atlas_enrollment_v2.py`
@@ -923,12 +1056,15 @@ Production, with required file action:
     accepted v1/v2 current-reference mutation; preserve the existing v1 writer lock as
     the second lock for v1 storage; expand the fixture-authority saved-run guard to the
     exact legacy+B13 custody marker set pinned above before any fixture mutation;
+    generic v1 fixture persist/renew takes the neutral run-root claim before that guard
+    and holds it through the epoch-local fixture writer transaction;
 - **Modify** `bilqis_mlx/runtime/_admission/atlas_lease_v2.py`
   - make accepted v2 persistence acquire the shared cross-epoch authority lock before
     the existing v2 writer lock and enforce reciprocal v1-current exclusion;
     ensure generic fixture persistence/renewal consumes the same custody-marker
-    rejection before it can reach v2 storage; do not introduce accepted v2 renewal in
-    C16.1a;
+    rejection before it can reach v2 storage; generic v2 persist/renew takes the same
+    neutral run-root claim before the guard and holds it through the v2 fixture writer
+    transaction; do not introduce accepted v2 renewal in C16.1a;
 - **Modify** `bilqis_mlx/runtime/_admission/atlas_lease_storage_v2.py`
   - required: exact `_durable_json` byte comparison for orphan reuse plus bounded
     same-lock post-reference reconciliation as the sole v2 storage reconciliation
@@ -950,6 +1086,8 @@ Production, with required file action:
 - **Modify** `bilqis_mlx/runtime/bamf_first_student.py`
   - factor deterministic pre-publication preparation and expose exact run-identity
     preview with source/target disjointness, plus recovery-aware fresh target handling;
+    for mutating create/recovery, take the neutral run-root claim before final target
+    classification and hold it through generation-zero publication/recovery;
 - **Modify** `bilqis_mlx/runtime/_custody/bamf_bundle/genesis/__init__.py` and
   **Modify** `bilqis_mlx/runtime/_custody/bamf_bundle/publication/retry.py`
   - expose prepared retry plus source-independent cold recovery for an exact sealed
@@ -963,7 +1101,9 @@ Production, with required file action:
 - **Modify** `bilqis_mlx/presentation/operator_cli/command.py` and **Modify**
   `bilqis_mlx/presentation/operator_cli/parser.py` only as required for
   the pinned v2 dispatch/presence-bit routing **and** the explicit BAMF-v2 foundation
-  input flags frozen in this R6 contract; no new trust-source flag and no change to
+  input flags frozen in this R8 contract; raw presence of any v2-only foundation flag
+  must intercept before historical learner dispatch even when topology is omitted or
+  invalid; no new trust-source flag and no change to
   historical `--admission-policy` default/action semantics;
 - **Modify** `docs/tasks/bamf-0.2/children/C11.1.md` and **Modify**
   `docs/architecture/BAMF_0_2.md`
@@ -990,6 +1130,11 @@ mirrored test owner:
 
 - request shape/round-trip and caller-no-authority tests;
 - fresh staged and atlas-release create/dry-run;
+- raw presence of any BAMF-v2-only foundation flag intercepts before historical
+  learner dispatch; missing/invalid/non-v2 topology reports
+  `BAMF_OPERATOR_V2_TOPOLOGY_REQUIRED` with `_invoke_learner` unreachable;
+- mixed-invalid fresh commands prove the pinned validation order across foundation,
+  topology, Atlas manifest, scope, source/target overlap and occupied-target failures;
 - atlas-release dry-run validates request compatibility without `--human-run` and
   still performs zero durable target mutation;
 - staged-gen0 -> resume enrollment completion;
@@ -1007,6 +1152,9 @@ mirrored test owner:
 - low-level fixture APIs remain compatible on marker-free roots but every low-level
   v1/v2 persist/renew call against a real accepted B13 root rejects before Atlas
   storage mutation, closing the authority-lock bypass;
+- synchronized B13-fresh-create versus generic v1/v2 fixture-writer races are
+  serialized by the neutral run-root claim: accepted B13 custody and fixture-created
+  C07 current authority can never coexist from the race;
 - B13 cold unpointed recovery after source advance both with persisted acceptance and
   with a missing sidecar reconstructed exactly from trust-row + sealed student;
 - interrupted cold recovery with each independently changed run id, run seed,
@@ -1035,7 +1183,11 @@ mirrored test owner:
 - dashboard `READY_FOR_HUMAN_START` remains non-authorizing while lifecycle
   `ready_for_training` is false and learner dispatch is unreachable;
 - unmocked persisted-source recovery + complete source-tree byte preservation for
-  both dry-run and create.
+  both dry-run and create, with both `BILQIS_STORAGE_ROOT` and `BILQIS_DATA_PLANE`
+  isolated to disposable test-local roots;
+- validation-only enrollment mismatches do not create `authority-epoch.lock`; after
+  validation succeeds, the accepted writer acquires the shared lock and repeats epoch
+  classification under lock before any lease/current mutation.
 
 Regression owners retained:
 
