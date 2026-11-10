@@ -17,8 +17,7 @@ from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, validate_bamf_parameters,
 )
 from bilqis_mlx.semantics.context_eligibility import (
-    ApprovedContextProjection, ContextHold, SourceFrontier, SourceGrant,
-    project_context,
+    ApprovedContextProjection, ContextHold, project_context,
 )
 from bilqis_mlx.semantics.frame_compiler import PositionKind
 from bilqis_mlx.semantics.frame_schema import AtomicFrame, FrameInstance
@@ -29,7 +28,6 @@ from bilqis_mlx.source_adapters.school import live_source_registry
 
 from .numerical import _read_motif_unqualified_candidate
 from .records import MOTIF_WIDTH, MotifReadPosition, MotifReadResult, _invalid
-from .source import schema_evidence_digest, schema_source_handle
 
 
 _B13_EXECUTION_SEAL = object()
@@ -100,33 +98,6 @@ def _row_read_inputs(
     return tuple(positions), mx.stack(tuple(vectors))
 
 
-def _schema_frontier(frontier, task, positions):
-    """Issue narrow read grants only for schemas rederived from pinned A03."""
-    if type(frontier) is not SourceFrontier:
-        _invalid()
-    grants = {grant.source_handle: grant for grant in frontier.grants}
-    for position in positions:
-        if position is None or position.schema is None:
-            continue
-        schema = position.schema
-        envelope = position.envelope
-        handle = schema_source_handle(schema)
-        grant = SourceGrant(
-            handle, task.principal_id, task.tenant_id,
-            envelope.source_regime, task.semantic_release,
-            schema_evidence_digest(schema), (task.purpose,),
-            (task.jurisdiction,), (task.scope,),
-            frontier.rights_epoch, frontier.correction_generation,
-            observed_at=0, effective_from=0)
-        prior = grants.get(handle)
-        if prior is not None and prior != grant:
-            _invalid()
-        grants[handle] = grant
-    return replace(
-        frontier, grants=tuple(sorted(
-            grants.values(), key=lambda grant: grant.source_handle)))
-
-
 def _read_retained_compiled_motifs(
     compiled: CompiledEncoderInput,
     parameters,
@@ -182,8 +153,7 @@ def _read_retained_compiled_motifs(
             row_features.append(vectors)
         task = replace(config.task, causal_prefix_end=row.visible_end)
         tasks.append(task)
-        frontiers.append(_schema_frontier(
-            issued_frontier, task, row_positions[-1]))
+        frontiers.append(issued_frontier)
         policies.append(config.policy)
     return _read_motif_unqualified_candidate(
         site_index=site_index, hidden=hidden,
