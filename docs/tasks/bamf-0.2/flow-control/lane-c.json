@@ -2,16 +2,16 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "0338f334388a01389163fb0cba74614c2bcdb83a",
-  "updated_at": "2026-11-10T00:17:52Z",
+  "updated_at": "2026-11-10T00:26:40Z",
   "exception": null,
   "items": [
     {
       "issue": 950,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "b23a4ac1be9f9616b0765d6b0372bf4a1e50eaa0",
-      "summary": "C16.1c implementation is checkpointed at semantic head b23a4ac1. Generation-zero preparation consumes only the pre-existing host-owned C09 registry, binds its exact record/digest into B13 custody, fences publication to the prepared run root, and cold AcceptedRuntimeHost reissues opaque SourceAuthorityRuntime. Focused 29/29 and C09/B13 authority ring 50/50 pass; structure and smell gates are clean. #917 caller-selected registry hardening and #904/#926 genesis trust remain controlling; no C07 lease or neural update is owned here.",
-      "resume_trigger": null,
+      "head_sha": "fb18a4056abf6ee4be2c94c9773275882439e16b",
+      "summary": "C16.1c candidate fb18a405 is invalidated by pinned EGM post-implementation drift: caller-selected fresh-target file placement still selects the C09 genesis trust root, and authoritative generation zero can still publish without C09 binding. No PR is open. A fixed host-administered system trust-source repair is proposed on issue #950, but production code is frozen until fresh EGM design review approves the changed trust boundary.",
+      "resume_trigger": "Fresh EGM design review of the C16.1c host trust-source repair reaches 0 Blockers / 0 Majors; then implement only that approved repair and rerun focused authority proof.",
       "preserved_branch": "codex/950-c09-genesis-source-authority-20261109"
     },
     {
