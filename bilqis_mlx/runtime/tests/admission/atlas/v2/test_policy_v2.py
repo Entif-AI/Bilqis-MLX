@@ -63,6 +63,20 @@ class AtlasPolicyV2Tests(PolicyV2Support):
             missing.exception.context["reason"],
             "BAMF_ATLAS_V2_A01_IDENTITY_AUTHORITY_UNAVAILABLE")
 
+    def test_semantic_id_handoff_requires_native_a02_before_policy_success(self):
+        _capability, _semantic_id, handoff, plan, ledger, checkpoint = self._event_handoff()
+        approval, lease = self._authority(handoff)
+        context = self._context(handoff, plan, ledger, checkpoint, approval)
+
+        with self.assertRaises(BilqisError) as caught:
+            advance_atlas_frontier_v2(
+                context, AtlasDeltaEnvelopeV2(handoff, None), lease)
+
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_ATLAS_V2_DELTA_INVALID",
+        )
+
     def test_v1_lease_is_not_reinterpreted_by_v2(self):
         _capability, semantic_id, handoff, plan, ledger, checkpoint = self._event_handoff()
         approval, _lease_v2 = self._authority(handoff)

@@ -118,6 +118,14 @@ class FactoryReleaseAdmissionBindingTests(unittest.TestCase):
     def _parsed(self):
         return FactoryReleaseAdmissionBinding.from_record(self.binding.to_record())
 
+    def _parsed_with(self, **changes):
+        record = self.binding.to_record()
+        for name, value in changes.items():
+            record[name] = value
+        public = {name: record[name] for name in PUBLIC_BINDING_FIELDS}
+        record["binding_sha256"] = sha(canonical(public))
+        return FactoryReleaseAdmissionBinding.from_record(record)
+
     def test_binding_record_has_exact_keys_and_canonical_digest(self):
         record = self.binding.to_record()
         self.assertEqual(set(record), PUBLIC_BINDING_FIELDS | {"binding_sha256"})
@@ -221,6 +229,30 @@ class FactoryReleaseAdmissionBindingTests(unittest.TestCase):
             failure.exception.context["reason"],
             "BAMF_FACTORY_RELEASE_ADMISSION_BINDING_DRIFT",
         )
+
+    def test_historical_validation_rejects_binding_only_digest_tamper(self):
+        student = self._historical_student(self.candidate)
+        alternate_transition = (
+            "0" * 64 if self.binding.transition_sha256 != "0" * 64 else "1" * 64
+        )
+        alternate_event = (
+            "0" * 64 if self.binding.adoption_event_sha256 != "0" * 64 else "1" * 64
+        )
+
+        for label, parsed in (
+            ("transition", self._parsed_with(transition_sha256=alternate_transition)),
+            ("event", self._parsed_with(adoption_event_sha256=alternate_event)),
+        ):
+            with self.subTest(label=label), self.assertRaises(BilqisError) as failure:
+                validate_parsed_factory_release_admission_binding(
+                    student,
+                    parsed,
+                    parsed.digest,
+                )
+            self.assertEqual(
+                failure.exception.context["reason"],
+                "BAMF_FACTORY_RELEASE_ADMISSION_BINDING_DRIFT",
+            )
 
     def test_historical_validation_rejects_event_and_event_id_tamper(self):
         student = self._historical_student(self.candidate)

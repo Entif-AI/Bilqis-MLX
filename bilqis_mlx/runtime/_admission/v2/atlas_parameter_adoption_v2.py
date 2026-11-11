@@ -14,6 +14,7 @@ from bilqis_mlx.runtime.atlas_lease_contracts import _invalid
 def accepted_parameter_extension_retry_v2(current, handoff, native_staged, lease):
     """Authenticate one exact historical v2 A02 child before live-parent verification."""
     from bilqis_mlx.runtime.atlas_admission import (
+        _accepted_run_lease_identity,
         read_accepted_atlas_factory_release,
         read_accepted_atlas_lease_v2,
     )
@@ -25,6 +26,7 @@ def accepted_parameter_extension_retry_v2(current, handoff, native_staged, lease
     native_staged = require_issued_a02_staged_vocabulary_extension(native_staged)
     pointer, accepted = accepted_generation(current.run_dir / "bamf-state.json")
     current_factory = read_accepted_atlas_factory_release(current.run_dir)
+    accepted_identity = _accepted_run_lease_identity(current.run_dir)
     source_authority = current.legacy.source_authority
     if current_factory.release_sha256 == handoff.staged_candidate.successor.release_sha256:
         from pathlib import Path
@@ -54,6 +56,11 @@ def accepted_parameter_extension_retry_v2(current, handoff, native_staged, lease
         return retry
     if (accepted.generation + 1 != candidate.generation
             or candidate.parent_manifest_sha256 != pointer["manifest_sha256"]
+            or accepted_identity != current.legacy.run_identity
+            or current.legacy.current_release.release_sha256
+               != handoff.receipt.predecessor_release.release_sha256
+            or handoff.proposal.current_release_sha256
+               != handoff.receipt.predecessor_release.release_sha256
             or current_factory.release_sha256
                != handoff.receipt.predecessor_release.release_sha256):
         _invalid("BAMF_ATLAS_V2_PARAMETER_RETRY_CONFLICT")

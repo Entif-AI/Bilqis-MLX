@@ -216,3 +216,106 @@ class CapabilityVerificationV2Tests(CapabilityV2Support):
         with self.assertRaises(BilqisError):
             AtlasAdmissionContextV2(
                 current.legacy, current.run_dir, runtime=object())
+        with self.assertRaises(BilqisError):
+            AtlasAdmissionContextV2(
+                current.legacy, current.run_dir, source_authority=object())
+
+        with self.assertRaises(BilqisError) as legacy_partial:
+            replace(
+                current.legacy,
+                runtime=object(), native_staged=None, source_authority=object(),
+            )
+        self.assertEqual(
+            legacy_partial.exception.context["reason"],
+            "BAMF_ATLAS_ADMISSION_CONTEXT_INVALID",
+        )
+
+        legacy_production = replace(
+            current.legacy,
+            runtime=object(), native_staged=object(), source_authority=object(),
+        )
+        with self.assertRaises(BilqisError) as mixed_owner:
+            AtlasAdmissionContextV2(
+                legacy_production,
+                current.run_dir,
+                runtime=object(),
+                source_authority=object(),
+            )
+        self.assertEqual(
+            mixed_owner.exception.context["reason"],
+            "BAMF_ATLAS_V2_CONTEXT_INVALID",
+        )
+
+        missing_registries = replace(
+            current.legacy,
+            source_registry=None,
+            answer_registry=None,
+        )
+        with self.assertRaises(BilqisError) as missing_implementations:
+            AtlasAdmissionContextV2(
+                missing_registries,
+                current.run_dir,
+                runtime=object(),
+                source_authority=object(),
+            )
+        self.assertEqual(
+            missing_implementations.exception.context["reason"],
+            "BAMF_ATLAS_V2_CONTEXT_INVALID",
+        )
+
+    def test_capability_only_rights_hold_is_preserved_before_success(self):
+        handoff = self._handoff()
+        approval, lease = self._lease_authority(handoff)
+        held_approval = _signed(replace(
+            approval,
+            rights_compatible=False,
+            signature_hex="0" * 128,
+        ))
+        held_lease = replace(lease, source_approval=held_approval)
+        current = replace(
+            self._context(handoff, held_approval),
+            legacy=replace(
+                self._context(handoff, held_approval).legacy,
+                source_approval=held_approval,
+            ),
+        )
+        facts = AtlasDerivedAdmissionFactsV2(1, 1, 1, 0, 0, 0)
+
+        with patch(
+                "bilqis_mlx.runtime.atlas_admission_policy_v2._accepted_run_bindings"), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_admission_policy_v2._require_current_v2_lease"), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_admission_policy_v2._require_exact_atlas_release"), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_capability_facts_v2."
+                    "read_capability_only_admission_facts_v2",
+                    return_value=facts):
+            result = advance_atlas_frontier_v2(
+                current, AtlasDeltaEnvelopeV2(handoff, None), held_lease)
+
+        self.assertEqual(result.reason, "SOURCE_OR_RIGHTS_HELD")
+
+    def test_capability_only_source_and_answer_implementation_drift_fail_closed(self):
+        handoff = self._handoff()
+        approval, lease = self._lease_authority(handoff)
+        current = self._context(handoff, approval)
+        facts = AtlasDerivedAdmissionFactsV2(1, 1, 1, 0, 0, 0)
+        expected = (
+            ("JIT_ADOPTION_SOURCE_IMPLEMENTATION_DRIFT", "BAMF_ATLAS_SOURCE_IMPLEMENTATION_DRIFT"),
+            ("JIT_ADOPTION_ANSWER_IMPLEMENTATION_DRIFT", "BAMF_ATLAS_ANSWER_IMPLEMENTATION_DRIFT"),
+        )
+
+        for raw, reason in expected:
+            with self.subTest(raw=raw), patch(
+                    "bilqis_mlx.runtime.atlas_admission_policy_v2._accepted_run_bindings"), patch(
+                    "bilqis_mlx.runtime.atlas_admission_policy_v2._require_current_v2_lease"), patch(
+                    "bilqis_mlx.runtime.atlas_admission_policy_v2._require_exact_atlas_release"), patch(
+                    "bilqis_mlx.runtime.atlas_capability_facts_v2."
+                    "read_capability_only_admission_facts_v2",
+                    return_value=facts), patch(
+                    "bilqis_mlx.runtime.jit_adoption.verify_current_implementations",
+                    side_effect=ValueError(raw)), self.assertRaises(BilqisError) as caught:
+                advance_atlas_frontier_v2(
+                    current, AtlasDeltaEnvelopeV2(handoff, None), lease)
+            self.assertEqual(caught.exception.context["reason"], reason)

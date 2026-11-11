@@ -63,6 +63,7 @@ def _accepted_capability_only_retry_state_v2(current, handoff, lease):
     from . import state as runtime_state
     from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
     from bilqis_mlx.runtime.atlas_admission import (
+        _accepted_run_lease_identity,
         read_accepted_atlas_factory_release,
         read_accepted_atlas_lease_v2,
     )
@@ -79,6 +80,7 @@ def _accepted_capability_only_retry_state_v2(current, handoff, lease):
 
     pointer, accepted = accepted_generation(current.run_dir / "bamf-state.json")
     accepted_release = read_accepted_atlas_factory_release(current.run_dir)
+    accepted_identity = _accepted_run_lease_identity(current.run_dir)
     predecessor = handoff.receipt.predecessor_release.release_sha256
     successor = handoff.staged_candidate.successor.release_sha256
     source_authority = current.source_authority
@@ -95,7 +97,10 @@ def _accepted_capability_only_retry_state_v2(current, handoff, lease):
         school = runtime_state._state_from_json(
             current.runtime.receipt["school"],
             schedule_program_from_executable_release(accepted_release))
-        if (accepted.retained_state.optimizer_step
+        if (accepted_identity != current.legacy.run_identity
+                or current.legacy.current_release.release_sha256 != predecessor
+                or handoff.proposal.current_release_sha256 != predecessor
+                or accepted.retained_state.optimizer_step
                 != current.legacy.checkpoint.optimizer_step
                 or school.current_student != current.legacy.checkpoint):
             _invalid("BAMF_ATLAS_V2_CAPABILITY_RETRY_CONFLICT")
