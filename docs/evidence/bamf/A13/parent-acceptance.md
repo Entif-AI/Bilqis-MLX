@@ -2,12 +2,14 @@
 
 ## Current acceptance — 2026-11-11
 
-Baseline: reviewed unified `036e0aa3c2bec184481a4f009d8c31e16b9495f5`.
+Baseline: reviewed unified `f9aa79b6cececdedd28a0e80db1256f8a70a9d7f`.
 Worktree: existing A13 checkout on `codex/354-a13-prefix-inventory-20261107`,
-fast-forwarded from `efcaf2d4` to that baseline before changes.
+with the current reviewed unified consumed by merge after the semantic repair.
+Current branch head at this acceptance refresh is
+`b758ed90f41a5b18f4eb0e47b706f546f159d2a1`.
 Issue #354 remains open until human review and integration; implementation
-focused verification is recorded below; aggregate premerge and independent
-repair re-audit remain pending.
+focused verification and the independent repair re-audit are recorded below;
+the resource-safe aggregate premerge remains pending.
 The earlier audit preserved below is historical and its callback-bypass finding
 has been repaired in the consumed baseline.
 
@@ -84,6 +86,20 @@ guard, 7 authority and 15 flow tests). Final lineage command:
 Factory witness:
 `python3 -B scripts/run_tests.py bilqis_mlx.runtime.tests.batch.factory.test_factory_training_bridge.FactoryTrainingBridgeTests.test_current_a_b_c_draws_bind_exact_c02_rows_into_b11`.
 The aggregate `npm run verify:premerge` remains the required pre-PR gate.
+
+The first detached differential-leaf/premerge attempt on 2026-11-11 is **not**
+acceptance evidence. It launched the dependency-selected MLX-capable leaf under
+four pytest-xdist workers. On the 96 GiB Studio, installed MLX 0.31.1 exposed a
+default memory/free-buffer-cache allowance of about 91.2 GiB per process, so the
+four-worker topology admitted roughly 364.8 GiB of aggregate MLX-managed demand.
+macOS produced repeated out-of-memory warnings, swap reached about 65.2 GiB used,
+workers died, and the owned process group was terminated to protect the host.
+ADR-138 and the corresponding root `AGENTS.md` rules now require MLX-capable
+verification to run serially unless an explicit aggregate budget is enforced.
+The replacement gate must therefore run with one worker, MLX free-buffer caching
+disabled in the long-lived test process, and an explicit bounded MLX test memory
+limit. The failed parallel run is preserved as a resource incident, not classified
+as an A13 semantic regression.
 
 The current legacy-trainer adaptation authority remains the preserved Factory replay
 `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
