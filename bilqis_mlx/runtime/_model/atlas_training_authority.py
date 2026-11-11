@@ -8,11 +8,9 @@ import re
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.source_execution import source_content_digest
-from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
-from bilqis_mlx.learning.source_atoms import SourceAtomRow
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyRef
-from bilqis_mlx.runtime.atlas_training_contracts import BamfTrainingBatch
+from bilqis_mlx.runtime.atlas_training_contracts import BamfTrainingBatch, _canonical_digest
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _ISSUER = object()
@@ -34,6 +32,7 @@ class BamfTrainingAuthority:
     episode_id: str
     visit_id: str
     immediate_dependencies: tuple[DependencyRef, ...]
+    auxiliary_labels_sha256: str | None = None
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
@@ -49,6 +48,9 @@ class BamfTrainingAuthority:
                                self.generation_binding,
                                self.training_batch_sha256,
                                self.source_row_sha256, self.visit_id))
+                or (self.auxiliary_labels_sha256 is not None
+                    and (not isinstance(self.auxiliary_labels_sha256, str)
+                         or not _SHA.fullmatch(self.auxiliary_labels_sha256)))
                 or type(self.immediate_dependencies) is not tuple
                 or not self.immediate_dependencies
                 or any(not isinstance(item, DependencyRef)
@@ -73,11 +75,13 @@ class BamfTrainingAuthority:
                 (ref.kind.value, ref.key)
                 for ref in self.immediate_dependencies),
         }
+        if self.auxiliary_labels_sha256 is not None:
+            payload["auxiliary_labels_sha256"] = self.auxiliary_labels_sha256
         wire = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(wire.encode()).hexdigest()
 
 
-def _issue(batch, source, provenance):
+def _issue(batch, source, provenance, auxiliaries):
     if (not provenance.source_family_id or not provenance.episode_id
             or not provenance.immediate_dependencies):
         _invalid("B11_TRAINING_SOURCE_INDEPENDENCE_REQUIRED")
@@ -93,6 +97,7 @@ def _issue(batch, source, provenance):
         ("episode_id", provenance.episode_id),
         ("visit_id", provenance.visit.visit_id),
         ("immediate_dependencies", provenance.immediate_dependencies),
+        ("auxiliary_labels_sha256", _canonical_digest(auxiliaries) if auxiliaries else None),
         ("_issuance", _ISSUER),
     ):
         object.__setattr__(authority, name, value)
@@ -122,7 +127,7 @@ def extend_training_dependencies(
     for name in (
         "release_sha256", "generation_binding", "training_batch_sha256",
         "delivery_capability", "source_row_id", "source_row_sha256",
-        "source_family_id", "episode_id", "visit_id",
+        "source_family_id", "episode_id", "visit_id", "auxiliary_labels_sha256",
     ):
         object.__setattr__(extended, name, getattr(authority, name))
     object.__setattr__(extended, "immediate_dependencies", merged)
@@ -134,6 +139,8 @@ def extend_training_dependencies(
 def bind_compiled_training_batch(
         batch, compiled, sources, feature_schema, *, active_semantic_rows, row_index=0):
     """Issue one B11 row from an exact source-owned C02 delivery batch."""
+    from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
+    from bilqis_mlx.learning.source_atoms import SourceAtomRow
     from bilqis_mlx.runtime.atlas_model_contracts import (
         BamfActiveSemanticRows, BamfCompiledBatch,
     )
@@ -157,5 +164,5 @@ def bind_compiled_training_batch(
         _invalid("B11_TRAINING_SOURCE_ROW_MISMATCH")
     return BamfCompiledBatch(
         compiled, sources, feature_schema, active_semantic_rows,
-        training_authority=_issue(batch, source, provenance),
+        training_authority=_issue(batch, source, provenance, batch.rows[row_index].auxiliaries),
         visit_provenance=provenance.visit)

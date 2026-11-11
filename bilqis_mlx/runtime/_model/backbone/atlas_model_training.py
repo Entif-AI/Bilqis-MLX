@@ -1,6 +1,8 @@
 """Loss and gradient ownership layered on the exact live B11 forward."""
 from __future__ import annotations
 
+from dataclasses import replace
+
 import mlx.core as mx
 
 from bilqis_mlx.learning.atlas_readout import (
@@ -73,6 +75,7 @@ def loss_bearing_bamf(
     output,
     targets: tuple[DecisionOutput, ...],
     mask,
+    *, salience_supervision=None,
 ) -> BamfLossExecution:
     """Bind a nonempty B10 supervised loss to the exact live B11 forward."""
     record = _FORWARD_ISSUANCE.require(output)
@@ -84,10 +87,31 @@ def loss_bearing_bamf(
     ):
         _invalid("B11_LOSS_TARGET_REQUIRED")
     loss = answer_loss(output, targets, mask)
+    heads, dependencies = (), ()
+    if salience_supervision is not None:
+        from .salience_training import SalienceSupervision
+        from .salience_loss import salience_loss_components
+        if type(salience_supervision) is not SalienceSupervision:
+            _invalid("BAMF_SALIENCE_SUPERVISION_REQUIRED")
+        primary = {DecisionKind.VALUE, DecisionKind.CONTROL,
+                   DecisionKind.OPERATOR, DecisionKind.OPERAND}
+        labelled = {target.decision_id for target in targets}
+        if not any(item.kind in primary and item.decision_id in labelled
+                   and mask.get(item.decision_id, False) for item in output.decisions):
+            _invalid("BAMF_SALIENCE_PRIMARY_TARGET_REQUIRED")
+        labels = salience_supervision.labels_for(record.compiled_batch)
+        components = salience_loss_components(
+            record.salience_parameters, record.salience_hidden, ModelTopologySpecV2(),
+            record.compiled_batch.compiled.extents, labels)
+        loss = replace(loss, total=loss.total + components.total,
+                       impact=components.impact, exigency=components.exigency,
+                       novelty=components.novelty)
+        heads, dependencies = components.heads, salience_supervision.dependencies
     if not bool(mx.all(mx.isfinite(loss.total))):
         _invalid("B11_LOSS_NONFINITE")
     return _issue_loss_execution(
-        output, loss, record, _loss_participation(output, targets, mask, record))
+        output, loss, record, _loss_participation(output, targets, mask, record),
+        salience_heads=heads, salience_dependencies=dependencies)
 
 
 def _bamf_value_and_grad_impl(
@@ -98,8 +122,14 @@ def _bamf_value_and_grad_impl(
     targets: tuple[DecisionOutput, ...],
     mask,
     cache=None,
+    *, salience_supervision=None,
 ) -> BamfGradientExecution:
     """Run one exact forward/loss/gradient dispatch with one execution identity."""
+    if salience_supervision is not None:
+        from .salience_training import SalienceSupervision
+        if type(salience_supervision) is not SalienceSupervision:
+            _invalid("BAMF_SALIENCE_SUPERVISION_REQUIRED")
+        salience_supervision.labels_for(compiled_batch)
     holder = {}
 
     def objective(current):
@@ -112,7 +142,8 @@ def _bamf_value_and_grad_impl(
             cache,
                 refinement_training=True,
         )
-        execution = loss_bearing_bamf(output, targets, mask)
+        execution = loss_bearing_bamf(output, targets, mask,
+                                      salience_supervision=salience_supervision)
         holder["execution"] = execution
         return execution.loss.total
 
@@ -143,10 +174,12 @@ def bamf_value_and_grad(
     targets: tuple[DecisionOutput, ...],
     mask,
     cache=None,
+    *, salience_supervision=None,
 ) -> BamfGradientExecution:
     """Public gradient entrypoint through the same backend as direct inference."""
     return model_backend(ModelTopologySpecV2()).value_and_grad(
-        params, compiled_batch, answer_plan, targets, mask, cache)
+        params, compiled_batch, answer_plan, targets, mask, cache,
+        salience_supervision=salience_supervision)
 
 
 __all__ = ("loss_bearing_bamf", "bamf_value_and_grad")

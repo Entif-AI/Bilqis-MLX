@@ -284,6 +284,15 @@
       "summary": "C07.1a/#509 semantic head 8212c6aa consumes reviewed unified 8b03be488 and repairs the live operating-loop admission seam. Frontier proposals now dispatch directly: no lease preserves immutable STAGED behavior; a referenced lease is authenticated through AcceptedRuntimeHost/B13/C09 and remains STAGED with exact lease digest until #958/#959 owner evidence exists. ADOPTED now exits through a distinct COLD_RESUME terminal before normal finalization, and the cold finalizer accepts no stale params/AdamW/graph/receipt, cold-loading accepted B13 generation/manifest/optimizer authority instead. Exact affected ring is 71/71 PASS plus 1 explicit gated skip; structure/governance, live flow-control, 43/43 BAMF mirrors and diff checks are green. Two global legacy-trainer evidence failures reproduce unchanged on pristine pre-patch head. Fresh Goldfish is EGM_PENDING because the worker pool is unavailable during conversation transfer. #509 remains active and open. #958/#959 and #950 are now consumed through reviewed unified. Full lease-backed C07 admission still depends on the remaining C16.1a/#542 human create/resume enrollment surface and capability-only zero-row adoption #955; none of those full-delivery edges is a prerequisite for C16 first-student launch.",
       "resume_trigger": null,
       "preserved_branch": "codex/bamf02-c-runtime"
+    },
+    {
+      "issue": 379,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "036e0aa3c",
+      "summary": "C06 parent integration: reconcile accepted C06.1-.4 with actual A09/B11/B13/A05 interfaces and inherited parent acceptance. Owner-directed work 2026-11-11; isolated codex/379-c06-salience-integration-20261111.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/379-c06-salience-integration-20261111"
     }
   ]
 }

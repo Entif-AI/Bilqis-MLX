@@ -45,6 +45,9 @@ class _ForwardRecord:
     motif_reads: tuple
     role_map: tuple[tuple[str, int], ...]
     training_authority: BamfTrainingAuthority | None
+    salience_hidden: object | None = None
+    salience_parameters: object | None = None
+    compiled_batch: object | None = None
 
 
 class _ForwardRegistry:
@@ -165,7 +168,17 @@ class BamfGradientExecution:
         require_bamf_loss_execution(self.execution)
 
 
-def _issue_loss_execution(output, loss, record, participation):
+def _issue_loss_execution(output, loss, record, participation, *, salience_heads=(),
+                          salience_dependencies=()):
+    from .atlas_training_authority import extend_training_dependencies
+    dense = set(record.dense_parameter_names)
+    for head in salience_heads:
+        dense.update(("readout.salience." + head, "readout.salience_bias." + head))
+    authority = record.training_authority
+    if salience_dependencies:
+        if authority is None:
+            _invalid("BAMF_SALIENCE_TRAINING_AUTHORITY_REQUIRED")
+        authority = extend_training_dependencies(authority, salience_dependencies)
     execution = object.__new__(BamfLossExecution)
     for name, value in (
         ("output", output),
@@ -180,9 +193,9 @@ def _issue_loss_execution(output, loss, record, participation):
         ("semantic_denominator_feature_rows", participation[2]),
         ("role_read_feature_rows", participation[3]),
         ("local_slot_rows", record.local_slot_rows),
-        ("dense_parameter_names", record.dense_parameter_names),
+        ("dense_parameter_names", tuple(sorted(dense))),
         ("motif_reads", record.motif_reads),
-        ("training_authority", record.training_authority),
+        ("training_authority", authority),
         ("schema_version", "bilqis.mlx.b11-loss-execution/v1"),
         ("_issuance", _LOSS_EXECUTION_ISSUER),
     ):

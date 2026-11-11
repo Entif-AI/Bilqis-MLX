@@ -153,7 +153,7 @@ def _stage_retained_motifs(run_dir, parent, cache, transaction, prepared,
 def _execute_prepared_candidate(
         run_dir, source_context, parent, atlas_artifact_path, delivered_rows, *,
         capability, teacher_hparams, max_norm, observation, memory_budget,
-        cache, generation, prepared, start) -> FactoryCandidateStep:
+        cache, generation, prepared, start, salience_supervision=None) -> FactoryCandidateStep:
     resource_plan, memory_budget = _resource_plan(prepared, parent, memory_budget)
     if (len(prepared.compiled_rows) != 1
             or resource_plan.groups != ((0,),)):
@@ -170,7 +170,7 @@ def _execute_prepared_candidate(
         authority.goal, compiled, feature_context.snapshot, generation)
     gradient = bamf_value_and_grad(
         dict(parent.retained_state.optimizer.parameters),
-        compiled, plan, targets, mask, cache)
+        compiled, plan, targets, mask, cache, salience_supervision=salience_supervision)
     transaction = admit_uninterrupted_candidate_step(
         Path(run_dir), parent, loss_bearing_target=True,
         gradient_execution=gradient, teacher_hparams=teacher_hparams,
@@ -218,6 +218,7 @@ def execute_factory_candidate_step(
     observation: FactoryDeliveryObservation,
     rehearsal_by_id: dict | None = None,
     memory_budget: MemoryBudget | None = None,
+    salience_provider=None,
 ) -> FactoryCandidateStep:
     """Compose C02→C08→B10/B11→candidate custody without publishing state.
 
@@ -245,11 +246,19 @@ def execute_factory_candidate_step(
         visit_provenance=visit_provenance,
         teacher_strategy=teacher_strategy,
         rehearsal_by_id=rehearsal_by_id)
+    supervision = None
+    if salience_provider is not None:
+        from .salience_training import prepare_salience_training
+        if not callable(salience_provider):
+            _invalid("BAMF_SALIENCE_PROVIDER_REQUIRED")
+        prepared, supervision = prepare_salience_training(
+            prepared, source_context, salience_provider(prepared))
     return _execute_prepared_candidate(
         run_dir, source_context, parent, atlas_artifact_path, delivered_rows,
         capability=capability, teacher_hparams=teacher_hparams,
         max_norm=max_norm, observation=observation, memory_budget=memory_budget,
-        cache=cache, generation=generation, prepared=prepared, start=start)
+        cache=cache, generation=generation, prepared=prepared, start=start,
+        salience_supervision=supervision)
 
 
 __all__ = (
