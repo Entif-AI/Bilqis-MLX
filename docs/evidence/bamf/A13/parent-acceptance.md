@@ -5,11 +5,13 @@
 Baseline: reviewed unified `f9aa79b6cececdedd28a0e80db1256f8a70a9d7f`.
 Worktree: existing A13 checkout on `codex/354-a13-prefix-inventory-20261107`,
 with the current reviewed unified consumed by merge after the semantic repair.
-Current branch head at this acceptance refresh is
-`b758ed90f41a5b18f4eb0e47b706f546f159d2a1`.
-Issue #354 remains open until human review and integration; implementation
-focused verification and the independent repair re-audit are recorded below;
-the resource-safe aggregate premerge remains pending.
+The exact semantic candidate exercised by the final detached qualification is
+`a3bd22c2fb0a0c10da7e3578125ed8c072ef2479`. The later verification-harness
+repair is `7d9f11396e4f7ec890b709ed4a4a8184b8b95dfb`; it changes only detached-run
+mutation accounting plus its focused regression test, not A13 runtime semantics.
+Issue #354 remains open until human review and integration. Focused implementation
+verification, independent repair re-audit, the resource-safe final gate, and the
+exact-baseline classification of that gate are recorded below.
 The earlier audit preserved below is historical and its callback-bypass finding
 has been repaired in the consumed baseline.
 
@@ -85,7 +87,9 @@ guard, 7 authority and 15 flow tests). Final lineage command:
 `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/batch/test_atlas_training_adapter.py bilqis_mlx/runtime/tests/batch/training`.
 Factory witness:
 `python3 -B scripts/run_tests.py bilqis_mlx.runtime.tests.batch.factory.test_factory_training_bridge.FactoryTrainingBridgeTests.test_current_a_b_c_draws_bind_exact_c02_rows_into_b11`.
-The aggregate `npm run verify:premerge` remains the required pre-PR gate.
+The aggregate `npm run verify:premerge` was executed by the resource-safe r3 gate
+described below. Its absolute repository result is red because reviewed unified is
+already red on the same failure families; no branch-owned A13 regression was found.
 
 The first detached differential-leaf/premerge attempt on 2026-11-11 is **not**
 acceptance evidence. It launched the dependency-selected MLX-capable leaf under
@@ -100,6 +104,66 @@ The replacement gate must therefore run with one worker, MLX free-buffer caching
 disabled in the long-lived test process, and an explicit bounded MLX test memory
 limit. The failed parallel run is preserved as a resource incident, not classified
 as an A13 semantic regression.
+
+### Resource-safe final gate r3 and exact-baseline classification
+
+Detached r3 ran from semantic candidate `a3bd22c2fb0a0c10da7e3578125ed8c072ef2479`
+against reviewed unified `f9aa79b6cececdedd28a0e80db1256f8a70a9d7f`, with
+`BILQIS_TEST_WORKERS=1`, MLX free-buffer cache disabled, an explicit 24 GiB MLX
+memory limit inherited by Python children, and the accepted A01 artifact mounted.
+The run completed without the prior OOM/worker-death failure mode.
+
+The differential leaf executed the selected 283-file cone and reported **1327
+passed, 93 failed, 2 errors, 12 skipped, 559 subtests passed**. The aggregate
+premerge then executed 4118 tests and reported **3963 passed, 4 assertion failures,
+92 errors, 59 skipped**. Both command exits were nonzero. These absolute red totals
+are not being relabelled as green.
+
+Classification is against the exact reviewed-unified commit, not against a guessed
+historical baseline. Earlier recovery already reproduced nine sampled
+custody/source-authority failures identically on pristine `f9aa79b6`. After r3, a
+fresh tracked-only archive of exact `f9aa79b6` was run under the same cache-zero /
+24 GiB MLX limit for six discriminating failures spanning every assertion-failure
+family plus representative C09 and Factory error families. All six failed on
+pristine unified with the same observed reasons:
+
+- learning owner inventory: expected 42, observed 49;
+- importing `bilqis_mlx.learning` eagerly imports `mlx`;
+- generic BAMF publication returns `BAMF_C09_SOURCE_AUTHORITY_BINDING_INVALID`
+  where the test expects `BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED`;
+- public facade late-binding reports the same unresolved prefix-inventory routes;
+- accepted A13 correction-runtime fixture fails at publication with
+  `BAMF_C09_SOURCE_AUTHORITY_BINDING_INVALID`;
+- Factory training-execution fixture fails at publication with
+  `BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED`.
+
+The aggregate error population is dominated by those same inherited custody/
+bootstrap families: 72 `SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID` errors, plus
+missing historical runtime state and five imports of the already-absent
+`bilqis_mlx.runtime.bamf_bundle.vocabulary_registry_export`. Both the legacy state
+and that module are absent from pristine `f9aa79b6` as well. None of the four A13
+production files changed by this candidate appears in an r3 failure traceback;
+their only r3 log occurrence is the test-selection command. The exact focused A13
+proof above remains green and the independent source-inventory re-audit remains
+PASS — 0 Blockers / 0 Majors / 0 Nits.
+
+R3 also exposed a verification-harness defect unrelated to A13 semantics. The
+detached snapshot created ordinary ignored `runs/` and `vendor/legacy-v16/runs/`
+runtime state, so the mutation guard reported `source_mutated=true` and overrode
+the command return with exit 86 even though the actual feature worktree remained
+Git-clean. Existing ignored historical `runs` data must still be copied into a
+snapshot when present, so the repair does not exclude `runs` from snapshot input.
+Instead `7d9f11396e4f7ec890b709ed4a4a8184b8b95dfb` excludes `runs` only from the
+post-command mutation guard. A focused regression failed before the repair with
+exit 86, then the complete detached-runner suite passed **6/6** after it; `git
+diff --check` also passed.
+
+Disposition: r3 is an **absolute repository-gate failure with zero identified
+#354-owned failures**. Its inherited failures remain baseline debt and are not
+repaired or masked in A13. Its false snapshot-mutation classification is repaired
+in the verification harness. This evidence is sufficient to classify the A13
+candidate as differential-clean relative to the exact reviewed unified baseline;
+it is not a claim that `f9aa79b6` itself has a green repository-wide premerge.
 
 The current legacy-trainer adaptation authority remains the preserved Factory replay
 `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
