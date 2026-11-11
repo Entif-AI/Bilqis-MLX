@@ -9,6 +9,7 @@ from bilqis_mlx.runtime.accepted_correction_ledger import (
 )
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_context_revalidation_support import (
     AUTHORITY,
     AcceptedContextFixture,
@@ -16,7 +17,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_context_rev
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.correction_runtime.temporal_support import (
     source_owned_temporal_case,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import publish_genesis, shape_patch
 from bilqis_mlx.semantics.context_eligibility import (
     C09ContextInvalidation,
     C09_INVALIDATION_SCHEMA_V1,
@@ -60,8 +61,9 @@ class AcceptedContextTemporalIdentityTests(AcceptedContextFixture):
     def test_source_owned_four_time_identity_survives_cold_ledger_read(self):
         case = source_owned_temporal_case()
         authority = case.contexts.transition_authority
-        cache = self.publish()
         with shape_patch():
+            publish_genesis(self.run)
+            cache = bind_accepted_execution_cache(self.run)
             host = AcceptedRuntimeHost(self.run)
             transition = host.record_context_transition(
                 case.previous, case.contexts)

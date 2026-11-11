@@ -104,14 +104,14 @@ def _compile_model_input(
     if (type(frames) is not tuple or
             any(type(frame) is not ContextEligibility for frame in frames)):
         _invalid('CONTEXT_SOURCE_FRAMES_REQUIRED')
+    if not frames and getattr(ast, 'frames', ()):
+        _invalid('CONTEXT_SOURCE_FRAMES_REQUIRED')
+    _require_source_lineage(ast, frames, visible, source_context.graph)
     projection = None
     if frames:
-        _require_source_lineage(ast, frames, visible, source_context.graph)
         projection = project_context(frames, task_scope, source_frontier, eligibility_policy)
         if type(projection) is not ApprovedContextProjection:
             _invalid('CONTEXT_NOT_ELIGIBLE')
-    elif ast.frames:
-        _invalid('CONTEXT_SOURCE_FRAMES_REQUIRED')
     current_features = _require_semantic_authority(
         compiler_config, task_scope, source_frontier, eligibility_policy,
         atlas_selection, feature_artifact_path)

@@ -1,5 +1,83 @@
 # A13 parent #354: integration acceptance crosswalk
 
+## Current acceptance — 2026-11-11
+
+Baseline: reviewed unified `036e0aa3c2bec184481a4f009d8c31e16b9495f5`.
+Worktree: existing A13 checkout on `codex/354-a13-prefix-inventory-20261107`,
+fast-forwarded from `efcaf2d4` to that baseline before changes.
+Issue #354 remains open until human review and integration; implementation
+verification is complete below, and independent turn-in review is pending.
+The earlier audit preserved below is historical and its callback-bypass finding
+has been repaired in the consumed baseline.
+
+### Reconciled owner contracts
+
+Original children #430/#431/#432 and remediation follow-ons #906/#916/#956
+are closed. A03 #349 is closed. The integrated C02 source-lineage implementation
+is `253efc4c2a554f4af9a3f789e8491129b21115cc`; A13/A05 prefix ownership includes
+`37417f9e80921e0b9be040eaf48da8f0940e8ed9`; current schema-right issuance is
+`349da6d3dcb67e9b710d080c82ba410ff84aca50`. These are consumed source,
+not new admissions or neural-learning receipts.
+
+| A13 obligation | Current implementation and executable evidence |
+| --- | --- |
+| Individual and combined joins, including forbidden pairs/sets | `check_context_eligibility`; context suite rejects individually legal frames in forbidden combinations before projection |
+| Source rights, purpose, release, temporal and prefix checks | `_context_eligibility` gate/projection; context suite checks revocation, future constituents, actor/scope isolation and missing member evidence |
+| Immutable approved projection and cache identity | `project_context`, `ApprovedContextProjection`; order-invariant membership digest, preserved frame/member ordering and distinct policy/time keys |
+| Existing PUBLIC_FORMAL A/B/C constructors without NLP/network | `test_real_public_formal_a_b_c_source_constructors`; genuine registered constructors with synthetic actors/scopes |
+| Factory source AST/frame equivalence before A05/B11 input | `require_source_lineage` and production `prepare_factory_training_batch`; cross-source/frame negatives, real pinned-A01 positive and A/B/C Factory-to-B11 witness |
+| Atomic input also belongs to the delivered row | `test_granted_atomic_prefix_must_match_the_delivered_source_row`; canonical atomic rows pass; another already-granted row's atomic AST rejects with `CONTEXT_SOURCE_LINEAGE_MISMATCH` |
+| Eligibility changes emit typed C09 invalidations | source-context tests exercise owner-issued expiry/revocation; accepted-context temporal test cold-reads the exact four source-owned times and event identity |
+| Current schema-right state survives fresh/cold preparation | `test_public_formal_schema_rights_owner.py` exercises revoked grants, cold owner reissue, distinct epochs and invalid restoration |
+| Motif reads preserve hidden state when held | seven `test_numerical.py` cases exercise exact/structural hits, missing/revoked grants, nested-child revocation and unavailable-scope safe returns |
+
+The source schemas remain `bilqis.context-eligibility/v1`,
+`bilqis.context-source-frontier/v1`, `bilqis.context-task-scope/v1`,
+`bilqis.context-policy/v1`; approved/held outputs remain
+`bilqis.eligible-context/v1`, `bilqis.context-hold/v1` and
+`bilqis.context-approved-projection/v1`. Existing C09 v1/v2 compatibility
+is retained. No schema, token identity, semantic meaning or teacher policy changes.
+
+### Correction and proof
+
+Incident **PM-2026-11-11-001** was filed and native-Sheet read back before repair.
+The new real-source regression failed because the atomic cross-row substitution
+raised no error. The adapter now applies its existing lineage validator to both
+framed and atomic inputs, preserving the missing-frame error contract.
+The cold-replay fixture now uses existing production `publish_genesis` rather
+than attempting to replace the generation-zero source authority in a successor.
+Three pre-existing evidence documents receive only their omitted provenance
+reference; their original check outcomes remain historical.
+
+Observed verification, zero skips in each group:
+
+- Context plus source-context and original adapter selection: **49/49**.
+- Complete affected training directory plus adapter: **64/64**.
+- Real A/B/C Factory-to-B11 preparation: **1/1**, three capability subcases.
+- Motif numerical reads: **7/7**.
+- Accepted-context temporal identity/cold read: **2/2** after fixture correction.
+
+Full commands, original RED and failed-fixture receipts are preserved locally in
+`.local/a13-completion-20261111/`. Pinned A01 bundle
+`5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`, release
+`58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306`, source bundle
+`f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec`
+were mounted for real-source tests. Environment variables are
+`BILQIS_ATLAS_REAL_ARTIFACT` and `BILQIS_A01_ATLAS_BUNDLE`.
+Use `scripts/run_tests.py` with the paths/test names above; the source-only
+Python 3.13 environment ran the first group and initial RED/GREEN, and native
+Python 3.14/MLX 0.31.1 on the Studio ran the final training/integration groups.
+
+The current legacy-trainer adaptation authority remains the preserved Factory replay
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
+The ABI guard passes with zero scattered literals; external expected fingerprint
+is absent locally, so enforcement remains advisory. No actual learner,
+optimizer, teacher, original checkpoint or human-run was changed. IPR-0220
+remains open for its broader coverage/learning obligations; actual retained
+learning is unmeasured by this source/integration proof. Human merge is required.
+
+## Historical parent audit (preserved)
+
 Status: **EGM MAJOR / parent acceptance blocked**.
 This is a parent-level evidence reconciliation, not a new A13
 implementation, source admission, learner run or merge approval.
