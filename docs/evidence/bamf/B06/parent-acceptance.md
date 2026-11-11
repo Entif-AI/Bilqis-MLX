@@ -88,5 +88,7 @@ The broader Factory training execution file was also attempted. It produced
 while their shared fixture tries to publish a successor without the now-required
 initial-generation bootstrap, raising
 BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED. The parent target-invariance test in
-that same file passes when run in isolation. This broader fixture result is not
-recorded as a passing qualification and is not used to manufacture B06 evidence.
+that same file passes when run in isolation. The complete file was then replayed
+on pristine reviewed unified 766ac5f1 and reproduced the same 3 passes / 3
+errors at the same bootstrap guard. This broader fixture result is not recorded
+as a passing qualification and is not used to manufacture B06 evidence.
