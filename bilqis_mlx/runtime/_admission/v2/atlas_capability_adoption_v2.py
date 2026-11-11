@@ -80,7 +80,6 @@ def _accepted_capability_only_retry_state_v2(current, handoff, lease):
 
     pointer, accepted = accepted_generation(current.run_dir / "bamf-state.json")
     accepted_release = read_accepted_atlas_factory_release(current.run_dir)
-    accepted_identity = _accepted_run_lease_identity(current.run_dir)
     predecessor = handoff.receipt.predecessor_release.release_sha256
     successor = handoff.staged_candidate.successor.release_sha256
     source_authority = current.source_authority
@@ -94,6 +93,7 @@ def _accepted_capability_only_retry_state_v2(current, handoff, lease):
     lease.source_approval.verify_signature(current.legacy.registry)
     _require_exact_atlas_release(current, handoff, lease)
     if accepted_release.release_sha256 == predecessor:
+        accepted_identity = _accepted_run_lease_identity(current.run_dir)
         school = runtime_state._state_from_json(
             current.runtime.receipt["school"],
             schedule_program_from_executable_release(accepted_release))

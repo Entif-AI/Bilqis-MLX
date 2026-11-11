@@ -26,7 +26,6 @@ def accepted_parameter_extension_retry_v2(current, handoff, native_staged, lease
     native_staged = require_issued_a02_staged_vocabulary_extension(native_staged)
     pointer, accepted = accepted_generation(current.run_dir / "bamf-state.json")
     current_factory = read_accepted_atlas_factory_release(current.run_dir)
-    accepted_identity = _accepted_run_lease_identity(current.run_dir)
     source_authority = current.legacy.source_authority
     if current_factory.release_sha256 == handoff.staged_candidate.successor.release_sha256:
         from pathlib import Path
@@ -54,6 +53,7 @@ def accepted_parameter_extension_retry_v2(current, handoff, native_staged, lease
         if cold.release_sha256 != handoff.staged_candidate.successor.release_sha256:
             _invalid("BAMF_ATLAS_NATIVE_RETRY_DRIFT")
         return retry
+    accepted_identity = _accepted_run_lease_identity(current.run_dir)
     if (accepted.generation + 1 != candidate.generation
             or candidate.parent_manifest_sha256 != pointer["manifest_sha256"]
             or accepted_identity != current.legacy.run_identity
