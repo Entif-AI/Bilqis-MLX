@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import NamedTuple
 
 from bilqis_mlx.factory.adapters import RegisteredSourceAdapter
 from bilqis_mlx.semantics.atlas.snapshot import (
@@ -59,14 +60,21 @@ def _source_family(adapter_id: str) -> str:
 def _new_approved_owner():
     issued = {}
 
+    class _Issuance(NamedTuple):
+        approved: object
+        approved_context_digest: str
+        candidate: CandidateMotifSnapshot
+        candidate_digest: str
+        schema_version: str
+
     def require(value):
         expected = issued.get(id(value))
         if (expected is None
-                or expected[0] is not value
-                or value.approved_context_digest != expected[1]
-                or value.candidate is not expected[2]
-                or value.candidate.digest != expected[3]
-                or value.schema_version != expected[4]):
+                or expected.approved is not value
+                or value.approved_context_digest != expected.approved_context_digest
+                or value.candidate is not expected.candidate
+                or value.candidate.digest != expected.candidate_digest
+                or value.schema_version != expected.schema_version):
             _invalid("BAMF_MOTIF_APPROVED_CANDIDATE_INVALID")
         return value
 
@@ -76,7 +84,7 @@ def _new_approved_owner():
                 ("approved_context_digest", approved_context_digest),
                 ("candidate", candidate), ("schema_version", APPROVED_MOTIF_SCHEMA)):
             object.__setattr__(approved, name, value)
-        issued[id(approved)] = (
+        issued[id(approved)] = _Issuance(
             approved, approved_context_digest, candidate, candidate.digest,
             APPROVED_MOTIF_SCHEMA)
         approved.__post_init__()

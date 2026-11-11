@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import NamedTuple
 
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.learning.atlas_engram_source import (
@@ -17,14 +18,21 @@ from ..records import invalid
 def _new_continuation_owner():
     issued = {}
 
+    class _Issuance(NamedTuple):
+        continuation: object
+        approved: ApprovedMotifCandidate
+        parent_manifest_sha256: str
+        parent_extents_sha256: str
+        parent_allocation_sha256: str
+
     def require(value):
         expected = issued.get(id(value))
         if (expected is None
-                or expected[0] is not value
-                or value.approved is not expected[1]
-                or value.parent_manifest_sha256 != expected[2]
-                or value.parent_extents_sha256 != expected[3]
-                or value.parent_allocation_sha256 != expected[4]):
+                or expected.continuation is not value
+                or value.approved is not expected.approved
+                or value.parent_manifest_sha256 != expected.parent_manifest_sha256
+                or value.parent_extents_sha256 != expected.parent_extents_sha256
+                or value.parent_allocation_sha256 != expected.parent_allocation_sha256):
             invalid("BAMF_MOTIF_SOURCE_CONTINUATION_INVALID")
         return value
 
@@ -35,7 +43,7 @@ def _new_continuation_owner():
                 ("parent_extents_sha256", student.extents.digest),
                 ("parent_allocation_sha256", student.retained_state.allocations.digest)):
             object.__setattr__(continuation, name, value)
-        issued[id(continuation)] = (
+        issued[id(continuation)] = _Issuance(
             continuation, approved, manifest_sha256, student.extents.digest,
             student.retained_state.allocations.digest)
         continuation.__post_init__()
