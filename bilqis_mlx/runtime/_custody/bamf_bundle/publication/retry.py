@@ -149,17 +149,65 @@ def recover_prepared_initial_generation(run_dir: Path, prepared):
         Path(run_dir), prepared.candidate, prepared)
 
 
-def recover_sealed_initial_generation(
-        run_dir: Path, *, expected_run_id: str, expected_run_seed: int,
-        expected_topology_digest: str, expected_atlas_artifact,
-        expected_optimizer_hyperparameters_sha256: str):
-    """Recover sealed generation zero without replaying mutable Factory authority."""
+def _sealed_genesis_student(
+        run_dir: Path, manifest_sha256: str, *, expected_run_id: str,
+        expected_run_seed: int, expected_topology_digest: str,
+        expected_atlas_artifact, expected_optimizer_hyperparameters_sha256: str):
     from ..genesis import validate_initial_generation_source_authority
+    from ..genesis.records import optimizer_hyperparameters_digest
+
+    target = run_dir / "bamf-bundles" / manifest_sha256
+    if target.is_symlink() or not target.is_dir():
+        invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+    student = load_bamf_bundle(
+        target, expected_manifest_sha256=manifest_sha256)
+    identity = student.run_identity
+    feature_source = student.compiler_features.get("feature_source")
+    if (identity is None or student.generation != 0
+            or student.run_id != expected_run_id
+            or identity.run_seed != expected_run_seed
+            or student.topology.digest != expected_topology_digest
+            or optimizer_hyperparameters_digest(student.optimizer_hyperparameters)
+            != expected_optimizer_hyperparameters_sha256
+            or not isinstance(feature_source, dict)
+            or feature_source.get("atlas_bundle_id") != expected_atlas_artifact.bundle_id
+            or feature_source.get("release_sha256") != expected_atlas_artifact.release_sha256
+            or feature_source.get("source_bundle_id") != expected_atlas_artifact.source_bundle_id):
+        invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+    validate_initial_generation_source_authority(student)
+    return student
+
+
+def _sealed_genesis_binding(student, expected_acceptance: str):
     from ..genesis.records import (
         INITIAL_BINDING_SCHEMA, InitialGenerationBinding,
         initial_generation_candidate_identity_digest,
         optimizer_hyperparameters_digest,
     )
+
+    fields = {
+        "run_id": student.run_id,
+        "generation": 0,
+        "run_identity_sha256": student.run_identity.digest,
+        "candidate_identity_sha256": initial_generation_candidate_identity_digest(student),
+        "optimizer_hyperparameters_sha256":
+            optimizer_hyperparameters_digest(student.optimizer_hyperparameters),
+        "feature_sha256": student.extents.factor_map_digest,
+        "optimizer_step": student.retained_state.optimizer_step,
+        "schema_version": INITIAL_BINDING_SCHEMA,
+    }
+    binding = InitialGenerationBinding.from_record(
+        {**fields, "binding_sha256": sha(canonical(fields))})
+    if binding.digest != expected_acceptance or binding.optimizer_step != 0:
+        invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_INVALID")
+    return binding
+
+
+def recover_sealed_initial_generation(
+        run_dir: Path, *, expected_run_id: str, expected_run_seed: int,
+        expected_topology_digest: str, expected_atlas_artifact,
+        expected_optimizer_hyperparameters_sha256: str):
+    """Recover sealed generation zero without replaying mutable Factory authority."""
     from .genesis_trust import require_initial_generation_trust_root, _stored_trust
 
     run_dir = Path(run_dir)
@@ -177,46 +225,15 @@ def recover_sealed_initial_generation(
             trust = json.loads(raw)
         except (UnicodeDecodeError, json.JSONDecodeError):
             invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_INVALID")
-        target = run_dir / "bamf-bundles" / manifest_sha256
-        if target.is_symlink() or not target.is_dir():
-            invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
-        student = load_bamf_bundle(
-            target, expected_manifest_sha256=manifest_sha256)
-        identity = student.run_identity
-        feature_source = student.compiler_features.get("feature_source")
-        if (identity is None or student.generation != 0
-                or student.run_id != expected_run_id
-                or identity.run_seed != expected_run_seed
-                or student.topology.digest != expected_topology_digest
-                or optimizer_hyperparameters_digest(student.optimizer_hyperparameters)
-                != expected_optimizer_hyperparameters_sha256
-                or not isinstance(feature_source, dict)
-                or feature_source.get("atlas_bundle_id")
-                != expected_atlas_artifact.bundle_id
-                or feature_source.get("release_sha256")
-                != expected_atlas_artifact.release_sha256
-                or feature_source.get("source_bundle_id")
-                != expected_atlas_artifact.source_bundle_id):
-            invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
-        validate_initial_generation_source_authority(student)
-        fields = {
-            "run_id": student.run_id,
-            "generation": 0,
-            "run_identity_sha256": identity.digest,
-            "candidate_identity_sha256":
-                initial_generation_candidate_identity_digest(student),
-            "optimizer_hyperparameters_sha256":
-                optimizer_hyperparameters_digest(student.optimizer_hyperparameters),
-            "feature_sha256": student.extents.factor_map_digest,
-            "optimizer_step": student.retained_state.optimizer_step,
-            "schema_version": INITIAL_BINDING_SCHEMA,
-        }
+        student = _sealed_genesis_student(
+            run_dir, manifest_sha256, expected_run_id=expected_run_id,
+            expected_run_seed=expected_run_seed,
+            expected_topology_digest=expected_topology_digest,
+            expected_atlas_artifact=expected_atlas_artifact,
+            expected_optimizer_hyperparameters_sha256=
+                expected_optimizer_hyperparameters_sha256)
         expected_acceptance = trust.get("acceptance_sha256")
-        record = {**fields, "binding_sha256": sha(canonical(fields))}
-        binding = InitialGenerationBinding.from_record(record)
-        if (binding.digest != expected_acceptance
-                or binding.optimizer_step != 0):
-            invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_INVALID")
+        binding = _sealed_genesis_binding(student, expected_acceptance)
         pointer = {
             "schema": BAMF_POINTER_SCHEMA,
             "run_id": student.run_id,
