@@ -305,6 +305,9 @@ class ProductionCandidateStepTests(unittest.TestCase):
             replace(plan, groups=((0, 1),), microbatch_size=2),
             replace(plan, optimizer_step_seed=8),
             replace(plan, source_digest="8" * 64),
+            replace(plan, logical_row_ids=("row:b", "row:a")),
+            replace(plan, generation_binding="generation:other"),
+            replace(plan, topology_digest="9" * 64),
         )
         for drift in drifts:
             with self.subTest(drift=drift), \

@@ -190,6 +190,83 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
                     teacher_hparams=HP, max_norm=1.0, observation=observation)
             self.assertEqual(caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
+    def _assert_prepared_logical_rows(self, prepared, row_ids):
+        self.assertEqual(
+            tuple(row.provenance.row_id for row in prepared.training_batch.rows), row_ids)
+        self.assertEqual(
+            tuple(compiled.training_authority.source_row_id
+                  for compiled in prepared.compiled_rows), row_ids)
+        self.assertTrue(all(
+            compiled.training_authority.training_batch_sha256
+            == prepared.training_batch.authority_digest
+            for compiled in prepared.compiled_rows))
+        self.assertEqual(
+            tuple(compiled.training_authority.source_row_sha256
+                  for compiled in prepared.compiled_rows),
+            tuple(row.provenance.source_row_content_sha256
+                  for row in prepared.training_batch.rows))
+
+    def _split_budget(self, parent, prepared):
+        default_budget = MemoryBudget(
+            bamf_parameter_census(parent.topology, parent.extents))
+        resource_rows = tuple(
+            ResourceRow.from_training_row(
+                training_row, _frame_stats(compiled),
+                generation_binding=prepared.training_batch.generation_binding,
+                delivered_content_sha256=prepared.training_batch.delivered_content_sha256,
+            )
+            for training_row, compiled in zip(
+                prepared.training_batch.rows, prepared.compiled_rows))
+        one_row_peak = max(
+            estimate_row_activation_bytes(item, parent.topology)
+            for item in resource_rows)
+        return replace(
+            default_budget,
+            allocation_bytes=(default_budget.resident_bytes
+                              + default_budget.activation_safety_factor * one_row_peak),
+        )
+
+    def _assert_split_step_result(self, result, prepared, row_ids, parent):
+        self.assertEqual(result.resource_plan.groups, ((0,), (1,)))
+        self.assertEqual(result.resource_plan.logical_row_ids, row_ids)
+        self.assertEqual(
+            tuple(row.provenance.row_id for row in result.prepared.training_batch.rows),
+            row_ids)
+        self.assertEqual(len(result.gradient_execution.loss_executions), 2)
+        self.assertEqual(
+            result.gradient_execution.source_digest, result.resource_plan.source_digest)
+        row_authorities = tuple(
+            execution.training_authority
+            for execution in result.gradient_execution.loss_executions)
+        self.assertEqual(
+            tuple(authority.source_row_id for authority in row_authorities), row_ids)
+        self.assertEqual(
+            tuple(authority.source_row_sha256 for authority in row_authorities),
+            tuple(row.provenance.source_row_content_sha256
+                  for row in prepared.training_batch.rows))
+        self.assertEqual(
+            tuple(authority.digest for authority in row_authorities),
+            tuple(compiled.training_authority.digest
+                  for compiled in result.prepared.compiled_rows))
+        self.assertEqual(result.transaction.update_steps, 1)
+        self.assertEqual(len(result.transaction.step_proofs), 1)
+        self.assertEqual(len(result.transaction.training_authorities), 1)
+        authority = result.transaction.training_authorities[0]
+        self.assertEqual(tuple(member.source_row_id for member in authority.members), row_ids)
+        proof = result.transaction.step_proofs[0]
+        self.assertEqual(proof.training_authority_sha256, authority.digest)
+        self.assertEqual(
+            proof.training_authority_members,
+            tuple((member.digest, member.source_family_id, member.episode_id)
+                  for member in authority.members))
+        self.assertIsNotNone(result.transaction.motif_transition)
+        deltas = tuple(
+            after - parent.retained_state.optimizer.update_counts[name]
+            for name, after in result.transaction.optimizer.update_counts.items())
+        self.assertTrue(all(bool(mx.all((delta == 0) | (delta == 1))) for delta in deltas))
+        self.assertTrue(any(bool(mx.any(delta == 1)) for delta in deltas))
+        self.assertEqual(result.realized_cost["optimizer_steps"], 1)
+
     def test_production_step_accumulates_split_real_rows_into_one_optimizer_step(self):
         rows, delivery = self._draw("A.IDENTITY", 37117, 2)
         with TemporaryDirectory() as run_dir_value:
@@ -199,52 +276,7 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
             parent = load_accepted_generation(run_dir)
             prepared = self.prepare("A.IDENTITY", 37117, 2)[1]
             row_ids = tuple(row["id"] for row in rows)
-            self.assertEqual(
-                tuple(row.provenance.row_id for row in prepared.training_batch.rows),
-                row_ids,
-            )
-            self.assertEqual(
-                tuple(
-                    compiled.training_authority.source_row_id
-                    for compiled in prepared.compiled_rows
-                ),
-                row_ids,
-            )
-            self.assertTrue(all(
-                compiled.training_authority.training_batch_sha256
-                == prepared.training_batch.authority_digest
-                for compiled in prepared.compiled_rows
-            ))
-            self.assertEqual(
-                tuple(
-                    compiled.training_authority.source_row_sha256
-                    for compiled in prepared.compiled_rows
-                ),
-                tuple(
-                    row.provenance.source_row_content_sha256
-                    for row in prepared.training_batch.rows
-                ),
-            )
-            default_budget = MemoryBudget(
-                bamf_parameter_census(parent.topology, parent.extents))
-            resource_rows = tuple(
-                ResourceRow.from_training_row(
-                    training_row, _frame_stats(compiled),
-                    generation_binding=prepared.training_batch.generation_binding,
-                    delivered_content_sha256=(
-                        prepared.training_batch.delivered_content_sha256),
-                )
-                for training_row, compiled in zip(
-                    prepared.training_batch.rows, prepared.compiled_rows))
-            one_row_peak = max(
-                estimate_row_activation_bytes(item, parent.topology)
-                for item in resource_rows)
-            split_budget = replace(
-                default_budget,
-                allocation_bytes=(
-                    default_budget.resident_bytes
-                    + default_budget.activation_safety_factor * one_row_peak),
-            )
+            self._assert_prepared_logical_rows(prepared, row_ids)
             observation = FactoryDeliveryObservation(
                 ObservationCapture(run_dir, {}), 1, rows, 37117)
             result = train_bamf_factory_step(
@@ -256,67 +288,8 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
                 visit_provenance=visit_provenance("A.IDENTITY"),
                 teacher_strategy={"policy": "c02-parent-production"},
                 teacher_hparams=HP, max_norm=1.0, observation=observation,
-                memory_budget=split_budget)
-            self.assertEqual(result.resource_plan.groups, ((0,), (1,)))
-            self.assertEqual(result.resource_plan.logical_row_ids, row_ids)
-            self.assertEqual(
-                tuple(
-                    row.provenance.row_id
-                    for row in result.prepared.training_batch.rows
-                ),
-                row_ids,
-            )
-            self.assertEqual(len(result.gradient_execution.loss_executions), 2)
-            self.assertEqual(
-                result.gradient_execution.source_digest,
-                result.resource_plan.source_digest,
-            )
-            row_authorities = tuple(
-                execution.training_authority
-                for execution in result.gradient_execution.loss_executions
-            )
-            self.assertEqual(
-                tuple(authority.source_row_id for authority in row_authorities),
-                row_ids,
-            )
-            self.assertEqual(
-                tuple(authority.source_row_sha256 for authority in row_authorities),
-                tuple(
-                    row.provenance.source_row_content_sha256
-                    for row in prepared.training_batch.rows
-                ),
-            )
-            self.assertEqual(
-                tuple(authority.digest for authority in row_authorities),
-                tuple(
-                    compiled.training_authority.digest
-                    for compiled in result.prepared.compiled_rows
-                ),
-            )
-            self.assertEqual(result.transaction.update_steps, 1)
-            self.assertEqual(len(result.transaction.step_proofs), 1)
-            self.assertEqual(len(result.transaction.training_authorities), 1)
-            authority = result.transaction.training_authorities[0]
-            self.assertEqual(
-                tuple(member.source_row_id for member in authority.members), row_ids)
-            proof = result.transaction.step_proofs[0]
-            self.assertEqual(proof.training_authority_sha256, authority.digest)
-            self.assertEqual(
-                proof.training_authority_members,
-                tuple(
-                    (member.digest, member.source_family_id, member.episode_id)
-                    for member in authority.members
-                ),
-            )
-            self.assertIsNotNone(result.transaction.motif_transition)
-            advanced = False
-            for name, after in result.transaction.optimizer.update_counts.items():
-                before = parent.retained_state.optimizer.update_counts[name]
-                delta = after - before
-                self.assertTrue(bool(mx.all((delta == 0) | (delta == 1))), name)
-                advanced = advanced or bool(mx.any(delta == 1))
-            self.assertTrue(advanced)
-            self.assertEqual(result.realized_cost["optimizer_steps"], 1)
+                memory_budget=self._split_budget(parent, prepared))
+            self._assert_split_step_result(result, prepared, row_ids, parent)
 
     def _draw(self, capability, seed, each):
         rows = tuple(self.context.draw_rows(seed=seed, capability=capability, each=each))

@@ -31,15 +31,26 @@ def _student(*proofs):
     return SimpleNamespace(retained_state=SimpleNamespace(step_proofs=proofs))
 
 
+def _anchor(authority_digest, *, family="family:1", episode="episode:1"):
+    return (
+        "A.TEST", "row:test", "d" * 64, family, episode,
+        "4" * 64, "5" * 64, "generation:test", authority_digest, (),
+    )
+
+
 class CapabilitySupportProofIndexTests(unittest.TestCase):
     def test_duplicate_scalar_authority_digest_rejects(self):
         duplicate = "6" * 64
-        with self.assertRaises(BilqisError):
+        with self.assertRaises(BilqisError) as caught:
             _verify_anchor_proofs(
-                SimpleNamespace(source_anchors=()),
+                SimpleNamespace(source_anchors=(_anchor(duplicate),)),
                 _student(_scalar(duplicate, step=1), _scalar(duplicate, step=2)),
                 "A.TEST",
             )
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT",
+        )
 
     def test_group_member_cannot_overlap_another_proof_top_level_digest(self):
         shared = "6" * 64
@@ -56,12 +67,16 @@ class CapabilitySupportProofIndexTests(unittest.TestCase):
                 ("c" * 64, "family:b", "episode:c"),
             ),
         )
-        with self.assertRaises(BilqisError):
+        with self.assertRaises(BilqisError) as caught:
             _verify_anchor_proofs(
-                SimpleNamespace(source_anchors=()),
+                SimpleNamespace(source_anchors=(_anchor(shared),)),
                 _student(_scalar(shared, step=1), grouped),
                 "A.TEST",
             )
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT",
+        )
 
 
 if __name__ == "__main__":

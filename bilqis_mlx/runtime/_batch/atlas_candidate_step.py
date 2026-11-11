@@ -20,6 +20,41 @@ def _invalid(reason):
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID, reason=reason)
 
 
+def _logical_batch_inputs(logical_batch_execution, training_batch,
+                          logical_batch_plan, spec):
+    logical = require_logical_batch_gradient_execution(logical_batch_execution)
+    if (type(logical_batch_plan) is not BatchPlan
+            or type(training_batch) is not BamfTrainingBatch):
+        _invalid("C08_LOGICAL_BATCH_PLAN_REQUIRED")
+    logical_batch_plan.__post_init__()
+    training_batch.__post_init__()
+    row_ids = tuple(row.provenance.row_id for row in training_batch.rows)
+    seeds = {row.provenance.optimizer_step_seed for row in training_batch.rows}
+    if (logical.plan_digest != logical_batch_plan.digest
+            or logical.source_digest != logical_batch_plan.source_digest
+            or logical.generation_binding != logical_batch_plan.generation_binding
+            or logical_batch_plan.logical_row_ids != row_ids
+            or seeds != {logical_batch_plan.optimizer_step_seed}
+            or logical_batch_plan.generation_binding != training_batch.generation_binding
+            or logical_batch_plan.topology_digest != spec.digest):
+        _invalid("C08_LOGICAL_BATCH_PLAN_DRIFT")
+    return logical.loss_executions, logical.gradients
+
+
+def _require_execution_custody(candidate, observed, *, spec, extents):
+    expected_generation = execution_generation_digest(
+        candidate.optimizer.parameters, spec=spec, extents=extents)
+    custody = candidate.parent.custody
+    for execution in observed:
+        if execution.output.generation_binding != expected_generation:
+            _invalid("B11_GRADIENT_EXECUTION_CANDIDATE_MISMATCH")
+        if (custody is None
+                or execution.custody_run_id != custody.run_id
+                or execution.custody_generation != custody.generation
+                or execution.custody_manifest_sha256 != custody.manifest_sha256):
+            _invalid("B11_GRADIENT_EXECUTION_CUSTODY_MISMATCH")
+
+
 def production_candidate_step(
         candidate, gradients=None, *, loss_bearing_target,
         gradient_execution=None, logical_batch_execution=None, training_batch=None,
@@ -37,46 +72,17 @@ def production_candidate_step(
         if logical_batch_execution is not None:
             if gradient_execution is not None or gradients is not None:
                 _invalid("C08_LOGICAL_BATCH_EXECUTION_REQUIRED")
-            logical = require_logical_batch_gradient_execution(
-                logical_batch_execution)
-            if (type(logical_batch_plan) is not BatchPlan
-                    or type(training_batch) is not BamfTrainingBatch):
-                _invalid("C08_LOGICAL_BATCH_PLAN_REQUIRED")
-            logical_batch_plan.__post_init__()
-            training_batch.__post_init__()
-            row_ids = tuple(
-                row.provenance.row_id for row in training_batch.rows)
-            seeds = {row.provenance.optimizer_step_seed for row in training_batch.rows}
-            if (logical.plan_digest != logical_batch_plan.digest
-                    or logical.source_digest != logical_batch_plan.source_digest
-                    or logical.generation_binding != logical_batch_plan.generation_binding
-                    or logical_batch_plan.logical_row_ids != row_ids
-                    or seeds != {logical_batch_plan.optimizer_step_seed}
-                    or logical_batch_plan.generation_binding
-                    != training_batch.generation_binding
-                    or logical_batch_plan.topology_digest != spec.digest):
-                _invalid("C08_LOGICAL_BATCH_PLAN_DRIFT")
-            loss_executions = logical.loss_executions
-            actual_gradients = logical.gradients
+            loss_executions, actual_gradients = _logical_batch_inputs(
+                logical_batch_execution, training_batch, logical_batch_plan, spec)
         else:
             if logical_batch_plan is not None:
                 _invalid("C08_LOGICAL_BATCH_PLAN_UNEXPECTED")
             if type(gradient_execution) is not BamfGradientExecution:
                 _invalid("B11_GRADIENT_EXECUTION_REQUIRED")
             gradient_execution.__post_init__()
-        expected_generation = execution_generation_digest(
-            candidate.optimizer.parameters, spec=spec, extents=extents)
-        custody = candidate.parent.custody
         observed = (loss_executions if loss_executions is not None
                     else (gradient_execution.execution,))
-        for execution in observed:
-            if execution.output.generation_binding != expected_generation:
-                _invalid("B11_GRADIENT_EXECUTION_CANDIDATE_MISMATCH")
-            if (custody is None
-                    or execution.custody_run_id != custody.run_id
-                    or execution.custody_generation != custody.generation
-                    or execution.custody_manifest_sha256 != custody.manifest_sha256):
-                _invalid("B11_GRADIENT_EXECUTION_CUSTODY_MISMATCH")
+        _require_execution_custody(candidate, observed, spec=spec, extents=extents)
         if loss_executions is None:
             loss_execution = gradient_execution.execution
             actual_gradients = gradient_execution.gradients
