@@ -5,6 +5,7 @@ from contextlib import contextmanager, redirect_stderr, redirect_stdout
 import io
 import json
 from pathlib import Path
+import shutil
 from unittest.mock import patch
 
 from bilqis_mlx.cli import main
@@ -174,6 +175,22 @@ class BamfResumeTests(BamfFirstStudentCase):
         self.assertEqual((code, output), (2, ""))
         self.assertIn("BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY", errors)
         self.assertEqual(_tree_snapshot(target), before)
+
+    def test_trust_only_pointerless_resume_is_intercepted_before_learner(self):
+        target = self.root / "trust-only-bamf"
+        receipt = self.preflight(target)
+        run_id = receipt.run_identity.run_id
+        shutil.rmtree(target)
+        with patch(
+                "bilqis_mlx.presentation.operator_cli.command._invoke_learner",
+                side_effect=AssertionError("legacy learner must not inspect BAMF v2 trust")):
+            code, output, errors = self.invoke([
+                "--human-run", "--resume", "--run-dir", str(target),
+                "--run-id", run_id,
+            ])
+        self.assertEqual((code, output), (2, ""))
+        self.assertIn("BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY", errors)
+        self.assertFalse(target.exists())
 
     def test_resume_conflicting_seed_and_optimizer_reject_before_writes(self):
         target = self.root / "accepted-bamf"

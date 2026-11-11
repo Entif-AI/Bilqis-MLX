@@ -93,8 +93,11 @@ def _add_training_execution_args(parser) -> None:
                         help="Explicit original checkpoint; the existing source fingerprint still applies")
     parser.add_argument("--verify-source", action="store_true",
                         help="Recheck all 216 candidate records against the pinned source (neural-inert)")
-    parser.add_argument("--human-run", action="store_true",
-                        help="Explicitly authorizes actual optimizer steps by the human operator")
+    parser.add_argument(
+        "--human-run", action="store_true",
+        help=("Explicit human authorization for mutating operator actions; legacy learner "
+              "paths may perform optimizer steps, while BAMF v2 create/enrollment remains "
+              "neural-inert."))
     parser.add_argument("--autonomous-curriculum", action="store_true",
                         help="After --human-run authorization, autonomously measure, teach, and remeasure factory evidence while preserving the school scheduler")
     parser.add_argument("--issue-349-experiment-root", type=Path,

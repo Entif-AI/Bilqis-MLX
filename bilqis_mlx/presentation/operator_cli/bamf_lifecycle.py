@@ -132,7 +132,7 @@ def _saved_policy(run_dir: Path) -> str:
     return lease.admission_policy
 
 
-def _validate_resume_overrides(args, requested_topology, student, atlas):
+def _validate_resume_overrides(args, student):
     identity = student.run_identity
     if identity is None:
         invalid("BAMF_OPERATOR_RESUME_RUN_IDENTITY_REQUIRED")
@@ -140,16 +140,23 @@ def _validate_resume_overrides(args, requested_topology, student, atlas):
         invalid("BAMF_OPERATOR_RESUME_RUN_ID_CONFLICT")
     if args.run_seed is not None and args.run_seed != identity.run_seed:
         invalid("BAMF_OPERATOR_RESUME_RUN_SEED_CONFLICT")
+    requested_topology = None
+    if args.model_topology is not None:
+        from bilqis_mlx.runtime.topology_lifecycle import topology_from_file
+        requested_topology = topology_from_file(args.model_topology)
     if requested_topology is not None and requested_topology != student.topology:
         invalid("BAMF_OPERATOR_RESUME_TOPOLOGY_CONFLICT")
     requested_hp = foundation_hyperparameters(args, required=False)
     if requested_hp is not None and requested_hp != student.optimizer_hyperparameters:
         invalid("BAMF_OPERATOR_RESUME_OPTIMIZER_CONFLICT")
+    return identity
+
+
+def _validate_resume_atlas_override(args, atlas):
     if args.atlas_release_manifest is not None:
         requested_atlas = atlas_manifest_identity(args.atlas_release_manifest)
         if requested_atlas != atlas:
             invalid("BAMF_OPERATOR_RESUME_ATLAS_MANIFEST_CONFLICT")
-    return identity
 
 
 def _resume(args, requested_topology):
@@ -166,10 +173,9 @@ def _resume(args, requested_topology):
         request = read_atlas_enrollment_request_v2(args.atlas_admission_scope)
     pointer = run_dir / "bamf-state.json"
     student, manifest_sha256 = load_bamf_generation_authority(pointer)
-    identity = student.run_identity
+    identity = _validate_resume_overrides(args, student)
     atlas = _accepted_atlas(run_dir, identity)
-    identity = _validate_resume_overrides(
-        args, requested_topology, student, atlas)
+    _validate_resume_atlas_override(args, atlas)
 
     if request is not None:
         from bilqis_mlx.runtime.atlas_admission import enroll_accepted_atlas_lease_v2
@@ -227,10 +233,11 @@ def bamf_lifecycle(args, topology):
             invalid("BAMF_OPERATOR_CREATE_EXPLICIT_HUMAN_REQUEST_REQUIRED")
     _validate_fresh_request_compatibility(args, topology, atlas, request)
     from bilqis_mlx.runtime._bamf_first_student_support import (
-        _canonical_disjoint_run_paths, _fresh_run_dir,
+        _canonical_disjoint_run_paths, _canonical_run_dir_shape, _fresh_run_dir,
     )
+    target = _canonical_run_dir_shape(args.run_dir)
     _source, target = _canonical_disjoint_run_paths(
-        str(source_run_dir()), args.run_dir)
+        str(source_run_dir()), target)
     pointer_path = target / "bamf-state.json"
     if pointer_path.exists() or pointer_path.is_symlink():
         invalid("BAMF_OPERATOR_CREATE_USE_RESUME")

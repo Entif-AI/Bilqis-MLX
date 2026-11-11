@@ -136,6 +136,26 @@ class BamfPublicationTests(unittest.TestCase):
             entered.append("retry")
         self.assertEqual(entered, ["retry"])
 
+    def test_pointer_lock_durability_error_survives_unlock_failure(self):
+        self.run.mkdir()
+        durability = OSError("durability failure")
+        real_flock = publication_storage.fcntl.flock
+
+        def fail_unlock(fd, operation):
+            if operation == publication_storage.fcntl.LOCK_UN:
+                raise OSError("unlock failure")
+            return real_flock(fd, operation)
+
+        with patch.object(publication_storage.os, "fsync", side_effect=durability), \
+                patch.object(publication_storage.fcntl, "flock", side_effect=fail_unlock), \
+                self.assertRaises(OSError) as failure:
+            with publication_storage._initial_generation_pointer_lock(self.run):
+                self.fail("durability failure must precede owner body")
+        self.assertIs(failure.exception, durability)
+        self.assertIn(
+            "BAMF_POINTER_LOCK_RELEASE_FAILED:OSError",
+            getattr(durability, "__notes__", ()))
+
     def test_pointer_lock_reopen_repeats_file_and_directory_fsync(self):
         self.run.mkdir()
         directory_syncs = []

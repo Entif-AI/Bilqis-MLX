@@ -93,6 +93,7 @@ def _pointer_lock(run_dir: Path, *, create: bool = False):
         except OSError:
             invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
     locked = False
+    primary_error = None
     try:
         opened = os.fstat(fd)
         try:
@@ -109,11 +110,33 @@ def _pointer_lock(run_dir: Path, *, create: bool = False):
         locked = True
         os.fsync(fd)
         _fsync_directory(run_dir)
-        yield
+        try:
+            yield
+        except BaseException as error:
+            primary_error = error
+            raise
+    except BaseException as error:
+        if primary_error is None:
+            primary_error = error
+        raise
     finally:
+        cleanup_error = None
         if locked:
-            fcntl.flock(fd, fcntl.LOCK_UN)
-        os.close(fd)
+            try:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            except OSError as error:
+                cleanup_error = error
+        try:
+            os.close(fd)
+        except OSError as error:
+            if cleanup_error is None:
+                cleanup_error = error
+        if cleanup_error is not None:
+            if primary_error is not None:
+                primary_error.add_note(
+                    "BAMF_POINTER_LOCK_RELEASE_FAILED:" + cleanup_error.__class__.__name__)
+            else:
+                raise cleanup_error
 
 
 def _initial_generation_pointer_lock(run_dir: Path):

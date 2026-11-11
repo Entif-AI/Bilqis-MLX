@@ -26,7 +26,8 @@ def diagnostics(run_dir: Path):
 
 def _bamf_or_topology(args):
     """Route BAMF v2 before legacy training while preserving C07 early failure."""
-    bamf_pointer = Path(args.run_dir).expanduser() / "bamf-state.json"
+    run_dir = Path(args.run_dir).expanduser()
+    bamf_pointer = run_dir / "bamf-state.json"
     fresh_v2_intent = (
         not args.resume
         and (args.bamf_v2_foundation_explicit or args.model_topology is not None)
@@ -43,15 +44,6 @@ def _bamf_or_topology(args):
             and not bamf_pointer.exists() and not bamf_pointer.is_symlink()):
         from bilqis_mlx.runtime.atlas_admission import validate_atlas_command_request
         validate_atlas_command_request(args)
-    from bilqis_mlx.runtime.topology_lifecycle import topology_from_file
-    try:
-        topology = topology_from_file(args.model_topology)
-    except BilqisError:
-        if fresh_v2_intent:
-            from .bamf_lifecycle_inputs import invalid
-            invalid("BAMF_OPERATOR_V2_TOPOLOGY_REQUIRED")
-        raise
-    run_dir = Path(args.run_dir).expanduser()
     interrupted_v2 = any(
         path.exists() or path.is_symlink()
         for path in (
@@ -61,6 +53,9 @@ def _bamf_or_topology(args):
             run_dir / ".bamf-staging",
         )
     )
+    if args.resume and isinstance(args.run_id, str) and args.run_id:
+        from bilqis_mlx.runtime.bamf_bundle.publication.genesis_trust import _stored_trust
+        interrupted_v2 = interrupted_v2 or _stored_trust(args.run_id) is not None
     if (args.resume and not bamf_pointer.exists() and not bamf_pointer.is_symlink()
             and interrupted_v2):
         from bilqis_mlx.runtime.bamf_bundle.publication.storage import (
@@ -69,15 +64,27 @@ def _bamf_or_topology(args):
         _validate_initial_generation_lifecycle_markers(run_dir)
         from .bamf_lifecycle_inputs import invalid
         invalid("BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY")
+    resume_v2_intent = (
+        args.resume
+        and (bamf_pointer.exists() or bamf_pointer.is_symlink()
+             or args.bamf_v2_foundation_explicit or args.model_topology is not None)
+    )
+    if resume_v2_intent:
+        from .bamf_lifecycle import bamf_lifecycle
+        return True, _print_status(bamf_lifecycle(args, None)), None
+
+    from bilqis_mlx.runtime.topology_lifecycle import topology_from_file
+    try:
+        topology = topology_from_file(args.model_topology)
+    except BilqisError:
+        if fresh_v2_intent:
+            from .bamf_lifecycle_inputs import invalid
+            invalid("BAMF_OPERATOR_V2_TOPOLOGY_REQUIRED")
+        raise
     from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
     if fresh_v2_intent and not isinstance(topology, ModelTopologySpecV2):
         from .bamf_lifecycle_inputs import invalid
         invalid("BAMF_OPERATOR_V2_TOPOLOGY_REQUIRED")
-    if (args.resume and isinstance(topology, ModelTopologySpecV2)
-            and not bamf_pointer.exists() and not bamf_pointer.is_symlink()):
-        from .bamf_preflight import bamf_preflight
-        _print_status(bamf_preflight(args, topology).to_record())
-        return True, 2, topology
     if (isinstance(topology, ModelTopologySpecV2)
             or (args.resume and (bamf_pointer.exists() or bamf_pointer.is_symlink()))):
         from .bamf_lifecycle import bamf_lifecycle

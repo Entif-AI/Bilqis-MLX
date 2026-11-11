@@ -243,7 +243,8 @@ def publish_candidate(run_dir, bundle, *, foundation_features=None):
     bundle = _normalize_candidate_for_parent(bundle, parent)
     return publish_bamf_generation(
         run_dir, bundle,
-        acceptance=acceptance(bundle, parent=parent.retained_state))
+        acceptance=acceptance(bundle, parent=parent.retained_state),
+        reserve_gib=0.)
 
 
 __all__ = (

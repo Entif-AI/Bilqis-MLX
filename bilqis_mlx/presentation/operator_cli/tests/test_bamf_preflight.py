@@ -211,10 +211,12 @@ class BamfPreflightTests(unittest.TestCase):
         with redirect_stdout(output), self.assertRaises(SystemExit) as stopped:
             parse_args(['train', '--help'])
         self.assertEqual(stopped.exception.code, 0)
-        help_text = ' '.join(output.getvalue().split())
+        help_text = ' '.join(output.getvalue().split()).replace('- ', '-')
         for text in (
             'PROVISIONAL max new wrong answers on any protected capability',
-            'Explicitly authorizes actual optimizer steps by the human operator',
+            ('Explicit human authorization for mutating operator actions; legacy learner '
+             'paths may perform optimizer steps, while BAMF v2 create/enrollment remains '
+             'neural-inert.'),
             'autonomously measure, teach, and remeasure factory evidence',
             'Optional complete visit cap',
             'low-overhead nanosecond timing markers',

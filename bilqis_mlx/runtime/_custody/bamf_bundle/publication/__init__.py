@@ -32,7 +32,7 @@ from .retry import (
 )
 from .storage import (
     ACCEPTANCE_DIR, _acceptance_path, _atomic_pointer, _live_bundle_manifest,
-    _initial_generation_pointer_lock, _pointer_lock, _read_pointer,
+    _fsync_directory, _initial_generation_pointer_lock, _pointer_lock, _read_pointer,
     _remove_stage, _require_bundle_root, _require_run_root, _stage, _write_acceptance,
 )
 
@@ -194,11 +194,8 @@ def _publish_authorized_generation(
                 _remove_stage(stage)
             else:
                 stage.rename(target)
-                directory = os.open(target.parent, os.O_RDONLY)
-                try:
-                    os.fsync(directory)
-                finally:
-                    os.close(directory)
+                _fsync_directory(stage.parent)
+                _fsync_directory(target.parent)
             if prepared is not None:
                 publish_initial_generation_trust_root(run_dir, prepared, digest)
             _write_acceptance(run_dir, digest, authority)
