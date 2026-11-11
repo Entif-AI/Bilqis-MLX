@@ -9,7 +9,7 @@ from pathlib import Path
 import stat
 from collections.abc import Mapping
 
-from .records import invalid
+from ..records import invalid
 
 
 SOURCE_AUTHORITY_REGISTRY_FILE = "source-authority-registry.json"
@@ -26,7 +26,7 @@ _TRUST_ROOT_MISMATCH = "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH"
 @contextlib.contextmanager
 def source_authority_registry_lock(run_dir: Path):
     """Serialize the project-owned trust-root provisioner with authority leases."""
-    from .publication.storage import _require_run_root
+    from ..publication.storage import _require_run_root
 
     root = Path(run_dir)
     _require_run_root(root)
@@ -106,7 +106,7 @@ def _bind_host_source_authority_registry(run_dir: Path, correction_frontier):
 
 def read_host_system_source_authority_registry():
     """Read the one fixed host-administered C09 root without a caller-selected path."""
-    from ._darwin_source_authority import open_host_source_authority_registry_fd
+    from .._darwin_source_authority import open_host_source_authority_registry_fd
 
     fd = open_host_source_authority_registry_fd(max_bytes=_MAX_REGISTRY_BYTES)
     try:

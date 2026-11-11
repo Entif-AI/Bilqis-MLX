@@ -22,22 +22,34 @@ from .atlas_lease_contracts import (
 class AtlasAdmissionContextV2:
     legacy: AtlasAdmissionContext
     run_dir: Path
+    runtime: object | None = None
+    source_authority: object | None = None
 
     def __post_init__(self):
+        legacy_production = (
+            self.legacy.runtime, self.legacy.native_staged,
+            self.legacy.source_authority,
+        ) if isinstance(self.legacy, AtlasAdmissionContext) else (None, None, None)
         if (not isinstance(self.legacy, AtlasAdmissionContext)
-                or not isinstance(self.run_dir, Path)):
+                or not isinstance(self.run_dir, Path)
+                or ((self.runtime is None) != (self.source_authority is None))
+                or (self.runtime is not None
+                    and (any(value is not None for value in legacy_production)
+                         or self.legacy.source_registry is None
+                         or self.legacy.answer_registry is None))):
             _invalid('BAMF_ATLAS_V2_CONTEXT_INVALID')
 
 
 @dataclass(frozen=True)
 class AtlasDeltaEnvelopeV2:
     handoff: AtlasDeltaScopeHandoff
-    native_staged: A02StagedVocabularyExtension
+    native_staged: A02StagedVocabularyExtension | None
     schema_version: str = 'bilqis.c07.atlas-delta-envelope/v2'
 
     def __post_init__(self):
         if (not isinstance(self.handoff, AtlasDeltaScopeHandoff)
-                or not isinstance(self.native_staged, A02StagedVocabularyExtension)
+                or (self.native_staged is not None
+                    and not isinstance(self.native_staged, A02StagedVocabularyExtension))
                 or self.schema_version != 'bilqis.c07.atlas-delta-envelope/v2'):
             _invalid('BAMF_ATLAS_V2_DELTA_INVALID')
 
@@ -56,13 +68,14 @@ class AtlasDerivedAdmissionFactsV2:
             self.semantic_banks,
             self.motif_pages,
             self.total_atlas_semantic_identities,
-            self.new_semantic_identities,
         )
         bounds = (
             self.checkpoint_bytes_lower_bound,
             self.required_available_bytes_lower_bound,
         )
         if (any(type(value) is not int or value < 1 for value in positive)
+                or type(self.new_semantic_identities) is not int
+                or self.new_semantic_identities < 0
                 or any(type(value) is not int or value < 0 for value in bounds)):
             _invalid('BAMF_ATLAS_V2_DERIVED_FACTS_INVALID')
 
@@ -103,16 +116,30 @@ def _accepted_run_bindings(current: AtlasAdmissionContextV2, delta: AtlasDeltaEn
             or cache.source_authority_registry_sha256 is None
             or cache.source_authority_registry_sha256 != legacy.registry.digest):
         _invalid('BAMF_ATLAS_V2_ACCEPTED_RUN_DRIFT')
-    _authenticate_native_staged_candidate(current.run_dir, delta.native_staged)
+    if delta.native_staged is not None:
+        _authenticate_native_staged_candidate(current.run_dir, delta.native_staged)
 
 
-def _derive_v2_facts(delta: AtlasDeltaEnvelopeV2) -> AtlasDerivedAdmissionFactsV2:
+def _derive_v2_facts(
+        current: AtlasAdmissionContextV2,
+        delta: AtlasDeltaEnvelopeV2) -> AtlasDerivedAdmissionFactsV2:
     from bilqis_mlx.factory.candidate_realizations import realized_atlas_semantic_id
     from bilqis_mlx.runtime.bamf_bundle.vocabulary.admission_facts import (
         read_issued_a02_staged_admission_facts_v2,
     )
+    from bilqis_mlx.runtime.atlas_capability_facts_v2 import (
+        read_capability_only_admission_facts_v2,
+    )
 
     handoff = delta.handoff
+    introduced = tuple(handoff.receipt.selection.introduced_semantic_ids)
+    added_capabilities = tuple(handoff.receipt.selection.introduced_capability_ids)
+    if not introduced:
+        if not added_capabilities or delta.native_staged is not None:
+            _invalid('BAMF_ATLAS_V2_DELTA_INVALID')
+        return read_capability_only_admission_facts_v2(current.run_dir, handoff)
+    if delta.native_staged is None:
+        _invalid('BAMF_ATLAS_V2_DELTA_INVALID')
     a02 = read_issued_a02_staged_admission_facts_v2(delta.native_staged)
     try:
         expected_atlas_ids = tuple(
@@ -134,6 +161,23 @@ def _derive_v2_facts(delta: AtlasDeltaEnvelopeV2) -> AtlasDerivedAdmissionFactsV
     )
 
 
+def _require_exact_atlas_release(
+        current: AtlasAdmissionContextV2,
+        handoff: AtlasDeltaScopeHandoff,
+        lease: AtlasAdmissionLeaseV2) -> None:
+    from bilqis_mlx.runtime.bamf_bundle import (
+        read_accepted_generation_feature_context,
+    )
+
+    context = read_accepted_generation_feature_context(
+        current.run_dir / 'bamf-state.json')
+    semantic_release = handoff.receipt.selection_snapshot.semantic_release
+    if (lease.source_approval.atlas_release_sha256 != semantic_release
+            or context.receipt.source_release_sha256 != semantic_release
+            or context.features.semantic_release != semantic_release):
+        _invalid('BAMF_ATLAS_V2_RELEASE_AUTHORITY_DRIFT')
+
+
 def _require_current_v2_lease(
         current: AtlasAdmissionContextV2,
         lease: AtlasAdmissionLeaseV2) -> None:
@@ -149,11 +193,20 @@ def _require_current_v2_lease(
         _invalid('BAMF_ATLAS_V2_LEASE_CURRENT_AUTHORITY_DRIFT')
 
 
-def _replay_a09_proposal(current: AtlasAdmissionContextV2, handoff):
+def replay_atlas_delta_scope_handoff_v2(
+        current: AtlasAdmissionContextV2,
+        handoff: AtlasDeltaScopeHandoff):
+    """Replay one exact A09 v2 handoff, including its complete reserve set."""
     from ..factory.jit_curriculum import propose_curriculum_delta
 
     legacy = current.legacy
+    handoff.verify()
     staged = handoff.staged_candidate
+    matches = tuple(
+        item for item in handoff.candidate_frontier.candidates
+        if item.candidate_id == staged.candidate_id)
+    if len(matches) != 1:
+        _invalid('BAMF_ATLAS_V2_PROPOSAL_CONTEXT_DRIFT')
     staged.verify(legacy.frontier, legacy.current_release)
     deferred = tuple(sorted(
         item.candidate_id for item in handoff.candidate_frontier.candidates
@@ -166,27 +219,17 @@ def _replay_a09_proposal(current: AtlasAdmissionContextV2, handoff):
             deferred_candidate_ids=deferred)
     except (ValueError, TypeError, KeyError, AttributeError):
         _invalid('BAMF_ATLAS_V2_PROPOSAL_CONTEXT_DRIFT')
-    if fresh != handoff.proposal:
+    if (fresh != handoff.proposal
+            or fresh.selected_successor_sha256
+               != staged.successor.release_sha256
+            or fresh.current_release_sha256
+               != legacy.current_release.release_sha256):
         _invalid('BAMF_ATLAS_V2_PROPOSAL_CONTEXT_DRIFT')
+    return staged
 
 
-def advance_atlas_frontier_v2(current, delta, lease):
-    """Verify one v2 delta for C07; #958 itself never publishes B13 state."""
-    if (not isinstance(current, AtlasAdmissionContextV2)
-            or not isinstance(delta, AtlasDeltaEnvelopeV2)
-            or (lease is not None
-                and not isinstance(lease, (AtlasAdmissionLease, AtlasAdmissionLeaseV2)))):
-        _invalid('BAMF_ATLAS_V2_ARGUMENT_INVALID')
-
-    handoff = delta.handoff
-    handoff.verify()
-    _accepted_run_bindings(current, delta)
-
+def _v2_policy_hold(current, handoff, lease, facts):
     legacy = current.legacy
-    from .jit_adoption import verify_current_implementations
-    _replay_a09_proposal(current, handoff)
-
-    facts = _derive_v2_facts(delta)
     legacy.source_approval.verify_signature(legacy.registry)
     if not isinstance(lease, AtlasAdmissionLeaseV2):
         return _staged(
@@ -196,6 +239,7 @@ def advance_atlas_frontier_v2(current, delta, lease):
     if lease.run_identity != legacy.run_identity:
         _invalid('BAMF_ATLAS_V2_LEASE_RUN_IDENTITY_DRIFT')
     _require_current_v2_lease(current, lease)
+    _require_exact_atlas_release(current, handoff, lease)
     lease.source_approval.verify_signature(legacy.registry)
     approval = legacy.source_approval
     if not approval.audit_passed or not approval.rights_compatible:
@@ -209,7 +253,6 @@ def advance_atlas_frontier_v2(current, delta, lease):
             current, handoff, lease, 'OUT_OF_LEASE_SCOPE',
             'Review the exact release, source rights, family/operator and policy scope '
             'before requesting a new v2 lease.')
-
     ceiling = lease.resource_ceiling
     if any(value > maximum for value, maximum in (
             (facts.semantic_banks, ceiling.max_semantic_banks),
@@ -231,9 +274,19 @@ def advance_atlas_frontier_v2(current, delta, lease):
         return _staged(
             current, handoff, lease, 'DELTA_BUDGET',
             'Split the qualified closure under its versioned per-delta admission budget.')
+    return None
 
-    from .atlas_production_admission import current_implementation_registries
-    source_registry, answer_registry = current_implementation_registries(legacy)
+
+def _verify_v2_current_implementations(current, handoff):
+    from .jit_adoption import verify_current_implementations
+
+    if current.runtime is not None:
+        from bilqis_mlx.factory.live_answers import live_answer_registry
+        from bilqis_mlx.source_adapters.school import live_source_registry
+        source_registry, answer_registry = live_source_registry(), live_answer_registry()
+    else:
+        from .atlas_production_admission import current_implementation_registries
+        source_registry, answer_registry = current_implementation_registries(current.legacy)
     try:
         verify_current_implementations(
             handoff.staged_candidate.successor, source_registry, answer_registry)
@@ -246,6 +299,39 @@ def advance_atlas_frontier_v2(current, delta, lease):
         }.get(str(error), 'BAMF_ATLAS_IMPLEMENTATION_REVALIDATION_FAILED')
         _invalid(reason)
 
+
+def advance_atlas_frontier_v2(current, delta, lease):
+    """Verify one v2 delta for C07; #958 itself never publishes B13 state."""
+    if (not isinstance(current, AtlasAdmissionContextV2)
+            or not isinstance(delta, AtlasDeltaEnvelopeV2)
+            or (lease is not None
+                and not isinstance(lease, (AtlasAdmissionLease, AtlasAdmissionLeaseV2)))):
+        _invalid('BAMF_ATLAS_V2_ARGUMENT_INVALID')
+
+    handoff = delta.handoff
+    handoff.verify()
+    introduced = tuple(handoff.receipt.selection.introduced_semantic_ids)
+    added_capabilities = tuple(handoff.receipt.selection.introduced_capability_ids)
+    if not introduced:
+        if not added_capabilities or delta.native_staged is not None:
+            _invalid('BAMF_ATLAS_V2_DELTA_INVALID')
+    elif delta.native_staged is None:
+        _invalid('BAMF_ATLAS_V2_DELTA_INVALID')
+    _accepted_run_bindings(current, delta)
+
+    replay_atlas_delta_scope_handoff_v2(current, handoff)
+
+    facts = _derive_v2_facts(current, delta)
+    hold = _v2_policy_hold(current, handoff, lease, facts)
+    if hold is not None:
+        return hold
+    _verify_v2_current_implementations(current, handoff)
+
+    if facts.new_semantic_identities == 0:
+        return _staged(
+            current, handoff, lease, 'V2_CAPABILITY_ONLY_AUTHORITY_VERIFIED',
+            'The zero-ID A09/B13 v2 authority is verified. Hand the exact '
+            'artifacts to the C07.1c Factory-adoption owner.')
     return _staged(
         current, handoff, lease, 'V2_DELTA_AUTHORITY_VERIFIED',
         'The signer-free A09/A02/B13 v2 authority is verified. Hand the exact '

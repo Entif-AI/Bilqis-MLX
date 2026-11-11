@@ -14,6 +14,17 @@ from bilqis_mlx.learning.atlas_acceptance import (
 from ..atlas_admission import (
     ATLAS_ADMISSION_SCHEMA, AtlasAdmissionBinding, ParsedAtlasAdmissionBinding,
 )
+from ..factory_release.admission import (
+    FACTORY_RELEASE_ADMISSION_SCHEMA,
+    FactoryReleaseAdmissionBinding,
+    ParsedFactoryReleaseAdmissionBinding,
+    require_factory_release_inert_state,
+    validate_parsed_factory_release_admission_binding,
+)
+from ..factory_release_adoption import (
+    is_factory_release_adoption_transition,
+    require_issued_factory_release_adoption_transition,
+)
 from ..package_import_transition import (
     is_package_import_transition, require_issued_package_import_transition,
 )
@@ -77,6 +88,11 @@ def validate_parent_transition(
         if (parent.topology.digest != candidate.topology.digest
                 or parent.extents.digest != candidate.extents.digest
                 or candidate_step != parent_step):
+            invalid("BAMF_GENERATION_TRANSITION_INVALID")
+    elif is_factory_release_adoption_transition(candidate.transition):
+        require_issued_factory_release_adoption_transition(candidate.transition)
+        require_factory_release_inert_state(parent, candidate)
+        if candidate_step != parent_step:
             invalid("BAMF_GENERATION_TRANSITION_INVALID")
     else:
         kind = ("MODEL_SWAP" if parent.topology.digest != candidate.topology.digest else
@@ -219,7 +235,10 @@ def require_published_acceptance(
         invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
     try:
         record = json.loads(acceptance_path.read_bytes())
-        if student.generation == 0:
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+    if student.generation == 0:
+        try:
             from ..genesis import (
                 InitialGenerationBinding,
                 validate_parsed_initial_generation_binding,
@@ -227,13 +246,22 @@ def require_published_acceptance(
             acceptance = InitialGenerationBinding.from_record(record)
             validate_parsed_initial_generation_binding(
                 student, acceptance, pointer["acceptance_sha256"])
-        else:
-            if record.get("schema_version") == ATLAS_ADMISSION_SCHEMA:
-                acceptance = AtlasAdmissionBinding.from_record(record)
-            else:
-                acceptance = AcceptedCandidateBinding.from_record(record)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError, BilqisError):
-        invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+        except BilqisError:
+            invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+    elif record.get("schema_version") == FACTORY_RELEASE_ADMISSION_SCHEMA:
+        acceptance = FactoryReleaseAdmissionBinding.from_record(record)
+    else:
+        try:
+            acceptance = (
+                AtlasAdmissionBinding.from_record(record)
+                if record.get("schema_version") == ATLAS_ADMISSION_SCHEMA
+                else AcceptedCandidateBinding.from_record(record))
+        except BilqisError:
+            invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+    if (student.generation > 0
+            and record.get("schema_version") == FACTORY_RELEASE_ADMISSION_SCHEMA):
+        validate_parsed_factory_release_admission_binding(
+            student, acceptance, pointer["acceptance_sha256"])
     if student.generation == 0:
         from .genesis_trust import require_initial_generation_trust_root
         require_initial_generation_trust_root(pointer, student, acceptance)
@@ -245,7 +273,9 @@ def require_published_acceptance(
             or acceptance.optimizer_step != student.retained_state.optimizer_step
             or acceptance.candidate_identity_sha256
             != candidate_identity_digest(student.retained_state)
-            or (not isinstance(acceptance, ParsedAtlasAdmissionBinding)
+            or (not isinstance(acceptance, (
+                    ParsedAtlasAdmissionBinding,
+                    ParsedFactoryReleaseAdmissionBinding))
                 and (acceptance.schema_version != ACCEPTANCE_SCHEMA
                      or acceptance.step_proof_sha256 != tuple(
                          proof.digest for proof in student.retained_state.step_proofs)
@@ -265,7 +295,9 @@ def require_published_acceptance(
             or parent.generation + 1 != student.generation
             or (not legacy_student
                 and parent.run_identity != student.run_identity)
-            or (isinstance(acceptance, ParsedAtlasAdmissionBinding)
+            or (isinstance(acceptance, (
+                    ParsedAtlasAdmissionBinding,
+                    ParsedFactoryReleaseAdmissionBinding))
                 and acceptance.parent_candidate_identity_sha256
                 != candidate_identity_digest(parent.retained_state))):
         invalid("BAMF_RUN_IDENTITY_DRIFT")

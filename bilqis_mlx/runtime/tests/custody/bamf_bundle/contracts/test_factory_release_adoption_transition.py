@@ -4,6 +4,8 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.runtime.bamf_bundle.factory_release_adoption import (
+    FACTORY_RELEASE_ADOPTION_EVENT,
+    FACTORY_RELEASE_ADOPTION_EVENT_SCHEMA,
     FACTORY_RELEASE_ADOPTION_KIND,
     FactoryReleaseAdoptionTransition,
     _issue_factory_release_adoption_transition,
@@ -40,7 +42,6 @@ class FactoryReleaseAdoptionTransitionTests(unittest.TestCase):
             parent,
             parent_manifest_sha256="a" * 64,
             transition=transition,
-            delivery_events=({"event": "FACTORY_RELEASE_ADOPTION"},),
         )
 
         self.assertEqual(successor.generation, parent.generation + 1)
@@ -62,6 +63,12 @@ class FactoryReleaseAdoptionTransitionTests(unittest.TestCase):
         self.assertIs(successor.transition, transition)
         self.assertEqual(successor.transition["kind"], FACTORY_RELEASE_ADOPTION_KIND)
         self.assertFalse(successor.transition["invalidate_derived_caches"])
+        self.assertEqual(len(successor.outbox), 1)
+        event = successor.outbox[0]
+        self.assertEqual(event["event"], FACTORY_RELEASE_ADOPTION_EVENT)
+        self.assertEqual(event["schema"], FACTORY_RELEASE_ADOPTION_EVENT_SCHEMA)
+        self.assertNotIn("event_id", event)
+        self.assertEqual(event["transition_sha256"], transition.digest)
 
 
 if __name__ == "__main__":

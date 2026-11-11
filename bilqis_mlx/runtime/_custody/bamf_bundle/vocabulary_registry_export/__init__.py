@@ -13,12 +13,12 @@ from bilqis_mlx.semantics.atlas.vocabulary_resources import (
 )
 from bilqis_mlx.semantics.atlas_projection import BANK_SIZE
 
-from ._vocabulary_admission_records import (
+from .._vocabulary_admission_records import (
     A02VocabularyStagingReceipt, STAGED_EVENT,
 )
-from .atlas_admission import ParsedAtlasAdmissionBinding
-from .feature.acceptance import accepted_binding_for_manifest, accepted_generation
-from .records import canonical, invalid, sha
+from ..atlas_admission import ParsedAtlasAdmissionBinding
+from ..feature.acceptance import accepted_binding_for_manifest, accepted_generation
+from ..records import canonical, invalid, sha
 
 
 REGISTRY_EXPORT_SCHEMA = "bilqis.mlx.a02-accepted-registry-mirror-export/v1"

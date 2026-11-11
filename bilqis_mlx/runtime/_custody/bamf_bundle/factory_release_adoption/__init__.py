@@ -12,6 +12,10 @@ FACTORY_RELEASE_ADOPTION_TRANSITION_SCHEMA = (
     "bilqis.mlx.bamf-generation-transition/v3"
 )
 FACTORY_RELEASE_ADOPTION_KIND = "FACTORY_RELEASE_ADOPTION"
+FACTORY_RELEASE_ADOPTION_EVENT = "BAMF_FACTORY_RELEASE_ADOPTION_COMMITTED"
+FACTORY_RELEASE_ADOPTION_EVENT_SCHEMA = (
+    "bilqis.mlx.bamf-factory-release-adoption-event/v1"
+)
 _DIGEST_FIELDS = (
     "predecessor_factory_release_sha256",
     "factory_release_sha256",
@@ -76,6 +80,14 @@ class FactoryReleaseAdoptionTransition(Mapping):
         if key not in _FIELDS:
             raise KeyError(key)
         return getattr(self, key)
+
+    def to_record(self) -> dict:
+        return {name: getattr(self, name) for name in _FIELDS}
+
+    @property
+    def digest(self) -> str:
+        from ..records import canonical, sha
+        return sha(canonical(self.to_record()))
 
 
 def is_factory_release_adoption_transition(value) -> bool:
@@ -147,18 +159,32 @@ def derive_factory_release_adoption_candidate(
     *,
     parent_manifest_sha256,
     transition,
-    delivery_events,
 ):
     """Derive generation N+1 while preserving every neural/teacher state owner."""
-    from .records import BamfBundleCandidate, CompleteStudent
+    from ..records import BamfBundleCandidate, CompleteStudent
 
     if (
         type(parent) is not CompleteStudent
         or not _hex(parent_manifest_sha256)
-        or type(delivery_events) is not tuple
     ):
         _invalid()
     transition = require_issued_factory_release_adoption_transition(transition)
+    event = {
+        "event": FACTORY_RELEASE_ADOPTION_EVENT,
+        "schema": FACTORY_RELEASE_ADOPTION_EVENT_SCHEMA,
+        "run_id": parent.run_id,
+        "generation": parent.generation + 1,
+        "optimizer_step": parent.retained_state.optimizer_step,
+        "predecessor_factory_release_sha256":
+            transition.predecessor_factory_release_sha256,
+        "factory_release_sha256": transition.factory_release_sha256,
+        "handoff_sha256": transition.handoff_sha256,
+        "proposal_sha256": transition.proposal_sha256,
+        "selection_receipt_sha256": transition.selection_receipt_sha256,
+        "lease_sha256": transition.lease_sha256,
+        "source_approval_sha256": transition.source_approval_sha256,
+        "transition_sha256": transition.digest,
+    }
     return BamfBundleCandidate(
         parent.run_id,
         parent.generation + 1,
@@ -175,6 +201,6 @@ def derive_factory_release_adoption_candidate(
         dict(parent.teacher_state),
         dict(parent.evaluation_contract),
         transition,
-        delivery_events,
+        (event,),
         parent.run_identity,
     )

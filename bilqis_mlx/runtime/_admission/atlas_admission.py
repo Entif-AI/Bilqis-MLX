@@ -42,6 +42,12 @@ def advance_atlas_frontier_v2(current, delta, lease):
     return advance(current, delta, lease)
 
 
+from .atlas_adoption_v2 import (
+    adopt_capability_only_atlas_successor_v2,
+    adopt_parameter_extension_atlas_successor_v2,
+)
+
+
 def add_atlas_admission_arguments(parser):
     parser.add_argument('--admission-policy', choices=('staged', 'atlas-release'), default='staged',
                         help='Stage new source successors unless an explicit Atlas admission lease authorizes them.')
@@ -220,6 +226,9 @@ def read_accepted_atlas_factory_release(run_dir):
     from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
         ParsedAtlasAdmissionBinding,
     )
+    from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
+        ParsedFactoryReleaseAdmissionBinding,
+    )
     from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
         accepted_binding_for_manifest, accepted_generation,
@@ -242,7 +251,9 @@ def read_accepted_atlas_factory_release(run_dir):
         binding = accepted_binding_for_manifest(
             root, manifest_sha256, student,
             expected_acceptance_sha256=acceptance_sha256)
-        if isinstance(binding, ParsedAtlasAdmissionBinding):
+        if isinstance(binding, (
+                ParsedAtlasAdmissionBinding,
+                ParsedFactoryReleaseAdmissionBinding)):
             digest = binding.factory_release_sha256
             break
         if student.generation == 0:

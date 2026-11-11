@@ -14,6 +14,11 @@ from ..atlas_admission import (
     AtlasAdmissionBinding, ParsedAtlasAdmissionBinding,
     require_atlas_admission_binding,
 )
+from ..factory_release.admission import (
+    FactoryReleaseAdmissionBinding,
+    ParsedFactoryReleaseAdmissionBinding,
+    require_factory_release_admission_binding,
+)
 from ..codec import load_bamf_bundle, save_bamf_bundle
 from ..records import (
     BAMF_POINTER_SCHEMA, BamfBundleCandidate, CompleteStudent, invalid,
@@ -110,6 +115,16 @@ def publish_atlas_admission_generation(
         run_dir, candidate, admitted, reserve_gib=reserve_gib)
 
 
+def publish_factory_release_adoption_generation(
+        run_dir: Path, candidate: BamfBundleCandidate, *,
+        admission: FactoryReleaseAdmissionBinding,
+        reserve_gib: float = 100.0) -> dict:
+    """Publish one neural-inert Factory-release successor through B13 custody."""
+    admitted = require_factory_release_admission_binding(candidate, admission)
+    return _publish_authorized_generation(
+        run_dir, candidate, admitted, reserve_gib=reserve_gib)
+
+
 def _existing_initial_generation_retry(
         run_dir: Path, candidate: BamfBundleCandidate, prepared):
     """Converge an exact sealed genesis retry without depending on mutable upstream."""
@@ -130,6 +145,9 @@ def _authorize_publication_candidate(
     if candidate.generation > 0:
         if type(authority) is AtlasAdmissionBinding:
             return require_atlas_admission_binding(candidate, authority), None, None
+        if type(authority) is FactoryReleaseAdmissionBinding:
+            return require_factory_release_admission_binding(
+                candidate, authority), None, None
         accepted = _require_acceptance(candidate, authority)
         return accepted, None, None
     from ..genesis import (
@@ -173,6 +191,8 @@ def _require_retry_acceptance_family(authority, persisted) -> None:
         valid = isinstance(persisted, ParsedAcceptedCandidateBinding)
     elif type(authority) is AtlasAdmissionBinding:
         valid = isinstance(persisted, ParsedAtlasAdmissionBinding)
+    elif type(authority) is FactoryReleaseAdmissionBinding:
+        valid = isinstance(persisted, ParsedFactoryReleaseAdmissionBinding)
     else:
         valid = False
     if (not valid or persisted.digest != authority.digest
