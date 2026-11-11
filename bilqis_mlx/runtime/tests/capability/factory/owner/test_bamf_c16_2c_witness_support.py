@@ -49,11 +49,6 @@ class C16_2CWitnessSupportTests(unittest.TestCase):
                 stdout=(f"vm.swapusage: total = {swap_total:.2f}M  "
                         f"used = {used:.2f}M  free = {swap_free:.2f}M  (encrypted)\n"),
                 stderr="")
-        if command == ["ps", "-axo", "pid=,ppid=,command="]:
-            body = processes or (
-                f"{os.getpid()} {os.getppid()} python -m pytest current\n"
-                f"{os.getppid()} 1 detached_long_run.py _worker current\n")
-            return subprocess.CompletedProcess(command, 0, stdout=body, stderr="")
         raise AssertionError(command)
 
     def test_resource_preflight_accepts_serial_healthy_studio(self):
@@ -67,14 +62,13 @@ class C16_2CWitnessSupportTests(unittest.TestCase):
         self.assertEqual(receipt["test_workers"], 1)
         self.assertEqual(receipt["memory_free_percent"], 81)
         self.assertGreater(receipt["swap_free_fraction"], .1)
-        self.assertEqual(receipt["conflicting_processes"], ())
 
     def test_resource_preflight_rejects_parallel_workers(self):
         with patch.dict(os.environ, {"BILQIS_TEST_WORKERS": "4"}):
             with self.assertRaisesRegex(RuntimeError, "C16_2C_MLX_WORKERS_UNSAFE"):
                 require_mlx_verification_resources()
 
-    def test_resource_preflight_rejects_near_saturated_swap(self):
+    def test_resource_preflight_observes_near_saturated_swap_without_veto(self):
         def saturated(command, **kwargs):
             return self._resource_result(command, swap_free=512)
 
@@ -83,8 +77,8 @@ class C16_2CWitnessSupportTests(unittest.TestCase):
             "c16_2c_resource_preflight.subprocess.run",
             side_effect=saturated,
         ):
-            with self.assertRaisesRegex(RuntimeError, "C16_2C_MLX_SWAP_PRESSURE"):
-                require_mlx_verification_resources()
+            receipt = require_mlx_verification_resources()
+        self.assertLess(receipt["swap_free_fraction"], .01)
 
     def test_resource_preflight_rejects_low_free_memory(self):
         def pressured(command, **kwargs):
@@ -96,26 +90,6 @@ class C16_2CWitnessSupportTests(unittest.TestCase):
             side_effect=pressured,
         ):
             with self.assertRaisesRegex(RuntimeError, "C16_2C_MLX_MEMORY_PRESSURE"):
-                require_mlx_verification_resources()
-
-    def test_resource_preflight_rejects_other_heavy_job(self):
-        def busy(command, **kwargs):
-            if command == ["ps", "-axo", "pid=,ppid=,command="]:
-                return self._resource_result(
-                    command,
-                    processes=(
-                        f"{os.getpid()} {os.getppid()} python -m pytest current\n"
-                        f"{os.getppid()} 1 detached_long_run.py _worker current\n"
-                        "98765 1 python -m pytest other_full_model_test.py\n"),
-                )
-            return self._resource_result(command)
-
-        with patch.dict(os.environ, {"BILQIS_TEST_WORKERS": "1"}), patch(
-            "bilqis_mlx.runtime.tests.capability.factory.owner."
-            "c16_2c_resource_preflight.subprocess.run",
-            side_effect=busy,
-        ):
-            with self.assertRaisesRegex(RuntimeError, "C16_2C_MLX_CONCURRENT_JOB"):
                 require_mlx_verification_resources()
 
     def test_future_capability_is_blocked_before_model_execution(self):

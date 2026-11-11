@@ -201,13 +201,13 @@ check. Set `BILQIS_TEST_WORKERS=1` for every stage. Before detaching, run the ch
 `require_mlx_verification_resources()` preflight from
 `c16_2c_resource_preflight.py`; the live test repeats the same gate before foundation
 or model loading. For this disposable qualification the preflight requires at least
-20% system memory free, at least 10% swap headroom, and no other pytest,
-`run_studio_proof.py`, or detached-long-run worker outside the current process
-ancestry. These are conservative C16.2c launch thresholds, not a new repository-wide
-allocator policy. Each live process then enters the repository
+20% system memory free and records swap headroom for the launch receipt. Existing
+independent pytest, Studio-proof, or detached workers do not veto launch; the stage
+itself remains single-worker through `BILQIS_TEST_WORKERS=1`. This is a local C16.2c
+containment rule, not a repository-wide allocator policy. Each live process then enters the repository
 `training_memory_policy(mx)`, which sets the MLX free-buffer cache limit to zero and
-clears the cache before and after the stage. If the preflight fails, do not launch or
-retry until the host state changes.
+clears the cache before and after the stage. If the hard physical-memory or worker-count
+preflight fails, do not launch until that condition changes.
 
 The M3 launch must therefore chain the preflight and detached launch, for example:
 
