@@ -39,6 +39,43 @@ from .support import accepted_c05_decision
 @unittest.skipUnless(os.environ.get("BILQIS_ATLAS_REAL_ARTIFACT"),
                      "real repo-pinned A01 artifact required")
 class MotifAllocationPublicationTests(unittest.TestCase):
+    def _assert_continuation_mutation_rejected(self, run_dir, transaction, continuation):
+        original_manifest = continuation.parent_manifest_sha256
+        object.__setattr__(continuation, "parent_manifest_sha256", "f" * 64)
+        with self.assertRaises(BilqisError):
+            stage_source_qualified_motif_allocation(run_dir, transaction, continuation)
+        object.__setattr__(continuation, "parent_manifest_sha256", original_manifest)
+
+        original_extents = continuation.parent_extents_sha256
+        object.__setattr__(continuation, "parent_extents_sha256", "f" * 64)
+        with self.assertRaises(BilqisError):
+            stage_source_qualified_motif_allocation(run_dir, transaction, continuation)
+        object.__setattr__(continuation, "parent_extents_sha256", original_extents)
+
+        approved = continuation.approved
+        original_context = approved.approved_context_digest
+        object.__setattr__(approved, "approved_context_digest", "f" * 64)
+        with self.assertRaises(BilqisError):
+            stage_source_qualified_motif_allocation(run_dir, transaction, continuation)
+        object.__setattr__(approved, "approved_context_digest", original_context)
+
+    def _assert_transition_mutation_rejected(self, run_dir, staged, parent,
+                                             successor, retained, decision):
+        original_pages = staged.motif_transition.added_pages
+        object.__setattr__(staged.motif_transition, "added_pages", 1)
+        with self.assertRaises(BilqisError):
+            resolve_candidate(staged, accepted=True)
+        object.__setattr__(staged.motif_transition, "added_pages", original_pages)
+
+        original_generation_pages = successor.transition.added_pages
+        object.__setattr__(successor.transition, "added_pages", 1)
+        with self.assertRaises(BilqisError):
+            accept_and_publish(
+                run_dir, successor, retained, decision=decision,
+                feature_sha256=successor.extents.factor_map_digest,
+                reserve_gib=0., training_authorities=None)
+        object.__setattr__(successor.transition, "added_pages", original_generation_pages)
+
     def test_v6_publication_cold_load_preserves_motif_allocation_and_optimizer(self):
         fixture = CandidateMotifAllocationFixture()
         fixture.setUp()
@@ -71,32 +108,10 @@ class MotifAllocationPublicationTests(unittest.TestCase):
                     source_frontier=SourceFrontier(1, 1, ()), policy=policy,
                     source_seed=seed, source_each=each, budget=MotifBudget(64),
                     source_profile_parameters=profile)
-                original_manifest = continuation.parent_manifest_sha256
-                object.__setattr__(continuation, "parent_manifest_sha256", "f" * 64)
-                with self.assertRaises(BilqisError):
-                    stage_source_qualified_motif_allocation(
-                        run_dir, transaction, continuation)
-                object.__setattr__(continuation, "parent_manifest_sha256", original_manifest)
-                original_extents = continuation.parent_extents_sha256
-                object.__setattr__(continuation, "parent_extents_sha256", "f" * 64)
-                with self.assertRaises(BilqisError):
-                    stage_source_qualified_motif_allocation(
-                        run_dir, transaction, continuation)
-                object.__setattr__(continuation, "parent_extents_sha256", original_extents)
-                approved = continuation.approved
-                original_context = approved.approved_context_digest
-                object.__setattr__(approved, "approved_context_digest", "f" * 64)
-                with self.assertRaises(BilqisError):
-                    stage_source_qualified_motif_allocation(
-                        run_dir, transaction, continuation)
-                object.__setattr__(approved, "approved_context_digest", original_context)
+                self._assert_continuation_mutation_rejected(
+                    run_dir, transaction, continuation)
                 staged = stage_source_qualified_motif_allocation(
                     run_dir, transaction, continuation)
-                original_pages = staged.motif_transition.added_pages
-                object.__setattr__(staged.motif_transition, "added_pages", 1)
-                with self.assertRaises(BilqisError):
-                    resolve_candidate(staged, accepted=True)
-                object.__setattr__(staged.motif_transition, "added_pages", original_pages)
                 retained = resolve_candidate(staged, accepted=True)
                 successor = derive_motif_successor_bundle(
                     parent, staged,
@@ -107,15 +122,8 @@ class MotifAllocationPublicationTests(unittest.TestCase):
                     },))
                 decision = accepted_c05_decision(
                     run_dir, staged, parent, successor, retained)
-                original_generation_pages = successor.transition.added_pages
-                object.__setattr__(successor.transition, "added_pages", 1)
-                with self.assertRaises(BilqisError):
-                    accept_and_publish(
-                        run_dir, successor, retained, decision=decision,
-                        feature_sha256=successor.extents.factor_map_digest,
-                        reserve_gib=0., training_authorities=None)
-                object.__setattr__(successor.transition, "added_pages",
-                                   original_generation_pages)
+                self._assert_transition_mutation_rejected(
+                    run_dir, staged, parent, successor, retained, decision)
                 published = accept_and_publish(
                     run_dir, successor, retained, decision=decision,
                     feature_sha256=successor.extents.factor_map_digest,

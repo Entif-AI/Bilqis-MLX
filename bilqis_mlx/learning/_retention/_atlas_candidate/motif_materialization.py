@@ -24,21 +24,12 @@ def _require_zero_row(tree, name, row):
         invalid()
 
 
-def _stage_candidate_motif_allocation_impl(
-        issue_transition, candidate, source_continuation, *,
-        spec, parent_extents, candidate_extents, run_seed: int):
-    """Terminally materialize one sealed B07 proposal into speculative B12 state."""
-    from .transaction import CandidateTransaction, _issue_transaction
-    from bilqis_mlx.runtime.bamf_bundle.motif.source_continuation import (
-        _require_source_qualified_continuation,
-    )
-    from bilqis_mlx.runtime.model_topology_v2 import (
-        GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
-    )
+def _require_materialization_context(
+        candidate, continuation, motif_candidate, *, spec, parent_extents,
+        candidate_extents, run_seed):
+    from .transaction import CandidateTransaction
+    from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2
 
-    continuation = _require_source_qualified_continuation(source_continuation)
-    approved = continuation.approved
-    motif_candidate = approved.candidate
     if (type(candidate) is not CandidateTransaction
             or type(motif_candidate) is not CandidateMotifSnapshot
             or type(spec) is not ModelTopologySpecV2
@@ -61,21 +52,13 @@ def _stage_candidate_motif_allocation_impl(
     motif_candidate.__post_init__()
     reconcile_b01_optimizer_manifest(candidate.optimizer, spec, parent_extents)
 
+
+def _materialize_optimizer(candidate, motif_candidate, *, spec, parent_extents,
+                           successor_extents, run_seed):
+    from bilqis_mlx.runtime.model_topology_v2 import expected_bamf_shapes
+
     proposed = motif_candidate.proposed
     view = motif_candidate.view
-    page_count = proposed.manifest.capacity // INITIAL_MOTIF_CAPACITY
-    successor_extents = candidate_extents
-    if (successor_extents.semantic_bank_count != parent_extents.semantic_bank_count
-            or successor_extents.active_semantic_digest
-            != parent_extents.active_semantic_digest
-            or successor_extents.factor_map_digest != parent_extents.factor_map_digest
-            or successor_extents.motif_page_count != page_count
-            or successor_extents.motif_key_map_digest != proposed.manifest.digest
-            or page_count - parent_extents.motif_page_count
-            != view.page_growth.added_pages
-            or view.page_growth.candidate_capacity != proposed.manifest.capacity):
-        invalid()
-
     declared = expected_bamf_shapes(spec, successor_extents)
     declared_by_name = {item.name: item for item in declared}
     old_names = set(candidate.optimizer.parameters)
@@ -98,8 +81,7 @@ def _stage_candidate_motif_allocation_impl(
         parameters[name] = initialize_bamf_parameter(item, run_seed=run_seed)
         moments_m[name] = np.zeros(item.shape, dtype=np.float32)
         moments_v[name] = np.zeros(item.shape, dtype=np.float32)
-        counts[name] = np.zeros(
-            declared_update_count_shape(item), dtype=np.uint64)
+        counts[name] = np.zeros(declared_update_count_shape(item), dtype=np.uint64)
 
     for slot in view.plan.allocated:
         page = slot.slot_id // INITIAL_MOTIF_CAPACITY
@@ -124,6 +106,44 @@ def _stage_candidate_motif_allocation_impl(
          for item in declared},
     )
     reconcile_b01_optimizer_manifest(optimizer, spec, successor_extents)
+    return optimizer
+
+
+def _stage_candidate_motif_allocation_impl(
+        issue_transition, candidate, source_continuation, *,
+        spec, parent_extents, candidate_extents, run_seed: int):
+    """Terminally materialize one sealed B07 proposal into speculative B12 state."""
+    from .transaction import _issue_transaction
+    from bilqis_mlx.runtime.bamf_bundle.motif.source_continuation import (
+        _require_source_qualified_continuation,
+    )
+
+    continuation = _require_source_qualified_continuation(source_continuation)
+    approved = continuation.approved
+    motif_candidate = approved.candidate
+    _require_materialization_context(
+        candidate, continuation, motif_candidate, spec=spec,
+        parent_extents=parent_extents, candidate_extents=candidate_extents,
+        run_seed=run_seed)
+
+    proposed = motif_candidate.proposed
+    view = motif_candidate.view
+    page_count = proposed.manifest.capacity // INITIAL_MOTIF_CAPACITY
+    successor_extents = candidate_extents
+    if (successor_extents.semantic_bank_count != parent_extents.semantic_bank_count
+            or successor_extents.active_semantic_digest
+            != parent_extents.active_semantic_digest
+            or successor_extents.factor_map_digest != parent_extents.factor_map_digest
+            or successor_extents.motif_page_count != page_count
+            or successor_extents.motif_key_map_digest != proposed.manifest.digest
+            or page_count - parent_extents.motif_page_count
+            != view.page_growth.added_pages
+            or view.page_growth.candidate_capacity != proposed.manifest.capacity):
+        invalid()
+
+    optimizer = _materialize_optimizer(
+        candidate, motif_candidate, spec=spec, parent_extents=parent_extents,
+        successor_extents=successor_extents, run_seed=run_seed)
     transition = issue_transition(
         parent_manifest_sha256=candidate.parent.custody.manifest_sha256,
         parent_extents=parent_extents, candidate_extents=successor_extents,
