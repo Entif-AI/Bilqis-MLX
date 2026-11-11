@@ -169,6 +169,10 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
         authority = patch('bilqis_mlx.runtime.atlas_training_adapter.rederive_training_authority')
         self.authority = authority.start()
         self.addCleanup(authority.stop)
+        inventory = patch(
+            'bilqis_mlx.runtime.training_input_authority.source_frame_inventory')
+        self.inventory = inventory.start()
+        self.addCleanup(inventory.stop)
         course, graph, sources, answers, _ = closed_source_fixture()
         registered = sources.require('fixture.z-generator/v1', 'fixture.z-oracle/v1')
         def draw(**kwargs):
@@ -225,6 +229,11 @@ class AtlasTrainingAdapterTest(unittest.TestCase):
             tuple(row['tokens'][:visible_ends.get(row['id'], len(row['tokens']))]),
             context.release.release_sha256, context.graph)
             for row in rows)
+        inventories = {
+            row['id']: (ast.source_instance_id, ast.frames)
+            for row, ast in zip(rows, legitimate_asts)
+        }
+        self.inventory.side_effect = lambda _context, row, _selection: inventories[row['id']]
         schema = _training_schema()
         semantic_release = base_task.semantic_release
         compiler_config = FrameCompilerConfig(

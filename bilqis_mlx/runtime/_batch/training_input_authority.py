@@ -10,6 +10,14 @@ from bilqis_mlx.semantics.frame_compiler import FrameCompilerConfig, StreamingAS
 from bilqis_mlx.semantics.frame_schema import FrameInstance
 
 from .atlas_training_contracts import _invalid
+from .factory_training_context import source_frame_inventory
+
+
+def require_source_inventory(ast, source_context, row, atlas_selection) -> None:
+    source_id, frames = source_frame_inventory(source_context, row, atlas_selection)
+    if (type(ast) is not StreamingAST or ast.source_instance_id != source_id
+            or ast.frames != frames):
+        _invalid("CONTEXT_SOURCE_LINEAGE_MISMATCH")
 
 
 def source_frame_roots(ast: StreamingAST) -> tuple:
@@ -96,5 +104,5 @@ def source_features(
 
 __all__ = (
     "require_semantic_authority", "require_source_lineage", "row_contexts",
-    "source_features",
+    "source_features", "require_source_inventory",
 )
