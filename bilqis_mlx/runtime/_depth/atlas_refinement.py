@@ -76,13 +76,19 @@ class RefinementParameterView(tuple, metaclass=_ViewType):
         self._immutable()
 
 
-def _require_b01_projection(view):
-    """Reject reconstructed trees before claiming B01 alias provenance."""
+def _require_b01_projection(view, *, parameters: Mapping[str, mx.array],
+                            spec: ModelTopologySpecV2, extents: GenerationExtents):
+    """Re-derive B01 alias provenance from the complete authoritative tree."""
     if not isinstance(view, RefinementParameterView):
         _invalid()
-    proof = type(view).__dict__.get("_owner_proof")
-    if proof is None or not proof(view):
+    validate_bamf_parameters(spec, extents, parameters)
+    declarations = tuple(item for item in expected_bamf_shapes(spec, extents)
+                         if item.name.startswith("refine."))
+    if tuple.__len__(view) != len(declarations):
         _invalid()
+    for index, item in enumerate(declarations):
+        if tuple.__getitem__(view, index) is not parameters[item.name]:
+            _invalid()
 
 
 def refinement_parameter_view(parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
@@ -93,13 +99,6 @@ def refinement_parameter_view(parameters: Mapping[str, mx.array], *, spec: Model
                          if item.name.startswith("refine."))
     names = tuple(item.name for item in declarations)
     values = tuple(parameters[name] for name in names)
-    owner = [None]
-
-    def proof(view):
-        return (view is owner[0] and tuple.__len__(view) == len(values)
-                and all(tuple.__getitem__(view, i) is value
-                        for i, value in enumerate(values)))
-
     def get_item(view, key):
         if isinstance(key, str):
             try:
@@ -108,23 +107,13 @@ def refinement_parameter_view(parameters: Mapping[str, mx.array], *, spec: Model
                 raise KeyError(key) from None
         return tuple.__getitem__(view, key)
 
-    def owner_metadata(view, value):
-        if not proof(view):
-            _invalid()
-        return value
-
     bound_type = _ViewType("BoundRefinementParameterView", (RefinementParameterView,), {
         "__slots__": (),
         "_fields": tuple(f"p{index}" for index in range(len(names))),
         "__getitem__": get_item,
         "keys": lambda _view: names,
-        "_owner_proof": staticmethod(proof),
-        "topology_digest": property(lambda view: owner_metadata(view, spec.digest)),
-        "extents_digest": property(lambda view: owner_metadata(view, extents.digest)),
-        "declarations": property(lambda view: owner_metadata(view, declarations)),
     })
-    owner[0] = bound_type(*values)
-    return owner[0]
+    return bound_type(*values)
 
 
 def _norm(value, gamma):
@@ -171,7 +160,9 @@ def _validate(hidden, seed, members, role, passes, parameters):
 
 
 def _refine_frame(hidden: mx.array, seed: mx.array, members: mx.array, role: mx.array,
-                  passes: int, parameters: Mapping[str, mx.array]) -> _RefinementResult:
+                  passes: int,
+                  parameters: Mapping[str, mx.array] | RefinementParameterView
+                  ) -> _RefinementResult:
     """Run a supplied complete, unmasked fixture frame for zero, one or two passes.
 
     All vectors are FP32. Hidden/seed/role are768-wide, members are[M,768].
@@ -198,7 +189,9 @@ def _refine_frame(hidden: mx.array, seed: mx.array, members: mx.array, role: mx.
     return _RefinementResult(state, route_logits, passes)
 
 
-def routing_logits_from_state(hidden: mx.array, parameters: Mapping[str, mx.array]) -> mx.array:
+def routing_logits_from_state(
+        hidden: mx.array,
+        parameters: Mapping[str, mx.array] | RefinementParameterView) -> mx.array:
     """Train the 0/1/2 route head before any local refinement pass.
 
     The zero-pass numerical kernel retains its exact hidden-object identity

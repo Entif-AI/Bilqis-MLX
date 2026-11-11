@@ -27,10 +27,7 @@ class RefinementRegistryTests(unittest.TestCase):
         declared = tuple(item for item in expected_bamf_shapes(self.spec, self.extents)
                          if item.name.startswith("refine."))
         self.assertIsInstance(view, RefinementParameterView)
-        self.assertEqual(view.declarations, declared)
         self.assertEqual(tuple(view.keys()), tuple(item.name for item in declared))
-        self.assertEqual(view.topology_digest, self.spec.digest)
-        self.assertEqual(view.extents_digest, self.extents.digest)
         for item in declared:
             self.assertIs(view[item.name], self.full[item.name])
 
@@ -54,19 +51,28 @@ class RefinementRegistryTests(unittest.TestCase):
         self.assertIs(view["refine.query"], original)
         self.assertIs(original, self.full["refine.query"])
 
-    def test_reconstructed_tuple_cannot_claim_b01_projection(self):
+    def test_projection_provenance_is_rederived_from_complete_b01_tree(self):
         view = refinement_parameter_view(self.full, spec=self.spec, extents=self.extents)
-        _require_b01_projection(view)
+        kwargs = dict(parameters=self.full, spec=self.spec, extents=self.extents)
+        _require_b01_projection(view, **kwargs)
         values = [tuple.__getitem__(view, i) for i in range(tuple.__len__(view))]
         same_aliases = type(view)(*values)
-        with self.assertRaises(BilqisError):
-            _require_b01_projection(same_aliases)
+        _require_b01_projection(same_aliases, **kwargs)
         values[1] = mx.zeros_like(values[1])
         forged = type(view)(*values)
         with self.assertRaises(BilqisError):
-            _require_b01_projection(forged)
+            _require_b01_projection(forged, **kwargs)
+
+    def test_class_monkeypatch_cannot_forge_b01_projection(self):
+        view = refinement_parameter_view(self.full, spec=self.spec, extents=self.extents)
+        values = [tuple.__getitem__(view, i) for i in range(tuple.__len__(view))]
+        forged = type(view)(*values)
+        values[1] = mx.zeros_like(values[1])
+        forged = type(view)(*values)
+        type.__setattr__(type(view), "_owner_proof", staticmethod(lambda _view: True))
         with self.assertRaises(BilqisError):
-            _ = forged.topology_digest
+            _require_b01_projection(
+                forged, parameters=self.full, spec=self.spec, extents=self.extents)
 
     def test_replaced_accessor_does_not_change_numerical_consumer(self):
         view = refinement_parameter_view(self.full, spec=self.spec, extents=self.extents)
@@ -77,33 +83,25 @@ class RefinementRegistryTests(unittest.TestCase):
         expected = _refine_frame(hidden, seed, members, role, 1, view)
         type.__setattr__(type(view), "__getitem__", lambda self, key: mx.zeros((1,)))
         actual = _refine_frame(hidden, seed, members, role, 1, view)
-        _require_b01_projection(view)
+        _require_b01_projection(
+            view, parameters=self.full, spec=self.spec, extents=self.extents)
         np.testing.assert_array_equal(np.asarray(actual.hidden), np.asarray(expected.hidden))
 
-    def test_view_identity_metadata_is_canonical(self):
-        view = refinement_parameter_view(
-            self.full, spec=self.spec, extents=self.extents)
-        with self.assertRaises(BilqisError):
-            view.topology_digest = "0" * 64
-        with self.assertRaises(BilqisError):
-            type(view).topology_digest = "0" * 64
-        for topology_digest, extents_digest in (
-            ("x" * 64, self.extents.digest),
-            (self.spec.digest, "0" * 63),
-        ):
-            with self.subTest(topology_digest=topology_digest, extents_digest=extents_digest), \
-                    self.assertRaises(BilqisError):
-                RefinementParameterView(
-                    topology_digest, extents_digest, view.declarations, view)
+    def test_view_carries_no_self_attested_authority_metadata(self):
+        view = refinement_parameter_view(self.full, spec=self.spec, extents=self.extents)
+        for name in ("topology_digest", "extents_digest", "declarations", "_owner_proof"):
+            self.assertFalse(hasattr(view, name))
 
     def test_b01_constructor_matches_every_refinement_parameter_spec(self):
         run_seed = 455
         full, _, manifest = create_unbound_bamf_state(
             self.spec, self.extents, run_seed=run_seed)
         view = refinement_parameter_view(full, spec=self.spec, extents=self.extents)
+        declarations = tuple(item for item in expected_bamf_shapes(self.spec, self.extents)
+                             if item.name.startswith("refine."))
         manifest_by_name = {item["name"]: item for item in manifest["parameters"]}
         self.assertEqual(set(manifest_by_name), set(full))
-        for item in view.declarations:
+        for item in declarations:
             expected = initialize_bamf_parameter(item, run_seed=run_seed)
             np.testing.assert_array_equal(np.asarray(view[item.name]), expected)
             self.assertEqual(manifest_by_name[item.name]["shape"], list(item.shape))
@@ -117,9 +115,10 @@ class RefinementRegistryTests(unittest.TestCase):
         first = refinement_parameter_view(
             self.full, spec=self.spec, extents=self.extents)
         second = refinement_parameter_view(full, spec=self.spec, extents=changed)
-        self.assertEqual(first.declarations, second.declarations)
-        self.assertNotEqual(first.extents_digest, second.extents_digest)
-        self.assertEqual(first.topology_digest, second.topology_digest)
+        self.assertEqual(tuple(first.keys()), tuple(second.keys()))
+        _require_b01_projection(
+            first, parameters=self.full, spec=self.spec, extents=self.extents)
+        _require_b01_projection(second, parameters=full, spec=self.spec, extents=changed)
 
     def test_numerical_kernel_consumes_the_registry_view_without_rekeying(self):
         view = refinement_parameter_view(
@@ -151,7 +150,8 @@ class RefinementRegistryTests(unittest.TestCase):
         self.assertIsInstance(gradients, RefinementParameterView)
         self.assertEqual(tuple(gradients.keys()), tuple(view.keys()))
         with self.assertRaises(BilqisError):
-            _require_b01_projection(gradients)
+            _require_b01_projection(
+                gradients, parameters=self.full, spec=self.spec, extents=self.extents)
         for name in view.keys():
             self.assertGreater(float(mx.sum(mx.abs(gradients[name]))), 0.0)
 
