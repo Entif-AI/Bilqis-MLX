@@ -35,7 +35,7 @@ def _student(*proofs):
 def _anchor(authority_digest, *, family="family:1", episode="episode:1"):
     return (
         "A.TEST", "row:test", "d" * 64, family, episode,
-        "4" * 64, "5" * 64, "generation:test", authority_digest,
+        "4" * 64, "5" * 64, "7" * 64, authority_digest,
         ((DependencyKind.SOURCE.value, "row:test"),),
     )
 

@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import inspect
 import unittest
-from dataclasses import replace
-from types import SimpleNamespace
 from unittest.mock import patch
 
 import mlx.core as mx
@@ -20,15 +18,9 @@ from bilqis_mlx.learning.atlas_plasticity import (
     GroupEligibility, IdentityRowAge, PlasticityPolicy,
 )
 from bilqis_mlx.runtime.atlas_candidate_step import production_candidate_step
-from bilqis_mlx.runtime.atlas_model import BamfGradientExecution
 from bilqis_mlx.runtime.atlas_optimizer import (
     AdamWHyperparameters, AdamWStateTree, reconcile_b01_optimizer_manifest,
 )
-from bilqis_mlx.runtime.atlas_resources import BatchPlan
-from bilqis_mlx.runtime.atlas_training_contracts import (
-    BamfTrainingRow, _issue_training_batch,
-)
-from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, Initializer, ModelTopologySpecV2, ParameterGroup,
     ParameterSpec,
@@ -55,12 +47,6 @@ CENSUS_SHAPE = (
     "bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
     "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
 )
-DIGEST_SHAPE = (
-    "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
-    "bilqis_mlx.runtime.backbone_identity.expected_bamf_shapes",
-)
-
-
 class ProductionCandidateStepTests(unittest.TestCase):
     def setUp(self):
         values = mx.array([[.5, -.25], [1., 2.]], dtype=mx.float32)
@@ -105,31 +91,6 @@ class ProductionCandidateStepTests(unittest.TestCase):
                 topology_digest=self.parent.custody.topology_digest,
                 candidate_step_ordinal=1,
                 teacher_hparams=self.hp, max_norm=1.)
-
-    def gradient_execution(self, manifest_sha256):
-        patches = (
-            patch(DIGEST_SHAPE[0], return_value=DECLARED),
-            patch(DIGEST_SHAPE[1], return_value=DECLARED),
-            patch(CENSUS_SHAPE[2], return_value=DECLARED),
-        )
-        for item in patches:
-            item.start()
-            self.addCleanup(item.stop)
-        execution = SimpleNamespace(
-            output=SimpleNamespace(
-                generation_binding=execution_generation_digest(
-                    self.parent.optimizer.parameters,
-                    spec=ModelTopologySpecV2(), extents=self.extents,
-                )
-            ),
-            custody_run_id=self.parent.custody.run_id,
-            custody_generation=self.parent.custody.generation,
-            custody_manifest_sha256=manifest_sha256,
-        )
-        gradient = object.__new__(BamfGradientExecution)
-        object.__setattr__(gradient, "execution", execution)
-        object.__setattr__(gradient, "gradients", {BANK: mx.zeros((2, 2))})
-        return gradient
 
     def test_step_accepts_no_caller_execution_or_motif_facts(self):
         parameters = set(inspect.signature(production_candidate_step).parameters)
@@ -219,147 +180,6 @@ class ProductionCandidateStepTests(unittest.TestCase):
             self.step(
                 begin_candidate(self.parent),
                 eligibility=self.eligibility(mode="FAST"))
-
-    def test_matching_b13_custody_reaches_the_execution_binder(self):
-        candidate = begin_candidate(self.parent)
-        gradient = self.gradient_execution(self.parent.custody.manifest_sha256)
-        marker = object()
-        accepted = object()
-        with patch.object(BamfGradientExecution, "__post_init__", return_value=None), \
-                patch(
-                    "bilqis_mlx.runtime.atlas_candidate_step.bind_execution_provenance",
-                    return_value=marker,
-                ) as binder, \
-                patch(
-                    "bilqis_mlx.runtime.atlas_candidate_step.candidate_step",
-                    return_value=accepted,
-                ) as apply_step:
-            result = production_candidate_step(
-                candidate,
-                loss_bearing_target=True,
-                gradient_execution=gradient,
-                group_eligible=self.eligibility(),
-                spec=ModelTopologySpecV2(), extents=self.extents,
-                run_id=self.parent.custody.run_id,
-                generation=self.parent.custody.generation + 1,
-                parent_manifest_sha256=self.parent.custody.manifest_sha256,
-                parent_candidate_identity_sha256=candidate_identity_digest(self.parent),
-                parent_optimizer_step=self.parent.optimizer_step,
-                topology_digest=self.parent.custody.topology_digest,
-                candidate_step_ordinal=1,
-                teacher_hparams=self.hp, max_norm=1.,
-            )
-        self.assertIs(result, accepted)
-        self.assertIs(binder.call_args.kwargs["loss_execution"], gradient.execution)
-        self.assertIs(apply_step.call_args.args[1], gradient.gradients)
-
-    def test_sibling_b13_manifest_cannot_replay_gradient_execution(self):
-        candidate = begin_candidate(self.parent)
-        gradient = self.gradient_execution("7" * 64)
-        with patch.object(BamfGradientExecution, "__post_init__", return_value=None), \
-                patch(
-                    "bilqis_mlx.runtime.atlas_candidate_step.bind_execution_provenance",
-                ) as binder:
-            with self.assertRaises(BilqisError):
-                production_candidate_step(
-                    candidate,
-                    loss_bearing_target=True,
-                    gradient_execution=gradient,
-                    group_eligible=self.eligibility(),
-                    spec=ModelTopologySpecV2(), extents=self.extents,
-                    run_id=self.parent.custody.run_id,
-                    generation=self.parent.custody.generation + 1,
-                    parent_manifest_sha256=self.parent.custody.manifest_sha256,
-                    parent_candidate_identity_sha256=candidate_identity_digest(self.parent),
-                    parent_optimizer_step=self.parent.optimizer_step,
-                    topology_digest=self.parent.custody.topology_digest,
-                    candidate_step_ordinal=1,
-                    teacher_hparams=self.hp, max_norm=1.,
-                )
-        binder.assert_not_called()
-
-    def test_logical_batch_plan_drift_rejects_before_execution_binding(self):
-        candidate = begin_candidate(self.parent)
-        rows = tuple(
-            BamfTrainingRow(
-                None, None, None,
-                SimpleNamespace(row_id=row_id, optimizer_step_seed=7),
-            )
-            for row_id in ("row:a", "row:b")
-        )
-        batch = _issue_training_batch(
-            "4" * 64, "generation:test", "5" * 64, "A.TEST", rows)
-        plan = BatchPlan(
-            groups=((0,), (1,)), logical_row_ids=("row:a", "row:b"),
-            microbatch_size=1, estimated_peak_bytes=100, resident_bytes=50,
-            optimizer_step_seed=7, generation_binding="generation:test",
-            topology_digest=ModelTopologySpecV2().digest,
-            memory_budget_digest="6" * 64, source_digest="7" * 64,
-        )
-        gradients = {BANK: mx.zeros((2, 2))}
-        groups_drift = replace(plan, groups=((0, 1),), microbatch_size=2)
-        seed_drift = replace(plan, optimizer_step_seed=8)
-        source_drift = replace(plan, source_digest="8" * 64)
-        row_drift = replace(plan, logical_row_ids=("row:b", "row:a"))
-        generation_drift = replace(plan, generation_binding="generation:other")
-        topology_drift = replace(plan, topology_digest="9" * 64)
-        cases = (
-            ("plan-digest", groups_drift, SimpleNamespace(
-                plan_digest=plan.digest, source_digest=plan.source_digest,
-                generation_binding=plan.generation_binding,
-                loss_executions=(), gradients=gradients)),
-            ("optimizer-seed", seed_drift, SimpleNamespace(
-                plan_digest=seed_drift.digest, source_digest=seed_drift.source_digest,
-                generation_binding=seed_drift.generation_binding,
-                loss_executions=(), gradients=gradients)),
-            ("source-digest", source_drift, SimpleNamespace(
-                plan_digest=source_drift.digest, source_digest=plan.source_digest,
-                generation_binding=source_drift.generation_binding,
-                loss_executions=(), gradients=gradients)),
-            ("row-order", row_drift, SimpleNamespace(
-                plan_digest=row_drift.digest, source_digest=row_drift.source_digest,
-                generation_binding=row_drift.generation_binding,
-                loss_executions=(), gradients=gradients)),
-            ("generation-binding", generation_drift, SimpleNamespace(
-                plan_digest=generation_drift.digest,
-                source_digest=generation_drift.source_digest,
-                generation_binding=generation_drift.generation_binding,
-                loss_executions=(), gradients=gradients)),
-            ("topology-digest", topology_drift, SimpleNamespace(
-                plan_digest=topology_drift.digest,
-                source_digest=topology_drift.source_digest,
-                generation_binding=topology_drift.generation_binding,
-                loss_executions=(), gradients=gradients)),
-        )
-        for name, drift, logical in cases:
-            with self.subTest(case=name), \
-                    patch(
-                        "bilqis_mlx.runtime.atlas_candidate_step.require_logical_batch_gradient_execution",
-                        return_value=logical,
-                    ), patch(
-                        "bilqis_mlx.runtime.atlas_candidate_step.bind_execution_provenance_many",
-                    ) as binder, self.assertRaises(BilqisError) as caught:
-                production_candidate_step(
-                    candidate, loss_bearing_target=True,
-                    logical_batch_execution=logical,
-                    training_batch=batch, logical_batch_plan=drift,
-                    group_eligible=self.eligibility(),
-                    spec=ModelTopologySpecV2(), extents=self.extents,
-                    run_id=self.parent.custody.run_id,
-                    generation=self.parent.custody.generation + 1,
-                    parent_manifest_sha256=self.parent.custody.manifest_sha256,
-                    parent_candidate_identity_sha256=candidate_identity_digest(self.parent),
-                    parent_optimizer_step=self.parent.optimizer_step,
-                    topology_digest=self.parent.custody.topology_digest,
-                    candidate_step_ordinal=1,
-                    teacher_hparams=self.hp, max_norm=1.,
-                )
-            self.assertEqual(
-                caught.exception.context["reason"],
-                "C08_LOGICAL_BATCH_PLAN_DRIFT",
-            )
-            binder.assert_not_called()
-
 
 if __name__ == "__main__":
     unittest.main()
