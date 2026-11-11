@@ -1,7 +1,7 @@
 # BAMF-0.2 operator observation commands
 
-Status: **C11.1 read-only configuration inspection and C11.2 reader integrated;
-production launch pending C11.1 #522**.
+Status: **C11.1 read-only inspection plus C16.1a persistent create/dry-run/resume
+lifecycle implemented on the feature branch; human review/merge remains pending**.
 This document does not authorize a durable student start or certify BAMF learning.
 
 ## Read-only cockpit
@@ -89,8 +89,9 @@ npm run train -- --human-run --model-topology configs/models/bamf-0.2.json \
 
 This publishes B13 generation zero at optimizer step `0` and returns `CREATED`; it
 still does not enter the learner. The Atlas manifest must be a canonical,
-source-pinned release manifest. The target must be absent or empty. Existing BAMF
-or legacy custody is never overwritten or coerced.
+source-pinned release manifest. Normal creation uses an absent or empty target. An
+exact fresh-create retry may converge the narrowly defined durable B13 pre-seal/sealed
+genesis evidence; arbitrary BAMF or legacy custody is never overwritten or coerced.
 
 To enroll the new lineage in the C07 `atlas-release` admission policy, add both the
 explicit policy and a versioned lease request:
@@ -125,6 +126,11 @@ optimizer hyperparameters, and effective admission policy. Explicit topology,
 run-id, seed, optimizer, Atlas-manifest, or policy overrides must equal the saved
 values or fail before writes. Ordinary resume takes no scope. Historical v1 state
 is not coerced to v2.
+
+If the target has BAMF-v2 lifecycle evidence but no accepted pointer, `--resume`
+rejects `BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY` without mutating
+recovery state. Repeat the original fresh create command with the same identity and
+optimizer inputs; B13 performs the only authorized exact-genesis recovery.
 
 A staged accepted run may complete its **first** C07 v2 enrollment later, still
 without entering the learner:

@@ -12,7 +12,10 @@ The optimizer values have no hidden default. B13 seals the exact supplied values
 B01 still owns parameter and decay geometry, and B12/B13 construct fresh zero
 moments and update counts. Historical optimizer state is never migrated.
 
-Preflight accepts only an absent or empty target directory. C16.1c/#950 moves new
+The low-level fresh preflight owner accepts an absent or empty target and, for an exact
+C16.1a fresh-create retry, the two durable B13 pre-seal prefixes or an exact sealed
+generation-zero recovery candidate. Arbitrary occupied targets still fail closed;
+pointerless `--resume` never invokes this recovery path. C16.1c/#950 moves new
 generation-zero C09 authority completely outside that target: on Darwin the host
 administrator provisions `/etc/entif-ai/bilqis/source-authority-registry.json`
 independently of Bilqis. The path is fixed in production; the CLI, config,
@@ -105,6 +108,13 @@ explicitly `--human-run --resume --admission-policy atlas-release
 --atlas-admission-scope <enrollment-request.json>`; the request remains
 non-authoritative and C07 derives authority only from accepted run custody. Both
 dry-run and resume/enrollment remain neural-inert here.
+
+If a fresh create is interrupted before the generation-zero pointer is installed, do
+not switch to resume. A pointerless target carrying BAMF-v2 lifecycle evidence rejects
+resume with `BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY`. Repeat the
+original fresh create command with the same run id, seed, topology, complete AdamW
+group and Atlas manifest. B13 alone decides whether the target is the exact sealed
+genesis that may converge or an occupied/malformed target that must remain untouched.
 
 The dashboard snapshot describes the newborn lineage. Admitted grade scope comes
 from the Factory execution plan. Optimizer step and visits are `0`, stage is
