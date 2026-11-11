@@ -8,11 +8,14 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.tests.test_atlas_salience import _signed
 from bilqis_mlx.runtime.atlas_admission import (
     _accepted_run_lease_identity, issue_atlas_lease_v2,
-    persist_accepted_atlas_lease_v2, renew_atlas_lease_v2,
+    persist_accepted_atlas_lease_v2,
     adopt_capability_only_atlas_successor_v2,
     adopt_parameter_extension_atlas_successor_v2,
     read_accepted_atlas_factory_release,
 )
+from bilqis_mlx.runtime.atlas_lease_storage import _atlas_authority_epoch_lock
+from bilqis_mlx.runtime.atlas_lease_storage_v2 import _atlas_lease_v2_lock
+from bilqis_mlx.runtime.atlas_lease_v2 import _renew_atlas_lease_v2_locked
 from bilqis_mlx.runtime.atlas_admission_policy_v2 import AtlasDeltaEnvelopeV2
 from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import accepted_generation
 from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import _lease as v1_lease
@@ -95,10 +98,10 @@ class MixedSameLeaseNegativeTests(MixedWitnessSupport, unittest.TestCase):
             "mixed-v2-scope-negative", run_identity, scoped_approval,
             lease.resource_ceiling, requested_at="2026-11-10T20:46:00Z",
             human_command_sha256="8" * 64, human_started=True, registry=_REGISTRY)
-        renew_atlas_lease_v2(
-            self.run, scoped, independently_loaded_run=run_identity,
-            registry=_REGISTRY, expected_prior_lease_sha256=lease.digest(),
-            human_started=True)
+        with _atlas_authority_epoch_lock(self.run), _atlas_lease_v2_lock(self.run):
+            _renew_atlas_lease_v2_locked(
+                self.run, scoped, independently_loaded_run=run_identity,
+                registry=_REGISTRY, expected_prior_lease_sha256=lease.digest())
         delta = AtlasDeltaEnvelopeV2(h2, native2)
         scoped_current = replace(
             current2,
@@ -118,10 +121,10 @@ class MixedSameLeaseNegativeTests(MixedWitnessSupport, unittest.TestCase):
             "mixed-v2-different", run_identity, approval, lease.resource_ceiling,
             requested_at="2026-11-10T20:47:00Z",
             human_command_sha256="7" * 64, human_started=True, registry=_REGISTRY)
-        renew_atlas_lease_v2(
-            self.run, different, independently_loaded_run=run_identity,
-            registry=_REGISTRY, expected_prior_lease_sha256=scoped.digest(),
-            human_started=True)
+        with _atlas_authority_epoch_lock(self.run), _atlas_lease_v2_lock(self.run):
+            _renew_atlas_lease_v2_locked(
+                self.run, different, independently_loaded_run=run_identity,
+                registry=_REGISTRY, expected_prior_lease_sha256=scoped.digest())
         with self.source_replay(snapshot, schema, features):
             with self.assertRaises(BilqisError) as failure:
                 adopt_parameter_extension_atlas_successor_v2(
