@@ -20,11 +20,11 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     candidate, parent_state, shape_patch,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_composition_support import (
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.correction_runtime.composition_support import (
     AUTHORITY, SYNTHETIC_SOURCE_AUTHORITY, AcceptedCorrectionCompositionCase,
     _event,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.correction_runtime.temporal_support import (
     source_owned_temporal_case,
 )
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture

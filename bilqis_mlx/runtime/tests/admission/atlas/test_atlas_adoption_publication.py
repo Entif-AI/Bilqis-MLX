@@ -43,7 +43,7 @@ class AtlasAdoptionPublicationTests(AtlasAdoptionExecutorFixture, unittest.TestC
                 return_value=lease), patch(
                 "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_factory_release",
                 return_value=self.current), patch(
-                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission.shutil.disk_usage",
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission.shutil.disk_usage",
                 return_value=SimpleNamespace(free=1)), patch(
                 "bilqis_mlx.runtime.bamf_bundle.publish_atlas_admission_generation") as publish:
             with self.assertRaises(BilqisError) as failure:
@@ -179,7 +179,7 @@ class AtlasAdoptionPublicationTests(AtlasAdoptionExecutorFixture, unittest.TestC
                 return_value=(pointer, accepted)), patch(
                 "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_binding_for_manifest",
                 return_value=historical), patch(
-                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission.shutil.disk_usage",
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission.shutil.disk_usage",
                 side_effect=AssertionError("exact retry rechecked live A02 headroom")), patch(
                 "bilqis_mlx.runtime.bamf_bundle.publish_atlas_admission_generation") as publish:
             result = _execute_prepared_successor_adoption(

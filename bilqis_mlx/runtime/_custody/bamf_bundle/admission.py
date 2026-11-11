@@ -44,6 +44,7 @@ from .publication.authority import authenticate_current_successor_retry
 from .records import (
     BamfBundleCandidate, CompleteStudent, invalid,
 )
+from .motif.transition import derive_motif_allocation_transition
 
 
 def derive_successor_bundle(parent: CompleteStudent, retained_state: CandidateState,
@@ -59,6 +60,8 @@ def derive_successor_bundle(parent: CompleteStudent, retained_state: CandidateSt
     """
     if type(parent) is not CompleteStudent or type(retained_state) is not CandidateState:
         invalid("BAMF_GENERATION_PARENT_INVALID")
+    if retained_state.allocations.digest != parent.retained_state.allocations.digest:
+        invalid("BAMF_MOTIF_ALLOCATION_TRANSITION_REQUIRED")
     kind = "RETAINED_CANDIDATE"
     transition = {
         "schema": "bilqis.mlx.bamf-generation-transition/v1",
@@ -68,6 +71,39 @@ def derive_successor_bundle(parent: CompleteStudent, retained_state: CandidateSt
     return BamfBundleCandidate(
         parent.run_id, parent.generation + 1, parent_manifest_sha256,
         parent.implementation_sha256, parent.topology, parent.extents,
+        retained_state, parent.optimizer_hyperparameters, parent.provenance,
+        dict(parent.semantic_abi), dict(parent.compiler_features),
+        dict(parent.correction_frontier), dict(parent.teacher_state),
+        dict(parent.evaluation_contract), transition, tuple(delivery_events),
+        parent.run_identity)
+
+
+def derive_motif_successor_bundle(
+        parent: CompleteStudent, transaction: CandidateTransaction, *,
+        parent_manifest_sha256: str, delivery_events: tuple) -> BamfBundleCandidate:
+    """Build the exact successor C05 must screen for a staged B07 transition."""
+    from bilqis_mlx.learning._atlas_candidate.motif_transition import (
+        _require_candidate_motif_allocation_transition,
+    )
+    from bilqis_mlx.runtime.atlas_optimizer import reconcile_b01_optimizer_manifest
+
+    if (type(parent) is not CompleteStudent
+            or type(transaction) is not CandidateTransaction
+            or transaction.motif_transition is None
+            or transaction.parent.custody is None
+            or transaction.parent.custody.manifest_sha256 != parent_manifest_sha256
+            or candidate_identity_digest(transaction.parent)
+            != candidate_identity_digest(parent.retained_state)):
+        invalid("BAMF_MOTIF_ALLOCATION_TRANSITION_INVALID")
+    b12 = transaction.motif_transition
+    _require_candidate_motif_allocation_transition(b12)
+    retained_state = resolve_candidate(transaction, accepted=True)
+    extents = b12.candidate_extents
+    reconcile_b01_optimizer_manifest(retained_state.optimizer, parent.topology, extents)
+    transition = derive_motif_allocation_transition(b12, retained_state)
+    return BamfBundleCandidate(
+        parent.run_id, parent.generation + 1, parent_manifest_sha256,
+        parent.implementation_sha256, parent.topology, extents,
         retained_state, parent.optimizer_hyperparameters, parent.provenance,
         dict(parent.semantic_abi), dict(parent.compiler_features),
         dict(parent.correction_frontier), dict(parent.teacher_state),
@@ -225,12 +261,27 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
     binding from that decision, and B13 custody publishes the generation only
     when the binding matches the candidate it publishes.
     """
+    from .genesis.records import successor_candidate_identity_digest
+    from .motif.transition import is_motif_allocation_transition
+    from bilqis_mlx.learning.atlas_retention_decision import (
+        _issued_decision_generation_authority,
+        _require_issued_decision_generation_authority,
+    )
+
     trusted_registry = _require_source_authority_for_acceptance(run_dir, bundle)
+    exact_generation_authority = successor_candidate_identity_digest(bundle)
+    if _issued_decision_generation_authority(decision) is not None:
+        _require_issued_decision_generation_authority(
+            decision, exact_generation_authority)
+    generation_authority_sha256 = (
+        exact_generation_authority
+        if is_motif_allocation_transition(bundle.transition) else None)
     binding = mint_acceptance_binding(
         decision, retained_state, run_id=bundle.run_id,
         generation=bundle.generation, feature_sha256=feature_sha256,
         training_authorities=training_authorities,
         source_authority_registry_sha256=(
-            trusted_registry.digest if trusted_registry is not None else None))
+            trusted_registry.digest if trusted_registry is not None else None),
+        generation_authority_sha256=generation_authority_sha256)
     return publish_bamf_generation(
         run_dir, bundle, acceptance=binding, reserve_gib=reserve_gib)

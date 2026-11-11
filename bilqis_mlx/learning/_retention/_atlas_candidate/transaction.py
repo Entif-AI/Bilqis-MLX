@@ -3,7 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import mlx.core as mx
 from bilqis_mlx.learning.atlas_engram import MotifBudget
-from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
+from bilqis_mlx.learning.atlas_engram_transaction import (
+    MotifAllocationSnapshot,
+)
 from bilqis_mlx.learning.atlas_plasticity import advance_candidate_policy, next_update_mode
 from bilqis_mlx.runtime.atlas_optimizer import (
     AdamWStateTree, _adamw_update, reconcile_b01_optimizer_manifest,
@@ -14,6 +16,11 @@ from .common import (LEGACY_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA, RETAINED_STATE
     STATE_SCHEMA, TRANSACTION_ISSUER, TRANSACTION_SCHEMA, invalid)
 from .proofs import CandidateStepProof
 from .state import CandidateState, _is_genesis_allocations
+from .motif_transition import (
+    CandidateMotifAllocationTransition,
+    _require_candidate_motif_allocation_transition,
+    _stage_candidate_motif_allocation,
+)
 
 @dataclass(frozen=True, init=False)
 class CandidateTransaction:
@@ -26,6 +33,7 @@ class CandidateTransaction:
     update_steps: int = 0
     step_proofs: tuple = ()
     training_authorities: tuple = ()
+    motif_transition: CandidateMotifAllocationTransition | None = None
     schema_version: str = TRANSACTION_SCHEMA
     _issuance: object = field(init=False, repr=False, compare=False)
 
@@ -48,17 +56,35 @@ class CandidateTransaction:
                 or any(type(proof) is not CandidateStepProof for proof in self.step_proofs)
                 or any(proof.step_index != index + 1
                        for index, proof in enumerate(self.step_proofs))
+                or (self.motif_transition is not None
+                    and type(self.motif_transition) is not CandidateMotifAllocationTransition)
                 or self.schema_version != TRANSACTION_SCHEMA):
             invalid()
         self.parent.__post_init__()
         self.optimizer.validate()
         self.allocations.__post_init__()
-        # Slot tensors are not materialized by this transaction slice.
-        if (self.allocations is not self.parent.allocations
-                or set(self.optimizer.parameters) != set(self.parent.optimizer.parameters)):
-            invalid()
+        if self.motif_transition is None:
+            if (self.allocations is not self.parent.allocations
+                    or set(self.optimizer.parameters) != set(self.parent.optimizer.parameters)):
+                invalid()
+        else:
+            _require_candidate_motif_allocation_transition(self.motif_transition)
+            transition = self.motif_transition
+            if (self.update_steps < 1
+                    or self.parent.custody is None
+                    or transition.parent_manifest_sha256
+                    != self.parent.custody.manifest_sha256
+                    or transition.parent_extents_sha256
+                    != self.parent.custody.extents_digest
+                    or transition.parent_allocation_sha256 != self.parent.allocations.digest
+                    or transition.candidate_allocation_sha256 != self.allocations.digest):
+                invalid()
         for name, count in self.optimizer.update_counts.items():
-            previous = self.parent.optimizer.update_counts[name]
+            previous = self.parent.optimizer.update_counts.get(name)
+            if previous is None:
+                if self.motif_transition is None or not name.startswith("motif.page."):
+                    invalid()
+                continue
             if (self.optimizer.parameters[name].shape != self.parent.optimizer.parameters[name].shape
                     or count.shape != previous.shape
                     or not bool(mx.all(count >= previous))
@@ -71,14 +97,17 @@ class CandidateTransaction:
 
 
 def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0,
-                       step_proofs=(), training_authorities=()):
-    """Continue optimizer-only candidate state; allocation state is immutable here."""
+                       step_proofs=(), training_authorities=(), *, allocations=None,
+                       motif_transition=None):
+    """Continue one candidate; B07 allocation state is terminal when present."""
     candidate = object.__new__(CandidateTransaction)
+    allocations = parent.allocations if allocations is None else allocations
     for name, value in (
-            ('parent', parent), ('optimizer', optimizer), ('allocations', parent.allocations),
+            ('parent', parent), ('optimizer', optimizer), ('allocations', allocations),
             ('teacher_requests_full', teacher_requests_full), ('update_steps', update_steps),
             ('step_proofs', tuple(step_proofs)),
             ('training_authorities', tuple(training_authorities)),
+            ('motif_transition', motif_transition),
             ('schema_version', TRANSACTION_SCHEMA), ('_issuance', TRANSACTION_ISSUER)):
         object.__setattr__(candidate, name, value)
     candidate.__post_init__()
@@ -109,6 +138,8 @@ def candidate_step(candidate: CandidateTransaction, gradients, execution,
     if type(candidate) is not CandidateTransaction:
         invalid()
     candidate.__post_init__()
+    if candidate.motif_transition is not None:
+        invalid()
     if type(execution) is not StepExecutionProvenance:
         invalid()
     custody = candidate.parent.custody

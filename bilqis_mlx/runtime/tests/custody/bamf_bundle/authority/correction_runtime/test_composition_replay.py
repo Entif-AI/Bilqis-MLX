@@ -9,7 +9,7 @@ from bilqis_mlx.runtime.atlas_revalidation import RevalidationFrontier
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     candidate, parent_state, shape_patch,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_composition_support import (
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.correction_runtime.composition_support import (
     AUTHORITY, AcceptedCorrectionCompositionCase, _event, _result,
 )
 from bilqis_mlx.runtime.tests.capability.factory.solver_helpers import _fixture

@@ -33,7 +33,7 @@ from bilqis_mlx.runtime.tests.test_atlas_revalidation import (
 from bilqis_mlx.semantics.cognitive_dependencies import (
     ArtifactKind, ArtifactNode, DependencyIndex, DependencyKind, DependencyRef,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.correction_runtime.temporal_support import (
     source_owned_temporal_case,
 )
 

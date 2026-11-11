@@ -33,16 +33,16 @@ from bilqis_mlx.semantics.atlas.vocabulary_transaction import (
     FullVocabularyParent, _stage_authenticated_full_vocabulary_extension,
     stage_full_vocabulary_extension,
 )
-from ._vocabulary_admission_records import (
+from .admission_records import (
     A02StagedVocabularyExtension, A02VocabularyStagingReceipt, STAGED_EVENT,
     _issue_a02_staged_vocabulary_extension,
     require_issued_a02_staged_vocabulary_extension,
 )
-from .feature_authority import (
+from ..feature_authority import (
     feature_schema_from_compiler_features, read_accepted_generation_feature_context,
 )
-from .publication import load_bamf_generation_authority
-from .records import BamfBundleCandidate, canonical, invalid, sha
+from ..publication import load_bamf_generation_authority
+from ..records import BamfBundleCandidate, canonical, invalid, sha
 
 
 def _accepted_active_ids(parent, snapshot) -> tuple[str, ...]:

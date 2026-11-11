@@ -47,11 +47,22 @@ def _new_factory_evaluation_owner():
         return value
 
     def issue(decision, parent, candidate):
+        from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
+            successor_candidate_identity_digest,
+        )
+        from bilqis_mlx.runtime.bamf_bundle.motif.transition import (
+            is_motif_allocation_transition,
+        )
         item = object.__new__(FactoryRetentionEvaluation)
+        generation_authority = (
+            successor_candidate_identity_digest(candidate)
+            if is_motif_allocation_transition(getattr(candidate, "transition", {}))
+            else None)
         for name, value in (
             ("decision", decision),
             ("parent_candidate_sha256", candidate_identity_digest(parent.retained_state)),
             ("candidate_candidate_sha256", candidate_identity_digest(candidate.retained_state)),
+            ("candidate_generation_authority_sha256", generation_authority),
         ):
             object.__setattr__(item, name, value)
         issued[id(item)] = item
@@ -67,6 +78,7 @@ class FactoryRetentionEvaluation:
     decision: Decision
     parent_candidate_sha256: str
     candidate_candidate_sha256: str
+    candidate_generation_authority_sha256: str | None
 
     def __init__(self, *args, **kwargs):
         _invalid("BAMF_C05_FACTORY_EVALUATION_CALLER_CONSTRUCTION_FORBIDDEN")
@@ -77,7 +89,11 @@ class FactoryRetentionEvaluation:
                 or not all(isinstance(value, str)
                            and len(value) == SHA256_HEX_LENGTH
                            for value in (self.parent_candidate_sha256,
-                                         self.candidate_candidate_sha256))):
+                                         self.candidate_candidate_sha256))
+                or (self.candidate_generation_authority_sha256 is not None
+                    and (not isinstance(self.candidate_generation_authority_sha256, str)
+                         or len(self.candidate_generation_authority_sha256)
+                         != SHA256_HEX_LENGTH))):
             _invalid("BAMF_C05_FACTORY_EVALUATION_INVALID")
 
 

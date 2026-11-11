@@ -106,7 +106,21 @@ class SourceQualifiedMotifTests(TestCase):
         ):
             self.assertNotIn(forbidden, parameters)
         self.assertFalse(hasattr(source_module, "_probe_approved_motifs"))
+        self.assertFalse(hasattr(source_module, "_issue_approved_motif_candidate"))
+        self.assertFalse(hasattr(source_module, "_APPROVED_ISSUER"))
         self.assertNotIn("frames", inspect.signature(begin_candidate).parameters)
+
+    def test_approved_candidate_requires_exact_owner_issued_candidate_identity(self):
+        approved, _frontier = self._prepare()
+        original = approved.candidate
+        same_value_copy = replace(original)
+        self.assertEqual(same_value_copy.digest, original.digest)
+        self.assertIsNot(same_value_copy, original)
+        object.__setattr__(approved, "candidate", same_value_copy)
+        with self.assertRaises(BilqisError):
+            approved.__post_init__()
+        object.__setattr__(approved, "candidate", original)
+        approved.__post_init__()
 
     def test_source_candidate_cannot_launder_history_into_retention(self):
         name = "identity.bank.0"

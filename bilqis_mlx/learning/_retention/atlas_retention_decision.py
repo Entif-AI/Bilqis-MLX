@@ -27,21 +27,33 @@ _DECISION_FIELDS = (
 def _new_decision_owner():
     """Track live C05 decisions by owner-issued object identity, not a token."""
     issued = {}
+    generation_authority = {}
 
     def require(value):
         if issued.get(id(value)) is not value:
             _invalid()
         return value
 
-    def issue(values):
+    def issue(values, *, generation_authority_sha256=None):
         decision = object.__new__(CandidateRetentionDecision)
         for name, value in values:
             object.__setattr__(decision, name, value)
         issued[id(decision)] = decision
+        generation_authority[id(decision)] = generation_authority_sha256
         decision.__post_init__()
         return decision
 
-    return require, issue
+    def require_generation_authority(value, expected):
+        require(value)
+        if (not _digest(expected)
+                or generation_authority.get(id(value)) != expected):
+            _invalid()
+        return value
+
+    def issued_generation_authority(value):
+        return generation_authority.get(id(value))
+
+    return require, require_generation_authority, issued_generation_authority, issue
 _LEGACY_FIELDS = (
     "decision", "reason", "target_gain", "protected_net_gain", "schema_version",
 )
@@ -169,7 +181,8 @@ def decide_candidate_retention(
     )
 
 
-_require_issued_decision, _raw_issue_decision = _new_decision_owner()
+(_require_issued_decision, _require_issued_decision_generation_authority,
+ _issued_decision_generation_authority, _raw_issue_decision) = _new_decision_owner()
 
 
 def _make_factory_retention_issuer(raw_issue):
@@ -195,7 +208,8 @@ def _make_factory_retention_issuer(raw_issue):
             ("evidence_sha256", result.evidence_sha256),
             ("policy_sha256", result.policy_sha256),
             ("schema_version", DECISION_SCHEMA),
-        ))
+        ), generation_authority_sha256=(
+            owner_evaluation.candidate_generation_authority_sha256))
 
     return issue_factory_retention_decision
 
