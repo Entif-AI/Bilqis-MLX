@@ -11,7 +11,7 @@ from bilqis_mlx.runtime.jit_adoption import (
 from bilqis_mlx.runtime.atlas_lease_contracts import _invalid
 
 
-def accepted_parameter_extension_retry_v2(current, handoff, native_staged, lease):
+def _accepted_parameter_extension_retry_once_v2(current, handoff, native_staged, lease):
     """Authenticate one exact historical v2 A02 child before live-parent verification."""
     from bilqis_mlx.runtime.atlas_admission import (
         _accepted_run_lease_identity,
@@ -65,6 +65,38 @@ def accepted_parameter_extension_retry_v2(current, handoff, native_staged, lease
                != handoff.receipt.predecessor_release.release_sha256):
         _invalid("BAMF_ATLAS_V2_PARAMETER_RETRY_CONFLICT")
     return None
+
+
+def accepted_parameter_extension_retry_v2(current, handoff, native_staged, lease):
+    """Classify against one stable accepted-generation snapshot, retrying once."""
+    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import accepted_generation
+
+    def identity(pointer):
+        return (
+            pointer["generation"],
+            pointer["manifest_sha256"],
+            pointer["acceptance_sha256"],
+        )
+
+    for attempt in range(2):
+        before, _student = accepted_generation(current.run_dir / "bamf-state.json")
+        try:
+            result = _accepted_parameter_extension_retry_once_v2(
+                current, handoff, native_staged, lease)
+        except BilqisError:
+            after, _student = accepted_generation(current.run_dir / "bamf-state.json")
+            if identity(after) == identity(before):
+                raise
+            if attempt == 1:
+                _invalid("BAMF_ATLAS_V2_PARAMETER_RETRY_CONFLICT")
+            continue
+        after, _student = accepted_generation(current.run_dir / "bamf-state.json")
+        if identity(after) == identity(before):
+            return result
+        if attempt == 1:
+            _invalid("BAMF_ATLAS_V2_PARAMETER_RETRY_CONFLICT")
+
+    _invalid("BAMF_ATLAS_V2_PARAMETER_RETRY_CONFLICT")
 
 
 def _revalidate_parameter_publication(

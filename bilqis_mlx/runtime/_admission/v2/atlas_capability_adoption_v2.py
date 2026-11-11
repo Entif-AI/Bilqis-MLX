@@ -58,7 +58,7 @@ def _historical_factory_release_sha256(
         acceptance_sha256 = parent_acceptance
 
 
-def _accepted_capability_only_retry_state_v2(current, handoff, lease):
+def _accepted_capability_only_retry_state_once_v2(current, handoff, lease):
     """Return an exact retry or the exact accepted predecessor pointer."""
     from . import state as runtime_state
     from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
@@ -137,6 +137,38 @@ def _accepted_capability_only_retry_state_v2(current, handoff, lease):
             current.run_dir, parent_manifest, parent_acceptance, parent) != predecessor:
         _invalid("BAMF_FACTORY_RELEASE_ADMISSION_BINDING_DRIFT")
     return pointer, None
+
+
+def _accepted_capability_only_retry_state_v2(current, handoff, lease):
+    """Classify against one stable accepted-generation snapshot, retrying once."""
+    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import accepted_generation
+
+    def identity(pointer):
+        return (
+            pointer["generation"],
+            pointer["manifest_sha256"],
+            pointer["acceptance_sha256"],
+        )
+
+    for attempt in range(2):
+        before, _student = accepted_generation(current.run_dir / "bamf-state.json")
+        try:
+            result = _accepted_capability_only_retry_state_once_v2(
+                current, handoff, lease)
+        except BilqisError:
+            after, _student = accepted_generation(current.run_dir / "bamf-state.json")
+            if identity(after) == identity(before):
+                raise
+            if attempt == 1:
+                _invalid("BAMF_ATLAS_V2_CAPABILITY_RETRY_CONFLICT")
+            continue
+        after, _student = accepted_generation(current.run_dir / "bamf-state.json")
+        if identity(after) == identity(before):
+            return result
+        if attempt == 1:
+            _invalid("BAMF_ATLAS_V2_CAPABILITY_RETRY_CONFLICT")
+
+    _invalid("BAMF_ATLAS_V2_CAPABILITY_RETRY_CONFLICT")
 
 
 def accepted_capability_only_retry_v2(current, handoff, lease):

@@ -2,6 +2,7 @@
 
 from bilqis_mlx.runtime.tests.admission.atlas.v2.capability_support import *
 from bilqis_mlx.learning.tests.test_atlas_salience import _signed
+from bilqis_mlx.runtime.jit_adoption import _PreparedSuccessorRuntime
 from bilqis_mlx.runtime.atlas_admission_policy_v2 import (
     _require_exact_atlas_release,
     replay_atlas_delta_scope_handoff_v2,
@@ -220,46 +221,74 @@ class CapabilityVerificationV2Tests(CapabilityV2Support):
             AtlasAdmissionContextV2(
                 current.legacy, current.run_dir, source_authority=object())
 
-        with self.assertRaises(BilqisError) as legacy_partial:
+    def test_legacy_partial_production_triple_still_rejects_before_v2_wrapping(self):
+        handoff = self._handoff()
+        approval, _lease = self._lease_authority(handoff)
+        current = self._context(handoff, approval)
+
+        with self.assertRaises(BilqisError) as caught:
             replace(
                 current.legacy,
-                runtime=object(), native_staged=None, source_authority=object(),
+                runtime=object(),
+                native_staged=None,
+                source_authority=object(),
             )
+
         self.assertEqual(
-            legacy_partial.exception.context["reason"],
+            caught.exception.context["reason"],
             "BAMF_ATLAS_ADMISSION_CONTEXT_INVALID",
         )
 
-        legacy_production = replace(
+    def test_v2_production_pair_rejects_any_legacy_production_triple(self):
+        handoff = self._handoff()
+        approval, _lease = self._lease_authority(handoff)
+        current = self._context(handoff, approval)
+        helper = object.__new__(AtlasAdoptionExecutorFixture)
+        _parent, candidate = AtlasAdoptionExecutorFixture._native_parent_and_candidate(helper)
+        native = AtlasAdoptionExecutorFixture._a02_staged(
+            helper, candidate, semantic_id="urn:fixture:v2-context")
+        legacy_runtime = _PreparedSuccessorRuntime(
+            None, current.run_dir, {}, None, None, {}, object(), object(), 0.)
+        legacy = replace(
             current.legacy,
-            runtime=object(), native_staged=object(), source_authority=object(),
+            runtime=legacy_runtime,
+            native_staged=native,
+            source_authority=object(),
         )
-        with self.assertRaises(BilqisError) as mixed_owner:
+
+        with self.assertRaises(BilqisError) as caught:
             AtlasAdmissionContextV2(
-                legacy_production,
+                legacy,
                 current.run_dir,
                 runtime=object(),
                 source_authority=object(),
             )
+
         self.assertEqual(
-            mixed_owner.exception.context["reason"],
+            caught.exception.context["reason"],
             "BAMF_ATLAS_V2_CONTEXT_INVALID",
         )
 
-        missing_registries = replace(
+    def test_v2_production_pair_requires_legacy_implementation_registries(self):
+        handoff = self._handoff()
+        approval, _lease = self._lease_authority(handoff)
+        current = self._context(handoff, approval)
+        legacy_without_registries = replace(
             current.legacy,
             source_registry=None,
             answer_registry=None,
         )
-        with self.assertRaises(BilqisError) as missing_implementations:
+
+        with self.assertRaises(BilqisError) as caught:
             AtlasAdmissionContextV2(
-                missing_registries,
+                legacy_without_registries,
                 current.run_dir,
                 runtime=object(),
                 source_authority=object(),
             )
+
         self.assertEqual(
-            missing_implementations.exception.context["reason"],
+            caught.exception.context["reason"],
             "BAMF_ATLAS_V2_CONTEXT_INVALID",
         )
 
