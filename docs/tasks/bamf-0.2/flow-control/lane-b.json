@@ -1,10 +1,20 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "555171ae3d4ac3132221dac59a893f5c08ccdbbf",
-  "updated_at": "2026-11-10T23:10:21Z",
+  "observed_unified": "08654dd2efd199cda03527bc456c3631f3cc0dbb",
+  "updated_at": "2026-11-11T01:16:36Z",
   "exception": null,
   "items": [
+    {
+      "issue": 863,
+      "pr": 981,
+      "state": "TURNED_IN",
+      "head_sha": "269f4d04051493f5e68ce7d6164aacc7bdb0390c",
+      "head_sha_role": "exact semantic/test proof head; subsequent turn-in bookkeeping is docs/flow-only",
+      "summary": "B05.2a closes the source-backed adapter-execution acceptance gap without duplicating production authority. Current unified already applies B01 adapters after source-owned B05 selection and at the final boundary; the new pinned-A01 witness proves nonzero adapted g2/g3 inputs, final g3 adaptation with no fourth group, finite nonzero A/B gradients across all three adapters, zero-init parity, and stale/cross-boundary/tree fail-closed behavior. Focused witness 4/4 PASS; affected ring 21 PASS / 2 explicit retained-motif skips; BAMF contracts 43/43; fresh independent Goldfish EGM 0 Blocker / 0 Major / 0 Nit; hosted semantic-ABI/portable-core/portable PASS. Human merge remains external and parent #450 stays open.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/863-b05-2a-source-adapters-20261110"
+    },
     {
       "issue": 979,
       "pr": 980,
