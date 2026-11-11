@@ -106,34 +106,41 @@ class BamfNativeC05LiveTests(unittest.TestCase):
             **payload, "visit_id": hashlib.sha256(wire.encode()).hexdigest()})
 
     def test_real_candidate_reaches_public_c05_without_legacy_state(self):
-        target, parent, context, feature_path = self._foundation()
-        capability = "B.IDBOOLOPS"
-        rows = tuple(context.draw_rows(seed=37116, capability=capability, each=1))
-        execution = context.release.execution_plan.capability_map[capability]
-        delivery = describe_delivered_teaching(
-            context.release, capability, execution.teaching_option_ids[0], rows)
-        capture = ObservationCapture(target, {})
-        capture.attempt_id = "c05-bamf-native-live"
-        capture.proposal_id = store_sidecar(target, {"attempt_id": capture.attempt_id})["sha256"]
-        capture.select_option(capability, None)
-        observation = FactoryDeliveryObservation(capture, 1, rows, 37116)
-        teacher_hp = type(HP)(
-            C05_TRAINING_LEARNING_RATE, HP.betas, HP.eps, HP.weight_decay)
-        step = train_bamf_factory_step(
-            target, context, parent, str(self.artifact), feature_path, rows,
-            capability=capability, delivery=delivery, requested_count=2,
-            source_seed=37116, source_each=1, optimizer_step_seed=17,
-            visit_provenance=self._visit(parent, target, capability),
-            teacher_strategy={"policy": "c05-bamf-native-live"},
-            teacher_hparams=teacher_hp, max_norm=1.0, observation=observation)
-        self.assertEqual(step.transaction.update_steps, 1)
-        self.assertFalse((target / "state.json").exists())
-        evaluation = evaluate_factory_retention_candidate(
-            context, step.transaction, str(self.artifact), capability, run_dir=target)
-        self.assertIsNotNone(evaluation.decision)
-        self.assertFalse((target / "state.json").exists())
-        self.assertTrue((target / ".c05-fixed-school.anchor.json").is_file())
-        self.assertTrue((target / "c05-fixed-school" / f"{parent.run_identity.digest}.json").is_file())
+        # The accepted runtime deliberately resolves C09 host authority on every
+        # rebind. Keep that host fixture active for the complete detached
+        # scenario rather than only for generation-zero publication.
+        with host_source_authority_patch():
+            target, parent, context, feature_path = self._foundation()
+            capability = "B.IDBOOLOPS"
+            rows = tuple(context.draw_rows(seed=37116, capability=capability, each=1))
+            execution = context.release.execution_plan.capability_map[capability]
+            delivery = describe_delivered_teaching(
+                context.release, capability, execution.teaching_option_ids[0], rows)
+            capture = ObservationCapture(target, {})
+            capture.attempt_id = "c05-bamf-native-live"
+            capture.proposal_id = store_sidecar(
+                target, {"attempt_id": capture.attempt_id})["sha256"]
+            capture.select_option(capability, None)
+            observation = FactoryDeliveryObservation(capture, 1, rows, 37116)
+            teacher_hp = type(HP)(
+                C05_TRAINING_LEARNING_RATE, HP.betas, HP.eps, HP.weight_decay)
+            step = train_bamf_factory_step(
+                target, context, parent, str(self.artifact), feature_path, rows,
+                capability=capability, delivery=delivery, requested_count=2,
+                source_seed=37116, source_each=1, optimizer_step_seed=17,
+                visit_provenance=self._visit(parent, target, capability),
+                teacher_strategy={"policy": "c05-bamf-native-live"},
+                teacher_hparams=teacher_hp, max_norm=1.0, observation=observation)
+            self.assertEqual(step.transaction.update_steps, 1)
+            self.assertFalse((target / "state.json").exists())
+            evaluation = evaluate_factory_retention_candidate(
+                context, step.transaction, str(self.artifact), capability, run_dir=target)
+            self.assertIsNotNone(evaluation.decision)
+            self.assertFalse((target / "state.json").exists())
+            self.assertTrue((target / ".c05-fixed-school.anchor.json").is_file())
+            self.assertTrue((
+                target / "c05-fixed-school" / f"{parent.run_identity.digest}.json"
+            ).is_file())
 
 
 if __name__ == "__main__":
