@@ -220,7 +220,7 @@ def _developmental_evidence_policy(root: Path) -> tuple[str, ...]:
 
     problems.extend(_developmental_policy_docs(root))
 
-    owner = root / "bilqis_mlx/runtime/_capability/factory_retention_owner.py"
+    owner = root / "bilqis_mlx/runtime/_capability/factory/factory_retention_owner.py"
     if not owner.is_file():
         problems.append("FACTORY_RETENTION_OWNER_MISSING")
     elif ("CURRENT_EVIDENCE_STAGE = EvidenceStage.FOUNDATION_ACQUISITION"

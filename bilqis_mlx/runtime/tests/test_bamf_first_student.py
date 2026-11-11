@@ -17,7 +17,7 @@ from bilqis_mlx.runtime.bamf_first_student import (
     LaunchReceipt,
     preflight_bamf_foundation,
 )
-from bilqis_mlx.runtime.tests._bamf_first_student_support import BamfFirstStudentCase
+from bilqis_mlx.runtime.tests.bamf_first_student._bamf_first_student_support import BamfFirstStudentCase
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import REGISTRY
 

@@ -5,7 +5,7 @@ import json
 from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.tests._bamf_first_student_support import BamfFirstStudentCase
+from bilqis_mlx.runtime.tests.bamf_first_student._bamf_first_student_support import BamfFirstStudentCase
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 
 

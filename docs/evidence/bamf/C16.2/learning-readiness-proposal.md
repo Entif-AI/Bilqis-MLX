@@ -239,7 +239,7 @@ No new CLI flag is introduced by #544.
 
 Production:
 
-- **Modify** `bilqis_mlx/runtime/_capability/factory_retention_owner.py` only to
+- **Modify** `bilqis_mlx/runtime/_capability/factory/factory_retention_owner.py` only to
   route accepted BAMF parents into the private C05-owned whole-school path while
   preserving the legacy historical path;
 - **Add** bounded private C05 support modules for fixed-school orchestration,
