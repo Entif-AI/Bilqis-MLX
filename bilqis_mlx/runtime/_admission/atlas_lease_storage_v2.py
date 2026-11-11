@@ -6,6 +6,7 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 
+from bilqis_mlx.errors import BilqisError
 from ..learning.champions import Checkpoint
 from ..semantics.domains import contract_digest
 from .atlas_lease_contracts import (
@@ -23,6 +24,11 @@ from .state import _durable_json
 
 _REFERENCE_SCHEMA = 'bilqis.c07.atlas-lease-reference/v2'
 _LEASE_DIR = 'autonomy/atlas-admission/v2/leases'
+
+
+def _durable_bytes(data: dict) -> bytes:
+    return (json.dumps(data, sort_keys=True, indent=2, ensure_ascii=False,
+                       allow_nan=False) + '\n').encode('utf-8')
 
 
 def _store_v2(root):
@@ -112,25 +118,52 @@ def _persist_atlas_lease_v2_locked(run_dir, lease, *, independently_loaded_run,
         return reference
     relative = _LEASE_DIR + '/' + lease.digest() + '.json'
     path = Path(run_dir) / relative
+    expected_lease_bytes = _durable_bytes(asdict(lease))
     if path.is_symlink():
         _invalid('BAMF_ATLAS_LEASE_V2_UNSAFE_PATH')
     if path.exists():
         try:
-            if _lease_v2_from_json(json.loads(path.read_text(encoding='utf-8'))) != lease:
+            if not path.is_file() or path.read_bytes() != expected_lease_bytes:
                 _invalid('BAMF_ATLAS_LEASE_V2_IMMUTABLE_DRIFT')
-        except (OSError, ValueError):
+        except OSError:
             _invalid('BAMF_ATLAS_LEASE_V2_READ_FAILED')
     else:
         _durable_json(path, asdict(lease))
-    _durable_json(reference, {
+    reference_payload = {
         'schema': _REFERENCE_SCHEMA,
         'run_identity_digest': contract_digest(independently_loaded_run),
         'lease_sha256': lease.digest(),
         'lease_file': relative,
-    })
-    if _read_atlas_lease_v2(
-            run_dir, independently_loaded_run, registry=registry) != lease:
-        _invalid('BAMF_ATLAS_LEASE_V2_READBACK_DRIFT')
+    }
+    _durable_json(reference, reference_payload)
+    try:
+        if _read_atlas_lease_v2(
+                run_dir, independently_loaded_run, registry=registry) != lease:
+            _invalid('BAMF_ATLAS_LEASE_V2_READBACK_DRIFT')
+    except BilqisError as error:
+        if error.context.get('reason') not in {
+                'BAMF_ATLAS_LEASE_V2_READ_FAILED',
+                'BAMF_ATLAS_LEASE_V2_READBACK_DRIFT'}:
+            raise
+        # Reconcile only the post-reference uncertainty window while the writer lock
+        # is still held. Earlier authority/path/signature failures are never caught.
+        try:
+            if (reference.is_symlink() or not reference.is_file()
+                    or reference.read_bytes() != _durable_bytes(reference_payload)
+                    or path.is_symlink() or not path.is_file()
+                    or path.read_bytes() != expected_lease_bytes):
+                _invalid('BAMF_ATLAS_LEASE_V2_RECONCILIATION_FAILED')
+            parsed_reference = json.loads(reference.read_text(encoding='utf-8'))
+            if parsed_reference != reference_payload:
+                _invalid('BAMF_ATLAS_LEASE_V2_RECONCILIATION_FAILED')
+            parsed_lease = _lease_v2_from_json(
+                json.loads(path.read_text(encoding='utf-8')))
+            parsed_lease.source_approval.verify(registry)
+            if (parsed_lease != lease
+                    or parsed_lease.run_identity != independently_loaded_run):
+                _invalid('BAMF_ATLAS_LEASE_V2_RECONCILIATION_FAILED')
+        except (OSError, json.JSONDecodeError, UnicodeError):
+            _invalid('BAMF_ATLAS_LEASE_V2_RECONCILIATION_FAILED')
     return reference
 
 

@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 253,
-  "legacy_raw_raise_count": 2073,
+  "legacy_raw_file_count": 256,
+  "legacy_raw_raise_count": 2079,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -9439,6 +9439,13 @@
       "path": "bilqis_mlx/runtime/_capability/candidate_staging.py"
     },
     {
+      "code_hint": "unlock failed",
+      "count": 2,
+      "exception": "OSError",
+      "expression": "'unlock failed'",
+      "path": "bilqis_mlx/runtime/_coordination/tests/test_run_root_claim.py"
+    },
+    {
       "code_hint": "HUMAN_TRAINER_LIVE_EXAM_INCOMPLETE_FACTORS",
       "count": 1,
       "exception": "ValueError",
@@ -11245,6 +11252,13 @@
       "path": "bilqis_mlx/runtime/tests/admission/atlas/test_atlas_lease_renewal.py"
     },
     {
+      "code_hint": "unlock failed",
+      "count": 2,
+      "exception": "OSError",
+      "expression": "'unlock failed'",
+      "path": "bilqis_mlx/runtime/tests/admission/atlas/test_atlas_lease_storage.py"
+    },
+    {
       "code_hint": "model-input planning entered before A06 authority rejection",
       "count": 1,
       "exception": "AssertionError",
@@ -11593,6 +11607,20 @@
       "exception": "AssertionError",
       "expression": "'generation-zero sidecars are owner-derived: ' + ','.join(sorted(forbidden))",
       "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/helpers.py"
+    },
+    {
+      "code_hint": "durability failure",
+      "count": 1,
+      "exception": "OSError",
+      "expression": "'durability failure'",
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py"
+    },
+    {
+      "code_hint": "unlock failure",
+      "count": 1,
+      "exception": "OSError",
+      "expression": "'unlock failure'",
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py"
     },
     {
       "code_hint": "test synchronization timed out",

@@ -11,7 +11,7 @@ from bilqis_mlx.runtime import release_adoption
 from bilqis_mlx.runtime.jit_adoption import (
     _accepted_lease_run_identity, _execute_prepared_successor_adoption,
 )
-from bilqis_mlx.runtime.tests.admission.atlas.atlas_adoption_executor_support import (
+from bilqis_mlx.runtime.tests.admission.atlas.adoption.atlas_adoption_executor_support import (
     AtlasAdoptionExecutorFixture,
 )
 from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import _lease

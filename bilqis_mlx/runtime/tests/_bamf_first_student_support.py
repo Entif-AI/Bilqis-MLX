@@ -92,7 +92,8 @@ class BamfFirstStudentCase(unittest.TestCase):
         with shape_patch(), genesis_feature_source_patch(), \
                 patch("bilqis_mlx.runtime.bamf_first_student.resolve_atlas_artifact_selection",
                       return_value=self.selection), \
-                patch.object(mlx_checkpoint, "assert_headroom"):
+                patch.object(mlx_checkpoint, "assert_headroom"), \
+                patch("bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom"):
             return preflight_bamf_foundation(config, release, target)
 
     def assert_owner_identity(self, receipt, student, manifest_sha256):

@@ -131,6 +131,25 @@ class BamfFirstStudentTests(BamfFirstStudentCase):
             for path in sorted(self.source.rglob("*")) if path.is_file()
         }, before)
 
+    def test_preflight_rejects_target_ancestor_of_source_before_factory_replay(self):
+        before = {
+            str(path.relative_to(self.source)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(self.source.rglob("*")) if path.is_file()
+        }
+        with patch("bilqis_mlx.runtime.bamf_first_student."
+                   "issue_initial_factory_foundation_authority") as factory_replay:
+            with self.assertRaises(BilqisError) as failure:
+                self.preflight(self.root)
+
+        self.assertEqual(
+            failure.exception.context["reason"],
+            "BAMF_FIRST_STUDENT_TARGET_OVERLAPS_SOURCE")
+        factory_replay.assert_not_called()
+        self.assertEqual({
+            str(path.relative_to(self.source)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(self.source.rglob("*")) if path.is_file()
+        }, before)
+
     def test_preflight_types_target_path_normalization_failure_before_factory_replay(self):
         with patch("bilqis_mlx.runtime.bamf_first_student."
                    "issue_initial_factory_foundation_authority") as factory_replay:
