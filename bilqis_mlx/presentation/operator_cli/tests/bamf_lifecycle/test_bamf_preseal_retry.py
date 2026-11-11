@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 import unittest
 
-from bilqis_mlx.presentation.operator_cli.tests import test_bamf_atlas_release_create as atlas_create_tests
+from bilqis_mlx.presentation.operator_cli.tests.bamf_lifecycle import test_bamf_atlas_release_create as atlas_create_tests
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
 import bilqis_mlx.runtime.bamf_bundle.publication.retry as retry
 import bilqis_mlx.runtime.bamf_bundle.publication.storage as storage

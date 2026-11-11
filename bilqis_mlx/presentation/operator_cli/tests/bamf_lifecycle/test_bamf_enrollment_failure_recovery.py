@@ -6,7 +6,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from bilqis_mlx.presentation.operator_cli.tests import test_bamf_atlas_release_create as atlas_create_tests
+from bilqis_mlx.presentation.operator_cli.tests.bamf_lifecycle import test_bamf_atlas_release_create as atlas_create_tests
 
 
 def _tree_bytes(root: Path):

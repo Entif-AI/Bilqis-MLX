@@ -13,7 +13,7 @@ from bilqis_mlx.curriculum.tests.test_staged_school import staged_course
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.learning_experiment import Settings, earlier_grade_capabilities
 from bilqis_mlx.learning.tests.teaching import test_c03_parent_acceptance as c03_tests
-from bilqis_mlx.presentation.operator_cli.tests import test_bamf_atlas_release_create as atlas_create_tests
+from bilqis_mlx.presentation.operator_cli.tests.bamf_lifecycle import test_bamf_atlas_release_create as atlas_create_tests
 from bilqis_mlx.runtime.accepted_teacher_custody import select_accepted_teacher_visit
 from bilqis_mlx.runtime.atlas_admission import advance_atlas_frontier
 from bilqis_mlx.runtime.bamf_bundle import (

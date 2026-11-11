@@ -5,7 +5,7 @@ from dataclasses import replace
 from unittest.mock import patch
 import unittest
 
-from bilqis_mlx.presentation.operator_cli.tests import test_bamf_atlas_release_create as atlas_create_tests
+from bilqis_mlx.presentation.operator_cli.tests.bamf_lifecycle import test_bamf_atlas_release_create as atlas_create_tests
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.atlas_admission import persist_accepted_atlas_lease
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority

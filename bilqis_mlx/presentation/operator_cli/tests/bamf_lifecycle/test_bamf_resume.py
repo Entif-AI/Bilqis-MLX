@@ -18,7 +18,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactIdentity
 
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[5]
 TOPOLOGY = ROOT / "configs/models/bamf-0.2.json"
 
 

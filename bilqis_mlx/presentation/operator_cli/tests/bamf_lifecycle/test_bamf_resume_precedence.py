@@ -4,8 +4,8 @@ from unittest.mock import patch
 import tempfile
 import unittest
 
-from bilqis_mlx.presentation.operator_cli.tests import test_bamf_atlas_release_create as atlas_create_tests
-from bilqis_mlx.presentation.operator_cli.tests import test_bamf_resume as resume_tests
+from bilqis_mlx.presentation.operator_cli.tests.bamf_lifecycle import test_bamf_atlas_release_create as atlas_create_tests
+from bilqis_mlx.presentation.operator_cli.tests.bamf_lifecycle import test_bamf_resume as resume_tests
 
 
 class BamfResumePrecedenceTests(unittest.TestCase):
