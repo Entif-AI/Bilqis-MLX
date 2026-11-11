@@ -1,6 +1,6 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-R15-PENDING
+Status: DESIGN AMENDMENT / EGM-R16-PENDING
 Issue: #542 / C16.1a
 Reviewed unified base: `905018b0ece7613843570dc2c2e72a74dae4e91d`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
@@ -178,6 +178,30 @@ stable/buildable/testable implementation phases rather than one flat file list. 
 two Nits were stale round labels. R15 repairs that complete set without changing the
 accepted architecture or production scope. Production mutation remains forbidden until
 R15 freshly clears **0 Blockers / 0 Majors** across all three required lenses.
+
+R15 review record: the frozen R15 proposal at
+`36c4bcb4adc51e3eb9139f5580df2080e9c94ef3` / SHA-256
+`643365934edd88a1b84b80c43356eea7e989776d4e4b489fea18142c243a6142`
+received Design/Structural **0 Blockers / 1 Major / 0 Nits**, Codebase Details
+**1 Blocker / 1 Major / 0 Nits**, and Implementation Readiness
+**0 Blockers / 1 Major / 0 Nits**. The material union is four seams. First,
+scope-absent ordinary resume promised an authenticated saved C07 policy while also
+returning before constructing the C09 capability required to authenticate a present
+v1/v2 accepted lease. Second, the frozen text abbreviated the reviewed B13
+generation-zero owner chain: after the initial
+`_existing_initial_generation_retry(...)` pointer-lock acquisition, reviewed B13
+also calls `_parent_acceptance_for_publication(...)`, whose owner acquires the
+persistent pointer lock again, before `_stage()`; final publication later acquires
+the pointer lock a third time. The durable prefix shapes remain pointer-lock-only,
+then pointer-lock plus staging, but the normative call chain and regression must name
+all three lock boundaries. Third, the C07 fixture-custody marker set omitted the
+persistent `.bamf-pointer.lock`, allowing generic fixture mutation to contaminate
+the newly recognized pointer-lock-only B13 crash prefix after the root claim is
+released. Fourth, the lifecycle report named several keys without freezing their
+exact JSON wire encodings or the source of `source_prefetch_workers` on resume.
+R16 repairs exactly those four findings and preserves every other R15 contract.
+Production mutation remains forbidden until R16 freshly clears **0 Blockers / 0
+Majors** across all three required lenses.
 
 ## Why this amendment exists
 
@@ -557,10 +581,24 @@ provisioning can itself fail; presentation may call it, but the classification l
 and error ownership remain C07:
 
 ```python
+def classify_accepted_atlas_epoch(run_dir: Path) -> str:
+    """Return exactly 'staged', 'v1' or 'v2'; raise on unsafe/dual authority."""
+    ...
+
 def require_accepted_atlas_epoch_available_v2(run_dir: Path) -> None:
-    """Read-only current-epoch classifier; creates no synchronization state."""
+    """Require classify_accepted_atlas_epoch(...) != 'v1'; create no state."""
     ...
 ```
+
+`classify_accepted_atlas_epoch(...)` is the single read-only classifier used by
+ordinary resume, v2 precheck and both accepted writers' under-lock recheck. It returns
+`staged` only when neither safe current reference exists, `v1` for one safe v1
+reference, and `v2` for one safe v2 reference; it raises the pinned owning
+unsafe-path error or `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT` instead of returning when
+classification is unsafe or dual. `require_accepted_atlas_epoch_available_v2(...)`
+delegates to it and maps only a returned `v1` to
+`BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT`; `staged` and `v2` return normally.
+Neither function creates directories or locks.
 
 The enrollment caller then supplies the request plus opaque accepted-run C09
 authority:
@@ -713,9 +751,15 @@ states. The full reviewed generation-zero call chain is normative: publication f
 enters `_authorize_publication_candidate(...)`, which calls
 `_existing_initial_generation_retry(...)`; that owner acquires/creates and then releases
 the persistent `.bamf-pointer.lock` while deciding that no exact prior genesis exists.
-Only after that retry preflight returns does `_publish_authorized_generation(...)` call
-`_stage()` and later take its second pointer lock around final publication. Therefore
-the only benign fresh-gen0 prefixes are:
+After that retry preflight returns, `_publish_authorized_generation(...)` calls
+`_parent_acceptance_for_publication(...)`; the reviewed B13 parent-acceptance owner
+acquires and releases the same persistent pointer lock a second time before returning
+generation-zero parent authority. Only then does publication call `_stage()`.
+Final publication later acquires the persistent pointer lock a **third** time around
+pointer/current validation and publication. The first two acquisitions occur before
+staging and therefore leave the same pointer-lock-only durable prefix; they are still
+distinct owner boundaries that the regression must traverse. Therefore the only
+benign fresh-gen0 prefixes are:
 
 1. exactly one safe regular `.bamf-pointer.lock`, with no other target entry; a crash
    may occur after the retry preflight releases the lock and before `_stage()` publishes
@@ -949,13 +993,11 @@ owns steps 1-6 and they are read-only; the accepted C07 owner then owns steps 7-
    settings and accepted Atlas feature receipt; invalid/drifted custody fails here;
 4. compare any explicit run/topology/optimizer/Atlas CLI equality assertions with the
    accepted state in the already pinned order run id -> run seed -> topology ->
-   optimizer group -> Atlas identity; the first mismatch short-circuits. Then compare
-   explicit admission-policy intent with the authenticated saved policy: on a staged
-   run, explicit `atlas-release` with no scope is an attempted first enrollment missing
-   its request and rejects `BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED`; on an already
-   atlas-release run, explicit `atlas-release` without scope is a valid equality
-   assertion; any explicit reverse/different policy rejects
-   `BAMF_OPERATOR_RESUME_ADMISSION_POLICY_CONFLICT`;
+   optimizer group -> Atlas identity; the first mismatch short-circuits. Admission
+   policy is **not** resolved in this step because ordinary no-scope resume has not
+   yet performed C07 path/epoch classification or, when a safe current reference is
+   present, C09-authenticated accepted-lease readback. Scope-present enrollment has
+   already satisfied its command-shape policy requirement in step 1;
 5. call C07-owned `require_accepted_atlas_epoch_available_v2(target)` before any C09
    host/capability provisioning; pre-existing dual/v1 authority therefore wins over
    any mixed-invalid C09 cache/capability condition and this precheck creates no lock
@@ -979,10 +1021,35 @@ owns steps 1-6 and they are read-only; the accepted C07 owner then owns steps 7-
     accepted v2 lease; different accepted v2 lease rejects as explicit renewal
     required.
 
-If step 1 found no scope, the command is on the ordinary-resume branch: after steps
-3-4 authenticate custody and resolve any explicit saved-policy assertion, it returns
-`READY_TO_RESUME`. Steps 5-11 above are enrollment-only and are not evaluated for a
-scope-absent ordinary resume.
+If step 1 found no scope, the command is on the ordinary-resume branch. After step 3
+authenticates accepted B13 custody and the run-id -> run-seed -> topology -> optimizer
+group -> Atlas-identity equality checks from step 4 have passed, resolve saved
+admission policy in this exact read-only order:
+
+1. call C07-owned `classify_accepted_atlas_epoch(target)` before constructing
+   `AcceptedRuntimeHost` or `SourceAuthorityRuntime`; preserve classifier precedence
+   v1 path safety -> v2 path safety -> epoch presence, so two safe present references
+   reject `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT`;
+2. if it returns `staged`, derive saved policy `staged` and do **not**
+   construct C09 authority;
+3. if it returns `v1` or `v2`, only then construct
+   `AcceptedRuntimeHost(target)`, obtain its opaque `SourceAuthorityRuntime`, and
+   authenticate/read back the corresponding accepted v1 or v2 lease through the existing
+   accepted C07/C09 owner. A successful authenticated read derives saved policy
+   `atlas-release`; any C09, lease or readback failure fails closed and is never
+   reclassified as `staged`;
+4. only after saved policy is established, apply explicit policy equality. Saved
+   `staged` plus explicit `atlas-release` with no scope rejects
+   `BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED`; any other explicit reverse/different
+   policy rejects `BAMF_OPERATOR_RESUME_ADMISSION_POLICY_CONFLICT`; omitted policy
+   inherits the authenticated saved policy;
+5. return `READY_TO_RESUME` with that policy, `ready_for_training=false` and
+   `neural_updates=0`.
+
+This ordinary-resume branch creates no `authority-epoch.lock`, acquires no writer
+lock, mutates no lease/current authority, and never invokes the learner. The explicit
+enrollment branch remains steps 5-11 above, including the C07 read-only epoch
+precheck before C09 and the mandatory under-lock epoch recheck before mutation.
 
 Therefore resume scope is not a general policy override or trust-root selector. It
 is a narrowly typed retry/completion surface for the first C07 enrollment after
@@ -1100,8 +1167,15 @@ generations
 bamf-state.json
 bamf-bundles
 bamf-acceptance
+.bamf-pointer.lock
 .bamf-staging
 ```
+
+The persistent pointer lock is itself B13 custody evidence even when it is the only
+target entry. Generic v1/v2 fixture persist or renew against that pointer-lock-only
+prefix must therefore reject before creating Atlas storage, an epoch-local writer
+lock, immutable lease bytes, renewal history, or a current reference. This marker
+guard composes with, rather than replaces, the shared run-root claim below.
 
 R12 closes the remaining **pre-marker race** without reserving a child filename.
 Marker inspection alone is insufficient
@@ -1311,6 +1385,32 @@ one of `READY_TO_CREATE`, `CREATED`, `READY_TO_RESUME`, `ENROLLED`;
 `ready_for_training` is always `false` and `neural_updates` is always `0`.
 `generation_manifest_sha256` is `null` only for `READY_TO_CREATE` and is the accepted
 B13 manifest digest for the other results.
+
+The remaining wire values are exact and shared by all four results:
+
+- `model_topology` is exactly `topology.to_record()`; accepted resume uses the
+  authenticated B13 student's saved `ModelTopologySpecV2` and serializes that saved
+  topology through the same method;
+- `atlas_release_manifest` is exactly
+  `{"sha256": atlas.bundle_id, "release_sha256": atlas.release_sha256,
+  "source_bundle_id": atlas.source_bundle_id,
+  "qualification": "A01_SOURCE_PINNED"}`, where `atlas` is the validated fresh
+  `AtlasArtifactIdentity` or the identity reconstructed from accepted B13 feature
+  custody on resume;
+- `optimizer_hyperparameters` is exactly
+  `{"learning_rate": hp.learning_rate, "betas": [hp.betas[0], hp.betas[1]],
+  "eps": hp.eps, "weight_decay": hp.weight_decay}`; fresh results serialize the
+  validated foundation AdamW record and resume serializes the authenticated saved B13
+  optimizer record;
+- `source_prefetch_workers` is exactly the current parsed
+  `args.source_prefetch_workers` integer in `0..2` for every lifecycle result.
+  It is a presentation/runtime request value, **not** accepted B13/C07 identity and is
+  intentionally not reconstructed from historical custody on resume. Reporting it
+  does not authorize training because every C16.1a result remains
+  `ready_for_training=false` with `neural_updates=0`.
+
+No implementation may substitute `dataclasses.asdict`, an object repr, a host path,
+or another locally convenient shape for these pinned wire values.
 
 `command._bamf_or_topology(...)` is the sole presentation caller. Once lifecycle owns
 the command it executes `_print_status(bamf_lifecycle(args, topology))`, whose existing
@@ -1577,8 +1677,10 @@ Production, with required file action:
     reciprocal v2-current exclusion; keep generic v1 renewal fixture-only on B13
     custody rather than inventing a new accepted renewal surface here;
 - **Modify** `bilqis_mlx/runtime/_admission/atlas_lease_storage.py`
-  - own the shared cross-epoch authority lock/path safety primitive used before any
-    accepted v1/v2 current-reference mutation; preserve the existing v1 writer lock as
+  - own exact read-only
+    `classify_accepted_atlas_epoch(run_dir: Path) -> str` plus the shared cross-epoch
+    authority lock/path safety primitive used before any accepted v1/v2
+    current-reference mutation; preserve the existing v1 writer lock as
     the second lock for v1 storage; expand the fixture-authority saved-run guard to the
     exact legacy+B13 custody marker set pinned above before any fixture mutation;
     generic v1 fixture persist/renew takes the neutral run-root claim before that guard
@@ -1598,7 +1700,9 @@ Production, with required file action:
 - **Create** `bilqis_mlx/presentation/operator_cli/bamf_lifecycle.py`
   - fresh request validation, post-genesis enrollment, resume-enrollment completion,
     exact preview identity, training-readiness false, and recovery-aware nonempty
-    target routing before mutable-source reconstruction;
+    target routing before mutable-source reconstruction; serialize the exact lifecycle
+    wire shapes and use the current parsed `source_prefetch_workers` value on every
+    report, including resume;
 - **Create** `bilqis_mlx/presentation/operator_cli/bamf_lifecycle_inputs.py`
   - own CLI-only source/manifest/optimizer input recovery and the exact fresh/resume
     identity/AdamW presence semantics pinned above while consuming the runtime target
@@ -1631,11 +1735,12 @@ Production, with required file action:
     stage-child cleanup through one helper that fsyncs `.bamf-staging/` after child
     removal; preserve `.bamf-pointer.lock` as the existing persistent B13
     synchronization file and classify both real fresh-owner prefixes: pointer-lock-only
-    after retry preflight, then pointer-lock + empty durable staging root;
+    after both pre-stage pointer-lock owner boundaries, then pointer-lock + empty
+    durable staging root;
 - **Modify** `bilqis_mlx/presentation/operator_cli/command.py` and **Modify**
   `bilqis_mlx/presentation/operator_cli/parser.py` only as required for
   the pinned v2 dispatch/presence-bit routing **and** the explicit BAMF-v2 foundation
-  input flags frozen in this R15 contract; parser-owned explicit-store actions must
+  input flags frozen in this R16 contract; parser-owned explicit-store actions must
   preserve argparse abbreviations while making any accepted explicit v2-only
   foundation option intercept before historical learner dispatch even when topology
   is omitted or invalid; `--admission-policy` uses the same parser-owned explicitness
@@ -1714,6 +1819,16 @@ mirrored test owner:
   explicit atlas-release policy but no scope rejects
   `BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED`; and already-atlas-release custody accepts
   an explicit matching atlas-release equality assertion without scope;
+- ordinary no-scope resume proves C07 path/epoch classification precedes C09:
+  no current refs plus broken C09 still reports `READY_TO_RESUME` / `staged`
+  without constructing the host; safe v1-only or v2-only plus broken C09/accepted
+  lease readback fails closed rather than downgrading to staged; unsafe v1 wins before
+  v2/dual/C09, unsafe v2 wins before dual/C09, and two safe refs report
+  `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT` before C09. Authenticated sole v1/v2 refs
+  derive `atlas-release`; omitted policy inherits, explicit matching
+  `atlas-release` succeeds, explicit `staged` conflicts. Every case proves zero
+  epoch-lock creation, zero lease/current mutation, zero learner dispatch and zero
+  optimizer steps;
 - atlas-release dry-run validates request compatibility without `--human-run` and
   still performs zero durable target mutation;
 - staged-gen0 -> resume enrollment completion;
@@ -1737,6 +1852,10 @@ mirrored test owner:
 - low-level fixture APIs remain compatible on marker-free roots but every low-level
   v1/v2 persist/renew call against a real accepted B13 root rejects before Atlas
   storage mutation, closing the authority-lock bypass;
+- the same low-level v1/v2 persist/renew APIs reject the exact
+  pointer-lock-only pre-seal prefix because `.bamf-pointer.lock` is itself in the
+  shared custody-marker guard; snapshots prove zero Atlas directory, writer lock,
+  immutable lease, renewal edge or current-reference mutation;
 - synchronized B13-fresh-create versus generic v1/v2 fixture-writer races are
   serialized by the neutral physical-parent directory claim: accepted B13 custody and
   fixture-created C07 current authority can never coexist from the race; a legal run
@@ -1750,9 +1869,13 @@ mirrored test owner:
   topology, Atlas identity and AdamW setting rejects before acceptance/pointer/outbox
   mutation;
 - both real pre-seal crash prefixes are lifecycle-owned. The regression enters the
-  full generation-zero owner order: `_existing_initial_generation_retry` creates/releases
-  the persistent pointer lock, then `_stage` publishes the durable staging root. A
-  simulated crash in the gap proves pointer-lock-only `--resume` rejects
+  full generation-zero owner order: `_existing_initial_generation_retry`
+  creates/releases the persistent pointer lock, then
+  `_parent_acceptance_for_publication` acquires/releases that same pointer lock a
+  second time, then `_stage` publishes the durable staging root, and final
+  publication later takes the pointer lock a third time. A simulated crash after
+  either pre-stage pointer-lock boundary and before stage publication proves the
+  same pointer-lock-only `--resume` rejection
   `BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY` and fresh create may
   continue while preserving the safe lock. A second crash after durable stage-root
   publication proves lock+empty-stage resume rejects identically and fresh create may
@@ -1785,6 +1908,12 @@ mirrored test owner:
 - parser presence-bit proof distinguishes omitted admission policy from explicit
   `staged` without changing argparse's historical default or abbreviation behavior;
 - dry-run exact B13 identity equals subsequent create identity;
+- every lifecycle result asserts the exact report wire contract: topology equals
+  `ModelTopologySpecV2.to_record()`; Atlas equals the four-key
+  `sha256/release_sha256/source_bundle_id/qualification` mapping pinned above;
+  AdamW equals the four-key mapping with `betas` encoded as a two-element JSON list;
+  and `source_prefetch_workers` equals the current parsed CLI integer even on
+  accepted resume, never a value reconstructed from custody;
 - parser-help text preserved across helper extraction;
 - cohesive first-start Functional Factory/rollback/cold-resume witness including one
   source-valid positive acquired-or-retained taught-behavior evidence kind;
