@@ -14,7 +14,34 @@ from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
 from bilqis_mlx.runtime.bamf_bundle.records import invalid
 
 
-_CONTINUATION_ISSUER = object()
+def _new_continuation_owner():
+    issued = {}
+
+    def require(value):
+        expected = issued.get(id(value))
+        if (expected is None
+                or expected[0] is not value
+                or value.approved is not expected[1]
+                or value.parent_manifest_sha256 != expected[2]
+                or value.parent_extents_sha256 != expected[3]
+                or value.parent_allocation_sha256 != expected[4]):
+            invalid("BAMF_MOTIF_SOURCE_CONTINUATION_INVALID")
+        return value
+
+    def issue(approved, student, manifest_sha256):
+        continuation = object.__new__(SourceQualifiedMotifContinuation)
+        for name, value in (
+                ("approved", approved), ("parent_manifest_sha256", manifest_sha256),
+                ("parent_extents_sha256", student.extents.digest),
+                ("parent_allocation_sha256", student.retained_state.allocations.digest)):
+            object.__setattr__(continuation, name, value)
+        issued[id(continuation)] = (
+            continuation, approved, manifest_sha256, student.extents.digest,
+            student.retained_state.allocations.digest)
+        continuation.__post_init__()
+        return continuation
+
+    return require, issue
 
 
 @dataclass(frozen=True, init=False)
@@ -25,38 +52,27 @@ class SourceQualifiedMotifContinuation:
     parent_manifest_sha256: str
     parent_extents_sha256: str
     parent_allocation_sha256: str
-    _issuance: object = field(init=False, repr=False, compare=False)
-
     def __init__(self, *args, **kwargs):
         invalid("BAMF_MOTIF_SOURCE_CONTINUATION_INVALID")
 
     def __post_init__(self):
+        _require_continuation_issued(self)
         _require_approved_motif_candidate(self.approved)
-        if (getattr(self, "_issuance", None) is not _CONTINUATION_ISSUER
-                or any(_required_manifest_sha256(value) != value for value in (
+        if any(_required_manifest_sha256(value) != value for value in (
                     self.parent_manifest_sha256, self.parent_extents_sha256,
-                    self.parent_allocation_sha256))):
+                    self.parent_allocation_sha256)):
             invalid("BAMF_MOTIF_SOURCE_CONTINUATION_INVALID")
 
 
-def _issue_continuation(approved, student, manifest_sha256):
-    continuation = object.__new__(SourceQualifiedMotifContinuation)
-    for name, value in (
-            ("approved", approved), ("parent_manifest_sha256", manifest_sha256),
-            ("parent_extents_sha256", student.extents.digest),
-            ("parent_allocation_sha256", student.retained_state.allocations.digest),
-            ("_issuance", _CONTINUATION_ISSUER)):
-        object.__setattr__(continuation, name, value)
-    continuation.__post_init__()
-    return continuation
-
-
 def _require_source_qualified_continuation(value):
-    if (type(value) is not SourceQualifiedMotifContinuation
-            or getattr(value, "_issuance", None) is not _CONTINUATION_ISSUER):
+    if type(value) is not SourceQualifiedMotifContinuation:
         invalid("BAMF_MOTIF_SOURCE_CONTINUATION_INVALID")
+    _require_continuation_issued(value)
     value.__post_init__()
     return value
+
+
+_require_continuation_issued, _raw_issue_continuation = _new_continuation_owner()
 
 
 def _required_manifest_sha256(value: object) -> str:
@@ -87,7 +103,8 @@ def continue_source_qualified_motifs_from_bundle(
     )
 
 
-def seal_source_qualified_motifs_from_bundle(
+def _seal_source_qualified_motifs_from_bundle(
+        issue_continuation,
         source_adapter, row, atlas_selection, *, retained_bundle_root: str | Path,
         expected_manifest_sha256: str, source_root, graph, task_scope,
         source_frontier, policy, source_seed: int, source_each: int, budget,
@@ -106,7 +123,19 @@ def seal_source_qualified_motifs_from_bundle(
     if isinstance(result, ContextHold):
         return result
     approved, frontier = result
-    return _issue_continuation(approved, student, expected_manifest_sha256), frontier
+    return issue_continuation(approved, student, expected_manifest_sha256), frontier
+
+
+def _make_source_sealer(issue_continuation):
+    def seal(source_adapter, row, atlas_selection, **kwargs):
+        return _seal_source_qualified_motifs_from_bundle(
+            issue_continuation, source_adapter, row, atlas_selection, **kwargs)
+    return seal
+
+
+seal_source_qualified_motifs_from_bundle = _make_source_sealer(
+    _raw_issue_continuation)
+del _raw_issue_continuation
 
 
 def stage_source_qualified_motif_allocation(

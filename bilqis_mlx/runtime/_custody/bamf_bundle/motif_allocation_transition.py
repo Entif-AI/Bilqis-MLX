@@ -21,7 +21,27 @@ _DIGEST_FIELDS = (
     "candidate_identity_sha256",
 )
 _FIELDS = ("schema", "kind", "invalidate_derived_caches", "added_pages") + _DIGEST_FIELDS
-_ISSUER = object()
+
+
+def _new_transition_owner():
+    issued = {}
+
+    def require(value):
+        expected = issued.get(id(value))
+        if expected is None or expected[0] is not value or dict(value) != expected[1]:
+            _invalid()
+        return value
+
+    def issue(values):
+        transition = object.__new__(MotifAllocationTransition)
+        for name, value in values.items():
+            object.__setattr__(transition, name, value)
+        issued[id(transition)] = (
+            transition, {name: getattr(transition, name) for name in _FIELDS})
+        transition.__post_init__()
+        return transition
+
+    return require, issue
 
 
 def _invalid():
@@ -49,14 +69,12 @@ class MotifAllocationTransition(Mapping):
     schema: str = MOTIF_ALLOCATION_TRANSITION_SCHEMA
     kind: str = MOTIF_ALLOCATION_KIND
     invalidate_derived_caches: bool = True
-    _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         _invalid()
 
     def __post_init__(self):
-        if getattr(self, "_issuance", None) is not _ISSUER:
-            _invalid()
+        _require_transition_issued(self)
         validate_motif_allocation_transition(self)
 
     def __iter__(self):
@@ -89,18 +107,22 @@ def validate_motif_allocation_transition(value) -> None:
 
 
 def require_issued_motif_allocation_transition(value) -> None:
-    if (type(value) is not MotifAllocationTransition
-            or getattr(value, "_issuance", None) is not _ISSUER):
+    if type(value) is not MotifAllocationTransition:
         _invalid()
+    _require_transition_issued(value)
     value.__post_init__()
 
 
-def _issue_motif_allocation_transition(
-        b12: CandidateMotifAllocationTransition, *, candidate_identity_sha256: str,
-) -> MotifAllocationTransition:
-    _require_candidate_motif_allocation_transition(b12)
-    transition = object.__new__(MotifAllocationTransition)
-    values = {
+_require_transition_issued, _raw_issue_transition = _new_transition_owner()
+
+
+def _make_transition_deriver(issue_transition):
+    def derive(b12: CandidateMotifAllocationTransition, retained_state):
+        from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+
+        _require_candidate_motif_allocation_transition(b12)
+        candidate_identity_sha256 = candidate_identity_digest(retained_state)
+        values = {
         "b12_transition_sha256": b12.digest,
         "parent_extents_sha256": b12.parent_extents_sha256,
         "candidate_extents_sha256": b12.candidate_extents.digest,
@@ -113,9 +135,10 @@ def _issue_motif_allocation_transition(
         "schema": MOTIF_ALLOCATION_TRANSITION_SCHEMA,
         "kind": MOTIF_ALLOCATION_KIND,
         "invalidate_derived_caches": True,
-        "_issuance": _ISSUER,
-    }
-    for name, value in values.items():
-        object.__setattr__(transition, name, value)
-    transition.__post_init__()
-    return transition
+        }
+        return issue_transition(values)
+    return derive
+
+
+derive_motif_allocation_transition = _make_transition_deriver(_raw_issue_transition)
+del _raw_issue_transition

@@ -1,110 +1,102 @@
-"""B07 allocation crosses C05/B13 publication and cold accepted custody."""
-from dataclasses import replace
+"""Real-A01 B07 allocation crosses C05/B13 publication and cold custody."""
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import numpy as np
 
-from bilqis_mlx.learning._engram.tests.motif_fixtures import source
+from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning._engram.tests.test_atlas_engram_source import (
+    REAL_RELEASE, SourceQualifiedMotifTests,
+)
 from bilqis_mlx.learning._retention.tests.motif_allocation_support import (
     CandidateMotifAllocationFixture, MOTIF,
 )
 from bilqis_mlx.learning.atlas_engram import MotifBudget
-from bilqis_mlx.learning.atlas_engram_source import _issue_approved_motif_candidate
-from bilqis_mlx.learning.atlas_engram_transaction import _prepare_candidate_motif_snapshot
 from bilqis_mlx.learning.atlas_candidate import resolve_candidate
-from bilqis_mlx.learning.atlas_retention_decision import issue_factory_retention_decision
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     accept_and_publish, derive_motif_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.source_continuation import (
-    _issue_continuation, stage_source_qualified_motif_allocation,
+    continue_source_qualified_motifs_from_bundle,
+    seal_source_qualified_motifs_from_bundle,
+    stage_source_qualified_motif_allocation,
 )
-import bilqis_mlx.runtime.factory_retention_owner as retention_owner
-from bilqis_mlx.runtime.factory_retention_owner import evaluate_factory_retention_candidate
-from bilqis_mlx.runtime.capability_retention import Decision, DecisionStatus
 from bilqis_mlx.runtime.tests.custody.bamf_bundle import helpers
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import publish_genesis, shape_patch
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
+    genesis_feature_source_patch, issue_feature_authority, source_features,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import publish_genesis
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
+    host_source_authority_patch,
+)
+from bilqis_mlx.semantics.context_eligibility import SourceFrontier
+from .motif_publication_support import accepted_c05_decision
 
 
-TARGET = "B07.MOTIF"
-
-
-def _matching_source():
-    item = source()
-    frame = replace(item.frame, bindings=tuple(
-        replace(binding, concept=replace(binding.concept, semantic_release="d" * 64))
-        for binding in item.frame.bindings))
-    return replace(item, frame=frame)
-
-
-def _accepted_c05_decision(run_dir, transaction, parent, successor, retained):
-    release_sha = "1" * 64
-    capability = SimpleNamespace(capability_id=TARGET, grade_id="B")
-    release = SimpleNamespace(
-        release_sha256=release_sha,
-        execution_plan=SimpleNamespace(
-            capabilities=(capability,), capability_map={TARGET: capability}))
-    source_context = SimpleNamespace(
-        __post_init__=lambda: None, release=release,
-        require_accepted_runtime=Mock())
-    fixed = SimpleNamespace(rows=({"id": "fixed"},), seed=7)
-    eligible = Decision(
-        DecisionStatus.ELIGIBLE, "PAIRED_SCREEN_WITHIN_BUDGET",
-        "a" * 64, "b" * 64, "c" * 64, "d" * 64)
-    original = transaction.training_authorities
-    object.__setattr__(transaction, "training_authorities", (
-        SimpleNamespace(delivery_capability=TARGET, release_sha256=release_sha),))
-    try:
-        with patch.multiple(
-                retention_owner, create=True,
-                _training_exclusions=Mock(return_value=((), ())),
-                _candidate_from_live_parent=Mock(
-                    return_value=(parent, successor, retained, object())),
-                read_current=Mock(return_value={"factory_release_sha256": release_sha}),
-                frontier_exam=Mock(return_value={"factory_release_sha256": release_sha}),
-                load_frontier_cohort=Mock(return_value=fixed),
-                _instruments=Mock(return_value=(SimpleNamespace(case=SimpleNamespace()),)),
-                case_census_digest=Mock(return_value="e" * 64),
-                _cohort=Mock(return_value=object()),
-                FoundationRetentionPolicy=Mock(return_value=object()),
-                factory_complete_solver=Mock(side_effect=((object(), "b" * 64),
-                                                          (object(), "c" * 64))),
-                evaluate_foundation_fixed_school_candidate=Mock(return_value=eligible)):
-            evaluation = evaluate_factory_retention_candidate(
-                source_context, transaction, "artifact", TARGET, run_dir=run_dir)
-    finally:
-        object.__setattr__(transaction, "training_authorities", original)
-    return issue_factory_retention_decision(evaluation)
-
-
+@unittest.skipUnless(os.environ.get("BILQIS_ATLAS_REAL_ARTIFACT"),
+                     "real repo-pinned A01 artifact required")
 class MotifAllocationPublicationTests(unittest.TestCase):
     def test_v6_publication_cold_load_preserves_motif_allocation_and_optimizer(self):
         fixture = CandidateMotifAllocationFixture()
         fixture.setUp()
+        source = SourceQualifiedMotifTests(
+            "test_real_source_replay_qualifies_pinned_schema_and_owner_grants")
+        (selection, source_root, graph, adapter, row, task, policy,
+         seed, each, profile) = source._case()
+        features = source_features(release=REAL_RELEASE)
         with TemporaryDirectory() as directory:
             run_dir = Path(directory)
-            with (patch.dict(os.environ, {
+            with (genesis_feature_source_patch(features),
+                  host_source_authority_patch(),
+                  patch.dict(os.environ, {
                     "BILQIS_DATA_PLANE": str(run_dir / "plane.sqlite3")}),
                   patch.object(helpers, "DECLARED", fixture.declared),
-                  shape_patch()):
-                genesis = publish_genesis(run_dir)
+                  fixture._shape_patches()):
+                feature_authority = issue_feature_authority(features)
+                genesis = publish_genesis(
+                    run_dir, foundation_features=feature_authority)
                 parent = load_accepted_generation(run_dir)
                 fixture.parent = parent.retained_state
                 fixture.extents = parent.extents
                 transaction = fixture._step()
-                proposal = _prepare_candidate_motif_snapshot(
-                    (_matching_source(),), parent.retained_state.allocations,
-                    MotifBudget(2))
-                approved = _issue_approved_motif_candidate("e" * 64, proposal)
-                continuation = _issue_continuation(
-                    approved, parent, genesis["manifest_sha256"])
+                continuation, _frontier = seal_source_qualified_motifs_from_bundle(
+                    adapter, row, selection,
+                    retained_bundle_root=(run_dir / "bamf-bundles"
+                                          / genesis["manifest_sha256"]),
+                    expected_manifest_sha256=genesis["manifest_sha256"],
+                    source_root=source_root, graph=graph, task_scope=task,
+                    source_frontier=SourceFrontier(1, 1, ()), policy=policy,
+                    source_seed=seed, source_each=each, budget=MotifBudget(64),
+                    source_profile_parameters=profile)
+                original_manifest = continuation.parent_manifest_sha256
+                object.__setattr__(continuation, "parent_manifest_sha256", "f" * 64)
+                with self.assertRaises(BilqisError):
+                    stage_source_qualified_motif_allocation(
+                        run_dir, transaction, continuation)
+                object.__setattr__(continuation, "parent_manifest_sha256", original_manifest)
+                original_extents = continuation.parent_extents_sha256
+                object.__setattr__(continuation, "parent_extents_sha256", "f" * 64)
+                with self.assertRaises(BilqisError):
+                    stage_source_qualified_motif_allocation(
+                        run_dir, transaction, continuation)
+                object.__setattr__(continuation, "parent_extents_sha256", original_extents)
+                approved = continuation.approved
+                original_context = approved.approved_context_digest
+                object.__setattr__(approved, "approved_context_digest", "f" * 64)
+                with self.assertRaises(BilqisError):
+                    stage_source_qualified_motif_allocation(
+                        run_dir, transaction, continuation)
+                object.__setattr__(approved, "approved_context_digest", original_context)
                 staged = stage_source_qualified_motif_allocation(
                     run_dir, transaction, continuation)
+                original_pages = staged.motif_transition.added_pages
+                object.__setattr__(staged.motif_transition, "added_pages", 1)
+                with self.assertRaises(BilqisError):
+                    resolve_candidate(staged, accepted=True)
+                object.__setattr__(staged.motif_transition, "added_pages", original_pages)
                 retained = resolve_candidate(staged, accepted=True)
                 successor = derive_motif_successor_bundle(
                     parent, staged,
@@ -113,13 +105,31 @@ class MotifAllocationPublicationTests(unittest.TestCase):
                         "event": "BAMF_GENERATION_ACCEPTED",
                         "optimizer_step": retained.optimizer_step,
                     },))
-                decision = _accepted_c05_decision(
+                decision = accepted_c05_decision(
                     run_dir, staged, parent, successor, retained)
+                original_generation_pages = successor.transition.added_pages
+                object.__setattr__(successor.transition, "added_pages", 1)
+                with self.assertRaises(BilqisError):
+                    accept_and_publish(
+                        run_dir, successor, retained, decision=decision,
+                        feature_sha256=successor.extents.factor_map_digest,
+                        reserve_gib=0., training_authorities=None)
+                object.__setattr__(successor.transition, "added_pages",
+                                   original_generation_pages)
                 published = accept_and_publish(
                     run_dir, successor, retained, decision=decision,
                     feature_sha256=successor.extents.factor_map_digest,
                     reserve_gib=0., training_authorities=None)
                 cold = load_accepted_generation(run_dir)
+                continued, _frontier = continue_source_qualified_motifs_from_bundle(
+                    adapter, row, selection,
+                    retained_bundle_root=(run_dir / "bamf-bundles"
+                                          / published["manifest_sha256"]),
+                    expected_manifest_sha256=published["manifest_sha256"],
+                    source_root=source_root, graph=graph, task_scope=task,
+                    source_frontier=SourceFrontier(1, 1, ()), policy=policy,
+                    source_seed=seed, source_each=each, budget=MotifBudget(64),
+                    source_profile_parameters=profile)
 
         self.assertEqual(cold.generation, 1)
         self.assertEqual(cold.transition["kind"], "MOTIF_ALLOCATION")
@@ -131,6 +141,14 @@ class MotifAllocationPublicationTests(unittest.TestCase):
             np.testing.assert_array_equal(
                 np.asarray(getattr(cold.retained_state.optimizer, tree)[MOTIF]),
                 np.asarray(getattr(retained.optimizer, tree)[MOTIF]))
+        self.assertEqual(continued.candidate.view.plan.allocated, ())
+        self.assertEqual(continued.candidate.proposed.manifest.slots,
+                         retained.allocations.manifest.slots)
+        prior_uses = dict(retained.allocations.observed_uses)
+        next_uses = dict(continued.candidate.proposed.observed_uses)
+        self.assertEqual(set(next_uses), set(prior_uses))
+        self.assertTrue(all(next_uses[key] > value
+                            for key, value in prior_uses.items()))
 
 
 if __name__ == "__main__":

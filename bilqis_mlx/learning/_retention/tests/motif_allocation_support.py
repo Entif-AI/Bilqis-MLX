@@ -14,7 +14,6 @@ from bilqis_mlx.learning._atlas_candidate.common import (
 )
 from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
-from bilqis_mlx.learning.atlas_engram_source import _issue_approved_motif_candidate
 from bilqis_mlx.learning.atlas_execution_provenance import issue_execution_provenance
 from bilqis_mlx.learning.atlas_participation import (
     ActiveAdmittedRows, RoleReadParticipation, SemanticDenominator,
@@ -28,7 +27,7 @@ from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, Initializer, ModelTopologySpecV2, ParameterGroup,
     ParameterSpec,
 )
-from bilqis_mlx.runtime.bamf_bundle.source_continuation import _issue_continuation
+from bilqis_mlx.runtime.topology_v2.ledger import ParameterCensus
 from bilqis_mlx.learning._engram.tests.motif_fixtures import RELEASE
 
 
@@ -79,11 +78,17 @@ class CandidateMotifAllocationFixture:
         stack = ExitStack()
         for target in (
             "bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
+            "bilqis_mlx.runtime.topology_v2.ledger.expected_bamf_shapes",
             "bilqis_mlx.runtime.topology_v2.validation.expected_bamf_shapes",
+            "bilqis_mlx.runtime.backbone_identity.expected_bamf_shapes",
             "bilqis_mlx.learning.atlas_participation_census.expected_bamf_shapes",
             "bilqis_mlx.learning._retention.atlas_participation_census.expected_bamf_shapes",
         ):
             stack.enter_context(patch(target, side_effect=shapes))
+        stack.enter_context(patch(
+            "bilqis_mlx.runtime.topology_v2.construction.bamf_parameter_census",
+            side_effect=lambda spec, extents: ParameterCensus(
+                spec.digest, extents.digest, shapes(spec, extents))))
         return stack
 
     def _retained_state(self, optimizer, allocations, extents):
@@ -130,9 +135,17 @@ class CandidateMotifAllocationFixture:
                 loss_bearing=True, max_norm=1.)
 
     def _continuation(self, proposal):
-        approved = _issue_approved_motif_candidate("d" * 64, proposal)
-        student = SimpleNamespace(
-            extents=self.extents,
-            retained_state=SimpleNamespace(allocations=self.parent.allocations))
-        return _issue_continuation(
-            approved, student, self.parent.custody.manifest_sha256)
+        return SimpleNamespace(
+            approved=SimpleNamespace(
+                candidate=proposal, approved_context_digest="d" * 64),
+            parent_manifest_sha256=self.parent.custody.manifest_sha256,
+            parent_extents_sha256=self.extents.digest,
+            parent_allocation_sha256=self.parent.allocations.digest,
+        )
+
+    @staticmethod
+    def _continuation_patch(continuation):
+        return patch(
+            "bilqis_mlx.runtime.bamf_bundle.source_continuation."
+            "_require_source_qualified_continuation",
+            return_value=continuation)

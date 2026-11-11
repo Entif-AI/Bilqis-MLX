@@ -19,8 +19,8 @@ from .state import CandidateState, _is_genesis_allocations
 from .motif_transition import (
     CandidateMotifAllocationTransition,
     _require_candidate_motif_allocation_transition,
+    _stage_candidate_motif_allocation,
 )
-from .motif_materialization import _stage_candidate_motif_allocation
 
 @dataclass(frozen=True, init=False)
 class CandidateTransaction:

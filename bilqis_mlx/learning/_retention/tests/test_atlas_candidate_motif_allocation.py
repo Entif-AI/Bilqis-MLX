@@ -31,7 +31,7 @@ class CandidateMotifAllocationTests(
             1, 1, "a" * 64, proposal.proposed.manifest.digest, "c" * 64)
         continuation = self._continuation(proposal)
 
-        with self._shape_patches():
+        with self._shape_patches(), self._continuation_patch(continuation):
             staged = _stage_candidate_motif_allocation(
                 transaction, continuation, spec=self.spec,
                 parent_extents=self.extents, candidate_extents=successor_extents,
@@ -50,8 +50,9 @@ class CandidateMotifAllocationTests(
             np.asarray(staged.optimizer.v[MOTIF][0]), np.zeros((128,), np.float32))
         self.assertEqual(int(staged.optimizer.update_counts[MOTIF][0]), 0)
 
-        self.assertIs(resolve_candidate(staged, accepted=False), self.parent)
-        retained = resolve_candidate(staged, accepted=True)
+        with self._continuation_patch(continuation):
+            self.assertIs(resolve_candidate(staged, accepted=False), self.parent)
+            retained = resolve_candidate(staged, accepted=True)
         self.assertEqual(retained.allocations, proposal.proposed)
         np.testing.assert_array_equal(
             np.asarray(retained.optimizer.parameters[MOTIF][0]), expected)
@@ -81,7 +82,8 @@ class CandidateMotifAllocationTests(
             before_v = np.asarray(transaction.optimizer.v[MOTIF]).copy()
             before_counts = np.asarray(transaction.optimizer.update_counts[MOTIF]).copy()
 
-            with self._shape_patches(growth=True):
+            with (self._shape_patches(growth=True),
+                  self._continuation_patch(continuation)):
                 staged = _stage_candidate_motif_allocation(
                     transaction, continuation, spec=self.spec,
                     parent_extents=extents, candidate_extents=successor_extents,
@@ -116,7 +118,8 @@ class CandidateMotifAllocationTests(
                 np.testing.assert_array_equal(
                     np.asarray(staged.optimizer.parameters["motif.page.1"][row]),
                     expected)
-            self.assertIs(resolve_candidate(staged, accepted=False), parent)
+            with self._continuation_patch(continuation):
+                self.assertIs(resolve_candidate(staged, accepted=False), parent)
         finally:
             self.parent, self.extents = original_parent, original_extents
 

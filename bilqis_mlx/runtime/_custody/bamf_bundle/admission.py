@@ -44,7 +44,7 @@ from .publication.authority import authenticate_current_successor_retry
 from .records import (
     BamfBundleCandidate, CompleteStudent, invalid,
 )
-from .motif_allocation_transition import _issue_motif_allocation_transition
+from .motif_allocation_transition import derive_motif_allocation_transition
 
 
 def derive_successor_bundle(parent: CompleteStudent, retained_state: CandidateState,
@@ -100,8 +100,7 @@ def derive_motif_successor_bundle(
     retained_state = resolve_candidate(transaction, accepted=True)
     extents = b12.candidate_extents
     reconcile_b01_optimizer_manifest(retained_state.optimizer, parent.topology, extents)
-    transition = _issue_motif_allocation_transition(
-        b12, candidate_identity_sha256=candidate_identity_digest(retained_state))
+    transition = derive_motif_allocation_transition(b12, retained_state)
     return BamfBundleCandidate(
         parent.run_id, parent.generation + 1, parent_manifest_sha256,
         parent.implementation_sha256, parent.topology, extents,

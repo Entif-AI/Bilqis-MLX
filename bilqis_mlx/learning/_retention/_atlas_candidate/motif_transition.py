@@ -11,7 +11,26 @@ from .common import invalid, is_digest
 
 
 MOTIF_TRANSITION_SCHEMA = "bilqis.mlx.b12-motif-allocation-transition/v1"
-_ISSUER = object()
+
+
+def _new_transition_owner():
+    issued = {}
+
+    def require(value):
+        expected = issued.get(id(value))
+        if expected is None or expected[0] is not value or value.digest != expected[1]:
+            invalid()
+        return value
+
+    def issue(**values):
+        transition = object.__new__(CandidateMotifAllocationTransition)
+        for name, value in (*values.items(), ("schema_version", MOTIF_TRANSITION_SCHEMA)):
+            object.__setattr__(transition, name, value)
+        issued[id(transition)] = (transition, transition.digest)
+        transition.__post_init__()
+        return transition
+
+    return require, issue
 
 
 def _canonical(value) -> bytes:
@@ -37,7 +56,6 @@ class CandidateMotifAllocationTransition:
     added_pages: int
     source_continuation: object = field(repr=False, compare=False)
     schema_version: str = MOTIF_TRANSITION_SCHEMA
-    _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         invalid()
@@ -47,8 +65,8 @@ class CandidateMotifAllocationTransition:
             _require_source_qualified_continuation,
         )
 
-        if (getattr(self, "_issuance", None) is not _ISSUER
-                or any(not is_digest(value) for value in (
+        _require_transition_issued(self)
+        if (any(not is_digest(value) for value in (
                     self.parent_manifest_sha256, self.parent_extents_sha256,
                     self.parent_allocation_sha256, self.candidate_allocation_sha256,
                     self.motif_candidate_sha256, self.approved_context_sha256))
@@ -83,33 +101,36 @@ class CandidateMotifAllocationTransition:
         return hashlib.sha256(_canonical(self.to_record())).hexdigest()
 
 
-def _issue_candidate_motif_allocation_transition(
-        *, parent_manifest_sha256, parent_extents, candidate_extents,
-        parent_allocation_sha256, candidate_allocation_sha256,
-        motif_candidate_sha256, approved_context_sha256, added_pages,
-        source_continuation,
-) -> CandidateMotifAllocationTransition:
-    if type(parent_extents) is not GenerationExtents:
-        invalid()
-    transition = object.__new__(CandidateMotifAllocationTransition)
-    for name, value in (
-            ("parent_manifest_sha256", parent_manifest_sha256),
-            ("parent_extents_sha256", parent_extents.digest),
-            ("candidate_extents", candidate_extents),
-            ("parent_allocation_sha256", parent_allocation_sha256),
-            ("candidate_allocation_sha256", candidate_allocation_sha256),
-            ("motif_candidate_sha256", motif_candidate_sha256),
-            ("approved_context_sha256", approved_context_sha256),
-            ("added_pages", added_pages),
-            ("source_continuation", source_continuation),
-            ("schema_version", MOTIF_TRANSITION_SCHEMA), ("_issuance", _ISSUER)):
-        object.__setattr__(transition, name, value)
-    transition.__post_init__()
-    return transition
-
-
 def _require_candidate_motif_allocation_transition(value) -> None:
-    if (type(value) is not CandidateMotifAllocationTransition
-            or getattr(value, "_issuance", None) is not _ISSUER):
+    if type(value) is not CandidateMotifAllocationTransition:
         invalid()
+    _require_transition_issued(value)
     value.__post_init__()
+
+
+_require_transition_issued, _raw_issue_transition = _new_transition_owner()
+
+
+def _make_materializer(issue_transition):
+    from .motif_materialization import _stage_candidate_motif_allocation_impl
+
+    def stage(candidate, source_continuation, **kwargs):
+        continuation = source_continuation
+        approved = continuation.approved
+        return _stage_candidate_motif_allocation_impl(
+            lambda **values: issue_transition(
+                parent_manifest_sha256=values["parent_manifest_sha256"],
+                parent_extents_sha256=values["parent_extents"].digest,
+                candidate_extents=values["candidate_extents"],
+                parent_allocation_sha256=values["parent_allocation_sha256"],
+                candidate_allocation_sha256=values["candidate_allocation_sha256"],
+                motif_candidate_sha256=values["motif_candidate_sha256"],
+                approved_context_sha256=values["approved_context_sha256"],
+                added_pages=values["added_pages"],
+                source_continuation=continuation),
+            candidate, source_continuation, **kwargs)
+    return stage
+
+
+_stage_candidate_motif_allocation = _make_materializer(_raw_issue_transition)
+del _raw_issue_transition

@@ -56,7 +56,33 @@ def _source_family(adapter_id: str) -> str:
     _invalid("BAMF_MOTIF_SOURCE_FAMILY_UNRELEASED")
 
 
-_APPROVED_ISSUER = object()
+def _new_approved_owner():
+    issued = {}
+
+    def require(value):
+        expected = issued.get(id(value))
+        if (expected is None
+                or expected[0] is not value
+                or value.approved_context_digest != expected[1]
+                or value.candidate is not expected[2]
+                or value.candidate.digest != expected[3]
+                or value.schema_version != expected[4]):
+            _invalid("BAMF_MOTIF_APPROVED_CANDIDATE_INVALID")
+        return value
+
+    def issue(approved_context_digest, candidate):
+        approved = object.__new__(ApprovedMotifCandidate)
+        for name, value in (
+                ("approved_context_digest", approved_context_digest),
+                ("candidate", candidate), ("schema_version", APPROVED_MOTIF_SCHEMA)):
+            object.__setattr__(approved, name, value)
+        issued[id(approved)] = (
+            approved, approved_context_digest, candidate, candidate.digest,
+            APPROVED_MOTIF_SCHEMA)
+        approved.__post_init__()
+        return approved
+
+    return require, issue
 
 
 @dataclass(frozen=True, init=False)
@@ -65,37 +91,25 @@ class ApprovedMotifCandidate:
     approved_context_digest: str
     candidate: CandidateMotifSnapshot
     schema_version: str = APPROVED_MOTIF_SCHEMA
-    _issuance: object = field(init=False, repr=False, compare=False)
-
     def __init__(self, *args, **kwargs):
         _invalid("BAMF_MOTIF_APPROVED_CANDIDATE_INVALID")
 
     def __post_init__(self) -> None:
-        if (getattr(self, "_issuance", None) is not _APPROVED_ISSUER
-                or not _SHA.fullmatch(self.approved_context_digest)
+        _require_approved_issued(self)
+        if (not _SHA.fullmatch(self.approved_context_digest)
                 or type(self.candidate) is not CandidateMotifSnapshot
                 or self.schema_version != APPROVED_MOTIF_SCHEMA):
             _invalid("BAMF_MOTIF_APPROVED_CANDIDATE_INVALID")
 
 
-def _issue_approved_motif_candidate(
-        approved_context_digest: str,
-        candidate: CandidateMotifSnapshot) -> ApprovedMotifCandidate:
-    approved = object.__new__(ApprovedMotifCandidate)
-    for name, value in (
-            ("approved_context_digest", approved_context_digest),
-            ("candidate", candidate), ("schema_version", APPROVED_MOTIF_SCHEMA),
-            ("_issuance", _APPROVED_ISSUER)):
-        object.__setattr__(approved, name, value)
-    approved.__post_init__()
-    return approved
-
-
 def _require_approved_motif_candidate(value) -> None:
-    if (type(value) is not ApprovedMotifCandidate
-            or getattr(value, "_issuance", None) is not _APPROVED_ISSUER):
+    if type(value) is not ApprovedMotifCandidate:
         _invalid("BAMF_MOTIF_APPROVED_CANDIDATE_INVALID")
+    _require_approved_issued(value)
     value.__post_init__()
+
+
+_require_approved_issued, _raw_issue_approved = _new_approved_owner()
 
 
 def _qualify_frame(envelope, snapshot, source_family, atlas_selection,
@@ -210,7 +224,8 @@ def source_qualified_motif_context(
     return projection, qualified, issued_frontier
 
 
-def _prepare_source_qualified_motifs_with_parent(
+def _prepare_source_qualified_motifs_with_parent_impl(
+    issue_approved,
     source_adapter: RegisteredSourceAdapter,
     row: dict,
     atlas_selection: AtlasArtifactSelection,
@@ -247,7 +262,24 @@ def _prepare_source_qualified_motifs_with_parent(
     if parent.manifest.semantic_release != task_scope.semantic_release:
         _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
     candidate = _prepare_candidate_motif_snapshot(qualified, parent, budget)
-    return _issue_approved_motif_candidate(projection.digest, candidate), issued_frontier
+    return issue_approved(projection.digest, candidate), issued_frontier
+
+
+def _make_parent_preparer(issue_approved):
+    def prepare(
+        source_adapter: RegisteredSourceAdapter,
+        row: dict,
+        atlas_selection: AtlasArtifactSelection,
+        **kwargs,
+    ):
+        return _prepare_source_qualified_motifs_with_parent_impl(
+            issue_approved, source_adapter, row, atlas_selection, **kwargs)
+    return prepare
+
+
+_prepare_source_qualified_motifs_with_parent = _make_parent_preparer(
+    _raw_issue_approved)
+del _raw_issue_approved
 
 
 def prepare_source_qualified_motifs(

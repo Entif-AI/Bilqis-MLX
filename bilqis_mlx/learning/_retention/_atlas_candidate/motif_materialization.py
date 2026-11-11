@@ -15,9 +15,6 @@ from bilqis_mlx.runtime.optimizer_count_geometry import declared_update_count_sh
 from bilqis_mlx.runtime.topology_v2.initialization import initialize_bamf_parameter
 
 from .common import invalid
-from .motif_transition import _issue_candidate_motif_allocation_transition
-
-
 def _array_copy(value):
     return np.array(value, copy=True)
 
@@ -27,8 +24,8 @@ def _require_zero_row(tree, name, row):
         invalid()
 
 
-def _stage_candidate_motif_allocation(
-        candidate, source_continuation, *,
+def _stage_candidate_motif_allocation_impl(
+        issue_transition, candidate, source_continuation, *,
         spec, parent_extents, candidate_extents, run_seed: int):
     """Terminally materialize one sealed B07 proposal into speculative B12 state."""
     from .transaction import CandidateTransaction, _issue_transaction
@@ -127,7 +124,7 @@ def _stage_candidate_motif_allocation(
          for item in declared},
     )
     reconcile_b01_optimizer_manifest(optimizer, spec, successor_extents)
-    transition = _issue_candidate_motif_allocation_transition(
+    transition = issue_transition(
         parent_manifest_sha256=candidate.parent.custody.manifest_sha256,
         parent_extents=parent_extents, candidate_extents=successor_extents,
         parent_allocation_sha256=candidate.parent.allocations.digest,
