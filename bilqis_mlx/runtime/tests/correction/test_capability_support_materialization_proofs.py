@@ -12,6 +12,7 @@ from bilqis_mlx.learning._retention._atlas_candidate.common import (
 from bilqis_mlx.runtime.capability_support_materialization import (
     _verify_anchor_proofs,
 )
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 
 
 def _scalar(authority_digest, *, step):
@@ -34,7 +35,8 @@ def _student(*proofs):
 def _anchor(authority_digest, *, family="family:1", episode="episode:1"):
     return (
         "A.TEST", "row:test", "d" * 64, family, episode,
-        "4" * 64, "5" * 64, "generation:test", authority_digest, (),
+        "4" * 64, "5" * 64, "generation:test", authority_digest,
+        ((DependencyKind.SOURCE.value, "row:test"),),
     )
 
 

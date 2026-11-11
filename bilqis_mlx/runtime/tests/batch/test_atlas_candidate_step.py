@@ -296,25 +296,49 @@ class ProductionCandidateStepTests(unittest.TestCase):
             topology_digest=ModelTopologySpecV2().digest,
             memory_budget_digest="6" * 64, source_digest="7" * 64,
         )
-        logical = SimpleNamespace(
-            plan_digest=plan.digest, source_digest=plan.source_digest,
-            generation_binding=plan.generation_binding,
-            loss_executions=(), gradients={BANK: mx.zeros((2, 2))},
+        gradients = {BANK: mx.zeros((2, 2))}
+        groups_drift = replace(plan, groups=((0, 1),), microbatch_size=2)
+        seed_drift = replace(plan, optimizer_step_seed=8)
+        source_drift = replace(plan, source_digest="8" * 64)
+        row_drift = replace(plan, logical_row_ids=("row:b", "row:a"))
+        generation_drift = replace(plan, generation_binding="generation:other")
+        topology_drift = replace(plan, topology_digest="9" * 64)
+        cases = (
+            ("plan-digest", groups_drift, SimpleNamespace(
+                plan_digest=plan.digest, source_digest=plan.source_digest,
+                generation_binding=plan.generation_binding,
+                loss_executions=(), gradients=gradients)),
+            ("optimizer-seed", seed_drift, SimpleNamespace(
+                plan_digest=seed_drift.digest, source_digest=seed_drift.source_digest,
+                generation_binding=seed_drift.generation_binding,
+                loss_executions=(), gradients=gradients)),
+            ("source-digest", source_drift, SimpleNamespace(
+                plan_digest=source_drift.digest, source_digest=plan.source_digest,
+                generation_binding=source_drift.generation_binding,
+                loss_executions=(), gradients=gradients)),
+            ("row-order", row_drift, SimpleNamespace(
+                plan_digest=row_drift.digest, source_digest=row_drift.source_digest,
+                generation_binding=row_drift.generation_binding,
+                loss_executions=(), gradients=gradients)),
+            ("generation-binding", generation_drift, SimpleNamespace(
+                plan_digest=generation_drift.digest,
+                source_digest=generation_drift.source_digest,
+                generation_binding=generation_drift.generation_binding,
+                loss_executions=(), gradients=gradients)),
+            ("topology-digest", topology_drift, SimpleNamespace(
+                plan_digest=topology_drift.digest,
+                source_digest=topology_drift.source_digest,
+                generation_binding=topology_drift.generation_binding,
+                loss_executions=(), gradients=gradients)),
         )
-        drifts = (
-            replace(plan, groups=((0, 1),), microbatch_size=2),
-            replace(plan, optimizer_step_seed=8),
-            replace(plan, source_digest="8" * 64),
-            replace(plan, logical_row_ids=("row:b", "row:a")),
-            replace(plan, generation_binding="generation:other"),
-            replace(plan, topology_digest="9" * 64),
-        )
-        for drift in drifts:
-            with self.subTest(drift=drift), \
+        for name, drift, logical in cases:
+            with self.subTest(case=name), \
                     patch(
                         "bilqis_mlx.runtime.atlas_candidate_step.require_logical_batch_gradient_execution",
                         return_value=logical,
-                    ), self.assertRaises(BilqisError) as caught:
+                    ), patch(
+                        "bilqis_mlx.runtime.atlas_candidate_step.bind_execution_provenance_many",
+                    ) as binder, self.assertRaises(BilqisError) as caught:
                 production_candidate_step(
                     candidate, loss_bearing_target=True,
                     logical_batch_execution=logical,
@@ -334,6 +358,7 @@ class ProductionCandidateStepTests(unittest.TestCase):
                 caught.exception.context["reason"],
                 "C08_LOGICAL_BATCH_PLAN_DRIFT",
             )
+            binder.assert_not_called()
 
 
 if __name__ == "__main__":
