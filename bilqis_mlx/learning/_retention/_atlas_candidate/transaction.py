@@ -12,7 +12,7 @@ from bilqis_mlx.runtime.atlas_optimizer import (
 )
 from ..atlas_execution_provenance import StepExecutionProvenance, mask_digest, participation_digest
 from ..atlas_participation import optimizer_participation_mask
-from .common import (LEGACY_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA, RETAINED_STATE_ISSUER,
+from .common import (LEGACY_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA, CLOSURE_STEP_PROOF_SCHEMA, RETAINED_STATE_ISSUER,
     STATE_SCHEMA, TRANSACTION_ISSUER, TRANSACTION_SCHEMA, invalid)
 from .proofs import CandidateStepProof
 from .state import CandidateState, _is_genesis_allocations
@@ -142,6 +142,8 @@ def candidate_step(candidate: CandidateTransaction, gradients, execution,
         invalid()
     if type(execution) is not StepExecutionProvenance:
         invalid()
+    from ..atlas_execution_provenance import require_execution_training_authority
+    require_execution_training_authority(execution, training_authority)
     custody = candidate.parent.custody
     if custody is None:
         invalid()
@@ -188,15 +190,21 @@ def candidate_step(candidate: CandidateTransaction, gradients, execution,
         if type(training_authority) is not BamfTrainingAuthority:
             invalid()
         training_authority.__post_init__()
+        closure = getattr(training_authority, "artifact_closure_sha256", None)
+        if closure is not None:
+            from bilqis_mlx.semantics.dependencies.closure import closure_digest
+            if closure_digest(training_authority.artifact_nodes) != closure:
+                invalid()
         proof = CandidateStepProof(
             **proof_args,
+            artifact_closure_sha256=closure,
             source_release_sha256=training_authority.release_sha256,
             training_batch_sha256=training_authority.training_batch_sha256,
             target_capability_id=training_authority.delivery_capability,
             training_authority_sha256=training_authority.digest,
             source_family_id=training_authority.source_family_id,
             episode_id=training_authority.episode_id,
-            schema_version=STEP_PROOF_SCHEMA)
+            schema_version=CLOSURE_STEP_PROOF_SCHEMA if closure else STEP_PROOF_SCHEMA)
     return _issue_transaction(
         candidate.parent, optimizer, candidate.teacher_requests_full,
         candidate.update_steps + 1, candidate.step_proofs + (proof,),

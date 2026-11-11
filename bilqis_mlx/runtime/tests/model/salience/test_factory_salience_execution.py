@@ -1,5 +1,8 @@
 """Real A01/A05/C02/B13 inputs carry signed fixture labels into B11."""
+from contextlib import contextmanager
 from dataclasses import replace
+import os
+import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -13,7 +16,15 @@ from bilqis_mlx.learning.atlas_salience import derive_salience, verify_salience_
 from bilqis_mlx.learning.salience_contracts import AuthoritySnapshot, Metric
 from bilqis_mlx.learning.tests.test_atlas_salience import _CONTEXT, _policy, _fact, _signed
 from bilqis_mlx.runtime.atlas_revalidation import SourceAuthorityRegistry
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
+from bilqis_mlx.learning.atlas_engram import MotifManifest
+from bilqis_mlx.learning.champions import Checkpoint
+from bilqis_mlx.runtime.bamf_bundle import (
+    issue_initial_foundation_feature_authority, prepare_initial_generation,
+    publish_initial_generation,
+)
+from bilqis_mlx.runtime.bamf_bundle.genesis.foundation import initial_foundation_sidecars
+from bilqis_mlx.runtime.bamf_bundle.genesis.preparation_authority import _factory_generation_provenance
+from bilqis_mlx.runtime.model_topology_v2 import b01_generation_authority, b01_generation_extents
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 from bilqis_mlx.runtime.factory_candidate_training import (
     FactoryDeliveryObservation, execute_factory_candidate_step,
@@ -21,14 +32,19 @@ from bilqis_mlx.runtime.factory_candidate_training import (
 from bilqis_mlx.runtime.salience_auxiliaries import RowSalienceBinding
 from bilqis_mlx.runtime.salience_training import SalienceLabelRequest
 from bilqis_mlx.runtime.teacher_observation_capture import ObservationCapture, store_sidecar
-from bilqis_mlx.runtime.tests.batch.factory.factory_training_bridge_support import FactoryTrainingBridgeFixture
+from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
-from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import HP
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, provision_source_authority_registry, with_source_authority_registry,
+from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
+    HP, live_factory_context,
 )
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    provision_source_authority_registry,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import issue_factory_authority
 from bilqis_mlx.runtime.tests.model.test_salience_auxiliaries import _REGISTRY as SALIENCE_REGISTRY
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY
+from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.domains import contract_digest
 
 
@@ -36,7 +52,48 @@ REGISTRY = SourceAuthorityRegistry(tuple(sorted((*AUTHORITY.keys, *SALIENCE_REGI
                                               key=lambda key: key.owner_id)))
 
 
-class FactorySalienceExecutionTests(FactoryTrainingBridgeFixture):
+@contextmanager
+def stage(name):
+    started = time.monotonic()
+    print(f'C06_STAGE {name} started', flush=True)
+    try:
+        yield
+    finally:
+        print(f'C06_STAGE {name} elapsed_seconds={time.monotonic() - started:.3f}', flush=True)
+
+
+class FactorySalienceExecutionTests(unittest.TestCase):
+    def setUp(self):
+        artifact = os.environ.get('BILQIS_A01_ATLAS_BUNDLE')
+        if not artifact or not Path(artifact).is_dir():
+            self.skipTest('BILQIS_A01_ATLAS_BUNDLE fixture is not mounted')
+        self.temporary = TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        environment = patch.dict(os.environ, {'BILQIS_DATA_PLANE': str(self.root / 'plane.sqlite3')})
+        environment.start()
+        self.addCleanup(environment.stop)
+        with stage('source_setup'):
+            self.artifact = Path(artifact)
+            selection = AtlasArtifactSelection(
+                str(self.artifact),
+                '5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7',
+                '58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306',
+                'f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec')
+            self.context, _ = live_factory_context(
+                Path.cwd(), (Path.cwd() / 'vendor/legacy-v16').resolve())
+            self.features = issue_initial_foundation_feature_authority(selection)
+            self.feature_receipt = persist_feature_manifest(self.features.features, self.root / 'features')
+
+    def accepted_source_context(self, run_dir):
+        from bilqis_mlx.runtime import admission as factory_admission
+        release_file = factory_admission._persist_executable_factory_release(
+            run_dir, self.context.release)
+        receipt = {'factory_release_sha256': self.context.release.release_sha256,
+                   'factory_release_file': release_file}
+        return AcceptedRuntimeHost(run_dir).source_context(
+            receipt, graph=self.context.graph, source_root=self.context.source_root)
+
     def _provider(self, prepared):
         batch = prepared.training_batch
         row = batch.rows[0]
@@ -63,26 +120,46 @@ class FactorySalienceExecutionTests(FactoryTrainingBridgeFixture):
         execution = self.context.release.execution_plan.capability_map[capability]
         delivery = describe_delivered_teaching(self.context.release, capability,
                                                execution.teaching_option_ids[0], rows)
-        with TemporaryDirectory() as run_value:
+        with TemporaryDirectory() as run_value, patch(
+                'bilqis_mlx.runtime.bamf_bundle.source_authority_custody.'
+                'read_host_system_source_authority_registry', return_value=REGISTRY):
             run_dir = Path(run_value)
             provision_source_authority_registry(run_dir, REGISTRY)
-            candidate = with_source_authority_registry(self.candidate, REGISTRY)
-            with patch('bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom', return_value=None):
-                publish_bamf_generation(run_dir, candidate, acceptance=acceptance(candidate))
+            with stage('bootstrap_prepare'):
+                origin = Checkpoint('7' * 64, 'bundles/foundation-origin', 0, True)
+                factory = issue_factory_authority(self.context.release, self.context.graph, origin)
+                features = self.features
+                semantic, compiler, *_ = initial_foundation_sidecars(
+                    factory.release, factory.admission, self.context.graph, run_seed=379,
+                    feature_authority=features)
+                provenance = _factory_generation_provenance(factory.release, features)
+                motif = MotifManifest(provenance.release_digest)
+                extents = b01_generation_extents(
+                    semantic_abi=semantic, compiler_features=compiler, motif_page_count=1,
+                    motif_key_map_digest=motif.digest)
+                prepared = prepare_initial_generation(
+                    run_id='c06-salience-disposable', run_seed=379, graph=self.context.graph,
+                    factory_authority=factory, foundation_features=features,
+                    model_authority=b01_generation_authority(extents),
+                    optimizer_hyperparameters=HP, provenance=provenance,
+                    delivery_events=({'event': 'FIXTURE_GENESIS', 'optimizer_step': 0},))
+            with stage('bootstrap_publish'):
+                publish_initial_generation(run_dir, prepared, reserve_gib=0.)
             context = self.accepted_source_context(run_dir)
             parent = load_accepted_generation(run_dir)
             capture = ObservationCapture(run_dir, {})
             capture.attempt_id = 'c06-salience-disposable'
             capture.proposal_id = store_sidecar(run_dir, {'attempt_id': capture.attempt_id})['sha256']
             capture.select_option(capability, None)
-            result = execute_factory_candidate_step(
-                run_dir, context, parent, str(self.artifact), self.feature_receipt.path, rows,
-                capability=capability, delivery=delivery, requested_count=3, source_seed=seed,
-                source_each=1, optimizer_step_seed=379,
-                visit_provenance=visit_provenance(capability),
-                teacher_strategy={'policy': 'c06-disposable-proof'}, teacher_hparams=HP,
-                max_norm=1.0, observation=FactoryDeliveryObservation(capture, 1, rows, seed),
-                salience_provider=self._provider)
+            with stage('candidate_step'):
+                result = execute_factory_candidate_step(
+                    run_dir, context, parent, str(self.artifact), self.feature_receipt.path, rows,
+                    capability=capability, delivery=delivery, requested_count=3, source_seed=seed,
+                    source_each=1, optimizer_step_seed=379,
+                    visit_provenance=visit_provenance(capability),
+                    teacher_strategy={'policy': 'c06-disposable-proof'}, teacher_hparams=HP,
+                    max_norm=1.0, observation=FactoryDeliveryObservation(capture, 1, rows, seed),
+                    salience_provider=self._provider)
             loss = result.gradient_execution.execution.loss
             self.assertGreater(float(loss.impact), 0.)
             self.assertGreater(float(loss.exigency), 0.)

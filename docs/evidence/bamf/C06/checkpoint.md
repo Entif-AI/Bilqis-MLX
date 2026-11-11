@@ -55,3 +55,26 @@ consumed unified baseline. That is an outstanding aggregate gate, not a green ru
 4. Exercise parent contrast fixtures on actual interfaces, then bounded drift,
    current-unified sync, premerge and hosted checks. Open only a review-ready PR.
 5. Human merge precedes issue closure. No self-merge authority exists.
+
+## Continuation checkpoint — 2026-11-11
+
+The first immutable Studio proof finished FAIL: three ordinal MLX tests passed;
+Factory setup incorrectly used ordinary publication for generation zero and
+rejected with BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED. Raw log and receipt
+are preserved as studio-proof-1.log and studio-proof-1-receipt.json.
+
+The fixture now uses production initial-generation preparation/publication.
+A focused run crossed the original bootstrap gate but the coordinator stopped it
+on competing Studio workers (exit 75). That transcript is factory-bootstrap-fix.log;
+it does not establish a C06 runtime PASS. The fixture then removed unused C05 model
+construction and added stage timings. This optimized fixture has not run yet.
+
+Retained closure design passed fresh scoped EGM after exact canonical encoding
+and provenance-side authority association repairs. Shared closure implementation
+is PARTIAL: codec and two portable tests pass; v4 proof groundwork and ephemeral
+provenance association are present. Authority/B11 binding, v7/v8 acceptance,
+cold C09 reconstruction and their regressions remain unimplemented. No complete
+closure or parent acceptance claim applies to this checkpoint.
+
+User requested an immediate push due quota, then instructed continuation. Preserve
+this partial state transparently and continue on the same issue/branch. No PR yet.

@@ -1,0 +1,5 @@
+C06_STUDIO_SERIAL_LANE_ACQUIRED
+C06_STAGE_START factory-integration
+test_real_factory_step_uses_present_heads_and_preserves_missing_head (bilqis_mlx.runtime.tests.model.salience._bilqis_test_6fb3529fbd0bfea751c212682aa3813c7cc5549879eb1ddff812b6e15e2b06c7.FactorySalienceExecutionTests.test_real_factory_step_uses_present_heads_and_preserves_missing_head) ... {"event": "FIXTURE_GENESIS", "event_id": "72f035b08e33100e12863aeedf2505d850a55aad0db03128e837b3a139643b50", "optimizer_step": 0}
+
+C06_STUDIO_COLLISION active_worker_pids=13827,14074,14270,14274

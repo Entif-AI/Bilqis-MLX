@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 from .common import (
-    LEGACY_STEP_PROOF_SCHEMA, PREVIOUS_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA,
+    LEGACY_STEP_PROOF_SCHEMA, PREVIOUS_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA, CLOSURE_STEP_PROOF_SCHEMA,
     invalid, is_digest,
 )
 
@@ -15,6 +15,8 @@ _V2_FIELDS = _LEGACY_FIELDS[:-1] + ("source_release_sha256",
     "schema_version")
 _V3_FIELDS = _V2_FIELDS[:-1] + (
     "source_family_id", "episode_id", "schema_version")
+
+_V4_FIELDS = _V3_FIELDS[:-1] + ("artifact_closure_sha256", "schema_version")
 
 @dataclass(frozen=True)
 class CandidateStepProof:
@@ -36,6 +38,7 @@ class CandidateStepProof:
     training_authority_sha256: str | None = None
     source_family_id: str | None = None
     episode_id: str | None = None
+    artifact_closure_sha256: str | None = None
     schema_version: str = STEP_PROOF_SCHEMA
 
     def __post_init__(self) -> None:
@@ -50,7 +53,10 @@ class CandidateStepProof:
                 or type(self.loss_bearing) is not bool
                 or self.schema_version not in (
                     LEGACY_STEP_PROOF_SCHEMA, PREVIOUS_STEP_PROOF_SCHEMA,
-                    STEP_PROOF_SCHEMA)):
+                    STEP_PROOF_SCHEMA, CLOSURE_STEP_PROOF_SCHEMA)):
+            invalid()
+        if ((self.schema_version == CLOSURE_STEP_PROOF_SCHEMA and not is_digest(self.artifact_closure_sha256))
+                or (self.schema_version != CLOSURE_STEP_PROOF_SCHEMA and self.artifact_closure_sha256 is not None)):
             invalid()
         authority = (
             self.source_release_sha256, self.training_batch_sha256,
@@ -69,7 +75,7 @@ class CandidateStepProof:
         if self.schema_version == PREVIOUS_STEP_PROOF_SCHEMA:
             if self.source_family_id is not None or self.episode_id is not None:
                 invalid()
-        elif self.schema_version == STEP_PROOF_SCHEMA and (
+        elif self.schema_version in (STEP_PROOF_SCHEMA, CLOSURE_STEP_PROOF_SCHEMA) and (
                 not isinstance(self.source_family_id, str) or not self.source_family_id
                 or not isinstance(self.episode_id, str) or not self.episode_id):
             invalid()
@@ -84,7 +90,8 @@ class CandidateStepProof:
     def _payload(self) -> dict:
         names = (_LEGACY_FIELDS if self.schema_version == LEGACY_STEP_PROOF_SCHEMA
                  else _V2_FIELDS if self.schema_version == PREVIOUS_STEP_PROOF_SCHEMA
-                 else _V3_FIELDS)
+                 else _V3_FIELDS if self.schema_version == STEP_PROOF_SCHEMA
+                 else _V4_FIELDS)
         return {name: getattr(self, name) for name in names}
 
     def to_record(self) -> dict:
@@ -98,7 +105,8 @@ class CandidateStepProof:
         schema = record.get("schema_version") if isinstance(record, dict) else None
         names = (_LEGACY_FIELDS if schema == LEGACY_STEP_PROOF_SCHEMA
                  else _V2_FIELDS if schema == PREVIOUS_STEP_PROOF_SCHEMA
-                 else _V3_FIELDS)
+                 else _V3_FIELDS if schema == STEP_PROOF_SCHEMA
+                 else _V4_FIELDS)
         if (not isinstance(record, dict)
                 or set(record) != set(names) | {"proof_sha256"}):
             invalid()
