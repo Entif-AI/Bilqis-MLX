@@ -16,7 +16,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.test_feature_authori
     feature_bound,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.feature_authority_lineage_support import (
-    publish_feature_genesis,
+    publish_feature_extension, publish_feature_genesis,
 )
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
@@ -58,6 +58,8 @@ class AcceptedFeaturePortabilityTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def _publish(self, source):
+        if source.transition.get("kind") == "PARAMETER_EXTENSION":
+            return publish_feature_extension(self.run, source)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             return publish_candidate(self.run, source)
 

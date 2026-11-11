@@ -77,7 +77,7 @@ class AcceptedGenerationFeatureAuthorityTests(FeatureAuthorityTestBase):
     def test_arbitrary_digest_candidate_cannot_self_ratify(self):
         features = source_features()
         authority = self.foundation_authority(features)
-        with self.foundation_replay(features):
+        with shape_patch(), self.foundation_replay(features):
             prepared = genesis_preparation(foundation_features=authority)
         adversary = replace(
             prepared.candidate,
@@ -124,7 +124,7 @@ class AcceptedGenerationFeatureAuthorityTests(FeatureAuthorityTestBase):
     def test_release_drift_between_custody_and_source_refuses_receipt(self):
         features = source_features()
         authority = self.foundation_authority(features)
-        with self.foundation_replay(features):
+        with shape_patch(), self.foundation_replay(features):
             prepared = genesis_preparation(foundation_features=authority)
         adversary = replace(
             prepared.candidate,
