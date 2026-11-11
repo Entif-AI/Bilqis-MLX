@@ -172,15 +172,22 @@ class RealTrainingAuthorityTests(unittest.TestCase):
             'source_ast_for': lambda tokens: atomic[tuple(tokens)],
             'frames_for_ast': lambda _ast: (),
         }
-        batch = compile_training_batch(
-            self.rows, self.context, ModelTopologySpecV2(),
-            compiler_config=self.config, **args)
-        self.assertEqual(len(batch.rows), len(self.rows))
-        self.assertEqual(
-            batch.rows[0].model_input.prefix.source_instance_id,
-            atomic[first_tokens].source_instance_id)
-
         args['source_ast_for'] = lambda _tokens: atomic[other_tokens]
+        with self.assertRaises(BilqisError) as caught:
+            compile_training_batch(
+                self.rows, self.context, ModelTopologySpecV2(),
+                compiler_config=self.config, **args)
+        self.assertEqual(
+            caught.exception.context['reason'],
+            'CONTEXT_SOURCE_LINEAGE_MISMATCH')
+
+    def test_source_owned_frames_cannot_be_stripped_from_the_same_row(self):
+        source_ast_for = self.args['source_ast_for']
+        args = {
+            **self.args,
+            'source_ast_for': lambda tokens: replace(source_ast_for(tokens), frames=()),
+            'frames_for_ast': lambda _ast: (),
+        }
         with self.assertRaises(BilqisError) as caught:
             compile_training_batch(
                 self.rows, self.context, ModelTopologySpecV2(),

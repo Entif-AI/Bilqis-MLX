@@ -6,7 +6,8 @@ Baseline: reviewed unified `036e0aa3c2bec184481a4f009d8c31e16b9495f5`.
 Worktree: existing A13 checkout on `codex/354-a13-prefix-inventory-20261107`,
 fast-forwarded from `efcaf2d4` to that baseline before changes.
 Issue #354 remains open until human review and integration; implementation
-verification is complete below, and independent turn-in review is pending.
+focused verification is recorded below; aggregate premerge and independent
+repair re-audit remain pending.
 The earlier audit preserved below is historical and its callback-bypass finding
 has been repaired in the consumed baseline.
 
@@ -26,7 +27,7 @@ not new admissions or neural-learning receipts.
 | Immutable approved projection and cache identity | `project_context`, `ApprovedContextProjection`; order-invariant membership digest, preserved frame/member ordering and distinct policy/time keys |
 | Existing PUBLIC_FORMAL A/B/C constructors without NLP/network | `test_real_public_formal_a_b_c_source_constructors`; genuine registered constructors with synthetic actors/scopes |
 | Factory source AST/frame equivalence before A05/B11 input | `require_source_lineage` and production `prepare_factory_training_batch`; cross-source/frame negatives, real pinned-A01 positive and A/B/C Factory-to-B11 witness |
-| Atomic input also belongs to the delivered row | `test_granted_atomic_prefix_must_match_the_delivered_source_row`; canonical atomic rows pass; another already-granted row's atomic AST rejects with `CONTEXT_SOURCE_LINEAGE_MISMATCH` |
+| Atomic input belongs to its row and only the source owner chooses empty frames | Shared `source_frame_inventory` rederives row identity and complete trees from the registered adapter and pinned schema manifest; real-source negatives reject cross-row substitution and same-row frame stripping; Factory preserves genuine B.IDBOOLOPS atomic fallback |
 | Eligibility changes emit typed C09 invalidations | source-context tests exercise owner-issued expiry/revocation; accepted-context temporal test cold-reads the exact four source-owned times and event identity |
 | Current schema-right state survives fresh/cold preparation | `test_public_formal_schema_rights_owner.py` exercises revoked grants, cold owner reissue, distinct epochs and invalid restoration |
 | Motif reads preserve hidden state when held | seven `test_numerical.py` cases exercise exact/structural hits, missing/revoked grants, nested-child revocation and unavailable-scope safe returns |
@@ -42,8 +43,17 @@ is retained. No schema, token identity, semantic meaning or teacher policy chang
 
 Incident **PM-2026-11-11-001** was filed and native-Sheet read back before repair.
 The new real-source regression failed because the atomic cross-row substitution
-raised no error. The adapter now applies its existing lineage validator to both
-framed and atomic inputs, preserving the missing-frame error contract.
+raised no error. The initial repair applied the existing lineage validator to both
+framed and atomic inputs, preserving the missing-frame error contract. Fresh review
+found this still admitted same-row frame stripping; a second RED test reproduced it.
+The adapter and Factory bridge now share `source_frame_inventory`: re-enter the
+registered adapter, canonical graph, pinned A01 snapshot and A03 schema manifest;
+bind the full source row; return its source-instance ID and complete frame trees,
+or an empty tuple only when the source tree has no fully released schema representation.
+The adapter compares source ID and exact inventory before selecting its framed/atomic
+path, then checks visible atom tokens and all admitted envelope roots as before.
+Synthetic adapter fixtures explicitly provide their source-inventory oracle; mounted
+real-source tests and the Factory witness use the actual owner unmocked.
 The cold-replay fixture now uses existing production `publish_genesis` rather
 than attempting to replace the generation-zero source authority in a successor.
 Three pre-existing evidence documents receive only their omitted provenance
@@ -52,8 +62,9 @@ reference; their original check outcomes remain historical.
 Observed verification, zero skips in each group:
 
 - Context plus source-context and original adapter selection: **49/49**.
-- Complete affected training directory plus adapter: **64/64**.
-- Real A/B/C Factory-to-B11 preparation: **1/1**, three capability subcases.
+- Complete affected training directory plus adapter: **65/65** after inventory repair.
+- Real A/B/C Factory-to-B11 preparation: **1/1**, three capability subcases,
+  including a literal all-ATOM assertion for source-owned B.IDBOOLOPS fallback.
 - Motif numerical reads: **7/7**.
 - Accepted-context temporal identity/cold read: **2/2** after fixture correction.
 
@@ -67,6 +78,12 @@ were mounted for real-source tests. Environment variables are
 Use `scripts/run_tests.py` with the paths/test names above; the source-only
 Python 3.13 environment ran the first group and initial RED/GREEN, and native
 Python 3.14/MLX 0.31.1 on the Studio ran the final training/integration groups.
+`quality:changed` passes (structure/governance, changed-file smells, source-authority
+guard, 7 authority and 15 flow tests). Final lineage command:
+`python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/batch/test_atlas_training_adapter.py bilqis_mlx/runtime/tests/batch/training`.
+Factory witness:
+`python3 -B scripts/run_tests.py bilqis_mlx.runtime.tests.batch.factory.test_factory_training_bridge.FactoryTrainingBridgeTests.test_current_a_b_c_draws_bind_exact_c02_rows_into_b11`.
+The aggregate `npm run verify:premerge` remains the required pre-PR gate.
 
 The current legacy-trainer adaptation authority remains the preserved Factory replay
 `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
