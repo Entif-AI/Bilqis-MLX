@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_admission import (
@@ -12,6 +13,7 @@ from bilqis_mlx.runtime.atlas_admission import (
 from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import (
     _lease, _run, _scope, _signed, _REGISTRY,
 )
+import bilqis_mlx.runtime.atlas_lease_storage as storage
 
 
 class AtlasLeaseStorageTests(unittest.TestCase):
@@ -64,3 +66,174 @@ class AtlasLeaseStorageTests(unittest.TestCase):
             with self.assertRaises(BilqisError):
                 persist_atlas_lease(root, _lease(), independently_loaded_run=_run(), registry=_REGISTRY)
             self.assertEqual(tuple(outside.iterdir()), ())
+
+    def test_every_b13_custody_marker_rejects_fixture_authority_before_atlas_state(self):
+        markers = (
+            'bamf-state.json', 'bamf-bundles', 'bamf-acceptance',
+            '.bamf-pointer.lock', '.bamf-staging',
+        )
+        for marker in markers:
+            with self.subTest(marker=marker), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                path = root / marker
+                if marker in {'bamf-bundles', 'bamf-acceptance', '.bamf-staging'}:
+                    path.mkdir()
+                else:
+                    path.write_text('')
+                with self.assertRaises(BilqisError) as failure:
+                    persist_atlas_lease(
+                        root, _lease(), independently_loaded_run=_run(), registry=_REGISTRY)
+                self.assertEqual(
+                    failure.exception.context['reason'],
+                    'BAMF_ATLAS_FIXTURE_AUTHORITY_FORBIDDEN_FOR_SAVED_RUN')
+                self.assertFalse((root / 'autonomy').exists())
+
+    def test_epoch_classifier_is_read_only_and_orders_v1_then_v2_path_safety(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.assertEqual(storage.classify_accepted_atlas_epoch(root), 'staged')
+            self.assertFalse((root / 'autonomy').exists())
+
+            v2 = root / 'autonomy/atlas-admission/v2/current.json'
+            v2.parent.mkdir(parents=True)
+            v2.write_text('{}')
+            self.assertEqual(storage.classify_accepted_atlas_epoch(root), 'v2')
+
+            v1 = root / 'autonomy/atlas-admission/current.json'
+            v1.write_text('{}')
+            with self.assertRaises(BilqisError) as dual:
+                storage.classify_accepted_atlas_epoch(root)
+            self.assertEqual(
+                dual.exception.context['reason'],
+                'BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT')
+
+            v1.unlink()
+            outside = root / 'outside'
+            outside.write_text('{}')
+            v1.symlink_to(outside)
+            v2.unlink()
+            v2.mkdir()
+            with self.assertRaises(BilqisError) as unsafe:
+                storage.classify_accepted_atlas_epoch(root)
+            self.assertEqual(
+                unsafe.exception.context['reason'],
+                'BAMF_ATLAS_LEASE_UNSAFE_PATH')
+
+    def test_epoch_classifier_rejects_unsafe_ancestors_before_epoch_presence(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / 'run'
+            root.mkdir()
+            outside = Path(temporary) / 'outside'
+            outside.mkdir()
+            (outside / 'atlas-admission').mkdir()
+            (root / 'autonomy').symlink_to(outside, target_is_directory=True)
+            with self.assertRaises(BilqisError) as v1_unsafe:
+                storage.classify_accepted_atlas_epoch(root)
+            self.assertEqual(
+                v1_unsafe.exception.context['reason'],
+                'BAMF_ATLAS_LEASE_UNSAFE_PATH')
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            base = root / 'autonomy/atlas-admission'
+            base.mkdir(parents=True)
+            outside = root / 'outside-v2'
+            outside.mkdir()
+            (base / 'v2').symlink_to(outside, target_is_directory=True)
+            with self.assertRaises(BilqisError) as v2_unsafe:
+                storage.classify_accepted_atlas_epoch(root)
+            self.assertEqual(
+                v2_unsafe.exception.context['reason'],
+                'BAMF_ATLAS_LEASE_V2_UNSAFE_PATH')
+
+    def test_epoch_classifier_orders_v1_path_safety_before_v2_path_safety(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            base = root / 'autonomy/atlas-admission'
+            base.mkdir(parents=True)
+            outside_v1 = root / 'outside-v1'
+            outside_v1.write_text('{}')
+            (base / 'current.json').symlink_to(outside_v1)
+            outside_v2 = root / 'outside-v2'
+            outside_v2.mkdir()
+            (base / 'v2').symlink_to(outside_v2, target_is_directory=True)
+            with self.assertRaises(BilqisError) as failure:
+                storage.classify_accepted_atlas_epoch(root)
+            self.assertEqual(
+                failure.exception.context['reason'],
+                'BAMF_ATLAS_LEASE_UNSAFE_PATH')
+
+    def test_epoch_lock_release_failure_preserves_body_error(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            real = storage.fcntl.flock
+
+            def fail_unlock(fd, operation):
+                if operation == storage.fcntl.LOCK_UN:
+                    raise OSError('unlock failed')
+                return real(fd, operation)
+
+            original = RuntimeError('body failed')
+            with patch.object(storage.fcntl, 'flock', side_effect=fail_unlock), \
+                    self.assertRaises(RuntimeError) as failure:
+                with storage._atlas_authority_epoch_lock(root):
+                    raise original
+            self.assertIs(failure.exception, original)
+            self.assertIn(
+                'BAMF_ATLAS_AUTHORITY_EPOCH_LOCK_RELEASE_FAILED:unlock',
+                getattr(original, '__notes__', ()))
+
+    def test_epoch_lock_rejects_unsafe_shape_and_acquire_release_failures(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            lock = root / 'autonomy/atlas-admission/authority-epoch.lock'
+            lock.parent.mkdir(parents=True)
+            outside = root / 'outside'
+            outside.write_text('x')
+            lock.symlink_to(outside)
+            with self.assertRaises(BilqisError) as unsafe:
+                with storage._atlas_authority_epoch_lock(root):
+                    self.fail('unsafe lock must not enter')
+            self.assertEqual(
+                unsafe.exception.context['reason'],
+                'BAMF_ATLAS_AUTHORITY_EPOCH_UNSAFE_LOCK')
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with patch.object(storage.fcntl, 'flock', side_effect=OSError('busy')), \
+                    self.assertRaises(BilqisError) as acquire:
+                with storage._atlas_authority_epoch_lock(root):
+                    self.fail('acquire failure must not enter')
+            self.assertEqual(
+                acquire.exception.context['reason'],
+                'BAMF_ATLAS_AUTHORITY_EPOCH_LOCK_UNAVAILABLE')
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            real = storage.fcntl.flock
+
+            def fail_unlock(fd, operation):
+                if operation == storage.fcntl.LOCK_UN:
+                    raise OSError('unlock failed')
+                return real(fd, operation)
+
+            with patch.object(storage.fcntl, 'flock', side_effect=fail_unlock), \
+                    self.assertRaises(BilqisError) as release:
+                with storage._atlas_authority_epoch_lock(root):
+                    pass
+            self.assertEqual(
+                release.exception.context['reason'],
+                'BAMF_ATLAS_AUTHORITY_EPOCH_LOCK_RELEASE_FAILED')
+
+    def test_read_only_epoch_precheck_does_not_create_epoch_lock(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            current = root / 'autonomy/atlas-admission/current.json'
+            current.parent.mkdir(parents=True)
+            current.write_text('{}')
+            with self.assertRaises(BilqisError) as failure:
+                storage.require_accepted_atlas_epoch_available_v2(root)
+            self.assertEqual(
+                failure.exception.context['reason'],
+                'BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT')
+            self.assertFalse((current.parent / 'authority-epoch.lock').exists())

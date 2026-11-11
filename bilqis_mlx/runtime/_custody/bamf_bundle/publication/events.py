@@ -9,6 +9,16 @@ from ..records import CompleteStudent, canonical, invalid, sha
 from .storage import _live_bundle_manifest, _pointer_lock, _read_pointer
 
 
+def reconcile_bamf_outbox(
+        run_dir: Path, student: CompleteStudent, *, publish_missing=True) -> bool:
+    """Reconcile while the caller holds the generation pointer writer lock."""
+    from bilqis_mlx.runtime import checkpoints
+    return checkpoints._reconcile_delivery_outbox(
+        Path(run_dir), {"run_id": student.run_id, "generation": student.generation,
+                        "delivery_outbox": list(student.outbox)},
+        publish_missing=publish_missing)
+
+
 def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dict) -> str:
     """Publish idempotent failure evidence without minting or mutating a generation."""
     if type(student) is not CompleteStudent or not isinstance(evidence, dict) or not evidence:

@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "1a1bcbf3c58b0d851e40dbdee847c3fb3c00ec3a",
-  "updated_at": "2026-11-10T18:28:17Z",
+  "observed_unified": "766ac5f1a94202ce1048bcda0c1a2c5cbefec642",
+  "updated_at": "2026-11-11T17:04:50Z",
   "exception": null,
   "items": [
     {
@@ -14,6 +14,16 @@
       "resume_trigger": null,
       "preserved_branch": "codex/950-c09-genesis-source-authority-20261109",
       "merged_pr": 963
+    },
+    {
+      "issue": 542,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "caea8d555688d28bd1b5a3615e41348dcd138db7",
+      "head_sha_role": "final post-review integrated implementation/proof head consuming reviewed unified 766ac5f1; the immediately following flow-control-only checkpoint is the exact post-sync drift-review candidate",
+      "summary": "C16.1a/#542 is implemented on codex/bamf02-c-runtime under frozen R19 authority and now consumes reviewed unified 766ac5f1a94202ce1048bcda0c1a2c5cbefec642. The pre-sync rereview candidate 7a4528e84d2c77f8ae17a6c7136451791912a456 cleared fresh independent Design, Codebase and Readiness review at 0 Blockers / 0 Majors / 0 Nits after closing historical-v1 topology routing and R19-clearance provenance findings. The integrated path remains neural-inert and preserves staged launch without #950, optional atlas-release authority, historical v1 routing, generation-zero recovery, resume precedence, accepted-Atlas custody, C07/C09 epoch serialization, reopen-only pointer provenance, root coordination and durable publication semantics. Exact post-sync M3 controls are green: development structure 0 violations; governance integrity 0 violations; changed-file smell 0 findings; error-control new debt 0; BAMF contract verification fully green; flow-control green with 15/15 tests. The widened C16/C07/publication/root-claim owner ring is 131/132, with its sole red tensor-CAS negative reproduced identically on reviewed unified 766ac5f1. The repository-wide leaf wrapper cannot return zero because reviewed unified itself is red on four byte-identical legacy-trainer documentation omissions plus two unchanged B14 tests importing removed private atlas_model_forward helpers; both debt classes were reproduced directly at 766ac5f1 and have zero Lane-C diff. xdist also proved unstable on this large selected ring, so those generic-gate failures are not claimed as #542 regressions or silently repaired cross-lane. Earlier exact M3 #542 evidence remains 108 passed + 65 subtests plus 36/36 invalidated routing tests. No learner, teacher episode, training or optimizer step was run; lifecycle reports remain ready_for_training=false and neural_updates=0.",
+      "resume_trigger": "Run fresh read-only post-sync three-lens drift review of the exact flow-control checkpoint immediately following integrated proof head caea8d555688d28bd1b5a3615e41348dcd138db7. Require 0 Blockers / 0 Majors and explicit judgment that the reproduced reviewed-unified gate debt is non-authorizing for this Lane-C turn-in. Then refetch reviewed unified and feature remote, integrate/reprove only if unified advanced, push normally without force, read back exact remote SHA, append/read back the #542 issue checkpoint, and open the human-review PR without merging. Keep #751 blocked until #542 is human-merged.",
+      "preserved_branch": "codex/bamf02-c-runtime"
     },
     {
       "issue": 917,

@@ -2,17 +2,13 @@
 from __future__ import annotations
 
 import os
-import shutil
 from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError
-from bilqis_mlx.learning.atlas_acceptance import (
-    AcceptedCandidateBinding, ParsedAcceptedCandidateBinding,
-)
+from bilqis_mlx.learning.atlas_acceptance import AcceptedCandidateBinding
 
 from ..atlas_admission import (
-    AtlasAdmissionBinding, ParsedAtlasAdmissionBinding,
-    require_atlas_admission_binding,
+    AtlasAdmissionBinding, require_atlas_admission_binding,
 )
 from ..codec import load_bamf_bundle, save_bamf_bundle
 from ..records import (
@@ -20,7 +16,6 @@ from ..records import (
 )
 from .authority import (
     _UNBOUND_RETRY,
-    authenticate_current_successor_retry,
     load_generation_locked as _load_generation_locked_impl,
     parent_acceptance_for_publication as _parent_acceptance_for_publication_impl,
     require_acceptance as _require_acceptance,
@@ -28,27 +23,18 @@ from .authority import (
     require_published_acceptance as _require_published_acceptance_impl,
     validate_parent_transition as _validate_parent_transition_impl,
 )
-from .events import record_bamf_rejection
-from .genesis_trust import (
-    publish_initial_generation_trust_root, require_initial_generation_trust_root,
-    sealed_initial_generation_manifest,
+from .events import reconcile_bamf_outbox, record_bamf_rejection
+from .genesis_trust import publish_initial_generation_trust_root
+from .retry import (
+    _existing_initial_generation_retry, recover_prepared_initial_generation,
+    recover_sealed_initial_generation,
+    reconcile_already_pointed_retry as _reconcile_already_pointed_retry,
 )
-from .retry import existing_initial_generation_retry
 from .storage import (
     ACCEPTANCE_DIR, _acceptance_path, _atomic_pointer, _live_bundle_manifest,
-    _pointer_lock, _read_pointer, _require_bundle_root, _require_run_root,
-    _stage, _write_acceptance,
+    _fsync_directory, _initial_generation_pointer_lock, _pointer_lock, _read_pointer,
+    _remove_stage, _require_bundle_root, _require_run_root, _stage, _write_acceptance,
 )
-
-
-def reconcile_bamf_outbox(
-        run_dir: Path, student: CompleteStudent, *, publish_missing=True) -> bool:
-    """Reconcile while the caller holds the generation pointer writer lock."""
-    from bilqis_mlx.runtime import checkpoints
-    return checkpoints._reconcile_delivery_outbox(
-        Path(run_dir), {"run_id": student.run_id, "generation": student.generation,
-                        "delivery_outbox": list(student.outbox)},
-        publish_missing=publish_missing)
 
 
 def _require_published_acceptance(
@@ -67,9 +53,12 @@ def _load_generation_locked(pointer_path: Path) -> tuple[CompleteStudent, dict]:
 def _parent_acceptance_for_publication(
         run_dir: Path, candidate: BamfBundleCandidate,
         accepted):
+    pointer_lock = (
+        _initial_generation_pointer_lock
+        if candidate.generation == 0 else _pointer_lock)
     return _parent_acceptance_for_publication_impl(
         run_dir, candidate, accepted,
-        pointer_lock=_pointer_lock, read_pointer=_read_pointer,
+        pointer_lock=pointer_lock, read_pointer=_read_pointer,
         live_manifest=_live_bundle_manifest, load_bundle=load_bamf_bundle,
         require_published_acceptance=_require_published_acceptance)
 
@@ -108,20 +97,6 @@ def publish_atlas_admission_generation(
     admitted = require_atlas_admission_binding(candidate, admission)
     return _publish_authorized_generation(
         run_dir, candidate, admitted, reserve_gib=reserve_gib)
-
-
-def _existing_initial_generation_retry(
-        run_dir: Path, candidate: BamfBundleCandidate, prepared):
-    """Converge an exact sealed genesis retry without depending on mutable upstream."""
-    return existing_initial_generation_retry(
-        run_dir, candidate, prepared,
-        pointer_lock=_pointer_lock, read_pointer=_read_pointer,
-        load_generation_locked=_load_generation_locked,
-        require_published_acceptance=_require_published_acceptance,
-        load_bundle=load_bamf_bundle, atomic_pointer=_atomic_pointer,
-        reconcile=reconcile_bamf_outbox,
-        sealed_manifest=sealed_initial_generation_manifest,
-        write_acceptance=_write_acceptance)
 
 
 def _authorize_publication_candidate(
@@ -168,44 +143,6 @@ def _require_successor_source_authority(run_dir, parent, child, authority):
     return trusted
 
 
-def _require_retry_acceptance_family(authority, persisted) -> None:
-    if type(authority) is AcceptedCandidateBinding:
-        valid = isinstance(persisted, ParsedAcceptedCandidateBinding)
-    elif type(authority) is AtlasAdmissionBinding:
-        valid = isinstance(persisted, ParsedAtlasAdmissionBinding)
-    else:
-        valid = False
-    if (not valid or persisted.digest != authority.digest
-            or persisted.schema_version != authority.schema_version):
-        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-
-
-def _reconcile_already_pointed_retry(
-        run_dir, current, candidate, authority, prepared, digest, stage):
-    if (current["run_id"] != candidate.run_id
-            or current["manifest_sha256"] != digest
-            or current["parent_manifest_sha256"] != candidate.parent_manifest_sha256
-            or current["schema"] != BAMF_POINTER_SCHEMA
-            or current["acceptance_sha256"] != authority.digest):
-        invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
-    student = load_bamf_bundle(
-        run_dir / current["bundle"], expected_manifest_sha256=digest)
-    if prepared is not None:
-        require_initial_generation_trust_root(current, student, authority)
-    else:
-        parent, persisted = authenticate_current_successor_retry(
-            run_dir, current, candidate, student,
-            load_bundle=load_bamf_bundle,
-            require_published_acceptance=_require_published_acceptance,
-        )
-        _require_retry_acceptance_family(authority, persisted)
-        _require_successor_source_authority(run_dir, parent, student, authority)
-    shutil.rmtree(stage)
-    _write_acceptance(run_dir, digest, authority)
-    reconcile_bamf_outbox(run_dir, student)
-    return current
-
-
 def _publish_authorized_generation(
         run_dir: Path, candidate: BamfBundleCandidate, authority, *,
         reserve_gib: float) -> dict:
@@ -224,11 +161,15 @@ def _publish_authorized_generation(
         digest = manifest["manifest_sha256"]
         target = _require_bundle_root(run_dir, create=True) / digest
         pointer_path = run_dir / "bamf-state.json"
-        with _pointer_lock(run_dir):
+        pointer_lock = (
+            _initial_generation_pointer_lock
+            if candidate.generation == 0 else _pointer_lock)
+        with pointer_lock(run_dir):
             current = _read_pointer(pointer_path)
             if current is not None and current["generation"] == candidate.generation:
                 return _reconcile_already_pointed_retry(
-                    run_dir, current, candidate, authority, prepared, digest, stage)
+                    run_dir, current, candidate, authority, prepared, digest, stage,
+                    require_successor_source_authority=_require_successor_source_authority)
             if prepared is not None:
                 from ..genesis import validate_initial_generation_preparation
                 validate_initial_generation_preparation(prepared)
@@ -250,14 +191,11 @@ def _publish_authorized_generation(
                 if target.is_symlink() or not target.is_dir():
                     invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
                 load_bamf_bundle(target, expected_manifest_sha256=digest)
-                shutil.rmtree(stage)
+                _remove_stage(stage)
             else:
                 stage.rename(target)
-                directory = os.open(target.parent, os.O_RDONLY)
-                try:
-                    os.fsync(directory)
-                finally:
-                    os.close(directory)
+                _fsync_directory(stage.parent)
+                _fsync_directory(target.parent)
             if prepared is not None:
                 publish_initial_generation_trust_root(run_dir, prepared, digest)
             _write_acceptance(run_dir, digest, authority)
@@ -274,7 +212,7 @@ def _publish_authorized_generation(
             return pointer
     except BaseException:
         if stage.exists() and stage.is_dir() and not stage.is_symlink():
-            shutil.rmtree(stage)
+            _remove_stage(stage)
         raise
 
 

@@ -17,7 +17,7 @@ from bilqis_mlx.runtime.bamf_bundle.vocabulary.admission_records import (
 )
 from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
 from bilqis_mlx.runtime.model_topology_v2 import bamf_parameter_census
-from bilqis_mlx.runtime.tests.admission.atlas.atlas_adoption_executor_support import (
+from bilqis_mlx.runtime.tests.admission.atlas.adoption.atlas_adoption_executor_support import (
     AtlasAdoptionExecutorFixture,
 )
 from bilqis_mlx.semantics.atlas.vocabulary_resources import (

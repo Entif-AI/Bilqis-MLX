@@ -312,18 +312,67 @@ C16/C11 implement and parser-test these command forms before they become executa
 ```sh
 npm run train -- --dry-run --verify-source \
   --model-topology configs/models/bamf-0.2.json \
-  --run-dir runs/bamf-0.2 --source-prefetch-workers 2
+  --run-dir runs/bamf-0.2 --source-prefetch-workers 2 \
+  --atlas-release-manifest <approved-manifest>
+
+npm run train -- --dry-run \
+  --model-topology configs/models/bamf-0.2.json \
+  --run-dir runs/bamf-0.2 --source-prefetch-workers 2 \
+  --admission-policy atlas-release --atlas-release-manifest <approved-manifest> \
+  --atlas-admission-scope <enrollment-request.json>
 
 npm run train -- --human-run \
   --model-topology configs/models/bamf-0.2.json \
   --run-dir runs/bamf-0.2 --source-prefetch-workers 2 \
-  --admission-policy atlas-release --atlas-release-manifest <approved-manifest>
+  --admission-policy atlas-release --atlas-release-manifest <approved-manifest> \
+  --atlas-admission-scope <enrollment-request.json>
 
 npm run train -- --human-run --resume \
   --run-dir runs/bamf-0.2 --source-prefetch-workers 2
+
+npm run train -- --human-run --resume \
+  --run-dir runs/bamf-0.2 --source-prefetch-workers 2 \
+  --admission-policy atlas-release \
+  --atlas-admission-scope <enrollment-request.json>
 ```
 
-The initial foundation command can omit the atlas lease and train only its current admitted release. The operator selects a session budget using the repository's supported time/visit switches. Resume uses saved topology, source, optimizer, teacher and lease. The new directory is distinct from current live and frozen qualification runs. These are implementation targets, not a statement that today's v1 parser already supports the BAMF fields.
+The initial foundation command may remain `staged` and omit Atlas enrollment, but
+every fresh BAMF v2 dry-run/create still requires the Atlas release manifest because
+B13 generation-zero identity binds the source-qualified Atlas artifact. For
+`atlas-release`, the scope is a non-authoritative C07 v2 enrollment request: it does not
+carry accepted B13 identity or select C09 trust-root authority. Fresh
+`atlas-release` dry-run and create both require that request so they validate the
+same human-selected run/seed/topology/Atlas-release inputs. Ordinary resume takes no
+scope and uses saved topology, source, optimizer, teacher and lease; an explicit
+conflicting override rejects. The final command form above is the only first
+post-genesis `staged -> atlas-release` enrollment completion path. These C16.1a
+lifecycle commands perform zero learner/optimizer updates; later training ownership
+remains separately gated. The resulting authority is the separate v2 lease epoch;
+historical v1 lease semantics remain unchanged. The new directory is distinct from current live and
+frozen qualification runs. These are implementation targets, not a statement that
+historical v1 routing uses BAMF v2 fields.
+
+The lifecycle report is not a training permit. It always reports
+`ready_for_training=false` and `neural_updates=0`; the newborn dashboard value
+`READY_FOR_HUMAN_START` remains an observation about accepted generation-zero custody.
+Pointerless resume with BAMF-v2 lifecycle markers never performs recovery. It rejects
+with `BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY`; repeating the exact
+fresh create command lets the B13 owner recover only an identity-equal sealed genesis.
+The persistent `.bamf-pointer.lock` and durable `.bamf-staging/` prefixes are therefore
+lifecycle evidence, not resume authority.
+
+Fresh validation preserves one deterministic failure order before target mutation:
+run identity, complete AdamW group, v2 topology, Atlas manifest, admission request
+shape, mutation authority/request equality, symmetric physical source/target
+disjointness, then target classification. Accepted resume compares explicit equality
+assertions in run-id, run-seed, topology, optimizer, Atlas order. C07 epoch/path
+classification precedes C09 source-authority validation where authority state is
+needed, and cross-epoch mutation repeats that classification under the shared lock.
+
+Historical accepted BAMF runs with only v1 C07 authority remain read-only compatible
+on resume. They are not silently treated as staged, cannot acquire a first v2 lease
+through this surface, and a run exposing both v1 and v2 current authority fails
+closed pending an explicit future migration contract.
 
 ## 20. Completion and useful outcomes
 
@@ -833,7 +882,7 @@ No additional trainable tensor may be silently created by a convenience layer. B
 
 **Deliver:** Add BAMF v2 to the existing train, dry-run and resume parser. Preserve human-run and source-prefetch controls. Add --admission-policy atlas-release with --atlas-release-manifest; resume reads saved values and rejects conflicting overrides before mutation. Reuse the existing metric owners for ST/M,R/H,RTN%,GREW,G/RTN,GRAD,P(RET),HEALTH. Add a compact expandable panel with active concepts/banks, ready/held coverage, atoms/frame, fallback, expansion, motif hits, plasticity mode and memory pressure. Keep the main cockpit compact and put detailed data in receipts. Distinguish staged curriculum, gained capability, retained steps, debt and perfect mastery. Publish actual parser-tested commands for preflight, owner launch, resume and read-only status.
 
-**Verify:** Fresh v2 and resume parse; conflicting saved topology fails. Ten retentions with no growth differs visibly from genuine capability improvement. Zero elapsed time or visits never emitsNaN. Stagnation-held active capabilities remain in the proper GREW denominator with measurement status. Status is read-only. Runbook commands pass real dry-run.
+**Verify:** Fresh v2 and resume parse; conflicting saved topology fails. Fresh dry-run and create bind identical accepted run identity, preserve the persisted source tree, report zero neural updates, and never dispatch the historical learner. Pointerless interrupted resume is classification-only while exact fresh-create retry may converge through B13. Ten retentions with no growth differs visibly from genuine capability improvement. Zero elapsed time or visits never emitsNaN. Stagnation-held active capabilities remain in the proper GREW denominator with measurement status. Status is read-only. Runbook commands pass real dry-run.
 
 #### [C12: #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381) | Package reusable cognitive capabilities and compatible plastic deltas
 

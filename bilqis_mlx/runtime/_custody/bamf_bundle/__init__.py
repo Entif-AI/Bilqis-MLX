@@ -41,6 +41,8 @@ _LAZY_EXPORTS = MappingProxyType({
     "PreparedInitialGeneration": ".genesis",
     "prepare_initial_generation": ".genesis",
     "publish_initial_generation": ".genesis",
+    "recover_prepared_initial_generation": ".genesis",
+    "recover_sealed_initial_generation": ".genesis",
     "InitialFoundationFeatureAuthority": ".genesis.foundation",
     "issue_initial_foundation_feature_authority": ".genesis.foundation",
     "InitialFactoryFoundationAuthority": ".genesis.origin",
@@ -90,5 +92,6 @@ __all__ = (
     "BamfRunIdentity", "InitialGenerationBinding", "PreparedInitialGeneration",
     "InitialFactoryFoundationAuthority", "issue_initial_factory_foundation_authority",
     "InitialFoundationFeatureAuthority", "issue_initial_foundation_feature_authority",
+    "recover_prepared_initial_generation", "recover_sealed_initial_generation",
     "prepare_initial_generation", "publish_initial_generation",
 )
