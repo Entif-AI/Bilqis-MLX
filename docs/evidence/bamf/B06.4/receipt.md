@@ -46,6 +46,27 @@ Repository gates:
 - Current changed-scope structure/governance: 0 violations.
 - Diff check: clean.
 
+Final differential leaf selection on the repaired semantic head:
+
+- exact base: `036e0aa3c2bec184481a4f009d8c31e16b9495f5`;
+- selected changed/dependent suites: refinement registry, existing refinement numerics, and grouped runtime identity;
+- result: **24 tests PASS + 80 subtests PASS**, zero failures or errors.
+
+The repository-wide premerge test sweep also ran on this branch and reached
+`3,941 total / 3,528 passed / 236 skipped / 13 failures / 164 errors`.
+That aggregate is **not recorded as a passing qualification**. It is dominated
+by repository/environment failures outside the #455 change surface, including
+many `DISK_BUDGET_EXHAUSTED` custody/publication paths and unrelated semantic
+and integration failures. No aggregate failure identity is in the B06.4
+registry/refinement owner or the exercised B11 production refinement ring.
+The changed-scope differential gate above is green.
+
+The full `npm run verify:premerge` quality phase also stops earlier on three
+legacy-trainer authority violations in unchanged evidence files. The identical
+legacy-trainer failure reproduces on pristine reviewed unified
+`036e0aa3c2bec184481a4f009d8c31e16b9495f5`, so it is base-owned debt rather
+than a #455 regression.
+
 The two topology skips are owner-declared capability gates: `BILQIS_BAMF_FULL_WITNESS` and `BILQIS_V1_BUNDLE_WITNESS`. This leaf does not convert absent optional witnesses into passes.
 
 ## Historical failure closure
@@ -53,6 +74,21 @@ The two topology skips are owner-declared capability gates: `BILQIS_BAMF_FULL_WI
 The historical pinned EGM review of the old #455 candidate found two Majors: the registry projection was not directly differentiable as an MLX parameter tree, and a dict-shaped view could be mutated through the base dict API. This candidate carries the #715 repair into the current production owner.
 
 Fresh review of the first current-unified repair then found a third candidate-owned Major: the view's dynamically generated class stored its provenance predicate in mutable class state, which `type.__setattr__` could replace. The repaired design removes self-attested authority from the differentiable view entirely. Regression proof now establishes direct `mx.grad(...)` traversal, blocks base-container substitution, re-derives B01 provenance from the complete authoritative tree, survives the class-monkeypatch exploit, and prevents accessor replacement from changing numerical consumption.
+
+## Final independent review
+
+Two fresh exact-SHA Goldfish reviews were rebound after the provenance repair
+to semantic/test head `f8f61dc1674269c323ddd55258df88069033fce6`.
+
+- Codebase/authority review: **0 Blockers / 0 Majors / 0 Nits**, `TURN_IN YES`,
+  `NO_DRIFT`.
+- Structural/ownership review: **0 Blockers / 0 Majors / 0 Nits**,
+  `TURN_IN YES`.
+
+Both independently confirmed B01 sole registry/initializer ownership, B06.1
+private numerical ownership, B11 production composition ownership, complete
+tree validation before projection, exact aliasing, absence of self-attested
+mutable provenance, and no executable restoration of `refine_selected(...)`.
 
 ## Lifecycle
 
