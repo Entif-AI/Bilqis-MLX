@@ -67,7 +67,8 @@ def _bamf_or_topology(args):
             _validate_initial_generation_lifecycle_markers,
         )
         _validate_initial_generation_lifecycle_markers(run_dir)
-        raise ValueError("BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY")
+        from .bamf_lifecycle_inputs import invalid
+        invalid("BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY")
     from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
     if fresh_v2_intent and not isinstance(topology, ModelTopologySpecV2):
         from .bamf_lifecycle_inputs import invalid

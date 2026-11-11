@@ -30,14 +30,14 @@ def _prepare_parent(parent: Path, *, create_parent: bool) -> Path:
             created.append(ancestor)
             ancestor = ancestor.parent
         if not ancestor.is_dir():
-            raise OSError("unsafe run-root parent ancestor")
+            raise OSError()
         parent.mkdir(parents=True, exist_ok=True)
         for directory in created:
             _fsync_directory(directory)
         if created:
             _fsync_directory(ancestor)
     elif not parent.exists() or not parent.is_dir():
-        raise OSError("run-root parent unavailable")
+        raise OSError()
     return parent.resolve(strict=True)
 
 
@@ -53,7 +53,7 @@ def run_root_claim(target: Path, *, create_parent: bool):
             flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
             descriptor = os.open(parent, flags)
             if not stat.S_ISDIR(os.fstat(descriptor).st_mode):
-                raise OSError("run-root parent is not a directory")
+                raise OSError()
             fcntl.flock(descriptor, fcntl.LOCK_EX)
             locked = True
         except BaseException:
