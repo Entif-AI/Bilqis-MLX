@@ -246,6 +246,33 @@ class BamfResumeTests(BamfFirstStudentCase):
         self.assertIn("BAMF_OPERATOR_RESUME_TOPOLOGY_CONFLICT", errors)
         self.assertEqual(_tree_snapshot(target), before)
 
+    def test_resume_all_equality_assertions_wrong_still_reports_run_id_first(self):
+        target = self.root / "accepted-all-wrong"
+        self.preflight(target)
+        before = _tree_snapshot(target)
+        forged = ModelTopologySpecV2()
+        object.__setattr__(forged, "layers", forged.layers + 1)
+        manifest = self.root / "wrong-atlas.json"
+        manifest.write_text("{}", encoding="utf-8")
+        other = AtlasArtifactIdentity("1" * 64, "2" * 64, "3" * 64)
+        with self.accepted_read_context(), patch(
+                "bilqis_mlx.runtime.topology_lifecycle.topology_from_file",
+                return_value=forged), patch(
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.atlas_manifest_identity",
+                return_value=other):
+            code, output, errors = self.invoke([
+                "--dry-run", "--resume", "--run-dir", str(target),
+                "--run-id", "wrong-run", "--run-seed", "544",
+                "--model-topology", str(TOPOLOGY),
+                "--learning-rate", "0.8", "--adam-beta1", "0.8",
+                "--adam-beta2", "0.8", "--adam-eps", "1e-5",
+                "--weight-decay", "0.8",
+                "--atlas-release-manifest", str(manifest),
+            ])
+        self.assertEqual((code, output), (2, ""))
+        self.assertIn("BAMF_OPERATOR_RESUME_RUN_ID_CONFLICT", errors)
+        self.assertEqual(_tree_snapshot(target), before)
+
 
 if __name__ == "__main__":
     import unittest

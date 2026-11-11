@@ -173,8 +173,11 @@ def _resume(args, requested_topology):
         request = read_atlas_enrollment_request_v2(args.atlas_admission_scope)
     pointer = run_dir / "bamf-state.json"
     student, manifest_sha256 = load_bamf_generation_authority(pointer)
-    identity = _validate_resume_overrides(args, student)
+    identity = student.run_identity
+    if identity is None:
+        invalid("BAMF_OPERATOR_RESUME_RUN_IDENTITY_REQUIRED")
     atlas = _accepted_atlas(run_dir, identity)
+    identity = _validate_resume_overrides(args, student)
     _validate_resume_atlas_override(args, atlas)
 
     if request is not None:
@@ -235,9 +238,9 @@ def bamf_lifecycle(args, topology):
     from bilqis_mlx.runtime._bamf_first_student_support import (
         _canonical_disjoint_run_paths, _canonical_run_dir_shape, _fresh_run_dir,
     )
-    target = _canonical_run_dir_shape(args.run_dir)
     _source, target = _canonical_disjoint_run_paths(
-        str(source_run_dir()), target)
+        str(source_run_dir()), args.run_dir)
+    target = _canonical_run_dir_shape(target)
     pointer_path = target / "bamf-state.json"
     if pointer_path.exists() or pointer_path.is_symlink():
         invalid("BAMF_OPERATOR_CREATE_USE_RESUME")

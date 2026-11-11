@@ -13,7 +13,6 @@ from .atlas_lease_contracts import (
     ResourceCeilingV2,
     _invalid,
 )
-from .atlas_lease_storage import require_accepted_atlas_epoch_available_v2
 
 
 def _request_from_json(payload) -> AtlasAdmissionEnrollmentRequestV2:
@@ -87,7 +86,6 @@ def enroll_accepted_atlas_lease_v2(
     features = read_accepted_generation_feature_receipt(pointer)
     if features.source_release_sha256 != identity.initial_release_digest:
         _invalid('BAMF_ATLAS_V2_ACCEPTED_ATLAS_CUSTODY_DRIFT')
-    require_accepted_atlas_epoch_available_v2(run_dir)
     if (request.requested_run_id != identity.run_id
             or request.requested_run_seed != identity.run_seed
             or request.requested_topology_digest != identity.initial_topology_digest):

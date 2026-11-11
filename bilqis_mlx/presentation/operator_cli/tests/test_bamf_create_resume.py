@@ -299,6 +299,8 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         with patch(
                 "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.atlas_manifest_identity",
                 return_value=self.identity), patch(
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle_inputs.active_run_dir",
+                return_value=self.source), patch(
                 "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.source_foundation",
                 side_effect=AssertionError("target shape must reject before source read")):
             code, output, errors = self.invoke([
@@ -308,6 +310,26 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
             ])
         self.assertEqual((code, output), (2, ""))
         self.assertIn("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED", errors)
+
+    def test_overlap_precedes_occupied_target_classification(self):
+        target = self.source / "occupied-inside-source"
+        target.write_text("occupied", encoding="utf-8")
+        manifest = self.root / "atlas-manifest-overlap.json"
+        manifest.write_text("{}", encoding="utf-8")
+        with patch(
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.atlas_manifest_identity",
+                return_value=self.identity), patch(
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle_inputs.active_run_dir",
+                return_value=self.source), patch(
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.source_foundation",
+                side_effect=AssertionError("overlap must reject before source reconstruction")):
+            code, output, errors = self.invoke([
+                "--human-run", "--model-topology", str(TOPOLOGY),
+                "--atlas-release-manifest", str(manifest),
+                "--run-dir", str(target), *self.FOUNDATION_ARGS,
+            ])
+        self.assertEqual((code, output), (2, ""))
+        self.assertIn("BAMF_FIRST_STUDENT_TARGET_OVERLAPS_SOURCE", errors)
 
     def test_persisted_source_dry_run_and_create_preserve_source_and_share_identity(self):
         storage, source = self.persisted_source_root()

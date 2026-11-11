@@ -51,8 +51,17 @@ def _store(root, *, fixture_authority=True):
 def classify_accepted_atlas_epoch(run_dir: Path) -> str:
     """Return staged/v1/v2 without creating accepted authority state."""
     root = Path(run_dir)
-    v1 = root / 'autonomy/atlas-admission/current.json'
-    v2 = root / 'autonomy/atlas-admission/v2/current.json'
+    # Reuse the v1 owner's read-only path validation so unsafe root/autonomy
+    # ancestors are rejected before epoch presence can be classified.  The
+    # classifier must not create any directory or lock.
+    base = _store(root, fixture_authority=False)
+    v2_directory = base / 'v2'
+    v2_leases = v2_directory / 'leases'
+    for path in (v2_directory, v2_leases):
+        if path.is_symlink() or (path.exists() and not path.is_dir()):
+            _invalid('BAMF_ATLAS_LEASE_V2_UNSAFE_PATH')
+    v1 = base / 'current.json'
+    v2 = v2_directory / 'current.json'
     if v1.is_symlink() or (v1.exists() and not v1.is_file()):
         _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
     if v2.is_symlink() or (v2.exists() and not v2.is_file()):
