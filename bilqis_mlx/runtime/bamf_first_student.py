@@ -134,18 +134,38 @@ def preflight_bamf_foundation(
     target = _canonical_run_dir_shape(new_run_dir)
     if target != canonical_target:
         _invalid("BAMF_FIRST_STUDENT_TARGET_PATH_DRIFT")
-    if target.is_dir() and any(target.iterdir()):
-        if (target / "bamf-state.json").exists() or (target / "bamf-state.json").is_symlink():
+    from bilqis_mlx.runtime._coordination import run_root_claim
+    from bilqis_mlx.runtime.bamf_bundle.publication.storage import (
+        _classify_initial_generation_target,
+        _reclaim_empty_initial_staging_root,
+    )
+    with run_root_claim(target, create_parent=True):
+        target = _canonical_run_dir_shape(new_run_dir)
+        if target != canonical_target:
+            _invalid("BAMF_FIRST_STUDENT_TARGET_PATH_DRIFT")
+        if ((target / "bamf-state.json").exists()
+                or (target / "bamf-state.json").is_symlink()):
             _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
-        from bilqis_mlx.runtime.bamf_bundle.genesis import (
-            recover_prepared_initial_generation,
-        )
-        pointer = recover_prepared_initial_generation(target, prepared)
-        if pointer is None:
+        target_state = _classify_initial_generation_target(target)
+        if target_state == "lock-stage":
+            _reclaim_empty_initial_staging_root(target)
+            target_state = _classify_initial_generation_target(target)
+            if target_state != "lock-only":
+                _invalid("BAMF_FIRST_STUDENT_PRESEAL_STAGING_RESIDUE")
+        if target_state == "recovery":
+            from bilqis_mlx.runtime.bamf_bundle.genesis import (
+                recover_prepared_initial_generation,
+            )
+            pointer = recover_prepared_initial_generation(target, prepared)
+            if pointer is None:
+                _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
+        elif target_state == "empty":
+            _fresh_run_dir(target)
+            pointer = publish_initial_generation(target, prepared)
+        elif target_state == "lock-only":
+            pointer = publish_initial_generation(target, prepared)
+        else:
             _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
-    else:
-        _fresh_run_dir(target)
-        pointer = publish_initial_generation(target, prepared)
     projection = load_bamf_foundation_dashboard_projection(target)
     if projection is None:
         _invalid("BAMF_FIRST_STUDENT_PERSISTED_FOUNDATION_DRIFT")

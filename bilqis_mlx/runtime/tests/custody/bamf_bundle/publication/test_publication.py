@@ -13,6 +13,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
+import bilqis_mlx.runtime.bamf_bundle.publication.storage as publication_storage
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.errors import BilqisError
@@ -99,6 +100,69 @@ class BamfPublicationTests(unittest.TestCase):
                     load_bamf_generation(run / "bamf-state.json")
                 if kind == "symlink":
                     self.assertEqual(tuple(outside.iterdir()), ())
+
+    def test_reader_lock_never_mints_missing_b13_custody(self):
+        self.assertFalse(self.run.exists())
+        with self.assertRaises(BilqisError):
+            load_bamf_generation(self.run / "bamf-state.json")
+        self.assertFalse(self.run.exists())
+
+        self.run.mkdir()
+        with self.assertRaises(BilqisError):
+            load_bamf_generation(self.run / "bamf-state.json")
+        self.assertFalse((self.run / ".bamf-pointer.lock").exists())
+
+    def test_initial_pointer_lock_repairs_failed_durability_before_yield(self):
+        self.run.mkdir()
+        real_fsync = publication_storage.os.fsync
+        calls = 0
+
+        def fail_once(fd):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise OSError("durability failure")
+            return real_fsync(fd)
+
+        entered = []
+        with patch.object(publication_storage.os, "fsync", side_effect=fail_once), \
+                self.assertRaises(OSError):
+            with publication_storage._initial_generation_pointer_lock(self.run):
+                entered.append("first")
+        self.assertEqual(entered, [])
+        self.assertTrue((self.run / ".bamf-pointer.lock").is_file())
+
+        with publication_storage._initial_generation_pointer_lock(self.run):
+            entered.append("retry")
+        self.assertEqual(entered, ["retry"])
+
+    def test_pointer_lock_reopen_repeats_file_and_directory_fsync(self):
+        self.run.mkdir()
+        directory_syncs = []
+        real_directory_sync = publication_storage._fsync_directory
+        with publication_storage._initial_generation_pointer_lock(self.run):
+            pass
+        with patch.object(
+                publication_storage, "_fsync_directory",
+                side_effect=lambda path: directory_syncs.append(Path(path))):
+            with publication_storage._pointer_lock(self.run):
+                pass
+        self.assertEqual(directory_syncs, [self.run])
+        real_directory_sync(self.run)
+
+    def test_stage_root_publish_and_child_cleanup_are_durable(self):
+        self.run.mkdir()
+        syncs = []
+        with patch.object(
+                publication_storage, "_fsync_directory",
+                side_effect=lambda path: syncs.append(Path(path))):
+            stage = publication_storage._stage(self.run)
+            self.assertEqual(syncs, [self.run / ".bamf-staging", self.run])
+            stage.mkdir()
+            (stage / "partial").write_text("x")
+            publication_storage._remove_stage(stage)
+        self.assertEqual(syncs[-1], self.run / ".bamf-staging")
+        self.assertFalse(stage.exists())
 
     def test_symlinked_bundle_root_rejects_before_external_bundle_write(self):
         self.run.mkdir()

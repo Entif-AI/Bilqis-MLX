@@ -40,12 +40,57 @@ def _resolved_run_path(value, *, reason: str) -> Path:
         _invalid(reason)
 
 
+def _physical_directory_chain(path: Path, *, reason: str) -> tuple[Path, tuple[tuple[int, int], ...]]:
+    """Return the deepest existing physical directory and its ancestor identities."""
+    try:
+        current = Path(path).expanduser()
+        while not current.exists():
+            if current.parent == current:
+                _invalid(reason)
+            current = current.parent
+        physical = current.resolve(strict=True)
+        if not physical.is_dir():
+            _invalid(reason)
+        identities = []
+        cursor = physical
+        while True:
+            stat = cursor.stat()
+            identities.append((stat.st_dev, stat.st_ino))
+            if cursor.parent == cursor:
+                break
+            cursor = cursor.parent
+        return physical, tuple(identities)
+    except (TypeError, OSError, PermissionError, RuntimeError):
+        _invalid(reason)
+
+
 def _canonical_disjoint_run_paths(source_run_dir: str, new_run_dir) -> tuple[Path, Path]:
-    source = _resolved_run_path(
-        source_run_dir, reason="BAMF_FIRST_STUDENT_SOURCE_PATH_INVALID")
+    try:
+        source_input = Path(source_run_dir).expanduser()
+    except (TypeError, OSError, RuntimeError):
+        _invalid("BAMF_FIRST_STUDENT_SOURCE_PATH_INVALID")
+    try:
+        target_input = Path(new_run_dir).expanduser()
+    except (TypeError, OSError, RuntimeError):
+        _invalid("BAMF_FIRST_STUDENT_TARGET_PATH_INVALID")
+    if target_input.is_symlink():
+        _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
+    source, source_chain = _physical_directory_chain(
+        source_input, reason="BAMF_FIRST_STUDENT_SOURCE_PATH_INVALID")
+    if not source_input.exists():
+        _invalid("BAMF_FIRST_STUDENT_SOURCE_PATH_INVALID")
+    source_identity = source.stat().st_dev, source.stat().st_ino
+    target_probe = (
+        target_input.parent
+        if target_input.exists() and not target_input.is_dir() else target_input)
+    target_existing, target_chain = _physical_directory_chain(
+        target_probe, reason="BAMF_FIRST_STUDENT_TARGET_PATH_INVALID")
     target = _resolved_run_path(
-        new_run_dir, reason="BAMF_FIRST_STUDENT_TARGET_PATH_INVALID")
-    if target == source or source in target.parents:
+        target_input, reason="BAMF_FIRST_STUDENT_TARGET_PATH_INVALID")
+    if (source_identity in target_chain
+            or (target_input.exists() and target_input.is_dir()
+                and (target_existing.stat().st_dev, target_existing.stat().st_ino)
+                in source_chain)):
         _invalid("BAMF_FIRST_STUDENT_TARGET_OVERLAPS_SOURCE")
     return source, target
 

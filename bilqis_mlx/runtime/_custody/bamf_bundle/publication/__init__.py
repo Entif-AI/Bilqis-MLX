@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-import shutil
 from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError
@@ -33,8 +32,8 @@ from .retry import (
 )
 from .storage import (
     ACCEPTANCE_DIR, _acceptance_path, _atomic_pointer, _live_bundle_manifest,
-    _pointer_lock, _read_pointer, _require_bundle_root, _require_run_root,
-    _stage, _write_acceptance,
+    _initial_generation_pointer_lock, _pointer_lock, _read_pointer,
+    _remove_stage, _require_bundle_root, _require_run_root, _stage, _write_acceptance,
 )
 
 
@@ -54,9 +53,12 @@ def _load_generation_locked(pointer_path: Path) -> tuple[CompleteStudent, dict]:
 def _parent_acceptance_for_publication(
         run_dir: Path, candidate: BamfBundleCandidate,
         accepted):
+    pointer_lock = (
+        _initial_generation_pointer_lock
+        if candidate.generation == 0 else _pointer_lock)
     return _parent_acceptance_for_publication_impl(
         run_dir, candidate, accepted,
-        pointer_lock=_pointer_lock, read_pointer=_read_pointer,
+        pointer_lock=pointer_lock, read_pointer=_read_pointer,
         live_manifest=_live_bundle_manifest, load_bundle=load_bamf_bundle,
         require_published_acceptance=_require_published_acceptance)
 
@@ -159,7 +161,10 @@ def _publish_authorized_generation(
         digest = manifest["manifest_sha256"]
         target = _require_bundle_root(run_dir, create=True) / digest
         pointer_path = run_dir / "bamf-state.json"
-        with _pointer_lock(run_dir):
+        pointer_lock = (
+            _initial_generation_pointer_lock
+            if candidate.generation == 0 else _pointer_lock)
+        with pointer_lock(run_dir):
             current = _read_pointer(pointer_path)
             if current is not None and current["generation"] == candidate.generation:
                 return _reconcile_already_pointed_retry(
@@ -186,7 +191,7 @@ def _publish_authorized_generation(
                 if target.is_symlink() or not target.is_dir():
                     invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
                 load_bamf_bundle(target, expected_manifest_sha256=digest)
-                shutil.rmtree(stage)
+                _remove_stage(stage)
             else:
                 stage.rename(target)
                 directory = os.open(target.parent, os.O_RDONLY)
@@ -210,7 +215,7 @@ def _publish_authorized_generation(
             return pointer
     except BaseException:
         if stage.exists() and stage.is_dir() and not stage.is_symlink():
-            shutil.rmtree(stage)
+            _remove_stage(stage)
         raise
 
 

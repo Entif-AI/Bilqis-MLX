@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError
@@ -23,7 +22,8 @@ from .authority import (
 from .events import reconcile_bamf_outbox
 from .storage import (
     _atomic_pointer, _live_bundle_manifest, _pointer_lock, _read_pointer,
-    _write_acceptance, _write_parsed_initial_generation_acceptance,
+    _initial_generation_pointer_lock, _remove_stage, _write_acceptance,
+    _write_parsed_initial_generation_acceptance,
 )
 
 
@@ -134,7 +134,7 @@ def _existing_initial_generation_retry(
 
     return existing_initial_generation_retry(
         run_dir, candidate, prepared,
-        pointer_lock=_pointer_lock, read_pointer=_read_pointer,
+        pointer_lock=_initial_generation_pointer_lock, read_pointer=_read_pointer,
         load_generation_locked=_load_generation_locked,
         require_published_acceptance=_require_published_acceptance,
         load_bundle=load_bamf_bundle, atomic_pointer=_atomic_pointer,
@@ -272,7 +272,7 @@ def reconcile_already_pointed_retry(
         )
         _require_retry_acceptance_family(authority, persisted)
         require_successor_source_authority(run_dir, parent, student, authority)
-    shutil.rmtree(stage)
+    _remove_stage(stage)
     _write_acceptance(run_dir, digest, authority)
     reconcile_bamf_outbox(run_dir, student)
     return current
