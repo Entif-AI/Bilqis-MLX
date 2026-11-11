@@ -152,7 +152,7 @@ class FactorySalienceExecutionTests(unittest.TestCase):
                 offer = prepare_priority_source_offer(context, parent, str(self.artifact),
                     capability=capability, source_seed=seed, source_each=1)
             with stage('a09_planning'):
-                plan = planning(self.features.selection, factory)
+                plan = planning(self.features.selection, factory, run_dir)
             from bilqis_mlx.runtime import accepted_priority_visit as priority_owner
             real_selector = priority_owner.select_visit_policy
             with stage('priority_selection'), patch.object(priority_owner, 'select_visit_policy',

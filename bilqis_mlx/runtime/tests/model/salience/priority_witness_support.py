@@ -1,8 +1,11 @@
 """Real-owner planning and signed fixture inputs for the C06 Studio witness."""
 from dataclasses import replace
 import hashlib
+import os
 from pathlib import Path
 import random
+import subprocess
+import sys
 
 from bilqis_mlx.compatibility import historical_teacher_policy
 from bilqis_mlx.curriculum.scheduler import start_new
@@ -34,12 +37,22 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.teacher_custody_fixtures impor
 from bilqis_mlx.semantics.domains import contract_digest
 
 
-def planning(selection, factory):
+def _current_candidate_frontier(root, output):
+    """Build A08 into disposable custody before loading its provenance-bound view."""
+    builder = root / 'lib/ithkuil/src/build_curriculum_frontier.py'
+    subprocess.run(
+        [sys.executable, str(builder)], check=True, capture_output=True, text=True,
+        env={**os.environ, 'BILQIS_CURRICULUM_FRONTIER_OUT': str(output)},
+    )
+    return load_candidate_frontier(
+        output, root / 'lib/ithkuil/_data/csv',
+        expected_builder_sha256=hashlib.sha256(builder.read_bytes()).hexdigest())
+
+
+def planning(selection, factory, run_dir):
     """Run A08/A09 owners; fixture rights are planning inputs only."""
     root = Path.cwd()
-    builder = root / 'lib/ithkuil/src/build_curriculum_frontier.py'
-    frontier = load_candidate_frontier(root / 'lib/ithkuil/_curriculum', root / 'lib/ithkuil/_data/csv',
-        expected_builder_sha256=hashlib.sha256(builder.read_bytes()).hexdigest())
+    frontier = _current_candidate_frontier(root, Path(run_dir) / 'candidate-frontier')
     learned = LearnedFrontier(selection.release_sha256)
     candidate = compile_semantic_curriculum(selection, SOURCE_FAMILY_ADAPTERS, learned)
     source_frontier, policy = _rights()
