@@ -9,6 +9,22 @@ from bilqis_mlx.runtime.jit_adoption import (
 )
 
 
+def advance_atlas_frontier_v2(*args, **kwargs):
+    """Late-bound verifier seam; keeps legacy import order and test patching stable."""
+    from bilqis_mlx.runtime.atlas_admission_policy_v2 import (
+        advance_atlas_frontier_v2 as advance,
+    )
+    return advance(*args, **kwargs)
+
+
+def replay_atlas_delta_scope_handoff_v2(*args, **kwargs):
+    """Late-bound A09 replay seam; avoids policy/admission import recursion."""
+    from bilqis_mlx.runtime.atlas_admission_policy_v2 import (
+        replay_atlas_delta_scope_handoff_v2 as replay,
+    )
+    return replay(*args, **kwargs)
+
+
 def _adopted_result(handoff, lease, pointer, reason):
     from bilqis_mlx.runtime.atlas_admission_policy import AdmissionResult, AdmissionStatus
 
@@ -34,8 +50,6 @@ def adopt_capability_only_atlas_successor_v2(current, delta, lease):
     from bilqis_mlx.runtime.atlas_admission_policy_v2 import (
         AtlasAdmissionContextV2,
         AtlasDeltaEnvelopeV2,
-        advance_atlas_frontier_v2,
-        replay_atlas_delta_scope_handoff_v2,
     )
     from bilqis_mlx.runtime.atlas_capability_adoption_v2 import (
         _accepted_capability_only_retry_state_v2,
@@ -98,8 +112,6 @@ def adopt_parameter_extension_atlas_successor_v2(current, delta, lease):
     from bilqis_mlx.runtime.atlas_admission_policy_v2 import (
         AtlasAdmissionContextV2,
         AtlasDeltaEnvelopeV2,
-        advance_atlas_frontier_v2,
-        replay_atlas_delta_scope_handoff_v2,
     )
     from bilqis_mlx.runtime.atlas_parameter_adoption_v2 import (
         accepted_parameter_extension_retry_v2,
