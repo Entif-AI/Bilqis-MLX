@@ -250,7 +250,7 @@
     },
     {
       "issue": 715,
-      "pr": 988,
+      "pr": null,
       "state": "TURNED_IN",
       "head_sha": "f8f61dc1674269c323ddd55258df88069033fce6",
       "summary": "Closed #715 differentiability/immutability remediation is consumed into the current-unified B06.4 implementation turned in as PR #988; the final repair also closes the fresh type.__setattr__ provenance bypass found during exact-SHA review.",
