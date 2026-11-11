@@ -1,6 +1,6 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-R12-PENDING
+Status: DESIGN AMENDMENT / EGM-R15-PENDING
 Issue: #542 / C16.1a
 Reviewed unified base: `905018b0ece7613843570dc2c2e72a74dae4e91d`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
@@ -156,6 +156,28 @@ C07-owned read-only epoch precheck, then constructs the C09 host, then enters ac
 enrollment; the mandatory under-lock epoch recheck remains unchanged. Production
 mutation remains forbidden until R14 freshly clears **0 Blockers / 0 Majors** across
 all three required lenses.
+
+R14 review record: the frozen R14 proposal at
+`7f99502ea09cdd174ae63044eaab9742755259fd` / SHA-256
+`240623f691e84d23c91225c9448e7255959aef9d5dc370873e194857b28c2df8`
+received Design/Structural **0 Blockers / 2 Majors / 1 Nit**, Codebase Details
+**0 Blockers / 0 Majors / 0 Nits**, and Implementation Readiness **0 Blockers / 4
+Majors / 1 Nit**. The material union is five seams. First, the pre-seal crash contract
+modeled only the lock+stage state and omitted the earlier pointer-lock-only prefix.
+The Design review initially described the inner publication order as stage-before-lock;
+source reconciliation refined that rationale: generation-zero authorization first calls
+`_existing_initial_generation_retry()`, whose real B13 owner acquires/creates the
+persistent pointer lock before `_stage()`. The actionable finding remains that **every
+legal durable prefix must be classified**, including the lock-only gap between retry
+classification and stage creation. Second, the new shared C07 epoch lock lacked an
+exact helper/failure/release contract and deterministic unsafe-path-versus-dual-epoch
+precedence. Third, the presentation lifecycle lacked an exact callable/report/serialization
+and exit-code boundary. Fourth, fresh/resume enrollment command-shape errors lacked
+literal within-stage precedence. Fifth, the readiness standard requires incremental
+stable/buildable/testable implementation phases rather than one flat file list. The
+two Nits were stale round labels. R15 repairs that complete set without changing the
+accepted architecture or production scope. Production mutation remains forbidden until
+R15 freshly clears **0 Blockers / 0 Majors** across all three required lenses.
 
 ## Why this amendment exists
 
@@ -393,6 +415,22 @@ modes. The first failing step wins:
 7. source/target canonical disjointness in both ancestry directions;
 8. target path shape and absent/empty/interrupted-genesis classification;
 9. B13 preview/preparation and any deeper owner validation.
+
+Steps 5-6 have a literal within-stage order. Native argparse `choices` rejection for an
+invalid `--admission-policy` value happens before lifecycle entry and is not translated
+to a BAMF semantic error. Once lifecycle owns the command, step 5 is:
+
+1. staged/omitted policy with any scope -> `BAMF_ATLAS_SCOPE_REQUIRES_EXPLICIT_POLICY`;
+2. `atlas-release` with no scope -> `BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED`;
+3. present scope that cannot be read or parsed as the exact v2 enrollment request ->
+   `BAMF_ATLAS_ENROLLMENT_REQUEST_INVALID`.
+
+For a mutating fresh create, step 6 then requires live human authorization first and
+rejects `BAMF_ATLAS_V2_EXPLICIT_HUMAN_REQUEST_REQUIRED` before evaluating request
+compatibility. Dry-run skips that authority gate. Request comparisons then short-circuit
+run id -> run seed -> topology -> Atlas release, using the four already-pinned
+`BAMF_OPERATOR_ATLAS_REQUEST_*_CONFLICT` errors in that order. No command-shape or
+request failure invokes B13 preparation merely to obtain a later error.
 
 No later step may be evaluated merely to choose a more specific error. Literal
 mixed-invalid regressions freeze representative precedence edges: incomplete optimizer
@@ -670,13 +708,26 @@ The cross-owner boundary has four **nominal valid** durable states:
 4. **Accepted gen0 plus valid C07 current reference.** The effective policy is
    `atlas-release`; resume validates/readbacks that lease without caller input.
 
-There is also one bounded **pre-seal crash residue**, not a fifth valid lifecycle
-state: a real run directory containing exactly B13's benign persistent synchronization
-file `.bamf-pointer.lock` plus a real, empty `.bamf-staging/` directory, with no B13
-pointer, bundle, acceptance, genesis-trust row, C07 authority, or other entry. The
-pointer lock must be a real regular file, never a symlink or non-file. This is the
-actual reviewed B13 owner sequence: generation-zero retry acquires/creates the
-persistent pointer lock before `_stage()` creates the staging root.
+There are also two ordered **pre-seal crash prefixes**, not additional valid lifecycle
+states. The full reviewed generation-zero call chain is normative: publication first
+enters `_authorize_publication_candidate(...)`, which calls
+`_existing_initial_generation_retry(...)`; that owner acquires/creates and then releases
+the persistent `.bamf-pointer.lock` while deciding that no exact prior genesis exists.
+Only after that retry preflight returns does `_publish_authorized_generation(...)` call
+`_stage()` and later take its second pointer lock around final publication. Therefore
+the only benign fresh-gen0 prefixes are:
+
+1. exactly one safe regular `.bamf-pointer.lock`, with no other target entry; a crash
+   may occur after the retry preflight releases the lock and before `_stage()` publishes
+   the staging root;
+2. the same safe regular `.bamf-pointer.lock` plus a real, empty `.bamf-staging/`
+   directory, with no B13 pointer, bundle, acceptance, genesis-trust row, C07 authority,
+   or other entry; this is the next durable prefix after stage-root publication or
+   retained-root generation-child cleanup.
+
+There is no lawful fresh-owner stage-only prefix in this contract. A stage marker
+without the safe persistent pointer lock is treated as malformed/interrupted B13
+evidence and fails closed rather than being silently reclaimed.
 
 The staging root is promoted to an explicit durable lifecycle marker. On first
 creation, B13 `_stage()` must fsync the new staging directory and then the run root
@@ -686,22 +737,22 @@ staging parent after removal. Therefore a crash after stage-root publication can
 reliably leave the exact recoverable lock+empty-stage residue rather than relying on
 an un-fsynced directory entry.
 
-- `--resume` treats any present/symlinked `.bamf-staging` marker as BAMF-v2
-  lifecycle evidence and never falls through to the historical learner. A real
-  directory marker rejects
+- `--resume` treats any present/symlinked `.bamf-pointer.lock` **or** `.bamf-staging`
+  marker as BAMF-v2 lifecycle evidence and never falls through to the historical
+  learner. A safe pointer-lock-only prefix or safe lock+real-stage prefix rejects
   `BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY`; an unsafe
-  symlink/non-directory marker preserves the B13 unsafe-entry error.
+  symlink/non-regular pointer lock or symlink/non-directory stage marker preserves the
+  owning B13 unsafe-entry error.
 - A repeated **fresh create**, under the shared run-root claim and only after all
-  pre-write equality/configuration validation succeeds, may reclaim the exact
-  lock+stage residue by requiring `.bamf-pointer.lock` to be a real regular file and
-  `.bamf-staging` to be a real empty directory, calling `rmdir()` on the staging
-  directory only, fsyncing the run root, then re-running the final target classifier.
-  That final classifier treats the safe persistent `.bamf-pointer.lock` as B13
-  synchronization residue rather than arbitrary user content; no other sibling is
-  permitted.
+  pre-write equality/configuration validation succeeds, treats the exact safe
+  pointer-lock-only prefix as benign persistent B13 synchronization residue and may
+  continue without deleting it. For the exact safe lock+stage prefix, it requires the
+  stage root to be a real empty directory, calls `rmdir()` on that staging directory
+  only, fsyncs the run root, then re-runs the final target classifier; that classifier
+  again ignores only the safe persistent pointer lock. No other sibling is permitted.
 - It never recursively deletes staging contents. A nonempty stage root, a target with
   any sibling entry other than the safe regular `.bamf-pointer.lock`, any unsafe
-  pointer-lock shape, or any unsafe stage marker rejects
+  pointer-lock shape, a stage-only prefix, or any unsafe stage marker rejects
   `BAMF_FIRST_STUDENT_PRESEAL_STAGING_RESIDUE` (or the owning B13 unsafe-entry error
   for symlink/non-directory shape) and requires operator reconciliation. No trust row
   means cold sealed-genesis recovery is not attempted for this state.
@@ -885,14 +936,26 @@ An explicit enrollment retry is allowed only as:
 This path has one normative validation order. The first failing step wins. Presentation
 owns steps 1-6 and they are read-only; the accepted C07 owner then owns steps 7-11:
 
-1. require the exact command shape above, including parser-owned explicit
-   `atlas-release` policy and scope presence;
-2. parse the enrollment scope for syntax/schema safety;
+1. classify command shape without reading authority. Scope presence is the enrollment
+   trigger. If scope is present while `admission_policy_explicit` is false or the
+   parsed policy is not `atlas-release`, reject
+   `BAMF_ATLAS_SCOPE_REQUIRES_EXPLICIT_POLICY`; with scope plus explicit
+   `atlas-release`, require `--human-run` and otherwise reject
+   `BAMF_ATLAS_V2_EXPLICIT_HUMAN_REQUEST_REQUIRED`. Scope absent means ordinary
+   resume at this stage, not an enrollment mutation;
+2. when scope is present, parse it for syntax/schema safety and normalize failure to
+   `BAMF_ATLAS_ENROLLMENT_REQUEST_INVALID`;
 3. cold-load and authenticate accepted B13 pointer, student/run identity, optimizer
    settings and accepted Atlas feature receipt; invalid/drifted custody fails here;
 4. compare any explicit run/topology/optimizer/Atlas CLI equality assertions with the
    accepted state in the already pinned order run id -> run seed -> topology ->
-   optimizer group -> Atlas identity; the first mismatch short-circuits;
+   optimizer group -> Atlas identity; the first mismatch short-circuits. Then compare
+   explicit admission-policy intent with the authenticated saved policy: on a staged
+   run, explicit `atlas-release` with no scope is an attempted first enrollment missing
+   its request and rejects `BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED`; on an already
+   atlas-release run, explicit `atlas-release` without scope is a valid equality
+   assertion; any explicit reverse/different policy rejects
+   `BAMF_OPERATOR_RESUME_ADMISSION_POLICY_CONFLICT`;
 5. call C07-owned `require_accepted_atlas_epoch_available_v2(target)` before any C09
    host/capability provisioning; pre-existing dual/v1 authority therefore wins over
    any mixed-invalid C09 cache/capability condition and this precheck creates no lock
@@ -915,6 +978,11 @@ owns steps 1-6 and they are read-only; the accepted C07 owner then owns steps 7-
 11. exact existing lease converges idempotently; absent lease may establish the first
     accepted v2 lease; different accepted v2 lease rejects as explicit renewal
     required.
+
+If step 1 found no scope, the command is on the ordinary-resume branch: after steps
+3-4 authenticate custody and resolve any explicit saved-policy assertion, it returns
+`READY_TO_RESUME`. Steps 5-11 above are enrollment-only and are not evaluated for a
+scope-absent ordinary resume.
 
 Therefore resume scope is not a general policy override or trust-root selector. It
 is a narrowly typed retry/completion surface for the first C07 enrollment after
@@ -958,6 +1026,52 @@ serialized by one cross-epoch authority lock owned under the existing
 file with the same host-local `flock` discipline as the existing writers. Lock order
 is fixed: cross-epoch authority lock first, then the epoch-specific v1 or v2 writer
 lock. No caller may acquire them in the reverse order.
+
+The shared lock API and failure contract are exact and live in
+`atlas_lease_storage.py`:
+
+```python
+@contextmanager
+def _atlas_authority_epoch_lock(run_dir: Path) -> Iterator[None]:
+    ...
+```
+
+The helper first calls the existing accepted-safe storage-path owner
+`_store(run_dir, fixture_authority=False)`. Any unsafe `autonomy` or
+`autonomy/atlas-admission` shape therefore preserves the existing
+`BAMF_ATLAS_LEASE_UNSAFE_PATH` surface before lock creation. Only after enrollment or
+accepted persistence has passed all non-mutating validation may the helper create a
+missing safe `autonomy/atlas-admission/` directory chain with `parents=True,
+exist_ok=True`; directory-creation failure is
+`BAMF_ATLAS_AUTHORITY_EPOCH_LOCK_UNAVAILABLE`. It then uses
+`authority-epoch.lock` beneath that root, opens with
+`O_CREAT|O_RDWR|O_NOFOLLOW` where supported, requires `fstat` to report a regular
+file, takes blocking `flock(LOCK_EX)`, yields exactly `None`, then unlocks and closes.
+An existing symlink or non-regular lock rejects
+`BAMF_ATLAS_AUTHORITY_EPOCH_UNSAFE_LOCK`. Other pre-yield open/fstat/flock failures
+reject `BAMF_ATLAS_AUTHORITY_EPOCH_LOCK_UNAVAILABLE`.
+The read-only epoch precheck never calls this helper and therefore never creates the
+lock merely to reject validation.
+
+Release semantics mirror the already-pinned run-root claim. If the protected body
+completed successfully but unlock or close fails, raise
+`BAMF_ATLAS_AUTHORITY_EPOCH_LOCK_RELEASE_FAILED`; durable postcondition is then
+unknown and no automatic replay is implied. If the body raised and release also fails,
+preserve and re-raise the same body exception and add exactly one note
+`BAMF_ATLAS_AUTHORITY_EPOCH_LOCK_RELEASE_FAILED:<unlock|close>`. Unlock is the first
+release operation; close is still attempted, and `unlock` is the note if both fail.
+
+One C07 read-only classifier owns current-reference path safety and presence for both
+the precheck and the mandatory under-lock recheck. Its deterministic order is v1 path
+safety first, then v2 path safety, then epoch presence. A symlink/non-file v1
+`current.json` therefore raises the existing `BAMF_ATLAS_LEASE_UNSAFE_PATH` even if a
+v2 reference is also present; if v1 is safe, a symlink/non-file v2 `current.json`
+raises `BAMF_ATLAS_LEASE_V2_UNSAFE_PATH`. Only after both present references are safe
+regular files may their coexistence raise `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT`.
+With safe paths, v1-only still yields `BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT` to the
+v2 first-enrollment owner, and v2-only yields
+`BAMF_ATLAS_V1_SUCCESSOR_AUTHORITY_PRESENT` to an accepted v1 writer. No caller
+duplicates this precedence logic.
 
 While holding that cross-epoch lock:
 
@@ -1174,6 +1288,39 @@ consume. It does not require `--human-run`, because it issues no authority and m
 no durable target mutation. A scope with `staged` is always invalid. A fresh `atlas-release` create or
 dry-run without scope is always invalid. Normal resume never requires a scope.
 
+The production presentation boundary is exact. C16.1a exposes one lifecycle callable
+and no second result/exit abstraction:
+
+```python
+def bamf_lifecycle(
+    args: argparse.Namespace,
+    topology: ModelTopologySpecV2 | None,
+) -> dict:
+    ...
+```
+
+Fresh owned commands require `topology` to be an actual `ModelTopologySpecV2` after
+the pinned validation order; accepted resume may pass `None`, in which case saved B13
+custody supplies topology. The function never prints, exits, invokes the learner, or
+returns an integer. Success returns exactly one JSON-serializable
+`bilqis.bamf.operator-lifecycle/v1` mapping with keys `schema`, `result`, `run_id`,
+`run_seed`, `run_identity`, `model_topology`, `atlas_release_manifest`,
+`admission_policy`, `optimizer_hyperparameters`, `source_prefetch_workers`,
+`generation_manifest_sha256`, `ready_for_training`, and `neural_updates`. `result` is
+one of `READY_TO_CREATE`, `CREATED`, `READY_TO_RESUME`, `ENROLLED`;
+`ready_for_training` is always `false` and `neural_updates` is always `0`.
+`generation_manifest_sha256` is `null` only for `READY_TO_CREATE` and is the accepted
+B13 manifest digest for the other results.
+
+`command._bamf_or_topology(...)` is the sole presentation caller. Once lifecycle owns
+the command it executes `_print_status(bamf_lifecycle(args, topology))`, whose existing
+contract prints the record once and returns exit code `0`; `_main` returns that code
+before learner dispatch. Lifecycle/owner exceptions are not converted to result
+records: they propagate to `_main`'s existing operator-blocked boundary, which prints
+the error and returns `2`. No C16.1a path invents a third success/failure exit
+convention, and the historical `bamf_preflight(...)` object is not used as the v2
+lifecycle return type.
+
 Dispatch is pinned before implementation:
 
 1. a fresh command whose parser-owned `bamf_v2_foundation_explicit` bit is true is
@@ -1188,7 +1335,7 @@ Dispatch is pinned before implementation:
    `bamf_lifecycle` even when `--model-topology` is omitted, because accepted B13
    custody supplies the saved topology;
 4. `--resume` against a target with no pointer but with BAMF-v2 genesis custody or
-   pre-seal artifacts (genesis-trust row, `.bamf-staging`, generation-zero
+   pre-seal artifacts (genesis-trust row, `.bamf-pointer.lock`, `.bamf-staging`, generation-zero
    bundle/acceptance evidence, or the v2 BAMF bundle directory shape) is intercepted
    before historical learner routing.
    This command path is **classification-only and non-mutating**: marker presence is
@@ -1367,6 +1514,39 @@ This test uses the real B13/C07/C09 owner boundary. It may use package-local sig
 and authority fixtures but must not replace the enrollment operation with a mocked
 success/failure return value.
 
+## Incremental implementation phases after EGM pass
+
+Implementation is ordered into five independently checkable phases. Each phase ends
+with a clean/importable tree, its named focused tests green, changed-production
+`py_compile` green, `git diff --check` green, and BAMF flow-control validation green
+before the next phase begins. A checkpoint commit may preserve each verified phase;
+no phase is permission to start the learner or optimizer.
+
+1. **Host coordination and C07 storage safety.** Add the neutral run-root claim,
+   fixture-custody guard expansion, shared epoch lock/classifier, accepted v1/v2
+   cross-epoch exclusion, and exact v2 orphan/reconciliation storage behavior. Run the
+   new coordination tests plus C07 v1/v2 storage/fixture/epoch-race tests. No
+   presentation routing changes occur in this phase.
+2. **B13 path, durability, and recovery foundations.** Add physical-identity
+   source/target disjointness, durable staging-root publication/cleanup, the two legal
+   pre-seal prefixes, parsed historical acceptance write path, prepared retry and
+   source-independent cold recovery. Run B13 generation-zero/retry/trust/recovery and
+   first-student path tests. C07 enrollment is not yet exposed through CLI.
+3. **Accepted C07 enrollment owner.** Add the immutable request contract/parser,
+   read-only epoch precheck, accepted-run enrollment owner, C09 capability use, and
+   sole accepted-v2 persistence delegation. Run C07/C09 accepted enrollment,
+   signature/rights, epoch-precedence and readback tests. No CLI command may yet route
+   to the new mutation owner.
+4. **Operator lifecycle and parser routing.** Add parser-owned explicitness actions,
+   exact `bamf_lifecycle(...)` report/exit integration, fresh dry-run/create,
+   interrupted-create classification, ordinary resume and explicit enrollment routing.
+   Run the C16.1a CLI/parser/help/learner-neutrality suite plus exact dry-run/create
+   identity equivalence. `_invoke_learner` must remain unreachable for every owned v2
+   case.
+5. **Cross-owner witnesses and documentation.** Add the cohesive disposable first-start
+   and persisted-source witnesses, update C11.1/BAMF architecture text, then run the
+   complete affected C16/C07/C09/B13/C03/A09 ring and the final repository gates below.
+
 ## Implementation surface after EGM pass
 
 Production, with required file action:
@@ -1450,11 +1630,12 @@ Production, with required file action:
     fsyncing the new staging directory and run root, and route every retained-root
     stage-child cleanup through one helper that fsyncs `.bamf-staging/` after child
     removal; preserve `.bamf-pointer.lock` as the existing persistent B13
-    synchronization file rather than pretending the pre-seal residue is stage-only;
+    synchronization file and classify both real fresh-owner prefixes: pointer-lock-only
+    after retry preflight, then pointer-lock + empty durable staging root;
 - **Modify** `bilqis_mlx/presentation/operator_cli/command.py` and **Modify**
   `bilqis_mlx/presentation/operator_cli/parser.py` only as required for
   the pinned v2 dispatch/presence-bit routing **and** the explicit BAMF-v2 foundation
-  input flags frozen in this R11 contract; parser-owned explicit-store actions must
+  input flags frozen in this R15 contract; parser-owned explicit-store actions must
   preserve argparse abbreviations while making any accepted explicit v2-only
   foundation option intercept before historical learner dispatch even when topology
   is omitted or invalid; `--admission-policy` uses the same parser-owned explicitness
@@ -1480,6 +1661,7 @@ Tests:
 - **Create** `bilqis_mlx/presentation/operator_cli/tests/test_bamf_resume_admission_policy.py`;
 - **Modify** `bilqis_mlx/presentation/operator_cli/tests/test_bamf_preflight.py`;
 - **Create** `bilqis_mlx/presentation/operator_cli/tests/test_bamf_first_start_neutrality.py`;
+- **Modify** `bilqis_mlx/runtime/tests/admission/atlas/test_atlas_lease_storage.py`;
 - **Modify** `bilqis_mlx/runtime/tests/admission/atlas/test_atlas_lease_v2.py`;
 - **Modify**
   `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_retry.py`;
@@ -1506,6 +1688,12 @@ mirrored test owner:
   custody on resume;
 - mixed-invalid fresh commands prove the pinned validation order across foundation,
   topology, Atlas manifest, scope, source/target overlap and occupied-target failures;
+- fresh command-shape regressions prove staged/omitted policy plus scope rejects
+  `BAMF_ATLAS_SCOPE_REQUIRES_EXPLICIT_POLICY`, atlas-release without scope rejects
+  `BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED`, malformed scope then rejects
+  `BAMF_ATLAS_ENROLLMENT_REQUEST_INVALID`, and mutating create without live human
+  authorization rejects `BAMF_ATLAS_V2_EXPLICIT_HUMAN_REQUEST_REQUIRED` before any
+  request-compatibility mismatch;
 - the reviewed-base fresh-process no-MLX regression remains an **early-invalid**
   configuration witness: with MLX imports blocked it returns the pinned
   foundation/configuration error before exact B13 preparation and preserves the full
@@ -1519,6 +1707,13 @@ mirrored test owner:
   `BAMF_ATLAS_V2_ENROLLMENT_RUN_IDENTITY_DRIFT` before
   `BAMF_ATLAS_V2_ENROLLMENT_ATLAS_RELEASE_DRIFT` when both request identity and
   Atlas release disagree with accepted custody;
+- explicit-resume command-shape regressions prove scope with omitted/explicit-staged
+  policy rejects `BAMF_ATLAS_SCOPE_REQUIRES_EXPLICIT_POLICY`; scope with explicit
+  atlas-release but no human authorization rejects
+  `BAMF_ATLAS_V2_EXPLICIT_HUMAN_REQUEST_REQUIRED`; staged accepted custody plus an
+  explicit atlas-release policy but no scope rejects
+  `BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED`; and already-atlas-release custody accepts
+  an explicit matching atlas-release equality assertion without scope;
 - atlas-release dry-run validates request compatibility without `--human-run` and
   still performs zero durable target mutation;
 - staged-gen0 -> resume enrollment completion;
@@ -1533,6 +1728,12 @@ mirrored test owner:
   enrollment on a v1-authorized run;
 - shared epoch serialization: sequential v1->v2 and v2->v1 mutations plus a
   synchronized concurrent race prove exactly one current-authority epoch can win;
+- shared epoch-lock regressions prove unsafe lock shape, acquire failure,
+  successful-body release failure, body-error-plus-release-error note precedence, and
+  that validation failure creates no lock. Epoch classification regressions prove v1
+  unsafe-path wins before v2 path/dual classification, then v2 unsafe-path wins before
+  dual conflict, and only two safe present current references yield
+  `BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT`;
 - low-level fixture APIs remain compatible on marker-free roots but every low-level
   v1/v2 persist/renew call against a real accepted B13 root rejects before Atlas
   storage mutation, closing the authority-lock bypass;
@@ -1548,18 +1749,18 @@ mirrored test owner:
 - interrupted cold recovery with each independently changed run id, run seed,
   topology, Atlas identity and AdamW setting rejects before acceptance/pointer/outbox
   mutation;
-- a real-owner lock+stage pre-seal crash residue is lifecycle-owned: B13 durably
-  publishes `.bamf-staging/` by fsyncing it and the run root before staging children,
-  and fsyncs the staging parent after generation-child cleanup; a no-pointer
-  `--resume` with a safe regular `.bamf-pointer.lock` plus real `.bamf-staging/` rejects
-  `BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY` with
-  `_invoke_learner` and both mutating B13 recovery owners unreachable; repeated
-  fresh create under the root claim may remove only an empty real stage root, fsync
-  the run root, re-check the target while ignoring only the safe persistent pointer
-  lock, and continue; a nonempty stage, any additional sibling, unsafe pointer lock,
-  symlink or non-directory stage residue fails closed without recursive deletion; the
-  regression must enter the real `_pointer_lock` -> `_stage` owner order before
-  simulating the crash so the residue shape cannot be invented by a fixture;
+- both real pre-seal crash prefixes are lifecycle-owned. The regression enters the
+  full generation-zero owner order: `_existing_initial_generation_retry` creates/releases
+  the persistent pointer lock, then `_stage` publishes the durable staging root. A
+  simulated crash in the gap proves pointer-lock-only `--resume` rejects
+  `BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY` and fresh create may
+  continue while preserving the safe lock. A second crash after durable stage-root
+  publication proves lock+empty-stage resume rejects identically and fresh create may
+  `rmdir` only that empty real stage, fsync the run root, reclassify while ignoring only
+  the safe lock, and continue. B13 fsyncs the staging parent after generation-child
+  cleanup. A stage-only prefix, nonempty stage, additional sibling, unsafe pointer
+  lock, symlink or non-directory stage fails closed without recursive deletion;
+  `_invoke_learner` and mutating resume recovery remain unreachable in every case;
 - command-level nonempty/no-pointer interrupted create reaches B13 recovery; the sole
   candidate is the immutable Data Plane genesis-trust row selected by expected
   `run_id`; malformed/drifted row-bound trust/acceptance/bundle evidence preserves
