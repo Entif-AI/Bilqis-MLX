@@ -24,6 +24,7 @@ from .authority import (
     validate_parent_transition as _validate_parent_transition_impl,
 )
 from .events import reconcile_bamf_outbox, record_bamf_rejection
+from .factory_release import persist_prepared_initial_factory_release
 from .genesis_trust import publish_initial_generation_trust_root
 from .retry import (
     _existing_initial_generation_retry, recover_prepared_initial_generation,
@@ -197,6 +198,7 @@ def _publish_authorized_generation(
                 _fsync_directory(stage.parent)
                 _fsync_directory(target.parent)
             if prepared is not None:
+                persist_prepared_initial_factory_release(run_dir, prepared)
                 publish_initial_generation_trust_root(run_dir, prepared, digest)
             _write_acceptance(run_dir, digest, authority)
             pointer = {

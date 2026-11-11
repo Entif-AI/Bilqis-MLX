@@ -71,7 +71,6 @@ class SourceExecutionContextTests(unittest.TestCase):
                 candidate(parent_state()), AUTHORITY)
             with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
                 publish_candidate(run_dir, source)
-            receipt = {"factory_release_sha256": self.release.release_sha256}
             with patch(
                 "bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
                 return_value=self.release,
@@ -84,7 +83,7 @@ class SourceExecutionContextTests(unittest.TestCase):
             ):
                 with shape_patch():
                     context = AcceptedRuntimeHost(run_dir).source_context(
-                        receipt, graph=self.graph, source_root=None)
+                        graph=self.graph, source_root=None)
             with shape_patch():
                 context.require_accepted_runtime(run_dir)
                 self.assertIs(
@@ -101,7 +100,6 @@ class SourceExecutionContextTests(unittest.TestCase):
                 candidate(parent_state()), AUTHORITY)
             with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
                 pointer = publish_candidate(run_dir, source)
-            receipt = {"factory_release_sha256": self.release.release_sha256}
             with patch(
                 "bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
                 return_value=self.release,
@@ -113,7 +111,7 @@ class SourceExecutionContextTests(unittest.TestCase):
                 return_value=self.answers,
             ), shape_patch():
                 context = AcceptedRuntimeHost(run_dir).source_context(
-                    receipt, graph=self.graph, source_root=None)
+                    graph=self.graph, source_root=None)
             successor = candidate(
                 next_accepted_step(parent_state()), generation=1,
                 parent=pointer["manifest_sha256"],

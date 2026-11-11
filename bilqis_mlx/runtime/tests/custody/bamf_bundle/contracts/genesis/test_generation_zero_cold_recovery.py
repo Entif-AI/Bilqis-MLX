@@ -139,6 +139,54 @@ class GenerationZeroColdRecoveryTests(unittest.TestCase):
         self.assertEqual(manifest, durable_manifest)
         self.assertEqual(student.run_identity.run_seed, 3111)
 
+    def test_sealed_cold_recovery_never_recreates_missing_factory_release(self):
+        prepared = self._prepare(run_seed=3113)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
+                patch.object(
+                    publication, "_atomic_pointer",
+                    side_effect=RuntimeError("pointer crash")):
+            with self.assertRaisesRegex(RuntimeError, "pointer crash"):
+                publish_initial_generation(self.run, prepared, reserve_gib=0.)
+
+        release_file = (
+            self.run / "factory-releases"
+            / f"{prepared.release.release_sha256}.json"
+        )
+        self.assertTrue(release_file.is_file())
+        release_file.unlink()
+        self._advance_factory_source(prepared)
+
+        with shape_patch(), self.assertRaisesRegex(
+                ValueError, "FACTORY_EXECUTABLE_RELEASE_DURABLE_ARTIFACT_MISSING"):
+            self._cold_recover(prepared)
+
+        self.assertFalse(release_file.exists())
+        self.assertFalse((self.run / "bamf-state.json").exists())
+
+    def test_exact_pointed_retry_rejects_missing_factory_release(self):
+        prepared = self._prepare(run_seed=3114)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            pointer = publish_initial_generation(self.run, prepared, reserve_gib=0.)
+
+        release_file = (
+            self.run / "factory-releases"
+            / f"{prepared.release.release_sha256}.json"
+        )
+        self.assertTrue(release_file.is_file())
+        release_file.unlink()
+
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
+                self.assertRaisesRegex(
+                    ValueError,
+                    "FACTORY_EXECUTABLE_RELEASE_DURABLE_ARTIFACT_MISSING"):
+            publish_initial_generation(self.run, prepared, reserve_gib=0.)
+
+        self.assertEqual(
+            json.loads((self.run / "bamf-state.json").read_text()),
+            pointer,
+        )
+        self.assertFalse(release_file.exists())
+
     def test_sealed_genesis_retry_requires_exact_host_root_after_factory_advance(self):
         prepared = self._prepare(run_seed=3112)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
