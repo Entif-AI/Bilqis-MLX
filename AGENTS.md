@@ -77,8 +77,9 @@ distant when structural governance needs historical debt/regression comparison.
 
 `npm run test:changed` first bounds work to direct owner tests from the near-head
 diff. Pytest-testmon may refine that bounded set when its dependency database is
-warm, and pytest-xdist runs the selected tests in parallel when available. On a cold
-database the same bounded tests seed testmon data for later edits. Testmon never
+warm. Pytest-xdist may parallelize only work that is known to be neural-inert and
+non-MLX; MLX-capable verification is governed by the resource-containment rules
+below. On a cold database the same bounded tests seed testmon data for later edits. Testmon never
 turns a partial cache into permission to collect the whole repository. Passing leaf
 and pre-merge gates write ignored receipts under
 `.local/test-gate/`. If the exact HEAD plus working-tree fingerprint has already
@@ -86,6 +87,52 @@ passed the same gate, do not rerun it merely because an agent resumed, compacted
 changed issue pages, or reached another checkpoint. The gate reports the prior pass
 as reused. Set `BILQIS_TEST_FORCE=1` only when there is a concrete reason to discard
 that proof.
+
+### MLX verification resource containment — 2026-11-11
+
+Treat any process as **MLX-capable** when it imports `mlx`, constructs or evaluates
+MLX arrays, loads a BAMF parameter/optimizer tree, executes a neural forward/backward
+path, serializes full MLX state, or runs a full-model/custody witness that can reach
+those owners transitively. Until the test harness enforces a verified aggregate
+memory budget automatically, MLX-capable verification is **serialized by default**:
+set `BILQIS_TEST_WORKERS=1` and do not invoke pytest with `-n > 1`. A broad
+dependency-selected test cone is not permission to run multiple MLX workers.
+
+The reason is measured, not hypothetical. On the 96 GiB M3 Ultra with MLX 0.31.1,
+a fresh process reported both the default MLX memory limit and free-buffer cache
+limit as `97,925,254,348` bytes, about **91.2 GiB per process**. Four unconstrained
+xdist workers therefore admit about **364.8 GiB** of aggregate MLX-managed demand
+before Python, the OS, other applications, or other test sessions are counted. On
+2026-11-11 an `-n 4` BAMF verification run drove macOS into repeated
+out-of-memory warnings and approximately **65.2 GiB of swap usage**. Detaching a
+command protects the agent socket; it does not make that command resource-safe.
+
+Long-lived MLX test processes must disable the free-buffer cache with
+`mx.set_cache_limit(0)` / `mx.clear_cache()`, or enter the repository's
+`training_memory_policy(mx)` when that policy is semantically appropriate. If the
+selected test runner cannot guarantee that policy in every MLX-capable worker, run
+the relevant tests serially and narrowly rather than launching a broad parallel
+suite. Do not overlap independent full-model/MLX witnesses merely because they live
+in different worktrees. Parallel MLX execution requires an explicit per-worker
+limit, an explicit aggregate upper bound that fits the host with headroom, and
+evidence that every worker actually applies those limits.
+
+Before any expensive MLX launch, inspect current swap/memory pressure and active
+MLX-heavy processes. If the system has already reported memory exhaustion, swap is
+near saturation, or another full-model witness is active, do not start another
+heavy MLX run. A memory-pressure dialog, swap-exhaustion event, OOM, or worker death
+under memory pressure is a **failed verification run**. Preserve its evidence,
+contain the process group, diagnose the allocation mechanism, and do not rerun the
+same workload unchanged.
+
+The production BAMF trainer remains one sovereign MLX writer. Its current
+`training_memory_policy` disables MLX's free-buffer cache, which prevents this
+specific multi-process cache explosion. The C08 **48 GiB** value is nevertheless a
+planning envelope, not a proven hard allocator ceiling: do not describe the trainer
+as capped at 48 GiB unless runtime allocator limits, live MLX telemetry, and the
+production OOM restore/retry path are wired and verified on the actual execution
+path. Never use a test-harness memory accident as evidence that production training
+is safe, and never use the analytical planner alone as proof of measured peak RAM.
 
 Run `npm run verify:premerge` only at an actual integration/turn-in boundary or when
 a change can invalidate broad prior evidence. That gate executes the repository's
