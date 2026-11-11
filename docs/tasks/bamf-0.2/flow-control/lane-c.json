@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "905018b0ece7613843570dc2c2e72a74dae4e91d",
-  "updated_at": "2026-11-11T04:05:29Z",
+  "observed_unified": "036e0aa3c2bec184481a4f009d8c31e16b9495f5",
+  "updated_at": "2026-11-11T15:58:14Z",
   "exception": null,
   "items": [
     {
@@ -19,9 +19,10 @@
       "issue": 542,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "0b4e2aa378a008498ed983c1d788ba644588a717",
-      "summary": "C16.1a/#542 is implemented on preserved branch codex/bamf02-c-runtime under the clean R19 design gate. Structural interruption completed first at f547cfa64 with facade/test thresholds satisfied. Production checkpoints then landed neutral physical-parent run-root coordination and serialized C07 epoch mutation, B13 generation-zero pointer/staging durability plus sealed recovery, accepted Atlas v2 enrollment ownership, and neural-inert operator create/dry-run/resume routing. Final repair-forward commits add persisted-source byte-preservation/no-learner witnesses, preserve cold-trust error precedence under R19 reopen-only locking, split sealed-genesis recovery to clear the changed-file smell gate, and route interrupted-genesis/root-claim failures through the governed error control plane instead of new opaque raise literals. Exact-head implementation verification on m3-ultra: focused C16/C07/C09/B13/C03/A09 ring 267 passed, 1 skipped, 86 subtests; changed production py_compile passed; module-size, governance and code-smell gates passed; BAMF flow-control validator plus 15 tests passed; post-error-control focused ring 35 passed plus 32 subtests. The two legacy-trainer documentation omissions reproduce unchanged on reviewed unified 905018b0 and are inherited debt. m3-ultra currently has less than the production 100 GiB reserve, so capacity-sensitive semantic tests were rerun with a verification-only codec headroom neutralizer while production disk policy remained unchanged. No learner, training or optimizer step was run; lifecycle reports remain ready_for_training=false and neural_updates=0.",
-      "resume_trigger": "Complete a fresh read-only post-implementation drift review of the exact flow-control checkpoint commit immediately following implementation head 0b4e2aa378a008498ed983c1d788ba644588a717 against frozen R19 authority. Require 0 Blockers / 0 Majors before turn-in. Then refetch origin, prove the remote feature ref remains an ancestor, push normally without force, read back the remote SHA, append/read back the #542 issue checkpoint, and prepare the human-review PR without merging. Keep #751 blocked until #542 is human-merged.",
+      "head_sha": "d038b1e2c15f4342a3e7d0753894edb20fb2e41d",
+      "head_sha_role": "semantic/test proof head; the immediately following flow-control-only checkpoint is the exact review and turn-in candidate",
+      "summary": "C16.1a/#542 is implemented on codex/bamf02-c-runtime under frozen R19 authority and current reviewed unified 036e0aa3. The repair preserves neural-inert create/dry-run/resume, generation-zero cold recovery, exact resume precedence, C07-before-C09 epoch ownership, shared cross-epoch locking, reopen-only pointer provenance and physical-parent root coordination. Final review repairs add ancestor path-safety classification, remove the extra unlocked epoch precheck, restore overlap-before-occupied precedence and accepted-Atlas-custody-before-CLI equality, and close the mandatory same-run first-start, all-four fixture-boundary, alias-race, all-wrong resume and exact report-wire witnesses. M3 review-repair proof is 38 passed plus 28 subtests; no learner, training or optimizer step was run; lifecycle reports remain ready_for_training=false and neural_updates=0. Reviewed-unified legacy-authority/import/manual/contract debt is tracked separately and must be classified by exact-base reproduction rather than repaired opportunistically here.",
+      "resume_trigger": "Run fresh read-only three-lens review of the exact flow-control checkpoint immediately following semantic/test head d038b1e2c15f4342a3e7d0753894edb20fb2e41d against frozen R19 and require 0 Blockers / 0 Majors. Then refetch reviewed unified and the feature remote, integrate only if unified advanced, rerun exact-head M3 verification as required, push normally without force, read back the remote SHA, append/read back the #542 issue checkpoint, and prepare the human-review PR without merging. Keep #751 blocked until #542 is human-merged.",
       "preserved_branch": "codex/bamf02-c-runtime"
     },
     {
