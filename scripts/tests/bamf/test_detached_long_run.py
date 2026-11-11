@@ -144,6 +144,45 @@ class DetachedLongRunTests(unittest.TestCase):
             self.assertNotEqual(
                 result["snapshot_sha256"], result["final_snapshot_sha256"])
 
+    def test_worker_allows_generated_run_state_without_hiding_source_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            snapshot = root / "snapshot"
+            (source / "vendor" / "legacy-v16" / "runs" / "seed").mkdir(parents=True)
+            (source / "vendor" / "legacy-v16" / "runs" / "seed" / "state.json").write_text(
+                "{}\n", encoding="utf-8")
+            (source / "subject.py").write_text("VALUE = 'before'\n", encoding="utf-8")
+            snapshot_receipt = _snapshot_workdir(source, snapshot)
+            receipt = root / "receipt.json"
+            args = SimpleNamespace(
+                label="run-output-test",
+                workdir=snapshot,
+                source_workdir=source,
+                source_sha256=snapshot_receipt["source_sha256"],
+                snapshot_sha256=snapshot_receipt["snapshot_sha256"],
+                log=root / "run.log",
+                receipt=receipt,
+                pid_file=root / "pid",
+                no_notify=True,
+                command=[
+                    sys.executable, "-B", "-c",
+                    "from pathlib import Path; "
+                    "p=Path('runs/disposable'); p.mkdir(parents=True); "
+                    "(p/'state.json').write_text('{}\\n'); "
+                    "q=Path('vendor/legacy-v16/runs/generated'); q.mkdir(parents=True); "
+                    "(q/'state.json').write_text('{}\\n')",
+                ],
+            )
+
+            self.assertEqual(_worker(args), 0)
+            result = json.loads(receipt.read_text(encoding="utf-8"))
+            self.assertEqual(result["status"], "PASS")
+            self.assertFalse(result["source_mutated"])
+            self.assertNotEqual(
+                result["snapshot_sha256"], result["final_snapshot_sha256"])
+            self.assertEqual((source / "subject.py").read_text(), "VALUE = 'before'\n")
+
     def test_worker_fails_if_command_mutates_snapshot_source(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

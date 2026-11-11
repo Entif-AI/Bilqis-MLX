@@ -12,6 +12,12 @@ from bilqis_mlx.learning.atlas_acceptance import (
 from ..atlas_admission import (
     ATLAS_ADMISSION_SCHEMA, AtlasAdmissionBinding, ParsedAtlasAdmissionBinding,
 )
+from ..factory_release.admission import (
+    FACTORY_RELEASE_ADMISSION_SCHEMA,
+    FactoryReleaseAdmissionBinding,
+    ParsedFactoryReleaseAdmissionBinding,
+    validate_parsed_factory_release_admission_binding,
+)
 from ..codec import load_bamf_bundle
 from ..publication import ACCEPTANCE_DIR, _pointer_lock, _read_pointer
 from ..records import (
@@ -47,7 +53,10 @@ def accepted_binding_for_manifest(
         invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
     try:
         record = json.loads(path.read_bytes())
-        if student.generation == 0:
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+    if student.generation == 0:
+        try:
             from ..genesis import (
                 InitialGenerationBinding,
                 validate_parsed_initial_generation_binding,
@@ -55,13 +64,23 @@ def accepted_binding_for_manifest(
             binding = InitialGenerationBinding.from_record(record)
             validate_parsed_initial_generation_binding(
                 student, binding, expected_acceptance_sha256)
-            return binding
-        binding = (
-            AtlasAdmissionBinding.from_record(record)
-            if record.get("schema_version") == ATLAS_ADMISSION_SCHEMA
-            else AcceptedCandidateBinding.from_record(record))
-    except (UnicodeDecodeError, json.JSONDecodeError, BilqisError):
-        invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+        except BilqisError:
+            invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+        return binding
+    schema = record.get("schema_version")
+    if schema == FACTORY_RELEASE_ADMISSION_SCHEMA:
+        binding = FactoryReleaseAdmissionBinding.from_record(record)
+    else:
+        try:
+            binding = (
+                AtlasAdmissionBinding.from_record(record)
+                if schema == ATLAS_ADMISSION_SCHEMA
+                else AcceptedCandidateBinding.from_record(record))
+        except BilqisError:
+            invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+    if schema == FACTORY_RELEASE_ADMISSION_SCHEMA:
+        validate_parsed_factory_release_admission_binding(
+            student, binding, expected_acceptance_sha256)
     if (binding.digest != expected_acceptance_sha256
             or binding.run_id != student.run_id
             or binding.generation != student.generation
@@ -70,7 +89,8 @@ def accepted_binding_for_manifest(
             or binding.candidate_identity_sha256
             != candidate_identity_digest(student.retained_state)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-    if (not isinstance(binding, ParsedAtlasAdmissionBinding)
+    if (not isinstance(binding, (
+            ParsedAtlasAdmissionBinding, ParsedFactoryReleaseAdmissionBinding))
             and (binding.schema_version != ACCEPTANCE_SCHEMA
                  or binding.step_proof_sha256 != tuple(
                      proof.digest for proof in student.retained_state.step_proofs))):

@@ -30,7 +30,7 @@ from bilqis_mlx.runtime.task_goal_readout import (
     task_goal_training_targets,
 )
 from bilqis_mlx.semantics.frame_compiler import (
-    prefix_inventory_evidence_digest, prefix_inventory_handle,
+    PositionKind, prefix_inventory_evidence_digest, prefix_inventory_handle,
 )
 
 from .factory_training_bridge_support import FactoryTrainingBridgeFixture
@@ -58,6 +58,11 @@ class FactoryTrainingBridgeTests(FactoryTrainingBridgeFixture):
                 self.assertTrue(all(
                     batch.compiled.compiled.rows[0].positions
                     for batch in prepared.compiled_rows))
+                if capability == "B.IDBOOLOPS":
+                    self.assertTrue(all(
+                        position.kind is PositionKind.ATOM
+                        for batch in prepared.compiled_rows
+                        for position in batch.compiled.compiled.rows[0].positions))
                 for index, (source_row, training_row, compiled) in enumerate(zip(
                         rows, prepared.training_batch.rows,
                         prepared.compiled_rows)):

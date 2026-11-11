@@ -4,6 +4,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
+from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+from bilqis_mlx.semantics.atlas_projection import (
+    _canonical_bytes as _atlas_bytes,
+    _digest as _atlas_sha256,
+)
+
 from .admission_records import (
     A02StagedVocabularyExtension,
     A02VocabularyStagingReceipt,
@@ -11,7 +17,7 @@ from .admission_records import (
     require_issued_a02_staged_vocabulary_extension,
 )
 from ..records import canonical, invalid, sha
-from ..vocabulary_registry_export import _mirror_from_record, _resource_requirement
+from .registry_export import _mirror_from_record, _resource_requirement
 
 
 @dataclass(frozen=True)
@@ -24,6 +30,28 @@ class A02StagedAdmissionFactsV2:
     motif_pages: int
     checkpoint_bytes_lower_bound: int
     required_available_bytes_lower_bound: int
+
+
+def accepted_active_semantic_ids(parent, snapshot) -> tuple[str, ...]:
+    """Recover accepted active semantic IDs without invoking A02 mutation."""
+    indices = tuple(sorted(
+        row.bank_index * ModelTopologySpecV2.semantic_bank_rows + row.row_index
+        for row in parent.retained_state.policy.row_ages))
+    if (indices != tuple(sorted(set(indices)))
+            or any(index >= parent.extents.semantic_bank_count
+                   * ModelTopologySpecV2.semantic_bank_rows for index in indices)
+            or _atlas_sha256(_atlas_bytes(list(indices)))
+            != parent.extents.active_semantic_digest
+            or parent.semantic_abi.get("active_set_sha256")
+            != parent.extents.active_semantic_digest):
+        invalid("BAMF_A02_PARENT_ACTIVE_SET_DRIFT")
+    by_index = {entry.index: entry.semantic_id for entry in snapshot.abi_entries}
+    if len(by_index) != len(snapshot.abi_entries):
+        invalid("BAMF_A02_PARENT_ACTIVE_SET_DRIFT")
+    try:
+        return tuple(by_index[index] for index in indices)
+    except KeyError:
+        invalid("BAMF_A02_PARENT_ACTIVE_SET_DRIFT")
 
 
 def read_issued_a02_staged_admission_facts_v2(

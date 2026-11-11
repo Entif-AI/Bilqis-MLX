@@ -21,13 +21,10 @@ from bilqis_mlx.semantics.context_eligibility import (
     PUBLIC_FORMAL, ApprovedContextProjection, ContextPolicy, SourceFrontier,
     TaskScope, project_context,
 )
-from bilqis_mlx.semantics.frame_adapters import (
-    bind_registered_source_row, public_formal_context,
-)
+from bilqis_mlx.semantics.frame_adapters import public_formal_context
 from bilqis_mlx.semantics.frame_compiler import (
     CompiledFrameRows, FrameCompilerConfig, validate_partial_visible_forest,
 )
-from bilqis_mlx.semantics.frame_schema import SourceSpan
 from bilqis_mlx.semantics.released_frame_schemas import (
     _load_pinned_released_frame_schemas,
 )
@@ -39,7 +36,7 @@ from bilqis_mlx.source_adapters.atoms.authority import canonical_graph_for
 from .atlas_training_adapter import compile_training_batch
 from .atlas_training_contracts import BamfTrainingBatch, BamfVisitProvenance, _invalid
 from .factory_training_context import (
-    public_training_context, schemas_cover_tree, training_answer_plan,
+    public_training_context, source_frame_inventory, training_answer_plan,
 )
 
 
@@ -107,7 +104,7 @@ class _FactorySourceRow:
     policy: ContextPolicy
 
 
-def _prepare_source_row(source_context, authenticated, adapter, manifest, schema_ids,
+def _prepare_source_row(source_context, authenticated, adapter, manifest,
                         profile, row, *, capability, source_seed, source_each):
     if row.get("capability") != capability:
         _invalid("FACTORY_TRAINING_CAPABILITY_MISMATCH")
@@ -122,20 +119,16 @@ def _prepare_source_row(source_context, authenticated, adapter, manifest, schema
         source_profile_parameters=profile, course=source_context.release.curriculum)
     if type(projection) is not ApprovedContextProjection:
         _invalid("FACTORY_TRAINING_CONTEXT_HELD")
-    end = len(row["tokens"])
-    tree = bind_registered_source_row(
-        adapter, row, authenticated.snapshot,
-        source_root=source_context.source_root, graph=source_graph,
-        source_span=SourceSpan(0, end), causal_prefix_end=end,
-        course=source_context.release.curriculum)
-    if schemas_cover_tree(tree, schema_ids):
+    _source_id, frames = source_frame_inventory(
+        source_context, row, authenticated.selection)
+    if frames:
         atom_ast, atom_config = public_formal_atom_context(
             authenticated.selection, row, source_graph,
             source_root=source_context.source_root, source_seed=source_seed,
             source_each=source_each, task=task, frontier=frame_frontier,
             policy=policy, course=source_context.release.curriculum,
             source_profile_parameters=profile)
-        ast = replace(atom_ast, frames=(tree,))
+        ast = replace(atom_ast, frames=frames)
         current = atom_config.frontier
         config = FrameCompilerConfig(
             tuple(body.parse() for body in manifest.bodies), manifest.schema_map,
@@ -259,11 +252,10 @@ def prepare_factory_training_batch(
     family = source_family_for_adapter(adapter.descriptor.adapter_id)
     manifest = _load_pinned_released_frame_schemas(
         family, authenticated.selection).manifest
-    schema_ids = frozenset(body.schema_id for body in manifest.bodies)
     profile = (dict(execution.provider_parameters)
                if execution.provider_parameters else None)
     source_rows = tuple(_prepare_source_row(
-        source_context, authenticated, adapter, manifest, schema_ids, profile, row,
+        source_context, authenticated, adapter, manifest, profile, row,
         capability=capability, source_seed=source_seed, source_each=source_each)
         for row in rows)
     by_tokens = {tuple(item.row["tokens"]): item.ast for item in source_rows}

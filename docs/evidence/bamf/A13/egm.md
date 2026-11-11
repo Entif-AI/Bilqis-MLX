@@ -118,3 +118,35 @@ authoritative #752 Lane-C consumer combination and preserves the producer files.
 This PASS applies to the A13 EGM-Mitigation follow-on only. It does not create
 a canonical A13.4 leaf, alter the A13.1-A13.3 registry, start #752 H4, authorize
 neural execution, or merge either issue.
+
+## A13 parent source-inventory reconciliation — 2026-11-11
+
+Pinned Google EGM checkout: `b3a35956759bf7f024af2ff061b2e0b44b438e4c`.
+A fresh Terra 6.1 High reviewer read codebase-details/comprehension personas and
+the re-implementation standard, issue #354 with amendments, governing IPR-0220,
+the actual source boundaries and the proof receipts. The initial contract audit
+identified the empty-frame path as requiring a discriminator.
+
+Real-source RED reproduced cross-row atomic substitution. Candidate
+`57ab58334bc1903559d01cc543a4511c5d644fb2` extended token lineage validation.
+The fresh turn-in reviewer found **0 Blockers / 1 Major / 0 Nits**: the initial
+positive accepted a source frame removed by the caller. Matching caller AST and
+caller envelopes did not establish source-owned absence. This candidate was held;
+no PR was opened.
+
+Repair `7790f0c86afde5b7bdcb4d8ecbb7fc9c7194694d` rederives complete source inventory
+through the registered adapter, canonical graph, pinned A01 snapshot and A03
+schema manifest. Factory preparation and public C02 validation share that owner.
+Both same-row frame stripping and cross-row atomic substitution reject, while
+source-derived B.IDBOOLOPS atomic fallback remains executable.
+
+The permitted targeted re-audit returned **PASS — 0 Blockers / 0 Majors / 0 Nits**
+at exact repair head `7790f0c86afde5b7bdcb4d8ecbb7fc9c7194694d`. The reviewer read the
+repair diff and RED/65-of-65/real A/B/C Factory receipts without repeating expensive
+proof. This closes the scoped source-inventory Major. The required aggregate
+premerge gate is still pending; this is not a merge or retained-learning receipt.
+The current parent acceptance crosswalk is `parent-acceptance.md`.
+
+PM-2026-11-11-001 was filed/enriched and verified in the native ledger before
+related repair. No actual student/AdamW/teacher/checkpoint update, human run,
+new semantic admission, or self-merge occurred. IPR-0220 remains open.

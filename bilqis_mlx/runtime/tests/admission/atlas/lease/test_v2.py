@@ -1,15 +1,18 @@
 """Atlas lease v2 is a separate human authority epoch from historical v1."""
 from dataclasses import asdict, replace
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 import json
 from pathlib import Path
 from types import SimpleNamespace
 import tempfile
+from threading import Event
 import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 
 from bilqis_mlx.runtime.atlas_admission import (
+    _hold_current_atlas_lease_v2_publication,
     AtlasAdmissionEnrollmentRequestV2,
     AtlasAdmissionLeaseV2,
     ResourceCeilingV2,
@@ -130,6 +133,38 @@ class AtlasLeaseV2Tests(unittest.TestCase):
             self.assertEqual(
                 read_atlas_lease_v2(root, _run(), registry=_REGISTRY), replacement)
             self.assertEqual(v1_reference.read_bytes(), before)
+
+    def test_publication_guard_serializes_human_renewal_until_release(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            prior = _lease_v2()
+            persist_atlas_lease_v2(
+                root, prior, independently_loaded_run=_run(), registry=_REGISTRY)
+            replacement = _lease_v2(
+                lease_id="fixture-v2-renewed-race",
+                requested_at="2026-11-10T18:00:00Z",
+                command="7" * 64)
+            started = Event()
+
+            def renew():
+                started.set()
+                renew_atlas_lease_v2(
+                    root, replacement,
+                    independently_loaded_run=_run(), registry=_REGISTRY,
+                    expected_prior_lease_sha256=prior.digest(), human_started=True)
+
+            with ThreadPoolExecutor(max_workers=1) as workers:
+                with _hold_current_atlas_lease_v2_publication(root, prior):
+                    future = workers.submit(renew)
+                    self.assertTrue(started.wait(1.0))
+                    with self.assertRaises(TimeoutError):
+                        future.result(timeout=0.05)
+                    self.assertEqual(
+                        read_atlas_lease_v2(root, _run(), registry=_REGISTRY), prior)
+                future.result(timeout=2.0)
+
+            self.assertEqual(
+                read_atlas_lease_v2(root, _run(), registry=_REGISTRY), replacement)
 
     def test_accepted_v2_persistence_rejects_existing_v1_authority(self):
         with tempfile.TemporaryDirectory() as temporary, patch(

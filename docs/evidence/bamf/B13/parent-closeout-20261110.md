@@ -122,3 +122,7 @@ This parent repair changes tests and evidence only. It does not change model par
 optimizer state, teacher state, accepted-generation bytes, source authority, runtime
 policy, or training authority. Human merge remains external authority. Issue #372 stays
 open until PR #983 is human-merged and the merged head is read back from reviewed unified.
+
+Legacy-trainer adaptation authority: preserved Factory replay
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
+Historical check outcomes above retain their original observation date.

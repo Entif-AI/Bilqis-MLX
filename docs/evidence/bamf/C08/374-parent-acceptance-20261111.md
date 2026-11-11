@@ -65,7 +65,7 @@ The full history is retained because each failure narrowed the problem without m
 4. R2 with a 1800-second wall guard: ran 1538.12 seconds and then failed after the expensive candidate path because the test supplied an unprepared `ObservationCapture` without `selected_option`. The fixture and fail-fast boundary were repaired with a cheap regression.
 5. R3: ran 1613.33 seconds and then failed on a stale postcondition that required the execution-time training-authority digest to equal the pre-forward digest. B11 lawfully extends execution-observed dependencies, so the correct invariant is stable authority identity plus monotonic dependency extension. A cheap contract regression now proves that rule.
 
-These failures motivated ADR-138 and the staged fail-fast verification contract in `AGENTS.md`.
+These failures motivated ADR-139 and the staged fail-fast verification contract in `AGENTS.md`.
 
 ## Terminal real-Factory witness
 
@@ -86,7 +86,7 @@ The real witness proves the C08 parent integration on the actual Factory/A01 art
 
 ## Evidence reuse after the terminal PASS
 
-The branch subsequently received documentation and verification-tooling changes only: ADR-138/`AGENTS.md` staged-verification doctrine plus hardening of the C08 preflight/runner and structural relocation of BAMF workstack/grooming scripts. These changes do not alter C08 production runtime, model, optimizer, Factory execution, resource planning, custody, or the full witness assertion path. Under ADR-129, the r4 real-Factory PASS therefore remains valid production acceptance evidence; only the newly changed tooling receives fresh lightweight verification and review.
+The branch subsequently received documentation and verification-tooling changes only: ADR-139/`AGENTS.md` staged-verification doctrine plus hardening of the C08 preflight/runner and structural relocation of BAMF workstack/grooming scripts. These changes do not alter C08 production runtime, model, optimizer, Factory execution, resource planning, custody, or the full witness assertion path. Under ADR-129, the r4 real-Factory PASS therefore remains valid production acceptance evidence; only the newly changed tooling receives fresh lightweight verification and review.
 
 ## Disposition
 
