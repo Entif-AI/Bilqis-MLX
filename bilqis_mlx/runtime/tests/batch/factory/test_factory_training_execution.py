@@ -18,8 +18,11 @@ from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.learning.student_ops import train_bamf_factory_step
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.atlas_model import bamf_value_and_grad
+from bilqis_mlx.runtime.atlas_resources import (
+    MemoryBudget, ResourceRow, estimate_row_activation_bytes,
+)
 from bilqis_mlx.runtime.atlas_training_adapter import pad_microbatches
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import publish_initial_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     load_accepted_generation,
 )
@@ -28,6 +31,7 @@ from bilqis_mlx.runtime.factory_candidate_training import (
 )
 from bilqis_mlx.runtime.factory_complete_solver import factory_evaluation_instrument
 from bilqis_mlx.runtime.factory_task_authority import factory_task_authority
+from bilqis_mlx.runtime.model_topology_v2 import bamf_parameter_census
 from bilqis_mlx.runtime.task_goal_readout import (
     task_goal_route_decisions, task_goal_route_plan,
 )
@@ -35,9 +39,6 @@ from bilqis_mlx.runtime.teacher_observation_capture import (
     ObservationCapture, read_sidecar, store_sidecar,
 )
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import HP
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, provision_source_authority_registry, with_source_authority_registry,
-)
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
@@ -189,25 +190,133 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
                     teacher_hparams=HP, max_norm=1.0, observation=observation)
             self.assertEqual(caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
-    def test_production_step_fails_closed_before_multirow_gradient_accumulation(self):
+    def test_production_step_accumulates_split_real_rows_into_one_optimizer_step(self):
         rows, delivery = self._draw("A.IDENTITY", 37117, 2)
         with TemporaryDirectory() as run_dir_value:
             run_dir = Path(run_dir_value)
             self._publish(run_dir)
             source_context = self.accepted_source_context(run_dir)
             parent = load_accepted_generation(run_dir)
+            prepared = self.prepare("A.IDENTITY", 37117, 2)[1]
+            row_ids = tuple(row["id"] for row in rows)
+            self.assertEqual(
+                tuple(row.provenance.row_id for row in prepared.training_batch.rows),
+                row_ids,
+            )
+            self.assertEqual(
+                tuple(
+                    compiled.training_authority.source_row_id
+                    for compiled in prepared.compiled_rows
+                ),
+                row_ids,
+            )
+            self.assertTrue(all(
+                compiled.training_authority.training_batch_sha256
+                == prepared.training_batch.authority_digest
+                for compiled in prepared.compiled_rows
+            ))
+            self.assertEqual(
+                tuple(
+                    compiled.training_authority.source_row_sha256
+                    for compiled in prepared.compiled_rows
+                ),
+                tuple(
+                    row.provenance.source_row_content_sha256
+                    for row in prepared.training_batch.rows
+                ),
+            )
+            default_budget = MemoryBudget(
+                bamf_parameter_census(parent.topology, parent.extents))
+            resource_rows = tuple(
+                ResourceRow.from_training_row(
+                    training_row, _frame_stats(compiled),
+                    generation_binding=prepared.training_batch.generation_binding,
+                    delivered_content_sha256=(
+                        prepared.training_batch.delivered_content_sha256),
+                )
+                for training_row, compiled in zip(
+                    prepared.training_batch.rows, prepared.compiled_rows))
+            one_row_peak = max(
+                estimate_row_activation_bytes(item, parent.topology)
+                for item in resource_rows)
+            split_budget = replace(
+                default_budget,
+                allocation_bytes=(
+                    default_budget.resident_bytes
+                    + default_budget.activation_safety_factor * one_row_peak),
+            )
             observation = FactoryDeliveryObservation(
                 ObservationCapture(run_dir, {}), 1, rows, 37117)
-            with self.assertRaises(BilqisError):
-                train_bamf_factory_step(
-                    run_dir, source_context, parent, str(self.artifact),
-                    self.feature_receipt.path, rows,
-                    capability="A.IDENTITY", delivery=delivery,
-                    requested_count=2, source_seed=37117, source_each=2,
-                    optimizer_step_seed=18,
-                    visit_provenance=visit_provenance("A.IDENTITY"),
-                    teacher_strategy={"policy": "c02-parent-production"},
-                    teacher_hparams=HP, max_norm=1.0, observation=observation)
+            result = train_bamf_factory_step(
+                run_dir, source_context, parent, str(self.artifact),
+                self.feature_receipt.path, rows,
+                capability="A.IDENTITY", delivery=delivery,
+                requested_count=2, source_seed=37117, source_each=2,
+                optimizer_step_seed=18,
+                visit_provenance=visit_provenance("A.IDENTITY"),
+                teacher_strategy={"policy": "c02-parent-production"},
+                teacher_hparams=HP, max_norm=1.0, observation=observation,
+                memory_budget=split_budget)
+            self.assertEqual(result.resource_plan.groups, ((0,), (1,)))
+            self.assertEqual(result.resource_plan.logical_row_ids, row_ids)
+            self.assertEqual(
+                tuple(
+                    row.provenance.row_id
+                    for row in result.prepared.training_batch.rows
+                ),
+                row_ids,
+            )
+            self.assertEqual(len(result.gradient_execution.loss_executions), 2)
+            self.assertEqual(
+                result.gradient_execution.source_digest,
+                result.resource_plan.source_digest,
+            )
+            row_authorities = tuple(
+                execution.training_authority
+                for execution in result.gradient_execution.loss_executions
+            )
+            self.assertEqual(
+                tuple(authority.source_row_id for authority in row_authorities),
+                row_ids,
+            )
+            self.assertEqual(
+                tuple(authority.source_row_sha256 for authority in row_authorities),
+                tuple(
+                    row.provenance.source_row_content_sha256
+                    for row in prepared.training_batch.rows
+                ),
+            )
+            self.assertEqual(
+                tuple(authority.digest for authority in row_authorities),
+                tuple(
+                    compiled.training_authority.digest
+                    for compiled in result.prepared.compiled_rows
+                ),
+            )
+            self.assertEqual(result.transaction.update_steps, 1)
+            self.assertEqual(len(result.transaction.step_proofs), 1)
+            self.assertEqual(len(result.transaction.training_authorities), 1)
+            authority = result.transaction.training_authorities[0]
+            self.assertEqual(
+                tuple(member.source_row_id for member in authority.members), row_ids)
+            proof = result.transaction.step_proofs[0]
+            self.assertEqual(proof.training_authority_sha256, authority.digest)
+            self.assertEqual(
+                proof.training_authority_members,
+                tuple(
+                    (member.digest, member.source_family_id, member.episode_id)
+                    for member in authority.members
+                ),
+            )
+            self.assertIsNotNone(result.transaction.motif_transition)
+            advanced = False
+            for name, after in result.transaction.optimizer.update_counts.items():
+                before = parent.retained_state.optimizer.update_counts[name]
+                delta = after - before
+                self.assertTrue(bool(mx.all((delta == 0) | (delta == 1))), name)
+                advanced = advanced or bool(mx.any(delta == 1))
+            self.assertTrue(advanced)
+            self.assertEqual(result.realized_cost["optimizer_steps"], 1)
 
     def _draw(self, capability, seed, each):
         rows = tuple(self.context.draw_rows(seed=seed, capability=capability, each=each))
@@ -217,13 +326,11 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
         return rows, delivery
 
     def _publish(self, run_dir: Path) -> None:
-        provision_source_authority_registry(run_dir, AUTHORITY)
-        candidate = with_source_authority_registry(self.candidate, AUTHORITY)
         with patch(
             "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom", return_value=None,
         ):
-            publish_bamf_generation(
-                run_dir, candidate, acceptance=acceptance(candidate))
+            publish_initial_generation(
+                run_dir, self.production_genesis(), reserve_gib=0.)
 
 
 if __name__ == "__main__":

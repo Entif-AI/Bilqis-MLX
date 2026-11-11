@@ -8,6 +8,7 @@ from pathlib import Path
 _OWNER_GROUPS = (
     "_projection", "_admission", "_capability", "_source", "_model", "_custody",
     "_operator", "_teacher", "_depth", "_correction", "_batch",
+    "_batch/training",
     "_model/cache", "_model/backbone", "_correction/owners",
     "_correction/accepted",
 )

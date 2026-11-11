@@ -3,12 +3,15 @@ from __future__ import annotations
 
 import inspect
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_execution_provenance import StepExecutionProvenance
 from bilqis_mlx.learning.atlas_plasticity import GroupEligibility
-from bilqis_mlx.runtime.atlas_execution_binder import bind_execution_provenance
+from bilqis_mlx.runtime.atlas_execution_binder import (
+    bind_execution_provenance, bind_execution_provenance_many,
+)
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, Initializer, ModelTopologySpecV2, ParameterGroup,
     ParameterSpec,
@@ -78,6 +81,44 @@ class ExecutionBinderProductionTests(unittest.TestCase):
     def test_loss_bearing_step_requires_exact_b11_execution_owner(self):
         with self.assertRaises(BilqisError):
             self.bind(loss_bearing_target=True)
+
+    def test_logical_batch_binder_unions_disjoint_row_participation(self):
+        executions = tuple(
+            SimpleNamespace(
+                visible_identity_rows=((0, row),),
+                feedback_identity_rows=(),
+                feature_rows=(),
+                local_slot_rows=(),
+                dense_parameter_names=(),
+                semantic_denominator_identity_rows=(),
+                semantic_denominator_feature_rows=(),
+                motif_reads=(),
+                role_read_feature_rows=(),
+            )
+            for row in (0, 1)
+        )
+        with patch(CENSUS_SHAPE[0], return_value=DECLARED), \
+                patch(CENSUS_SHAPE[1], return_value=DECLARED), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_execution_binder.require_bamf_loss_execution",
+                    side_effect=lambda value: value,
+                ):
+            provenance = bind_execution_provenance_many(
+                loss_executions=executions,
+                group_eligible=eligibility(admitted=((0, 0), (0, 1))),
+                spec=ModelTopologySpecV2(), extents=EXTENTS,
+                run_id="fixture-run", generation=1,
+                parent_manifest_sha256="6" * 64,
+                parent_candidate_identity_sha256="7" * 64,
+                parent_optimizer_step=11, topology_digest="8" * 64,
+                candidate_step_ordinal=1,
+            )
+        self.assertEqual(
+            provenance.participation.identity_rows, ((0, 0), (0, 1)))
+        self.assertEqual(
+            provenance.mask.parameter(BANK).row_indices, (0, 1))
+        self.assertEqual(
+            provenance.mask.participating_identity_rows, ((0, 0), (0, 1)))
 
     def test_forged_fast_reclassification_of_slow_parameter_is_refused(self):
         forged = eligibility(mode="FAST", admitted=((0, 0),), eligible=(BANK, MOTIF))

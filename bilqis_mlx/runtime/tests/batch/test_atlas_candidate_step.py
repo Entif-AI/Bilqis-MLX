@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import inspect
 import unittest
+from dataclasses import replace
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -22,6 +23,10 @@ from bilqis_mlx.runtime.atlas_candidate_step import production_candidate_step
 from bilqis_mlx.runtime.atlas_model import BamfGradientExecution
 from bilqis_mlx.runtime.atlas_optimizer import (
     AdamWHyperparameters, AdamWStateTree, reconcile_b01_optimizer_manifest,
+)
+from bilqis_mlx.runtime.atlas_resources import BatchPlan
+from bilqis_mlx.runtime.atlas_training_contracts import (
+    BamfTrainingRow, _issue_training_batch,
 )
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.model_topology_v2 import (
@@ -272,6 +277,60 @@ class ProductionCandidateStepTests(unittest.TestCase):
                     teacher_hparams=self.hp, max_norm=1.,
                 )
         binder.assert_not_called()
+
+    def test_logical_batch_plan_drift_rejects_before_execution_binding(self):
+        candidate = begin_candidate(self.parent)
+        rows = tuple(
+            BamfTrainingRow(
+                None, None, None,
+                SimpleNamespace(row_id=row_id, optimizer_step_seed=7),
+            )
+            for row_id in ("row:a", "row:b")
+        )
+        batch = _issue_training_batch(
+            "4" * 64, "generation:test", "5" * 64, "A.TEST", rows)
+        plan = BatchPlan(
+            groups=((0,), (1,)), logical_row_ids=("row:a", "row:b"),
+            microbatch_size=1, estimated_peak_bytes=100, resident_bytes=50,
+            optimizer_step_seed=7, generation_binding="generation:test",
+            topology_digest=ModelTopologySpecV2().digest,
+            memory_budget_digest="6" * 64, source_digest="7" * 64,
+        )
+        logical = SimpleNamespace(
+            plan_digest=plan.digest, source_digest=plan.source_digest,
+            generation_binding=plan.generation_binding,
+            loss_executions=(), gradients={BANK: mx.zeros((2, 2))},
+        )
+        drifts = (
+            replace(plan, groups=((0, 1),), microbatch_size=2),
+            replace(plan, optimizer_step_seed=8),
+            replace(plan, source_digest="8" * 64),
+        )
+        for drift in drifts:
+            with self.subTest(drift=drift), \
+                    patch(
+                        "bilqis_mlx.runtime.atlas_candidate_step.require_logical_batch_gradient_execution",
+                        return_value=logical,
+                    ), self.assertRaises(BilqisError) as caught:
+                production_candidate_step(
+                    candidate, loss_bearing_target=True,
+                    logical_batch_execution=logical,
+                    training_batch=batch, logical_batch_plan=drift,
+                    group_eligible=self.eligibility(),
+                    spec=ModelTopologySpecV2(), extents=self.extents,
+                    run_id=self.parent.custody.run_id,
+                    generation=self.parent.custody.generation + 1,
+                    parent_manifest_sha256=self.parent.custody.manifest_sha256,
+                    parent_candidate_identity_sha256=candidate_identity_digest(self.parent),
+                    parent_optimizer_step=self.parent.optimizer_step,
+                    topology_digest=self.parent.custody.topology_digest,
+                    candidate_step_ordinal=1,
+                    teacher_hparams=self.hp, max_norm=1.,
+                )
+            self.assertEqual(
+                caught.exception.context["reason"],
+                "C08_LOGICAL_BATCH_PLAN_DRIFT",
+            )
 
 
 if __name__ == "__main__":

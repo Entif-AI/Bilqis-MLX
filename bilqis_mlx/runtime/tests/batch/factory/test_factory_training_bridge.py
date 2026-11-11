@@ -14,6 +14,9 @@ from bilqis_mlx.semantics.cognitive_dependencies import (
 )
 from bilqis_mlx.learning.atlas_readout import DecisionKind, ExecutionMode
 from bilqis_mlx.runtime.atlas_model import bind_compiled_training_batch, forward_bamf
+from bilqis_mlx.runtime.atlas_training_authority import (
+    bind_logical_batch_training_authority,
+)
 from bilqis_mlx.runtime.cognitive_solver import (
     GenerationBinding, RouteKind, SolveBudget, SolveContext, solve_task,
 )
@@ -164,6 +167,38 @@ class FactoryTrainingBridgeTests(FactoryTrainingBridgeFixture):
                 first.sources, first.feature_schema,
                 active_semantic_rows=first.active_semantic_rows, row_index=1)
         self.assertNotEqual(rows[0]["id"], rows[1]["id"])
+
+    def test_c08_logical_batch_authority_rejects_partial_duplicate_and_foreign_rows(self):
+        _rows, prepared = self.prepare("A.IDENTITY", 37120, 2)
+        authorities = tuple(
+            compiled.training_authority for compiled in prepared.compiled_rows)
+
+        with self.assertRaises(BilqisError) as partial:
+            bind_logical_batch_training_authority(
+                prepared.training_batch, authorities[:1])
+        self.assertEqual(
+            partial.exception.context["reason"],
+            "C08_LOGICAL_BATCH_AUTHORITY_INPUT_INVALID",
+        )
+
+        with self.assertRaises(BilqisError) as duplicate:
+            bind_logical_batch_training_authority(
+                prepared.training_batch, (authorities[0], authorities[0]))
+        self.assertEqual(
+            duplicate.exception.context["reason"],
+            "C08_LOGICAL_BATCH_AUTHORITY_DRIFT",
+        )
+
+        _foreign_rows, foreign = self.prepare("A.IDENTITY", 37121, 2)
+        with self.assertRaises(BilqisError) as stale:
+            bind_logical_batch_training_authority(
+                prepared.training_batch,
+                (authorities[0], foreign.compiled_rows[1].training_authority),
+            )
+        self.assertEqual(
+            stale.exception.context["reason"],
+            "C08_LOGICAL_BATCH_AUTHORITY_DRIFT",
+        )
 
     def test_current_a_b_c_score_through_one_b11_backend(self):
         parameters = self.candidate.retained_state.optimizer.parameters

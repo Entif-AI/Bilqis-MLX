@@ -207,3 +207,20 @@ class BatchPlan:
                     self.source_digest))
                 or self.schema_version != BATCH_PLAN_SCHEMA):
             _invalid("BAMF_C08_BATCH_PLAN_INVALID")
+
+    @property
+    def digest(self) -> str:
+        """Content identity of the exact deterministic microbatch plan."""
+        return _digest({
+            "groups": self.groups,
+            "logical_row_ids": self.logical_row_ids,
+            "microbatch_size": self.microbatch_size,
+            "estimated_peak_bytes": self.estimated_peak_bytes,
+            "resident_bytes": self.resident_bytes,
+            "optimizer_step_seed": self.optimizer_step_seed,
+            "generation_binding": self.generation_binding,
+            "topology_digest": self.topology_digest,
+            "memory_budget_digest": self.memory_budget_digest,
+            "source_digest": self.source_digest,
+            "schema_version": self.schema_version,
+        })

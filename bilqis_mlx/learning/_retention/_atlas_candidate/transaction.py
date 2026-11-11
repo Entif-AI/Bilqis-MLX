@@ -12,8 +12,9 @@ from bilqis_mlx.runtime.atlas_optimizer import (
 )
 from ..atlas_execution_provenance import StepExecutionProvenance, mask_digest, participation_digest
 from ..atlas_participation import optimizer_participation_mask
-from .common import (LEGACY_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA, RETAINED_STATE_ISSUER,
-    STATE_SCHEMA, TRANSACTION_ISSUER, TRANSACTION_SCHEMA, invalid)
+from .common import (LEGACY_STEP_PROOF_SCHEMA, LOGICAL_BATCH_STEP_PROOF_SCHEMA,
+    STEP_PROOF_SCHEMA, RETAINED_STATE_ISSUER, STATE_SCHEMA, TRANSACTION_ISSUER,
+    TRANSACTION_SCHEMA, invalid)
 from .proofs import CandidateStepProof
 from .state import CandidateState, _is_genesis_allocations
 from .motif_transition import (
@@ -184,19 +185,34 @@ def candidate_step(candidate: CandidateTransaction, gradients, execution,
         proof = CandidateStepProof(
             **proof_args, schema_version=LEGACY_STEP_PROOF_SCHEMA)
     else:
-        from bilqis_mlx.runtime.atlas_training_authority import BamfTrainingAuthority
-        if type(training_authority) is not BamfTrainingAuthority:
+        from bilqis_mlx.runtime.atlas_training_authority import (
+            BamfLogicalBatchTrainingAuthority, BamfTrainingAuthority,
+        )
+        if type(training_authority) is BamfTrainingAuthority:
+            training_authority.__post_init__()
+            proof = CandidateStepProof(
+                **proof_args,
+                source_release_sha256=training_authority.release_sha256,
+                training_batch_sha256=training_authority.training_batch_sha256,
+                target_capability_id=training_authority.delivery_capability,
+                training_authority_sha256=training_authority.digest,
+                source_family_id=training_authority.source_family_id,
+                episode_id=training_authority.episode_id,
+                schema_version=STEP_PROOF_SCHEMA)
+        elif type(training_authority) is BamfLogicalBatchTrainingAuthority:
+            training_authority.__post_init__()
+            proof = CandidateStepProof(
+                **proof_args,
+                source_release_sha256=training_authority.release_sha256,
+                training_batch_sha256=training_authority.training_batch_sha256,
+                target_capability_id=training_authority.delivery_capability,
+                training_authority_sha256=training_authority.digest,
+                training_authority_members=tuple(
+                    (member.digest, member.source_family_id, member.episode_id)
+                    for member in training_authority.members),
+                schema_version=LOGICAL_BATCH_STEP_PROOF_SCHEMA)
+        else:
             invalid()
-        training_authority.__post_init__()
-        proof = CandidateStepProof(
-            **proof_args,
-            source_release_sha256=training_authority.release_sha256,
-            training_batch_sha256=training_authority.training_batch_sha256,
-            target_capability_id=training_authority.delivery_capability,
-            training_authority_sha256=training_authority.digest,
-            source_family_id=training_authority.source_family_id,
-            episode_id=training_authority.episode_id,
-            schema_version=STEP_PROOF_SCHEMA)
     return _issue_transaction(
         candidate.parent, optimizer, candidate.teacher_requests_full,
         candidate.update_steps + 1, candidate.step_proofs + (proof,),

@@ -60,33 +60,48 @@ def _source_anchors(training_authorities, state) -> tuple[tuple, ...]:
         return ()
     if type(training_authorities) is not tuple:
         _invalid()
-    from bilqis_mlx.runtime.atlas_training_authority import BamfTrainingAuthority
+    from bilqis_mlx.runtime.atlas_training_authority import (
+        BamfLogicalBatchTrainingAuthority, BamfTrainingAuthority,
+    )
     if len(training_authorities) != len(state.step_proofs):
         _invalid()
     anchors = []
     for proof, authority in zip(state.step_proofs, training_authorities):
-        if type(authority) is not BamfTrainingAuthority:
+        if type(authority) is BamfTrainingAuthority:
+            authority.__post_init__()
+            members = (authority,)
+            if (proof.training_authority_sha256 != authority.digest
+                    or proof.source_release_sha256 != authority.release_sha256
+                    or proof.training_batch_sha256 != authority.training_batch_sha256
+                    or proof.target_capability_id != authority.delivery_capability
+                    or proof.source_family_id != authority.source_family_id
+                    or proof.episode_id != authority.episode_id):
+                _invalid()
+        elif type(authority) is BamfLogicalBatchTrainingAuthority:
+            authority.__post_init__()
+            members = authority.members
+            if (proof.training_authority_sha256 != authority.digest
+                    or proof.source_release_sha256 != authority.release_sha256
+                    or proof.training_batch_sha256 != authority.training_batch_sha256
+                    or proof.target_capability_id != authority.delivery_capability
+                    or proof.training_authority_members != tuple(
+                        (member.digest, member.source_family_id, member.episode_id)
+                        for member in members)):
+                _invalid()
+        else:
             _invalid()
-        authority.__post_init__()
-        if (proof.training_authority_sha256 != authority.digest
-                or proof.source_release_sha256 != authority.release_sha256
-                or proof.training_batch_sha256 != authority.training_batch_sha256
-                or proof.target_capability_id != authority.delivery_capability
-                or proof.source_family_id != authority.source_family_id
-                or proof.episode_id != authority.episode_id):
-            _invalid()
-        anchors.append((
-            authority.delivery_capability,
-            authority.source_row_id,
-            authority.source_row_sha256,
-            authority.source_family_id,
-            authority.episode_id,
-            authority.release_sha256,
-            authority.training_batch_sha256,
-            authority.generation_binding,
-            authority.digest,
-            _dependency_record(authority),
-        ))
+        anchors.extend((
+            member.delivery_capability,
+            member.source_row_id,
+            member.source_row_sha256,
+            member.source_family_id,
+            member.episode_id,
+            member.release_sha256,
+            member.training_batch_sha256,
+            member.generation_binding,
+            member.digest,
+            _dependency_record(member),
+        ) for member in members)
     return tuple(anchors)
 
 

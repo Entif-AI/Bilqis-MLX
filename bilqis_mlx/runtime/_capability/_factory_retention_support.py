@@ -7,7 +7,9 @@ from pathlib import Path
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import CandidateTransaction, resolve_candidate
 from bilqis_mlx.learning.atlas_package_import import PackageImportTransaction
-from bilqis_mlx.runtime.atlas_training_authority import BamfTrainingAuthority
+from bilqis_mlx.runtime.atlas_training_authority import (
+    BamfLogicalBatchTrainingAuthority, BamfTrainingAuthority,
+)
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache, derive_motif_successor_bundle,
     derive_successor_bundle, load_accepted_generation,
@@ -33,14 +35,25 @@ def _training_exclusions(candidate: CandidateTransaction):
     if not candidate.training_authorities:
         _invalid("BAMF_C05_TRAINING_SOURCE_INDEPENDENCE_UNAVAILABLE")
     for proof, authority in zip(candidate.step_proofs, candidate.training_authorities):
-        if (type(authority) is not BamfTrainingAuthority
-                or proof.training_authority_sha256 != authority.digest
-                or proof.source_family_id != authority.source_family_id
-                or proof.episode_id != authority.episode_id):
+        if type(authority) is BamfTrainingAuthority:
+            authority.__post_init__()
+            members = (authority,)
+            valid = (proof.training_authority_sha256 == authority.digest
+                     and proof.source_family_id == authority.source_family_id
+                     and proof.episode_id == authority.episode_id)
+        elif type(authority) is BamfLogicalBatchTrainingAuthority:
+            authority.__post_init__()
+            members = authority.members
+            valid = (proof.training_authority_sha256 == authority.digest
+                     and proof.training_authority_members == tuple(
+                         (member.digest, member.source_family_id, member.episode_id)
+                         for member in members))
+        else:
+            members, valid = (), False
+        if not valid:
             _invalid("BAMF_C05_TRAINING_SOURCE_INDEPENDENCE_UNAVAILABLE")
-        authority.__post_init__()
-        families.add(authority.source_family_id)
-        episodes.add(authority.episode_id)
+        families.update(member.source_family_id for member in members)
+        episodes.update(member.episode_id for member in members)
     if not families or not episodes:
         _invalid("BAMF_C05_TRAINING_SOURCE_INDEPENDENCE_UNAVAILABLE")
     return tuple(sorted(families)), tuple(sorted(episodes))
