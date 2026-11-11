@@ -20,7 +20,7 @@ from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
 from bilqis_mlx.runtime.jit_adoption import _accepted_lease_run_identity
 from bilqis_mlx.runtime.tests._bamf_first_student_support import BamfFirstStudentCase
 from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import _REGISTRY
-from bilqis_mlx.runtime.tests.admission.atlas.lease.test_atlas_lease_v2 import _lease_v2
+from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_lease_v2 import _lease_v2
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
     genesis_feature_source_patch, source_features,
 )
