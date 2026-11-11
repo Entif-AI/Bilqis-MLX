@@ -16,10 +16,12 @@ from .package_import_transition import (
 )
 from .factory_release_adoption import (
     FACTORY_RELEASE_ADOPTION_TRANSITION_SCHEMA,
+    is_factory_release_adoption_transition,
     validate_factory_release_adoption_transition,
 )
 from .motif.transition import (
-    MOTIF_ALLOCATION_TRANSITION_SCHEMA, validate_motif_allocation_transition,
+    MOTIF_ALLOCATION_TRANSITION_SCHEMA, is_motif_allocation_transition,
+    validate_motif_allocation_transition,
 )
 from .sidecar_contracts import validate_identity_sidecars
 
@@ -162,8 +164,7 @@ def validate_generation_identity(run_id, generation, parent, implementation):
 
 
 def validate_transition(generation: int, transition: Mapping) -> None:
-    if (isinstance(transition, Mapping)
-            and transition.get("schema") == MOTIF_ALLOCATION_TRANSITION_SCHEMA):
+    if is_motif_allocation_transition(transition):
         if generation == 0:
             invalid("BAMF_GENERATION_TRANSITION_INVALID")
         validate_motif_allocation_transition(transition)
@@ -173,8 +174,7 @@ def validate_transition(generation: int, transition: Mapping) -> None:
             invalid("BAMF_GENERATION_TRANSITION_INVALID")
         validate_package_import_transition(transition)
         return
-    if (isinstance(transition, Mapping)
-            and transition.get("schema") == FACTORY_RELEASE_ADOPTION_TRANSITION_SCHEMA):
+    if is_factory_release_adoption_transition(transition):
         if generation == 0:
             invalid("BAMF_GENERATION_TRANSITION_INVALID")
         validate_factory_release_adoption_transition(transition)
