@@ -115,8 +115,8 @@ class RefinementKernelTests(unittest.TestCase):
         full = {item.name: mx.zeros(item.shape, dtype=mx.float32)
                 for item in expected_bamf_shapes(self.spec, self.extents)}
         view = refinement_parameter_view(full, spec=self.spec, extents=self.extents)
-        self.assertEqual(set(view), set(self.params))
-        for name in view:
+        self.assertEqual(set(view.keys()), set(self.params))
+        for name in view.keys():
             self.assertIs(view[name], full[name])
         with self.assertRaises(BilqisError):
             refinement_parameter_view({**full, "unregistered.head": mx.zeros((1,))},

@@ -23,6 +23,7 @@ MEMBER_RANK = 2
 MAX_LOCAL_PASSES = 2
 ROUTE_LOGIT_DIM = MAX_LOCAL_PASSES + 1
 RESIDUAL_GATE_SCALE = .1
+REFINEMENT_PARAMETER_VIEW_SCHEMA = "bilqis.mlx.refinement-parameter-view/v1"
 
 
 def _invalid():
@@ -37,12 +38,82 @@ class _RefinementResult:
     schema_version: str = "bilqis.mlx.refinement-numerical-result/provisional-v1"
 
 
-def refinement_parameter_view(parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
-                              extents: GenerationExtents) -> dict[str, mx.array]:
-    """Borrow exact refinement tensors after validating the full B01 tree."""
+class _ViewType(type):
+    def __setattr__(cls, _name, _value):
+        _invalid()
+
+
+class RefinementParameterView(tuple, metaclass=_ViewType):
+    """Immutable B01 aliases and a native MLX named-tuple parameter pytree."""
+
+    __slots__ = ()
+    schema_version = REFINEMENT_PARAMETER_VIEW_SCHEMA
+
+    def __new__(cls, *args):
+        if cls is RefinementParameterView:
+            _invalid()
+        return tuple.__new__(cls, args)
+
+    def values(self):
+        return tuple(self)
+
+    @staticmethod
+    def _immutable(*_args, **_kwargs):
+        _invalid()
+
+    __setitem__ = _immutable
+    __delitem__ = _immutable
+    clear = _immutable
+    pop = _immutable
+    popitem = _immutable
+    setdefault = _immutable
+    update = _immutable
+
+    def __ior__(self, _other):
+        self._immutable()
+
+    def __setattr__(self, _name, _value):
+        self._immutable()
+
+
+def _require_b01_projection(view, *, parameters: Mapping[str, mx.array],
+                            spec: ModelTopologySpecV2, extents: GenerationExtents):
+    """Re-derive B01 alias provenance from the complete authoritative tree."""
+    if not isinstance(view, RefinementParameterView):
+        _invalid()
     validate_bamf_parameters(spec, extents, parameters)
-    return {item.name: parameters[item.name] for item in expected_bamf_shapes(spec, extents)
-            if item.name.startswith("refine.")}
+    declarations = tuple(item for item in expected_bamf_shapes(spec, extents)
+                         if item.name.startswith("refine."))
+    if tuple.__len__(view) != len(declarations):
+        _invalid()
+    for index, item in enumerate(declarations):
+        if tuple.__getitem__(view, index) is not parameters[item.name]:
+            _invalid()
+
+
+def refinement_parameter_view(parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
+                              extents: GenerationExtents) -> RefinementParameterView:
+    """Borrow exact B01 aliases; reconstructed pytrees carry no alias authority."""
+    validate_bamf_parameters(spec, extents, parameters)
+    declarations = tuple(item for item in expected_bamf_shapes(spec, extents)
+                         if item.name.startswith("refine."))
+    names = tuple(item.name for item in declarations)
+    values = tuple(parameters[name] for name in names)
+    def get_item(view, key):
+        if isinstance(key, str):
+            try:
+                key = names.index(key)
+            except ValueError:
+                raise KeyError(key) from None
+        return tuple.__getitem__(view, key)
+
+    bound_type = _ViewType("BoundRefinementParameterView", (RefinementParameterView,), {
+        "__slots__": (),
+        "_fields": tuple(f"p{index}" for index in range(len(names))),
+        "__getitem__": get_item,
+        "keys": lambda _view: names,
+    })
+    return bound_type(*values)
 
 
 def _norm(value, gamma):
@@ -50,13 +121,18 @@ def _norm(value, gamma):
 
 
 def _validate_refinement_parameters(parameters):
-    if not isinstance(parameters, Mapping):
+    if not isinstance(parameters, (Mapping, RefinementParameterView)):
         _invalid()
     # Shapes are independent of generation extents; the canonical ledger owns them.
     extents = GenerationExtents(1, 1, "0"*64, "0"*64, "0"*64)
     declarations = tuple(item for item in expected_bamf_shapes(ModelTopologySpecV2(), extents)
                          if item.name.startswith("refine."))
-    if set(parameters) != {item.name for item in declarations}:
+    if isinstance(parameters, RefinementParameterView):
+        if tuple.__len__(parameters) != len(declarations):
+            _invalid()
+        parameters = {item.name: tuple.__getitem__(parameters, i)
+                      for i, item in enumerate(declarations)}
+    if set(parameters.keys()) != {item.name for item in declarations}:
         _invalid()
     for item in declarations:
         value = parameters[item.name]
@@ -64,6 +140,7 @@ def _validate_refinement_parameters(parameters):
             _invalid()
     if not all(bool(mx.all(mx.isfinite(value))) for value in parameters.values()):
         _invalid()
+    return parameters
 
 
 def _validate(hidden, seed, members, role, passes, parameters):
@@ -75,21 +152,24 @@ def _validate(hidden, seed, members, role, passes, parameters):
     if (not isinstance(members, mx.array) or members.ndim != MEMBER_RANK or
             members.shape[0] < 1 or members.shape[1] != WIDTH or members.dtype != mx.float32):
         _invalid()
-    _validate_refinement_parameters(parameters)
+    parameters = _validate_refinement_parameters(parameters)
     if not all(bool(mx.all(mx.isfinite(value))) for value in
                (hidden, seed, members, role)):
         _invalid()
+    return parameters
 
 
 def _refine_frame(hidden: mx.array, seed: mx.array, members: mx.array, role: mx.array,
-                  passes: int, parameters: Mapping[str, mx.array]) -> _RefinementResult:
+                  passes: int,
+                  parameters: Mapping[str, mx.array] | RefinementParameterView
+                  ) -> _RefinementResult:
     """Run a supplied complete, unmasked fixture frame for zero, one or two passes.
 
     All vectors are FP32. Hidden/seed/role are768-wide, members are[M,768].
     Inputs remain unchanged; every pass recalls the same original seed and
     members. No backbone, source lookup, routing decision or state write occurs.
     """
-    _validate(hidden, seed, members, role, passes, parameters)
+    parameters = _validate(hidden, seed, members, role, passes, parameters)
     if passes == 0:
         return _RefinementResult(hidden, None, 0)
     keys = members @ parameters["refine.key"].T
@@ -109,7 +189,9 @@ def _refine_frame(hidden: mx.array, seed: mx.array, members: mx.array, role: mx.
     return _RefinementResult(state, route_logits, passes)
 
 
-def routing_logits_from_state(hidden: mx.array, parameters: Mapping[str, mx.array]) -> mx.array:
+def routing_logits_from_state(
+        hidden: mx.array,
+        parameters: Mapping[str, mx.array] | RefinementParameterView) -> mx.array:
     """Train the 0/1/2 route head before any local refinement pass.
 
     The zero-pass numerical kernel retains its exact hidden-object identity
@@ -120,7 +202,7 @@ def routing_logits_from_state(hidden: mx.array, parameters: Mapping[str, mx.arra
             or hidden.dtype != mx.float32
             or not bool(mx.all(mx.isfinite(hidden)))):
         _invalid()
-    _validate_refinement_parameters(parameters)
+    parameters = _validate_refinement_parameters(parameters)
     logits = hidden @ parameters["refine.route"].T + parameters["refine.route_bias"]
     if not bool(mx.all(mx.isfinite(logits))):
         _invalid()
