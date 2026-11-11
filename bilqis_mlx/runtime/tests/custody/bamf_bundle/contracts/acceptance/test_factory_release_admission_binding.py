@@ -30,7 +30,7 @@ from bilqis_mlx.runtime.bamf_bundle.records import (
     sha,
     sidecar_records,
 )
-from bilqis_mlx.runtime.tests.admission.atlas.atlas_adoption_executor_support import (
+from bilqis_mlx.runtime.tests.admission.atlas.adoption.atlas_adoption_executor_support import (
     AtlasAdoptionExecutorFixture,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.acceptance._generation_acceptance_support import (

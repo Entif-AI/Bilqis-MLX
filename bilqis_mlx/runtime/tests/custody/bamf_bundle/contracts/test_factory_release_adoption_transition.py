@@ -11,7 +11,7 @@ from bilqis_mlx.runtime.bamf_bundle.factory_release_adoption import (
     _issue_factory_release_adoption_transition,
     derive_factory_release_adoption_candidate,
 )
-from bilqis_mlx.runtime.tests.admission.atlas.atlas_adoption_executor_support import (
+from bilqis_mlx.runtime.tests.admission.atlas.adoption.atlas_adoption_executor_support import (
     AtlasAdoptionExecutorFixture,
 )
 
