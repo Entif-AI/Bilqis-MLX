@@ -1,5 +1,6 @@
 """R19 command ownership and resume precedence witnesses for C16.1a."""
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 import tempfile
 import unittest
@@ -89,6 +90,28 @@ class BamfResumePrecedenceTests(unittest.TestCase):
             ])
             self.assertEqual((code, output), (2, ""))
             self.assertIn("BLOCKED", errors)
+        finally:
+            fixture.tearDown()
+
+    def test_accepted_atlas_custody_drift_precedes_resume_equality(self):
+        fixture = resume_tests.BamfResumeTests(methodName="runTest")
+        fixture.setUp()
+        try:
+            target = fixture.root / "accepted-custody-drift"
+            fixture.preflight(target)
+            with fixture.accepted_read_context(), patch(
+                    "bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt",
+                    return_value=SimpleNamespace(
+                        source_release_sha256="f" * 64,
+                        source_atlas_bundle_id="e" * 64,
+                        source_source_bundle_id="d" * 64)):
+                code, output, errors = fixture.invoke([
+                    "--dry-run", "--resume", "--run-dir", str(target),
+                    "--run-id", "wrong-run",
+                ])
+            self.assertEqual((code, output), (2, ""))
+            self.assertIn("BAMF_ATLAS_V2_ACCEPTED_ATLAS_CUSTODY_DRIFT", errors)
+            self.assertNotIn("BAMF_OPERATOR_RESUME_RUN_ID_CONFLICT", errors)
         finally:
             fixture.tearDown()
 

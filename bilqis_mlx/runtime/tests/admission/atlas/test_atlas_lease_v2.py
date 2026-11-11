@@ -206,6 +206,27 @@ class AtlasLeaseV2Tests(unittest.TestCase):
                 failure.exception.context['reason'],
                 'BAMF_ATLAS_V2_ENROLLMENT_RUN_IDENTITY_DRIFT')
 
+    def test_accepted_atlas_custody_drift_precedes_request_and_c09(self):
+        identity = SimpleNamespace(
+            run_id='accepted-run', run_seed=19,
+            initial_topology_digest='a' * 64,
+            initial_release_digest=_scope().atlas_release_sha256)
+        with tempfile.TemporaryDirectory() as temporary, patch(
+                'bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority',
+                return_value=(SimpleNamespace(run_identity=identity), 'b' * 64)), patch(
+                'bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt',
+                return_value=SimpleNamespace(source_release_sha256='e' * 64)), patch(
+                'bilqis_mlx.runtime.atlas_admission._accepted_source_registry',
+                side_effect=AssertionError('C09 must not run')):
+            with self.assertRaises(BilqisError) as failure:
+                enroll_accepted_atlas_lease_v2(
+                    Path(temporary),
+                    self._enrollment_request(run_id='wrong-run', release='f' * 64),
+                    human_started=True, source_authority=object())
+            self.assertEqual(
+                failure.exception.context['reason'],
+                'BAMF_ATLAS_V2_ACCEPTED_ATLAS_CUSTODY_DRIFT')
+
     def test_enrollment_owner_converges_exact_v2_lease(self):
         identity = SimpleNamespace(
             run_id='accepted-run', run_seed=19,

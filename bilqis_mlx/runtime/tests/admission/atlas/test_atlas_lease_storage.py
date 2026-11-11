@@ -146,6 +146,23 @@ class AtlasLeaseStorageTests(unittest.TestCase):
                 v2_unsafe.exception.context['reason'],
                 'BAMF_ATLAS_LEASE_V2_UNSAFE_PATH')
 
+    def test_epoch_classifier_orders_v1_path_safety_before_v2_path_safety(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            base = root / 'autonomy/atlas-admission'
+            base.mkdir(parents=True)
+            outside_v1 = root / 'outside-v1'
+            outside_v1.write_text('{}')
+            (base / 'current.json').symlink_to(outside_v1)
+            outside_v2 = root / 'outside-v2'
+            outside_v2.mkdir()
+            (base / 'v2').symlink_to(outside_v2, target_is_directory=True)
+            with self.assertRaises(BilqisError) as failure:
+                storage.classify_accepted_atlas_epoch(root)
+            self.assertEqual(
+                failure.exception.context['reason'],
+                'BAMF_ATLAS_LEASE_UNSAFE_PATH')
+
     def test_epoch_lock_release_failure_preserves_body_error(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

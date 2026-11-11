@@ -55,15 +55,15 @@ def classify_accepted_atlas_epoch(run_dir: Path) -> str:
     # ancestors are rejected before epoch presence can be classified.  The
     # classifier must not create any directory or lock.
     base = _store(root, fixture_authority=False)
+    v1 = base / 'current.json'
+    if v1.is_symlink() or (v1.exists() and not v1.is_file()):
+        _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
     v2_directory = base / 'v2'
     v2_leases = v2_directory / 'leases'
     for path in (v2_directory, v2_leases):
         if path.is_symlink() or (path.exists() and not path.is_dir()):
             _invalid('BAMF_ATLAS_LEASE_V2_UNSAFE_PATH')
-    v1 = base / 'current.json'
     v2 = v2_directory / 'current.json'
-    if v1.is_symlink() or (v1.exists() and not v1.is_file()):
-        _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
     if v2.is_symlink() or (v2.exists() and not v2.is_file()):
         _invalid('BAMF_ATLAS_LEASE_V2_UNSAFE_PATH')
     v1_present, v2_present = v1.exists(), v2.exists()
