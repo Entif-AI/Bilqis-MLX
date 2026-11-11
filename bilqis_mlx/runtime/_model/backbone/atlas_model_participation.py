@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from bilqis_mlx.learning.atlas_readout import AnswerPlan, DecisionKind
-from bilqis_mlx.learning.frame_embeddings.banks import SemanticBankView
+from bilqis_mlx.learning.frame_embeddings.banks import semantic_bank_views
 from bilqis_mlx.runtime.atlas_training_authority import extend_training_dependencies
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_motif_artifact_owner
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2, expected_bamf_shapes
@@ -25,27 +25,11 @@ def _active_banks(parameters, batch: BamfCompiledBatch, plan: AnswerPlan):
     if (
         snapshot != plan.snapshot
         or snapshot.release_sha256 != batch.compiled.features.semantic_release
-        or snapshot.active_set_sha256
-        != batch.compiled.extents.active_semantic_digest
     ):
         _invalid("B11_SEMANTIC_SNAPSHOT_MISMATCH")
-    rows = [[] for _ in range(batch.compiled.extents.semantic_bank_count)]
-    for entry in snapshot.abi_entries:
-        if entry.active:
-            if not 0 <= entry.bank < len(rows):
-                _invalid("B11_ACTIVE_BANK_OUT_OF_RANGE")
-            rows[entry.bank].append(entry.row)
-    banks = []
-    for bank_index, active_rows in enumerate(rows):
-        name = f"identity.bank.{bank_index}"
-        banks.append(SemanticBankView(
-            bank_index,
-            parameters.get(name),
-            tuple(sorted(active_rows)),
-            snapshot.release_sha256,
-            snapshot.active_set_sha256,
-        ))
-    return tuple(banks)
+    return semantic_bank_views(
+        parameters, batch.compiled.extents, snapshot.release_sha256,
+        batch.active_semantic_rows.active_indices)
 
 
 def _executed_readout_parameters(plan, output):

@@ -56,8 +56,12 @@ def _shape_patch():
     from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
         genesis_feature_source_patch,
     )
+    from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
+        host_source_authority_patch,
+    )
 
     stack = ExitStack()
+    stack.enter_context(host_source_authority_patch())
     stack.enter_context(genesis_feature_source_patch())
     targets = (
         "bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
@@ -103,7 +107,9 @@ def _publish(run: Path, bundle, *, parent_state_for_acceptance: CandidateState):
         parent=parent_state_for_acceptance, retained=bundle.retained_state)
     acceptance = mint_acceptance_binding(
         decision, bundle.retained_state, run_id=bundle.run_id,
-        generation=bundle.generation, feature_sha256=bundle.extents.factor_map_digest)
+        generation=bundle.generation, feature_sha256=bundle.extents.factor_map_digest,
+        source_authority_registry_sha256=bundle.correction_frontier.get(
+            "source_authority_registry_sha256"))
     return publish_bamf_generation(run, bundle, acceptance=acceptance)
 
 
@@ -260,7 +266,15 @@ class CacheSeparationTests(unittest.TestCase):
             successor = replace(
                 candidate(changed_state, 1, first["manifest_sha256"]),
                 run_identity=parent.run_identity,
+                implementation_sha256=parent.implementation_sha256,
                 topology=swapped_topology,
+                extents=parent.extents,
+                provenance=parent.provenance,
+                semantic_abi=dict(parent.semantic_abi),
+                compiler_features=dict(parent.compiler_features),
+                correction_frontier=dict(parent.correction_frontier),
+                teacher_state=dict(parent.teacher_state),
+                evaluation_contract=dict(parent.evaluation_contract),
                 transition={"schema": "bilqis.mlx.bamf-generation-transition/v1",
                             "kind": "MODEL_SWAP", "invalidate_derived_caches": True})
             with _shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):

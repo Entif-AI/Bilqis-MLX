@@ -7,7 +7,7 @@ from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.runtime.bamf_bundle import (
     A02VocabularyStagingReceipt, BamfBundleCandidate, CompleteStudent,
 )
-from bilqis_mlx.runtime.bamf_bundle._vocabulary_admission_records import (
+from bilqis_mlx.runtime.bamf_bundle.vocabulary.admission_records import (
     STAGED_EVENT, _issue_a02_staged_vocabulary_extension,
 )
 from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha

@@ -15,7 +15,7 @@ from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, publish_bamf_generation, publish_initial_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
-from bilqis_mlx.runtime.bamf_bundle.motif_codec import snapshot_to_record
+from bilqis_mlx.runtime.bamf_bundle.motif.codec import snapshot_to_record
 from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ParameterCensus
 from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import REGISTRY

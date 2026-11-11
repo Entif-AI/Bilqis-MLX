@@ -300,14 +300,14 @@ class BamfColdResumeContinuationTests(unittest.TestCase):
                             fresh_cache.accepted_manifest_sha256)
         self.assertNotEqual(stale_cache.generation_binding,
                             fresh_cache.generation_binding)
-        with self.assertRaises(BilqisError) as mismatch:
+        with shape_patch(), self.assertRaises(BilqisError) as mismatch:
             _source_producer(
                 None, None, fresh_cache.generation_binding, stale_cache)
         self.assertEqual(mismatch.exception.context["reason"],
                          "B13_EXECUTION_CACHE_STALE")
 
         object.__setattr__(stale_cache, "generation_binding", "corrupt")
-        with self.assertRaises(BilqisError):
+        with shape_patch(), self.assertRaises(BilqisError):
             require_accepted_execution_cache(stale_cache)
 
     def test_cold_resume_refuses_a_generation_without_published_custody(self):

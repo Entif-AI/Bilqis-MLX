@@ -7,6 +7,8 @@ from unittest.mock import Mock, patch
 from bilqis_mlx.learning.atlas_retention_decision import (
     decide_candidate_retention, issue_factory_retention_decision,
 )
+import bilqis_mlx.learning.atlas_acceptance as acceptance_owner
+from bilqis_mlx.learning.atlas_acceptance import mint_acceptance_binding
 from bilqis_mlx.learning.atlas_candidate import CandidateTransaction
 import bilqis_mlx.runtime.factory_retention_owner as owner
 from bilqis_mlx.runtime.factory_retention_owner import (
@@ -92,27 +94,36 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
             DecisionStatus.ELIGIBLE, "PAIRED_SCREEN_WITHIN_BUDGET",
             "a" * 64, "b" * 64, "c" * 64, "d" * 64)
 
-        with patch.multiple(
-                owner,
-                create=True,
-                _training_exclusions=Mock(return_value=(("trained-family",), ("trained-episode",))),
-                _candidate_from_live_parent=Mock(return_value=(
-                    SimpleNamespace(retained_state=object()),
-                    SimpleNamespace(retained_state=object()), object(), object())),
-                candidate_identity_digest=Mock(return_value="d" * 64),
-                _owner_seed=Mock(return_value=11),
-                read_current=Mock(return_value={"factory_release_sha256": release_sha}),
-                frontier_exam=Mock(return_value={"factory_release_sha256": release_sha}),
-                load_frontier_cohort=Mock(return_value=fixed),
-                _fresh_rows=fresh,
-                _instruments=Mock(return_value=(SimpleNamespace(case=SimpleNamespace()),)),
-                case_census_digest=Mock(return_value="e" * 64),
-                _cohort=Mock(return_value=object()),
-                FoundationRetentionPolicy=Mock(return_value=object()),
-                factory_complete_solver=Mock(side_effect=((object(), "b" * 64),
-                                                          (object(), "c" * 64))),
-                evaluate_foundation_fixed_school_candidate=Mock(return_value=decision),
-        ):
+        with patch(
+                "bilqis_mlx.runtime.bamf_bundle.genesis.records."
+                "successor_candidate_identity_digest", return_value="f" * 64), \
+                patch.multiple(
+                    owner,
+                    create=True,
+                    _training_exclusions=Mock(return_value=(("trained-family",), ("trained-episode",))),
+                    _candidate_from_live_parent=Mock(return_value=(
+                        SimpleNamespace(retained_state=object()),
+                    SimpleNamespace(
+                        retained_state=object(),
+                        transition={
+                            "schema": "bilqis.mlx.bamf-generation-transition/v3",
+                            "kind": "MOTIF_ALLOCATION",
+                        }),
+                    object(), object())),
+                    candidate_identity_digest=Mock(return_value="d" * 64),
+                    _owner_seed=Mock(return_value=11),
+                    read_current=Mock(return_value={"factory_release_sha256": release_sha}),
+                    frontier_exam=Mock(return_value={"factory_release_sha256": release_sha}),
+                    load_frontier_cohort=Mock(return_value=fixed),
+                    _fresh_rows=fresh,
+                    _instruments=Mock(return_value=(SimpleNamespace(case=SimpleNamespace()),)),
+                    case_census_digest=Mock(return_value="e" * 64),
+                    _cohort=Mock(return_value=object()),
+                    FoundationRetentionPolicy=Mock(return_value=object()),
+                    factory_complete_solver=Mock(side_effect=((object(), "b" * 64),
+                                                              (object(), "c" * 64))),
+                    evaluate_foundation_fixed_school_candidate=Mock(return_value=decision),
+                ):
             result = evaluate_factory_retention_candidate(
                 source, candidate, "artifact", target, run_dir=Path("unused"))
 
@@ -122,6 +133,13 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
         self.assertTrue(issued.accepted)
         self.assertEqual(issued.parent_generation, "d" * 64)
         self.assertEqual(issued.candidate_generation, "d" * 64)
+        self.assertEqual(result.candidate_generation_authority_sha256, "f" * 64)
+        retained = SimpleNamespace(optimizer_step=1, step_proofs=())
+        with patch.object(acceptance_owner, "candidate_identity_digest",
+                          return_value="d" * 64), self.assertRaises(BilqisError):
+            mint_acceptance_binding(
+                issued, retained, run_id="fixture-run", generation=1,
+                feature_sha256="a" * 64)
         fresh.assert_not_called()
 
     def test_real_source_family_overlap_fails_closed_across_redraws(self):

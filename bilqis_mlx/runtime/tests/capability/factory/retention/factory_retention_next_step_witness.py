@@ -19,7 +19,7 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_candidate_step, admit_uninterrupted_candidate_step,
     bind_accepted_execution_cache, load_accepted_generation,
 )
-from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_candidate_feature_context
+from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_execution_feature_context
 from bilqis_mlx.runtime.bamf_bundle.records import CompleteStudent, sidecar_records
 from bilqis_mlx.runtime.factory_complete_solver import factory_evaluation_instrument
 from bilqis_mlx.runtime.factory_evaluation_compiler import compile_factory_evaluation_batch
@@ -69,10 +69,11 @@ def _prepare_execution(run_dir, source_context, parent, artifact, visit):
     compiled = compile_factory_evaluation_batch(
         context, parent, str(artifact), row, source_seed=seed, source_each=1)
     live_batch = bind_compiled_training_batch(
-        training, compiled.compiled, compiled.sources, compiled.feature_schema)
+        training, compiled.compiled, compiled.sources, compiled.feature_schema,
+        active_semantic_rows=compiled.active_semantic_rows)
     authority = factory_task_authority(context, live_batch)
-    feature_context = authenticate_bamf_candidate_feature_context(
-        parent, str(artifact))
+    feature_context = authenticate_bamf_execution_feature_context(
+        parent, str(artifact), run_dir)
     plan = task_goal_route_plan(
         authority.goal, live_batch, feature_context.snapshot, generation)
     targets, mask = _targets(context, parent, artifact, row, seed, authority)

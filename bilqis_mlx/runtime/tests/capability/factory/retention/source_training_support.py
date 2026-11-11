@@ -8,7 +8,7 @@ from bilqis_mlx.factory.generation import runtime_adapter_for_release
 from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.runtime.atlas_training_adapter import compile_training_batch
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
-from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_candidate_feature_context
+from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_execution_feature_context
 from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
 from bilqis_mlx.semantics.context_eligibility import (
     PUBLIC_FORMAL, ContextPolicy, SourceFrontier, TaskScope,
@@ -46,8 +46,8 @@ def _answer_plan(prefix, release, _capability, kind, generation_binding):
 
 def _training_context(source_context, candidate, artifact_path, row, capability,
                       source_seed, source_each):
-    authenticated = authenticate_bamf_candidate_feature_context(
-        candidate, str(artifact_path))
+    authenticated = authenticate_bamf_execution_feature_context(
+        candidate, str(artifact_path), source_context.run_dir)
     execution = source_context.release.execution_plan.capability_map[capability]
     adapter = runtime_adapter_for_release(
         source_context.source_root, source_context.graph, source_context.release,

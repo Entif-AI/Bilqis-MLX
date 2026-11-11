@@ -8,10 +8,12 @@ from bilqis_mlx.factory.generation import runtime_adapter_for_release
 from bilqis_mlx.factory.teaching import DeliveredTeaching
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.learning.source_atoms import SourceAtomRow
-from bilqis_mlx.runtime.atlas_model_contracts import BamfCompiledBatch
+from bilqis_mlx.runtime.atlas_model_contracts import (
+    BamfCompiledBatch, bind_candidate_active_semantic_rows,
+)
 from bilqis_mlx.runtime.atlas_training_authority import bind_compiled_training_batch
 from bilqis_mlx.runtime.bamf_bundle import (
-    BamfBundleCandidate, authenticate_bamf_candidate_feature_context,
+    BamfBundleCandidate, authenticate_bamf_execution_feature_context,
 )
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.semantics.atlas_features.formal import source_family_for_adapter
@@ -47,14 +49,50 @@ class PreparedFactoryTrainingBatch:
 
     training_batch: BamfTrainingBatch
     compiled_rows: tuple[BamfCompiledBatch, ...]
+    motif_inputs: tuple
 
     def __post_init__(self) -> None:
         if (type(self.training_batch) is not BamfTrainingBatch
                 or type(self.compiled_rows) is not tuple
                 or len(self.compiled_rows) != len(self.training_batch.rows)
+                or type(self.motif_inputs) is not tuple
+                or len(self.motif_inputs) != len(self.training_batch.rows)
+                or any(type(item) is not _FactoryMotifPlanningInput
+                       for item in self.motif_inputs)
                 or any(type(item) is not BamfCompiledBatch
                        for item in self.compiled_rows)):
             _invalid("FACTORY_TRAINING_BRIDGE_INVALID")
+
+
+@dataclass(frozen=True)
+class _FactoryMotifPlanningInput:
+    """Exact source-owner inputs B07 must replay against retained custody."""
+
+    source_adapter: object
+    row: dict
+    atlas_selection: object
+    source_root: Path
+    source_graph: dict
+    task: TaskScope
+    frontier: SourceFrontier
+    policy: ContextPolicy
+    source_seed: int
+    source_each: int
+    source_profile_parameters: dict | None
+    course: object
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.row, dict)
+                or not isinstance(self.source_root, Path)
+                or not isinstance(self.source_graph, dict)
+                or type(self.task) is not TaskScope
+                or type(self.frontier) is not SourceFrontier
+                or type(self.policy) is not ContextPolicy
+                or type(self.source_seed) is not int or self.source_seed < 0
+                or type(self.source_each) is not int or self.source_each < 1
+                or (self.source_profile_parameters is not None
+                    and not isinstance(self.source_profile_parameters, dict))):
+            _invalid("FACTORY_MOTIF_PLANNING_INPUT_INVALID")
 
 
 @dataclass(frozen=True)
@@ -115,9 +153,21 @@ def _prepare_source_row(source_context, authenticated, adapter, manifest, schema
         row, ast, approved, source_graph, config, task, current, policy)
 
 
+def _motif_planning_input(source_context, authenticated, adapter, profile, item, *,
+                          source_seed, source_each):
+    result = _FactoryMotifPlanningInput(
+        adapter, item.row, authenticated.selection,
+        Path(source_context.source_root), item.source_graph,
+        item.task, item.frontier, item.policy,
+        source_seed, source_each, profile, source_context.release.curriculum)
+    result.__post_init__()
+    return result
+
+
 def _bind_b11_rows(source_context, candidate, authenticated, training, source_rows,
                    profile, *, source_seed, source_each):
     compiled_rows = []
+    active_semantic_rows = bind_candidate_active_semantic_rows(candidate, authenticated)
     for index, item in enumerate(source_rows):
         approved_config = (item.config if item.projection is None
                            else replace(item.config, approved=item.projection))
@@ -141,7 +191,8 @@ def _bind_b11_rows(source_context, candidate, authenticated, training, source_ro
             Path(source_context.source_root), source_seed, source_each,
             source_context.release.curriculum, profile)
         batch = bind_compiled_training_batch(
-            training, compiled, (source,), authenticated.schema, row_index=index)
+            training, compiled, (source,), authenticated.schema,
+            active_semantic_rows=active_semantic_rows, row_index=index)
         source_context.register_compiled_batch(batch)
         compiled_rows.append(batch)
     return tuple(compiled_rows)
@@ -199,8 +250,8 @@ def prepare_factory_training_batch(
         source_seed=source_seed, source_each=source_each,
         optimizer_step_seed=optimizer_step_seed,
         visit_provenance=visit_provenance, teacher_strategy=teacher_strategy)
-    authenticated = authenticate_bamf_candidate_feature_context(
-        candidate, atlas_artifact_path)
+    authenticated = authenticate_bamf_execution_feature_context(
+        candidate, atlas_artifact_path, source_context.run_dir)
     execution = source_context.release.execution_plan.capability_map[capability]
     adapter = runtime_adapter_for_release(
         source_context.source_root, source_context.graph, source_context.release,
@@ -245,7 +296,11 @@ def prepare_factory_training_batch(
     compiled_rows = _bind_b11_rows(
         source_context, candidate, authenticated, training, source_rows, profile,
         source_seed=source_seed, source_each=source_each)
-    prepared = PreparedFactoryTrainingBatch(training, compiled_rows)
+    motif_inputs = tuple(_motif_planning_input(
+        source_context, authenticated, adapter, profile, item,
+        source_seed=source_seed, source_each=source_each)
+        for item in source_rows)
+    prepared = PreparedFactoryTrainingBatch(training, compiled_rows, motif_inputs)
     prepared.__post_init__()
     return prepared
 

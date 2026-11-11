@@ -76,7 +76,7 @@ class A02C07ProductionAdoptionTests(unittest.TestCase):
 
     def _stage_real_successor(self, snapshot):
         with self._source_patches(snapshot), patch(
-                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission.shutil.disk_usage",
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission.shutil.disk_usage",
                 return_value=SimpleNamespace(free=DISPOSABLE_AVAILABLE_BYTES)):
             staged = stage_vocabulary_extension(
                 self.run, "/artifact", Path("/source"), ("urn:concept:8192",))
@@ -114,7 +114,7 @@ class A02C07ProductionAdoptionTests(unittest.TestCase):
                 "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_lease",
                 return_value=lease), self._source_patches(snapshot), \
                 patch(
-                    "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission.shutil.disk_usage",
+                    "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission.shutil.disk_usage",
                     return_value=SimpleNamespace(free=DISPOSABLE_AVAILABLE_BYTES)), \
                 patch.object(mlx_checkpoint, "assert_headroom"), publication:
             return _publish_native_staged_candidate(

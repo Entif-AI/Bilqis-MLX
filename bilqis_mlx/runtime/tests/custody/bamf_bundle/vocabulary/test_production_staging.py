@@ -15,8 +15,13 @@ import numpy as np
 from bilqis_mlx.errors import BilqisError
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge
+from bilqis_mlx.learning.frame_embeddings import semantic_bank_views
+from bilqis_mlx.runtime.atlas_model_contracts import bind_candidate_active_semantic_rows
 from bilqis_mlx.runtime.bamf_bundle import (
-    issue_initial_foundation_feature_authority, load_bamf_generation,
+    authenticate_bamf_candidate_feature_context,
+    authenticate_bamf_generation_feature_context,
+    issue_initial_foundation_feature_authority,
+    load_bamf_generation,
     publish_bamf_generation, publish_initial_generation, stage_vocabulary_extension,
     stage_vocabulary_extension_from_source_id,
 )
@@ -26,6 +31,9 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, genesis_preparation,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
+    host_source_authority_patch,
 )
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
@@ -47,8 +55,11 @@ class A02ProductionStagingTests(unittest.TestCase):
         self.environment = patch.dict(
             os.environ, {"BILQIS_DATA_PLANE": str(self.root / "plane.sqlite3")})
         self.environment.start()
+        self.host_authority = host_source_authority_patch()
+        self.host_authority.__enter__()
 
     def tearDown(self):
+        self.host_authority.__exit__(None, None, None)
         self.environment.stop()
         self.temporary.cleanup()
 
@@ -95,7 +106,7 @@ class A02ProductionStagingTests(unittest.TestCase):
                 identity.source_bundle_id)))
         for target in (
                 "bilqis_mlx.runtime.bamf_bundle.feature_authority.load_pinned_atlas_snapshot",
-                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission.load_pinned_atlas_snapshot",
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission.load_pinned_atlas_snapshot",
                 "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
                 "bilqis_mlx.semantics.atlas.vocabulary_resources.load_pinned_atlas_snapshot"):
             stack.enter_context(patch(target, return_value=current_snapshot))
@@ -114,23 +125,30 @@ class A02ProductionStagingTests(unittest.TestCase):
             b'"semantic role 8192"@en .\n')
         return _rewrite_bundle(bundle, "canonical.nt", canonical)
 
-    def test_stages_bank_extension_without_granting_admission(self):
-        current_snapshot, current_features, optimizer = self._publish_source_parent()
-        parent = load_bamf_generation(self.pointer, publish_missing_outbox=False)
-        with self._source_patches(current_snapshot):
-            with self.assertRaises(BilqisError):
-                stage_vocabulary_extension(
-                    self.run, "/artifact", Path("/source"),
-                    ("urn:concept:not-present",))
-            staged = stage_vocabulary_extension(
-                self.run, "/artifact", Path("/source"), ("urn:concept:8192",))
+    def _assert_staged_bank_extension(
+        self, current_snapshot, current_features, optimizer, parent, staged,
+        authenticated, active_rows,
+    ):
         self.assertEqual(
             load_bamf_generation(self.pointer, publish_missing_outbox=False).generation, 0)
         self.assertEqual(staged.receipt.generation, 1)
         self.assertEqual(staged.receipt.semantic_bank_count, 2)
         self.assertEqual(staged.receipt.status, "STAGED_NOT_ADMITTED")
-        self.assertNotEqual(
-            parent.run_identity.run_seed, parent.topology.default_run_seed)
+        self.assertFalse(current_snapshot.abi(8192).active)
+        self.assertEqual(active_rows.active_indices, (0, 8192))
+        self.assertEqual(
+            active_rows.active_semantic_digest, staged.receipt.active_set_sha256)
+        banks = semantic_bank_views(
+            staged.candidate.retained_state.optimizer.parameters,
+            staged.candidate.extents,
+            authenticated.features.semantic_release,
+            active_rows.active_indices,
+        )
+        self.assertEqual(tuple(bank.active_rows for bank in banks), ((0,), (0,)))
+        self.assertIs(
+            banks[1].weights,
+            staged.candidate.retained_state.optimizer.parameters["identity.bank.1"])
+        self.assertNotEqual(parent.run_identity.run_seed, parent.topology.default_run_seed)
         feature_names = (
             "features.type", "features.project_type",
             "features.project_graph", "features.gates",
@@ -159,7 +177,8 @@ class A02ProductionStagingTests(unittest.TestCase):
             np.asarray(optimizer.parameters["identity.bank.0"]))
         self.assertTrue(bool(mx.all(
             staged.candidate.retained_state.optimizer.update_counts["identity.bank.1"] == 0)))
-        self.assertIn(IdentityRowAge(1, 0, 0), staged.candidate.retained_state.policy.row_ages)
+        self.assertIn(
+            IdentityRowAge(1, 0, 0), staged.candidate.retained_state.policy.row_ages)
         with self.assertRaises(BilqisError) as failure:
             publish_bamf_generation(
                 self.run, staged.candidate,
@@ -168,6 +187,46 @@ class A02ProductionStagingTests(unittest.TestCase):
                 reserve_gib=0.)
         self.assertEqual(
             failure.exception.context["reason"], "BAMF_ATLAS_ADMISSION_EXECUTOR_REQUIRED")
+
+    def test_stages_bank_extension_without_granting_admission(self):
+        current_snapshot, current_features, optimizer = self._publish_source_parent()
+        parent = load_bamf_generation(self.pointer, publish_missing_outbox=False)
+        with self._source_patches(current_snapshot):
+            parent_authenticated = authenticate_bamf_generation_feature_context(
+                parent, "/artifact", self.pointer)
+            parent_active_rows = bind_candidate_active_semantic_rows(
+                parent, parent_authenticated)
+            self.assertEqual(parent_active_rows.active_indices, (0,))
+            forged_schema = {
+                **parent.compiler_features["feature_schema"],
+                "role_ids": ["urn:role:forged"],
+            }
+            forged_parent = replace(
+                parent,
+                compiler_features={
+                    **parent.compiler_features,
+                    "feature_schema": forged_schema,
+                },
+            )
+            with self.assertRaises(BilqisError) as forged_failure:
+                authenticate_bamf_generation_feature_context(
+                    forged_parent, "/artifact", self.pointer)
+            self.assertEqual(
+                forged_failure.exception.context["reason"],
+                "BAMF_GENERATION_POINTER_DRIFT")
+            with self.assertRaises(BilqisError):
+                stage_vocabulary_extension(
+                    self.run, "/artifact", Path("/source"),
+                    ("urn:concept:not-present",))
+            staged = stage_vocabulary_extension(
+                self.run, "/artifact", Path("/source"), ("urn:concept:8192",))
+            authenticated = authenticate_bamf_candidate_feature_context(
+                staged.candidate, "/artifact")
+            active_rows = bind_candidate_active_semantic_rows(
+                staged.candidate, authenticated)
+        self._assert_staged_bank_extension(
+            current_snapshot, current_features, optimizer, parent, staged,
+            authenticated, active_rows)
 
     def test_stages_from_content_id_through_real_source_bundle_verifier(self):
         bundle = self._real_source_bundle()
@@ -189,7 +248,7 @@ class A02ProductionStagingTests(unittest.TestCase):
                 clear=False), self._source_patches(
                     current_snapshot, patch_bundle=False):
             with patch(
-                    "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                    "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission."
                     "shutil.disk_usage",
                     return_value=SimpleNamespace(free=0)):
                 with self.assertRaises(BilqisError) as failure:
@@ -201,7 +260,7 @@ class A02ProductionStagingTests(unittest.TestCase):
                 "BAMF_A02_SOURCE_BUNDLE_ID_MISMATCH",
             )
             with patch(
-                    "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                    "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission."
                     "shutil.disk_usage",
                     return_value=SimpleNamespace(free=1 << 50)):
                 staged = stage_vocabulary_extension_from_source_id(
@@ -230,17 +289,17 @@ class A02ContentIdentityBoundaryTests(unittest.TestCase):
             object(), "1" * 64, object(), object(), None, prior)
         with (
             patch(
-                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission."
                 "resolve_atlas_source_bundle",
                 return_value=Path("/host") / requested,
             ),
             patch(
-                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission."
                 "_accepted_vocabulary_parent",
                 return_value=accepted_parent,
             ),
             patch(
-                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission."
                 "stage_vocabulary_extension",
                 side_effect=AssertionError("wrong source ID reached staging"),
             ),

@@ -6,13 +6,16 @@ from pathlib import Path
 import time
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.learning.atlas_engram import MOTIF_PAGE_STATE_BYTES, MotifBudget
 from bilqis_mlx.runtime.atlas_model import bamf_value_and_grad
 from bilqis_mlx.runtime.atlas_resources import (
     FrameStats, MemoryBudget, ResourceRow, plan_microbatches,
 )
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle import (
-    CompleteStudent, authenticate_bamf_candidate_feature_context,
+    CompleteStudent, authenticate_bamf_execution_feature_context,
+    seal_source_qualified_motifs_from_bundle,
+    stage_source_qualified_motif_allocation,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_uninterrupted_candidate_step, bind_accepted_execution_cache,
@@ -113,14 +116,45 @@ def _resource_plan(prepared, parent, memory_budget):
         )
         for training_row, compiled in zip(
             prepared.training_batch.rows, prepared.compiled_rows))
-    return plan_microbatches(rows, parent.topology, memory_budget)
+    return plan_microbatches(rows, parent.topology, memory_budget), memory_budget
+
+
+def _stage_retained_motifs(run_dir, parent, cache, transaction, prepared,
+                           resource_plan, memory_budget):
+    if len(prepared.motif_inputs) != 1:
+        _invalid("FACTORY_CANDIDATE_STEP_MOTIF_ACCUMULATION_REQUIRED")
+    motif = prepared.motif_inputs[0]
+    spare = max(0, memory_budget.allocation_bytes - resource_plan.estimated_peak_bytes)
+    budget = MotifBudget(
+        64,
+        page_growth_bytes=(MOTIF_PAGE_STATE_BYTES
+                           if spare >= MOTIF_PAGE_STATE_BYTES else 0))
+    bundle_root = Path(run_dir) / "bamf-bundles" / cache.accepted_manifest_sha256
+    result = seal_source_qualified_motifs_from_bundle(
+        motif.source_adapter, motif.row, motif.atlas_selection,
+        retained_bundle_root=bundle_root,
+        expected_manifest_sha256=cache.accepted_manifest_sha256,
+        source_root=motif.source_root, graph=motif.source_graph,
+        task_scope=motif.task, source_frontier=motif.frontier,
+        policy=motif.policy, source_seed=motif.source_seed,
+        source_each=motif.source_each, budget=budget,
+        source_profile_parameters=motif.source_profile_parameters,
+        course=motif.course)
+    from bilqis_mlx.semantics.context_eligibility import ContextHold
+    if isinstance(result, ContextHold):
+        _invalid("FACTORY_CANDIDATE_STEP_MOTIF_CONTEXT_HELD")
+    continuation, _ = result
+    if continuation.approved.candidate.proposed.digest == parent.retained_state.allocations.digest:
+        return transaction
+    return stage_source_qualified_motif_allocation(
+        Path(run_dir), transaction, continuation)
 
 
 def _execute_prepared_candidate(
         run_dir, source_context, parent, atlas_artifact_path, delivered_rows, *,
         capability, teacher_hparams, max_norm, observation, memory_budget,
         cache, generation, prepared, start) -> FactoryCandidateStep:
-    resource_plan = _resource_plan(prepared, parent, memory_budget)
+    resource_plan, memory_budget = _resource_plan(prepared, parent, memory_budget)
     if (len(prepared.compiled_rows) != 1
             or resource_plan.groups != ((0,),)):
         _invalid("FACTORY_CANDIDATE_STEP_C08_ACCUMULATION_REQUIRED")
@@ -130,8 +164,8 @@ def _execute_prepared_candidate(
     compiled = bind_factory_task_compiled_batch(compiled, authority)
     resolved = factory_task_training_goal(source_context, compiled, authority)
     targets, mask = task_goal_training_targets(authority.goal, resolved)
-    feature_context = authenticate_bamf_candidate_feature_context(
-        parent, atlas_artifact_path)
+    feature_context = authenticate_bamf_execution_feature_context(
+        parent, atlas_artifact_path, source_context.run_dir)
     plan = task_goal_route_plan(
         authority.goal, compiled, feature_context.snapshot, generation)
     gradient = bamf_value_and_grad(
@@ -141,6 +175,8 @@ def _execute_prepared_candidate(
         Path(run_dir), parent, loss_bearing_target=True,
         gradient_execution=gradient, teacher_hparams=teacher_hparams,
         max_norm=max_norm)
+    transaction = _stage_retained_motifs(
+        run_dir, parent, cache, transaction, prepared, resource_plan, memory_budget)
     cost = {
         "wall_seconds": time.perf_counter() - start,
         "loss_total": float(gradient.loss_total.item()),

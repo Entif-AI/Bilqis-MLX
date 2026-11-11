@@ -5,7 +5,9 @@ from types import MappingProxyType
 from .codec import load_bamf_bundle, save_bamf_bundle
 from .feature_authority import (
     AcceptedGenerationFeatureContext, AcceptedGenerationFeatureReceipt,
-    AuthenticatedCandidateFeatureContext,
+    AuthenticatedCandidateFeatureContext, AuthenticatedGenerationFeatureContext,
+    authenticate_bamf_execution_feature_context,
+    authenticate_bamf_generation_feature_context,
     authenticate_bamf_candidate_feature_context, authenticate_bamf_candidate_features,
     feature_schema_from_compiler_features,
     read_accepted_generation_feature_context,
@@ -17,12 +19,17 @@ from .publication import (
     publish_atlas_admission_generation, publish_bamf_generation,
     record_bamf_rejection,
 )
-from ._vocabulary_admission_records import (
+from .vocabulary.admission_records import (
     A02StagedVocabularyExtension, A02VocabularyStagingReceipt,
     require_issued_a02_staged_vocabulary_extension,
 )
 from .package_import_transition import PackageImportTransition
-from .source_continuation import continue_source_qualified_motifs_from_bundle
+from .motif.source_continuation import (
+    SourceQualifiedMotifContinuation,
+    continue_source_qualified_motifs_from_bundle,
+    seal_source_qualified_motifs_from_bundle,
+    stage_source_qualified_motif_allocation,
+)
 from .records import (
     BAMF_BUNDLE_SCHEMA, BAMF_POINTER_SCHEMA, BamfBundleCandidate,
     BamfGenerationManifest, CompleteStudent,
@@ -40,11 +47,11 @@ _LAZY_EXPORTS = MappingProxyType({
     "issue_initial_foundation_feature_authority": ".genesis.foundation",
     "InitialFactoryFoundationAuthority": ".genesis.origin",
     "issue_initial_factory_foundation_authority": ".genesis.origin",
-    "stage_vocabulary_extension": ".vocabulary_admission",
-    "stage_vocabulary_extension_from_source_id": ".vocabulary_admission",
-    "require_staged_vocabulary_admission_headroom": ".vocabulary_admission",
-    "AcceptedVocabularyRegistryExport": ".vocabulary_registry_export",
-    "read_accepted_vocabulary_registry_export": ".vocabulary_registry_export",
+    "stage_vocabulary_extension": ".vocabulary.admission",
+    "stage_vocabulary_extension_from_source_id": ".vocabulary.admission",
+    "require_staged_vocabulary_admission_headroom": ".vocabulary.admission",
+    "AcceptedVocabularyRegistryExport": ".vocabulary.registry_export",
+    "read_accepted_vocabulary_registry_export": ".vocabulary.registry_export",
 })
 
 
@@ -61,6 +68,9 @@ __all__ = (
     "BAMF_BUNDLE_SCHEMA", "BAMF_POINTER_SCHEMA", "BamfBundleCandidate",
     "BamfGenerationManifest", "CompleteStudent", "save_bamf_bundle", "load_bamf_bundle",
     "continue_source_qualified_motifs_from_bundle",
+    "seal_source_qualified_motifs_from_bundle",
+    "stage_source_qualified_motif_allocation",
+    "SourceQualifiedMotifContinuation",
     "publish_bamf_generation", "load_bamf_generation",
     "publish_atlas_admission_generation",
     "load_bamf_generation_authority", "record_bamf_rejection",
@@ -71,8 +81,10 @@ __all__ = (
     "AcceptedVocabularyRegistryExport", "read_accepted_vocabulary_registry_export",
     "PackageImportTransition",
     "AcceptedGenerationFeatureContext", "AcceptedGenerationFeatureReceipt",
-    "AuthenticatedCandidateFeatureContext",
+    "AuthenticatedCandidateFeatureContext", "AuthenticatedGenerationFeatureContext",
     "authenticate_bamf_candidate_feature_context", "read_accepted_generation_feature_lineage",
+    "authenticate_bamf_execution_feature_context",
+    "authenticate_bamf_generation_feature_context",
     "read_accepted_generation_feature_context", "feature_schema_from_compiler_features",
     "read_accepted_generation_feature_receipt",
     "authenticate_bamf_candidate_features",
