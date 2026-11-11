@@ -129,3 +129,32 @@ receipt, and preflight API for #542; #543 adds no parser flag or command dispatc
 Focused verification:
 
 `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_bamf_first_student.py`
+
+### C16.2 disposable launch witness and future handoff command
+
+C16.2 proves disposable learning readiness; it does not start the persistent BAMF
+learner. Its exact future owner-start command is:
+
+`npm run train -- --human-run --resume --run-dir <accepted-bamf-run>`
+
+Cold resume after interruption uses the same command shape. The parser and current
+resume preflight accept this form against accepted B13 custody, but the C16.1a
+lifecycle remains neural-inert and returns `READY_TO_RESUME`; C16.3/#545 owns the
+persistent production dispatch that follows this handoff.
+
+The C16.2c disposable acceptance witness uses the real accepted owner chain:
+accepted B13 custody, C03 teacher selection/provenance, C02/C08/B11 candidate
+execution, C05 owner-derived fixed-school retention, and B13 publication/rejection.
+It also requires a real damaging disposable candidate to be rejected and durably
+recorded without changing accepted parent custody, plus uninterrupted versus
+cold-process equivalence of the next bounded update. No target `state.json` is part
+of this witness, and no persistent student or persistent optimizer is started.
+
+For the disposable accepted-generation transition only, C16.2c owns a deterministic
+test fixture for the still-caller-supplied C03 successor fields: `next_seed` is the
+selected visit seed plus one and `cursor` is the taught source row id. Those values
+make the witness reproducible; they do **not** claim production teacher-trajectory
+authority. The resulting launch-witness receipt records that limitation together
+with parent/retained generations, optimizer state digests and steps, selected visit,
+C05 decision, Factory/source identities, and the uninterrupted-versus-cold next
+update result.

@@ -11,6 +11,7 @@ import bilqis_mlx.runtime.model_topology_v2 as model_topology_v2
 import bilqis_mlx.runtime.bamf_bundle.publication as bamf_publication
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.presentation.dashboard import build as build_dashboard
+from bilqis_mlx.presentation.operator_cli.parser import parse_args
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
 from bilqis_mlx.runtime.bamf_first_student import (
     BamfFoundationConfig,
@@ -23,6 +24,15 @@ from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import REGISTRY
 
 
 class BamfFirstStudentTests(BamfFirstStudentCase):
+    def test_c16_2_future_owner_resume_command_parser_contract(self):
+        target = self.root / "accepted-bamf-run"
+        args = parse_args([
+            "train", "--human-run", "--resume", "--run-dir", str(target),
+        ])
+        self.assertTrue(args.human_run)
+        self.assertTrue(args.resume)
+        self.assertEqual(args.run_dir, target)
+
     def test_cli_reexports_foundation_contract_without_owning_dispatch(self):
         from bilqis_mlx import cli
 
