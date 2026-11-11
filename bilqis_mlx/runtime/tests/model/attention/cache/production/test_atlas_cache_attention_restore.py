@@ -17,7 +17,7 @@ from bilqis_mlx.runtime.atlas_cache_codec import (
     interactive_attention_cache_inference,
 )
 from bilqis_mlx.runtime.atlas_cache_runtime import _capture_forward_attention_caches
-from bilqis_mlx.runtime.tests.model.attention.cache.cache_production_source_fixture import (
+from bilqis_mlx.runtime.tests.model.attention.cache.production.cache_production_source_fixture import (
     source_backed_production_fixture,
 )
 

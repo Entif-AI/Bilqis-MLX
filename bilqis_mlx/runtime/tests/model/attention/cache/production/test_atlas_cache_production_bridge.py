@@ -36,7 +36,7 @@ from bilqis_mlx.runtime.tests.model.attention.cache.cache_authority_integration_
     _selection,
     _source,
 )
-from bilqis_mlx.runtime.tests.model.attention.cache.cache_production_source_fixture import (
+from bilqis_mlx.runtime.tests.model.attention.cache.production.cache_production_source_fixture import (
     source_backed_production_fixture,
 )
 

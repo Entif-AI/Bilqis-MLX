@@ -16,7 +16,7 @@ from bilqis_mlx.runtime.tests.model.execution.active_semantic_rows_support impor
     snapshot_active_semantic_rows,
 )
 from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
-from .cache_authority_integration_fixture import _accepted_registry
+from ..cache_authority_integration_fixture import _accepted_registry
 
 
 @lru_cache(maxsize=1)
