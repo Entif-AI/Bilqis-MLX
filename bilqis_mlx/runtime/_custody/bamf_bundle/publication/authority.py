@@ -206,4 +206,3 @@ def parent_acceptance_for_publication(
             expected_manifest_sha256=current["manifest_sha256"])
         require_published_acceptance(run_dir, current, parent)
         return current["acceptance_sha256"]
-
