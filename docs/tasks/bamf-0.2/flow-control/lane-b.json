@@ -1,10 +1,20 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "B",
-  "observed_unified": "08654dd2efd199cda03527bc456c3631f3cc0dbb",
-  "updated_at": "2026-11-11T01:16:36Z",
+  "observed_unified": "8b8625b85b571ae1eeecbc683157895db029a812",
+  "updated_at": "2026-11-11T02:02:37Z",
   "exception": null,
   "items": [
+    {
+      "issue": 372,
+      "pr": 983,
+      "state": "TURNED_IN",
+      "head_sha": "731286ef7f0041dd821a23ac5a6cc789a6a96f7e",
+      "head_sha_role": "exact semantic/test proof head; subsequent closeout evidence and flow bookkeeping are docs-only",
+      "summary": "B13 parent #372 is turned in through PR #983 after current-unified integration audit found stale parent witnesses, not a production custody defect. Changed-feature lineage now exercises the live C07 AtlasAdmissionBinding publication seam while preserving accepted-parent C09 source-authority custody; cache/cold-resume fixtures reach their intended B13 guards without weakening production validation. Exact proof: parent ring 79/79, changed-feature ring 22/22, cache separation 3/3, cold continuation 8/8, full schema/resume 2/2, frozen-v1 1/1, real-A01 motif continuation 2/2. Two independent exact-head reviewers returned 0 Blocker / 0 Major / 0 Nit, and hosted semantic-ABI/portable-core/portable checks pass on the proof head. Human merge remains external; #372 stays open until merged readback.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/372-b13-parent-integration-20261110"
+    },
     {
       "issue": 863,
       "pr": 981,
