@@ -9,6 +9,29 @@ from contextlib import contextmanager
 from pathlib import Path
 from .contracts import (SCHEMA_VERSION, SQLITE_BUSY_TIMEOUT_MS, SQLITE_MMAP_BYTES, SQLITE_CACHE_KIB, DataPlaneError, _error)
 
+_C05_FIXED_SCHOOL_TRUST_SQL = """
+CREATE TABLE IF NOT EXISTS bamf_c05_fixed_school_trust(
+    run_identity_sha256 TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL,
+    foundation_parent_manifest_sha256 TEXT NOT NULL,
+    receipt_sha256 TEXT NOT NULL UNIQUE,
+    receipt_payload BLOB NOT NULL,
+    cohort_sha256 TEXT NOT NULL,
+    cohort_payload_sha256 TEXT NOT NULL,
+    cohort_payload BLOB NOT NULL
+) WITHOUT ROWID;
+CREATE TRIGGER IF NOT EXISTS bamf_c05_fixed_school_trust_no_update
+BEFORE UPDATE ON bamf_c05_fixed_school_trust
+BEGIN
+    SELECT RAISE(ABORT, 'BAMF_C05_FIXED_SCHOOL_TRUST_IMMUTABLE');
+END;
+CREATE TRIGGER IF NOT EXISTS bamf_c05_fixed_school_trust_no_delete
+BEFORE DELETE ON bamf_c05_fixed_school_trust
+BEGIN
+    SELECT RAISE(ABORT, 'BAMF_C05_FIXED_SCHOOL_TRUST_IMMUTABLE');
+END;
+"""
+
 class DataPlaneStoreMixin:
     def __init__(self, path: Path):
         self.path = Path(path)
@@ -85,6 +108,7 @@ class DataPlaneStoreMixin:
             SELECT RAISE(ABORT, 'BAMF_GENESIS_TRUST_IMMUTABLE');
         END;
         """)
+        self._db.executescript(_C05_FIXED_SCHOOL_TRUST_SQL)
         row = self._db.execute(
             "SELECT value FROM meta WHERE key='schema_version'").fetchone()
         if row is None:

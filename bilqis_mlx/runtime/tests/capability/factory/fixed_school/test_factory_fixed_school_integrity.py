@@ -29,7 +29,42 @@ class BamfFactoryFixedSchoolIntegrityTests(BamfFirstStudentCase):
             cache = bind_accepted_execution_cache(target)
         return host, context, cache, sources, answers
 
-    def test_cold_school_rejects_content_valid_subset_relabelled_as_whole_scope(self):
+    def _advance_generation(self, target, tag):
+        import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
+        from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate, publish_bamf_generation
+        from bilqis_mlx.runtime.bamf_bundle.admission import (
+            bind_accepted_execution_cache, load_accepted_generation,
+        )
+        from bilqis_mlx.runtime.bamf_bundle.package_import_transition import (
+            _issue_package_import_transition,
+        )
+        from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import acceptance
+
+        with shape_patch():
+            parent = load_accepted_generation(target)
+            cache = bind_accepted_execution_cache(target)
+        transition = _issue_package_import_transition(
+            package_sha256=tag * 64, screened_candidate_sha256="2" * 64,
+            reset_policy_sha256="3" * 64, c05_evidence_sha256="4" * 64,
+            c05_policy_sha256="5" * 64, source_clearance_sha256="6" * 64)
+        successor = BamfBundleCandidate(
+            parent.run_id, parent.generation + 1, cache.accepted_manifest_sha256,
+            parent.implementation_sha256, parent.topology, parent.extents,
+            parent.retained_state, parent.optimizer_hyperparameters,
+            parent.provenance, parent.semantic_abi, parent.compiler_features,
+            parent.correction_frontier, parent.teacher_state,
+            parent.evaluation_contract, transition,
+            ({"event": "BAMF_PACKAGE_IMPORT_ACCEPTED",
+              "optimizer_step": parent.retained_state.optimizer_step},),
+            parent.run_identity)
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
+                patch("bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom"):
+            return publish_bamf_generation(
+                target, successor,
+                acceptance=acceptance(successor, parent=parent.retained_state),
+                reserve_gib=0.)
+
+    def test_cold_school_repairs_content_valid_subset_projection(self):
         target = self.root / "c05-subset-substitution"
         self.preflight(target)
         _host, context, cache, _sources, _answers = self._context(target)
@@ -42,6 +77,7 @@ class BamfFactoryFixedSchoolIntegrityTests(BamfFirstStudentCase):
                 expected_parent_manifest_sha256=cache.accepted_manifest_sha256)
         receipt_path = next((target / "c05-fixed-school").glob("*.json"))
         receipt = json.loads(receipt_path.read_text())
+        trusted_cohort_sha = receipt["cohort_sha256"]
         cohort_path = target / receipt["cohort_file"]
         stored = json.loads(cohort_path.read_text())
         kept = stored["capabilities"][0]
@@ -60,10 +96,16 @@ class BamfFactoryFixedSchoolIntegrityTests(BamfFirstStudentCase):
         receipt["cohort_file"] = str(forged_path.relative_to(target))
         receipt_path.write_text(json.dumps(receipt))
 
-        with self.assertRaises(BilqisError), shape_patch():
+        with shape_patch():
             fixed_owner._bamf_fixed_school_cohort(
                 context, target,
                 expected_parent_manifest_sha256=cache.accepted_manifest_sha256)
+        repaired_receipt = json.loads(receipt_path.read_text())
+        self.assertEqual(repaired_receipt["cohort_sha256"], trusted_cohort_sha)
+        repaired = json.loads((target / repaired_receipt["cohort_file"]).read_text())
+        self.assertEqual(
+            {row["capability"] for row in repaired["rows"]},
+            set(repaired_receipt["capabilities"]))
 
     def test_fixed_school_rejects_valid_but_wrong_persisted_factory_release(self):
         target = self.root / "c05-wrong-valid-release"
@@ -143,60 +185,13 @@ class BamfFactoryFixedSchoolIntegrityTests(BamfFirstStudentCase):
         self.assertEqual(cohort["source_manifest_sha256"], bindings.digest())
 
     def test_first_materialization_after_generation_one_keeps_run_stable_school(self):
-        from unittest.mock import patch
-        import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
-        from bilqis_mlx.factory.tests.test_executable_release import _answers
-        from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_registry
-        from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
-        from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate, publish_bamf_generation
-        from bilqis_mlx.runtime.bamf_bundle.admission import (
-            bind_accepted_execution_cache, load_accepted_generation,
-        )
-        from bilqis_mlx.runtime.bamf_bundle.package_import_transition import (
-            _issue_package_import_transition,
-        )
-        from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import acceptance
         import bilqis_mlx.runtime.factory_fixed_school as fixed_owner
 
         target = self.root / "c05-generation-one-first-materialization"
         self.preflight(target)
-
-        def advance(tag):
-            with shape_patch():
-                parent = load_accepted_generation(target)
-                cache = bind_accepted_execution_cache(target)
-            transition = _issue_package_import_transition(
-                package_sha256=tag * 64, screened_candidate_sha256="2" * 64,
-                reset_policy_sha256="3" * 64, c05_evidence_sha256="4" * 64,
-                c05_policy_sha256="5" * 64, source_clearance_sha256="6" * 64)
-            successor = BamfBundleCandidate(
-                parent.run_id, parent.generation + 1, cache.accepted_manifest_sha256,
-                parent.implementation_sha256, parent.topology, parent.extents,
-                parent.retained_state, parent.optimizer_hyperparameters,
-                parent.provenance, parent.semantic_abi, parent.compiler_features,
-                parent.correction_frontier, parent.teacher_state,
-                parent.evaluation_contract, transition,
-                ({"event": "BAMF_PACKAGE_IMPORT_ACCEPTED",
-                  "optimizer_step": parent.retained_state.optimizer_step},),
-                parent.run_identity)
-            with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
-                    patch("bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom"):
-                pointer = publish_bamf_generation(
-                    target, successor,
-                    acceptance=acceptance(successor, parent=parent.retained_state),
-                    reserve_gib=0.)
-            return pointer
-
-        first = advance("1")
-        sources, answers = _synthetic_registry(), _answers()
-        with patch(
-                "bilqis_mlx.source_adapters.school.live_source_registry",
-                return_value=sources), patch(
-                "bilqis_mlx.factory.live_answers.live_answer_registry",
-                return_value=answers), shape_patch():
-            context = AcceptedRuntimeHost(target).source_context(
-                graph=self.graph, source_root=None)
-            cache = bind_accepted_execution_cache(target)
+        first = self._advance_generation(target, "1")
+        _host, context, cache, _sources, _answers = self._context(target)
+        with shape_patch():
             fixed_owner._bamf_fixed_school_cohort(
                 context, target,
                 expected_parent_manifest_sha256=cache.accepted_manifest_sha256)
@@ -204,15 +199,9 @@ class BamfFactoryFixedSchoolIntegrityTests(BamfFirstStudentCase):
         original = json.loads(receipt_path.read_text())
         self.assertEqual(original["foundation_parent_manifest_sha256"], first["manifest_sha256"])
 
-        advance("7")
-        with patch(
-                "bilqis_mlx.source_adapters.school.live_source_registry",
-                return_value=sources), patch(
-                "bilqis_mlx.factory.live_answers.live_answer_registry",
-                return_value=answers), shape_patch():
-            context = AcceptedRuntimeHost(target).source_context(
-                graph=self.graph, source_root=None)
-            cache = bind_accepted_execution_cache(target)
+        self._advance_generation(target, "7")
+        _host, context, cache, _sources, _answers = self._context(target)
+        with shape_patch():
             fixed_owner._bamf_fixed_school_cohort(
                 context, target,
                 expected_parent_manifest_sha256=cache.accepted_manifest_sha256)
@@ -222,6 +211,27 @@ class BamfFactoryFixedSchoolIntegrityTests(BamfFirstStudentCase):
         self.assertEqual(
             cold["foundation_parent_manifest_sha256"],
             original["foundation_parent_manifest_sha256"])
+
+        real_projection = fixed_owner.require_projection_json
+        advanced_during_projection = False
+
+        def advance_pointer_after_projection(*args, **kwargs):
+            nonlocal advanced_during_projection
+            result = real_projection(*args, **kwargs)
+            if not advanced_during_projection:
+                advanced_during_projection = True
+                self._advance_generation(target, "8")
+            return result
+
+        _host, context, cache, _sources, _answers = self._context(target)
+        with shape_patch():
+            with patch.object(
+                    fixed_owner, "require_projection_json",
+                    side_effect=advance_pointer_after_projection):
+                with self.assertRaises(BilqisError):
+                    fixed_owner._bamf_fixed_school_cohort(
+                        context, target,
+                        expected_parent_manifest_sha256=cache.accepted_manifest_sha256)
 
 
 if __name__ == "__main__":

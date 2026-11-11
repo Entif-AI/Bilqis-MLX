@@ -125,6 +125,39 @@ class BamfFactoryFixedSchoolTests(BamfFirstStudentCase):
                 context, target, expected_parent_manifest_sha256=cache.accepted_manifest_sha256)
         self.assertEqual(second, first)
 
+    def test_c05_bamf_fixed_school_recovers_interrupted_projection_without_redraw(self):
+        target = self.root / "c05-native-fixed-school-interrupted-projection"
+        self.preflight(target)
+        from bilqis_mlx.factory.tests.test_executable_release import _answers
+        from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_registry
+        from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+        from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+        import bilqis_mlx.runtime.factory_fixed_school as fixed_owner
+
+        with patch(
+                "bilqis_mlx.source_adapters.school.live_source_registry",
+                return_value=_synthetic_registry()), patch(
+                "bilqis_mlx.factory.live_answers.live_answer_registry",
+                return_value=_answers()), shape_patch():
+            context = AcceptedRuntimeHost(target).source_context(
+                graph=self.graph, source_root=None)
+            cache = bind_accepted_execution_cache(target)
+            with patch.object(
+                    fixed_owner, "require_projection_json",
+                    side_effect=RuntimeError("simulated crash after immutable trust publish")):
+                with self.assertRaisesRegex(RuntimeError, "simulated crash"):
+                    fixed_owner._bamf_fixed_school_cohort(
+                        context, target,
+                        expected_parent_manifest_sha256=cache.accepted_manifest_sha256)
+
+        with patch.object(
+                fixed_owner, "_draw_executable_scope_cohort",
+                side_effect=AssertionError("retry redrew mutable source")), shape_patch():
+            recovered = fixed_owner._bamf_fixed_school_cohort(
+                context, target,
+                expected_parent_manifest_sha256=cache.accepted_manifest_sha256)
+        self.assertTrue(recovered.rows)
+
     def test_public_c05_candidate_route_uses_bamf_native_fixed_school_without_state(self):
         target = self.root / "c05-native-public-candidate"
         self.preflight(target)

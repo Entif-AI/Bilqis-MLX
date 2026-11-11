@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from bilqis_mlx.factory.assessment import assessment_scope_contract
-from bilqis_mlx.runtime.assessment import _load_executable_cohort
+from bilqis_mlx.generated_assessment import EXECUTABLE_COHORT_SCHEMA, verify_stored_cohort
 from bilqis_mlx.runtime.bamf_bundle.codec import validate_bamf_bundle_custody
 from bilqis_mlx.runtime.bamf_bundle.genesis.records import BamfRunIdentity
 from bilqis_mlx.runtime.capability_evaluation import _invalid
@@ -79,12 +79,30 @@ def pointer(receipt: dict) -> dict:
     }
 
 
-def load_complete_school(run_dir, source_manifest, release, capabilities, value):
-    cohort = _load_executable_cohort(
-        run_dir, source_manifest, release, capabilities, value)
-    if {row.get("capability") for row in cohort.rows} != set(capabilities):
-        _invalid("BAMF_C05_FIXED_SCHOOL_SCOPE_DRIFT")
-    return cohort
+def load_trusted_complete_school(stored, source_manifest, release, capabilities, value):
+    """Verify a trusted executable-cohort payload without reopening its projection."""
+    contract = assessment_scope_contract(release, capabilities)
+    if (not isinstance(stored, dict)
+            or stored.get("schema") != EXECUTABLE_COHORT_SCHEMA
+            or stored.get("factory_release_sha256") != release.release_sha256
+            or stored.get("semantic_catalog_sha256") != release.semantic_catalog_sha256
+            or stored.get("source_manifest_sha256") != source_manifest.get("manifest_sha256")
+            or tuple(stored.get("capabilities", ())) != contract.capabilities
+            or stored.get("rubric_sha256") != contract.rubric_sha256
+            or stored.get("source_sha256") != contract.source_sha256
+            or stored.get("generator_version") != contract.generator_version
+            or stored.get("cohort_sha256") != value.get("cohort_sha256")
+            or stored.get("seed") != value.get("cohort_seed")):
+        _invalid("BAMF_C05_FIXED_SCHOOL_COHORT_DRIFT")
+    try:
+        return verify_stored_cohort(
+            stored, value["cohort_sha256"],
+            expected_rubric_sha256=contract.rubric_sha256,
+            expected_factory_release_sha256=release.release_sha256,
+            expected_capabilities=contract.capabilities)
+    except ValueError:
+        _invalid("BAMF_C05_FIXED_SCHOOL_COHORT_DRIFT")
+        raise AssertionError
 
 
 def _validate_foundation(source_context, parent, digest: str) -> None:
@@ -144,22 +162,3 @@ def require_receipt(
     _validate_foundation(
         source_context, parent, receipt["foundation_parent_manifest_sha256"])
     return receipt
-
-
-def load_receipt(path: Path) -> dict:
-    if path.parent.is_symlink() or path.is_symlink() or not path.is_file():
-        _invalid("BAMF_C05_FIXED_SCHOOL_RECEIPT_UNSAFE")
-    try:
-        return json.loads(path.read_text())
-    except (OSError, ValueError, TypeError):
-        _invalid("BAMF_C05_FIXED_SCHOOL_RECEIPT_INVALID")
-        raise AssertionError
-
-
-def require_receipt_root(root: Path, path: Path) -> None:
-    if root.is_symlink() or (root.exists() and not root.is_dir()):
-        _invalid("BAMF_C05_FIXED_SCHOOL_RECEIPT_UNSAFE")
-    if root.exists() and any(
-            item.name != path.name or item.is_symlink() or not item.is_file()
-            for item in root.iterdir()):
-        _invalid("BAMF_C05_FIXED_SCHOOL_RECEIPT_UNSAFE")

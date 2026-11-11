@@ -72,6 +72,54 @@ class FactoryPackageImportOwnerTests(unittest.TestCase):
                     source, transaction, "artifact", "B.IDBOOLOPS",
                     run_dir=Path("unused"))
 
+    def test_historical_package_import_stays_on_legacy_fixed_school_path(self):
+        release_sha = "a" * 64
+        target = "B.IDBOOLOPS"
+        capability = SimpleNamespace(capability_id=target, grade_id="B")
+        release = SimpleNamespace(
+            release_sha256=release_sha,
+            execution_plan=SimpleNamespace(
+                capabilities=(capability,), capability_map={target: capability}),
+        )
+        source = SimpleNamespace(
+            __post_init__=lambda: None,
+            require_accepted_runtime=Mock(),
+            release=release,
+        )
+        transaction = object.__new__(PackageImportTransaction)
+        parent = SimpleNamespace(run_identity=None)
+        candidate = object()
+        state = object()
+        cache = object()
+        fixed = SimpleNamespace(rows=(SimpleNamespace(),), seed=17)
+        legacy_receipt = {"factory_release_sha256": release_sha}
+        fixed_exam = {"factory_release_sha256": release_sha}
+        sentinel = object()
+        foundation = Mock(return_value=sentinel)
+        read_current = Mock(return_value=legacy_receipt)
+        load_frontier = Mock(return_value=fixed)
+        bamf_school = Mock(side_effect=AssertionError(
+            "historical package import entered BAMF trust custody"))
+        with patch.multiple(
+                owner,
+                _package_import_from_live_parent=Mock(return_value=(
+                    parent, candidate, state, cache)),
+                read_current=read_current,
+                frontier_exam=Mock(return_value=fixed_exam),
+                load_frontier_cohort=load_frontier,
+                _bamf_fixed_school_cohort=bamf_school,
+                _instruments=Mock(return_value=(object(),)),
+                _foundation_retention_evaluation=foundation,
+        ):
+            result = evaluate_factory_package_import(
+                source, transaction, "artifact", target,
+                run_dir=Path("unused"))
+
+        self.assertIs(result, sentinel)
+        read_current.assert_called_once_with(Path("unused"))
+        load_frontier.assert_called_once_with(Path("unused"), fixed_exam)
+        bamf_school.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

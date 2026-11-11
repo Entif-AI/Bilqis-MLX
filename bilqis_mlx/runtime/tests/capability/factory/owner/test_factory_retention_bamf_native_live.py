@@ -1,6 +1,8 @@
 """DETACHED_ONLY real-source C05 proof for BAMF-native fixed-school custody."""
 from __future__ import annotations
 
+BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"
+
 from dataclasses import asdict
 import hashlib
 import json
@@ -17,7 +19,9 @@ from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.admission import _executable_factory_admission
 from bilqis_mlx.runtime.atlas_visit_provenance import BamfVisitProvenance
 from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_execution_feature_context
-from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    bind_accepted_execution_cache, load_accepted_generation,
+)
 from bilqis_mlx.runtime.bamf_first_student import BamfFoundationConfig, preflight_bamf_foundation
 from bilqis_mlx.runtime.factory_candidate_training import FactoryDeliveryObservation
 from bilqis_mlx.runtime.factory_retention_owner import evaluate_factory_retention_candidate
@@ -86,7 +90,7 @@ class BamfNativeC05LiveTests(unittest.TestCase):
         return target, parent, accepted, feature_receipt.path
 
     def _visit(self, parent, target, capability):
-        cache = AcceptedRuntimeHost(target).cache
+        cache = bind_accepted_execution_cache(target)
         payload = {
             "run_identity_sha256": parent.run_identity.digest,
             "run_seed": parent.run_identity.run_seed,
@@ -137,7 +141,7 @@ class BamfNativeC05LiveTests(unittest.TestCase):
                 context, step.transaction, str(self.artifact), capability, run_dir=target)
             self.assertIsNotNone(evaluation.decision)
             self.assertFalse((target / "state.json").exists())
-            self.assertTrue((target / ".c05-fixed-school.anchor.json").is_file())
+            self.assertFalse((target / ".c05-fixed-school.anchor.json").exists())
             self.assertTrue((
                 target / "c05-fixed-school" / f"{parent.run_identity.digest}.json"
             ).is_file())
