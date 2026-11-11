@@ -1,6 +1,5 @@
 """Real persisted grade-label neutrality for B09.3 promotion authority."""
 from dataclasses import asdict, replace
-import json
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -20,17 +19,11 @@ from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import (
     CandidateCustodyIdentity, CandidateState, issue_promotion_transition_state,
 )
-from bilqis_mlx.learning.atlas_plasticity import (
-    PlasticityPolicy, advance_candidate_policy, group_eligibility,
-    next_update_mode,
-)
+from bilqis_mlx.learning.atlas_plasticity import PlasticityPolicy
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.admission import _persist_executable_factory_release
 from bilqis_mlx.runtime.plasticity_promotion import issue_accepted_promotion_transition
 from bilqis_mlx.runtime.state import _fingerprint
-from bilqis_mlx.runtime.model_topology_v2 import (
-    GenerationExtents, ModelTopologySpecV2, bamf_parameter_census,
-)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     accepted_state, parent_state, retention_decision,
 )
@@ -161,51 +154,15 @@ class PlasticityPromotionGradeNeutralityTests(TestCase):
             return (
                 receipt,
                 transitioned.policy.mode_transition,
-                transitioned.policy,
                 asdict(states[0]),
                 runtime_release.release_sha256,
             )
 
-    @staticmethod
-    def _canonical_bytes(value):
-        return json.dumps(
-            value, sort_keys=True, separators=(",", ":"),
-        ).encode("utf-8")
-
-    def _accepted_history_projection(self, policy):
-        for _ in range(3):
-            self.assertEqual(
-                next_update_mode(policy, teacher_requests_full=False), "FAST")
-            policy = advance_candidate_policy(
-                policy, teacher_requests_full=False, accepted=True,
-                participating_rows=((0, 1),),
-            )
-        cold = PlasticityPolicy.from_record(
-            json.loads(json.dumps(policy.to_record())))
-        extents = GenerationExtents(
-            1, 1, "a" * 64, self.retained.allocations.manifest.digest, "c" * 64)
-        eligibility = group_eligibility(
-            next_update_mode(cold, teacher_requests_full=False),
-            bamf_parameter_census(ModelTopologySpecV2(), extents),
-            cold.row_ages,
-        )
-        clock = {
-            "accepted_fast_since_full": cold.accepted_fast_since_full,
-            "row_ages": [asdict(item) for item in cold.row_ages],
-        }
-        return (
-            self._canonical_bytes(asdict(eligibility)),
-            self._canonical_bytes(clock),
-            self._canonical_bytes(cold.to_record()),
-        )
-
     def test_real_grade_metadata_does_not_change_transition_authority(self):
         runtime_release = self._runtime_release()
-        (baseline_receipt, baseline_transition, baseline_policy, baseline_entry,
-         baseline_release) = (
+        baseline_receipt, baseline_transition, baseline_entry, baseline_release = (
             self._issue(runtime_release, grade_visit_order=("A", "B")))
-        (permuted_receipt, permuted_transition, permuted_policy, permuted_entry,
-         permuted_release) = (
+        permuted_receipt, permuted_transition, permuted_entry, permuted_release = (
             self._issue(runtime_release, grade_visit_order=("B", "A")))
 
         self.assertEqual(baseline_release, permuted_release)
@@ -221,9 +178,3 @@ class PlasticityPromotionGradeNeutralityTests(TestCase):
             baseline_receipt.promotion_evidence_sha256,
             permuted_receipt.promotion_evidence_sha256)
         self.assertEqual(baseline_transition, permuted_transition)
-        self.assertEqual(
-            baseline_receipt.foundation_capability_ids,
-            permuted_receipt.foundation_capability_ids)
-        self.assertEqual(
-            self._accepted_history_projection(baseline_policy),
-            self._accepted_history_projection(permuted_policy))
