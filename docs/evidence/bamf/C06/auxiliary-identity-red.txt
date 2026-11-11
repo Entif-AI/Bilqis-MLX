@@ -20,8 +20,8 @@ issued_batch = (BamfTrainingBatch(release_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 >           authority = issue(labelled, source)
                         ^^^^^^^^^^^^^^^^^^^^^^^
 
-bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py:48: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py:48:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 batch = BamfTrainingBatch(release_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', generation_bindin...ema_version='bilqis.c09.dependency-ref/v1'),)), auxiliaries=(('impact', 1, 'SOURCE', 'receipt-1'),), rule_policy=()),))
 source = namespace(source_row={'id': 'row-1'})
@@ -42,8 +42,8 @@ issued_batch = (BamfTrainingBatch(release_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 >       plain = issue(batch, source)
                 ^^^^^^^^^^^^^^^^^^^^
 
-bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py:56: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py:56:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 batch = BamfTrainingBatch(release_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', generation_bindin...RCE: 'SOURCE'>, key='source:one', schema_version='bilqis.c09.dependency-ref/v1'),)), auxiliaries=(), rule_policy=()),))
 source = namespace(source_row={'id': 'row-1'})

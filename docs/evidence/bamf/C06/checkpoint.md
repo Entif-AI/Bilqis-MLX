@@ -36,7 +36,9 @@ its proposed accepted-A09 progress owner still needs precise upstream resolution
 No implementation-verification, drift or integration PASS is claimed.
 
 Existing C06 portable baseline: 35/35. New owner: 4/4. New pytest identity and
-supervision cases: 6/6. Source compiles; module-size check passes; diff is clean.
+supervision cases: 6/6. Source compiles; module-size check passes. Initial staged diff check found trailing
+pytest display whitespace in the red receipt. Raw bytes are preserved in its
+`.txt.gz`; the readable receipt trims trailing display whitespace.
 `quality:changed` stopped on legacy-source documentation validation. The C06
 wording was repaired; the remaining three reported files are unchanged from the
 consumed unified baseline. That is an outstanding aggregate gate, not a green run.
