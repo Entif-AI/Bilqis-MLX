@@ -5,12 +5,8 @@ import hashlib
 
 import numpy as np
 
-ATTENTION_CACHE_RANK = 4
-B14_HEAD_WIDTH = 24
-KIND_COUNT = 2
-CAPTURE_HANDLE_HEX_LENGTH = 64
-
-
+ATTENTION_CACHE_RANK, B14_HEAD_WIDTH = 4, 24
+KIND_COUNT, CAPTURE_HANDLE_HEX_LENGTH = 2, 64
 def _invalid() -> None:
     from .atlas_cache_codec import _invalid as codec_invalid
     codec_invalid()
