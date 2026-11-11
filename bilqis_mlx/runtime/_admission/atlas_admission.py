@@ -17,8 +17,8 @@ from .atlas_lease_contracts import (
     _invalid, _sha, _name, _names,
 )
 from .atlas_lease_storage import (
-    _atlas_lease_lock, _lease_from_json, _persist_atlas_lease_locked,
-    _read_atlas_lease, _store,
+    _atlas_authority_epoch_lock, _atlas_lease_lock, classify_accepted_atlas_epoch,
+    _lease_from_json, _persist_atlas_lease_locked, _read_atlas_lease, _store,
 )
 from .state import _durable_json
 
@@ -167,9 +167,11 @@ def read_atlas_lease(run_dir, independently_loaded_run, *, registry):
 
 
 def persist_atlas_lease(run_dir, lease, *, independently_loaded_run, registry):
-    with _atlas_lease_lock(run_dir):
-        return _persist_atlas_lease_locked(run_dir, lease,
-            independently_loaded_run=independently_loaded_run, registry=registry)
+    from bilqis_mlx.runtime._coordination import run_root_claim
+    with run_root_claim(Path(run_dir), create_parent=False):
+        with _atlas_lease_lock(run_dir):
+            return _persist_atlas_lease_locked(run_dir, lease,
+                independently_loaded_run=independently_loaded_run, registry=registry)
 
 
 def _accepted_run_lease_identity(run_dir):
@@ -205,10 +207,14 @@ def persist_accepted_atlas_lease(run_dir, lease, *, source_authority):
     if not isinstance(lease, AtlasAdmissionLease) or lease.run_identity != expected:
         _invalid('BAMF_ATLAS_LEASE_RUN_IDENTITY_DRIFT')
     registry = _accepted_source_registry(run_dir, source_authority)
-    with _atlas_lease_lock(run_dir, fixture_authority=False):
-        return _persist_atlas_lease_locked(
-            run_dir, lease, independently_loaded_run=expected, registry=registry,
-            fixture_authority=False)
+    with _atlas_authority_epoch_lock(run_dir):
+        epoch = classify_accepted_atlas_epoch(Path(run_dir))
+        if epoch == 'v2':
+            _invalid('BAMF_ATLAS_V1_SUCCESSOR_AUTHORITY_PRESENT')
+        with _atlas_lease_lock(run_dir, fixture_authority=False):
+            return _persist_atlas_lease_locked(
+                run_dir, lease, independently_loaded_run=expected, registry=registry,
+                fixture_authority=False)
 
 
 def read_accepted_atlas_lease(run_dir, *, source_authority):
@@ -288,10 +294,11 @@ def renew_atlas_lease(run_dir, lease, *, independently_loaded_run, registry,
             or lease.run_identity != independently_loaded_run):
         _invalid('BAMF_ATLAS_LEASE_RENEWAL_ARGUMENT_INVALID')
     lease.source_approval.verify(registry)
-    with _atlas_lease_lock(run_dir):
+    from bilqis_mlx.runtime._coordination import run_root_claim
+    with run_root_claim(Path(run_dir), create_parent=False), _atlas_lease_lock(run_dir):
         directory = _store(run_dir)
         prior = _read_atlas_lease(run_dir, independently_loaded_run,
-                                 registry=registry, current_authority=False)
+                                  registry=registry, current_authority=False)
         edge = {'schema': 'bilqis.c07.lease-renewal/v1',
                 'prior_lease_sha256': expected_prior_lease_sha256,
                 'replacement_lease_sha256': lease.digest(),

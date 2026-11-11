@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_admission import (
@@ -12,6 +13,7 @@ from bilqis_mlx.runtime.atlas_admission import (
 from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import (
     _lease, _run, _scope, _signed, _REGISTRY,
 )
+import bilqis_mlx.runtime.atlas_lease_storage as storage
 
 
 class AtlasLeaseStorageTests(unittest.TestCase):
@@ -64,3 +66,75 @@ class AtlasLeaseStorageTests(unittest.TestCase):
             with self.assertRaises(BilqisError):
                 persist_atlas_lease(root, _lease(), independently_loaded_run=_run(), registry=_REGISTRY)
             self.assertEqual(tuple(outside.iterdir()), ())
+
+    def test_every_b13_custody_marker_rejects_fixture_authority_before_atlas_state(self):
+        markers = (
+            'bamf-state.json', 'bamf-bundles', 'bamf-acceptance',
+            '.bamf-pointer.lock', '.bamf-staging',
+        )
+        for marker in markers:
+            with self.subTest(marker=marker), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                path = root / marker
+                if marker in {'bamf-bundles', 'bamf-acceptance', '.bamf-staging'}:
+                    path.mkdir()
+                else:
+                    path.write_text('')
+                with self.assertRaises(BilqisError) as failure:
+                    persist_atlas_lease(
+                        root, _lease(), independently_loaded_run=_run(), registry=_REGISTRY)
+                self.assertEqual(
+                    failure.exception.context['reason'],
+                    'BAMF_ATLAS_FIXTURE_AUTHORITY_FORBIDDEN_FOR_SAVED_RUN')
+                self.assertFalse((root / 'autonomy').exists())
+
+    def test_epoch_classifier_is_read_only_and_orders_v1_then_v2_path_safety(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.assertEqual(storage.classify_accepted_atlas_epoch(root), 'staged')
+            self.assertFalse((root / 'autonomy').exists())
+
+            v2 = root / 'autonomy/atlas-admission/v2/current.json'
+            v2.parent.mkdir(parents=True)
+            v2.write_text('{}')
+            self.assertEqual(storage.classify_accepted_atlas_epoch(root), 'v2')
+
+            v1 = root / 'autonomy/atlas-admission/current.json'
+            v1.write_text('{}')
+            with self.assertRaises(BilqisError) as dual:
+                storage.classify_accepted_atlas_epoch(root)
+            self.assertEqual(
+                dual.exception.context['reason'],
+                'BAMF_ATLAS_AUTHORITY_EPOCH_CONFLICT')
+
+            v1.unlink()
+            outside = root / 'outside'
+            outside.write_text('{}')
+            v1.symlink_to(outside)
+            v2.unlink()
+            v2.mkdir()
+            with self.assertRaises(BilqisError) as unsafe:
+                storage.classify_accepted_atlas_epoch(root)
+            self.assertEqual(
+                unsafe.exception.context['reason'],
+                'BAMF_ATLAS_LEASE_UNSAFE_PATH')
+
+    def test_epoch_lock_release_failure_preserves_body_error(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            real = storage.fcntl.flock
+
+            def fail_unlock(fd, operation):
+                if operation == storage.fcntl.LOCK_UN:
+                    raise OSError('unlock failed')
+                return real(fd, operation)
+
+            original = RuntimeError('body failed')
+            with patch.object(storage.fcntl, 'flock', side_effect=fail_unlock), \
+                    self.assertRaises(RuntimeError) as failure:
+                with storage._atlas_authority_epoch_lock(root):
+                    raise original
+            self.assertIs(failure.exception, original)
+            self.assertIn(
+                'BAMF_ATLAS_AUTHORITY_EPOCH_LOCK_RELEASE_FAILED:unlock',
+                getattr(original, '__notes__', ()))

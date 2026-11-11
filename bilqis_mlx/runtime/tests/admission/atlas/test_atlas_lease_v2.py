@@ -12,6 +12,7 @@ from bilqis_mlx.runtime.atlas_admission import (
     AtlasAdmissionLeaseV2,
     ResourceCeilingV2,
     issue_atlas_lease_v2,
+    persist_accepted_atlas_lease_v2,
     persist_atlas_lease,
     persist_atlas_lease_v2,
     read_atlas_lease_v2,
@@ -126,6 +127,25 @@ class AtlasLeaseV2Tests(unittest.TestCase):
             self.assertEqual(
                 read_atlas_lease_v2(root, _run(), registry=_REGISTRY), replacement)
             self.assertEqual(v1_reference.read_bytes(), before)
+
+    def test_accepted_v2_persistence_rejects_existing_v1_authority(self):
+        with tempfile.TemporaryDirectory() as temporary, patch(
+                'bilqis_mlx.runtime.atlas_admission._accepted_run_lease_identity',
+                return_value=_run()), patch(
+                'bilqis_mlx.runtime.atlas_admission._accepted_source_registry',
+                return_value=_REGISTRY):
+            root = Path(temporary)
+            v1 = root / 'autonomy/atlas-admission/current.json'
+            v1.parent.mkdir(parents=True)
+            v1.write_text('{}')
+            with self.assertRaises(BilqisError) as failure:
+                persist_accepted_atlas_lease_v2(
+                    root, _lease_v2(), source_authority=object())
+            self.assertEqual(
+                failure.exception.context['reason'],
+                'BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT')
+            self.assertFalse(
+                (root / 'autonomy/atlas-admission/v2/current.json').exists())
 
 
 if __name__ == "__main__":
