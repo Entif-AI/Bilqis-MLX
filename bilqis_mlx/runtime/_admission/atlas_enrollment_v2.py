@@ -13,6 +13,7 @@ from .atlas_lease_contracts import (
     ResourceCeilingV2,
     _invalid,
 )
+from .atlas_lease_storage import require_accepted_atlas_epoch_available_v2
 
 
 def _request_from_json(payload) -> AtlasAdmissionEnrollmentRequestV2:
@@ -67,16 +68,6 @@ def read_atlas_enrollment_request_v2(path) -> AtlasAdmissionEnrollmentRequestV2:
     return _request_from_json(payload)
 
 
-def _reject_legacy_v1_authority(run_dir: Path) -> None:
-    current = run_dir / 'autonomy/atlas-admission/current.json'
-    if current.is_symlink():
-        _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
-    if current.exists():
-        if not current.is_file():
-            _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
-        _invalid('BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT')
-
-
 def enroll_accepted_atlas_lease_v2(
         run_dir, request: AtlasAdmissionEnrollmentRequestV2, *,
         human_started: bool, source_authority):
@@ -84,7 +75,6 @@ def enroll_accepted_atlas_lease_v2(
     if human_started is not True or type(request) is not AtlasAdmissionEnrollmentRequestV2:
         _invalid('BAMF_ATLAS_V2_EXPLICIT_HUMAN_REQUEST_REQUIRED')
     run_dir = Path(run_dir)
-    _reject_legacy_v1_authority(run_dir)
 
     from bilqis_mlx.runtime.bamf_bundle import (
         load_bamf_generation_authority, read_accepted_generation_feature_receipt,
@@ -97,6 +87,7 @@ def enroll_accepted_atlas_lease_v2(
     features = read_accepted_generation_feature_receipt(pointer)
     if features.source_release_sha256 != identity.initial_release_digest:
         _invalid('BAMF_ATLAS_V2_ACCEPTED_ATLAS_CUSTODY_DRIFT')
+    require_accepted_atlas_epoch_available_v2(run_dir)
     if (request.requested_run_id != identity.run_id
             or request.requested_run_seed != identity.run_seed
             or request.requested_topology_digest != identity.initial_topology_digest):

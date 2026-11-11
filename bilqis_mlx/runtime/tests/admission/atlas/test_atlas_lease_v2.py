@@ -2,6 +2,7 @@
 from dataclasses import asdict, replace
 import json
 from pathlib import Path
+from types import SimpleNamespace
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -9,8 +10,10 @@ from unittest.mock import patch
 from bilqis_mlx.errors import BilqisError
 
 from bilqis_mlx.runtime.atlas_admission import (
+    AtlasAdmissionEnrollmentRequestV2,
     AtlasAdmissionLeaseV2,
     ResourceCeilingV2,
+    enroll_accepted_atlas_lease_v2,
     issue_atlas_lease_v2,
     persist_accepted_atlas_lease_v2,
     persist_atlas_lease,
@@ -146,6 +149,85 @@ class AtlasLeaseV2Tests(unittest.TestCase):
                 'BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT')
             self.assertFalse(
                 (root / 'autonomy/atlas-admission/v2/current.json').exists())
+
+    def _enrollment_request(self, *, run_id='accepted-run', run_seed=19,
+                            topology='a' * 64, release=None):
+        approval = _scope()
+        if release is not None:
+            approval = replace(approval, atlas_release_sha256=release)
+        return AtlasAdmissionEnrollmentRequestV2(
+            'accepted-v2', run_id, run_seed, topology, approval,
+            _lease_v2().resource_ceiling, '2026-11-11T03:00:00Z', '7' * 64)
+
+    def test_enrollment_epoch_precheck_precedes_c09_validation(self):
+        identity = SimpleNamespace(
+            run_id='accepted-run', run_seed=19,
+            initial_topology_digest='a' * 64,
+            initial_release_digest=_scope().atlas_release_sha256)
+        with tempfile.TemporaryDirectory() as temporary, patch(
+                'bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority',
+                return_value=(SimpleNamespace(run_identity=identity), 'b' * 64)), patch(
+                'bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt',
+                return_value=SimpleNamespace(
+                    source_release_sha256=identity.initial_release_digest)), patch(
+                'bilqis_mlx.runtime.atlas_admission._accepted_source_registry',
+                side_effect=AssertionError('C09 must not run')):
+            root = Path(temporary)
+            v1 = root / 'autonomy/atlas-admission/current.json'
+            v1.parent.mkdir(parents=True)
+            v1.write_text('{}')
+            with self.assertRaises(BilqisError) as failure:
+                enroll_accepted_atlas_lease_v2(
+                    root, self._enrollment_request(), human_started=True,
+                    source_authority=object())
+            self.assertEqual(
+                failure.exception.context['reason'],
+                'BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT')
+
+    def test_enrollment_identity_mismatch_precedes_release_and_c09(self):
+        identity = SimpleNamespace(
+            run_id='accepted-run', run_seed=19,
+            initial_topology_digest='a' * 64,
+            initial_release_digest=_scope().atlas_release_sha256)
+        with tempfile.TemporaryDirectory() as temporary, patch(
+                'bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority',
+                return_value=(SimpleNamespace(run_identity=identity), 'b' * 64)), patch(
+                'bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt',
+                return_value=SimpleNamespace(
+                    source_release_sha256=identity.initial_release_digest)), patch(
+                'bilqis_mlx.runtime.atlas_admission._accepted_source_registry',
+                side_effect=AssertionError('C09 must not run')):
+            with self.assertRaises(BilqisError) as failure:
+                enroll_accepted_atlas_lease_v2(
+                    Path(temporary),
+                    self._enrollment_request(
+                        run_id='wrong-run', release='f' * 64),
+                    human_started=True, source_authority=object())
+            self.assertEqual(
+                failure.exception.context['reason'],
+                'BAMF_ATLAS_V2_ENROLLMENT_RUN_IDENTITY_DRIFT')
+
+    def test_enrollment_owner_converges_exact_v2_lease(self):
+        identity = SimpleNamespace(
+            run_id='accepted-run', run_seed=19,
+            initial_topology_digest='a' * 64,
+            initial_release_digest=_scope().atlas_release_sha256)
+        with tempfile.TemporaryDirectory() as temporary, patch(
+                'bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority',
+                return_value=(SimpleNamespace(run_identity=identity), 'b' * 64)), patch(
+                'bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt',
+                return_value=SimpleNamespace(
+                    source_release_sha256=identity.initial_release_digest)), patch(
+                'bilqis_mlx.runtime.atlas_admission._accepted_run_lease_identity',
+                return_value=_run()), patch(
+                'bilqis_mlx.runtime.atlas_admission._accepted_source_registry',
+                return_value=_REGISTRY):
+            root = Path(temporary)
+            lease = enroll_accepted_atlas_lease_v2(
+                root, self._enrollment_request(), human_started=True,
+                source_authority=object())
+            self.assertEqual(
+                read_atlas_lease_v2(root, _run(), registry=_REGISTRY), lease)
 
 
 if __name__ == "__main__":
