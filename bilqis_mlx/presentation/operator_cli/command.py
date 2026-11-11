@@ -28,10 +28,11 @@ def _bamf_or_topology(args):
     """Route BAMF v2 before legacy training while preserving C07 early failure."""
     run_dir = Path(args.run_dir).expanduser()
     bamf_pointer = run_dir / "bamf-state.json"
-    fresh_v2_intent = (
-        not args.resume
-        and (args.bamf_v2_foundation_explicit or args.model_topology is not None)
-    )
+    # A topology path is shared historical syntax.  It becomes BAMF-v2 intent
+    # only after the file has actually loaded as ModelTopologySpecV2.  The
+    # seven parser-owned foundation flags, by contrast, are v2-only and must
+    # seize fresh-command ownership before topology loading.
+    fresh_v2_intent = not args.resume and args.bamf_v2_foundation_explicit
     if fresh_v2_intent:
         from .bamf_lifecycle_inputs import foundation_hyperparameters, invalid
         if not args.run_id or type(args.run_seed) is not int or args.run_seed < 0:
@@ -67,7 +68,7 @@ def _bamf_or_topology(args):
     resume_v2_intent = (
         args.resume
         and (bamf_pointer.exists() or bamf_pointer.is_symlink()
-             or args.bamf_v2_foundation_explicit or args.model_topology is not None)
+             or args.bamf_v2_foundation_explicit)
     )
     if resume_v2_intent:
         from .bamf_lifecycle import bamf_lifecycle

@@ -1,10 +1,35 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-R19-PENDING
+Status: DESIGN AMENDMENT / EGM-R19-CLEARED (continuity reconciliation recorded 2026-11-11)
 Issue: #542 / C16.1a
 Reviewed unified base: `905018b0ece7613843570dc2c2e72a74dae4e91d`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
 Pinned EGM: `b3a35956759bf7f024af2ff061b2e0b44b438e4c`
+
+## R19 clearance continuity reconciliation | 11 November 2026
+
+The frozen R19 proposal content remains commit
+`51cda75bf7e75e84533605bf0375789aac14a814` with SHA-256
+`803e85677640e8f39667691e1929c1c6248fce7470a35bc0385c6b99a81c4921`.
+Its flow-control checkpoint remains
+`3212531a851074d196dc615c55d28b71c264e2f7`.
+
+The repository failed to persist a dedicated R19-pass receipt between that pending
+checkpoint and the mandatory structural interruption commit
+`f547cfa64e5070ba3b0a7bb189f093bcf86a3045`. The authoritative continuation handoff
+for this serialized-writer session and the canonical Session Minutes document
+`1WBP98mM2nVw6nZfe_PEn4ee2cEObocBSURIRFmRZZOM` both carry the
+pre-implementation disposition that R19 cleared the required Design/Structural,
+Codebase Details, and Implementation Readiness scopes at **0 Blockers / 0 Majors / 0
+Nits** before production implementation resumed. The same continuity record binds the
+mandatory publication/retry structural interruption at `f547cfa64e...` to its focused
+**20/20 M3** proof.
+
+This paragraph repairs missing durable provenance; it does not invent a new historical
+review, change R19 content, widen #542 authority, or waive current exact-head review.
+The later implementation must still pass fresh post-implementation review and all
+turn-in gates. If the continuity record is ever contradicted by stronger primary
+evidence, that contradiction must be preserved and this reconciliation revisited.
 
 R5 review record: the frozen R5 proposal at `703b913c2dc6ff7e86b38f62e55dc9712f33563c`
 failed fresh independent review against reviewed unified

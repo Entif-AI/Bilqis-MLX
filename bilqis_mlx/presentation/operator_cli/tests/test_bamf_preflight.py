@@ -11,6 +11,8 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from bilqis_mlx.cli import main, parse_args
+from bilqis_mlx.presentation.operator_cli.command import _bamf_or_topology
+from bilqis_mlx.runtime.model_topology import ModelTopologySpec
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactIdentity
 from bilqis_mlx.semantics.atlas_projection import ATLAS_MANIFEST_SCHEMA, _canonical_bytes
@@ -34,6 +36,24 @@ class BamfPreflightTests(unittest.TestCase):
             self.assertEqual((code, output), (2, ''))
             self.assertIn('BAMF_OPERATOR_FOUNDATION_IDENTITY_REQUIRED', errors)
             self.assertFalse(run.exists())
+
+    def test_historical_v1_topology_does_not_claim_bamf_v2_ownership(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            topology = ModelTopologySpec(1, 2, 12, 24, 96)
+            topology_path = Path(tmp) / 'historical-v1-topology.json'
+            topology_path.write_text(json.dumps(topology.to_record()), encoding='utf-8')
+            for resume in (False, True):
+                argv = [
+                    'train', '--dry-run', '--model-topology', str(topology_path),
+                    '--run-dir', str(Path(tmp) / 'historical-run'),
+                ]
+                if resume:
+                    argv.append('--resume')
+                with self.subTest(resume=resume):
+                    handled, result, loaded = _bamf_or_topology(parse_args(argv))
+                    self.assertFalse(handled)
+                    self.assertIsNone(result)
+                    self.assertEqual(loaded, topology)
 
     def test_fresh_v2_conflicting_topology_rejects_before_source_or_run_write(self):
         with tempfile.TemporaryDirectory() as tmp:
