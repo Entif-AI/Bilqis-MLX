@@ -1,5 +1,6 @@
 """B11 source-producer owner threading across cache modes."""
 from types import SimpleNamespace
+from pathlib import Path
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -87,3 +88,33 @@ class AtlasModelOwnerThreadingTests(TestCase):
         self.assertIs(accepted, retained_cache)
         bind.assert_called_once_with(retained_cache, batch.compiled)
         self.assertIs(start.call_args.args[-1], owner)
+
+    def test_durable_b13_forward_captures_b14_only_after_source_completion(self):
+        producer = object()
+        batch = object()
+        accepted = SimpleNamespace(_run_dir=Path("/tmp/accepted-b13"))
+        hidden = object()
+        with patch.object(
+            forward_impl, "finalize_source_backbone_hidden", return_value=hidden
+        ), patch(
+            "bilqis_mlx.runtime.atlas_cache_runtime._capture_forward_attention_caches"
+        ) as capture:
+            actual = forward_impl._finalize_source_hidden(
+                producer, accepted, batch, capture_derived_cache=True)
+        self.assertIs(actual, hidden)
+        capture.assert_called_once_with(accepted, batch, producer)
+
+    def test_loss_bearing_forward_never_captures_b14_cache(self):
+        producer = object()
+        batch = object()
+        accepted = SimpleNamespace(_run_dir=Path("/tmp/accepted-b13"))
+        hidden = object()
+        with patch.object(
+            forward_impl, "finalize_source_backbone_hidden", return_value=hidden
+        ), patch(
+            "bilqis_mlx.runtime.atlas_cache_runtime._capture_forward_attention_caches"
+        ) as capture:
+            actual = forward_impl._finalize_source_hidden(
+                producer, accepted, batch, capture_derived_cache=False)
+        self.assertIs(actual, hidden)
+        capture.assert_not_called()

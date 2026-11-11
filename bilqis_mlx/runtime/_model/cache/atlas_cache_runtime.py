@@ -4,12 +4,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 
-from bilqis_mlx.errors import BilqisError
 from ..semantics.cognitive_dependencies import DependencyKind, DependencyRef
-from .atlas_cache_binding import (
-    CacheArtifact, _require_cache_binding, binding_digest,
-)
-
 
 CACHE_AUTHENTICATOR_BYTES = 16
 
@@ -41,12 +36,6 @@ def _new_authority_owner():
 
 
 _authority_state, _raw_authority_issue = _new_authority_owner()
-del _raw_authority_issue
-
-
-def _accepted_cache_for_authority(_authority):
-    """No production B14 issuer exists until an upstream owner supplies one."""
-    return None
 
 
 class CacheAuthorityRuntime:
@@ -84,25 +73,49 @@ class CacheAuthorityRuntime:
             _invalid()
 
     def _verify_detached(self, owner_id, dependency, signature_hex, payload) -> None:
-        """Verify a source-owner statement through this host-bound registry."""
         registry, _, _, _ = _authority_state(self)
         registry.verify_detached(owner_id, dependency, signature_hex, payload)
 
     def _validate_export_clearance_context(
             self, receipt, selection, source_frontier, artifact_digests):
-        """Validate A12 clearance without exposing the bound authority registry."""
         from bilqis_mlx.semantics.atlas_release_audit import (
             validate_export_clearance_context,
         )
         registry, _, _, _ = _authority_state(self)
         return validate_export_clearance_context(
             receipt, selection, source_frontier, artifact_digests, registry)
+
     def _current_eligibility_inputs(self):
-        """Read current rebuild authority from the owner-bound resolver."""
         _, _, source, _ = _authority_state(self)
         if source is None:
             _invalid()
         return source()
+
+    def _current_causal_identity(self, binding):
+        return None
+
+    def _current_production_identity(self, binding):
+        from .atlas_cache_production_bridge import production_capture_for_binding
+        capture = production_capture_for_binding(self, binding)
+        return None if capture is None else capture[1]
+
+    def _current_canonical_fp32(self, binding):
+        from .atlas_cache_production_bridge import production_capture_for_binding
+        capture = production_capture_for_binding(self, binding)
+        return None if capture is None or capture[0] is None else capture[0].copy()
+
+
+from .atlas_cache_production_custody import new_production_authority_owner
+(_provision_cache_authority_runtime,
+ _production_authority_state,
+ _capture_production_records) = new_production_authority_owner(_raw_authority_issue)
+del _raw_authority_issue
+
+
+def _accepted_cache_for_authority(authority):
+    entry = _production_authority_state(authority)
+    return None if entry is None else entry[1]
+
 
 def _require_authority(authority: CacheAuthorityRuntime) -> CacheAuthorityRuntime:
     if type(authority) is not CacheAuthorityRuntime:
@@ -118,108 +131,106 @@ def _require_authority(authority: CacheAuthorityRuntime) -> CacheAuthorityRuntim
     return authority
 
 
-def bind_cache_artifact_owner(authority, artifact, binding):
-    from bilqis_mlx.runtime.atlas_cache_owner import (
-        _issue_exact_cache_artifact_owner, cache_artifact_digest,
-    )
-    authority = _require_authority(authority)
-    _, _, _, owners = _authority_state(authority)
-    key = (bytes(binding_digest(binding)), cache_artifact_digest(artifact))
-    owner = owners.get(key)
-    if owner is None:
-        owner = _issue_exact_cache_artifact_owner(authority, artifact, binding)
-        owners[key] = owner
-    accepted_cache = _accepted_cache_for_authority(authority)
-    if accepted_cache is not None and accepted_cache._run_dir is not None:
-        from bilqis_mlx.runtime.accepted_corrections import (
-            register_accepted_target,
-        )
-        register_accepted_target(
-            accepted_cache._run_dir,
-            accepted_cache.accepted_manifest_sha256,
-            "EXACT_CACHE", owner,
-        )
-    return owner
+def bind_accepted_cache_authority(accepted_cache):
+    """Resolve the one B14 capability owned by an already-accepted B13 cache."""
+    authority = _provision_cache_authority_runtime(accepted_cache)
+    return _require_authority(authority)
 
 
-def apply_cache_correction(
-    authority, artifact, binding, event,
+def _capture_forward_attention_caches(accepted_cache, compiled_batch, producer):
+    from .atlas_cache_production_bridge import capture_forward_attention_caches
+    return capture_forward_attention_caches(accepted_cache, compiled_batch, producer)
+
+
+def attention_cache_handles(authority):
+    from .atlas_cache_production_bridge import attention_cache_handles as operation
+    return operation(authority)
+
+
+def attention_cache_binding(authority, handle):
+    from .atlas_cache_production_bridge import attention_cache_binding as operation
+    return operation(authority, handle)
+
+
+def attention_cache_pairs(authority):
+    from .atlas_cache_attention_restore import attention_cache_pairs as operation
+    return operation(authority)
+
+
+def restore_attention_cache(
+    authority, key_artifact, key_handle, value_artifact, value_handle,
+    parameters, spec, extents,
 ):
-    """Deliver one qualified C09 correction into opaque cache custody."""
-    authority = _require_authority(authority)
-    owner = bind_cache_artifact_owner(authority, artifact, binding)
-    authority_registry, _, _, _ = _authority_state(authority)
-    authority_registry.verify_correction(event)
-    if not owner.index.direct_dependents(event.dependency):
-        return owner.queue
-    return owner.apply_correction(event, authority_registry)
+    from .atlas_cache_attention_restore import restore_attention_cache as operation
+    return operation(
+        authority, key_artifact, key_handle, value_artifact, value_handle,
+        parameters, spec, extents)
+
+
+def interactive_attention_cache_inference(
+    authority, key_artifact, key_handle, value_artifact, value_handle,
+    parameters, spec, extents, *, cached_infer, fp32_recompute,
+    quality_check, policy,
+):
+    from .atlas_cache_attention_restore import (
+        interactive_attention_cache_inference as operation,
+    )
+    return operation(
+        authority, key_artifact, key_handle, value_artifact, value_handle,
+        parameters, spec, extents, cached_infer=cached_infer,
+        fp32_recompute=fp32_recompute, quality_check=quality_check, policy=policy)
+
+
+def encode_attention_cache(authority, handle):
+    from .atlas_cache_production_bridge import encode_attention_cache as operation
+    return operation(authority, handle)
+
+
+def bind_cache_artifact_owner(authority, artifact, binding):
+    from .atlas_cache_operations import bind_cache_artifact_owner as operation
+    return operation(authority, artifact, binding)
+
+
+def apply_cache_correction(authority, artifact, binding, event):
+    from .atlas_cache_operations import apply_cache_correction as operation
+    return operation(authority, artifact, binding, event)
 
 
 def encode_cold_cache(authority, cache, codec_manifest, *, binding):
-    from .atlas_cache_records import _encode_cold_cache
-    from .atlas_cache_eligibility import validate_current_binding
-    authority = _require_authority(authority)
-    validate_current_binding(authority, binding)
-    return _encode_cold_cache(
-        cache, codec_manifest, binding=binding,
-        authority=authority,
-    )
+    from .atlas_cache_operations import encode_cold_cache as operation
+    return operation(authority, cache, codec_manifest, binding=binding)
 
 
 def decode_cache(authority, artifact, expected_binding):
-    from .atlas_cache_records import _decode_cache
-    from .atlas_cache_eligibility import validate_current_binding
-    authority = _require_authority(authority)
-    validate_current_binding(authority, expected_binding)
-    owner = bind_cache_artifact_owner(authority, artifact, expected_binding)
-    owner.require(authority, artifact, expected_binding)
-    return _decode_cache(
-        artifact, expected_binding, authority=authority,
-    )
+    from .atlas_cache_operations import decode_cache as operation
+    return operation(authority, artifact, expected_binding)
 
 
 def interactive_cache_inference(
     authority, artifact, expected_binding, *, cached_infer,
     fp32_recompute, quality_check, policy, artifact_owner=None,
 ):
-    from .atlas_cache_policy import _interactive_cache_inference
-    retained_owner = None
-    if isinstance(artifact, CacheArtifact):
-        try:
-            from .atlas_cache_eligibility import validate_current_binding
-            validate_current_binding(authority, expected_binding)
-            _require_cache_binding(artifact, expected_binding, authority)
-        except BilqisError:
-            pass
-        else:
-            retained_owner = bind_cache_artifact_owner(
-                authority, artifact, expected_binding)
-            if artifact_owner is not None and artifact_owner is not retained_owner:
-                _invalid()
-    return _interactive_cache_inference(
-        artifact, expected_binding,
-        artifact_owner=retained_owner,
-        cached_infer=cached_infer,
-        fp32_recompute=fp32_recompute,
-        quality_check=quality_check,
-        policy=policy,
-        authority=_require_authority(authority),
-    )
+    from .atlas_cache_operations import interactive_cache_inference as operation
+    return operation(
+        authority, artifact, expected_binding, cached_infer=cached_infer,
+        fp32_recompute=fp32_recompute, quality_check=quality_check,
+        policy=policy, artifact_owner=artifact_owner)
 
 
 def rebuild_revoked_cache(
     authority, stale_artifact, new_binding, *, eligibility_receipt, persist,
 ):
-    from .atlas_cache_rebuild import _rebuild_revoked_cache
-    return _rebuild_revoked_cache(
-        stale_artifact,
-        new_binding,
-        eligibility_receipt=eligibility_receipt,
-        persist=persist,
-        authority=_require_authority(authority),
-    )
+    from .atlas_cache_operations import rebuild_revoked_cache as operation
+    return operation(
+        authority, stale_artifact, new_binding,
+        eligibility_receipt=eligibility_receipt, persist=persist)
+
+
+def rebuild_attention_cache(authority, stale_artifact, handle, *, persist):
+    from .atlas_cache_operations import rebuild_attention_cache as operation
+    return operation(authority, stale_artifact, handle, persist=persist)
 
 
 def issue_cache_eligibility(authority, binding):
-    from .atlas_cache_eligibility import issue_cache_eligibility as _issue
-    return _issue(_require_authority(authority), binding)
+    from .atlas_cache_operations import issue_cache_eligibility as operation
+    return operation(authority, binding)

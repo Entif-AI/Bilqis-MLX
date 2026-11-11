@@ -234,11 +234,19 @@ from .atlas_cache_rebuild import (  # noqa: E402
 )
 from .atlas_cache_runtime import (
     apply_cache_correction,
+    attention_cache_binding,
+    attention_cache_handles,
+    attention_cache_pairs,
+    bind_accepted_cache_authority,
     bind_cache_artifact_owner,
     CacheAuthorityRuntime,
     decode_cache,
+    encode_attention_cache,
     encode_cold_cache,
+    interactive_attention_cache_inference,
     interactive_cache_inference,
     issue_cache_eligibility,
+    rebuild_attention_cache,
     rebuild_revoked_cache,
+    restore_attention_cache,
 )
