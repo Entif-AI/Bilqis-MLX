@@ -188,6 +188,31 @@ class _SourceBackboneProducerSession:
         return receipt
 
 
+def _b14_attention_caches(producer):
+    """Return only the attention caches sealed inside one complete B11 producer."""
+    if type(producer) is not _SourceBackboneProducerSession:
+        _invalid_producer_receipt()
+    if len(producer._session.results) != producer._topology.depth_groups:
+        _invalid_producer_receipt()
+    producer._validated_receipts(producer._topology.depth_groups)
+    caches = tuple(
+        cache
+        for result, retained, seal in zip(
+            producer._session.results,
+            producer._result_refs,
+            producer._result_seals,
+            strict=True,
+        )
+        if result is retained
+        and result.execution_digest == seal[0]
+        and _content_digest(result.hidden) == seal[1]
+        for cache in result.attention_caches
+    )
+    if len(caches) != producer._topology.layers:
+        _invalid_producer_receipt()
+    return caches
+
+
 def start_source_backbone_numerical(
     compiled, parameters, sources, feature_schema, banks, artifact_owner,
 ):
