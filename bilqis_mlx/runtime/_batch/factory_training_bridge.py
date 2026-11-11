@@ -49,14 +49,50 @@ class PreparedFactoryTrainingBatch:
 
     training_batch: BamfTrainingBatch
     compiled_rows: tuple[BamfCompiledBatch, ...]
+    motif_inputs: tuple
 
     def __post_init__(self) -> None:
         if (type(self.training_batch) is not BamfTrainingBatch
                 or type(self.compiled_rows) is not tuple
                 or len(self.compiled_rows) != len(self.training_batch.rows)
+                or type(self.motif_inputs) is not tuple
+                or len(self.motif_inputs) != len(self.training_batch.rows)
+                or any(type(item) is not _FactoryMotifPlanningInput
+                       for item in self.motif_inputs)
                 or any(type(item) is not BamfCompiledBatch
                        for item in self.compiled_rows)):
             _invalid("FACTORY_TRAINING_BRIDGE_INVALID")
+
+
+@dataclass(frozen=True)
+class _FactoryMotifPlanningInput:
+    """Exact source-owner inputs B07 must replay against retained custody."""
+
+    source_adapter: object
+    row: dict
+    atlas_selection: object
+    source_root: Path
+    source_graph: dict
+    task: TaskScope
+    frontier: SourceFrontier
+    policy: ContextPolicy
+    source_seed: int
+    source_each: int
+    source_profile_parameters: dict | None
+    course: object
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.row, dict)
+                or not isinstance(self.source_root, Path)
+                or not isinstance(self.source_graph, dict)
+                or type(self.task) is not TaskScope
+                or type(self.frontier) is not SourceFrontier
+                or type(self.policy) is not ContextPolicy
+                or type(self.source_seed) is not int or self.source_seed < 0
+                or type(self.source_each) is not int or self.source_each < 1
+                or (self.source_profile_parameters is not None
+                    and not isinstance(self.source_profile_parameters, dict))):
+            _invalid("FACTORY_MOTIF_PLANNING_INPUT_INVALID")
 
 
 @dataclass(frozen=True)
@@ -115,6 +151,17 @@ def _prepare_source_row(source_context, authenticated, adapter, manifest, schema
         ast, approved, config, current = atom_ast, None, atom_config, atom_config.frontier
     return _FactorySourceRow(
         row, ast, approved, source_graph, config, task, current, policy)
+
+
+def _motif_planning_input(source_context, authenticated, adapter, profile, item, *,
+                          source_seed, source_each):
+    result = _FactoryMotifPlanningInput(
+        adapter, item.row, authenticated.selection,
+        Path(source_context.source_root), item.source_graph,
+        item.task, item.frontier, item.policy,
+        source_seed, source_each, profile, source_context.release.curriculum)
+    result.__post_init__()
+    return result
 
 
 def _bind_b11_rows(source_context, candidate, authenticated, training, source_rows,
@@ -249,7 +296,11 @@ def prepare_factory_training_batch(
     compiled_rows = _bind_b11_rows(
         source_context, candidate, authenticated, training, source_rows, profile,
         source_seed=source_seed, source_each=source_each)
-    prepared = PreparedFactoryTrainingBatch(training, compiled_rows)
+    motif_inputs = tuple(_motif_planning_input(
+        source_context, authenticated, adapter, profile, item,
+        source_seed=source_seed, source_each=source_each)
+        for item in source_rows)
+    prepared = PreparedFactoryTrainingBatch(training, compiled_rows, motif_inputs)
     prepared.__post_init__()
     return prepared
 

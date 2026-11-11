@@ -7,7 +7,8 @@ from pathlib import Path
 from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
-    ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, _require_issued_binding,
+    ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA, AcceptedCandidateBinding,
+    _require_issued_binding,
     candidate_identity_digest,
 )
 
@@ -27,6 +28,9 @@ from ..factory_release_adoption import (
 )
 from ..package_import_transition import (
     is_package_import_transition, require_issued_package_import_transition,
+)
+from ..motif.transition import (
+    is_motif_allocation_transition, require_issued_motif_allocation_transition,
 )
 from ..records import (
     ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BAMF_POINTER_SCHEMA,
@@ -48,7 +52,9 @@ def require_acceptance(
         invalid("BAMF_GENERATION_ACCEPTANCE_REQUIRED")
     _require_issued_binding(acceptance)
     acceptance.__post_init__()
-    if (acceptance.schema_version != ACCEPTANCE_SCHEMA
+    motif_transition = is_motif_allocation_transition(candidate.transition)
+    expected_schema = MOTIF_ACCEPTANCE_SCHEMA if motif_transition else ACCEPTANCE_SCHEMA
+    if (acceptance.schema_version != expected_schema
             or acceptance.run_id != candidate.run_id
             or acceptance.generation != candidate.generation
             or acceptance.feature_sha256 != candidate.extents.factor_map_digest
@@ -61,6 +67,11 @@ def require_acceptance(
             != candidate.correction_frontier.get(
                 "source_authority_registry_sha256")):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    if motif_transition:
+        from ..genesis.records import successor_candidate_identity_digest
+        if (acceptance.generation_authority_sha256
+                != successor_candidate_identity_digest(candidate)):
+            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     return acceptance
 
 
@@ -83,7 +94,28 @@ def validate_parent_transition(
         invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
     parent_step = parent.retained_state.optimizer_step
     candidate_step = candidate.retained_state.optimizer_step
-    if is_package_import_transition(candidate.transition):
+    if is_motif_allocation_transition(candidate.transition):
+        require_issued_motif_allocation_transition(candidate.transition)
+        transition = candidate.transition
+        if (parent.topology.digest != candidate.topology.digest
+                or candidate_step <= parent_step
+                or parent.extents.digest != transition["parent_extents_sha256"]
+                or candidate.extents.digest != transition["candidate_extents_sha256"]
+                or parent.retained_state.allocations.digest
+                != transition["parent_allocation_sha256"]
+                or candidate.retained_state.allocations.digest
+                != transition["candidate_allocation_sha256"]
+                or candidate_identity_digest(candidate.retained_state)
+                != transition["candidate_identity_sha256"]
+                or parent.extents.semantic_bank_count != candidate.extents.semantic_bank_count
+                or parent.extents.active_semantic_digest != candidate.extents.active_semantic_digest
+                or parent.extents.factor_map_digest != candidate.extents.factor_map_digest
+                or candidate.extents.motif_page_count - parent.extents.motif_page_count
+                != transition["added_pages"]
+                or candidate.extents.motif_key_map_digest
+                != candidate.retained_state.allocations.manifest.digest):
+            invalid("BAMF_GENERATION_TRANSITION_INVALID")
+    elif is_package_import_transition(candidate.transition):
         require_issued_package_import_transition(candidate.transition)
         if (parent.topology.digest != candidate.topology.digest
                 or parent.extents.digest != candidate.extents.digest
@@ -95,6 +127,12 @@ def validate_parent_transition(
         if candidate_step != parent_step:
             invalid("BAMF_GENERATION_TRANSITION_INVALID")
     else:
+        if (parent.extents.motif_page_count != candidate.extents.motif_page_count
+                or parent.extents.motif_key_map_digest
+                != candidate.extents.motif_key_map_digest
+                or parent.retained_state.allocations.digest
+                != candidate.retained_state.allocations.digest):
+            invalid("BAMF_GENERATION_TRANSITION_INVALID")
         kind = ("MODEL_SWAP" if parent.topology.digest != candidate.topology.digest else
                 "PARAMETER_EXTENSION" if parent.extents.digest != candidate.extents.digest else
                 "RETAINED_CANDIDATE")
@@ -276,12 +314,23 @@ def require_published_acceptance(
             or (not isinstance(acceptance, (
                     ParsedAtlasAdmissionBinding,
                     ParsedFactoryReleaseAdmissionBinding))
-                and (acceptance.schema_version != ACCEPTANCE_SCHEMA
+                and (acceptance.schema_version not in {
+                        ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA}
                      or acceptance.step_proof_sha256 != tuple(
                          proof.digest for proof in student.retained_state.step_proofs)
                      or acceptance.source_authority_registry_sha256
                      != student.correction_frontier.get(
                          "source_authority_registry_sha256")))):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    if is_motif_allocation_transition(student.transition):
+        from ..genesis.records import successor_candidate_identity_digest
+        if (acceptance.schema_version != MOTIF_ACCEPTANCE_SCHEMA
+                or acceptance.generation_authority_sha256
+                != successor_candidate_identity_digest(student)):
+            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    elif (not isinstance(acceptance, (
+            ParsedAtlasAdmissionBinding, ParsedFactoryReleaseAdmissionBinding))
+          and acceptance.schema_version != ACCEPTANCE_SCHEMA):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     manifest = live_manifest(run_dir, pointer)
     legacy_student = manifest.get("schema") != ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA
@@ -295,6 +344,9 @@ def require_published_acceptance(
             or parent.generation + 1 != student.generation
             or (not legacy_student
                 and parent.run_identity != student.run_identity)
+            or (not is_motif_allocation_transition(student.transition)
+                and parent.retained_state.allocations.digest
+                != student.retained_state.allocations.digest)
             or (isinstance(acceptance, (
                     ParsedAtlasAdmissionBinding,
                     ParsedFactoryReleaseAdmissionBinding))

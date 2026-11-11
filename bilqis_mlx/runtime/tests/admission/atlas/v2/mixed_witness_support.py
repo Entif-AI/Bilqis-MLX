@@ -125,7 +125,7 @@ class MixedWitnessSupport(MixedSourceSupport):
                 identity.source_bundle_id)))
         for target in (
                 "bilqis_mlx.runtime.bamf_bundle.feature_authority.load_pinned_atlas_snapshot",
-                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission.load_pinned_atlas_snapshot",
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission.load_pinned_atlas_snapshot",
                 "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
                 "bilqis_mlx.semantics.atlas.vocabulary_resources.load_pinned_atlas_snapshot"):
             stack.enter_context(patch(target, return_value=snapshot))
@@ -133,7 +133,7 @@ class MixedWitnessSupport(MixedSourceSupport):
             "bilqis_mlx.semantics.atlas.vocabulary_resources._verify_bundle",
             return_value=(snapshot.source_bundle_id, {"canonical.nt": source_nt})))
         stack.enter_context(patch(
-            "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission.shutil.disk_usage",
+            "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission.shutil.disk_usage",
             return_value=type("Disk", (), {"free": 1 << 50})()))
         return stack
 

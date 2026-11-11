@@ -10,14 +10,14 @@ from bilqis_mlx.semantics.atlas_projection import (
     _digest as _atlas_sha256,
 )
 
-from .._vocabulary_admission_records import (
+from .admission_records import (
     A02StagedVocabularyExtension,
     A02VocabularyStagingReceipt,
     STAGED_EVENT,
     require_issued_a02_staged_vocabulary_extension,
 )
 from ..records import canonical, invalid, sha
-from ..vocabulary_registry_export import _mirror_from_record, _resource_requirement
+from .registry_export import _mirror_from_record, _resource_requirement
 
 
 @dataclass(frozen=True)

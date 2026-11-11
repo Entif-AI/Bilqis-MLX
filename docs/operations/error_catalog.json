@@ -11578,7 +11578,7 @@
       "count": 1,
       "exception": "AssertionError",
       "expression": "'source-owned context was not approved'",
-      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/accepted_correction_runtime_temporal_support.py"
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/correction_runtime/temporal_support.py"
     },
     {
       "code_hint": "COLD_RESUME_CONTINUATION_REJECTED before=",

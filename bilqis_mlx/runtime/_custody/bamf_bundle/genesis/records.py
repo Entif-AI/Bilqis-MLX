@@ -165,7 +165,7 @@ def optimizer_hyperparameters_digest(hyperparameters) -> str:
 
 
 def _candidate_identity_payload(candidate, *, allow_missing_run_identity: bool) -> dict:
-    from ..motif_codec import snapshot_to_record
+    from ..motif.codec import snapshot_to_record
 
     state = candidate.retained_state
     identity = candidate.run_identity

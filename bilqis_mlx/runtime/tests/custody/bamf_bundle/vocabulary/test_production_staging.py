@@ -106,7 +106,7 @@ class A02ProductionStagingTests(unittest.TestCase):
                 identity.source_bundle_id)))
         for target in (
                 "bilqis_mlx.runtime.bamf_bundle.feature_authority.load_pinned_atlas_snapshot",
-                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission.load_pinned_atlas_snapshot",
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission.load_pinned_atlas_snapshot",
                 "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
                 "bilqis_mlx.semantics.atlas.vocabulary_resources.load_pinned_atlas_snapshot"):
             stack.enter_context(patch(target, return_value=current_snapshot))
@@ -248,7 +248,7 @@ class A02ProductionStagingTests(unittest.TestCase):
                 clear=False), self._source_patches(
                     current_snapshot, patch_bundle=False):
             with patch(
-                    "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                    "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission."
                     "shutil.disk_usage",
                     return_value=SimpleNamespace(free=0)):
                 with self.assertRaises(BilqisError) as failure:
@@ -260,7 +260,7 @@ class A02ProductionStagingTests(unittest.TestCase):
                 "BAMF_A02_SOURCE_BUNDLE_ID_MISMATCH",
             )
             with patch(
-                    "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                    "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission."
                     "shutil.disk_usage",
                     return_value=SimpleNamespace(free=1 << 50)):
                 staged = stage_vocabulary_extension_from_source_id(
@@ -289,17 +289,17 @@ class A02ContentIdentityBoundaryTests(unittest.TestCase):
             object(), "1" * 64, object(), object(), None, prior)
         with (
             patch(
-                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission."
                 "resolve_atlas_source_bundle",
                 return_value=Path("/host") / requested,
             ),
             patch(
-                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission."
                 "_accepted_vocabulary_parent",
                 return_value=accepted_parent,
             ),
             patch(
-                "bilqis_mlx.runtime.bamf_bundle.vocabulary_admission."
+                "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission."
                 "stage_vocabulary_extension",
                 side_effect=AssertionError("wrong source ID reached staging"),
             ),

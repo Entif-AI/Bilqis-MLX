@@ -33,7 +33,7 @@ from bilqis_mlx.semantics.atlas.vocabulary_transaction import (
     FullVocabularyParent, _stage_authenticated_full_vocabulary_extension,
     stage_full_vocabulary_extension,
 )
-from .._vocabulary_admission_records import (
+from .admission_records import (
     A02StagedVocabularyExtension, A02VocabularyStagingReceipt, STAGED_EVENT,
     _issue_a02_staged_vocabulary_extension,
     require_issued_a02_staged_vocabulary_extension,

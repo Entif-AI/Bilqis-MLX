@@ -13,7 +13,7 @@ from bilqis_mlx.semantics.atlas.vocabulary_resources import (
 )
 from bilqis_mlx.semantics.atlas_projection import BANK_SIZE
 
-from .._vocabulary_admission_records import (
+from .admission_records import (
     A02VocabularyStagingReceipt, STAGED_EVENT,
 )
 from ..atlas_admission import ParsedAtlasAdmissionBinding
