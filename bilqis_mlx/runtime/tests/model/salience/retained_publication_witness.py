@@ -22,7 +22,7 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 )
 from bilqis_mlx.runtime.factory_retention_owner import evaluate_factory_retention_candidate
 from bilqis_mlx.runtime.tests.capability.factory.retention.owner_live_support import _fixed_school
-from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
 
 def assert_retained_publication_witness(
@@ -101,6 +101,21 @@ def assert_retained_publication_witness(
                         if ref.kind is DependencyKind.SOURCE
                         and ref.key.startswith('salience-fact:')), None)
     testcase.assertIsNotNone(source_fact)
+    unrelated = CorrectionEvent(
+        event_id='fixture:c06-unrelated-source-correction',
+        dependency=DependencyRef(DependencyKind.SOURCE, source_fact.key + ':unrelated'),
+        source_owner=_OWNER, source_receipt_sha256='e' * 64,
+        old_evidence_sha256='c' * 64, new_evidence_sha256='d' * 64,
+        source_time=1, effective_time=2, observed_at=3, recorded_at=4,
+        reason_code='FIXTURE_UNRELATED_SOURCE_CORRECTION', source_signature_hex='0' * 128)
+    unrelated = replace(
+        unrelated, source_signature_hex=_KEY.sign(unrelated.signing_bytes()).hex())
+    unrelated_event_id = AcceptedRuntimeHost(run_dir).record_correction(unrelated)
+    owner.require(capability)
+    _reset_accepted_correction_runtime_for_tests()
+    owner = load_capability_support_owner(run_dir, capability)
+    owner.require(capability)
+
     event = CorrectionEvent(
         event_id='fixture:c06-accepted-source-correction', dependency=source_fact,
         source_owner=_OWNER, source_receipt_sha256='f' * 64,
@@ -128,6 +143,8 @@ def assert_retained_publication_witness(
         'accepted_manifest_sha256': published['manifest_sha256'],
         'proof_sha256': proof.digest,
         'closure_sha256': authority.artifact_closure_sha256,
+        'unrelated_correction_event_id': unrelated_event_id,
+        'unrelated_correction_isolated': True,
         'correction_event_id': event_id,
         'correction_hold_recovered': True,
         'elapsed_seconds': round(time.monotonic() - started, 3),

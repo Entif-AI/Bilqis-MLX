@@ -48,6 +48,7 @@ from bilqis_mlx.runtime.priority_source_offer import prepare_priority_source_off
 from bilqis_mlx.runtime.accepted_priority_visit import execute_accepted_priority_candidate
 from bilqis_mlx.runtime.tests.model.salience.priority_witness_support import planning, select
 from bilqis_mlx.runtime.tests.model.salience.retained_closure_witness import assert_non_authorizing_closure_witness
+from bilqis_mlx.runtime.tests.model.salience.retained_publication_witness import assert_retained_publication_witness
 
 BILQIS_LEAF_GATE_POLICY = 'DETACHED_ONLY'
 
@@ -205,3 +206,6 @@ class FactorySalienceExecutionTests(unittest.TestCase):
             self.assertEqual(load_accepted_generation(run_dir).generation, parent.generation)
             with stage('retained_closure'):
                 assert_non_authorizing_closure_witness(self, run_dir, parent, result)
+            with stage('retained_publication'):
+                assert_retained_publication_witness(
+                    self, run_dir, context, parent, result, self.artifact, capability)
