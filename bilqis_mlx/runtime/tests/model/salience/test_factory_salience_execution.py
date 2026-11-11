@@ -11,7 +11,6 @@ from unittest.mock import patch
 import mlx.core as mx
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.learning.atlas_salience import derive_salience, verify_salience_inputs
 from bilqis_mlx.learning.salience_contracts import AuthoritySnapshot, Metric
 from bilqis_mlx.learning.tests.test_atlas_salience import _CONTEXT, _policy, _fact, _signed
@@ -27,13 +26,12 @@ from bilqis_mlx.runtime.bamf_bundle.genesis.preparation_authority import _factor
 from bilqis_mlx.runtime.model_topology_v2 import b01_generation_authority, b01_generation_extents
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 from bilqis_mlx.runtime.factory_candidate_training import (
-    FactoryDeliveryObservation, execute_factory_candidate_step,
+    FactoryDeliveryObservation,
 )
 from bilqis_mlx.runtime.salience_auxiliaries import RowSalienceBinding
 from bilqis_mlx.runtime.salience_training import SalienceLabelRequest
 from bilqis_mlx.runtime.teacher_observation_capture import ObservationCapture, store_sidecar
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
-from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
     HP, live_factory_context,
 )
@@ -46,6 +44,12 @@ from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.domains import contract_digest
+from bilqis_mlx.runtime.priority_source_offer import prepare_priority_source_offer
+from bilqis_mlx.runtime.accepted_priority_visit import execute_accepted_priority_candidate
+from bilqis_mlx.runtime.tests.model.salience.priority_witness_support import planning, select
+from bilqis_mlx.runtime.tests.model.salience.retained_closure_witness import assert_non_authorizing_closure_witness
+
+BILQIS_LEAF_GATE_POLICY = 'DETACHED_ONLY'
 
 
 REGISTRY = SourceAuthorityRegistry(tuple(sorted((*AUTHORITY.keys, *SALIENCE_REGISTRY.keys),
@@ -116,10 +120,6 @@ class FactorySalienceExecutionTests(unittest.TestCase):
 
     def test_real_factory_step_uses_present_heads_and_preserves_missing_head(self):
         capability, seed = 'B.IDBOOLOPS', 37901
-        rows = tuple(self.context.draw_rows(seed=seed, capability=capability, each=1))
-        execution = self.context.release.execution_plan.capability_map[capability]
-        delivery = describe_delivered_teaching(self.context.release, capability,
-                                               execution.teaching_option_ids[0], rows)
         with TemporaryDirectory() as run_value, patch(
                 'bilqis_mlx.runtime.bamf_bundle.source_authority_custody.'
                 'read_host_system_source_authority_registry', return_value=REGISTRY):
@@ -147,19 +147,48 @@ class FactorySalienceExecutionTests(unittest.TestCase):
                 publish_initial_generation(run_dir, prepared, reserve_gib=0.)
             context = self.accepted_source_context(run_dir)
             parent = load_accepted_generation(run_dir)
+            with stage('priority_offer'):
+                offer = prepare_priority_source_offer(context, parent, str(self.artifact),
+                    capability=capability, source_seed=seed, source_each=1)
+            with stage('a09_planning'):
+                plan = planning(self.features.selection, factory)
+            from bilqis_mlx.runtime import accepted_priority_visit as priority_owner
+            real_selector = priority_owner.select_visit_policy
+            with stage('priority_selection'), patch.object(priority_owner, 'select_visit_policy',
+                                                           wraps=real_selector) as policy_call:
+                selection = select(run_dir, context, parent, offer, plan, REGISTRY)
+            self.assertEqual(selection.status, 'TEACHER_SELECTED')
+            self.assertEqual(selection.option_id, 'c06-teaching')
+            self.assertIs(selection.offer, offer)
+            self.assertEqual(selection.visit.identity.capability_id, capability)
+            self.assertEqual(selection.visit.identity.accepted_manifest_sha256, offer.accepted_manifest_sha256)
+            self.assertEqual(policy_call.call_count, 1)
+            policy = selection.policy
+            self.assertGreater(policy['lr'], 0)
+            selection.policy['lr'] = 99
+            self.assertEqual(selection.policy, policy)
+            rows = offer.rows()
             capture = ObservationCapture(run_dir, {})
             capture.attempt_id = 'c06-salience-disposable'
             capture.proposal_id = store_sidecar(run_dir, {'attempt_id': capture.attempt_id})['sha256']
             capture.select_option(capability, None)
-            with stage('candidate_step'):
-                result = execute_factory_candidate_step(
-                    run_dir, context, parent, str(self.artifact), self.feature_receipt.path, rows,
-                    capability=capability, delivery=delivery, requested_count=3, source_seed=seed,
-                    source_each=1, optimizer_step_seed=379,
-                    visit_provenance=visit_provenance(capability),
-                    teacher_strategy={'policy': 'c06-disposable-proof'}, teacher_hparams=HP,
-                    max_norm=1.0, observation=FactoryDeliveryObservation(capture, 1, rows, seed),
+            real_step = priority_owner.execute_factory_candidate_step
+            with stage('candidate_step'), patch.object(priority_owner, 'execute_factory_candidate_step',
+                                                       wraps=real_step) as step_call:
+                result = execute_accepted_priority_candidate(
+                    selection, context, str(self.artifact), self.feature_receipt.path,
+                    teacher_hparams=HP, optimizer_step_seed=379, max_norm=1.0,
+                    observation=FactoryDeliveryObservation(capture, 1, rows, seed),
                     salience_provider=self._provider)
+            self.assertEqual(step_call.call_count, 1)
+            arguments, keywords = step_call.call_args
+            self.assertEqual(arguments[5], rows)
+            self.assertEqual(keywords['teacher_strategy'], policy)
+            self.assertEqual(keywords['source_seed'], seed)
+            self.assertEqual(keywords['teacher_hparams'], replace(HP, learning_rate=float(policy['lr'])))
+            self.assertEqual(keywords['visit_provenance'].visit_id, selection.visit.identity.visit_id)
+            self.assertEqual(result.prepared.training_batch.rows[0].provenance.visit.visit_id,
+                             selection.visit.identity.visit_id)
             loss = result.gradient_execution.execution.loss
             self.assertGreater(float(loss.impact), 0.)
             self.assertGreater(float(loss.exigency), 0.)
@@ -174,3 +203,5 @@ class FactorySalienceExecutionTests(unittest.TestCase):
             self.assertEqual(result.transaction.update_steps, 1)
             self.assertEqual(parent.retained_state.optimizer_step, 0)
             self.assertEqual(load_accepted_generation(run_dir).generation, parent.generation)
+            with stage('retained_closure'):
+                assert_non_authorizing_closure_witness(self, run_dir, parent, result)

@@ -24,3 +24,22 @@ class UnifiedPublicationReaderTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'mismatched closure'):
                 _require_non_genesis_acceptance_identity(acceptance, pointer, student)
             verify.assert_called_once_with(acceptance, (proof,))
+
+    def test_published_retained_acceptance_checks_parent_identity(self):
+        from bilqis_mlx.errors import BilqisError
+        from bilqis_mlx.runtime.bamf_bundle.publication.acceptance import require_published_acceptance
+        from bilqis_mlx.runtime.bamf_bundle.records import BAMF_POINTER_SCHEMA
+        parent = SimpleNamespace(run_id='run', generation=0, run_identity='id',
+            retained_state=SimpleNamespace(allocations=SimpleNamespace(digest='allocation')))
+        student = SimpleNamespace(run_id='run', generation=1, run_identity='id',
+            parent_manifest_sha256='a'*64, transition={},
+            retained_state=SimpleNamespace(allocations=SimpleNamespace(digest='allocation')))
+        binding = SimpleNamespace(parent_candidate_identity_sha256='b'*64)
+        pointer = {'schema': BAMF_POINTER_SCHEMA}
+        with patch('bilqis_mlx.runtime.bamf_bundle.publication.acceptance._read_published_acceptance_record', return_value={}), \
+             patch('bilqis_mlx.runtime.bamf_bundle.publication.acceptance._parse_published_acceptance', return_value=binding), \
+             patch('bilqis_mlx.runtime.bamf_bundle.publication.acceptance._require_non_genesis_acceptance_identity'), \
+             patch('bilqis_mlx.runtime.bamf_bundle.publication.acceptance.candidate_identity_digest', return_value='c'*64):
+            with self.assertRaises(BilqisError):
+                require_published_acceptance('/tmp/test', pointer, student,
+                    load_bundle=lambda *args, **kwargs: parent, live_manifest=lambda *args: {})

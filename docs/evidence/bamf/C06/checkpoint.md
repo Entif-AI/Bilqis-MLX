@@ -1,5 +1,8 @@
 # C06 parent implementation checkpoint — 2026-11-11
 
+Sections below preserve earlier checkpoints. The final section supersedes their
+implementation and verification status; failure receipts remain historical evidence.
+
 Issue #379 remains OPEN and incomplete. No PR is ready. Branch
 codex/379-c06-salience-integration-20261111 starts from reviewed unified
 036e0aa3c2bec184481a4f009d8c31e16b9495f5 in its own worktree.
@@ -101,3 +104,51 @@ fixture was optimized to avoid constructing an unused C05 model and now reports
 source/bootstrap/candidate stage timings. Actual source/accepted-selection/B11
 and accepted cold-read/correction witnesses, final drift, current-unified sync,
 and integration gates remain required before a PR.
+
+
+## Current continuation — 22:03 UTC
+
+Consumed current unified `c42362ced0309a24f2f95391257df8f4ef3588cc` in merge
+`e3486f13`, preserving source-frame inventory, Factory release adoption and the
+extracted published-acceptance reader. No main or sibling lane was merged.
+
+All known neural, priority and retained-closure design findings are resolved;
+see egm.md for the fresh pinned reviews. GitHub EGM-Passed describes design only.
+Implementation, final drift and integration gates remain incomplete.
+
+Combined portable pytest selection passed 39 tests after synchronization. The
+new parent-identity regression then passed in its focused file (2/2). A separate
+salience/evidence/diagnostics/resource-preflight owner selection passed 42/42.
+One earlier command used four moved test paths and failed collection; the same
+intended owner selection passed at its current `_salience/tests` paths.
+`quality:changed` against the consumed unified head passed: structure/governance,
+zero new code smells, static trainer-authority checks and flow checks. Unified
+resolved the earlier baseline documentation failures; no checker was weakened.
+The leaf planner selects 748 tests; neither that broad selection nor premerge
+has run. No passing leaf/premerge receipt is claimed.
+
+The real fixture now composes source offers, A08/A09 planning, accepted C03
+selection and real Factory candidate execution. It checks policy, exact rows,
+teacher learning rate and visit provenance. It is marked DETACHED_ONLY. The
+new retained-closure helper serializes the real B09 proof and graph, then checks
+transitive correction holds in an in-memory index. It is non-authorizing and
+cannot establish accepted B13 publication, C05 retention or cold support.
+Both additions remain unverified on Studio.
+
+The extracted B13 publication reader now checks retained parent identity as well
+as admission parent identity. The regression reproduced this gap before repair.
+Prior cold-anchor identity and repeated-authority pairing repairs remain present.
+
+Studio preflight at 22:03 UTC reported swap 57925.81/59392 MiB used, 83% memory
+free, and no matching heavy test workers. AGENTS.md forbids launching another
+heavy witness while swap is near saturation. No new native worker was launched.
+The coordinator now uses one worker, `training_memory_policy(mx)` in each native
+stage, and a resource preflight that rejects near-full swap or low free memory.
+It does not claim a production hard allocator ceiling.
+
+Next: run the real-source fixture only after resources permit; repair any failing
+owner seam; exercise legitimate C05 retention and actual B13 accepted cold support,
+including ordinary/motif closure, correction replay/recovery and isolation; finish
+bounded drift, final unified synchronization and integration gates. No PR until
+those required gates pass. Issue #379 remains open; no self-merge authority exists.
+The remote worktree retains an older fixture copy: inspect/reconcile before update.

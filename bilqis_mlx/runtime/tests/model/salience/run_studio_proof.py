@@ -48,16 +48,50 @@ def _other_workers():
             break
         descendants.update(more)
     own.update(descendants)
-    markers = ('run_tests.py', ' -m pytest ', 'bilqis_mlx.cli train', 'bilqis_mlx.cli bamf')
+    markers = ('run_studio_proof.py --_stage ', 'run_tests.py', ' -m pytest ', 'bilqis_mlx.cli train', 'bilqis_mlx.cli bamf')
     return tuple(sorted(pid for pid, (_, command) in rows.items()
                         if pid not in own and 'python' in command.lower()
                         and any(marker in command for marker in markers)))
 
 
+def _resources_ready():
+    swap = subprocess.run(['sysctl', 'vm.swapusage'], check=True,
+                          capture_output=True, text=True).stdout
+    pressure = subprocess.run(['memory_pressure', '-Q'], check=True,
+                              capture_output=True, text=True).stdout
+    print(swap + pressure, flush=True)
+    values = re.search(r'total = ([0-9.]+)M.*used = ([0-9.]+)M', swap)
+    free = re.search(r'memory free percentage: ([0-9]+)%', pressure)
+    if values is None or free is None:
+        print('C06_STUDIO_RESOURCE_STATUS_UNVERIFIED', flush=True)
+        return False
+    total, used = map(float, values.groups())
+    if (total > 0 and used / total >= .9) or int(free.group(1)) < 10:
+        print('C06_STUDIO_RESOURCE_HOLD swap_or_pressure', flush=True)
+        return False
+    return True
+
+
+def _native_stage(label):
+    root = Path(__file__).resolve().parents[5]
+    sys.path.insert(0, str(root))
+    import mlx.core as mx
+    from bilqis_mlx.runtime.mlx_memory import training_memory_policy
+    from scripts.run_tests import main as run_tests
+    with training_memory_policy(mx) as policy:
+        print(f'C06_MEMORY_POLICY {policy}', flush=True)
+        return run_tests(dict(STAGES)[label], root=root)
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--lock', type=Path, required=True)
+    parser.add_argument('--lock', type=Path)
+    parser.add_argument('--_stage', choices=tuple(dict(STAGES)))
     args = parser.parse_args()
+    if args._stage:
+        return _native_stage(args._stage)
+    if args.lock is None:
+        parser.error('--lock is required for the coordinator')
     args.lock.parent.mkdir(parents=True, exist_ok=True)
     with args.lock.open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
@@ -69,11 +103,13 @@ def main():
             time.sleep(10)
         print('C06_STUDIO_SERIAL_LANE_ACQUIRED', flush=True)
         for label, paths in STAGES:
+            if not _resources_ready():
+                return 75
             start = time.monotonic()
             print('C06_STAGE_START ' + label, flush=True)
             with TemporaryFile(mode='w+', encoding='utf-8') as output:
-                child = subprocess.Popen([sys.executable, '-B', 'scripts/run_tests.py', *paths],
-                    env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'},
+                child = subprocess.Popen([sys.executable, '-B', __file__, '--_stage', label],
+                    env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1', 'BILQIS_TEST_WORKERS': '1'},
                     stdout=output, stderr=subprocess.STDOUT)
                 while child.poll() is None:
                     if other := _other_workers():

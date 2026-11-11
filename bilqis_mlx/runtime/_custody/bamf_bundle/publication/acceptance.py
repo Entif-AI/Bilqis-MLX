@@ -173,10 +173,7 @@ def require_published_acceptance(
             or (not is_motif_allocation_transition(student.transition)
                 and parent.retained_state.allocations.digest
                 != student.retained_state.allocations.digest)
-            or (isinstance(acceptance, (
-                    ParsedAtlasAdmissionBinding,
-                    ParsedFactoryReleaseAdmissionBinding))
-                and acceptance.parent_candidate_identity_sha256
-                != candidate_identity_digest(parent.retained_state))):
+            or acceptance.parent_candidate_identity_sha256
+            != candidate_identity_digest(parent.retained_state)):
         invalid("BAMF_RUN_IDENTITY_DRIFT")
     return acceptance
