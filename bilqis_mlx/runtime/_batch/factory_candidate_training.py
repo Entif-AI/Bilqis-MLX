@@ -62,10 +62,15 @@ class FactoryDeliveryObservation:
     mentors: object = None
 
     def __post_init__(self):
+        capture = self.capture
         if (type(self.step) is not int or self.step < 1
                 or type(self.seed) is not int or self.seed < 0
                 or type(self.option_rows) is not tuple or not self.option_rows
-                or not isinstance(self.controls, dict)):
+                or not isinstance(self.controls, dict)
+                or not callable(getattr(capture, "delivery", None))
+                or any(not isinstance(getattr(capture, name, None), str)
+                       or not getattr(capture, name)
+                       for name in ("attempt_id", "proposal_id", "selected_option"))):
             _invalid("FACTORY_TRAINING_OBSERVATION_INVALID")
 
 

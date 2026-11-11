@@ -67,6 +67,14 @@ class FactoryResourcePlanningCustodyTests(unittest.TestCase):
 
 
 class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
+    def _observation(self, run_dir, capability, rows, seed):
+        capture = ObservationCapture(run_dir, {})
+        capture.attempt_id = f"factory-step:{capability}:{seed}"
+        capture.proposal_id = store_sidecar(
+            run_dir, {"attempt_id": capture.attempt_id})["sha256"]
+        capture.select_option(capability, None)
+        return capture, FactoryDeliveryObservation(capture, 1, rows, seed)
+
     def route_context(self, compiled):
         authority = factory_task_authority(self.context, compiled)
         plan = task_goal_route_plan(
@@ -140,12 +148,8 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
             self._publish(run_dir)
             source_context = self.accepted_source_context(run_dir)
             parent = load_accepted_generation(run_dir)
-            capture = ObservationCapture(run_dir, {})
-            capture.attempt_id = "c02-parent-step"
-            capture.proposal_id = store_sidecar(
-                run_dir, {"attempt_id": capture.attempt_id})["sha256"]
-            capture.select_option("B.IDBOOLOPS", None)
-            observation = FactoryDeliveryObservation(capture, 1, rows, 37116)
+            capture, observation = self._observation(
+                run_dir, "B.IDBOOLOPS", rows, 37116)
             result = train_bamf_factory_step(
                 run_dir, source_context, parent, str(self.artifact),
                 self.feature_receipt.path, rows,
@@ -176,8 +180,8 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
             source_context = self.accepted_source_context(run_dir)
             AcceptedRuntimeHost(run_dir).record_correction(correction)
             parent = load_accepted_generation(run_dir)
-            observation = FactoryDeliveryObservation(
-                ObservationCapture(run_dir, {}), 1, rows, 37118)
+            _, observation = self._observation(
+                run_dir, "B.IDBOOLOPS", rows, 37118)
             with self.assertRaises(BilqisError) as caught:
                 train_bamf_factory_step(
                     run_dir, source_context, parent, str(self.artifact),
@@ -277,8 +281,8 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
             prepared = self.prepare("A.IDENTITY", 37117, 2)[1]
             row_ids = tuple(row["id"] for row in rows)
             self._assert_prepared_logical_rows(prepared, row_ids)
-            observation = FactoryDeliveryObservation(
-                ObservationCapture(run_dir, {}), 1, rows, 37117)
+            _, observation = self._observation(
+                run_dir, "A.IDENTITY", rows, 37117)
             result = train_bamf_factory_step(
                 run_dir, source_context, parent, str(self.artifact),
                 self.feature_receipt.path, rows,
