@@ -47,7 +47,21 @@ class _AuthoritativeCacheIdentity:
     rights_purpose_sha256: str
     policy_epoch_sha256: str
     context_eligibility_sha256: str
+    causal_prefix_sha256: str
+    masks_sha256: str
+    scope_sha256: str
+    key_sha256: str
     inference_state_sha256: str
+    offset: int
+
+
+@dataclass(frozen=True)
+class _CausalCacheIdentity:
+    causal_prefix_sha256: str
+    masks_sha256: str
+    scope_sha256: str
+    key_sha256: str
+    offset: int
 
 
 @dataclass(frozen=True)
@@ -84,6 +98,9 @@ def _require_inputs(inputs) -> CacheEligibilityInputs:
 
 def _canonical_fp32_values(authority, binding: CacheBinding):
     """Recompute cache values through the authority owner's current source."""
+    production = authority._current_canonical_fp32(binding)
+    if production is not None:
+        return production
     inputs = authority._current_eligibility_inputs()
     source = getattr(inputs, "canonical_fp32_source", None)
     if not callable(source):
@@ -124,7 +141,9 @@ def _source_context_identity(authority, student, inputs) -> tuple[str, str, str,
     return clearance_sha256, projection.digest, purpose_sha256, policy_sha256
 
 
-def _authoritative_identity(authority, binding: CacheBinding) -> _AuthoritativeCacheIdentity:
+def _current_identity(
+    authority, binding: CacheBinding, causal: _CausalCacheIdentity,
+) -> _AuthoritativeCacheIdentity:
     from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
     from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
     from bilqis_mlx.semantics.domains import contract_digest
@@ -143,16 +162,98 @@ def _authoritative_identity(authority, binding: CacheBinding) -> _AuthoritativeC
         spec=student.topology,
         extents=student.extents,
     )
-    identity = _AuthoritativeCacheIdentity(
+    return _AuthoritativeCacheIdentity(
         manifest_sha256, lineage, student.topology.digest,
         inputs.atlas_selection.source_bundle_id,
         inputs.atlas_selection.release_sha256,
-        clearance, purpose, policy, context, inference,
+        clearance, purpose, policy, context,
+        causal.causal_prefix_sha256, causal.masks_sha256,
+        causal.scope_sha256, causal.key_sha256,
+        inference, causal.offset,
     )
+
+
+def _authoritative_identity(authority, binding: CacheBinding) -> _AuthoritativeCacheIdentity:
+    validate_binding(binding)
+    production = authority._current_production_identity(binding)
+    if production is not None:
+        if any(getattr(binding, name) != getattr(production, name)
+               for name in production.__dataclass_fields__):
+            _invalid()
+        return production
+    causal = authority._current_causal_identity(binding)
+    if causal is None:
+        # Test-only isolated owners have no production B13 bridge.  Their binding
+        # remains the explicit fixture currentness source; production authorities
+        # always supply an owner-derived causal identity above.
+        causal = _CausalCacheIdentity(
+            binding.causal_prefix_sha256,
+            binding.masks_sha256,
+            binding.scope_sha256,
+            binding.key_sha256,
+            binding.offset,
+        )
+    identity = _current_identity(authority, binding, causal)
     if any(getattr(binding, name) != getattr(identity, name)
            for name in identity.__dataclass_fields__):
         _invalid()
     return identity
+
+
+def binding_from_identity(
+    codec_manifest,
+    identity: _AuthoritativeCacheIdentity,
+    artifact_authority_id: str,
+    artifact_authority_public_key_hex: str,
+) -> CacheBinding:
+    if type(identity) is not _AuthoritativeCacheIdentity:
+        _invalid()
+    binding = CacheBinding(
+        codec_manifest,
+        identity.generation_sha256,
+        identity.lineage_sha256,
+        identity.topology_sha256,
+        identity.source_release_sha256,
+        identity.semantic_release_sha256,
+        identity.source_rights_sha256,
+        identity.rights_purpose_sha256,
+        identity.policy_epoch_sha256,
+        identity.context_eligibility_sha256,
+        identity.causal_prefix_sha256,
+        identity.masks_sha256,
+        identity.scope_sha256,
+        identity.key_sha256,
+        identity.inference_state_sha256,
+        identity.offset,
+        artifact_authority_id,
+        artifact_authority_public_key_hex,
+    )
+    validate_binding(binding, codec_manifest)
+    return binding
+
+
+def derive_current_binding(
+    authority,
+    codec_manifest,
+    causal: _CausalCacheIdentity,
+    artifact_authority_id: str,
+    artifact_authority_public_key_hex: str,
+) -> CacheBinding:
+    """Build one complete binding from owner-derived current and causal state."""
+    if type(causal) is not _CausalCacheIdentity:
+        _invalid()
+    provisional = CacheBinding(
+        codec_manifest,
+        "0" * 64, "0" * 64, "0" * 64, "0" * 64, "0" * 64,
+        "0" * 64, "0" * 64, "0" * 64, "0" * 64,
+        causal.causal_prefix_sha256, causal.masks_sha256,
+        causal.scope_sha256, causal.key_sha256, "0" * 64, causal.offset,
+        artifact_authority_id, artifact_authority_public_key_hex,
+    )
+    identity = _current_identity(authority, provisional, causal)
+    return binding_from_identity(
+        codec_manifest, identity,
+        artifact_authority_id, artifact_authority_public_key_hex)
 
 
 def validate_current_binding(authority, binding: CacheBinding) -> None:
