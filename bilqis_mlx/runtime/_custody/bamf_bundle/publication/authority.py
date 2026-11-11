@@ -261,20 +261,18 @@ def load_generation_locked(
     return student, pointer
 
 
-def require_published_acceptance(
-        run_dir: Path, pointer: dict, student: CompleteStudent, *,
-        load_bundle, live_manifest):
-    """Authenticate the generation-specific acceptance bound by one live pointer."""
-    if pointer.get("schema") != BAMF_POINTER_SCHEMA:
-        invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
+def _read_published_acceptance_record(run_dir: Path, pointer: dict) -> dict:
     acceptance_path = (
         Path(run_dir) / ACCEPTANCE_DIR / f"{pointer['manifest_sha256']}.json")
     if acceptance_path.is_symlink() or not acceptance_path.is_file():
         invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
     try:
-        record = json.loads(acceptance_path.read_bytes())
+        return json.loads(acceptance_path.read_bytes())
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+
+
+def _parse_published_acceptance(student, pointer, record):
     if student.generation == 0:
         try:
             from ..genesis import (
@@ -286,24 +284,22 @@ def require_published_acceptance(
                 student, acceptance, pointer["acceptance_sha256"])
         except BilqisError:
             invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
-    elif record.get("schema_version") == FACTORY_RELEASE_ADMISSION_SCHEMA:
+        return acceptance
+    if record.get("schema_version") == FACTORY_RELEASE_ADMISSION_SCHEMA:
         acceptance = FactoryReleaseAdmissionBinding.from_record(record)
-    else:
-        try:
-            acceptance = (
-                AtlasAdmissionBinding.from_record(record)
-                if record.get("schema_version") == ATLAS_ADMISSION_SCHEMA
-                else AcceptedCandidateBinding.from_record(record))
-        except BilqisError:
-            invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
-    if (student.generation > 0
-            and record.get("schema_version") == FACTORY_RELEASE_ADMISSION_SCHEMA):
         validate_parsed_factory_release_admission_binding(
             student, acceptance, pointer["acceptance_sha256"])
-    if student.generation == 0:
-        from .genesis_trust import require_initial_generation_trust_root
-        require_initial_generation_trust_root(pointer, student, acceptance)
         return acceptance
+    try:
+        return (
+            AtlasAdmissionBinding.from_record(record)
+            if record.get("schema_version") == ATLAS_ADMISSION_SCHEMA
+            else AcceptedCandidateBinding.from_record(record))
+    except BilqisError:
+        invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
+
+
+def _require_non_genesis_acceptance_identity(acceptance, pointer, student) -> None:
     if (acceptance.digest != pointer["acceptance_sha256"]
             or acceptance.run_id != student.run_id
             or acceptance.generation != student.generation
@@ -332,6 +328,21 @@ def require_published_acceptance(
             ParsedAtlasAdmissionBinding, ParsedFactoryReleaseAdmissionBinding))
           and acceptance.schema_version != ACCEPTANCE_SCHEMA):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+
+
+def require_published_acceptance(
+        run_dir: Path, pointer: dict, student: CompleteStudent, *,
+        load_bundle, live_manifest):
+    """Authenticate the generation-specific acceptance bound by one live pointer."""
+    if pointer.get("schema") != BAMF_POINTER_SCHEMA:
+        invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
+    record = _read_published_acceptance_record(run_dir, pointer)
+    acceptance = _parse_published_acceptance(student, pointer, record)
+    if student.generation == 0:
+        from .genesis_trust import require_initial_generation_trust_root
+        require_initial_generation_trust_root(pointer, student, acceptance)
+        return acceptance
+    _require_non_genesis_acceptance_identity(acceptance, pointer, student)
     manifest = live_manifest(run_dir, pointer)
     legacy_student = manifest.get("schema") != ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA
     parent_sha = student.parent_manifest_sha256
