@@ -4,10 +4,12 @@ from __future__ import annotations
 import argparse
 import fcntl
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
 import time
+from tempfile import TemporaryFile
 
 
 STAGES = (
@@ -69,19 +71,31 @@ def main():
         for label, paths in STAGES:
             start = time.monotonic()
             print('C06_STAGE_START ' + label, flush=True)
-            child = subprocess.Popen([sys.executable, '-B', 'scripts/run_tests.py', *paths],
-                                     env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'})
-            while child.poll() is None:
-                if other := _other_workers():
-                    child.terminate()
-                    child.wait()
-                    print('C06_STUDIO_COLLISION active_worker_pids=' + ','.join(map(str, other)), flush=True)
-                    return 75
-                time.sleep(1)
+            with TemporaryFile(mode='w+', encoding='utf-8') as output:
+                child = subprocess.Popen([sys.executable, '-B', 'scripts/run_tests.py', *paths],
+                    env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'},
+                    stdout=output, stderr=subprocess.STDOUT)
+                while child.poll() is None:
+                    if other := _other_workers():
+                        child.terminate()
+                        child.wait()
+                        output.seek(0)
+                        print(output.read(), flush=True)
+                        print('C06_STUDIO_COLLISION active_worker_pids=' + ','.join(map(str, other)), flush=True)
+                        return 75
+                    time.sleep(1)
+                output.seek(0)
+                transcript = output.read()
+            print(transcript, end='', flush=True)
             print(f'C06_STAGE_DONE {label} exit={child.returncode} seconds={time.monotonic()-start:.3f}',
                   flush=True)
             if child.returncode:
                 return child.returncode
+            totals = re.findall(r'TEST_TOTALS total=(\d+) passed=(\d+) failed=(\d+) skipped=(\d+) errors=(\d+)',
+                                transcript)
+            if not totals or int(totals[-1][0]) == 0 or any(int(value) for value in totals[-1][2:]):
+                print('C06_STAGE_INCOMPLETE missing, skipped or unsuccessful required evidence', flush=True)
+                return 3
     return 0
 
 
