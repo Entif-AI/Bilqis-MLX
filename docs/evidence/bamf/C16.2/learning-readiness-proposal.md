@@ -1,10 +1,23 @@
 # C16.2 foundation launch-readiness proposal
 
-Status: DESIGN / EGM-PENDING
+Status: DESIGN / DECOMPOSED / IMPLEMENTATION-EGM-PENDING
 Issue: #544 / C16.2
-Reviewed unified base: `edb004e8d7dd982c5761533ef017128db0144d53`
+Reviewed unified base consumed by the current execution branch:
+`f9aa79b6cececdedd28a0e80db1256f8a70a9d7f`
 Execution branch: `codex/544-c16-learning-readiness-20261111`
 Pinned EGM: `b3a35956759bf7f024af2ff061b2e0b44b438e4c`
+
+The first EGM review rejected the original raw fixed-school-pointer design. The
+work was therefore decomposed instead of self-granting C16.2 authority over C05:
+
+- #992 / C16.2a owns accepted Factory release custody and is complete;
+- #993 / C16.2b owns the C05-native whole-school custody seam;
+- #994 / C16.2c owns the aggregate retained/rejected/cold-resume launch witness
+  and owner-start command contract.
+
+Live issue amendments on those children are the controlling detailed contracts.
+This document records their integrated shape and MUST NOT be read as authority
+for the rejected pre-decomposition pointer design.
 
 ## Outcome
 
@@ -62,7 +75,7 @@ The witness may use package-local owner fixtures to construct a disposable
 accepted run and current source context. It must not mock the actual candidate
 training, C05 evaluation or B13 publication result that it claims to prove.
 
-## The one production seam C16.2 must repair
+## C16.2b / #993: C05-owned fixed-school custody
 
 `factory_retention_owner._fixed_school_instruments(...)` currently obtains its
 fixed-school exam by calling `state_dag.read_current(run_dir)` and then
@@ -70,34 +83,70 @@ fixed-school exam by calling `state_dag.read_current(run_dir)` and then
 makes the otherwise BAMF-native C05 retention owner require a target
 `state.json` merely to evaluate an accepted BAMF candidate.
 
-C16.2 removes that representation leak without changing C05 decision semantics.
+C16.2b removes that representation leak without changing C05 decision semantics.
 
-### C05 fixed-school input
+### C05 fixed-school authority
 
-Extend the C05 owner with an optional explicit immutable fixed-school exam
-pointer, for example:
+The public C05 APIs remain unchanged. No caller may supply a cohort, pointer,
+seed, rubric, scope, policy, solver, source manifest or coverage map.
 
-`evaluate_factory_retention_candidate(..., fixed_school_exam=None)`
+For accepted BAMF parents (`run_identity is not None`), C05 itself derives the
+whole-school cohort from the accepted Factory release and persists one immutable
+receipt keyed by `run_identity.digest`. The cohort covers the complete ordered
+capability tuple from the release execution plan. Its source identity is the
+Factory `source_attestation_sha256` when present, otherwise the exact
+`SourceBindingSet.digest()`. That source identity MUST equal
+`run_identity.initial_source_identity`; the B13 generation manifest is never
+substituted for it.
 
-Rules:
+The fixed-school seed is run-stable and contains only run identity, Factory
+release, source identity, semantic catalog, complete capability scope, rubric
+and source contract. It MUST NOT include the current generation, accepted parent,
+candidate, target capability, grade or score.
 
-- when `fixed_school_exam is None`, preserve the existing legacy behavior and
-  read the current operator receipt exactly as today;
-- when supplied, treat the pointer only as immutable cohort custody, not caller
-  retention authority;
-- require `factory_release_sha256` to equal the accepted source release;
-- load the cohort only through `load_frontier_cohort(run_dir, exam)`;
-- reject absent, unsafe, malformed or content-drifted cohort custody;
-- run the same existing foundation/adaptive C05 screening code after the cohort
-  has been loaded;
-- do not create or update target `state.json`.
+C05 additionally owns one minimal write-once integrity anchor,
+`.c05-fixed-school.anchor.json`, which binds the accepted B13 parent present at
+first materialization. The anchor is not retention authority and is not a seed
+input. `.c05-fixed-school.lock` is synchronization only and carries no authority
+payload. Missing, malformed, symlinked, rewritten or conflicting anchor/receipt
+state fails closed. Later accepted generations reuse the same receipt/cohort
+while current-parent authority is authenticated independently on every C05
+evaluation.
 
-The pointer is created by existing assessment owners in the disposable C16.2
-witness: `assessment_scope_contract`, `make_cohort` and
-`_persist_executable_cohort`. C16.2 does not invent a second cohort format.
+For historical parents (`run_identity is None`), C05 preserves the legacy
+`state.json -> frontier_exam -> load_frontier_cohort` path unchanged. A BAMF
+parent never falls back to target `state.json`.
 
-This is the only production semantic change owned by #544 unless exact-head
-verification proves another gap in the bounded witness itself.
+Candidate and package-import evaluation share this private owner path. Package
+import remains explicitly non-training and therefore contributes no training
+source-exclusion claim.
+
+### Alternatives considered
+
+1. **Caller-supplied fixed-school pointer. Rejected.** It violates the existing
+   C05 no-caller-cohort contract and permits same-release subset substitution.
+2. **Treat the B13 parent manifest as source-manifest identity. Rejected.** B13
+   custody and Factory source provenance are different authorities.
+3. **Recompute a mutable fixed school on every evaluation. Rejected.** This makes
+   retention evidence depend on later source drift and breaks cold equivalence.
+4. **C05-owned immutable whole-school custody. Selected.** It preserves C05
+   authority, exact source provenance, whole-release scope and cold reuse without
+   changing public API authority.
+
+### Risks & mitigations
+
+- **Scope substitution:** verify persisted row coverage against the complete
+  admitted capability set, not metadata alone.
+- **Release/source drift:** bind run identity, exact Factory release, source
+  identity, semantic catalog, rubric and source contract on every cold load.
+- **First-parent provenance rewrite:** use the write-once C05 integrity anchor and
+  require exact anchor/receipt agreement after restart.
+- **Concurrent first materialization:** serialize under the C05-only lock and
+  fail closed on conflicting custody.
+- **Legacy contamination:** branch on accepted `run_identity`; never use file
+  existence as the BAMF/legacy selector.
+- **Package-import side effects:** reuse the same C05 fixed school while keeping
+  the package-import training-exclusion set empty.
 
 ## Disposable foundation witness
 
@@ -115,9 +164,10 @@ The witness must:
 3. select a source-qualified visit through the real C03 owner;
 4. construct C03 visit provenance and execute the real C02/C08/B11 candidate
    step;
-5. persist an immutable fixed-school cohort through existing assessment custody;
-6. evaluate the candidate through the real C05 Factory retention owner using
-   the new BAMF-native fixed-school input;
+5. let the real C05 owner materialize or cold-load its BAMF-native whole-school
+   custody without target `state.json`;
+6. evaluate the candidate through the unchanged public C05 Factory retention
+   owner;
 7. issue the existing owner retention decision and resolve the candidate;
 8. derive the C03 successor through the existing B13 successor constructor;
 9. publish through the existing B13 acceptance path;
@@ -189,9 +239,11 @@ No new CLI flag is introduced by #544.
 
 Production:
 
-- **Modify** `bilqis_mlx/runtime/_capability/factory_retention_owner.py`
-  - add the BAMF-native immutable fixed-school pointer path while preserving the
-    legacy default.
+- **Modify** `bilqis_mlx/runtime/_capability/factory_retention_owner.py` only to
+  route accepted BAMF parents into the private C05-owned whole-school path while
+  preserving the legacy historical path;
+- **Add** bounded private C05 support modules for fixed-school orchestration,
+  receipt/scope verification, and synchronization/integrity-anchor custody.
 
 Tests/evidence:
 
@@ -232,13 +284,14 @@ this implementation session.
 
 ## Incremental implementation phases
 
-1. **C05 seam.** Add explicit immutable fixed-school exam input and focused tests.
-2. **C16.2 witness.** Compose the real retained/rejected/cold-restart disposable
-   proof on package-local first-student fixtures.
-3. **Operator contract docs/tests.** Publish and verify owner-start/cold-resume
-   command shape while keeping C16.1a neural-inert.
-4. **Turn-in.** Run focused controls, fresh EGM, final diff/premerge checks and
-   publish the exact-head receipt for human review.
+1. **#992 / C16.2a.** Persist and recover the accepted exact Factory release in
+   B13 custody. Complete.
+2. **#993 / C16.2b.** Add C05-owned immutable whole-school custody and prove the
+   public candidate/package-import routes remain owner-controlled and state-free.
+3. **#994 / C16.2c.** Compose the real retained/rejected/cold-restart disposable
+   proof and publish the owner-start/cold-resume command contract.
+4. **Parent turn-in.** Run aggregate exact-head controls, fresh EGM,
+   diff/premerge checks and publish the #544 receipt for human review.
 
 Each phase must finish importable and testable. There is no production neural
 dispatch change in #544.
