@@ -78,8 +78,8 @@ On the candidate based directly on reviewed unified
 The repository differential test selector also ran directly against the exact
 reviewed-unified base and selected only the new parent acceptance owner:
 3/3 PASS. The aggregate verify:leaf wrapper stops before test selection at four
-legacy-trainer source-reference omissions in unchanged evidence files. The same
-four violations reproduce identically on pristine reviewed unified
+source-reference violations reported by check_legacy_trainer_authority.py in
+unchanged evidence files. The same four violations reproduce identically on pristine reviewed unified
 766ac5f1a94202ce1048bcda0c1a2c5cbefec642, so they are not claimed green and
 are not attributed to this parent-acceptance patch.
 
