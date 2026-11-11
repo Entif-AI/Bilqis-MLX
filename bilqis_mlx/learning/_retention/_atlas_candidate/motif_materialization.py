@@ -29,7 +29,7 @@ def _stage_candidate_motif_allocation_impl(
         spec, parent_extents, candidate_extents, run_seed: int):
     """Terminally materialize one sealed B07 proposal into speculative B12 state."""
     from .transaction import CandidateTransaction, _issue_transaction
-    from bilqis_mlx.runtime.bamf_bundle.source_continuation import (
+    from bilqis_mlx.runtime.bamf_bundle.motif.source_continuation import (
         _require_source_qualified_continuation,
     )
     from bilqis_mlx.runtime.model_topology_v2 import (

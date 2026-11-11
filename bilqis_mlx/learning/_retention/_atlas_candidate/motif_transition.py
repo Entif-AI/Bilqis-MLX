@@ -61,7 +61,7 @@ class CandidateMotifAllocationTransition:
         invalid()
 
     def __post_init__(self):
-        from bilqis_mlx.runtime.bamf_bundle.source_continuation import (
+        from bilqis_mlx.runtime.bamf_bundle.motif.source_continuation import (
             _require_source_qualified_continuation,
         )
 

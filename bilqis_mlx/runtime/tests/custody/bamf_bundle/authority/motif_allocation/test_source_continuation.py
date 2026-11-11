@@ -13,13 +13,13 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning._engram.tests.test_atlas_engram_source import SourceQualifiedMotifTests
 from bilqis_mlx.learning.atlas_engram import MotifBudget
 from bilqis_mlx.runtime import mlx_checkpoint
-import bilqis_mlx.runtime.bamf_bundle.source_continuation as continuation
+import bilqis_mlx.runtime.bamf_bundle.motif.source_continuation as continuation
 import bilqis_mlx.learning._atlas_candidate.motif_transition as b12_transition
-import bilqis_mlx.runtime.bamf_bundle.motif_allocation_transition as b13_transition
+import bilqis_mlx.runtime.bamf_bundle.motif.transition as b13_transition
 from bilqis_mlx.runtime.bamf_bundle import (
     continue_source_qualified_motifs_from_bundle, load_bamf_bundle, save_bamf_bundle,
 )
-from bilqis_mlx.runtime.bamf_bundle.source_continuation import (
+from bilqis_mlx.runtime.bamf_bundle.motif.source_continuation import (
     SourceQualifiedMotifContinuation, stage_source_qualified_motif_allocation,
 )
 from bilqis_mlx.semantics.context_eligibility import SourceFrontier

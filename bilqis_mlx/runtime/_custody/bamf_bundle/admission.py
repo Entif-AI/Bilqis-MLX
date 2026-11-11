@@ -44,7 +44,7 @@ from .publication.authority import authenticate_current_successor_retry
 from .records import (
     BamfBundleCandidate, CompleteStudent, invalid,
 )
-from .motif_allocation_transition import derive_motif_allocation_transition
+from .motif.transition import derive_motif_allocation_transition
 
 
 def derive_successor_bundle(parent: CompleteStudent, retained_state: CandidateState,
@@ -262,7 +262,7 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
     when the binding matches the candidate it publishes.
     """
     from .genesis.records import successor_candidate_identity_digest
-    from .motif_allocation_transition import is_motif_allocation_transition
+    from .motif.transition import is_motif_allocation_transition
     from bilqis_mlx.learning.atlas_retention_decision import (
         _issued_decision_generation_authority,
         _require_issued_decision_generation_authority,

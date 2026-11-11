@@ -10,8 +10,8 @@ from bilqis_mlx.learning.atlas_engram_source import (
     _prepare_source_qualified_motifs_with_parent,
 )
 from bilqis_mlx.semantics.context_eligibility import ContextHold
-from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
-from bilqis_mlx.runtime.bamf_bundle.records import invalid
+from ..codec import load_bamf_bundle
+from ..records import invalid
 
 
 def _new_continuation_owner():
@@ -146,7 +146,7 @@ def stage_source_qualified_motif_allocation(
     from bilqis_mlx.learning._atlas_candidate.transaction import (
         _stage_candidate_motif_allocation,
     )
-    from .admission import load_accepted_generation
+    from ..admission import load_accepted_generation
 
     continuation = _require_source_qualified_continuation(continuation)
     if type(transaction) is not CandidateTransaction:

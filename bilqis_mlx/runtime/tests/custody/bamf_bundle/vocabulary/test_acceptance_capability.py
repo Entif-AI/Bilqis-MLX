@@ -22,7 +22,7 @@ from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation,
     require_issued_a02_staged_vocabulary_extension,
 )
-from bilqis_mlx.runtime.bamf_bundle._vocabulary_admission_records import (
+from bilqis_mlx.runtime.bamf_bundle.vocabulary.admission_records import (
     STAGED_EVENT, _issue_a02_staged_vocabulary_extension,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle

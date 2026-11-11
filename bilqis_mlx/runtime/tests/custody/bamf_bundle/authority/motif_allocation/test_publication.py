@@ -19,7 +19,7 @@ from bilqis_mlx.learning.atlas_candidate import resolve_candidate
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     accept_and_publish, derive_motif_successor_bundle, load_accepted_generation,
 )
-from bilqis_mlx.runtime.bamf_bundle.source_continuation import (
+from bilqis_mlx.runtime.bamf_bundle.motif.source_continuation import (
     continue_source_qualified_motifs_from_bundle,
     seal_source_qualified_motifs_from_bundle,
     stage_source_qualified_motif_allocation,
@@ -33,7 +33,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helper
     host_source_authority_patch,
 )
 from bilqis_mlx.semantics.context_eligibility import SourceFrontier
-from .motif_publication_support import accepted_c05_decision
+from .support import accepted_c05_decision
 
 
 @unittest.skipUnless(os.environ.get("BILQIS_ATLAS_REAL_ARTIFACT"),

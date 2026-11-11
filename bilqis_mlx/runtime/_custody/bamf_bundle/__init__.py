@@ -19,12 +19,12 @@ from .publication import (
     publish_atlas_admission_generation, publish_bamf_generation,
     record_bamf_rejection,
 )
-from ._vocabulary_admission_records import (
+from .vocabulary.admission_records import (
     A02StagedVocabularyExtension, A02VocabularyStagingReceipt,
     require_issued_a02_staged_vocabulary_extension,
 )
 from .package_import_transition import PackageImportTransition
-from .source_continuation import (
+from .motif.source_continuation import (
     SourceQualifiedMotifContinuation,
     continue_source_qualified_motifs_from_bundle,
     seal_source_qualified_motifs_from_bundle,
@@ -45,11 +45,11 @@ _LAZY_EXPORTS = MappingProxyType({
     "issue_initial_foundation_feature_authority": ".genesis.foundation",
     "InitialFactoryFoundationAuthority": ".genesis.origin",
     "issue_initial_factory_foundation_authority": ".genesis.origin",
-    "stage_vocabulary_extension": ".vocabulary_admission",
-    "stage_vocabulary_extension_from_source_id": ".vocabulary_admission",
-    "require_staged_vocabulary_admission_headroom": ".vocabulary_admission",
-    "AcceptedVocabularyRegistryExport": ".vocabulary_registry_export",
-    "read_accepted_vocabulary_registry_export": ".vocabulary_registry_export",
+    "stage_vocabulary_extension": ".vocabulary.admission",
+    "stage_vocabulary_extension_from_source_id": ".vocabulary.admission",
+    "require_staged_vocabulary_admission_headroom": ".vocabulary.admission",
+    "AcceptedVocabularyRegistryExport": ".vocabulary.registry_export",
+    "read_accepted_vocabulary_registry_export": ".vocabulary.registry_export",
 })
 
 

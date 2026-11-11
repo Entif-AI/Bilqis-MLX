@@ -31,7 +31,7 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     bind_motif_artifact_owner,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.correction_runtime.temporal_support import (
     source_owned_temporal_case,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.test_accepted_context_revalidation import (

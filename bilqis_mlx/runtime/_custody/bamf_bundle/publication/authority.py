@@ -18,7 +18,7 @@ from ..atlas_admission import (
 from ..package_import_transition import (
     is_package_import_transition, require_issued_package_import_transition,
 )
-from ..motif_allocation_transition import (
+from ..motif.transition import (
     is_motif_allocation_transition, require_issued_motif_allocation_transition,
 )
 from ..records import (

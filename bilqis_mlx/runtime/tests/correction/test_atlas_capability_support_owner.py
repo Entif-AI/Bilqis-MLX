@@ -53,7 +53,7 @@ from . import capability_support_owner_support as support_fixture
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.test_accepted_context_revalidation import (
     _signed_context_result,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.correction_runtime.temporal_support import (
     source_owned_temporal_case,
 )
 

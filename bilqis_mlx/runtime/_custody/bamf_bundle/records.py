@@ -10,11 +10,11 @@ from typing import Mapping
 from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
-from .motif_codec import snapshot_from_record, snapshot_to_record
+from .motif.codec import snapshot_from_record, snapshot_to_record
 from .package_import_transition import (
     PACKAGE_IMPORT_TRANSITION_SCHEMA, validate_package_import_transition,
 )
-from .motif_allocation_transition import (
+from .motif.transition import (
     MOTIF_ALLOCATION_TRANSITION_SCHEMA, validate_motif_allocation_transition,
 )
 from .sidecar_contracts import validate_identity_sidecars

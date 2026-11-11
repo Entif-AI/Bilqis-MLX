@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
-from .._vocabulary_admission_records import (
+from .admission_records import (
     A02StagedVocabularyExtension,
     A02VocabularyStagingReceipt,
     STAGED_EVENT,

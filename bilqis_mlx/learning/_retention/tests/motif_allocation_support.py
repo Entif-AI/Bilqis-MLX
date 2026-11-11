@@ -146,6 +146,6 @@ class CandidateMotifAllocationFixture:
     @staticmethod
     def _continuation_patch(continuation):
         return patch(
-            "bilqis_mlx.runtime.bamf_bundle.source_continuation."
+            "bilqis_mlx.runtime.bamf_bundle.motif.source_continuation."
             "_require_source_qualified_continuation",
             return_value=continuation)

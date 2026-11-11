@@ -50,7 +50,7 @@ def _new_factory_evaluation_owner():
         from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
             successor_candidate_identity_digest,
         )
-        from bilqis_mlx.runtime.bamf_bundle.motif_allocation_transition import (
+        from bilqis_mlx.runtime.bamf_bundle.motif.transition import (
             is_motif_allocation_transition,
         )
         item = object.__new__(FactoryRetentionEvaluation)

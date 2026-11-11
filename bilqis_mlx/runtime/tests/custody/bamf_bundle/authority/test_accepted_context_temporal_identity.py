@@ -13,7 +13,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_context_rev
     AUTHORITY,
     AcceptedContextFixture,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.accepted_correction_runtime_temporal_support import (
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.correction_runtime.temporal_support import (
     source_owned_temporal_case,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
