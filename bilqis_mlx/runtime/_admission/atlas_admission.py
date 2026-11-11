@@ -17,8 +17,8 @@ from .atlas_lease_contracts import (
     _invalid, _sha, _name, _names,
 )
 from .atlas_lease_storage import (
-    _atlas_lease_lock, _lease_from_json, _persist_atlas_lease_locked,
-    _read_atlas_lease, _store,
+    _atlas_authority_epoch_lock, _atlas_lease_lock, classify_accepted_atlas_epoch,
+    _lease_from_json, _persist_atlas_lease_locked, _read_atlas_lease, _store,
 )
 from .state import _durable_json
 
@@ -48,11 +48,38 @@ from .atlas_adoption_v2 import (
 )
 
 
-def add_atlas_admission_arguments(parser):
-    parser.add_argument('--admission-policy', choices=('staged', 'atlas-release'), default='staged',
-                        help='Stage new source successors unless an explicit Atlas admission lease authorizes them.')
+def add_atlas_admission_arguments(parser, *, admission_policy_action=None):
+    policy_kwargs = {
+        'choices': ('staged', 'atlas-release'),
+        'default': 'staged',
+        'help': 'Stage new source successors unless an explicit Atlas admission lease authorizes them.',
+    }
+    if admission_policy_action is not None:
+        policy_kwargs['action'] = admission_policy_action
+    parser.add_argument('--admission-policy', **policy_kwargs)
     parser.add_argument('--atlas-admission-scope', type=Path,
                         help='Exact versioned Atlas lease request; accepted run/source authority is required.')
+
+
+def read_atlas_lease_request(path):
+    """Parse one caller-supplied lease request without granting run authority."""
+    path = Path(path)
+    if path.is_symlink() or not path.is_file():
+        _invalid('BAMF_ATLAS_SCOPE_FILE_INVALID')
+    try:
+        payload = json.loads(path.read_text(encoding='utf-8'))
+    except (OSError, ValueError, UnicodeError):
+        _invalid('BAMF_ATLAS_SCOPE_FILE_INVALID')
+    return _lease_from_json(payload)
+
+
+def validate_atlas_lease_request(args):
+    """Validate explicit human selection and return request data only."""
+    if args.human_run is not True:
+        _invalid('BAMF_ATLAS_EXPLICIT_HUMAN_REQUEST_REQUIRED')
+    if args.atlas_admission_scope is None:
+        _invalid('BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED')
+    return read_atlas_lease_request(args.atlas_admission_scope)
 
 
 def validate_atlas_command_request(args):
@@ -60,17 +87,7 @@ def validate_atlas_command_request(args):
         if args.atlas_admission_scope is not None:
             _invalid('BAMF_ATLAS_SCOPE_REQUIRES_EXPLICIT_POLICY')
         return
-    if args.human_run is not True:
-        _invalid('BAMF_ATLAS_EXPLICIT_HUMAN_REQUEST_REQUIRED')
-    if args.atlas_admission_scope is None:
-        _invalid('BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED')
-    path = Path(args.atlas_admission_scope)
-    if path.is_symlink() or not path.is_file():
-        _invalid('BAMF_ATLAS_SCOPE_FILE_INVALID')
-    try:
-        _lease_from_json(json.loads(path.read_text(encoding='utf-8')))
-    except (OSError, ValueError):
-        _invalid('BAMF_ATLAS_SCOPE_FILE_INVALID')
+    validate_atlas_lease_request(args)
     # A scope file alone still cannot authorize the CLI: this parser-level check
     # has neither accepted B13 run custody nor the typed A02 staged candidate.
     _invalid('BAMF_ATLAS_ACCEPTED_RUN_AUTHORITY_UNAVAILABLE')
@@ -162,9 +179,11 @@ def read_atlas_lease(run_dir, independently_loaded_run, *, registry):
 
 
 def persist_atlas_lease(run_dir, lease, *, independently_loaded_run, registry):
-    with _atlas_lease_lock(run_dir):
-        return _persist_atlas_lease_locked(run_dir, lease,
-            independently_loaded_run=independently_loaded_run, registry=registry)
+    from bilqis_mlx.runtime._coordination import run_root_claim
+    with run_root_claim(Path(run_dir), create_parent=False):
+        with _atlas_lease_lock(run_dir):
+            return _persist_atlas_lease_locked(run_dir, lease,
+                independently_loaded_run=independently_loaded_run, registry=registry)
 
 
 def _accepted_run_lease_identity(run_dir):
@@ -200,10 +219,14 @@ def persist_accepted_atlas_lease(run_dir, lease, *, source_authority):
     if not isinstance(lease, AtlasAdmissionLease) or lease.run_identity != expected:
         _invalid('BAMF_ATLAS_LEASE_RUN_IDENTITY_DRIFT')
     registry = _accepted_source_registry(run_dir, source_authority)
-    with _atlas_lease_lock(run_dir, fixture_authority=False):
-        return _persist_atlas_lease_locked(
-            run_dir, lease, independently_loaded_run=expected, registry=registry,
-            fixture_authority=False)
+    with _atlas_authority_epoch_lock(run_dir):
+        epoch = classify_accepted_atlas_epoch(Path(run_dir))
+        if epoch == 'v2':
+            _invalid('BAMF_ATLAS_V1_SUCCESSOR_AUTHORITY_PRESENT')
+        with _atlas_lease_lock(run_dir, fixture_authority=False):
+            return _persist_atlas_lease_locked(
+                run_dir, lease, independently_loaded_run=expected, registry=registry,
+                fixture_authority=False)
 
 
 def read_accepted_atlas_lease(run_dir, *, source_authority):
@@ -290,10 +313,11 @@ def renew_atlas_lease(run_dir, lease, *, independently_loaded_run, registry,
             or lease.run_identity != independently_loaded_run):
         _invalid('BAMF_ATLAS_LEASE_RENEWAL_ARGUMENT_INVALID')
     lease.source_approval.verify(registry)
-    with _atlas_lease_lock(run_dir):
+    from bilqis_mlx.runtime._coordination import run_root_claim
+    with run_root_claim(Path(run_dir), create_parent=False), _atlas_lease_lock(run_dir):
         directory = _store(run_dir)
         prior = _read_atlas_lease(run_dir, independently_loaded_run,
-                                 registry=registry, current_authority=False)
+                                  registry=registry, current_authority=False)
         edge = {'schema': 'bilqis.c07.lease-renewal/v1',
                 'prior_lease_sha256': expected_prior_lease_sha256,
                 'replacement_lease_sha256': lease.digest(),
@@ -342,4 +366,9 @@ from .atlas_lease_v2 import (
     read_accepted_atlas_lease_v2,
     read_atlas_lease_v2,
     renew_atlas_lease_v2,
+)
+from .atlas_enrollment_v2 import (
+    AtlasAdmissionEnrollmentRequestV2,
+    enroll_accepted_atlas_lease_v2,
+    read_atlas_enrollment_request_v2,
 )

@@ -35,7 +35,7 @@ from bilqis_mlx.runtime.atlas_admission_policy_v2 import (
     AtlasAdmissionContextV2,
     AtlasDeltaEnvelopeV2,
 )
-from bilqis_mlx.runtime.tests.admission.atlas.atlas_adoption_executor_support import (
+from bilqis_mlx.runtime.tests.admission.atlas.adoption.atlas_adoption_executor_support import (
     AtlasAdoptionExecutorFixture,
 )
 from bilqis_mlx.runtime.jit_adoption import _PreparedSuccessorRuntime
