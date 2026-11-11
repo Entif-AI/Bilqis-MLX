@@ -1,0 +1,1 @@
+"""Atlas adoption contract tests."""

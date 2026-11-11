@@ -143,6 +143,44 @@ class PublicationDurabilityTests(unittest.TestCase):
                 patch.object(publication, '_atomic_pointer', side_effect=install):
             self.publish(candidate(parent_state()))
 
+    def test_successful_stage_move_fsyncs_retained_staging_parent(self):
+        synced = []
+        sync_directory = publication._fsync_directory
+
+        def sync(path):
+            synced.append(Path(path))
+            sync_directory(path)
+
+        with patch.object(publication, '_fsync_directory', side_effect=sync):
+            self.publish(candidate(parent_state()))
+        staging = self.run / '.bamf-staging'
+        bundles = self.run / 'bamf-bundles'
+        self.assertIn(staging, synced)
+        self.assertIn(bundles, synced)
+        self.assertLess(synced.index(staging), synced.index(bundles))
+        self.assertEqual(tuple(staging.iterdir()), ())
+
+    def test_successor_publication_never_mints_missing_genesis_lock(self):
+        initial = parent_state()
+        first = self.publish(candidate(initial))
+        successor = candidate(accepted_state(initial), 1, first['manifest_sha256'])
+
+        lock = self.run / '.bamf-pointer.lock'
+        lock.unlink()
+        with self.assertRaises(BilqisError):
+            self.publish(successor)
+        self.assertFalse(lock.exists())
+
+        absent = self.root / 'absent-successor-root'
+        original = self.run
+        self.run = absent
+        try:
+            with self.assertRaises(BilqisError):
+                self.publish(successor)
+        finally:
+            self.run = original
+        self.assertFalse(absent.exists())
+
     def test_acceptance_directory_is_resynced_on_pre_pointer_retry(self):
         initial = parent_state()
         first = self.publish(candidate(initial))

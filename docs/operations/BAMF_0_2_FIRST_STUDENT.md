@@ -12,7 +12,10 @@ The optimizer values have no hidden default. B13 seals the exact supplied values
 B01 still owns parameter and decay geometry, and B12/B13 construct fresh zero
 moments and update counts. Historical optimizer state is never migrated.
 
-Preflight accepts only an absent or empty target directory. C16.1c/#950 moves new
+The low-level fresh preflight owner accepts an absent or empty target and, for an exact
+C16.1a fresh-create retry, the two durable B13 pre-seal prefixes or an exact sealed
+generation-zero recovery candidate. Arbitrary occupied targets still fail closed;
+pointerless `--resume` never invokes this recovery path. C16.1c/#950 moves new
 generation-zero C09 authority completely outside that target: on Darwin the host
 administrator provisions `/etc/entif-ai/bilqis/source-authority-registry.json`
 independently of Bilqis. The path is fixed in production; the CLI, config,
@@ -76,6 +79,42 @@ hyperparameters, and exact schema versions for material launch inputs and
 generation-zero outputs. The persisted B13 bundle remains the source of truth for
 the active ABI, source/Factory/teacher provenance, topology, extents, implementation
 identity, parameter ledger, optimizer moments/counts, and run seed.
+
+### Human create, Atlas enrollment, and resume
+
+C16.1a/#542 layers the persistent operator lifecycle over this owner API. Fresh
+`--dry-run` validates the complete foundation identity and returns
+`READY_TO_CREATE` without creating the target. Fresh `--human-run` calls this
+preflight and returns `CREATED` after generation zero is current; the operator does
+not enter the learner in this leaf.
+
+The default effective admission policy is `staged`. For an explicit
+`atlas-release` request, the CLI parses the versioned non-authoritative C07 v2
+enrollment request as request data and validates its known run/topology/Atlas fields
+before publication. It is not itself a lease or authority. After
+generation zero is accepted, it creates `AcceptedRuntimeHost(run_dir)`, obtains the
+opaque generation-bound C09 `SourceAuthorityRuntime`, and delegates exact lease
+persistence/readback to C07. It never accepts a raw registry or uses the launch
+receipt, CLI fields, target path, or lease file as a C09 trust root. A failed
+post-genesis lease validation installs no C07 current reference; the accepted
+generation zero remains a valid staged run.
+
+Ordinary resume cold-loads the accepted B13 generation and feature receipt, derives saved
+run id/seed, topology, Atlas identity and optimizer hyperparameters, and derives
+the effective admission policy through authenticated C07 lease readback. Omitted
+settings use those saved values. Conflicting explicit overrides reject before
+writes, and ordinary resume takes no scope. The one first-enrollment resume form is
+explicitly `--human-run --resume --admission-policy atlas-release
+--atlas-admission-scope <enrollment-request.json>`; the request remains
+non-authoritative and C07 derives authority only from accepted run custody. Both
+dry-run and resume/enrollment remain neural-inert here.
+
+If a fresh create is interrupted before the generation-zero pointer is installed, do
+not switch to resume. A pointerless target carrying BAMF-v2 lifecycle evidence rejects
+resume with `BAMF_OPERATOR_INTERRUPTED_GENESIS_REQUIRES_CREATE_RETRY`. Repeat the
+original fresh create command with the same run id, seed, topology, complete AdamW
+group and Atlas manifest. B13 alone decides whether the target is the exact sealed
+genesis that may converge or an occupied/malformed target that must remain untouched.
 
 The dashboard snapshot describes the newborn lineage. Admitted grade scope comes
 from the Factory execution plan. Optimizer step and visits are `0`, stage is
