@@ -13,7 +13,7 @@ from bilqis_mlx.runtime.atlas_lease_v2 import persist_accepted_atlas_lease_v2
 from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import (
     _lease, _REGISTRY, _run,
 )
-from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_lease_v2 import _lease_v2
+from bilqis_mlx.runtime.tests.admission.atlas.lease.test_atlas_lease_v2 import _lease_v2
 
 
 class AtlasEpochSerializationTests(unittest.TestCase):
