@@ -75,6 +75,14 @@ On the candidate based directly on reviewed unified
 - changed-scope structure/governance: 0 violations;
 - staged diff hygiene: clean.
 
+The repository differential test selector also ran directly against the exact
+reviewed-unified base and selected only the new parent acceptance owner:
+3/3 PASS. The aggregate verify:leaf wrapper stops before test selection at four
+legacy-trainer source-reference omissions in unchanged evidence files. The same
+four violations reproduce identically on pristine reviewed unified
+766ac5f1a94202ce1048bcda0c1a2c5cbefec642, so they are not claimed green and
+are not attributed to this parent-acceptance patch.
+
 The broader Factory training execution file was also attempted. It produced
 3 passes and 3 errors. All three errors occur before their intended assertions
 while their shared fixture tries to publish a successor without the now-required
