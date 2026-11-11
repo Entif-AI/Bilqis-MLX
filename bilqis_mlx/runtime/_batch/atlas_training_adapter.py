@@ -31,6 +31,7 @@ from .batch_training_authority import rederive_training_authority
 from .training_input_authority import (
     require_semantic_authority as _require_semantic_authority_impl,
     require_source_lineage as _require_source_lineage,
+    require_source_inventory as _require_source_inventory,
     row_contexts as _row_contexts,
     source_features as _source_features,
 )
@@ -104,14 +105,15 @@ def _compile_model_input(
     if (type(frames) is not tuple or
             any(type(frame) is not ContextEligibility for frame in frames)):
         _invalid('CONTEXT_SOURCE_FRAMES_REQUIRED')
+    if not frames and getattr(ast, 'frames', ()):
+        _invalid('CONTEXT_SOURCE_FRAMES_REQUIRED')
+    _require_source_inventory(ast, source_context, row, atlas_selection)
+    _require_source_lineage(ast, frames, visible, source_context.graph)
     projection = None
     if frames:
-        _require_source_lineage(ast, frames, visible, source_context.graph)
         projection = project_context(frames, task_scope, source_frontier, eligibility_policy)
         if type(projection) is not ApprovedContextProjection:
             _invalid('CONTEXT_NOT_ELIGIBLE')
-    elif ast.frames:
-        _invalid('CONTEXT_SOURCE_FRAMES_REQUIRED')
     current_features = _require_semantic_authority(
         compiler_config, task_scope, source_frontier, eligibility_policy,
         atlas_selection, feature_artifact_path)

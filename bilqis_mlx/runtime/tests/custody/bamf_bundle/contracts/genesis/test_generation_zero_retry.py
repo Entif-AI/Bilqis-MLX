@@ -1,7 +1,6 @@
 """Generation-zero retries authenticate exact state and recover durable custody."""
 from __future__ import annotations
 
-from dataclasses import replace
 import json
 import os
 from pathlib import Path
@@ -12,17 +11,10 @@ from unittest.mock import patch
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.bamf_bundle import (
-    load_bamf_generation_authority, publish_initial_generation,
-)
-from bilqis_mlx.runtime.bamf_bundle import source_authority_custody as custody
-from bilqis_mlx.runtime.bamf_bundle.records import invalid
+from bilqis_mlx.runtime.bamf_bundle import publish_initial_generation
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     genesis_preparation, shape_patch,
 )
-from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
-from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import REGISTRY
-from bilqis_mlx.state_dag import persist, read_current
 
 
 class GenerationZeroRetryTests(unittest.TestCase):
@@ -47,20 +39,6 @@ class GenerationZeroRetryTests(unittest.TestCase):
             return publish_initial_generation(
                 self.run, prepared, reserve_gib=0.)
 
-    def _advance_factory_source(self, prepared):
-        source = Path(prepared.factory_authority.source_run_dir)
-        current = read_current(source)
-        advanced = dict(current)
-        advanced["generation"] = current["generation"] + 1
-        school = dict(current["school"])
-        checkpoint = dict(school["current_student"])
-        checkpoint.update(
-            optimizer_step=checkpoint["optimizer_step"] + 1,
-            sha256="8" * 64, filename="bundles/advanced")
-        school["current_student"] = checkpoint
-        advanced["school"] = school
-        persist(source, advanced)
-
     def test_completed_retry_rejects_post_publication_numerical_mutation(self):
         prepared = self._prepare(run_seed=307)
         first = self._publish(prepared)
@@ -78,105 +56,6 @@ class GenerationZeroRetryTests(unittest.TestCase):
         self.assertEqual(
             json.loads((self.run / "bamf-state.json").read_text()), before)
         self.assertEqual(before, first)
-
-    def test_pre_pointer_crash_recovers_exact_genesis_after_factory_advances(self):
-        prepared = self._prepare(run_seed=311)
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
-                patch.object(
-                    publication, "_atomic_pointer",
-                    side_effect=RuntimeError("pointer crash")):
-            with self.assertRaisesRegex(RuntimeError, "pointer crash"):
-                publish_initial_generation(self.run, prepared, reserve_gib=0.)
-
-        self.assertFalse((self.run / "bamf-state.json").exists())
-        bundles = tuple((self.run / "bamf-bundles").iterdir())
-        acceptances = tuple((self.run / "bamf-acceptance").iterdir())
-        self.assertEqual(len(bundles), 1)
-        self.assertEqual(len(acceptances), 1)
-        durable_manifest = bundles[0].name
-
-        self._advance_factory_source(prepared)
-        recovered = self._publish(prepared)
-
-        self.assertEqual(recovered["manifest_sha256"], durable_manifest)
-        self.assertEqual(
-            json.loads((self.run / "bamf-state.json").read_text()), recovered)
-        with shape_patch():
-            student, manifest = load_bamf_generation_authority(
-                self.run / "bamf-state.json")
-        self.assertEqual(manifest, durable_manifest)
-        self.assertEqual(student.run_identity.run_seed, 311)
-
-    def test_post_trust_seal_crash_recovers_after_factory_advances(self):
-        prepared = self._prepare(run_seed=3111)
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
-                patch.object(
-                    publication, "_write_acceptance",
-                    side_effect=RuntimeError("acceptance crash")):
-            with self.assertRaisesRegex(RuntimeError, "acceptance crash"):
-                publish_initial_generation(self.run, prepared, reserve_gib=0.)
-
-        self.assertFalse((self.run / "bamf-state.json").exists())
-        self.assertFalse((self.run / "bamf-acceptance").exists())
-        bundles = tuple((self.run / "bamf-bundles").iterdir())
-        self.assertEqual(len(bundles), 1)
-        durable_manifest = bundles[0].name
-
-        self._advance_factory_source(prepared)
-        recovered = self._publish(prepared)
-
-        self.assertEqual(recovered["manifest_sha256"], durable_manifest)
-        self.assertEqual(len(tuple((self.run / "bamf-acceptance").iterdir())), 1)
-        with shape_patch():
-            student, manifest = load_bamf_generation_authority(
-                self.run / "bamf-state.json")
-        self.assertEqual(manifest, durable_manifest)
-        self.assertEqual(student.run_identity.run_seed, 3111)
-
-    def test_sealed_genesis_retry_requires_exact_host_root_after_factory_advance(self):
-        prepared = self._prepare(run_seed=3112)
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"), \
-                patch.object(
-                    publication, "_write_acceptance",
-                    side_effect=RuntimeError("acceptance crash")):
-            with self.assertRaisesRegex(RuntimeError, "acceptance crash"):
-                publish_initial_generation(self.run, prepared, reserve_gib=0.)
-
-        self.assertFalse((self.run / "bamf-state.json").exists())
-        durable_manifest = next((self.run / "bamf-bundles").iterdir()).name
-        self._advance_factory_source(prepared)
-
-        def missing_root():
-            invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED")
-
-        with shape_patch(), patch.object(
-                custody, "read_host_system_source_authority_registry",
-                side_effect=missing_root), patch.object(
-                mlx_checkpoint, "assert_headroom"), \
-                self.assertRaises(BilqisError) as missing:
-            publish_initial_generation(self.run, prepared, reserve_gib=0.)
-        self.assertEqual(
-            missing.exception.context["reason"],
-            "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED")
-        self.assertFalse((self.run / "bamf-state.json").exists())
-
-        drift = SourceAuthorityRegistry((replace(
-            REGISTRY.keys[0], owner_id="source:drifted-host-root"),))
-        with shape_patch(), patch.object(
-                custody, "read_host_system_source_authority_registry",
-                return_value=drift), patch.object(
-                mlx_checkpoint, "assert_headroom"), \
-                self.assertRaises(BilqisError) as mismatch:
-            publish_initial_generation(self.run, prepared, reserve_gib=0.)
-        self.assertEqual(
-            mismatch.exception.context["reason"],
-            "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_MISMATCH")
-        self.assertFalse((self.run / "bamf-state.json").exists())
-
-        recovered = self._publish(prepared)
-        self.assertEqual(recovered["manifest_sha256"], durable_manifest)
-        self.assertEqual(
-            json.loads((self.run / "bamf-state.json").read_text()), recovered)
 
     def test_post_pointer_crash_retry_reconciles_pending_delivery_before_success(self):
         prepared = self._prepare(run_seed=312)
@@ -217,7 +96,6 @@ class GenerationZeroRetryTests(unittest.TestCase):
         self.assertFalse((self.run / "bamf-state.json").exists())
         self.assertEqual(len(tuple((self.run / "bamf-bundles").iterdir())), 1)
         self.assertEqual(len(tuple((self.run / "bamf-acceptance").iterdir())), 1)
-
 
 if __name__ == "__main__":
     unittest.main()

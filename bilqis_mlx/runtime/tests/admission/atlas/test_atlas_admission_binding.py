@@ -140,6 +140,27 @@ class AtlasAdmissionBindingTests(unittest.TestCase):
                 failure.exception.context["reason"],
                 "BAMF_C09_SOURCE_AUTHORITY_RUNTIME_INVALID")
 
+    def test_accepted_v1_persistence_rejects_existing_v2_authority(self):
+        parent, _staged = self._parent_and_candidate()
+        lease = replace(_lease(), run_identity=_accepted_lease_run_identity(
+            parent.run_identity))
+        with tempfile.TemporaryDirectory() as temporary, patch(
+                "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
+                return_value=(parent, "a" * 64)), patch(
+                "bilqis_mlx.runtime.atlas_admission._accepted_source_registry",
+                return_value=_REGISTRY):
+            root = Path(temporary)
+            v2 = root / "autonomy/atlas-admission/v2/current.json"
+            v2.parent.mkdir(parents=True)
+            v2.write_text('{}')
+            with self.assertRaises(BilqisError) as failure:
+                persist_accepted_atlas_lease(
+                    root, lease, source_authority=object())
+            self.assertEqual(
+                failure.exception.context["reason"],
+                "BAMF_ATLAS_V1_SUCCESSOR_AUTHORITY_PRESENT")
+            self.assertFalse((root / "autonomy/atlas-admission/current.json").exists())
+
     def test_accepted_b13_binding_is_the_cold_factory_release_authority(self):
         from bilqis_mlx.runtime import admission as factory_admission
         from bilqis_mlx.runtime.tests.operator.test_admission import _executable_fixture

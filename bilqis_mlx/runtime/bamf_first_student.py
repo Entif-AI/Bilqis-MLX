@@ -28,7 +28,8 @@ from ._bamf_first_student_contracts import (
     BamfFoundationDashboardProjection, DashboardMetrics, LaunchReceipt, _invalid,
 )
 from ._bamf_first_student_support import (
-    _canonical_disjoint_run_paths, _dashboard_metrics_from_projection,
+    _canonical_disjoint_run_paths, _canonical_run_dir_shape,
+    _dashboard_metrics_from_projection,
     _fresh_run_dir, _model_authority, _resolved_run_path,
 )
 
@@ -72,19 +73,15 @@ def load_bamf_foundation_dashboard_projection(
     )
 
 
-def preflight_bamf_foundation(
+def _prepare_bamf_foundation(
         config: BamfFoundationConfig,
         admitted_release: ExecutableFactoryRelease,
-        new_run_dir) -> LaunchReceipt:
-    """Publish one owner-derived generation zero without performing a neural update."""
+        new_run_dir):
     if type(config) is not BamfFoundationConfig:
         _invalid("BAMF_FIRST_STUDENT_CONFIG_INVALID")
     config.validate()
     source, canonical_target = _canonical_disjoint_run_paths(
         config.source_run_dir, new_run_dir)
-    target = _fresh_run_dir(new_run_dir)
-    if target != canonical_target:
-        _invalid("BAMF_FIRST_STUDENT_TARGET_PATH_DRIFT")
     graph = deepcopy(dict(config.semantic_graph))
     factory = issue_initial_factory_foundation_authority(source, graph)
     if type(admitted_release) is not ExecutableFactoryRelease or admitted_release != factory.release:
@@ -114,8 +111,61 @@ def preflight_bamf_foundation(
             "optimizer_step": 0,
         },),
     )
-    _fresh_run_dir(target)
-    pointer = publish_initial_generation(target, prepared)
+    return canonical_target, prepared
+
+
+def preview_bamf_foundation_run_identity(
+        config: BamfFoundationConfig,
+        admitted_release: ExecutableFactoryRelease,
+        new_run_dir) -> BamfRunIdentity:
+    """Derive exact generation-zero identity without mutating target custody."""
+    _target, prepared = _prepare_bamf_foundation(
+        config, admitted_release, new_run_dir)
+    return prepared.candidate.run_identity
+
+
+def preflight_bamf_foundation(
+        config: BamfFoundationConfig,
+        admitted_release: ExecutableFactoryRelease,
+        new_run_dir) -> LaunchReceipt:
+    """Publish one owner-derived generation zero without performing a neural update."""
+    canonical_target, prepared = _prepare_bamf_foundation(
+        config, admitted_release, new_run_dir)
+    target = _canonical_run_dir_shape(new_run_dir)
+    if target != canonical_target:
+        _invalid("BAMF_FIRST_STUDENT_TARGET_PATH_DRIFT")
+    from bilqis_mlx.runtime._coordination import run_root_claim
+    from bilqis_mlx.runtime.bamf_bundle.publication.storage import (
+        _classify_initial_generation_target,
+        _reclaim_empty_initial_staging_root,
+    )
+    with run_root_claim(target, create_parent=True):
+        target = _canonical_run_dir_shape(new_run_dir)
+        if target != canonical_target:
+            _invalid("BAMF_FIRST_STUDENT_TARGET_PATH_DRIFT")
+        if ((target / "bamf-state.json").exists()
+                or (target / "bamf-state.json").is_symlink()):
+            _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
+        target_state = _classify_initial_generation_target(target)
+        if target_state == "lock-stage":
+            _reclaim_empty_initial_staging_root(target)
+            target_state = _classify_initial_generation_target(target)
+            if target_state != "lock-only":
+                _invalid("BAMF_FIRST_STUDENT_PRESEAL_STAGING_RESIDUE")
+        if target_state == "recovery":
+            from bilqis_mlx.runtime.bamf_bundle.genesis import (
+                recover_prepared_initial_generation,
+            )
+            pointer = recover_prepared_initial_generation(target, prepared)
+            if pointer is None:
+                _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
+        elif target_state == "empty":
+            _fresh_run_dir(target)
+            pointer = publish_initial_generation(target, prepared)
+        elif target_state == "lock-only":
+            pointer = publish_initial_generation(target, prepared)
+        else:
+            _invalid("BAMF_FIRST_STUDENT_RUN_DIRECTORY_OCCUPIED")
     projection = load_bamf_foundation_dashboard_projection(target)
     if projection is None:
         _invalid("BAMF_FIRST_STUDENT_PERSISTED_FOUNDATION_DRIFT")
@@ -156,4 +206,5 @@ __all__ = (
     "BamfFoundationConfig", "BamfFoundationDashboardProjection",
     "DashboardMetrics", "LaunchReceipt",
     "load_bamf_foundation_dashboard_projection", "preflight_bamf_foundation",
+    "preview_bamf_foundation_run_identity",
 )

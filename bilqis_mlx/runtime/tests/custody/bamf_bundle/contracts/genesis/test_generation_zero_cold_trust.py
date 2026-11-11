@@ -39,6 +39,11 @@ class GenerationZeroColdTrustTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def _install_package_local_genesis(self):
+        self.run.mkdir(parents=True)
+        # This fixture is testing the external genesis-trust requirement, not the
+        # R19 lifecycle-marker gate. Supply already-existing safe B13 provenance
+        # explicitly so the generic package-local path still cannot mint it.
+        (self.run / ".bamf-pointer.lock").write_bytes(b"")
         with shape_patch():
             prepared = genesis_preparation(run_seed=1301)
         stage = self.run / "forged-stage"

@@ -29,12 +29,23 @@ def publish_initial_generation(run_dir, prepared: PreparedInitialGeneration, *, 
         run_dir, prepared.candidate, prepared, reserve_gib=reserve_gib)
 
 
+def recover_prepared_initial_generation(run_dir, prepared: PreparedInitialGeneration):
+    from ..publication import recover_prepared_initial_generation as recover
+    return recover(run_dir, prepared)
+
+
+def recover_sealed_initial_generation(run_dir, **expectations):
+    from ..publication import recover_sealed_initial_generation as recover
+    return recover(run_dir, **expectations)
+
+
 __all__ = (
     "BamfRunIdentity", "InitialGenerationBinding", "ParsedInitialGenerationBinding",
     "PreparedInitialGeneration", "InitialFoundationFeatureAuthority",
     "issue_initial_foundation_feature_authority", "InitialFactoryFoundationAuthority",
     "issue_initial_factory_foundation_authority", "prepare_initial_generation",
     "publish_initial_generation", "validate_initial_generation_binding",
+    "recover_prepared_initial_generation", "recover_sealed_initial_generation",
     "validate_initial_generation_preparation", "validate_parsed_initial_generation_binding",
     "validate_initial_generation_source_authority",
 )

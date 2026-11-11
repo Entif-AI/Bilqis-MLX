@@ -135,14 +135,16 @@ def parse_accepted_candidate_binding(record) -> ParsedAcceptedCandidateBinding:
     if not isinstance(record, dict):
         invalid()
     schema = record.get("schema_version")
-    names = (LEGACY_FIELDS if schema == LEGACY_ACCEPTANCE_SCHEMA
-             else V2_BINDING_FIELDS if schema == PREVIOUS_ACCEPTANCE_SCHEMA
-             else V3_BINDING_FIELDS if schema == PREVIOUS_SOURCE_ACCEPTANCE_SCHEMA
-             else V4_BINDING_FIELDS if schema == PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA
-             else BINDING_FIELDS if schema == ACCEPTANCE_SCHEMA
-             else MOTIF_BINDING_FIELDS if schema == MOTIF_ACCEPTANCE_SCHEMA
-             else CLOSURE_BINDING_FIELDS if schema == CLOSURE_ACCEPTANCE_SCHEMA
-             else MOTIF_CLOSURE_BINDING_FIELDS if schema == MOTIF_CLOSURE_ACCEPTANCE_SCHEMA else ())
+    names = next((fields for version, fields in (
+        (LEGACY_ACCEPTANCE_SCHEMA, LEGACY_FIELDS),
+        (PREVIOUS_ACCEPTANCE_SCHEMA, V2_BINDING_FIELDS),
+        (PREVIOUS_SOURCE_ACCEPTANCE_SCHEMA, V3_BINDING_FIELDS),
+        (PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA, V4_BINDING_FIELDS),
+        (ACCEPTANCE_SCHEMA, BINDING_FIELDS),
+        (MOTIF_ACCEPTANCE_SCHEMA, MOTIF_BINDING_FIELDS),
+        (CLOSURE_ACCEPTANCE_SCHEMA, CLOSURE_BINDING_FIELDS),
+        (MOTIF_CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_BINDING_FIELDS),
+    ) if version == schema), ())
     if not names or set(record) != set(names) | {"binding_sha256"}:
         invalid()
     if (not isinstance(record["run_id"], str) or not record["run_id"]

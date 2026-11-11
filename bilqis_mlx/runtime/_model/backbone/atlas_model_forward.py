@@ -67,6 +67,20 @@ def _source_producer(params, compiled_batch, generation, cache):
     ), accepted_cache
 
 
+def _finalize_source_hidden(
+    producer, accepted_cache, compiled_batch, *, capture_derived_cache: bool,
+):
+    hidden = finalize_source_backbone_hidden(producer)
+    if (capture_derived_cache and accepted_cache is not None
+            and accepted_cache._run_dir is not None):
+        from bilqis_mlx.runtime.atlas_cache_runtime import (
+            _capture_forward_attention_caches,
+        )
+        _capture_forward_attention_caches(
+            accepted_cache, compiled_batch, producer)
+    return hidden
+
+
 def _forward_bamf_impl(
     backend: Backend,
     params,
@@ -100,7 +114,9 @@ def _forward_bamf_impl(
 
     producer, accepted_cache = _source_producer(
         params, compiled_batch, generation, cache)
-    hidden = finalize_source_backbone_hidden(producer)
+    hidden = _finalize_source_hidden(
+        producer, accepted_cache, compiled_batch,
+        capture_derived_cache=not refinement_training)
     if hidden.shape[0] != 1:
         _invalid("B11_SINGLE_ROW_FORWARD_REQUIRED")
     row = compiled_batch.compiled.compiled.rows[0]

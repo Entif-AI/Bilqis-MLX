@@ -17,148 +17,29 @@ from .atlas_lease_contracts import (
     _invalid, _sha, _name, _names,
 )
 from .atlas_lease_storage import (
-    _atlas_lease_lock, _lease_from_json, _persist_atlas_lease_locked,
-    _read_atlas_lease, _store,
+    _atlas_authority_epoch_lock, _atlas_lease_lock, classify_accepted_atlas_epoch,
+    _lease_from_json, _persist_atlas_lease_locked, _read_atlas_lease, _store,
 )
 from .state import _durable_json
 
 
-def issue_atlas_lease(lease_id, run_identity, source_approval, resource_ceiling, *,
-                      requested_at, human_command_sha256, human_started, registry):
-    if human_started is not True or not isinstance(source_approval, AtlasSourceApproval):
-        _invalid('BAMF_ATLAS_EXPLICIT_HUMAN_REQUEST_REQUIRED')
-    source_approval.verify(registry)
-    return AtlasAdmissionLease(lease_id, run_identity, source_approval, resource_ceiling,
-                               requested_at, human_command_sha256)
-
-
-def advance_atlas_frontier(current, proposal, lease):
-    from .atlas_admission_policy import advance_atlas_frontier as advance
-    return advance(current, proposal, lease)
-
-
-def advance_atlas_frontier_v2(current, delta, lease):
-    from .atlas_admission_policy_v2 import advance_atlas_frontier_v2 as advance
-    return advance(current, delta, lease)
-
-
-def add_atlas_admission_arguments(parser):
-    parser.add_argument('--admission-policy', choices=('staged', 'atlas-release'), default='staged',
-                        help='Stage new source successors unless an explicit Atlas admission lease authorizes them.')
-    parser.add_argument('--atlas-admission-scope', type=Path,
-                        help='Exact versioned Atlas lease request; accepted run/source authority is required.')
-
-
-def validate_atlas_command_request(args):
-    if args.admission_policy == 'staged':
-        if args.atlas_admission_scope is not None:
-            _invalid('BAMF_ATLAS_SCOPE_REQUIRES_EXPLICIT_POLICY')
-        return
-    if args.human_run is not True:
-        _invalid('BAMF_ATLAS_EXPLICIT_HUMAN_REQUEST_REQUIRED')
-    if args.atlas_admission_scope is None:
-        _invalid('BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED')
-    path = Path(args.atlas_admission_scope)
-    if path.is_symlink() or not path.is_file():
-        _invalid('BAMF_ATLAS_SCOPE_FILE_INVALID')
-    try:
-        _lease_from_json(json.loads(path.read_text(encoding='utf-8')))
-    except (OSError, ValueError):
-        _invalid('BAMF_ATLAS_SCOPE_FILE_INVALID')
-    # A scope file alone still cannot authorize the CLI: this parser-level check
-    # has neither accepted B13 run custody nor the typed A02 staged candidate.
-    _invalid('BAMF_ATLAS_ACCEPTED_RUN_AUTHORITY_UNAVAILABLE')
-
-
-def _validated_frontier_proposal(proposal):
-    from ..factory.jit_curriculum import CurriculumDeltaProposal, ProposalDisposition
-    if not isinstance(proposal, CurriculumDeltaProposal) or proposal.disposition is not ProposalDisposition.PROPOSAL:
-        _invalid('BAMF_ATLAS_STAGED_PROPOSAL_REQUIRED')
-    try:
-        proposal.verify()
-    except (ValueError, TypeError):
-        _invalid('BAMF_ATLAS_NATIVE_PROPOSAL_CONTEXT_DRIFT')
-    return proposal
-
-
-def _persist_staged_atlas_result(run_dir, result):
-    from .atlas_admission_policy import AdmissionResult, AdmissionStatus
-    if not isinstance(result, AdmissionResult) or result.status is not AdmissionStatus.STAGED:
-        _invalid('BAMF_ATLAS_STAGED_RESULT_REQUIRED')
-    directory = _store(run_dir, fixture_authority=False)
-    staged = directory / 'staged'
-    if staged.is_symlink() or (staged.exists() and not staged.is_dir()):
-        _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
-    path = staged / (contract_digest(result) + '.json')
-    payload = json.loads(json.dumps(asdict(result)))
-    if path.is_symlink():
-        _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
-    if path.exists():
-        try:
-            if json.loads(path.read_text(encoding='utf-8')) != payload:
-                _invalid('BAMF_ATLAS_STAGED_DECISION_IMMUTABLE_DRIFT')
-        except (OSError, ValueError):
-            _invalid('BAMF_ATLAS_STAGED_DECISION_READ_FAILED')
-    else:
-        _durable_json(path, payload)
-    if json.loads(path.read_text(encoding='utf-8')) != payload:
-        _invalid('BAMF_ATLAS_STAGED_DECISION_READBACK_DRIFT')
-    return result
-
-
-def stage_unleased_atlas_proposal(run_dir, proposal):
-    from .atlas_admission_policy import AdmissionResult, AdmissionStatus
-    proposal = _validated_frontier_proposal(proposal)
-    directory = _store(run_dir, fixture_authority=False)
-    reference = directory / 'current.json'
-    if reference.exists() or reference.is_symlink():
-        # An unreadable/unverifiable lease is not equivalent to absence of one.
-        _invalid('BAMF_ATLAS_ACCEPTED_RUN_OWNER_REQUIRED_FOR_REFERENCED_LEASE')
-    return _persist_staged_atlas_result(run_dir, AdmissionResult(
-        AdmissionStatus.STAGED, proposal.proposal_sha256, None,
-        proposal.current_release_sha256, proposal.selected_successor_sha256,
-        'EXPLICIT_ATLAS_LEASE_REQUIRED',
-        'Keep the exact successor staged; request an approved Atlas scope after accepted run authority is available.'))
-
-
-def dispatch_atlas_frontier_proposal(run_dir, proposal):
-    """Route one frontier proposal through accepted lease custody or safe staging.
-
-    A persisted lease is authority only after B13/C09 replay.  Until the owner
-    handoffs for production delta scope and source-bundle location are available,
-    an authenticated lease therefore remains a precise STAGED hold rather than a
-    caller-selected adoption shortcut.
-    """
-    from .atlas_admission_policy import AdmissionResult, AdmissionStatus
-    proposal = _validated_frontier_proposal(proposal)
-    directory = _store(run_dir, fixture_authority=False)
-    reference = directory / 'current.json'
-    if reference.is_symlink():
-        _invalid('BAMF_ATLAS_LEASE_UNSAFE_PATH')
-    if not reference.exists():
-        return stage_unleased_atlas_proposal(run_dir, proposal)
-
-    from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
-    host = AcceptedRuntimeHost(Path(run_dir))
-    lease = read_accepted_atlas_lease(
-        run_dir, source_authority=host.source_authority())
-    if lease is None:
-        _invalid('BAMF_ATLAS_ACCEPTED_RUN_OWNER_REQUIRED_FOR_REFERENCED_LEASE')
-    return _persist_staged_atlas_result(run_dir, AdmissionResult(
-        AdmissionStatus.STAGED, proposal.proposal_sha256, lease.digest(),
-        proposal.current_release_sha256, proposal.selected_successor_sha256,
-        'PRODUCTION_DELTA_AUTHORITY_UNAVAILABLE',
-        'Keep the exact successor staged until owner-derived delta scope and source-bundle location are available.'))
-
-
-def read_atlas_lease(run_dir, independently_loaded_run, *, registry):
-    return _read_atlas_lease(run_dir, independently_loaded_run, registry=registry)
-
-
-def persist_atlas_lease(run_dir, lease, *, independently_loaded_run, registry):
-    with _atlas_lease_lock(run_dir):
-        return _persist_atlas_lease_locked(run_dir, lease,
-            independently_loaded_run=independently_loaded_run, registry=registry)
+from .atlas_adoption_v2 import (
+    adopt_capability_only_atlas_successor_v2,
+    adopt_parameter_extension_atlas_successor_v2,
+)
+from .atlas_admission_requests import (
+    add_atlas_admission_arguments,
+    advance_atlas_frontier,
+    advance_atlas_frontier_v2,
+    dispatch_atlas_frontier_proposal,
+    issue_atlas_lease,
+    persist_atlas_lease,
+    read_atlas_lease,
+    read_atlas_lease_request,
+    stage_unleased_atlas_proposal,
+    validate_atlas_command_request,
+    validate_atlas_lease_request,
+)
 
 
 def _accepted_run_lease_identity(run_dir):
@@ -194,10 +75,14 @@ def persist_accepted_atlas_lease(run_dir, lease, *, source_authority):
     if not isinstance(lease, AtlasAdmissionLease) or lease.run_identity != expected:
         _invalid('BAMF_ATLAS_LEASE_RUN_IDENTITY_DRIFT')
     registry = _accepted_source_registry(run_dir, source_authority)
-    with _atlas_lease_lock(run_dir, fixture_authority=False):
-        return _persist_atlas_lease_locked(
-            run_dir, lease, independently_loaded_run=expected, registry=registry,
-            fixture_authority=False)
+    with _atlas_authority_epoch_lock(run_dir):
+        epoch = classify_accepted_atlas_epoch(Path(run_dir))
+        if epoch == 'v2':
+            _invalid('BAMF_ATLAS_V1_SUCCESSOR_AUTHORITY_PRESENT')
+        with _atlas_lease_lock(run_dir, fixture_authority=False):
+            return _persist_atlas_lease_locked(
+                run_dir, lease, independently_loaded_run=expected, registry=registry,
+                fixture_authority=False)
 
 
 def read_accepted_atlas_lease(run_dir, *, source_authority):
@@ -212,13 +97,18 @@ def read_accepted_atlas_factory_release(run_dir):
     """Resolve current Factory authority only through accepted B13 lineage.
 
     Generation zero binds the founding Factory release in ``BamfRunIdentity``.
-    A C07 generation binds its successor directly in ``AtlasAdmissionBinding``.
+    A C07 generation binds its successor in its generation-specific admission
+    family: ``AtlasAdmissionBinding`` for parameter extension or
+    ``FactoryReleaseAdmissionBinding`` for neural-inert Factory adoption.
     Ordinary retained generations inherit the nearest accepted ancestor's Factory
     authority through the acceptance-bound parent chain; they never reintroduce
     the legacy operator receipt as a second current-Factory authority.
     """
     from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
         ParsedAtlasAdmissionBinding,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
+        ParsedFactoryReleaseAdmissionBinding,
     )
     from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
@@ -242,7 +132,9 @@ def read_accepted_atlas_factory_release(run_dir):
         binding = accepted_binding_for_manifest(
             root, manifest_sha256, student,
             expected_acceptance_sha256=acceptance_sha256)
-        if isinstance(binding, ParsedAtlasAdmissionBinding):
+        if isinstance(binding, (
+                ParsedAtlasAdmissionBinding,
+                ParsedFactoryReleaseAdmissionBinding)):
             digest = binding.factory_release_sha256
             break
         if student.generation == 0:
@@ -277,10 +169,11 @@ def renew_atlas_lease(run_dir, lease, *, independently_loaded_run, registry,
             or lease.run_identity != independently_loaded_run):
         _invalid('BAMF_ATLAS_LEASE_RENEWAL_ARGUMENT_INVALID')
     lease.source_approval.verify(registry)
-    with _atlas_lease_lock(run_dir):
+    from bilqis_mlx.runtime._coordination import run_root_claim
+    with run_root_claim(Path(run_dir), create_parent=False), _atlas_lease_lock(run_dir):
         directory = _store(run_dir)
         prior = _read_atlas_lease(run_dir, independently_loaded_run,
-                                 registry=registry, current_authority=False)
+                                  registry=registry, current_authority=False)
         edge = {'schema': 'bilqis.c07.lease-renewal/v1',
                 'prior_lease_sha256': expected_prior_lease_sha256,
                 'replacement_lease_sha256': lease.digest(),
@@ -322,10 +215,16 @@ def renew_atlas_lease(run_dir, lease, *, independently_loaded_run, registry,
 # V2 is deliberately a separate human-authority epoch.  Re-export its public
 # entrypoints here without changing the v1 storage or policy contracts above.
 from .atlas_lease_v2 import (
+    _hold_current_atlas_lease_v2_publication,
     issue_atlas_lease_v2,
     persist_accepted_atlas_lease_v2,
     persist_atlas_lease_v2,
     read_accepted_atlas_lease_v2,
     read_atlas_lease_v2,
     renew_atlas_lease_v2,
+)
+from .atlas_enrollment_v2 import (
+    AtlasAdmissionEnrollmentRequestV2,
+    enroll_accepted_atlas_lease_v2,
+    read_atlas_enrollment_request_v2,
 )

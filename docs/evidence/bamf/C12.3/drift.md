@@ -97,3 +97,7 @@ Flow-control and contract-mirror checks also remained green after `039fbcab`.
 The aggregate quality chain previously stopped only on the pre-existing C07.1b
 legacy-trainer receipt defect reproduced on the reviewed base; #527 does not edit
 that unrelated receipt.
+
+Legacy-trainer adaptation authority: preserved Factory replay
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
+Historical check outcomes above retain their original observation date.
