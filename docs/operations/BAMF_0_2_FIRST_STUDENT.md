@@ -158,3 +158,81 @@ authority. The resulting launch-witness receipt records that limitation together
 with parent/retained generations, optimizer state digests and steps, selected visit,
 C05 decision, Factory/source identities, and the uninterrupted-versus-cold next
 update result.
+
+### C16.2c staged verification
+
+Do not run the complete real-source C16.2c module as one qualification command.
+Its live checks have different failure boundaries and must remain independently
+rerunnable.
+
+Run cheap contract checks first. They cover mature C03 lineage reuse, the future
+capability source block, the two-family release/scope contract, and staged receipt
+assembly. Reuse the existing C16.1, #992, #993, C03 custody, B13 rejection, and
+operator-command receipts while their tested assumptions remain unchanged.
+
+The remaining live evidence has four stages:
+
+1. Run one real C05 rejection witness and verify B13 rejection preserves accepted
+   pointer, bundle, optimizer, and cold parent custody.
+2. Run one admitted `A.IDENTITY` witness through the same real C03, C02/C08/B11,
+   and C05 owner chain. This is the second-family traversal required by the
+   first-start negative; it does not need a second accepted publication.
+3. Run one accepted B.IDBOOLOPS transition through C03, C02/C08/B11, C05, and B13.
+   In that same process, execute the uninterrupted next update and persist the
+   accepted run plus warm-stage receipt under `BILQIS_C16_2C_STAGE_ROOT`. Those two
+   actions are one irreducible stage because a process restart would make the warm arm
+   cold.
+4. Start a new process against that same accepted stage root. Execute only the cold
+   next update and compare it with the persisted uninterrupted receipt.
+
+Run MLX-heavy stages on `m3-ultra` through SSH from a digest-pinned detached source
+snapshot. Use separate isolated attempt roots for rejection, second-family, and the
+accepted-plus-cold chain. The cold stage must reuse the accepted stage root. Use the
+accepted A01 artifact. Do not poll the remote job from chat. If rejection,
+second-family, or accepted-plus-warm fails, preserve that failed root and rerun only
+that stage in a fresh attempt root. A cold-stage failure may reuse the unchanged
+accepted B13 custody because cold continuation is the behavior under test. Evidence-
+only content-addressed sidecars may accumulate without changing that accepted custody.
+Do not restart already-passing stages unless their source, Factory, feature, C05, or
+B13 custody assumptions changed.
+
+ADR-138 resource containment is part of the launch contract, not an optional operator
+check. Set `BILQIS_TEST_WORKERS=1` for every stage. Before detaching, run the cheap
+`require_mlx_verification_resources()` preflight from
+`c16_2c_resource_preflight.py`; the live test repeats the same gate before foundation
+or model loading. For this disposable qualification the preflight requires at least
+20% system memory free, at least 10% swap headroom, and no other pytest,
+`run_studio_proof.py`, or detached-long-run worker outside the current process
+ancestry. These are conservative C16.2c launch thresholds, not a new repository-wide
+allocator policy. Each live process then enters the repository
+`training_memory_policy(mx)`, which sets the MLX free-buffer cache limit to zero and
+clears the cache before and after the stage. If the preflight fails, do not launch or
+retry until the host state changes.
+
+The M3 launch must therefore chain the preflight and detached launch, for example:
+
+```text
+BILQIS_TEST_WORKERS=1 <complete-python> -c \
+  'from bilqis_mlx.runtime.tests.capability.factory.owner.c16_2c_resource_preflight import require_mlx_verification_resources as p; print(p())' \
+&& BILQIS_TEST_WORKERS=1 <complete-python> scripts/bamf/detached_long_run.py launch ... -- \
+  env BILQIS_TEST_WORKERS=1 BILQIS_A01_ATLAS_BUNDLE=<accepted-a01> \
+      BILQIS_C16_2C_STAGE_ROOT=<isolated-stage-root> \
+      <complete-python> -m pytest -q <live-module>::<one-node-id>
+```
+
+Verify the detached PID/log/receipt/source digest once, then yield. Do not poll it.
+
+The expensive test module is `DETACHED_ONLY`. Invoke its four test node IDs
+separately. A cold-stage skip is not acceptance evidence; it means the accepted stage
+receipt is absent. The cheap C16.2c helper tests remain suitable for the ordinary
+development loop.
+
+The live node IDs are:
+
+- `test_c16_2c_stage_real_rejection_records_rollback_without_parent_mutation`
+- `test_c16_2c_stage_second_admitted_family_traverses_source_c03_c05_chain`
+- `test_c16_2c_stage_accepts_generation_one_and_records_uninterrupted_next_update`
+- `test_c16_2c_stage_cold_next_update_matches_persisted_uninterrupted_stage`
+
+Pass exactly one node ID to pytest for each detached launch. Never qualify #994 by
+running the whole live module in one command.

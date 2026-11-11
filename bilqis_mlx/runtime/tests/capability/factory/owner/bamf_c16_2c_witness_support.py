@@ -42,12 +42,18 @@ def bound_visit(parent, target, capability=CAPABILITY, lesson_grade="B"):
         current_student=SimpleNamespace(
             sha256=candidate_identity_digest(parent.retained_state)),
     )
+    bootstrap = {}
+    if "c03_lineage" not in parent.teacher_state:
+        bootstrap = {
+            "legacy_receipt": {"teacher": selection_teacher()},
+            "adaptation": adaptation(),
+            "prior_region": "legacy-region",
+        }
     bound, policy, _metadata = select_accepted_teacher_visit(
         target, historical_teacher_policy, school, random.Random(17), Settings(),
         "factory/7", {}, lesson_grade, capability_id=capability,
         total_capabilities=20,
-        legacy_receipt={"teacher": selection_teacher()},
-        adaptation=adaptation(), prior_region="legacy-region")
+        **bootstrap)
     provenance = BamfVisitProvenance.from_c03_record(bound.identity.to_record())
     return bound, provenance, policy
 
@@ -114,14 +120,17 @@ def cold_probe(target, feature_path, artifact):
         return next_update_receipt(target, context, feature_path, artifact)
 
 
-def launch_witness_receipt(
+def accepted_witness_receipt(
         parent, successor, published, decision, context, bound,
-        uninterrupted, cold):
-    """Bind the disposable C16.2c proof without claiming production trajectory ownership."""
+        uninterrupted, feature_artifact_path, *, process_nonce):
+    """Persist accepted publication plus its same-process next update."""
+    if (not isinstance(uninterrupted, dict)
+            or not isinstance(process_nonce, str) or not process_nonce):
+        raise ValueError("C16_2C_WITNESS_STAGE_INVALID")
     source = (context.release.source_bindings.source_attestation_sha256
               or context.release.source_bindings.digest())
     return {
-        "schema": "bilqis.mlx.c16.2c-launch-witness/v1",
+        "schema": "bilqis.mlx.c16.2c-accepted-stage/v1",
         "parent_generation": parent.generation,
         "retained_generation": successor.generation,
         "parent_optimizer_step": parent.retained_state.optimizer_step,
@@ -133,9 +142,9 @@ def launch_witness_receipt(
         "c05_decision": decision.to_record(),
         "factory_release_sha256": context.release.release_sha256,
         "source_identity_sha256": source,
+        "feature_artifact_path": str(Path(feature_artifact_path).resolve()),
         "uninterrupted_next_update": uninterrupted,
-        "cold_next_update": cold,
-        "cold_next_update_equivalent": uninterrupted == cold,
+        "uninterrupted_process_nonce": process_nonce,
         "c03_successor_fixture_authority": {
             "next_seed": bound.identity.selection_seed + C03_FIXTURE_SEED_OFFSET,
             "cursor_owner": "taught-source-row-id",
@@ -144,7 +153,22 @@ def launch_witness_receipt(
     }
 
 
+def finalize_witness_receipt(accepted, cold):
+    """Complete the receipt only after a separately launched cold process agrees."""
+    if (not isinstance(accepted, dict)
+            or accepted.get("schema") != "bilqis.mlx.c16.2c-accepted-stage/v1"
+            or not isinstance(cold, dict)):
+        raise ValueError("C16_2C_WITNESS_STAGE_INVALID")
+    return {
+        **accepted,
+        "schema": "bilqis.mlx.c16.2c-launch-witness/v1",
+        "cold_next_update": cold,
+        "cold_next_update_equivalent": accepted["uninterrupted_next_update"] == cold,
+    }
+
+
 __all__ = (
-    "C03_FIXTURE_SEED_OFFSET", "CAPABILITY", "cold_probe",
-    "launch_witness_receipt", "next_update_receipt", "real_candidate_step",
+    "C03_FIXTURE_SEED_OFFSET", "CAPABILITY", "accepted_witness_receipt",
+    "cold_probe", "finalize_witness_receipt",
+    "next_update_receipt", "real_candidate_step",
 )
