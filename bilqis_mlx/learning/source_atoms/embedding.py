@@ -18,7 +18,7 @@ from .inputs import SourceAtomRow
 
 def source_atom_vectors(
     parameters, compiled, config, source, features, feature_schema, extents,
-    artifact_owner,
+    banks, artifact_owner,
 ):
     """Recheck source/rights before gathering any identity tensor.
 
@@ -31,11 +31,9 @@ def source_atom_vectors(
         invalid("BAMF_SOURCE_ATOM_INPUT_INVALID")
     snapshot = load_pinned_atlas_snapshot(source.selection)
     expected_features = build_feature_manifest(snapshot, feature_schema)
-    minimum_bank_count = 1 + max(
-        (entry.bank for entry in snapshot.abi_entries if entry.active), default=-1)
     if (features != expected_features or extents.factor_map_digest != features.digest
-            or extents.active_semantic_digest != snapshot.active_set_sha256
-            or extents.semantic_bank_count < minimum_bank_count):
+            or type(banks) is not tuple or not banks
+            or any(type(bank) is not SemanticBankView for bank in banks)):
         invalid("BAMF_SOURCE_ATOM_GENERATION_DRIFT")
     artifact_owner.require(features)
     handoff = build_source_atom_handoff(
@@ -46,12 +44,19 @@ def source_atom_vectors(
         source.graph, **source.replay_arguments())
     spec = ModelTopologySpecV2()
     owned = embedding_parameter_view(parameters, spec=spec, extents=extents)
-    banks = tuple(SemanticBankView(
-        index, owned[f"identity.bank.{index}"],
-        tuple(entry.row for entry in snapshot.abi_entries if entry.bank == index and entry.active),
-        snapshot.release_sha256, snapshot.active_set_sha256)
-        for index in range(extents.semantic_bank_count))
     _validate_banks(banks)
+    active_indices = tuple(
+        bank.bank_index * spec.semantic_bank_rows + row
+        for bank in banks for row in bank.active_rows)
+    if (len(banks) != extents.semantic_bank_count
+            or banks[0].semantic_release != snapshot.release_sha256
+            or banks[0].active_semantic_digest != extents.active_semantic_digest
+            or any(bank.weights is not owned.get(f"identity.bank.{bank.bank_index}")
+                   for bank in banks)
+            or any(index >= len(snapshot.abi_entries)
+                   or snapshot.abi_entries[index].index != index
+                   for index in active_indices)):
+        invalid("BAMF_SOURCE_ATOM_GENERATION_DRIFT")
     vectors = []
     for binding in handoff.bindings:
         row = features.features_for(

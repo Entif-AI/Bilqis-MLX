@@ -64,6 +64,8 @@ from .banks import (
     ConceptBatch,
     IndexedLogits,
     _validate_banks,
+    semantic_bank_views,
+    semantic_bank_views_from_vocabulary_candidate,
     embed_atoms,
     semantic_logits,
 )
@@ -71,6 +73,7 @@ from .initialization import (
     SourceFactorWitness,
     IdentityRowInitialization,
     plan_identity_initialization,
+    qualify_staged_identity_initialization,
 )
 from .gather import (
     gather_constituents,

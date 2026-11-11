@@ -11,7 +11,12 @@ from unittest.mock import patch
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.runtime.bamf_bundle import (
     feature_authority, issue_initial_foundation_feature_authority,
+    load_bamf_generation_authority, publish_atlas_admission_generation,
     publish_initial_generation,
+)
+from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
+from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
+    _issue_atlas_admission_binding,
 )
 from bilqis_mlx.runtime.bamf_bundle.genesis import foundation as genesis_foundation
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
@@ -57,6 +62,63 @@ def publish_feature_genesis(
                 run_dir, prepared, reserve_gib=0.)
 
 
+def publish_feature_extension(run_dir, source):
+    """Publish one feature-map change through the current C07/B13 authority seam."""
+    pointer = Path(run_dir) / "bamf-state.json"
+    with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+        parent, parent_manifest = load_bamf_generation_authority(pointer)
+        candidate = derive_successor_bundle(
+            parent, parent.retained_state,
+            parent_manifest_sha256=parent_manifest,
+            delivery_events=({"event": "FIXTURE_ATLAS_EXTENSION"},),
+        )
+        candidate = replace(
+            candidate,
+            provenance=replace(
+                parent.provenance,
+                release_digest=source.provenance.release_digest,
+            ),
+            extents=replace(
+                parent.extents,
+                semantic_bank_count=source.extents.semantic_bank_count,
+                active_semantic_digest=source.extents.active_semantic_digest,
+                factor_map_digest=source.extents.factor_map_digest,
+            ),
+            semantic_abi={
+                **parent.semantic_abi,
+                "active_set_sha256": source.semantic_abi["active_set_sha256"],
+                "semantic_bank_count": source.semantic_abi["semantic_bank_count"],
+                "bank_identities": list(source.semantic_abi["bank_identities"]),
+            },
+            compiler_features={
+                **parent.compiler_features,
+                "factor_map_sha256": source.compiler_features["factor_map_sha256"],
+                "feature_source": dict(source.compiler_features["feature_source"]),
+                "feature_schema": dict(source.compiler_features["feature_schema"]),
+            },
+            correction_frontier={
+                **parent.correction_frontier,
+                "release_digest": source.provenance.release_digest,
+            },
+            transition={
+                "schema": "bilqis.mlx.bamf-generation-transition/v1",
+                "kind": "PARAMETER_EXTENSION",
+                "invalidate_derived_caches": True,
+            },
+        )
+        admission = _issue_atlas_admission_binding(
+            candidate, parent,
+            lease_sha256="9" * 64,
+            source_approval_sha256="8" * 64,
+            proposal_sha256="7" * 64,
+            factory_release_sha256="6" * 64,
+            staging_receipt_sha256="5" * 64,
+            parent_feature_receipt_sha256="4" * 64,
+        )
+        return publish_atlas_admission_generation(
+            run_dir, candidate, admission=admission, reserve_gib=0.)
+
+
 class FeatureLineageCase(unittest.TestCase):
     def setUp(self):
         self.temporary = TemporaryDirectory()
@@ -75,6 +137,8 @@ class FeatureLineageCase(unittest.TestCase):
         self.temporary.cleanup()
 
     def publish(self, source):
+        if source.transition.get("kind") == "PARAMETER_EXTENSION":
+            return publish_feature_extension(self.run, source)
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             return publish_candidate(self.run, source)
 

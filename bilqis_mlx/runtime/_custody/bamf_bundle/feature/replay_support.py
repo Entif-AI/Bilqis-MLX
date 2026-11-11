@@ -61,7 +61,8 @@ def artifact_identity(source: dict) -> AtlasArtifactIdentity:
 
 def authenticate_features(
         student, artifact_path: str | None = None, *, predecessor=None,
-        resolve_selection, load_snapshot, build_manifest):
+        resolve_selection, load_snapshot, build_manifest,
+        require_active_set_match: bool = True):
     """Replay the admitted source release and rederive the accepted feature map."""
     compiler = student.compiler_features
     if compiler.get("factor_map_sha256") != student.extents.factor_map_digest:
@@ -78,7 +79,8 @@ def authenticate_features(
                      str(artifact_path), identity.bundle_id,
                      identity.release_sha256, identity.source_bundle_id))
     snapshot = load_snapshot(selection)
-    if student.extents.active_semantic_digest != snapshot.active_set_sha256:
+    if (require_active_set_match
+            and student.extents.active_semantic_digest != snapshot.active_set_sha256):
         invalid("BAMF_FEATURE_ACTIVE_SET_DRIFT")
     try:
         features = build_manifest(snapshot, schema)

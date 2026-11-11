@@ -161,7 +161,8 @@ class FactoryTrainingBridgeTests(FactoryTrainingBridgeFixture):
         with self.assertRaises(BilqisError):
             bind_compiled_training_batch(
                 prepared.training_batch, first.compiled,
-                first.sources, first.feature_schema, row_index=1)
+                first.sources, first.feature_schema,
+                active_semantic_rows=first.active_semantic_rows, row_index=1)
         self.assertNotEqual(rows[0]["id"], rows[1]["id"])
 
     def test_current_a_b_c_score_through_one_b11_backend(self):

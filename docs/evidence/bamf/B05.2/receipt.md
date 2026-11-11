@@ -37,3 +37,72 @@ The reviewer ran `git diff --check` successfully but could not
 execute tests in its isolated environment because rdflib was missing.
 The 19/19 focused and 59/59 combined MLX totals are prime-run
 evidence, not a second Goldfish execution.
+
+## Final integrated closeout — 2026-11-10
+
+The opening `NUMERICAL_PROOF_ONLY` status above records the original 2026-10-29
+scoped candidate and remains historical provenance. It is no longer the current
+integration disposition.
+
+Issue #450 is now technically complete on reviewed unified
+`4d7599086c2aed283a25ac24f6cc35271f4dc9ce`. The original B05.2 candidate
+`eef9ed83dba729c7d1095537c1e33cea93c0f955` is an ancestor of current unified,
+and the source/custody seams that were intentionally deferred by that candidate
+have since landed through their owning issues.
+
+### Integrated authority closure
+
+- B05.1 prerequisite #449 is closed and integrated.
+- The real retained B11 producer executes B08 site 1 after layer 4 and before the
+  g1 boundary capture; source-owned g1 receipts record the retained motif result.
+- B05.2a #863 / merged PR #981 proves the production source producer applies the
+  existing B01 rank-8 adapter after boundaries 1 and 2 and applies the third
+  adapter to the final boundary result without executing a fourth backbone group.
+- B05.3 #451 proves the B01 ledger owns one singular set of shared selector
+  projections plus three distinct gate vector/bias pairs and that B13 cold custody
+  round-trips parameters, moments, update counts, diagnostics, and selector output.
+- B08.2 #461 supplies the integrated retained placement/reporting witness. The
+  broader B11/B13 parents may retain unrelated aggregate work; their OPEN state is
+  not a blocker for these exact B05.2-owned seams.
+- Public diagnostics expose generic `output`, `alpha`, and `gate` observations
+  without assigning fixed cognitive functions to layers.
+
+No second parameter registry, checkpoint owner, source grant, motif authority,
+optimizer authority, or production neural implementation is introduced by this
+closeout.
+
+### Exact-head requalification
+
+On exact reviewed-unified head `4d7599086c2aed283a25ac24f6cc35271f4dc9ce`:
+
+```text
+runtime/tests/depth/test_block_attnres.py
+2 passed, 0 failed, 0 skipped
+
+learning/source_atoms/tests/test_backbone_source_adapters.py
+learning/source_atoms/tests/test_backbone_retained_motif.py
+6 passed, 0 failed, 0 skipped
+
+runtime/tests/depth/test_selector_custody.py
+1 passed, 0 failed, 0 skipped
+```
+
+The real-A01 run used both `BILQIS_A01_ATLAS_BUNDLE` and
+`BILQIS_ATLAS_REAL_ARTIFACT` bound to the pinned bundle identity
+`5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7`.
+The selector-custody witness ran with `BILQIS_BAMF_FULL_WITNESS=1`.
+
+Repository guards on the same head:
+
+```text
+BAMF contract mirrors: 43/43 exact mirrors and API/acceptance fields PASS
+B05 owner-mirror reconciliation: no-op
+Governance integrity: 0 violations
+Factory architecture: OK
+Semantic boundaries: OK
+BAMF flow control: OK
+```
+
+Independent read-only integrated audit of exact head `4d759908` found
+0 Blockers / 0 Majors. Its sole Nit was this stale historical receipt, repaired by
+this append-only closeout. No production-code change is required for #450.

@@ -11,7 +11,10 @@ import mlx.core as mx
 import numpy as np
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.frame_embeddings import ConceptBatch, FeatureRequest, SemanticBankView, _local_position, compose_factor_features, embed_atoms, semantic_logits, IndexedLogits, gather_constituents, masked_semantic_loss, plan_identity_initialization, embedding_parameter_view
-from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes
+from bilqis_mlx.runtime.model_topology_v2 import (
+    GenerationExtents, ModelTopologySpecV2, create_unbound_bamf_state,
+    expected_bamf_shapes,
+)
 from bilqis_mlx.runtime.model_topology import DEFAULT_OPTIMIZER
 from bilqis_mlx.semantics.frame_schema import ConceptRef, FrameSchema, RoleOccurrence, RoleSpec, SourceSpan, make_frame_instance
 from bilqis_mlx.semantics.context_eligibility import ContextMember, frame_evidence_digest, member_evidence_digest, project_context
@@ -20,6 +23,30 @@ from bilqis_mlx.semantics.tests.test_atlas_features import _features, _snapshot
 from bilqis_mlx.learning.tests.test_frame_embeddings import _context_for, FactorCompositionTests
 
 class FactorCompositionTests2(FactorCompositionTests):
+    def test_same_identity_changed_role_changes_embedding_without_changing_identity_row(self):
+        identity = mx.zeros((8192, 768), dtype=mx.float32).at[11, 0].add(1)
+        params = {
+            **self.params,
+            "identity.bank.0": identity,
+            "features.local_slot": mx.zeros_like(self.params["features.local_slot"]),
+        }
+        bank = SemanticBankView(
+            0, identity, (11,), self.features.semantic_release,
+            self.extents.active_semantic_digest)
+        left_request, right_request = self.request("left"), self.request("right")
+        self.assertEqual(left_request.concept.semantic_id, right_request.concept.semantic_id)
+        self.assertEqual(left_request.concept.abi_index, right_request.concept.abi_index)
+        before = np.asarray(params["identity.bank.0"][11]).copy()
+
+        left = embed_atoms(
+            params, ConceptBatch(((left_request,),), (bank,), self.extents), self.features)
+        right = embed_atoms(
+            params, ConceptBatch(((right_request,),), (bank,), self.extents), self.features)
+
+        self.assertIs(bank.weights, params["identity.bank.0"])
+        np.testing.assert_array_equal(np.asarray(params["identity.bank.0"][11]), before)
+        self.assertFalse(np.array_equal(np.asarray(left), np.asarray(right)))
+
     def test_identity_witnesses_are_complete_and_canonical_under_source_reordering(self):
         weights = mx.zeros((8192, 768), dtype=mx.float32)
         params = {**self.params, "identity.bank.0": weights}
@@ -62,6 +89,31 @@ class FactorCompositionTests2(FactorCompositionTests):
             with self.assertRaises(BilqisError):
                 embedding_parameter_view(changed, spec=spec, extents=extents)
 
+    def test_real_b01_constructor_matches_expanded_ledger_and_embedding_registry(self):
+        spec = ModelTopologySpecV2()
+        parameters, _state, manifest = create_unbound_bamf_state(
+            spec, self.extents, run_seed=17)
+        declared = expected_bamf_shapes(spec, self.extents)
+        self.assertEqual(tuple(parameters), tuple(item.name for item in declared))
+        self.assertEqual(
+            tuple(item["name"] for item in manifest["parameters"]),
+            tuple(item.name for item in declared),
+        )
+        for record, item in zip(manifest["parameters"], declared):
+            self.assertEqual(record["shape"], list(item.shape))
+            self.assertEqual(record["initializer"], item.initializer.value)
+            self.assertEqual(record["group"], item.group.value)
+            self.assertEqual(record["decay"], item.decay)
+            self.assertEqual(record["dtype"], item.dtype)
+            self.assertEqual(record["parameters"], item.parameter_count)
+            self.assertEqual(record["category"], item.category.value)
+        view = embedding_parameter_view(parameters, spec=spec, extents=self.extents)
+        owned = tuple(
+            item.name for item in declared
+            if item.name.startswith(("identity.bank.", "features.")))
+        self.assertEqual(tuple(view), owned)
+        self.assertTrue(all(view[name] is parameters[name] for name in owned))
+
     def test_serialized_embedding_prefix_reproduces_tied_logits(self):
         from bilqis_mlx.runtime.disk import assert_headroom
         active_digest = hashlib.sha256(json_bytes([11,12])).hexdigest()
@@ -92,7 +144,11 @@ class FactorCompositionTests2(FactorCompositionTests):
         active_digest = hashlib.sha256(json_bytes([11,12])).hexdigest()
         extents = replace(self.extents, active_semantic_digest=active_digest)
         bank = mx.zeros((8192, 768), dtype=mx.float32).at[11, 0].add(1).at[12, 1].add(2)
-        parameters = {**self.params, "identity.bank.0": bank}
+        full = {item.name: mx.zeros(item.shape, dtype=mx.float32)
+                for item in expected_bamf_shapes(ModelTopologySpecV2(), extents)}
+        full.update({**self.params, "identity.bank.0": bank})
+        parameters = embedding_parameter_view(
+            full, spec=ModelTopologySpecV2(), extents=extents)
         request = self.request()
         def objective(params):
             banks = (SemanticBankView(0, params["identity.bank.0"], (11, 12),
@@ -103,6 +159,7 @@ class FactorCompositionTests2(FactorCompositionTests):
                                          mx.ones(logits.logits.shape, dtype=mx.bool_))
         gradients = mx.grad(objective)(parameters)
         ledger = {item.name: item for item in expected_bamf_shapes(ModelTopologySpecV2(), extents)}
+        self.assertEqual(set(gradients), set(parameters))
         report = []
         for name, gradient in gradients.items():
             values = np.asarray(gradient)

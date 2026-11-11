@@ -12,7 +12,7 @@ from bilqis_mlx.runtime.atlas_resources import (
 )
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle import (
-    CompleteStudent, authenticate_bamf_candidate_feature_context,
+    CompleteStudent, authenticate_bamf_execution_feature_context,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_uninterrupted_candidate_step, bind_accepted_execution_cache,
@@ -130,8 +130,8 @@ def _execute_prepared_candidate(
     compiled = bind_factory_task_compiled_batch(compiled, authority)
     resolved = factory_task_training_goal(source_context, compiled, authority)
     targets, mask = task_goal_training_targets(authority.goal, resolved)
-    feature_context = authenticate_bamf_candidate_feature_context(
-        parent, atlas_artifact_path)
+    feature_context = authenticate_bamf_execution_feature_context(
+        parent, atlas_artifact_path, source_context.run_dir)
     plan = task_goal_route_plan(
         authority.goal, compiled, feature_context.snapshot, generation)
     gradient = bamf_value_and_grad(
