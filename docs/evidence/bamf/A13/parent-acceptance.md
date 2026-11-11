@@ -56,7 +56,7 @@ Synthetic adapter fixtures explicitly provide their source-inventory oracle; mou
 real-source tests and the Factory witness use the actual owner unmocked.
 The cold-replay fixture now uses existing production `publish_genesis` rather
 than attempting to replace the generation-zero source authority in a successor.
-Three pre-existing evidence documents receive only their omitted provenance
+Four pre-existing evidence documents receive only their omitted provenance
 reference; their original check outcomes remain historical.
 
 Observed verification, zero skips in each group:

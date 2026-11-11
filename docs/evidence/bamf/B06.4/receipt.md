@@ -104,3 +104,6 @@ Fresh PR #988 targets reviewed unified `036e0aa3c2bec184481a4f009d8c31e16b9495f5
 The following flow-control-only bookkeeping commit must also clear hosted checks before final turn-in is claimed. Human merge and merged-head readback remain external lifecycle gates.
 
 No live student, AdamW state, teacher state, accepted checkpoint lineage, or human-run training was mutated.
+
+Current replay provenance for the historical quality observations above:
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
