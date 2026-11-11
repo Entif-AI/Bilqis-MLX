@@ -1,4 +1,4 @@
-"""A09/source construction support for the #955 mixed v2 witness."""
+"""A09/source construction support for mixed v2 admission witnesses."""
 from contextlib import ExitStack
 from dataclasses import replace
 import hashlib
@@ -225,12 +225,14 @@ class MixedSourceSupport(EventCandidateRealizationFixture):
         prefix = tuple(slice(0, size) for size in before.shape)
         np.testing.assert_array_equal(after[prefix], before)
 
-    def event_handoff(self, current_release):
+    def event_handoff(
+            self, current_release, *, capability="D.EVENT_OCCURRENCE",
+            mastered=None, graph=None):
         candidate, source_frontier, policy = self.atlas_fixture()
-        capability = "D.EVENT_OCCURRENCE"
         semantic_id = event_frames.atlas_semantic_id(capability)
+        current_graph = self.parent_graph if graph is None else graph
         staged = candidate_realizations.prepare_realized_candidate(
-            self.frontier, current_release, self.parent_graph, semantic_id,
+            self.frontier, current_release, current_graph, semantic_id,
             source_root=LEGACY, source_registry=self.combined_source_registry(),
             answer_registry=self.answer_registry)
         snapshot = self.build_snapshot(
@@ -238,7 +240,8 @@ class MixedSourceSupport(EventCandidateRealizationFixture):
         snapshot = bind_realized_snapshot(
             snapshot, candidate, self.frontier, current_release, (staged,))
         plan, checkpoint_sha256, step, ledger, learner = self.learner_evidence(
-            current_release, {"A.IDENTITY"}, capability)
+            current_release, {"A.IDENTITY"} if mastered is None else set(mastered),
+            capability)
         closure = resolve_frontier_closure(
             snapshot, candidate.census, current_release=current_release,
             evidence_ledger=ledger, autonomy_plan=plan,
