@@ -2,13 +2,6 @@
 from __future__ import annotations
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.atlas_admission_policy import AdmissionResult, AdmissionStatus
-from bilqis_mlx.runtime.atlas_admission_policy_v2 import (
-    AtlasAdmissionContextV2,
-    AtlasDeltaEnvelopeV2,
-    advance_atlas_frontier_v2,
-    replay_atlas_delta_scope_handoff_v2,
-)
 from bilqis_mlx.runtime.atlas_lease_contracts import AtlasAdmissionLeaseV2, _invalid
 from bilqis_mlx.runtime.jit_adoption import (
     _PreparedSuccessorRuntime,
@@ -17,6 +10,8 @@ from bilqis_mlx.runtime.jit_adoption import (
 
 
 def _adopted_result(handoff, lease, pointer, reason):
+    from bilqis_mlx.runtime.atlas_admission_policy import AdmissionResult, AdmissionStatus
+
     successor = handoff.staged_candidate.successor.release_sha256
     return AdmissionResult(
         AdmissionStatus.ADOPTED,
@@ -35,6 +30,13 @@ def _adopted_result(handoff, lease, pointer, reason):
 
 def adopt_capability_only_atlas_successor_v2(current, delta, lease):
     """Publish one exact zero-ID Factory successor after v2 verification."""
+    from bilqis_mlx.runtime.atlas_admission_policy import AdmissionStatus
+    from bilqis_mlx.runtime.atlas_admission_policy_v2 import (
+        AtlasAdmissionContextV2,
+        AtlasDeltaEnvelopeV2,
+        advance_atlas_frontier_v2,
+        replay_atlas_delta_scope_handoff_v2,
+    )
     from bilqis_mlx.runtime.atlas_capability_adoption_v2 import (
         _accepted_capability_only_retry_state_v2,
         accepted_capability_only_retry_v2,
@@ -92,6 +94,13 @@ def adopt_capability_only_atlas_successor_v2(current, delta, lease):
 
 def adopt_parameter_extension_atlas_successor_v2(current, delta, lease):
     """Publish one exact A02 parameter extension using persisted v2 lease authority."""
+    from bilqis_mlx.runtime.atlas_admission_policy import AdmissionStatus
+    from bilqis_mlx.runtime.atlas_admission_policy_v2 import (
+        AtlasAdmissionContextV2,
+        AtlasDeltaEnvelopeV2,
+        advance_atlas_frontier_v2,
+        replay_atlas_delta_scope_handoff_v2,
+    )
     from bilqis_mlx.runtime.atlas_parameter_adoption_v2 import (
         accepted_parameter_extension_retry_v2,
         publish_native_staged_candidate_v2,
