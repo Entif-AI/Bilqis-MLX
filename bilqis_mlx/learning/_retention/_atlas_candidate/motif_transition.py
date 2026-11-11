@@ -112,9 +112,9 @@ _require_transition_issued, _raw_issue_transition = _new_transition_owner()
 
 
 def _make_materializer(issue_transition):
-    from .motif_materialization import _stage_candidate_motif_allocation_impl
-
     def stage(candidate, source_continuation, **kwargs):
+        from .motif_materialization import _stage_candidate_motif_allocation_impl
+
         continuation = source_continuation
         approved = continuation.approved
         return _stage_candidate_motif_allocation_impl(
