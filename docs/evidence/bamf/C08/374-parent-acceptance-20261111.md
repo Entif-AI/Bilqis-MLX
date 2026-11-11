@@ -88,6 +88,44 @@ The real witness proves the C08 parent integration on the actual Factory/A01 art
 
 The branch subsequently received documentation and verification-tooling changes only: ADR-139/`AGENTS.md` staged-verification doctrine plus hardening of the C08 preflight/runner and structural relocation of BAMF workstack/grooming scripts. These changes do not alter C08 production runtime, model, optimizer, Factory execution, resource planning, custody, or the full witness assertion path. Under ADR-129, the r4 real-Factory PASS therefore remains valid production acceptance evidence; only the newly changed tooling receives fresh lightweight verification and review.
 
+## Current unified reconciliation | 2026-11-11
+
+The feature branch later consumed current reviewed unified head
+`c42362ced0309a24f2f95391257df8f4ef3588cc` in merge commit
+`d54b0703f66beda6e60f12c1de58c07885e28026`.
+
+- The upstream `ADR-138` resource-containment decision is preserved. This branch's
+  staged fail-fast verification decision was mechanically renumbered to `ADR-139`;
+  its accepted doctrine is unchanged.
+- The runtime package path exports now include both C08 `_batch/training` ownership
+  and unified `_admission/v2` ownership.
+- Current-base cheap verification is green: the BAMF contract verifier passed,
+  `git diff --check` is clean, the focused C08 seam ring passed `14` tests with
+  `9` skips and `9` subtests, and `npm run quality:check` passed with
+  `BILQIS_QUALITY_BASE_REF=origin/codex/bamf-unified-base-20261028` and
+  serialized test workers.
+- The first premerge r2 attempt before this merge failed only because the older
+  branch lacked four legacy-trainer evidence updates already present on current
+  unified. Current-base `quality:check` confirms that integration mismatch is closed.
+
+Current unified also refactored Factory source-frame preparation through
+`source_frame_inventory(...)`, which lies on the real C08 pre-gradient path.
+Therefore the historical r4 PASS remains valid evidence for its tested immutable
+head, but it is not silently promoted into current-base integration proof under
+ADR-129. A current-base real-fixture/full witness and aggregate premerge gate remain
+the final turn-in evidence.
+
+Those gates are presently resource-blocked rather than semantically failed. Current
+host inspection reports swap at approximately `58.15 GiB / 59.39 GiB`, which is
+near saturation. Current `ADR-138` explicitly forbids launching another expensive
+MLX/full-model witness in that state. No heavy rerun is authorized until that
+resource precondition clears; do not weaken the guard or treat detachment as a
+substitute for memory safety.
+
 ## Disposition
 
-C08 BAMF-0.2 owned acceptance is satisfied. The feature branch is ready for a human-reviewed pull request into `codex/bamf-unified-base-20261028`. This receipt does not authorize self-merge or issue closure before that PR is merged and read back.
+C08 BAMF-0.2 owned acceptance remains satisfied by the owner-declared and durable
+r4 production PASS. Current-base integration is reconciled and pushed, but PR
+readiness remains pending the resource-lawful current-base witness/premerge gates
+described above. This receipt does not authorize self-merge or issue closure before
+the human-reviewed PR is merged and read back.
