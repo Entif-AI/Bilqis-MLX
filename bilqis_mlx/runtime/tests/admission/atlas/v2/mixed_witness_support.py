@@ -211,8 +211,26 @@ class MixedWitnessSupport(MixedSourceSupport):
         self.assertEqual(accepted2.retained_state.policy,
                          native2.candidate.retained_state.policy)
         self.assertEqual(accepted2.extents, native2.candidate.extents)
-        self.assertEqual(native2.candidate.retained_state.policy,
-                         accepted1.retained_state.policy)
+        parent_policy = accepted1.retained_state.policy
+        candidate_policy = native2.candidate.retained_state.policy
+        self.assertEqual(
+            (candidate_policy.mode, candidate_policy.accepted_fast_since_full,
+             candidate_policy.policy_version, candidate_policy.schema_version,
+             candidate_policy.mode_transition),
+            (parent_policy.mode, parent_policy.accepted_fast_since_full,
+             parent_policy.policy_version, parent_policy.schema_version,
+             parent_policy.mode_transition))
+        parent_ages = {item.identity: item.accepted_age for item in parent_policy.row_ages}
+        candidate_ages = {
+            item.identity: item.accepted_age for item in candidate_policy.row_ages
+        }
+        self.assertTrue(set(parent_ages).issubset(candidate_ages))
+        self.assertEqual(
+            {identity: candidate_ages[identity] for identity in parent_ages},
+            parent_ages)
+        new_ages = tuple(
+            age for identity, age in candidate_ages.items() if identity not in parent_ages)
+        self.assertEqual(new_ages, (0,))
         self.assertNotEqual(native2.candidate.extents.digest, accepted1.extents.digest)
         for field in ("parameters", "m", "v", "update_counts"):
             self.assert_tree_prefix(
