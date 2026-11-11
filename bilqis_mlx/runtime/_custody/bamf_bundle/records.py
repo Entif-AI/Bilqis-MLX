@@ -15,12 +15,11 @@ from .package_import_transition import (
     PACKAGE_IMPORT_TRANSITION_SCHEMA, validate_package_import_transition,
 )
 from .factory_release_adoption import (
-    FACTORY_RELEASE_ADOPTION_TRANSITION_SCHEMA,
     is_factory_release_adoption_transition,
     validate_factory_release_adoption_transition,
 )
 from .motif.transition import (
-    MOTIF_ALLOCATION_TRANSITION_SCHEMA, is_motif_allocation_transition,
+    is_motif_allocation_transition,
     validate_motif_allocation_transition,
 )
 from .sidecar_contracts import validate_identity_sidecars
