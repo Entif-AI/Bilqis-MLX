@@ -1,6 +1,6 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-R18-PENDING
+Status: DESIGN AMENDMENT / EGM-R19-PENDING
 Issue: #542 / C16.1a
 Reviewed unified base: `905018b0ece7613843570dc2c2e72a74dae4e91d`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
@@ -234,10 +234,18 @@ found one additional provenance flaw: shared read/support callers also use
 `_pointer_lock(...)`, whose current `O_CREAT` behavior can mint a pointer-lock-only
 marker on an empty target even though no B13 publication owner ran. R18 therefore
 separates publication-authorized marker creation from reopen-only read/support
-locking, while retaining `.bamf-pointer.lock` as the B13 lifecycle marker. R18 repairs
-the full R17 union without widening C16.1a scope. Production mutation remains
-forbidden until R18 freshly clears **0 Blockers / 0 Majors** across all three required
-lenses.
+locking, while retaining `.bamf-pointer.lock` as the B13 lifecycle marker. R18
+therefore repaired the full R17 union, but its fresh Codebase Details lens still
+returned **1 Blocker / 1 Major / 0 Nits**. The Blocker is that R18 made the generic
+publication lock creator-capable for successor publication too: generation >0
+parent-acceptance can run against an absent/wrong root, create the lock-only marker,
+then reject, falsely leaving the marker R18 classifies as interrupted generation-zero
+provenance. The Major is that R18 did not freeze the existing
+`flock(LOCK_EX | LOCK_NB)` + `BAMF_POINTER_WRITER_ACTIVE` contention behavior, so an
+implementer could accidentally turn observable fail-fast locking into a blocking
+wait. R19 repairs those two findings without widening C16.1a scope. Production
+mutation remains forbidden until R19 freshly clears **0 Blockers / 0 Majors** across
+all three required lenses.
 
 ## Why this amendment exists
 
@@ -801,17 +809,24 @@ loaders, correction owners, event/reconciliation readers, and cognitive-package
 consumers use only this reopen-only mode and therefore cannot mint B13 lifecycle
 evidence.
 
-Only the B13 publication chain receives `_publication_pointer_lock(...)`, a private
-publication-owned wrapper/callback that invokes `_pointer_lock(..., create=True)`.
-That mode may first establish the safe run
-root and must distinguish first creation from reopen without a racy pre-open existence
-decision: first attempt `O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW` (where `O_NOFOLLOW` is
-supported); on `FileExistsError`, reopen the existing marker with
-`O_RDWR|O_NOFOLLOW`. The generation-zero retry owner, parent-acceptance-for-publication
-owner and final publication owner all use that explicit creator-capable callback; no
-other caller does. After acquiring the exclusive flock and verifying the opened
-descriptor is the same safe regular lock file, **every acquisition in either mode**
-must execute `fsync(fd)` and then `fsync(run_dir)` before yielding to its caller. This
+Only **generation-zero** publication receives `_initial_generation_pointer_lock(...)`,
+a private creator-capable wrapper/callback that invokes `_pointer_lock(...,
+create=True)`. That mode may first establish the safe run root and must distinguish
+first creation from reopen without a racy pre-open existence decision: first attempt
+`O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW` (where `O_NOFOLLOW` is supported); on
+`FileExistsError`, reopen the existing marker with `O_RDWR|O_NOFOLLOW`. The
+generation-zero retry owner always uses this wrapper. Parent-acceptance-for-publication
+and final publication select it **only when `candidate.generation == 0`**; every
+generation >0 successor path uses reopen-only `_pointer_lock(..., create=False)` and
+therefore cannot mint a lock-only marker on an absent or wrong root. No other caller
+receives creator authority.
+
+Both modes preserve the existing fail-fast lock contract exactly. After open/validate,
+acquire `flock(fd, LOCK_EX | LOCK_NB)`; `BlockingIOError` rejects with exact
+`BAMF_POINTER_WRITER_ACTIVE` **before any fsync or owner body**. Only after the
+nonblocking exclusive flock succeeds and the opened descriptor is verified as the
+same safe regular lock file does **every acquisition in either mode** execute
+`fsync(fd)` and then `fsync(run_dir)` before yielding to its caller. This
 deliberately repairs the indistinguishable residual in which an earlier creator left
 a visible regular marker but crashed or failed before completing durability. Failure
 of either fsync propagates the underlying `OSError` unchanged, matching the existing
@@ -1848,15 +1863,19 @@ Production, with required file action:
     lock owner can proceed **and** make creation publication-owned: change
     `_pointer_lock(run_dir, *, create=False)` to a reopen-only default that never
     creates the run root or marker, factor a non-creating existing-run-root validator
-    for that path, and add private `_publication_pointer_lock(...)`
-    as the only `create=True` wrapper used by the B13 retry, parent-acceptance and
-    final-publication boundaries. Creator mode retains exclusive-create/reopen
-    semantics to avoid racy path decisions. Both modes acquire the exclusive flock,
-    validate the opened regular file, then fsync the lock fd and run root on every
-    acquisition before yielding. This repeated durability barrier repairs a visible
-    residual left by an earlier failed/crashed creator; either fsync failure
-    propagates unchanged and the acquisition never yields. Reopen-only callers fail
-    closed rather than minting a missing marker;
+    for that path, and add private `_initial_generation_pointer_lock(...)` as the only
+    `create=True` wrapper. Use creator mode for generation-zero retry and select it in
+    parent-acceptance/final publication only for `candidate.generation == 0`;
+    generation >0 successor publication uses reopen-only `_pointer_lock(...)` at both
+    boundaries and therefore cannot mint a false gen0 marker. Creator mode retains
+    exclusive-create/reopen semantics to avoid racy path decisions. Both modes retain
+    exact `flock(LOCK_EX | LOCK_NB)` fail-fast contention with
+    `BAMF_POINTER_WRITER_ACTIVE`, then validate the opened regular file and fsync the
+    lock fd and run root on every successful acquisition before yielding. This
+    repeated durability barrier repairs a visible residual left by an earlier
+    failed/crashed creator; either fsync failure propagates unchanged and the
+    acquisition never yields. Reopen-only callers fail closed rather than minting a
+    missing marker;
   - make first creation of `.bamf-staging/` durable before generation-specific work by
     fsyncing the new staging directory and run root, and route every retained-root
     stage-child cleanup through one helper that fsyncs `.bamf-staging/` after child
@@ -2002,8 +2021,8 @@ mirrored test owner:
   mutation;
 - both real pre-seal crash prefixes are lifecycle-owned. The regression enters the
   full generation-zero owner order: `_existing_initial_generation_retry`
-  first-creates the persistent pointer lock through the publication-only
-  `_publication_pointer_lock(...)` exclusive-create path and
+  first-creates the persistent pointer lock through the generation-zero-only
+  `_initial_generation_pointer_lock(...)` exclusive-create path and
   spies on durability ordering to prove `fsync(lock_fd)` then
   `fsync(run_dir)` complete before the owner body can proceed or release the lock;
   a forced failure of either fsync fails before staging, bundle, acceptance or
@@ -2032,9 +2051,20 @@ mirrored test owner:
   `_pointer_lock(..., create=False)`, do not create the run root or
   `.bamf-pointer.lock`, and prove absent root -> `BUNDLE_ROOT_UNSAFE` and absent lock
   under a valid root -> `BUNDLE_ENTRY_UNSAFE`. A
-  publication-owned create path remains the only route that can first mint the lock
-  marker; after publication has minted it, the same representative readers reopen it
-  without creating a second lifecycle artifact;
+  generation-zero publication create path remains the only route that can first mint
+  the lock marker; after publication has minted it, the same representative readers
+  reopen it without creating a second lifecycle artifact;
+- generation >0 publication cannot mint generation-zero provenance: with an otherwise
+  valid successor candidate/acceptance aimed at an absent run root or at a real run
+  root missing `.bamf-pointer.lock`, both parent-acceptance and final-publication lock
+  selection remain reopen-only, fail with the pinned root/entry contract, and leave no
+  marker behind. Generation-zero publication over the same fresh target remains the
+  sole creator-capable path;
+- pointer-lock contention remains nonblocking and byte-for-byte compatible with the
+  existing error contract in both modes: while another holder owns the flock, a
+  creator-capable gen0 acquisition and a reopen-only reader/successor acquisition both
+  attempt `LOCK_EX | LOCK_NB`, reject `BAMF_POINTER_WRITER_ACTIVE`, perform no fsync,
+  and never enter their owner bodies;
 - the mandatory publication structural interruption is behavior-preserving:
   the existing Work Stack interruption bucket is reconciled before the first
   production edit; the split and mirrored tests are verified before any feature
