@@ -1,6 +1,7 @@
 # BAMF-0.2 B05.2a / issue #863 proof receipt
 
-Status: candidate proof, pending independent EGM and hosted PR checks.
+Status: turned-in proof; independent EGM and hosted PR checks passed on the
+semantic/test proof head. Human merge remains external authority.
 
 ## Authority and baseline
 
@@ -71,5 +72,31 @@ PASS: 43/43 issue API, implementation and acceptance fields match workstack
 BAMF_FLOW_CONTROL_OK
 ```
 
-Independent EGM disposition and hosted PR results are appended at turn-in rather
-than predicted here.
+## Independent EGM and hosted turn-in
+
+Fresh independent Goldfish EGM reviewed exact semantic/test proof head
+`269f4d04051493f5e68ce7d6164aacc7bdb0390c` against reviewed unified
+`08654dd2efd199cda03527bc456c3631f3cc0dbb` and returned:
+
+```text
+PASS
+Blocker 0 / Major 0 / Nit 0
+```
+
+The reviewer independently inspected the live #863 acceptance, source producer,
+finalizer, replay, depth selection, adapter ownership, and retained B08/B13 path.
+It also reproduced the pinned-A01 source-adapter witness at 4/4 PASS with zero
+skips and the lower-level adapter suite at 6/6 PASS.
+
+Draft PR #981 hosted checks on the proof head:
+
+```text
+semantic-abi-integrity PASS
+portable-core          PASS
+portable               PASS
+```
+
+The subsequent turn-in commit is documentation/flow-control bookkeeping only and
+does not change production or test semantics. Merge remains human-only, issue #863
+remains open until merged readback, and parent #450 remains open regardless of this
+child's merge.
