@@ -12,7 +12,7 @@ from bilqis_mlx.runtime.tests.bamf_first_student._bamf_first_student_support imp
 from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import (
     _lease, _REGISTRY, _run,
 )
-from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_lease_v2 import _lease_v2
+from bilqis_mlx.runtime.tests.admission.atlas.lease.test_v2 import _lease_v2
 from unittest.mock import patch
 from dataclasses import replace
 import os

@@ -10,6 +10,10 @@ from bilqis_mlx.learning.atlas_acceptance import (
 )
 
 from ..atlas_admission import AtlasAdmissionBinding, ParsedAtlasAdmissionBinding
+from ..factory_release.admission import (
+    FactoryReleaseAdmissionBinding,
+    ParsedFactoryReleaseAdmissionBinding,
+)
 from ..codec import load_bamf_bundle
 from ..records import (
     BAMF_POINTER_SCHEMA, BamfBundleCandidate, canonical, invalid, sha, sidecar_records,
@@ -294,6 +298,8 @@ def _require_retry_acceptance_family(authority, persisted) -> None:
         valid = isinstance(persisted, ParsedAcceptedCandidateBinding)
     elif type(authority) is AtlasAdmissionBinding:
         valid = isinstance(persisted, ParsedAtlasAdmissionBinding)
+    elif type(authority) is FactoryReleaseAdmissionBinding:
+        valid = isinstance(persisted, ParsedFactoryReleaseAdmissionBinding)
     else:
         valid = False
     if (not valid or persisted.digest != authority.digest

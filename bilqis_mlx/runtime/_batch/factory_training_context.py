@@ -7,6 +7,33 @@ from bilqis_mlx.semantics.context_eligibility import (
 from bilqis_mlx.semantics.frame_schema import FrameInstance, FrameTree
 
 
+def source_frame_inventory(source_context, row, atlas_selection):
+    """Derive the complete framed/atomic choice from the registered source owner."""
+    from bilqis_mlx.factory.generation import runtime_adapter_for_release
+    from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
+    from bilqis_mlx.semantics.atlas_features.formal import source_family_for_adapter
+    from bilqis_mlx.semantics.frame_adapters import bind_registered_source_row
+    from bilqis_mlx.semantics.frame_schema import SourceSpan
+    from bilqis_mlx.semantics.released_frame_schemas import _load_pinned_released_frame_schemas
+    from bilqis_mlx.source_adapters.atoms.authority import canonical_graph_for
+
+    execution = source_context.release.execution_plan.capability_map[row['capability']]
+    adapter = runtime_adapter_for_release(
+        source_context.source_root, source_context.graph, source_context.release,
+        source_context.source_registry, execution)
+    manifest = _load_pinned_released_frame_schemas(
+        source_family_for_adapter(adapter.descriptor.adapter_id), atlas_selection).manifest
+    graph = canonical_graph_for(row.get('generator'), source_context.source_root)
+    end = len(row['tokens'])
+    tree = bind_registered_source_row(
+        adapter, row, load_pinned_atlas_snapshot(atlas_selection),
+        source_root=source_context.source_root, graph=graph,
+        source_span=SourceSpan(0, end), causal_prefix_end=end,
+        course=source_context.release.curriculum)
+    schemas = frozenset(body.schema_id for body in manifest.bodies)
+    return tree.root.source_instance_id, ((tree,) if schemas_cover_tree(tree, schemas) else ())
+
+
 def training_answer_plan(prefix, release, kind, generation_binding):
     head = next(item for item in release.answer_heads if item.kind == kind)
     return {
@@ -47,4 +74,5 @@ def schemas_cover_tree(tree: FrameTree, schema_ids: frozenset[str]) -> bool:
 
 __all__ = (
     "public_training_context", "schemas_cover_tree", "training_answer_plan",
+    "source_frame_inventory",
 )

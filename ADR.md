@@ -3240,3 +3240,66 @@ the lifecycle marker and design-first EGM rule, and its focused regression prote
 the cutover. Existing differential-test receipts, dependency mapping, diagnostic-loop
 budgets, precedence-ordered diagnosis, and snapshot-pinned detached execution remain
 the proof-economy mechanisms for implementation work.
+
+## ADR-138 | 2026-11-11 | MLX verification is resource-bounded; planner budgets are not allocator guarantees
+
+**Status:** Accepted by direct owner instruction after the 2026-11-11 #354
+qualification run exhausted host memory and swap.
+
+**Observed incident:** The #354 differential leaf gate launched pytest-xdist with
+four persistent workers. The selected dependency cone was MLX-capable and included
+model, optimizer, custody, serialization, gradient, and full-model-adjacent tests.
+During the run macOS repeatedly reported that the system had run out of memory,
+Activity Monitor showed extreme Python memory accounting, xdist workers died, and
+the 96 GiB M3 Ultra reached approximately **65.2 GiB used swap**.
+
+Fresh-process inspection of installed MLX 0.31.1 established the mechanism:
+`mx.set_cache_limit(0)` returned a previous default free-buffer cache limit of
+`97,925,254,348` bytes, and `mx.set_memory_limit(1 GiB)` returned the same
+previous default memory limit. That is about **91.2 GiB per process**. Four
+unconstrained MLX-capable xdist workers therefore permitted about **364.8 GiB** of
+aggregate MLX-managed demand before ordinary Python memory, the operating system,
+other applications, or concurrent workstreams were counted. Exact instantaneous
+attribution among live tensors, allocator cache, compressed memory, and swap is not
+required to establish the failure: the parallel worker topology admitted demand far
+beyond host capacity and the host demonstrably exhausted memory and swap.
+
+**Decision for verification:** MLX-capable tests are serialized unless a future
+harness proves and enforces a safe aggregate memory budget. Agents set
+`BILQIS_TEST_WORKERS=1` and must not use pytest `-n > 1` for any selected suite
+that imports MLX directly or can reach MLX transitively through BAMF model, optimizer,
+custody, serialization, gradient, or full-model owners. Long-lived MLX test
+processes disable the free-buffer cache with `mx.set_cache_limit(0)` and
+`mx.clear_cache()`, or use the repository memory-policy context where appropriate.
+Parallel MLX becomes lawful only when every worker has an explicit applied memory
+policy and the sum of worker limits plus host headroom fits the machine.
+
+Detached execution under ADR-132/135 is orthogonal to resource safety. A detached
+process may still exhaust the host. Before launching an expensive MLX witness,
+inspect current swap/memory pressure and concurrent MLX-heavy jobs. Do not overlap
+full-model witnesses by default. System out-of-memory warnings, near-saturated swap,
+OOMs, or memory-pressure worker deaths invalidate the run; preserve the receipt/log,
+terminate the owned process group when needed to protect the host, diagnose the root
+cause, and do not rerun the unchanged workload.
+
+**Decision for production training:** The production operator remains one sovereign
+MLX writer. `runtime/operating_loop.py` enters `training_memory_policy(mx)`, which
+sets the MLX free-buffer cache limit to zero for the long-running trainer; therefore
+the specific four-process cache multiplication that caused this incident is not an
+expected production topology.
+
+However, C08's current **48 GiB trainer envelope is an analytical planning budget,
+not a hard allocator guarantee**. The planner uses it to choose/reject
+microbatches, but current production execution does not enforce a corresponding
+`mx.set_memory_limit(48 GiB)`, and the implemented C08 MLX telemetry/OOM
+restore-and-retry machinery is not yet connected around the production candidate
+gradient execution seam. Until those runtime controls are wired and verified,
+agents must describe 48 GiB as a planned envelope, not a measured or enforced peak.
+
+Before the first durable successor training run is treated as resource-qualified,
+the disposable/current-production execution path must record actual MLX active,
+cache, and peak memory together with process/system memory pressure and swap delta,
+compare them with the C08 estimate, and prove that any OOM follows the retained-state
+restore/retry contract rather than destabilizing the host or student. This resource
+qualification does not authorize an agent to start or resume the human-owned durable
+trainer.

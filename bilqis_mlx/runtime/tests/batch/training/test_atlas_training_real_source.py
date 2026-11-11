@@ -157,6 +157,45 @@ class RealTrainingAuthorityTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             self.compile(replace(self.config, schema_map=replace(self.config.schema_map, entries=swapped)))
 
+    def test_granted_atomic_prefix_must_match_the_delivered_source_row(self):
+        source_ast_for = self.args['source_ast_for']
+        first_tokens = tuple(self.rows[0]['tokens'])
+        other_tokens = tuple(self.rows[1]['tokens'])
+        self.assertNotEqual(first_tokens, other_tokens)
+        self.assertEqual(len(first_tokens), len(other_tokens))
+        atomic = {
+            tokens: replace(source_ast_for(tokens), frames=())
+            for tokens in (first_tokens, other_tokens)
+        }
+        args = {
+            **self.args,
+            'source_ast_for': lambda tokens: atomic[tuple(tokens)],
+            'frames_for_ast': lambda _ast: (),
+        }
+        args['source_ast_for'] = lambda _tokens: atomic[other_tokens]
+        with self.assertRaises(BilqisError) as caught:
+            compile_training_batch(
+                self.rows, self.context, ModelTopologySpecV2(),
+                compiler_config=self.config, **args)
+        self.assertEqual(
+            caught.exception.context['reason'],
+            'CONTEXT_SOURCE_LINEAGE_MISMATCH')
+
+    def test_source_owned_frames_cannot_be_stripped_from_the_same_row(self):
+        source_ast_for = self.args['source_ast_for']
+        args = {
+            **self.args,
+            'source_ast_for': lambda tokens: replace(source_ast_for(tokens), frames=()),
+            'frames_for_ast': lambda _ast: (),
+        }
+        with self.assertRaises(BilqisError) as caught:
+            compile_training_batch(
+                self.rows, self.context, ModelTopologySpecV2(),
+                compiler_config=self.config, **args)
+        self.assertEqual(
+            caught.exception.context['reason'],
+            'CONTEXT_SOURCE_LINEAGE_MISMATCH')
+
     def test_formal_owner_rejects_even_when_failure_callback_returns(self):
         binding = next(item for item in self.real_frame.bindings if item.concept is not None)
         with self.assertRaises(BilqisError):
