@@ -92,3 +92,19 @@ that same file passes when run in isolation. The complete file was then replayed
 on pristine reviewed unified 766ac5f1 and reproduced the same 3 passes / 3
 errors at the same bootstrap guard. This broader fixture result is not recorded
 as a passing qualification and is not used to manufacture B06 evidence.
+
+## Post-implementation drift
+
+Current repository governance separates pre-implementation EGM design review
+from engineering verification and post-implementation drift. The accepted #365
+authority amendment already received pinned EGM design review. Historical
+finished-code Goldfish wording in the original B06 packet predates ADR-137 and
+remains provenance rather than a new implementation-review gate.
+
+The complete candidate diff from reviewed unified 766ac5f1 contains only this
+acceptance test and this evidence receipt. No production B01, B06, B11, source,
+Factory, optimizer, checkpoint, schema, or public API surface changes. The
+integrated B06 implementation therefore remains the exact EGM-approved
+architecture consumed from reviewed unified.
+
+Drift classification: NO_DRIFT. No design amendment or EGM rerun is required.
