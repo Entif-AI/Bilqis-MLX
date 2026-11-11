@@ -3671,7 +3671,7 @@ Current production scan: **2079** raw raises across **256** files. The baseline 
 | `source-owned context was not approved` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/correction_runtime/temporal_support.py` |
 | `test synchronization timed out` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_recovery.py` |
 | `undefined` | 1 | `bilqis_mlx/semantics/tests/foundation/test_source_memo.py` |
-| `unlock failed` | 4 | `bilqis_mlx/runtime/_coordination/tests/test_run_root_claim.py`, `bilqis_mlx/runtime/tests/admission/atlas/test_atlas_lease_storage.py` |
+| `unlock failed` | 4 | `bilqis_mlx/runtime/_coordination/tests/test_run_root_claim.py`, `bilqis_mlx/runtime/tests/admission/atlas/lease/test_storage.py` |
 | `unlock failure` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py` |
 | `unreachable` | 2 | `bilqis_mlx/factory/curriculum/formal_lesson_types.py`, `bilqis_mlx/learning/championship_runtime.py` |
 | `unsupported fixture operator` | 1 | `bilqis_mlx/verification/tests/test_verification_laws.py` |
