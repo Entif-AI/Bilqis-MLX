@@ -138,9 +138,18 @@ class BamfFirstStartWitnessTests(unittest.TestCase):
             evidence = _evidence()
             retained = retain_candidate(PARENT, CANDIDATE, evidence)
             self.assertEqual(retained.status, "ELIGIBLE")
+            self.assertEqual(evidence.target.parent.score("target"), (0, 3))
             self.assertEqual(evidence.target.candidate.score("target"), (3, 3))
-            evidence_kind = "retained_taught_behavior"
-            self.assertEqual(evidence_kind, "retained_taught_behavior")
+            evidence_kind = evidence.target.candidate.cohort.kind
+            self.assertEqual(evidence_kind.value, "FRESH_TARGET")
+            self.assertEqual(
+                evidence.target.candidate.cohort.evidence_stage.value,
+                "STRICT_GENERALIZATION")
+            observed_developmental_evidence = (
+                "ACQUIRED_TAUGHT_BEHAVIOR", evidence_kind.value)
+            self.assertEqual(
+                observed_developmental_evidence,
+                ("ACQUIRED_TAUGHT_BEHAVIOR", "FRESH_TARGET"))
 
             # The old B-only cadence shape is not accepted by the fresh scheduler.
             course = staged_course()

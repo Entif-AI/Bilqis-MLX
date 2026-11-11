@@ -159,7 +159,7 @@ class AtlasLeaseV2Tests(unittest.TestCase):
             'accepted-v2', run_id, run_seed, topology, approval,
             _lease_v2().resource_ceiling, '2026-11-11T03:00:00Z', '7' * 64)
 
-    def test_enrollment_epoch_precheck_precedes_c09_validation(self):
+    def test_enrollment_owner_does_not_duplicate_presentation_epoch_precheck(self):
         identity = SimpleNamespace(
             run_id='accepted-run', run_seed=19,
             initial_topology_digest='a' * 64,
@@ -170,19 +170,18 @@ class AtlasLeaseV2Tests(unittest.TestCase):
                 'bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt',
                 return_value=SimpleNamespace(
                     source_release_sha256=identity.initial_release_digest)), patch(
+                'bilqis_mlx.runtime.atlas_admission._accepted_run_lease_identity',
+                return_value=_run()), patch(
                 'bilqis_mlx.runtime.atlas_admission._accepted_source_registry',
                 side_effect=AssertionError('C09 must not run')):
             root = Path(temporary)
             v1 = root / 'autonomy/atlas-admission/current.json'
             v1.parent.mkdir(parents=True)
             v1.write_text('{}')
-            with self.assertRaises(BilqisError) as failure:
+            with self.assertRaisesRegex(AssertionError, 'C09 must not run'):
                 enroll_accepted_atlas_lease_v2(
                     root, self._enrollment_request(), human_started=True,
                     source_authority=object())
-            self.assertEqual(
-                failure.exception.context['reason'],
-                'BAMF_ATLAS_V2_LEGACY_AUTHORITY_PRESENT')
 
     def test_enrollment_identity_mismatch_precedes_release_and_c09(self):
         identity = SimpleNamespace(

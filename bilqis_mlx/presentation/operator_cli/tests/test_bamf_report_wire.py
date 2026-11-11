@@ -22,17 +22,24 @@ class BamfReportWireTests(BamfFirstStudentCase):
             "optimizer_hyperparameters", "source_prefetch_workers",
             "generation_manifest_sha256", "ready_for_training", "neural_updates",
         }
-        for workers, result in enumerate((
-                "READY_TO_CREATE", "CREATED", "READY_TO_RESUME", "ENROLLED")):
-            workers = workers % 3
+        cases = (
+            (0, "READY_TO_CREATE", "staged", None),
+            (1, "CREATED", "staged", "9" * 64),
+            (2, "READY_TO_RESUME", "staged", "9" * 64),
+            (0, "ENROLLED", "atlas-release", "9" * 64),
+        )
+        for workers, result, policy, manifest_sha256 in cases:
             report = _report(
                 result=result, run_identity=identity, topology=topology,
-                atlas=self.identity, policy="staged", hp=hp,
-                source_prefetch_workers=workers, manifest_sha256="9" * 64)
+                atlas=self.identity, policy=policy, hp=hp,
+                source_prefetch_workers=workers,
+                manifest_sha256=manifest_sha256)
             with self.subTest(result=result):
                 self.assertEqual(set(report), expected_keys)
                 self.assertEqual(report["schema"], SCHEMA)
                 self.assertEqual(report["result"], result)
+                self.assertEqual(report["run_id"], identity.run_id)
+                self.assertEqual(report["run_seed"], identity.run_seed)
                 self.assertEqual(report["run_identity"], identity.to_record())
                 self.assertEqual(report["model_topology"], topology.to_record())
                 self.assertEqual(report["atlas_release_manifest"], {
@@ -45,7 +52,10 @@ class BamfReportWireTests(BamfFirstStudentCase):
                     "learning_rate": .0007, "betas": [.88, .97],
                     "eps": 1e-7, "weight_decay": .03,
                 })
+                self.assertEqual(report["admission_policy"], policy)
                 self.assertEqual(report["source_prefetch_workers"], workers)
+                self.assertEqual(
+                    report["generation_manifest_sha256"], manifest_sha256)
                 self.assertFalse(report["ready_for_training"])
                 self.assertEqual(report["neural_updates"], 0)
 
