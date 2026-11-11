@@ -92,6 +92,15 @@ mutable provenance, and no executable restoration of `refine_selected(...)`.
 
 ## Lifecycle
 
-The old #455 flow-control resume condition is satisfied: #454 is accepted and merged, and the #715 repair semantics are consumed here. The issue remains open until fresh post-implementation review, hosted PR checks, human merge, and merged-head readback complete its lifecycle.
+The old #455 flow-control resume condition is satisfied: #454 is accepted and merged, and the #715 repair semantics are consumed here.
+
+Fresh PR #988 targets reviewed unified `036e0aa3c2bec184481a4f009d8c31e16b9495f5`. Hosted checks on turn-in head `cff35bb382efb946a35ed965cad545c92d86af0b` passed:
+
+- `semantic-abi-integrity`: PASS;
+- `portable-core`: PASS;
+- `portable`: PASS;
+- semantic profile jobs: policy-selected SKIP.
+
+The following flow-control-only bookkeeping commit must also clear hosted checks before final turn-in is claimed. Human merge and merged-head readback remain external lifecycle gates.
 
 No live student, AdamW state, teacher state, accepted checkpoint lineage, or human-run training was mutated.
