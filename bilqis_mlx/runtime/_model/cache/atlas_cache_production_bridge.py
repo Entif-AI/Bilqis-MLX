@@ -5,6 +5,11 @@ import hashlib
 
 import numpy as np
 
+ATTENTION_CACHE_RANK = 4
+B14_HEAD_WIDTH = 24
+KIND_COUNT = 2
+CAPTURE_HANDLE_HEX_LENGTH = 64
+
 
 def _invalid() -> None:
     from .atlas_cache_codec import _invalid as codec_invalid
@@ -13,7 +18,8 @@ def _invalid() -> None:
 
 def _array_fp32(value) -> np.ndarray:
     values = np.asarray(value)
-    if (values.ndim != 4 or values.shape[-1] != 24
+    if (values.ndim != ATTENTION_CACHE_RANK
+            or values.shape[-1] != B14_HEAD_WIDTH
             or values.dtype != np.float32 or not np.isfinite(values).all()):
         _invalid()
     return np.asarray(
@@ -159,7 +165,7 @@ def capture_forward_attention_caches(accepted_cache, compiled_batch, producer):
                 (attention_cache.layer, kind),
                 metadata,
             )
-    if len(captures) != producer._topology.layers * 2:
+    if len(captures) != producer._topology.layers * KIND_COUNT:
         _invalid()
     _capture_production_records(authority, captures)
     return authority
@@ -198,11 +204,15 @@ def binding_for_handle(authority, handle: str):
     from .atlas_cache_eligibility import binding_from_identity
     from .atlas_cache_runtime import _production_authority_state, _require_authority
 
-    if not isinstance(handle, str) or len(handle) != 64:
+    if (not isinstance(handle, str)
+            or len(handle) != CAPTURE_HANDLE_HEX_LENGTH):
         _invalid()
     authority = _require_authority(authority)
     entry = _production_authority_state(authority)
-    if entry is None or handle not in entry[3]:
+    if entry is None:
+        _invalid()
+    captured_records = entry[3]
+    if handle not in captured_records:
         _invalid()
     values, identity = production_capture_for_handle(authority, handle)
     key = entry[2]

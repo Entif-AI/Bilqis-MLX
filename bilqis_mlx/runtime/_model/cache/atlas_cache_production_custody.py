@@ -8,6 +8,8 @@ from threading import RLock
 
 from ..semantics.cognitive_dependencies import DependencyKind
 
+MAX_CAPTURE_RECORDS = 256
+
 
 def _invalid() -> None:
     from .atlas_cache_codec import _invalid as codec_invalid
@@ -97,19 +99,20 @@ def new_production_authority_owner(issue):
         entry = state(authority)
         if entry is None:
             _invalid()
+        records = entry[3]
         with lock:
             for handle, capture_record in captures.items():
                 slot = capture_record[4]
                 stale = tuple(
                     existing_handle
-                    for existing_handle, existing_record in entry[3].items()
+                    for existing_handle, existing_record in records.items()
                     if existing_record[4] == slot
                 )
                 for existing_handle in stale:
-                    del entry[3][existing_handle]
-                entry[3][handle] = capture_record
-                entry[3].move_to_end(handle)
-            while len(entry[3]) > 256:
-                entry[3].popitem(last=False)
+                    del records[existing_handle]
+                records[handle] = capture_record
+                records.move_to_end(handle)
+            while len(records) > MAX_CAPTURE_RECORDS:
+                records.popitem(last=False)
 
     return provision, state, capture

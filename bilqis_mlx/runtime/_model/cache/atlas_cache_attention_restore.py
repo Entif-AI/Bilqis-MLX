@@ -76,10 +76,13 @@ def restore_attention_cache(
 
     key_record = production_record_for_handle(authority, key_handle)
     value_record = production_record_for_handle(authority, value_handle)
-    if (key_record[4][1] != "key" or value_record[4][1] != "value"
-            or key_record[4][0] != value_record[4][0]):
+    _key_values, _key_identity, _key_owner, _key_row, key_slot, key_meta = (
+        key_record)
+    (_value_values, _value_identity, _value_owner, _value_row, value_slot,
+     value_meta) = value_record
+    if (key_slot[1] != "key" or value_slot[1] != "value"
+            or key_slot[0] != value_slot[0]):
         _invalid()
-    key_meta, value_meta = key_record[5], value_record[5]
     if key_meta is not value_meta:
         _invalid()
     _, key_binding = binding_for_handle(authority, key_handle)
