@@ -1,6 +1,6 @@
 """Capability-only Atlas v2 adoption and retry tests."""
 
-from contextlib import ExitStack
+from contextlib import ExitStack, nullcontext
 
 from bilqis_mlx.runtime.tests.admission.atlas.v2.capability_support import *
 from bilqis_mlx.runtime.jit_adoption import _PreparedSuccessorRuntime
@@ -30,6 +30,10 @@ class CapabilityPublicationV2Tests(CapabilityV2Support):
         successor = handoff.staged_candidate.successor.release_sha256
         predecessor = handoff.receipt.predecessor_release.release_sha256
         stack = ExitStack()
+        lease_guard = stack.enter_context(patch(
+            "bilqis_mlx.runtime.atlas_admission."
+            "_hold_current_atlas_lease_v2_publication",
+            return_value=nullcontext()))
         stack.enter_context(patch(
             "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_lease_v2",
             return_value=lease))
@@ -90,12 +94,12 @@ class CapabilityPublicationV2Tests(CapabilityV2Support):
             actual = publish_capability_only_factory_successor(
                 current, handoff, lease, expected_parent_pointer=parent_pointer)
         return actual, pointer, handoff, parent, transition, candidate, binding, runtime, (
-            issue_transition, derive, issue_binding, publish, exact_release)
+            issue_transition, derive, issue_binding, publish, exact_release, lease_guard)
 
     def test_capability_only_publisher_binds_authenticated_predecessor_and_publishes_once(self):
         (actual, pointer, handoff, parent, transition, candidate, binding, runtime,
          mocks) = self._publication_case()
-        issue_transition, derive, issue_binding, publish, exact_release = mocks
+        issue_transition, derive, issue_binding, publish, exact_release, lease_guard = mocks
         self.assertEqual(actual, pointer)
         self.assertEqual(
             issue_transition.call_args.kwargs[
@@ -108,6 +112,8 @@ class CapabilityPublicationV2Tests(CapabilityV2Support):
         publish.assert_called_once_with(
             runtime.run_dir, candidate, admission=binding, reserve_gib=0.0)
         exact_release.assert_called_once()
+        lease_guard.assert_called_once()
+        self.assertEqual(lease_guard.call_args.args[0], runtime.run_dir)
 
     def test_capability_only_publisher_rejects_parent_pointer_advance_before_issue(self):
         advanced = {

@@ -218,7 +218,9 @@ def read_accepted_atlas_factory_release(run_dir):
     """Resolve current Factory authority only through accepted B13 lineage.
 
     Generation zero binds the founding Factory release in ``BamfRunIdentity``.
-    A C07 generation binds its successor directly in ``AtlasAdmissionBinding``.
+    A C07 generation binds its successor in its generation-specific admission
+    family: ``AtlasAdmissionBinding`` for parameter extension or
+    ``FactoryReleaseAdmissionBinding`` for neural-inert Factory adoption.
     Ordinary retained generations inherit the nearest accepted ancestor's Factory
     authority through the acceptance-bound parent chain; they never reintroduce
     the legacy operator receipt as a second current-Factory authority.
@@ -333,6 +335,7 @@ def renew_atlas_lease(run_dir, lease, *, independently_loaded_run, registry,
 # V2 is deliberately a separate human-authority epoch.  Re-export its public
 # entrypoints here without changing the v1 storage or policy contracts above.
 from .atlas_lease_v2 import (
+    _hold_current_atlas_lease_v2_publication,
     issue_atlas_lease_v2,
     persist_accepted_atlas_lease_v2,
     persist_atlas_lease_v2,

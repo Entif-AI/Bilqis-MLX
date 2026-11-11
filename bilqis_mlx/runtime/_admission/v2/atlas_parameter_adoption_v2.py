@@ -124,6 +124,20 @@ def publish_native_staged_candidate_v2(
         runtime, selected, proposal, native_staged, atlas_lease,
         source_authority, *, current, checkpoint, handoff):
     """Publish the exact A02 state using only the persisted v2 lease store."""
+    from bilqis_mlx.runtime.atlas_admission import (
+        _hold_current_atlas_lease_v2_publication,
+    )
+    with _hold_current_atlas_lease_v2_publication(runtime.run_dir, atlas_lease):
+        return _publish_native_staged_candidate_v2_locked(
+            runtime, selected, proposal, native_staged, atlas_lease,
+            source_authority, current=current, checkpoint=checkpoint,
+            handoff=handoff)
+
+
+def _publish_native_staged_candidate_v2_locked(
+        runtime, selected, proposal, native_staged, atlas_lease,
+        source_authority, *, current, checkpoint, handoff):
+    """Publish A02 state while human v2 lease renewal is excluded."""
     from . import admission as runtime_admission
     from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_factory_release
     from bilqis_mlx.runtime.bamf_bundle import (

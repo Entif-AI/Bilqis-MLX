@@ -205,6 +205,18 @@ def _revalidate_capability_publication(
 def publish_capability_only_factory_successor(
         current, handoff, lease, *, expected_parent_pointer):
     """Publish one verified zero-ID Factory successor without any A02 owner call."""
+    from bilqis_mlx.runtime.atlas_admission import (
+        _hold_current_atlas_lease_v2_publication,
+    )
+    with _hold_current_atlas_lease_v2_publication(current.run_dir, lease):
+        return _publish_capability_only_factory_successor_locked(
+            current, handoff, lease,
+            expected_parent_pointer=expected_parent_pointer)
+
+
+def _publish_capability_only_factory_successor_locked(
+        current, handoff, lease, *, expected_parent_pointer):
+    """Publish while human v2 lease renewal is structurally excluded."""
     from . import admission as runtime_admission
     from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_factory_release
     from bilqis_mlx.runtime.bamf_bundle.factory_release_adoption import (

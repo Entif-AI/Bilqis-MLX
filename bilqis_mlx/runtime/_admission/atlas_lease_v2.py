@@ -1,6 +1,7 @@
 """Human-authorized Atlas admission lease v2 issuance and custody."""
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import asdict
 import json
 from pathlib import Path
@@ -69,6 +70,23 @@ def read_accepted_atlas_lease_v2(run_dir, *, source_authority):
     registry = _accepted_source_registry(run_dir, source_authority)
     return _read_atlas_lease_v2(
         run_dir, expected, registry=registry)
+
+
+@contextmanager
+def _hold_current_atlas_lease_v2_publication(run_dir, lease):
+    """Serialize one v2 publication against human lease replacement."""
+    if not isinstance(lease, AtlasAdmissionLeaseV2):
+        _invalid('BAMF_ATLAS_V2_LEASE_CURRENT_AUTHORITY_DRIFT')
+    with _atlas_lease_v2_lock(run_dir):
+        current = _read_atlas_lease_v2(
+            run_dir, lease.run_identity, registry=None, current_authority=False)
+        if current is None or current != lease:
+            _invalid('BAMF_ATLAS_V2_LEASE_CURRENT_AUTHORITY_DRIFT')
+        yield
+        current = _read_atlas_lease_v2(
+            run_dir, lease.run_identity, registry=None, current_authority=False)
+        if current is None or current != lease:
+            _invalid('BAMF_ATLAS_V2_LEASE_CURRENT_AUTHORITY_DRIFT')
 
 
 def renew_atlas_lease_v2(

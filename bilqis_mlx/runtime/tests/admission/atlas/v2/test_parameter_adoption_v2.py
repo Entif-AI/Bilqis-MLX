@@ -1,13 +1,45 @@
 """Atlas v2 genuine A02 parameter-adoption tests."""
 
+from contextlib import nullcontext
+
 from bilqis_mlx.runtime.tests.admission.atlas.v2.policy_support import *
 from bilqis_mlx.runtime.jit_adoption import _PreparedSuccessorRuntime
 from bilqis_mlx.runtime.atlas_parameter_adoption_v2 import (
     _revalidate_parameter_publication,
+    publish_native_staged_candidate_v2,
 )
 
 
 class ParameterAdoptionV2Tests(PolicyV2Support):
+    def test_parameter_publisher_enters_current_v2_lease_publication_guard(self):
+        _capability, semantic_id, handoff, plan, ledger, checkpoint = self._event_handoff()
+        approval, lease = self._authority(handoff)
+        native = self._a02_staged(semantic_id)
+        pure = self._context(handoff, plan, ledger, checkpoint, approval)
+        runtime = _PreparedSuccessorRuntime(
+            None, pure.run_dir, {}, None, None, {}, object(), object(), 0.)
+        legacy = replace(
+            pure.legacy, runtime=runtime, native_staged=native,
+            source_authority=object())
+        current = AtlasAdmissionContextV2(legacy, pure.run_dir)
+        pointer = {"generation": 1, "manifest_sha256": "f" * 64}
+
+        with patch(
+                "bilqis_mlx.runtime.atlas_admission."
+                "_hold_current_atlas_lease_v2_publication",
+                return_value=nullcontext()) as lease_guard, patch(
+                    "bilqis_mlx.runtime.atlas_parameter_adoption_v2."
+                    "_publish_native_staged_candidate_v2_locked",
+                    return_value=pointer) as locked:
+            actual = publish_native_staged_candidate_v2(
+                runtime, handoff.staged_candidate, handoff.proposal, native, lease,
+                legacy.source_authority, current=current, checkpoint=checkpoint,
+                handoff=handoff)
+
+        self.assertEqual(actual, pointer)
+        lease_guard.assert_called_once_with(runtime.run_dir, lease)
+        locked.assert_called_once()
+
     def test_parameter_extension_v2_owner_uses_exact_v2_lease_and_cold_resume(self):
         _capability, semantic_id, handoff, plan, ledger, checkpoint = self._event_handoff()
         approval, lease = self._authority(handoff)
