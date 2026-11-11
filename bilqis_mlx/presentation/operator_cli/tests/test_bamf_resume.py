@@ -78,7 +78,7 @@ class BamfResumeTests(BamfFirstStudentCase):
                     "--dry-run", "--resume", "--run-dir", str(target), *policy_args,
                 ])
             self.assertEqual((code, output), (2, ""))
-            self.assertIn("BAMF_OPERATOR_RESUME_ADMISSION_POLICY_CONFLICT", errors)
+            self.assertIn("BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED", errors)
             self.assertEqual(_tree_snapshot(target), before)
 
     def test_resume_rejects_atlas_scope_override_before_writes(self):
@@ -93,7 +93,24 @@ class BamfResumeTests(BamfFirstStudentCase):
                 "--atlas-admission-scope", str(scope),
             ])
         self.assertEqual((code, output), (2, ""))
-        self.assertIn("BAMF_OPERATOR_RESUME_ATLAS_SCOPE_OVERRIDE_FORBIDDEN", errors)
+        self.assertIn("BAMF_ATLAS_SCOPE_REQUIRES_EXPLICIT_POLICY", errors)
+        self.assertEqual(_tree_snapshot(target), before)
+
+    def test_resume_scope_requires_human_authorization_before_request_parse(self):
+        target = self.root / "accepted-bamf"
+        self.preflight(target)
+        before = _tree_snapshot(target)
+        scope = self.root / "malformed-scope.json"
+        scope.write_text("not-json", encoding="utf-8")
+        with self.accepted_read_context():
+            code, output, errors = self.invoke([
+                "--dry-run", "--resume", "--run-dir", str(target),
+                "--admission-policy", "atlas-release",
+                "--atlas-admission-scope", str(scope),
+            ])
+        self.assertEqual((code, output), (2, ""))
+        self.assertIn("BAMF_ATLAS_V2_EXPLICIT_HUMAN_REQUEST_REQUIRED", errors)
+        self.assertNotIn("BAMF_ATLAS_ENROLLMENT_REQUEST_INVALID", errors)
         self.assertEqual(_tree_snapshot(target), before)
 
     def test_human_resume_is_cold_validation_only_and_neural_inert(self):

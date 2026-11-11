@@ -6,6 +6,18 @@ import sys
 from .settings import DEFAULT_RUN
 
 
+class _FoundationExplicitStore(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)
+        namespace.bamf_v2_foundation_explicit = True
+
+
+class _AdmissionPolicyExplicitStore(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)
+        namespace.admission_policy_explicit = True
+
+
 def _add_boolean_profile_args(parser) -> None:
     boolean_profile = parser.add_mutually_exclusive_group()
     boolean_profile.add_argument(
@@ -20,26 +32,31 @@ def _add_boolean_profile_args(parser) -> None:
 
 def _add_bamf_foundation_args(parser) -> None:
     from bilqis_mlx.runtime.atlas_admission import add_atlas_admission_arguments
-    add_atlas_admission_arguments(parser)
+    parser.set_defaults(
+        bamf_v2_foundation_explicit=False,
+        admission_policy_explicit=False,
+    )
+    add_atlas_admission_arguments(
+        parser, admission_policy_action=_AdmissionPolicyExplicitStore)
     parser.add_argument('--atlas-release-manifest', type=Path,
                         help='Pinned Atlas release manifest for a BAMF semantic foundation.')
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--model-topology", type=Path,
                         help="Versioned ModelTopologySpec JSON; resume must match saved topology.")
-    parser.add_argument("--run-id", type=str,
+    parser.add_argument("--run-id", type=str, action=_FoundationExplicitStore,
                         help="Operator-selected BAMF lineage ID; required for a fresh v2 foundation.")
-    parser.add_argument("--run-seed", type=int,
+    parser.add_argument("--run-seed", type=int, action=_FoundationExplicitStore,
                         help="Operator-selected BAMF initialization seed; required for a fresh v2 foundation.")
-    parser.add_argument("--learning-rate", type=float,
+    parser.add_argument("--learning-rate", type=float, action=_FoundationExplicitStore,
                         help="Exact BAMF AdamW learning rate; required for a fresh v2 foundation.")
-    parser.add_argument("--adam-beta1", type=float,
+    parser.add_argument("--adam-beta1", type=float, action=_FoundationExplicitStore,
                         help="Exact BAMF AdamW beta1; required for a fresh v2 foundation.")
-    parser.add_argument("--adam-beta2", type=float,
+    parser.add_argument("--adam-beta2", type=float, action=_FoundationExplicitStore,
                         help="Exact BAMF AdamW beta2; required for a fresh v2 foundation.")
-    parser.add_argument("--adam-eps", type=float,
+    parser.add_argument("--adam-eps", type=float, action=_FoundationExplicitStore,
                         help="Exact BAMF AdamW epsilon; required for a fresh v2 foundation.")
-    parser.add_argument("--weight-decay", type=float,
+    parser.add_argument("--weight-decay", type=float, action=_FoundationExplicitStore,
                         help="Exact BAMF AdamW weight decay; required for a fresh v2 foundation.")
 
 
@@ -125,10 +142,4 @@ def parse_args(argv=None):
         explain.add_argument(
             "code", help="Typed error, legacy error, stop reason, or blocker code")
     parsed = parser.parse_args(raw_argv)
-    # C07's historical parser default is intentionally preserved for callers,
-    # but BAMF resume must distinguish omission from an explicit policy override.
-    parsed.admission_policy_explicit = any(
-        value == "--admission-policy" or value.startswith("--admission-policy=")
-        for value in raw_argv
-    )
     return parsed

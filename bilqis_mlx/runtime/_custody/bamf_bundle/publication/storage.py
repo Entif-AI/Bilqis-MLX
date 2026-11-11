@@ -251,6 +251,19 @@ def _classify_initial_generation_target(run_dir: Path) -> str:
     return "recovery"
 
 
+def _validate_initial_generation_lifecycle_markers(run_dir: Path) -> None:
+    """Validate marker shapes for read-only pointerless-resume interception."""
+    run_dir = Path(run_dir)
+    lock = run_dir / ".bamf-pointer.lock"
+    stage = run_dir / ".bamf-staging"
+    if lock.exists() or lock.is_symlink():
+        if lock.is_symlink() or not lock.is_file():
+            invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+    if stage.exists() or stage.is_symlink():
+        if stage.is_symlink() or not stage.is_dir():
+            invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+
+
 def _reclaim_empty_initial_staging_root(run_dir: Path) -> None:
     """Remove only the exact empty pre-seal staging root and durably retain the run root."""
     run_dir = Path(run_dir)

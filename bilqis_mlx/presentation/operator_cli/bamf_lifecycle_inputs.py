@@ -123,6 +123,11 @@ def source_foundation():
     return source, release, graph
 
 
+def source_run_dir() -> Path:
+    """Return the current source-run path without reconstructing mutable source state."""
+    return active_run_dir().resolve()
+
+
 def validate_foundation_authority(source, release, graph, atlas) -> None:
     """Replay the read-only B13 and A01 authorities used by real create."""
     from bilqis_mlx.runtime.bamf_bundle import (
@@ -142,5 +147,5 @@ def validate_foundation_authority(source, release, graph, atlas) -> None:
 
 __all__ = (
     "atlas_manifest_identity", "foundation_hyperparameters",
-    "invalid", "source_foundation", "validate_foundation_authority",
+    "invalid", "source_foundation", "source_run_dir", "validate_foundation_authority",
 )

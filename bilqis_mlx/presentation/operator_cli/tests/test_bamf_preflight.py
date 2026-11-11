@@ -8,9 +8,11 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 
 from bilqis_mlx.cli import main, parse_args
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactIdentity
 from bilqis_mlx.semantics.atlas_projection import ATLAS_MANIFEST_SCHEMA, _canonical_bytes
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -154,6 +156,55 @@ class BamfPreflightTests(unittest.TestCase):
         self.assertTrue(explicit.admission_policy_explicit)
         self.assertTrue(equals.admission_policy_explicit)
         self.assertFalse(omitted.admission_policy_explicit)
+
+    def test_parser_tracks_v2_foundation_presence_across_argparse_spellings(self):
+        cases = (
+            ['--run-id', 'x'], ['--run-id=x'], ['--run-i', 'x'],
+            ['--run-seed', '0'], ['--run-seed=0'], ['--run-s', '0'],
+            ['--learning-rate', '0.1'], ['--learning-rate=0.1'], ['--learning-r', '0.1'],
+            ['--adam-beta1', '0.8'], ['--adam-beta1=0.8'],
+            ['--adam-beta2', '0.9'], ['--adam-beta2=0.9'],
+            ['--adam-eps', '1e-8'], ['--adam-eps=1e-8'], ['--adam-e', '1e-8'],
+            ['--weight-decay', '0.01'], ['--weight-decay=0.01'], ['--weight-d', '0.01'],
+        )
+        for spelling in cases:
+            with self.subTest(spelling=spelling):
+                self.assertTrue(parse_args(['train', *spelling]).bamf_v2_foundation_explicit)
+        self.assertFalse(parse_args(['train']).bamf_v2_foundation_explicit)
+
+    def test_fresh_v2_optimizer_completeness_precedes_missing_topology(self):
+        output, errors = io.StringIO(), io.StringIO()
+        with redirect_stdout(output), redirect_stderr(errors):
+            code = main(['train', '--dry-run', '--run-id', 'x', '--run-seed', '0',
+                         '--learning-rate', '0.001'])
+        self.assertEqual((code, output.getvalue()), (2, ''))
+        self.assertIn('BAMF_OPERATOR_FOUNDATION_OPTIMIZER_INCOMPLETE', errors.getvalue())
+        self.assertNotIn('BAMF_OPERATOR_V2_TOPOLOGY_REQUIRED', errors.getvalue())
+
+    def test_mutating_atlas_release_requires_human_before_request_compatibility(self):
+        request = SimpleNamespace(
+            requested_run_id='wrong-run', requested_run_seed=999,
+            requested_topology_digest='0' * 64,
+            source_approval=SimpleNamespace(atlas_release_sha256='1' * 64),
+        )
+        identity = AtlasArtifactIdentity('2' * 64, '3' * 64, '4' * 64)
+        output, errors = io.StringIO(), io.StringIO()
+        with patch(
+                'bilqis_mlx.presentation.operator_cli.bamf_lifecycle.atlas_manifest_identity',
+                return_value=identity), patch(
+                'bilqis_mlx.runtime.atlas_admission.read_atlas_enrollment_request_v2',
+                return_value=request), redirect_stdout(output), redirect_stderr(errors):
+            code = main([
+                'train', '--model-topology', str(TOPOLOGY), '--run-id', 'x',
+                '--run-seed', '0', '--learning-rate', '0.001', '--adam-beta1', '0.9',
+                '--adam-beta2', '0.95', '--adam-eps', '1e-8', '--weight-decay', '0.1',
+                '--atlas-release-manifest', '/synthetic-manifest.json',
+                '--admission-policy', 'atlas-release', '--atlas-admission-scope',
+                '/synthetic-request.json',
+            ])
+        self.assertEqual((code, output.getvalue()), (2, ''))
+        self.assertIn('BAMF_ATLAS_V2_EXPLICIT_HUMAN_REQUEST_REQUIRED', errors.getvalue())
+        self.assertNotIn('BAMF_OPERATOR_ATLAS_REQUEST_RUN_ID_CONFLICT', errors.getvalue())
 
     def test_train_help_preserves_operator_descriptions_after_parser_factoring(self):
         output = io.StringIO()

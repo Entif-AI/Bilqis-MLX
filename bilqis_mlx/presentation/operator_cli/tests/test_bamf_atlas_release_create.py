@@ -70,6 +70,8 @@ class BamfAtlasReleaseCreateTests(BamfFirstStudentCase):
         with patch(
                 "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.source_foundation",
                 return_value=(self.source, self.release, self.graph)), patch(
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle_inputs.active_run_dir",
+                return_value=self.source), patch(
                 "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.atlas_manifest_identity",
                 return_value=self.identity), shape_patch(), genesis_feature_source_patch(), patch(
                 "bilqis_mlx.semantics.atlas.snapshot.resolve_atlas_artifact_selection",
@@ -79,6 +81,7 @@ class BamfAtlasReleaseCreateTests(BamfFirstStudentCase):
                 "bilqis_mlx.runtime.bamf_bundle.feature_authority._authenticate_features",
                 return_value=source_features()), patch.object(
                 mlx_checkpoint, "assert_headroom"), patch(
+                "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom"), patch(
                 HOST_READER, return_value=_REGISTRY):
             yield
 

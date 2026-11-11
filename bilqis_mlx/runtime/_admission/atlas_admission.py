@@ -42,9 +42,15 @@ def advance_atlas_frontier_v2(current, delta, lease):
     return advance(current, delta, lease)
 
 
-def add_atlas_admission_arguments(parser):
-    parser.add_argument('--admission-policy', choices=('staged', 'atlas-release'), default='staged',
-                        help='Stage new source successors unless an explicit Atlas admission lease authorizes them.')
+def add_atlas_admission_arguments(parser, *, admission_policy_action=None):
+    policy_kwargs = {
+        'choices': ('staged', 'atlas-release'),
+        'default': 'staged',
+        'help': 'Stage new source successors unless an explicit Atlas admission lease authorizes them.',
+    }
+    if admission_policy_action is not None:
+        policy_kwargs['action'] = admission_policy_action
+    parser.add_argument('--admission-policy', **policy_kwargs)
     parser.add_argument('--atlas-admission-scope', type=Path,
                         help='Exact versioned Atlas lease request; accepted run/source authority is required.')
 

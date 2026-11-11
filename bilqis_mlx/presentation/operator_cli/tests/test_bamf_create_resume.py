@@ -52,13 +52,16 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         with patch(
                 "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.source_foundation",
                 return_value=(self.source, self.release, self.graph)), patch(
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle_inputs.active_run_dir",
+                return_value=self.source), patch(
                 "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.atlas_manifest_identity",
                 return_value=self.identity), shape_patch(), genesis_feature_source_patch(), patch(
                 "bilqis_mlx.semantics.atlas.snapshot.resolve_atlas_artifact_selection",
                 return_value=self.selection), patch(
                 "bilqis_mlx.runtime.bamf_first_student.resolve_atlas_artifact_selection",
                 return_value=self.selection), patch.object(
-                mlx_checkpoint, "assert_headroom"):
+                mlx_checkpoint, "assert_headroom"), patch(
+                "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom"):
             yield
 
     def test_fresh_bamf_dry_run_is_ready_and_does_not_create_run(self):
@@ -131,12 +134,13 @@ class BamfCreateResumeTests(BamfFirstStudentCase):
         target = self.root / "new-bamf"
         manifest = self.root / "manifest.json"
         manifest.write_text("{}", encoding="utf-8")
-        code, output, errors = self.invoke([
-            "--human-run", "--model-topology", str(TOPOLOGY),
-            "--admission-policy", "atlas-release",
-            "--atlas-release-manifest", str(manifest),
-            "--run-dir", str(target), *self.FOUNDATION_ARGS,
-        ])
+        with self.foundation_create_context():
+            code, output, errors = self.invoke([
+                "--human-run", "--model-topology", str(TOPOLOGY),
+                "--admission-policy", "atlas-release",
+                "--atlas-release-manifest", str(manifest),
+                "--run-dir", str(target), *self.FOUNDATION_ARGS,
+            ])
 
         self.assertEqual((code, output), (2, ""))
         self.assertIn("BAMF_ATLAS_EXPLICIT_SCOPE_FILE_REQUIRED", errors)
