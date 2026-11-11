@@ -3240,3 +3240,66 @@ the lifecycle marker and design-first EGM rule, and its focused regression prote
 the cutover. Existing differential-test receipts, dependency mapping, diagnostic-loop
 budgets, precedence-ordered diagnosis, and snapshot-pinned detached execution remain
 the proof-economy mechanisms for implementation work.
+
+## ADR-138 | 2026-11-11 | Expensive verification uses fail-fast staged preflight before full execution
+
+**Status:** Accepted by direct owner instruction on 2026-11-11 after issue #374
+repeatedly spent full Factory/MLX execution time before exposing cheap fixture and
+test-contract defects.
+
+**Problem:** A long-running test can contain three different kinds of work: cheap
+contract validation, production-fixture setup, and the expensive computation that
+actually requires MLX or a full model. When these are bundled into one opaque test,
+a trivial defect at the end can consume the full cost of the expensive phase before
+the developer learns anything useful. During #374, one real-Factory witness ran for
+about 25 minutes before a missing observation-fixture field failed. The next ran for
+about 27 minutes before a stale authority-digest assertion failed, even though the
+neural path had already completed. Both failures could have been detected without
+paying the full neural cost.
+
+**Decision:** Expensive verification is an ordered pipeline. The repository uses the
+following stages whenever a test or witness contains a multi-minute Factory, MLX,
+full-model, or equivalent expensive phase.
+
+1. **Cheap contracts.** Run focused neural-inert checks for imports, fixture shape,
+   deterministic invariants, assertion semantics, and other preconditions that do
+   not require the expensive output.
+2. **Real-fixture preflight.** When production artifacts or custody matter, use the
+   real artifact/configuration and the same shared setup as the full witness. Execute
+   every cheap production operation through the immediate boundary before the
+   expensive call, including applicable accepted-runtime, custody, generation,
+   feature-authentication, target, route, observation, and resource-plan checks.
+   Stop before the expensive computation itself.
+3. **Expensive execution.** Start the full witness only after every required earlier
+   stage succeeds. Preserve the exact production acceptance path for facts that
+   genuinely depend on the expensive computation.
+
+The staged runner must enforce this ordering and abort on the first failure. A
+required preflight may not pass because pytest skipped the case. The runner must
+verify that required external artifacts, runtime state, and custody inputs exist and
+are usable, and it must distinguish `passed`, `failed`, and `skipped/not-run` rather
+than treating process exit code zero as sufficient proof.
+
+**Shared-path requirement:** Preflight and full witness share setup, fixture, and
+assertion helpers wherever semantics permit. A hand-copied lightweight imitation is
+not sufficient because it can drift from the expensive path. Cheap preflight should
+reach the actual seam immediately before the expensive call, or use an explicit seam
+that proves equivalent production inputs and checks. Expensive-output-specific
+assertions remain in the final witness, but every assertion contract that can be
+tested synthetically should also have a focused cheap regression.
+
+**Failure learning:** If a full-cost run discovers a banal fixture, import,
+precondition, or assertion-contract defect, repairing that defect is not enough. Add
+or strengthen an earlier stage so the same defect class fails before expensive
+execution on the next run. This converts diagnostic history into a durable test
+boundary instead of relying on agent memory.
+
+**Execution and authority:** ADR-132 still governs commands that can exceed five
+minutes. The complete staged pipeline runs detached from a digest-verified source
+snapshot, emits stage markers into its durable log, stops immediately on failed
+preflight, notifies the operator on exit, and is never polled from chat. Preflight is
+diagnostic and non-authorizing. Only the complete production witness can satisfy an
+acceptance requirement that depends on the expensive computation. This ADR composes
+with ADR-129 evidence reuse, ADR-130 diagnostic-loop budgeting, ADR-131
+precedence-ordered diagnosis, ADR-132 detached execution, and ADR-137 claim-first
+verification.

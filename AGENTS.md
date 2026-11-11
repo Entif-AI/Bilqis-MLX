@@ -211,6 +211,40 @@ expensive probe is still running so the successor does not launch a duplicate.
 Acceptance-scale witnesses belong at a stable boundary after cheaper evidence has
 changed; they are not the ordinary inner debugging loop.
 
+**Staged fail-fast verification for expensive tests (ADR-138):** Treat every
+expensive test or witness as an ordered pipeline. Do not make a multi-minute MLX,
+Factory, full-model, or end-to-end run the first place that fixture, import,
+precondition, or assertion-contract errors can surface.
+
+1. Run cheap contract checks first. Cover imports, fixture shape, deterministic
+   invariants, assertion semantics, and other neural-inert behavior with focused
+   tests that complete quickly.
+2. Run a real-fixture preflight next when the final witness depends on external
+   artifacts, accepted custody, source state, runtime configuration, or other
+   production inputs. Use the same source paths and shared setup helpers as the
+   full witness. Execute every cheap production step through the immediate boundary
+   before the expensive call, then stop before the expensive computation begins.
+3. Treat an unexpected skip as preflight failure. A required real-fixture preflight
+   must verify that its artifact, runtime, and custody inputs exist and are usable;
+   pytest exit code zero is insufficient when the required case was skipped.
+4. Chain the stages in one runner or command so failure stops the pipeline. The
+   expensive phase may start only after every required preflight stage succeeds.
+   Do not rely on an agent remembering that a separate preflight was supposed to
+   run first.
+5. Share setup and assertion helpers between the preflight and full witness. Do not
+   maintain a simplified imitation that can drift away from the production path.
+6. Keep expensive-output assertions in the final witness, but give every invariant
+   that can be proved without the expensive output a cheap contract test first.
+   If a long run discovers a banal fixture, import, precondition, or assertion
+   defect, add or strengthen the earlier stage before rerunning the expensive test.
+
+The staged path is diagnostic and non-authorizing. Only the complete production
+witness can satisfy acceptance that actually depends on the expensive computation.
+If the full command can plausibly exceed five minutes, the complete staged pipeline
+still follows the detached-run rules below, including snapshot isolation, durable
+receipts, desktop notification, and no chat polling. Stage logs must identify which
+stage failed so the next run does not repeat already-settled expensive work.
+
 **Precedence-ordered diagnosis for expensive qualification gates (ADR-131):** When
 an acceptance or retention decision has ordered rejection predicates, diagnosis
 must evaluate the cheapest decisive predicate first and stop as soon as that result
