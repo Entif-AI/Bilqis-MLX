@@ -9,7 +9,7 @@ import stat
 from types import MappingProxyType
 from typing import Literal
 
-from .records import invalid
+from ..records import invalid
 
 
 ACL_TYPE_EXTENDED = 0x00000100

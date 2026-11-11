@@ -11249,14 +11249,14 @@
       "count": 1,
       "exception": "OSError",
       "expression": "'disposable interruption before pointer publication'",
-      "path": "bilqis_mlx/runtime/tests/admission/atlas/test_atlas_lease_renewal.py"
+      "path": "bilqis_mlx/runtime/tests/admission/atlas/lease/test_renewal.py"
     },
     {
       "code_hint": "unlock failed",
       "count": 2,
       "exception": "OSError",
       "expression": "'unlock failed'",
-      "path": "bilqis_mlx/runtime/tests/admission/atlas/test_atlas_lease_storage.py"
+      "path": "bilqis_mlx/runtime/tests/admission/atlas/lease/test_storage.py"
     },
     {
       "code_hint": "model-input planning entered before A06 authority rejection",
