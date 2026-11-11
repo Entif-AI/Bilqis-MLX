@@ -74,7 +74,7 @@ class MixedSameLeaseNegativeTests(MixedWitnessSupport, unittest.TestCase):
                 "BAMF_ATLAS_V2_ARGUMENT_INVALID")
             self._assert_pointer_unchanged(pointer1)
             unavailable = replace(
-                current2, legacy=replace(current2.legacy, runtime=None))
+                current2, legacy=replace(current2.legacy, runtime=object()))
             with self.assertRaises(BilqisError) as owner_failure:
                 adopt_parameter_extension_atlas_successor_v2(
                     unavailable, delta, lease)
