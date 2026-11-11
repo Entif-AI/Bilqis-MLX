@@ -54,6 +54,7 @@ def _rehydrate_support_hold(owner, hold, node, authority_registry):
         install_ledger(owner, ledger_from_record(encoded_ledger))
     if transition is not None:
         authority_registry.verify_transition(transition)
+        node = owner.index.node(transition.artifact_id)
         if (transition.artifact_id != node.artifact_id
                 or transition.correction_event_id != event.event_id
                 or transition.correction_receipt_sha256 != event.source_receipt_sha256

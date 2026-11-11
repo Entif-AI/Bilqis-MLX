@@ -9,7 +9,8 @@ import re
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
-from bilqis_mlx.semantics.cognitive_dependencies import DependencyRef
+from bilqis_mlx.semantics.cognitive_dependencies import DependencyRef, DependencyKind, ArtifactNode
+from bilqis_mlx.semantics.dependencies.closure import closure_digest
 from bilqis_mlx.runtime.atlas_training_contracts import BamfTrainingBatch, _canonical_digest
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
@@ -33,6 +34,8 @@ class BamfTrainingAuthority:
     visit_id: str
     immediate_dependencies: tuple[DependencyRef, ...]
     auxiliary_labels_sha256: str | None = None
+    artifact_nodes: tuple = ()
+    artifact_closure_sha256: str | None = None
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
@@ -59,6 +62,22 @@ class BamfTrainingAuthority:
                     set(self.immediate_dependencies)))):
             _invalid("B11_TRAINING_AUTHORITY_INVALID")
 
+        if type(self.artifact_nodes) is not tuple:
+            _invalid("B11_TRAINING_ARTIFACT_CLOSURE_INVALID")
+        if self.artifact_nodes:
+            try:
+                digest = closure_digest(self.artifact_nodes)
+            except (TypeError, ValueError):
+                _invalid("B11_TRAINING_ARTIFACT_CLOSURE_INVALID")
+            if (digest != self.artifact_closure_sha256
+                    or any(ref.kind is DependencyKind.ARTIFACT
+                           and ref.key not in {node.artifact_id for node in self.artifact_nodes}
+                           for ref in self.immediate_dependencies)):
+                _invalid("B11_TRAINING_ARTIFACT_CLOSURE_INVALID")
+        elif (self.artifact_closure_sha256 is not None
+              or any(ref.kind is DependencyKind.ARTIFACT for ref in self.immediate_dependencies)):
+            _invalid("B11_TRAINING_ARTIFACT_CLOSURE_INVALID")
+
     @property
     def digest(self):
         payload = {
@@ -77,11 +96,13 @@ class BamfTrainingAuthority:
         }
         if self.auxiliary_labels_sha256 is not None:
             payload["auxiliary_labels_sha256"] = self.auxiliary_labels_sha256
+        if self.artifact_nodes:
+            payload["artifact_closure_sha256"] = self.artifact_closure_sha256
         wire = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(wire.encode()).hexdigest()
 
 
-def _issue(batch, source, provenance, auxiliaries):
+def _issue(batch, source, provenance, auxiliaries=()):
     if (not provenance.source_family_id or not provenance.episode_id
             or not provenance.immediate_dependencies):
         _invalid("B11_TRAINING_SOURCE_INDEPENDENCE_REQUIRED")
@@ -98,6 +119,8 @@ def _issue(batch, source, provenance, auxiliaries):
         ("visit_id", provenance.visit.visit_id),
         ("immediate_dependencies", provenance.immediate_dependencies),
         ("auxiliary_labels_sha256", _canonical_digest(auxiliaries) if auxiliaries else None),
+        ("artifact_nodes", ()),
+        ("artifact_closure_sha256", None),
         ("_issuance", _ISSUER),
     ):
         object.__setattr__(authority, name, value)
@@ -108,6 +131,7 @@ def _issue(batch, source, provenance, auxiliaries):
 def extend_training_dependencies(
     authority: BamfTrainingAuthority,
     dependencies: tuple[DependencyRef, ...],
+    *, artifact_nodes: tuple = (),
 ) -> BamfTrainingAuthority:
     """Return the same source authority with execution-observed C09 inputs added.
 
@@ -116,12 +140,21 @@ def extend_training_dependencies(
     executed.  The B11 owner therefore extends, never replaces, that frontier.
     """
     if (type(authority) is not BamfTrainingAuthority
+            or type(artifact_nodes) is not tuple
+            or any(type(node) is not ArtifactNode for node in artifact_nodes)
             or type(dependencies) is not tuple
             or any(not isinstance(item, DependencyRef) for item in dependencies)):
         _invalid("B11_TRAINING_EXECUTION_DEPENDENCIES_INVALID")
     authority.__post_init__()
     merged = tuple(sorted(set((*authority.immediate_dependencies, *dependencies))))
-    if merged == authority.immediate_dependencies:
+    nodes = {node.artifact_id: node for node in authority.artifact_nodes}
+    for node in artifact_nodes:
+        if node.artifact_id in nodes and nodes[node.artifact_id] != node:
+            _invalid("B11_TRAINING_ARTIFACT_CLOSURE_CONFLICT")
+        nodes[node.artifact_id] = node
+    closed = tuple(nodes[key] for key in sorted(nodes))
+    digest = closure_digest(closed) if closed else None
+    if merged == authority.immediate_dependencies and closed == authority.artifact_nodes:
         return authority
     extended = object.__new__(BamfTrainingAuthority)
     for name in (
@@ -130,6 +163,8 @@ def extend_training_dependencies(
         "source_family_id", "episode_id", "visit_id", "auxiliary_labels_sha256",
     ):
         object.__setattr__(extended, name, getattr(authority, name))
+    object.__setattr__(extended, "artifact_nodes", closed)
+    object.__setattr__(extended, "artifact_closure_sha256", digest)
     object.__setattr__(extended, "immediate_dependencies", merged)
     object.__setattr__(extended, "_issuance", _ISSUER)
     extended.__post_init__()

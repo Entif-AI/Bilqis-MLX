@@ -21,3 +21,14 @@ cannot simply be appended to a retained source anchor without preserving that
 closure through B13. The current neural work is not evidence of accepted-generation
 support/cold-read qualification. Reconcile that required custody seam before
 parent completion, drift PASS or PR turn-in. No release/admission waiver applies.
+
+## Continued inherited-scope audit
+
+Shared proof/acceptance versioning and full cold-read closure are required by the
+same #379 source/custody obligation; new_acceptance=false. Empty-closure v1/v3
+proofs and v5/v6 acceptance remain byte-compatible. New v4/v7/v8 records preserve
+only the actual executed evidence graph. Independent drift found two defects in
+cold acceptance identity and repeated-authority pairing; focused repairs restore
+the approved design rather than add acceptance. Source preflight, accepted C03
+selection and the public exact-row Factory composition complete the prescribed
+priority ownership seam. No new operator loop or source/admission authority exists.

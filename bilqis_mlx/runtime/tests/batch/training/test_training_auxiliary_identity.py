@@ -74,3 +74,27 @@ def test_absent_labels_preserve_old_digest_and_extension_retains_binding(issued_
     object.__setattr__(extended, 'auxiliary_labels_sha256', 'invalid')
     with pytest.raises(BilqisError):
         extended.__post_init__()
+
+
+def test_existing_three_argument_issuance_remains_supported(issued_batch):
+    batch, source = issued_batch
+    assert _issue(batch, source, batch.rows[0].provenance).digest == issue(batch, source).digest
+
+
+def test_executed_artifact_closure_is_bound_and_preserved(issued_batch):
+    from bilqis_mlx.semantics.cognitive_dependencies import ArtifactKind, ArtifactNode
+    from bilqis_mlx.semantics.dependencies.closure import closure_digest
+    batch, source = issued_batch
+    authority = issue(batch, source)
+    node = ArtifactNode('salience:test', ArtifactKind.SALIENCE_EVIDENCE, 'f' * 64,
+                        True, authority.immediate_dependencies, 2, 3)
+    extended = extend_training_dependencies(authority, (node.reference,), artifact_nodes=(node,))
+    assert extended.artifact_nodes == (node,)
+    assert extended.artifact_closure_sha256 == closure_digest((node,))
+    assert extended.digest != authority.digest
+    later = extend_training_dependencies(extended, (DependencyRef(DependencyKind.SOURCE, 'source:later'),))
+    assert later.artifact_nodes == extended.artifact_nodes
+    assert later.artifact_closure_sha256 == extended.artifact_closure_sha256
+    object.__setattr__(later, 'artifact_closure_sha256', 'a' * 64)
+    with pytest.raises(BilqisError):
+        later.__post_init__()

@@ -198,6 +198,26 @@ def _bind_b11_rows(source_context, candidate, authenticated, training, source_ro
     return tuple(compiled_rows)
 
 
+def _prepare_factory_source_rows(source_context, authenticated, rows, *, capability,
+                                 source_seed, source_each):
+    """Prepare the same source-owned AST and eligibility inputs for C02 or an offer."""
+    execution = source_context.release.execution_plan.capability_map[capability]
+    adapter = runtime_adapter_for_release(
+        source_context.source_root, source_context.graph, source_context.release,
+        source_context.source_registry, execution)
+    family = source_family_for_adapter(adapter.descriptor.adapter_id)
+    manifest = _load_pinned_released_frame_schemas(
+        family, authenticated.selection).manifest
+    schema_ids = frozenset(body.schema_id for body in manifest.bodies)
+    profile = (dict(execution.provider_parameters)
+               if execution.provider_parameters else None)
+    source_rows = tuple(_prepare_source_row(
+        source_context, authenticated, adapter, manifest, schema_ids, profile, row,
+        capability=capability, source_seed=source_seed, source_each=source_each)
+        for row in rows)
+    return adapter, profile, source_rows
+
+
 def _validated_training_request(
         source_context, candidate, delivered_rows, generation_binding, *,
         capability, delivery, requested_count, source_seed, source_each,
@@ -252,20 +272,9 @@ def prepare_factory_training_batch(
         visit_provenance=visit_provenance, teacher_strategy=teacher_strategy)
     authenticated = authenticate_bamf_execution_feature_context(
         candidate, atlas_artifact_path, source_context.run_dir)
-    execution = source_context.release.execution_plan.capability_map[capability]
-    adapter = runtime_adapter_for_release(
-        source_context.source_root, source_context.graph, source_context.release,
-        source_context.source_registry, execution)
-    family = source_family_for_adapter(adapter.descriptor.adapter_id)
-    manifest = _load_pinned_released_frame_schemas(
-        family, authenticated.selection).manifest
-    schema_ids = frozenset(body.schema_id for body in manifest.bodies)
-    profile = (dict(execution.provider_parameters)
-               if execution.provider_parameters else None)
-    source_rows = tuple(_prepare_source_row(
-        source_context, authenticated, adapter, manifest, schema_ids, profile, row,
-        capability=capability, source_seed=source_seed, source_each=source_each)
-        for row in rows)
+    adapter, profile, source_rows = _prepare_factory_source_rows(
+        source_context, authenticated, rows, capability=capability,
+        source_seed=source_seed, source_each=source_each)
     by_tokens = {tuple(item.row["tokens"]): item.ast for item in source_rows}
     if len(by_tokens) != len(rows):
         _invalid("FACTORY_TRAINING_AMBIGUOUS_SOURCE_PREFIX")

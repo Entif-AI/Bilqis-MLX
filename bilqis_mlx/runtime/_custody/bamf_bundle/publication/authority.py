@@ -7,7 +7,7 @@ from pathlib import Path
 from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
-    ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA, AcceptedCandidateBinding,
+    ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA, AcceptedCandidateBinding,
     _require_issued_binding,
     candidate_identity_digest,
 )
@@ -42,8 +42,9 @@ def require_acceptance(
     _require_issued_binding(acceptance)
     acceptance.__post_init__()
     motif_transition = is_motif_allocation_transition(candidate.transition)
-    expected_schema = MOTIF_ACCEPTANCE_SCHEMA if motif_transition else ACCEPTANCE_SCHEMA
-    if (acceptance.schema_version != expected_schema
+    expected_schema = ((MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA) if motif_transition
+                       else (ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA))
+    if (acceptance.schema_version not in expected_schema
             or acceptance.run_id != candidate.run_id
             or acceptance.generation != candidate.generation
             or acceptance.feature_sha256 != candidate.extents.factor_map_digest
@@ -61,6 +62,8 @@ def require_acceptance(
         if (acceptance.generation_authority_sha256
                 != successor_candidate_identity_digest(candidate)):
             invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    from bilqis_mlx.learning._retention._atlas_acceptance_records import require_closure_proofs
+    require_closure_proofs(acceptance, candidate.retained_state.step_proofs)
     return acceptance
 
 
@@ -285,7 +288,7 @@ def require_published_acceptance(
             != candidate_identity_digest(student.retained_state)
             or (not isinstance(acceptance, ParsedAtlasAdmissionBinding)
                 and (acceptance.schema_version not in {
-                        ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA}
+                        ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA}
                      or acceptance.step_proof_sha256 != tuple(
                          proof.digest for proof in student.retained_state.step_proofs)
                      or acceptance.source_authority_registry_sha256
@@ -294,13 +297,16 @@ def require_published_acceptance(
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     if is_motif_allocation_transition(student.transition):
         from ..genesis.records import successor_candidate_identity_digest
-        if (acceptance.schema_version != MOTIF_ACCEPTANCE_SCHEMA
+        if (acceptance.schema_version not in (MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
                 or acceptance.generation_authority_sha256
                 != successor_candidate_identity_digest(student)):
             invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     elif (not isinstance(acceptance, ParsedAtlasAdmissionBinding)
-          and acceptance.schema_version != ACCEPTANCE_SCHEMA):
+          and acceptance.schema_version not in (ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    from bilqis_mlx.learning._retention._atlas_acceptance_records import require_closure_proofs
+    if not isinstance(acceptance, ParsedAtlasAdmissionBinding):
+        require_closure_proofs(acceptance, student.retained_state.step_proofs)
     manifest = live_manifest(run_dir, pointer)
     legacy_student = manifest.get("schema") != ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA
     parent_sha = student.parent_manifest_sha256

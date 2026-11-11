@@ -78,3 +78,26 @@ closure or parent acceptance claim applies to this checkpoint.
 
 User requested an immediate push due quota, then instructed continuation. Preserve
 this partial state transparently and continue on the same issue/branch. No PR yet.
+
+## Implementation continuation
+
+The priority source offer, admitted A09 qualification, accepted C03 selector and
+public Factory candidate composition are implemented. Native policy JSON is
+issuer-recorded and its learning rate is applied to AdamW without altering the
+other supplied hyperparameters. Full original signed inputs are checked before
+filtering. Every source offer has a source-evidence C09 owner, including atom-only
+prefixes without a packed frame. Pre-selection holds consume no teacher RNG;
+after-selection stale delivery rejects without a second selection.
+
+Executed artifact closure now travels through B11 authority, provenance binding,
+v4 proofs, v7/v8 acceptance and C09 cold support. The old empty-closure records
+retain their existing schema/bytes. Independent drift findings about published
+acceptance identity and repeated-authority step pairing were repaired with focused
+regressions. Combined portable selection: 38 tests passed. This includes mocked
+owner-boundary checks and is not a substitute for the real integrated witness.
+
+No new Studio run has started since the interrupted focused attempt. The native
+fixture was optimized to avoid constructing an unused C05 model and now reports
+source/bootstrap/candidate stage timings. Actual source/accepted-selection/B11
+and accepted cold-read/correction witnesses, final drift, current-unified sync,
+and integration gates remain required before a PR.

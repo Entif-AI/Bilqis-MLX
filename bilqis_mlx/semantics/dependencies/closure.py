@@ -7,13 +7,14 @@ import json
 from . import ArtifactKind, ArtifactNode, DependencyIndex, DependencyKind, DependencyRef
 
 SCHEMA = 'bilqis.c06.executed-artifact-closure/v1'
+_NODES_REQUIRED = 'BAMF_SALIENCE_CLOSURE_NODES_REQUIRED'
 _FIELDS = frozenset(('artifact_id', 'kind', 'content_digest', 'eligible',
                      'immediate_dependencies', 'impact', 'exigency', 'schema_version'))
 
 
 def encode_closure_nodes(nodes):
     if type(nodes) is not tuple or not nodes:
-        raise ValueError('CLOSURE_NODES_REQUIRED')
+        raise ValueError(_NODES_REQUIRED)
     index = DependencyIndex(nodes)
     return tuple({
         'artifact_id': node.artifact_id, 'kind': node.kind.value,
@@ -25,7 +26,7 @@ def encode_closure_nodes(nodes):
 
 def decode_closure_nodes(records):
     if not isinstance(records, (list, tuple)) or not records:
-        raise ValueError('CLOSURE_NODES_REQUIRED')
+        raise ValueError(_NODES_REQUIRED)
     nodes = []
     for item in records:
         if not isinstance(item, dict) or set(item) != _FIELDS:

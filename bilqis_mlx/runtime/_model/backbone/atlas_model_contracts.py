@@ -169,7 +169,7 @@ class BamfGradientExecution:
 
 
 def _issue_loss_execution(output, loss, record, participation, *, salience_heads=(),
-                          salience_dependencies=()):
+                          salience_dependencies=(), salience_artifact_nodes=()):
     from .atlas_training_authority import extend_training_dependencies
     dense = set(record.dense_parameter_names)
     for head in salience_heads:
@@ -178,7 +178,8 @@ def _issue_loss_execution(output, loss, record, participation, *, salience_heads
     if salience_dependencies:
         if authority is None:
             _invalid("BAMF_SALIENCE_TRAINING_AUTHORITY_REQUIRED")
-        authority = extend_training_dependencies(authority, salience_dependencies)
+        authority = extend_training_dependencies(
+            authority, salience_dependencies, artifact_nodes=salience_artifact_nodes)
     execution = object.__new__(BamfLossExecution)
     for name, value in (
         ("output", output),

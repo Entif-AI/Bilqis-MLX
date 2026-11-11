@@ -64,6 +64,11 @@ class SalienceSupervision:
         _invalid('BAMF_SALIENCE_SUPERVISION_CALLER_CONSTRUCTION_FORBIDDEN')
 
     @property
+    def artifact_nodes(self):
+        self._owner.require()
+        return self._owner.index.nodes
+
+    @property
     def dependencies(self):
         node = self._owner.require()
         return tuple(sorted(set((node.reference, *node.immediate_dependencies))))

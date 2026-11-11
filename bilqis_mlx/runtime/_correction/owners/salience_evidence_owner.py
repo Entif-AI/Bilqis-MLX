@@ -68,6 +68,50 @@ class SalienceEvidenceArtifactOwner:
         self._queue = None
         self._context_changed = False
 
+    @classmethod
+    def for_source_offer(cls, authority, rows, prefixes):
+        """Track C02-equivalent dependencies even for prefixes with no packed frames."""
+        from bilqis_mlx.runtime.source_execution import SourceBatchAuthority, source_content_digest
+        from bilqis_mlx.runtime.atlas_training_adapter import source_prefix_dependencies
+        from bilqis_mlx.semantics.frame_compiler import CompiledFrameBatch
+        if (type(authority) is not SourceBatchAuthority or type(rows) is not tuple
+                or type(prefixes) is not tuple or not rows
+                or len(rows) != len(prefixes) or len(rows) != authority.each
+                or any(type(row) is not dict for row in rows)
+                or any(type(prefix) is not CompiledFrameBatch for prefix in prefixes)):
+            _invalid('BAMF_PRIORITY_SOURCE_OFFER_EVIDENCE_INVALID')
+        authority.__post_init__()
+        if source_content_digest(rows) != authority.content_sha256:
+            _invalid('BAMF_PRIORITY_SOURCE_OFFER_EVIDENCE_INVALID')
+        refs = set()
+        for row, prefix in zip(rows, prefixes):
+            prefix.__post_init__()
+            row_id, source_id = row.get('id'), row.get('source_id')
+            operation_id = row.get('operation_id')
+            if operation_id is None and isinstance(row.get('record'), dict):
+                operation_id = row['record'].get('operator')
+            if (not isinstance(row_id, str) or not row_id
+                    or row.get('capability') != authority.capability_id
+                    or any(value is not None and (not isinstance(value, str) or not value)
+                           for value in (source_id, operation_id))):
+                _invalid('BAMF_PRIORITY_SOURCE_OFFER_EVIDENCE_INVALID')
+            refs.update(source_prefix_dependencies(row_id, source_id, operation_id, prefix))
+        content = (authority.release_sha256, authority.capability_id, authority.provider_id,
+                   authority.provider_implementation_sha256, authority.seed, authority.each,
+                   authority.content_sha256, authority.source_family_id, authority.episode_ids,
+                   tuple((prefix.cache_key, prefix.context_digest) for prefix in prefixes))
+        digest = contract_digest(content)
+        priority = owner_priority(ArtifactKind.SALIENCE_EVIDENCE)
+        identity = 'priority-source-offer:' + digest
+        node = ArtifactNode(identity, ArtifactKind.SALIENCE_EVIDENCE, digest,
+                            True, tuple(sorted(refs)), *priority)
+        owner = object.__new__(cls)
+        owner._index = DependencyIndex.build((node,))
+        owner._artifact_id = identity
+        owner._queue = None
+        owner._context_changed = False
+        return owner
+
     @property
     def index(self):
         return self._index

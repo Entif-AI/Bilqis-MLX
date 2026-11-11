@@ -164,14 +164,13 @@ def _compile_native_target(row, *, kind: str, gold, head, source_context: Source
     return BamfTarget('semantic_token', native['identity'], native['token_id'], True)
 
 
-def _row_immediate_dependencies(
+def source_prefix_dependencies(
     row_id: str,
     source_id: str | None,
     operation_id: str | None,
-    model_input: BamfModelInput,
+    prefix,
 ) -> tuple[DependencyRef, ...]:
-    """Freeze the exact C09 inputs while C02 still owns their authority."""
-    prefix = model_input.prefix
+    """Derive C09 inputs from the source-owned row and exact A05 prefix."""
     dependencies = {
         DependencyRef(DependencyKind.SOURCE, row_id),
         DependencyRef(
@@ -196,6 +195,12 @@ def _row_immediate_dependencies(
             DependencyKind.TIME,
             "time:asof:context:" + prefix.context_digest))
     return tuple(sorted(dependencies))
+
+
+def _row_immediate_dependencies(row_id, source_id, operation_id, model_input):
+    """Freeze the exact C09 inputs while C02 still owns their authority."""
+    return source_prefix_dependencies(row_id, source_id, operation_id, model_input.prefix)
+
 
 def compile_training_batch(delivered_rows, source_context: SourceExecutionContext,
                            topology, *, delivery: DeliveredTeaching, delivery_capability: str,

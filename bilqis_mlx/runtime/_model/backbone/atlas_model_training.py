@@ -87,7 +87,7 @@ def loss_bearing_bamf(
     ):
         _invalid("B11_LOSS_TARGET_REQUIRED")
     loss = answer_loss(output, targets, mask)
-    heads, dependencies = (), ()
+    heads, dependencies, artifact_nodes = (), (), ()
     if salience_supervision is not None:
         from .salience_training import SalienceSupervision
         from .salience_loss import salience_loss_components
@@ -107,11 +107,13 @@ def loss_bearing_bamf(
                        impact=components.impact, exigency=components.exigency,
                        novelty=components.novelty)
         heads, dependencies = components.heads, salience_supervision.dependencies
+        artifact_nodes = salience_supervision.artifact_nodes
     if not bool(mx.all(mx.isfinite(loss.total))):
         _invalid("B11_LOSS_NONFINITE")
     return _issue_loss_execution(
         output, loss, record, _loss_participation(output, targets, mask, record),
-        salience_heads=heads, salience_dependencies=dependencies)
+        salience_heads=heads, salience_dependencies=dependencies,
+        salience_artifact_nodes=artifact_nodes)
 
 
 def _bamf_value_and_grad_impl(
