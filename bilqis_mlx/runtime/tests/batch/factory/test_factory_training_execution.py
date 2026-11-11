@@ -30,7 +30,11 @@ from bilqis_mlx.runtime.factory_candidate_training import (
     FactoryDeliveryObservation, _frame_stats,
 )
 from bilqis_mlx.runtime.factory_complete_solver import factory_evaluation_instrument
-from bilqis_mlx.runtime.factory_task_authority import factory_task_authority
+from bilqis_mlx.runtime.factory_task_authority import (
+    bind_factory_task_compiled_batch,
+    factory_task_authority,
+    factory_task_training_goal,
+)
 from bilqis_mlx.runtime.model_topology_v2 import bamf_parameter_census
 from bilqis_mlx.runtime.task_goal_readout import (
     task_goal_route_decisions, task_goal_route_plan,
@@ -47,6 +51,14 @@ from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import (
 )
 
 from .factory_training_bridge_support import FactoryTrainingBridgeFixture
+from .factory_training_execution_support import (
+    assert_prepared_logical_rows,
+    assert_split_step_result,
+    draw,
+    observation,
+    publish,
+    split_budget,
+)
 
 
 class FactoryResourcePlanningCustodyTests(unittest.TestCase):
@@ -67,14 +79,6 @@ class FactoryResourcePlanningCustodyTests(unittest.TestCase):
 
 
 class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
-    def _observation(self, run_dir, capability, rows, seed):
-        capture = ObservationCapture(run_dir, {})
-        capture.attempt_id = f"factory-step:{capability}:{seed}"
-        capture.proposal_id = store_sidecar(
-            run_dir, {"attempt_id": capture.attempt_id})["sha256"]
-        capture.select_option(capability, None)
-        return capture, FactoryDeliveryObservation(capture, 1, rows, seed)
-
     def route_context(self, compiled):
         authority = factory_task_authority(self.context, compiled)
         plan = task_goal_route_plan(
@@ -142,13 +146,13 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
         self.assertEqual(tuple(sum(mask) for mask in packed[0].padding_mask), lengths)
 
     def test_student_ops_executes_one_real_factory_candidate_step_and_records_cost(self):
-        rows, delivery = self._draw("B.IDBOOLOPS", 37116, 1)
+        rows, delivery = draw(self, "B.IDBOOLOPS", 37116, 1)
         with TemporaryDirectory() as run_dir_value:
             run_dir = Path(run_dir_value)
-            self._publish(run_dir)
+            publish(self, run_dir)
             source_context = self.accepted_source_context(run_dir)
             parent = load_accepted_generation(run_dir)
-            capture, observation = self._observation(
+            capture, delivery_observation = observation(
                 run_dir, "B.IDBOOLOPS", rows, 37116)
             result = train_bamf_factory_step(
                 run_dir, source_context, parent, str(self.artifact),
@@ -158,7 +162,7 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
                 optimizer_step_seed=17,
                 visit_provenance=visit_provenance("B.IDBOOLOPS"),
                 teacher_strategy={"policy": "c02-parent-production"},
-                teacher_hparams=HP, max_norm=1.0, observation=observation)
+                teacher_hparams=HP, max_norm=1.0, observation=delivery_observation)
             self.assertEqual(result.transaction.update_steps, 1)
             self.assertEqual(result.resource_plan.groups, ((0,),))
             self.assertEqual(len(result.route_targets), 1)
@@ -170,17 +174,17 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
             self.assertEqual(payload["controls"]["realized_cost"]["optimizer_steps"], 1)
 
     def test_persisted_correction_holds_training_batch_before_gradient_read(self):
-        rows, delivery = self._draw("B.IDBOOLOPS", 37118, 1)
+        rows, delivery = draw(self, "B.IDBOOLOPS", 37118, 1)
         correction = _event(DependencyRef(
             DependencyKind.SOURCE,
             "source:" + self.feature_context.features.source_bundle_id))
         with TemporaryDirectory() as run_dir_value:
             run_dir = Path(run_dir_value)
-            self._publish(run_dir)
+            publish(self, run_dir)
             source_context = self.accepted_source_context(run_dir)
             AcceptedRuntimeHost(run_dir).record_correction(correction)
             parent = load_accepted_generation(run_dir)
-            _, observation = self._observation(
+            _, delivery_observation = observation(
                 run_dir, "B.IDBOOLOPS", rows, 37118)
             with self.assertRaises(BilqisError) as caught:
                 train_bamf_factory_step(
@@ -191,97 +195,20 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
                     optimizer_step_seed=19,
                     visit_provenance=visit_provenance("B.IDBOOLOPS"),
                     teacher_strategy={"policy": "c09-correction-hold"},
-                    teacher_hparams=HP, max_norm=1.0, observation=observation)
+                    teacher_hparams=HP, max_norm=1.0, observation=delivery_observation)
             self.assertEqual(caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
-    def _assert_prepared_logical_rows(self, prepared, row_ids):
-        self.assertEqual(
-            tuple(row.provenance.row_id for row in prepared.training_batch.rows), row_ids)
-        self.assertEqual(
-            tuple(compiled.training_authority.source_row_id
-                  for compiled in prepared.compiled_rows), row_ids)
-        self.assertTrue(all(
-            compiled.training_authority.training_batch_sha256
-            == prepared.training_batch.authority_digest
-            for compiled in prepared.compiled_rows))
-        self.assertEqual(
-            tuple(compiled.training_authority.source_row_sha256
-                  for compiled in prepared.compiled_rows),
-            tuple(row.provenance.source_row_content_sha256
-                  for row in prepared.training_batch.rows))
-
-    def _split_budget(self, parent, prepared):
-        default_budget = MemoryBudget(
-            bamf_parameter_census(parent.topology, parent.extents))
-        resource_rows = tuple(
-            ResourceRow.from_training_row(
-                training_row, _frame_stats(compiled),
-                generation_binding=prepared.training_batch.generation_binding,
-                delivered_content_sha256=prepared.training_batch.delivered_content_sha256,
-            )
-            for training_row, compiled in zip(
-                prepared.training_batch.rows, prepared.compiled_rows))
-        one_row_peak = max(
-            estimate_row_activation_bytes(item, parent.topology)
-            for item in resource_rows)
-        return replace(
-            default_budget,
-            allocation_bytes=(default_budget.resident_bytes
-                              + default_budget.activation_safety_factor * one_row_peak),
-        )
-
-    def _assert_split_step_result(self, result, prepared, row_ids, parent):
-        self.assertEqual(result.resource_plan.groups, ((0,), (1,)))
-        self.assertEqual(result.resource_plan.logical_row_ids, row_ids)
-        self.assertEqual(
-            tuple(row.provenance.row_id for row in result.prepared.training_batch.rows),
-            row_ids)
-        self.assertEqual(len(result.gradient_execution.loss_executions), 2)
-        self.assertEqual(
-            result.gradient_execution.source_digest, result.resource_plan.source_digest)
-        row_authorities = tuple(
-            execution.training_authority
-            for execution in result.gradient_execution.loss_executions)
-        self.assertEqual(
-            tuple(authority.source_row_id for authority in row_authorities), row_ids)
-        self.assertEqual(
-            tuple(authority.source_row_sha256 for authority in row_authorities),
-            tuple(row.provenance.source_row_content_sha256
-                  for row in prepared.training_batch.rows))
-        self.assertEqual(
-            tuple(authority.digest for authority in row_authorities),
-            tuple(compiled.training_authority.digest
-                  for compiled in result.prepared.compiled_rows))
-        self.assertEqual(result.transaction.update_steps, 1)
-        self.assertEqual(len(result.transaction.step_proofs), 1)
-        self.assertEqual(len(result.transaction.training_authorities), 1)
-        authority = result.transaction.training_authorities[0]
-        self.assertEqual(tuple(member.source_row_id for member in authority.members), row_ids)
-        proof = result.transaction.step_proofs[0]
-        self.assertEqual(proof.training_authority_sha256, authority.digest)
-        self.assertEqual(
-            proof.training_authority_members,
-            tuple((member.digest, member.source_family_id, member.episode_id)
-                  for member in authority.members))
-        self.assertIsNotNone(result.transaction.motif_transition)
-        deltas = tuple(
-            after - parent.retained_state.optimizer.update_counts[name]
-            for name, after in result.transaction.optimizer.update_counts.items())
-        self.assertTrue(all(bool(mx.all((delta == 0) | (delta == 1))) for delta in deltas))
-        self.assertTrue(any(bool(mx.any(delta == 1)) for delta in deltas))
-        self.assertEqual(result.realized_cost["optimizer_steps"], 1)
-
     def test_production_step_accumulates_split_real_rows_into_one_optimizer_step(self):
-        rows, delivery = self._draw("A.IDENTITY", 37117, 2)
+        rows, delivery = draw(self, "A.IDENTITY", 37117, 2)
         with TemporaryDirectory() as run_dir_value:
             run_dir = Path(run_dir_value)
-            self._publish(run_dir)
+            publish(self, run_dir)
             source_context = self.accepted_source_context(run_dir)
             parent = load_accepted_generation(run_dir)
             prepared = self.prepare("A.IDENTITY", 37117, 2)[1]
             row_ids = tuple(row["id"] for row in rows)
-            self._assert_prepared_logical_rows(prepared, row_ids)
-            _, observation = self._observation(
+            assert_prepared_logical_rows(self, prepared, row_ids)
+            _, delivery_observation = observation(
                 run_dir, "A.IDENTITY", rows, 37117)
             result = train_bamf_factory_step(
                 run_dir, source_context, parent, str(self.artifact),
@@ -291,23 +218,9 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
                 optimizer_step_seed=18,
                 visit_provenance=visit_provenance("A.IDENTITY"),
                 teacher_strategy={"policy": "c02-parent-production"},
-                teacher_hparams=HP, max_norm=1.0, observation=observation,
-                memory_budget=self._split_budget(parent, prepared))
-            self._assert_split_step_result(result, prepared, row_ids, parent)
-
-    def _draw(self, capability, seed, each):
-        rows = tuple(self.context.draw_rows(seed=seed, capability=capability, each=each))
-        execution = self.context.release.execution_plan.capability_map[capability]
-        delivery = describe_delivered_teaching(
-            self.context.release, capability, execution.teaching_option_ids[0], rows)
-        return rows, delivery
-
-    def _publish(self, run_dir: Path) -> None:
-        with patch(
-            "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom", return_value=None,
-        ):
-            publish_initial_generation(
-                run_dir, self.production_genesis(), reserve_gib=0.)
+                teacher_hparams=HP, max_norm=1.0, observation=delivery_observation,
+                memory_budget=split_budget(parent, prepared))
+            assert_split_step_result(self, result, prepared, row_ids, parent)
 
 
 if __name__ == "__main__":
