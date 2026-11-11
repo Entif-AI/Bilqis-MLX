@@ -7,26 +7,9 @@ from bilqis_mlx.runtime.jit_adoption import _PreparedSuccessorRuntime
 
 
 class CapabilityPublicationV2Tests(CapabilityV2Support):
-    def _publication_case(self, *, last_parent_pointer=None):
-        handoff = self._handoff()
-        approval, lease = self._lease_authority(handoff)
-        pure = self._context(handoff, approval)
-        runtime = _PreparedSuccessorRuntime(
-            None, pure.run_dir, {"school": {}}, None, None, {}, object(), object(), 0.)
-        current = AtlasAdmissionContextV2(
-            pure.legacy, pure.run_dir, runtime=runtime, source_authority=object())
-        parent = SimpleNamespace(
-            retained_state=SimpleNamespace(
-                optimizer_step=pure.legacy.checkpoint.optimizer_step))
-        transition = SimpleNamespace()
-        candidate = SimpleNamespace()
-        binding = SimpleNamespace()
-        pointer = {"generation": 1, "manifest_sha256": "f" * 64}
-        parent_pointer = {
-            "generation": 0,
-            "manifest_sha256": "a" * 64,
-            "acceptance_sha256": "b" * 64,
-        }
+    def _publication_stack(
+            self, handoff, lease, pure, parent, transition, candidate, binding,
+            pointer, parent_pointer, *, last_parent_pointer=None):
         successor = handoff.staged_candidate.successor.release_sha256
         predecessor = handoff.receipt.predecessor_release.release_sha256
         stack = ExitStack()
@@ -90,11 +73,36 @@ class CapabilityPublicationV2Tests(CapabilityV2Support):
         exact_release = stack.enter_context(patch(
             "bilqis_mlx.runtime.atlas_capability_adoption_v2."
             "_require_exact_atlas_release"))
+        return stack, (
+            issue_transition, derive, issue_binding, publish, exact_release, lease_guard)
+
+    def _publication_case(self, *, last_parent_pointer=None):
+        handoff = self._handoff()
+        approval, lease = self._lease_authority(handoff)
+        pure = self._context(handoff, approval)
+        runtime = _PreparedSuccessorRuntime(
+            None, pure.run_dir, {"school": {}}, None, None, {}, object(), object(), 0.)
+        current = AtlasAdmissionContextV2(
+            pure.legacy, pure.run_dir, runtime=runtime, source_authority=object())
+        parent = SimpleNamespace(
+            retained_state=SimpleNamespace(
+                optimizer_step=pure.legacy.checkpoint.optimizer_step))
+        transition = SimpleNamespace()
+        candidate = SimpleNamespace()
+        binding = SimpleNamespace()
+        pointer = {"generation": 1, "manifest_sha256": "f" * 64}
+        parent_pointer = {
+            "generation": 0,
+            "manifest_sha256": "a" * 64,
+            "acceptance_sha256": "b" * 64,
+        }
+        stack, mocks = self._publication_stack(
+            handoff, lease, pure, parent, transition, candidate, binding,
+            pointer, parent_pointer, last_parent_pointer=last_parent_pointer)
         with stack:
             actual = publish_capability_only_factory_successor(
                 current, handoff, lease, expected_parent_pointer=parent_pointer)
-        return actual, pointer, handoff, parent, transition, candidate, binding, runtime, (
-            issue_transition, derive, issue_binding, publish, exact_release, lease_guard)
+        return actual, pointer, handoff, parent, transition, candidate, binding, runtime, mocks
 
     def test_capability_only_publisher_binds_authenticated_predecessor_and_publishes_once(self):
         (actual, pointer, handoff, parent, transition, candidate, binding, runtime,
