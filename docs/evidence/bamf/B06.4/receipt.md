@@ -4,15 +4,17 @@
 
 Issue #455 owns the final B06 refinement tensor and initializer reconciliation. The accepted B06 parent amendment on #365 keeps B01 as the sole tensor/initializer authority, B06.1 as the private numerical owner, and B11 as the production composition owner. B06.3/#454 is closed and its PR #942 is merged.
 
-This candidate consumes reviewed unified `036e0aa3c2bec184481a4f009d8c31e16b9495f5`. Its semantic/test proof head is `39eeefea431e19bbc88d35d30ffb4a223340a344`.
+This candidate consumes reviewed unified `036e0aa3c2bec184481a4f009d8c31e16b9495f5`. Its final semantic/test proof head is `f8f61dc1674269c323ddd55258df88069033fce6`.
 
 Historical PRs #686 and #725 remain closed provenance. Their accepted repair semantics were remapped onto the current `bilqis_mlx/runtime/_depth/atlas_refinement.py` owner. The retired `refine_selected(...)` facade was not restored.
+
+The stale `refine_selected(...)` wording in the original live #455 body and its checked-in source mirror is preserved as historical task provenance. The accepted #365 B06 authority amendment supersedes that physical/API wording and governs this implementation.
 
 ## Implemented contract
 
 `refinement_parameter_view(...)` validates the complete B01 parameter tree before projecting any refinement tensors. It derives its ordered declarations from B01 `expected_bamf_shapes(...)` and returns exact aliases to the existing `refine.*` arrays.
 
-The projection is a tuple-backed MLX parameter pytree with a named lookup surface. It is immutable and binds topology digest, generation-extents digest, and exact B01 declarations to the issued view. Reconstructed autodiff trees retain the numerical shape but cannot claim B01 projection provenance. Numerical validation reads tuple leaves directly, so replacing the named accessor cannot substitute tensors.
+The projection is a tuple-backed MLX parameter pytree with a named lookup surface. It is immutable and carries no self-attested topology, extents, declaration, or ownership authority. B01 provenance is re-derived against the complete validated parameter tree, topology, and generation extents at the verification boundary. MLX autodiff reconstructions therefore cannot self-ratify as B01 authority. Numerical validation reads tuple leaves directly, so replacing the named accessor cannot substitute tensors.
 
 B01 remains the only initializer owner. The proof compares each projected tensor with `initialize_bamf_parameter(...)` and the B01 manifest fields for shape, initializer, optimizer group, and decay.
 
@@ -22,9 +24,9 @@ The current B11 production path is unchanged. It obtains this view from the acce
 
 Focused current-head proof:
 
-- B06.4 registry: 11/11 PASS, zero skips or errors.
+- B06.4 registry: 12/12 PASS, zero skips or errors.
 - Existing B06.1 numerical refinement: 7/7 PASS, zero skips or errors.
-- Whole refinement owner family: 21/21 PASS, zero skips or errors.
+- Whole refinement owner family: 22/22 PASS, zero skips or errors.
 - Real-A01 B11 production refinement: 9/9 PASS, zero skips or errors.
 - B01 topology/ledger/initializer/lifecycle: 21/23 PASS, with two declared optional witness skips and no failures or errors.
 
@@ -50,11 +52,10 @@ The two topology skips are owner-declared capability gates: `BILQIS_BAMF_FULL_WI
 
 The historical pinned EGM review of the old #455 candidate found two Majors: the registry projection was not directly differentiable as an MLX parameter tree, and a dict-shaped view could be mutated through the base dict API. This candidate carries the #715 repair into the current production owner.
 
-Regression proof now establishes direct `mx.grad(...)` traversal, blocks base-container substitution, rejects reconstructed views as B01 provenance, and prevents accessor replacement from changing numerical consumption.
+Fresh review of the first current-unified repair then found a third candidate-owned Major: the view's dynamically generated class stored its provenance predicate in mutable class state, which `type.__setattr__` could replace. The repaired design removes self-attested authority from the differentiable view entirely. Regression proof now establishes direct `mx.grad(...)` traversal, blocks base-container substitution, re-derives B01 provenance from the complete authoritative tree, survives the class-monkeypatch exploit, and prevents accessor replacement from changing numerical consumption.
 
 ## Lifecycle
 
 The old #455 flow-control resume condition is satisfied: #454 is accepted and merged, and the #715 repair semantics are consumed here. The issue remains open until fresh post-implementation review, hosted PR checks, human merge, and merged-head readback complete its lifecycle.
 
 No live student, AdamW state, teacher state, accepted checkpoint lineage, or human-run training was mutated.
-
