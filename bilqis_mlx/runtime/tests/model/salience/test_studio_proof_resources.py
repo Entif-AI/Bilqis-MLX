@@ -13,16 +13,28 @@ class StudioProofResourceTests(unittest.TestCase):
         self.runner = module_from_spec(spec)
         spec.loader.exec_module(self.runner)
 
-    def check_resources(self, swap, pressure):
+    def check_resources(self, swap, pressure, **kwargs):
         with patch.object(self.runner.subprocess, 'run', side_effect=(
                 SimpleNamespace(stdout=swap), SimpleNamespace(stdout=pressure))), \
                 patch('builtins.print'):
-            return self.runner._resources_ready()
+            return self.runner._resources_ready(**kwargs)
 
     def test_nearly_full_swap_holds_even_when_memory_is_free(self):
         self.assertFalse(self.check_resources(
             'vm.swapusage: total = 59392.00M used = 57933.81M free = 1458.19M',
             'System-wide memory free percentage: 83%'))
+
+    def test_explicit_24_gib_concurrent_budget_allows_nearly_full_swap(self):
+        self.assertTrue(self.check_resources(
+            'vm.swapusage: total = 102400.00M used = 80000.00M free = 22400.00M',
+            'System-wide memory free percentage: 40%',
+            allow_concurrent_mlx=True, max_memory_gib=24))
+
+    def test_concurrent_budget_must_not_exceed_24_gib(self):
+        self.assertFalse(self.check_resources(
+            'vm.swapusage: total = 102400.00M used = 80000.00M free = 22400.00M',
+            'System-wide memory free percentage: 40%',
+            allow_concurrent_mlx=True, max_memory_gib=24.01))
 
     def test_safe_pressure_and_swap_allow_stage(self):
         self.assertTrue(self.check_resources(

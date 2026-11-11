@@ -12,6 +12,10 @@ import time
 from tempfile import TemporaryFile
 
 
+GIB = 1024 ** 3
+MAX_AUTHORIZED_CONCURRENT_GIB = 24
+
+
 STAGES = (
     ('ordinal-loss', ('bilqis_mlx/runtime/tests/model/salience/test_salience_loss.py',)),
     ('factory-integration', ('bilqis_mlx/runtime/tests/model/salience/test_factory_salience_execution.py',)),
@@ -54,7 +58,7 @@ def _other_workers():
                         and any(marker in command for marker in markers)))
 
 
-def _resources_ready():
+def _resources_ready(*, allow_concurrent_mlx=False, max_memory_gib=None):
     swap = subprocess.run(['sysctl', 'vm.swapusage'], check=True,
                           capture_output=True, text=True).stdout
     pressure = subprocess.run(['memory_pressure', '-Q'], check=True,
@@ -66,53 +70,116 @@ def _resources_ready():
         print('C06_STUDIO_RESOURCE_STATUS_UNVERIFIED', flush=True)
         return False
     total, used = map(float, values.groups())
+    if allow_concurrent_mlx:
+        if (max_memory_gib is None or max_memory_gib <= 0
+                or max_memory_gib > MAX_AUTHORIZED_CONCURRENT_GIB):
+            print('C06_STUDIO_CONCURRENT_MEMORY_BUDGET_INVALID', flush=True)
+            return False
+        if int(free.group(1)) < 10:
+            print('C06_STUDIO_RESOURCE_HOLD memory_pressure', flush=True)
+            return False
+        print(f'C06_STUDIO_CONCURRENT_RESOURCE_OVERRIDE max_memory_gib={max_memory_gib}',
+              flush=True)
+        return True
     if (total > 0 and used / total >= .9) or int(free.group(1)) < 10:
         print('C06_STUDIO_RESOURCE_HOLD swap_or_pressure', flush=True)
         return False
     return True
 
 
-def _native_stage(label):
+def _process_tree_rss_bytes(root_pid):
+    result = subprocess.run(['ps', '-axo', 'pid=,ppid=,rss='], check=True,
+                            capture_output=True, text=True)
+    rows = {}
+    for line in result.stdout.splitlines():
+        fields = line.strip().split()
+        if len(fields) == 3:
+            rows[int(fields[0])] = (int(fields[1]), int(fields[2]))
+    descendants = {root_pid}
+    while True:
+        more = {pid for pid, (parent, _) in rows.items() if parent in descendants}
+        if more <= descendants:
+            break
+        descendants.update(more)
+    return sum(rows.get(pid, (0, 0))[1] for pid in descendants) * 1024
+
+
+def _native_stage(label, max_memory_gib=None):
     root = Path(__file__).resolve().parents[5]
     sys.path.insert(0, str(root))
     import mlx.core as mx
     from bilqis_mlx.runtime.mlx_memory import training_memory_policy
     from scripts.run_tests import main as run_tests
     with training_memory_policy(mx) as policy:
-        print(f'C06_MEMORY_POLICY {policy}', flush=True)
-        return run_tests(dict(STAGES)[label], root=root)
+        limit_bytes = None if max_memory_gib is None else int(max_memory_gib * GIB)
+        previous_limit = None
+        if limit_bytes is not None:
+            previous_limit = mx.set_memory_limit(limit_bytes)
+            mx.reset_peak_memory()
+        print(f'C06_MEMORY_POLICY {policy} memory_limit_bytes={limit_bytes}', flush=True)
+        try:
+            return run_tests(dict(STAGES)[label], root=root)
+        finally:
+            if limit_bytes is not None:
+                peak = mx.get_peak_memory()
+                print(f'C06_MEMORY_PEAK bytes={peak} limit_bytes={limit_bytes}', flush=True)
+                if previous_limit is not None:
+                    mx.set_memory_limit(previous_limit)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--lock', type=Path)
     parser.add_argument('--_stage', choices=tuple(dict(STAGES)))
+    parser.add_argument('--allow-concurrent-mlx', action='store_true')
+    parser.add_argument('--max-memory-gib', type=float)
     args = parser.parse_args()
     if args._stage:
-        return _native_stage(args._stage)
+        return _native_stage(args._stage, args.max_memory_gib)
     if args.lock is None:
         parser.error('--lock is required for the coordinator')
+    if args.allow_concurrent_mlx and (args.max_memory_gib is None
+            or args.max_memory_gib <= 0
+            or args.max_memory_gib > MAX_AUTHORIZED_CONCURRENT_GIB):
+        parser.error('--allow-concurrent-mlx requires --max-memory-gib in (0, 24]')
     args.lock.parent.mkdir(parents=True, exist_ok=True)
     with args.lock.open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        previous = None
-        while other := _other_workers():
-            if other != previous:
-                print('C06_STUDIO_WAIT active_worker_pids=' + ','.join(map(str, other)), flush=True)
-                previous = other
-            time.sleep(10)
+        if not args.allow_concurrent_mlx:
+            previous = None
+            while other := _other_workers():
+                if other != previous:
+                    print('C06_STUDIO_WAIT active_worker_pids=' + ','.join(map(str, other)), flush=True)
+                    previous = other
+                time.sleep(10)
         print('C06_STUDIO_SERIAL_LANE_ACQUIRED', flush=True)
         for label, paths in STAGES:
-            if not _resources_ready():
+            if not _resources_ready(
+                    allow_concurrent_mlx=args.allow_concurrent_mlx,
+                    max_memory_gib=args.max_memory_gib):
                 return 75
             start = time.monotonic()
             print('C06_STAGE_START ' + label, flush=True)
             with TemporaryFile(mode='w+', encoding='utf-8') as output:
-                child = subprocess.Popen([sys.executable, '-B', __file__, '--_stage', label],
+                command = [sys.executable, '-B', __file__, '--_stage', label]
+                if args.max_memory_gib is not None:
+                    command += ['--max-memory-gib', str(args.max_memory_gib)]
+                child = subprocess.Popen(command,
                     env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1', 'BILQIS_TEST_WORKERS': '1'},
                     stdout=output, stderr=subprocess.STDOUT)
                 while child.poll() is None:
-                    if other := _other_workers():
+                    if args.max_memory_gib is not None:
+                        rss = _process_tree_rss_bytes(child.pid)
+                        if rss > int(args.max_memory_gib * GIB):
+                            child.terminate()
+                            child.wait()
+                            output.seek(0)
+                            print(output.read(), flush=True)
+                            print('C06_STUDIO_MEMORY_LIMIT_EXCEEDED '
+                                  f'rss_bytes={rss} limit_bytes={int(args.max_memory_gib * GIB)}',
+                                  flush=True)
+                            return 137
+                    if not args.allow_concurrent_mlx and (other := _other_workers()):
                         child.terminate()
                         child.wait()
                         output.seek(0)
