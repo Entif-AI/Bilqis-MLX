@@ -122,6 +122,24 @@ MLX/full-model witness in that state. No heavy rerun is authorized until that
 resource precondition clears; do not weaken the guard or treat detachment as a
 substitute for memory safety.
 
+Two independent read-only turn-in reviews were then collected against the reconciled
+current-base branch. The implementation/custody reviewer reported no blocker, major,
+or minor correctness or integration defect across C08 resource planning, row-weighted
+gradient accumulation, grouped training authority/proof, participation unions, motif
+staging, canonical owner-path relocation, or the current-unified source-frame lineage
+changes. The evidence reviewer independently confirmed that the r4 PASS remains valid
+for its immutable tested head, that `ADR-139` renumbering is internally consistent,
+and that the minimum remaining current-base evidence is exactly one staged mounted
+real-fixture/full witness followed by the aggregate premerge gate. That reviewer also
+confirmed the PR must not be presented as ready for human review until those gates are
+green or validly reusable.
+
+A later host check still showed resource pressure: swap remained approximately
+`57.01 GiB / 58.37 GiB` with no active C08/MLX test worker visible. This confirms the
+blocker is residual host resource state rather than a surviving owned test process.
+No unrelated process was terminated and no unsafe memory-pressure workaround was
+used merely to force the remaining proof.
+
 ## Disposition
 
 C08 BAMF-0.2 owned acceptance remains satisfied by the owner-declared and durable
