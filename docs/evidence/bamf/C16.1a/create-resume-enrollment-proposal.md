@@ -1,6 +1,6 @@
 # C16.1a persistent create/resume enrollment proposal
 
-Status: DESIGN AMENDMENT / EGM-R16-PENDING
+Status: DESIGN AMENDMENT / EGM-R17-PENDING
 Issue: #542 / C16.1a
 Reviewed unified base: `905018b0ece7613843570dc2c2e72a74dae4e91d`
 Historical implementation candidate preserved for evidence: `291f7a39cc6f083c222fff604e8a3d95ab98e497`
@@ -199,9 +199,28 @@ persistent `.bamf-pointer.lock`, allowing generic fixture mutation to contaminat
 the newly recognized pointer-lock-only B13 crash prefix after the root claim is
 released. Fourth, the lifecycle report named several keys without freezing their
 exact JSON wire encodings or the source of `source_prefetch_workers` on resume.
-R16 repairs exactly those four findings and preserves every other R15 contract.
-Production mutation remains forbidden until R16 freshly clears **0 Blockers / 0
-Majors** across all three required lenses.
+R16 repairs exactly those four findings and preserves every other R15 contract. At
+that historical R15 -> R16 gate, production mutation remained forbidden until R16
+freshly cleared **0 Blockers / 0 Majors** across all three required lenses.
+
+R16 review record: the frozen R16 proposal at
+`c1d88064544fefcf6ecabcf4f3d099a6ebf6a560` / SHA-256
+`fbd006313d12c33601f96593741f5ab119107880f79ba6315fb30c1bdbd48f67`
+received Design/Structural **0 Blockers / 1 Major / 0 Nits**, Codebase Details
+**1 Blocker / 1 Major / 0 Nits**, and Implementation Readiness
+**0 Blockers / 0 Majors / 0 Nits**. The material union is two seams. First, R16
+promoted the pointer-lock-only prefix to crash-durable B13 custody evidence while the
+reviewed `_pointer_lock(...)` owner still first-created `.bamf-pointer.lock` with
+`O_CREAT` and never fsynced the new lock inode or run-directory entry; a power-loss
+crash can therefore erase the marker on which interrupted-custody classification and
+fixture exclusion depend. Second, the exact frozen tree has
+`bilqis_mlx/runtime/_custody/bamf_bundle/publication/__init__.py` at 394 LoC. The
+active repository interruption contract requires an encountered >360-LoC
+project-authored file to be split before feature work resumes, with the original
+below 240 LoC and mirrored companion tests below 240 LoC along the same ownership
+boundary. R17 repairs exactly those two findings. Production mutation remains
+forbidden until R17 freshly clears **0 Blockers / 0 Majors** across all three required
+lenses.
 
 ## Why this amendment exists
 
@@ -751,6 +770,20 @@ states. The full reviewed generation-zero call chain is normative: publication f
 enters `_authorize_publication_candidate(...)`, which calls
 `_existing_initial_generation_retry(...)`; that owner acquires/creates and then releases
 the persistent `.bamf-pointer.lock` while deciding that no exact prior genesis exists.
+The **first creation** of that persistent marker is itself a durability boundary.
+`_pointer_lock(...)` must distinguish first creation from reopen without a racy
+pre-open existence decision: first attempt
+`O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW` (where `O_NOFOLLOW` is supported); on
+`FileExistsError`, reopen the existing marker with
+`O_RDWR|O_NOFOLLOW`. A first-created marker must be verified as the same safe
+regular opened file, then `fsync(fd)` and `fsync(run_dir)` **before the first
+publication owner may proceed past lock acquisition**. Failure of either durability
+operation fails closed by propagating the underlying `OSError` unchanged, matching
+the existing B13 storage durability helpers rather than inventing a new public BAMF
+reason for host-filesystem failure. The caller must not treat the marker as durable
+custody and no staging/bundle/acceptance work may begin. Reopening an already durable
+marker does not repeat the creation fsync. The marker remains persistent after
+unlock/close.
 After that retry preflight returns, `_publish_authorized_generation(...)` calls
 `_parent_acceptance_for_publication(...)`; the reviewed B13 parent-acceptance owner
 acquires and releases the same persistent pointer lock a second time before returning
@@ -773,7 +806,9 @@ There is no lawful fresh-owner stage-only prefix in this contract. A stage marke
 without the safe persistent pointer lock is treated as malformed/interrupted B13
 evidence and fails closed rather than being silently reclaimed.
 
-The staging root is promoted to an explicit durable lifecycle marker. On first
+The pointer lock and staging root are both explicit durable lifecycle markers. The
+pointer-lock-only prefix is authoritative only because first creation has completed
+the file + run-root fsync sequence above. On first
 creation, B13 `_stage()` must fsync the new staging directory and then the run root
 **before any generation-specific staging work begins**. Every path that removes a
 generation-specific stage child while retaining `.bamf-staging/` must fsync that
@@ -1627,11 +1662,27 @@ no phase is permission to start the learner or optimizer.
    cross-epoch exclusion, and exact v2 orphan/reconciliation storage behavior. Run the
    new coordination tests plus C07 v1/v2 storage/fixture/epoch-race tests. No
    presentation routing changes occur in this phase.
-2. **B13 path, durability, and recovery foundations.** Add physical-identity
-   source/target disjointness, durable staging-root publication/cleanup, the two legal
-   pre-seal prefixes, parsed historical acceptance write path, prepared retry and
-   source-independent cold recovery. Run B13 generation-zero/retry/trust/recovery and
-   first-student path tests. C07 enrollment is not yet exposed through CLI.
+2. **B13 structural interruption, path, durability, and recovery foundations.**
+   Before adding feature logic to the encountered 394-LoC publication facade, split
+   cohesive generation-zero retry/cold-recovery orchestration out of
+   `publication/__init__.py` into `publication/retry.py` so the facade is **<240
+   LoC**. Mirror that ownership split in the generation-zero companion tests by
+   moving cold-recovery-focused cases out of
+   `test_generation_zero_retry.py` into
+   `test_generation_zero_cold_recovery.py`; both companion files must be **<240
+   LoC**. Verify those structural postconditions and the moved behavior before
+   continuing this phase. The frozen-tree seam is arithmetically feasible without
+   threshold laundering: moving the generation-zero retry/cold-recovery block plus
+   its retry-only reconciliation ownership removes roughly 147 source lines from the
+   394-LoC facade before import cleanup, while the 97-LoC retry owner remains safely
+   below the >360-LoC trigger; splitting the cold-recovery helper/tests likewise
+   leaves both companion test files below 240 LoC. Then add physical-identity
+   source/target disjointness,
+   durable first creation of the persistent pointer lock, durable staging-root
+   publication/cleanup, the two legal pre-seal prefixes, parsed historical acceptance
+   write path, prepared retry and source-independent cold recovery. Run B13
+   generation-zero/retry/trust/recovery and first-student path tests. C07 enrollment
+   is not yet exposed through CLI.
 3. **Accepted C07 enrollment owner.** Add the immutable request contract/parser,
    read-only epoch precheck, accepted-run enrollment owner, C09 capability use, and
    sole accepted-v2 persistence delegation. Run C07/C09 accepted enrollment,
@@ -1721,6 +1772,14 @@ Production, with required file action:
     classification and hold it through generation-zero publication/recovery;
 - **Modify** `bilqis_mlx/runtime/_custody/bamf_bundle/genesis/__init__.py` and
   **Modify** `bilqis_mlx/runtime/_custody/bamf_bundle/publication/retry.py`
+  - first perform the mandatory encountered-file split: move the facade's
+    generation-zero retry/cold-recovery orchestration into this existing cohesive
+    retry module, including `_existing_initial_generation_retry(...)`,
+    `recover_prepared_initial_generation(...)`,
+    `recover_sealed_initial_generation(...)`, and the retry-only reconciliation
+    helpers they require, while keeping the package facade as the public re-export /
+    shared-publication boundary. The final facade must be <240 LoC and this retry
+    module must remain below the >360-LoC trigger;
   - expose prepared retry plus source-independent cold recovery for an exact sealed
     unpointed generation zero; reconstruct a missing historical acceptance record
     only from trust-row digest + sealed student, using
@@ -1730,13 +1789,18 @@ Production, with required file action:
   **Modify** `bilqis_mlx/runtime/_custody/bamf_bundle/publication/__init__.py`
   - add `_write_parsed_initial_generation_acceptance(...)` as the only historical
     acceptance-sidecar write path, reusing existing canonical/atomic/fsync semantics;
+  - make first creation of persistent `.bamf-pointer.lock` crash-durable before any
+    publication-owner body can proceed: use exclusive create to identify first
+    creation, reopen on `FileExistsError`, validate the opened regular file, and
+    for first creation only fsync the lock fd then the run root before yielding the
+    lock. Reopen of an already durable marker does not repeat creation fsync;
   - make first creation of `.bamf-staging/` durable before generation-specific work by
     fsyncing the new staging directory and run root, and route every retained-root
     stage-child cleanup through one helper that fsyncs `.bamf-staging/` after child
-    removal; preserve `.bamf-pointer.lock` as the existing persistent B13
-    synchronization file and classify both real fresh-owner prefixes: pointer-lock-only
-    after both pre-stage pointer-lock owner boundaries, then pointer-lock + empty
-    durable staging root;
+    removal; preserve `.bamf-pointer.lock` as the persistent B13 synchronization
+    file and classify both real fresh-owner prefixes only after its creation
+    durability boundary: pointer-lock-only after both pre-stage pointer-lock owner
+    boundaries, then pointer-lock + empty durable staging root;
 - **Modify** `bilqis_mlx/presentation/operator_cli/command.py` and **Modify**
   `bilqis_mlx/presentation/operator_cli/parser.py` only as required for
   the pinned v2 dispatch/presence-bit routing **and** the explicit BAMF-v2 foundation
@@ -1770,6 +1834,11 @@ Tests:
 - **Modify** `bilqis_mlx/runtime/tests/admission/atlas/test_atlas_lease_v2.py`;
 - **Modify**
   `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_retry.py`;
+- **Create**
+  `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_cold_recovery.py`
+  - mandatory mirrored structural companion: move the cold-recovery-focused cases
+    with the production retry/cold-recovery split; both this file and
+    `test_generation_zero_retry.py` must finish <240 LoC;
 - **Modify**
   `bilqis_mlx/runtime/tests/custody/bamf_bundle/contracts/genesis/test_generation_zero_cold_trust.py`;
 - **Modify**
@@ -1870,7 +1939,13 @@ mirrored test owner:
   mutation;
 - both real pre-seal crash prefixes are lifecycle-owned. The regression enters the
   full generation-zero owner order: `_existing_initial_generation_retry`
-  creates/releases the persistent pointer lock, then
+  first-creates the persistent pointer lock through the exclusive-create path and
+  spies on durability ordering to prove `fsync(lock_fd)` then
+  `fsync(run_dir)` complete before the owner body can proceed or release the lock;
+  a forced failure of either first-creation fsync fails before staging, bundle,
+  acceptance or pointer mutation and is never classified as durable custody.
+  Reopening the already durable marker on subsequent acquisitions does not repeat
+  first-creation fsync. The owner then releases the persistent pointer lock, and
   `_parent_acceptance_for_publication` acquires/releases that same pointer lock a
   second time, then `_stage` publishes the durable staging root, and final
   publication later takes the pointer lock a third time. A simulated crash after
@@ -1884,6 +1959,14 @@ mirrored test owner:
   cleanup. A stage-only prefix, nonempty stage, additional sibling, unsafe pointer
   lock, symlink or non-directory stage fails closed without recursive deletion;
   `_invoke_learner` and mutating resume recovery remain unreachable in every case;
+- the mandatory publication structural interruption is behavior-preserving:
+  `publication/__init__.py` finishes below 240 LoC; generation-zero retry/cold
+  recovery orchestration lives in the cohesive `publication/retry.py` owner and is
+  re-exported through the package facade without changing public imports; mirrored
+  `test_generation_zero_retry.py` and
+  `test_generation_zero_cold_recovery.py` each finish below 240 LoC and collectively
+  preserve every pre-split generation-zero retry/recovery assertion before new B13
+  feature logic is added;
 - command-level nonempty/no-pointer interrupted create reaches B13 recovery; the sole
   candidate is the immutable Data Plane genesis-trust row selected by expected
   `run_id`; malformed/drifted row-bound trust/acceptance/bundle evidence preserves
