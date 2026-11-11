@@ -5,6 +5,7 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import mlx.core as mx
@@ -13,7 +14,9 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_bundle, save_bamf_bundle
+from bilqis_mlx.runtime.bamf_bundle.publication.authority import validate_parent_transition
 from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
+from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.runtime.checkpoint_outbox import with_delivery_outbox
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import candidate, parent_state, shape_patch
 
@@ -96,3 +99,34 @@ class CodecBoundaryTests(unittest.TestCase):
                 with self.assertRaises(BilqisError):
                     save_bamf_bundle(value, root)
                 self.assertFalse(root.exists())
+
+    def test_retained_candidate_cannot_downgrade_allocation_metadata_change(self):
+        original = parent_state().allocations
+        changed = MotifAllocationSnapshot(
+            original.manifest,
+            observed_uses=(("0" * 64, 1),))
+        topology = SimpleNamespace(digest="1" * 64)
+        extents = SimpleNamespace(
+            digest="2" * 64, motif_page_count=1,
+            motif_key_map_digest=original.manifest.digest)
+        parent = SimpleNamespace(
+            run_id="fixture-run", generation=0, parent_manifest_sha256=None,
+            topology=topology, extents=extents,
+            retained_state=SimpleNamespace(optimizer_step=11, allocations=original))
+        child = SimpleNamespace(
+            run_id="fixture-run", generation=1, parent_manifest_sha256="6" * 64,
+            topology=topology, extents=extents,
+            retained_state=SimpleNamespace(optimizer_step=12, allocations=changed),
+            transition={"schema": "bilqis.mlx.bamf-generation-transition/v1",
+                        "kind": "RETAINED_CANDIDATE",
+                        "invalidate_derived_caches": True})
+        pointer = {
+            "run_id": child.run_id, "generation": 0,
+            "manifest_sha256": "6" * 64,
+            "parent_manifest_sha256": parent.parent_manifest_sha256,
+            "bundle": "parent",
+        }
+        with self.assertRaises(BilqisError):
+            validate_parent_transition(
+                self.root, pointer, child, load_bundle=lambda *_a, **_k: parent,
+                reconcile=lambda *_a, **_k: None)

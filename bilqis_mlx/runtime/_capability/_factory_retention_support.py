@@ -9,7 +9,8 @@ from bilqis_mlx.learning.atlas_candidate import CandidateTransaction, resolve_ca
 from bilqis_mlx.learning.atlas_package_import import PackageImportTransaction
 from bilqis_mlx.runtime.atlas_training_authority import BamfTrainingAuthority
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_execution_cache, derive_successor_bundle, load_accepted_generation,
+    bind_accepted_execution_cache, derive_motif_successor_bundle,
+    derive_successor_bundle, load_accepted_generation,
 )
 from bilqis_mlx.runtime.capability_retention import (
     EvidenceKind, EvidenceStage, EvaluationCohort, RetentionPolicy, case_census_digest,
@@ -73,10 +74,16 @@ def _candidate_from_live_parent(run_dir: Path, transaction: CandidateTransaction
             or custody.extents_digest != parent.extents.digest):
         _invalid("BAMF_C05_CANDIDATE_PARENT_CUSTODY_MISMATCH")
     preview = resolve_candidate(transaction, accepted=True)
-    successor = derive_successor_bundle(
-        parent, preview,
-        parent_manifest_sha256=cache.accepted_manifest_sha256,
-        delivery_events=())
+    if transaction.motif_transition is None:
+        successor = derive_successor_bundle(
+            parent, preview,
+            parent_manifest_sha256=cache.accepted_manifest_sha256,
+            delivery_events=())
+    else:
+        successor = derive_motif_successor_bundle(
+            parent, transaction,
+            parent_manifest_sha256=cache.accepted_manifest_sha256,
+            delivery_events=())
     return parent, successor, preview, cache
 
 

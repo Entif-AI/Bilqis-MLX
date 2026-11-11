@@ -14,6 +14,9 @@ from .motif_codec import snapshot_from_record, snapshot_to_record
 from .package_import_transition import (
     PACKAGE_IMPORT_TRANSITION_SCHEMA, validate_package_import_transition,
 )
+from .motif_allocation_transition import (
+    MOTIF_ALLOCATION_TRANSITION_SCHEMA, validate_motif_allocation_transition,
+)
 from .sidecar_contracts import validate_identity_sidecars
 
 BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v2"
@@ -155,6 +158,12 @@ def validate_generation_identity(run_id, generation, parent, implementation):
 
 
 def validate_transition(generation: int, transition: Mapping) -> None:
+    if (isinstance(transition, Mapping)
+            and transition.get("schema") == MOTIF_ALLOCATION_TRANSITION_SCHEMA):
+        if generation == 0:
+            invalid("BAMF_GENERATION_TRANSITION_INVALID")
+        validate_motif_allocation_transition(transition)
+        return
     if isinstance(transition, Mapping) and transition.get("schema") == PACKAGE_IMPORT_TRANSITION_SCHEMA:
         if generation == 0:
             invalid("BAMF_GENERATION_TRANSITION_INVALID")

@@ -56,7 +56,8 @@ class MotifSourceContinuationTests(unittest.TestCase):
             with (patch.dict(os.environ, {'BILQIS_DATA_PLANE': str(root / 'plane.sqlite3')}),
                   shape_patch(), patch.object(mlx_checkpoint, 'assert_headroom')):
                 bundle0 = root / 'bundle-0'
-                manifest = save_bamf_bundle(candidate(parent), bundle0)
+                manifest = save_bamf_bundle(
+                    candidate(parent), bundle0, reserve_gib=0.)
                 manifest = rewrite_motif_bundle_fixture(bundle0, manifest, allocations)
                 self.assertIn('object_sha256', manifest['tensors'])
                 self.assertFalse((bundle0 / manifest['tensors']['filename']).exists())
@@ -72,7 +73,7 @@ class MotifSourceContinuationTests(unittest.TestCase):
                         continued, generation=1,
                         parent=manifest['manifest_sha256'],
                     ),
-                    bundle1,
+                    bundle1, reserve_gib=0.,
                 )
                 second, _ = continue_source_qualified_motifs_from_bundle(
                     adapter, row, selection,
