@@ -193,8 +193,31 @@ class FactoryRetentionOwnerLiveTests(SourceBackboneTestBase):
             run_dir = Path(directory)
             parent, cache, source_context = _initialize_generation(
                 run_dir, source_context, self.snapshot, self.artifact)
-            transaction = _source_owned_candidate_step(
-                run_dir, source_context, parent, cache, self.artifact)
+            transaction, _gradient, row, targets, teacher = (
+                _teacher_selected_source_owned_candidate_step_evidence(
+                    run_dir, source_context, parent, cache, self.artifact))
+            _, candidate_bundle, _, _ = _candidate_from_live_parent(run_dir, transaction)
+            target = targets[0]
+            parent_compiled, before = _evaluation_output(
+                source_context, parent, self.artifact, row)
+            candidate_compiled, after = _evaluation_output(
+                source_context, candidate_bundle, self.artifact, row)
+            self.assertEqual(parent_compiled.sources, candidate_compiled.sources)
+            self.assertEqual(
+                parent_compiled.compiled.compiled,
+                candidate_compiled.compiled.compiled)
+            before_summary = _target_summary(before, target)
+            after_summary = _target_summary(after, target)
+            self.assertEqual(before_summary["candidates"], after_summary["candidates"])
+            self.assertGreater(
+                after_summary["gold_margin"], before_summary["gold_margin"])
+            self.assertGreater(after_summary["gold_margin"], 0.0)
+            self.assertNotEqual(before_summary["committed"], target.value)
+            self.assertEqual(after_summary["committed"], target.value)
+            legacy_teacher = selection_teacher()
+            self.assertIn(teacher["policy_key"], legacy_teacher["strategies"])
+            self.assertEqual(
+                teacher["policy"], legacy_teacher["strategies"][teacher["policy_key"]])
             _successor, _retained, published = _publish_c05_successor(
                 run_dir, source_context, parent, cache, self.artifact, transaction)
             owner = load_capability_support_owner(run_dir, TARGET)
