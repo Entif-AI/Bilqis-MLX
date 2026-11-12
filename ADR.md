@@ -3303,3 +3303,162 @@ compare them with the C08 estimate, and prove that any OOM follows the retained-
 restore/retry contract rather than destabilizing the host or student. This resource
 qualification does not authorize an agent to start or resume the human-owned durable
 trainer.
+## ADR-139 | 2026-11-11 | Expensive verification uses fail-fast staged preflight before full execution
+
+**Status:** Accepted by direct owner instruction on 2026-11-11 after issue #374
+repeatedly spent full Factory/MLX execution time before exposing cheap fixture and
+test-contract defects.
+
+**Problem:** A long-running test can contain three different kinds of work: cheap
+contract validation, production-fixture setup, and the expensive computation that
+actually requires MLX or a full model. When these are bundled into one opaque test,
+a trivial defect at the end can consume the full cost of the expensive phase before
+the developer learns anything useful. During #374, one real-Factory witness ran for
+about 25 minutes before a missing observation-fixture field failed. The next ran for
+about 27 minutes before a stale authority-digest assertion failed, even though the
+neural path had already completed. Both failures could have been detected without
+paying the full neural cost.
+
+**Decision:** Expensive verification is an ordered pipeline. The repository uses the
+following stages whenever a test or witness contains a multi-minute Factory, MLX,
+full-model, or equivalent expensive phase.
+
+1. **Repository-static preflight.** At integration/turn-in boundaries, run every
+   applicable neural-inert quality/static gate before mounted real-fixture or
+   full-model work. Governance, documentation, source/authority scanners,
+   changed-file quality, and other deterministic repository checks belong here.
+   A cheap static failure discovered after expensive execution is a harness-ordering
+   defect and must be moved ahead of the expensive stage before another rerun.
+2. **Cheap contracts.** Run focused neural-inert checks for imports, fixture shape,
+   deterministic invariants, assertion semantics, and other preconditions that do
+   not require the expensive output.
+3. **Real-fixture preflight.** When production artifacts or custody matter, use the
+   real artifact/configuration and the same shared setup as the full witness. Execute
+   every cheap production operation through the immediate boundary before the
+   expensive call, including applicable accepted-runtime, custody, generation,
+   feature-authentication, target, route, observation, and resource-plan checks.
+   Stop before the expensive computation itself.
+4. **Expensive execution.** Start the full witness only after every required earlier
+   stage succeeds. Preserve the exact production acceptance path for facts that
+   genuinely depend on the expensive computation.
+
+The staged runner must enforce this ordering and abort on the first failure. A
+required preflight may not pass because pytest skipped the case. The runner must
+verify that required external artifacts, runtime state, and custody inputs exist and
+are usable, and it must distinguish `passed`, `failed`, and `skipped/not-run` rather
+than treating process exit code zero as sufficient proof.
+
+**Aggregate selection:** A test module that declares
+`BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"` is not part of default aggregate test
+discovery. Such witnesses run only through explicit targeted execution or their
+dedicated detached harness, where their artifact, resource, mutation, and receipt
+contracts can be enforced. Broad premerge verification must not accidentally repay
+or bypass a separately governed expensive witness.
+
+**Shared-path requirement:** Preflight and full witness share setup, fixture, and
+assertion helpers wherever semantics permit. A hand-copied lightweight imitation is
+not sufficient because it can drift from the expensive path. Cheap preflight should
+reach the actual seam immediately before the expensive call, or use an explicit seam
+that proves equivalent production inputs and checks. Expensive-output-specific
+assertions remain in the final witness, but every assertion contract that can be
+tested synthetically should also have a focused cheap regression.
+
+**Failure learning:** If a full-cost run discovers a banal fixture, import,
+precondition, or assertion-contract defect, repairing that defect is not enough. Add
+or strengthen an earlier stage so the same defect class fails before expensive
+execution on the next run. This converts diagnostic history into a durable test
+boundary instead of relying on agent memory.
+
+**Execution and authority:** ADR-132 still governs commands that can exceed five
+minutes. The complete staged pipeline runs detached from a digest-verified source
+snapshot, emits stage markers into its durable log, stops immediately on failed
+preflight, notifies the operator on exit, and is never polled from chat. Preflight is
+diagnostic and non-authorizing. Only the complete production witness can satisfy an
+acceptance requirement that depends on the expensive computation. This ADR composes
+with ADR-129 evidence reuse, ADR-130 diagnostic-loop budgeting, ADR-131
+precedence-ordered diagnosis, ADR-132 detached execution, and ADR-137 claim-first
+verification.
+
+## ADR-140 | 2026-11-11 | M3 Ultra verification concurrency is bounded per job, not serialized host-wide
+
+**Status:** Accepted by direct owner instruction on 2026-11-11 after C08 turn-in
+needlessly waited behind other bounded MLX verification jobs.
+
+**Context:** ADR-138 correctly diagnosed the 2026-11-11 OOM incident as an
+unbounded aggregate-allocation failure. Four MLX-capable xdist workers each inherited
+a roughly host-sized default allocator/cache allowance. The resulting rule was too
+coarse when applied as host-wide serialization. Independent detached jobs with
+explicit limits differ from unconstrained xdist workers inside one runner. The M3
+Ultra is expected to execute multiple bounded jobs concurrently.
+
+**Decision:** MLX-capable pytest remains single-worker within one runner unless that
+runner proves an aggregate budget. Independent MLX/full-model jobs may run
+concurrently on the M3 Ultra when every job applies a memory/cache policy. Their
+configured aggregate ceilings must leave host headroom. Another bounded MLX job is
+not a blocker. Agents must not insert a host-wide wait merely to avoid concurrency.
+
+Current swap occupancy is an observation, not an automatic veto. Launch decisions
+use applied job limits and actual physical-memory pressure/headroom. Refuse or stop
+work when a participating job is unbounded. Do the same when configured aggregate
+ceilings exceed safe host capacity or the OS reports memory-pressure/OOM symptoms.
+Preserve per-job RSS/wall guards and detached receipts. One job can then be contained
+without serializing unrelated bounded work.
+
+This ADR supersedes only ADR-138's host-wide no-overlap interpretation. ADR-138's
+measured OOM incident, single-worker default inside a runner, cache containment,
+explicit memory limits, and production-trainer distinction remain in force.
+
+## ADR-141 | 2026-11-12 | Verification test suites have a two-hour wall-clock ceiling
+
+**Status:** Accepted by direct owner instruction on 2026-11-12 after the C06 #379
+turn-in showed that a leaf-development witness had absorbed later system
+qualification and ran for about 9 hours 51 minutes before a whole-school rejection.
+
+**Problem:** ADR-129, ADR-137 and ADR-139 already require evidence reuse,
+claim-first differential verification and fail-fast staged preflight. ADR-132 governs
+detached execution for commands that can exceed five minutes. Those controls reduce
+waste and protect the agent session, but they do not set an absolute wall-clock
+limit. A test can therefore remain technically lawful while still consuming most of
+a working day, delaying review and mixing unrelated system qualification into
+ordinary development feedback.
+
+**Decision:** No agent may launch or require a test suite, verification command,
+hosted verification workflow, witness, or composed verification run whose planned or
+expected wall-clock duration exceeds **2 hours**. Two hours is an absolute ceiling,
+not a target. Normal leaf development and turn-in should use checks that complete in
+seconds to minutes whenever the claim permits it.
+
+Before launch, use prior receipts, selected-test scope, stage timings, or another
+concrete estimate to bound the expected duration. If the bound is unknown or can
+exceed two hours, the run is not ready to start. Split it into claim-specific stages
+that each stay within the ceiling and emit durable receipts. Arbitrary time slicing
+does not satisfy this rule: every stage must prove an independently meaningful claim
+and have explicit inputs plus a resumable or terminal result.
+
+If an agent-launched test reaches two hours without completing, stop or contain the
+owned process at the next safe boundary. Preserve its partial log and receipt, and
+record the result as incomplete or over-budget rather than PASS. Diagnose the
+expensive stage and convert any discovered fixture, assertion, ownership or contract
+failure into a cheaper deterministic regression before another attempt. Still-valid
+passing evidence remains reusable and must not be repaid solely because a session
+resumed, a branch moved equivalently, or time elapsed.
+
+Detached execution, snapshot isolation, bounded MLX concurrency and operator
+observation do not waive the ceiling for tests. Whole-system qualification that
+cannot be made meaningful within two hours is not an ordinary test gate. Redesign it
+as bounded staged qualification, or hand it to the human operator as a separately
+authorized non-test training or production exercise. A multi-stage qualification may
+span more than two hours in aggregate only when each stage is independently bounded,
+interpretable and receipted; it may not disguise one opaque monolithic test behind
+restarts.
+
+Historical test evidence from runs longer than two hours remains valid provenance and
+is not erased by this decision. This ADR changes future verification posture, not the
+historical record. Only a new owner-ratified ADR amendment may raise or remove the
+two-hour ceiling.
+
+**Relationship to existing decisions:** ADR-137 still governs claim-first proof and
+evidence reuse. ADR-139 still governs fail-fast staging. ADR-132 still requires
+detached execution for sufficiently long commands. ADR-138 and ADR-140 still govern
+MLX memory and concurrency. ADR-141 adds the wall-clock ceiling above those controls.
+

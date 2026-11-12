@@ -237,7 +237,8 @@ def evaluate_factory_retention_candidate(
     training = _training_exclusions(candidate)
     if (any(authority.delivery_capability != target_capability
             or authority.release_sha256 != release.release_sha256
-            for authority in candidate.training_authorities)):
+            for authority in candidate.training_authorities
+            if authority is not None)):
         _invalid("BAMF_C05_TARGET_NOT_OWNED_BY_TRAINING")
     parent, candidate_bundle, candidate_state, cache = _candidate_from_live_parent(
         run_dir, candidate)

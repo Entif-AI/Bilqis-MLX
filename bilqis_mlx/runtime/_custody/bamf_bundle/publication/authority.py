@@ -5,7 +5,9 @@ from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.learning.atlas_acceptance import (
-    ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, _require_issued_binding,
+    ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA,
+    MOTIF_CLOSURE_ACCEPTANCE_SCHEMA, AcceptedCandidateBinding,
+    _require_issued_binding,
     candidate_identity_digest,
 )
 
@@ -42,8 +44,9 @@ def require_acceptance(
     _require_issued_binding(acceptance)
     acceptance.__post_init__()
     motif_transition = is_motif_allocation_transition(candidate.transition)
-    expected_schema = MOTIF_ACCEPTANCE_SCHEMA if motif_transition else ACCEPTANCE_SCHEMA
-    if (acceptance.schema_version != expected_schema
+    expected_schema = ((MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA) if motif_transition
+                       else (ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA))
+    if (acceptance.schema_version not in expected_schema
             or acceptance.run_id != candidate.run_id
             or acceptance.generation != candidate.generation
             or acceptance.feature_sha256 != candidate.extents.factor_map_digest
@@ -61,6 +64,8 @@ def require_acceptance(
         if (acceptance.generation_authority_sha256
                 != successor_candidate_identity_digest(candidate)):
             invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    from bilqis_mlx.learning._retention._atlas_acceptance_records import require_closure_proofs
+    require_closure_proofs(acceptance, candidate.retained_state.step_proofs)
     return acceptance
 
 

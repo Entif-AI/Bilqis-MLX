@@ -8,6 +8,7 @@ from typing import NamedTuple
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.learning.atlas_engram_source import (
     ApprovedMotifCandidate, _require_approved_motif_candidate,
+    _prepare_source_qualified_motif_batch_with_parent,
     _prepare_source_qualified_motifs_with_parent,
 )
 from bilqis_mlx.semantics.context_eligibility import ContextHold
@@ -141,7 +142,24 @@ def _make_source_sealer(issue_continuation):
     return seal
 
 
+def _make_batch_source_sealer(issue_continuation):
+    def seal(requests, *, retained_bundle_root: str | Path,
+             expected_manifest_sha256: str, budget):
+        expected = _required_manifest_sha256(expected_manifest_sha256)
+        student = load_bamf_bundle(
+            Path(retained_bundle_root), expected_manifest_sha256=expected)
+        result = _prepare_source_qualified_motif_batch_with_parent(
+            requests, budget=budget, parent=student.retained_state.allocations)
+        if isinstance(result, ContextHold):
+            return result
+        approved, frontiers = result
+        return issue_continuation(approved, student, expected), frontiers
+    return seal
+
+
 seal_source_qualified_motifs_from_bundle = _make_source_sealer(
+    _raw_issue_continuation)
+seal_source_qualified_motif_batch_from_bundle = _make_batch_source_sealer(
     _raw_issue_continuation)
 del _raw_issue_continuation
 

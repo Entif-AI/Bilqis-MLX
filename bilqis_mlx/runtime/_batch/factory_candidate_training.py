@@ -7,13 +7,18 @@ import time
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_engram import MOTIF_PAGE_STATE_BYTES, MotifBudget
-from bilqis_mlx.runtime.atlas_model import bamf_value_and_grad
+from bilqis_mlx.learning.atlas_engram_source import SourceQualifiedMotifRequest
+from bilqis_mlx.runtime.atlas_model import (
+    BamfGradientExecution,
+    bamf_value_and_grad,
+)
 from bilqis_mlx.runtime.atlas_resources import (
     FrameStats, MemoryBudget, ResourceRow, plan_microbatches,
 )
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle import (
     CompleteStudent, authenticate_bamf_execution_feature_context,
+    seal_source_qualified_motif_batch_from_bundle,
     seal_source_qualified_motifs_from_bundle,
     stage_source_qualified_motif_allocation,
 )
@@ -31,6 +36,10 @@ from bilqis_mlx.runtime.task_goal_readout import (
 from bilqis_mlx.semantics.frame_compiler import PositionKind
 
 from .atlas_training_delivery import capture_realized_delivery
+from .c08_gradient_accumulation import (
+    LogicalBatchGradientExecution,
+    accumulate_logical_batch_gradients,
+)
 from .factory_training_bridge import (
     PreparedFactoryTrainingBatch, prepare_factory_training_batch,
 )
@@ -59,10 +68,15 @@ class FactoryDeliveryObservation:
     mentors: object = None
 
     def __post_init__(self):
+        capture = self.capture
         if (type(self.step) is not int or self.step < 1
                 or type(self.seed) is not int or self.seed < 0
                 or type(self.option_rows) is not tuple or not self.option_rows
-                or not isinstance(self.controls, dict)):
+                or not isinstance(self.controls, dict)
+                or not callable(getattr(capture, "delivery", None))
+                or any(not isinstance(getattr(capture, name, None), str)
+                       or not getattr(capture, name)
+                       for name in ("attempt_id", "proposal_id", "selected_option"))):
             _invalid("FACTORY_TRAINING_OBSERVATION_INVALID")
 
 
@@ -74,9 +88,33 @@ class FactoryCandidateStep:
     resource_plan: object
     task_authority: object
     route_targets: tuple
-    gradient_execution: object
+    diagnostics: object
     transaction: object
     realized_cost: dict
+
+
+@dataclass(frozen=True)
+class FactoryCandidateDiagnostics:
+    """Opt-in heavy B11/C08 execution evidence for operator diagnostics only."""
+
+    gradient_execution: object
+    schema_version: str = "bilqis.mlx.b11-factory-diagnostics/v1"
+
+    def __post_init__(self):
+        if (type(self.gradient_execution)
+                not in (BamfGradientExecution, LogicalBatchGradientExecution)
+                or self.schema_version != "bilqis.mlx.b11-factory-diagnostics/v1"):
+            _invalid("FACTORY_CANDIDATE_DIAGNOSTICS_INVALID")
+
+
+def _reporting_diagnostics(gradient, capture_diagnostics: bool):
+    """Retain activation-heavy execution evidence only for explicit diagnostics."""
+    if type(capture_diagnostics) is not bool:
+        _invalid("FACTORY_CANDIDATE_DIAGNOSTICS_FLAG_INVALID")
+    return (
+        FactoryCandidateDiagnostics(gradient)
+        if capture_diagnostics else None
+    )
 
 
 def _frame_stats(compiled_batch) -> FrameStats:
@@ -121,15 +159,38 @@ def _resource_plan(prepared, parent, memory_budget):
 
 def _stage_retained_motifs(run_dir, parent, cache, transaction, prepared,
                            resource_plan, memory_budget):
-    if len(prepared.motif_inputs) != 1:
-        _invalid("FACTORY_CANDIDATE_STEP_MOTIF_ACCUMULATION_REQUIRED")
-    motif = prepared.motif_inputs[0]
     spare = max(0, memory_budget.allocation_bytes - resource_plan.estimated_peak_bytes)
     budget = MotifBudget(
         64,
         page_growth_bytes=(MOTIF_PAGE_STATE_BYTES
                            if spare >= MOTIF_PAGE_STATE_BYTES else 0))
     bundle_root = Path(run_dir) / "bamf-bundles" / cache.accepted_manifest_sha256
+    from bilqis_mlx.semantics.context_eligibility import ContextHold
+    if len(prepared.motif_inputs) > 1:
+        requests = tuple(
+            SourceQualifiedMotifRequest(
+                motif.source_adapter, motif.row, motif.atlas_selection,
+                motif.source_root, motif.source_graph, motif.task, motif.frontier,
+                motif.policy, motif.source_seed, motif.source_each,
+                motif.source_profile_parameters, motif.course,
+            )
+            for motif in prepared.motif_inputs
+        )
+        result = seal_source_qualified_motif_batch_from_bundle(
+            requests,
+            retained_bundle_root=bundle_root,
+            expected_manifest_sha256=cache.accepted_manifest_sha256,
+            budget=budget,
+        )
+        if isinstance(result, ContextHold):
+            _invalid("FACTORY_CANDIDATE_STEP_MOTIF_CONTEXT_HELD")
+        continuation, _ = result
+        if (continuation.approved.candidate.proposed.digest
+                == parent.retained_state.allocations.digest):
+            return transaction
+        return stage_source_qualified_motif_allocation(
+            Path(run_dir), transaction, continuation)
+    motif = prepared.motif_inputs[0]
     result = seal_source_qualified_motifs_from_bundle(
         motif.source_adapter, motif.row, motif.atlas_selection,
         retained_bundle_root=bundle_root,
@@ -140,11 +201,11 @@ def _stage_retained_motifs(run_dir, parent, cache, transaction, prepared,
         source_each=motif.source_each, budget=budget,
         source_profile_parameters=motif.source_profile_parameters,
         course=motif.course)
-    from bilqis_mlx.semantics.context_eligibility import ContextHold
     if isinstance(result, ContextHold):
         _invalid("FACTORY_CANDIDATE_STEP_MOTIF_CONTEXT_HELD")
     continuation, _ = result
-    if continuation.approved.candidate.proposed.digest == parent.retained_state.allocations.digest:
+    if (continuation.approved.candidate.proposed.digest
+            == parent.retained_state.allocations.digest):
         return transaction
     return stage_source_qualified_motif_allocation(
         Path(run_dir), transaction, continuation)
@@ -153,33 +214,51 @@ def _stage_retained_motifs(run_dir, parent, cache, transaction, prepared,
 def _execute_prepared_candidate(
         run_dir, source_context, parent, atlas_artifact_path, delivered_rows, *,
         capability, teacher_hparams, max_norm, observation, memory_budget,
-        cache, generation, prepared, start) -> FactoryCandidateStep:
+        cache, generation, prepared, start, capture_diagnostics,
+        salience_supervision=None) -> FactoryCandidateStep:
     resource_plan, memory_budget = _resource_plan(prepared, parent, memory_budget)
-    if (len(prepared.compiled_rows) != 1
-            or resource_plan.groups != ((0,),)):
-        _invalid("FACTORY_CANDIDATE_STEP_C08_ACCUMULATION_REQUIRED")
-
-    compiled = prepared.compiled_rows[0]
-    authority = factory_task_authority(source_context, compiled)
-    compiled = bind_factory_task_compiled_batch(compiled, authority)
-    resolved = factory_task_training_goal(source_context, compiled, authority)
-    targets, mask = task_goal_training_targets(authority.goal, resolved)
     feature_context = authenticate_bamf_execution_feature_context(
         parent, atlas_artifact_path, source_context.run_dir)
-    plan = task_goal_route_plan(
-        authority.goal, compiled, feature_context.snapshot, generation)
-    gradient = bamf_value_and_grad(
-        dict(parent.retained_state.optimizer.parameters),
-        compiled, plan, targets, mask, cache)
-    transaction = admit_uninterrupted_candidate_step(
-        Path(run_dir), parent, loss_bearing_target=True,
-        gradient_execution=gradient, teacher_hparams=teacher_hparams,
-        max_norm=max_norm)
+    parameters = dict(parent.retained_state.optimizer.parameters)
+    authorities = [None] * len(prepared.compiled_rows)
+    target_rows = [None] * len(prepared.compiled_rows)
+
+    def execute_row(index):
+        compiled = prepared.compiled_rows[index]
+        authority = factory_task_authority(source_context, compiled)
+        compiled = bind_factory_task_compiled_batch(compiled, authority)
+        resolved = factory_task_training_goal(source_context, compiled, authority)
+        targets, mask = task_goal_training_targets(authority.goal, resolved)
+        plan = task_goal_route_plan(
+            authority.goal, compiled, feature_context.snapshot, generation)
+        gradient = bamf_value_and_grad(
+            parameters, compiled, plan, targets, mask, cache,
+            salience_supervision=salience_supervision)
+        authorities[index] = authority
+        target_rows[index] = targets
+        return gradient
+
+    if len(prepared.compiled_rows) == 1:
+        gradient = execute_row(0)
+        transaction = admit_uninterrupted_candidate_step(
+            Path(run_dir), parent, loss_bearing_target=True,
+            gradient_execution=gradient, teacher_hparams=teacher_hparams,
+            max_norm=max_norm)
+        loss_total = gradient.loss_total
+    else:
+        gradient = accumulate_logical_batch_gradients(resource_plan, execute_row)
+        transaction = admit_uninterrupted_candidate_step(
+            Path(run_dir), parent, loss_bearing_target=True,
+            logical_batch_execution=gradient,
+            training_batch=prepared.training_batch,
+            logical_batch_plan=resource_plan,
+            teacher_hparams=teacher_hparams, max_norm=max_norm)
+        loss_total = gradient.weighted_mean_loss
     transaction = _stage_retained_motifs(
         run_dir, parent, cache, transaction, prepared, resource_plan, memory_budget)
     cost = {
         "wall_seconds": time.perf_counter() - start,
-        "loss_total": float(gradient.loss_total.item()),
+        "loss_total": float(loss_total.item()),
         "c08_estimated_peak_bytes": resource_plan.estimated_peak_bytes,
         "optimizer_steps": transaction.update_steps,
     }
@@ -192,9 +271,12 @@ def _execute_prepared_candidate(
         guidance=observation.guidance, controls=observation.controls,
         seed=observation.seed, cost=cost, prior=observation.prior,
         mentors=observation.mentors)
+    diagnostics = _reporting_diagnostics(gradient, capture_diagnostics)
     return FactoryCandidateStep(
-        prepared, resource_plan, authority, targets,
-        gradient, transaction, cost)
+        prepared, resource_plan,
+        authorities[0] if len(authorities) == 1 else tuple(authorities),
+        target_rows[0] if len(target_rows) == 1 else tuple(target_rows),
+        diagnostics, transaction, cost)
 
 
 def execute_factory_candidate_step(
@@ -218,16 +300,18 @@ def execute_factory_candidate_step(
     observation: FactoryDeliveryObservation,
     rehearsal_by_id: dict | None = None,
     memory_budget: MemoryBudget | None = None,
+    capture_diagnostics: bool = False,
+    salience_provider=None,
 ) -> FactoryCandidateStep:
     """Compose C02→C08→B10/B11→candidate custody without publishing state.
 
-    B11 currently issues one source-qualified compiled row per gradient witness.
-    C08 planning therefore runs over the complete delivered batch first, but a
-    multi-row or split plan fails closed before neural execution until the C08/B11
-    tree-gradient accumulator owns that one-logical-batch/one-AdamW-step seam.
+    B11 remains row-scoped. C08 plans the complete delivered batch, accumulates
+    row-scoped raw MLX gradient trees using plan group weights, unions execution
+    participation, and enters B12 exactly once for one logical teacher batch.
     """
     if (not isinstance(parent, CompleteStudent)
-            or not isinstance(observation, FactoryDeliveryObservation)):
+            or not isinstance(observation, FactoryDeliveryObservation)
+            or type(capture_diagnostics) is not bool):
         _invalid("FACTORY_CANDIDATE_STEP_INPUT_INVALID")
     source_context.require_accepted_runtime(Path(run_dir))
     start = time.perf_counter()
@@ -245,14 +329,24 @@ def execute_factory_candidate_step(
         visit_provenance=visit_provenance,
         teacher_strategy=teacher_strategy,
         rehearsal_by_id=rehearsal_by_id)
+    supervision = None
+    if salience_provider is not None:
+        from bilqis_mlx.runtime.salience_training import prepare_salience_training
+        if not callable(salience_provider):
+            _invalid("BAMF_SALIENCE_PROVIDER_REQUIRED")
+        prepared, supervision = prepare_salience_training(
+            prepared, source_context, salience_provider(prepared))
     return _execute_prepared_candidate(
         run_dir, source_context, parent, atlas_artifact_path, delivered_rows,
         capability=capability, teacher_hparams=teacher_hparams,
         max_norm=max_norm, observation=observation, memory_budget=memory_budget,
-        cache=cache, generation=generation, prepared=prepared, start=start)
+        cache=cache, generation=generation, prepared=prepared, start=start,
+        capture_diagnostics=capture_diagnostics,
+        salience_supervision=supervision)
 
 
 __all__ = (
-    "FactoryCandidateStep", "FactoryDeliveryObservation",
+    "FactoryCandidateDiagnostics", "FactoryCandidateStep",
+    "FactoryDeliveryObservation",
     "execute_factory_candidate_step",
 )

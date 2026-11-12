@@ -3,12 +3,18 @@ from __future__ import annotations
 
 import inspect
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
+import mlx.core as mx
+
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_engram_reads import MotifReadResult
 from bilqis_mlx.learning.atlas_execution_provenance import StepExecutionProvenance
 from bilqis_mlx.learning.atlas_plasticity import GroupEligibility
-from bilqis_mlx.runtime.atlas_execution_binder import bind_execution_provenance
+from bilqis_mlx.runtime.atlas_execution_binder import (
+    bind_execution_provenance, bind_execution_provenance_many,
+)
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, Initializer, ModelTopologySpecV2, ParameterGroup,
     ParameterSpec,
@@ -27,6 +33,12 @@ CENSUS_SHAPE = (
     "bilqis_mlx.learning.atlas_participation_census.expected_bamf_shapes",
     "bilqis_mlx.learning._retention.atlas_participation_census.expected_bamf_shapes",
 )
+
+
+def motif_read(slot):
+    return MotifReadResult(
+        mx.zeros((1, 1, 768), dtype=mx.float32), (("EXACT",),),
+        (slot,), ("a" * 64,))
 
 
 def eligibility(mode="FULL", admitted=((0, 0),), eligible=(BANK, MOTIF)):
@@ -78,6 +90,68 @@ class ExecutionBinderProductionTests(unittest.TestCase):
     def test_loss_bearing_step_requires_exact_b11_execution_owner(self):
         with self.assertRaises(BilqisError):
             self.bind(loss_bearing_target=True)
+
+    def test_logical_batch_binder_unions_disjoint_row_participation(self):
+        executions = (
+            SimpleNamespace(
+                visible_identity_rows=((0, 0),),
+                feedback_identity_rows=(),
+                feature_rows=(("type", 1),),
+                local_slot_rows=(1,),
+                dense_parameter_names=("dense.alpha",),
+                semantic_denominator_identity_rows=((0, 1),),
+                semantic_denominator_feature_rows=(("schema", 3),),
+                motif_reads=(motif_read(1),),
+                role_read_feature_rows=(("role", 5),),
+            ),
+            SimpleNamespace(
+                visible_identity_rows=((0, 1),),
+                feedback_identity_rows=((0, 0),),
+                feature_rows=(("role", 2),),
+                local_slot_rows=(2,),
+                dense_parameter_names=("dense.beta",),
+                semantic_denominator_identity_rows=(),
+                semantic_denominator_feature_rows=(("type", 4),),
+                motif_reads=(motif_read(2),),
+                role_read_feature_rows=(("schema", 6),),
+            ),
+        )
+        with patch(CENSUS_SHAPE[0], return_value=DECLARED), \
+                patch(CENSUS_SHAPE[1], return_value=DECLARED), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_execution_binder.require_bamf_loss_execution",
+                    side_effect=lambda value: value,
+                ):
+            provenance = bind_execution_provenance_many(
+                loss_executions=executions,
+                group_eligible=eligibility(admitted=((0, 0), (0, 1))),
+                spec=ModelTopologySpecV2(), extents=EXTENTS,
+                run_id="fixture-run", generation=1,
+                parent_manifest_sha256="6" * 64,
+                parent_candidate_identity_sha256="7" * 64,
+                parent_optimizer_step=11, topology_digest="8" * 64,
+                candidate_step_ordinal=1,
+            )
+        self.assertEqual(
+            provenance.participation.identity_rows, ((0, 0), (0, 1)))
+        self.assertEqual(provenance.participation.motif_slots, (1, 2))
+        self.assertEqual(
+            provenance.participation.feature_rows,
+            tuple(sorted({
+                ("type", 1), ("role", 2), ("schema", 3),
+                ("type", 4), ("role", 5), ("schema", 6),
+            })),
+        )
+        self.assertEqual(provenance.participation.local_slot_rows, (1, 2))
+        self.assertEqual(
+            provenance.participation.dense_parameter_names,
+            ("dense.alpha", "dense.beta"),
+        )
+        self.assertEqual(
+            provenance.mask.parameter(BANK).row_indices, (0, 1))
+        self.assertEqual(provenance.mask.parameter(MOTIF).row_indices, (1, 2))
+        self.assertEqual(
+            provenance.mask.participating_identity_rows, ((0, 0), (0, 1)))
 
     def test_forged_fast_reclassification_of_slow_parameter_is_refused(self):
         forged = eligibility(mode="FAST", admitted=((0, 0),), eligible=(BANK, MOTIF))

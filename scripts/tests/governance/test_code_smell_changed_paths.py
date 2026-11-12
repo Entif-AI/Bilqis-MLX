@@ -76,6 +76,16 @@ class ChangedPathSmellTests(unittest.TestCase):
             ("bilqis_mlx/runtime/atlas_training_adapter.py",
              "module-mutable-literal", "NEW")])
 
+    def test_nested_batch_training_owner_preserves_canonical_identity(self):
+        canonical = "bilqis_mlx/runtime/atlas_training_adapter.py"
+        owner = "bilqis_mlx/runtime/_batch/training/atlas_training_adapter.py"
+        self.assertEqual(audit.logical_source_path(owner), canonical)
+        self.commit(canonical, "EXISTING = []\n")
+        records = [("R100", canonical, owner)]
+        prior = audit._base_findings("HEAD", records)
+        self.assertEqual([audit.fingerprint(item) for item in prior], [
+            (canonical, "module-mutable-literal", "EXISTING")])
+
     def test_added_canonical_owner_compartment_preserves_existing_smell_identity(self):
         canonical = "bilqis_mlx/semantics/cognitive_dag.py"
         physical = "bilqis_mlx/semantics/_cognitive_dag/execution.py"

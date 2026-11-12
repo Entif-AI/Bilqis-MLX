@@ -1,0 +1,92 @@
+DETACHED_LONG_RUN_START 2026-11-11T15:38:35.958807+00:00 label='C06 salience Studio qualification' pid=7982 command=['/usr/bin/env', 'BILQIS_A01_ATLAS_BUNDLE=/Users/emilie/Code/371-c02-complete-20261106/.local/c02-a01-rebuild/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7', 'BILQIS_ATLAS_REAL_ARTIFACT=/Users/emilie/Code/371-c02-complete-20261106/.local/c02-a01-rebuild/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7', '/usr/local/bin/python3', '-B', 'bilqis_mlx/runtime/tests/model/salience/run_studio_proof.py', '--lock', '/Users/emilie/Code/.bilqis-studio-mlx.lock']
+C06_STUDIO_WAIT active_worker_pids=46604,48902
+C06_STUDIO_WAIT active_worker_pids=14694,15877,46604,48902
+C06_STUDIO_WAIT active_worker_pids=46604,48902
+C06_STUDIO_WAIT active_worker_pids=18093,46604,48902
+C06_STUDIO_WAIT active_worker_pids=18093,20218,21127,46604,48902
+C06_STUDIO_WAIT active_worker_pids=20218,21127,21961,46604,48902
+C06_STUDIO_WAIT active_worker_pids=20218,21127,46604,48902
+C06_STUDIO_WAIT active_worker_pids=20218,21127,24498,25426,46604,48902
+C06_STUDIO_WAIT active_worker_pids=20218,21127,24498,25426,32281,46604,48902
+C06_STUDIO_WAIT active_worker_pids=20218,21127,32281,46604,48902
+C06_STUDIO_WAIT active_worker_pids=20218,21127,32281,44458,46604,48902
+C06_STUDIO_WAIT active_worker_pids=20218,32281,44458,46604,48902
+C06_STUDIO_WAIT active_worker_pids=20218,32281,46604,48902
+C06_STUDIO_WAIT active_worker_pids=32281,46604,48902
+C06_STUDIO_WAIT active_worker_pids=32281,46604,48902,68445,69633
+C06_STUDIO_WAIT active_worker_pids=32281,46604,48902,68445
+C06_STUDIO_WAIT active_worker_pids=32281
+C06_STUDIO_WAIT active_worker_pids=9492,32281
+C06_STUDIO_WAIT active_worker_pids=32281
+C06_STUDIO_WAIT active_worker_pids=31561,32281
+C06_STUDIO_WAIT active_worker_pids=32281
+C06_STUDIO_WAIT active_worker_pids=32281,39542
+C06_STUDIO_WAIT active_worker_pids=32281,39542,55843
+C06_STUDIO_WAIT active_worker_pids=32281,39542,55843,58133,59377
+C06_STUDIO_WAIT active_worker_pids=32281,39542,55843,58133
+C06_STUDIO_WAIT active_worker_pids=32281,39542,55843
+C06_STUDIO_WAIT active_worker_pids=32281,39542,55843,65674,66561
+C06_STUDIO_WAIT active_worker_pids=32281,39542,65674,66561
+C06_STUDIO_WAIT active_worker_pids=32281,39542,65674
+C06_STUDIO_WAIT active_worker_pids=32281,39542
+C06_STUDIO_WAIT active_worker_pids=32281,39542,91622
+C06_STUDIO_WAIT active_worker_pids=32281,39542
+C06_STUDIO_WAIT active_worker_pids=9069,9992,32281,39542
+C06_STUDIO_WAIT active_worker_pids=9069,9992,14717,32281,39542
+C06_STUDIO_WAIT active_worker_pids=32281,39542
+C06_STUDIO_WAIT active_worker_pids=21936,32281,39542
+C06_STUDIO_WAIT active_worker_pids=32281,39542
+C06_STUDIO_WAIT active_worker_pids=32281
+C06_STUDIO_WAIT active_worker_pids=32281,49270
+C06_STUDIO_WAIT active_worker_pids=32281
+C06_STUDIO_WAIT active_worker_pids=32281,61804
+C06_STUDIO_WAIT active_worker_pids=32281
+C06_STUDIO_WAIT active_worker_pids=32281,81958
+C06_STUDIO_WAIT active_worker_pids=32281
+C06_STUDIO_WAIT active_worker_pids=32281,94262
+C06_STUDIO_WAIT active_worker_pids=32281
+C06_STUDIO_WAIT active_worker_pids=980,32281
+C06_STUDIO_WAIT active_worker_pids=32281
+C06_STUDIO_SERIAL_LANE_ACQUIRED
+C06_STAGE_START ordinal-loss
+test_absent_head_has_zero_gradient_and_explicit_unknown_is_supervised (bilqis_mlx.runtime.tests.model.salience._bilqis_test_1c8ae22d127c66b6987a12f0cde93e1651b78f209cab04e6d1aa1c3384e95ccd.SalienceLossTests.test_absent_head_has_zero_gradient_and_explicit_unknown_is_supervised) ... ok
+test_each_present_head_is_point_zero_five_cross_entropy (bilqis_mlx.runtime.tests.model.salience._bilqis_test_1c8ae22d127c66b6987a12f0cde93e1651b78f209cab04e6d1aa1c3384e95ccd.SalienceLossTests.test_each_present_head_is_point_zero_five_cross_entropy) ... ok
+test_unknown_values_and_nonordinal_labels_fail (bilqis_mlx.runtime.tests.model.salience._bilqis_test_1c8ae22d127c66b6987a12f0cde93e1651b78f209cab04e6d1aa1c3384e95ccd.SalienceLossTests.test_unknown_values_and_nonordinal_labels_fail) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.029s
+
+OK
+TEST_TOTALS total=3 passed=3 failed=0 skipped=0 errors=0
+3 passed, 0 failed, 0 skipped
+C06_STAGE_DONE ordinal-loss exit=0 seconds=1.078
+C06_STAGE_START factory-integration
+test_real_factory_step_uses_present_heads_and_preserves_missing_head (bilqis_mlx.runtime.tests.model.salience._bilqis_test_6fb3529fbd0bfea751c212682aa3813c7cc5549879eb1ddff812b6e15e2b06c7.FactorySalienceExecutionTests.test_real_factory_step_uses_present_heads_and_preserves_missing_head) ... ERROR
+
+======================================================================
+ERROR: test_real_factory_step_uses_present_heads_and_preserves_missing_head (bilqis_mlx.runtime.tests.model.salience._bilqis_test_6fb3529fbd0bfea751c212682aa3813c7cc5549879eb1ddff812b6e15e2b06c7.FactorySalienceExecutionTests.test_real_factory_step_uses_present_heads_and_preserves_missing_head)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/emilie/Code/379-c06-salience-20261111/.local/c06-proof-20261111/source-snapshot/bilqis_mlx/runtime/tests/model/salience/test_factory_salience_execution.py", line 71, in test_real_factory_step_uses_present_heads_and_preserves_missing_head
+    publish_bamf_generation(run_dir, candidate, acceptance=acceptance(candidate))
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/emilie/Code/379-c06-salience-20261111/.local/c06-proof-20261111/source-snapshot/bilqis_mlx/runtime/_custody/bamf_bundle/publication/__init__.py", line 99, in publish_bamf_generation
+    accepted = _require_acceptance(candidate, acceptance)
+  File "/Users/emilie/Code/379-c06-salience-20261111/.local/c06-proof-20261111/source-snapshot/bilqis_mlx/runtime/_custody/bamf_bundle/publication/authority.py", line 39, in require_acceptance
+    invalid("BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED")
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/emilie/Code/379-c06-salience-20261111/.local/c06-proof-20261111/source-snapshot/bilqis_mlx/runtime/_custody/bamf_bundle/records.py", line 149, in invalid
+    ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason=reason)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/emilie/Code/379-c06-salience-20261111/.local/c06-proof-20261111/source-snapshot/bilqis_mlx/errors/bus.py", line 15, in Raise
+    raise BilqisError(spec, context)
+bilqis_mlx.errors.model.BilqisError: SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID
+
+----------------------------------------------------------------------
+Ran 1 test in 15.424s
+
+FAILED (errors=1)
+TEST_TOTALS total=1 passed=0 failed=1 skipped=0 errors=1
+0 passed, 1 failed, 0 skipped
+C06_STAGE_DONE factory-integration exit=1 seconds=17.206
+DETACHED_LONG_RUN_END 2026-11-11T16:18:28.841049+00:00 label='C06 salience Studio qualification' returncode=1 source_mutated=False

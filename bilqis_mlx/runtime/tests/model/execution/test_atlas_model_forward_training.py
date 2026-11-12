@@ -1,7 +1,6 @@
 """B11 live loss, gradient, and production-candidate execution witnesses."""
 from dataclasses import replace
 from unittest import skipUnless
-from unittest.mock import patch
 
 import mlx.core as mx
 
@@ -27,8 +26,6 @@ from bilqis_mlx.runtime.atlas_model import (
 )
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters, AdamWStateTree
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
-import bilqis_mlx.runtime.atlas_model_forward as forward_impl
-from bilqis_mlx.runtime.bamf_bundle.execution_cache import _new_execution_cache
 from bilqis_mlx.runtime.model_topology_v2 import (
     Initializer, ModelTopologySpecV2, expected_bamf_shapes,
 )
@@ -80,27 +77,19 @@ class AtlasModelTrainingExecutionTests(SourceBackboneTestBase):
                 self.compiled.extents, motif_key_map_digest=genesis.manifest.digest),
         )
         plan = self._answer_plan(compiled=compiled, parameters=self.parameters)
-        cache = _new_execution_cache(
-            run_id="source-backed-forward", generation=0,
-            accepted_manifest_sha256="6" * 64,
-            generation_binding=plan.generation_binding,
-            motif_manifest=genesis.manifest,
-        )
         batch = BamfCompiledBatch(
             compiled, (self.source,), self.schema,
             active_semantic_rows(
-                compiled, self.active_indices, run_id=cache.run_id,
-                generation=cache.generation))
-        with patch.object(
-                forward_impl, "require_accepted_execution_cache", return_value=cache):
-            gradient_execution = bamf_value_and_grad(
-                self.parameters, batch, plan,
-                (DecisionOutput("finish", ControlAction.END_FRAME),),
-                {"finish": True}, cache=cache)
+                compiled, self.active_indices, run_id="source-backed-forward",
+                generation=0))
+        gradient_execution = bamf_value_and_grad(
+            self.parameters, batch, plan,
+            (DecisionOutput("finish", ControlAction.END_FRAME),),
+            {"finish": True}, cache=None)
         execution = gradient_execution.execution
-        self.assertEqual(execution.custody_run_id, "source-backed-forward")
-        self.assertEqual(execution.custody_generation, 0)
-        self.assertEqual(execution.custody_manifest_sha256, "6" * 64)
+        self.assertIsNone(execution.custody_run_id)
+        self.assertIsNone(execution.custody_generation)
+        self.assertIsNone(execution.custody_manifest_sha256)
         self.assertIn("blocks.0.query", execution.dense_parameter_names)
         self.assertEqual(
             float(mx.abs(gradient_execution.gradients["blocks.0.query"]).sum()), 0.0)
@@ -155,18 +144,20 @@ class AtlasModelTrainingExecutionTests(SourceBackboneTestBase):
             optimizer, PlasticityPolicy("FOUNDATION", 0, ages), genesis, 0,
             CandidateCustodyIdentity(
                 "source-backed-forward", 0, "6" * 64, spec.digest, extents.digest))
-        transaction = production_candidate_step(
-            begin_candidate(parent), loss_bearing_target=True,
-            gradient_execution=gradient_execution, group_eligible=eligibility,
-            spec=spec, extents=extents, run_id="source-backed-forward", generation=1,
-            parent_manifest_sha256="6" * 64,
-            parent_candidate_identity_sha256=candidate_identity_digest(parent),
-            parent_optimizer_step=0, topology_digest=spec.digest,
-            candidate_step_ordinal=1,
-            teacher_hparams=AdamWHyperparameters(.001, (.9, .95), 1e-8, .01),
-            max_norm=1.0)
-        self.assertEqual(transaction.update_steps, 1)
-        self.assertEqual(int(transaction.optimizer.update_counts["blocks.0.query"]), 1)
+        with self.assertRaises(BilqisError) as caught:
+            production_candidate_step(
+                begin_candidate(parent), loss_bearing_target=True,
+                gradient_execution=gradient_execution, group_eligible=eligibility,
+                spec=spec, extents=extents, run_id="source-backed-forward", generation=1,
+                parent_manifest_sha256="6" * 64,
+                parent_candidate_identity_sha256=candidate_identity_digest(parent),
+                parent_optimizer_step=0, topology_digest=spec.digest,
+                candidate_step_ordinal=1,
+                teacher_hparams=AdamWHyperparameters(.001, (.9, .95), 1e-8, .01),
+                max_norm=1.0)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "B11_GRADIENT_EXECUTION_CUSTODY_MISMATCH")
 
     def test_loss_execution_is_issued_only_from_exact_live_forward(self):
         compiled, gradient_execution, execution, genesis = self._live_gradient_execution()

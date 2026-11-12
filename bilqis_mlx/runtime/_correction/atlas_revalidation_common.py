@@ -29,6 +29,7 @@ _OWNER_PRIORITY = (
     (ArtifactKind.EXACT_CACHE, (3, 4)),
     (ArtifactKind.OPERATOR_COMPOSITION, (2, 4)),
     (ArtifactKind.CAPABILITY_SUPPORT, (4, 4)),
+    (ArtifactKind.SALIENCE_EVIDENCE, (2, 3)),
 )
 
 
