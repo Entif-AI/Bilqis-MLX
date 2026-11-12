@@ -118,92 +118,117 @@ class FactorySalienceExecutionTests(unittest.TestCase):
             source_owner='fixture:salience-owner', signature_hex='0' * 128))
         return SalienceLabelRequest(((binding, evidence),), snapshot, lambda *args: False)
 
+    def _bootstrap(self, run_dir):
+        provision_source_authority_registry(run_dir, REGISTRY)
+        with stage('bootstrap_prepare'):
+            origin = Checkpoint('7' * 64, 'bundles/foundation-origin', 0, True)
+            factory = issue_factory_authority(self.context.release, self.context.graph, origin)
+            features = self.features
+            semantic, compiler, *_ = initial_foundation_sidecars(
+                factory.release, factory.admission, self.context.graph, run_seed=379,
+                feature_authority=features)
+            provenance = _factory_generation_provenance(factory.release, features)
+            motif = MotifManifest(provenance.release_digest)
+            extents = b01_generation_extents(
+                semantic_abi=semantic, compiler_features=compiler, motif_page_count=1,
+                motif_key_map_digest=motif.digest)
+            prepared = prepare_initial_generation(
+                run_id='c06-salience-disposable', run_seed=379, graph=self.context.graph,
+                factory_authority=factory, foundation_features=features,
+                model_authority=b01_generation_authority(extents),
+                optimizer_hyperparameters=HP, provenance=provenance,
+                delivery_events=({'event': 'FIXTURE_GENESIS', 'optimizer_step': 0},))
+        with stage('bootstrap_publish'):
+            publish_initial_generation(run_dir, prepared, reserve_gib=0.)
+        return factory, self.accepted_source_context(run_dir), load_accepted_generation(run_dir)
+
+    def _select_priority(self, run_dir, context, parent, factory, capability, seed):
+        with stage('priority_offer'):
+            offer = prepare_priority_source_offer(
+                context, parent, str(self.artifact),
+                capability=capability, source_seed=seed, source_each=1)
+        with stage('a09_planning'):
+            plan = planning(self.features.selection, factory, run_dir)
+        from bilqis_mlx.runtime import accepted_priority_visit as priority_owner
+        with stage('priority_selection'), patch.object(
+                priority_owner, 'select_visit_policy',
+                wraps=priority_owner.select_visit_policy) as policy_call:
+            selection = select(run_dir, context, parent, offer, plan, REGISTRY)
+        self.assertEqual(selection.status, 'TEACHER_SELECTED')
+        self.assertEqual(selection.option_id, 'c06-teaching')
+        self.assertIs(selection.offer, offer)
+        self.assertEqual(selection.visit.identity.capability_id, capability)
+        self.assertEqual(
+            selection.visit.identity.accepted_manifest_sha256,
+            offer.accepted_manifest_sha256)
+        self.assertEqual(policy_call.call_count, 1)
+        policy = selection.policy
+        self.assertGreater(policy['lr'], 0)
+        selection.policy['lr'] = 99
+        self.assertEqual(selection.policy, policy)
+        return priority_owner, selection, policy, offer.rows()
+
+    def _execute_candidate(
+            self, priority_owner, run_dir, context, parent, selection, policy, rows, seed):
+        capture = ObservationCapture(run_dir, {})
+        capture.attempt_id = 'c06-salience-disposable'
+        capture.proposal_id = store_sidecar(
+            run_dir, {'attempt_id': capture.attempt_id})['sha256']
+        capture.select_option(selection.visit.identity.capability_id, None)
+        with stage('candidate_step'), patch.object(
+                priority_owner, 'execute_factory_candidate_step',
+                wraps=priority_owner.execute_factory_candidate_step) as step_call:
+            result = execute_accepted_priority_candidate(
+                selection, context, str(self.artifact), self.feature_receipt.path,
+                teacher_hparams=HP, optimizer_step_seed=379, max_norm=1.0,
+                observation=FactoryDeliveryObservation(capture, 1, rows, seed),
+                salience_provider=self._provider, capture_diagnostics=True)
+        self._assert_candidate_result(
+            step_call, result, selection, policy, rows, seed, parent, run_dir)
+        return result
+
+    def _assert_candidate_result(
+            self, step_call, result, selection, policy, rows, seed, parent, run_dir):
+        self.assertEqual(step_call.call_count, 1)
+        arguments, keywords = step_call.call_args
+        self.assertEqual(arguments[5], rows)
+        self.assertEqual(keywords['teacher_strategy'], policy)
+        self.assertEqual(keywords['source_seed'], seed)
+        self.assertEqual(
+            keywords['teacher_hparams'], replace(HP, learning_rate=float(policy['lr'])))
+        self.assertEqual(
+            keywords['visit_provenance'].visit_id, selection.visit.identity.visit_id)
+        self.assertEqual(
+            result.prepared.training_batch.rows[0].provenance.visit.visit_id,
+            selection.visit.identity.visit_id)
+        self.assertIsNotNone(result.diagnostics)
+        gradient = result.diagnostics.gradient_execution
+        loss = gradient.execution.loss
+        self.assertGreater(float(loss.impact), 0.)
+        self.assertGreater(float(loss.exigency), 0.)
+        self.assertEqual(float(loss.novelty), 0.)
+        for name in ('impact', 'exigency'):
+            value = gradient.gradients['readout.salience_bias.' + name]
+            self.assertGreater(float(mx.abs(value).sum()), 0.)
+        novelty = gradient.gradients['readout.salience_bias.novelty']
+        self.assertEqual(float(mx.abs(novelty).sum()), 0.)
+        census = gradient.execution.dense_parameter_names
+        self.assertIn('readout.salience.impact', census)
+        self.assertNotIn('readout.salience.novelty', census)
+        self.assertEqual(result.transaction.update_steps, 1)
+        self.assertEqual(parent.retained_state.optimizer_step, 0)
+        self.assertEqual(load_accepted_generation(run_dir).generation, parent.generation)
+
     def test_real_factory_step_uses_present_heads_and_preserves_missing_head(self):
         capability, seed = 'B.IDBOOLOPS', 37901
         with TemporaryDirectory() as run_value, patch(
                 'bilqis_mlx.runtime.bamf_bundle.source_authority_custody.'
                 'read_host_system_source_authority_registry', return_value=REGISTRY):
             run_dir = Path(run_value)
-            provision_source_authority_registry(run_dir, REGISTRY)
-            with stage('bootstrap_prepare'):
-                origin = Checkpoint('7' * 64, 'bundles/foundation-origin', 0, True)
-                factory = issue_factory_authority(self.context.release, self.context.graph, origin)
-                features = self.features
-                semantic, compiler, *_ = initial_foundation_sidecars(
-                    factory.release, factory.admission, self.context.graph, run_seed=379,
-                    feature_authority=features)
-                provenance = _factory_generation_provenance(factory.release, features)
-                motif = MotifManifest(provenance.release_digest)
-                extents = b01_generation_extents(
-                    semantic_abi=semantic, compiler_features=compiler, motif_page_count=1,
-                    motif_key_map_digest=motif.digest)
-                prepared = prepare_initial_generation(
-                    run_id='c06-salience-disposable', run_seed=379, graph=self.context.graph,
-                    factory_authority=factory, foundation_features=features,
-                    model_authority=b01_generation_authority(extents),
-                    optimizer_hyperparameters=HP, provenance=provenance,
-                    delivery_events=({'event': 'FIXTURE_GENESIS', 'optimizer_step': 0},))
-            with stage('bootstrap_publish'):
-                publish_initial_generation(run_dir, prepared, reserve_gib=0.)
-            context = self.accepted_source_context(run_dir)
-            parent = load_accepted_generation(run_dir)
-            with stage('priority_offer'):
-                offer = prepare_priority_source_offer(context, parent, str(self.artifact),
-                    capability=capability, source_seed=seed, source_each=1)
-            with stage('a09_planning'):
-                plan = planning(self.features.selection, factory, run_dir)
-            from bilqis_mlx.runtime import accepted_priority_visit as priority_owner
-            real_selector = priority_owner.select_visit_policy
-            with stage('priority_selection'), patch.object(priority_owner, 'select_visit_policy',
-                                                           wraps=real_selector) as policy_call:
-                selection = select(run_dir, context, parent, offer, plan, REGISTRY)
-            self.assertEqual(selection.status, 'TEACHER_SELECTED')
-            self.assertEqual(selection.option_id, 'c06-teaching')
-            self.assertIs(selection.offer, offer)
-            self.assertEqual(selection.visit.identity.capability_id, capability)
-            self.assertEqual(selection.visit.identity.accepted_manifest_sha256, offer.accepted_manifest_sha256)
-            self.assertEqual(policy_call.call_count, 1)
-            policy = selection.policy
-            self.assertGreater(policy['lr'], 0)
-            selection.policy['lr'] = 99
-            self.assertEqual(selection.policy, policy)
-            rows = offer.rows()
-            capture = ObservationCapture(run_dir, {})
-            capture.attempt_id = 'c06-salience-disposable'
-            capture.proposal_id = store_sidecar(run_dir, {'attempt_id': capture.attempt_id})['sha256']
-            capture.select_option(capability, None)
-            real_step = priority_owner.execute_factory_candidate_step
-            with stage('candidate_step'), patch.object(priority_owner, 'execute_factory_candidate_step',
-                                                       wraps=real_step) as step_call:
-                result = execute_accepted_priority_candidate(
-                    selection, context, str(self.artifact), self.feature_receipt.path,
-                    teacher_hparams=HP, optimizer_step_seed=379, max_norm=1.0,
-                    observation=FactoryDeliveryObservation(capture, 1, rows, seed),
-                    salience_provider=self._provider, capture_diagnostics=True)
-            self.assertEqual(step_call.call_count, 1)
-            arguments, keywords = step_call.call_args
-            self.assertEqual(arguments[5], rows)
-            self.assertEqual(keywords['teacher_strategy'], policy)
-            self.assertEqual(keywords['source_seed'], seed)
-            self.assertEqual(keywords['teacher_hparams'], replace(HP, learning_rate=float(policy['lr'])))
-            self.assertEqual(keywords['visit_provenance'].visit_id, selection.visit.identity.visit_id)
-            self.assertEqual(result.prepared.training_batch.rows[0].provenance.visit.visit_id,
-                             selection.visit.identity.visit_id)
-            self.assertIsNotNone(result.diagnostics)
-            gradient = result.diagnostics.gradient_execution
-            loss = gradient.execution.loss
-            self.assertGreater(float(loss.impact), 0.)
-            self.assertGreater(float(loss.exigency), 0.)
-            self.assertEqual(float(loss.novelty), 0.)
-            gradients = gradient.gradients
-            for name in ('impact', 'exigency'):
-                self.assertGreater(float(mx.abs(gradients['readout.salience_bias.' + name]).sum()), 0.)
-            self.assertEqual(float(mx.abs(gradients['readout.salience_bias.novelty']).sum()), 0.)
-            census = gradient.execution.dense_parameter_names
-            self.assertIn('readout.salience.impact', census)
-            self.assertNotIn('readout.salience.novelty', census)
-            self.assertEqual(result.transaction.update_steps, 1)
-            self.assertEqual(parent.retained_state.optimizer_step, 0)
-            self.assertEqual(load_accepted_generation(run_dir).generation, parent.generation)
+            factory, context, parent = self._bootstrap(run_dir)
+            priority_owner, selection, policy, rows = self._select_priority(
+                run_dir, context, parent, factory, capability, seed)
+            result = self._execute_candidate(
+                priority_owner, run_dir, context, parent, selection, policy, rows, seed)
             with stage('retained_closure'):
                 assert_non_authorizing_closure_witness(self, run_dir, parent, result)

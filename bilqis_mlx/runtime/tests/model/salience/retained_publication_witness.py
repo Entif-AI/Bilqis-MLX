@@ -25,14 +25,7 @@ from bilqis_mlx.runtime.tests.capability.factory.retention.owner_live_support im
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
 
-def assert_retained_publication_witness(
-        testcase, run_dir, source_context, parent, result, artifact_path, capability):
-    """Run the production fixed-school gate; publish only its real accepted result.
-
-    The run directory must be disposable and remain alive throughout this witness.
-    A rejection is a test failure with the owner's exact reason, not a skipped gate.
-    """
-    run_dir = Path(run_dir)
+def _require_closure_bound_transaction(testcase, run_dir, parent, result):
     transaction = result.transaction
     testcase.assertEqual(transaction.update_steps, 1)
     authority = transaction.training_authorities[0]
@@ -42,8 +35,11 @@ def assert_retained_publication_witness(
     testcase.assertEqual(proof.artifact_closure_sha256, authority.artifact_closure_sha256)
     cache = bind_accepted_execution_cache(run_dir)
     testcase.assertEqual(cache.generation, parent.generation)
+    return transaction, authority, proof, cache
 
-    started = time.monotonic()
+
+def _run_retention_screen(
+        run_dir, source_context, parent, transaction, artifact_path, capability, cache):
     print('C06_RETENTION fixed_school_started', flush=True)
     fixed = _fixed_school(run_dir, source_context, cache.accepted_manifest_sha256)
     state_dag.persist(run_dir, {
@@ -61,7 +57,11 @@ def assert_retained_publication_witness(
             f'reason={decision.reason}; evidence={decision.evidence_sha256}; '
             f'policy={decision.policy_sha256}; '
             f'blocking_capability={evaluation.decision.blocking_capability}')
+    return decision
 
+
+def _publish_retained_candidate(
+        testcase, run_dir, parent, transaction, authority, proof, cache, decision):
     retained = resolve_candidate(transaction, accepted=True)
     events = ({'event': 'BAMF_GENERATION_ACCEPTED',
                'optimizer_step': retained.optimizer_step},)
@@ -94,13 +94,19 @@ def assert_retained_publication_witness(
     indexed = {node.artifact_id: node for node in owner.index.nodes}
     for node in authority.artifact_nodes:
         testcase.assertEqual(indexed[node.artifact_id], node)
-    owner.require(capability)
+    return published, owner, expected_schema
 
+
+def _salience_source_fact(testcase, authority):
     source_fact = next((ref for node in authority.artifact_nodes
                         for ref in node.immediate_dependencies
                         if ref.kind is DependencyKind.SOURCE
                         and ref.key.startswith('salience-fact:')), None)
     testcase.assertIsNotNone(source_fact)
+    return source_fact
+
+
+def _record_unrelated_correction(run_dir, capability, owner, source_fact):
     unrelated = CorrectionEvent(
         event_id='fixture:c06-unrelated-source-correction',
         dependency=DependencyRef(DependencyKind.SOURCE, source_fact.key + ':unrelated'),
@@ -115,7 +121,10 @@ def assert_retained_publication_witness(
     _reset_accepted_correction_runtime_for_tests()
     owner = load_capability_support_owner(run_dir, capability)
     owner.require(capability)
+    return unrelated_event_id, owner
 
+
+def _record_held_correction(testcase, run_dir, capability, owner, source_fact):
     event = CorrectionEvent(
         event_id='fixture:c06-accepted-source-correction', dependency=source_fact,
         source_owner=_OWNER, source_receipt_sha256='f' * 64,
@@ -137,6 +146,30 @@ def assert_retained_publication_witness(
     testcase.assertIn(after_restart.exception.context.get('reason'), (
         'BAMF_C09_ARTIFACT_HELD', 'BAMF_C09_ARTIFACT_DEPENDENCY_HELD',
         'BAMF_C09_CAPABILITY_SUPPORT_REQUALIFICATION_REQUIRED'))
+    return event_id
+
+
+def assert_retained_publication_witness(
+        testcase, run_dir, source_context, parent, result, artifact_path, capability):
+    """Run the production retained-publication qualification on a disposable run.
+
+    This is intentionally a later system/integration witness, not a default C06
+    leaf-development gate.
+    """
+    run_dir = Path(run_dir)
+    started = time.monotonic()
+    transaction, authority, proof, cache = _require_closure_bound_transaction(
+        testcase, run_dir, parent, result)
+    decision = _run_retention_screen(
+        run_dir, source_context, parent, transaction, artifact_path, capability, cache)
+    published, owner, expected_schema = _publish_retained_candidate(
+        testcase, run_dir, parent, transaction, authority, proof, cache, decision)
+    owner.require(capability)
+    source_fact = _salience_source_fact(testcase, authority)
+    unrelated_event_id, owner = _record_unrelated_correction(
+        run_dir, capability, owner, source_fact)
+    event_id = _record_held_correction(
+        testcase, run_dir, capability, owner, source_fact)
     receipt = {
         'schema': 'bilqis.c06.retained-publication-witness/v1',
         'acceptance_schema': expected_schema,
