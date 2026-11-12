@@ -24,14 +24,39 @@ class GenerationProjectionTests(unittest.TestCase):
             student = Checkpoint('2' * 64, 'bundles/disposable', 0, True)
             _, release_file, admission = _executable_factory_admission(root, release, student, _fingerprint(graph), graph)
             domain = replace(_contract(root / 'outbox.sqlite3'), release_digest=release.release_sha256)
+            capability = 'capability:verified'
+            frontier = {'rubric:v1:' + capability: {
+                'capability': capability, 'rubric': 'rubric:v1',
+                'checkpoint': asdict(student), 'correct': 3, 'total': 3,
+                'evaluation_id': 'evaluation:verified'}}
             record = _with_delivery_outbox(dict(run_id='fixture:run', generation=1,
                 factory_release_sha256=release.release_sha256, factory_release_file=release_file,
                 factory_admission_v2=asdict(admission), semantic_graph_sha256=_fingerprint(graph),
-                school={'current_student': asdict(student)}), (
+                school={'current_student': asdict(student)}, capability_best=frontier), (
                 {'event': 'SCHOOL_TEACHER_VISIT_COMMITTED', 'capability': 'renamed.capability',
+                 'generation': 1, 'optimizer_step': 0,
+                 'recovered_at_student_sha256': '2' * 64,
+                 'checkpoint_status': 'RECORDED_AT_BOUNDARY',
                  'source_time': 570, 'effective_time': 575, 'observed_at': 580, 'recorded_at': 585},
+                {'event': 'SCHOOL_CAPABILITY_BEST_COMMITTED',
+                 'generation': 1, 'optimizer_step': 0, 'student_sha256': '2' * 64,
+                 'capabilities': [capability], 'rubric': 'rubric:v1',
+                 'scores': {capability: {'correct': 3, 'total': 3}},
+                 'evaluation_ids': {capability: 'evaluation:verified'},
+                 'source_time': 571, 'effective_time': 576, 'observed_at': 581, 'recorded_at': 585},
+                {'event': 'SCHOOL_CAPABILITY_BEST_COMMITTED',
+                 'generation': 1, 'optimizer_step': 0, 'student_sha256': '2' * 64,
+                 'capabilities': [capability], 'rubric': 'rubric:v1',
+                 'scores': {capability: {'correct': 2, 'total': 3}},
+                 'evaluation_ids': {capability: 'evaluation:verified'},
+                 'source_time': 572, 'effective_time': 577, 'observed_at': 582, 'recorded_at': 585},
                 {'event': 'UNKNOWN_NATIVE_EVENT'},
                 {'event': 'SCHOOL_TEACHER_VISIT_COMMITTED', 'capability': 'legacy:no-times'},
+                {'event': 'SCHOOL_TEACHER_VISIT_COMMITTED', 'capability': 'lookalike',
+                 'generation': 1, 'optimizer_step': 0,
+                 'recovered_at_student_sha256': 'f' * 64,
+                 'checkpoint_status': 'RECORDED_AT_BOUNDARY',
+                 'source_time': 590, 'effective_time': 591, 'observed_at': 592, 'recorded_at': 593},
                 {'event': 'BAMF_FACTORY_RELEASE_ADOPTION_COMMITTED',
                  'factory_release_sha256': '9' * 64,
                  'source_time': 586, 'effective_time': 587, 'observed_at': 588, 'recorded_at': 589},
@@ -43,18 +68,21 @@ class GenerationProjectionTests(unittest.TestCase):
                 return project_accepted_generation(root, 1, contract, graph=graph)
             first = project()
             self.assertEqual(first.projected_native_event_ids, (
-                record['delivery_outbox'][0]['event_id'],
+                record['delivery_outbox'][1]['event_id'],
             ))
             self.assertEqual(first.uncovered_native_event_ids, (
-                record['delivery_outbox'][1]['event_id'],
+                record['delivery_outbox'][0]['event_id'],
                 record['delivery_outbox'][2]['event_id'],
                 record['delivery_outbox'][3]['event_id'],
                 record['delivery_outbox'][4]['event_id'],
+                record['delivery_outbox'][5]['event_id'],
+                record['delivery_outbox'][6]['event_id'],
+                record['delivery_outbox'][7]['event_id'],
             ))
             self.assertEqual(first.receipt.appended_count, 1)
             self.assertEqual(project().receipt.duplicate_count, 1)
             events = read_projection_outbox(domain.outbox_path)
-            self.assertEqual(events[0].event.kind.value, 'TEACHER_VISIT')
+            self.assertEqual(events[0].event.kind.value, 'CAPABILITY_OUTCOME')
             self.assertEqual((root / 'state.json').read_bytes(), before)
             for key in ('release_digest', 'model_digest'):
                 with self.assertRaises(BilqisError):
@@ -125,7 +153,10 @@ class GenerationProjectionTests(unittest.TestCase):
                 supplied_graph = {**graph, 'tokens': ['foreign']} if case == 'graph' else graph
                 if case == 'later':
                     result = project_accepted_generation(root, 1, domain, graph=supplied_graph)
-                    self.assertEqual(result.receipt.appended_count, 1)
+                    self.assertEqual(result.receipt.appended_count, 0)
+                    self.assertEqual(
+                        result.uncovered_native_event_ids,
+                        (record['delivery_outbox'][0]['event_id'],))
                 else:
                     with self.assertRaises((ValueError, BilqisError)):
                         project_accepted_generation(root, 1, domain, graph=supplied_graph)

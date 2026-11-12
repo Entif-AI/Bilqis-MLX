@@ -5,8 +5,9 @@ import json
 from pathlib import Path
 import sqlite3
 
-from .contracts import OWNER_FIXTURE_KINDS, _canonical, _digest, _invalid, _name, _sha, _time, _DELIVERY_STATUSES
-from .events import AkashaEvent
+from .contracts import (OWNER_FIXTURE_KINDS, _canonical, _digest, _invalid, _name,
+                        _requires_projection_binding, _sha, _time, _DELIVERY_STATUSES)
+from .events import AkashaEvent, _restore_event
 from .contracts import AkashaEventKind
 
 _SCHEMA_SQL = """
@@ -72,9 +73,15 @@ def _prepare_outbox_entry(event: AkashaEvent, projection_binding):
         _invalid("BAMF_C10_EVENT_ARGUMENT_INVALID")
     event.validate()
     owner_source_key = None
+    fields = json.loads(event.payload_json)
+    if projection_binding is None and _requires_projection_binding(event.kind, fields):
+        _invalid("BAMF_C10_OWNER_PROJECTION_BINDING_REQUIRED")
     if event.kind in OWNER_FIXTURE_KINDS:
-        fields = json.loads(event.payload_json)
-        owner_source_key = _digest(_canonical([event.kind.value, fields["producer_id"], fields["owner_source_event_id"]]).encode())
+        if fields.get("verification_mode") == "DISPOSABLE_CONTRACT":
+            owner_source_key = _digest(_canonical([
+                event.kind.value, fields["producer_id"],
+                fields["owner_source_event_id"],
+            ]).encode())
     binding_json = None
     if projection_binding is not None:
         from ..bamf_projection import BamfProjectionEvent
@@ -120,7 +127,7 @@ def append_outbox(path: Path, event: AkashaEvent, *, projection_binding=None) ->
 def _read_event(row: tuple[str]) -> AkashaEvent:
     try:
         payload = json.loads(row[0])
-        return AkashaEvent(
+        return _restore_event(
             **{**payload, "kind": AkashaEventKind(payload["kind"])})
     except (TypeError, ValueError, KeyError):
         _invalid("BAMF_C10_STORED_EVENT_INVALID")

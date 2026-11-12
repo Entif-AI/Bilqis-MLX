@@ -48,7 +48,8 @@ def project_rosetta_observation(event, runtime, *, created_at):
     except ValueError:
         _invalid('BAMF_C10_ROSETTA_TIMESTAMP_INVALID')
     if any(value > 2**53 - 1 for value in (event.as_of, event.event.source_time,
-            event.event.effective_time, event.event.observed_at, event.event.recorded_at)):
+            event.event.effective_time, event.event.observed_at, event.event.recorded_at)
+            if value is not None):
         _invalid('BAMF_C10_ROSETTA_UNSAFE_INTEGER')
     path = runtime.bridge_path
     if (path.is_symlink() or not path.is_file()
