@@ -3323,16 +3323,22 @@ paying the full neural cost.
 following stages whenever a test or witness contains a multi-minute Factory, MLX,
 full-model, or equivalent expensive phase.
 
-1. **Cheap contracts.** Run focused neural-inert checks for imports, fixture shape,
+1. **Repository-static preflight.** At integration/turn-in boundaries, run every
+   applicable neural-inert quality/static gate before mounted real-fixture or
+   full-model work. Governance, documentation, source/authority scanners,
+   changed-file quality, and other deterministic repository checks belong here.
+   A cheap static failure discovered after expensive execution is a harness-ordering
+   defect and must be moved ahead of the expensive stage before another rerun.
+2. **Cheap contracts.** Run focused neural-inert checks for imports, fixture shape,
    deterministic invariants, assertion semantics, and other preconditions that do
    not require the expensive output.
-2. **Real-fixture preflight.** When production artifacts or custody matter, use the
+3. **Real-fixture preflight.** When production artifacts or custody matter, use the
    real artifact/configuration and the same shared setup as the full witness. Execute
    every cheap production operation through the immediate boundary before the
    expensive call, including applicable accepted-runtime, custody, generation,
    feature-authentication, target, route, observation, and resource-plan checks.
    Stop before the expensive computation itself.
-3. **Expensive execution.** Start the full witness only after every required earlier
+4. **Expensive execution.** Start the full witness only after every required earlier
    stage succeeds. Preserve the exact production acceptance path for facts that
    genuinely depend on the expensive computation.
 

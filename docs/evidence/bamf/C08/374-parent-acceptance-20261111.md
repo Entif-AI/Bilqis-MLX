@@ -108,6 +108,9 @@ The feature branch later consumed current reviewed unified head
   branch lacked four legacy-trainer evidence updates already present on current
   unified. Current-base `quality:check` confirms that integration mismatch is closed.
 
+Legacy-trainer adaptation authority remains the preserved Factory replay
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
+
 Current unified also refactored Factory source-frame preparation through
 `source_frame_inventory(...)`, which lies on the real C08 pre-gradient path.
 Therefore the historical r4 PASS remains valid evidence for its tested immutable
@@ -140,10 +143,39 @@ blocker is residual host resource state rather than a surviving owned test proce
 No unrelated process was terminated and no unsafe memory-pressure workaround was
 used merely to force the remaining proof.
 
+## Current-base staged witness r3 | 2026-11-11
+
+The operator subsequently clarified that bounded MLX/full-model jobs on the M3 Ultra
+may run concurrently; another bounded MLX job is not, by itself, a reason to wait.
+The C08 witness retained its own explicit RSS and wall guards.
+
+Detached current-base run `C08-374-1d9866b5-current-base-turnin-r3` executed from
+immutable head `1d9866b5c93cefa08c2fcb790261ccf2716a5e38` with source/snapshot SHA-256
+`a16fc56a41c6a1a396b42031295fd1cc3e5cdb46486c21b4da08c26ffff852b1`.
+
+- Fast contracts: `6 passed`, `6 subtests`, `0.81s`.
+- Mounted real-fixture preflight: `1 passed`, `1135.32s`.
+- Exact two-row real-Factory MLX witness: `1 passed`, `1496.89s`.
+- Full-witness guard: `GUARD=NONE`.
+- Peak witness RSS: `9,802,960 KiB`, about `9.349 GiB`.
+- Detached snapshot remained unchanged: `source_mutated=false`.
+
+The C08 current-base production acceptance path is therefore green. The detached
+pipeline failed only afterward, when `quality:check` reached the static
+legacy-trainer authority scanner and this receipt mentioned `legacy-trainer` without
+also naming the canonical replay path. That is a cheap evidence-document defect,
+not a C08 semantic, Factory, gradient, optimizer, custody, or MLX failure.
+
+This failure also exposed an ordering defect in the turn-in harness: applicable
+neural-inert quality/static checks must run before mounted real-fixture or full-model
+execution. Future C08 turn-in runs reuse the green current-base witness under ADR-129
+unless a dependency on its production path changes; they do not repay the expensive
+witness merely because a later documentation/static gate failed.
+
 ## Disposition
 
-C08 BAMF-0.2 owned acceptance remains satisfied by the owner-declared and durable
-r4 production PASS. Current-base integration is reconciled and pushed, but PR
-readiness remains pending the resource-lawful current-base witness/premerge gates
-described above. This receipt does not authorize self-merge or issue closure before
-the human-reviewed PR is merged and read back.
+C08 BAMF-0.2 owned acceptance is satisfied, including a green current-base mounted
+real-fixture and exact two-row real-Factory MLX witness. PR readiness now depends on
+the remaining aggregate premerge gate only; the production witness is reusable under
+ADR-129 while its dependency surface is unchanged. This receipt does not authorize
+self-merge or issue closure before the human-reviewed PR is merged and read back.

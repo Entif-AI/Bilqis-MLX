@@ -263,24 +263,30 @@ expensive test or witness as an ordered pipeline. Do not make a multi-minute MLX
 Factory, full-model, or end-to-end run the first place that fixture, import,
 precondition, or assertion-contract errors can surface.
 
-1. Run cheap contract checks first. Cover imports, fixture shape, deterministic
+1. At an integration/turn-in boundary, run every applicable neural-inert repository
+   quality/static gate **before** mounted real-fixture or full-model execution. This
+   includes governance, docs, source/authority scanners, changed-file quality, and
+   other deterministic checks that do not depend on expensive model output. A late
+   static failure is a pipeline-order defect; repair the early gate before another
+   expensive rerun.
+2. Run cheap contract checks next. Cover imports, fixture shape, deterministic
    invariants, assertion semantics, and other neural-inert behavior with focused
    tests that complete quickly.
-2. Run a real-fixture preflight next when the final witness depends on external
+3. Run a real-fixture preflight next when the final witness depends on external
    artifacts, accepted custody, source state, runtime configuration, or other
    production inputs. Use the same source paths and shared setup helpers as the
    full witness. Execute every cheap production step through the immediate boundary
    before the expensive call, then stop before the expensive computation begins.
-3. Treat an unexpected skip as preflight failure. A required real-fixture preflight
+4. Treat an unexpected skip as preflight failure. A required real-fixture preflight
    must verify that its artifact, runtime, and custody inputs exist and are usable;
    pytest exit code zero is insufficient when the required case was skipped.
-4. Chain the stages in one runner or command so failure stops the pipeline. The
+5. Chain the stages in one runner or command so failure stops the pipeline. The
    expensive phase may start only after every required preflight stage succeeds.
    Do not rely on an agent remembering that a separate preflight was supposed to
    run first.
-5. Share setup and assertion helpers between the preflight and full witness. Do not
+6. Share setup and assertion helpers between the preflight and full witness. Do not
    maintain a simplified imitation that can drift away from the production path.
-6. Keep expensive-output assertions in the final witness, but give every invariant
+7. Keep expensive-output assertions in the final witness, but give every invariant
    that can be proved without the expensive output a cheap contract test first.
    If a long run discovers a banal fixture, import, precondition, or assertion
    defect, add or strengthen the earlier stage before rerunning the expensive test.
