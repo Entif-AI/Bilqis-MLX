@@ -115,6 +115,42 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
     assert issued.planning is planning
 
 
+def _rejection_custody():
+    evidence = {
+        "schema": "bilqis.bamf.c16.3-rejection/v2",
+        "visit_id": "visit:beta",
+        "selected_option_id": "capability:beta",
+        "selected_policy_key": "policy",
+        "candidate_optimizer_step": 12,
+        "retained_optimizer_step": 11,
+        "retention_reason": "retention_gate",
+    }
+    authority_record = {
+        "schema": "bilqis.mlx.bamf-rejection-authority/v1",
+        "run_id": "run", "generation": 2,
+        "student_manifest_sha256": "f" * 64, "optimizer_step": 11,
+        "evidence": evidence,
+    }
+    authority_raw = canonical(authority_record)
+    authority_sha256 = hashlib.sha256(authority_raw).hexdigest()
+    event = checkpoint_outbox.with_delivery_outbox(
+        {"run_id": "run", "generation": 2}, ({
+            "event": "BAMF_CANDIDATE_REJECTED", "generation": 2,
+            "student_manifest_sha256": "f" * 64, "optimizer_step": 11,
+            "evidence": evidence, "rejection_authority_sha256": authority_sha256,
+        },))["delivery_outbox"][0]
+    receipt = {
+        "schema": "bilqis.mlx.bamf-rejection-receipt/v1",
+        "run_id": "run", "generation": 2,
+        "student_manifest_sha256": "f" * 64, "event": event,
+    }
+    receipt_raw = canonical(receipt)
+    receipt_sha256 = hashlib.sha256(receipt_raw).hexdigest()
+    objects = {authority_sha256: authority_raw, receipt_sha256: receipt_raw}
+    return evidence, event, receipt_sha256, SimpleNamespace(
+        get_object=lambda digest: objects[digest])
+
+
 def test_rejected_candidate_is_durably_deprioritized_without_advancing_c03_rotation():
     from bilqis_mlx.runtime import priority_authority as authority
 
@@ -148,52 +184,8 @@ def test_rejected_candidate_is_durably_deprioritized_without_advancing_c03_rotat
 
     with TemporaryDirectory() as temporary:
         run_dir = Path(temporary)
-        evidence = {
-            "schema": "bilqis.bamf.c16.3-rejection/v2",
-            "visit_id": "visit:beta",
-            "selected_option_id": "capability:beta",
-            "selected_policy_key": "policy",
-            "candidate_optimizer_step": 12,
-            "retained_optimizer_step": 11,
-            "retention_reason": "retention_gate",
-        }
-        authority_record = {
-            "schema": "bilqis.mlx.bamf-rejection-authority/v1",
-            "run_id": "run",
-            "generation": 2,
-            "student_manifest_sha256": "f" * 64,
-            "optimizer_step": 11,
-            "evidence": evidence,
-        }
-        authority_raw = canonical(authority_record)
-        authority_sha256 = hashlib.sha256(authority_raw).hexdigest()
-        event = {
-            "event": "BAMF_CANDIDATE_REJECTED",
-            "generation": 2,
-            "student_manifest_sha256": "f" * 64,
-            "optimizer_step": 11,
-            "evidence": evidence,
-            "rejection_authority_sha256": authority_sha256,
-        }
-        event = checkpoint_outbox.with_delivery_outbox(
-            {"run_id": "run", "generation": 2}, (event,))["delivery_outbox"][0]
-        receipt = {
-            "schema": "bilqis.mlx.bamf-rejection-receipt/v1",
-            "run_id": "run",
-            "generation": 2,
-            "student_manifest_sha256": "f" * 64,
-            "event": event,
-        }
-        receipt_raw = canonical(receipt)
-        receipt_sha256 = hashlib.sha256(receipt_raw).hexdigest()
+        _evidence, event, _receipt_sha256, plane = _rejection_custody()
         (run_dir / "events.jsonl").write_text(json.dumps(event) + "\n")
-        def get_object(digest):
-            if digest == authority_sha256:
-                return authority_raw
-            if digest == receipt_sha256:
-                return receipt_raw
-            raise ValueError(digest)
-        plane = SimpleNamespace(get_object=get_object)
         with patch(
             "bilqis_mlx.runtime.bamf_bundle.accepted_runtime._accepted_correction_registry",
             return_value=(cache, registry),
@@ -256,40 +248,7 @@ def test_duplicate_raw_journal_rows_cannot_amplify_one_b13_rejection():
     parent = SimpleNamespace(retained_state=SimpleNamespace(optimizer_step=11))
     cache = SimpleNamespace(
         generation=2, accepted_manifest_sha256="f" * 64, run_id="run")
-    evidence = {
-        "schema": "bilqis.bamf.c16.3-rejection/v2",
-        "visit_id": "visit:beta",
-        "selected_option_id": "capability:beta",
-        "selected_policy_key": "policy",
-        "candidate_optimizer_step": 12,
-        "retained_optimizer_step": 11,
-        "retention_reason": "retention_gate",
-    }
-    authority_record = {
-        "schema": "bilqis.mlx.bamf-rejection-authority/v1",
-        "run_id": "run", "generation": 2,
-        "student_manifest_sha256": "f" * 64, "optimizer_step": 11,
-        "evidence": evidence,
-    }
-    authority_raw = canonical(authority_record)
-    authority_sha256 = hashlib.sha256(authority_raw).hexdigest()
-    event = checkpoint_outbox.with_delivery_outbox(
-        {"run_id": "run", "generation": 2}, ({
-            "event": "BAMF_CANDIDATE_REJECTED", "generation": 2,
-            "student_manifest_sha256": "f" * 64, "optimizer_step": 11,
-            "evidence": evidence, "rejection_authority_sha256": authority_sha256,
-        },))["delivery_outbox"][0]
-    receipt = {
-        "schema": "bilqis.mlx.bamf-rejection-receipt/v1",
-        "run_id": "run", "generation": 2,
-        "student_manifest_sha256": "f" * 64, "event": event,
-    }
-    receipt_raw = canonical(receipt)
-    receipt_sha256 = hashlib.sha256(receipt_raw).hexdigest()
-    plane = SimpleNamespace(get_object=lambda digest: {
-        authority_sha256: authority_raw,
-        receipt_sha256: receipt_raw,
-    }[digest])
+    _evidence, event, receipt_sha256, plane = _rejection_custody()
     with TemporaryDirectory() as temporary:
         run_dir = Path(temporary)
         raw = json.dumps(event) + "\n"
