@@ -74,7 +74,11 @@ def _prepare_outbox_entry(event: AkashaEvent, projection_binding):
     owner_source_key = None
     if event.kind in OWNER_FIXTURE_KINDS:
         fields = json.loads(event.payload_json)
-        owner_source_key = _digest(_canonical([event.kind.value, fields["producer_id"], fields["owner_source_event_id"]]).encode())
+        if fields.get("verification_mode") == "DISPOSABLE_CONTRACT":
+            owner_source_key = _digest(_canonical([
+                event.kind.value, fields["producer_id"],
+                fields["owner_source_event_id"],
+            ]).encode())
     binding_json = None
     if projection_binding is not None:
         from ..bamf_projection import BamfProjectionEvent

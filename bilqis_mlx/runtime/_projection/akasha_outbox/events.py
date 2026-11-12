@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 from .contracts import (AKASHA_EVENT_SCHEMA, AKASHA_PROJECTION_SCHEMA, AkashaEventKind,
-    _canonical, _digest, _invalid, _name, _payload_for, _sha, _time)
+    _canonical, _digest, _event_times, _invalid, _name, _payload_for, _sha)
 
 @dataclass(frozen=True)
 class AkashaEvent:
@@ -12,18 +12,18 @@ class AkashaEvent:
     subject_id: str
     source_receipt_sha256: str
     payload_json: str
-    source_time: int
-    effective_time: int
-    observed_at: int
-    recorded_at: int
+    source_time: int | None
+    effective_time: int | None
+    observed_at: int | None
+    recorded_at: int | None
     schema_version: str = AKASHA_EVENT_SCHEMA
 
     @classmethod
     def from_payload(
         cls, *, kind: AkashaEventKind, subject_id: str,
         source_receipt_sha256: str, payload: dict,
-        source_time: int, effective_time: int,
-        observed_at: int, recorded_at: int,
+        source_time: int | None, effective_time: int | None,
+        observed_at: int | None, recorded_at: int | None,
     ) -> "AkashaEvent":
         if not isinstance(kind, AkashaEventKind):
             _invalid("BAMF_C10_EVENT_KIND_INVALID")
@@ -56,10 +56,11 @@ class AkashaEvent:
                 or not _name(self.subject_id)
                 or not _sha(self.source_receipt_sha256)
                 or not isinstance(self.payload_json, str)
-                or not all(_time(value) for value in (
+                or not _event_times((
                     self.source_time, self.effective_time,
                     self.observed_at, self.recorded_at))
-                or self.observed_at > self.recorded_at
+                or (self.observed_at is not None
+                    and self.observed_at > self.recorded_at)
                 or self.schema_version != AKASHA_EVENT_SCHEMA):
             _invalid("BAMF_C10_EVENT_IDENTITY_INVALID")
         _payload_for(self.kind, self.payload_json)
