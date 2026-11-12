@@ -14,7 +14,9 @@ from bilqis_mlx.runtime.atlas_attention import (
 )
 from bilqis_mlx.runtime.atlas_refinement import refinement_parameter_view
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
-from bilqis_mlx.runtime.backbone_group_numerical import run_backbone_group_numerical
+from bilqis_mlx.runtime.backbone_group_numerical import (
+    _norm, run_backbone_group_numerical,
+)
 from bilqis_mlx.runtime.backbone_source_bridge import compute_compiled_h0
 from bilqis_mlx.runtime.block_attnres import depth_parameter_view
 from bilqis_mlx.runtime.model_topology_v2 import (
@@ -80,6 +82,45 @@ class AtlasModelMixedFrameTests(unittest.TestCase):
             name: cls.parameters[f"blocks.{layer}.{name}"]
             for name in ATTENTION_PARAMETER_NAMES
         }
+
+    @classmethod
+    def _incremental_12_layer_stack(
+            cls, hidden, *, scope_ids, valid, generation, cuts,
+            initial_caches=None):
+        caches = [None] * cls.spec.layers if initial_caches is None else list(initial_caches)
+        if len(caches) != cls.spec.layers:
+            raise AssertionError("one cache slot is required per B11 layer")
+        left = 0
+        parent = None
+        outputs = []
+        for right in cuts:
+            current = hidden[:, left:right]
+            prefix_name = f"prefix-{right}"
+            for layer in range(cls.spec.layers):
+                prefix = f"blocks.{layer}."
+                attn_input = _norm(
+                    current, cls.parameters[prefix + "attn_norm"],
+                    cls.spec.rms_norm_epsilon)
+                scope = AttentionScope(
+                    scope_ids[:, left:right], layer, generation,
+                    _digest(prefix_name),
+                    None if parent is None else _digest(parent))
+                attention, caches[layer] = ccgqa(
+                    cls._attention_parameters(layer), attn_input,
+                    valid[:, left:right], scope, cache=caches[layer], offset=left)
+                current = current + attention
+                feed_input = _norm(
+                    current, cls.parameters[prefix + "ffn_norm"],
+                    cls.spec.rms_norm_epsilon)
+                activated = mx.maximum(
+                    feed_input @ cls.parameters[prefix + "ffn_in"].T, 0)
+                current = current + (
+                    (activated * activated)
+                    @ cls.parameters[prefix + "ffn_out"].T)
+            outputs.append(current)
+            left = right
+            parent = prefix_name
+        return mx.concatenate(outputs, axis=1), tuple(caches)
 
     def test_constructor_and_views_use_only_the_expanded_b01_parameter_specs(self):
         declared = expected_bamf_shapes(self.spec, self.compiled.extents)
@@ -196,51 +237,46 @@ class AtlasModelMixedFrameTests(unittest.TestCase):
             atol=2e-5, rtol=3e-5)
 
         hidden = h0[row_index:row_index + 1]
-        valid = mx.ones((1, hidden.shape[1]), dtype=mx.bool_)
-        ids = mx.zeros((1, hidden.shape[1]), dtype=mx.int32)
-        starts = mx.zeros((1, hidden.shape[1]), dtype=mx.bool_)
-        params = self._attention_parameters(0)
+        valid = mx.ones(hidden.shape[:2], dtype=mx.bool_)
+        ids = mx.zeros(hidden.shape[:2], dtype=mx.int32)
         generation = execution_generation_digest(
             self.parameters, spec=self.spec, extents=self.compiled.extents)
 
-        def scope(left, right, name, parent=None):
-            return AttentionScope(
-                ids[:, left:right], 0, generation, _digest(name),
-                None if parent is None else _digest(parent),
-                sequence_starts=starts[:, left:right])
+        production_full = self._stack(h0)[row_index:row_index + 1]
+        full, later_caches = self._incremental_12_layer_stack(
+            hidden, scope_ids=ids, valid=valid, generation=generation,
+            cuts=(hidden.shape[1],))
+        np.testing.assert_allclose(
+            np.asarray(full), np.asarray(production_full),
+            atol=2e-6, rtol=3e-5)
+        full_logits = self._control_logits(production_full)
 
-        full_scope = scope(0, hidden.shape[1], "full")
-        full, later_cache = ccgqa(params, hidden, valid, full_scope)
         for cuts in (
             tuple(range(1, hidden.shape[1] + 1)),
             (prefix, hidden.shape[1]),
         ):
-            left = 0
-            parent = None
-            cache = None
-            chunks = []
-            for right in cuts:
-                name = f"chunk-{right}"
-                chunk, cache = ccgqa(
-                    params, hidden[:, left:right], valid[:, left:right],
-                    scope(left, right, name, parent), cache=cache, offset=left)
-                chunks.append(chunk)
-                left = right
-                parent = name
+            incremental, _ = self._incremental_12_layer_stack(
+                hidden, scope_ids=ids, valid=valid, generation=generation,
+                cuts=cuts)
+            incremental_logits = self._control_logits(incremental)
             np.testing.assert_allclose(
-                np.asarray(mx.concatenate(chunks, axis=1)), np.asarray(full),
-                atol=2e-6, rtol=3e-5)
+                np.asarray(incremental_logits), np.asarray(full_logits),
+                atol=2e-5, rtol=3e-5)
 
-        early_scope = scope(0, prefix, "early")
         with self.assertRaises(BilqisError):
-            ccgqa(
-                params, hidden[:, :prefix], valid[:, :prefix], early_scope,
-                cache=later_cache)
-        fresh_early, _ = ccgqa(
-            params, hidden[:, :prefix], valid[:, :prefix], early_scope)
+            self._incremental_12_layer_stack(
+                hidden[:, :prefix], scope_ids=ids[:, :prefix],
+                valid=valid[:, :prefix], generation=generation,
+                cuts=(prefix,), initial_caches=later_caches)
+        fresh_early, _ = self._incremental_12_layer_stack(
+            hidden[:, :prefix], scope_ids=ids[:, :prefix],
+            valid=valid[:, :prefix], generation=generation,
+            cuts=(prefix,))
+        fresh_early_logits = self._control_logits(fresh_early)
         np.testing.assert_allclose(
-            np.asarray(fresh_early), np.asarray(full[:, :prefix]),
-            atol=2e-6, rtol=3e-5)
+            np.asarray(fresh_early_logits),
+            np.asarray(full_logits[:, :prefix]),
+            atol=2e-5, rtol=3e-5)
 
 
 if __name__ == "__main__":
