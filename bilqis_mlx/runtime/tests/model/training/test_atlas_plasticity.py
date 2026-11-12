@@ -17,7 +17,7 @@ from bilqis_mlx.learning.atlas_plasticity import (
 )
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, ParameterGroup,
-    bamf_parameter_census, expected_bamf_shapes,
+    bamf_parameter_census, expected_bamf_shapes, initialize_bamf_parameter,
 )
 
 
@@ -50,6 +50,48 @@ def _params(group_index=0, *, activate_B=False):
 
 
 class PlasticAdapterTests(TestCase):
+    def test_seeded_adapter_wakes_B_then_A_in_two_literal_backward_passes(self):
+        spec, extents, _parameters = _ledger()
+        declared = {item.name: item for item in expected_bamf_shapes(spec, extents)}
+        A = mx.array(initialize_bamf_parameter(
+            declared["plastic.group.0.A"], run_seed=369))
+        B = mx.array(initialize_bamf_parameter(
+            declared["plastic.group.0.B"], run_seed=369))
+        params = AdapterParameters(
+            0, mx.ones((spec.width,), dtype=mx.float32), A, B)
+        hidden = mx.zeros((1, 2, spec.width), dtype=mx.float32)
+        hidden[0, 0, 0] = 1.0
+        hidden[0, 1, 1] = -0.5
+
+        self.assertGreater(float(mx.sum(mx.abs(A))), 0)
+        self.assertEqual(float(mx.sum(mx.abs(B))), 0.0)
+        np.testing.assert_array_equal(
+            np.asarray(adapter_forward(hidden, params)), np.asarray(hidden))
+
+        def loss(a, b):
+            output = adapter_forward(hidden, replace(params, A=a, B=b))
+            return mx.sum(output * output)
+
+        first_A = mx.grad(lambda a: loss(a, B))(A)
+        first_B = mx.grad(lambda b: loss(A, b))(B)
+        mx.eval(first_A, first_B)
+        self.assertTrue(bool(mx.all(mx.isfinite(first_A))))
+        self.assertTrue(bool(mx.all(mx.isfinite(first_B))))
+        self.assertEqual(float(mx.sum(mx.abs(first_A))), 0.0)
+        self.assertGreater(float(mx.sum(mx.abs(first_B))), 0.0)
+
+        updated_B = B - mx.array(0.01, dtype=mx.float32) * first_B
+        second_A = mx.grad(lambda a: loss(a, updated_B))(A)
+        mx.eval(updated_B, second_A)
+        self.assertGreater(float(mx.sum(mx.abs(updated_B))), 0.0)
+        self.assertTrue(bool(mx.all(mx.isfinite(second_A))))
+        self.assertGreater(float(mx.sum(mx.abs(second_A))), 0.0)
+
+        zero_A = mx.zeros_like(A)
+        unwakeable_B = mx.grad(lambda b: loss(zero_A, b))(B)
+        mx.eval(unwakeable_B)
+        self.assertEqual(float(mx.sum(mx.abs(unwakeable_B))), 0.0)
+
     def test_three_zero_B_adapters_are_exact_identity_but_B_remains_trainable(self):
         hidden = mx.zeros((1, 2, 768), dtype=mx.float32)
         hidden[0, 0, 0] = 1.0
