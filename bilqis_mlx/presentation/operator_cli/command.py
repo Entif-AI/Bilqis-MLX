@@ -24,6 +24,22 @@ def diagnostics(run_dir: Path):
     return _print_status(audit_saved_run(run_dir))
 
 
+def _bamf_operator_admission_status(report):
+    """Return safe admission terminal state that still permits retained learning."""
+    if report.get("result") == "READY_TO_RESUME":
+        return None
+    if report.get("admission_policy") != "atlas-release":
+        return False
+    from bilqis_mlx.runtime.atlas_flywheel import AdmissionFlywheelStatus
+    safe = {
+        AdmissionFlywheelStatus.FIXED_POINT.value,
+        AdmissionFlywheelStatus.WAITING_FOR_EVIDENCE.value,
+        AdmissionFlywheelStatus.IMPLEMENTATION_UNCOVERED.value,
+        AdmissionFlywheelStatus.LEASE_REQUIRED.value,
+    }
+    return report.get("result") if report.get("result") in safe else False
+
+
 def _bamf_or_topology(args):
     """Route BAMF v2 before legacy training while preserving C07 early failure."""
     run_dir = Path(args.run_dir).expanduser()
@@ -73,14 +89,18 @@ def _bamf_or_topology(args):
     if resume_v2_intent:
         from .bamf_lifecycle import bamf_lifecycle
         report = bamf_lifecycle(args, None)
+        admission_status = _bamf_operator_admission_status(report)
         if (args.human_run and not args.dry_run
-                and report.get("result") == "READY_TO_RESUME"):
+                and admission_status is not False):
             from dataclasses import asdict
             from bilqis_mlx.runtime.bamf_operator import operate_bamf
             result = operate_bamf(
                 run_dir, minutes=args.minutes,
                 max_visits=args.max_visits, reserve_gib=args.reserve_gib)
-            return True, _print_status(asdict(result)), None
+            operator_report = asdict(result)
+            if admission_status is not None:
+                operator_report["admission_status"] = admission_status
+            return True, _print_status(operator_report), None
         return True, _print_status(report), None
 
     from bilqis_mlx.runtime.topology_lifecycle import topology_from_file
