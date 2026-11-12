@@ -151,3 +151,28 @@ The exact #576 handoff clause therefore resolves to issue edges `B01,A05.4` plus
 required receipt `#546`. Removing #546 or changing the exact clause fails closed;
 removing the #592 corroborative source does not change the dependency meaning.
 B03.3 remains a downstream consumer, not a prerequisite.
+
+## B11.1a changed condition
+
+B11.1a #586 is intentionally cycle-breaking. Its immutable dependency-cycle rule
+consumes B01, B04 and the **already-implemented B05 numerical selector contract as
+a downstream numerical operation**, while explicitly forbidding B05.4 provenance
+acceptance and final B13 custody as prerequisites. A later source-owner amendment
+adds A05.5 #594 and states exactly that #594 must reach unified before #586 producer
+acceptance.
+
+The B05 numerical receipt is PR #552, not later PR #780. PR #552 merged as
+`d486b33a178cf868374cfeb3a78ec15103525975` and contains the existing B05.1
+numerical selector plus its source-feature repair while deliberately retaining the
+summary-origin provenance Major. That is precisely the contract #586 was carved
+out to consume and then repair with execution-owned producer provenance. PR #780
+merged only after accepted B11 producer integration and explicitly references
+#586/#577; requiring it would invert the dependency and recreate the cycle.
+
+The evidence clause remains the exact #586 dependency-cycle body. Resolution also
+requires pinned source record `B11.1a.comment-6505193864`, whose source-owner
+amendment names A05.5 #594 and requires it to reach unified before #586 producer
+acceptance. The packet resolves to issue edges `B01,B04,A05.5` and requires receipts
+`#552,#618`. PR #618 is the
+already-pinned accepted A05.5 source-ingress receipt. Removing either receipt, removing the pinned amendment source, or changing the
+cycle clause fails closed. No B05, B05.4 or B13 graph edge is added.

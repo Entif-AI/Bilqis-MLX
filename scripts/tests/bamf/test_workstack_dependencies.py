@@ -255,6 +255,65 @@ class DependencyEvidenceTests(unittest.TestCase):
         changed[3]['reviewed-packets'] = pinned_matrix(changed[0])
         self.assertIs(check_dependency_evidence(*changed).status, EvidenceStatus.INVALID)
 
+    def test_b11_cycle_clause_requires_numerical_selector_and_source_ingress_receipts(self):
+        clause = (
+            '## Dependency-cycle rule\n'
+            'This child is deliberately carved out of B11.1 so it can precede B05 parent acceptance. '
+            'It consumes the accepted B01 topology/parameter registry, reviewed B04 attention/block primitives, '
+            'and the already-implemented B05 numerical selector contract as a downstream numerical operation. '
+            'It **must not depend on B05.4 provenance acceptance** or B13 final generation custody. '
+            'Full B11.1 remains responsible for complete model assembly after the surrounding owners are accepted.'
+        )
+        args = packet(clause, edges=('B01', 'B04', 'A05.5'))
+        args[2].update({'B01': 346, 'B04': 355, 'A05.5': 594})
+        evidence = args[0]['dependency_evidence']
+        for number in (552, 618):
+            source_id = 'C01.1.pr-' + str(number)
+            url = 'https://github.com/Entif-AI/Bilqis-MLX/pull/' + str(number)
+            raw = json.dumps(dict(number=number, url=url, state='MERGED',
+                headRefOid='a'*40, mergeCommit={'oid': 'b'*40})).encode()
+            args[3][source_id] = raw
+            evidence['source_records'].append(dict(source_id=source_id, kind='pull_request',
+                locator=url, sha256=hashlib.sha256(raw).hexdigest(), excerpt='b'*40))
+            evidence['external_receipts'].append(dict(number=number, role='prerequisite',
+                head_sha='a'*40, merge_sha='b'*40, url=url, source_id=source_id))
+        amendment_id = 'B11.1a.comment-6505193864'
+        amendment_raw = b'#594 must provide real source-positive/rights/prefix proof and reach unified before #586 producer acceptance.'
+        args[3][amendment_id] = amendment_raw
+        evidence['source_records'].append(dict(source_id=amendment_id, kind='comment',
+            locator='https://github.com/Entif-AI/Bilqis-MLX/issues/586#issuecomment-6505193864',
+            sha256=hashlib.sha256(amendment_raw).hexdigest(), excerpt=amendment_raw.decode()))
+        args[3]['reviewed-packets'] = pinned_matrix(args[0])
+        result = check_dependency_evidence(*args)
+        self.assertIs(result.status, EvidenceStatus.RESOLVED)
+        self.assertEqual(result.known_edges, ('B01', 'B04', 'A05.5'))
+
+        for missing_number in (552, 618):
+            missing = deepcopy(args)
+            missing[0]['dependency_evidence']['external_receipts'] = [
+                item for item in missing[0]['dependency_evidence']['external_receipts']
+                if item['number'] != missing_number
+            ]
+            missing[3]['reviewed-packets'] = pinned_matrix(missing[0])
+            with self.subTest(missing_number=missing_number):
+                self.assertIs(check_dependency_evidence(*missing).status, EvidenceStatus.INVALID)
+
+        missing_amendment = deepcopy(args)
+        missing_amendment[0]['dependency_evidence']['source_records'] = [
+            item for item in missing_amendment[0]['dependency_evidence']['source_records']
+            if item['source_id'] != amendment_id
+        ]
+        missing_amendment[3].pop(amendment_id, None)
+        missing_amendment[3]['reviewed-packets'] = pinned_matrix(missing_amendment[0])
+        self.assertIs(check_dependency_evidence(*missing_amendment).status, EvidenceStatus.INVALID)
+
+        changed = deepcopy(args)
+        changed[0]['dependency_evidence']['clause'] = clause.replace(
+            'already-implemented B05 numerical selector contract',
+            'accepted B05.4 selector contract')
+        changed[3]['reviewed-packets'] = pinned_matrix(changed[0])
+        self.assertIs(check_dependency_evidence(*changed).status, EvidenceStatus.INVALID)
+
     def test_unknown_edge_or_missing_range_member_is_invalid(self):
         args = packet(edges=('A99',))
         self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.INVALID)

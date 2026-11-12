@@ -403,7 +403,7 @@
       "parent_number": 471,
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
+        "resolution": "resolved",
         "body_sha256": "d4b4f9f92629d4074a6d9e89a288f0c88c0b73da37786ab2beaed843c19bb081",
         "clause": "## Dependency-cycle rule\nThis child is deliberately carved out of B11.1 so it can precede B05 parent acceptance. It consumes the accepted B01 topology/parameter registry, reviewed B04 attention/block primitives, and the already-implemented B05 numerical selector contract as a downstream numerical operation. It **must not depend on B05.4 provenance acceptance** or B13 final generation custody. Full B11.1 remains responsible for complete model assembly after the surrounding owners are accepted.",
         "known_edges": [
@@ -412,6 +412,14 @@
           "A05.5"
         ],
         "external_receipts": [
+          {
+            "number": 552,
+            "role": "prerequisite",
+            "head_sha": "f5f0ecc418ac5f7e10266d9b94bd74fd68e4b723",
+            "merge_sha": "d486b33a178cf868374cfeb3a78ec15103525975",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/552",
+            "source_id": "B11.1a.pr-552"
+          },
           {
             "number": 618,
             "role": "prerequisite",
@@ -463,12 +471,19 @@
             "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/618",
             "sha256": "6cf936f2c092e318c41ce71748da3c2bfcbddf4be0863afa78e0a49341aa2991",
             "excerpt": "a02b9ed45ead1801be6dff655866b73be0ffc8ff"
+          },
+          {
+            "source_id": "B11.1a.pr-552",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/552",
+            "sha256": "f5b11ecb613a08e815a580908f2f6c91bfddd5e8e7a0d5f39a557c4c1af6b219",
+            "excerpt": "d486b33a178cf868374cfeb3a78ec15103525975"
           }
         ],
         "obligations": [
           "Accepted A05.5 PR618 source binding; preserve source-approved h0 and B03/B02/A05/B08 provenance obligations. No B05.4/final B13 blocking edge. Preserve587-era specification as historical/acceptance context and its canonical cycle-rule correction."
         ],
-        "unresolved": "Preserve exact B05 numerical-operation obligation and source/cycle-rule context; never require B05.4 or final B13 acceptance."
+        "unresolved": null
       }
     },
     {

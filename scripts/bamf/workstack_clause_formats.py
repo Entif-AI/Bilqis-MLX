@@ -62,6 +62,23 @@ def _released_schema_serialization_prerequisites(text, numbers):
     return (('A01',), (551,))
 
 
+def _b11_cycle_prerequisites(text, numbers, source_ids):
+    expected = (
+        '## Dependency-cycle rule\n'
+        'This child is deliberately carved out of B11.1 so it can precede B05 parent acceptance. '
+        'It consumes the accepted B01 topology/parameter registry, reviewed B04 attention/block primitives, '
+        'and the already-implemented B05 numerical selector contract as a downstream numerical operation. '
+        'It **must not depend on B05.4 provenance acceptance** or B13 final generation custody. '
+        'Full B11.1 remains responsible for complete model assembly after the surrounding owners are accepted.'
+    )
+    keys = ('B01', 'B04', 'A05.5')
+    if (text != expected or any(type(numbers.get(key)) is not int for key in keys)
+            or numbers['A05.5'] != 594
+            or 'B11.1a.comment-6505193864' not in source_ids):
+        return None
+    return (keys, (552, 618))
+
+
 def _b02_child_handle_prerequisites(text, numbers):
     expected = (
         '## Dependency / handoff\n'
@@ -130,7 +147,10 @@ def _parent_amendment(clause, numbers):
     return (*original, *child), ()
 
 
-def parse_clause(clause, numbers):
+def parse_clause(clause, numbers, source_ids=()):
+    b11_cycle = _b11_cycle_prerequisites(clause, numbers, frozenset(source_ids))
+    if b11_cycle is not None:
+        return b11_cycle
     b02_child = _b02_child_handle_prerequisites(clause, numbers)
     if b02_child is not None:
         return b02_child
