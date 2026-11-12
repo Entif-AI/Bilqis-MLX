@@ -93,10 +93,12 @@ that proof.
 Treat any process as **MLX-capable** when it imports `mlx`, constructs or evaluates
 MLX arrays, loads a BAMF parameter/optimizer tree, executes a neural forward/backward
 path, serializes full MLX state, or runs a full-model/custody witness that can reach
-those owners transitively. Until the test harness enforces a verified aggregate
-memory budget automatically, MLX-capable verification is **serialized by default**:
-set `BILQIS_TEST_WORKERS=1` and do not invoke pytest with `-n > 1`. A broad
-dependency-selected test cone is not permission to run multiple MLX workers.
+those owners transitively. Within one test runner, MLX-capable verification is
+**single-worker by default**. Set `BILQIS_TEST_WORKERS=1`. Do not invoke pytest with
+`-n > 1` unless that runner enforces an explicit aggregate memory budget. This is not
+a host-wide serialization rule. Independent bounded MLX jobs on the M3 Ultra may
+overlap when each job applies a memory/cache policy. Their configured aggregate
+limits must leave host headroom. Another bounded MLX job is not a reason to wait.
 
 The reason is measured, not hypothetical. On the 96 GiB M3 Ultra with MLX 0.31.1,
 a fresh process reported both the default MLX memory limit and free-buffer cache
@@ -111,19 +113,20 @@ Long-lived MLX test processes must disable the free-buffer cache with
 `mx.set_cache_limit(0)` / `mx.clear_cache()`, or enter the repository's
 `training_memory_policy(mx)` when that policy is semantically appropriate. If the
 selected test runner cannot guarantee that policy in every MLX-capable worker, run
-the relevant tests serially and narrowly rather than launching a broad parallel
-suite. Do not overlap independent full-model/MLX witnesses merely because they live
-in different worktrees. Parallel MLX execution requires an explicit per-worker
-limit, an explicit aggregate upper bound that fits the host with headroom, and
-evidence that every worker actually applies those limits.
+the relevant tests serially and narrowly rather than launching an unbounded broad
+parallel suite. Independent processes may overlap when every process has an applied
+memory limit/cache policy and their configured aggregate upper bound fits the host
+with headroom.
 
-Before any expensive MLX launch, inspect current swap/memory pressure and active
-MLX-heavy processes. If the system has already reported memory exhaustion, swap is
-near saturation, or another full-model witness is active, do not start another
-heavy MLX run. A memory-pressure dialog, swap-exhaustion event, OOM, or worker death
-under memory pressure is a **failed verification run**. Preserve its evidence,
-contain the process group, diagnose the allocation mechanism, and do not rerun the
-same workload unchanged.
+Before any expensive MLX launch, inspect current memory pressure and the bounds on
+active MLX-heavy processes. Do not serialize because another bounded witness is
+active. High swap occupancy is also not a veto while physical-memory headroom remains
+healthy. Refuse a new launch if a participating job lacks an applied bound. Also
+refuse when configured aggregate ceilings exceed safe host capacity or the OS reports
+actual memory-pressure/OOM symptoms. A memory-pressure dialog, swap-exhaustion event,
+OOM, or worker death under memory pressure is a **failed verification run**. Preserve
+its evidence, contain the owned process group, diagnose the allocation mechanism,
+and do not rerun the same workload unchanged.
 
 The production BAMF trainer remains one sovereign MLX writer. Its current
 `training_memory_policy` disables MLX's free-buffer cache, which prevents this

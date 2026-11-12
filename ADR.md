@@ -3378,3 +3378,32 @@ acceptance requirement that depends on the expensive computation. This ADR compo
 with ADR-129 evidence reuse, ADR-130 diagnostic-loop budgeting, ADR-131
 precedence-ordered diagnosis, ADR-132 detached execution, and ADR-137 claim-first
 verification.
+
+## ADR-140 | 2026-11-11 | M3 Ultra verification concurrency is bounded per job, not serialized host-wide
+
+**Status:** Accepted by direct owner instruction on 2026-11-11 after C08 turn-in
+needlessly waited behind other bounded MLX verification jobs.
+
+**Context:** ADR-138 correctly diagnosed the 2026-11-11 OOM incident as an
+unbounded aggregate-allocation failure. Four MLX-capable xdist workers each inherited
+a roughly host-sized default allocator/cache allowance. The resulting rule was too
+coarse when applied as host-wide serialization. Independent detached jobs with
+explicit limits differ from unconstrained xdist workers inside one runner. The M3
+Ultra is expected to execute multiple bounded jobs concurrently.
+
+**Decision:** MLX-capable pytest remains single-worker within one runner unless that
+runner proves an aggregate budget. Independent MLX/full-model jobs may run
+concurrently on the M3 Ultra when every job applies a memory/cache policy. Their
+configured aggregate ceilings must leave host headroom. Another bounded MLX job is
+not a blocker. Agents must not insert a host-wide wait merely to avoid concurrency.
+
+Current swap occupancy is an observation, not an automatic veto. Launch decisions
+use applied job limits and actual physical-memory pressure/headroom. Refuse or stop
+work when a participating job is unbounded. Do the same when configured aggregate
+ceilings exceed safe host capacity or the OS reports memory-pressure/OOM symptoms.
+Preserve per-job RSS/wall guards and detached receipts. One job can then be contained
+without serializing unrelated bounded work.
+
+This ADR supersedes only ADR-138's host-wide no-overlap interpretation. ADR-138's
+measured OOM incident, single-worker default inside a runner, cache containment,
+explicit memory limits, and production-trainer distinction remain in force.
