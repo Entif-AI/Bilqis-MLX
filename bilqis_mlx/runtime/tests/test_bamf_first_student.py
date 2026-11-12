@@ -127,6 +127,30 @@ class BamfFirstStudentTests(BamfFirstStudentCase):
                 graph=self.graph, source_root=None)
         self.assertEqual(context.release, self.release)
 
+    def test_accepted_runtime_host_rehydrates_semantic_graph_from_b13_custody(self):
+        target = self.root / "host-owned-semantic-graph"
+        self.preflight(target)
+        from bilqis_mlx.factory.tests.test_executable_release import _answers
+        from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_registry
+        from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+
+        with patch(
+                "bilqis_mlx.source_adapters.school.live_source_registry",
+                return_value=_synthetic_registry()), patch(
+                "bilqis_mlx.factory.live_answers.live_answer_registry",
+                return_value=_answers()), shape_patch():
+            context = AcceptedRuntimeHost(target).source_context(source_root=None)
+            student, _manifest_sha256 = load_bamf_generation_authority(
+                target / "bamf-state.json")
+        self.assertEqual(context.graph, self.graph)
+        self.assertEqual(
+            student.compiler_features["factory_semantic_catalog_sha256"],
+            context.release.semantic_catalog_sha256)
+        from bilqis_mlx.runtime.state import _fingerprint
+        self.assertEqual(
+            student.compiler_features["factory_semantic_graph_sha256"],
+            _fingerprint(context.graph))
+
     def test_preflight_consumes_fixed_host_source_authority_without_target_provisioning(self):
         target = self.root / "host-rooted-run"
         self.preflight(target)

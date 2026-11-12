@@ -19,6 +19,26 @@ class Observation:
     option_rows: tuple
     seed: int
 
+
+class ScheduleProgramStub:
+    def __init__(self, grades):
+        self.grades = grades
+    def digest(self):
+        return 'course'
+
+
+@dataclass(frozen=True)
+class PriorityStudentIdentityStub:
+    sha256: str
+
+
+@dataclass(frozen=True)
+class PrioritySchoolContextStub:
+    course_digest: str
+    active_grades: tuple[str, ...]
+    current_student: PriorityStudentIdentityStub
+    stage: str = 'MAIN'
+
 def module(**attrs):
     result = ModuleType('stub')
     result.__dict__.update(attrs)
@@ -28,10 +48,15 @@ def module(**attrs):
 def priority():
     owners = {
         'bilqis_mlx.factory.teaching': module(describe_delivered_teaching=None),
+        'bilqis_mlx.factory.schedule': module(ScheduleProgram=ScheduleProgramStub),
         'bilqis_mlx.learning.atlas_acceptance': module(candidate_identity_digest=None),
         'bilqis_mlx.learning.atlas_salience': module(salience_priority_features=None),
         'bilqis_mlx.learning.salience_contracts': module(ActionKind=SimpleNamespace(CORRECTION=1, PROCEDURE_REPAIR=2)),
-        'bilqis_mlx.learning.salience_teacher': module(_teacher=None),
+        'bilqis_mlx.learning.salience_teacher': module(
+            _teacher=None,
+            PrioritySchoolContext=PrioritySchoolContextStub,
+            PriorityStudentIdentity=PriorityStudentIdentityStub,
+        ),
         'bilqis_mlx.learning.learning_experiment': module(Settings=type(None)),
         'bilqis_mlx.learning.teacher_lineage': module(restore_teacher_lineage=None),
         'bilqis_mlx.learning.teacher_visit_identity': module(derive_teacher_visit_identity=None, record_teacher_visit_identity=None),
@@ -86,6 +111,18 @@ def test_execution_owns_rows_policy_and_teacher_rate(priority):
     assert kw['teacher_hparams'] == HParams(0.25, (0.8, 0.9), 1e-8, 0.2)
     assert kw['observation'] == Observation(args[5], 7)
     assert kw['capture_diagnostics'] is True
+
+
+def test_accepted_priority_school_derives_all_admitted_grades_and_student(priority):
+    program = ScheduleProgramStub(
+        (SimpleNamespace(id='violet'), SimpleNamespace(id='amber')))
+    parent = SimpleNamespace(retained_state='student')
+    with patch.object(priority, 'candidate_identity_digest', return_value='student-id'):
+        school = priority.accepted_priority_school(parent, program)
+    assert school.course_digest == 'course'
+    assert school.active_grades == ('violet', 'amber')
+    assert school.current_student.sha256 == 'student-id'
+    assert school.stage == 'MAIN'
 
 def test_issuer_and_rate_are_required(priority):
     with pytest.raises(ValueError):

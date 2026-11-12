@@ -12,6 +12,7 @@ from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_salience import salience_priority_features
 from bilqis_mlx.learning.salience_contracts import ActionKind
 from bilqis_mlx.learning.salience_teacher import _teacher
+from bilqis_mlx.learning.salience_teacher import PrioritySchoolContext, PriorityStudentIdentity
 from bilqis_mlx.learning.learning_experiment import Settings
 from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
 from bilqis_mlx.learning.teacher_visit_identity import derive_teacher_visit_identity, record_teacher_visit_identity
@@ -90,6 +91,22 @@ def _require_issued(result):
               result._metadata_json, result.lesson_grade, result.holds, result._run_dir)
     if actual != _ISSUED[result]:
         _invalid('BAMF_PRIORITY_RESULT_DRIFT')
+
+
+def accepted_priority_school(parent, program):
+    """Project B13 + admitted Factory custody into C03's minimal school view."""
+    from bilqis_mlx.factory.schedule import ScheduleProgram
+    if not isinstance(program, ScheduleProgram):
+        _invalid('BAMF_PRIORITY_PROGRAM_INVALID')
+    grades = tuple(grade.id for grade in program.grades)
+    if not grades:
+        _invalid('BAMF_PRIORITY_PROGRAM_INVALID')
+    return PrioritySchoolContext(
+        course_digest=program.digest(),
+        active_grades=grades,
+        current_student=PriorityStudentIdentity(
+            candidate_identity_digest(parent.retained_state)),
+    )
 
 
 def select_accepted_priority_visit(

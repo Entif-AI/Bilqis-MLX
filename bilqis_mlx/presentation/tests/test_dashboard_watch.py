@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from bilqis_mlx.presentation.dashboard import _replay_dashboard_journal, build
+from bilqis_mlx.presentation.dashboard import _dashboard_state, _replay_dashboard_journal, build
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard
 from bilqis_mlx.presentation.dashboard_watch import JournalReplaced, JournalTail, watch
 from bilqis_mlx.presentation.run_discovery import (
@@ -18,6 +18,24 @@ from bilqis_mlx.presentation.run_discovery import (
 
 
 class DashboardWatchTests(unittest.TestCase):
+    def test_bamf_pointer_takes_precedence_over_legacy_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "bamf-state.json").write_text("{}")
+            (root / "state.json").write_text("{}")
+            bamf = {"school": {"active_grades": ["violet"], "grade_index": 0}}
+            with patch(
+                "bilqis_mlx.presentation.dashboard._bamf_accepted_dashboard_state",
+                return_value=bamf,
+            ) as accepted, patch(
+                "bilqis_mlx.presentation.dashboard.read_current",
+            ) as legacy:
+                _path, state, _school, _active, current = _dashboard_state(root)
+        self.assertIs(state, bamf)
+        self.assertEqual(current, "violet")
+        accepted.assert_called_once_with(root)
+        legacy.assert_not_called()
+
     def test_initial_replay_decodes_only_the_dashboard_record_window(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

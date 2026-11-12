@@ -1,5 +1,6 @@
 """Owner-derived sidecars for a fresh BAMF generation-zero foundation."""
 from __future__ import annotations
+from copy import deepcopy
 from dataclasses import dataclass, field
 
 from bilqis_mlx.factory.executable_release import (
@@ -122,6 +123,11 @@ def initial_foundation_sidecars(
         "correction_generation": 0,
         "factory_release_sha256": release.release_sha256,
         "factory_semantic_catalog_sha256": release.semantic_catalog_sha256,
+        "factory_semantic_graph_sha256": admission.semantic_graph_sha256,
+        # B13 keeps the exact admitted semantic graph with the accepted
+        # generation so a persistent BAMF resume never has to rediscover it
+        # through the historical state.json trainer or a host-local bundle.
+        "factory_semantic_catalog": deepcopy(graph),
         "factory_grade_ids": [grade.grade_id for grade in plan.grades],
         "feature_source": {
             "atlas_bundle_id": feature.features.atlas_bundle_id,
