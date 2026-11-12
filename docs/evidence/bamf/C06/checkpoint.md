@@ -252,6 +252,13 @@ passes `quality:changed` and `quality:check`, including governance, Factory
 architecture, docs, error-control with zero new debt, zero new code-smell findings,
 legacy-trainer authority/tests and BAMF flow-control/tests.
 
+Fresh-context turn-in review found the logical-batch closure defect above as one
+Major before PR. After the repair, the permitted targeted re-audit at exact pushed
+head `e9052d2c80660f0080aadaa3019555f001d60dae` passed with zero unresolved
+findings under the pinned EGM Codebase Details and Implementation Readiness
+personas/standard; the reviewer independently ran 27 focused tests, all passing.
+See `docs/evidence/bamf/C06/egm.md` for the review receipt.
+
 No new multi-hour native/system witness was launched. The prior long-run failure at
 `A.PARENT` remains recorded system-level negative evidence for later
 operator-observed qualification. It does not block C06 leaf turn-in under the
