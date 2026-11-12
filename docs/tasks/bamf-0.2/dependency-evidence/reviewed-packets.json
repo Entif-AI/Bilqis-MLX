@@ -274,14 +274,23 @@
       "parent_number": 359,
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
+        "resolution": "resolved",
         "body_sha256": "0c57a08d7d67b0f5d9dfc411a3aac355e4f0d309bb7abdce886714987ed347e8",
         "clause": "## Dependency / handoff\nConsumes B01 parameter/feature authority, actual A05 compiled child handles, and the A05.4 partial-visible-forest contract. Completion unblocks the neural half of B03.3 #444.\n\nNo source admission, ABI allocation, or durable training is authorized by this issue.",
         "known_edges": [
           "B01",
           "A05.4"
         ],
-        "external_receipts": [],
+        "external_receipts": [
+          {
+            "number": 546,
+            "role": "prerequisite",
+            "head_sha": "74be2874bd6a4f4163878ebc547e2cfabde890e4",
+            "merge_sha": "ac498099b56a38f3b669e16d30f8bab580709f49",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/546",
+            "source_id": "B02.4.pr-546"
+          }
+        ],
         "source_records": [
           {
             "source_id": "B02.4.body",
@@ -289,12 +298,26 @@
             "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/576",
             "sha256": "0c57a08d7d67b0f5d9dfc411a3aac355e4f0d309bb7abdce886714987ed347e8",
             "excerpt": "## Dependency / handoff\nConsumes B01 parameter/feature authority, actual A05 compiled child handles, and the A05.4 partial-visible-forest contract. Completion unblocks the neural half of B03.3 #444.\n\nNo source admission, ABI allocation, or durable training is authorized by this issue."
+          },
+          {
+            "source_id": "B02.4.pr-546",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/546",
+            "sha256": "a97c7613815d8d7e6d36c9e404bcb8caee951a9a416eadbccb12eb4b79b8ec55",
+            "excerpt": "ac498099b56a38f3b669e16d30f8bab580709f49"
+          },
+          {
+            "source_id": "B02.4.pr-592",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/592",
+            "sha256": "febd1f27bb1982fa504dcb6dfed445693904d7a30fcb56815f3652037480a388",
+            "excerpt": "c3fab66c5da2d20704a7aeb6cd80def07337bce6"
           }
         ],
         "obligations": [
           "Consume actual A05 compiled handles; preserve child occurrence/content identity without fabricated ABI identity."
         ],
-        "unresolved": "Actual A05 compiled child-handle receipt granularity is not identified; B03.3 is a consumer."
+        "unresolved": null
       }
     },
     {

@@ -62,6 +62,19 @@ def _released_schema_serialization_prerequisites(text, numbers):
     return (('A01',), (551,))
 
 
+def _b02_child_handle_prerequisites(text, numbers):
+    expected = (
+        '## Dependency / handoff\n'
+        'Consumes B01 parameter/feature authority, actual A05 compiled child handles, and the A05.4 partial-visible-forest contract. '
+        'Completion unblocks the neural half of B03.3 #444.\n\n'
+        'No source admission, ABI allocation, or durable training is authorized by this issue.'
+    )
+    keys = ('B01', 'A05.4')
+    if text != expected or any(type(numbers.get(key)) is not int for key in keys):
+        return None
+    return (keys, (546,))
+
+
 def _a08_formal_operator_prerequisites(text, numbers):
     expected = (
         '**Direct prerequisites:** A08.1a, A07.1, A07.2, A13. '
@@ -118,6 +131,9 @@ def _parent_amendment(clause, numbers):
 
 
 def parse_clause(clause, numbers):
+    b02_child = _b02_child_handle_prerequisites(clause, numbers)
+    if b02_child is not None:
+        return b02_child
     a08_formal = _a08_formal_operator_prerequisites(clause, numbers)
     if a08_formal is not None:
         return a08_formal

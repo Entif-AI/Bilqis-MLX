@@ -131,3 +131,23 @@ required receipt `#546`. Removing #546 or changing the clause fails closed. PR #
 remains useful ancestry evidence, but it is not substituted for the issue-scoped
 acceptance/integration receipt. The receipt supplies the named A13.1 granularity; it
 does not replace the broader A13 issue edge with an A13.1 graph edge.
+
+## B02.4 changed condition
+
+B02.4 #576 already declares issue edges `B01,A05.4` and separately requires
+**actual A05 compiled child handles**. The missing handle receipt is now identified
+without adding an A05 parent edge.
+
+PR #546 is the causal compiler integration: its head contains A05.1
+`CompiledPosition.frame_handle`, A05.2 `ExpansionHandle` / `PrefixMaps` occurrence
+and content bindings, and the final A05 source-authority repair `de5bb9c...`; merge
+`ac498099b56a38f3b669e16d30f8bab580709f49` lands those interfaces. A05.4 is a
+separate validator over an already accepted `CompiledFrameBatch`. Its reviewed
+cross-lane integration PR #592 (merge `c3fab66c5da2d20704a7aeb6cd80def07337bce6`)
+is retained as corroboration for the existing A05.4 graph edge, but it inherited
+the compiled handles from #546 and is not the missing handle receipt.
+
+The exact #576 handoff clause therefore resolves to issue edges `B01,A05.4` plus
+required receipt `#546`. Removing #546 or changing the exact clause fails closed;
+removing the #592 corroborative source does not change the dependency meaning.
+B03.3 remains a downstream consumer, not a prerequisite.
