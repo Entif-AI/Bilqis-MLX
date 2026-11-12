@@ -96,7 +96,8 @@ class BamfProjectionEvent:
                     self.release_digest, self.model_digest,
                     self.evaluator_digest, self.rights_digest))
                 or not _time(self.as_of)
-                or self.as_of < self.event.recorded_at
+                or (self.event.recorded_at is not None
+                    and self.as_of < self.event.recorded_at)
                 or self.schema_version != BAMF_PROJECTION_EVENT_SCHEMA):
             _invalid("BAMF_C10_PROJECTION_EVENT_INVALID")
         self.event.validate()

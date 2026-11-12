@@ -2,9 +2,35 @@
 from dataclasses import dataclass
 
 from .contracts import (AKASHA_EVENT_SCHEMA, AKASHA_PROJECTION_SCHEMA, AkashaEventKind,
-    _canonical, _digest, _invalid, _name, _payload_for, _sha, _time)
+    _canonical, _digest, _event_times, _invalid, _name, _payload_for, _sha,
+    _unknown_time_allowed)
 
-@dataclass(frozen=True)
+def _owner_payload_gate():
+    issuer = object()
+    claimed = False
+
+    def authorized(value) -> bool:
+        return value is issuer
+
+    def claim():
+        nonlocal claimed
+        if claimed:
+            _invalid("BAMF_C10_OWNER_PROJECTION_ISSUER_ALREADY_CLAIMED")
+        claimed = True
+
+        def issue(**kwargs):
+            return AkashaEvent.from_payload(
+                **kwargs, _owner_issuance=issuer)
+
+        return issue
+
+    return authorized, claim
+
+
+_authorized_owner_issuance, _claim_owner_payload_issuer = _owner_payload_gate()
+del _owner_payload_gate
+
+@dataclass(frozen=True, init=False)
 class AkashaEvent:
     event_id: str
     payload_digest: str
@@ -12,21 +38,28 @@ class AkashaEvent:
     subject_id: str
     source_receipt_sha256: str
     payload_json: str
-    source_time: int
-    effective_time: int
-    observed_at: int
-    recorded_at: int
+    source_time: int | None
+    effective_time: int | None
+    observed_at: int | None
+    recorded_at: int | None
     schema_version: str = AKASHA_EVENT_SCHEMA
+
+    def __init__(self, *args, **kwargs):
+        _invalid("BAMF_C10_EVENT_CONSTRUCTION_FORBIDDEN")
 
     @classmethod
     def from_payload(
         cls, *, kind: AkashaEventKind, subject_id: str,
         source_receipt_sha256: str, payload: dict,
-        source_time: int, effective_time: int,
-        observed_at: int, recorded_at: int,
+        source_time: int | None, effective_time: int | None,
+        observed_at: int | None, recorded_at: int | None,
+        _owner_issuance=None,
     ) -> "AkashaEvent":
         if not isinstance(kind, AkashaEventKind):
             _invalid("BAMF_C10_EVENT_KIND_INVALID")
+        if (_unknown_time_allowed(kind, payload)
+                and not _authorized_owner_issuance(_owner_issuance)):
+            _invalid("BAMF_C10_OWNER_PROJECTION_AUTHORITY_REQUIRED")
         payload_json = _canonical(payload)
         payload_digest = _digest(payload_json.encode("utf-8"))
         fields = {
@@ -40,29 +73,29 @@ class AkashaEvent:
             "observed_at": observed_at,
             "recorded_at": recorded_at,
         }
-        return cls(
+        return _construct_event(
             event_id=_digest(_canonical(fields).encode("utf-8")),
-            payload_digest=payload_digest,
-            kind=kind, subject_id=subject_id,
+            payload_digest=payload_digest, kind=kind, subject_id=subject_id,
             source_receipt_sha256=source_receipt_sha256,
             payload_json=payload_json, source_time=source_time,
             effective_time=effective_time, observed_at=observed_at,
-            recorded_at=recorded_at)
+            recorded_at=recorded_at, schema_version=AKASHA_EVENT_SCHEMA)
 
     def validate(self) -> None:
+        payload = _payload_for(self.kind, self.payload_json)
         if (not isinstance(self.kind, AkashaEventKind)
                 or not _sha(self.event_id)
                 or not _sha(self.payload_digest)
                 or not _name(self.subject_id)
                 or not _sha(self.source_receipt_sha256)
                 or not isinstance(self.payload_json, str)
-                or not all(_time(value) for value in (
+                or not _event_times(self.kind, payload, (
                     self.source_time, self.effective_time,
                     self.observed_at, self.recorded_at))
-                or self.observed_at > self.recorded_at
+                or (self.observed_at is not None
+                    and self.observed_at > self.recorded_at)
                 or self.schema_version != AKASHA_EVENT_SCHEMA):
             _invalid("BAMF_C10_EVENT_IDENTITY_INVALID")
-        _payload_for(self.kind, self.payload_json)
         expected_payload_digest = _digest(self.payload_json.encode("utf-8"))
         identity = {
             "schema_version": self.schema_version,
@@ -82,6 +115,22 @@ class AkashaEvent:
 
     def __post_init__(self) -> None:
         self.validate()
+
+
+def _construct_event(**fields) -> AkashaEvent:
+    event = object.__new__(AkashaEvent)
+    for name in (
+            "event_id", "payload_digest", "kind", "subject_id",
+            "source_receipt_sha256", "payload_json", "source_time",
+            "effective_time", "observed_at", "recorded_at", "schema_version"):
+        object.__setattr__(event, name, fields[name])
+    event.validate()
+    return event
+
+
+def _restore_event(**fields) -> AkashaEvent:
+    """Rehydrate an immutable event only from the validated durable envelope."""
+    return _construct_event(**fields)
 
 
 @dataclass(frozen=True)
