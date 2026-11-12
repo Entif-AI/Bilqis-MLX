@@ -1,7 +1,7 @@
 {
   "schema": "bilqis.bamf.registry-expansion-review/v1",
-  "status": "implementation-readiness-reviewed-not-executable",
-  "unified_sha": "70e37ae27214061dcc1712503eae6741a2e3781e",
+  "status": "implementation-readiness-reviewed-executable",
+  "unified_sha": "bd5ed28610351d37907671c6002d2fc8d20d5124",
   "packets": [
     {
       "key": "A08.1b.1",
@@ -181,16 +181,26 @@
       "parent_number": 418,
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
+        "resolution": "resolved",
         "body_sha256": "8963cf232425ad37df199ddc4f537fbf05384803b2d1cd65824bc8939944526a",
         "clause": "**Direct prerequisites:** A08.1b.1 through A08.1b.4. OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists.",
         "known_edges": [
+          "A08.1a",
           "A08.1b.1",
           "A08.1b.2",
           "A08.1b.3",
           "A08.1b.4"
         ],
-        "external_receipts": [],
+        "external_receipts": [
+          {
+            "number": 657,
+            "role": "prerequisite",
+            "head_sha": "a6bb632750e26dd6a3e73395e0d1904e1142bf74",
+            "merge_sha": "351a7f69ede047b9678c095864e4ba324acc4a0e",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/657",
+            "source_id": "A08.1b.5.pr-657"
+          }
+        ],
         "source_records": [
           {
             "source_id": "A08.1b.5.body",
@@ -205,12 +215,26 @@
             "locator": "docs/tasks/bamf-0.2/children/A08.1b.5.md",
             "sha256": "2130ffbfc39858e55ffb19e2965d234fdfc28c3cb1876c9488ba141129ca79fa",
             "excerpt": "# BAMF-0.2 A08.1b.5 | Integrate constructive families into the Factory registry\n\nParent: A08.1b #418. Lane: `codex/bamf02-a-semantics`.\nIssue number: #557. Source spec: A08.1b and\n`BAMF-0.2-SPEC-001`, preserved without reducing acceptance.\n\n## Exact owned result\n\nBind the independently verified A08.1b.1-.4 family programs\nto existing `ConstructionProgram`, `CapabilityDefinition`,\nsource-adapter/checker registry and curriculum definition\nsurfaces. A rule registry must switch Boolean, integer and a\nsource-qualified world-model fixture without grade-ID\nbranches; the same family in another grade must retain\nequivalent construction/checker behavior. Every eligible\nsource/family obligation is either backed by a registered\nconstructive generator and independent checker or remains\nvisible `IMPLEMENTATION_UNCOVERED`; never shrink the frozen\nA08.1a denominator to fit installed adapters.\n\nKeep source-held and IR-only separate from implementation debt.\nAll source-lesson and synthetic checker evidence remains\n`LEARNING_UNVERIFIED` until independent C05/C13/C14\nretained-transfer evidence exists. No zero-debt or\n`COMPLETE_ATLAS_COVERAGE` claim without a complete\nsource-to-constructor ledger and fresh checker proof.\n\n**A08.1a source-authority consumption clarification (2026-10-29):**\nAn A08 inventory, candidate or lesson set is a non-authoritative\nproposal even when produced from a pinned source. Before installing\nany program or accepting a source-fact check, the Factory registry\nmust take the separately governed A01 `AtlasArtifactSelection`\nand rederive/compare the exact proposal with\n`assert_family_inventory_current`,\n`assert_curriculum_candidate_current` or\n`assert_source_lesson_set_current` at the consuming boundary.\nNo caller-mintable schema, status or digest substitutes for this\nsource replay. Current A13 tenant/purpose/epoch/visibility/revocation\nrights must then be checked independently. A source-valid proposal\nwithout those rights remains non-executable and\n`LEARNING_UNVERIFIED`.\n\n**Source-owner prerequisites surfaced by independent review:**\nThe current A01 artifact has source-row keys/loci and a global\n`source_rows_sha256`, but not raw source-row payload or per-edge\nrelation source-row provenance. A03's released adapters cover\nformal A/B/C, not SKOS/Ithkuil source rows. Do not invent\n`SourceSpan`, `FrameInstance`, `ContextEligibility` or\n`SourceGrant` inside A08. Decompose the missing work into:\n(1) source-owner resolution of exact pinned row bytes;\n(2) a released SKOS/Ithkuil row-to-A03 frame adapter with truthful\noccurrence/span/source reference;\n(3) per-edge relation evidence binding where applicable;\n(4) source-owner A13 grant issuance for frame/member evidence;\n(5) a lesson-to-fresh-`ApprovedContextProjection` crosswalk\ncovering **both positive and contrast** source facts.\n\nThe final gate must call A13 `project_context` under the current\nTaskScope, SourceFrontier and ContextPolicy, distinguishing\nimplementation-uncovered from source-held/revoked. A cheap\nmandatory regression: authorize both positive and contrast\nevidence, then revoke **only** the contrast grant. The same\nlesson must become ineligible without losing the frozen A08\ndenominator or granting learner credit.\n\n## Finish gate\n\nExecutable cross-family, cross-grade, missing-constructor,\nwrong-checker, held-source and no-false-learning-credit tests.\nConsume A08.1b.1-.4 EGM PASS receipts and A08.1a frozen census.\nIndependent EGM PASS, immutable issue/PR receipt and parent\n#418 integration crosswalk. No live training or self-merge.\n"
+          },
+          {
+            "source_id": "A08.1b.5.comment-6838107336",
+            "kind": "comment",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/557#issuecomment-6838107336",
+            "sha256": "20d67eb8750d1554e872086c3c4689e7b3103f4e5e79e642241e21f51fdffb3d",
+            "excerpt": "### C01 dependency-authority clarification | 2026-11-12\n\nThis is an append-only source-owner clarification for dependency normalization. It does not change A08.1b.5's functional acceptance or reopen its completed implementation.\n\n**Exact inbound BAMF graph prerequisites for A08.1b.5:**\n- A08.1a #417\n- A08.1b.1 #553\n- A08.1b.2 #554\n- A08.1b.3 #555\n- A08.1b.4 #556\n\nThe five `Source-owner prerequisites surfaced by independent review` in the checked-in A08.1b.5 specification are **acceptance/receipt obligations**, not additional graph edges. For C01 normalization they are bound to the accepted A08.1b.5 integration receipt rather than expanded into inferred A01/A03/A13 edges:\n1. exact pinned row bytes;\n2. released SKOS/Ithkuil row-to-A03 frame adapter;\n3. per-edge relation evidence where applicable;\n4. source-owner A13 frame/member grant issuance;\n5. lesson-to-fresh-`ApprovedContextProjection` crosswalk for positive and contrast facts.\n\nA01, A03 and A13 remain authority surfaces consumed through A08.1a and the accepted A08.1b.1-.4/source-integration receipts. They are not separate direct A08.1b.5 graph edges under this clarification.\n\n**Receipt classification:** merged PR #657 is the implementation/acceptance receipt for the final constructive-family/source-authority integration. It is required provenance for C01 normalization but is not a dependency-graph node.\n\nC01 may therefore normalize A08.1b.5 as `deps=[A08.1a,A08.1b.1,A08.1b.2,A08.1b.3,A08.1b.4]` only when this exact amendment snapshot and the exact merged #657 receipt are pinned. This clarification authorizes no other inbound edges.\n"
+          },
+          {
+            "source_id": "A08.1b.5.pr-657",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/657",
+            "sha256": "c43309ecd54f1516b86a89f06c355f31bde98c4171632dd6660324794ddf535e",
+            "excerpt": "351a7f69ede047b9678c095864e4ba324acc4a0e"
           }
         ],
         "obligations": [
-          "Consume A08.1a frozen census and four family EGM receipts; source owners issue SourceSpan/FrameInstance/ContextEligibility/SourceGrant; final projection uses A13 project_context."
+          "Direct edges are A08.1a plus A08.1b.1-.4. The five source-owner clauses remain receipt-only acceptance obligations bound to PR657; A01/A03/A13 are authority surfaces consumed through the census/sibling/source-integration receipts, not extra direct edges."
         ],
-        "unresolved": "Preserve A08.1a census and additional unnamed source-owner obligations; range alone does not settle them."
+        "unresolved": null
       }
     },
     {
@@ -493,14 +517,17 @@
       "parent_number": 357,
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
+        "resolution": "resolved",
         "body_sha256": "f87ab6da0149eb545df31a32f4ea4b9520b9e3b6091ed5e87e6a131a3dd96588",
         "clause": "Child of A05 #357; prerequisite for canonical B11.1a producer #586 and downstream B05.4 #577. A05 `SourceAtom` currently carries only index/token/source reference; B03 `CompiledEmbeddingVectors` accepts caller-supplied raw atom vectors, so a real B11 h0 producer cannot prove that those vectors came from admitted A01/B02 semantic identities.",
-        "known_edges": [],
+        "known_edges": [
+          "A01",
+          "A13"
+        ],
         "external_receipts": [
           {
             "number": 618,
-            "role": "implementation",
+            "role": "prerequisite",
             "head_sha": "eac29b8be9e4e92470422570ce4fc0a96837f05e",
             "merge_sha": "a02b9ed45ead1801be6dff655866b73be0ffc8ff",
             "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/618",
@@ -535,12 +562,19 @@
             "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/618",
             "sha256": "6cf936f2c092e318c41ce71748da3c2bfcbddf4be0863afa78e0a49341aa2991",
             "excerpt": "a02b9ed45ead1801be6dff655866b73be0ffc8ff"
+          },
+          {
+            "source_id": "A05.5.comment-6838106985",
+            "kind": "comment",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/594#issuecomment-6838106985",
+            "sha256": "85e237de0d9755337655d7224a9a20064c57ef2c21ddccf293d45e7bcb5774f3",
+            "excerpt": "### C01 dependency-authority clarification | 2026-11-12\n\nThis is an append-only source-owner clarification for dependency normalization. It does not change A05.5's functional acceptance or reopen its completed implementation.\n\n**Exact inbound BAMF graph prerequisites for A05.5:**\n- A01 #345\n- A13 #354\n\n**Not direct A05.5 graph edges:**\n- A03 #349 and A04 #351 are inherited A05 parent/compiler authority through A05 #357; do not duplicate them as A05.5 child edges.\n- B02 #359 and B03 #363 are downstream numerical consumer/proof surfaces for the source-bound vectors, not inbound prerequisites.\n- B11.1a #586 and B05.4 #577 are downstream consumers of A05.5.\n- A05 #357 is the ownership/inheritance parent, not a child dependency edge.\n\n**Receipt classification:** merged PR #618 is the implementation/acceptance receipt for this source-owner seam. It is required provenance for C01 normalization but is not a dependency-graph node.\n\nC01 may therefore normalize A05.5 as `deps=[A01,A13]` only when this exact amendment snapshot and the exact merged #618 receipt are pinned. This clarification authorizes no additional inbound edges.\n"
           }
         ],
         "obligations": [
-          "Accepted implementation PR618 does not supply a direct prerequisite list. Preserve A01 identity,A13 rights/prefix/corrections,B01-derived B02/B03 embedding requirements; B11.1a and B05.4 are consumers."
+          "Direct edges are A01/A13 only; A03/A04 remain inherited A05 authority. B02/B03/B11.1a/B05.4 are consumers or proof surfaces, not inbound graph edges. PR618 is a required acceptance receipt, not a graph node."
         ],
-        "unresolved": "No direct prerequisite list is established. Empty known edges is not a settled claim of no prerequisites."
+        "unresolved": null
       }
     },
     {

@@ -62,6 +62,38 @@ def _released_schema_serialization_prerequisites(text, numbers):
     return (('A01',), (551,))
 
 
+def _a05_source_binding_prerequisites(text, numbers, source_hashes):
+    expected = (
+        'Child of A05 #357; prerequisite for canonical B11.1a producer #586 and downstream B05.4 #577. '
+        'A05 `SourceAtom` currently carries only index/token/source reference; B03 `CompiledEmbeddingVectors` '
+        'accepts caller-supplied raw atom vectors, so a real B11 h0 producer cannot prove that those vectors '
+        'came from admitted A01/B02 semantic identities.'
+    )
+    keys = ('A01', 'A13')
+    if (text != expected
+            or numbers.get('A01') != 345
+            or numbers.get('A13') != 354
+            or source_hashes.get('A05.5.comment-6838106985') != '85e237de0d9755337655d7224a9a20064c57ef2c21ddccf293d45e7bcb5774f3'
+            or source_hashes.get('A05.5.pr-618') != '6cf936f2c092e318c41ce71748da3c2bfcbddf4be0863afa78e0a49341aa2991'):
+        return None
+    return keys, (618,)
+
+
+def _a08_family_integration_prerequisites(text, numbers, source_hashes):
+    expected = (
+        '**Direct prerequisites:** A08.1b.1 through A08.1b.4. '
+        'OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists.'
+    )
+    keys = ('A08.1a', 'A08.1b.1', 'A08.1b.2', 'A08.1b.3', 'A08.1b.4')
+    expected_numbers = (417, 553, 554, 555, 556)
+    if (text != expected
+            or tuple(numbers.get(key) for key in keys) != expected_numbers
+            or source_hashes.get('A08.1b.5.comment-6838107336') != '20d67eb8750d1554e872086c3c4689e7b3103f4e5e79e642241e21f51fdffb3d'
+            or source_hashes.get('A08.1b.5.pr-657') != 'c43309ecd54f1516b86a89f06c355f31bde98c4171632dd6660324794ddf535e'):
+        return None
+    return keys, (657,)
+
+
 def _b11_cycle_prerequisites(text, numbers, source_hashes):
     expected = (
         '## Dependency-cycle rule\n'
@@ -148,7 +180,14 @@ def _parent_amendment(clause, numbers):
 
 
 def parse_clause(clause, numbers, source_hashes=None):
-    b11_cycle = _b11_cycle_prerequisites(clause, numbers, source_hashes or {})
+    source_hashes = source_hashes or {}
+    a05_source_binding = _a05_source_binding_prerequisites(clause, numbers, source_hashes)
+    if a05_source_binding is not None:
+        return a05_source_binding
+    a08_family_integration = _a08_family_integration_prerequisites(clause, numbers, source_hashes)
+    if a08_family_integration is not None:
+        return a08_family_integration
+    b11_cycle = _b11_cycle_prerequisites(clause, numbers, source_hashes)
     if b11_cycle is not None:
         return b11_cycle
     b02_child = _b02_child_handle_prerequisites(clause, numbers)

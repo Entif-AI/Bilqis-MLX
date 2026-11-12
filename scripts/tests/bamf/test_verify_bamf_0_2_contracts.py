@@ -30,7 +30,7 @@ class IssueContractRegistryTests(unittest.TestCase):
     def body(self, key):
         return (contracts.TASKS / 'children' / (key + '.md')).read_text()
 
-    def test_actual_cli_accepts_registered_contracts_and_retains_all_holds(self):
+    def test_actual_cli_accepts_registered_contracts_and_resolves_dependency_holds(self):
         result = subprocess.run(
             [sys.executable, '-B', str(contracts.ROOT / 'scripts/verify_bamf_0_2_contracts.py')],
             cwd=contracts.ROOT, capture_output=True, text=True, check=False)
@@ -57,11 +57,10 @@ class IssueContractRegistryTests(unittest.TestCase):
             mirrors,
             evidence_sources=self.sources,
         )
-        hold_count = len(report['dependency_resolution']['held_keys'])
-        self.assertIn(
-            f'{hold_count} dependency normalization holds retained; no executable order',
-            result.stdout,
-        )
+        self.assertEqual(report['dependency_resolution']['held_keys'], [])
+        self.assertTrue(report['order'])
+        self.assertIn('dependency normalization resolved; executable order contains',
+                      result.stdout)
 
     def test_actual_late_packets_have_source_provenance_without_generated_markers(self):
         for key in ('A08.1b.1', 'A08.1b.2', 'A08.1b.3', 'A08.1b.4',

@@ -1,0 +1,17 @@
+### C01 dependency-authority clarification | 2026-11-12
+
+This is an append-only source-owner clarification for dependency normalization. It does not change A05.5's functional acceptance or reopen its completed implementation.
+
+**Exact inbound BAMF graph prerequisites for A05.5:**
+- A01 #345
+- A13 #354
+
+**Not direct A05.5 graph edges:**
+- A03 #349 and A04 #351 are inherited A05 parent/compiler authority through A05 #357; do not duplicate them as A05.5 child edges.
+- B02 #359 and B03 #363 are downstream numerical consumer/proof surfaces for the source-bound vectors, not inbound prerequisites.
+- B11.1a #586 and B05.4 #577 are downstream consumers of A05.5.
+- A05 #357 is the ownership/inheritance parent, not a child dependency edge.
+
+**Receipt classification:** merged PR #618 is the implementation/acceptance receipt for this source-owner seam. It is required provenance for C01 normalization but is not a dependency-graph node.
+
+C01 may therefore normalize A05.5 as `deps=[A01,A13]` only when this exact amendment snapshot and the exact merged #618 receipt are pinned. This clarification authorizes no additional inbound edges.
