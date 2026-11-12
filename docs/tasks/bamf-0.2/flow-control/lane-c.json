@@ -317,10 +317,10 @@
     },
     {
       "issue": 511,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "505dfdd1ea2cfe57d6e4418f7b6faed7428b71b6",
-      "summary": "C07.2/#511 resumed from current reviewed unified after #509/#510 integration. Owner-directed work 2026-11-12; isolated branch codex/511-c07-out-of-scope-debt-v2-20261112. Scope is out-of-lease release staging/renewal continuity, current debt/numeric-policy evidence, and bounded three-successor replay acceptance; no live learner mutation or self-merge authority.",
+      "pr": 1006,
+      "state": "TURNED_IN",
+      "head_sha": "66f176198af5ebc03fbbdc0269c36f557d65da71",
+      "summary": "C07.2/#511 turned in after consuming reviewed unified 16fe1bc9 and merged C07 prerequisites. Out-of-lease semantic releases remain staged while already-authorized learning may continue; current debt, numeric scope and Factory policy identity come from the exact current manifest/release boundary; the existing custody-backed C07 witness proves one persisted lease across three data-defined successors with cold resume from the second. Fresh independent exact-head review at semantic head 66f17619 found 0 Blockers / 0 Majors / 0 Minors. Post-sync bounded affected checks remain green; no live learner mutation, over-budget test, or self-merge authority was used.",
       "resume_trigger": null,
       "preserved_branch": "codex/511-c07-out-of-scope-debt-v2-20261112"
     }
