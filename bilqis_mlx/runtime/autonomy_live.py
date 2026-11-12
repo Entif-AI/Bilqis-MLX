@@ -17,7 +17,6 @@ from ..factory.autonomy import (
     record_evidence,
     record_rejected_teaching_attempt,
     record_teaching_intervention,
-    reconcile_successor_evidence,
 )
 from ..factory.model import FactoryRelease
 from ..source_adapters.school import live_source_registry
@@ -30,6 +29,7 @@ from ._autonomy_live.planning import (
     build_live_autonomy_plan,
     measure_live_evidence,
     reconcile_live_autonomy_state,
+    reconcile_successor_evidence_or_reset,
     reroute_failed_teaching,
     scheduled_teaching_matches,
 )
@@ -65,7 +65,7 @@ class LiveAutonomySession:
             return
         plan = build_live_autonomy_plan(release, self.source_root)
         try:
-            ledger = reconcile_successor_evidence(
+            ledger = reconcile_successor_evidence_or_reset(
                 self.release, release, self.ledger,
                 previous_plan=self.plan, current_plan=plan)
             persist_autonomy_state(

@@ -40,6 +40,25 @@ REGISTRY_SNAPSHOT = (
 )
 
 
+def reconcile_successor_evidence_or_reset(
+        previous_release, release, ledger, *, previous_plan, current_plan):
+    """Carry only evidence whose projection identity is actually available."""
+    previous_projection = {
+        item.capability_id
+        for item in previous_release.execution_plan.capability_projection_digests}
+    current_projection = {
+        item.capability_id
+        for item in release.execution_plan.capability_projection_digests}
+    shared = (
+        set(previous_release.curriculum.capability_map)
+        & set(release.curriculum.capability_map))
+    if not shared <= (previous_projection & current_projection):
+        return initial_evidence_ledger(release, plan=current_plan)
+    return reconcile_successor_evidence(
+        previous_release, release, ledger,
+        previous_plan=previous_plan, current_plan=current_plan)
+
+
 def build_live_autonomy_plan(
     release: FactoryRelease, source_root: Path,
 ) -> AutonomyPlan:
@@ -98,7 +117,7 @@ def reconcile_live_autonomy_state(
                         })
                     old_plan, old_ledger = read_autonomy_state(
                         root, previous_release)
-                    ledger = reconcile_successor_evidence(
+                    ledger = reconcile_successor_evidence_or_reset(
                         previous_release, release, old_ledger,
                         previous_plan=old_plan, current_plan=plan)
                     persist_autonomy_state(
