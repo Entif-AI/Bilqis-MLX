@@ -208,6 +208,37 @@ class EventCandidateAtlasIntegrationTests(EventCandidateRealizationFixture, unit
         self.assertEqual(tuple(observed), tuple(event_frames.SOURCE_SPECS))
         self._assert_final_frontier(candidate, state)
 
+    def test_cold_rebuild_skips_realized_semantic_already_in_accepted_release(self):
+        candidate, source_frontier, policy = self.atlas_fixture()
+        state = (self.current, self.parent_graph, {"A.IDENTITY"}, None, None)
+        current, graph, mastered, _prior, _admitted_snapshot = self._stage_capability(
+            candidate, source_frontier, policy, state, "D.EVENT_OCCURRENCE")
+
+        semantic_id = event_frames.atlas_semantic_id("D.COMMENCEMENT")
+        staged = candidate_realizations.prepare_realized_candidate(
+            self.frontier, current, graph, semantic_id,
+            source_root=LEGACY, source_registry=self.source_registry,
+            answer_registry=self.answer_registry)
+        snapshot = self.build_snapshot(
+            candidate, source_frontier, policy, current, staged)
+        snapshot = bind_realized_snapshot(
+            snapshot, candidate, self.frontier, current, (staged,))
+        plan, checkpoint, step, ledger, learner = self.learner_evidence(
+            current, mastered, "D.COMMENCEMENT")
+        closure = resolve_frontier_closure(
+            snapshot, candidate.census, current_release=current,
+            evidence_ledger=ledger, autonomy_plan=plan,
+            checkpoint_sha256=checkpoint, optimizer_step=step)
+
+        handoff = next_atlas_delta(
+            AtlasCoverageEpoch(
+                snapshot, closure, self.frontier, current, (staged,), None),
+            learner, plan)
+
+        self.assertIsInstance(handoff, AtlasDeltaScopeHandoff)
+        handoff.verify()
+        self.assertEqual(handoff.receipt.selected_semantic_id, semantic_id)
+
 
 if __name__ == "__main__":
     unittest.main()
