@@ -25,12 +25,14 @@ class NativeAtlasDebt:
     carried_mastery_debt: tuple[str, ...]
     mature_capability_debt: tuple[tuple[str, int], ...]
     mature_grade_debt: tuple[tuple[str, int], ...]
+    numeric_maximum: int | None
+    numeric_scope_final_maximum: int | None
     current_provider_parameters: tuple
     # Native legacy debt lacks per-item historical scope/policy receipts. Current
     # provider parameters describe current scope, never the origin of old debt.
     historical_scope_policy_status: str = field(default='NOT_MEASURED', init=False)
     authorizes_learning: bool = field(default=False, init=False)
-    schema_version: str = field(default='bilqis.c07.native-debt-view/v1', init=False)
+    schema_version: str = field(default='bilqis.c07.native-debt-view/v2', init=False)
 
 
 def read_native_atlas_debt(run_dir: Path, manifest: dict, graph: dict, *,
@@ -60,6 +62,17 @@ def read_native_atlas_debt(run_dir: Path, manifest: dict, graph: dict, *,
     for name in required:
         if _fingerprint(getattr(school, name)) != _fingerprint(raw_school[name]):
             _invalid('BAMF_ATLAS_NATIVE_DEBT_MIGRATION_REQUIRED')
+    numeric_maximum = manifest.get('numeric_maximum')
+    numeric_final = manifest.get('numeric_scope_final_maximum')
+    if (numeric_maximum is not None and
+            (type(numeric_maximum) is not int or numeric_maximum < 0)):
+        _invalid('BAMF_ATLAS_NUMERIC_SCOPE_INVALID')
+    if (numeric_final is not None and
+            (type(numeric_final) is not int or numeric_final < 0)):
+        _invalid('BAMF_ATLAS_NUMERIC_SCOPE_INVALID')
+    if (numeric_maximum is not None and numeric_final is not None
+            and numeric_maximum > numeric_final):
+        _invalid('BAMF_ATLAS_NUMERIC_SCOPE_INVALID')
     active = set(school.active_grades)
     capabilities = tuple(c for c in release.execution_plan.capabilities if c.grade_id in active)
     return NativeAtlasDebt(expected_manifest_sha256, manifest['run_id'], manifest['generation'],
@@ -68,4 +81,5 @@ def read_native_atlas_debt(run_dir: Path, manifest: dict, graph: dict, *,
         school.active_grades, tuple((c.capability_id, c.grade_id) for c in capabilities),
         school.introduction_frontiers, school.carried_mastery_debt,
         school.mature_capability_debt, school.mature_grade_debt,
+        numeric_maximum, numeric_final,
         tuple((c.capability_id, c.provider_parameters) for c in capabilities))

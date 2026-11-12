@@ -303,6 +303,15 @@
       "summary": "C06 parent integration: reconcile accepted C06.1-.4 with actual A09/B11/B13/A05 interfaces and inherited parent acceptance. Owner-directed work 2026-11-11; isolated codex/379-c06-salience-integration-20261111.",
       "resume_trigger": null,
       "preserved_branch": "codex/379-c06-salience-integration-20261111"
+    },
+    {
+      "issue": 511,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "505dfdd1ea2cfe57d6e4418f7b6faed7428b71b6",
+      "summary": "C07.2/#511 resumed from current reviewed unified after #509/#510 integration. Owner-directed work 2026-11-12; isolated branch codex/511-c07-out-of-scope-debt-v2-20261112. Scope is out-of-lease release staging/renewal continuity, current debt/numeric-policy evidence, and bounded three-successor replay acceptance; no live learner mutation or self-merge authority.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/511-c07-out-of-scope-debt-v2-20261112"
     }
   ]
 }

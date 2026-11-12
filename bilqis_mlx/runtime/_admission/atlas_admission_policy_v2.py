@@ -239,6 +239,12 @@ def _v2_policy_hold(current, handoff, lease, facts):
     if lease.run_identity != legacy.run_identity:
         _invalid('BAMF_ATLAS_V2_LEASE_RUN_IDENTITY_DRIFT')
     _require_current_v2_lease(current, lease)
+    semantic_release = handoff.receipt.selection_snapshot.semantic_release
+    if lease.source_approval.atlas_release_sha256 != semantic_release:
+        return _staged(
+            current, handoff, lease, 'OUT_OF_LEASE_SCOPE',
+            'Keep the exact successor staged; request a renewed v2 lease for the '
+            'new semantic release while current authorized learning continues.')
     _require_exact_atlas_release(current, handoff, lease)
     lease.source_approval.verify_signature(legacy.registry)
     approval = legacy.source_approval

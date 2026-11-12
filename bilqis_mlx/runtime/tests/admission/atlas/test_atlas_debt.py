@@ -30,7 +30,7 @@ class AtlasDebtTests(unittest.TestCase):
         self.receipt = dict(run_id='disposable', generation=2,
             factory_release_sha256=self.release.release_sha256, factory_release_file=path,
             factory_admission_v2=asdict(admission), semantic_graph_sha256=_fingerprint(self.graph),
-            school=asdict(school))
+            numeric_maximum=7, numeric_scope_final_maximum=11, school=asdict(school))
 
     def read(self, receipt=None, digest=None):
         receipt = self.receipt if receipt is None else receipt
@@ -48,6 +48,8 @@ class AtlasDebtTests(unittest.TestCase):
         self.assertEqual(result.profile_sha256, _fingerprint(asdict(self.release.profile)))
         self.assertEqual(result.current_provider_parameters,
             tuple((c.capability_id, c.provider_parameters) for c in self.release.execution_plan.capabilities))
+        self.assertEqual(result.numeric_maximum, 7)
+        self.assertEqual(result.numeric_scope_final_maximum, 11)
         self.assertEqual(result.historical_scope_policy_status, 'NOT_MEASURED')
         self.assertEqual(result, self.read())
         self.assertEqual(self.receipt, before)
@@ -58,6 +60,14 @@ class AtlasDebtTests(unittest.TestCase):
             receipt = deepcopy(self.receipt)
             del receipt['school'][name]
             with self.subTest(name=name), self.assertRaises(BilqisError):
+                self.read(receipt)
+
+    def test_manifest_numeric_scope_must_be_ordered_nonnegative_data(self):
+        for current, final in ((-1, 3), (3, -1), (8, 7)):
+            receipt = deepcopy(self.receipt)
+            receipt["numeric_maximum"] = current
+            receipt["numeric_scope_final_maximum"] = final
+            with self.subTest(current=current, final=final), self.assertRaises(BilqisError):
                 self.read(receipt)
 
     def test_changed_generation_unknown_debt_and_student_drift_reject(self):
