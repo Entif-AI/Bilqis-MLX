@@ -183,6 +183,7 @@ class AdmissionFlywheelTests(AtlasDeltaAdapterFixture):
             result = run_admission_flywheel(
                 lambda: next(states),
                 lambda item: self.adopted_result(item),
+                max_advances=1,
             )
         self.assertEqual(result.status, AdmissionFlywheelStatus.FIXED_POINT)
         self.assertEqual(result.reason, "FIXED_POINT")

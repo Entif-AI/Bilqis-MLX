@@ -177,6 +177,10 @@ def run_admission_flywheel(
             advances += 1
         elif isinstance(planned, AtlasDeltaScopeHandoff):
             planned.verify()
+            if advances >= max_advances:
+                return AdmissionFlywheelResult(
+                    AdmissionFlywheelStatus.HELD,
+                    "ADVANCE_BUDGET_EXHAUSTED", advances, state)
             result = admission_executor(planned)
             if not isinstance(result, AdmissionResult):
                 _invalid("BAMF_ATLAS_FLYWHEEL_ADMISSION_RESULT_INVALID")
@@ -210,11 +214,6 @@ def run_admission_flywheel(
             advances += 1
         else:
             _invalid("BAMF_ATLAS_FLYWHEEL_PLANNER_RESULT_INVALID")
-
-        if advances >= max_advances:
-            return AdmissionFlywheelResult(
-                AdmissionFlywheelStatus.HELD,
-                "ADVANCE_BUDGET_EXHAUSTED", advances, state)
 
 
 def _validate_run_inputs(
