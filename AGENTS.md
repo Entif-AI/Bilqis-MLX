@@ -88,6 +88,36 @@ changed issue pages, or reached another checkpoint. The gate reports the prior p
 as reused. Set `BILQIS_TEST_FORCE=1` only when there is a concrete reason to discard
 that proof.
 
+
+### Verification wall-clock ceiling — 2026-11-12
+
+No agent-launched test suite, verification command, hosted workflow, witness, or
+composed verification run may have a planned or expected wall-clock duration above
+**2 hours**. The two-hour value is an absolute ceiling, not a target. Ordinary leaf
+development and turn-in should use checks that finish in seconds to minutes whenever
+the claim permits it.
+
+Before launch, bound the expected duration from prior receipts, selected tests, or
+staged estimates. If the bound is unknown or can exceed two hours, do not launch the
+run. Split it into claim-specific stages that each remain within the ceiling and
+produce durable receipts. Do not evade the rule with arbitrary time slicing: each
+stage must have an independently meaningful claim, explicit inputs, and a resumable
+or terminal result. Detached execution, snapshot isolation, or operator observation
+does not waive the ceiling for a test.
+
+If an agent-launched test reaches two hours without completing, stop or contain the
+owned process at the next safe boundary, preserve the partial log/receipt, and
+classify the run as incomplete or over-budget rather than PASS. Turn the discovered
+seam into a cheaper deterministic regression before another attempt. Reuse
+still-valid passing evidence under the rules above instead of repaying an expensive
+proof.
+
+Whole-system qualification that cannot be made meaningful inside this ceiling is
+not an ordinary test gate. Redesign it as bounded staged qualification, or hand it to
+the human operator as a separately authorized non-test run. Historical test evidence
+from runs longer than two hours remains provenance and is not invalidated. Only a
+new owner-ratified ADR amendment may change this ceiling.
+
 ### MLX verification resource containment — 2026-11-11
 
 Treat any process as **MLX-capable** when it imports `mlx`, constructs or evaluates
