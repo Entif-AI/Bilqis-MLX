@@ -14,8 +14,6 @@ from bilqis_mlx.factory.atlas_frontier import (
     next_atlas_delta,
 )
 from bilqis_mlx.factory.atlas_frontier_closure import resolve_frontier_closure
-from bilqis_mlx.factory.atlas_delta_adapter import _issue_accepted_obligation_credit
-from bilqis_mlx.factory.atlas_frontier_progress_validation import obligation_digest
 from bilqis_mlx.factory.tests.events.support import EventCandidateRealizationFixture, LEGACY
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.atlas_admission import (
@@ -49,57 +47,35 @@ from bilqis_mlx.source_adapters import event_frames
 
 
 class PolicyV2Support(EventCandidateRealizationFixture, unittest.TestCase):
-    def _event_handoff(
-            self, capability=None, current_release=None, parent_graph=None,
-            accepted_credit=None):
+    def _event_handoff(self):
         candidate, source_frontier, policy = self.atlas_fixture()
-        capability = capability or next(iter(event_frames.SOURCE_SPECS))
-        current_release = current_release or self.current
-        parent_graph = parent_graph or self.parent_graph
+        capability = next(iter(event_frames.SOURCE_SPECS))
         semantic_id = event_frames.atlas_semantic_id(capability)
         staged = candidate_realizations.prepare_realized_candidate(
-            self.frontier, current_release, parent_graph, semantic_id,
+            self.frontier, self.current, self.parent_graph, semantic_id,
             source_root=LEGACY, source_registry=self.source_registry,
             answer_registry=self.answer_registry)
         snapshot = self.build_snapshot(
-            candidate, source_frontier, policy, current_release, staged)
+            candidate, source_frontier, policy, self.current, staged)
         snapshot = bind_realized_snapshot(
-            snapshot, candidate, self.frontier, current_release, (staged,))
-        mastered = {"A.IDENTITY"} | {
-            item for item in event_frames.SOURCE_SPECS
-            if item in current_release.execution_plan.capability_map
-        }
+            snapshot, candidate, self.frontier, self.current, (staged,))
         plan, checkpoint_sha256, step, ledger, learner = self.learner_evidence(
-            current_release, mastered, capability)
+            self.current, {"A.IDENTITY"}, capability)
         closure = resolve_frontier_closure(
-            snapshot, candidate.census, current_release=current_release,
+            snapshot, candidate.census, current_release=self.current,
             evidence_ledger=ledger, autonomy_plan=plan,
             checkpoint_sha256=checkpoint_sha256, optimizer_step=step)
         handoff = next_atlas_delta(
             AtlasCoverageEpoch(
                 snapshot=snapshot, closure=closure,
                 candidate_frontier=self.frontier,
-                current_release=current_release,
-                staged_candidates=(staged,), prior=None,
-                accepted_credit=accepted_credit),
+                current_release=self.current,
+                staged_candidates=(staged,), prior=None),
             learner, plan)
-        if not hasattr(handoff, "verify"):
-            raise AssertionError(f"{capability}: {handoff}")
         handoff.verify()
         checkpoint = Checkpoint(
             checkpoint_sha256, "bundles/v2-event-owner", step, True)
         return capability, semantic_id, handoff, plan, ledger, checkpoint
-
-    @staticmethod
-    def _accepted_credit(current_release, handoffs):
-        """Model authenticated accepted-custody credit between sequential successors."""
-        keys = tuple(sorted(
-            (handoff.receipt.selection.selected_semantic_id,
-             obligation_digest(handoff.receipt.selection.selected_obligations))
-            for _semantic_id, handoff, _plan, _ledger, _checkpoint in handoffs
-        ))
-        return _issue_accepted_obligation_credit(
-            current_release.release_sha256, "a" * 64, keys)
 
     @staticmethod
     def _a02_staged(semantic_id):

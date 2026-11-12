@@ -16,6 +16,7 @@ class NativeAtlasDebt:
     run_id: str
     generation: int
     factory_release_sha256: str
+    policy_profile_id: str
     profile_sha256: str
     checkpoint_sha256: str
     optimizer_step: int
@@ -76,7 +77,8 @@ def read_native_atlas_debt(run_dir: Path, manifest: dict, graph: dict, *,
     active = set(school.active_grades)
     capabilities = tuple(c for c in release.execution_plan.capabilities if c.grade_id in active)
     return NativeAtlasDebt(expected_manifest_sha256, manifest['run_id'], manifest['generation'],
-        release.release_sha256, _fingerprint(asdict(release.profile)),
+        release.release_sha256, release.profile.profile_id,
+        _fingerprint(asdict(release.profile)),
         school.current_student.sha256, school.current_student.optimizer_step,
         school.active_grades, tuple((c.capability_id, c.grade_id) for c in capabilities),
         school.introduction_frontiers, school.carried_mastery_debt,

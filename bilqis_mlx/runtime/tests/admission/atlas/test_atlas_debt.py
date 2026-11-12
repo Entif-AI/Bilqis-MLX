@@ -45,6 +45,7 @@ class AtlasDebtTests(unittest.TestCase):
         self.assertEqual(result.mature_capability_debt, (('Z.C1', 2),))
         self.assertEqual(result.mature_grade_debt, (('Z', 3),))
         self.assertEqual(result.capability_grades[0], ('Z.C0', 'Z'))
+        self.assertEqual(result.policy_profile_id, self.release.profile.profile_id)
         self.assertEqual(result.profile_sha256, _fingerprint(asdict(self.release.profile)))
         self.assertEqual(result.current_provider_parameters,
             tuple((c.capability_id, c.provider_parameters) for c in self.release.execution_plan.capabilities))

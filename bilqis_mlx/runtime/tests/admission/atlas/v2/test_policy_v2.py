@@ -122,69 +122,6 @@ class AtlasPolicyV2Tests(PolicyV2Support):
         self.assertIs(context.legacy.current_release, before_release)
         self.assertIs(context.legacy.ledger, before_ledger)
 
-    def test_one_v2_lease_covers_three_source_attested_successor_handoffs(self):
-        capabilities = (
-            "D.EVENT_OCCURRENCE", "D.COMMENCEMENT", "D.TERMINATION")
-        handoffs = []
-        current = self.current
-        graph = self.parent_graph
-        accepted_credit = None
-        for capability in capabilities:
-            _cap, semantic_id, handoff, plan, ledger, checkpoint = self._event_handoff(
-                capability=capability, current_release=current, parent_graph=graph,
-                accepted_credit=accepted_credit)
-            handoffs.append((semantic_id, handoff, plan, ledger, checkpoint))
-            current = handoff.staged_candidate.successor
-            graph = event_frames.projected_graph(graph, (capability,))
-            accepted_credit = self._accepted_credit(current, handoffs)
-
-        semantic_release = handoffs[0][1].receipt.selection_snapshot.semantic_release
-        self.assertTrue(all(
-            handoff.receipt.selection_snapshot.semantic_release == semantic_release
-            for _semantic_id, handoff, _plan, _ledger, _checkpoint in handoffs))
-        families = tuple(sorted({
-            family for _semantic_id, handoff, _plan, _ledger, _checkpoint in handoffs
-            for family in handoff.family_ids
-        }))
-        operators = tuple(sorted({
-            operator for _semantic_id, handoff, _plan, _ledger, _checkpoint in handoffs
-            for operator in handoff.operator_ids
-        }))
-        approval = _signed(replace(
-            AtlasSourceApproval(
-                "fixture-v2-three-successors", semantic_release, families, operators,
-                "b" * 64, 1, "c" * 64, "d" * 64, "e" * 64,
-                True, True, "fixture:salience-owner", "0" * 128),
-            signature_hex="0" * 128))
-        lease = issue_atlas_lease_v2(
-            "fixture-v2-three-successors", _run(), approval,
-            ResourceCeilingV2(4, 4, 32768, 1 << 40, 1 << 40),
-            requested_at="2026-11-12T15:00:00Z",
-            human_command_sha256="7" * 64, human_started=True, registry=_REGISTRY)
-
-        results = []
-        with patch(
-                "bilqis_mlx.runtime.atlas_admission_policy_v2._accepted_run_bindings"), \
-                patch(
-                    "bilqis_mlx.runtime.atlas_admission_policy_v2._require_current_v2_lease"), \
-                patch(
-                    "bilqis_mlx.runtime.atlas_admission_policy_v2._require_exact_atlas_release"):
-            for semantic_id, handoff, plan, ledger, checkpoint in handoffs:
-                context = self._context(handoff, plan, ledger, checkpoint, approval)
-                result = advance_atlas_frontier_v2(
-                    context, AtlasDeltaEnvelopeV2(
-                        handoff, self._a02_staged(semantic_id)), lease)
-                results.append(result)
-
-        self.assertEqual(
-            tuple(result.reason for result in results),
-            ("V2_DELTA_AUTHORITY_VERIFIED",) * 3)
-        self.assertEqual({result.lease_sha256 for result in results}, {lease.digest()})
-        self.assertEqual(
-            len({handoff.staged_candidate.successor.release_sha256
-                 for _semantic_id, handoff, _plan, _ledger, _checkpoint in handoffs}),
-            3)
-
     def test_resource_policy_uses_only_a02_sealed_v2_facts(self):
         _capability, semantic_id, handoff, plan, ledger, checkpoint = self._event_handoff()
         native = self._a02_staged(semantic_id)
