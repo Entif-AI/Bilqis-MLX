@@ -1,5 +1,4 @@
 """Literal C07.1a/#509 repeated-adoption closure witness."""
-from contextlib import nullcontext
 import os
 import unittest
 from unittest.mock import patch
@@ -16,17 +15,48 @@ from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
 from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
     ParsedFactoryReleaseAdmissionBinding,
 )
-from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+from bilqis_mlx.runtime.model_topology_v2 import (
+    Initializer, ModelTopologySpecV2, ParameterGroup, ParameterSpec,
+)
+from bilqis_mlx.runtime.topology_v2.dimensions import (
+    FEATURE_DIM, FEATURE_ROWS, GRAPH_FEATURE_DIM,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from bilqis_mlx.runtime.tests.admission.atlas.v2.mixed_witness_support import (
     MixedWitnessSupport,
 )
 
 
+_COMPACT_DECLARED = (
+    ParameterSpec(
+        "identity.bank.0",
+        (ModelTopologySpecV2.semantic_bank_rows, ModelTopologySpecV2.width),
+        Initializer.IDENTITY_BANK, ParameterGroup.IDENTITY_ROW_AGE, True),
+    ParameterSpec(
+        "features.type", (FEATURE_ROWS, FEATURE_DIM),
+        Initializer.FEATURE_TABLE, ParameterGroup.SLOW, True),
+    ParameterSpec(
+        "features.project_type", (ModelTopologySpecV2.width, FEATURE_DIM),
+        Initializer.MATRIX, ParameterGroup.SLOW, True),
+    ParameterSpec(
+        "features.project_graph", (ModelTopologySpecV2.width, GRAPH_FEATURE_DIM),
+        Initializer.MATRIX, ParameterGroup.SLOW, True),
+    ParameterSpec(
+        "features.gates", (4,), Initializer.MINUS_TWO,
+        ParameterGroup.SLOW, False),
+)
+
+
 class C07LeaseClosureV2Tests(MixedWitnessSupport, unittest.TestCase):
     def _exercise_three_successors(self, *, compact_shapes: bool):
-        shape_scope = shape_patch() if compact_shapes else nullcontext()
-        with shape_scope:
+        if not compact_shapes:
+            self._exercise_three_successors_in_scope()
+            return
+        with patch(
+                "bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers.DECLARED",
+                _COMPACT_DECLARED), patch(
+                    "bilqis_mlx.runtime.topology_v2.serialization.expected_bamf_shapes",
+                    return_value=_COMPACT_DECLARED), shape_patch():
             self._exercise_three_successors_in_scope()
 
     def _exercise_three_successors_in_scope(self):
