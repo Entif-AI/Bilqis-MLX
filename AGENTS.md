@@ -93,10 +93,12 @@ that proof.
 Treat any process as **MLX-capable** when it imports `mlx`, constructs or evaluates
 MLX arrays, loads a BAMF parameter/optimizer tree, executes a neural forward/backward
 path, serializes full MLX state, or runs a full-model/custody witness that can reach
-those owners transitively. Until the test harness enforces a verified aggregate
-memory budget automatically, MLX-capable verification is **serialized by default**:
-set `BILQIS_TEST_WORKERS=1` and do not invoke pytest with `-n > 1`. A broad
-dependency-selected test cone is not permission to run multiple MLX workers.
+those owners transitively. Within one test runner, MLX-capable verification is
+**single-worker by default**. Set `BILQIS_TEST_WORKERS=1`. Do not invoke pytest with
+`-n > 1` unless that runner enforces an explicit aggregate memory budget. This is not
+a host-wide serialization rule. Independent bounded MLX jobs on the M3 Ultra may
+overlap when each job applies a memory/cache policy. Their configured aggregate
+limits must leave host headroom. Another bounded MLX job is not a reason to wait.
 
 The reason is measured, not hypothetical. On the 96 GiB M3 Ultra with MLX 0.31.1,
 a fresh process reported both the default MLX memory limit and free-buffer cache
@@ -111,19 +113,20 @@ Long-lived MLX test processes must disable the free-buffer cache with
 `mx.set_cache_limit(0)` / `mx.clear_cache()`, or enter the repository's
 `training_memory_policy(mx)` when that policy is semantically appropriate. If the
 selected test runner cannot guarantee that policy in every MLX-capable worker, run
-the relevant tests serially and narrowly rather than launching a broad parallel
-suite. Do not overlap independent full-model/MLX witnesses merely because they live
-in different worktrees. Parallel MLX execution requires an explicit per-worker
-limit, an explicit aggregate upper bound that fits the host with headroom, and
-evidence that every worker actually applies those limits.
+the relevant tests serially and narrowly rather than launching an unbounded broad
+parallel suite. Independent processes may overlap when every process has an applied
+memory limit/cache policy and their configured aggregate upper bound fits the host
+with headroom.
 
-Before any expensive MLX launch, inspect current swap/memory pressure and active
-MLX-heavy processes. If the system has already reported memory exhaustion, swap is
-near saturation, or another full-model witness is active, do not start another
-heavy MLX run. A memory-pressure dialog, swap-exhaustion event, OOM, or worker death
-under memory pressure is a **failed verification run**. Preserve its evidence,
-contain the process group, diagnose the allocation mechanism, and do not rerun the
-same workload unchanged.
+Before any expensive MLX launch, inspect current memory pressure and the bounds on
+active MLX-heavy processes. Do not serialize because another bounded witness is
+active. High swap occupancy is also not a veto while physical-memory headroom remains
+healthy. Refuse a new launch if a participating job lacks an applied bound. Also
+refuse when configured aggregate ceilings exceed safe host capacity or the OS reports
+actual memory-pressure/OOM symptoms. A memory-pressure dialog, swap-exhaustion event,
+OOM, or worker death under memory pressure is a **failed verification run**. Preserve
+its evidence, contain the owned process group, diagnose the allocation mechanism,
+and do not rerun the same workload unchanged.
 
 The production BAMF trainer remains one sovereign MLX writer. Its current
 `training_memory_policy` disables MLX's free-buffer cache, which prevents this
@@ -257,6 +260,53 @@ stage before another full witness. A compaction handoff must state whether an
 expensive probe is still running so the successor does not launch a duplicate.
 Acceptance-scale witnesses belong at a stable boundary after cheaper evidence has
 changed; they are not the ordinary inner debugging loop.
+
+**Staged fail-fast verification for expensive tests (ADR-139):** Treat every
+expensive test or witness as an ordered pipeline. Do not make a multi-minute MLX,
+Factory, full-model, or end-to-end run the first place that fixture, import,
+precondition, or assertion-contract errors can surface.
+
+1. At an integration/turn-in boundary, run every applicable neural-inert repository
+   quality/static gate **before** mounted real-fixture or full-model execution. This
+   includes governance, docs, source/authority scanners, changed-file quality, and
+   other deterministic checks that do not depend on expensive model output. A late
+   static failure is a pipeline-order defect; repair the early gate before another
+   expensive rerun.
+2. Run cheap contract checks next. Cover imports, fixture shape, deterministic
+   invariants, assertion semantics, and other neural-inert behavior with focused
+   tests that complete quickly.
+3. Run a real-fixture preflight next when the final witness depends on external
+   artifacts, accepted custody, source state, runtime configuration, or other
+   production inputs. Use the same source paths and shared setup helpers as the
+   full witness. Execute every cheap production step through the immediate boundary
+   before the expensive call, then stop before the expensive computation begins.
+4. Treat an unexpected skip as preflight failure. A required real-fixture preflight
+   must verify that its artifact, runtime, and custody inputs exist and are usable;
+   pytest exit code zero is insufficient when the required case was skipped.
+5. Chain the stages in one runner or command so failure stops the pipeline. The
+   expensive phase may start only after every required preflight stage succeeds.
+   Do not rely on an agent remembering that a separate preflight was supposed to
+   run first.
+6. Share setup and assertion helpers between the preflight and full witness. Do not
+   maintain a simplified imitation that can drift away from the production path.
+7. Keep expensive-output assertions in the final witness, but give every invariant
+   that can be proved without the expensive output a cheap contract test first.
+   If a long run discovers a banal fixture, import, precondition, or assertion
+   defect, add or strengthen the earlier stage before rerunning the expensive test.
+
+Aggregate repository discovery must not silently schedule a witness that declares
+`BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"`. Those files are excluded from the
+default aggregate runner and remain runnable only by an explicit targeted command or
+their dedicated detached witness harness. This keeps broad premerge verification
+from repaying separately accepted expensive evidence or bypassing witness-specific
+resource/receipt controls.
+
+The staged path is diagnostic and non-authorizing. Only the complete production
+witness can satisfy acceptance that actually depends on the expensive computation.
+If the full command can plausibly exceed five minutes, the complete staged pipeline
+still follows the detached-run rules below, including snapshot isolation, durable
+receipts, desktop notification, and no chat polling. Stage logs must identify which
+stage failed so the next run does not repeat already-settled expensive work.
 
 **Precedence-ordered diagnosis for expensive qualification gates (ADR-131):** When
 an acceptance or retention decision has ordered rejection predicates, diagnosis

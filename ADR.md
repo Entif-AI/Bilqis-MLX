@@ -3303,3 +3303,107 @@ compare them with the C08 estimate, and prove that any OOM follows the retained-
 restore/retry contract rather than destabilizing the host or student. This resource
 qualification does not authorize an agent to start or resume the human-owned durable
 trainer.
+## ADR-139 | 2026-11-11 | Expensive verification uses fail-fast staged preflight before full execution
+
+**Status:** Accepted by direct owner instruction on 2026-11-11 after issue #374
+repeatedly spent full Factory/MLX execution time before exposing cheap fixture and
+test-contract defects.
+
+**Problem:** A long-running test can contain three different kinds of work: cheap
+contract validation, production-fixture setup, and the expensive computation that
+actually requires MLX or a full model. When these are bundled into one opaque test,
+a trivial defect at the end can consume the full cost of the expensive phase before
+the developer learns anything useful. During #374, one real-Factory witness ran for
+about 25 minutes before a missing observation-fixture field failed. The next ran for
+about 27 minutes before a stale authority-digest assertion failed, even though the
+neural path had already completed. Both failures could have been detected without
+paying the full neural cost.
+
+**Decision:** Expensive verification is an ordered pipeline. The repository uses the
+following stages whenever a test or witness contains a multi-minute Factory, MLX,
+full-model, or equivalent expensive phase.
+
+1. **Repository-static preflight.** At integration/turn-in boundaries, run every
+   applicable neural-inert quality/static gate before mounted real-fixture or
+   full-model work. Governance, documentation, source/authority scanners,
+   changed-file quality, and other deterministic repository checks belong here.
+   A cheap static failure discovered after expensive execution is a harness-ordering
+   defect and must be moved ahead of the expensive stage before another rerun.
+2. **Cheap contracts.** Run focused neural-inert checks for imports, fixture shape,
+   deterministic invariants, assertion semantics, and other preconditions that do
+   not require the expensive output.
+3. **Real-fixture preflight.** When production artifacts or custody matter, use the
+   real artifact/configuration and the same shared setup as the full witness. Execute
+   every cheap production operation through the immediate boundary before the
+   expensive call, including applicable accepted-runtime, custody, generation,
+   feature-authentication, target, route, observation, and resource-plan checks.
+   Stop before the expensive computation itself.
+4. **Expensive execution.** Start the full witness only after every required earlier
+   stage succeeds. Preserve the exact production acceptance path for facts that
+   genuinely depend on the expensive computation.
+
+The staged runner must enforce this ordering and abort on the first failure. A
+required preflight may not pass because pytest skipped the case. The runner must
+verify that required external artifacts, runtime state, and custody inputs exist and
+are usable, and it must distinguish `passed`, `failed`, and `skipped/not-run` rather
+than treating process exit code zero as sufficient proof.
+
+**Aggregate selection:** A test module that declares
+`BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"` is not part of default aggregate test
+discovery. Such witnesses run only through explicit targeted execution or their
+dedicated detached harness, where their artifact, resource, mutation, and receipt
+contracts can be enforced. Broad premerge verification must not accidentally repay
+or bypass a separately governed expensive witness.
+
+**Shared-path requirement:** Preflight and full witness share setup, fixture, and
+assertion helpers wherever semantics permit. A hand-copied lightweight imitation is
+not sufficient because it can drift from the expensive path. Cheap preflight should
+reach the actual seam immediately before the expensive call, or use an explicit seam
+that proves equivalent production inputs and checks. Expensive-output-specific
+assertions remain in the final witness, but every assertion contract that can be
+tested synthetically should also have a focused cheap regression.
+
+**Failure learning:** If a full-cost run discovers a banal fixture, import,
+precondition, or assertion-contract defect, repairing that defect is not enough. Add
+or strengthen an earlier stage so the same defect class fails before expensive
+execution on the next run. This converts diagnostic history into a durable test
+boundary instead of relying on agent memory.
+
+**Execution and authority:** ADR-132 still governs commands that can exceed five
+minutes. The complete staged pipeline runs detached from a digest-verified source
+snapshot, emits stage markers into its durable log, stops immediately on failed
+preflight, notifies the operator on exit, and is never polled from chat. Preflight is
+diagnostic and non-authorizing. Only the complete production witness can satisfy an
+acceptance requirement that depends on the expensive computation. This ADR composes
+with ADR-129 evidence reuse, ADR-130 diagnostic-loop budgeting, ADR-131
+precedence-ordered diagnosis, ADR-132 detached execution, and ADR-137 claim-first
+verification.
+
+## ADR-140 | 2026-11-11 | M3 Ultra verification concurrency is bounded per job, not serialized host-wide
+
+**Status:** Accepted by direct owner instruction on 2026-11-11 after C08 turn-in
+needlessly waited behind other bounded MLX verification jobs.
+
+**Context:** ADR-138 correctly diagnosed the 2026-11-11 OOM incident as an
+unbounded aggregate-allocation failure. Four MLX-capable xdist workers each inherited
+a roughly host-sized default allocator/cache allowance. The resulting rule was too
+coarse when applied as host-wide serialization. Independent detached jobs with
+explicit limits differ from unconstrained xdist workers inside one runner. The M3
+Ultra is expected to execute multiple bounded jobs concurrently.
+
+**Decision:** MLX-capable pytest remains single-worker within one runner unless that
+runner proves an aggregate budget. Independent MLX/full-model jobs may run
+concurrently on the M3 Ultra when every job applies a memory/cache policy. Their
+configured aggregate ceilings must leave host headroom. Another bounded MLX job is
+not a blocker. Agents must not insert a host-wide wait merely to avoid concurrency.
+
+Current swap occupancy is an observation, not an automatic veto. Launch decisions
+use applied job limits and actual physical-memory pressure/headroom. Refuse or stop
+work when a participating job is unbounded. Do the same when configured aggregate
+ceilings exceed safe host capacity or the OS reports memory-pressure/OOM symptoms.
+Preserve per-job RSS/wall guards and detached receipts. One job can then be contained
+without serializing unrelated bounded work.
+
+This ADR supersedes only ADR-138's host-wide no-overlap interpretation. ADR-138's
+measured OOM incident, single-worker default inside a runner, cache containment,
+explicit memory limits, and production-trainer distinction remain in force.

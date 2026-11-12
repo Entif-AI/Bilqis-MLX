@@ -1,0 +1,134 @@
+"""C08 owner for raw MLX gradient-tree accumulation across one logical batch."""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Callable, Mapping
+
+import mlx.core as mx
+
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.runtime.atlas_model import BamfGradientExecution
+from bilqis_mlx.runtime.atlas_resources import BatchPlan
+
+
+_ISSUER = object()
+_LOGICAL_BATCH_MIN_ROWS = 2
+_SHA256_HEX_LENGTH = 64
+
+
+def _invalid(reason: str) -> None:
+    ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID, reason=reason)
+
+
+@dataclass(frozen=True, init=False)
+class LogicalBatchGradientExecution:
+    """Owner-issued raw mean gradient plus every row-scoped B11 loss execution."""
+
+    loss_executions: tuple
+    gradients: Mapping
+    weighted_mean_loss: mx.array
+    source_digest: str
+    generation_binding: str
+    plan_digest: str
+    _issuance: object = field(init=False, repr=False, compare=False)
+
+    def __init__(self, *args, **kwargs):
+        _invalid("C08_LOGICAL_BATCH_GRADIENT_CALLER_CONSTRUCTION_FORBIDDEN")
+
+    def __post_init__(self):
+        if (getattr(self, "_issuance", None) is not _ISSUER
+                or type(self.loss_executions) is not tuple
+                or len(self.loss_executions) < _LOGICAL_BATCH_MIN_ROWS
+                or not isinstance(self.gradients, Mapping)
+                or not self.gradients
+                or any(not isinstance(value, mx.array)
+                       for value in self.gradients.values())
+                or not isinstance(self.weighted_mean_loss, mx.array)
+                or self.weighted_mean_loss.size != 1
+                or not bool(mx.all(mx.isfinite(self.weighted_mean_loss)))
+                or not isinstance(self.source_digest, str)
+                or not self.source_digest
+                or not isinstance(self.generation_binding, str)
+                or not self.generation_binding
+                or not isinstance(self.plan_digest, str)
+                or len(self.plan_digest) != _SHA256_HEX_LENGTH
+                or any(char not in "0123456789abcdef" for char in self.plan_digest)):
+            _invalid("C08_LOGICAL_BATCH_GRADIENT_INVALID")
+
+
+def require_logical_batch_gradient_execution(value):
+    if type(value) is not LogicalBatchGradientExecution:
+        _invalid("C08_LOGICAL_BATCH_GRADIENT_REQUIRED")
+    value.__post_init__()
+    return value
+
+
+def _sum_tree(total, gradients):
+    if total is None:
+        return {name: value for name, value in gradients.items()}
+    if set(total) != set(gradients):
+        _invalid("C08_LOGICAL_BATCH_GRADIENT_TREE_DRIFT")
+    return {name: total[name] + gradients[name] for name in total}
+
+
+def _scale_tree(gradients, scale: float):
+    return {name: value * mx.array(scale, dtype=value.dtype)
+            for name, value in gradients.items()}
+
+
+def accumulate_logical_batch_gradients(
+        plan: BatchPlan,
+        execute_row: Callable[[int], BamfGradientExecution],
+) -> LogicalBatchGradientExecution:
+    """Execute each planned row once, row-count-weight raw group means, clip later."""
+    if not isinstance(plan, BatchPlan) or not callable(execute_row):
+        _invalid("C08_LOGICAL_BATCH_GRADIENT_ARGUMENT_INVALID")
+    plan.__post_init__()
+    total_rows = len(plan.logical_row_ids)
+    aggregate = None
+    weighted_loss = mx.array(0.0, dtype=mx.float32)
+    losses = []
+    for group in plan.groups:
+        group_sum = None
+        group_loss = mx.array(0.0, dtype=mx.float32)
+        for index in group:
+            execution = execute_row(index)
+            if type(execution) is not BamfGradientExecution:
+                _invalid("C08_LOGICAL_BATCH_B11_EXECUTION_REQUIRED")
+            execution.__post_init__()
+            if execution.execution.output.generation_binding != plan.generation_binding:
+                _invalid("C08_LOGICAL_BATCH_GENERATION_DRIFT")
+            group_sum = _sum_tree(group_sum, execution.gradients)
+            group_loss = group_loss + execution.loss_total
+            mx.eval(group_sum, group_loss)
+            losses.append(execution.execution)
+        group_mean = _scale_tree(group_sum, 1.0 / len(group))
+        mx.eval(group_mean, group_loss)
+        aggregate = _sum_tree(
+            aggregate,
+            _scale_tree(group_mean, len(group) / total_rows))
+        weighted_loss = weighted_loss + (
+            group_loss / len(group)) * (len(group) / total_rows)
+        mx.eval(aggregate, weighted_loss)
+    if len(losses) != total_rows or aggregate is None:
+        _invalid("C08_LOGICAL_BATCH_EXECUTION_COVERAGE_DRIFT")
+    mx.eval(aggregate, weighted_loss)
+    result = object.__new__(LogicalBatchGradientExecution)
+    for name, value in (
+        ("loss_executions", tuple(losses)),
+        ("gradients", aggregate),
+        ("weighted_mean_loss", weighted_loss),
+        ("source_digest", plan.source_digest),
+        ("generation_binding", plan.generation_binding),
+        ("plan_digest", plan.digest),
+        ("_issuance", _ISSUER),
+    ):
+        object.__setattr__(result, name, value)
+    result.__post_init__()
+    return result
+
+
+__all__ = (
+    "LogicalBatchGradientExecution", "accumulate_logical_batch_gradients",
+    "require_logical_batch_gradient_execution",
+)
