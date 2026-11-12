@@ -135,15 +135,18 @@ class MixedSourceSupport(EventCandidateRealizationFixture):
               for capability, spec in event_frames.SOURCE_SPECS.items()),
         ]
         snapshot = source_atlas_snapshot(tuple(definitions))
-        target_semantic_id = event_frames.atlas_semantic_id("D.EVENT_OCCURRENCE")
+        target_semantic_ids = {
+            event_frames.atlas_semantic_id("D.EVENT_OCCURRENCE"),
+            event_frames.atlas_semantic_id("D.COMMENCEMENT"),
+        }
         # A02 may add identity rows, not grow the accepted feature-factor tables.
-        # Keep this prospective source identity untyped so the mixed witness tests
-        # parameter extension rather than an unsupported factor-table extension.
+        # Keep these prospective source identities untyped so the mixed witness
+        # tests repeated parameter extension rather than factor-table extension.
         concepts = tuple(
             replace(
                 item,
                 concept=replace(item.concept, types=()),
-            ) if item.concept.semantic_id == target_semantic_id else item
+            ) if item.concept.semantic_id in target_semantic_ids else item
             for item in snapshot.concepts
         )
         active_indices = [entry.index for entry in snapshot.abi_entries if entry.active]
