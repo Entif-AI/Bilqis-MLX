@@ -13,10 +13,10 @@ from bilqis_mlx.learning.atlas_acceptance import (
 )
 
 from ..atlas_admission import (
-    ATLAS_ADMISSION_SCHEMA, AtlasAdmissionBinding, ParsedAtlasAdmissionBinding,
+    ATLAS_ADMISSION_SCHEMAS, AtlasAdmissionBinding, ParsedAtlasAdmissionBinding,
 )
 from ..factory_release.admission import (
-    FACTORY_RELEASE_ADMISSION_SCHEMA,
+    FACTORY_RELEASE_ADMISSION_SCHEMAS,
     FactoryReleaseAdmissionBinding,
     ParsedFactoryReleaseAdmissionBinding,
     validate_parsed_factory_release_admission_binding,
@@ -94,7 +94,7 @@ def _parse_published_acceptance(student, pointer, record):
         except BilqisError:
             invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")
         return acceptance
-    if record.get("schema_version") == FACTORY_RELEASE_ADMISSION_SCHEMA:
+    if record.get("schema_version") in FACTORY_RELEASE_ADMISSION_SCHEMAS:
         acceptance = FactoryReleaseAdmissionBinding.from_record(record)
         validate_parsed_factory_release_admission_binding(
             student, acceptance, pointer["acceptance_sha256"])
@@ -102,7 +102,7 @@ def _parse_published_acceptance(student, pointer, record):
     try:
         return (
             AtlasAdmissionBinding.from_record(record)
-            if record.get("schema_version") == ATLAS_ADMISSION_SCHEMA
+            if record.get("schema_version") in ATLAS_ADMISSION_SCHEMAS
             else AcceptedCandidateBinding.from_record(record))
     except BilqisError:
         invalid("BAMF_GENERATION_ACCEPTANCE_INVALID")

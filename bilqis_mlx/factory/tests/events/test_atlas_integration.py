@@ -2,6 +2,7 @@ import hashlib
 from dataclasses import replace
 import unittest
 
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory import candidate_realizations
 from bilqis_mlx.factory.atlas_frontier import (
     AtlasCoverageEpoch,
@@ -14,8 +15,11 @@ from bilqis_mlx.factory.atlas_frontier_events import FactoryAdmissionEvent, reco
 from bilqis_mlx.factory.atlas_frontier_progress import plan_frontier_progress
 from bilqis_mlx.factory.atlas_frontier_progress_contracts import FrontierStatus
 from bilqis_mlx.factory.atlas_frontier_progress_validation import requested_keys
+from bilqis_mlx.factory.atlas_delta_adapter import _issue_accepted_obligation_credit
 from bilqis_mlx.factory.atlas_delta_scope import AtlasDeltaScopeHandoff
 from bilqis_mlx.factory.atlas_frontier_selection import select_frontier_delta_for_projection
+from bilqis_mlx.factory.atlas_frontier_selection import _candidate_signature
+from bilqis_mlx.factory.atlas_frontier_selection_validation import obligation_signature
 from bilqis_mlx.factory.autonomy import (
     EvidenceReceipt,
     compile_autonomy_plan,
@@ -207,6 +211,138 @@ class EventCandidateAtlasIntegrationTests(EventCandidateRealizationFixture, unit
             observed.append(capability)
         self.assertEqual(tuple(observed), tuple(event_frames.SOURCE_SPECS))
         self._assert_final_frontier(candidate, state)
+
+    def test_cold_rebuild_skips_realized_semantic_already_in_accepted_release(self):
+        candidate, source_frontier, policy = self.atlas_fixture()
+        state = (self.current, self.parent_graph, {"A.IDENTITY"}, None, None)
+        current, graph, mastered, prior, _admitted_snapshot = self._stage_capability(
+            candidate, source_frontier, policy, state, "D.EVENT_OCCURRENCE")
+        accepted_credit = _issue_accepted_obligation_credit(
+            current.release_sha256,
+            "a" * 64,
+            tuple(sorted(requested_keys(prior.staged_receipts))),
+        )
+
+        semantic_id = event_frames.atlas_semantic_id("D.COMMENCEMENT")
+        staged = candidate_realizations.prepare_realized_candidate(
+            self.frontier, current, graph, semantic_id,
+            source_root=LEGACY, source_registry=self.source_registry,
+            answer_registry=self.answer_registry)
+        snapshot = self.build_snapshot(
+            candidate, source_frontier, policy, current, staged)
+        snapshot = bind_realized_snapshot(
+            snapshot, candidate, self.frontier, current, (staged,))
+        plan, checkpoint, step, ledger, learner = self.learner_evidence(
+            current, mastered, "D.COMMENCEMENT")
+        closure = resolve_frontier_closure(
+            snapshot, candidate.census, current_release=current,
+            evidence_ledger=ledger, autonomy_plan=plan,
+            checkpoint_sha256=checkpoint, optimizer_step=step)
+
+        handoff = next_atlas_delta(
+            AtlasCoverageEpoch(
+                snapshot, closure, self.frontier, current, (staged,), None,
+                accepted_credit),
+            learner, plan)
+
+        self.assertIsInstance(handoff, AtlasDeltaScopeHandoff)
+        handoff.verify()
+        self.assertEqual(handoff.receipt.selected_semantic_id, semantic_id)
+
+    def test_cold_rebuild_reopens_accepted_semantic_when_obligation_changes(self):
+        candidate, source_frontier, policy = self.atlas_fixture()
+        state = (self.current, self.parent_graph, {"A.IDENTITY"}, None, None)
+        current, graph, mastered, prior, _admitted_snapshot = self._stage_capability(
+            candidate, source_frontier, policy, state, "D.EVENT_OCCURRENCE")
+        accepted_credit = _issue_accepted_obligation_credit(
+            current.release_sha256,
+            "a" * 64,
+            tuple(sorted(requested_keys(prior.staged_receipts))),
+        )
+
+        semantic_id = event_frames.atlas_semantic_id("D.COMMENCEMENT")
+        staged = candidate_realizations.prepare_realized_candidate(
+            self.frontier, current, graph, semantic_id,
+            source_root=LEGACY, source_registry=self.source_registry,
+            answer_registry=self.answer_registry)
+        snapshot = self.build_snapshot(
+            candidate, source_frontier, policy, current, staged)
+        snapshot = bind_realized_snapshot(
+            snapshot, candidate, self.frontier, current, (staged,))
+        occurrence_id = event_frames.atlas_semantic_id("D.EVENT_OCCURRENCE")
+        rows = tuple(
+            replace(row, source_evidence_sha256="c" * 64)
+            if row.semantic_id == occurrence_id else row
+            for row in snapshot.coverage_rows)
+        changed = replace(
+            snapshot, coverage_rows=rows,
+            correction_generation=snapshot.correction_generation + 1,
+            snapshot_sha256="0" * 64)
+        snapshot = replace(changed, snapshot_sha256=changed.expected_digest())
+        plan, checkpoint, step, ledger, learner = self.learner_evidence(
+            current, mastered, "D.COMMENCEMENT")
+        closure = resolve_frontier_closure(
+            snapshot, candidate.census, current_release=current,
+            evidence_ledger=ledger, autonomy_plan=plan,
+            checkpoint_sha256=checkpoint, optimizer_step=step)
+
+        result = next_atlas_delta(
+            AtlasCoverageEpoch(
+                snapshot, closure, self.frontier, current, (staged,), None,
+                accepted_credit),
+            learner, plan)
+
+        self.assertIs(result, FrontierStatus.IMPLEMENTATION_UNCOVERED)
+
+    def test_staged_receipt_rejects_rehashed_obligation_substitution(self):
+        candidate, source_frontier, policy = self.atlas_fixture()
+        state = (self.current, self.parent_graph, {"A.IDENTITY"}, None, None)
+        _current, _graph, _mastered, prior, _snapshot = self._stage_capability(
+            candidate, source_frontier, policy, state, "D.EVENT_OCCURRENCE")
+        receipt = prior.staged_receipts[0]
+        selected = receipt.selection.selected_obligations
+        forged_rows = (
+            replace(selected[0], source_evidence_sha256="c" * 64),
+            *selected[1:],
+        )
+        forged_projection = replace(
+            receipt.projection,
+            obligation_signature=obligation_signature(forged_rows),
+            projection_sha256="0" * 64,
+        )
+        forged_projection = replace(
+            forged_projection,
+            projection_sha256=forged_projection.expected_digest(),
+        )
+        forged_selection = replace(
+            receipt.selection,
+            selected_obligations=forged_rows,
+            candidate_signature=_candidate_signature(
+                receipt.selected_semantic_id,
+                forged_rows,
+                receipt.selection.introduced_capability_ids,
+                receipt.selection.introduced_semantic_ids,
+            ),
+            selection_sha256="0" * 64,
+        )
+        forged_selection = replace(
+            forged_selection,
+            selection_sha256=forged_selection.expected_digest(),
+        )
+        forged = replace(
+            receipt,
+            selection=forged_selection,
+            projection=forged_projection,
+            receipt_sha256="0" * 64,
+        )
+        forged = replace(forged, receipt_sha256=forged.expected_digest())
+
+        with self.assertRaises(BilqisError) as caught:
+            forged.verify()
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PLANNER_STAGED_SELECTION_INVALID",
+        )
 
 
 if __name__ == "__main__":

@@ -68,7 +68,7 @@ def _verified_extension(parent, plan, *, accepted_features=None, predecessor=Non
         _invalid("BAMF_VOCABULARY_PLAN_INVALID")
     if accepted_features is None and predecessor is None:
         snapshot = _verified_prior(parent.prior)
-    elif accepted_features is not None and predecessor is not None:
+    elif accepted_features is not None:
         snapshot = _verified_authenticated_prior(
             parent.prior, accepted_features, predecessor)
     else:

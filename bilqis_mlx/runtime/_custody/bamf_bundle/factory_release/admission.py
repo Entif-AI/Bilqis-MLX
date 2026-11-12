@@ -1,9 +1,6 @@
 """C07/B13 acceptance for neural-inert Factory-release adoption."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Mapping
-
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 
 from ..factory_release_adoption import (
@@ -14,20 +11,19 @@ from ..factory_release_adoption import (
     require_issued_factory_release_adoption_transition,
 )
 from ..records import BamfBundleCandidate, CompleteStudent, canonical, invalid, sha
+from .admission_binding import (
+    FACTORY_RELEASE_ADMISSION_SCHEMA,
+    FACTORY_RELEASE_ADMISSION_SCHEMA_V1,
+    FACTORY_RELEASE_ADMISSION_SCHEMA_V2,
+    FACTORY_RELEASE_ADMISSION_SCHEMAS,
+    FactoryReleaseAdmissionBinding,
+    ParsedFactoryReleaseAdmissionBinding,
+    _mint_binding,
+    _require_live_binding,
+    _valid_obligation_keys,
+)
 
 
-FACTORY_RELEASE_ADMISSION_SCHEMA = (
-    "bilqis.mlx.bamf-factory-release-admission-binding/v1"
-)
-_ISSUER = object()
-_FIELDS = (
-    "run_id", "generation", "candidate_identity_sha256",
-    "parent_candidate_identity_sha256", "feature_sha256", "optimizer_step",
-    "lease_sha256", "source_approval_sha256", "handoff_sha256",
-    "proposal_sha256", "selection_receipt_sha256",
-    "predecessor_factory_release_sha256", "factory_release_sha256",
-    "transition_sha256", "adoption_event_sha256", "schema_version",
-)
 _EVENT_FIELDS = frozenset({
     "event", "schema", "run_id", "generation", "optimizer_step",
     "predecessor_factory_release_sha256", "factory_release_sha256",
@@ -41,92 +37,8 @@ _PROVENANCE_FIELDS = (
 )
 
 
-def _hex(value: object) -> bool:
-    return (isinstance(value, str) and len(value) == 64
-            and all(char in "0123456789abcdef" for char in value))
-
-
 def _invalid(reason="BAMF_FACTORY_RELEASE_ADMISSION_BINDING_INVALID") -> None:
     invalid(reason)
-
-
-@dataclass(frozen=True)
-class FactoryReleaseAdmissionBinding:
-    """Live B13/C07 capability for one exact Factory-only successor."""
-
-    run_id: str
-    generation: int
-    candidate_identity_sha256: str
-    parent_candidate_identity_sha256: str
-    feature_sha256: str
-    optimizer_step: int
-    lease_sha256: str
-    source_approval_sha256: str
-    handoff_sha256: str
-    proposal_sha256: str
-    selection_receipt_sha256: str
-    predecessor_factory_release_sha256: str
-    factory_release_sha256: str
-    transition_sha256: str
-    adoption_event_sha256: str
-    schema_version: str = FACTORY_RELEASE_ADMISSION_SCHEMA
-    _issuance: object = field(init=False, default=None, repr=False, compare=False)
-
-    def __post_init__(self) -> None:
-        if (getattr(self, "_issuance", None) is not _ISSUER
-                or not isinstance(self.run_id, str) or not self.run_id
-                or type(self.generation) is not int or self.generation < 1
-                or type(self.optimizer_step) is not int or self.optimizer_step < 0
-                or self.schema_version != FACTORY_RELEASE_ADMISSION_SCHEMA
-                or any(not _hex(getattr(self, name)) for name in _FIELDS
-                       if name.endswith("_sha256"))):
-            _invalid()
-
-    def _public_record(self) -> dict:
-        return {name: getattr(self, name) for name in _FIELDS}
-
-    @property
-    def digest(self) -> str:
-        return sha(canonical(self._public_record()))
-
-    def to_record(self) -> dict:
-        return {**self._public_record(), "binding_sha256": self.digest}
-
-    @classmethod
-    def from_record(cls, record: Mapping) -> "ParsedFactoryReleaseAdmissionBinding":
-        if (not isinstance(record, Mapping)
-                or set(record) != set(_FIELDS) | {"binding_sha256"}):
-            _invalid()
-        payload = {name: record[name] for name in _FIELDS}
-        if (payload["schema_version"] != FACTORY_RELEASE_ADMISSION_SCHEMA
-                or not isinstance(payload["run_id"], str) or not payload["run_id"]
-                or type(payload["generation"]) is not int or payload["generation"] < 1
-                or type(payload["optimizer_step"]) is not int
-                or payload["optimizer_step"] < 0
-                or any(not _hex(payload[name]) for name in _FIELDS
-                       if name.endswith("_sha256"))
-                or record["binding_sha256"] != sha(canonical(payload))):
-            _invalid()
-        return ParsedFactoryReleaseAdmissionBinding(payload)
-
-
-@dataclass(frozen=True)
-class ParsedFactoryReleaseAdmissionBinding:
-    """Verified historical Factory-only acceptance; never live authority."""
-
-    fields: dict
-
-    def __getattr__(self, name: str):
-        if name in _FIELDS:
-            return self.fields[name]
-        raise AttributeError(name)
-
-    @property
-    def digest(self) -> str:
-        return sha(canonical(self.fields))
-
-    def to_record(self) -> dict:
-        return {**self.fields, "binding_sha256": self.digest}
 
 
 def _same_inert_state(parent: CompleteStudent, candidate: BamfBundleCandidate) -> bool:
@@ -183,8 +95,8 @@ def _owner_event(candidate) -> dict:
 
 
 def _issue_factory_release_admission_binding(
-        candidate: BamfBundleCandidate, parent: CompleteStudent, *,
-        transition) -> FactoryReleaseAdmissionBinding:
+        candidate: BamfBundleCandidate, parent: CompleteStudent, *, transition,
+        accepted_obligation_keys: tuple[tuple[str, str], ...] = ()) -> FactoryReleaseAdmissionBinding:
     transition = require_issued_factory_release_adoption_transition(transition)
     event = _owner_event(candidate)
     if (type(candidate) is not BamfBundleCandidate
@@ -200,41 +112,33 @@ def _issue_factory_release_admission_binding(
                    for name in _PROVENANCE_FIELDS if name != "transition_sha256")
             or event["transition_sha256"] != transition.digest):
         _invalid()
-    binding = object.__new__(FactoryReleaseAdmissionBinding)
-    values = (
-        ("run_id", candidate.run_id),
-        ("generation", candidate.generation),
-        ("candidate_identity_sha256", candidate_identity_digest(
-            candidate.retained_state)),
-        ("parent_candidate_identity_sha256", candidate_identity_digest(
-            parent.retained_state)),
-        ("feature_sha256", candidate.extents.factor_map_digest),
-        ("optimizer_step", candidate.retained_state.optimizer_step),
-        ("lease_sha256", transition.lease_sha256),
-        ("source_approval_sha256", transition.source_approval_sha256),
-        ("handoff_sha256", transition.handoff_sha256),
-        ("proposal_sha256", transition.proposal_sha256),
-        ("selection_receipt_sha256", transition.selection_receipt_sha256),
-        ("predecessor_factory_release_sha256",
-         transition.predecessor_factory_release_sha256),
-        ("factory_release_sha256", transition.factory_release_sha256),
-        ("transition_sha256", transition.digest),
-        ("adoption_event_sha256", sha(canonical(event))),
-        ("schema_version", FACTORY_RELEASE_ADMISSION_SCHEMA),
-        ("_issuance", _ISSUER),
+    obligation_keys = tuple(sorted(set(accepted_obligation_keys)))
+    if obligation_keys and not _valid_obligation_keys(obligation_keys):
+        _invalid()
+    return _mint_binding(
+        run_id=candidate.run_id, generation=candidate.generation,
+        candidate_identity_sha256=candidate_identity_digest(candidate.retained_state),
+        parent_candidate_identity_sha256=candidate_identity_digest(parent.retained_state),
+        feature_sha256=candidate.extents.factor_map_digest,
+        optimizer_step=candidate.retained_state.optimizer_step,
+        lease_sha256=transition.lease_sha256,
+        source_approval_sha256=transition.source_approval_sha256,
+        handoff_sha256=transition.handoff_sha256,
+        proposal_sha256=transition.proposal_sha256,
+        selection_receipt_sha256=transition.selection_receipt_sha256,
+        predecessor_factory_release_sha256=transition.predecessor_factory_release_sha256,
+        factory_release_sha256=transition.factory_release_sha256,
+        transition_sha256=transition.digest,
+        adoption_event_sha256=sha(canonical(event)),
+        accepted_obligation_keys=obligation_keys,
+        schema_version=(FACTORY_RELEASE_ADMISSION_SCHEMA_V2
+                        if obligation_keys else FACTORY_RELEASE_ADMISSION_SCHEMA_V1),
     )
-    for name, value in values:
-        object.__setattr__(binding, name, value)
-    binding.__post_init__()
-    return binding
 
 
 def require_factory_release_admission_binding(
         candidate: BamfBundleCandidate, value) -> FactoryReleaseAdmissionBinding:
-    if (type(value) is not FactoryReleaseAdmissionBinding
-            or getattr(value, "_issuance", None) is not _ISSUER):
-        _invalid()
-    value.__post_init__()
+    value = _require_live_binding(value)
     transition = require_issued_factory_release_adoption_transition(
         candidate.transition)
     event = _owner_event(candidate)
@@ -310,6 +214,9 @@ def validate_parsed_factory_release_admission_binding(
 
 __all__ = (
     "FACTORY_RELEASE_ADMISSION_SCHEMA",
+    "FACTORY_RELEASE_ADMISSION_SCHEMA_V1",
+    "FACTORY_RELEASE_ADMISSION_SCHEMA_V2",
+    "FACTORY_RELEASE_ADMISSION_SCHEMAS",
     "FactoryReleaseAdmissionBinding",
     "ParsedFactoryReleaseAdmissionBinding",
     "_issue_factory_release_admission_binding",
