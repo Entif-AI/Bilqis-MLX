@@ -176,6 +176,39 @@ class DependencyEvidenceTests(unittest.TestCase):
         changed[3]['reviewed-packets'] = pinned_matrix(changed[0])
         self.assertIs(check_dependency_evidence(*changed).status, EvidenceStatus.INVALID)
 
+    def test_a08_formal_operator_clause_requires_causal_a13_1_receipt(self):
+        clause = (
+            '**Direct prerequisites:** A08.1a, A07.1, A07.2, A13. '
+            'OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists.'
+        )
+        args = packet(clause, edges=('A08.1a', 'A07.1', 'A07.2', 'A13'))
+        args[2].update({'A08.1a': 417, 'A07.1': 413, 'A07.2': 414, 'A13': 369})
+        number = 546
+        source_id = 'C01.1.pr-546'
+        url = 'https://github.com/Entif-AI/Bilqis-MLX/pull/546'
+        raw = json.dumps(dict(number=number, url=url, state='MERGED',
+            headRefOid='a'*40, mergeCommit={'oid': 'b'*40})).encode()
+        evidence = args[0]['dependency_evidence']
+        args[3][source_id] = raw
+        evidence['source_records'].append(dict(source_id=source_id, kind='pull_request',
+            locator=url, sha256=hashlib.sha256(raw).hexdigest(), excerpt='b'*40))
+        evidence['external_receipts'].append(dict(number=number, role='prerequisite',
+            head_sha='a'*40, merge_sha='b'*40, url=url, source_id=source_id))
+        args[3]['reviewed-packets'] = pinned_matrix(args[0])
+        result = check_dependency_evidence(*args)
+        self.assertIs(result.status, EvidenceStatus.RESOLVED)
+        self.assertEqual(result.known_edges, ('A08.1a', 'A07.1', 'A07.2', 'A13'))
+
+        missing = deepcopy(args)
+        missing[0]['dependency_evidence']['external_receipts'] = []
+        missing[3]['reviewed-packets'] = pinned_matrix(missing[0])
+        self.assertIs(check_dependency_evidence(*missing).status, EvidenceStatus.INVALID)
+
+        changed = deepcopy(args)
+        changed[0]['dependency_evidence']['clause'] = clause.replace('A13.', 'A13.1.')
+        changed[3]['reviewed-packets'] = pinned_matrix(changed[0])
+        self.assertIs(check_dependency_evidence(*changed).status, EvidenceStatus.INVALID)
+
     def test_unknown_edge_or_missing_range_member_is_invalid(self):
         args = packet(edges=('A99',))
         self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.INVALID)

@@ -2998,7 +2998,7 @@
       "source_parent_sha256": "621ea44d1dc505ceecff00370cfeb68c793cc8a8adaa1cac5aa5e63155e34901",
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
+        "resolution": "resolved",
         "body_sha256": "7d0ed874ea1b5b403715f81ad0693ab8587ea9685d38b1045dec1684432293a0",
         "clause": "**Direct prerequisites:** A08.1a, A07.1, A07.2, A13. OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists.",
         "known_edges": [
@@ -3007,7 +3007,16 @@
           "A07.2",
           "A13"
         ],
-        "external_receipts": [],
+        "external_receipts": [
+          {
+            "number": 546,
+            "role": "prerequisite",
+            "head_sha": "74be2874bd6a4f4163878ebc547e2cfabde890e4",
+            "merge_sha": "ac498099b56a38f3b669e16d30f8bab580709f49",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/546",
+            "source_id": "A08.1b.2.pr-546"
+          }
+        ],
         "source_records": [
           {
             "source_id": "A08.1b.2.body",
@@ -3022,12 +3031,19 @@
             "locator": "docs/tasks/bamf-0.2/children/A08.1b.2.md",
             "sha256": "bb2c0aee1ab7ffecd9d81358b4675fb65d47cadd05de9e25620ce16e455759b6",
             "excerpt": "# BAMF-0.2 A08.1b.2 | Formal Boolean and numeric constructive operators\n\nParent: A08.1b #418. Lane: `codex/bamf02-a-semantics`.\nIssue number: #554. Source spec: A08.1b and\n`BAMF-0.2-SPEC-001`, both preserved in full.\n\n## Exact owned result\n\nBind the A01-released formal Boolean/numeric identities to the\nexisting A07 source-qualified pure-operator registry, A13 source\nrights and the original Factory construction/checker contract.\nFor each source-attested formal family, generate positive\nconstituent-first teaching, legal source-valid contrasts,\ncanonical typed answer, independent executable checker,\nprerequisite closure and real variation axes. Reuse A07\noperator semantics, domain/arity/error contracts and exact\nsource authority; never infer laws from labels or let a caller\nsubstitute a different formal family under the same ABI index.\n\nDo not grant `ADAPTER_READY` for a named registry entry without\nan actual registered generator/checker pair. No synthetic\nchecker success becomes `LEARNING_VERIFIED`. Preserve all\nunsupported/held obligations in the A08.1a denominator.\n\n## Finish gate\n\nLiteral Boolean and numeric examples, cross-family spoof,\nwrong-arity/type, rights/release revocation, contrast and\nchecker-independence negatives. Consume A08.1a, A07.1/A07.2\nand A13.1 receipts. Focused tests and independent EGM PASS,\nimmutable branch/issue/PR receipts. No grade-specific dispatch,\nlive training, source promotion or self-merge.\n"
+          },
+          {
+            "source_id": "A08.1b.2.pr-546",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/546",
+            "sha256": "a97c7613815d8d7e6d36c9e404bcb8caee951a9a416eadbccb12eb4b79b8ec55",
+            "excerpt": "ac498099b56a38f3b669e16d30f8bab580709f49"
           }
         ],
         "obligations": [
           "Preserve named A13.1 receipt alongside live A13 prerequisite and full parent requirements."
         ],
-        "unresolved": "The named local specification additionally requires an A13.1 receipt; retain that granularity."
+        "unresolved": null
       }
     },
     {

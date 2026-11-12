@@ -62,6 +62,17 @@ def _released_schema_serialization_prerequisites(text, numbers):
     return (('A01',), (551,))
 
 
+def _a08_formal_operator_prerequisites(text, numbers):
+    expected = (
+        '**Direct prerequisites:** A08.1a, A07.1, A07.2, A13. '
+        'OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists.'
+    )
+    keys = ('A08.1a', 'A07.1', 'A07.2', 'A13')
+    if text != expected or any(type(numbers.get(key)) is not int for key in keys):
+        return None
+    return (keys, (546,))
+
+
 def _current_a05_compiler_prerequisites(text, numbers):
     expected = (
         '## Dependency / handoff\n'
@@ -107,6 +118,9 @@ def _parent_amendment(clause, numbers):
 
 
 def parse_clause(clause, numbers):
+    a08_formal = _a08_formal_operator_prerequisites(clause, numbers)
+    if a08_formal is not None:
+        return a08_formal
     prefix = '**Direct prerequisites:** '
     if clause.startswith(prefix):
         edges = _short_edges(clause[len(prefix):], numbers)

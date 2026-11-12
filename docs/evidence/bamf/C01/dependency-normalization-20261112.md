@@ -108,3 +108,26 @@ The exact A05.4 handoff clause therefore resolves to graph edges `A03,A04,A13`
 plus required receipt `#546`. Removing #546 fails closed. Removing the #571 audit
 source does not change resolution, because the audit did not land the compiler.
 Neither source creates an A05 parent edge or turns B03.3 into a prerequisite.
+
+## A08.1b.2 changed condition
+
+A08.1b.2 #554 already names the complete issue-graph prerequisites
+`A08.1a,A07.1,A07.2,A13`. Its checked-in child specification adds one narrower
+turn-in obligation: consume an **A13.1 receipt**. That receipt is now pinned without
+changing the graph.
+
+A13.1 #430 reached reviewed implementation and independent EGM PASS at
+`7895cea9b36e9b04ef085be2b0c3de4002cae257`. PR #551 did carry those bytes into
+reviewed unified as part of an explicitly historical A07.3 cut, but it was not the
+A13.1 integration authority: #430 closed after #551 had already merged and still
+recorded A13 parent/downstream integration, draft PR #546, and human merge approval
+as outstanding. PR #546 later merged with an explicit `Refs #430` entry naming the
+A13.1 repair and final review receipt. Its head is
+`74be2874bd6a4f4163878ebc547e2cfabde890e4`; merge
+`ac498099b56a38f3b669e16d30f8bab580709f49`.
+
+The exact #554 body clause therefore resolves to the four existing issue edges plus
+required receipt `#546`. Removing #546 or changing the clause fails closed. PR #551
+remains useful ancestry evidence, but it is not substituted for the issue-scoped
+acceptance/integration receipt. The receipt supplies the named A13.1 granularity; it
+does not replace the broader A13 issue edge with an A13.1 graph edge.
