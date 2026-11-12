@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 264,
-  "legacy_raw_raise_count": 2092,
+  "legacy_raw_file_count": 265,
+  "legacy_raw_raise_count": 2093,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -11705,6 +11705,13 @@
       "exception": "AssertionError",
       "expression": "f'C06 Factory C05 rejected labeled candidate: reason={decision.reason}; evidence={decision.evidence_sha256}; policy={decision.policy_sha256}; blocking_capability={evaluation.decision.blocking_capability}'",
       "path": "bilqis_mlx/runtime/tests/model/salience/retained_publication_witness.py"
+    },
+    {
+      "code_hint": "bamf_operator must not inspect Factory capability order",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'bamf_operator must not inspect Factory capability order'",
+      "path": "bilqis_mlx/runtime/tests/operator/test_bamf_operator_session.py"
     },
     {
       "code_hint": "GRAPH_UNAVAILABLE",

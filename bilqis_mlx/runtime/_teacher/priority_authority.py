@@ -6,7 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_salience import derive_salience, verify_salience_inputs
 from bilqis_mlx.learning.salience_contracts import (
     ActionKind, AttentionOption, AuthoritySnapshot, FactOrigin, Metric, MetricRule,
@@ -24,7 +24,12 @@ from bilqis_mlx.semantics.domains import contract_digest
 
 _SCOPE = "factory/foundation"
 _SOURCE_EACH = 1
+SHA256_HEX_LENGTH = 64
 _REJECTION_JOURNAL_INVALID = "BAMF_PRIORITY_REJECTION_JOURNAL_INVALID"
+
+
+def _invalid(reason):
+    ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID, reason=reason)
 
 
 @dataclass(frozen=True)
@@ -89,7 +94,7 @@ def _context(parent, offer, teacher_epoch_digest):
     if (type(rights_epoch) is not int or rights_epoch < 0
             or type(correction_generation) is not int
             or correction_generation < 0):
-        raise ValueError("BAMF_PRIORITY_CORRECTION_FRONTIER_INVALID")
+        _invalid("BAMF_PRIORITY_CORRECTION_FRONTIER_INVALID")
     return SalienceContext(
         offer.release_sha256, binding, rights_epoch, correction_generation,
         offer.capability_id, capability_epoch,
@@ -131,10 +136,10 @@ def _priority_planning(run_dir, source_context, atlas_artifact_path):
     run_dir = Path(run_dir)
     selection, feature_receipt = _accepted_selection(run_dir)
     if Path(selection.path).resolve() != Path(atlas_artifact_path).resolve():
-        raise ValueError("BAMF_PRIORITY_ATLAS_SELECTION_DRIFT")
+        _invalid("BAMF_PRIORITY_ATLAS_SELECTION_DRIFT")
     current = source_context.release
     if selection.release_sha256 != feature_receipt.source_release_sha256:
-        raise ValueError("BAMF_PRIORITY_ATLAS_RELEASE_DRIFT")
+        _invalid("BAMF_PRIORITY_ATLAS_RELEASE_DRIFT")
     candidate = compile_semantic_curriculum(
         selection, SOURCE_FAMILY_ADAPTERS,
         LearnedFrontier(selection.release_sha256))
@@ -172,8 +177,8 @@ def _priority_planning(run_dir, source_context, atlas_artifact_path):
         try:
             projection = candidate_realizations.project_authoritative_target(
                 semantic_id, current, rows)
-        except ValueError as error:
-            raise ValueError("BAMF_PRIORITY_A09_REALIZATION_MISSING") from error
+        except ValueError:
+            _invalid("BAMF_PRIORITY_A09_REALIZATION_MISSING")
         selected = select_frontier_delta_for_projection(
             snapshot, closure, current, projection, requested)
     progress = plan_frontier_progress(
@@ -186,32 +191,37 @@ def _priority_planning(run_dir, source_context, atlas_artifact_path):
 def _current_rejections(run_dir, parent, cache):
     """Replay only rejections bound to the exact currently accepted B13 parent."""
     from bilqis_mlx.data_plane import data_plane
+    from bilqis_mlx.runtime import checkpoint_outbox
     from bilqis_mlx.runtime.bamf_bundle.records import canonical
     journal = Path(run_dir) / "events.jsonl"
     if not journal.exists():
         return ()
     if journal.is_symlink() or not journal.is_file():
-        raise ValueError(_REJECTION_JOURNAL_INVALID)
+        _invalid(_REJECTION_JOURNAL_INVALID)
     rows, seen = [], set()
     for raw in journal.read_text(encoding="utf-8").splitlines():
         try:
             event = json.loads(raw)
-        except json.JSONDecodeError as error:
-            raise ValueError(_REJECTION_JOURNAL_INVALID) from error
+        except json.JSONDecodeError:
+            _invalid(_REJECTION_JOURNAL_INVALID)
         if not isinstance(event, dict) or event.get("event") != "BAMF_CANDIDATE_REJECTED":
             continue
         if event.get("generation") != cache.generation:
             continue
         if (event.get("student_manifest_sha256") != cache.accepted_manifest_sha256
                 or event.get("optimizer_step") != parent.retained_state.optimizer_step):
-            raise ValueError("BAMF_PRIORITY_REJECTION_IDENTITY_DRIFT")
+            _invalid("BAMF_PRIORITY_REJECTION_IDENTITY_DRIFT")
+        lineage = {"run_id": cache.run_id, "generation": cache.generation}
+        if not checkpoint_outbox.ordinary_outbox_lineage(lineage, [event]):
+            _invalid("BAMF_PRIORITY_REJECTION_OUTBOX_INVALID")
         evidence = event.get("evidence")
         if not isinstance(evidence, dict) or evidence.get("schema") != "bilqis.bamf.c16.3-rejection/v2":
             continue
         authority_sha256 = event.get("rejection_authority_sha256")
-        if (not isinstance(authority_sha256, str) or len(authority_sha256) != 64
+        if (not isinstance(authority_sha256, str)
+                or len(authority_sha256) != SHA256_HEX_LENGTH
                 or any(char not in "0123456789abcdef" for char in authority_sha256)):
-            raise ValueError("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
+            _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
         authority = {
             "schema": "bilqis.mlx.bamf-rejection-authority/v1",
             "run_id": cache.run_id,
@@ -222,10 +232,25 @@ def _current_rejections(run_dir, parent, cache):
         }
         try:
             authority_raw = data_plane().get_object(authority_sha256)
-        except ValueError as error:
-            raise ValueError("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID") from error
+        except ValueError:
+            _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
         if authority_raw != canonical(authority):
-            raise ValueError("BAMF_PRIORITY_REJECTION_AUTHORITY_DRIFT")
+            _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_DRIFT")
+        receipt = {
+            "schema": "bilqis.mlx.bamf-rejection-receipt/v1",
+            "run_id": cache.run_id,
+            "generation": cache.generation,
+            "student_manifest_sha256": cache.accepted_manifest_sha256,
+            "event": event,
+        }
+        receipt_raw = canonical(receipt)
+        receipt_sha256 = hashlib.sha256(receipt_raw).hexdigest()
+        try:
+            stored_receipt = data_plane().get_object(receipt_sha256)
+        except ValueError:
+            _invalid("BAMF_PRIORITY_REJECTION_RECEIPT_INVALID")
+        if stored_receipt != receipt_raw:
+            _invalid("BAMF_PRIORITY_REJECTION_RECEIPT_DRIFT")
         selected = evidence.get("selected_option_id")
         visit_id = evidence.get("visit_id")
         candidate_step = evidence.get("candidate_optimizer_step")
@@ -237,8 +262,7 @@ def _current_rejections(run_dir, parent, cache):
                 or candidate_step <= parent.retained_state.optimizer_step
                 or retained_step != parent.retained_state.optimizer_step
                 or not isinstance(reason, str) or not reason):
-            raise ValueError("BAMF_PRIORITY_REJECTION_EVIDENCE_INVALID")
-        receipt_sha256 = contract_digest(event)
+            _invalid("BAMF_PRIORITY_REJECTION_EVIDENCE_INVALID")
         if receipt_sha256 in seen:
             continue
         seen.add(receipt_sha256)
@@ -270,7 +294,7 @@ def issue_foundation_priority_authority(
     signer = read_host_system_source_authority_signer(registry)
     next_seed = parent.teacher_state.get("next_seed")
     if type(next_seed) is not int or next_seed < 0:
-        raise ValueError("BAMF_PRIORITY_TEACHER_SEED_INVALID")
+        _invalid("BAMF_PRIORITY_TEACHER_SEED_INVALID")
     counter, last_selected = priority_rotation_state(parent.teacher_state)
     planning = _priority_planning(run_dir, source_context, atlas_artifact_path)
     offers = tuple((capability.id, prepare_priority_source_offer(
@@ -281,7 +305,7 @@ def issue_foundation_priority_authority(
     rejections = _current_rejections(run_dir, parent, cache)
     option_ids = {capability for capability, _ in offers}
     if any(capability not in option_ids for capability, *_ in rejections):
-        raise ValueError("BAMF_PRIORITY_REJECTION_OPTION_DRIFT")
+        _invalid("BAMF_PRIORITY_REJECTION_OPTION_DRIFT")
     rejection_recency = {}
     for offset, (capability, *_rest) in enumerate(rejections, start=1):
         rejection_recency[capability] = counter + offset
