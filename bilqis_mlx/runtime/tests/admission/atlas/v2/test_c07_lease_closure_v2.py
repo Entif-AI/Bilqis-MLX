@@ -1,4 +1,5 @@
 """Literal C07.1a/#509 repeated-adoption closure witness."""
+from contextlib import nullcontext
 import os
 import unittest
 from unittest.mock import patch
@@ -15,17 +16,20 @@ from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
 from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
     ParsedFactoryReleaseAdmissionBinding,
 )
+from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from bilqis_mlx.runtime.tests.admission.atlas.v2.mixed_witness_support import (
     MixedWitnessSupport,
 )
 
 
-@unittest.skipUnless(
-    os.environ.get("BILQIS_BAMF_FULL_WITNESS"),
-    "full C07.1a repeated-adoption witness is explicitly gated",
-)
 class C07LeaseClosureV2Tests(MixedWitnessSupport, unittest.TestCase):
-    def test_one_lease_admits_three_successors_and_cold_resumes_from_second(self):
+    def _exercise_three_successors(self, *, compact_shapes: bool):
+        shape_scope = shape_patch() if compact_shapes else nullcontext()
+        with shape_scope:
+            self._exercise_three_successors_in_scope()
+
+    def _exercise_three_successors_in_scope(self):
         staged1 = self.zero_id_stage()
         h1, plan1, learner1 = self.capability_handoff(staged1)
         snapshot, event_candidate, schema, features = self.common_atlas()
@@ -88,8 +92,22 @@ class C07LeaseClosureV2Tests(MixedWitnessSupport, unittest.TestCase):
             read_accepted_atlas_factory_release(self.run).release_sha256,
             h3.staged_candidate.successor.release_sha256)
         ages = tuple(item.identity for item in accepted3.retained_state.policy.row_ages)
-        self.assertEqual(ages.count(semantic2), 1)
-        self.assertEqual(ages.count(semantic3), 1)
+        for semantic_id in (semantic2, semantic3):
+            entry = snapshot.abi_for_semantic(semantic_id)
+            row_identity = divmod(entry.index, ModelTopologySpecV2.semantic_bank_rows)
+            self.assertEqual(ages.count(row_identity), 1)
+
+    def test_compact_one_lease_admits_three_successors_and_cold_resumes_from_second(self):
+        """Exercise the exact orchestration contract without full-size tensor cost."""
+        self._exercise_three_successors(compact_shapes=True)
+
+    @unittest.skipUnless(
+        os.environ.get("BILQIS_BAMF_FULL_WITNESS"),
+        "full C07.1a repeated-adoption witness is explicitly gated",
+    )
+    def test_one_lease_admits_three_successors_and_cold_resumes_from_second(self):
+        """Final acceptance witness at production tensor geometry."""
+        self._exercise_three_successors(compact_shapes=False)
 
 
 if __name__ == "__main__":
