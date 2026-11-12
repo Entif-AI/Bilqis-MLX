@@ -12,6 +12,7 @@ FOUNDATION_SCHEMA = "bilqis.c13.foundation-launch-input/v1"
 SOURCE_SCHEMA = "bilqis.c13.episode-source-release/v1"
 CASE_SCHEMA = "bilqis.c13.episode-binding-case/v1"
 RECEIPT_SCHEMA = "bilqis.c13.delivery-receipt/v1"
+SEMANTIC_DELTA_SCHEMA = "bilqis.c13.semantic-delta-receipt/v1"
 MAX_STEPS = 64
 ACTORS = ("A", "B", "C")
 
@@ -100,6 +101,28 @@ class CandidateAttemptReceipt:
 
 
 @dataclass(frozen=True)
+class SemanticDeltaReceipt:
+    semantic_id: str
+    parent_generation: int
+    current_generation: int
+    optimizer_step: int
+    prior_state_preserved: bool
+    new_rows: tuple[tuple[int, int], ...]
+    schema_version: str = SEMANTIC_DELTA_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (self.schema_version != SEMANTIC_DELTA_SCHEMA
+                or not self.semantic_id
+                or self.current_generation != self.parent_generation + 1
+                or type(self.optimizer_step) is not int or self.optimizer_step < 0
+                or self.prior_state_preserved is not True
+                or not self.new_rows
+                or any(type(bank) is not int or type(row) is not int
+                       or bank < 0 or row < 0 for bank, row in self.new_rows)):
+            fail("BAMF_C13_SEMANTIC_DELTA_RECEIPT_INVALID")
+
+
+@dataclass(frozen=True)
 class DeliveryReceipt:
     source_release_sha256: str
     semantic_release: str
@@ -140,5 +163,5 @@ class DeliveryReceipt:
 __all__ = (
     "ACTORS", "CASE_SCHEMA", "CandidateAttemptReceipt", "DeliveryConfig",
     "DeliveryReceipt", "EpisodeSourceRelease", "FoundationLaunchInput",
-    "MAX_STEPS", "fail",
+    "MAX_STEPS", "SemanticDeltaReceipt", "fail",
 )
