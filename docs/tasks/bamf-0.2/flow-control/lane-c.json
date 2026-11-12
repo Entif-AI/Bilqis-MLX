@@ -323,6 +323,15 @@
       "summary": "C07.2/#511 turned in after consuming reviewed unified 16fe1bc9 and merged C07 prerequisites. Out-of-lease semantic releases remain staged while already-authorized learning may continue; current debt, numeric scope and Factory policy identity come from the exact current manifest/release boundary; the existing custody-backed C07 witness proves one persisted lease across three data-defined successors with cold resume from the second. Fresh independent exact-head review at semantic head 66f17619 found 0 Blockers / 0 Majors / 0 Minors. Post-sync bounded affected checks remain green; no live learner mutation, over-budget test, or self-merge authority was used.",
       "resume_trigger": null,
       "preserved_branch": "codex/511-c07-out-of-scope-debt-v2-20261112"
+    },
+    {
+      "issue": 512,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "21b95a97315875e91e4882d0e9343c75b3ae763e",
+      "summary": "C07.3/#512 began from reviewed unified 21b95a97 after #511 merged. Isolated serialized-writer branch codex/512-c07-flywheel-20261112 owns the event-driven A09/C07 admission flywheel only: typed terminal statuses, exact proposal/admission binding, and replanning solely after custody-visible state advance. It introduces no source-rights, grade-promotion, or MLX-training authority.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/512-c07-flywheel-20261112"
     }
   ]
 }
