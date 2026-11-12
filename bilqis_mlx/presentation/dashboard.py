@@ -44,11 +44,54 @@ def _bamf_foundation_dashboard_state(run_dir: Path):
     }
 
 
+def _bamf_accepted_dashboard_state(run_dir: Path):
+    pointer = run_dir / "bamf-state.json"
+    if not pointer.exists() and not pointer.is_symlink():
+        return None
+    from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
+    from bilqis_mlx.runtime.admission import _read_executable_factory_release_artifact
+    student, _manifest = load_bamf_generation_authority(pointer)
+    if student.generation == 0:
+        return None
+    release = _read_executable_factory_release_artifact(run_dir, {
+        "factory_release_sha256": student.run_identity.factory_release_sha256,
+        "factory_release_file": (
+            "factory-releases/" + student.run_identity.factory_release_sha256 + ".json"),
+    })
+    active = [grade.grade_id for grade in release.execution_plan.grades]
+    latest_capability = next((
+        event.get("capability") for event in reversed(student.outbox)
+        if isinstance(event, dict) and isinstance(event.get("capability"), str)
+    ), None)
+    current_grade = (
+        release.execution_plan.capability_map[latest_capability].grade_id
+        if latest_capability in release.execution_plan.capability_map
+        else active[0])
+    teacher = student.teacher_state
+    return {
+        "generation": student.generation,
+        "factory_release_sha256": release.release_sha256,
+        "teacher": {"events": teacher.get("teacher_epoch", 0)},
+        "result": "PERSISTENT_BAMF_ACCEPTED",
+        "school": {
+            "current_student": {
+                "optimizer_step": student.retained_state.optimizer_step,
+            },
+            "active_grades": active,
+            "grade_index": active.index(current_grade),
+            "visits": teacher.get("teacher_epoch", student.generation),
+            "stage": "PERSISTENT_BAMF",
+        },
+    }
+
+
 def _dashboard_state(run_dir: Path):
     state_path = run_dir / "state.json"
     state = read_current(run_dir) if state_path.exists() else None
     if state is None:
         state = _bamf_foundation_dashboard_state(run_dir)
+    if state is None:
+        state = _bamf_accepted_dashboard_state(run_dir)
     school = state["school"] if state else {}
     active = school.get("active_grades", ())
     grade_index = school.get("grade_index", 0)

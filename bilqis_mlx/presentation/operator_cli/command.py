@@ -72,7 +72,18 @@ def _bamf_or_topology(args):
     )
     if resume_v2_intent:
         from .bamf_lifecycle import bamf_lifecycle
-        return True, _print_status(bamf_lifecycle(args, None)), None
+        report = bamf_lifecycle(args, None)
+        if (args.human_run and not args.dry_run
+                and report.get("result") == "READY_TO_RESUME"):
+            from dataclasses import asdict
+            from bilqis_mlx.runtime.bamf_operator import operate_bamf
+            from .bamf_lifecycle_inputs import source_foundation
+            _source, _release, graph = source_foundation()
+            result = operate_bamf(
+                run_dir, graph, minutes=args.minutes,
+                max_visits=args.max_visits, reserve_gib=args.reserve_gib)
+            return True, _print_status(asdict(result)), None
+        return True, _print_status(report), None
 
     from bilqis_mlx.runtime.topology_lifecycle import topology_from_file
     try:

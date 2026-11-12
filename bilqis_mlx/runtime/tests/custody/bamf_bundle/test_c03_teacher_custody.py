@@ -19,6 +19,9 @@ from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
 from bilqis_mlx.runtime.accepted_teacher_custody import (
     BoundTeacherVisit, derive_c03_successor_bundle, select_accepted_teacher_visit,
 )
+from bilqis_mlx.runtime.foundation_teacher_owner import (
+    accepted_teacher_trajectory, derive_accepted_teacher_successor,
+)
 from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate, publish_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 from bilqis_mlx.runtime.bamf_bundle.package_import_transition import (
@@ -73,12 +76,14 @@ class C03AcceptedTeacherCustodyTests(unittest.TestCase):
         self.assertEqual(bound.identity.cursor, "GENESIS")
         self.assertEqual(bound.projection.teacher_state["last_visit"],
                          bound.identity.to_record())
+        trajectory = accepted_teacher_trajectory(bound)
+        self.assertEqual(trajectory.next_seed, 72)
+        self.assertEqual(trajectory.cursor, bound.identity.visit_id)
 
         retained = accepted_state(parent.retained_state, parent.extents)
         with shape_patch():
-            successor = derive_c03_successor_bundle(
+            successor = derive_accepted_teacher_successor(
                 self.run, retained, bound,
-                next_seed=72, cursor="lesson:1",
                 delivery_events=({"event": "C03_TEST_VISIT", "optimizer_step": 1},))
         self.assertEqual(successor.provenance.teacher_identity,
                          successor.teacher_state["teacher_identity"])
@@ -97,7 +102,7 @@ class C03AcceptedTeacherCustodyTests(unittest.TestCase):
         restored = restore_teacher_lineage(cold.teacher_state)
         self.assertEqual(cold.teacher_state["last_visit"], bound.identity.to_record())
         self.assertEqual(cold.teacher_state["next_seed"], 72)
-        self.assertEqual(cold.teacher_state["cursor"], "lesson:1")
+        self.assertEqual(cold.teacher_state["cursor"], bound.identity.visit_id)
         self.assertEqual(cold.teacher_state["teacher_epoch"], 1)
         self.assertEqual(restored.student_sha256,
                          candidate_identity_digest(cold.retained_state))
@@ -113,7 +118,7 @@ class C03AcceptedTeacherCustodyTests(unittest.TestCase):
         self.assertEqual(rebound.identity.generation, 1)
         self.assertEqual(rebound.identity.run_seed, 71)
         self.assertEqual(rebound.identity.selection_seed, 72)
-        self.assertEqual(rebound.identity.cursor, "lesson:1")
+        self.assertEqual(rebound.identity.cursor, bound.identity.visit_id)
         self.assertEqual(rebound.identity.student_sha256, restored.student_sha256)
 
         with self.assertRaises(BilqisError) as caller_failure:

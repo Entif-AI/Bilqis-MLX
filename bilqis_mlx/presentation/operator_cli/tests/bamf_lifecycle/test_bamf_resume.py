@@ -114,20 +114,30 @@ class BamfResumeTests(BamfFirstStudentCase):
         self.assertNotIn("BAMF_ATLAS_ENROLLMENT_REQUEST_INVALID", errors)
         self.assertEqual(_tree_snapshot(target), before)
 
-    def test_human_resume_is_cold_validation_only_and_neural_inert(self):
+    def test_human_resume_dispatches_bamf_native_operator_after_validation(self):
         target = self.root / "accepted-bamf"
         self.preflight(target)
         before = _tree_snapshot(target)
+        graph = {"schema": "test-graph"}
+        from bilqis_mlx.runtime.bamf_operator import BamfOperatorResult
         with self.accepted_read_context(), patch(
                 "bilqis_mlx.presentation.operator_cli.command._invoke_learner",
-                side_effect=AssertionError("C16.2 owns later neural execution")):
+                side_effect=AssertionError("legacy learner must remain untouched")), patch(
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle_inputs.source_foundation",
+                return_value=(Path("/source"), object(), graph)), patch(
+                "bilqis_mlx.runtime.bamf_operator.operate_bamf",
+                return_value=BamfOperatorResult(
+                    "VISIT_LIMIT", 1, 1, 0, 1, 1)) as operate:
             code, output, errors = self.invoke([
                 "--human-run", "--resume", "--run-dir", str(target),
+                "--max-visits", "1",
             ])
         self.assertEqual((code, errors), (0, ""))
         report = json.loads(output)
-        self.assertEqual(report["result"], "READY_TO_RESUME")
-        self.assertFalse(report["ready_for_training"])
+        self.assertEqual(report["status"], "VISIT_LIMIT")
+        self.assertEqual(report["generation"], 1)
+        operate.assert_called_once_with(
+            target, graph, minutes=90, max_visits=1, reserve_gib=100.0)
         self.assertEqual(_tree_snapshot(target), before)
 
     def test_human_resume_run_id_conflict_never_reaches_learner(self):

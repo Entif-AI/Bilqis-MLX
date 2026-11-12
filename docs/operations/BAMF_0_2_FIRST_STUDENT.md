@@ -198,3 +198,51 @@ The future owner-start command remains:
 
 C16.3/#545 still owns persistent production dispatch. C16.2 remains neural-inert
 outside bounded disposable checks.
+
+### C16.3 persistent human-start handoff
+
+C16.3 implements the persistent side of the command contract without routing an
+accepted BAMF generation through the historical `state.json` trainer:
+
+`npm run train -- --human-run --resume --run-dir <accepted-bamf-run>`
+
+Resume first revalidates the accepted B13 run, topology, Factory release, Atlas
+identity and admission policy through the existing lifecycle boundary. A dry-run
+still stops at `READY_TO_RESUME`; fresh creation and Atlas enrollment also remain
+neural-inert. Only an explicit non-dry-run `--human-run --resume` enters the BAMF
+operator coordinator.
+
+The coordinator owns no curriculum, retention policy or publication decision. For
+each proposed visit it:
+
+1. opens the current accepted generation through `AcceptedRuntimeHost` and checks
+   the accepted Atlas-lease epoch;
+2. measures the accepted parent on C05's immutable whole-school fixture and selects
+   the first admitted Factory capability that is not yet mastered and whose declared
+   prerequisites are mastered, preserving Factory release order without grade-label
+   branches;
+3. binds C03 policy selection to the accepted teacher state. On the first visit,
+   C03 bootstrap is reconstructed only from the checked-in legacy-trainer authority
+   record and its exact live source head; unavailable or drifted authority fails
+   closed rather than searching for another trainer;
+4. derives source and optimizer seeds from the accepted visit identity and executes
+   one BAMF-native C02/C08/B10/B11 candidate transaction;
+5. runs the C05 owner screen and either records a B13 rejection without advancing
+   teacher trajectory, or publishes the accepted successor through B13.
+
+C16.3 also makes the production C03 trajectory explicit. Genesis remains B13-owned:
+`next_seed=run_seed` and `cursor=GENESIS`. After an accepted visit, the next seed is
+the accepted visit's selection seed plus one and the cursor is that visit's opaque
+`visit_id`. The source-row cursor used by the C16.2 disposable witness remains
+fixture-only evidence and is not production authority. Rejected candidates do not
+advance the accepted seed, cursor or teacher epoch.
+
+The operator loop is serialized by the existing run-root operator lock. A rejected
+candidate enters `REJECTED_HOLD` rather than silently retrying, and a fully mastered
+foundation enters `FOUNDATION_COMPLETE`. Status and dashboard inspection read the
+accepted BAMF generation directly; they do not reconstruct a legacy school.
+
+No persistent BAMF student is started as part of C16.3 acceptance. The human owner
+starts and observes the live lineage with the command above. Agent verification of
+this handoff remains bounded under ADR-141 and uses parser/lifecycle/authority/cold
+resume contract tests rather than a long-running learner session.

@@ -15,8 +15,8 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
     load_accepted_generation,
 )
 from bilqis_mlx.runtime.capability_retention import (
-    Decision, EvidenceKind, EvidenceStage, EvaluationCohort, RetentionPolicy, case_census_digest,
-    evaluate_retention_candidate,
+    Decision, EvidenceKind, EvidenceStage, EvaluationCohort, RetentionPolicy,
+    case_census_digest, evaluate_capabilities, evaluate_retention_candidate,
 )
 from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.state_dag import read_current
@@ -208,6 +208,40 @@ def _bind_factory_evaluation_issuer(raw_issue):
 _foundation_retention_evaluation, _adaptive_retention_evaluation = (
     _bind_factory_evaluation_issuer(_raw_issue_owner_evaluation))
 del _raw_issue_owner_evaluation
+
+
+def measure_factory_foundation_progress(
+    source_context, artifact_path: str, *, run_dir: Path,
+):
+    """Measure the accepted parent on C05's immutable whole-school fixture.
+
+    This is observation only.  It grants no admission or retention authority;
+    C16.3 uses the scores solely to choose the next prerequisite-lawful target
+    from the admitted Factory plan.
+    """
+    if not isinstance(run_dir, Path):
+        _invalid("BAMF_C05_FACTORY_OWNER_INPUT_INVALID")
+    source_context.__post_init__()
+    source_context.require_accepted_runtime(run_dir)
+    parent = load_accepted_generation(run_dir)
+    cache = bind_accepted_execution_cache(run_dir)
+    release = source_context.release
+    groups = tuple(
+        (item.capability_id, item.grade_id)
+        for item in release.execution_plan.capabilities)
+    fixed = _fixed_school_instruments(
+        source_context, parent, artifact_path, run_dir, release,
+        parent=parent, cache=cache)
+    cases = tuple(item.case for item in fixed)
+    policy = FoundationRetentionPolicy(
+        groups, tuple(dict.fromkeys(group for _, group in groups)), (),
+        C05_PROBE_EACH, case_census_digest(cases))
+    cohort = _cohort(
+        EvidenceKind.FIXED_SCHOOL, fixed, groups, release, policy, ((), ()),
+        evidence_stage=CURRENT_EVIDENCE_STAGE)
+    solver, generation = factory_complete_solver(
+        source_context, parent, artifact_path, fixed)
+    return evaluate_capabilities(solver, cohort, generation)
 
 
 def evaluate_factory_retention_candidate(

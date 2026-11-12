@@ -83,6 +83,26 @@ def _executable_release_summary(run_dir: Path, saved: dict) -> dict | None:
 
 
 def _inspect(run_dir: Path) -> dict:
+    bamf_pointer = run_dir / "bamf-state.json"
+    if bamf_pointer.exists() or bamf_pointer.is_symlink():
+        from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
+        student, manifest_sha256 = load_bamf_generation_authority(bamf_pointer)
+        teacher = student.teacher_state
+        return {
+            "status": "BAMF_ACCEPTED_GENERATION_READ_ONLY",
+            "run_id": student.run_id,
+            "generation": student.generation,
+            "generation_manifest_sha256": manifest_sha256,
+            "optimizer_step": student.retained_state.optimizer_step,
+            "factory_release_sha256": student.run_identity.factory_release_sha256,
+            "topology_sha256": student.run_identity.topology_sha256,
+            "teacher_epoch": teacher.get("teacher_epoch"),
+            "teacher_cursor": teacher.get("cursor"),
+            "teacher_next_seed": teacher.get("next_seed"),
+            "c03_lineage_active": "c03_lineage" in teacher,
+            "neural_training_started_by_this_command": False,
+            "run_dir": str(run_dir),
+        }
     state = run_dir / "state.json"
     if state.is_file():
         saved = read_current(run_dir)

@@ -1,0 +1,161 @@
+"""C16.3 production owner for the first BAMF C03 bootstrap and trajectory."""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+import random
+
+from bilqis_mlx.compatibility.legacy_trainer_authority import live_authority
+from bilqis_mlx.compatibility import historical_teacher_policy
+from bilqis_mlx.learning.teacher_lineage import adaptation_authority_ref
+from bilqis_mlx.learning.teacher_lineage_records import digest, invalid
+from bilqis_mlx.runtime.accepted_teacher_custody import BoundTeacherVisit
+
+
+TRAJECTORY_SCHEMA = "bilqis.bamf.c16.3-teacher-trajectory/v1"
+_BOOTSTRAP_ISSUER = object()
+_ADVANCE_ISSUER = object()
+
+
+@dataclass(frozen=True, init=False)
+class FoundationTeacherBootstrap:
+    """Unforgeable source-derived bootstrap for a pre-C03 accepted student."""
+
+    legacy_receipt: dict
+    adaptation: dict
+    prior_region: str
+    _issuance: object = field(init=False, repr=False, compare=False)
+
+    def __init__(self, *args, **kwargs):
+        invalid("TEACHER_BOOTSTRAP_CALLER_CONSTRUCTION_FORBIDDEN")
+
+    def __post_init__(self):
+        if (
+            getattr(self, "_issuance", None) is not _BOOTSTRAP_ISSUER
+            or not isinstance(self.legacy_receipt.get("teacher"), dict)
+            or not isinstance(self.adaptation, dict)
+            or not isinstance(self.prior_region, str)
+            or not self.prior_region
+        ):
+            invalid("TEACHER_BOOTSTRAP_AUTHORITY_INVALID")
+
+
+@dataclass(frozen=True, init=False)
+class TeacherTrajectoryAdvance:
+    """Owner-issued next accepted C03 trajectory coordinates."""
+
+    next_seed: int
+    cursor: str
+    policy_schema: str
+    _issuance: object = field(init=False, repr=False, compare=False)
+
+    def __init__(self, *args, **kwargs):
+        invalid("TEACHER_TRAJECTORY_CALLER_CONSTRUCTION_FORBIDDEN")
+
+    def __post_init__(self):
+        if (
+            getattr(self, "_issuance", None) is not _ADVANCE_ISSUER
+            or type(self.next_seed) is not int
+            or self.next_seed < 0
+            or not isinstance(self.cursor, str)
+            or not self.cursor
+            or self.policy_schema != TRAJECTORY_SCHEMA
+        ):
+            invalid("TEACHER_TRAJECTORY_INVALID")
+
+
+def foundation_teacher_bootstrap() -> FoundationTeacherBootstrap:
+    """Bind the declared latest legacy teacher without importing its learner."""
+    authority, observed_head, current = live_authority()
+    teacher = current["teacher"]
+    adaptation = adaptation_authority_ref(
+        authority, observed_source_head=observed_head)
+    prior_region = digest({
+        "schema": "bilqis.bamf.c16.3-prior-teacher-region/v1",
+        "adaptation": adaptation,
+        "teacher_sha256": digest(teacher),
+    })
+    result = object.__new__(FoundationTeacherBootstrap)
+    for name, value in (
+        ("legacy_receipt", {"teacher": teacher}),
+        ("adaptation", adaptation),
+        ("prior_region", prior_region),
+        ("_issuance", _BOOTSTRAP_ISSUER),
+    ):
+        object.__setattr__(result, name, value)
+    result.__post_init__()
+    return result
+
+
+def accepted_teacher_trajectory(visit: BoundTeacherVisit) -> TeacherTrajectoryAdvance:
+    """Advance only from the exact accepted visit identity.
+
+    C16.3 deliberately defines a BAMF-native generic trajectory instead of
+    inheriting the retired trainer's receipt/generation hash RNG.  The cursor is
+    an opaque accepted-visit chain identity, not a source row or grade position.
+    Rejected candidates never call this owner and therefore burn no seed.
+    """
+    if type(visit) is not BoundTeacherVisit:
+        invalid("TEACHER_VISIT_CUSTODY_REQUIRED")
+    visit.__post_init__()
+    result = object.__new__(TeacherTrajectoryAdvance)
+    for name, value in (
+        ("next_seed", visit.identity.selection_seed + 1),
+        ("cursor", visit.identity.visit_id),
+        ("policy_schema", TRAJECTORY_SCHEMA),
+        ("_issuance", _ADVANCE_ISSUER),
+    ):
+        object.__setattr__(result, name, value)
+    result.__post_init__()
+    return result
+
+
+def select_foundation_teacher_visit(
+        run_dir, school, learning_settings, teacher_curriculum_scope,
+        previsit_diagnostics, *, capability_id: str, lesson_grade: str,
+        total_capabilities=None, plasticity_escape=None):
+    """Select one production visit from accepted C03 state, never caller RNG."""
+    from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+    from bilqis_mlx.runtime.accepted_teacher_custody import (
+        select_accepted_teacher_visit,
+    )
+
+    parent = load_accepted_generation(run_dir)
+    state = parent.teacher_state
+    if type(state.get("next_seed")) is not int or state["next_seed"] < 0:
+        invalid("TEACHER_SUCCESSOR_SELECTION_STATE_INVALID")
+    bootstrap = {}
+    if "c03_lineage" not in state:
+        owned = foundation_teacher_bootstrap()
+        bootstrap = {
+            "legacy_receipt": owned.legacy_receipt,
+            "adaptation": owned.adaptation,
+            "prior_region": owned.prior_region,
+        }
+    return select_accepted_teacher_visit(
+        run_dir, historical_teacher_policy, school,
+        random.Random(state["next_seed"]), learning_settings,
+        teacher_curriculum_scope, previsit_diagnostics, lesson_grade,
+        capability_id=capability_id, total_capabilities=total_capabilities,
+        plasticity_escape=plasticity_escape, **bootstrap)
+
+
+def derive_accepted_teacher_successor(
+        run_dir, retained_state, visit: BoundTeacherVisit, *,
+        delivery_events: tuple):
+    """Build an accepted B13 successor with C16.3-owned trajectory state."""
+    from bilqis_mlx.runtime.accepted_teacher_custody import (
+        derive_c03_successor_bundle,
+    )
+    trajectory = accepted_teacher_trajectory(visit)
+    return derive_c03_successor_bundle(
+        run_dir, retained_state, visit,
+        next_seed=trajectory.next_seed, cursor=trajectory.cursor,
+        delivery_events=delivery_events)
+
+
+__all__ = (
+    "FoundationTeacherBootstrap", "TeacherTrajectoryAdvance",
+    "TRAJECTORY_SCHEMA", "accepted_teacher_trajectory",
+    "derive_accepted_teacher_successor", "foundation_teacher_bootstrap",
+    "select_foundation_teacher_visit",
+)
