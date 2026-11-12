@@ -2,9 +2,13 @@
 from copy import deepcopy
 import hashlib
 import json
+from pathlib import Path
 import subprocess
 import sys
 import unittest
+
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "scripts" / "bamf" / "workstack"))
 
 from scripts import verify_bamf_0_2_contracts as contracts
 from scripts.bamf.workstack_dependencies import load_dependency_sources, pinned_dependency_keys

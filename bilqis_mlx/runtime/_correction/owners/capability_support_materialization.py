@@ -75,25 +75,43 @@ def _anchor_dependencies(anchors, policy_sha256, manifest_sha256):
 
 
 def _verify_anchor_proofs(binding, student, capability_id):
-    proofs = student.retained_state.step_proofs
-    if len(proofs) != len(binding.source_anchors):
+    expected = []
+    for step_index, proof in enumerate(student.retained_state.step_proofs, 1):
+        if (getattr(proof, "step_index", None) != step_index
+                or proof.training_authority_sha256 is None):
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
+        members = getattr(proof, "training_authority_members", ()) or ()
+        if members:
+            expected.extend(
+                (proof, digest, family, episode)
+                for digest, family, episode in members
+            )
+        else:
+            expected.append((
+                proof,
+                proof.training_authority_sha256,
+                proof.source_family_id,
+                proof.episode_id,
+            ))
+    if len(binding.source_anchors) != len(expected):
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
-    anchors = []
-    for index, (anchor, proof) in enumerate(zip(binding.source_anchors, proofs), 1):
+    for anchor, (proof, authority_digest, family, episode) in zip(
+            binding.source_anchors, expected):
         source = _source_anchor(anchor)
-        if (proof.step_index != index
-                or proof.training_authority_sha256 != source.training_authority_sha256
+        if (source.training_authority_sha256 != authority_digest
                 or proof.source_release_sha256 != source.release_sha256
                 or proof.training_batch_sha256 != source.training_batch_sha256
                 or proof.target_capability_id != source.capability_id
-                or proof.source_family_id != source.source_family_id
-                or proof.episode_id != source.episode_id):
+                or source.source_family_id != family
+                or source.episode_id != episode):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
-        if source.capability_id == capability_id:
-            anchors.append(anchor)
+    anchors = tuple(
+        anchor for anchor in binding.source_anchors
+        if _source_anchor(anchor).capability_id == capability_id
+    )
     if not anchors:
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_SOURCE_MISSING")
-    return tuple(anchors)
+    return anchors
 
 
 def materialized_support(binding, student, manifest_sha256, capability_id):
@@ -142,18 +160,24 @@ def materialized_support(binding, student, manifest_sha256, capability_id):
 
 def retained_closure_nodes(binding, student, capability_id):
     """Recover only closures bound to this capability's executed proofs."""
-    from bilqis_mlx.learning._retention._atlas_acceptance_records import require_closure_proofs
+    from bilqis_mlx.learning._retention._atlas_acceptance_records import (
+        require_closure_proofs,
+    )
     from bilqis_mlx.semantics.dependencies.closure import decode_closure_nodes
+
     require_closure_proofs(binding, student.retained_state.step_proofs)
-    proofs = {proof.step_index: proof for proof in student.retained_state.step_proofs}
+    proofs = {
+        proof.step_index: proof
+        for proof in student.retained_state.step_proofs
+    }
     nodes = {}
-    for entry in getattr(binding, 'artifact_closures', ()) or ():
-        proof = proofs[entry['step_index']]
+    for entry in getattr(binding, "artifact_closures", ()) or ():
+        proof = proofs[entry["step_index"]]
         if proof.target_capability_id != capability_id:
             continue
-        for node in decode_closure_nodes(entry['nodes']):
+        for node in decode_closure_nodes(entry["nodes"]):
             previous = nodes.get(node.artifact_id)
             if previous is not None and previous != node:
-                _invalid('BAMF_C09_CAPABILITY_SUPPORT_CLOSURE_CONFLICT')
+                _invalid("BAMF_C09_CAPABILITY_SUPPORT_CLOSURE_CONFLICT")
             nodes[node.artifact_id] = node
     return tuple(sorted(nodes.values(), key=lambda node: node.artifact_id))

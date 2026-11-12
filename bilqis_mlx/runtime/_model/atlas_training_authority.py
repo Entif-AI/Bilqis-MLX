@@ -15,6 +15,8 @@ from bilqis_mlx.runtime.atlas_training_contracts import BamfTrainingBatch, _cano
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _ISSUER = object()
+_BATCH_ISSUER = object()
+_LOGICAL_BATCH_MIN_ROWS = 2
 
 
 def _invalid(reason):
@@ -169,6 +171,103 @@ def extend_training_dependencies(
     object.__setattr__(extended, "_issuance", _ISSUER)
     extended.__post_init__()
     return extended
+
+
+@dataclass(frozen=True, init=False)
+class BamfLogicalBatchTrainingAuthority:
+    """C08 owner proof for one logical batch composed of final B11 row authorities."""
+
+    release_sha256: str
+    generation_binding: str
+    training_batch_sha256: str
+    delivery_capability: str
+    visit_id: str
+    members: tuple[BamfTrainingAuthority, ...]
+    _issuance: object = field(init=False, repr=False, compare=False)
+
+    def __init__(self, *args, **kwargs):
+        _invalid("C08_LOGICAL_BATCH_AUTHORITY_CALLER_CONSTRUCTION_FORBIDDEN")
+
+    def __post_init__(self):
+        if (getattr(self, "_issuance", None) is not _BATCH_ISSUER
+                or not all(isinstance(value, str) and value for value in (
+                    self.delivery_capability,))
+                or not all(isinstance(value, str) and _SHA.fullmatch(value)
+                           for value in (
+                               self.release_sha256, self.generation_binding,
+                               self.training_batch_sha256, self.visit_id))
+                or type(self.members) is not tuple
+                or len(self.members) < _LOGICAL_BATCH_MIN_ROWS
+                or any(type(member) is not BamfTrainingAuthority
+                       for member in self.members)
+                or len({member.source_row_id for member in self.members})
+                != len(self.members)
+                or len({member.source_family_id for member in self.members}) != 1):
+            _invalid("C08_LOGICAL_BATCH_AUTHORITY_INVALID")
+        for member in self.members:
+            member.__post_init__()
+            if (member.release_sha256 != self.release_sha256
+                    or member.generation_binding != self.generation_binding
+                    or member.training_batch_sha256 != self.training_batch_sha256
+                    or member.delivery_capability != self.delivery_capability
+                    or member.visit_id != self.visit_id):
+                _invalid("C08_LOGICAL_BATCH_AUTHORITY_INVALID")
+
+    @property
+    def digest(self):
+        payload = {
+            "schema": "bilqis.mlx.c08-logical-batch-training-authority/v1",
+            "release": self.release_sha256,
+            "generation": self.generation_binding,
+            "batch": self.training_batch_sha256,
+            "capability": self.delivery_capability,
+            "visit_id": self.visit_id,
+            "members": tuple(member.digest for member in self.members),
+        }
+        wire = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(wire.encode()).hexdigest()
+
+
+def bind_logical_batch_training_authority(
+        batch: BamfTrainingBatch,
+        authorities: tuple[BamfTrainingAuthority, ...],
+) -> BamfLogicalBatchTrainingAuthority:
+    """Bind exact row-complete B11 authorities into one C08 optimizer-step authority."""
+    if (type(batch) is not BamfTrainingBatch
+            or type(authorities) is not tuple
+            or len(authorities) != len(batch.rows)
+            or len(authorities) < _LOGICAL_BATCH_MIN_ROWS):
+        _invalid("C08_LOGICAL_BATCH_AUTHORITY_INPUT_INVALID")
+    batch.__post_init__()
+    for row, authority in zip(batch.rows, authorities):
+        if type(authority) is not BamfTrainingAuthority:
+            _invalid("C08_LOGICAL_BATCH_AUTHORITY_INPUT_INVALID")
+        authority.__post_init__()
+        provenance = row.provenance
+        if (authority.release_sha256 != batch.release_sha256
+                or authority.generation_binding != batch.generation_binding
+                or authority.training_batch_sha256 != batch.authority_digest
+                or authority.delivery_capability != batch.delivery_capability
+                or authority.source_row_id != provenance.row_id
+                or authority.source_row_sha256 != provenance.source_row_content_sha256
+                or authority.source_family_id != provenance.source_family_id
+                or authority.episode_id != provenance.episode_id
+                or authority.visit_id != provenance.visit.visit_id):
+            _invalid("C08_LOGICAL_BATCH_AUTHORITY_DRIFT")
+    authority = object.__new__(BamfLogicalBatchTrainingAuthority)
+    first = authorities[0]
+    for name, value in (
+        ("release_sha256", first.release_sha256),
+        ("generation_binding", first.generation_binding),
+        ("training_batch_sha256", first.training_batch_sha256),
+        ("delivery_capability", first.delivery_capability),
+        ("visit_id", first.visit_id),
+        ("members", authorities),
+        ("_issuance", _BATCH_ISSUER),
+    ):
+        object.__setattr__(authority, name, value)
+    authority.__post_init__()
+    return authority
 
 
 def bind_compiled_training_batch(

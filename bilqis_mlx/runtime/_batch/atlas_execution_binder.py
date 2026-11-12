@@ -12,6 +12,8 @@ from bilqis_mlx.learning.atlas_participation import (
 from bilqis_mlx.learning.atlas_participation_census import validate_group_census
 from bilqis_mlx.runtime.atlas_model import require_bamf_loss_execution
 
+_LOGICAL_BATCH_MIN_ROWS = 2
+
 
 def _invalid(reason: str) -> None:
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID, reason=reason)
@@ -69,8 +71,72 @@ def bind_execution_provenance(
         parent_optimizer_step=parent_optimizer_step,
         topology_digest=topology_digest,
         candidate_step_ordinal=candidate_step_ordinal)
-
     if loss_bearing_target:
-        from bilqis_mlx.learning.atlas_execution_provenance import _bind_execution_training_authority
-        _bind_execution_training_authority(provenance, execution)
+        from bilqis_mlx.learning.atlas_execution_provenance import (
+            _bind_execution_training_authority,
+        )
+        _bind_execution_training_authority(provenance, loss_execution)
     return provenance
+
+
+def bind_execution_provenance_many(
+        *, loss_executions: tuple,
+        group_eligible, spec, extents, run_id: str, generation: int,
+        parent_manifest_sha256: str, parent_candidate_identity_sha256: str,
+        parent_optimizer_step: int, topology_digest: str,
+        candidate_step_ordinal: int) -> StepExecutionProvenance:
+    """Union exact row-scoped B11 execution evidence for one C08 optimizer step."""
+    if (type(loss_executions) is not tuple
+            or len(loss_executions) < _LOGICAL_BATCH_MIN_ROWS):
+        _invalid("C08_LOGICAL_BATCH_EXECUTION_REQUIRED")
+    validate_group_census(group_eligible, spec, extents)
+    executions = tuple(require_bamf_loss_execution(item) for item in loss_executions)
+    inputs = StepParticipationInputs(
+        visible_identity_rows=tuple(sorted({
+            row for execution in executions for row in execution.visible_identity_rows
+        })),
+        feedback_identity_rows=tuple(sorted({
+            row for execution in executions for row in execution.feedback_identity_rows
+        })),
+        visible_feature_rows=tuple(sorted({
+            row for execution in executions for row in execution.feature_rows
+        })),
+        local_slot_rows=tuple(sorted({
+            row for execution in executions for row in execution.local_slot_rows
+        })),
+        executed_parameter_names=tuple(sorted({
+            name for execution in executions for name in execution.dense_parameter_names
+        })),
+        loss_bearing_target=True,
+    )
+    denominator = SemanticDenominator(
+        identity_rows=tuple(sorted({
+            row for execution in executions
+            for row in execution.semantic_denominator_identity_rows
+        })),
+        feature_rows=tuple(sorted({
+            row for execution in executions
+            for row in execution.semantic_denominator_feature_rows
+        })),
+    )
+    motif_reads = tuple(
+        result for execution in executions for result in execution.motif_reads)
+    role_reads = RoleReadParticipation(tuple(sorted({
+        row for execution in executions for row in execution.role_read_feature_rows
+    })))
+    active_admitted = ActiveAdmittedRows(
+        identity_rows=group_eligible.admitted_identity_rows,
+        motif_slots=tuple(sorted({
+            slot for result in motif_reads for slot in result.participating_slots
+        })),
+        feature_rows=inputs.visible_feature_rows,
+        local_slot_rows=inputs.local_slot_rows,
+    )
+    return issue_execution_provenance(
+        inputs, denominator, motif_reads, role_reads, group_eligible, active_admitted,
+        spec=spec, extents=extents, run_id=run_id, generation=generation,
+        parent_manifest_sha256=parent_manifest_sha256,
+        parent_candidate_identity_sha256=parent_candidate_identity_sha256,
+        parent_optimizer_step=parent_optimizer_step,
+        topology_digest=topology_digest,
+        candidate_step_ordinal=candidate_step_ordinal)

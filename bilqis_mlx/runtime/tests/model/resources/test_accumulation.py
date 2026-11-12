@@ -8,6 +8,8 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+import mlx.core as mx
+
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, bamf_parameter_census,
@@ -32,6 +34,10 @@ from bilqis_mlx.runtime.source_prefetch import (
     SCHEMA as SOURCE_PREFETCH_SCHEMA,
     freeze_source_packet, source_prefetch_pool,
 )
+from bilqis_mlx.runtime.c08_gradient_accumulation import (
+    accumulate_logical_batch_gradients,
+)
+from bilqis_mlx.runtime.atlas_model import BamfGradientExecution
 
 
 GENERATION = "fixture:retained-generation"
@@ -40,8 +46,43 @@ GENERATION = "fixture:retained-generation"
 from bilqis_mlx.runtime.tests.model.resources.helpers import AtlasResourcesFixture, GENERATION, _rows
 
 class AtlasResourcesTests(AtlasResourcesFixture):
+    def test_real_mlx_tree_accumulation_weights_split_groups_without_clipping(self):
+        rows = _rows(3)
+        row_bytes = estimate_row_activation_bytes(rows[0], self.topology)
+        constrained = replace(
+            self.budget, allocation_bytes=(
+                self.budget.resident_bytes + 2 * row_bytes
+                * self.budget.activation_safety_factor))
+        plan = plan_microbatches(rows, self.topology, constrained)
+        self.assertEqual(plan.groups, ((0, 1), (2,)))
+        values = (1.0, 3.0, 9.0)
+        seen = []
+
+        def execute_row(index):
+            seen.append(index)
+            execution = object.__new__(BamfGradientExecution)
+            object.__setattr__(execution, "execution", SimpleNamespace(
+                output=SimpleNamespace(generation_binding=GENERATION)))
+            object.__setattr__(
+                execution, "gradients",
+                {"weight": mx.array([values[index], values[index] + 2.0])})
+            object.__setattr__(execution, "loss_total", mx.array(values[index]))
+            return execution
+
+        with patch.object(BamfGradientExecution, "__post_init__", return_value=None):
+            result = accumulate_logical_batch_gradients(plan, execute_row)
+        self.assertEqual(seen, [0, 1, 2])
+        self.assertTrue(bool(mx.allclose(
+            result.gradients["weight"],
+            mx.array([13.0 / 3.0, 19.0 / 3.0]),
+            rtol=0.0, atol=1e-6)))
+        self.assertAlmostEqual(
+            float(result.weighted_mean_loss.item()), 13.0 / 3.0, places=6)
+        self.assertEqual(result.source_digest, plan.source_digest)
+        self.assertEqual(result.generation_binding, GENERATION)
+
     def test_weighted_split_gradient_matches_unsplit_and_applies_one_step(self):
-        rows = _rows(4)
+        rows = _rows(3)
         row_bytes = estimate_row_activation_bytes(rows[0], self.topology)
         constrained = replace(
             self.budget, allocation_bytes=(
@@ -49,22 +90,23 @@ class AtlasResourcesTests(AtlasResourcesFixture):
                 * self.budget.activation_safety_factor))
         split = plan_microbatches(rows, self.topology, constrained)
         whole = plan_microbatches(rows, self.topology, self.budget)
-        self.assertEqual(split.groups, ((0, 1), (2, 3)))
+        self.assertEqual(split.groups, ((0, 1), (2,)))
         chunks = (
-            GradientChunk((0, 1), (1.0, 2.0), 0.25, 73, GENERATION),
-            GradientChunk((2, 3), (3.0, 4.0), 0.75, 73, GENERATION),
+            GradientChunk((0, 1), (2.0, 4.0), 0.5, 73, GENERATION),
+            GradientChunk((2,), (9.0, 11.0), 1.0, 73, GENERATION),
         )
         split_grad = accumulate_gradients(split, chunks, clip_norm=1.0)
         whole_grad = accumulate_gradients(
             whole, (GradientChunk(
-                (0, 1, 2, 3), (2.0, 3.0), 0.5, 73, GENERATION),),
+                (0, 1, 2), (13.0 / 3.0, 19.0 / 3.0),
+                2.0 / 3.0, 73, GENERATION),),
             clip_norm=1.0)
         self.assertEqual(split_grad.gradient, whole_grad.gradient)
-        self.assertAlmostEqual(split_grad.weighted_mean_loss, 0.5)
+        self.assertAlmostEqual(split_grad.weighted_mean_loss, 2.0 / 3.0)
         self.assertAlmostEqual(
-            split_grad.gradient[0], 2.0 / math.sqrt(13.0), places=7)
+            split_grad.gradient[0], 13.0 / math.sqrt(530.0), places=7)
         self.assertAlmostEqual(
-            split_grad.gradient[1], 3.0 / math.sqrt(13.0), places=7)
+            split_grad.gradient[1], 19.0 / math.sqrt(530.0), places=7)
         calls = []
 
         def backend_apply(gradient, generation_binding, source_digest):

@@ -31,7 +31,11 @@ def assert_non_authorizing_closure_witness(testcase, run_dir, parent, result):
     testcase.assertEqual(len(transaction.training_authorities), 1)
     authority = transaction.training_authorities[0]
     proof = transaction.step_proofs[0]
-    testcase.assertIs(authority, result.gradient_execution.execution.training_authority)
+    testcase.assertIsNotNone(result.diagnostics)
+    testcase.assertIs(
+        authority,
+        result.diagnostics.gradient_execution.execution.training_authority,
+    )
     testcase.assertEqual(proof.step_index, 1)
     testcase.assertEqual(proof.training_authority_sha256, authority.digest)
     testcase.assertEqual(proof.artifact_closure_sha256, authority.artifact_closure_sha256)

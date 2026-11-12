@@ -93,7 +93,7 @@ prefixes without a packed frame. Pre-selection holds consume no teacher RNG;
 after-selection stale delivery rejects without a second selection.
 
 Executed artifact closure now travels through B11 authority, provenance binding,
-v4 proofs, v7/v8 acceptance and C09 cold support. The old empty-closure records
+closure-bearing proofs, v7/v8 acceptance and C09 cold support. The old empty-closure records
 retain their existing schema/bytes. Independent drift findings about published
 acceptance identity and repeated-authority step pairing were repaired with focused
 regressions. Combined portable selection: 38 tests passed. This includes mocked
@@ -152,3 +152,38 @@ including ordinary/motif closure, correction replay/recovery and isolation; fini
 bounded drift, final unified synchronization and integration gates. No PR until
 those required gates pass. Issue #379 remains open; no self-merge authority exists.
 The remote worktree retains an older fixture copy: inspect/reconcile before update.
+
+## Verification posture correction — 2026-11-12
+
+The later detached native run at feature head
+`d97ab0c16da67defd9abb087fa3ac8a9050bc590` finished FAIL after 35,478.744
+seconds in the Factory integration test. The failure was not C06 salience execution:
+ordinal loss passed 3/3; the real selected Factory candidate step completed; the
+present impact/exigency heads produced nonzero supervised gradients; the absent
+novelty head remained masked; and the non-authorizing retained closure witness
+completed. The later retained-publication phase then spent 30,311.072 seconds in
+the C05 fixed-school screen and rejected the candidate for
+`PROTECTED_CAPABILITY_REGRESSION` at `A.PARENT`. Peak MLX memory was
+6,027,280,464 bytes under the explicit 24 GiB run budget. Source custody was not
+mutated. Durable raw evidence is preserved in
+`studio-proof-2-fail.log` and `studio-proof-2-fail-receipt.json`.
+
+That run exposed an invalid verification composition: a C06 leaf witness had
+absorbed whole-school C05 retention, accepted B13 publication and cold-support
+qualification. Those later gates are system/integration qualification, not
+ordinary leaf-development feedback. The C06 leaf witness now stops after the real
+candidate plus non-authorizing retained-closure seam. The retained-publication
+helper remains available for later assembled-system qualification, but it is not
+chained into the default leaf path.
+
+Long native/system qualification is therefore deferred until the surrounding BAMF
+system is sufficiently assembled for an operator-observed run with useful live
+telemetry. Development and turn-in use bounded owner tests and existing valid
+evidence instead of repeatedly launching multi-hour autonomous proofs. The failed
+run remains negative evidence for the later C05/system screen; it is not rewritten
+as a whole-test PASS.
+
+Current reviewed unified advanced after that run and owns candidate-step proof v4
+for C08 logical batches. C06 closure-bearing scalar proofs therefore advance to v5
+without changing v1-v4 bytes or C08 semantics. The current synchronization must be
+validated with bounded compatibility/owner tests before turn-in.

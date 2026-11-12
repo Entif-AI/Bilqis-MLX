@@ -51,8 +51,9 @@ different node bearing the same ID.
 
 ## Proof and acceptance versions
 
-`CandidateStepProof` v1–v3 parse exactly as today. Keep v3 emission and its exact
-record/digest bytes when the executed authority closure is empty. Add v4 for a
+`CandidateStepProof` v1–v4 parse exactly as today. Keep v3 emission and its exact
+record/digest bytes when the executed scalar authority closure is empty. Reviewed
+unified now owns v4 for C08 logical-batch proofs. Add v5 for a
 nonempty closure: the v3 fields plus `artifact_closure_sha256`. In
 `_atlas_candidate/transaction.py`, derive it from the same issued authority
 carried by the exact B11 gradient execution; check the authority's closure digest
@@ -86,7 +87,7 @@ current behavior. The production adapter still obtains gradients and loss
 execution from one issued BamfGradientExecution before deriving provenance; it
 cannot accept an independently supplied gradient tree for a loss-bearing step.
  State/transaction decoding
-must round-trip mixed historical v3 and new v4 proofs without changing old bytes.
+must round-trip mixed historical v3/v4 and new v5 proofs without changing old bytes.
 
 Keep ordinary acceptance v5 and motif-transition acceptance v6 unchanged when
 all step closures are empty. Add v7 for an ordinary candidate and v8 for a motif
@@ -95,7 +96,7 @@ transition containing at least one nonempty closure. V7 is v5 plus
 `generation_authority_sha256` requirement and motif successor identity check.
 `artifact_closures` is a canonical step-ordered tuple of entries
 `(step_index, training_authority_sha256, artifact_closure_sha256, nodes)` for
-exactly the nonempty v4 proofs; no empty, duplicate, extra or missing entries.
+exactly the nonempty v5 proofs; no empty, duplicate, extra or missing entries.
 Existing ten-field source anchors remain unchanged and retain their actual
 immediate dependency references. Acceptance's canonical bytes cover both the
 anchors and closure entries. V7/v8 must not be emitted for an empty closure.

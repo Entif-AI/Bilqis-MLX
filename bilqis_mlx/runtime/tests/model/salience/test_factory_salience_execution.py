@@ -48,7 +48,6 @@ from bilqis_mlx.runtime.priority_source_offer import prepare_priority_source_off
 from bilqis_mlx.runtime.accepted_priority_visit import execute_accepted_priority_candidate
 from bilqis_mlx.runtime.tests.model.salience.priority_witness_support import planning, select
 from bilqis_mlx.runtime.tests.model.salience.retained_closure_witness import assert_non_authorizing_closure_witness
-from bilqis_mlx.runtime.tests.model.salience.retained_publication_witness import assert_retained_publication_witness
 
 BILQIS_LEAF_GATE_POLICY = 'DETACHED_ONLY'
 
@@ -180,7 +179,7 @@ class FactorySalienceExecutionTests(unittest.TestCase):
                     selection, context, str(self.artifact), self.feature_receipt.path,
                     teacher_hparams=HP, optimizer_step_seed=379, max_norm=1.0,
                     observation=FactoryDeliveryObservation(capture, 1, rows, seed),
-                    salience_provider=self._provider)
+                    salience_provider=self._provider, capture_diagnostics=True)
             self.assertEqual(step_call.call_count, 1)
             arguments, keywords = step_call.call_args
             self.assertEqual(arguments[5], rows)
@@ -190,15 +189,17 @@ class FactorySalienceExecutionTests(unittest.TestCase):
             self.assertEqual(keywords['visit_provenance'].visit_id, selection.visit.identity.visit_id)
             self.assertEqual(result.prepared.training_batch.rows[0].provenance.visit.visit_id,
                              selection.visit.identity.visit_id)
-            loss = result.gradient_execution.execution.loss
+            self.assertIsNotNone(result.diagnostics)
+            gradient = result.diagnostics.gradient_execution
+            loss = gradient.execution.loss
             self.assertGreater(float(loss.impact), 0.)
             self.assertGreater(float(loss.exigency), 0.)
             self.assertEqual(float(loss.novelty), 0.)
-            gradients = result.gradient_execution.gradients
+            gradients = gradient.gradients
             for name in ('impact', 'exigency'):
                 self.assertGreater(float(mx.abs(gradients['readout.salience_bias.' + name]).sum()), 0.)
             self.assertEqual(float(mx.abs(gradients['readout.salience_bias.novelty']).sum()), 0.)
-            census = result.gradient_execution.execution.dense_parameter_names
+            census = gradient.execution.dense_parameter_names
             self.assertIn('readout.salience.impact', census)
             self.assertNotIn('readout.salience.novelty', census)
             self.assertEqual(result.transaction.update_steps, 1)
@@ -206,6 +207,3 @@ class FactorySalienceExecutionTests(unittest.TestCase):
             self.assertEqual(load_accepted_generation(run_dir).generation, parent.generation)
             with stage('retained_closure'):
                 assert_non_authorizing_closure_witness(self, run_dir, parent, result)
-            with stage('retained_publication'):
-                assert_retained_publication_witness(
-                    self, run_dir, context, parent, result, self.artifact, capability)

@@ -25,6 +25,17 @@ STAGES = (
         'bilqis_mlx/learning/atlas_readout/decoder/tests/test_losses.py',
     )),
 )
+DEFAULT_STAGE_LABELS = ('ordinal-loss',)
+
+
+def _selected_stage_labels(*, include_native_integration=False,
+                           include_affected_owners=False):
+    selected = list(DEFAULT_STAGE_LABELS)
+    if include_native_integration:
+        selected.append('factory-integration')
+    if include_affected_owners:
+        selected.append('affected-owners')
+    return tuple(selected)
 
 
 def _processes():
@@ -133,6 +144,8 @@ def main():
     parser.add_argument('--_stage', choices=tuple(dict(STAGES)))
     parser.add_argument('--allow-concurrent-mlx', action='store_true')
     parser.add_argument('--max-memory-gib', type=float)
+    parser.add_argument('--include-native-integration', action='store_true')
+    parser.add_argument('--include-affected-owners', action='store_true')
     args = parser.parse_args()
     if args._stage:
         return _native_stage(args._stage, args.max_memory_gib)
@@ -143,6 +156,10 @@ def main():
             or args.max_memory_gib > MAX_AUTHORIZED_CONCURRENT_GIB):
         parser.error('--allow-concurrent-mlx requires --max-memory-gib in (0, 24]')
     args.lock.parent.mkdir(parents=True, exist_ok=True)
+    selected = _selected_stage_labels(
+        include_native_integration=args.include_native_integration,
+        include_affected_owners=args.include_affected_owners,
+    )
     with args.lock.open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         if not args.allow_concurrent_mlx:
@@ -153,7 +170,7 @@ def main():
                     previous = other
                 time.sleep(10)
         print('C06_STUDIO_SERIAL_LANE_ACQUIRED', flush=True)
-        for label, paths in STAGES:
+        for label in selected:
             if not _resources_ready(
                     allow_concurrent_mlx=args.allow_concurrent_mlx,
                     max_memory_gib=args.max_memory_gib):

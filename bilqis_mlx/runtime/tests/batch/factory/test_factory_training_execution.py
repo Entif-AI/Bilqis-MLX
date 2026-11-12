@@ -1,6 +1,8 @@
 """Factory gradient, candidate-step, and accepted C09 custody integration."""
 from __future__ import annotations
 
+BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"
+
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -18,8 +20,11 @@ from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
 from bilqis_mlx.learning.student_ops import train_bamf_factory_step
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.atlas_model import bamf_value_and_grad
+from bilqis_mlx.runtime.atlas_resources import (
+    MemoryBudget, ResourceRow, estimate_row_activation_bytes,
+)
 from bilqis_mlx.runtime.atlas_training_adapter import pad_microbatches
-from bilqis_mlx.runtime.bamf_bundle import publish_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import publish_initial_generation
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     load_accepted_generation,
 )
@@ -27,7 +32,12 @@ from bilqis_mlx.runtime.factory_candidate_training import (
     FactoryDeliveryObservation, _frame_stats,
 )
 from bilqis_mlx.runtime.factory_complete_solver import factory_evaluation_instrument
-from bilqis_mlx.runtime.factory_task_authority import factory_task_authority
+from bilqis_mlx.runtime.factory_task_authority import (
+    bind_factory_task_compiled_batch,
+    factory_task_authority,
+    factory_task_training_goal,
+)
+from bilqis_mlx.runtime.model_topology_v2 import bamf_parameter_census
 from bilqis_mlx.runtime.task_goal_readout import (
     task_goal_route_decisions, task_goal_route_plan,
 )
@@ -35,9 +45,6 @@ from bilqis_mlx.runtime.teacher_observation_capture import (
     ObservationCapture, read_sidecar, store_sidecar,
 )
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import HP
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    acceptance, provision_source_authority_registry, with_source_authority_registry,
-)
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
@@ -46,6 +53,14 @@ from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import (
 )
 
 from .factory_training_bridge_support import FactoryTrainingBridgeFixture
+from .factory_training_execution_support import (
+    assert_prepared_logical_rows,
+    assert_split_step_result,
+    draw,
+    observation,
+    publish,
+    split_budget,
+)
 
 
 class FactoryResourcePlanningCustodyTests(unittest.TestCase):
@@ -133,18 +148,14 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
         self.assertEqual(tuple(sum(mask) for mask in packed[0].padding_mask), lengths)
 
     def test_student_ops_executes_one_real_factory_candidate_step_and_records_cost(self):
-        rows, delivery = self._draw("B.IDBOOLOPS", 37116, 1)
+        rows, delivery = draw(self, "B.IDBOOLOPS", 37116, 1)
         with TemporaryDirectory() as run_dir_value:
             run_dir = Path(run_dir_value)
-            self._publish(run_dir)
+            publish(self, run_dir)
             source_context = self.accepted_source_context(run_dir)
             parent = load_accepted_generation(run_dir)
-            capture = ObservationCapture(run_dir, {})
-            capture.attempt_id = "c02-parent-step"
-            capture.proposal_id = store_sidecar(
-                run_dir, {"attempt_id": capture.attempt_id})["sha256"]
-            capture.select_option("B.IDBOOLOPS", None)
-            observation = FactoryDeliveryObservation(capture, 1, rows, 37116)
+            capture, delivery_observation = observation(
+                run_dir, "B.IDBOOLOPS", rows, 37116)
             result = train_bamf_factory_step(
                 run_dir, source_context, parent, str(self.artifact),
                 self.feature_receipt.path, rows,
@@ -153,10 +164,11 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
                 optimizer_step_seed=17,
                 visit_provenance=visit_provenance("B.IDBOOLOPS"),
                 teacher_strategy={"policy": "c02-parent-production"},
-                teacher_hparams=HP, max_norm=1.0, observation=observation)
+                teacher_hparams=HP, max_norm=1.0, observation=delivery_observation)
             self.assertEqual(result.transaction.update_steps, 1)
             self.assertEqual(result.resource_plan.groups, ((0,),))
             self.assertEqual(len(result.route_targets), 1)
+            self.assertIsNone(result.diagnostics)
             self.assertEqual(result.realized_cost["optimizer_steps"], 1)
             payload = read_sidecar(run_dir, capture.steps[0])
             self.assertEqual(
@@ -165,18 +177,18 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
             self.assertEqual(payload["controls"]["realized_cost"]["optimizer_steps"], 1)
 
     def test_persisted_correction_holds_training_batch_before_gradient_read(self):
-        rows, delivery = self._draw("B.IDBOOLOPS", 37118, 1)
+        rows, delivery = draw(self, "B.IDBOOLOPS", 37118, 1)
         correction = _event(DependencyRef(
             DependencyKind.SOURCE,
             "source:" + self.feature_context.features.source_bundle_id))
         with TemporaryDirectory() as run_dir_value:
             run_dir = Path(run_dir_value)
-            self._publish(run_dir)
+            publish(self, run_dir)
             source_context = self.accepted_source_context(run_dir)
             AcceptedRuntimeHost(run_dir).record_correction(correction)
             parent = load_accepted_generation(run_dir)
-            observation = FactoryDeliveryObservation(
-                ObservationCapture(run_dir, {}), 1, rows, 37118)
+            _, delivery_observation = observation(
+                run_dir, "B.IDBOOLOPS", rows, 37118)
             with self.assertRaises(BilqisError) as caught:
                 train_bamf_factory_step(
                     run_dir, source_context, parent, str(self.artifact),
@@ -186,45 +198,33 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
                     optimizer_step_seed=19,
                     visit_provenance=visit_provenance("B.IDBOOLOPS"),
                     teacher_strategy={"policy": "c09-correction-hold"},
-                    teacher_hparams=HP, max_norm=1.0, observation=observation)
+                    teacher_hparams=HP, max_norm=1.0, observation=delivery_observation)
             self.assertEqual(caught.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
-    def test_production_step_fails_closed_before_multirow_gradient_accumulation(self):
-        rows, delivery = self._draw("A.IDENTITY", 37117, 2)
+    def test_production_step_accumulates_split_real_rows_into_one_optimizer_step(self):
+        rows, delivery = draw(self, "A.IDENTITY", 37117, 2)
         with TemporaryDirectory() as run_dir_value:
             run_dir = Path(run_dir_value)
-            self._publish(run_dir)
+            publish(self, run_dir)
             source_context = self.accepted_source_context(run_dir)
             parent = load_accepted_generation(run_dir)
-            observation = FactoryDeliveryObservation(
-                ObservationCapture(run_dir, {}), 1, rows, 37117)
-            with self.assertRaises(BilqisError):
-                train_bamf_factory_step(
-                    run_dir, source_context, parent, str(self.artifact),
-                    self.feature_receipt.path, rows,
-                    capability="A.IDENTITY", delivery=delivery,
-                    requested_count=2, source_seed=37117, source_each=2,
-                    optimizer_step_seed=18,
-                    visit_provenance=visit_provenance("A.IDENTITY"),
-                    teacher_strategy={"policy": "c02-parent-production"},
-                    teacher_hparams=HP, max_norm=1.0, observation=observation)
-
-    def _draw(self, capability, seed, each):
-        rows = tuple(self.context.draw_rows(seed=seed, capability=capability, each=each))
-        execution = self.context.release.execution_plan.capability_map[capability]
-        delivery = describe_delivered_teaching(
-            self.context.release, capability, execution.teaching_option_ids[0], rows)
-        return rows, delivery
-
-    def _publish(self, run_dir: Path) -> None:
-        provision_source_authority_registry(run_dir, AUTHORITY)
-        candidate = with_source_authority_registry(self.candidate, AUTHORITY)
-        with patch(
-            "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom", return_value=None,
-        ):
-            publish_bamf_generation(
-                run_dir, candidate, acceptance=acceptance(candidate))
-
+            prepared = self.prepare("A.IDENTITY", 37117, 2)[1]
+            row_ids = tuple(row["id"] for row in rows)
+            assert_prepared_logical_rows(self, prepared, row_ids)
+            _, delivery_observation = observation(
+                run_dir, "A.IDENTITY", rows, 37117)
+            result = train_bamf_factory_step(
+                run_dir, source_context, parent, str(self.artifact),
+                self.feature_receipt.path, rows,
+                capability="A.IDENTITY", delivery=delivery,
+                requested_count=2, source_seed=37117, source_each=2,
+                optimizer_step_seed=18,
+                visit_provenance=visit_provenance("A.IDENTITY"),
+                teacher_strategy={"policy": "c02-parent-production"},
+                teacher_hparams=HP, max_norm=1.0, observation=delivery_observation,
+                memory_budget=split_budget(parent, prepared),
+                capture_diagnostics=True)
+            assert_split_step_result(self, result, prepared, row_ids, parent)
 
 if __name__ == "__main__":
     unittest.main()

@@ -79,12 +79,13 @@ def test_execution_owns_rows_policy_and_teacher_rate(priority):
          patch.object(priority, 'execute_factory_candidate_step', return_value='step') as execute:
         assert priority.execute_accepted_priority_candidate(selected, SimpleNamespace(release=release), 'atlas', 'features',
             teacher_hparams=HParams(0.01, (0.8, 0.9), 1e-8, 0.2), observation=Observation(({'id': 'old'},), 0),
-            optimizer_step_seed=3, max_norm=1) == 'step'
+            optimizer_step_seed=3, max_norm=1, capture_diagnostics=True) == 'step'
     args, kw = execute.call_args
     assert args[5] == ({'id': 'one', 'capability': 'cap'},)
     assert kw['teacher_strategy'] == {'lr': 0.25, 'nested': {'x': 1}}
     assert kw['teacher_hparams'] == HParams(0.25, (0.8, 0.9), 1e-8, 0.2)
     assert kw['observation'] == Observation(args[5], 7)
+    assert kw['capture_diagnostics'] is True
 
 def test_issuer_and_rate_are_required(priority):
     with pytest.raises(ValueError):

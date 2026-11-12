@@ -7,7 +7,7 @@ import subprocess
 
 from bamf02_groom_contracts import REPO, child_body, plan_for, sha
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 TASKS = ROOT / "docs/tasks/bamf-0.2"
 CHILDREN = TASKS / "children"
 ENDPOINT = f"repos/{REPO}"

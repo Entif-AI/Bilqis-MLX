@@ -1,0 +1,32 @@
+{
+  "command": [
+    "/usr/bin/env",
+    "BILQIS_A01_ATLAS_BUNDLE=/Users/emilie/Code/371-c02-complete-20261106/.local/c02-a01-rebuild/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+    "BILQIS_ATLAS_REAL_ARTIFACT=/Users/emilie/Code/371-c02-complete-20261106/.local/c02-a01-rebuild/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+    "/usr/local/bin/python3",
+    "-B",
+    "bilqis_mlx/runtime/tests/model/salience/run_studio_proof.py",
+    "--lock",
+    "/Users/emilie/Code/.bilqis-studio-c06-379.lock",
+    "--allow-concurrent-mlx",
+    "--max-memory-gib",
+    "24"
+  ],
+  "command_returncode": 1,
+  "final_mutation_guard_sha256": "55240771c947ce00588e66166e8d97928ba0c0546fa7e8c187fde13b8d33d8ba",
+  "final_snapshot_sha256": "e24684c432bf3351e861a1c83c8c0ab6dfb8bbd3b36478fa50116045041b156a",
+  "finished_at": "2026-11-12T09:02:47.486384+00:00",
+  "label": "C06-379-d97ab0c1-concurrent-24g",
+  "log": "/Users/emilie/Code/379-c06-resume-20261111/.local/c06-proof-concurrent-d97ab0c1-20261111/studio.log",
+  "mutation_guard_sha256": "55240771c947ce00588e66166e8d97928ba0c0546fa7e8c187fde13b8d33d8ba",
+  "pid": 65788,
+  "returncode": 1,
+  "schema": "bilqis.bamf.detached-long-run/v2",
+  "snapshot_sha256": "e24684c432bf3351e861a1c83c8c0ab6dfb8bbd3b36478fa50116045041b156a",
+  "source_mutated": false,
+  "source_sha256": "e24684c432bf3351e861a1c83c8c0ab6dfb8bbd3b36478fa50116045041b156a",
+  "source_workdir": "/Users/emilie/Code/379-c06-resume-20261111",
+  "started_at": "2026-11-11T23:11:24.435541+00:00",
+  "status": "FAIL",
+  "workdir": "/private/tmp/c06-379-d97ab0c1-source"
+}

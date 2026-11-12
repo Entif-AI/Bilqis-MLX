@@ -15,4 +15,6 @@ class AtlasModelBackendTests(unittest.TestCase):
         self.assertEqual(backend.precision, "FP32")
         self.assertTrue(backend.device)
         with self.assertRaises(BilqisError):
+            Backend(spec, backend.device, precision="BF16")
+        with self.assertRaises(BilqisError):
             model_backend(object())

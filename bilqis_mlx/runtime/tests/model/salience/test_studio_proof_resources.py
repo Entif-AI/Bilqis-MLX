@@ -19,6 +19,19 @@ class StudioProofResourceTests(unittest.TestCase):
                 patch('builtins.print'):
             return self.runner._resources_ready(**kwargs)
 
+    def test_long_native_stages_require_explicit_opt_in(self):
+        self.assertEqual(
+            self.runner._selected_stage_labels(),
+            ('ordinal-loss',),
+        )
+        self.assertEqual(
+            self.runner._selected_stage_labels(
+                include_native_integration=True,
+                include_affected_owners=True,
+            ),
+            ('ordinal-loss', 'factory-integration', 'affected-owners'),
+        )
+
     def test_nearly_full_swap_holds_even_when_memory_is_free(self):
         self.assertFalse(self.check_resources(
             'vm.swapusage: total = 59392.00M used = 57933.81M free = 1458.19M',
