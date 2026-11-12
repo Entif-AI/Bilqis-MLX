@@ -242,6 +242,16 @@ authority union, acceptance-record and cold-support checks are included. The
 updated portable C06/C08 cone passes **61/61** in 0.59 seconds. No long native or
 whole-school run was needed to discover or repair this integration defect.
 
+The repaired C06/C08 custody head is
+`5ef579c7578ed18e47cdd9b6567b5d94e7358114`
+(`fix(bamf): retain C06 closure across C08 batches`). The exact failing-before
+cold-support regression rejected the pre-fix state with
+`SCHOOL.MODEL_TOPOLOGY.INVALID` from `require_closure_proofs`; the same test
+passes after the v6 repair. Final bounded static verification at this code head
+passes `quality:changed` and `quality:check`, including governance, Factory
+architecture, docs, error-control with zero new debt, zero new code-smell findings,
+legacy-trainer authority/tests and BAMF flow-control/tests.
+
 No new multi-hour native/system witness was launched. The prior long-run failure at
 `A.PARENT` remains recorded system-level negative evidence for later
 operator-observed qualification. It does not block C06 leaf turn-in under the
