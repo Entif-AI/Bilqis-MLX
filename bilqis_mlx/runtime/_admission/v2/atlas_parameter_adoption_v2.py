@@ -219,6 +219,13 @@ def _publish_native_staged_candidate_v2_locked(
         current=current, checkpoint=checkpoint, handoff=handoff)
     if raced is not None:
         return raced
+    from bilqis_mlx.factory.candidate_realizations import admitted_candidate_graph
+    from bilqis_mlx.runtime.bamf_bundle.vocabulary.compiler_binding import (
+        bind_parameter_extension_compiler_state,
+    )
+    successor_graph = admitted_candidate_graph(selected, runtime.graph)
+    candidate = bind_parameter_extension_compiler_state(
+        candidate, selected.successor, successor_graph)
     require_staged_vocabulary_admission_headroom(runtime.run_dir, native_staged)
     handoff.receipt.verify()
     inherited = read_accepted_atlas_obligation_credit(runtime.run_dir)

@@ -289,16 +289,34 @@ class AcceptedAtlasFlywheelRuntimeTests(MixedWitnessSupport, unittest.TestCase):
 
     def _invoke_real_human_resume(self):
         output, errors = io.StringIO(), io.StringIO()
+
+        def cold_operator_probe(run_dir, *, minutes, max_visits, reserve_gib):
+            from bilqis_mlx.runtime.bamf_operator import BamfOperatorResult
+            from bilqis_mlx.runtime.bamf_operator.session import _execution_context
+
+            parent, context, _atlas_path, _feature_path = _execution_context(
+                Path(run_dir).resolve())
+            accepted_release = read_accepted_atlas_factory_release(Path(run_dir).resolve())
+            self.assertEqual(context.release.release_sha256, accepted_release.release_sha256)
+            return BamfOperatorResult(
+                "VISIT_LIMIT", 0, 0, 0,
+                parent.generation, parent.retained_state.optimizer_step)
+
         with patch(
                 "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.source_foundation",
                 return_value=(None, None, self.parent_graph)), patch(
                     "bilqis_mlx.presentation.operator_cli.command._invoke_learner",
                     side_effect=AssertionError(
-                        "accepted flywheel must not reuse a live learner")), \
+                        "accepted flywheel must not reuse a live learner")), patch(
+                    "bilqis_mlx.runtime.bamf_operator.operate_bamf",
+                    side_effect=cold_operator_probe) as operate, \
                 redirect_stdout(output), redirect_stderr(errors):
             code = main([
-                "train", "--human-run", "--resume", "--run-dir", str(self.run)])
+                "train", "--human-run", "--resume", "--run-dir", str(self.run),
+                "--max-visits", "1"])
         self.assertEqual((code, errors.getvalue()), (0, ""))
+        operate.assert_called_once_with(
+            self.run, minutes=90, max_visits=1, reserve_gib=100.0)
         return self._json_records(output.getvalue())[-1]
 
     def test_human_resume_runs_real_parameter_flywheel_from_accepted_custody(self):
@@ -323,8 +341,11 @@ class AcceptedAtlasFlywheelRuntimeTests(MixedWitnessSupport, unittest.TestCase):
                 binding = accepted_binding_for_manifest(
                     self.run, pointer["manifest_sha256"], accepted_student,
                     expected_acceptance_sha256=pointer["acceptance_sha256"])
-            self.assertEqual(report["admission_policy"], "atlas-release")
-            self.assertEqual(report["neural_updates"], 0)
+            self.assertEqual(report["status"], "VISIT_LIMIT")
+            self.assertEqual(report["visits"], 0)
+            self.assertEqual(report["accepted"], 0)
+            self.assertEqual(report["rejected"], 0)
+            self.assertIn("admission_status", report)
             self.assertEqual(accepted.generation, parent.generation + 1)
             self.assertEqual(
                 accepted.retained_state.optimizer_step,
