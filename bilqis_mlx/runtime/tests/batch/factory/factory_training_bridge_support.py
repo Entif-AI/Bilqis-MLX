@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.learning.champions import Checkpoint
@@ -48,6 +49,12 @@ class FactoryTrainingBridgeFixture(SourceBackboneTestBase):
         if not artifact or not Path(artifact).is_dir():
             self.skipTest("BILQIS_A01_ATLAS_BUNDLE fixture is not mounted")
         self.artifact = Path(artifact)
+        self.data_plane_root = TemporaryDirectory()
+        self.addCleanup(self.data_plane_root.cleanup)
+        self.enterContext(patch.dict(
+            os.environ,
+            {"BILQIS_DATA_PLANE": str(Path(self.data_plane_root.name) / "plane.sqlite3")},
+        ))
         super().setUp()
         self.enterContext(host_source_authority_patch(AUTHORITY))
         self.root = Path.cwd()
