@@ -19,7 +19,7 @@ class DependencyNormalizationTests(unittest.TestCase):
             args = packet(clause, edges=('B01', 'A05.4'))
             args[2].update({'B01': 346, 'A05.4': 575})
             evidence = args[0]['dependency_evidence']
-            for number in (546, 592):
+            for number, is_gating in ((546, True), (592, False)):
                 source_id = 'C01.1.pr-' + str(number)
                 url = 'https://github.com/Entif-AI/Bilqis-MLX/pull/' + str(number)
                 raw = json.dumps(dict(number=number, url=url, state='MERGED',
@@ -27,7 +27,7 @@ class DependencyNormalizationTests(unittest.TestCase):
                 args[3][source_id] = raw
                 evidence['source_records'].append(dict(source_id=source_id, kind='pull_request',
                     locator=url, sha256=hashlib.sha256(raw).hexdigest(), excerpt='b'*40))
-                if number == 546:
+                if is_gating:
                     evidence['external_receipts'].append(dict(number=number, role='prerequisite',
                         head_sha='a'*40, merge_sha='b'*40, url=url, source_id=source_id))
             args[3]['reviewed-packets'] = pinned_matrix(args[0])
