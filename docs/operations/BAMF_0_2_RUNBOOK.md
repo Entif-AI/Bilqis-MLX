@@ -1,12 +1,15 @@
 # BAMF-0.2 operator observation commands
 
-Status: **C11.3 read-only cockpit/runbook and the C16.1a persistent
-create/dry-run/resume lifecycle are integrated in reviewed unified**. Human-started
-resume with an accepted `atlas-release` lease now reaches the accepted-custody C07
-flywheel; that path remains neural-inert and fail-closed. This document does not
-authorize a durable student start or certify BAMF learning. Full C11.3 closure still
-requires accepted production qualification of the operator-status observation
-producer plus the current C07/C10 parent receipts described below.
+Status: **C11.3 read-only cockpit/runbook plus C16.1a create/resume and C16.3
+persistent BAMF dispatch are implemented**. `--human-run --resume` is the explicit
+human start boundary for an accepted lineage. A staged lineage enters the BAMF-native
+operator directly. An accepted `atlas-release` lineage first runs the restart-safe
+C07 flywheel; FIXED_POINT, WAITING_FOR_EVIDENCE, IMPLEMENTATION_UNCOVERED and
+LEASE_REQUIRED preserve already-authorized learning and continue into the operator,
+while ambiguous HELD remains a hard stop. This document never authorizes an agent to
+start the durable student on the human's behalf. Full C11.3 closure still requires
+accepted production qualification of the operator-status observation producer plus
+the current C07/C10 parent receipts described below.
 
 ## Read-only cockpit
 
@@ -160,25 +163,40 @@ Existing trainer help can also be inspected without a neural update:
 npm run train -- --help
 ```
 
-### Resource custody controls
+### Persistent human start and resource custody controls
 
-The real train parser exposes the resource controls used by this lineage. Keep the
-protected disk reserve at its production default and never use this runbook as a
-reason to weaken it:
+The real persistent start command is the same resume shape proven by C16.3. Keep the
+protected disk reserve at its production default and bound the first operational
+session explicitly when desired:
 
 ```sh
 npm run train -- --human-run --resume --run-dir /absolute/path/to/bamf-run \
-  --reserve-gib 100 --source-prefetch-workers 2
+  --minutes 90 --reserve-gib 100 --max-visits 1
 ```
 
-`--source-prefetch-workers` accepts only `0`, `1`, or `2`; those workers prepare
-source/release packets and never own writable model, optimizer, teacher, admission,
-or graph state. `--reserve-gib` defaults to `100`. On an accepted `atlas-release`
-lineage the command above may run the authorized C07 admission flywheel and commit
-an already-authorized successor, so use `--dry-run --resume` when only inspection is
-intended. The C07 path reloads accepted custody after adoption rather than reusing
-stale in-memory learner/optimizer state. This command does not by itself authorize
-new source rights, a lease renewal, grade promotion, or a persistent optimizer run.
+`--reserve-gib` defaults to `100`; do not lower it merely to make a witness pass.
+`--minutes` defaults to `90` and is the wall-clock session bound consumed by the
+persistent BAMF operator.
+`--max-visits 1` is a bounded first-start choice, not a permanent policy. Omitting
+`--max-visits` leaves the session bounded by the human-selected time budget and disk
+reserve. On an accepted `atlas-release` lineage the command first runs the authorized
+C07 admission flywheel. If that flywheel returns a safe non-integrity terminal, the
+same command then cold-loads the current accepted generation into the C16.3 BAMF
+operator. An ambiguous `HELD` status stops before learning. Use `--dry-run --resume`
+when only inspection is intended.
+
+The parser still accepts `--source-prefetch-workers {0,1,2}` for compatibility with
+the historical operator path. The C16.3 BAMF-native operator does **not** start that
+prefetch pool: C03.4 supplies the exact source-qualified priority offer and rows to
+the candidate owner, so the native persistent path currently uses zero independent
+prefetch workers. Do not describe that flag as an active BAMF resource knob until a
+future owner explicitly composes it into the native operator.
+
+The human start may perform retained optimizer work. It does not authorize new
+source rights, a lease renewal or grade promotion by fiat; those remain with their
+existing owners. C07 admission reloads accepted custody after adoption rather than
+reusing stale in-memory learner/optimizer state, and C16.3 owns only serialized
+composition of the existing teacher/candidate/C05/B13 owners.
 
 `--issue-349-experiment-root` is a separate bounded experiment-custody control and
 is not required for an ordinary BAMF production lineage. Do not substitute it for
@@ -186,11 +204,9 @@ B13/C07 custody or the 100 GiB reserve.
 
 C11.2's bounded reader remains available for historical inspection. The persistent
 v2 lifecycle above consumes accepted B13/C09/C07 custody and validates saved
-topology/admission settings. For an accepted `atlas-release` lineage, human-started
-resume now enters the restart-safe C07 flywheel against cold accepted custody and
-returns its typed terminal result without reusing a live learner or optimizer.
-Persistent learner execution remains a separate owner boundary. The existing
-100 GiB reserve remains unchanged and is not weakened by these commands.
+topology/admission settings. C16.3 then enters the BAMF-native operator only from the
+explicit human resume boundary. The existing 100 GiB reserve remains unchanged and
+is not weakened by these commands.
 
 The resource/rubric panel describes current Factory assessment as fresh routine,
 fixed promotion and inactive generalization. Historical rubric descriptions are
