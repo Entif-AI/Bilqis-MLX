@@ -17,6 +17,9 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures imp
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from scripts.bamf.c13_delivery_contracts import CandidateAttemptReceipt
 from scripts.bamf import c13_delivery_runtime as delivery_runtime
+from scripts.bamf.c13_episode_source import (
+    CAPABILITY, episode_factory_release, registered_episode_lowerer,
+)
 from scripts.prove_bamf_delivery import (
     DeliveryConfig, EpisodeSourceRelease, check_episode_binding,
     episode_binding_case, episode_task_goal, FoundationLaunchInput,
@@ -209,6 +212,58 @@ class BamfLearningPathCandidateAccountingTests(unittest.TestCase):
                 side_effect=(accepted, rejected, AssertionError("must stop"))):
             attempts = delivery_runtime.run_candidate_attempts(Path("/tmp/disposable"), 64)
         self.assertEqual(attempts, (accepted, rejected))
+
+
+class BamfLearningPathEpisodeSourceTests(unittest.TestCase):
+    def test_disposable_episode_provider_compiles_and_redraws_through_factory(self):
+        from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+
+        release, graph, sources, answers = episode_factory_release()
+        context = SourceExecutionContext(release, graph, None, sources, answers)
+        rows = tuple(context.draw_rows(seed=31, capability=CAPABILITY, each=4))
+        self.assertEqual(len(rows), 4)
+        self.assertTrue(all(sources.resolve_owner(row["generator"]).check(row)
+                            for row in rows))
+        authority = context.bind_rows(rows, seed=31, capability=CAPABILITY, each=4)
+        self.assertEqual(authority.release_sha256, release.release_sha256)
+        self.assertEqual(authority.source_family_id, "bamf.c13.episode-binding/v1")
+
+    def test_episode_lowerer_is_gold_blind_and_resolves_binding_by_actor_identity(self):
+        from bilqis_mlx.runtime.factory_task_authority import _source_view
+
+        release, graph, sources, answers = episode_factory_release()
+        context = __import__(
+            "bilqis_mlx.runtime.source_execution", fromlist=["SourceExecutionContext"]
+        ).SourceExecutionContext(release, graph, None, sources, answers)
+        row = context.draw_rows(seed=17, capability=CAPABILITY, each=1)[0]
+        capability = release.execution_plan.capability_map[CAPABILITY]
+        lowerer = registered_episode_lowerer()
+        goal, binding = lowerer.lower(
+            _source_view(row), semantic_release="e" * 64, capability=capability)
+        resolved = lowerer.resolve(
+            row, semantic_release="e" * 64, capability=capability)
+
+        self.assertEqual(goal.output_signature, "Number")
+        self.assertTrue(all(node.operands[0] is None for node in goal.expression_or_holes.nodes
+                            if node.node_id.startswith("select-")))
+        self.assertEqual(len(binding.operands), 6)
+        selected = tuple(
+            node.operands[0].source_handle for node in resolved.expression_or_holes.nodes
+            if node.node_id.startswith("select-"))
+        self.assertTrue(selected)
+        self.assertTrue(all(handle.startswith("source:c13:") for handle in selected))
+        self.assertNotIn(str(row["gold"]), selected)
+
+    def test_test_scoped_lowerer_registration_matches_exact_provider_digest(self):
+        from bilqis_mlx.source_adapters import task_goal_registry
+
+        lowerer = registered_episode_lowerer()
+        with patch.object(
+                task_goal_registry, "live_task_goal_lowerers",
+                return_value=(*task_goal_registry.live_task_goal_lowerers(), lowerer)):
+            selected = task_goal_registry.require_task_goal_lowerer(
+                lowerer.provider_id, lowerer.provider_implementation_sha256)
+        self.assertIs(selected, lowerer)
 
 
 if __name__ == "__main__":
