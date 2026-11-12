@@ -5,41 +5,42 @@ from pathlib import Path
 from ..state_dag import read_generation
 from .checkpoints import _outbox_source_generation, _expected_outbox_events
 from .state import _fingerprint
-from .akasha_outbox import AkashaEvent, NATIVE_EVENT_KINDS
+from .akasha_outbox import AkashaEvent, AkashaEventKind, NATIVE_EVENT_KINDS
 from .bamf_projection import BamfProjectionEvent, project_generation_outbox, _invalid
 
 
 def _native_owner_kind(native: dict, record: dict):
-    """Classify only events whose owner-specific fields bind to committed state."""
-    name = native.get("event")
-    kind = NATIVE_EVENT_KINDS.get(name)
-    if kind is None:
+    """Consume only native events whose separate owner state proves the category."""
+    if native.get("event") != "SCHOOL_CAPABILITY_BEST_COMMITTED":
         return None
     student = record.get("school", {}).get("current_student", {})
     generation = record.get("generation")
-    if name == "SCHOOL_TEACHER_VISIT_COMMITTED":
-        if (native.get("generation") != generation
-                or native.get("optimizer_step") != student.get("optimizer_step")
-                or native.get("recovered_at_student_sha256") != student.get("sha256")
-                or native.get("checkpoint_status") != "RECORDED_AT_BOUNDARY"):
-            return None
-    elif name == "SCHOOL_CAPABILITY_BEST_COMMITTED":
-        if (native.get("generation") != generation
-                or native.get("optimizer_step") != student.get("optimizer_step")
-                or native.get("student_sha256") != student.get("sha256")
-                or not isinstance(native.get("capabilities"), list)
-                or not native["capabilities"]
-                or not isinstance(native.get("rubric"), str)
-                or not native["rubric"]):
-            return None
-    elif name == "SCHOOL_FACTORY_RELEASE_MIGRATED":
-        if (native.get("generation") != generation
-                or native.get("factory_release_sha256") != record.get("factory_release_sha256")
-                or native.get("student_sha256") != student.get("sha256")
-                or native.get("optimizer_step") != student.get("optimizer_step")
-                or native.get("actual_neural_updates") != 0):
-            return None
-    return kind
+    capabilities = native.get("capabilities")
+    frontier = record.get("capability_best")
+    if (native.get("generation") != generation
+            or native.get("optimizer_step") != student.get("optimizer_step")
+            or native.get("student_sha256") != student.get("sha256")
+            or not isinstance(capabilities, list) or not capabilities
+            or not isinstance(frontier, dict)):
+        return None
+    slots = [
+        frontier[key] for key in sorted(frontier)
+        if isinstance(frontier.get(key), dict)
+        and frontier[key].get("capability") in capabilities
+        and frontier[key].get("checkpoint", {}).get("sha256") == student.get("sha256")
+    ]
+    if (len(slots) != len(capabilities)
+            or {slot.get("capability") for slot in slots} != set(capabilities)
+            or len({slot.get("rubric") for slot in slots}) != 1
+            or native.get("rubric") != slots[0].get("rubric")
+            or native.get("scores") != {
+                slot["capability"]: {
+                    "correct": slot.get("correct"), "total": slot.get("total")}
+                for slot in slots}
+            or native.get("evaluation_ids") != {
+                slot["capability"]: slot.get("evaluation_id") for slot in slots}):
+        return None
+    return AkashaEventKind.CAPABILITY_OUTCOME
 
 
 

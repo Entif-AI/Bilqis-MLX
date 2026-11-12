@@ -1,20 +1,25 @@
 """Production C10 owner projections consume accepted authority, never lookalikes."""
 from dataclasses import replace
 from pathlib import Path
+import random
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
+from bilqis_mlx.compatibility import historical_teacher_policy
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning.learning_experiment import Settings
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.akasha_outbox import AkashaEvent, AkashaEventKind, read_outbox
+from bilqis_mlx.runtime.akasha_outbox import (
+    AkashaEvent, AkashaEventKind, append_outbox, read_outbox,
+)
 from bilqis_mlx.runtime.akasha_staging import build_staging_projection
 from bilqis_mlx.runtime.bamf_projection import read_projection_outbox
 from bilqis_mlx.runtime.tests.projection.test_bamf_projection import _contract, _projected
 from bilqis_mlx.runtime.owner_projection import (
-    _accepted_generation,
-    _motif_event,
     append_accepted_bamf_generation,
     append_public_package_export,
     event_from_public_package_export,
@@ -33,7 +38,10 @@ from bilqis_mlx.runtime.bamf_bundle.publication import (
     publish_factory_release_adoption_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
-from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
+from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation, publish_bamf_generation
+from bilqis_mlx.runtime.accepted_teacher_custody import (
+    derive_c03_successor_bundle, select_accepted_teacher_visit,
+)
 from bilqis_mlx.runtime.cognitive_package import export_capability
 from bilqis_mlx.runtime.cognitive_package.exchange import publish_package
 from bilqis_mlx.runtime.cognitive_package.staging import authorize_public_export
@@ -50,14 +58,48 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.acceptance._generati
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.acceptance.test_atlas_admission_publication import (
     AtlasAdmissionPublicationTests,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import accepted_state, shape_patch
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import next_accepted_step
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
     acceptance,
 )
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.teacher_custody_fixtures import (
+    adaptation, selection_teacher,
+)
 
 
 class AcceptedOwnerProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
+    def test_teacher_visit_projects_from_accepted_c03_custody_not_native_name(self):
+        parent = self.parent()
+        school = SimpleNamespace(
+            stage="RECOVERY_1",
+            current_student=SimpleNamespace(
+                sha256=candidate_identity_digest(parent.retained_state)))
+        with shape_patch():
+            bound, _policy, _metadata = select_accepted_teacher_visit(
+                self.run, historical_teacher_policy, school, random.Random(17),
+                Settings(), "factory/7", {}, "A", capability_id="C.ADD",
+                total_capabilities=20,
+                legacy_receipt={"teacher": selection_teacher()},
+                adaptation=adaptation(), prior_region="legacy-region")
+            successor = derive_c03_successor_bundle(
+                self.run,
+                accepted_state(parent.retained_state, parent.extents),
+                bound, next_seed=72, cursor="lesson:1",
+                delivery_events=({"event": "C10_TEACHER_OWNER_FIXTURE"},))
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            publish_bamf_generation(
+                self.run, successor,
+                acceptance=acceptance(successor, parent=parent.retained_state),
+                reserve_gib=0.0)
+        with shape_patch():
+            events = events_from_accepted_bamf_generation(self.run)
+        teacher = tuple(
+            event for event in events if event.kind is AkashaEventKind.TEACHER_VISIT)
+        self.assertEqual(len(teacher), 1)
+        self.assertIn(bound.identity.visit_id, teacher[0].payload_json)
+        self.assertIn(self._parent_pointer["manifest_sha256"], teacher[0].payload_json)
+
     def test_factory_release_projection_consumes_b13_acceptance_and_keeps_time_unknown(self):
         parent = self.parent()
         transition = _issue_factory_release_adoption_transition(
@@ -91,6 +133,11 @@ class AcceptedOwnerProjectionTests(GenerationAcceptanceFixture, unittest.TestCas
              event.observed_at, event.recorded_at),
             (None, None, None, None))
         self.assertIn(binding.digest, event.payload_json)
+        with self.assertRaises(BilqisError) as caught:
+            append_outbox(self.root / "unbound.sqlite3", event)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C10_OWNER_PROJECTION_BINDING_REQUIRED")
         path = self.root / "factory-outbox.sqlite3"
         domain = _contract(path)
         with shape_patch():
@@ -145,12 +192,6 @@ class AcceptedOwnerProjectionTests(GenerationAcceptanceFixture, unittest.TestCas
             acceptance=acceptance(successor, parent=parent.retained_state),
         )
         with shape_patch():
-            accepted_source = _accepted_generation(self.run)
-            self.assertIsNotNone(accepted_source.parent_binding)
-            self.assertNotEqual(
-                accepted_source.student.retained_state.policy.to_record(),
-                accepted_source.parent.retained_state.policy.to_record(),
-            )
             events = events_from_accepted_bamf_generation(self.run)
         self.assertEqual(tuple(event.kind for event in events),
                          (AkashaEventKind.PLASTICITY_EPOCH,))
@@ -200,6 +241,13 @@ class PackageOwnerProjectionTests(unittest.TestCase):
 
 
 class OwnerProjectionContractTests(unittest.TestCase):
+    def test_generic_owner_issuer_and_source_stamper_are_not_exposed(self):
+        import bilqis_mlx.runtime.owner_projection as owner_projection
+        self.assertFalse(hasattr(owner_projection, "_issue_accepted_source"))
+        self.assertFalse(hasattr(owner_projection, "_issue_owner_payload"))
+        self.assertFalse(hasattr(owner_projection, "_accepted_generation"))
+        self.assertFalse(hasattr(owner_projection, "_motif_event"))
+
     def test_unknown_time_requires_complete_null_quartet_and_stays_internal(self):
         payload = {
             "run_id": "fixture-run",
@@ -264,11 +312,6 @@ class OwnerProjectionContractTests(unittest.TestCase):
                 observed_at=None,
                 recorded_at=None,
             )
-
-    def test_owner_projection_helper_rejects_motif_lookalike(self):
-        with self.assertRaises(BilqisError):
-            _motif_event(object())
-
 
 if __name__ == "__main__":
     unittest.main()

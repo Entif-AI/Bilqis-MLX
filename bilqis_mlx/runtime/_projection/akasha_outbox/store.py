@@ -5,7 +5,8 @@ import json
 from pathlib import Path
 import sqlite3
 
-from .contracts import OWNER_FIXTURE_KINDS, _canonical, _digest, _invalid, _name, _sha, _time, _DELIVERY_STATUSES
+from .contracts import (OWNER_FIXTURE_KINDS, _canonical, _digest, _invalid, _name,
+                        _requires_projection_binding, _sha, _time, _DELIVERY_STATUSES)
 from .events import AkashaEvent, _restore_event
 from .contracts import AkashaEventKind
 
@@ -72,8 +73,10 @@ def _prepare_outbox_entry(event: AkashaEvent, projection_binding):
         _invalid("BAMF_C10_EVENT_ARGUMENT_INVALID")
     event.validate()
     owner_source_key = None
+    fields = json.loads(event.payload_json)
+    if projection_binding is None and _requires_projection_binding(event.kind, fields):
+        _invalid("BAMF_C10_OWNER_PROJECTION_BINDING_REQUIRED")
     if event.kind in OWNER_FIXTURE_KINDS:
-        fields = json.loads(event.payload_json)
         if fields.get("verification_mode") == "DISPOSABLE_CONTRACT":
             owner_source_key = _digest(_canonical([
                 event.kind.value, fields["producer_id"],

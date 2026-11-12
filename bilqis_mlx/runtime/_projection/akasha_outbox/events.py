@@ -5,7 +5,30 @@ from .contracts import (AKASHA_EVENT_SCHEMA, AKASHA_PROJECTION_SCHEMA, AkashaEve
     _canonical, _digest, _event_times, _invalid, _name, _payload_for, _sha,
     _unknown_time_allowed)
 
-_OWNER_PROJECTION_ISSUER = object()
+def _owner_payload_gate():
+    issuer = object()
+    claimed = False
+
+    def authorized(value) -> bool:
+        return value is issuer
+
+    def claim():
+        nonlocal claimed
+        if claimed:
+            _invalid("BAMF_C10_OWNER_PROJECTION_ISSUER_ALREADY_CLAIMED")
+        claimed = True
+
+        def issue(**kwargs):
+            return AkashaEvent.from_payload(
+                **kwargs, _owner_issuance=issuer)
+
+        return issue
+
+    return authorized, claim
+
+
+_authorized_owner_issuance, _claim_owner_payload_issuer = _owner_payload_gate()
+del _owner_payload_gate
 
 @dataclass(frozen=True, init=False)
 class AkashaEvent:
@@ -35,7 +58,7 @@ class AkashaEvent:
         if not isinstance(kind, AkashaEventKind):
             _invalid("BAMF_C10_EVENT_KIND_INVALID")
         if (_unknown_time_allowed(kind, payload)
-                and _owner_issuance is not _OWNER_PROJECTION_ISSUER):
+                and not _authorized_owner_issuance(_owner_issuance)):
             _invalid("BAMF_C10_OWNER_PROJECTION_AUTHORITY_REQUIRED")
         payload_json = _canonical(payload)
         payload_digest = _digest(payload_json.encode("utf-8"))
@@ -92,12 +115,6 @@ class AkashaEvent:
 
     def __post_init__(self) -> None:
         self.validate()
-
-
-def _from_owner_payload(**kwargs) -> AkashaEvent:
-    """Internal constructor for already-authenticated production owner facts."""
-    return AkashaEvent.from_payload(
-        **kwargs, _owner_issuance=_OWNER_PROJECTION_ISSUER)
 
 
 def _construct_event(**fields) -> AkashaEvent:

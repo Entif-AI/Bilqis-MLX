@@ -61,6 +61,8 @@ def _unknown_time_allowed(kind, payload: dict) -> bool:
             and payload.get("owner_event_type") is not None)
         or (kind is AkashaEventKind.MOTIF_CANDIDATE
             and payload.get("transition_sha256") is not None)
+        or (kind is AkashaEventKind.TEACHER_VISIT
+            and payload.get("visit_id") is not None)
     )
 
 
@@ -127,13 +129,22 @@ _MOTIF_ACCEPTANCE_FIELDS = frozenset({
     "approved_context_sha256", "candidate_allocation_sha256",
     "transition_sha256", "added_pages", "admission_receipt_sha256",
 })
+_TEACHER_ACCEPTANCE_FIELDS = frozenset({
+    "run_id", "generation", "visit_id", "accepted_manifest_sha256",
+    "teacher_identity", "student_sha256", "capability_id", "policy_key",
+    "admission_receipt_sha256",
+})
 
 
 _REQUIRED_FIELDS = MappingProxyType({
     **{kind: _OWNER_FIXTURE_FIELDS
        for kind in OWNER_FIXTURE_KINDS},
-    **{kind: frozenset({"native_event_id", "native_event_digest", "run_id", "generation", "native_event_type"})
-       for kind in (AkashaEventKind.TEACHER_VISIT, AkashaEventKind.FACTORY_RELEASE, AkashaEventKind.CAPABILITY_OUTCOME)},
+    **{kind: frozenset({
+        "native_event_id", "native_event_digest", "run_id", "generation",
+        "native_event_type"})
+       for kind in (
+           AkashaEventKind.TEACHER_VISIT, AkashaEventKind.FACTORY_RELEASE,
+           AkashaEventKind.CAPABILITY_OUTCOME)},
     AkashaEventKind.SOURCE_CORRECTION: frozenset({
         "correction_event_id", "source_owner", "dependency_key",
         "old_digest", "new_digest"}),
@@ -175,12 +186,22 @@ def _payload_form(kind, payload):
     accepted_motif = (
         kind is AkashaEventKind.MOTIF_CANDIDATE
         and payload.get("transition_sha256") is not None)
+    accepted_teacher = (
+        kind is AkashaEventKind.TEACHER_VISIT
+        and payload.get("visit_id") is not None)
     required = (
         _PRODUCTION_FIELDS[kind] if production_owner
         else _FACTORY_ACCEPTANCE_FIELDS if accepted_factory
         else _MOTIF_ACCEPTANCE_FIELDS if accepted_motif
+        else _TEACHER_ACCEPTANCE_FIELDS if accepted_teacher
         else _REQUIRED_FIELDS[kind])
-    return required, production_owner, accepted_factory, accepted_motif
+    return required, production_owner, accepted_factory, accepted_motif, accepted_teacher
+
+
+def _requires_projection_binding(kind, payload) -> bool:
+    _, production_owner, accepted_factory, accepted_motif, accepted_teacher = _payload_form(
+        kind, payload)
+    return production_owner or accepted_factory or accepted_motif or accepted_teacher
 
 
 def _validate_required_payload(payload, required):
@@ -232,7 +253,7 @@ def _payload_for(kind: AkashaEventKind, payload_json: str) -> dict:
             or any(not isinstance(key, str) for key in payload)
             or payload_json != _canonical(payload)):
         _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
-    required, production_owner, accepted_factory, accepted_motif = _payload_form(
+    required, production_owner, accepted_factory, accepted_motif, accepted_teacher = _payload_form(
         kind, payload)
     _validate_required_payload(payload, required)
     if kind in OWNER_FIXTURE_KINDS and not production_owner:
@@ -241,7 +262,8 @@ def _payload_for(kind: AkashaEventKind, payload_json: str) -> dict:
             _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
     if production_owner:
         _validate_production_owner_payload(kind, payload)
-    if kind in NATIVE_EVENT_KINDS.values() and not accepted_factory:
+    if (kind in NATIVE_EVENT_KINDS.values()
+            and not accepted_factory and not accepted_teacher):
         if (type(payload['generation']) is not int or payload['generation'] < 0
                 or not _name(payload['run_id']) or not _sha(payload['native_event_id'])
                 or not _name(payload['native_event_type'])
@@ -257,6 +279,17 @@ def _payload_for(kind: AkashaEventKind, payload_json: str) -> dict:
                 or type(payload['generation']) is not int or payload['generation'] < 1
                 or type(payload['added_pages']) is not int
                 or payload['added_pages'] not in (0, 1)):
+            _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
+    if accepted_teacher:
+        if (not _name(payload["run_id"])
+                or type(payload["generation"]) is not int
+                or payload["generation"] < 0
+                or not _sha(payload["visit_id"])
+                or not _sha(payload["accepted_manifest_sha256"])
+                or not _sha(payload["teacher_identity"])
+                or not _sha(payload["student_sha256"])
+                or not _name(payload["capability_id"])
+                or not _name(payload["policy_key"])):
             _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
     if (kind is AkashaEventKind.REVALIDATION
             and type(payload["eligible"]) is not bool):
