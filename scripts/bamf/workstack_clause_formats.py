@@ -181,16 +181,14 @@ def _parent_amendment(clause, numbers):
     return (*original, *child), ()
 
 
-def parse_clause(clause, numbers, source_hashes=None, implementation_receipts=()):
+def parse_clause(clause, numbers, source_hashes=None, implementation_receipts=(), entry_key=None):
     source_hashes = source_hashes or {}
-    a05_source_binding = _a05_source_binding_prerequisites(
-        clause, numbers, source_hashes, implementation_receipts)
-    if a05_source_binding is not None:
-        return a05_source_binding
-    a08_family_integration = _a08_family_integration_prerequisites(
-        clause, numbers, source_hashes, implementation_receipts)
-    if a08_family_integration is not None:
-        return a08_family_integration
+    if entry_key == 'A05.5':
+        return _a05_source_binding_prerequisites(
+            clause, numbers, source_hashes, implementation_receipts)
+    if entry_key == 'A08.1b.5':
+        return _a08_family_integration_prerequisites(
+            clause, numbers, source_hashes, implementation_receipts)
     b11_cycle = _b11_cycle_prerequisites(clause, numbers, source_hashes)
     if b11_cycle is not None:
         return b11_cycle

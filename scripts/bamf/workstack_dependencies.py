@@ -140,6 +140,7 @@ def check_dependency_evidence(entry, body, issue_map, sources):
             issue_map,
             {r['source_id']: r['sha256'] for r in evidence['source_records']},
             implementation_receipts=implementation_receipts,
+            entry_key=entry['key'],
         )
         if parsed is None:
             return _invalid('unsupported-clause')

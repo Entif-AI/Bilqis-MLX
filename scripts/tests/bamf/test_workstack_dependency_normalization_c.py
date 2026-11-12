@@ -84,3 +84,19 @@ class FinalAuthorityNormalizationTests(unittest.TestCase):
         self.assertEqual(entry['deps'], [
             'A08.1a', 'A08.1b.1', 'A08.1b.2', 'A08.1b.3', 'A08.1b.4'])
         self.assert_amendment_is_gating('A08.1b.5', 'A08.1b.5.comment-6838107336')
+
+        narrowed = deepcopy(entry)
+        narrowed_edges = ['A08.1b.1', 'A08.1b.2', 'A08.1b.3', 'A08.1b.4']
+        narrowed['deps'] = narrowed_edges
+        narrowed['dependency_evidence']['known_edges'] = narrowed_edges
+        narrowed['dependency_evidence']['clause'] = (
+            '**Direct prerequisites:** A08.1b.1 through A08.1b.4.')
+        narrowed['dependency_evidence']['external_receipts'] = []
+        narrowed_sources = dict(self.sources)
+        narrowed_sources['reviewed-packets'] = pinned_matrix(narrowed)
+        self.assertIs(check_dependency_evidence(
+            narrowed,
+            narrowed_sources['A08.1b.5.body'],
+            self.numbers,
+            narrowed_sources,
+        ).status, EvidenceStatus.INVALID)
