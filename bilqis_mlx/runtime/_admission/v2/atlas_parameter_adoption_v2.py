@@ -119,8 +119,9 @@ def accepted_parameter_extension_retry_v2(current, handoff, native_staged, lease
 def _revalidate_parameter_publication(
         runtime, selected, native_staged, atlas_lease, source_authority,
         *, current, checkpoint, handoff):
-    from . import state as runtime_state
-    from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
+    from bilqis_mlx.runtime.atlas_flywheel_runtime_context import (
+        atlas_admission_checkpoint,
+    )
     from bilqis_mlx.runtime.atlas_admission import (
         read_accepted_atlas_factory_release,
         read_accepted_atlas_lease_v2,
@@ -146,14 +147,12 @@ def _revalidate_parameter_publication(
         _require_exact_atlas_release(current, handoff, atlas_lease)
         accepted_current = read_accepted_atlas_factory_release(runtime.run_dir)
         accepted_current.verify_semantic_catalog(runtime.graph)
-        school = runtime_state._state_from_json(
-            runtime.receipt["school"],
-            schedule_program_from_executable_release(accepted_current))
+        runtime_checkpoint = atlas_admission_checkpoint(runtime, accepted_current)
         if (accepted_current.release_sha256
                 != handoff.receipt.predecessor_release.release_sha256
                 or candidate.parent_manifest_sha256 != parent_manifest
                 or parent.retained_state.optimizer_step != checkpoint.optimizer_step
-                or school.current_student != checkpoint):
+                or runtime_checkpoint != checkpoint):
             _invalid("BAMF_ATLAS_RUNTIME_CONTEXT_CHANGED")
         from bilqis_mlx.factory.live_answers import live_answer_registry
         from bilqis_mlx.source_adapters.school import live_source_registry

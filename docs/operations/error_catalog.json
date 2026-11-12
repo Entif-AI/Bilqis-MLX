@@ -1,5 +1,5 @@
 {
-  "legacy_raw_file_count": 262,
+  "legacy_raw_file_count": 264,
   "legacy_raw_raise_count": 2092,
   "legacy_raw_raise_groups": [
     {
@@ -9362,6 +9362,90 @@
       "path": "bilqis_mlx/runtime/_admission/jit_adoption.py"
     },
     {
+      "code_hint": "AUTONOMY_FRONTIER_BUILDER_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_FRONTIER_BUILDER_MISSING'",
+      "path": "bilqis_mlx/runtime/_autonomy_live/frontier.py"
+    },
+    {
+      "code_hint": "AUTONOMY_JIT_PROPOSAL_DIRECTORY_UNSAFE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_JIT_PROPOSAL_DIRECTORY_UNSAFE'",
+      "path": "bilqis_mlx/runtime/_autonomy_live/frontier.py"
+    },
+    {
+      "code_hint": "AUTONOMY_JIT_PROPOSAL_IMMUTABLE_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_JIT_PROPOSAL_IMMUTABLE_DRIFT'",
+      "path": "bilqis_mlx/runtime/_autonomy_live/frontier.py"
+    },
+    {
+      "code_hint": "AUTONOMY_JIT_PROPOSAL_PATH_UNSAFE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_JIT_PROPOSAL_PATH_UNSAFE'",
+      "path": "bilqis_mlx/runtime/_autonomy_live/frontier.py"
+    },
+    {
+      "code_hint": "AUTONOMY_JIT_PROPOSAL_READBACK_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_JIT_PROPOSAL_READBACK_DRIFT'",
+      "path": "bilqis_mlx/runtime/_autonomy_live/frontier.py"
+    },
+    {
+      "code_hint": "AUTONOMY_STATE_POINTER_UNSAFE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_STATE_POINTER_UNSAFE'",
+      "path": "bilqis_mlx/runtime/_autonomy_live/planning.py"
+    },
+    {
+      "code_hint": "AUTONOMY_TEACHING_REROUTE_OUTSIDE_SCHEDULER_SCOPE",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_TEACHING_REROUTE_OUTSIDE_SCHEDULER_SCOPE'",
+      "path": "bilqis_mlx/runtime/_autonomy_live/planning.py"
+    },
+    {
+      "code_hint": "AUTONOMY_REJECTED_ATTEMPT_EVENT_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_REJECTED_ATTEMPT_EVENT_INVALID'",
+      "path": "bilqis_mlx/runtime/_autonomy_live/recovery.py"
+    },
+    {
+      "code_hint": "AUTONOMY_TEACHING_RECOVERY_CAPABILITY_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_TEACHING_RECOVERY_CAPABILITY_INVALID'",
+      "path": "bilqis_mlx/runtime/_autonomy_live/recovery.py"
+    },
+    {
+      "code_hint": "AUTONOMY_TEACHING_RECOVERY_SPECIMEN_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_TEACHING_RECOVERY_SPECIMEN_DRIFT'",
+      "path": "bilqis_mlx/runtime/_autonomy_live/recovery.py"
+    },
+    {
+      "code_hint": "AUTONOMY_TEACHING_RECOVERY_SPECIMEN_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_TEACHING_RECOVERY_SPECIMEN_MISSING'",
+      "path": "bilqis_mlx/runtime/_autonomy_live/recovery.py"
+    },
+    {
+      "code_hint": "AUTONOMY_TEACHING_RECOVERY_SPECIMEN_PATH_DRIFT",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'AUTONOMY_TEACHING_RECOVERY_SPECIMEN_PATH_DRIFT'",
+      "path": "bilqis_mlx/runtime/_autonomy_live/recovery.py"
+    },
+    {
       "code_hint": "LEARNING_EXPERIMENT_INCOMPLETE_SAME_GRADE_PROMOTION",
       "count": 1,
       "exception": "ValueError",
@@ -10907,90 +10991,6 @@
       "exception": "ValueError",
       "expression": "'STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES'",
       "path": "bilqis_mlx/runtime/assessment.py"
-    },
-    {
-      "code_hint": "AUTONOMY_FRONTIER_BUILDER_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_FRONTIER_BUILDER_MISSING'",
-      "path": "bilqis_mlx/runtime/autonomy_live.py"
-    },
-    {
-      "code_hint": "AUTONOMY_JIT_PROPOSAL_DIRECTORY_UNSAFE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_JIT_PROPOSAL_DIRECTORY_UNSAFE'",
-      "path": "bilqis_mlx/runtime/autonomy_live.py"
-    },
-    {
-      "code_hint": "AUTONOMY_JIT_PROPOSAL_IMMUTABLE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_JIT_PROPOSAL_IMMUTABLE_DRIFT'",
-      "path": "bilqis_mlx/runtime/autonomy_live.py"
-    },
-    {
-      "code_hint": "AUTONOMY_JIT_PROPOSAL_PATH_UNSAFE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_JIT_PROPOSAL_PATH_UNSAFE'",
-      "path": "bilqis_mlx/runtime/autonomy_live.py"
-    },
-    {
-      "code_hint": "AUTONOMY_JIT_PROPOSAL_READBACK_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_JIT_PROPOSAL_READBACK_DRIFT'",
-      "path": "bilqis_mlx/runtime/autonomy_live.py"
-    },
-    {
-      "code_hint": "AUTONOMY_REJECTED_ATTEMPT_EVENT_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_REJECTED_ATTEMPT_EVENT_INVALID'",
-      "path": "bilqis_mlx/runtime/autonomy_live.py"
-    },
-    {
-      "code_hint": "AUTONOMY_STATE_POINTER_UNSAFE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_STATE_POINTER_UNSAFE'",
-      "path": "bilqis_mlx/runtime/autonomy_live.py"
-    },
-    {
-      "code_hint": "AUTONOMY_TEACHING_RECOVERY_CAPABILITY_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_TEACHING_RECOVERY_CAPABILITY_INVALID'",
-      "path": "bilqis_mlx/runtime/autonomy_live.py"
-    },
-    {
-      "code_hint": "AUTONOMY_TEACHING_RECOVERY_SPECIMEN_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_TEACHING_RECOVERY_SPECIMEN_DRIFT'",
-      "path": "bilqis_mlx/runtime/autonomy_live.py"
-    },
-    {
-      "code_hint": "AUTONOMY_TEACHING_RECOVERY_SPECIMEN_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_TEACHING_RECOVERY_SPECIMEN_MISSING'",
-      "path": "bilqis_mlx/runtime/autonomy_live.py"
-    },
-    {
-      "code_hint": "AUTONOMY_TEACHING_RECOVERY_SPECIMEN_PATH_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_TEACHING_RECOVERY_SPECIMEN_PATH_DRIFT'",
-      "path": "bilqis_mlx/runtime/autonomy_live.py"
-    },
-    {
-      "code_hint": "AUTONOMY_TEACHING_REROUTE_OUTSIDE_SCHEDULER_SCOPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'AUTONOMY_TEACHING_REROUTE_OUTSIDE_SCHEDULER_SCOPE'",
-      "path": "bilqis_mlx/runtime/autonomy_live.py"
     },
     {
       "code_hint": "HUMAN_TRAINER_OUTBOX_ADVANCE_SOURCE_DRIFT",
@@ -13817,6 +13817,54 @@
       "recovery_key": "errors.school.bamf_atlas_admission.invalid.recovery",
       "self_heal_owner": null,
       "title": "BAMF Atlas lease or admission boundary invalid"
+    },
+    {
+      "code": "SCHOOL.BAMF_ATLAS_ADMISSION.FLYWHEEL_RUNTIME_INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [
+        "BAMF_ATLAS_FLYWHEEL_RUNTIME_INVALID"
+      ],
+      "message_key": "errors.school.bamf_atlas_admission.flywheel_runtime_invalid.message",
+      "message_template": "The accepted-custody flywheel runtime inputs are invalid.",
+      "next_action": "Preserve accepted custody and reconstruct the flywheel only from the accepted run, source graph and configured reserve.",
+      "operator_steps": [],
+      "owner": "runtime.atlas_flywheel_runtime",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_atlas_admission.flywheel_runtime_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Accepted Atlas flywheel runtime invalid"
+    },
+    {
+      "code": "SCHOOL.BAMF_ATLAS_ADMISSION.ACCEPTED_LEASE_REQUIRED",
+      "disposition": "STAGE_AND_INSPECT",
+      "legacy_codes": [
+        "BAMF_ATLAS_V2_ACCEPTED_LEASE_REQUIRED"
+      ],
+      "message_key": "errors.school.bamf_atlas_admission.accepted_lease_required.message",
+      "message_template": "The cold admission flywheel has no accepted Atlas v2 lease for this run.",
+      "next_action": "Leave accepted custody unchanged and require the existing explicit human enrollment path before admission can continue.",
+      "operator_steps": [],
+      "owner": "runtime.atlas_flywheel_runtime",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_atlas_admission.accepted_lease_required.recovery",
+      "self_heal_owner": null,
+      "title": "Accepted Atlas lease required"
+    },
+    {
+      "code": "SCHOOL.BAMF_ATLAS_ADMISSION.FLYWHEEL_PREDECESSOR_DRIFT",
+      "disposition": "PRESERVE_AND_RELOAD",
+      "legacy_codes": [
+        "BAMF_ATLAS_FLYWHEEL_ACCEPTED_PREDECESSOR_DRIFT"
+      ],
+      "message_key": "errors.school.bamf_atlas_admission.flywheel_predecessor_drift.message",
+      "message_template": "The accepted Factory release no longer matches the predecessor bound into the proposed Atlas handoff.",
+      "next_action": "Reject the stale handoff, preserve the accepted generation, and rebuild planner state from current accepted custody.",
+      "operator_steps": [],
+      "owner": "runtime.atlas_flywheel_runtime",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_atlas_admission.flywheel_predecessor_drift.recovery",
+      "self_heal_owner": null,
+      "title": "Atlas flywheel predecessor drift"
     },
     {
       "code": "SCHOOL.BAMF_SALIENCE.INVALID",
