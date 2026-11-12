@@ -118,13 +118,6 @@ head, but it is not silently promoted into current-base integration proof under
 ADR-129. A current-base real-fixture/full witness and aggregate premerge gate remain
 the final turn-in evidence.
 
-Those gates are presently resource-blocked rather than semantically failed. Current
-host inspection reports swap at approximately `58.15 GiB / 59.39 GiB`, which is
-near saturation. Current `ADR-138` explicitly forbids launching another expensive
-MLX/full-model witness in that state. No heavy rerun is authorized until that
-resource precondition clears; do not weaken the guard or treat detachment as a
-substitute for memory safety.
-
 Two independent read-only turn-in reviews were then collected against the reconciled
 current-base branch. The implementation/custody reviewer reported no blocker, major,
 or minor correctness or integration defect across C08 resource planning, row-weighted
@@ -136,12 +129,6 @@ and that the minimum remaining current-base evidence is exactly one staged mount
 real-fixture/full witness followed by the aggregate premerge gate. That reviewer also
 confirmed the PR must not be presented as ready for human review until those gates are
 green or validly reusable.
-
-A later host check still showed resource pressure: swap remained approximately
-`57.01 GiB / 58.37 GiB` with no active C08/MLX test worker visible. This confirms the
-blocker is residual host resource state rather than a surviving owned test process.
-No unrelated process was terminated and no unsafe memory-pressure workaround was
-used merely to force the remaining proof.
 
 ## Current-base staged witness r3 | 2026-11-11
 
@@ -183,10 +170,103 @@ declared `DETACHED_ONLY`, as is the pre-existing Factory retention live witness.
 focused runner/gate suite passes `27/27`, and direct discovery confirms both files are
 absent from the aggregate set.
 
+## Final turn-in qualification | 2026-11-11
+
+Turn-in identity:
+
+- issue: `#374` / `C08`, Lane C;
+- reviewed unified: `c42362ced0309a24f2f95391257df8f4ef3588cc`;
+- final reviewed code/test/governance tip before the evidence-only commit:
+  `3e0a02a3d34bc1fb06c1096519e9f0d78377f5a3`;
+- consumed C02 receipt: `0a5d0343`; consumed B11 receipt: `8899f7d2`;
+- primary production surfaces: topology-aware resource contracts, logical-batch
+  gradient accumulation, candidate-step/binder training authority, grouped proof and
+  retention consumers, Factory candidate training, motif/source continuation, and
+  runtime training-owner relocation;
+- verification/governance surfaces: C08 Factory bridge/execution/preflight tests,
+  staged witness scripts, aggregate test discovery, ADR-139/ADR-140, `AGENTS.md`, and
+  this acceptance receipt.
+
+The operator clarified the M3 Ultra execution policy after the initial current-base
+qualification attempt: independent MLX/full-model jobs may overlap when each job is
+explicitly bounded. ADR-140 records that correction. MLX remains single-worker inside
+an unbudgeted runner, but another bounded process or high swap occupancy alone is not
+a host-wide veto.
+
+The current-base production witness remains the authoritative C08 semantic proof:
+
+- detached head `1d9866b5c93cefa08c2fcb790261ccf2716a5e38`;
+- fast contracts: `6 passed`, `6 subtests`;
+- mounted real-fixture preflight: `1 passed` in `1135.32s`;
+- exact two-row real-Factory MLX witness: `1 passed` in `1496.89s`;
+- `GUARD=NONE`, peak RSS about `9.349 GiB`, `source_mutated=false`.
+
+Git inspection from that witness head through final test/governance candidate
+`3e0a02a3d34bc1fb06c1096519e9f0d78377f5a3` shows no production-module changes.
+The entire later delta is ADR/AGENTS policy, test fixtures, test selection, and this
+evidence document. ADR-129 therefore permits reuse of the green production witness.
+
+### Aggregate fail-fast classification
+
+The corrected aggregate r6 ran from `416b4374cd07efabe00dc17004039bd0806e8e7b`
+with one Python process, MLX cache disabled, and an explicit 24 GiB memory limit.
+Default discovery no longer schedules `DETACHED_ONLY` witnesses. The run was stopped
+at its first error rather than collecting redundant failures after the gate was
+already red.
+
+The first error was `SchoolNumericAnswersTests.setUpClass`, before any test body ran.
+Exact focused replay on both candidate `416b4374` and pristine reviewed unified
+`c42362ced0309a24f2f95391257df8f4ef3588cc` produces the same `FileNotFoundError`
+for the absent preserved vendor checkpoint
+`vendor/legacy-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt`.
+The aggregate result is therefore absolute red and differentially inherited at the
+first failing boundary. It is not relabelled green. No #374-owned aggregate regression
+was identified before that inherited boundary.
+
+### Correction-hold fixture repair
+
+The earlier aggregate attempt also exposed a stale C09 correction-hold fixture. The
+exact pristine-unified version is itself red before correction handling because its
+old generation-zero publication path now rejects with
+`BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED`. C08 correctly modernized that fixture
+to `publish_initial_generation`, which exposed two candidate-side test defects:
+
+1. `FactoryTrainingBridgeFixture` installed the export-clearance host registry while
+   the correction event was signed by the fixture's separate synthetic `AUTHORITY`.
+   A cheap RED regression showed `host_source_authority_patch(AUTHORITY)` was
+   unsupported. The helper now accepts an optional registry while preserving its
+   existing default, and the Factory fixture binds its actual authority.
+2. The disposable Factory fixture reused the workstation-wide data plane with fixed
+   run identity `factory-training-live`. Genesis trust is keyed by run ID, so prior
+   test state could trigger `BAMF_INITIAL_GENERATION_TRUST_ROOT_DRIFT`. The fixture
+   now uses a temporary per-test `BILQIS_DATA_PLANE`; production trust-root checks are
+   unchanged.
+
+Cheap verification at final reviewed test/governance tip `3e0a02a3` is green: runner/gate regressions `27/27`, BAMF
+contract mirrors `43/43`, full `quality:check`, explicit/default source-authority helper contracts, nine focused data-plane/helper
+contracts, governance, docs, Factory architecture, error-control, flow-control,
+changed-file smell audit, and `git diff --check` all pass. The final two-line cleanup
+closes cached per-test data-plane connections before environment restoration and temp
+directory removal.
+
+Exact repaired correction-hold witness `C08-374-d50fb77f-correction-hold-r3`
+ran from immutable test/governance head
+`d50fb77f9a116446d2f7a6462e97d606b9c3c455` with the mounted A01 artifact,
+MLX cache disabled, and a 24 GiB memory limit. It returned `PASS`, return code `0`,
+with `source_mutated=false`; `1 passed in 1344.83s (0:22:24)`. The test proves that a persisted
+C09 source correction holds the prepared Factory training batch with
+`BAMF_C09_ARTIFACT_HELD` before gradient read. Final tip `3e0a02a3` differs only by
+post-test data-plane connection cleanup, so this result remains valid there.
+
+A final independent read-only review of the post-witness test/governance delta reported
+`PASS - 0 Blockers / 0 Majors / 0 Minors` after the final data-plane cleanup repair.
+
 ## Disposition
 
-C08 BAMF-0.2 owned acceptance is satisfied, including a green current-base mounted
-real-fixture and exact two-row real-Factory MLX witness. PR readiness now depends on
-the remaining aggregate premerge gate only; the production witness is reusable under
-ADR-129 while its dependency surface is unchanged. This receipt does not authorize
-self-merge or issue closure before the human-reviewed PR is merged and read back.
+C08 BAMF-0.2 owned acceptance is satisfied. The current-base production witness is
+green and reusable under ADR-129. Aggregate premerge remains absolute red only at a
+first failing boundary reproduced on exact reviewed unified. Candidate-owned fixture
+regressions discovered during turn-in are repaired and independently qualified.
+The feature is ready for a human-reviewed pull request into
+`codex/bamf-unified-base-20261028`. This receipt does not authorize self-merge or
+issue closure before that PR is merged and read back.
