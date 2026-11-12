@@ -5,6 +5,11 @@ from bilqis_mlx.runtime.jit_adoption import _PreparedSuccessorRuntime
 from bilqis_mlx.runtime.atlas_parameter_adoption_v2 import (
     accepted_parameter_extension_retry_v2,
 )
+from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
+    ATLAS_ADMISSION_SCHEMA_V2,
+    ParsedAtlasAdmissionBinding,
+)
+from bilqis_mlx.factory.atlas_frontier_progress_validation import requested_keys
 
 
 class ParameterRetryRaceV2Tests(PolicyV2Support):
@@ -161,9 +166,18 @@ class ParameterRetryRaceV2Tests(PolicyV2Support):
             return lease
 
         host = SimpleNamespace(source_authority=lambda: fresh_authority)
+        binding = ParsedAtlasAdmissionBinding({
+            "schema_version": ATLAS_ADMISSION_SCHEMA_V2,
+            "selection_receipt_sha256": handoff.receipt.receipt_sha256,
+            "selected_obligation_keys": tuple(requested_keys((handoff.receipt,))),
+        })
         with patch(
                 "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_generation",
                 side_effect=accepted_generation), \
+                patch(
+                    "bilqis_mlx.runtime.bamf_bundle.feature.acceptance."
+                    "accepted_binding_for_manifest",
+                    return_value=binding), \
                 patch(
                     "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_factory_release",
                     side_effect=lambda _run_dir: SimpleNamespace(
