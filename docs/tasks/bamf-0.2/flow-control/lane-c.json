@@ -323,6 +323,15 @@
       "summary": "C07.2/#511 turned in after consuming reviewed unified 16fe1bc9 and merged C07 prerequisites. Out-of-lease semantic releases remain staged while already-authorized learning may continue; current debt, numeric scope and Factory policy identity come from the exact current manifest/release boundary; the existing custody-backed C07 witness proves one persisted lease across three data-defined successors with cold resume from the second. Fresh independent exact-head review at semantic head 66f17619 found 0 Blockers / 0 Majors / 0 Minors. Post-sync bounded affected checks remain green; no live learner mutation, over-budget test, or self-merge authority was used.",
       "resume_trigger": null,
       "preserved_branch": "codex/511-c07-out-of-scope-debt-v2-20261112"
+    },
+    {
+      "issue": 512,
+      "pr": 1008,
+      "state": "TURNED_IN",
+      "head_sha": "c046edace130ac16caa569fcae15cf0307fd69df",
+      "summary": "C07.3/#512 turned in after consuming reviewed unified 21b95a97 and merged #511. The event-driven A09/C07 flywheel emits only FIXED_POINT, WAITING_FOR_EVIDENCE, HELD, IMPLEMENTATION_UNCOVERED or LEASE_REQUIRED; replans only after a verified state advance; binds STAGED/ADOPTED results to the existing C07 owner semantics; and adds no source-rights, grade-promotion or MLX-training authority. Fresh independent exact-head review at semantic head c046edac found 0 Blockers / 0 Majors / 0 Minors. Bounded focused tests, module-size, code-smell, architecture, docs, error-control, diff, portable-core and semantic-ABI gates are green; no live learner mutation, over-budget test or self-merge authority was used.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/512-c07-flywheel-20261112"
     }
   ]
 }
