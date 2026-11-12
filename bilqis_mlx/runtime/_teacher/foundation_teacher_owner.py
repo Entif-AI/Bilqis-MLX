@@ -130,7 +130,8 @@ def select_foundation_priority_visit(
             "prior_region": owned.prior_region,
         }
     return select_accepted_priority_visit(
-        run_dir, source_context, authority.frontier, authority.history, None,
+        run_dir, source_context, authority.frontier, authority.history,
+        authority.planning,
         authority.offers, historical_teacher_policy, school,
         random.Random(parent.teacher_state["next_seed"]), Settings(),
         program=program, now=authority.now,

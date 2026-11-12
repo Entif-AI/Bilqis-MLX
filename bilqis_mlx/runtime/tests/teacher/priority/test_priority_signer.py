@@ -1,4 +1,7 @@
 """C06 host signer binds private authority to the already-accepted C09 public root."""
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from types import SimpleNamespace
@@ -56,9 +59,11 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
         )),
     )
     source_context = SimpleNamespace(release=release)
+    planning = SimpleNamespace(selection=None)
     parent = SimpleNamespace(
         teacher_state={"next_seed": 7},
-        compiler_features={"rights_epoch": 0, "correction_generation": 0},
+        correction_frontier={"rights_epoch": 0, "correction_generation": 0},
+        retained_state=SimpleNamespace(optimizer_step=11),
     )
 
     def offer(_context, _parent, _path, *, capability, source_seed, source_each):
@@ -73,15 +78,19 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
             source_authority=SimpleNamespace(content_sha256="e" * 64),
         )
 
+    cache = SimpleNamespace(
+        generation=2, accepted_manifest_sha256="f" * 64, run_id="run")
     with patch(
         "bilqis_mlx.runtime.bamf_bundle.accepted_runtime._accepted_correction_registry",
-        return_value=(object(), registry),
+        return_value=(cache, registry),
     ), patch(
         "bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer.read_host_system_source_authority_signer",
         return_value=signer,
     ), patch.object(authority, "prepare_priority_source_offer", side_effect=offer), patch.object(
         authority, "priority_rotation_state",
         return_value=(1, {"capability:alpha": 1}),
+    ), patch.object(
+        authority, "_priority_planning", return_value=planning,
     ):
         issued = authority.issue_foundation_priority_authority(
             "/run", source_context, parent, {"epoch": 1}, "/atlas")
@@ -98,3 +107,78 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
     assert {tier for _, tier in ranked.tiers} == {DispatchTier.FAIR_ROTATION}
     assert {offer.source_each for _, offer in issued.offers} == {1}
     assert len({offer.source_seed for _, offer in issued.offers}) == 2
+    assert issued.planning is planning
+
+
+def test_rejected_candidate_is_durably_deprioritized_without_advancing_c03_rotation():
+    from bilqis_mlx.runtime import priority_authority as authority
+
+    registry = _registry()
+    signer = HostSourceAuthoritySigner("owner:c06", "44" * 32, registry)
+    release = SimpleNamespace(
+        release_sha256="a" * 64,
+        execution_plan=SimpleNamespace(capabilities=(
+            SimpleNamespace(id="capability:alpha"),
+            SimpleNamespace(id="capability:beta"),
+        )),
+    )
+    source_context = SimpleNamespace(release=release)
+    planning = SimpleNamespace(selection=None)
+    parent = SimpleNamespace(
+        teacher_state={"next_seed": 7},
+        correction_frontier={"rights_epoch": 0, "correction_generation": 0},
+        retained_state=SimpleNamespace(optimizer_step=11),
+    )
+    cache = SimpleNamespace(
+        generation=2, accepted_manifest_sha256="f" * 64, run_id="run")
+
+    def offer(_context, _parent, _path, *, capability, source_seed, source_each):
+        return SimpleNamespace(
+            capability_id=capability, source_seed=source_seed, source_each=source_each,
+            source_family_id="family:" + capability,
+            source_binding_digest=("b" if capability.endswith("alpha") else "c") * 64,
+            release_sha256=release.release_sha256, generation_binding="d" * 64,
+            source_authority=SimpleNamespace(content_sha256="e" * 64),
+        )
+
+    with TemporaryDirectory() as temporary:
+        run_dir = Path(temporary)
+        event = {
+            "event": "BAMF_CANDIDATE_REJECTED",
+            "generation": 2,
+            "student_manifest_sha256": "f" * 64,
+            "optimizer_step": 11,
+            "evidence": {
+                "schema": "bilqis.bamf.c16.3-rejection/v2",
+                "visit_id": "visit:beta",
+                "selected_option_id": "capability:beta",
+                "selected_policy_key": "policy",
+                "candidate_optimizer_step": 12,
+                "retained_optimizer_step": 11,
+                "retention_reason": "retention_gate",
+            },
+        }
+        (run_dir / "events.jsonl").write_text(json.dumps(event) + "\n")
+        with patch(
+            "bilqis_mlx.runtime.bamf_bundle.accepted_runtime._accepted_correction_registry",
+            return_value=(cache, registry),
+        ), patch(
+            "bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer.read_host_system_source_authority_signer",
+            return_value=signer,
+        ), patch.object(authority, "prepare_priority_source_offer", side_effect=offer), patch.object(
+            authority, "priority_rotation_state",
+            return_value=(1, {"capability:alpha": 1}),
+        ), patch.object(authority, "_priority_planning", return_value=planning):
+            first = authority.issue_foundation_priority_authority(
+                run_dir, source_context, parent, {"epoch": 1}, "/atlas")
+            cold = authority.issue_foundation_priority_authority(
+                run_dir, source_context, parent, {"epoch": 1}, "/atlas")
+
+    assert first == cold
+    assert first.now == 2
+    assert len(first.history.events) == 1
+    assert tuple(item.stable_id for item in rank_attention_options(
+        first.frontier.options, dict(first.frontier.evidence), first.frontier.snapshot).ordered) == (
+            "capability:alpha", "capability:beta")
+    assert parent.teacher_state == {"next_seed": 7}
+    assert parent.retained_state.optimizer_step == 11

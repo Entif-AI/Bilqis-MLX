@@ -52,30 +52,10 @@ class BamfOperatorResult:
     optimizer_step: int
 
 
-def _accepted_lease_digest(run_dir: Path, host: AcceptedRuntimeHost):
-    from bilqis_mlx.runtime.atlas_lease_storage import classify_accepted_atlas_epoch
-    epoch = classify_accepted_atlas_epoch(run_dir)
-    if epoch == "staged":
-        return "staged"
-    source_authority = host.source_authority()
-    if epoch == "v2":
-        from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_lease_v2
-        lease = read_accepted_atlas_lease_v2(
-            run_dir, source_authority=source_authority)
-    else:
-        from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_lease
-        lease = read_accepted_atlas_lease(
-            run_dir, source_authority=source_authority)
-    if lease is None:
-        _invalid("BAMF_OPERATOR_ACCEPTED_ATLAS_LEASE_MISSING")
-    return lease.digest()
-
-
 def _execution_context(run_dir: Path):
     parent = load_accepted_generation(run_dir)
     host = AcceptedRuntimeHost(run_dir)
     context = host.source_context(source_root=LEGACY_SOURCE.resolve())
-    _accepted_lease_digest(run_dir, host)
     accepted = read_accepted_generation_feature_context(run_dir / "bamf-state.json")
     identity = accepted.receipt
     selection = resolve_atlas_artifact_selection(AtlasArtifactIdentity(

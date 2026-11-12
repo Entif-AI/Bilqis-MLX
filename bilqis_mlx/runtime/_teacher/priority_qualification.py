@@ -36,8 +36,6 @@ class QualifiedPriority:
 
 
 def _planning(planning, release):
-    if planning is None:
-        return
     if type(planning) is not PriorityPlanningInput:
         _invalid('BAMF_PRIORITY_PLANNING_INVALID')
     progress, closure = planning.progress, planning.closure
@@ -140,7 +138,7 @@ def requalify_priority(run_dir, source_context, parent, frontier, history,
                 or offer.accepted_manifest_sha256 != cache.accepted_manifest_sha256
                 or offer.generation_binding != cache.generation_binding):
             _invalid('BAMF_PRIORITY_OFFER_IDENTITY_DRIFT')
-        if _planning_hold(option, None if planning is None else planning.selection):
+        if _planning_hold(option, planning.selection):
             holds.append((option.stable_id, 'A09_PLANNING_UNAVAILABLE'))
             continue
         try:

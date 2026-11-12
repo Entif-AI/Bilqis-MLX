@@ -6,6 +6,8 @@ from types import ModuleType, SimpleNamespace as N
 from unittest.mock import patch
 import pytest
 
+from bilqis_mlx.errors import BilqisError
+
 
 def mod(**attrs):
     value = ModuleType('stub')
@@ -114,14 +116,12 @@ def test_nonzero_unlock_without_selection_is_held(qualification):
     assert result.holds == (('one', 'A09_PLANNING_UNAVAILABLE'),)
 
 
-def test_planner_may_be_absent_only_when_no_option_claims_an_unlock(qualification):
+def test_planner_is_required_even_when_no_option_claims_an_unlock(qualification):
     args = list(inputs(qualification, (option('one'),), (('one', Offer()),)))
     args[5] = None
-    assert qualification.requalify_priority(*args, now=10).ranked.ordered[0].stable_id == 'one'
-    args[3].options = (option('one', 3),)
-    with patch.object(qualification.candidate_realizations, 'realized_atlas_semantic_id', return_value='semantic'):
-        result = qualification.requalify_priority(*args, now=10)
-    assert result.holds == (('one', 'A09_PLANNING_UNAVAILABLE'),)
+    with pytest.raises(BilqisError) as failure:
+        qualification.requalify_priority(*args, now=10)
+    assert failure.value.context['reason'] == 'BAMF_PRIORITY_PLANNING_INVALID'
 
 def test_grade_renaming_keeps_capability_admission(qualification):
     program = N(grades=(N(id='renamed', capabilities=(N(id='cap'),)),))
