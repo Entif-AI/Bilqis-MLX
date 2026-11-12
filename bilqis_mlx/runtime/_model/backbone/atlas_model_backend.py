@@ -36,11 +36,13 @@ class Backend:
             self, params, compiled_batch, answer_plan, mode, cache)
 
     def value_and_grad(
-            self, params, compiled_batch, answer_plan, targets, mask, cache=None):
+            self, params, compiled_batch, answer_plan, targets, mask, cache=None, *,
+            salience_supervision=None):
         from .atlas_model_training import _bamf_value_and_grad_impl
 
         return _bamf_value_and_grad_impl(
-            self, params, compiled_batch, answer_plan, targets, mask, cache)
+            self, params, compiled_batch, answer_plan, targets, mask, cache,
+            salience_supervision=salience_supervision)
 
 
 def model_backend(topology) -> Backend:

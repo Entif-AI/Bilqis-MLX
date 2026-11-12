@@ -22,6 +22,7 @@ from .atlas_participation import (
 EXECUTION_PROVENANCE_SCHEMA = "bilqis.mlx.b09-execution-provenance/v1"
 DIGEST_HEX_LENGTH = 64
 _PROVENANCE_ISSUER = object()
+_BOUND_AUTHORITY_DIGEST_INDEX = 3
 
 
 def _invalid() -> None:
@@ -160,3 +161,52 @@ def issue_execution_provenance(
         object.__setattr__(provenance, name, value)
     provenance.__post_init__()
     return provenance
+
+def _make_execution_authority_registry():
+    # Key by object identity, never dataclass equality. Weak references prevent stale
+    # associations from surviving the provenance they authenticate.
+    authorities = {}
+
+
+    def _bind_execution_training_authority(provenance, loss_execution):
+        import weakref
+        from bilqis_mlx.runtime.atlas_model_contracts import require_bamf_loss_execution
+        if type(provenance) is not StepExecutionProvenance:
+            _invalid()
+        provenance.__post_init__()
+        require_bamf_loss_execution(loss_execution)
+        authority = loss_execution.training_authority
+        key = id(provenance)
+        existing = authorities.get(key)
+        if existing is not None and (existing[0]() is not provenance
+                                     or existing[1] is not loss_execution):
+            _invalid()
+        digest = None if authority is None else authority.digest
+        def remove(ref):
+            current = authorities.get(key)
+            if current is not None and current[0] is ref:
+                authorities.pop(key, None)
+        authorities[key] = (weakref.ref(provenance, remove), loss_execution, authority, digest)
+
+
+    def require_execution_training_authority(provenance, training_authority):
+        if type(provenance) is not StepExecutionProvenance:
+            _invalid()
+        current = authorities.get(id(provenance))
+        if current is not None and current[0]() is not provenance:
+            _invalid()
+        bound = None if current is None else current[2]
+        bound_closure = getattr(bound, 'artifact_closure_sha256', None)
+        supplied_closure = getattr(training_authority, 'artifact_closure_sha256', None)
+        if bound_closure is not None:
+            if (training_authority is not bound
+                    or bound.digest != current[_BOUND_AUTHORITY_DIGEST_INDEX]):
+                _invalid()
+        elif supplied_closure is not None:
+            _invalid()
+
+    return _bind_execution_training_authority, require_execution_training_authority
+
+
+(_bind_execution_training_authority,
+ require_execution_training_authority) = _make_execution_authority_registry()

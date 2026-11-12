@@ -1,0 +1,61 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__ test_labels_bind_exact_values_and_receipts_without_changing_batch_identity __
+
+issued_batch = (BamfTrainingBatch(release_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', generation_bindi..._version='bilqis.c09.dependency-ref/v1'),)), auxiliaries=(), rule_policy=()),)), namespace(source_row={'id': 'row-1'}))
+
+    def test_labels_bind_exact_values_and_receipts_without_changing_batch_identity(issued_batch):
+        batch, source = issued_batch
+        variants = (
+            (('impact', 1, 'SOURCE', 'receipt-1'),),
+            (('novelty', 1, 'SOURCE', 'receipt-1'),),
+            (('impact', 2, 'SOURCE', 'receipt-1'),),
+            (('impact', 1, 'OUTCOME', 'receipt-1'),),
+            (('impact', 1, 'SOURCE', 'receipt-2'),),
+        )
+        identities = []
+        for labels in variants:
+            labelled = _reissue_training_batch(batch, rows=(replace(batch.rows[0], auxiliaries=labels),))
+            assert labelled.authority_digest == batch.authority_digest
+>           authority = issue(labelled, source)
+                        ^^^^^^^^^^^^^^^^^^^^^^^
+
+bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py:48:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+batch = BamfTrainingBatch(release_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', generation_bindin...ema_version='bilqis.c09.dependency-ref/v1'),)), auxiliaries=(('impact', 1, 'SOURCE', 'receipt-1'),), rule_policy=()),))
+source = namespace(source_row={'id': 'row-1'})
+
+    def issue(batch, source):
+        row = batch.rows[0]
+>       return _issue(batch, source, row.provenance, row.auxiliaries)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: _issue() takes 3 positional arguments but 4 were given
+
+bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py:32: TypeError
+_____ test_absent_labels_preserve_old_digest_and_extension_retains_binding _____
+
+issued_batch = (BamfTrainingBatch(release_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', generation_bindi..._version='bilqis.c09.dependency-ref/v1'),)), auxiliaries=(), rule_policy=()),)), namespace(source_row={'id': 'row-1'}))
+
+    def test_absent_labels_preserve_old_digest_and_extension_retains_binding(issued_batch):
+        batch, source = issued_batch
+>       plain = issue(batch, source)
+                ^^^^^^^^^^^^^^^^^^^^
+
+bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py:56:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+batch = BamfTrainingBatch(release_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', generation_bindin...RCE: 'SOURCE'>, key='source:one', schema_version='bilqis.c09.dependency-ref/v1'),)), auxiliaries=(), rule_policy=()),))
+source = namespace(source_row={'id': 'row-1'})
+
+    def issue(batch, source):
+        row = batch.rows[0]
+>       return _issue(batch, source, row.provenance, row.auxiliaries)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: _issue() takes 3 positional arguments but 4 were given
+
+bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py:32: TypeError
+=========================== short test summary info ============================
+FAILED bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py::test_labels_bind_exact_values_and_receipts_without_changing_batch_identity
+FAILED bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py::test_absent_labels_preserve_old_digest_and_extension_retains_binding
+2 failed in 0.19s

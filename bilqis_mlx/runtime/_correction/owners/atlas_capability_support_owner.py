@@ -106,8 +106,18 @@ class CapabilitySupportArtifactOwner:
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_REQUALIFICATION_REQUIRED")
         if self._queue is not None:
             read_artifact(self._index, self._queue, self.current_node.artifact_id)
-        elif not self.current_node.eligible:
-            _invalid("BAMF_C09_ARTIFACT_INELIGIBLE")
+        else:
+            from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
+            pending, visited = [self.current_node], set()
+            while pending:
+                item = pending.pop()
+                if item.artifact_id in visited:
+                    continue
+                visited.add(item.artifact_id)
+                if not item.eligible:
+                    _invalid("BAMF_C09_ARTIFACT_INELIGIBLE")
+                pending.extend(self.index.node(ref.key) for ref in item.immediate_dependencies
+                               if ref.kind is DependencyKind.ARTIFACT)
         return self.support
 
     def install_requalification(self, update: RequalificationUpdate) -> None:
@@ -178,12 +188,12 @@ class CapabilitySupportArtifactOwner:
 
 def _issue_owner(
     support, node, generation_bindings=(), journal=None,
-    accepted_manifest_sha256=None,
+    accepted_manifest_sha256=None, closure_nodes=(),
 ):
     owner = object.__new__(CapabilitySupportArtifactOwner)
     owner._capability_id = support.capability_id
     owner._ledger = RequalificationLedger((support,))
-    owner._index = DependencyIndex.build((node,))
+    owner._index = DependencyIndex.build((node, *closure_nodes))
     owner._queue = None
     owner._generation_bindings = tuple(generation_bindings)
     owner._journal_path = journal
@@ -200,12 +210,12 @@ def load_capability_support_owner(
 ) -> CapabilitySupportArtifactOwner:
     """Materialize current support only from accepted B13 lossless source anchors."""
     run_dir = Path(run_dir)
-    manifest_sha256, support, node, generation_bindings = load_current_support(
+    manifest_sha256, support, node, generation_bindings, closure_nodes = load_current_support(
         run_dir, capability_id)
     hold_path = journal_path(run_dir, manifest_sha256, capability_id)
     owner = _issue_owner(
         support, node, generation_bindings, hold_path,
-        accepted_manifest_sha256=manifest_sha256)
+        accepted_manifest_sha256=manifest_sha256, closure_nodes=closure_nodes)
     hold = read_journal(
         hold_path,
         capability_id=capability_id,

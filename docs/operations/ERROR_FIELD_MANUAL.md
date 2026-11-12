@@ -1772,7 +1772,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2079** raw raises across **256** files. The baseline gate permits only reduction.
+Current production scan: **2085** raw raises across **260** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -1997,6 +1997,8 @@ Current production scan: **2079** raw raises across **256** files. The baseline 
 | `C05 source-owned step did not execute exactly once` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py` |
 | `C05 target diagnostic capability is not admitted` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_target_diagnostic.py` |
 | `C05 target diagnostic training authority drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_target_diagnostic.py` |
+| `C06 Factory C05 rejected labeled candidate` | 1 | `bilqis_mlx/runtime/tests/model/salience/retained_publication_witness.py` |
+| `C09 hold` | 1 | `bilqis_mlx/runtime/tests/teacher/priority/test_priority_execution.py` |
 | `CANDIDATE_FRONTIER_ARTIFACT_UNREADABLE` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `CANDIDATE_FRONTIER_BUILDER_STALE` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `CANDIDATE_FRONTIER_CANDIDATE_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
@@ -3659,7 +3661,9 @@ Current production scan: **2079** raw raises across **256** files. The baseline 
 | `durability failure` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py` |
 | `evaluator-owned cache reached by solver` | 1 | `bilqis_mlx/semantics/tests/operators/test_cognitive_operator_native.py` |
 | `exact cached route must preempt neural` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver_retention.py` |
+| `fixture capability is not in one active admitted grade` | 1 | `bilqis_mlx/runtime/tests/model/salience/priority_witness_support.py` |
 | `generation-zero sidecars are owner-derived` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/helpers.py` |
+| `held` | 2 | `bilqis_mlx/runtime/tests/teacher/priority/test_priority_execution.py`, `bilqis_mlx/runtime/tests/teacher/priority/test_priority_qualification.py` |
 | `lacks U7C pattern` | 1 | `bilqis_mlx/source_adapters/tests/boolean/test_grade_b_u7c_causal_cells.py` |
 | `malformed decoder payload` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py` |
 | `malformed translated score` | 1 | `bilqis_mlx/runtime/tests/capability/test_capability_evidence_history.py` |
@@ -3667,6 +3671,7 @@ Current production scan: **2079** raw raises across **256** files. The baseline 
 | `model-input planning entered before A06 authority rejection` | 1 | `bilqis_mlx/runtime/tests/batch/training/test_atlas_training_real_source.py` |
 | `non-finite JSON literal` | 1 | `bilqis_mlx/semantics/atlas/feature_io_contracts.py` |
 | `pointer interrupted` | 1 | `bilqis_mlx/runtime/tests/custody/state_dag/test_persistence.py` |
+| `signature` | 1 | `bilqis_mlx/runtime/tests/teacher/priority/test_priority_qualification.py` |
 | `snapshot must not mutate MLX telemetry` | 1 | `bilqis_mlx/runtime/tests/model/resources/test_memory_retry.py` |
 | `source-owned context was not approved` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/correction_runtime/temporal_support.py` |
 | `test synchronization timed out` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_recovery.py` |

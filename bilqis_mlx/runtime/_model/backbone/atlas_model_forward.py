@@ -1,6 +1,8 @@
 """Source-owned B11 forward execution and typed readout composition."""
 from __future__ import annotations
 
+from dataclasses import replace
+
 from bilqis_mlx.learning.atlas_engram_reads.source_owner import _B13_EXECUTION_SEAL
 from bilqis_mlx.learning.atlas_readout import (
     AnswerPlan, DecoderMemory, ExecutionMode, ModelOutput,
@@ -125,6 +127,7 @@ def _forward_bamf_impl(
     ):
         _invalid("B11_APPROVED_CONTEXT_REQUIRED")
     row_hidden = hidden[0]
+    salience_hidden = row_hidden[-1]
     if row_hidden.shape[0] != len(row.positions):
         _invalid("B11_HIDDEN_POSITION_MISMATCH")
     semantics = ReadoutSemantics(
@@ -146,9 +149,10 @@ def _forward_bamf_impl(
     if type(output) is not ModelOutput or output.execution_mode is not mode:
         _invalid("B11_TYPED_OUTPUT_INVALID")
     return _FORWARD_ISSUANCE.issue(
-        output, _forward_participation(
+        output, replace(_forward_participation(
             params, compiled_batch, answer_plan, output, producer, accepted_cache,
-            refinement_roles, refinement_executed))
+            refinement_roles, refinement_executed),
+            salience_hidden=salience_hidden, salience_parameters=params, compiled_batch=compiled_batch))
 
 
 def forward_bamf(

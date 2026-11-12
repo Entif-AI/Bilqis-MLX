@@ -18,6 +18,9 @@ class LossParts:
     role: mx.array
     epistemic: mx.array
     total: mx.array
+    impact: mx.array | None = None
+    exigency: mx.array | None = None
+    novelty: mx.array | None = None
 
 
 def answer_loss(output,targets,mask):
