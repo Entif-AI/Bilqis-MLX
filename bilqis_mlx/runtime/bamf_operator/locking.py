@@ -6,6 +6,8 @@ import fcntl
 import os
 from pathlib import Path
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+
 
 LOCKFILE = ".bamf-operator.lock"
 
@@ -19,7 +21,12 @@ def bamf_operator_lock(run_dir: Path):
         try:
             fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
-            raise ValueError("BAMF_OPERATOR_ANOTHER_WRITER_ACTIVE") from exc
+            try:
+                ErrorBus.raise_(
+                    SCHOOL.BAMF_FIRST_STUDENT.INVALID,
+                    reason="BAMF_OPERATOR_ANOTHER_WRITER_ACTIVE")
+            except Exception as error:
+                raise error from exc
         yield
     finally:
         fcntl.flock(fd, fcntl.LOCK_UN)

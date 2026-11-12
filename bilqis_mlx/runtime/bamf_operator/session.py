@@ -12,6 +12,7 @@ from types import SimpleNamespace
 import time
 
 from bilqis_mlx.factory.teaching import describe_delivered_teaching
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import resolve_candidate
 from bilqis_mlx.learning.atlas_retention_decision import (
@@ -40,6 +41,10 @@ from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactIdentity, resolve_atlas_artifact_selection,
 )
 from .locking import bamf_operator_lock
+
+
+def _invalid(reason: str):
+    ErrorBus.raise_(SCHOOL.BAMF_FIRST_STUDENT.INVALID, reason=reason)
 
 
 @dataclass(frozen=True)
@@ -101,7 +106,7 @@ def _accepted_lease_digest(run_dir: Path, host: AcceptedRuntimeHost):
         lease = read_accepted_atlas_lease(
             run_dir, source_authority=source_authority)
     if lease is None:
-        raise ValueError("BAMF_OPERATOR_ACCEPTED_ATLAS_LEASE_MISSING")
+        _invalid("BAMF_OPERATOR_ACCEPTED_ATLAS_LEASE_MISSING")
     return lease.digest()
 
 
@@ -142,7 +147,7 @@ def _next_target(context, parent, atlas_path: str, run_dir: Path):
             return item, assessment
     if len(mastered) == len(execution):
         return None, assessment
-    raise ValueError("BAMF_OPERATOR_PREREQUISITE_DEADLOCK")
+    _invalid("BAMF_OPERATOR_PREREQUISITE_DEADLOCK")
 
 
 def _visit(run_dir: Path, graph, reserve_gib: float):
@@ -169,7 +174,7 @@ def _visit(run_dir: Path, graph, reserve_gib: float):
         capture, parent.retained_state.optimizer_step + 1, rows, source_seed)
     lr = policy.get("lr") if isinstance(policy, dict) else None
     if type(lr) not in (int, float) or lr <= 0:
-        raise ValueError("BAMF_OPERATOR_TEACHER_RATE_INVALID")
+        _invalid("BAMF_OPERATOR_TEACHER_RATE_INVALID")
     teacher_hp = replace(
         parent.optimizer_hyperparameters, learning_rate=float(lr))
     step = train_bamf_factory_step(
@@ -215,7 +220,7 @@ def operate_bamf(
     """Run the human-authorized BAMF lineage until a bounded stop condition."""
     if (type(minutes) is not int or minutes < 1 or type(max_visits) is not int
             or max_visits < 0 or reserve_gib < 0):
-        raise ValueError("BAMF_OPERATOR_SESSION_BOUNDS_INVALID")
+        _invalid("BAMF_OPERATOR_SESSION_BOUNDS_INVALID")
     run_dir = Path(run_dir).resolve()
     deadline = time.monotonic() + minutes * 60
     visits = accepted = rejected = 0

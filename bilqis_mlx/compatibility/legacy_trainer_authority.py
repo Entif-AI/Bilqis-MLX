@@ -9,10 +9,17 @@ import json
 from pathlib import Path
 import subprocess
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+
 
 ROOT = Path(__file__).resolve().parents[2]
 AUTHORITY_PATH = ROOT / "docs/tasks/bamf-0.2/legacy-trainer-authority.json"
 SCHEMA = "bilqis.bamf.legacy-trainer-authority/v1"
+GIT_SHA1_HEX_LENGTH = 40
+
+
+def _invalid(reason: str):
+    ErrorBus.raise_(SCHOOL.BAMF_FIRST_STUDENT.INVALID, reason=reason)
 
 
 def authority_record(path: Path = AUTHORITY_PATH) -> dict:
@@ -20,7 +27,10 @@ def authority_record(path: Path = AUTHORITY_PATH) -> dict:
     try:
         record = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, ValueError, TypeError) as exc:
-        raise ValueError("LEGACY_TRAINER_AUTHORITY_INVALID") from exc
+        try:
+            _invalid("LEGACY_TRAINER_AUTHORITY_READ_FAILED")
+        except Exception as error:
+            raise error from exc
     required = {
         "schema", "version", "source_branch", "source_worktree",
         "source_run", "source_state",
@@ -32,7 +42,7 @@ def authority_record(path: Path = AUTHORITY_PATH) -> dict:
         or any(not isinstance(record.get(name), str) or not record[name]
                for name in required - {"schema"})
     ):
-        raise ValueError("LEGACY_TRAINER_AUTHORITY_INVALID")
+        _invalid("LEGACY_TRAINER_AUTHORITY_RECORD_INVALID")
     return record
 
 
@@ -40,7 +50,7 @@ def _git(worktree: Path, *args: str) -> str:
     result = subprocess.run(
         ["git", *args], cwd=worktree, capture_output=True, text=True)
     if result.returncode:
-        raise ValueError("LEGACY_TRAINER_AUTHORITY_GIT_CHECK_FAILED")
+        _invalid("LEGACY_TRAINER_AUTHORITY_GIT_CHECK_FAILED")
     return result.stdout.strip()
 
 
@@ -53,17 +63,18 @@ def live_authority(record: dict | None = None) -> tuple[dict, str, dict]:
     """
     record = authority_record() if record is None else dict(record)
     if record.get("schema") != SCHEMA:
-        raise ValueError("LEGACY_TRAINER_AUTHORITY_INVALID")
+        _invalid("LEGACY_TRAINER_AUTHORITY_SCHEMA_INVALID")
     worktree = Path(record["source_worktree"])
     run = Path(record["source_run"])
     if not worktree.is_dir() or not run.is_dir():
-        raise ValueError("LEGACY_TRAINER_AUTHORITY_SOURCE_UNAVAILABLE")
+        _invalid("LEGACY_TRAINER_AUTHORITY_SOURCE_UNAVAILABLE")
     branch = _git(worktree, "branch", "--show-current")
     head = _git(worktree, "rev-parse", "HEAD")
     if branch != record["source_branch"]:
-        raise ValueError("LEGACY_TRAINER_AUTHORITY_BRANCH_DRIFT")
-    if len(head) != 40 or any(char not in "0123456789abcdef" for char in head):
-        raise ValueError("LEGACY_TRAINER_AUTHORITY_HEAD_INVALID")
+        _invalid("LEGACY_TRAINER_AUTHORITY_BRANCH_DRIFT")
+    if (len(head) != GIT_SHA1_HEX_LENGTH
+            or any(char not in "0123456789abcdef" for char in head)):
+        _invalid("LEGACY_TRAINER_AUTHORITY_HEAD_INVALID")
     from bilqis_mlx.state_dag import read_current
     current = read_current(run)
     teacher = current.get("teacher") if isinstance(current, dict) else None
@@ -72,7 +83,7 @@ def live_authority(record: dict | None = None) -> tuple[dict, str, dict]:
         or not isinstance(teacher.get("strategies"), dict)
         or not teacher["strategies"]
     ):
-        raise ValueError("LEGACY_TRAINER_AUTHORITY_TEACHER_INVALID")
+        _invalid("LEGACY_TRAINER_AUTHORITY_TEACHER_INVALID")
     return record, head, current
 
 
