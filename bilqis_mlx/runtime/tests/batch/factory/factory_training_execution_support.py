@@ -98,12 +98,17 @@ def assert_split_step_result(case, result, prepared, row_ids, parent):
     case.assertEqual(
         tuple(row.provenance.row_id for row in result.prepared.training_batch.rows),
         row_ids)
-    case.assertEqual(len(result.gradient_execution.loss_executions), 2)
+    case.assertIsNotNone(result.diagnostics)
+    execution = result.diagnostics.gradient_execution
     case.assertEqual(
-        result.gradient_execution.source_digest, result.resource_plan.source_digest)
+        result.diagnostics.schema_version,
+        "bilqis.mlx.b11-factory-diagnostics/v1")
+    case.assertEqual(len(execution.loss_executions), 2)
+    case.assertEqual(
+        execution.source_digest, result.resource_plan.source_digest)
     row_authorities = tuple(
         execution.training_authority
-        for execution in result.gradient_execution.loss_executions)
+        for execution in execution.loss_executions)
     case.assertEqual(
         tuple(authority.source_row_id for authority in row_authorities), row_ids)
     case.assertEqual(

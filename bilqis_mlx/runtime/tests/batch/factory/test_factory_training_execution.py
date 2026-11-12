@@ -168,6 +168,7 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
             self.assertEqual(result.transaction.update_steps, 1)
             self.assertEqual(result.resource_plan.groups, ((0,),))
             self.assertEqual(len(result.route_targets), 1)
+            self.assertIsNone(result.diagnostics)
             self.assertEqual(result.realized_cost["optimizer_steps"], 1)
             payload = read_sidecar(run_dir, capture.steps[0])
             self.assertEqual(
@@ -221,9 +222,9 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
                 visit_provenance=visit_provenance("A.IDENTITY"),
                 teacher_strategy={"policy": "c02-parent-production"},
                 teacher_hparams=HP, max_norm=1.0, observation=delivery_observation,
-                memory_budget=split_budget(parent, prepared))
+                memory_budget=split_budget(parent, prepared),
+                capture_diagnostics=True)
             assert_split_step_result(self, result, prepared, row_ids, parent)
-
 
 if __name__ == "__main__":
     unittest.main()
