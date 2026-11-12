@@ -1,9 +1,9 @@
 # C16.2 foundation launch-readiness proposal
 
-Status: DESIGN / DECOMPOSED / IMPLEMENTATION-EGM-PENDING
+Status: IMPLEMENTED / BOUNDED-VERIFICATION / TURN-IN-REVIEW
 Issue: #544 / C16.2
 Reviewed unified base consumed by the current execution branch:
-`f9aa79b6cececdedd28a0e80db1256f8a70a9d7f`
+`505dfdd1ea2cfe57d6e4418f7b6faed7428b71b6`
 Execution branch: `codex/544-c16-learning-readiness-20261111`
 Pinned EGM: `b3a35956759bf7f024af2ff061b2e0b44b438e4c`
 
@@ -30,8 +30,9 @@ The C16.2 deliverable is therefore:
 
 1. make the existing real source-qualified BAMF retention path executable on a
    disposable accepted BAMF run without creating legacy `state.json` custody;
-2. compose one exact-head disposable witness across the already implemented
-   C03 -> C02/C08/B11 -> C05 -> B13 owners;
+2. compose exact-head evidence across the already implemented
+   C03 -> C02/C08/B11 -> C05 -> B13 owners, using accepted owner receipts and
+   bounded seam checks rather than one full-model pytest witness;
 3. prove retained source-valid behavior, complete rejected-candidate rollback
    and cold-resume equivalence;
 4. publish and verify the exact owner-start and cold-resume command shape that
@@ -43,23 +44,32 @@ retained taught behavior is sufficient for this launch gate. Fresh episodes,
 independent source families, unseen fillers, novel composition and a strictly
 improved fresh-target score remain diagnostics and cannot veto C16.2.
 
+ADR-141 and the owner correction recorded on #544/#994 also control the proof
+method. No agent-launched test may exceed two hours, and two hours is a ceiling,
+not a target. Exact accepted owner evidence may be composed when its assumptions
+remain current. A still-uncertain adapter seam receives the smallest bounded
+integration check that can resolve it. A whole-system exercise that cannot fit
+the ceiling is deferred to a human-operated, dashboarded non-test run after
+assembly; it is not a hidden C16.2 prerequisite.
+
 ## Boundary with C16.1 and C16.3
 
 C16.1a owns persistent create, dry-run, resume validation and optional C07
 enrollment. Its lifecycle report continues to carry
 `ready_for_training=false` and `neural_updates=0`.
 
-C16.2 does not route that report into neural execution. Its disposable witness
-calls the existing runtime owners directly under isolated test custody.
+C16.2 does not route that report into neural execution. Its bounded verification
+uses the existing runtime owners and exact accepted owner receipts under isolated
+test custody.
 
 C16.3/#545 owns the production handoff from validated BAMF resume into the
 human-operated learning loop. The command published by C16.2 is a reviewed
 handoff contract, not executable neural authority added by this leaf.
 
-## Existing owner chain to prove
+## Existing owner chain to account for
 
-The production mechanisms already exist. C16.2 must compose rather than replace
-them:
+The production mechanisms already exist. C16.2 must account for their composition
+rather than replace them:
 
 `accepted B13 generation`
 `-> AcceptedRuntimeHost/source context`
@@ -71,9 +81,10 @@ them:
 `-> C03 successor teacher custody`
 `-> B13 publication or observational rejection`
 
-The witness may use package-local owner fixtures to construct a disposable
-accepted run and current source context. It must not mock the actual candidate
-training, C05 evaluation or B13 publication result that it claims to prove.
+Accepted owner receipts may be reused when they are exact and their production
+assumptions are unchanged. Package-local fixtures may prove narrow composition
+seams. A check must not mock a production result that the same check claims to
+observe.
 
 ## C16.2b / #993: C05-owned fixed-school custody
 
