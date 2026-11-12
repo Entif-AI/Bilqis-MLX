@@ -86,3 +86,25 @@ none is promoted to a direct prerequisite by this normalization. Removing #551 o
 changing the exact clause fails closed.
 
 Pinned EGM codebase review rejected an earlier draft that used PR #546: the A03/A04 repair/evidence commits were already ancestors of #546's base, so #546 inherited rather than accepted them. The candidate was corrected to the causal reviewed-unified integration PR #551 before commit.
+
+## A05.4 changed condition
+
+A05.4 #575 declares direct dependencies on A03, A04 and A13, plus a separate
+requirement to consume **current A05 compiler receipts**. B03.3 #444 is named only
+as the downstream consumer that must rerun its proof after A05.4, so it is not
+promoted to a prerequisite.
+
+The compiler condition is causally bound to the implementation receipt, with the later parent audit retained as corroboration:
+
+- PR #546, head `74be2874bd6a4f4163878ebc547e2cfabde890e4`, merge
+  `ac498099b56a38f3b669e16d30f8bab580709f49`, contains the final reviewed A05.1-.3
+  compiler code including the source-grant repair at `de5bb9c...`.
+- PR #571, head `eec0e4323d1535173361d786fc4611135a8043ae`, merge
+  `7d88957bf9dd48eb0e6e18428c17d3080dc1df31`, is retained as non-gating
+  corroboration: it is explicitly a documentation-only independent A05 parent
+  acceptance crosswalk over code that was already in reviewed unified.
+
+The exact A05.4 handoff clause therefore resolves to graph edges `A03,A04,A13`
+plus required receipt `#546`. Removing #546 fails closed. Removing the #571 audit
+source does not change resolution, because the audit did not land the compiler.
+Neither source creates an A05 parent edge or turns B03.3 into a prerequisite.

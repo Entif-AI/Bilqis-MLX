@@ -130,6 +130,52 @@ class DependencyEvidenceTests(unittest.TestCase):
         changed[3]['reviewed-packets'] = pinned_matrix(changed[0])
         self.assertIs(check_dependency_evidence(*changed).status, EvidenceStatus.INVALID)
 
+    def test_a05_partial_forest_requires_code_receipt_and_keeps_parent_audit_nongating(self):
+        clause = (
+            '## Dependency / handoff\n'
+            'Consumes accepted A03/A04/A13 and current A05 compiler receipts. '
+            'On completion, B03.3 #444 must rerun its child-only future-isolation and nested-gradient proof against this exact source contract.\n\n'
+            'No live learner or durable optimizer start is authorized by this issue.'
+        )
+        args = packet(clause, edges=('A03', 'A04', 'A13'))
+        args[2].update({'A03': 349, 'A04': 351, 'A13': 369})
+        evidence = args[0]['dependency_evidence']
+        for number in (546, 571):
+            source_id = 'C01.1.pr-' + str(number)
+            url = 'https://github.com/Entif-AI/Bilqis-MLX/pull/' + str(number)
+            raw = json.dumps(dict(number=number, url=url, state='MERGED',
+                headRefOid='a'*40, mergeCommit={'oid': 'b'*40})).encode()
+            args[3][source_id] = raw
+            evidence['source_records'].append(dict(source_id=source_id, kind='pull_request',
+                locator=url, sha256=hashlib.sha256(raw).hexdigest(), excerpt='b'*40))
+            if number == 546:
+                evidence['external_receipts'].append(dict(number=number, role='prerequisite',
+                    head_sha='a'*40, merge_sha='b'*40, url=url, source_id=source_id))
+        args[3]['reviewed-packets'] = pinned_matrix(args[0])
+        result = check_dependency_evidence(*args)
+        self.assertIs(result.status, EvidenceStatus.RESOLVED)
+        self.assertEqual(result.known_edges, ('A03', 'A04', 'A13'))
+
+        missing = deepcopy(args)
+        missing[0]['dependency_evidence']['external_receipts'] = []
+        missing[3]['reviewed-packets'] = pinned_matrix(missing[0])
+        self.assertIs(check_dependency_evidence(*missing).status, EvidenceStatus.INVALID)
+
+        audit_only = deepcopy(args)
+        audit_only[0]['dependency_evidence']['source_records'] = [
+            item for item in audit_only[0]['dependency_evidence']['source_records']
+            if item['source_id'] != 'C01.1.pr-571'
+        ]
+        audit_only[3].pop('C01.1.pr-571', None)
+        audit_only[3]['reviewed-packets'] = pinned_matrix(audit_only[0])
+        self.assertIs(check_dependency_evidence(*audit_only).status, EvidenceStatus.RESOLVED)
+
+        changed = deepcopy(args)
+        changed[0]['dependency_evidence']['clause'] = clause.replace(
+            'current A05 compiler receipts', 'current A05 compiler receipt')
+        changed[3]['reviewed-packets'] = pinned_matrix(changed[0])
+        self.assertIs(check_dependency_evidence(*changed).status, EvidenceStatus.INVALID)
+
     def test_unknown_edge_or_missing_range_member_is_invalid(self):
         args = packet(edges=('A99',))
         self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.INVALID)

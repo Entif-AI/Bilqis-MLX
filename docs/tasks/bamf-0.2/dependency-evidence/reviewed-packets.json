@@ -204,7 +204,7 @@
       "parent_number": 357,
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
+        "resolution": "resolved",
         "body_sha256": "6cc2e7be26433afda920047b409538ab5c75d56576f8ad208838e93bf674bed6",
         "clause": "## Dependency / handoff\nConsumes accepted A03/A04/A13 and current A05 compiler receipts. On completion, B03.3 #444 must rerun its child-only future-isolation and nested-gradient proof against this exact source contract.\n\nNo live learner or durable optimizer start is authorized by this issue.",
         "known_edges": [
@@ -212,7 +212,16 @@
           "A04",
           "A13"
         ],
-        "external_receipts": [],
+        "external_receipts": [
+          {
+            "number": 546,
+            "role": "prerequisite",
+            "head_sha": "74be2874bd6a4f4163878ebc547e2cfabde890e4",
+            "merge_sha": "ac498099b56a38f3b669e16d30f8bab580709f49",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/546",
+            "source_id": "A05.4.pr-546"
+          }
+        ],
         "source_records": [
           {
             "source_id": "A05.4.body",
@@ -220,12 +229,26 @@
             "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/575",
             "sha256": "6cc2e7be26433afda920047b409538ab5c75d56576f8ad208838e93bf674bed6",
             "excerpt": "## Dependency / handoff\nConsumes accepted A03/A04/A13 and current A05 compiler receipts. On completion, B03.3 #444 must rerun its child-only future-isolation and nested-gradient proof against this exact source contract.\n\nNo live learner or durable optimizer start is authorized by this issue."
+          },
+          {
+            "source_id": "A05.4.pr-546",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/546",
+            "sha256": "a97c7613815d8d7e6d36c9e404bcb8caee951a9a416eadbccb12eb4b79b8ec55",
+            "excerpt": "ac498099b56a38f3b669e16d30f8bab580709f49"
+          },
+          {
+            "source_id": "A05.4.pr-571",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/571",
+            "sha256": "9046150f7e2ab08bbf93e88021cbd5343625b643b124e2d30e275fc03367d6fc",
+            "excerpt": "7d88957bf9dd48eb0e6e18428c17d3080dc1df31"
           }
         ],
         "obligations": [
           "Consume current A05 compiler receipt; B03.3 reruns future-isolation/nested-gradient proof as consumer."
         ],
-        "unresolved": "Current A05 compiler receipt granularity is not identified; B03.3 is a consumer."
+        "unresolved": null
       }
     },
     {

@@ -62,6 +62,19 @@ def _released_schema_serialization_prerequisites(text, numbers):
     return (('A01',), (551,))
 
 
+def _current_a05_compiler_prerequisites(text, numbers):
+    expected = (
+        '## Dependency / handoff\n'
+        'Consumes accepted A03/A04/A13 and current A05 compiler receipts. '
+        'On completion, B03.3 #444 must rerun its child-only future-isolation and nested-gradient proof against this exact source contract.\n\n'
+        'No live learner or durable optimizer start is authorized by this issue.'
+    )
+    keys = ('A03', 'A04', 'A13')
+    if text != expected or any(type(numbers.get(key)) is not int for key in keys):
+        return None
+    return (keys, (546,))
+
+
 def _producer_correction(clause, numbers):
     if not re.search(r'^## Producer-authority correction(?: |$)', clause, re.M):
         return None
@@ -106,6 +119,9 @@ def parse_clause(clause, numbers):
     released_schema = _released_schema_serialization_prerequisites(clause, numbers)
     if released_schema is not None:
         return released_schema
+    a05_compiler = _current_a05_compiler_prerequisites(clause, numbers)
+    if a05_compiler is not None:
+        return a05_compiler
     match = re.match(r'Direct prerequisites: merged #(\d+)/#(\d+); exact qualified #(\d+)/#(\d+) receipts for final composition turn-in; existing (' + KEY + r'(?:/' + KEY + r')*) source interfaces\.', clause)
     if match:
         return tuple(match[5].split('/')), tuple(int(match[i]) for i in range(1, 5))
