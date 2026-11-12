@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "edb004e8d7dd982c5761533ef017128db0144d53",
-  "updated_at": "2026-11-11T17:39:05Z",
+  "observed_unified": "cc186239958eaaa3de835312734f6ddbc01221c5",
+  "updated_at": "2026-11-12T18:28:58Z",
   "exception": null,
   "items": [
     {
@@ -35,6 +35,16 @@
       "summary": "C16.2/#544 is turned in as PR #1007 after consuming reviewed unified 505dfdd1. #992 accepted Factory custody, #993 C05 fixed-school custody and #994 bounded launch-readiness evidence compose under FOUNDATION_EVIDENCE_POLICY_ACTIVE and ADR-141. The retired >14h full-model witness is incomplete/over-budget provenance only and is not a gate. Final bounded evidence, quality, 43/43 BAMF mirrors and exact-head EGM are green at b309146d with 0 Blockers / 0 Majors / 0 Nits. Persistent BAMF learning was not started; C16.3/#545 owns the human-operated neural dispatch.",
       "resume_trigger": null,
       "preserved_branch": "codex/544-c16-learning-readiness-20261111"
+    },
+    {
+      "issue": 545,
+      "pr": 1013,
+      "state": "TURNED_IN",
+      "head_sha": "90e3c00e9c871f264a07d90fc33a8772a470574f",
+      "head_sha_role": "exact semantic implementation head before this flow-control turn-in receipt commit",
+      "summary": "C16.3/#545 and its C03.4b production-priority dependency #1010 are turned in together through PR #1013 after consuming reviewed unified cc186239. The persistent BAMF-native human operator binds current B13 custody, consumes signed C06/A09/source-qualified priority authority, and executes only the C03.4-selected candidate; Factory release order and legacy trainer state have no scheduling authority. Rejected candidates remain on the accepted parent and can affect later priority only through current-parent B13 outbox lineage, exact rejection-authority CAS, exact B13 rejection-receipt CAS, and receipt-digest dedupe. Final bounded proof on semantic head 90e3c00e is 30 passed + 5 subtests in 3.09s with zero new error debt and green structure/governance/factory/docs/smell/diff gates; hosted portable-core, portable and Semantic ABI checks are green. Independent exact-head review found 0 Blockers / 0 Majors; one reviewer recorded one nonblocking test-completeness Nit because the real C03 alpha/beta priority proof and the persistent operator release-order isolation proof are separate tests rather than one continuous test. No persistent BAMF student was started; the long-lived run remains human-owned.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/bamf02-c-runtime"
     },
     {
       "issue": 917,

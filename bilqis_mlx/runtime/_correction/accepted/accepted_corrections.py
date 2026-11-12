@@ -75,7 +75,7 @@ class AcceptedRuntimeHost:
         cache = bind_accepted_execution_cache(self.run_dir)
         return require_source_authority_runtime(self._source_authority, cache)
 
-    def source_context(self, *, graph: dict, source_root: Path | None):
+    def source_context(self, *, graph: dict | None = None, source_root: Path | None):
         """Mint context for the Factory release bound by accepted B13 custody."""
         self.source_authority()
         from bilqis_mlx.factory.live_answers import live_answer_registry
@@ -85,11 +85,29 @@ class AcceptedRuntimeHost:
 
         student, _manifest_sha256 = load_bamf_generation_authority(
             self.run_dir / "bamf-state.json")
-        release_sha256 = student.run_identity.factory_release_sha256
+        from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_factory_release
+        release = read_accepted_atlas_factory_release(self.run_dir)
+        release_sha256 = release.release_sha256
         receipt = {
             "factory_release_sha256": release_sha256,
             "factory_release_file": f"factory-releases/{release_sha256}.json",
         }
+        if graph is None:
+            recorded = student.compiler_features.get("factory_semantic_catalog")
+            graph_sha256 = student.compiler_features.get("factory_semantic_graph_sha256")
+            catalog_sha256 = student.compiler_features.get("factory_semantic_catalog_sha256")
+            if (not isinstance(recorded, dict)
+                    or catalog_sha256 != release.semantic_catalog_sha256):
+                _invalid("BAMF_ACCEPTED_SEMANTIC_CATALOG_REQUIRED")
+            from copy import deepcopy
+            from bilqis_mlx.runtime.state import _fingerprint
+            graph = deepcopy(recorded)
+            if _fingerprint(graph) != graph_sha256:
+                _invalid("BAMF_ACCEPTED_SEMANTIC_CATALOG_DRIFT")
+            try:
+                release.verify_semantic_catalog(graph)
+            except (TypeError, ValueError):
+                _invalid("BAMF_ACCEPTED_SEMANTIC_CATALOG_DRIFT")
         return SourceExecutionContext.from_admitted_release(
             self.run_dir, receipt, graph=graph, source_root=source_root,
             source_registry=live_source_registry(),

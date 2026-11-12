@@ -76,6 +76,26 @@ class SidecarContractTests(unittest.TestCase):
                 self.assertHeldBeforeTensorSave(
                     replace(value, compiler_features=raw))
 
+    def test_semantic_graph_custody_requires_complete_pair_and_exact_digest(self):
+        value = source()
+        graph = {"tokens": ["fixture.padding", "cogal.value.false"]}
+        from bilqis_mlx.runtime.state import _fingerprint
+        variants = (
+            {"factory_semantic_catalog": graph},
+            {"factory_semantic_graph_sha256": _fingerprint(graph)},
+            {
+                "factory_semantic_catalog": graph,
+                "factory_semantic_graph_sha256": "f" * 64,
+                "factory_semantic_catalog_sha256": "e" * 64,
+            },
+        )
+        for fields in variants:
+            with self.subTest(fields=fields):
+                self.assertHeldBeforeTensorSave(replace(
+                    value,
+                    compiler_features={**value.compiler_features, **fields},
+                ))
+
     def test_malformed_source_authority_anchor_holds_before_tensor_save(self):
         value = source()
         self.assertHeldBeforeTensorSave(replace(
