@@ -201,6 +201,18 @@ def _resume(args, requested_topology):
             invalid("BAMF_OPERATOR_RESUME_ADMISSION_POLICY_CONFLICT")
         result = "READY_TO_RESUME"
 
+        if policy == "atlas-release" and args.human_run is True and not args.dry_run:
+            from bilqis_mlx.runtime.atlas_flywheel_runtime import (
+                run_accepted_atlas_flywheel,
+            )
+            _source, _release, graph = source_foundation()
+            flywheel = run_accepted_atlas_flywheel(
+                run_dir, graph, reserve_gib=args.reserve_gib)
+            result = flywheel.status.value
+            student, manifest_sha256 = load_bamf_generation_authority(pointer)
+            identity = _validate_resume_overrides(args, student)
+            atlas = _accepted_atlas(run_dir, identity)
+
     return _report(
         result=result, run_identity=identity, topology=student.topology, atlas=atlas,
         policy=policy, hp=student.optimizer_hyperparameters,

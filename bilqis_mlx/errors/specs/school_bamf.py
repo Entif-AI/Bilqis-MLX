@@ -12,6 +12,33 @@ class BAMF_ATLAS_ADMISSION:
         disposition="STAGE_AND_INSPECT",
         next_action="Keep the retained run unchanged; reconcile explicit human authorization, source rights and exact successor custody.",
     )
+    FLYWHEEL_RUNTIME_INVALID = _spec(
+        ("SCHOOL", "BAMF_ATLAS_ADMISSION", "FLYWHEEL_RUNTIME_INVALID"),
+        owner="runtime.atlas_flywheel_runtime",
+        title="Accepted Atlas flywheel runtime invalid",
+        message_template="The accepted-custody flywheel runtime inputs are invalid.",
+        disposition="PRESERVE_AND_INSPECT",
+        next_action="Preserve accepted custody and reconstruct the flywheel only from the accepted run, source graph and configured reserve.",
+        legacy_codes=("BAMF_ATLAS_FLYWHEEL_RUNTIME_INVALID",),
+    )
+    ACCEPTED_LEASE_REQUIRED = _spec(
+        ("SCHOOL", "BAMF_ATLAS_ADMISSION", "ACCEPTED_LEASE_REQUIRED"),
+        owner="runtime.atlas_flywheel_runtime",
+        title="Accepted Atlas lease required",
+        message_template="The cold admission flywheel has no accepted Atlas v2 lease for this run.",
+        disposition="STAGE_AND_INSPECT",
+        next_action="Leave accepted custody unchanged and require the existing explicit human enrollment path before admission can continue.",
+        legacy_codes=("BAMF_ATLAS_V2_ACCEPTED_LEASE_REQUIRED",),
+    )
+    FLYWHEEL_PREDECESSOR_DRIFT = _spec(
+        ("SCHOOL", "BAMF_ATLAS_ADMISSION", "FLYWHEEL_PREDECESSOR_DRIFT"),
+        owner="runtime.atlas_flywheel_runtime",
+        title="Atlas flywheel predecessor drift",
+        message_template="The accepted Factory release no longer matches the predecessor bound into the proposed Atlas handoff.",
+        disposition="PRESERVE_AND_RELOAD",
+        next_action="Reject the stale handoff, preserve the accepted generation, and rebuild planner state from current accepted custody.",
+        legacy_codes=("BAMF_ATLAS_FLYWHEEL_ACCEPTED_PREDECESSOR_DRIFT",),
+    )
 
 
 class BAMF_SALIENCE:

@@ -60,8 +60,9 @@ def _historical_factory_release_sha256(
 
 def _accepted_capability_only_retry_state_once_v2(current, handoff, lease):
     """Return an exact retry or the exact accepted predecessor pointer."""
-    from . import state as runtime_state
-    from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
+    from bilqis_mlx.runtime.atlas_flywheel_runtime_context import (
+        atlas_admission_checkpoint,
+    )
     from bilqis_mlx.runtime.atlas_admission import (
         _accepted_run_lease_identity,
         read_accepted_atlas_factory_release,
@@ -96,15 +97,14 @@ def _accepted_capability_only_retry_state_once_v2(current, handoff, lease):
     _require_exact_atlas_release(current, handoff, lease)
     if accepted_release.release_sha256 == predecessor:
         accepted_identity = _accepted_run_lease_identity(current.run_dir)
-        school = runtime_state._state_from_json(
-            current.runtime.receipt["school"],
-            schedule_program_from_executable_release(accepted_release))
+        runtime_checkpoint = atlas_admission_checkpoint(
+            current.runtime, accepted_release)
         if (accepted_identity != current.legacy.run_identity
                 or current.legacy.current_release.release_sha256 != predecessor
                 or handoff.proposal.current_release_sha256 != predecessor
                 or accepted.retained_state.optimizer_step
                 != current.legacy.checkpoint.optimizer_step
-                or school.current_student != current.legacy.checkpoint):
+                or runtime_checkpoint != current.legacy.checkpoint):
             _invalid("BAMF_ATLAS_V2_CAPABILITY_RETRY_CONFLICT")
         return None, dict(pointer)
     if accepted_release.release_sha256 != successor:
@@ -195,8 +195,9 @@ def _revalidate_capability_publication(
     if persisted is None or persisted != lease:
         _invalid("BAMF_ATLAS_V2_LEASE_CURRENT_AUTHORITY_DRIFT")
     try:
-        from . import state as runtime_state
-        from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
+        from bilqis_mlx.runtime.atlas_flywheel_runtime_context import (
+            atlas_admission_checkpoint,
+        )
         from bilqis_mlx.runtime.atlas_capability_facts_v2 import (
             read_capability_only_admission_facts_v2,
         )
@@ -213,14 +214,12 @@ def _revalidate_capability_publication(
         lease.source_approval.verify_signature(current.legacy.registry)
         _require_exact_atlas_release(current, handoff, lease)
         accepted_current = read_accepted_atlas_factory_release(runtime.run_dir)
-        school = runtime_state._state_from_json(
-            runtime.receipt["school"],
-            schedule_program_from_executable_release(accepted_current))
+        runtime_checkpoint = atlas_admission_checkpoint(runtime, accepted_current)
         if (accepted_current.release_sha256
                 != handoff.receipt.predecessor_release.release_sha256
                 or parent.retained_state.optimizer_step
                    != current.legacy.checkpoint.optimizer_step
-                or school.current_student != current.legacy.checkpoint):
+                or runtime_checkpoint != current.legacy.checkpoint):
             raced = accepted_capability_only_retry_v2(current, handoff, lease)
             if isinstance(raced, dict):
                 return raced, None, None
@@ -280,7 +279,10 @@ def _publish_capability_only_factory_successor_locked(
 
     runtime = current.runtime
     source_authority = current.source_authority
-    if not isinstance(runtime, _PreparedSuccessorRuntime):
+    from bilqis_mlx.runtime.atlas_flywheel_runtime_context import (
+        is_atlas_admission_runtime,
+    )
+    if not is_atlas_admission_runtime(runtime):
         _invalid("BAMF_ATLAS_V2_CAPABILITY_OWNER_UNAVAILABLE")
     refreshed, current_parent_pointer = _accepted_capability_only_retry_state_v2(
         current, handoff, lease)
