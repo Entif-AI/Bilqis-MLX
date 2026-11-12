@@ -1,6 +1,8 @@
 """Factory gradient, candidate-step, and accepted C09 custody integration."""
 from __future__ import annotations
 
+BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"
+
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory

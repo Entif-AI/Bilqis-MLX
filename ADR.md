@@ -3348,6 +3348,13 @@ verify that required external artifacts, runtime state, and custody inputs exist
 are usable, and it must distinguish `passed`, `failed`, and `skipped/not-run` rather
 than treating process exit code zero as sufficient proof.
 
+**Aggregate selection:** A test module that declares
+`BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"` is not part of default aggregate test
+discovery. Such witnesses run only through explicit targeted execution or their
+dedicated detached harness, where their artifact, resource, mutation, and receipt
+contracts can be enforced. Broad premerge verification must not accidentally repay
+or bypass a separately governed expensive witness.
+
 **Shared-path requirement:** Preflight and full witness share setup, fixture, and
 assertion helpers wherever semantics permit. A hand-copied lightweight imitation is
 not sufficient because it can drift from the expensive path. Cheap preflight should

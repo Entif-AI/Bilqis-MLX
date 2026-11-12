@@ -172,6 +172,17 @@ execution. Future C08 turn-in runs reuse the green current-base witness under AD
 unless a dependency on its production path changes; they do not repay the expensive
 witness merely because a later documentation/static gate failed.
 
+The first premerge-only aggregate attempt after that repair was intentionally stopped
+once it recorded a test error and then began executing the already-accepted C08
+real-Factory witness again. The root harness defect was default aggregate discovery:
+`scripts/run_tests.py` did not honor the existing `DETACHED_ONLY` policy used by the
+differential gate. A focused regression failed before repair by showing a detached-only
+test file present in default discovery. The runner now excludes such files by default,
+while explicit targeted execution remains available. The C08 real-execution module is
+declared `DETACHED_ONLY`, as is the pre-existing Factory retention live witness. The
+focused runner/gate suite passes `27/27`, and direct discovery confirms both files are
+absent from the aggregate set.
+
 ## Disposition
 
 C08 BAMF-0.2 owned acceptance is satisfied, including a green current-base mounted

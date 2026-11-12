@@ -291,6 +291,13 @@ precondition, or assertion-contract errors can surface.
    If a long run discovers a banal fixture, import, precondition, or assertion
    defect, add or strengthen the earlier stage before rerunning the expensive test.
 
+Aggregate repository discovery must not silently schedule a witness that declares
+`BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"`. Those files are excluded from the
+default aggregate runner and remain runnable only by an explicit targeted command or
+their dedicated detached witness harness. This keeps broad premerge verification
+from repaying separately accepted expensive evidence or bypassing witness-specific
+resource/receipt controls.
+
 The staged path is diagnostic and non-authorizing. Only the complete production
 witness can satisfy acceptance that actually depends on the expensive computation.
 If the full command can plausibly exceed five minutes, the complete staged pipeline
