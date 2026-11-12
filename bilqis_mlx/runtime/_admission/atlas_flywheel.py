@@ -99,6 +99,106 @@ def _terminal_flywheel_result(
             AdmissionFlywheelResult(mapped, status.value, advances, state))
 
 
+def _hold(
+        reason: str, state: AdmissionFlywheelState,
+        advances: int) -> AdmissionFlywheelResult:
+    return AdmissionFlywheelResult(
+        AdmissionFlywheelStatus.HELD, reason, advances, state)
+
+
+def _load_flywheel_state(
+        load_state: AdmissionFlywheelStateLoader) -> AdmissionFlywheelState:
+    state = load_state()
+    if type(state) is not AdmissionFlywheelState:
+        _invalid("BAMF_ATLAS_FLYWHEEL_STATE_INVALID")
+    return state
+
+
+def _planner_status_step(
+        planned: FrontierStatus, state: AdmissionFlywheelState,
+        advances: int, max_advances: int,
+        load_state: AdmissionFlywheelStateLoader,
+) -> AdmissionFlywheelState | AdmissionFlywheelResult:
+    terminal = _terminal_flywheel_result(planned, state, advances)
+    if terminal is not None:
+        return terminal
+    if planned is not FrontierStatus.REPLAN_REQUIRED:
+        _invalid("BAMF_ATLAS_FLYWHEEL_PLANNER_STATUS_INVALID")
+    if advances >= max_advances:
+        return _hold("ADVANCE_BUDGET_EXHAUSTED", state, advances)
+    refreshed = _load_flywheel_state(load_state)
+    if _flywheel_state_identity(refreshed) == _flywheel_state_identity(state):
+        return _hold("REPLAN_WITHOUT_STATE_ADVANCE", state, advances)
+    return refreshed
+
+
+def _admission_binding_hold(
+        result: AdmissionResult, handoff: AtlasDeltaScopeHandoff,
+        state: AdmissionFlywheelState, advances: int,
+) -> AdmissionFlywheelResult | None:
+    expected_retained_release = (
+        handoff.staged_candidate.successor.release_sha256
+        if result.status is AdmissionStatus.ADOPTED
+        else state.epoch.current_release.release_sha256)
+    if (result.proposal_sha256 != handoff.proposal.proposal_sha256
+            or result.retained_release_sha256 != expected_retained_release
+            or result.staged_successor_sha256
+               != handoff.staged_candidate.successor.release_sha256):
+        return _hold("ADMISSION_RESULT_BINDING_DRIFT", state, advances)
+    return None
+
+
+def _staged_result(
+        result: AdmissionResult, state: AdmissionFlywheelState,
+        advances: int) -> AdmissionFlywheelResult:
+    status = (AdmissionFlywheelStatus.LEASE_REQUIRED
+              if ("LEASE_REQUIRED" in result.reason
+                  or result.reason == "OUT_OF_LEASE_SCOPE")
+              else AdmissionFlywheelStatus.HELD)
+    return AdmissionFlywheelResult(status, result.reason, advances, state)
+
+
+def _admission_step(
+        handoff: AtlasDeltaScopeHandoff, state: AdmissionFlywheelState,
+        advances: int, max_advances: int,
+        load_state: AdmissionFlywheelStateLoader,
+        admission_executor: AdmissionFlywheelExecutor,
+) -> AdmissionFlywheelState | AdmissionFlywheelResult:
+    handoff.verify()
+    if advances >= max_advances:
+        return _hold("ADVANCE_BUDGET_EXHAUSTED", state, advances)
+    result = admission_executor(handoff)
+    if not isinstance(result, AdmissionResult):
+        _invalid("BAMF_ATLAS_FLYWHEEL_ADMISSION_RESULT_INVALID")
+    binding_hold = _admission_binding_hold(result, handoff, state, advances)
+    if binding_hold is not None:
+        return binding_hold
+    if result.status is AdmissionStatus.STAGED:
+        return _staged_result(result, state, advances)
+    refreshed = _load_flywheel_state(load_state)
+    if refreshed.epoch.current_release.release_sha256 != result.staged_successor_sha256:
+        return _hold("ADOPTED_STATE_BINDING_DRIFT", state, advances)
+    if _flywheel_state_identity(refreshed) == _flywheel_state_identity(state):
+        return _hold("ADOPTED_WITHOUT_STATE_ADVANCE", state, advances)
+    return refreshed
+
+
+def _flywheel_step(
+        state: AdmissionFlywheelState, advances: int, max_advances: int,
+        load_state: AdmissionFlywheelStateLoader,
+        admission_executor: AdmissionFlywheelExecutor,
+) -> AdmissionFlywheelState | AdmissionFlywheelResult:
+    planned = next_atlas_delta(state.epoch, state.learner_evidence, state.plan)
+    if isinstance(planned, FrontierStatus):
+        return _planner_status_step(
+            planned, state, advances, max_advances, load_state)
+    if isinstance(planned, AtlasDeltaScopeHandoff):
+        return _admission_step(
+            planned, state, advances, max_advances,
+            load_state, admission_executor)
+    _invalid("BAMF_ATLAS_FLYWHEEL_PLANNER_RESULT_INVALID")
+
+
 def run_admission_flywheel(
     load_state: AdmissionFlywheelStateLoader,
     admission_executor: AdmissionFlywheelExecutor,
@@ -116,72 +216,12 @@ def run_admission_flywheel(
         _invalid("BAMF_ATLAS_FLYWHEEL_EXECUTOR_INVALID")
     if type(max_advances) is not int or max_advances < 1:
         _invalid("BAMF_ATLAS_FLYWHEEL_ADVANCE_BUDGET_INVALID")
-
-    state = load_state()
-    if type(state) is not AdmissionFlywheelState:
-        _invalid("BAMF_ATLAS_FLYWHEEL_STATE_INVALID")
+    state = _load_flywheel_state(load_state)
     advances = 0
     while True:
-        planned = next_atlas_delta(
-            state.epoch, state.learner_evidence, state.plan)
-        if isinstance(planned, FrontierStatus):
-            terminal = _terminal_flywheel_result(planned, state, advances)
-            if terminal is not None:
-                return terminal
-            if planned is not FrontierStatus.REPLAN_REQUIRED:
-                _invalid("BAMF_ATLAS_FLYWHEEL_PLANNER_STATUS_INVALID")
-            if advances >= max_advances:
-                return AdmissionFlywheelResult(
-                    AdmissionFlywheelStatus.HELD,
-                    "ADVANCE_BUDGET_EXHAUSTED", advances, state)
-            refreshed = load_state()
-            if type(refreshed) is not AdmissionFlywheelState:
-                _invalid("BAMF_ATLAS_FLYWHEEL_STATE_INVALID")
-            if _flywheel_state_identity(refreshed) == _flywheel_state_identity(state):
-                return AdmissionFlywheelResult(
-                    AdmissionFlywheelStatus.HELD,
-                    "REPLAN_WITHOUT_STATE_ADVANCE", advances, state)
-            state = refreshed
-            advances += 1
-        elif isinstance(planned, AtlasDeltaScopeHandoff):
-            planned.verify()
-            if advances >= max_advances:
-                return AdmissionFlywheelResult(
-                    AdmissionFlywheelStatus.HELD,
-                    "ADVANCE_BUDGET_EXHAUSTED", advances, state)
-            result = admission_executor(planned)
-            if not isinstance(result, AdmissionResult):
-                _invalid("BAMF_ATLAS_FLYWHEEL_ADMISSION_RESULT_INVALID")
-            expected_retained_release = (
-                planned.staged_candidate.successor.release_sha256
-                if result.status is AdmissionStatus.ADOPTED
-                else state.epoch.current_release.release_sha256)
-            if (result.proposal_sha256 != planned.proposal.proposal_sha256
-                    or result.retained_release_sha256 != expected_retained_release
-                    or result.staged_successor_sha256
-                       != planned.staged_candidate.successor.release_sha256):
-                return AdmissionFlywheelResult(
-                    AdmissionFlywheelStatus.HELD,
-                    "ADMISSION_RESULT_BINDING_DRIFT", advances, state)
-            if result.status is AdmissionStatus.STAGED:
-                status = (AdmissionFlywheelStatus.LEASE_REQUIRED
-                          if ("LEASE_REQUIRED" in result.reason
-                              or result.reason == "OUT_OF_LEASE_SCOPE")
-                          else AdmissionFlywheelStatus.HELD)
-                return AdmissionFlywheelResult(status, result.reason, advances, state)
-            refreshed = load_state()
-            if type(refreshed) is not AdmissionFlywheelState:
-                _invalid("BAMF_ATLAS_FLYWHEEL_STATE_INVALID")
-            if (refreshed.epoch.current_release.release_sha256
-                    != result.staged_successor_sha256):
-                return AdmissionFlywheelResult(
-                    AdmissionFlywheelStatus.HELD,
-                    "ADOPTED_STATE_BINDING_DRIFT", advances, state)
-            if _flywheel_state_identity(refreshed) == _flywheel_state_identity(state):
-                return AdmissionFlywheelResult(
-                    AdmissionFlywheelStatus.HELD,
-                    "ADOPTED_WITHOUT_STATE_ADVANCE", advances, state)
-            state = refreshed
-            advances += 1
-        else:
-            _invalid("BAMF_ATLAS_FLYWHEEL_PLANNER_RESULT_INVALID")
+        step = _flywheel_step(
+            state, advances, max_advances, load_state, admission_executor)
+        if isinstance(step, AdmissionFlywheelResult):
+            return step
+        state = step
+        advances += 1
