@@ -46,6 +46,54 @@ class DependencyEvidenceTests(unittest.TestCase):
         args[2].update({'A01.1': 500, 'A01.2': 501, 'A01.3': 502})
         self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.RESOLVED)
 
+    def test_b13_genesis_direct_prerequisites_require_the_exact_reviewed_clause(self):
+        clause = (
+            '## Direct prerequisites\n\n'
+            '- B13.1 #478 immutable bundle/pointer custody interface.\n'
+            '- B13.4 #481 / B01 parameter-schema and initializer authority.\n\n'
+            'Open parent state alone is not a blocker when the required exact interface is already present '
+            'on reviewed unified; final turn-in must record the actual consumed receipts.'
+        )
+        args = packet(clause, edges=('B13.1', 'B13.4'))
+        args[2].update({'B13.1': 478, 'B13.4': 481, 'B01': 346})
+        evidence = args[0]['dependency_evidence']
+        for number in (885, 802):
+            source_id = 'C01.1.pr-' + str(number)
+            url = 'https://github.com/Entif-AI/Bilqis-MLX/pull/' + str(number)
+            raw = json.dumps(dict(number=number, url=url, state='MERGED',
+                headRefOid='a'*40, mergeCommit={'oid': 'b'*40})).encode()
+            args[3][source_id] = raw
+            evidence['source_records'].append(dict(source_id=source_id, kind='pull_request',
+                locator=url, sha256=hashlib.sha256(raw).hexdigest(), excerpt='b'*40))
+            evidence['external_receipts'].append(dict(number=number, role='prerequisite',
+                head_sha='a'*40, merge_sha='b'*40, url=url, source_id=source_id))
+        args[3]['reviewed-packets'] = pinned_matrix(args[0])
+        self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.RESOLVED)
+        missing = deepcopy(args)
+        missing[0]['dependency_evidence']['external_receipts'] = []
+        missing[3]['reviewed-packets'] = pinned_matrix(missing[0])
+        self.assertIs(check_dependency_evidence(*missing).status, EvidenceStatus.INVALID)
+        variants = (
+            clause.replace('#481', '#999'),
+            clause.replace(
+                '- B13.1 #478 immutable bundle/pointer custody interface.',
+                '- B13.1 #478 and B13.4 #481 are both direct prerequisites.',
+            ),
+            clause.replace(
+                '- B13.1 #478 immutable bundle/pointer custody interface.',
+                '- B13.1 #478 is not a prerequisite.',
+            ),
+            clause.replace(
+                '- B13.4 #481 / B01 parameter-schema and initializer authority.',
+                '- B13.4 #481 / B01 parameter-schema and initializer authority.\n\n- B01 #346 extra prerequisite.',
+            ),
+        )
+        for forged_clause in variants:
+            with self.subTest(forged_clause=forged_clause):
+                forged = packet(forged_clause, edges=('B13.1', 'B13.4'))
+                forged[2].update({'B13.1': 478, 'B13.4': 481, 'B01': 346})
+                self.assertIs(check_dependency_evidence(*forged).status, EvidenceStatus.INVALID)
+
     def test_unknown_edge_or_missing_range_member_is_invalid(self):
         args = packet(edges=('A99',))
         self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.INVALID)
@@ -111,6 +159,31 @@ class DependencyEvidenceTests(unittest.TestCase):
         self.assertIs(result.status, EvidenceStatus.RESOLVED)
         self.assertEqual(result.known_edges, ('B02', 'B03'))
         evidence['external_receipts'][0]['merge_sha'] = 'c'*40
+        args[3]['reviewed-packets'] = pinned_matrix(args[0])
+        self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.INVALID)
+
+    def test_implementation_receipt_is_validated_without_becoming_a_clause_prerequisite(self):
+        args = packet()
+        evidence = args[0]['dependency_evidence']
+        number = 885
+        source_id = 'C01.1.pr-885'
+        url = 'https://github.com/Entif-AI/Bilqis-MLX/pull/885'
+        raw_obj = dict(number=number, url=url, state='MERGED',
+            headRefOid='a'*40, mergeCommit={'oid': 'b'*40})
+        raw = json.dumps(raw_obj).encode()
+        args[3][source_id] = raw
+        record = dict(source_id=source_id, kind='pull_request', locator=url,
+            sha256=hashlib.sha256(raw).hexdigest(), excerpt='b'*40)
+        evidence['source_records'].append(record)
+        evidence['external_receipts'].append(dict(number=number, role='implementation',
+            head_sha='a'*40, merge_sha='b'*40, url=url, source_id=source_id))
+        args[3]['reviewed-packets'] = pinned_matrix(args[0])
+        self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.RESOLVED)
+
+        raw_obj['state'] = 'OPEN'
+        raw = json.dumps(raw_obj).encode()
+        args[3][source_id] = raw
+        record['sha256'] = hashlib.sha256(raw).hexdigest()
         args[3]['reviewed-packets'] = pinned_matrix(args[0])
         self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.INVALID)
 

@@ -1,0 +1,72 @@
+# C01 dependency normalization follow-up — 12 November 2026
+
+Issue: #347 (`BAMF-0.2 C01`)
+
+Reviewed-unified base: `009263acb78662f9933469ebf9f666722c1c7679`
+
+This follow-up preserves the 1 November rule: dependency edges are not guessed and
+implementation closure is not treated as complete dependency normalization. It
+changes only a hold whose original unresolved condition has now acquired exact
+accepted evidence.
+
+## B13.6 changed condition
+
+B13.6 #904 already declares exactly two direct issue prerequisites in its immutable
+body: B13.1 #478 and B13.4 #481. The 1 November evidence packet kept B13.6 held
+because the required accepted B13.1 receipt did not yet exist. That condition has
+changed without changing the issue body or its dependency meaning:
+
+- B13.1 PR #885 is MERGED, head
+  `f166cac5db1e217880ce706efb51408001c7231e`, merge
+  `9301e41ef215b9d035449c3260c7cd0f8ee0b5a7`.
+- B13.4 PR #802 is MERGED, head
+  `4e19623217b20a79f38ba30e79dfc14294171740`, merge
+  `05e31a576e3432e4238c9b4477a70d70ec4fc487`.
+- Both prerequisite issues are CLOSED after accepted integration, and B13.6 itself
+  later completed its own bounded acceptance. The latter is not used as proof of
+  the prerequisite edges; it only confirms no later B13.6 amendment superseded
+  the declared prerequisite contract.
+
+The canonical dependency-evidence record now retains exact snapshots of PR #885 and
+PR #802 as source evidence. They are provenance for the previously missing accepted
+receipts; they are not new graph nodes. The known issue edges remain exactly
+`B13.1,B13.4`.
+
+## Parser scope
+
+The dependency grammar gains one narrow, issue-specific form: the exact immutable
+B13.6 `## Direct prerequisites` clause already present in #904. It validates the
+canonical issue numbers for B13.1 and B13.4 and rejects any textual variation; it
+does not introduce a general bullet parser, interpret descriptive prose, or infer
+prerequisites from closure.
+
+## Remaining holds
+
+This increment does not alter A03.4, A05.4, A05.5, A08.1b.2, A08.1b.5, B02.4 or
+B11.1a. Their source/specification/receipt-granularity questions remain held until
+each is resolved against its own controlling evidence.
+
+## Independent review repair
+
+Two fresh read-only reviewers independently found the same two material defects in
+the first candidate. First, a generic bullet-prefix parser could accept ambiguous
+or negated prose while silently ignoring an additional issue-shaped prerequisite.
+Second, the retained PR snapshots were source-hash checked but not passed through
+the dependency receipt validator, so their MERGED/head/merge fields were not
+mechanically enforced.
+
+The repair removes the generic bullet grammar. The parser now accepts only the exact
+B13.6 direct-prerequisite clause already present in its immutable issue body, with
+canonical issue-number lookup for B13.1 and B13.4. Tests reject a forged issue
+number, a same-line hidden second prerequisite, negation, and a second bullet block.
+PR #885 and #802 are now also registered in `external_receipts` as implementation
+receipts for the prerequisite-owner implementations. That makes `_receipts` verify
+their number, MERGED state, URL, head SHA and merge SHA while leaving the parsed
+issue-edge set unchanged.
+
+A pinned EGM comprehension pass found one further causal-binding gap: merely
+validating #885/#802 when present did not make them mandatory for B13.6 resolution.
+The exact B13.6 clause grammar now returns both issue edges and required PR receipt
+numbers `(885, 802)`. Those records use the existing `prerequisite` receipt role,
+which remains receipt provenance rather than an issue-graph node. A regression
+removes both receipts from an otherwise exact packet and requires `INVALID`.

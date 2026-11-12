@@ -35,6 +35,20 @@ def _linked_edges(text, numbers):
     return tuple(edges)
 
 
+def _genesis_custody_prerequisites(text, numbers):
+    keys = ('B13.1', 'B13.4')
+    if any(type(numbers.get(key)) is not int for key in keys):
+        return None
+    expected = (
+        '## Direct prerequisites\n\n'
+        f'- B13.1 #{numbers["B13.1"]} immutable bundle/pointer custody interface.\n'
+        f'- B13.4 #{numbers["B13.4"]} / B01 parameter-schema and initializer authority.\n\n'
+        'Open parent state alone is not a blocker when the required exact interface is already present '
+        'on reviewed unified; final turn-in must record the actual consumed receipts.'
+    )
+    return (keys, (885, 802)) if text == expected else None
+
+
 def _producer_correction(clause, numbers):
     if not re.search(r'^## Producer-authority correction(?: |$)', clause, re.M):
         return None
@@ -73,7 +87,9 @@ def parse_clause(clause, numbers):
         return None if edges is None else (edges, ())
     if clause.startswith('## Direct prerequisites\n'):
         edges = _linked_edges(clause, numbers)
-        return None if edges is None else (edges, ())
+        if edges is not None:
+            return edges, ()
+        return _genesis_custody_prerequisites(clause, numbers)
     match = re.match(r'Direct prerequisites: merged #(\d+)/#(\d+); exact qualified #(\d+)/#(\d+) receipts for final composition turn-in; existing (' + KEY + r'(?:/' + KEY + r')*) source interfaces\.', clause)
     if match:
         return tuple(match[5].split('/')), tuple(int(match[i]) for i in range(1, 5))

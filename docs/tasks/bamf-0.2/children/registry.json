@@ -1632,14 +1632,31 @@
       "source_parent_sha256": "2ee76692706486f543cfed7f9926c3519c5cfdc33b81630a92d49020a31e9215",
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
+        "resolution": "resolved",
         "body_sha256": "9b52a41e078ef9b26e8f4248c4e4ae004c6f1215eda9ea749da1ce3263dd3bc4",
-        "clause": "## Direct prerequisites",
+        "clause": "## Direct prerequisites\n\n- B13.1 #478 immutable bundle/pointer custody interface.\n- B13.4 #481 / B01 parameter-schema and initializer authority.\n\nOpen parent state alone is not a blocker when the required exact interface is already present on reviewed unified; final turn-in must record the actual consumed receipts.",
         "known_edges": [
           "B13.1",
           "B13.4"
         ],
-        "external_receipts": [],
+        "external_receipts": [
+          {
+            "number": 885,
+            "role": "prerequisite",
+            "head_sha": "f166cac5db1e217880ce706efb51408001c7231e",
+            "merge_sha": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/885",
+            "source_id": "B13.6.pr-885"
+          },
+          {
+            "number": 802,
+            "role": "prerequisite",
+            "head_sha": "4e19623217b20a79f38ba30e79dfc14294171740",
+            "merge_sha": "05e31a576e3432e4238c9b4477a70d70ec4fc487",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/802",
+            "source_id": "B13.6.pr-802"
+          }
+        ],
         "source_records": [
           {
             "source_id": "B13.6.body",
@@ -1647,12 +1664,26 @@
             "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/904",
             "sha256": "9b52a41e078ef9b26e8f4248c4e4ae004c6f1215eda9ea749da1ce3263dd3bc4",
             "excerpt": "The current production publication code already states that genesis admission is a distinct source/bootstrap gate, but generation zero is still published only by supplying a C05 `AcceptedCandidateBinding`; tests manufacture that token through a disposable retention helper. That test-only retention authority is not a lawful production genesis gate."
+          },
+          {
+            "source_id": "B13.6.pr-885",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/885",
+            "sha256": "f79026658129ac386df2334bbb2596717dc1581d60a9cf05031b31489ff872ea",
+            "excerpt": "9301e41ef215b9d035449c3260c7cd0f8ee0b5a7"
+          },
+          {
+            "source_id": "B13.6.pr-802",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/802",
+            "sha256": "6cbdbdaeb8133ec73cda5361c55981182bc50139dc5d08ecbaf4b142a706aa20",
+            "excerpt": "05e31a576e3432e4238c9b4477a70d70ec4fc487"
           }
         ],
         "obligations": [
           "Consume the existing B13.1 publication and B13.4/B01 parameter-schema interfaces without treating their open parent state as a caller-mintable authority. Final turn-in must record the actual accepted dependency receipts."
         ],
-        "unresolved": "B13.1 parent acceptance remains open even though the required publication interface exists on reviewed unified; implementation may proceed against that frozen interface, but final turn-in must consume the accepted receipt."
+        "unresolved": null
       }
     },
     {
