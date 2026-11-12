@@ -98,6 +98,23 @@ class BamfMetricsTests(unittest.TestCase):
         self.assertNotIn("NaN", rendered)
         self.assertNotIn("nan", rendered)
 
+    def test_zero_elapsed_and_zero_visits_render_unmeasured_rates_not_nan(self):
+        view = board()
+        view.started = 0.0
+        view.state.update(
+            attempted_steps=0, retained_visits=0, visits=0, grew=0,
+        )
+
+        rendered = view.render(width=320, height=40)
+
+        self.assertNotIn("nan", rendered.lower())
+        self.assertNotIn("inf", rendered.lower())
+        headings, values = rendered.splitlines()[:2]
+        for label, width in (("ST/M", 5), ("R/H", 5), ("G/RTN", 6)):
+            with self.subTest(label=label):
+                start = headings.index(label)
+                self.assertEqual(values[start:start + width].strip(), "-")
+
     def test_malformed_receipt_preserves_previous_view(self):
         from bilqis_mlx.errors import BilqisError
         view = board()

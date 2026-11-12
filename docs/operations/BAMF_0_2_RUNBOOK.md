@@ -1,8 +1,12 @@
 # BAMF-0.2 operator observation commands
 
-Status: **C11.1 read-only inspection plus C16.1a persistent create/dry-run/resume
-lifecycle implemented on the feature branch; human review/merge remains pending**.
-This document does not authorize a durable student start or certify BAMF learning.
+Status: **C11.3 read-only cockpit/runbook and the C16.1a persistent
+create/dry-run/resume lifecycle are integrated in reviewed unified**. Human-started
+resume with an accepted `atlas-release` lease now reaches the accepted-custody C07
+flywheel; that path remains neural-inert and fail-closed. This document does not
+authorize a durable student start or certify BAMF learning. Full C11.3 closure still
+requires accepted production qualification of the operator-status observation
+producer plus the current C07/C10 parent receipts described below.
 
 ## Read-only cockpit
 
@@ -42,17 +46,21 @@ or introduce a grade-specific teaching policy.
 
 The reader accepts `bilqis.bamf.operator-status/v1` under saved-state key
 `bamf_operator_status`, or an append-only journal event named
-`BAMF_OPERATOR_STATUS_OBSERVED` with a `receipt` object. This is a proposed
-presentation boundary, not an implemented B13/A12 producer contract. It validates
-schema, complete nonnegative coverage counts, source/model/evaluator/rights/census
-SHA256 syntax and finite observations before replacing the last valid view.
+`BAMF_OPERATOR_STATUS_OBSERVED` with a `receipt` object. This remains a presentation
+boundary: no accepted production owner currently emits this exact status schema.
+B13/A12/C05 and C10 now expose their own accepted custody/evaluation/projection
+receipts, but the cockpit must not synthesize an operator-status receipt from them
+without an explicit producer contract. The reader validates schema, complete
+nonnegative coverage counts, source/model/evaluator/rights/census SHA256 syntax and
+finite observations before replacing the last valid view.
 A malformed journal observation leaves that view intact and the watcher reports
 the failure through its existing log channel.
 
 Structural validation does not verify the referenced source release, producer,
 checkpoint, evaluator or rights artifact. Actual source/custody owners must issue
 and qualify these observations before production use. The current tests use
-explicit synthetic receipts and do not establish producer acceptance or learning.
+explicit synthetic receipts and do not establish producer acceptance or learning;
+the presence of integrated B13/A12/C05/C10 owners does not change that boundary.
 
 ## Preflight, launch and resume boundary
 
@@ -152,16 +160,46 @@ Existing trainer help can also be inspected without a neural update:
 npm run train -- --help
 ```
 
+### Resource custody controls
+
+The real train parser exposes the resource controls used by this lineage. Keep the
+protected disk reserve at its production default and never use this runbook as a
+reason to weaken it:
+
+```sh
+npm run train -- --human-run --resume --run-dir /absolute/path/to/bamf-run \
+  --reserve-gib 100 --source-prefetch-workers 2
+```
+
+`--source-prefetch-workers` accepts only `0`, `1`, or `2`; those workers prepare
+source/release packets and never own writable model, optimizer, teacher, admission,
+or graph state. `--reserve-gib` defaults to `100`. On an accepted `atlas-release`
+lineage the command above may run the authorized C07 admission flywheel and commit
+an already-authorized successor, so use `--dry-run --resume` when only inspection is
+intended. The C07 path reloads accepted custody after adoption rather than reusing
+stale in-memory learner/optimizer state. This command does not by itself authorize
+new source rights, a lease renewal, grade promotion, or a persistent optimizer run.
+
+`--issue-349-experiment-root` is a separate bounded experiment-custody control and
+is not required for an ordinary BAMF production lineage. Do not substitute it for
+B13/C07 custody or the 100 GiB reserve.
+
 C11.2's bounded reader remains available for historical inspection. The persistent
 v2 lifecycle above consumes accepted B13/C09/C07 custody and validates saved
-topology/admission settings, but C16.1a still stops before later learner execution.
-The existing 100 GiB reserve remains unchanged.
+topology/admission settings. For an accepted `atlas-release` lineage, human-started
+resume now enters the restart-safe C07 flywheel against cold accepted custody and
+returns its typed terminal result without reusing a live learner or optimizer.
+Persistent learner execution remains a separate owner boundary. The existing
+100 GiB reserve remains unchanged and is not weakened by these commands.
 
 The resource/rubric panel describes current Factory assessment as fresh routine,
 fixed promotion and inactive generalization. Historical rubric descriptions are
 labeled `Historical policy (lineage only)`; they do not select BAMF scheduling or
-assessment. C11.3/#524 full candidate/source/delivery/debt/promotion/retention/transfer
-provenance and launch/resource acceptance remain pending production observations.
+assessment. The launch/resume command forms, generation-zero custody, saved-policy
+validation and C07 enrollment/flywheel routing are now implemented. C11.3/#524 may
+still display candidate/source/delivery/debt/promotion/retention/transfer evidence
+only when an accepted producer supplies it; activity or grade labels never fabricate
+those observations.
 
 
 ## Separate operator evidence
@@ -201,5 +239,10 @@ These remain structurally checked supplied observations. This reader neither
 verifies producer/source/evaluator authority nor fabricates measurement from
 activity, retention counts or grade labels. A learned-transfer observation is not
 a newly scheduled GENERALIZATION cohort or promotion authority. Current fresh
-generalization remains inactive. Production observation issuance and complete
-launch/resource custody still require #522/B13/A12 and the relevant C05 owner.
+generalization remains inactive. #522's mitigation and the B13/A12/C05 launch and
+custody owners are integrated in reviewed unified; they are no longer blockers for
+the command surface documented here. Final #524 turn-in still must consume the C07
+parent's real-path closure receipt (#380), and C10.1/#519 remains the open
+producer/source-rights/evaluator qualification seam for production projection
+evidence. Until those receipts exist, this runbook intentionally reports the gap
+instead of manufacturing operator evidence.
