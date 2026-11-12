@@ -3407,3 +3407,58 @@ without serializing unrelated bounded work.
 This ADR supersedes only ADR-138's host-wide no-overlap interpretation. ADR-138's
 measured OOM incident, single-worker default inside a runner, cache containment,
 explicit memory limits, and production-trainer distinction remain in force.
+
+## ADR-141 | 2026-11-12 | Verification test suites have a two-hour wall-clock ceiling
+
+**Status:** Accepted by direct owner instruction on 2026-11-12 after the C06 #379
+turn-in showed that a leaf-development witness had absorbed later system
+qualification and ran for about 9 hours 51 minutes before a whole-school rejection.
+
+**Problem:** ADR-129, ADR-137 and ADR-139 already require evidence reuse,
+claim-first differential verification and fail-fast staged preflight. ADR-132 governs
+detached execution for commands that can exceed five minutes. Those controls reduce
+waste and protect the agent session, but they do not set an absolute wall-clock
+limit. A test can therefore remain technically lawful while still consuming most of
+a working day, delaying review and mixing unrelated system qualification into
+ordinary development feedback.
+
+**Decision:** No agent may launch or require a test suite, verification command,
+hosted verification workflow, witness, or composed verification run whose planned or
+expected wall-clock duration exceeds **2 hours**. Two hours is an absolute ceiling,
+not a target. Normal leaf development and turn-in should use checks that complete in
+seconds to minutes whenever the claim permits it.
+
+Before launch, use prior receipts, selected-test scope, stage timings, or another
+concrete estimate to bound the expected duration. If the bound is unknown or can
+exceed two hours, the run is not ready to start. Split it into claim-specific stages
+that each stay within the ceiling and emit durable receipts. Arbitrary time slicing
+does not satisfy this rule: every stage must prove an independently meaningful claim
+and have explicit inputs plus a resumable or terminal result.
+
+If an agent-launched test reaches two hours without completing, stop or contain the
+owned process at the next safe boundary. Preserve its partial log and receipt, and
+record the result as incomplete or over-budget rather than PASS. Diagnose the
+expensive stage and convert any discovered fixture, assertion, ownership or contract
+failure into a cheaper deterministic regression before another attempt. Still-valid
+passing evidence remains reusable and must not be repaid solely because a session
+resumed, a branch moved equivalently, or time elapsed.
+
+Detached execution, snapshot isolation, bounded MLX concurrency and operator
+observation do not waive the ceiling for tests. Whole-system qualification that
+cannot be made meaningful within two hours is not an ordinary test gate. Redesign it
+as bounded staged qualification, or hand it to the human operator as a separately
+authorized non-test training or production exercise. A multi-stage qualification may
+span more than two hours in aggregate only when each stage is independently bounded,
+interpretable and receipted; it may not disguise one opaque monolithic test behind
+restarts.
+
+Historical test evidence from runs longer than two hours remains valid provenance and
+is not erased by this decision. This ADR changes future verification posture, not the
+historical record. Only a new owner-ratified ADR amendment may raise or remove the
+two-hour ceiling.
+
+**Relationship to existing decisions:** ADR-137 still governs claim-first proof and
+evidence reuse. ADR-139 still governs fail-fast staging. ADR-132 still requires
+detached execution for sufficiently long commands. ADR-138 and ADR-140 still govern
+MLX memory and concurrency. ADR-141 adds the wall-clock ceiling above those controls.
+
