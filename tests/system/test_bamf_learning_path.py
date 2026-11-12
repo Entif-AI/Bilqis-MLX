@@ -122,6 +122,8 @@ class BamfLearningPathFoundationTests(BamfFirstStudentCase):
         )
         self.assertNotIn("DISPOSABLE_CREATION", receipt.remaining_behaviors)
         self.assertEqual(receipt.launch_receipt.dashboard_metrics.optimizer_step, 0)
+        self.assertNotIn("COLD_RESTART", receipt.exercised_behaviors)
+        self.assertIn("COLD_RESTART", receipt.remaining_behaviors)
         self.assertEqual(
             receipt.launch_receipt.factory_release_sha256,
             self.release.release_sha256,
@@ -145,7 +147,9 @@ class BamfLearningPathFoundationTests(BamfFirstStudentCase):
                 mlx_checkpoint, "assert_headroom"), patch(
                 "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom"), patch(
                 "scripts.prove_bamf_delivery.run_candidate_attempts",
-                return_value=attempts):
+                return_value=attempts), patch(
+                "scripts.prove_bamf_delivery.cold_restart_identity",
+                return_value={"candidate_identity_sha256": "2" * 64}):
             receipt = prove_bamf_delivery(DeliveryConfig(), source, self.root / "attempts", 2)
 
         self.assertEqual(receipt.status, "CANDIDATE_EXERCISED")
@@ -153,11 +157,12 @@ class BamfLearningPathFoundationTests(BamfFirstStudentCase):
         self.assertEqual(
             set(receipt.exercised_behaviors),
             {"SOURCE_FIXTURES", "DISPOSABLE_CREATION", "SOURCE_BOUND_GRADIENTS",
-             "PAIRED_EVALUATION", "ACCEPTED_CANDIDATE", "REJECTED_CANDIDATE"},
+             "PAIRED_EVALUATION", "ACCEPTED_CANDIDATE", "REJECTED_CANDIDATE",
+             "COLD_RESTART"},
         )
         self.assertEqual(
             receipt.remaining_behaviors,
-            ("COLD_RESTART", "APPEND_ONLY_SEMANTIC_DELTA"),
+            ("APPEND_ONLY_SEMANTIC_DELTA",),
         )
 
 
@@ -212,6 +217,23 @@ class BamfLearningPathCandidateAccountingTests(unittest.TestCase):
                 side_effect=(accepted, rejected, AssertionError("must stop"))):
             attempts = delivery_runtime.run_candidate_attempts(Path("/tmp/disposable"), 64)
         self.assertEqual(attempts, (accepted, rejected))
+
+    def test_cold_restart_identity_uses_fresh_process_and_preserves_full_candidate_digest(self):
+        parent = self.student(4, 9)
+        with patch.object(
+                delivery_runtime, "load_accepted_generation", return_value=parent), patch.object(
+                delivery_runtime, "_identity", return_value="7" * 64), patch.object(
+                delivery_runtime.subprocess, "run") as run:
+            run.return_value = SimpleNamespace(
+                returncode=0, stderr="",
+                stdout=json.dumps({
+                    "generation": 4,
+                    "optimizer_step": 9,
+                    "candidate_identity_sha256": "7" * 64,
+                }) + "\n")
+            receipt = delivery_runtime.cold_restart_identity(Path("/tmp/disposable"))
+        self.assertEqual(receipt["candidate_identity_sha256"], "7" * 64)
+        self.assertIn("-c", run.call_args.args[0])
 
 
 class BamfLearningPathEpisodeSourceTests(unittest.TestCase):

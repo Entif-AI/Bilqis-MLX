@@ -15,7 +15,7 @@ from scripts.bamf.c13_delivery_contracts import (
     DeliveryConfig, DeliveryReceipt, EpisodeSourceRelease, FoundationLaunchInput,
     MAX_STEPS, fail,
 )
-from scripts.bamf.c13_delivery_runtime import run_candidate_attempts
+from scripts.bamf.c13_delivery_runtime import cold_restart_identity, run_candidate_attempts
 from scripts.bamf.c13_episode_fixtures import (
     EpisodeBindingCase, EpisodeEvent, check_episode_binding, episode_binding_case,
     episode_task_goal, fixture_manifest,
@@ -74,6 +74,9 @@ def prove_bamf_delivery(config, source_release, disposable_dir, max_steps) -> De
         target)
     attempts = run_candidate_attempts(target, max_steps) if max_steps else ()
     exercised, remaining = _behaviors(attempts)
+    if attempts and cold_restart_identity(target):
+        exercised = (*exercised, "COLD_RESTART")
+        remaining = tuple(item for item in remaining if item != "COLD_RESTART")
     status = "CANDIDATE_EXERCISED" if attempts else "FOUNDATION_CREATED"
     return DeliveryReceipt(
         source_release.release_sha256, source_release.semantic_release, digest,
