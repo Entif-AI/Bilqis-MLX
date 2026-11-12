@@ -53,10 +53,23 @@ def _time(value: object) -> bool:
     return type(value) is int and value >= 0
 
 
-def _event_times(values) -> bool:
-    """C10 time is explicit when known; unknown is represented only as a full quartet."""
+def _unknown_time_allowed(kind, payload: dict) -> bool:
+    """Only accepted production-owner envelopes may lack source-owned clocks."""
+    return (
+        (kind in OWNER_FIXTURE_KINDS and payload.get("verification_mode") is None)
+        or (kind is AkashaEventKind.FACTORY_RELEASE
+            and payload.get("owner_event_type") is not None)
+        or (kind is AkashaEventKind.MOTIF_CANDIDATE
+            and payload.get("transition_sha256") is not None)
+    )
+
+
+def _event_times(kind, payload: dict, values) -> bool:
+    """Preserve legacy timed contracts; owner-backed unknown time is all-or-none."""
     values = tuple(values)
-    return all(value is None for value in values) or all(_time(value) for value in values)
+    if all(_time(value) for value in values):
+        return True
+    return _unknown_time_allowed(kind, payload) and all(value is None for value in values)
 
 
 class AkashaEventKind(str, Enum):

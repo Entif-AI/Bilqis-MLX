@@ -50,20 +50,20 @@ class AkashaEvent:
             recorded_at=recorded_at)
 
     def validate(self) -> None:
+        payload = _payload_for(self.kind, self.payload_json)
         if (not isinstance(self.kind, AkashaEventKind)
                 or not _sha(self.event_id)
                 or not _sha(self.payload_digest)
                 or not _name(self.subject_id)
                 or not _sha(self.source_receipt_sha256)
                 or not isinstance(self.payload_json, str)
-                or not _event_times((
+                or not _event_times(self.kind, payload, (
                     self.source_time, self.effective_time,
                     self.observed_at, self.recorded_at))
                 or (self.observed_at is not None
                     and self.observed_at > self.recorded_at)
                 or self.schema_version != AKASHA_EVENT_SCHEMA):
             _invalid("BAMF_C10_EVENT_IDENTITY_INVALID")
-        _payload_for(self.kind, self.payload_json)
         expected_payload_digest = _digest(self.payload_json.encode("utf-8"))
         identity = {
             "schema_version": self.schema_version,

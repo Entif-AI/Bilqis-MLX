@@ -195,6 +195,26 @@ class OwnerProjectionContractTests(unittest.TestCase):
             with self.assertRaises(BilqisError):
                 build_staging_projection((_projected(event, domain),), domain)
 
+    def test_legacy_native_event_still_requires_concrete_time(self):
+        payload = {
+            "native_event_id": "1" * 64,
+            "native_event_digest": "2" * 64,
+            "run_id": "fixture-run",
+            "generation": 1,
+            "native_event_type": "SCHOOL_TEACHER_VISIT_COMMITTED",
+        }
+        with self.assertRaises(BilqisError):
+            AkashaEvent.from_payload(
+                kind=AkashaEventKind.TEACHER_VISIT,
+                subject_id="teacher-visit:fixture",
+                source_receipt_sha256="3" * 64,
+                payload=payload,
+                source_time=None,
+                effective_time=None,
+                observed_at=None,
+                recorded_at=None,
+            )
+
     def test_motif_projection_uses_validated_b13_transition_identity(self):
         transition = {
             "schema": "bilqis.mlx.bamf-generation-transition/v3",
