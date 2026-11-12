@@ -36,6 +36,7 @@ from . import candidate_realizations
 
 
 _SHA256_HEX_LENGTH = hashlib.sha256().digest_size * 2
+_OBLIGATION_KEY_PARTS = 2
 _ACCEPTED_CREDIT_ISSUER = object()
 
 
@@ -60,7 +61,8 @@ class AcceptedObligationCredit:
                 or not _digest(self.acceptance_sha256)
                 or type(self.obligation_keys) is not tuple
                 or self.obligation_keys != tuple(sorted(set(self.obligation_keys)))
-                or any(type(item) is not tuple or len(item) != 2
+                or any(type(item) is not tuple
+                       or len(item) != _OBLIGATION_KEY_PARTS
                        or type(item[0]) is not str or not item[0]
                        or not _digest(item[1]) for item in self.obligation_keys)
                 or self.schema != "bilqis.factory-accepted-obligation-credit/v1"):
