@@ -212,23 +212,31 @@ still stops at `READY_TO_RESUME`; fresh creation and Atlas enrollment also remai
 neural-inert. Only an explicit non-dry-run `--human-run --resume` enters the BAMF
 operator coordinator.
 
-The coordinator owns no curriculum, retention policy or publication decision. For
-each proposed visit it:
+The coordinator owns no curriculum, retention policy or publication decision. The
+persistent visit loop is intentionally held until #1010 materializes C03.4's existing
+priority authorities for production. It must not replace that missing bridge with a
+release-order, grade-order, deficit, or CLI-selected scheduler. Once those owner inputs
+exist, each proposed visit must:
 
 1. opens the current accepted generation through `AcceptedRuntimeHost` and checks
    the accepted Atlas-lease epoch;
-2. measures the accepted parent on C05's immutable whole-school fixture and selects
-   the first admitted Factory capability that is not yet mastered and whose declared
-   prerequisites are mastered, preserving Factory release order without grade-label
-   branches;
-3. binds C03 policy selection to the accepted teacher state. On the first visit,
+2. consumes source-owner C06 `AttentionFrontier`/`SalienceHistory`, verified A09
+   `PriorityPlanningInput`, current source offers, admitted `ScheduleProgram`, and a
+   lawful accepted-BAMF scheduler projection through C03.4
+   `select_accepted_priority_visit`; C03.4 alone owns ordering and selection;
+3. binds the resulting C03 policy selection to the accepted teacher state. On the first visit,
    C03 bootstrap is reconstructed only from the checked-in legacy-trainer authority
    record and its exact live source head; unavailable or drifted authority fails
    closed rather than searching for another trainer;
-4. derives source and optimizer seeds from the accepted visit identity and executes
-   one BAMF-native C02/C08/B10/B11 candidate transaction;
+4. executes only the issuer-bound selection through
+   `execute_accepted_priority_candidate`, which supplies the exact source rows,
+   provenance and teacher policy to the BAMF-native C02/C08/B10/B11 transaction;
 5. runs the C05 owner screen and either records a B13 rejection without advancing
    teacher trajectory, or publishes the accepted successor through B13.
+
+Until #1010 closes those production input seams, an ordinary non-dry human resume
+fails closed with `BAMF_OPERATOR_PRIORITY_AUTHORITY_UNAVAILABLE` before a visit or
+optimizer update. This is a dependency hold, not a fallback scheduling policy.
 
 C16.3 also makes the production C03 trajectory explicit. Genesis remains B13-owned:
 `next_seed=run_seed` and `cursor=GENESIS`. After an accepted visit, the next seed is
@@ -237,10 +245,11 @@ the accepted visit's selection seed plus one and the cursor is that visit's opaq
 fixture-only evidence and is not production authority. Rejected candidates do not
 advance the accepted seed, cursor or teacher epoch.
 
-The operator loop is serialized by the existing run-root operator lock. A rejected
-candidate enters `REJECTED_HOLD` rather than silently retrying, and a fully mastered
-foundation enters `FOUNDATION_COMPLETE`. Status and dashboard inspection read the
-accepted BAMF generation directly; they do not reconstruct a legacy school.
+The operator loop is serialized by the existing run-root operator lock. Once #1010
+supplies C03.4's production authority, a rejected candidate must hold rather than
+silently retry, and completion must be a C03.4/Factory-owned result rather than a
+locally invented grade sequence. Status and dashboard inspection read the accepted
+BAMF generation directly; they do not reconstruct a legacy school.
 
 No persistent BAMF student is started as part of C16.3 acceptance. The human owner
 starts and observes the live lineage with the command above. Agent verification of

@@ -87,11 +87,13 @@ def _bamf_accepted_dashboard_state(run_dir: Path):
 
 def _dashboard_state(run_dir: Path):
     state_path = run_dir / "state.json"
-    state = read_current(run_dir) if state_path.exists() else None
-    if state is None:
-        state = _bamf_foundation_dashboard_state(run_dir)
-    if state is None:
+    bamf_pointer = run_dir / "bamf-state.json"
+    if bamf_pointer.exists() or bamf_pointer.is_symlink():
         state = _bamf_accepted_dashboard_state(run_dir)
+        if state is None:
+            state = _bamf_foundation_dashboard_state(run_dir)
+    else:
+        state = read_current(run_dir) if state_path.exists() else None
     school = state["school"] if state else {}
     active = school.get("active_grades", ())
     grade_index = school.get("grade_index", 0)
