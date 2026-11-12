@@ -8,10 +8,12 @@ from bilqis_mlx.factory.atlas_frontier import (
     staged_selection_receipt,
 )
 from bilqis_mlx.factory.atlas_delta_adapter import (
-    AcceptedObligationCredit, _credited_requested_keys,
+    AcceptedObligationCredit, _accepted_requested_keys,
+    _credited_requested_keys, _issue_accepted_obligation_credit,
 )
 from bilqis_mlx.factory.atlas_delta_scope import AtlasDeltaScopeHandoff
 from bilqis_mlx.factory.atlas_frontier_progress import FrontierStatus, plan_frontier_progress
+from bilqis_mlx.factory.atlas_frontier_progress_validation import current_obligations
 from bilqis_mlx.factory.atlas_frontier_closure import ClosureReason, ClosureStatus
 from bilqis_mlx.factory.atlas_frontier_selection import select_frontier_delta
 from bilqis_mlx.factory.candidate_realizations import project_authoritative_target
@@ -156,6 +158,76 @@ class AtlasDeltaAdapterTests(AtlasDeltaAdapterFixture):
         self.assertEqual(
             caught.exception.context["reason"],
             "BAMF_PLANNER_ACCEPTED_CREDIT_INVALID",
+        )
+
+    def test_new_qualified_family_reopens_only_affected_accepted_obligation(self):
+        before = current_obligations(self.closure)
+        credit = _issue_accepted_obligation_credit(
+            self.current.release_sha256,
+            "a" * 64,
+            tuple(sorted(before.items())),
+        )
+        source_row = next(
+            row for row in self.snapshot.coverage_rows
+            if row.semantic_id == "z.op.0"
+        )
+        new_row = replace(
+            source_row,
+            family_id="numeric_composition",
+            source_evidence_sha256="c" * 64,
+        )
+        changed = rehash(
+            self.snapshot,
+            required_source_family_ids=tuple(sorted((
+                *self.snapshot.required_source_family_ids,
+                new_row.family_id,
+            ))),
+            coverage_rows=tuple(sorted(
+                (*self.snapshot.coverage_rows, new_row),
+                key=lambda row: (row.semantic_id, row.family_id),
+            )),
+            source_coverage_sha256="c" * 64,
+            qualification_epoch=self.snapshot.qualification_epoch + 1,
+            event_generation=self.snapshot.event_generation + 1,
+            predecessor_sha256=self.snapshot.snapshot_sha256,
+        )
+        changed_closure = _closure(changed, tuple(
+            _candidate(changed, row.semantic_id, family_id=row.family_id)
+            for row in changed.coverage_rows
+        ))
+        after = current_obligations(changed_closure)
+        epoch = self._epoch(
+            snapshot=changed,
+            closure=changed_closure,
+            accepted_credit=credit,
+        )
+        requested = _accepted_requested_keys(epoch)
+
+        self.assertNotEqual(before["z.op.0"], after["z.op.0"])
+        self.assertEqual(before["z.op.1"], after["z.op.1"])
+        self.assertEqual(before["z.op.2"], after["z.op.2"])
+        self.assertEqual(requested, tuple(sorted((
+            ("z.op.1", after["z.op.1"]),
+            ("z.op.2", after["z.op.2"]),
+        ))))
+
+        with patch(
+            "bilqis_mlx.factory.candidate_realizations.project_realized_target",
+            side_effect=self._authority,
+        ), patch(
+            "bilqis_mlx.factory.atlas_frontier_progress_validation.project_realized_target",
+            side_effect=self._authority,
+        ), patch(
+            "bilqis_mlx.factory.candidate_realizations.realized_source_sense_id",
+            return_value=self.staged.source_sense_id,
+        ):
+            handoff = next_atlas_delta(epoch, self.learner, self.plan)
+
+        self.assertIsInstance(handoff, AtlasDeltaScopeHandoff)
+        self.assertEqual(handoff.receipt.selected_semantic_id, "z.op.0")
+        self.assertEqual(
+            tuple(row.family_id for row in handoff.receipt.selection.selected_obligations),
+            ("numeric_composition", "positive_identity"),
         )
 
     def test_ready_semantic_without_realized_staged_binding_is_explicit_debt(self):
