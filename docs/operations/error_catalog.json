@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 256,
-  "legacy_raw_raise_count": 2079,
+  "legacy_raw_file_count": 260,
+  "legacy_raw_raise_count": 2085,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -11651,6 +11651,20 @@
       "path": "bilqis_mlx/runtime/tests/model/resources/test_memory_retry.py"
     },
     {
+      "code_hint": "fixture capability is not in one active admitted grade",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'fixture capability is not in one active admitted grade'",
+      "path": "bilqis_mlx/runtime/tests/model/salience/priority_witness_support.py"
+    },
+    {
+      "code_hint": "C06 Factory C05 rejected labeled candidate",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "f'C06 Factory C05 rejected labeled candidate: reason={decision.reason}; evidence={decision.evidence_sha256}; policy={decision.policy_sha256}; blocking_capability={evaluation.decision.blocking_capability}'",
+      "path": "bilqis_mlx/runtime/tests/model/salience/retained_publication_witness.py"
+    },
+    {
       "code_hint": "GRAPH_UNAVAILABLE",
       "count": 1,
       "exception": "RuntimeError",
@@ -11663,6 +11677,34 @@
       "exception": "AssertionError",
       "expression": "'Rosetta owner revision drift requires requalification'",
       "path": "bilqis_mlx/runtime/tests/projection/test_rosetta_observation.py"
+    },
+    {
+      "code_hint": "C09 hold",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'C09 hold'",
+      "path": "bilqis_mlx/runtime/tests/teacher/priority/test_priority_execution.py"
+    },
+    {
+      "code_hint": "held",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'held'",
+      "path": "bilqis_mlx/runtime/tests/teacher/priority/test_priority_execution.py"
+    },
+    {
+      "code_hint": "held",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'held'",
+      "path": "bilqis_mlx/runtime/tests/teacher/priority/test_priority_qualification.py"
+    },
+    {
+      "code_hint": "signature",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'signature'",
+      "path": "bilqis_mlx/runtime/tests/teacher/priority/test_priority_qualification.py"
     },
     {
       "code_hint": "non-finite JSON literal",

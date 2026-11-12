@@ -1,0 +1,85 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ AcceptedSupportIntegrityTests.test_accepted_materialization_uses_published_acceptance_identity _
+
+self = <test_accepted_support_integrity.AcceptedSupportIntegrityTests testMethod=test_accepted_materialization_uses_published_acceptance_identity>
+
+    def test_accepted_materialization_uses_published_acceptance_identity(self):
+        # Even internally rehashed acceptance bytes must match the published pointer.
+        run = '/tmp/closure-accepted-identity-test'
+        pointer = {'manifest_sha256': 'a'*64, 'acceptance_sha256': 'b'*64}
+        student = SimpleNamespace(generation=1)
+        with patch('bilqis_mlx.runtime.bamf_bundle.publication._pointer_lock') as lock, \
+             patch('bilqis_mlx.runtime.bamf_bundle.publication._read_pointer', return_value=pointer), \
+             patch('bilqis_mlx.runtime.bamf_bundle.publication._live_bundle_manifest'), \
+             patch('bilqis_mlx.runtime.bamf_bundle.codec.load_bamf_bundle', return_value=student), \
+             patch('bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_binding_for_manifest', side_effect=ValueError('published digest mismatch')) as auth:
+            lock.return_value.__enter__.return_value = None
+            with self.assertRaises(ValueError):
+>               _accepted_materialization(run, 'a'*64)
+
+bilqis_mlx/learning/_retention/tests/closure/test_accepted_support_integrity.py:34:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+bilqis_mlx/runtime/_correction/owners/capability_support_loading.py:47: in _accepted_materialization
+    binding = _accepted_binding(run_dir, manifest_sha256)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bilqis_mlx/runtime/_correction/owners/capability_support_loading.py:19: in _accepted_binding
+    from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
+bilqis_mlx/runtime/_custody/bamf_bundle/genesis/__init__.py:4: in <module>
+    from bilqis_mlx.runtime.atlas_optimizer import _create_unbound_bamf_optimizer
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    """Private numerical AdamW counts; full-model candidate custody remains separate.
+
+    No durable student, participation policy, clipping policy, generation publication
+    or historical optimizer migration is implemented by this numerical seam.
+    """
+    from __future__ import annotations
+
+    from dataclasses import dataclass
+    import math
+    from types import MappingProxyType
+    from typing import Mapping
+
+>   import mlx.core as mx
+E   ModuleNotFoundError: No module named 'mlx'
+
+bilqis_mlx/runtime/_model/atlas_optimizer.py:13: ModuleNotFoundError
+_____ AcceptedSupportIntegrityTests.test_two_steps_may_use_same_authority ______
+
+self = <test_accepted_support_integrity.AcceptedSupportIntegrityTests testMethod=test_two_steps_may_use_same_authority>
+
+    def test_two_steps_may_use_same_authority(self):
+        proof = SimpleNamespace(training_authority_sha256='a'*64, source_release_sha256='b'*64,
+            training_batch_sha256='c'*64, target_capability_id='cap', source_family_id='family', episode_id='episode')
+        anchor = ('cap', 'row', 'd'*64, 'family', 'episode', 'b'*64, 'c'*64,
+                  'e'*64, 'a'*64, (('SOURCE', 'source:one'),))
+        student = SimpleNamespace(retained_state=SimpleNamespace(step_proofs=(proof, proof)))
+        binding = SimpleNamespace(source_anchors=(anchor, anchor))
+>       self.assertEqual(_verify_anchor_proofs(binding, student, 'cap'), (anchor, anchor))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+bilqis_mlx/learning/_retention/tests/closure/test_accepted_support_integrity.py:17:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+bilqis_mlx/runtime/_correction/owners/capability_support_materialization.py:85: in _verify_anchor_proofs
+    _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
+bilqis_mlx/runtime/_correction/atlas_revalidation_common.py:37: in _invalid
+    ErrorBus.raise_(SCHOOL.BAMF_REVALIDATION.INVALID, reason=reason)
+bilqis_mlx/errors/bus.py:20: in raise_
+    ErrorBus.Raise(spec, **context)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = ErrorSpec(path=('SCHOOL', 'BAMF_REVALIDATION', 'INVALID'), owner='runtime.atlas_revalidation', title='BAMF correction ...s source-owned evidence before reuse.', operator_steps=(), preserve_state=True, self_heal_owner=None), legacy_codes=())
+context = {'reason': 'BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT'}
+
+    @staticmethod
+    def Raise(spec: ErrorSpec, **context: object) -> NoReturn:
+        """Public compositional raise form used by domain code."""
+>       raise BilqisError(spec, context)
+E       bilqis_mlx.errors.model.BilqisError: SCHOOL.BAMF_REVALIDATION.INVALID
+
+bilqis_mlx/errors/bus.py:15: BilqisError
+=========================== short test summary info ============================
+FAILED bilqis_mlx/learning/_retention/tests/closure/test_accepted_support_integrity.py::AcceptedSupportIntegrityTests::test_accepted_materialization_uses_published_acceptance_identity
+FAILED bilqis_mlx/learning/_retention/tests/closure/test_accepted_support_integrity.py::AcceptedSupportIntegrityTests::test_two_steps_may_use_same_authority
+2 failed in 0.25s

@@ -10,9 +10,14 @@ from bilqis_mlx.learning._retention._atlas_candidate.common import (
     LOGICAL_BATCH_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA,
 )
 from bilqis_mlx.runtime.capability_support_materialization import (
-    _verify_anchor_proofs,
+    _verify_anchor_proofs, retained_closure_nodes,
 )
-from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
+from bilqis_mlx.semantics.cognitive_dependencies import (
+    ArtifactKind, ArtifactNode, DependencyKind, DependencyRef,
+)
+from bilqis_mlx.semantics.dependencies.closure import (
+    closure_digest, encode_closure_nodes,
+)
 
 
 def _scalar(authority_digest, *, step):
@@ -32,11 +37,16 @@ def _student(*proofs):
     return SimpleNamespace(retained_state=SimpleNamespace(step_proofs=proofs))
 
 
-def _anchor(authority_digest, *, family="family:1", episode="episode:1"):
+def _anchor(authority_digest, *, family="family:1", episode="episode:1",
+            row="row:test", dependencies=None):
+    dependencies = (
+        ((DependencyKind.SOURCE.value, row),)
+        if dependencies is None else dependencies
+    )
     return (
-        "A.TEST", "row:test", "d" * 64, family, episode,
+        "A.TEST", row, "d" * 64, family, episode,
         "4" * 64, "5" * 64, "7" * 64, authority_digest,
-        ((DependencyKind.SOURCE.value, "row:test"),),
+        dependencies,
     )
 
 
@@ -78,6 +88,55 @@ class CapabilitySupportProofIndexTests(unittest.TestCase):
         self.assertEqual(
             caught.exception.context["reason"],
             "BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT",
+        )
+
+    def test_logical_batch_closure_nodes_survive_accepted_cold_support(self):
+        node = ArtifactNode(
+            "salience-labels:logical-batch",
+            ArtifactKind.SALIENCE_EVIDENCE,
+            "e" * 64,
+            True,
+            (DependencyRef(DependencyKind.SOURCE, "source:salience"),),
+            2,
+            1,
+        )
+        digest = closure_digest((node,))
+        logical_digest = "b" * 64
+        members = (
+            ("6" * 64, "family:b", "episode:b"),
+            ("c" * 64, "family:b", "episode:c"),
+        )
+        proof = SimpleNamespace(
+            step_index=1,
+            schema_version="bilqis.mlx.candidate-step-proof/v6",
+            target_capability_id="A.TEST",
+            training_authority_sha256=logical_digest,
+            artifact_closure_sha256=digest,
+            training_authority_members=members,
+        )
+        dependency = ((DependencyKind.ARTIFACT.value, node.artifact_id),)
+        binding = SimpleNamespace(
+            source_anchors=(
+                _anchor(
+                    members[0][0], family=members[0][1], episode=members[0][2],
+                    row="row:b", dependencies=dependency,
+                ),
+                _anchor(
+                    members[1][0], family=members[1][1], episode=members[1][2],
+                    row="row:c", dependencies=dependency,
+                ),
+            ),
+            artifact_closures=({
+                "step_index": 1,
+                "training_authority_sha256": logical_digest,
+                "artifact_closure_sha256": digest,
+                "nodes": encode_closure_nodes((node,)),
+            },),
+        )
+
+        self.assertEqual(
+            retained_closure_nodes(binding, _student(proof), "A.TEST"),
+            (node,),
         )
 
 

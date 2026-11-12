@@ -13,6 +13,8 @@ PREVIOUS_SOURCE_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v3"
 PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v4"
 ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v5"
 MOTIF_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v6"
+CLOSURE_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v7"
+MOTIF_CLOSURE_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v8"
 DIGEST_HEX_LENGTH = 64
 LEGACY_FIELDS = (
     "run_id", "generation", "candidate_identity_sha256", "feature_sha256",
@@ -31,10 +33,13 @@ BINDING_FIELDS = V4_BINDING_FIELDS[:-1] + (
     "source_authority_registry_sha256", "schema_version")
 MOTIF_BINDING_FIELDS = BINDING_FIELDS[:-1] + (
     "generation_authority_sha256", "schema_version")
+CLOSURE_BINDING_FIELDS = BINDING_FIELDS[:-1] + ("artifact_closures", "schema_version")
+MOTIF_CLOSURE_BINDING_FIELDS = MOTIF_BINDING_FIELDS[:-1] + ("artifact_closures", "schema_version")
 V3_SOURCE_ANCHOR_WIDTH = 9
 SOURCE_ANCHOR_WIDTH = 10
 DEPENDENCY_RECORD_WIDTH = 2
 SOURCE_ANCHOR_DIGEST_INDEXES = (2, 5, 6, 7, 8)
+SOURCE_ANCHOR_AUTHORITY_DIGEST_INDEX = 8
 SOURCE_ANCHOR_DEPENDENCIES_INDEX = 9
 
 
@@ -70,7 +75,7 @@ def normalize_source_anchors(value, schema):
         anchor = tuple(anchor)
         if schema in (
                 PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA, ACCEPTANCE_SCHEMA,
-                MOTIF_ACCEPTANCE_SCHEMA):
+                MOTIF_ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA):
             if len(anchor) != SOURCE_ANCHOR_WIDTH:
                 invalid()
             dependencies = anchor[-1]
@@ -88,7 +93,7 @@ def valid_source_anchors(value, schema=ACCEPTANCE_SCHEMA) -> bool:
         return False
     width = (SOURCE_ANCHOR_WIDTH if schema in (
                  PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA, ACCEPTANCE_SCHEMA,
-                 MOTIF_ACCEPTANCE_SCHEMA)
+                 MOTIF_ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
              else V3_SOURCE_ANCHOR_WIDTH)
     for anchor in value:
         if type(anchor) is not tuple or len(anchor) != width:
@@ -100,7 +105,7 @@ def valid_source_anchors(value, schema=ACCEPTANCE_SCHEMA) -> bool:
             return False
         if (schema in (
                 PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA, ACCEPTANCE_SCHEMA,
-                MOTIF_ACCEPTANCE_SCHEMA)
+                MOTIF_ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
                 and not dependency_records(
                     anchor[SOURCE_ANCHOR_DEPENDENCIES_INDEX])):
             return False
@@ -114,7 +119,7 @@ class ParsedAcceptedCandidateBinding:
 
     def __getattr__(self, name: str):
         known = (LEGACY_FIELDS, V2_BINDING_FIELDS, V3_BINDING_FIELDS,
-                 V4_BINDING_FIELDS, BINDING_FIELDS, MOTIF_BINDING_FIELDS)
+                 V4_BINDING_FIELDS, BINDING_FIELDS, MOTIF_BINDING_FIELDS, CLOSURE_BINDING_FIELDS, MOTIF_CLOSURE_BINDING_FIELDS)
         if any(name in fields for fields in known):
             return self.fields.get(name)
         raise AttributeError(name)
@@ -131,12 +136,16 @@ def parse_accepted_candidate_binding(record) -> ParsedAcceptedCandidateBinding:
     if not isinstance(record, dict):
         invalid()
     schema = record.get("schema_version")
-    names = (LEGACY_FIELDS if schema == LEGACY_ACCEPTANCE_SCHEMA
-             else V2_BINDING_FIELDS if schema == PREVIOUS_ACCEPTANCE_SCHEMA
-             else V3_BINDING_FIELDS if schema == PREVIOUS_SOURCE_ACCEPTANCE_SCHEMA
-             else V4_BINDING_FIELDS if schema == PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA
-             else BINDING_FIELDS if schema == ACCEPTANCE_SCHEMA
-             else MOTIF_BINDING_FIELDS if schema == MOTIF_ACCEPTANCE_SCHEMA else ())
+    names = next((fields for version, fields in (
+        (LEGACY_ACCEPTANCE_SCHEMA, LEGACY_FIELDS),
+        (PREVIOUS_ACCEPTANCE_SCHEMA, V2_BINDING_FIELDS),
+        (PREVIOUS_SOURCE_ACCEPTANCE_SCHEMA, V3_BINDING_FIELDS),
+        (PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA, V4_BINDING_FIELDS),
+        (ACCEPTANCE_SCHEMA, BINDING_FIELDS),
+        (MOTIF_ACCEPTANCE_SCHEMA, MOTIF_BINDING_FIELDS),
+        (CLOSURE_ACCEPTANCE_SCHEMA, CLOSURE_BINDING_FIELDS),
+        (MOTIF_CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_BINDING_FIELDS),
+    ) if version == schema), ())
     if not names or set(record) != set(names) | {"binding_sha256"}:
         invalid()
     if (not isinstance(record["run_id"], str) or not record["run_id"]
@@ -150,26 +159,107 @@ def parse_accepted_candidate_binding(record) -> ParsedAcceptedCandidateBinding:
                 "candidate_identity_sha256", "feature_sha256", "decision_sha256"))):
         invalid()
     if names in (V2_BINDING_FIELDS, V4_BINDING_FIELDS, BINDING_FIELDS,
-                 MOTIF_BINDING_FIELDS) and any(
+                 MOTIF_BINDING_FIELDS, CLOSURE_BINDING_FIELDS, MOTIF_CLOSURE_BINDING_FIELDS) and any(
             not is_digest(record[name]) for name in (
                 "parent_candidate_identity_sha256", "evidence_sha256", "policy_sha256")):
         invalid()
     anchors = None
     if names in (V3_BINDING_FIELDS, V4_BINDING_FIELDS, BINDING_FIELDS,
-                 MOTIF_BINDING_FIELDS):
+                 MOTIF_BINDING_FIELDS, CLOSURE_BINDING_FIELDS, MOTIF_CLOSURE_BINDING_FIELDS):
         anchors = normalize_source_anchors(record.get("source_anchors"), schema)
         if not valid_source_anchors(anchors, schema):
             invalid()
-    if (names in (BINDING_FIELDS, MOTIF_BINDING_FIELDS)
+    if (names in (BINDING_FIELDS, MOTIF_BINDING_FIELDS, CLOSURE_BINDING_FIELDS, MOTIF_CLOSURE_BINDING_FIELDS)
             and record["source_authority_registry_sha256"] is not None
             and not is_digest(record["source_authority_registry_sha256"])):
         invalid()
-    if names == MOTIF_BINDING_FIELDS and not is_digest(record["generation_authority_sha256"]):
+    if names in (MOTIF_BINDING_FIELDS, MOTIF_CLOSURE_BINDING_FIELDS) and not is_digest(record["generation_authority_sha256"]):
         invalid()
     payload = {name: record[name] for name in names}
     if anchors is not None:
         payload["source_anchors"] = anchors
+    if names in (CLOSURE_BINDING_FIELDS, MOTIF_CLOSURE_BINDING_FIELDS):
+        payload["artifact_closures"] = normalize_artifact_closures(record["artifact_closures"])
     if record["binding_sha256"] != hashlib.sha256(canonical(payload)).hexdigest():
         invalid()
     payload["step_proof_sha256"] = tuple(payload["step_proof_sha256"])
     return ParsedAcceptedCandidateBinding(payload)
+
+
+def normalize_artifact_closures(entries):
+    from bilqis_mlx.semantics.dependencies.closure import closure_digest, decode_closure_nodes, encode_closure_nodes
+    if not isinstance(entries, (tuple, list)) or not entries:
+        invalid()
+    result = []
+    for entry in entries:
+        if (not isinstance(entry, dict) or set(entry) != {
+                'step_index', 'training_authority_sha256', 'artifact_closure_sha256', 'nodes'}
+                or type(entry['step_index']) is not int or entry['step_index'] < 1
+                or not is_digest(entry['training_authority_sha256'])
+                or not is_digest(entry['artifact_closure_sha256'])):
+            invalid()
+        nodes = decode_closure_nodes(entry['nodes'])
+        if closure_digest(nodes) != entry['artifact_closure_sha256']:
+            invalid()
+        result.append({**entry, 'nodes': encode_closure_nodes(nodes)})
+    if [e['step_index'] for e in result] != sorted(set(e['step_index'] for e in result)):
+        invalid()
+    return tuple(result)
+
+
+def require_closure_proofs(binding, proofs):
+    entries = getattr(binding, 'artifact_closures', None) or ()
+    by_step = {entry['step_index']: entry for entry in entries}
+    if len(by_step) != len(entries):
+        invalid()
+    from ._atlas_candidate.common import (
+        CLOSURE_STEP_PROOF_SCHEMA,
+        LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+    )
+    closure_schemas = {
+        CLOSURE_STEP_PROOF_SCHEMA,
+        LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+    }
+    expected = {
+        proof.step_index for proof in proofs
+        if proof.schema_version in closure_schemas
+    }
+    if set(by_step) != expected:
+        invalid()
+    anchors = getattr(binding, 'source_anchors', ())
+    for proof in proofs:
+        if proof.step_index in by_step:
+            item = by_step[proof.step_index]
+            if (item['training_authority_sha256'] != proof.training_authority_sha256
+                    or item['artifact_closure_sha256'] != proof.artifact_closure_sha256):
+                invalid()
+            if proof.schema_version == CLOSURE_STEP_PROOF_SCHEMA:
+                matches = [
+                    anchor for anchor in anchors
+                    if anchor[SOURCE_ANCHOR_AUTHORITY_DIGEST_INDEX]
+                    == proof.training_authority_sha256
+                ]
+                if not matches or any(anchor != matches[0] for anchor in matches):
+                    invalid()
+            else:
+                member_digests = {
+                    member[0] for member in proof.training_authority_members
+                }
+                matches = [
+                    anchor for anchor in anchors
+                    if anchor[SOURCE_ANCHOR_AUTHORITY_DIGEST_INDEX]
+                    in member_digests
+                ]
+                if (len(matches) != len(member_digests)
+                        or {
+                            anchor[SOURCE_ANCHOR_AUTHORITY_DIGEST_INDEX]
+                            for anchor in matches
+                        } != member_digests):
+                    invalid()
+            from bilqis_mlx.semantics.dependencies.closure import decode_closure_nodes
+            ids = {node.artifact_id for node in decode_closure_nodes(item['nodes'])}
+            if any(
+                    kind == 'ARTIFACT' and key not in ids
+                    for anchor in matches
+                    for kind, key in anchor[SOURCE_ANCHOR_DEPENDENCIES_INDEX]):
+                invalid()

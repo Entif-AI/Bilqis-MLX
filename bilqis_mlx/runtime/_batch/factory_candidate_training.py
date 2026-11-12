@@ -214,7 +214,8 @@ def _stage_retained_motifs(run_dir, parent, cache, transaction, prepared,
 def _execute_prepared_candidate(
         run_dir, source_context, parent, atlas_artifact_path, delivered_rows, *,
         capability, teacher_hparams, max_norm, observation, memory_budget,
-        cache, generation, prepared, start, capture_diagnostics) -> FactoryCandidateStep:
+        cache, generation, prepared, start, capture_diagnostics,
+        salience_supervision=None) -> FactoryCandidateStep:
     resource_plan, memory_budget = _resource_plan(prepared, parent, memory_budget)
     feature_context = authenticate_bamf_execution_feature_context(
         parent, atlas_artifact_path, source_context.run_dir)
@@ -231,7 +232,8 @@ def _execute_prepared_candidate(
         plan = task_goal_route_plan(
             authority.goal, compiled, feature_context.snapshot, generation)
         gradient = bamf_value_and_grad(
-            parameters, compiled, plan, targets, mask, cache)
+            parameters, compiled, plan, targets, mask, cache,
+            salience_supervision=salience_supervision)
         authorities[index] = authority
         target_rows[index] = targets
         return gradient
@@ -299,6 +301,7 @@ def execute_factory_candidate_step(
     rehearsal_by_id: dict | None = None,
     memory_budget: MemoryBudget | None = None,
     capture_diagnostics: bool = False,
+    salience_provider=None,
 ) -> FactoryCandidateStep:
     """Compose C02→C08→B10/B11→candidate custody without publishing state.
 
@@ -326,12 +329,20 @@ def execute_factory_candidate_step(
         visit_provenance=visit_provenance,
         teacher_strategy=teacher_strategy,
         rehearsal_by_id=rehearsal_by_id)
+    supervision = None
+    if salience_provider is not None:
+        from bilqis_mlx.runtime.salience_training import prepare_salience_training
+        if not callable(salience_provider):
+            _invalid("BAMF_SALIENCE_PROVIDER_REQUIRED")
+        prepared, supervision = prepare_salience_training(
+            prepared, source_context, salience_provider(prepared))
     return _execute_prepared_candidate(
         run_dir, source_context, parent, atlas_artifact_path, delivered_rows,
         capability=capability, teacher_hparams=teacher_hparams,
         max_norm=max_norm, observation=observation, memory_budget=memory_budget,
         cache=cache, generation=generation, prepared=prepared, start=start,
-        capture_diagnostics=capture_diagnostics)
+        capture_diagnostics=capture_diagnostics,
+        salience_supervision=supervision)
 
 
 __all__ = (

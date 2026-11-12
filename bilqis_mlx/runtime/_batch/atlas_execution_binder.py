@@ -56,7 +56,7 @@ def bind_execution_provenance(
             feature_rows=execution.feature_rows,
             local_slot_rows=execution.local_slot_rows,
         )
-    return issue_execution_provenance(
+    provenance = issue_execution_provenance(
         inputs, SemanticDenominator(
             identity_rows=execution.semantic_denominator_identity_rows,
             feature_rows=execution.semantic_denominator_feature_rows,
@@ -71,6 +71,12 @@ def bind_execution_provenance(
         parent_optimizer_step=parent_optimizer_step,
         topology_digest=topology_digest,
         candidate_step_ordinal=candidate_step_ordinal)
+    if loss_bearing_target:
+        from bilqis_mlx.learning.atlas_execution_provenance import (
+            _bind_execution_training_authority,
+        )
+        _bind_execution_training_authority(provenance, loss_execution)
+    return provenance
 
 
 def bind_execution_provenance_many(

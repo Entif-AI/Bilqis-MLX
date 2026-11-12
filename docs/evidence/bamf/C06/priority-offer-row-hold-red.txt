@@ -1,0 +1,76 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_atom_only_offer_holds_on_exact_row_corrections[SOURCE] __________
+
+kind = 'SOURCE'
+
+    @pytest.mark.parametrize('kind', ['SOURCE', 'RIGHTS'])
+    def test_atom_only_offer_holds_on_exact_row_corrections(kind):
+        from dataclasses import replace
+        from bilqis_mlx.runtime.atlas_packed_frame_owner import PackedFrameArtifactOwner
+        from bilqis_mlx.runtime.atlas_training_adapter import _row_immediate_dependencies
+        from bilqis_mlx.runtime.salience_evidence_owner import SalienceEvidenceArtifactOwner
+        from bilqis_mlx.runtime.tests.batch import test_atlas_training_adapter as fixture_module
+        from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
+        from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
+        from bilqis_mlx.semantics.frame_compiler import CompiledFrameRows, _prefix_digest
+
+        fixture = fixture_module.AtlasTrainingAdapterTest()
+        fixture.setUp()
+        try:
+            batch = fixture.compile(fixture.rows)
+            row = fixture.rows[0]
+            original = batch.rows[0].model_input.prefix
+            positions = tuple(position for position in original.positions if position.packed is None)
+            key = _prefix_digest(original.source_instance_id, original.semantic_release,
+                                 original.visible_end, original.schema_map, original.context_digest,
+                                 positions, original.scope, original.policy_version)
+            prefix = replace(original, positions=positions, cache_key=key)
+            packed = PackedFrameArtifactOwner(CompiledFrameRows(
+                (prefix,), (prefix.positions,), ((True,) * len(prefix.positions),)))
+            assert not packed.index.nodes
+            authority = fixture.context.bind_rows(fixture.rows, seed=17, capability='Z.C0', each=1)
+>           owner = SalienceEvidenceArtifactOwner.for_source_offer(authority, tuple(fixture.rows), (prefix,))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: type object 'SalienceEvidenceArtifactOwner' has no attribute 'for_source_offer'
+
+bilqis_mlx/runtime/tests/teacher/priority/test_priority_source_offer.py:70: AttributeError
+_________ test_atom_only_offer_holds_on_exact_row_corrections[RIGHTS] __________
+
+kind = 'RIGHTS'
+
+    @pytest.mark.parametrize('kind', ['SOURCE', 'RIGHTS'])
+    def test_atom_only_offer_holds_on_exact_row_corrections(kind):
+        from dataclasses import replace
+        from bilqis_mlx.runtime.atlas_packed_frame_owner import PackedFrameArtifactOwner
+        from bilqis_mlx.runtime.atlas_training_adapter import _row_immediate_dependencies
+        from bilqis_mlx.runtime.salience_evidence_owner import SalienceEvidenceArtifactOwner
+        from bilqis_mlx.runtime.tests.batch import test_atlas_training_adapter as fixture_module
+        from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event
+        from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
+        from bilqis_mlx.semantics.frame_compiler import CompiledFrameRows, _prefix_digest
+
+        fixture = fixture_module.AtlasTrainingAdapterTest()
+        fixture.setUp()
+        try:
+            batch = fixture.compile(fixture.rows)
+            row = fixture.rows[0]
+            original = batch.rows[0].model_input.prefix
+            positions = tuple(position for position in original.positions if position.packed is None)
+            key = _prefix_digest(original.source_instance_id, original.semantic_release,
+                                 original.visible_end, original.schema_map, original.context_digest,
+                                 positions, original.scope, original.policy_version)
+            prefix = replace(original, positions=positions, cache_key=key)
+            packed = PackedFrameArtifactOwner(CompiledFrameRows(
+                (prefix,), (prefix.positions,), ((True,) * len(prefix.positions),)))
+            assert not packed.index.nodes
+            authority = fixture.context.bind_rows(fixture.rows, seed=17, capability='Z.C0', each=1)
+>           owner = SalienceEvidenceArtifactOwner.for_source_offer(authority, tuple(fixture.rows), (prefix,))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: type object 'SalienceEvidenceArtifactOwner' has no attribute 'for_source_offer'
+
+bilqis_mlx/runtime/tests/teacher/priority/test_priority_source_offer.py:70: AttributeError
+=========================== short test summary info ============================
+FAILED bilqis_mlx/runtime/tests/teacher/priority/test_priority_source_offer.py::test_atom_only_offer_holds_on_exact_row_corrections[SOURCE]
+FAILED bilqis_mlx/runtime/tests/teacher/priority/test_priority_source_offer.py::test_atom_only_offer_holds_on_exact_row_corrections[RIGHTS]
+2 failed, 8 deselected in 0.21s

@@ -75,42 +75,42 @@ def _anchor_dependencies(anchors, policy_sha256, manifest_sha256):
 
 
 def _verify_anchor_proofs(binding, student, capability_id):
-    anchors = tuple(anchor for anchor in binding.source_anchors
-                    if _source_anchor(anchor).capability_id == capability_id)
-    if not anchors:
-        _invalid("BAMF_C09_CAPABILITY_SUPPORT_SOURCE_MISSING")
-    proofs = {}
-
-    def register(digest, proof):
-        if digest in proofs:
+    expected = []
+    for step_index, proof in enumerate(student.retained_state.step_proofs, 1):
+        if (getattr(proof, "step_index", None) != step_index
+                or proof.training_authority_sha256 is None):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
-        proofs[digest] = proof
-
-    for proof in student.retained_state.step_proofs:
-        if proof.training_authority_sha256 is None:
-            _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
-        register(proof.training_authority_sha256, proof)
-        for member in proof.training_authority_members:
-            register(member[0], proof)
-    for anchor in anchors:
+        members = getattr(proof, "training_authority_members", ()) or ()
+        if members:
+            expected.extend(
+                (proof, digest, family, episode)
+                for digest, family, episode in members
+            )
+        else:
+            expected.append((
+                proof,
+                proof.training_authority_sha256,
+                proof.source_family_id,
+                proof.episode_id,
+            ))
+    if len(binding.source_anchors) != len(expected):
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
+    for anchor, (proof, authority_digest, family, episode) in zip(
+            binding.source_anchors, expected):
         source = _source_anchor(anchor)
-        proof = proofs.get(source.training_authority_sha256)
-        member = (
-            (source.training_authority_sha256,
-             source.source_family_id,
-             source.episode_id) in proof.training_authority_members
-            if proof is not None else False)
-        scalar = (
-            proof is not None
-            and proof.training_authority_sha256 == source.training_authority_sha256)
-        if (proof is None or not (scalar or member)
+        if (source.training_authority_sha256 != authority_digest
                 or proof.source_release_sha256 != source.release_sha256
                 or proof.training_batch_sha256 != source.training_batch_sha256
                 or proof.target_capability_id != source.capability_id
-                or (scalar and (
-                    proof.source_family_id != source.source_family_id
-                    or proof.episode_id != source.episode_id))):
+                or source.source_family_id != family
+                or source.episode_id != episode):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
+    anchors = tuple(
+        anchor for anchor in binding.source_anchors
+        if _source_anchor(anchor).capability_id == capability_id
+    )
+    if not anchors:
+        _invalid("BAMF_C09_CAPABILITY_SUPPORT_SOURCE_MISSING")
     return anchors
 
 
@@ -156,3 +156,28 @@ def materialized_support(binding, student, manifest_sha256, capability_id):
     if len(generation_bindings) != 1:
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_GENERATION_AMBIGUOUS")
     return support, node, generation_bindings
+
+
+def retained_closure_nodes(binding, student, capability_id):
+    """Recover only closures bound to this capability's executed proofs."""
+    from bilqis_mlx.learning._retention._atlas_acceptance_records import (
+        require_closure_proofs,
+    )
+    from bilqis_mlx.semantics.dependencies.closure import decode_closure_nodes
+
+    require_closure_proofs(binding, student.retained_state.step_proofs)
+    proofs = {
+        proof.step_index: proof
+        for proof in student.retained_state.step_proofs
+    }
+    nodes = {}
+    for entry in getattr(binding, "artifact_closures", ()) or ():
+        proof = proofs[entry["step_index"]]
+        if proof.target_capability_id != capability_id:
+            continue
+        for node in decode_closure_nodes(entry["nodes"]):
+            previous = nodes.get(node.artifact_id)
+            if previous is not None and previous != node:
+                _invalid("BAMF_C09_CAPABILITY_SUPPORT_CLOSURE_CONFLICT")
+            nodes[node.artifact_id] = node
+    return tuple(sorted(nodes.values(), key=lambda node: node.artifact_id))

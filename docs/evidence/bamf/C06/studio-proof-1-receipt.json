@@ -1,0 +1,29 @@
+{
+  "command": [
+    "/usr/bin/env",
+    "BILQIS_A01_ATLAS_BUNDLE=/Users/emilie/Code/371-c02-complete-20261106/.local/c02-a01-rebuild/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+    "BILQIS_ATLAS_REAL_ARTIFACT=/Users/emilie/Code/371-c02-complete-20261106/.local/c02-a01-rebuild/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+    "/usr/local/bin/python3",
+    "-B",
+    "bilqis_mlx/runtime/tests/model/salience/run_studio_proof.py",
+    "--lock",
+    "/Users/emilie/Code/.bilqis-studio-mlx.lock"
+  ],
+  "command_returncode": 1,
+  "final_mutation_guard_sha256": "857b33a88535d9d24a6f87eac567fa9feb0f278f14ae7d432ecd45335cf25a8f",
+  "final_snapshot_sha256": "857b33a88535d9d24a6f87eac567fa9feb0f278f14ae7d432ecd45335cf25a8f",
+  "finished_at": "2026-11-11T16:18:28.841049+00:00",
+  "label": "C06 salience Studio qualification",
+  "log": "/Users/emilie/Code/379-c06-salience-20261111/.local/c06-proof-20261111/studio.log",
+  "mutation_guard_sha256": "857b33a88535d9d24a6f87eac567fa9feb0f278f14ae7d432ecd45335cf25a8f",
+  "pid": 7982,
+  "returncode": 1,
+  "schema": "bilqis.bamf.detached-long-run/v2",
+  "snapshot_sha256": "857b33a88535d9d24a6f87eac567fa9feb0f278f14ae7d432ecd45335cf25a8f",
+  "source_mutated": false,
+  "source_sha256": "857b33a88535d9d24a6f87eac567fa9feb0f278f14ae7d432ecd45335cf25a8f",
+  "source_workdir": "/Users/emilie/Code/379-c06-salience-20261111",
+  "started_at": "2026-11-11T15:38:35.958807+00:00",
+  "status": "FAIL",
+  "workdir": "/Users/emilie/Code/379-c06-salience-20261111/.local/c06-proof-20261111/source-snapshot"
+}

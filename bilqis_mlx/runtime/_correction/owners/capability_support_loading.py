@@ -1,79 +1,56 @@
 """Authenticated accepted-generation loading for C09 capability support."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
-    ACCEPTANCE_SCHEMA, AcceptedCandidateBinding, candidate_identity_digest,
+    ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
 )
 
 from .atlas_requalification_contracts import RequalificationLedger
 from .atlas_revalidation_common import _invalid
-from .capability_support_materialization import materialized_support
-
-
-def _accepted_binding(run_dir: Path, manifest_sha256: str):
-    from bilqis_mlx.runtime.bamf_bundle.publication import ACCEPTANCE_DIR, _pointer_lock
-    from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
-        INITIAL_BINDING_SCHEMA, InitialGenerationBinding,
-    )
-
-    run_dir = Path(run_dir)
-    with _pointer_lock(run_dir):
-        path = run_dir / ACCEPTANCE_DIR / f"{manifest_sha256}.json"
-        if path.is_symlink() or not path.is_file():
-            _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_MISSING")
-        try:
-            record = json.loads(path.read_bytes())
-            schema = record.get("schema_version") if isinstance(record, dict) else None
-            if schema == INITIAL_BINDING_SCHEMA:
-                return InitialGenerationBinding.from_record(record)
-            if schema == ACCEPTANCE_SCHEMA:
-                return AcceptedCandidateBinding.from_record(record)
-            _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_INVALID")
-        except (UnicodeDecodeError, json.JSONDecodeError, BilqisError):
-            _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_INVALID")
+from .capability_support_materialization import materialized_support, retained_closure_nodes
 
 
 def _accepted_materialization(
     run_dir: Path, manifest_sha256: str, expected_acceptance_sha256: str | None = None,
 ):
+    """Authenticate every ancestor against the current pointer's acceptance chain."""
     from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
-    from bilqis_mlx.runtime.bamf_bundle.publication import _pointer_lock
+    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
+        accepted_binding_for_manifest, parent_acceptance_anchor_from_manifest,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.publication import (
+        _live_bundle_manifest, _pointer_lock, _read_pointer,
+    )
+    from bilqis_mlx.runtime.accepted_correction_ledger import _manifest_lineage
 
     run_dir = Path(run_dir)
-    binding = _accepted_binding(run_dir, manifest_sha256)
     with _pointer_lock(run_dir):
+        pointer = _read_pointer(run_dir / "bamf-state.json")
+        if pointer is None:
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_GENERATION_MISSING")
+        _live_bundle_manifest(run_dir, pointer)
+        current = pointer["manifest_sha256"]
+        expected = pointer.get("acceptance_sha256")
+        if not isinstance(expected, str):
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_MISSING")
+        if current != manifest_sha256:
+            lineage = _manifest_lineage(run_dir, current)
+            if manifest_sha256 not in lineage:
+                _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_DRIFT")
+            for child in reversed(lineage[lineage.index(manifest_sha256) + 1:]):
+                expected = parent_acceptance_anchor_from_manifest(run_dir, child)
+                if expected is None:
+                    _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_MISSING")
+        if expected_acceptance_sha256 is not None and expected != expected_acceptance_sha256:
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_DRIFT")
         student = load_bamf_bundle(
             run_dir / "bamf-bundles" / manifest_sha256,
             expected_manifest_sha256=manifest_sha256,
         )
-        if student.generation == 0:
-            from bilqis_mlx.runtime.bamf_bundle.genesis import (
-                validate_parsed_initial_generation_binding,
-            )
-            expected = (
-                binding.digest if expected_acceptance_sha256 is None
-                else expected_acceptance_sha256)
-            try:
-                validate_parsed_initial_generation_binding(student, binding, expected)
-            except BilqisError:
-                _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_DRIFT")
-            return binding, student
-        if (binding.schema_version != ACCEPTANCE_SCHEMA
-                or (expected_acceptance_sha256 is not None
-                    and binding.digest != expected_acceptance_sha256)
-                or binding.run_id != student.run_id
-                or binding.generation != student.generation
-                or binding.feature_sha256 != student.extents.factor_map_digest
-                or binding.optimizer_step != student.retained_state.optimizer_step
-                or binding.candidate_identity_sha256
-                != candidate_identity_digest(student.retained_state)
-                or binding.step_proof_sha256 != tuple(
-                    proof.digest for proof in student.retained_state.step_proofs)):
-            _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_DRIFT")
+        binding = accepted_binding_for_manifest(
+            run_dir, manifest_sha256, student, expected_acceptance_sha256=expected)
     return binding, student
 
 
@@ -85,12 +62,11 @@ def _latest_source_qualified_materialization(
 
     for manifest_sha256 in reversed(_manifest_lineage(
             Path(run_dir), current_manifest_sha256)):
-        binding = _accepted_binding(run_dir, manifest_sha256)
-        if (binding.schema_version != ACCEPTANCE_SCHEMA
+        binding, student = _accepted_materialization(run_dir, manifest_sha256)
+        if (binding.schema_version not in (ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
                 or not any(anchor[0] == capability_id
                            for anchor in getattr(binding, "source_anchors", ()))):
             continue
-        binding, student = _accepted_materialization(run_dir, manifest_sha256)
         return manifest_sha256, binding, student
     _invalid("BAMF_C09_CAPABILITY_SUPPORT_SOURCE_MISSING")
 
@@ -120,7 +96,8 @@ def load_current_support(run_dir: Path, capability_id: str):
         spec=current_student.topology,
         extents=current_student.extents,
     )
-    return manifest_sha256, support, node, (current_generation_binding,)
+    closure = retained_closure_nodes(binding, student, capability_id)
+    return manifest_sha256, support, node, (current_generation_binding,), closure
 
 
 def accepted_support_census(
@@ -131,23 +108,25 @@ def accepted_support_census(
 
     materializations = {}
     for lineage_manifest in reversed(_manifest_lineage(run_dir, manifest_sha256)):
-        binding = _accepted_binding(run_dir, lineage_manifest)
-        if (binding.schema_version != ACCEPTANCE_SCHEMA
+        binding, student = _accepted_materialization(run_dir, lineage_manifest)
+        if (binding.schema_version not in (ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
                 or not getattr(binding, "source_anchors", ())):
             continue
-        binding, student = _accepted_materialization(run_dir, lineage_manifest)
         for capability_id in sorted({anchor[0] for anchor in binding.source_anchors}):
             materializations.setdefault(
                 capability_id, (lineage_manifest, binding, student))
     supports = []
-    nodes = []
+    nodes = {}
     for capability_id, (source_manifest, binding, student) in sorted(
             materializations.items()):
         support, node, _bindings = materialized_support(
             binding, student, source_manifest, capability_id)
         supports.append(support)
-        nodes.append(node)
-    return RequalificationLedger(tuple(supports)), tuple(nodes)
+        for item in (node, *retained_closure_nodes(binding, student, capability_id)):
+            if item.artifact_id in nodes and nodes[item.artifact_id] != item:
+                _invalid("BAMF_C09_CAPABILITY_SUPPORT_CLOSURE_CONFLICT")
+            nodes[item.artifact_id] = item
+    return RequalificationLedger(tuple(supports)), tuple(nodes.values())
 
 
 __all__ = ("accepted_support_census", "load_current_support")
