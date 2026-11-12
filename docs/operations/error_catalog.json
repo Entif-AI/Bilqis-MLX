@@ -9331,35 +9331,35 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'JIT_ADOPTION_ANSWER_IMPLEMENTATION_DRIFT'",
-      "path": "bilqis_mlx/runtime/_admission/jit_adoption.py"
+      "path": "bilqis_mlx/runtime/_admission/jit/jit_adoption.py"
     },
     {
       "code_hint": "JIT_ADOPTION_EXACT_SUCCESSOR_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'JIT_ADOPTION_EXACT_SUCCESSOR_REQUIRED'",
-      "path": "bilqis_mlx/runtime/_admission/jit_adoption.py"
+      "path": "bilqis_mlx/runtime/_admission/jit/jit_adoption.py"
     },
     {
       "code_hint": "JIT_ADOPTION_PROPOSAL_CONTEXT_CHANGED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'JIT_ADOPTION_PROPOSAL_CONTEXT_CHANGED'",
-      "path": "bilqis_mlx/runtime/_admission/jit_adoption.py"
+      "path": "bilqis_mlx/runtime/_admission/jit/jit_adoption.py"
     },
     {
       "code_hint": "JIT_ADOPTION_READY_PROPOSAL_REQUIRED",
       "count": 1,
       "exception": "ValueError",
       "expression": "'JIT_ADOPTION_READY_PROPOSAL_REQUIRED'",
-      "path": "bilqis_mlx/runtime/_admission/jit_adoption.py"
+      "path": "bilqis_mlx/runtime/_admission/jit/jit_adoption.py"
     },
     {
       "code_hint": "JIT_ADOPTION_SOURCE_IMPLEMENTATION_DRIFT",
       "count": 1,
       "exception": "ValueError",
       "expression": "'JIT_ADOPTION_SOURCE_IMPLEMENTATION_DRIFT'",
-      "path": "bilqis_mlx/runtime/_admission/jit_adoption.py"
+      "path": "bilqis_mlx/runtime/_admission/jit/jit_adoption.py"
     },
     {
       "code_hint": "AUTONOMY_FRONTIER_BUILDER_MISSING",
