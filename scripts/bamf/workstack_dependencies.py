@@ -132,7 +132,7 @@ def check_dependency_evidence(entry, body, issue_map, sources):
             return EvidenceCheck(EvidenceStatus.HELD, tuple(edges), evidence['unresolved'])
         if evidence['unresolved'] is not None:
             return _invalid('bad-record')
-        parsed = parse_clause(evidence['clause'], issue_map)
+        parsed = parse_clause(evidence['clause'], issue_map, {r['source_id']: r['sha256'] for r in evidence['source_records']})
         if parsed is None:
             return _invalid('unsupported-clause')
         if parsed != (tuple(edges), receipts) or len(parsed[0]) != len(set(parsed[0])):
