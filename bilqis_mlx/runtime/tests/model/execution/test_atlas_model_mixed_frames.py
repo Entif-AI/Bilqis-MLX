@@ -1,12 +1,19 @@
-"""B11.3 mixed-frame execution and complete B01 tensor ownership witnesses."""
+"""B11 mixed-frame, tensor-ownership, and downstream causal witnesses."""
+import hashlib
 import unittest
 
 import mlx.core as mx
+import numpy as np
 
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.frame_embeddings import embedding_parameter_view
 from bilqis_mlx.learning.frame_encoder import frame_encoder_parameter_view
 from bilqis_mlx.learning.tests.frames.nested_fixtures import _case
+from bilqis_mlx.runtime.atlas_attention import (
+    ATTENTION_PARAMETER_NAMES, AttentionScope, ccgqa,
+)
 from bilqis_mlx.runtime.atlas_refinement import refinement_parameter_view
+from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.backbone_group_numerical import run_backbone_group_numerical
 from bilqis_mlx.runtime.backbone_source_bridge import compute_compiled_h0
 from bilqis_mlx.runtime.block_attnres import depth_parameter_view
@@ -16,6 +23,10 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 from bilqis_mlx.runtime.topology_v2.construction import create_unbound_bamf_state
 from bilqis_mlx.semantics.frame_codec import PackDisposition
 from bilqis_mlx.semantics.frame_compiler import PositionKind
+
+
+def _digest(text):
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 class AtlasModelMixedFrameTests(unittest.TestCase):
@@ -55,6 +66,20 @@ class AtlasModelMixedFrameTests(unittest.TestCase):
                 extents=cls.compiled.extents, scope_ids=scope, valid=valid,
                 generation="4" * 64, prefix_digest="5" * 64).hidden
         return current
+
+    @classmethod
+    def _control_logits(cls, hidden):
+        return (
+            hidden @ cls.parameters["readout.control"].T
+            + cls.parameters["readout.control_bias"]
+        )
+
+    @classmethod
+    def _attention_parameters(cls, layer=0):
+        return {
+            name: cls.parameters[f"blocks.{layer}.{name}"]
+            for name in ATTENTION_PARAMETER_NAMES
+        }
 
     def test_constructor_and_views_use_only_the_expanded_b01_parameter_specs(self):
         declared = expected_bamf_shapes(self.spec, self.compiled.extents)
@@ -139,6 +164,83 @@ class AtlasModelMixedFrameTests(unittest.TestCase):
         mx.eval(parameter_gradient)
         self.assertTrue(bool(mx.all(mx.isfinite(parameter_gradient))))
         self.assertGreater(float(mx.sum(mx.abs(parameter_gradient))), 0)
+
+    def test_actual_12_layer_prefix_logits_and_cache_paths_are_causal(self):
+        h0 = compute_compiled_h0(
+            self.compiled, self.vectors, self.parameters,
+            spec=self.spec, extents=self.compiled.extents).hidden
+        row_index = 1
+        row = self.compiled.compiled.rows[row_index]
+        prefix = max(2, len(row.positions) // 2)
+        self.assertLess(prefix, len(row.positions))
+        prefix_handles = tuple(
+            position.cache_identity for position in row.positions[:prefix])
+        self.assertEqual(len(prefix_handles), prefix)
+        self.assertEqual(len(set(prefix_handles)), prefix)
+        self.assertEqual(
+            (self.spec.layers, self.spec.depth_groups,
+             self.spec.query_heads, self.spec.kv_heads, self.spec.head_dimension),
+            (12, 3, 16, 8, 24))
+
+        first = h0.at[row_index, prefix:].add(
+            mx.array(3.0, dtype=mx.float32))
+        second = h0.at[row_index, prefix:].subtract(
+            mx.array(5.0, dtype=mx.float32))
+        first_logits = self._control_logits(self._stack(first))[row_index, :prefix]
+        second_logits = self._control_logits(self._stack(second))[row_index, :prefix]
+        mx.eval(first_logits, second_logits)
+        delta = float(mx.max(mx.abs(first_logits - second_logits)))
+        self.assertLessEqual(delta, 2e-5)
+        np.testing.assert_allclose(
+            np.asarray(first_logits), np.asarray(second_logits),
+            atol=2e-5, rtol=3e-5)
+
+        hidden = h0[row_index:row_index + 1]
+        valid = mx.ones((1, hidden.shape[1]), dtype=mx.bool_)
+        ids = mx.zeros((1, hidden.shape[1]), dtype=mx.int32)
+        starts = mx.zeros((1, hidden.shape[1]), dtype=mx.bool_)
+        params = self._attention_parameters(0)
+        generation = execution_generation_digest(
+            self.parameters, spec=self.spec, extents=self.compiled.extents)
+
+        def scope(left, right, name, parent=None):
+            return AttentionScope(
+                ids[:, left:right], 0, generation, _digest(name),
+                None if parent is None else _digest(parent),
+                sequence_starts=starts[:, left:right])
+
+        full_scope = scope(0, hidden.shape[1], "full")
+        full, later_cache = ccgqa(params, hidden, valid, full_scope)
+        for cuts in (
+            tuple(range(1, hidden.shape[1] + 1)),
+            (prefix, hidden.shape[1]),
+        ):
+            left = 0
+            parent = None
+            cache = None
+            chunks = []
+            for right in cuts:
+                name = f"chunk-{right}"
+                chunk, cache = ccgqa(
+                    params, hidden[:, left:right], valid[:, left:right],
+                    scope(left, right, name, parent), cache=cache, offset=left)
+                chunks.append(chunk)
+                left = right
+                parent = name
+            np.testing.assert_allclose(
+                np.asarray(mx.concatenate(chunks, axis=1)), np.asarray(full),
+                atol=2e-6, rtol=3e-5)
+
+        early_scope = scope(0, prefix, "early")
+        with self.assertRaises(BilqisError):
+            ccgqa(
+                params, hidden[:, :prefix], valid[:, :prefix], early_scope,
+                cache=later_cache)
+        fresh_early, _ = ccgqa(
+            params, hidden[:, :prefix], valid[:, :prefix], early_scope)
+        np.testing.assert_allclose(
+            np.asarray(fresh_early), np.asarray(full[:, :prefix]),
+            atol=2e-6, rtol=3e-5)
 
 
 if __name__ == "__main__":
