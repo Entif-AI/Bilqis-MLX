@@ -18,7 +18,6 @@ def _historical_factory_release_sha256(
     from bilqis_mlx.runtime.bamf_bundle.atlas_admission import ParsedAtlasAdmissionBinding
     from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
-        FACTORY_RELEASE_ADMISSION_SCHEMA_V2,
         ParsedFactoryReleaseAdmissionBinding,
     )
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
@@ -70,6 +69,7 @@ def _accepted_capability_only_retry_state_once_v2(current, handoff, lease):
     )
     from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
+        FACTORY_RELEASE_ADMISSION_SCHEMA_V2,
         ParsedFactoryReleaseAdmissionBinding,
     )
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
