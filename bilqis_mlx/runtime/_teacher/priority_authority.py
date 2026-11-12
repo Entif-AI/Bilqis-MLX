@@ -3,10 +3,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 import hashlib
-import json
-from pathlib import Path
 
-from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_salience import derive_salience, verify_salience_inputs
 from bilqis_mlx.learning.salience_contracts import (
     ActionKind, AttentionOption, AuthoritySnapshot, FactOrigin, Metric, MetricRule,
@@ -20,12 +18,12 @@ from bilqis_mlx.learning.teacher_lineage import priority_rotation_state
 from bilqis_mlx.runtime.priority_source_offer import prepare_priority_source_offer
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from bilqis_mlx.semantics.domains import contract_digest
+from .priority_planning_owner import priority_planning as _priority_planning
+from .priority_rejection_replay import current_rejections as _current_rejections
 
 
 _SCOPE = "factory/foundation"
 _SOURCE_EACH = 1
-SHA256_HEX_LENGTH = 64
-_REJECTION_JOURNAL_INVALID = "BAMF_PRIORITY_REJECTION_JOURNAL_INVALID"
 
 
 def _invalid(reason):
@@ -104,170 +102,6 @@ def _context(parent, offer, teacher_epoch_digest):
 def _offer_seed(next_seed: int, capability_id: str) -> int:
     raw = f"bilqis.bamf.c03.4-source-seed/v1|{next_seed}|{capability_id}".encode()
     return int.from_bytes(hashlib.sha256(raw).digest()[:8], "big")
-
-
-def _priority_planning(run_dir, source_context, atlas_artifact_path):
-    """Project current A09 state from accepted custody without requiring a C07 lease."""
-    from bilqis_mlx.factory import candidate_realizations
-    from bilqis_mlx.factory.atlas_delta_adapter import (
-        AtlasCoverageEpoch, _accepted_requested_keys,
-    )
-    from bilqis_mlx.factory.atlas_frontier import PlannerBudget
-    from bilqis_mlx.factory.atlas_frontier_closure import resolve_frontier_closure
-    from bilqis_mlx.factory.atlas_frontier_progress import plan_frontier_progress
-    from bilqis_mlx.factory.atlas_frontier_selection import (
-        ranked_frontier_target, select_frontier_delta_for_projection,
-    )
-    from bilqis_mlx.factory.atlas_runtime_snapshot import build_accepted_executable_snapshot
-    from bilqis_mlx.factory.skos_curriculum import (
-        LearnedFrontier, SOURCE_FAMILY_ADAPTERS, compile_semantic_curriculum,
-        issue_source_context_transition_authority,
-    )
-    from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_obligation_credit
-    from bilqis_mlx.runtime.atlas_flywheel_runtime import (
-        _accepted_checkpoint, _accepted_selection, _candidate_frontier,
-        _persist_ready_realizations,
-    )
-    from bilqis_mlx.runtime.autonomy_live import (
-        build_live_autonomy_plan, reconcile_live_autonomy_state,
-    )
-    from bilqis_mlx.runtime.priority_qualification import PriorityPlanningInput
-
-    run_dir = Path(run_dir)
-    selection, feature_receipt = _accepted_selection(run_dir)
-    if Path(selection.path).resolve() != Path(atlas_artifact_path).resolve():
-        _invalid("BAMF_PRIORITY_ATLAS_SELECTION_DRIFT")
-    current = source_context.release
-    if selection.release_sha256 != feature_receipt.source_release_sha256:
-        _invalid("BAMF_PRIORITY_ATLAS_RELEASE_DRIFT")
-    candidate = compile_semantic_curriculum(
-        selection, SOURCE_FAMILY_ADAPTERS,
-        LearnedFrontier(selection.release_sha256))
-    source = issue_source_context_transition_authority(selection)
-    frontier = _candidate_frontier()
-    staged = _persist_ready_realizations(
-        run_dir, current, candidate, frontier, source_context.graph)
-    plan = build_live_autonomy_plan(current, source_context.source_root)
-    ledger = reconcile_live_autonomy_state(run_dir, current, plan)
-    checkpoint = _accepted_checkpoint(run_dir)
-    snapshot = build_accepted_executable_snapshot(
-        candidate, source.frontier, source.policy, frontier, current, staged,
-        budget=PlannerBudget(9, 16, 1000),
-        admission_receipt_sha256=feature_receipt.acceptance_sha256,
-        grade_labels=tuple(grade.grade_id for grade in current.execution_plan.grades),
-    )
-    closure = resolve_frontier_closure(
-        snapshot, candidate.census, current_release=current,
-        evidence_ledger=ledger, autonomy_plan=plan,
-        checkpoint_sha256=checkpoint.sha256,
-        optimizer_step=checkpoint.optimizer_step,
-    )
-    epoch = AtlasCoverageEpoch(
-        snapshot, closure, frontier, current, staged,
-        accepted_credit=read_accepted_atlas_obligation_credit(run_dir))
-    epoch.verify()
-    requested = _accepted_requested_keys(epoch)
-    selected = projection = None
-    try:
-        semantic_id, rows = ranked_frontier_target(snapshot, closure, requested)
-    except BilqisError as error:
-        if error.context.get("reason") != "BAMF_PLANNER_NO_BOUNDED_READY_DELTA":
-            raise
-    else:
-        try:
-            projection = candidate_realizations.project_authoritative_target(
-                semantic_id, current, rows)
-        except ValueError:
-            _invalid("BAMF_PRIORITY_A09_REALIZATION_MISSING")
-        selected = select_frontier_delta_for_projection(
-            snapshot, closure, current, projection, requested)
-    progress = plan_frontier_progress(
-        snapshot, closure, selected,
-        current_release=current if selected is not None else None,
-        selected_projection=projection)
-    return PriorityPlanningInput(progress, closure, selected, projection)
-
-
-def _current_rejections(run_dir, parent, cache):
-    """Replay only rejections bound to the exact currently accepted B13 parent."""
-    from bilqis_mlx.data_plane import data_plane
-    from bilqis_mlx.runtime import checkpoint_outbox
-    from bilqis_mlx.runtime.bamf_bundle.records import canonical
-    journal = Path(run_dir) / "events.jsonl"
-    if not journal.exists():
-        return ()
-    if journal.is_symlink() or not journal.is_file():
-        _invalid(_REJECTION_JOURNAL_INVALID)
-    rows, seen = [], set()
-    for raw in journal.read_text(encoding="utf-8").splitlines():
-        try:
-            event = json.loads(raw)
-        except json.JSONDecodeError:
-            _invalid(_REJECTION_JOURNAL_INVALID)
-        if not isinstance(event, dict) or event.get("event") != "BAMF_CANDIDATE_REJECTED":
-            continue
-        if event.get("generation") != cache.generation:
-            continue
-        if (event.get("student_manifest_sha256") != cache.accepted_manifest_sha256
-                or event.get("optimizer_step") != parent.retained_state.optimizer_step):
-            _invalid("BAMF_PRIORITY_REJECTION_IDENTITY_DRIFT")
-        lineage = {"run_id": cache.run_id, "generation": cache.generation}
-        if not checkpoint_outbox.ordinary_outbox_lineage(lineage, [event]):
-            _invalid("BAMF_PRIORITY_REJECTION_OUTBOX_INVALID")
-        evidence = event.get("evidence")
-        if not isinstance(evidence, dict) or evidence.get("schema") != "bilqis.bamf.c16.3-rejection/v2":
-            continue
-        authority_sha256 = event.get("rejection_authority_sha256")
-        if (not isinstance(authority_sha256, str)
-                or len(authority_sha256) != SHA256_HEX_LENGTH
-                or any(char not in "0123456789abcdef" for char in authority_sha256)):
-            _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
-        authority = {
-            "schema": "bilqis.mlx.bamf-rejection-authority/v1",
-            "run_id": cache.run_id,
-            "generation": cache.generation,
-            "student_manifest_sha256": cache.accepted_manifest_sha256,
-            "optimizer_step": parent.retained_state.optimizer_step,
-            "evidence": evidence,
-        }
-        try:
-            authority_raw = data_plane().get_object(authority_sha256)
-        except ValueError:
-            _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
-        if authority_raw != canonical(authority):
-            _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_DRIFT")
-        receipt = {
-            "schema": "bilqis.mlx.bamf-rejection-receipt/v1",
-            "run_id": cache.run_id,
-            "generation": cache.generation,
-            "student_manifest_sha256": cache.accepted_manifest_sha256,
-            "event": event,
-        }
-        receipt_raw = canonical(receipt)
-        receipt_sha256 = hashlib.sha256(receipt_raw).hexdigest()
-        try:
-            stored_receipt = data_plane().get_object(receipt_sha256)
-        except ValueError:
-            _invalid("BAMF_PRIORITY_REJECTION_RECEIPT_INVALID")
-        if stored_receipt != receipt_raw:
-            _invalid("BAMF_PRIORITY_REJECTION_RECEIPT_DRIFT")
-        selected = evidence.get("selected_option_id")
-        visit_id = evidence.get("visit_id")
-        candidate_step = evidence.get("candidate_optimizer_step")
-        retained_step = evidence.get("retained_optimizer_step")
-        reason = evidence.get("retention_reason")
-        if (not isinstance(selected, str) or not selected
-                or not isinstance(visit_id, str) or not visit_id
-                or type(candidate_step) is not int
-                or candidate_step <= parent.retained_state.optimizer_step
-                or retained_step != parent.retained_state.optimizer_step
-                or not isinstance(reason, str) or not reason):
-            _invalid("BAMF_PRIORITY_REJECTION_EVIDENCE_INVALID")
-        if receipt_sha256 in seen:
-            continue
-        seen.add(receipt_sha256)
-        rows.append((selected, visit_id, reason, receipt_sha256))
-    return tuple(rows)
 
 
 def _planning_unlocks(capability_id, planning):

@@ -20,6 +20,7 @@ from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, Dependen
 from bilqis_mlx.learning.atlas_salience import DispatchTier, rank_attention_options
 from bilqis_mlx.learning.salience_contracts import Ordinal
 from bilqis_mlx.runtime import checkpoint_outbox
+from bilqis_mlx.runtime import priority_rejection_replay as rejection_replay
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
 
 
@@ -196,8 +197,8 @@ def test_rejected_candidate_is_durably_deprioritized_without_advancing_c03_rotat
         with patch(
             "bilqis_mlx.runtime.bamf_bundle.accepted_runtime._accepted_correction_registry",
             return_value=(cache, registry),
-        ), patch(
-            "bilqis_mlx.data_plane.data_plane", return_value=plane,
+        ), patch.object(
+            rejection_replay, "data_plane", return_value=plane,
         ), patch(
             "bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer.read_host_system_source_authority_signer",
             return_value=signer,
@@ -293,6 +294,6 @@ def test_duplicate_raw_journal_rows_cannot_amplify_one_b13_rejection():
         run_dir = Path(temporary)
         raw = json.dumps(event) + "\n"
         (run_dir / "events.jsonl").write_text(raw + raw)
-        with patch("bilqis_mlx.data_plane.data_plane", return_value=plane):
+        with patch.object(rejection_replay, "data_plane", return_value=plane):
             rows = authority._current_rejections(run_dir, parent, cache)
     assert rows == (("capability:beta", "visit:beta", "retention_gate", receipt_sha256),)
