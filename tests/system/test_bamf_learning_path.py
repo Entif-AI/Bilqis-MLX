@@ -7,7 +7,7 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from scripts.prove_bamf_delivery import (
     DeliveryConfig, EpisodeSourceRelease, check_episode_binding,
-    episode_binding_case, prove_bamf_delivery,
+    episode_binding_case, episode_task_goal, prove_bamf_delivery,
 )
 
 
@@ -30,8 +30,10 @@ class BamfLearningPathFixtureTests(unittest.TestCase):
         wire = json.dumps(visible, sort_keys=True)
         self.assertNotIn("checker_answer", wire)
         self.assertNotIn("target_actor", wire)
-        self.assertTrue(visible["task_goal_shape"]["gold_binding_in_model_input"] is False)
-        self.assertIn("ROLE_LOOKUP", visible["task_goal_shape"]["continuation"])
+        goal = episode_task_goal(first, self.source.semantic_release)
+        self.assertEqual(goal.output_signature, "Number")
+        self.assertEqual(goal.allowed_operator_ids, ("ADD", "SELECT_NUMBER"))
+        self.assertTrue(all("duration:" in item for item in goal.source_visible_bindings))
         self.assertGreater(check_episode_binding(first), 0)
 
     def test_depth_changes_binding_without_exposing_selected_actor(self):
@@ -62,6 +64,8 @@ class BamfLearningPathFixtureTests(unittest.TestCase):
              "REJECTED_CANDIDATE", "COLD_RESTART", "APPEND_ONLY_SEMANTIC_DELTA"},
         )
         self.assertTrue(all("target_actor" not in json.dumps(row["input"])
+                            for row in payload["baseline"] + payload["fresh"]))
+        self.assertTrue(all(row["task_goal"]["schema_version"] == "bilqis.task-goal/v1"
                             for row in payload["baseline"] + payload["fresh"]))
 
     def test_preflight_is_reproducible_and_bounded_to_64_steps(self):
