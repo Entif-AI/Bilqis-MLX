@@ -6,6 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
+from bilqis_mlx.data_plane import close_data_planes
 from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.learning.atlas_engram import MotifManifest
@@ -55,6 +56,7 @@ class FactoryTrainingBridgeFixture(SourceBackboneTestBase):
             os.environ,
             {"BILQIS_DATA_PLANE": str(Path(self.data_plane_root.name) / "plane.sqlite3")},
         ))
+        self.addCleanup(close_data_planes)
         super().setUp()
         self.enterContext(host_source_authority_patch(AUTHORITY))
         self.root = Path.cwd()
