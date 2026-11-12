@@ -10,6 +10,8 @@ from bilqis_mlx.runtime.salience_evidence_owner import SalienceEvidenceArtifactO
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext, source_content_digest
 from bilqis_mlx.runtime.atlas_training_contracts import _canonical_digest
 
+SALIENCE_REQUEST_RECORD_WIDTH = 2
+
 
 @dataclass(frozen=True)
 class SalienceLabelRequest:
@@ -19,7 +21,8 @@ class SalienceLabelRequest:
 
     def __post_init__(self):
         if (type(self.records) is not tuple or not self.records
-                or any(type(item) is not tuple or len(item) != 2
+                or any(type(item) is not tuple
+                       or len(item) != SALIENCE_REQUEST_RECORD_WIDTH
                        or not isinstance(item[0], RowSalienceBinding)
                        or not isinstance(item[1], SalienceEvidence) for item in self.records)
                 or len({item[0].row_id for item in self.records}) != len(self.records)

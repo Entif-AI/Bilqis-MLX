@@ -2,7 +2,10 @@ import copy
 import unittest
 
 from bilqis_mlx.learning._retention._atlas_candidate.proofs import CandidateStepProof
-from bilqis_mlx.learning._retention._atlas_candidate.common import STEP_PROOF_SCHEMA, CLOSURE_STEP_PROOF_SCHEMA
+from bilqis_mlx.learning._retention._atlas_candidate.common import (
+    CLOSURE_STEP_PROOF_SCHEMA, LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+    STEP_PROOF_SCHEMA,
+)
 from bilqis_mlx.learning._retention._atlas_acceptance_records import normalize_artifact_closures, require_closure_proofs
 from bilqis_mlx.semantics.cognitive_dependencies import ArtifactKind, ArtifactNode, DependencyKind, DependencyRef
 from bilqis_mlx.semantics.dependencies.closure import closure_digest, encode_closure_nodes
@@ -76,3 +79,41 @@ class ClosureRecordsTests(unittest.TestCase):
         altered['binding_sha256'] = hashlib.sha256(canonical({k:v for k,v in altered.items() if k != 'binding_sha256'})).hexdigest()
         with self.assertRaises(Exception):
             require_closure_proofs(parse_accepted_candidate_binding(altered), (proof,))
+
+    def test_logical_batch_closure_acceptance_binds_all_member_anchors(self):
+        node = ArtifactNode(
+            'logical-root', ArtifactKind.SALIENCE_EVIDENCE, '0' * 64, True,
+            (DependencyRef(DependencyKind.SOURCE, 'source'),), 2, 3)
+        digest = closure_digest((node,))
+        members = (
+            ('7' * 64, 'family', 'episode:a'),
+            ('8' * 64, 'family', 'episode:b'),
+        )
+        proof = CandidateStepProof(
+            step_index=1, provenance_sha256='1' * 64,
+            participation_sha256='2' * 64, mask_sha256='3' * 64,
+            parameter_names=('p',), loss_bearing=True,
+            source_release_sha256='4' * 64, training_batch_sha256='5' * 64,
+            target_capability_id='cap', training_authority_sha256='6' * 64,
+            training_authority_members=members,
+            artifact_closure_sha256=digest,
+            schema_version=LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA)
+        anchors = tuple(
+            ('cap', f'row:{index}', str(index) * 64, family, episode,
+             '4' * 64, '5' * 64, '9' * 64, authority,
+             (('ARTIFACT', 'logical-root'),))
+            for index, (authority, family, episode) in enumerate(members, 1)
+        )
+        closure = {
+            'step_index': 1,
+            'training_authority_sha256': '6' * 64,
+            'artifact_closure_sha256': digest,
+            'nodes': encode_closure_nodes((node,)),
+        }
+        binding = type(
+            'Binding', (),
+            {'artifact_closures': normalize_artifact_closures((closure,)),
+             'source_anchors': anchors},
+        )()
+
+        require_closure_proofs(binding, (proof,))

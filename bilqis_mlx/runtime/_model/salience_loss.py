@@ -5,6 +5,8 @@ import mlx.core as mx
 from bilqis_mlx.learning.atlas_salience import project_salience_heads
 from bilqis_mlx.learning.salience_contracts import _invalid
 
+SALIENCE_ORDINAL_CLASS_COUNT = 5
+
 
 @dataclass(frozen=True)
 class SalienceLossComponents:
@@ -21,7 +23,9 @@ class SalienceLossComponents:
 def salience_loss_components(parameters, hidden, topology, extents, labels):
     names = ('impact', 'exigency', 'novelty')
     if (not isinstance(labels, dict) or not set(labels) <= set(names)
-            or any(type(value) is not int or not 0 <= value < 5 for value in labels.values())
+            or any(type(value) is not int
+                   or not 0 <= value < SALIENCE_ORDINAL_CLASS_COUNT
+                   for value in labels.values())
             or tuple(hidden.shape) != (topology.width,)):
         _invalid('BAMF_SALIENCE_LOSS_LABELS_INVALID')
     zero = mx.array(0., dtype=mx.float32)

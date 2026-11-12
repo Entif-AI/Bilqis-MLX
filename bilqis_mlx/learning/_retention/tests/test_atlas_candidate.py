@@ -23,7 +23,8 @@ from bilqis_mlx.learning.atlas_candidate import (
     CandidateTransaction, begin_candidate, candidate_step, resolve_candidate,
 )
 from bilqis_mlx.learning._retention._atlas_candidate.common import (
-    LOGICAL_BATCH_STEP_PROOF_SCHEMA, PREVIOUS_STEP_PROOF_SCHEMA,
+    LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA, LOGICAL_BATCH_STEP_PROOF_SCHEMA,
+    PREVIOUS_STEP_PROOF_SCHEMA,
 )
 from bilqis_mlx.learning._retention.tests.execution_fixtures import execution_provenance
 from bilqis_mlx.learning.source_atoms import SourceAtomRow
@@ -319,4 +320,26 @@ class CandidateTransactionTests(TestCase):
         self.assertEqual(
             record["schema_version"], "bilqis.mlx.candidate-step-proof/v4")
         self.assertEqual(record["training_authority_members"], members)
+        self.assertEqual(CandidateStepProof.from_record(record), proof)
+
+    def test_v6_step_proof_roundtrips_logical_batch_artifact_closure(self):
+        members = (
+            ("7" * 64, "family:a", "episode:a"),
+            ("8" * 64, "family:a", "episode:b"),
+        )
+        proof = CandidateStepProof(
+            1, "1" * 64, "2" * 64, "3" * 64, (self.name,), True,
+            source_release_sha256="4" * 64,
+            training_batch_sha256="5" * 64,
+            target_capability_id="A.TEST",
+            training_authority_sha256="6" * 64,
+            training_authority_members=members,
+            artifact_closure_sha256="9" * 64,
+            schema_version=LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+        )
+        record = proof.to_record()
+        self.assertEqual(
+            record["schema_version"], "bilqis.mlx.candidate-step-proof/v6")
+        self.assertEqual(record["training_authority_members"], members)
+        self.assertEqual(record["artifact_closure_sha256"], "9" * 64)
         self.assertEqual(CandidateStepProof.from_record(record), proof)

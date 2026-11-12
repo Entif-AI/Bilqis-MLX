@@ -212,6 +212,9 @@ class BamfLogicalBatchTrainingAuthority:
                     or member.delivery_capability != self.delivery_capability
                     or member.visit_id != self.visit_id):
                 _invalid("C08_LOGICAL_BATCH_AUTHORITY_INVALID")
+        # Validate cross-member closure aliases at issuance, not only when a
+        # downstream consumer happens to inspect the aggregate.
+        self.artifact_nodes
 
     @property
     def digest(self):
@@ -226,6 +229,31 @@ class BamfLogicalBatchTrainingAuthority:
         }
         wire = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(wire.encode()).hexdigest()
+
+    @property
+    def artifact_nodes(self):
+        """Canonical union of member-owned executed artifact closures."""
+        nodes = {}
+        for member in self.members:
+            for node in member.artifact_nodes:
+                previous = nodes.get(node.artifact_id)
+                if previous is not None and previous != node:
+                    _invalid("C08_LOGICAL_BATCH_ARTIFACT_CLOSURE_CONFLICT")
+                nodes[node.artifact_id] = node
+        return tuple(nodes[key] for key in sorted(nodes))
+
+    @property
+    def artifact_closure_sha256(self):
+        nodes = self.artifact_nodes
+        return closure_digest(nodes) if nodes else None
+
+    @property
+    def immediate_dependencies(self):
+        return tuple(sorted({
+            dependency
+            for member in self.members
+            for dependency in member.immediate_dependencies
+        }))
 
 
 def bind_logical_batch_training_authority(

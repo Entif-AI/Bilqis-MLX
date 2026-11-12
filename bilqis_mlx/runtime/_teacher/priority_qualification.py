@@ -13,6 +13,8 @@ from bilqis_mlx.learning.salience_history import completed_windows
 from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _accepted_correction_registry
 from bilqis_mlx.semantics.domains import contract_digest
 
+PRIORITY_OFFER_PAIR_WIDTH = 2
+
 
 def _invalid(reason):
     ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID, reason=reason)
@@ -97,7 +99,9 @@ def requalify_priority(run_dir, source_context, parent, frontier, history,
         if derive_salience(verified) != item:
             _invalid('BAMF_PRIORITY_EVIDENCE_DRIFT')
     rank_attention_options(frontier.options, evidence, frontier.snapshot)
-    if (type(offers) is not tuple or any(type(pair) is not tuple or len(pair) != 2
+    if (type(offers) is not tuple
+            or any(type(pair) is not tuple
+            or len(pair) != PRIORITY_OFFER_PAIR_WIDTH
             or not isinstance(pair[0], str) or type(pair[1]) is not PreparedPrioritySourceOffer
             for pair in offers) or len(dict(offers)) != len(offers)
             or not set(dict(offers)).issubset({option.stable_id for option in frontier.options})):

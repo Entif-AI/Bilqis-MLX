@@ -13,8 +13,9 @@ from bilqis_mlx.runtime.atlas_optimizer import (
 from ..atlas_execution_provenance import StepExecutionProvenance, mask_digest, participation_digest
 from ..atlas_participation import optimizer_participation_mask
 from .common import (CLOSURE_STEP_PROOF_SCHEMA, LEGACY_STEP_PROOF_SCHEMA,
-    LOGICAL_BATCH_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA, RETAINED_STATE_ISSUER,
-    STATE_SCHEMA, TRANSACTION_ISSUER, TRANSACTION_SCHEMA, invalid)
+    LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA, LOGICAL_BATCH_STEP_PROOF_SCHEMA,
+    STEP_PROOF_SCHEMA, RETAINED_STATE_ISSUER, STATE_SCHEMA, TRANSACTION_ISSUER,
+    TRANSACTION_SCHEMA, invalid)
 from .proofs import CandidateStepProof
 from .state import CandidateState, _is_genesis_allocations
 from .motif_transition import (
@@ -193,12 +194,20 @@ def _candidate_step_proof(candidate, execution, update_mask, loss_bearing,
             schema_version=(
                 CLOSURE_STEP_PROOF_SCHEMA if closure else STEP_PROOF_SCHEMA))
     if type(training_authority) is BamfLogicalBatchTrainingAuthority:
+        closure = training_authority.artifact_closure_sha256
+        if closure is not None:
+            from bilqis_mlx.semantics.dependencies.closure import closure_digest
+            if closure_digest(training_authority.artifact_nodes) != closure:
+                invalid()
         return CandidateStepProof(
             **proof_args, **common,
             training_authority_members=tuple(
                 (member.digest, member.source_family_id, member.episode_id)
                 for member in training_authority.members),
-            schema_version=LOGICAL_BATCH_STEP_PROOF_SCHEMA)
+            artifact_closure_sha256=closure,
+            schema_version=(
+                LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA
+                if closure else LOGICAL_BATCH_STEP_PROOF_SCHEMA))
     invalid()
 
 

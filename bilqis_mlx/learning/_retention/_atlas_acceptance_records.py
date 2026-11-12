@@ -39,6 +39,7 @@ V3_SOURCE_ANCHOR_WIDTH = 9
 SOURCE_ANCHOR_WIDTH = 10
 DEPENDENCY_RECORD_WIDTH = 2
 SOURCE_ANCHOR_DIGEST_INDEXES = (2, 5, 6, 7, 8)
+SOURCE_ANCHOR_AUTHORITY_DIGEST_INDEX = 8
 SOURCE_ANCHOR_DEPENDENCIES_INDEX = 9
 
 
@@ -211,8 +212,18 @@ def require_closure_proofs(binding, proofs):
     by_step = {entry['step_index']: entry for entry in entries}
     if len(by_step) != len(entries):
         invalid()
-    from ._atlas_candidate.common import CLOSURE_STEP_PROOF_SCHEMA
-    expected = {proof.step_index for proof in proofs if proof.schema_version == CLOSURE_STEP_PROOF_SCHEMA}
+    from ._atlas_candidate.common import (
+        CLOSURE_STEP_PROOF_SCHEMA,
+        LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+    )
+    closure_schemas = {
+        CLOSURE_STEP_PROOF_SCHEMA,
+        LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+    }
+    expected = {
+        proof.step_index for proof in proofs
+        if proof.schema_version in closure_schemas
+    }
     if set(by_step) != expected:
         invalid()
     anchors = getattr(binding, 'source_anchors', ())
@@ -222,10 +233,33 @@ def require_closure_proofs(binding, proofs):
             if (item['training_authority_sha256'] != proof.training_authority_sha256
                     or item['artifact_closure_sha256'] != proof.artifact_closure_sha256):
                 invalid()
-            matches = [a for a in anchors if a[8] == proof.training_authority_sha256]
-            if not matches or any(anchor != matches[0] for anchor in matches):
-                invalid()
+            if proof.schema_version == CLOSURE_STEP_PROOF_SCHEMA:
+                matches = [
+                    anchor for anchor in anchors
+                    if anchor[SOURCE_ANCHOR_AUTHORITY_DIGEST_INDEX]
+                    == proof.training_authority_sha256
+                ]
+                if not matches or any(anchor != matches[0] for anchor in matches):
+                    invalid()
+            else:
+                member_digests = {
+                    member[0] for member in proof.training_authority_members
+                }
+                matches = [
+                    anchor for anchor in anchors
+                    if anchor[SOURCE_ANCHOR_AUTHORITY_DIGEST_INDEX]
+                    in member_digests
+                ]
+                if (len(matches) != len(member_digests)
+                        or {
+                            anchor[SOURCE_ANCHOR_AUTHORITY_DIGEST_INDEX]
+                            for anchor in matches
+                        } != member_digests):
+                    invalid()
             from bilqis_mlx.semantics.dependencies.closure import decode_closure_nodes
             ids = {node.artifact_id for node in decode_closure_nodes(item['nodes'])}
-            if any(kind == 'ARTIFACT' and key not in ids for kind, key in matches[0][9]):
+            if any(
+                    kind == 'ARTIFACT' and key not in ids
+                    for anchor in matches
+                    for kind, key in anchor[SOURCE_ANCHOR_DEPENDENCIES_INDEX]):
                 invalid()

@@ -7,7 +7,9 @@ from types import SimpleNamespace
 import pytest
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.atlas_training_authority import _issue, extend_training_dependencies
+from bilqis_mlx.runtime.atlas_training_authority import (
+    _issue, bind_logical_batch_training_authority, extend_training_dependencies,
+)
 from bilqis_mlx.runtime.atlas_training_contracts import (
     BamfDeliveryProvenance, BamfTrainingRow, _canonical_digest,
     _issue_training_batch, _reissue_training_batch,
@@ -98,3 +100,44 @@ def test_executed_artifact_closure_is_bound_and_preserved(issued_batch):
     object.__setattr__(later, 'artifact_closure_sha256', 'a' * 64)
     with pytest.raises(BilqisError):
         later.__post_init__()
+
+
+def test_logical_batch_authority_unions_member_artifact_closures():
+    from bilqis_mlx.semantics.cognitive_dependencies import ArtifactKind, ArtifactNode
+    from bilqis_mlx.semantics.dependencies.closure import closure_digest
+
+    dependency = DependencyRef(DependencyKind.SOURCE, 'source:one')
+    visit = visit_provenance('cap-1')
+    rows = tuple(
+        BamfTrainingRow(
+            None, None, None,
+            BamfDeliveryProvenance(
+                f'row-{index}', chr(96 + index) * 64, 'source-1', 'cap-1',
+                None, (), 1, 1, None, 1, visit, 'family-1',
+                f'episode-{index}', (dependency,),
+            ),
+        )
+        for index in (1, 2)
+    )
+    batch = _issue_training_batch(
+        'b' * 64, 'c' * 64, 'd' * 64, 'cap-1', rows)
+    sources = tuple(
+        SimpleNamespace(source_row={'id': row.provenance.row_id})
+        for row in rows
+    )
+    node = ArtifactNode(
+        'salience:logical-batch', ArtifactKind.SALIENCE_EVIDENCE, 'f' * 64,
+        True, (dependency,), 2, 3)
+    authorities = tuple(
+        extend_training_dependencies(
+            _issue(batch, source, row.provenance),
+            (node.reference,),
+            artifact_nodes=(node,),
+        )
+        for row, source in zip(rows, sources)
+    )
+    logical = bind_logical_batch_training_authority(batch, authorities)
+
+    assert logical.artifact_nodes == (node,)
+    assert logical.artifact_closure_sha256 == closure_digest((node,))
+    assert node.reference in logical.immediate_dependencies

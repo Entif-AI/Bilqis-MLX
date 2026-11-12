@@ -8,6 +8,7 @@ PREVIOUS_STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v2"
 STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v3"
 LOGICAL_BATCH_STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v4"
 CLOSURE_STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v5"
+LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v6"
 DIGEST_HEX_LENGTH = 64
 TRANSACTION_ISSUER = object()
 RETAINED_STATE_ISSUER = object()

@@ -210,14 +210,37 @@ Bounded verification after reconciliation:
 - Studio resource/default-stage policy: **6/6 PASS**;
 - moved C06 salience evidence owner tests: **7/7 PASS**;
 - `quality:changed`: PASS for development structure, governance integrity,
-  zero new code-smell findings, legacy-trainer authority plus its 7 tests, and
-  BAMF flow-control plus its 15 tests;
+  zero new code-smell findings, legacy-trainer authority plus its 7 tests, using
+  canonical source run
+  `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`,
+  and BAMF flow-control plus its 15 tests;
 - `git diff --check`: PASS.
 
 The combined portable cone also resolved a real semantic integration disagreement:
 legitimate repeated scalar source-authority use remains valid only when accepted
 source-anchor multiplicity and step order match exactly, while ambiguous
 scalar/logical-batch digest overlap still fails closed.
+
+Fresh-context turn-in review then found one additional C06/C08 Major before PR:
+multi-row C08 retained each salience-extended B11 member authority and its
+ARTIFACT-bearing source anchor, but v4 logical-batch proofs had no retained closure
+field and acceptance therefore persisted no closure nodes for those anchors. Cold
+C09 support could later fail with `BAMF_C09_DEPENDENCY_ARTIFACT_MISSING`.
+
+A focused cold-support regression reproduced that defect before repair. The fix is
+additive: v4 remains the reviewed C08 no-closure schema; scalar C06 closure remains
+v5; v6 is a logical-batch closure proof carrying the canonical union digest of the
+member-owned artifact closures. The logical authority exposes only a derived
+canonical union and retains its existing digest, which already commits to the
+member digests. Each member digest commits its own closure digest. Acceptance binds
+the v6 union to the top-level logical authority while retaining exact member source
+anchors, and cold validation requires every member ARTIFACT dependency to resolve
+inside the persisted union.
+
+The failing-before regression now passes. Additional v6 round-trip, logical
+authority union, acceptance-record and cold-support checks are included. The
+updated portable C06/C08 cone passes **61/61** in 0.59 seconds. No long native or
+whole-school run was needed to discover or repair this integration defect.
 
 No new multi-hour native/system witness was launched. The prior long-run failure at
 `A.PARENT` remains recorded system-level negative evidence for later

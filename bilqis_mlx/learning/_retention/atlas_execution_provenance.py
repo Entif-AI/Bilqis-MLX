@@ -22,6 +22,7 @@ from .atlas_participation import (
 EXECUTION_PROVENANCE_SCHEMA = "bilqis.mlx.b09-execution-provenance/v1"
 DIGEST_HEX_LENGTH = 64
 _PROVENANCE_ISSUER = object()
+_BOUND_AUTHORITY_DIGEST_INDEX = 3
 
 
 def _invalid() -> None:
@@ -198,7 +199,8 @@ def _make_execution_authority_registry():
         bound_closure = getattr(bound, 'artifact_closure_sha256', None)
         supplied_closure = getattr(training_authority, 'artifact_closure_sha256', None)
         if bound_closure is not None:
-            if training_authority is not bound or bound.digest != current[3]:
+            if (training_authority is not bound
+                    or bound.digest != current[_BOUND_AUTHORITY_DIGEST_INDEX]):
                 _invalid()
         elif supplied_closure is not None:
             _invalid()

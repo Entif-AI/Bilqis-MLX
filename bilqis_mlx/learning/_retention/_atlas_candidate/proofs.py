@@ -6,6 +6,7 @@ import json
 from .common import (
     CLOSURE_STEP_PROOF_SCHEMA,
     LEGACY_STEP_PROOF_SCHEMA, LOGICAL_BATCH_STEP_PROOF_SCHEMA,
+    LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
     PREVIOUS_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA,
     invalid, is_digest,
 )
@@ -20,6 +21,8 @@ _V3_FIELDS = _V2_FIELDS[:-1] + (
 _V4_FIELDS = _V2_FIELDS[:-1] + (
     "training_authority_members", "schema_version")
 _V5_FIELDS = _V3_FIELDS[:-1] + (
+    "artifact_closure_sha256", "schema_version")
+_V6_FIELDS = _V4_FIELDS[:-1] + (
     "artifact_closure_sha256", "schema_version")
 _LOGICAL_BATCH_MIN_MEMBERS = 2
 _LOGICAL_BATCH_MEMBER_WIDTH = 3
@@ -70,11 +73,16 @@ class CandidateStepProof:
                 or self.schema_version not in (
                     LEGACY_STEP_PROOF_SCHEMA, PREVIOUS_STEP_PROOF_SCHEMA,
                     STEP_PROOF_SCHEMA, LOGICAL_BATCH_STEP_PROOF_SCHEMA,
-                    CLOSURE_STEP_PROOF_SCHEMA)):
+                    CLOSURE_STEP_PROOF_SCHEMA,
+                    LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA)):
             invalid()
-        if ((self.schema_version == CLOSURE_STEP_PROOF_SCHEMA
+        closure_schemas = (
+            CLOSURE_STEP_PROOF_SCHEMA,
+            LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+        )
+        if ((self.schema_version in closure_schemas
              and not is_digest(self.artifact_closure_sha256))
-                or (self.schema_version != CLOSURE_STEP_PROOF_SCHEMA
+                or (self.schema_version not in closure_schemas
                     and self.artifact_closure_sha256 is not None)):
             invalid()
         authority = (
@@ -102,7 +110,9 @@ class CandidateStepProof:
                 or not isinstance(self.episode_id, str) or not self.episode_id
                 or self.training_authority_members):
             invalid()
-        elif self.schema_version == LOGICAL_BATCH_STEP_PROOF_SCHEMA:
+        elif self.schema_version in (
+                LOGICAL_BATCH_STEP_PROOF_SCHEMA,
+                LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA):
             if (self.source_family_id is not None or self.episode_id is not None
                     or type(self.training_authority_members) is not tuple
                     or len(self.training_authority_members) < _LOGICAL_BATCH_MIN_MEMBERS
@@ -125,7 +135,8 @@ class CandidateStepProof:
                  else _V2_FIELDS if self.schema_version == PREVIOUS_STEP_PROOF_SCHEMA
                  else _V3_FIELDS if self.schema_version == STEP_PROOF_SCHEMA
                  else _V4_FIELDS if self.schema_version == LOGICAL_BATCH_STEP_PROOF_SCHEMA
-                 else _V5_FIELDS)
+                 else _V5_FIELDS if self.schema_version == CLOSURE_STEP_PROOF_SCHEMA
+                 else _V6_FIELDS)
         return {name: getattr(self, name) for name in names}
 
     def to_record(self) -> dict:
@@ -142,6 +153,7 @@ class CandidateStepProof:
                  else _V3_FIELDS if schema == STEP_PROOF_SCHEMA
                  else _V4_FIELDS if schema == LOGICAL_BATCH_STEP_PROOF_SCHEMA
                  else _V5_FIELDS if schema == CLOSURE_STEP_PROOF_SCHEMA
+                 else _V6_FIELDS if schema == LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA
                  else ())
         if (not isinstance(record, dict)
                 or set(record) != set(names) | {"proof_sha256"}):
