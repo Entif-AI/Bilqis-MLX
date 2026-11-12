@@ -3,6 +3,8 @@ import os
 import unittest
 from unittest.mock import patch
 
+BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"
+
 from bilqis_mlx.factory import candidate_realizations
 from bilqis_mlx.runtime.atlas_admission import (
     adopt_capability_only_atlas_successor_v2,
