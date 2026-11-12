@@ -194,7 +194,7 @@ class DependencyEvidenceTests(unittest.TestCase):
             ),
         )
         self.assertEqual(numbers['C14.3'], 535)
-        self.assertEqual(numbers['C14.4'], 559)
+        self.assertNotIn('C14.4', numbers)
         self.assertEqual(numbers['B10.5'], 635)
         self.assertNotIn(587, numbers.values())
         self.assertNotIn(636, numbers.values())

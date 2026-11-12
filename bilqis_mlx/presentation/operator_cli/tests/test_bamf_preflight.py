@@ -234,9 +234,9 @@ class BamfPreflightTests(unittest.TestCase):
         help_text = ' '.join(output.getvalue().split()).replace('- ', '-')
         for text in (
             'PROVISIONAL max new wrong answers on any protected capability',
-            ('Explicit human authorization for mutating operator actions; legacy learner '
-             'paths may perform optimizer steps, while BAMF v2 create/enrollment remains '
-             'neural-inert.'),
+            ('Explicit human authorization for mutating operator actions; BAMF create '
+             'and enrollment remain neural-inert, while an accepted BAMF --resume may '
+             'enter the persistent BAMF-native learner.'),
             'autonomously measure, teach, and remeasure factory evidence',
             'Optional complete visit cap',
             'low-overhead nanosecond timing markers',

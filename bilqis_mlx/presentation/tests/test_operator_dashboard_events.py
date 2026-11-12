@@ -14,7 +14,7 @@ from bilqis_mlx.runtime.bamf_first_student import BamfFoundationDashboardProject
 
 
 class OperatorTests(unittest.TestCase):
-    def test_dashboard_consumes_only_lightweight_bamf_foundation_projection(self):
+    def test_generation_zero_dashboard_falls_back_to_lightweight_foundation_projection(self):
         projection = BamfFoundationDashboardProjection(
             factory_release_sha256="a" * 64,
             optimizer_step=0,
@@ -25,13 +25,18 @@ class OperatorTests(unittest.TestCase):
             current_grade="A",
             last_run_status="NOT_STARTED",
         )
-        with tempfile.TemporaryDirectory() as tmp, patch(
-                "bilqis_mlx.presentation.dashboard."
-                "load_bamf_foundation_dashboard_projection",
-                return_value=projection) as load_projection:
+        with tempfile.TemporaryDirectory() as tmp:
             run = Path(tmp)
-            board = build(run, stream=io.StringIO(), reserve_gib=0.)
+            (run / "bamf-state.json").write_text("generation-zero-pointer")
+            with patch(
+                    "bilqis_mlx.presentation.dashboard._bamf_accepted_dashboard_state",
+                    return_value=None) as accepted_state, patch(
+                    "bilqis_mlx.presentation.dashboard."
+                    "load_bamf_foundation_dashboard_projection",
+                    return_value=projection) as load_projection:
+                board = build(run, stream=io.StringIO(), reserve_gib=0.)
 
+        accepted_state.assert_called_once_with(run)
         load_projection.assert_called_once_with(run)
         self.assertEqual(board.state["step"], 0)
         self.assertEqual(board.state["visits"], 0)

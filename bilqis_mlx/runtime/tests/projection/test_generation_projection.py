@@ -13,7 +13,7 @@ from bilqis_mlx.runtime.tests.projection.test_bamf_projection import _contract
 
 
 class GenerationProjectionTests(unittest.TestCase):
-    def test_native_committed_visit_replays_and_unknown_kind_remains_delivery_debt(self):
+    def test_native_committed_events_replay_and_owner_unverified_events_remain_delivery_debt(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             from bilqis_mlx.runtime.tests.test_admission import _executable_fixture
@@ -31,14 +31,26 @@ class GenerationProjectionTests(unittest.TestCase):
                 {'event': 'SCHOOL_TEACHER_VISIT_COMMITTED', 'capability': 'renamed.capability',
                  'source_time': 570, 'effective_time': 575, 'observed_at': 580, 'recorded_at': 585},
                 {'event': 'UNKNOWN_NATIVE_EVENT'},
-                {'event': 'SCHOOL_TEACHER_VISIT_COMMITTED', 'capability': 'legacy:no-times'},))
+                {'event': 'SCHOOL_TEACHER_VISIT_COMMITTED', 'capability': 'legacy:no-times'},
+                {'event': 'BAMF_FACTORY_RELEASE_ADOPTION_COMMITTED',
+                 'factory_release_sha256': '9' * 64,
+                 'source_time': 586, 'effective_time': 587, 'observed_at': 588, 'recorded_at': 589},
+                {'event': 'BAMF_FACTORY_RELEASE_ADOPTION_COMMITTED',
+                 'factory_release_sha256': '8' * 64},))
             persist(root, record)
             before = (root / 'state.json').read_bytes()
             def project(contract=domain):
                 return project_accepted_generation(root, 1, contract, graph=graph)
             first = project()
-            self.assertEqual(first.projected_native_event_ids, (record['delivery_outbox'][0]['event_id'],))
-            self.assertEqual(first.uncovered_native_event_ids, tuple(event['event_id'] for event in record['delivery_outbox'][1:]))
+            self.assertEqual(first.projected_native_event_ids, (
+                record['delivery_outbox'][0]['event_id'],
+            ))
+            self.assertEqual(first.uncovered_native_event_ids, (
+                record['delivery_outbox'][1]['event_id'],
+                record['delivery_outbox'][2]['event_id'],
+                record['delivery_outbox'][3]['event_id'],
+                record['delivery_outbox'][4]['event_id'],
+            ))
             self.assertEqual(first.receipt.appended_count, 1)
             self.assertEqual(project().receipt.duplicate_count, 1)
             events = read_projection_outbox(domain.outbox_path)

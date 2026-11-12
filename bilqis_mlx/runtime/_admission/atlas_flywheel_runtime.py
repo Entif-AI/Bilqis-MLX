@@ -227,9 +227,14 @@ class AcceptedAtlasFlywheelSupervisor:
         native = None
         if introduced:
             selection, _feature_receipt = _accepted_selection(self.run_dir)
+            native_semantic_ids = tuple(
+                candidate_realizations.realized_atlas_semantic_id(capability_id)
+                for capability_id in
+                handoff.receipt.selection.introduced_capability_ids
+            )
             native = stage_vocabulary_extension_from_source_id(
                 self.run_dir, selection.path, selection.source_bundle_id,
-                introduced)
+                native_semantic_ids)
         legacy = AtlasAdmissionContext(
             _accepted_run_lease_identity(self.run_dir), current, frontier,
             ledger, plan, checkpoint, lease.source_approval, registry,

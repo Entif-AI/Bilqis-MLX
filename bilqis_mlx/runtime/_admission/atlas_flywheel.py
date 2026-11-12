@@ -4,14 +4,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 from typing import Callable
-
+from bilqis_mlx.errors import BilqisError
 from ..factory.atlas_frontier import (
     AtlasCoverageEpoch,
     AtlasLearnerEvidence,
     next_atlas_delta,
 )
+from ..factory.atlas_frontier_closure import ClosureStatus
 from ..factory.atlas_delta_scope import AtlasDeltaScopeHandoff
 from ..factory.atlas_frontier_progress import FrontierStatus
+from ..factory.atlas_frontier_progress_validation import current_obligations
 from ..factory.autonomy import AutonomyPlan
 from .atlas_admission_policy import AdmissionResult, AdmissionStatus
 from .atlas_lease_contracts import _invalid
@@ -64,8 +66,18 @@ class AdmissionFlywheelResult:
 
 AdmissionFlywheelStateLoader = Callable[[], AdmissionFlywheelState]
 AdmissionFlywheelExecutor = Callable[[AtlasDeltaScopeHandoff], AdmissionResult]
-
-
+def _next_atlas_delta(epoch, learner, plan):
+    try:
+        return next_atlas_delta(epoch, learner, plan)
+    except BilqisError as error:
+        if (error.context.get("reason") not in {"BAMF_PLANNER_NO_BOUNDED_READY_DELTA",
+                                                "BAMF_PLANNER_PROGRESS_SELECTION_REQUIRED"}
+                or epoch.accepted_credit is None or epoch.prior is not None): raise
+        current = current_obligations(epoch.closure); states = {item.status for item in epoch.closure.candidates}
+        if ClosureStatus.IMPLEMENTATION_UNCOVERED in states: return FrontierStatus.IMPLEMENTATION_UNCOVERED
+        if ClosureStatus.WAITING_FOR_EVIDENCE in states: return FrontierStatus.WAITING_FOR_EVIDENCE
+        if epoch.closure.source_holds: return FrontierStatus.SOURCE_HELD
+        return (FrontierStatus.COMPLETE_ATLAS_COVERAGE if set(current) == set(epoch.snapshot.source_eligible_concept_ids) and all(item in epoch.accepted_credit.obligation_keys for item in current.items()) else FrontierStatus.FIXED_POINT)
 def _flywheel_state_identity(state: AdmissionFlywheelState) -> tuple:
     epoch = state.epoch
     return (
@@ -188,7 +200,7 @@ def _flywheel_step(
         load_state: AdmissionFlywheelStateLoader,
         admission_executor: AdmissionFlywheelExecutor,
 ) -> AdmissionFlywheelState | AdmissionFlywheelResult:
-    planned = next_atlas_delta(state.epoch, state.learner_evidence, state.plan)
+    planned = _next_atlas_delta(state.epoch, state.learner_evidence, state.plan)
     if isinstance(planned, FrontierStatus):
         return _planner_status_step(
             planned, state, advances, max_advances, load_state)
