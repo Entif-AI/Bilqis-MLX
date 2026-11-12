@@ -1,6 +1,6 @@
 """Concurrent exact-retry convergence for C07 v2 capability adoption."""
 
-from bilqis_mlx.runtime.tests.admission.atlas.v2.capability_support import *
+from bilqis_mlx.runtime.tests.admission.atlas.v2.capability.capability_support import *
 from bilqis_mlx.runtime.jit_adoption import _PreparedSuccessorRuntime
 from bilqis_mlx.runtime.atlas_capability_adoption_v2 import (
     _accepted_capability_only_retry_state_v2,
