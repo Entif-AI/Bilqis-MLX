@@ -116,7 +116,7 @@ class AdmissionFlywheelTests(AtlasDeltaAdapterFixture):
         )
         for planner_status, expected in cases:
             with self.subTest(planner_status=planner_status), patch(
-                    "bilqis_mlx.runtime.autonomy_loop.next_atlas_delta",
+                    "bilqis_mlx.runtime.atlas_flywheel.next_atlas_delta",
                     return_value=planner_status):
                 result = run_admission_flywheel(
                     lambda: state,
@@ -129,7 +129,7 @@ class AdmissionFlywheelTests(AtlasDeltaAdapterFixture):
         state = self.state()
         handoff = self._handoff()
         with patch(
-                "bilqis_mlx.runtime.autonomy_loop.next_atlas_delta",
+                "bilqis_mlx.runtime.atlas_flywheel.next_atlas_delta",
                 return_value=handoff):
             result = run_admission_flywheel(
                 lambda: state,
@@ -142,7 +142,7 @@ class AdmissionFlywheelTests(AtlasDeltaAdapterFixture):
     def test_replan_without_state_advance_holds_instead_of_polling(self):
         state = self.state()
         with patch(
-                "bilqis_mlx.runtime.autonomy_loop.next_atlas_delta",
+                "bilqis_mlx.runtime.atlas_flywheel.next_atlas_delta",
                 return_value=FrontierStatus.REPLAN_REQUIRED):
             result = run_admission_flywheel(
                 lambda: state,
@@ -159,7 +159,7 @@ class AdmissionFlywheelTests(AtlasDeltaAdapterFixture):
                 self.learner.ledger, "f" * 64, 1))
         states = iter((first, second))
         with patch(
-                "bilqis_mlx.runtime.autonomy_loop.next_atlas_delta",
+                "bilqis_mlx.runtime.atlas_flywheel.next_atlas_delta",
                 side_effect=(FrontierStatus.REPLAN_REQUIRED,
                              FrontierStatus.REPLAN_REQUIRED)):
             result = run_admission_flywheel(
@@ -185,7 +185,7 @@ class AdmissionFlywheelTests(AtlasDeltaAdapterFixture):
             "forged proposal identity",
         )
         with patch(
-                "bilqis_mlx.runtime.autonomy_loop.next_atlas_delta",
+                "bilqis_mlx.runtime.atlas_flywheel.next_atlas_delta",
                 return_value=handoff):
             result = run_admission_flywheel(lambda: state, lambda _item: forged)
         self.assertEqual(result.status, AdmissionFlywheelStatus.HELD)
@@ -198,7 +198,7 @@ class AdmissionFlywheelTests(AtlasDeltaAdapterFixture):
         second = self.successor_state(handoff)
         states = iter((first, second))
         with patch(
-                "bilqis_mlx.runtime.autonomy_loop.next_atlas_delta",
+                "bilqis_mlx.runtime.atlas_flywheel.next_atlas_delta",
                 side_effect=(handoff, FrontierStatus.FIXED_POINT)):
             result = run_admission_flywheel(
                 lambda: next(states),
