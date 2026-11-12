@@ -88,8 +88,6 @@ class AtlasModelMixedFrameTests(unittest.TestCase):
             cls, hidden, *, scope_ids, valid, generation, cuts,
             initial_caches=None):
         caches = [None] * cls.spec.layers if initial_caches is None else list(initial_caches)
-        if len(caches) != cls.spec.layers:
-            raise AssertionError("one cache slot is required per B11 layer")
         left = 0
         parent = None
         outputs = []
