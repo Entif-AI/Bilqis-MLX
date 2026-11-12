@@ -72,7 +72,7 @@ def _source_records(records, body, sources):
 def _receipts(receipts, records, sources):
     if type(receipts) is not list:
         return None
-    required, seen = [], set()
+    prerequisite, implementation, seen = [], [], set()
     for receipt in receipts:
         if (type(receipt) is not dict or set(receipt) != RECEIPT_FIELDS
                 or type(receipt['number']) is not int or receipt['number'] <= 0
@@ -91,8 +91,10 @@ def _receipts(receipts, records, sources):
                 or raw['mergeCommit']['oid'] != receipt['merge_sha']):
             return None
         if receipt['role'] == 'prerequisite':
-            required.append(receipt['number'])
-    return tuple(required)
+            prerequisite.append(receipt['number'])
+        else:
+            implementation.append(receipt['number'])
+    return tuple(prerequisite), tuple(implementation)
 
 
 def check_dependency_evidence(entry, body, issue_map, sources):
@@ -123,8 +125,8 @@ def check_dependency_evidence(entry, body, issue_map, sources):
                 or not _name(evidence['clause']) or evidence['clause'] not in body.decode('utf-8')
                 or not _source_records(evidence['source_records'], body, sources)):
             return _invalid('source-drift')
-        receipts = _receipts(evidence['external_receipts'], evidence['source_records'], sources)
-        if receipts is None:
+        receipt_roles = _receipts(evidence['external_receipts'], evidence['source_records'], sources)
+        if receipt_roles is None:
             return _invalid('bad-receipt')
         if evidence['resolution'] == 'held':
             if not _name(evidence['unresolved']):
@@ -132,10 +134,17 @@ def check_dependency_evidence(entry, body, issue_map, sources):
             return EvidenceCheck(EvidenceStatus.HELD, tuple(edges), evidence['unresolved'])
         if evidence['unresolved'] is not None:
             return _invalid('bad-record')
-        parsed = parse_clause(evidence['clause'], issue_map, {r['source_id']: r['sha256'] for r in evidence['source_records']})
+        prerequisite_receipts, implementation_receipts = receipt_roles
+        parsed = parse_clause(
+            evidence['clause'],
+            issue_map,
+            {r['source_id']: r['sha256'] for r in evidence['source_records']},
+            implementation_receipts=implementation_receipts,
+        )
         if parsed is None:
             return _invalid('unsupported-clause')
-        if parsed != (tuple(edges), receipts) or len(parsed[0]) != len(set(parsed[0])):
+        if (parsed != (tuple(edges), prerequisite_receipts)
+                or len(parsed[0]) != len(set(parsed[0]))):
             return _invalid('clause-mismatch')
         return EvidenceCheck(EvidenceStatus.RESOLVED, tuple(edges))
     except (KeyError, TypeError, ValueError, RecursionError):

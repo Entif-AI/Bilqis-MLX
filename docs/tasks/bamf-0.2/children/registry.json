@@ -3175,7 +3175,7 @@
         "external_receipts": [
           {
             "number": 657,
-            "role": "prerequisite",
+            "role": "implementation",
             "head_sha": "a6bb632750e26dd6a3e73395e0d1904e1142bf74",
             "merge_sha": "351a7f69ede047b9678c095864e4ba324acc4a0e",
             "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/657",
@@ -3558,7 +3558,7 @@
         "external_receipts": [
           {
             "number": 618,
-            "role": "prerequisite",
+            "role": "implementation",
             "head_sha": "eac29b8be9e4e92470422570ce4fc0a96837f05e",
             "merge_sha": "a02b9ed45ead1801be6dff655866b73be0ffc8ff",
             "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/618",

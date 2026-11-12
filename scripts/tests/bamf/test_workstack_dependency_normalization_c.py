@@ -28,6 +28,10 @@ class FinalAuthorityNormalizationTests(unittest.TestCase):
         entry = self.entry(key)
         body = self.sources[key + '.body']
         sources = dict(self.sources)
+        self.assertEqual(
+            [row['role'] for row in entry['dependency_evidence']['external_receipts']],
+            ['implementation'],
+        )
         self.assertIs(check_dependency_evidence(entry, body, self.numbers, sources).status,
                       EvidenceStatus.RESOLVED)
 
@@ -60,6 +64,14 @@ class FinalAuthorityNormalizationTests(unittest.TestCase):
         receipt_sources['reviewed-packets'] = pinned_matrix(missing_receipt)
         self.assertIs(check_dependency_evidence(
             missing_receipt, body, self.numbers, receipt_sources).status,
+            EvidenceStatus.INVALID)
+
+        wrong_role = deepcopy(entry)
+        wrong_role['dependency_evidence']['external_receipts'][0]['role'] = 'prerequisite'
+        wrong_role_sources = dict(sources)
+        wrong_role_sources['reviewed-packets'] = pinned_matrix(wrong_role)
+        self.assertIs(check_dependency_evidence(
+            wrong_role, body, self.numbers, wrong_role_sources).status,
             EvidenceStatus.INVALID)
 
     def test_a05_5_authority_amendment_resolves_exact_a01_a13_edges(self):

@@ -62,7 +62,7 @@ def _released_schema_serialization_prerequisites(text, numbers):
     return (('A01',), (551,))
 
 
-def _a05_source_binding_prerequisites(text, numbers, source_hashes):
+def _a05_source_binding_prerequisites(text, numbers, source_hashes, implementation_receipts):
     expected = (
         'Child of A05 #357; prerequisite for canonical B11.1a producer #586 and downstream B05.4 #577. '
         'A05 `SourceAtom` currently carries only index/token/source reference; B03 `CompiledEmbeddingVectors` '
@@ -74,12 +74,13 @@ def _a05_source_binding_prerequisites(text, numbers, source_hashes):
             or numbers.get('A01') != 345
             or numbers.get('A13') != 354
             or source_hashes.get('A05.5.comment-6838106985') != '85e237de0d9755337655d7224a9a20064c57ef2c21ddccf293d45e7bcb5774f3'
-            or source_hashes.get('A05.5.pr-618') != '6cf936f2c092e318c41ce71748da3c2bfcbddf4be0863afa78e0a49341aa2991'):
+            or source_hashes.get('A05.5.pr-618') != '6cf936f2c092e318c41ce71748da3c2bfcbddf4be0863afa78e0a49341aa2991'
+            or 618 not in implementation_receipts):
         return None
-    return keys, (618,)
+    return keys, ()
 
 
-def _a08_family_integration_prerequisites(text, numbers, source_hashes):
+def _a08_family_integration_prerequisites(text, numbers, source_hashes, implementation_receipts):
     expected = (
         '**Direct prerequisites:** A08.1b.1 through A08.1b.4. '
         'OPEN parent status alone is not a blocker when an exact reviewed branch receipt exists.'
@@ -89,9 +90,10 @@ def _a08_family_integration_prerequisites(text, numbers, source_hashes):
     if (text != expected
             or tuple(numbers.get(key) for key in keys) != expected_numbers
             or source_hashes.get('A08.1b.5.comment-6838107336') != '20d67eb8750d1554e872086c3c4689e7b3103f4e5e79e642241e21f51fdffb3d'
-            or source_hashes.get('A08.1b.5.pr-657') != 'c43309ecd54f1516b86a89f06c355f31bde98c4171632dd6660324794ddf535e'):
+            or source_hashes.get('A08.1b.5.pr-657') != 'c43309ecd54f1516b86a89f06c355f31bde98c4171632dd6660324794ddf535e'
+            or 657 not in implementation_receipts):
         return None
-    return keys, (657,)
+    return keys, ()
 
 
 def _b11_cycle_prerequisites(text, numbers, source_hashes):
@@ -179,12 +181,14 @@ def _parent_amendment(clause, numbers):
     return (*original, *child), ()
 
 
-def parse_clause(clause, numbers, source_hashes=None):
+def parse_clause(clause, numbers, source_hashes=None, implementation_receipts=()):
     source_hashes = source_hashes or {}
-    a05_source_binding = _a05_source_binding_prerequisites(clause, numbers, source_hashes)
+    a05_source_binding = _a05_source_binding_prerequisites(
+        clause, numbers, source_hashes, implementation_receipts)
     if a05_source_binding is not None:
         return a05_source_binding
-    a08_family_integration = _a08_family_integration_prerequisites(clause, numbers, source_hashes)
+    a08_family_integration = _a08_family_integration_prerequisites(
+        clause, numbers, source_hashes, implementation_receipts)
     if a08_family_integration is not None:
         return a08_family_integration
     b11_cycle = _b11_cycle_prerequisites(clause, numbers, source_hashes)
