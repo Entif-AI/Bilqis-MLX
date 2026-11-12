@@ -28,11 +28,11 @@
     },
     {
       "issue": 544,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "edb004e8d7dd982c5761533ef017128db0144d53",
-      "head_sha_role": "exact reviewed-unified execution base before #544-owned edits",
-      "summary": "C16.2/#544 is active on isolated branch codex/544-c16-learning-readiness-20261111 from reviewed unified edb004e8d. It owns the post-C16.1 human learning-readiness/start boundary and exact owner-start/cold-resume commands while preserving C16.1a validation as neural-inert. The implementation must reuse existing C02/C05/C08/B11/B13 owners and may not convert BAMF custody into legacy state.json or bypass accepted-generation authority.",
+      "pr": 1007,
+      "state": "TURNED_IN",
+      "head_sha": "b309146d3979ed4f9093f5f713d8f96ac783b4f2",
+      "head_sha_role": "exact semantic implementation and final 0B/0M/0N EGM head before the flow-control turn-in receipt commit",
+      "summary": "C16.2/#544 is turned in as PR #1007 after consuming reviewed unified 505dfdd1. #992 accepted Factory custody, #993 C05 fixed-school custody and #994 bounded launch-readiness evidence compose under FOUNDATION_EVIDENCE_POLICY_ACTIVE and ADR-141. The retired >14h full-model witness is incomplete/over-budget provenance only and is not a gate. Final bounded evidence, quality, 43/43 BAMF mirrors and exact-head EGM are green at b309146d with 0 Blockers / 0 Majors / 0 Nits. Persistent BAMF learning was not started; C16.3/#545 owns the human-operated neural dispatch.",
       "resume_trigger": null,
       "preserved_branch": "codex/544-c16-learning-readiness-20261111"
     },
