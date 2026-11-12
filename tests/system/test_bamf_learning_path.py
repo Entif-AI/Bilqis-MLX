@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -14,6 +15,8 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures imp
     ATLAS_RELEASE, genesis_feature_source_patch,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
+from scripts.bamf.c13_delivery_contracts import CandidateAttemptReceipt
+from scripts.bamf import c13_delivery_runtime as delivery_runtime
 from scripts.prove_bamf_delivery import (
     DeliveryConfig, EpisodeSourceRelease, check_episode_binding,
     episode_binding_case, episode_task_goal, FoundationLaunchInput,
@@ -122,6 +125,90 @@ class BamfLearningPathFoundationTests(BamfFirstStudentCase):
         )
         self.assertTrue((Path(receipt.run_dir) / "bamf-state.json").is_file())
         self.assertTrue((target / "c13-source-fixtures.json").is_file())
+
+    def test_integrated_receipt_names_real_candidate_behaviors_only_after_owner_attempts(self):
+        source = EpisodeSourceRelease(
+            self.release.release_sha256,
+            ATLAS_RELEASE,
+            FoundationLaunchInput(self.config(run_id="c13-attempts"), self.release),
+        )
+        attempts = (
+            CandidateAttemptReceipt("ACCEPTED", 0, 1, 0, 1, "1" * 64, "2" * 64, 1),
+            CandidateAttemptReceipt("REJECTED", 1, 1, 1, 1, "2" * 64, "2" * 64, 1),
+        )
+        with shape_patch(), genesis_feature_source_patch(), patch(
+                "bilqis_mlx.runtime.bamf_first_student.resolve_atlas_artifact_selection",
+                return_value=self.selection), patch.object(
+                mlx_checkpoint, "assert_headroom"), patch(
+                "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom"), patch(
+                "scripts.prove_bamf_delivery.run_candidate_attempts",
+                return_value=attempts):
+            receipt = prove_bamf_delivery(DeliveryConfig(), source, self.root / "attempts", 2)
+
+        self.assertEqual(receipt.status, "CANDIDATE_EXERCISED")
+        self.assertEqual(receipt.candidate_attempts, attempts)
+        self.assertEqual(
+            set(receipt.exercised_behaviors),
+            {"SOURCE_FIXTURES", "DISPOSABLE_CREATION", "SOURCE_BOUND_GRADIENTS",
+             "PAIRED_EVALUATION", "ACCEPTED_CANDIDATE", "REJECTED_CANDIDATE"},
+        )
+        self.assertEqual(
+            receipt.remaining_behaviors,
+            ("COLD_RESTART", "APPEND_ONLY_SEMANTIC_DELTA"),
+        )
+
+
+class BamfLearningPathCandidateAccountingTests(unittest.TestCase):
+    @staticmethod
+    def student(generation, step):
+        return SimpleNamespace(
+            generation=generation,
+            retained_state=SimpleNamespace(optimizer_step=step),
+        )
+
+    def test_owner_candidate_acceptance_must_advance_generation_and_optimizer(self):
+        parent, current = self.student(0, 0), self.student(1, 1)
+        result = SimpleNamespace(status="VISIT_LIMIT", visits=1, accepted=1, rejected=0)
+        with patch.object(
+                delivery_runtime, "load_accepted_generation",
+                side_effect=(parent, current)), patch.object(
+                delivery_runtime, "operate_bamf", return_value=result) as operate, patch.object(
+                delivery_runtime, "_identity", side_effect=("1" * 64, "2" * 64)):
+            receipt = delivery_runtime.attempt_owner_candidate(Path("/tmp/disposable"))
+        self.assertEqual(receipt.outcome, "ACCEPTED")
+        self.assertEqual(receipt.attempted_steps, 1)
+        self.assertEqual((receipt.current_generation, receipt.current_optimizer_step), (1, 1))
+        self.assertEqual(operate.call_args.kwargs["reserve_gib"], 100.0)
+
+    def test_owner_candidate_rejection_and_hold_preserve_accepted_parent(self):
+        cases = (
+            (SimpleNamespace(status="REJECTED_HOLD", visits=1, accepted=0, rejected=1),
+             "REJECTED", 1),
+            (SimpleNamespace(status="PRIORITY_HOLD", visits=0, accepted=0, rejected=0),
+             "HELD", 0),
+        )
+        for result, expected, attempted in cases:
+            with self.subTest(outcome=expected):
+                parent, current = self.student(3, 7), self.student(3, 7)
+                with patch.object(
+                        delivery_runtime, "load_accepted_generation",
+                        side_effect=(parent, current)), patch.object(
+                        delivery_runtime, "operate_bamf", return_value=result), patch.object(
+                        delivery_runtime, "_identity", side_effect=("3" * 64, "3" * 64)):
+                    receipt = delivery_runtime.attempt_owner_candidate(Path("/tmp/disposable"))
+                self.assertEqual(receipt.outcome, expected)
+                self.assertEqual(receipt.attempted_steps, attempted)
+
+    def test_candidate_loop_stops_at_first_rejection_after_acceptance(self):
+        accepted = CandidateAttemptReceipt(
+            "ACCEPTED", 0, 1, 0, 1, "1" * 64, "2" * 64, 1)
+        rejected = CandidateAttemptReceipt(
+            "REJECTED", 1, 1, 1, 1, "2" * 64, "2" * 64, 1)
+        with patch.object(
+                delivery_runtime, "attempt_owner_candidate",
+                side_effect=(accepted, rejected, AssertionError("must stop"))):
+            attempts = delivery_runtime.run_candidate_attempts(Path("/tmp/disposable"), 64)
+        self.assertEqual(attempts, (accepted, rejected))
 
 
 if __name__ == "__main__":
