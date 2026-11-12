@@ -99,6 +99,7 @@ TRAIN_SEED = 46117
 
 
 def _initialize_generation(run_dir, source_context, snapshot, artifact):
+    run_id = f"factory-c05-live-{run_dir.name}"
     selection = AtlasArtifactSelection(
         str(artifact), snapshot.bundle_id, snapshot.release_sha256,
         snapshot.source_bundle_id)
@@ -118,7 +119,7 @@ def _initialize_generation(run_dir, source_context, snapshot, artifact):
             semantic_abi=semantic, compiler_features=compiler,
             motif_page_count=1, motif_key_map_digest=motif.digest)
         prepared = prepare_initial_generation(
-            run_id="factory-c05-live", run_seed=C05_GENESIS_SEED,
+            run_id=run_id, run_seed=C05_GENESIS_SEED,
             graph=source_context.graph, factory_authority=factory,
             model_authority=b01_generation_authority(extents),
             optimizer_hyperparameters=HP, provenance=provenance,
