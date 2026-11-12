@@ -211,13 +211,18 @@ class MixedSourceSupport(EventCandidateRealizationFixture):
         )
 
     @staticmethod
-    def assert_tree_prefix(test_case, parent, child):
+    def assert_tree_prefix(
+            test_case, parent, child, *, mutable_rows_by_key=None,
+            mutable_rows=()):
         if isinstance(parent, Mapping):
             test_case.assertIsInstance(child, Mapping)
             test_case.assertEqual(set(child), set(parent))
             for key in parent:
                 MixedSourceSupport.assert_tree_prefix(
-                    test_case, parent[key], child[key])
+                    test_case, parent[key], child[key],
+                    mutable_rows=(
+                        () if mutable_rows_by_key is None
+                        else mutable_rows_by_key.get(key, ())))
             return
         before, after = np.asarray(parent), np.asarray(child)
         test_case.assertEqual(after.dtype, before.dtype)
@@ -225,6 +230,19 @@ class MixedSourceSupport(EventCandidateRealizationFixture):
         test_case.assertTrue(
             all(new >= old for old, new in zip(before.shape, after.shape)))
         prefix = tuple(slice(0, size) for size in before.shape)
+        if mutable_rows:
+            test_case.assertGreater(before.ndim, 0)
+            rows = tuple(sorted(set(mutable_rows)))
+            test_case.assertEqual(rows, tuple(mutable_rows))
+            test_case.assertTrue(all(0 <= row < before.shape[0] for row in rows))
+            stable_rows = np.array(
+                [row for row in range(before.shape[0]) if row not in rows],
+                dtype=np.intp)
+            if stable_rows.size:
+                child_prefix = (stable_rows, *prefix[1:])
+                np.testing.assert_array_equal(
+                    after[child_prefix], before[stable_rows])
+            return
         np.testing.assert_array_equal(after[prefix], before)
 
     def event_handoff(

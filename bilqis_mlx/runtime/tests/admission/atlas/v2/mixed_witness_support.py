@@ -234,14 +234,26 @@ class MixedWitnessSupport(MixedSourceSupport):
         self.assertEqual(
             {identity: candidate_ages[identity] for identity in parent_ages},
             parent_ages)
-        new_ages = tuple(
-            age for identity, age in candidate_ages.items() if identity not in parent_ages)
-        self.assertEqual(new_ages, (0,))
+        new_rows = tuple(
+            item for item in candidate_policy.row_ages
+            if item.identity not in parent_ages)
+        self.assertEqual(tuple(item.accepted_age for item in new_rows), (0,))
+        mutable_parameter_rows = {
+            f"identity.bank.{bank}": tuple(sorted(rows))
+            for bank, rows in {
+                item.bank_index: tuple(
+                    row.row_index for row in new_rows
+                    if row.bank_index == item.bank_index)
+                for item in new_rows
+            }.items()
+        }
         self.assertNotEqual(native2.candidate.extents.digest, accepted1.extents.digest)
         for field in ("parameters", "m", "v", "update_counts"):
             self.assert_tree_prefix(
                 self, getattr(accepted1.retained_state.optimizer, field),
-                getattr(accepted2.retained_state.optimizer, field))
+                getattr(accepted2.retained_state.optimizer, field),
+                mutable_rows_by_key=(
+                    mutable_parameter_rows if field == "parameters" else None))
         self.assertEqual(self.neural_fingerprint(accepted2),
                          self.neural_fingerprint(native2.candidate))
         fingerprint = self.run_fingerprint()

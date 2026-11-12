@@ -21,6 +21,29 @@ class MixedSourceSupportTests(unittest.TestCase):
 
         MixedSourceSupport.assert_tree_prefix(self, parent, child)
 
+    def test_tree_prefix_allows_only_declared_new_semantic_rows_to_change(self):
+        parent = MappingProxyType({
+            "identity.bank.0": np.array(
+                [[1.0, 2.0], [0.0, 0.0], [5.0, 6.0]], dtype=np.float32),
+        })
+        child = MappingProxyType({
+            "identity.bank.0": np.array(
+                [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32),
+        })
+
+        MixedSourceSupport.assert_tree_prefix(
+            self, parent, child,
+            mutable_rows_by_key={"identity.bank.0": (1,)})
+
+        corrupted = MappingProxyType({
+            "identity.bank.0": np.array(
+                [[9.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32),
+        })
+        with self.assertRaises(AssertionError):
+            MixedSourceSupport.assert_tree_prefix(
+                self, parent, corrupted,
+                mutable_rows_by_key={"identity.bank.0": (1,)})
+
 
 if __name__ == "__main__":
     unittest.main()
