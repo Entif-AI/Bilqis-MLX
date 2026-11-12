@@ -146,12 +146,9 @@ The coordinator now uses one worker, `training_memory_policy(mx)` in each native
 stage, and a resource preflight that rejects near-full swap or low free memory.
 It does not claim a production hard allocator ceiling.
 
-Next: run the real-source fixture only after resources permit; repair any failing
-owner seam; exercise legitimate C05 retention and actual B13 accepted cold support,
-including ordinary/motif closure, correction replay/recovery and isolation; finish
-bounded drift, final unified synchronization and integration gates. No PR until
-those required gates pass. Issue #379 remains open; no self-merge authority exists.
-The remote worktree retains an older fixture copy: inspect/reconcile before update.
+This continuation plan is superseded by the verification-posture correction below.
+The retained-publication/C05 whole-school exercise is preserved as later
+system-qualification work rather than a C06 leaf-development prerequisite.
 
 ## Verification posture correction — 2026-11-12
 
@@ -187,3 +184,42 @@ Current reviewed unified advanced after that run and owns candidate-step proof v
 for C08 logical batches. C06 closure-bearing scalar proofs therefore advance to v5
 without changing v1-v4 bytes or C08 semantics. The current synchronization must be
 validated with bounded compatibility/owner tests before turn-in.
+
+## Current unified reconciliation and bounded turn-in evidence
+
+The feature consumed reviewed unified
+`cd213c72963519c19a3a36eb8e1442eb35d68718` in merge
+`e14138aaca8a1591ece060f7bae40db32a808ff7`. Six shared custody/training conflicts
+were reconciled against the reviewed C08 logical-batch contracts rather than
+preserving stale C06 assumptions. The post-reconciliation code head is
+`db686f648b524e7f02f469dc56af98bf1ad41353`.
+
+The merge exposed a real schema collision: reviewed unified already owns
+`candidate-step-proof/v4` for C08 logical batches, while the earlier C06 branch
+had used v4 for scalar retained-closure proofs. Unified v4 remains authoritative;
+C06 scalar closure proofs advance to v5. A compatibility regression initially
+caught a shifted positional v3 constructor and was repaired before turn-in.
+
+Bounded verification after reconciliation:
+
+- custody/schema/resource selection: **25/25 PASS**;
+- priority/salience/auxiliary selection: **14/14 PASS**;
+- combined C06/C08 portable integration cone: **57/57 PASS**;
+- native salience ordinal-loss checks: **3/3 PASS**;
+- Factory result/diagnostics contract: **4/4 PASS**;
+- Studio resource/default-stage policy: **6/6 PASS**;
+- moved C06 salience evidence owner tests: **7/7 PASS**;
+- `quality:changed`: PASS for development structure, governance integrity,
+  zero new code-smell findings, legacy-trainer authority plus its 7 tests, and
+  BAMF flow-control plus its 15 tests;
+- `git diff --check`: PASS.
+
+The combined portable cone also resolved a real semantic integration disagreement:
+legitimate repeated scalar source-authority use remains valid only when accepted
+source-anchor multiplicity and step order match exactly, while ambiguous
+scalar/logical-batch digest overlap still fails closed.
+
+No new multi-hour native/system witness was launched. The prior long-run failure at
+`A.PARENT` remains recorded system-level negative evidence for later
+operator-observed qualification. It does not block C06 leaf turn-in under the
+current verification posture. Issue #379 still has no self-merge authority.
