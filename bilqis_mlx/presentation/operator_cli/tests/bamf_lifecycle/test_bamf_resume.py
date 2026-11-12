@@ -118,13 +118,10 @@ class BamfResumeTests(BamfFirstStudentCase):
         target = self.root / "accepted-bamf"
         self.preflight(target)
         before = _tree_snapshot(target)
-        graph = {"schema": "test-graph"}
         from bilqis_mlx.runtime.bamf_operator import BamfOperatorResult
         with self.accepted_read_context(), patch(
                 "bilqis_mlx.presentation.operator_cli.command._invoke_learner",
                 side_effect=AssertionError("legacy learner must remain untouched")), patch(
-                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle_inputs.source_foundation",
-                return_value=(Path("/source"), object(), graph)), patch(
                 "bilqis_mlx.runtime.bamf_operator.operate_bamf",
                 return_value=BamfOperatorResult(
                     "VISIT_LIMIT", 1, 1, 0, 1, 1)) as operate:
@@ -137,7 +134,7 @@ class BamfResumeTests(BamfFirstStudentCase):
         self.assertEqual(report["status"], "VISIT_LIMIT")
         self.assertEqual(report["generation"], 1)
         operate.assert_called_once_with(
-            target, graph, minutes=90, max_visits=1, reserve_gib=100.0)
+            target, minutes=90, max_visits=1, reserve_gib=100.0)
         self.assertEqual(_tree_snapshot(target), before)
 
     def test_human_resume_run_id_conflict_never_reaches_learner(self):
