@@ -101,13 +101,14 @@ class C07LeaseClosureV2Tests(MixedWitnessSupport, unittest.TestCase):
 
         # The third delta starts only from a fresh read of accepted generation 2.
         cold2 = read_accepted_atlas_factory_release(self.run)
+        cold_credit = self.accepted_credit()
         self.assertEqual(cold2.release_sha256, h2.staged_candidate.successor.release_sha256)
         graph2 = candidate_realizations.admitted_candidate_graph(
             h2.staged_candidate, self.parent_graph)
         semantic3, h3, plan3, ledger3, checkpoint3, step3 = self.event_handoff(
             cold2, capability="D.COMMENCEMENT",
             mastered={"A.IDENTITY", "D.EVENT_OCCURRENCE"}, graph=graph2,
-            accepted_receipts=self.accepted_receipts(h2))
+            accepted_credit=cold_credit)
         self.assertEqual(
             h3.staged_candidate.successor.transition.added_capabilities,
             ("D.COMMENCEMENT",))

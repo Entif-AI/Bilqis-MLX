@@ -7,6 +7,7 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
+    FACTORY_RELEASE_ADMISSION_SCHEMA_V2,
     FactoryReleaseAdmissionBinding,
     ParsedFactoryReleaseAdmissionBinding,
     _issue_factory_release_admission_binding,
@@ -137,6 +138,16 @@ class FactoryReleaseAdmissionBindingTests(unittest.TestCase):
         parsed = FactoryReleaseAdmissionBinding.from_record(record)
         self.assertIsInstance(parsed, ParsedFactoryReleaseAdmissionBinding)
         self.assertEqual(parsed.to_record(), record)
+
+    def test_v2_binding_roundtrip_seals_cumulative_obligation_keys(self):
+        keys = (("semantic:event", "9" * 64),)
+        binding = _issue_factory_release_admission_binding(
+            self.candidate, self.parent, transition=self.transition,
+            accepted_obligation_keys=keys)
+        parsed = FactoryReleaseAdmissionBinding.from_record(binding.to_record())
+        self.assertEqual(binding.schema_version, FACTORY_RELEASE_ADMISSION_SCHEMA_V2)
+        self.assertEqual(parsed.accepted_obligation_keys, keys)
+        self.assertEqual(parsed.digest, binding.digest)
 
     def test_live_binding_rejects_substituted_candidate(self):
         alternate_feature = (

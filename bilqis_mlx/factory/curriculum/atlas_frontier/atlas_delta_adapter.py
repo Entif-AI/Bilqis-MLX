@@ -7,7 +7,7 @@ proposal.  Persisted staging and admission remain with their existing owners.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 import hashlib
 
 from bilqis_mlx.errors import BilqisError
@@ -36,6 +36,54 @@ from . import candidate_realizations
 
 
 _SHA256_HEX_LENGTH = hashlib.sha256().digest_size * 2
+_ACCEPTED_CREDIT_ISSUER = object()
+
+
+def _digest(value: object) -> bool:
+    return (type(value) is str and len(value) == _SHA256_HEX_LENGTH
+            and all(char in "0123456789abcdef" for char in value))
+
+
+@dataclass(frozen=True)
+class AcceptedObligationCredit:
+    """Ephemeral planner capability minted only from authenticated B13 custody."""
+
+    factory_release_sha256: str
+    acceptance_sha256: str
+    obligation_keys: tuple[tuple[str, str], ...]
+    schema: str = "bilqis.factory-accepted-obligation-credit/v1"
+    _issuance: object = field(init=False, default=None, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if (getattr(self, "_issuance", None) is not _ACCEPTED_CREDIT_ISSUER
+                or not _digest(self.factory_release_sha256)
+                or not _digest(self.acceptance_sha256)
+                or type(self.obligation_keys) is not tuple
+                or self.obligation_keys != tuple(sorted(set(self.obligation_keys)))
+                or any(type(item) is not tuple or len(item) != 2
+                       or type(item[0]) is not str or not item[0]
+                       or not _digest(item[1]) for item in self.obligation_keys)
+                or self.schema != "bilqis.factory-accepted-obligation-credit/v1"):
+            _fail("BAMF_PLANNER_ACCEPTED_CREDIT_INVALID")
+
+
+def _issue_accepted_obligation_credit(
+    factory_release_sha256: str,
+    acceptance_sha256: str,
+    obligation_keys: tuple[tuple[str, str], ...],
+) -> AcceptedObligationCredit:
+    """Mint planner credit after runtime has authenticated accepted B13 custody."""
+    credit = object.__new__(AcceptedObligationCredit)
+    for name, value in (
+        ("factory_release_sha256", factory_release_sha256),
+        ("acceptance_sha256", acceptance_sha256),
+        ("obligation_keys", tuple(sorted(set(obligation_keys)))),
+        ("schema", "bilqis.factory-accepted-obligation-credit/v1"),
+        ("_issuance", _ACCEPTED_CREDIT_ISSUER),
+    ):
+        object.__setattr__(credit, name, value)
+    credit.__post_init__()
+    return credit
 
 
 def bind_realized_snapshot(
@@ -79,7 +127,7 @@ class AtlasCoverageEpoch:
     current_release: ExecutableFactoryRelease
     staged_candidates: tuple[StagedCandidate, ...]
     prior: FrontierProgress | None = None
-    accepted_receipts: tuple[StagedSelectionReceipt, ...] = ()
+    accepted_credit: AcceptedObligationCredit | None = None
 
     def verify(self) -> None:
         if (type(self.snapshot) is not CurriculumSnapshot
@@ -89,9 +137,8 @@ class AtlasCoverageEpoch:
                 or type(self.staged_candidates) is not tuple
                 or any(type(item) is not StagedCandidate for item in self.staged_candidates)
                 or (self.prior is not None and type(self.prior) is not FrontierProgress)
-                or type(self.accepted_receipts) is not tuple
-                or any(type(item) is not StagedSelectionReceipt
-                       for item in self.accepted_receipts)):
+                or (self.accepted_credit is not None
+                    and type(self.accepted_credit) is not AcceptedObligationCredit)):
             _fail("BAMF_PLANNER_ADAPTER_INPUT_INVALID")
         self.snapshot.verify()
         self.closure.verify()
@@ -111,7 +158,11 @@ class AtlasCoverageEpoch:
             _fail("BAMF_PLANNER_ADAPTER_STAGED_SET_INVALID")
         for item in self.staged_candidates:
             item.verify(self.candidate_frontier, self.current_release)
-        _verify_accepted_receipt_chain(self)
+        if self.accepted_credit is not None:
+            self.accepted_credit.__post_init__()
+            if (self.accepted_credit.factory_release_sha256
+                    != self.current_release.release_sha256):
+                _fail("BAMF_PLANNER_ACCEPTED_CREDIT_RELEASE_DRIFT")
         if self.prior is not None:
             self.prior.verify()
 
@@ -199,42 +250,15 @@ def _credited_requested_keys(coverage_epoch: AtlasCoverageEpoch) -> tuple[tuple[
 def _accepted_requested_keys(
     coverage_epoch: AtlasCoverageEpoch,
 ) -> tuple[tuple[str, str], ...]:
-    """Credit exact obligation identities from the accepted receipt lineage."""
+    """Credit only exact obligation identities authenticated by B13 custody."""
+    credit = coverage_epoch.accepted_credit
+    if credit is None:
+        return ()
     current = current_obligations(coverage_epoch.closure)
     return tuple(
-        key for key in sorted(requested_keys(coverage_epoch.accepted_receipts))
+        key for key in credit.obligation_keys
         if current.get(key[0]) == key[1]
     )
-
-
-def _verify_accepted_receipt_chain(coverage_epoch: AtlasCoverageEpoch) -> None:
-    """Require one content-addressed direct-successor chain ending at current."""
-    receipts = coverage_epoch.accepted_receipts
-    if not receipts:
-        return
-    for receipt in receipts:
-        receipt.verify()
-    successor_by_sha = {
-        receipt.staged_successor_sha256: receipt for receipt in receipts
-    }
-    if len(successor_by_sha) != len(receipts):
-        _fail("BAMF_PLANNER_ACCEPTED_RECEIPT_LINEAGE_INVALID")
-    predecessor_counts = {}
-    for receipt in receipts:
-        predecessor = receipt.predecessor_release.release_sha256
-        predecessor_counts[predecessor] = predecessor_counts.get(predecessor, 0) + 1
-    current_sha = coverage_epoch.current_release.release_sha256
-    roots = tuple(
-        receipt for receipt in receipts
-        if receipt.predecessor_release.release_sha256 not in successor_by_sha
-    )
-    if (current_sha not in successor_by_sha
-            or current_sha in predecessor_counts
-            or len(roots) != 1
-            or any(
-                predecessor_counts.get(successor_sha, 0) != 1
-                for successor_sha in successor_by_sha if successor_sha != current_sha)):
-        _fail("BAMF_PLANNER_ACCEPTED_RECEIPT_LINEAGE_INVALID")
 
 
 def next_atlas_delta(

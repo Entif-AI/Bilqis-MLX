@@ -161,6 +161,76 @@ def read_accepted_atlas_factory_release(run_dir):
     })
 
 
+def _accepted_atlas_obligation_state(run_dir):
+    """Recover cumulative accepted obligation identity through B13 ancestry."""
+    from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
+        ATLAS_ADMISSION_SCHEMA_V2, ParsedAtlasAdmissionBinding,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
+    from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
+        FACTORY_RELEASE_ADMISSION_SCHEMA_V2,
+        ParsedFactoryReleaseAdmissionBinding,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
+        accepted_binding_for_manifest, accepted_generation,
+        parent_acceptance_anchor_from_manifest,
+    )
+
+    root = Path(run_dir)
+    pointer, student = accepted_generation(root / "bamf-state.json")
+    current_acceptance = pointer["acceptance_sha256"]
+    current_release = read_accepted_atlas_factory_release(root)
+    manifest_sha256 = pointer["manifest_sha256"]
+    acceptance_sha256 = current_acceptance
+    visited = set()
+    while student.generation > 0:
+        if manifest_sha256 in visited:
+            _invalid("BAMF_ATLAS_ACCEPTED_OBLIGATION_BINDING_REQUIRED")
+        visited.add(manifest_sha256)
+        binding = accepted_binding_for_manifest(
+            root, manifest_sha256, student,
+            expected_acceptance_sha256=acceptance_sha256)
+        if (isinstance(binding, ParsedAtlasAdmissionBinding)
+                and binding.schema_version == ATLAS_ADMISSION_SCHEMA_V2):
+            return (
+                current_release.release_sha256,
+                current_acceptance,
+                binding.selected_obligation_keys,
+            )
+        if (isinstance(binding, ParsedFactoryReleaseAdmissionBinding)
+                and binding.schema_version == FACTORY_RELEASE_ADMISSION_SCHEMA_V2):
+            return (
+                current_release.release_sha256,
+                current_acceptance,
+                binding.accepted_obligation_keys,
+            )
+        parent_manifest = student.parent_manifest_sha256
+        parent_acceptance = parent_acceptance_anchor_from_manifest(
+            root, manifest_sha256)
+        if not _sha(parent_manifest) or not _sha(parent_acceptance):
+            _invalid("BAMF_ATLAS_ACCEPTED_OBLIGATION_BINDING_REQUIRED")
+        student = load_bamf_bundle(
+            root / "bamf-bundles" / parent_manifest,
+            expected_manifest_sha256=parent_manifest)
+        manifest_sha256 = parent_manifest
+        acceptance_sha256 = parent_acceptance
+    return current_release.release_sha256, current_acceptance, ()
+
+
+def read_accepted_atlas_obligation_credit(run_dir):
+    """Mint ephemeral planner credit only from authenticated accepted B13 custody."""
+    from bilqis_mlx.factory.atlas_delta_adapter import (
+        _issue_accepted_obligation_credit,
+    )
+
+    release_sha256, acceptance_sha256, obligation_keys = (
+        _accepted_atlas_obligation_state(run_dir))
+    if not obligation_keys:
+        return None
+    return _issue_accepted_obligation_credit(
+        release_sha256, acceptance_sha256, obligation_keys)
+
+
 def renew_atlas_lease(run_dir, lease, *, independently_loaded_run, registry,
                       expected_prior_lease_sha256, human_started):
     """Renew disposable scope explicitly; caller assertions do not prove human identity."""

@@ -8,7 +8,7 @@ from bilqis_mlx.factory.atlas_frontier import (
     staged_selection_receipt,
 )
 from bilqis_mlx.factory.atlas_delta_adapter import (
-    _credited_requested_keys,
+    AcceptedObligationCredit, _credited_requested_keys,
 )
 from bilqis_mlx.factory.atlas_delta_scope import AtlasDeltaScopeHandoff
 from bilqis_mlx.factory.atlas_frontier_progress import FrontierStatus, plan_frontier_progress
@@ -146,16 +146,16 @@ class AtlasDeltaAdapterTests(AtlasDeltaAdapterFixture):
             "BAMF_PLANNER_ADAPTER_STAGED_SET_INVALID",
         )
 
-    def test_unaccepted_receipt_cannot_mint_cold_obligation_credit(self):
-        handoff = self._handoff()
-        epoch = self._epoch(accepted_receipts=(handoff.receipt,))
-
+    def test_caller_cannot_mint_cold_obligation_credit(self):
         with self.assertRaises(BilqisError) as caught:
-            epoch.verify()
-
+            AcceptedObligationCredit(
+                self.current.release_sha256,
+                "a" * 64,
+                (("z.op.0", "b" * 64),),
+            )
         self.assertEqual(
             caught.exception.context["reason"],
-            "BAMF_PLANNER_ACCEPTED_RECEIPT_LINEAGE_INVALID",
+            "BAMF_PLANNER_ACCEPTED_CREDIT_INVALID",
         )
 
     def test_ready_semantic_without_realized_staged_binding_is_explicit_debt(self):

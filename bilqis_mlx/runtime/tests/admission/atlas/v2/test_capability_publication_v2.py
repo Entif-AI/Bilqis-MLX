@@ -40,6 +40,9 @@ class CapabilityPublicationV2Tests(CapabilityV2Support):
             side_effect=[SimpleNamespace(release_sha256=predecessor),
                          SimpleNamespace(release_sha256=successor)]))
         stack.enter_context(patch(
+            "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_obligation_credit",
+            return_value=None))
+        stack.enter_context(patch(
             "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
             return_value=(parent, "a" * 64)))
         stack.enter_context(patch(
@@ -117,8 +120,10 @@ class CapabilityPublicationV2Tests(CapabilityV2Support):
             handoff.receipt.predecessor_release.release_sha256)
         derive.assert_called_once_with(
             parent, parent_manifest_sha256="a" * 64, transition=transition)
-        issue_binding.assert_called_once_with(
-            candidate, parent, transition=transition)
+        issue_binding.assert_called_once()
+        self.assertEqual(issue_binding.call_args.args, (candidate, parent))
+        self.assertIs(issue_binding.call_args.kwargs["transition"], transition)
+        self.assertTrue(issue_binding.call_args.kwargs["accepted_obligation_keys"])
         publish.assert_called_once_with(
             runtime.run_dir, candidate, admission=binding, reserve_gib=0.0)
         exact_release.assert_called_once()

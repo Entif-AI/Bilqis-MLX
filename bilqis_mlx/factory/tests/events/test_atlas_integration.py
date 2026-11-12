@@ -15,6 +15,7 @@ from bilqis_mlx.factory.atlas_frontier_events import FactoryAdmissionEvent, reco
 from bilqis_mlx.factory.atlas_frontier_progress import plan_frontier_progress
 from bilqis_mlx.factory.atlas_frontier_progress_contracts import FrontierStatus
 from bilqis_mlx.factory.atlas_frontier_progress_validation import requested_keys
+from bilqis_mlx.factory.atlas_delta_adapter import _issue_accepted_obligation_credit
 from bilqis_mlx.factory.atlas_delta_scope import AtlasDeltaScopeHandoff
 from bilqis_mlx.factory.atlas_frontier_selection import select_frontier_delta_for_projection
 from bilqis_mlx.factory.atlas_frontier_selection import _candidate_signature
@@ -216,7 +217,11 @@ class EventCandidateAtlasIntegrationTests(EventCandidateRealizationFixture, unit
         state = (self.current, self.parent_graph, {"A.IDENTITY"}, None, None)
         current, graph, mastered, prior, _admitted_snapshot = self._stage_capability(
             candidate, source_frontier, policy, state, "D.EVENT_OCCURRENCE")
-        accepted_receipts = prior.staged_receipts
+        accepted_credit = _issue_accepted_obligation_credit(
+            current.release_sha256,
+            "a" * 64,
+            tuple(sorted(requested_keys(prior.staged_receipts))),
+        )
 
         semantic_id = event_frames.atlas_semantic_id("D.COMMENCEMENT")
         staged = candidate_realizations.prepare_realized_candidate(
@@ -237,7 +242,7 @@ class EventCandidateAtlasIntegrationTests(EventCandidateRealizationFixture, unit
         handoff = next_atlas_delta(
             AtlasCoverageEpoch(
                 snapshot, closure, self.frontier, current, (staged,), None,
-                accepted_receipts),
+                accepted_credit),
             learner, plan)
 
         self.assertIsInstance(handoff, AtlasDeltaScopeHandoff)
@@ -249,7 +254,11 @@ class EventCandidateAtlasIntegrationTests(EventCandidateRealizationFixture, unit
         state = (self.current, self.parent_graph, {"A.IDENTITY"}, None, None)
         current, graph, mastered, prior, _admitted_snapshot = self._stage_capability(
             candidate, source_frontier, policy, state, "D.EVENT_OCCURRENCE")
-        accepted_receipts = prior.staged_receipts
+        accepted_credit = _issue_accepted_obligation_credit(
+            current.release_sha256,
+            "a" * 64,
+            tuple(sorted(requested_keys(prior.staged_receipts))),
+        )
 
         semantic_id = event_frames.atlas_semantic_id("D.COMMENCEMENT")
         staged = candidate_realizations.prepare_realized_candidate(
@@ -280,7 +289,7 @@ class EventCandidateAtlasIntegrationTests(EventCandidateRealizationFixture, unit
         result = next_atlas_delta(
             AtlasCoverageEpoch(
                 snapshot, closure, self.frontier, current, (staged,), None,
-                accepted_receipts),
+                accepted_credit),
             learner, plan)
 
         self.assertIs(result, FrontierStatus.IMPLEMENTATION_UNCOVERED)
