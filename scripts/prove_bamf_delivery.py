@@ -12,11 +12,16 @@ from pathlib import Path
 import random
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.factory.executable_release import ExecutableFactoryRelease
+from bilqis_mlx.runtime.bamf_first_student import (
+    BamfFoundationConfig, LaunchReceipt, preflight_bamf_foundation,
+)
 from bilqis_mlx.semantics.cognitive_dag import (
     DAGBudget, DAGNode, DAGOperand, DAGProgram, RefKind, TaskGoal,
 )
 
 _CONFIG_SCHEMA = "bilqis.c13.delivery-config/v1"
+_FOUNDATION_SCHEMA = "bilqis.c13.foundation-launch-input/v1"
 _SOURCE_SCHEMA = "bilqis.c13.episode-source-release/v1"
 _CASE_SCHEMA = "bilqis.c13.episode-binding-case/v1"
 _RECEIPT_SCHEMA = "bilqis.c13.delivery-receipt/v1"
@@ -26,11 +31,6 @@ _ACTORS = ("A", "B", "C")
 
 def _fail(reason: str) -> None:
     ErrorBus.raise_(SCHOOL.BAMF_SOLVER.INVALID, reason=reason)
-
-
-def _digest(value: object) -> str:
-    wire = json.dumps(value, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(wire.encode()).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -49,9 +49,24 @@ class DeliveryConfig:
 
 
 @dataclass(frozen=True)
+class FoundationLaunchInput:
+    config: BamfFoundationConfig
+    admitted_release: ExecutableFactoryRelease
+    schema_version: str = _FOUNDATION_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (self.schema_version != _FOUNDATION_SCHEMA
+                or type(self.config) is not BamfFoundationConfig
+                or type(self.admitted_release) is not ExecutableFactoryRelease):
+            _fail("BAMF_C13_FOUNDATION_INPUT_INVALID")
+        self.config.validate()
+
+
+@dataclass(frozen=True)
 class EpisodeSourceRelease:
     release_sha256: str
     semantic_release: str
+    foundation: FoundationLaunchInput | None = None
     source_family_id: str = "bamf.c13.episode-binding/v1"
     schema_version: str = _SOURCE_SCHEMA
 
@@ -61,6 +76,10 @@ class EpisodeSourceRelease:
                 or any(not isinstance(value, str) or len(value) != 64
                        or any(char not in "0123456789abcdef" for char in value)
                        for value in values)
+                or (self.foundation is not None
+                    and (type(self.foundation) is not FoundationLaunchInput
+                         or self.foundation.admitted_release.release_sha256
+                         != self.release_sha256))
                 or not self.source_family_id):
             _fail("BAMF_C13_SOURCE_RELEASE_INVALID")
 
@@ -128,14 +147,23 @@ class DeliveryReceipt:
     status: str
     exercised_behaviors: tuple[str, ...]
     remaining_behaviors: tuple[str, ...]
+    launch_receipt: LaunchReceipt | None = None
+    run_dir: str | None = None
     schema_version: str = _RECEIPT_SCHEMA
 
     def __post_init__(self) -> None:
         if (self.schema_version != _RECEIPT_SCHEMA
-                or self.status not in ("PREPARED", "EXECUTED")
+                or self.status not in ("PREPARED", "FOUNDATION_CREATED", "EXECUTED")
                 or self.baseline_case_count != 64 or self.fresh_case_count != 64
                 or not 0 <= self.max_steps <= _MAX_STEPS
-                or len(self.fixture_manifest_sha256) != 64):
+                or len(self.fixture_manifest_sha256) != 64
+                or (self.status == "PREPARED"
+                    and (self.launch_receipt is not None or self.run_dir is not None))
+                or (self.status != "PREPARED"
+                    and (type(self.launch_receipt) is not LaunchReceipt
+                         or not isinstance(self.run_dir, str) or not self.run_dir
+                         or self.launch_receipt.factory_release_sha256
+                         != self.source_release_sha256))):
             _fail("BAMF_C13_DELIVERY_RECEIPT_INVALID")
 
 
@@ -247,7 +275,7 @@ def _disposable(path: Path) -> Path:
 
 
 def prove_bamf_delivery(config, source_release, disposable_dir, max_steps) -> DeliveryReceipt:
-    """Prepare the C13 witness deterministically; later leaves own neural execution."""
+    """Prepare C13 fixtures and optionally publish real disposable B13 generation zero."""
     if (type(config) is not DeliveryConfig
             or type(source_release) is not EpisodeSourceRelease
             or type(max_steps) is not int or not 0 <= max_steps <= _MAX_STEPS):
@@ -257,17 +285,33 @@ def prove_bamf_delivery(config, source_release, disposable_dir, max_steps) -> De
     manifest_path = root / "c13-source-fixtures.json"
     manifest_path.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
     digest = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
-    remaining = (
+    launch = None
+    run_dir = None
+    exercised = ("SOURCE_FIXTURES",)
+    remaining = [
+        "DISPOSABLE_CREATION",
         "SOURCE_BOUND_GRADIENTS", "PAIRED_EVALUATION", "ACCEPTED_CANDIDATE",
         "REJECTED_CANDIDATE", "COLD_RESTART", "APPEND_ONLY_SEMANTIC_DELTA",
-    )
+    ]
+    status = "PREPARED"
+    if source_release.foundation is not None:
+        target = root / "run"
+        launch = preflight_bamf_foundation(
+            source_release.foundation.config,
+            source_release.foundation.admitted_release,
+            target,
+        )
+        run_dir = str(target.resolve())
+        exercised = (*exercised, "DISPOSABLE_CREATION")
+        remaining.remove("DISPOSABLE_CREATION")
+        status = "FOUNDATION_CREATED"
     return DeliveryReceipt(
         source_release.release_sha256, source_release.semantic_release, digest,
-        64, 64, max_steps, "PREPARED", ("DISPOSABLE_CREATION",), remaining)
+        64, 64, max_steps, status, exercised, tuple(remaining), launch, run_dir)
 
 
 __all__ = (
     "DeliveryConfig", "DeliveryReceipt", "EpisodeBindingCase", "EpisodeEvent",
     "EpisodeSourceRelease", "check_episode_binding", "episode_binding_case",
-    "episode_task_goal", "prove_bamf_delivery",
+    "episode_task_goal", "FoundationLaunchInput", "prove_bamf_delivery",
 )

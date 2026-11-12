@@ -3,11 +3,21 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
+import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.runtime.tests.bamf_first_student._bamf_first_student_support import (
+    BamfFirstStudentCase,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
+    ATLAS_RELEASE, genesis_feature_source_patch,
+)
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from scripts.prove_bamf_delivery import (
     DeliveryConfig, EpisodeSourceRelease, check_episode_binding,
-    episode_binding_case, episode_task_goal, prove_bamf_delivery,
+    episode_binding_case, episode_task_goal, FoundationLaunchInput,
+    prove_bamf_delivery,
 )
 
 
@@ -51,7 +61,9 @@ class BamfLearningPathFixtureTests(unittest.TestCase):
             payload = json.loads(
                 (Path(directory) / "c13-source-fixtures.json").read_text())
         self.assertEqual(receipt.status, "PREPARED")
-        self.assertEqual(receipt.exercised_behaviors, ("DISPOSABLE_CREATION",))
+        self.assertEqual(receipt.exercised_behaviors, ("SOURCE_FIXTURES",))
+        self.assertIsNone(receipt.launch_receipt)
+        self.assertIsNone(receipt.run_dir)
         self.assertEqual(receipt.baseline_case_count, 64)
         self.assertEqual(receipt.fresh_case_count, 64)
         self.assertEqual(
@@ -60,7 +72,7 @@ class BamfLearningPathFixtureTests(unittest.TestCase):
             [row["input"]["seed"] for row in payload["fresh"]], list(range(64, 128)))
         self.assertEqual(
             set(receipt.remaining_behaviors),
-            {"SOURCE_BOUND_GRADIENTS", "PAIRED_EVALUATION", "ACCEPTED_CANDIDATE",
+            {"DISPOSABLE_CREATION", "SOURCE_BOUND_GRADIENTS", "PAIRED_EVALUATION", "ACCEPTED_CANDIDATE",
              "REJECTED_CANDIDATE", "COLD_RESTART", "APPEND_ONLY_SEMANTIC_DELTA"},
         )
         self.assertTrue(all("target_actor" not in json.dumps(row["input"])
@@ -80,6 +92,36 @@ class BamfLearningPathFixtureTests(unittest.TestCase):
         retained = Path(__file__).resolve().parents[2] / "runs" / "school-mlx-v1"
         with self.assertRaises(BilqisError):
             prove_bamf_delivery(self.config, self.source, retained, 1)
+
+
+class BamfLearningPathFoundationTests(BamfFirstStudentCase):
+    def test_integrated_preflight_publishes_real_zero_update_disposable_foundation(self):
+        source = EpisodeSourceRelease(
+            self.release.release_sha256,
+            ATLAS_RELEASE,
+            FoundationLaunchInput(self.config(run_id="c13-disposable"), self.release),
+        )
+        target = self.root / "c13-delivery"
+        with shape_patch(), genesis_feature_source_patch(), patch(
+                "bilqis_mlx.runtime.bamf_first_student.resolve_atlas_artifact_selection",
+                return_value=self.selection), patch.object(
+                mlx_checkpoint, "assert_headroom"), patch(
+                "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom"):
+            receipt = prove_bamf_delivery(DeliveryConfig(), source, target, 0)
+
+        self.assertEqual(receipt.status, "FOUNDATION_CREATED")
+        self.assertEqual(
+            receipt.exercised_behaviors,
+            ("SOURCE_FIXTURES", "DISPOSABLE_CREATION"),
+        )
+        self.assertNotIn("DISPOSABLE_CREATION", receipt.remaining_behaviors)
+        self.assertEqual(receipt.launch_receipt.dashboard_metrics.optimizer_step, 0)
+        self.assertEqual(
+            receipt.launch_receipt.factory_release_sha256,
+            self.release.release_sha256,
+        )
+        self.assertTrue((Path(receipt.run_dir) / "bamf-state.json").is_file())
+        self.assertTrue((target / "c13-source-fixtures.json").is_file())
 
 
 if __name__ == "__main__":
