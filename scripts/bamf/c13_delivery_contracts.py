@@ -136,6 +136,7 @@ class DeliveryReceipt:
     launch_receipt: LaunchReceipt | None = None
     run_dir: str | None = None
     candidate_attempts: tuple[CandidateAttemptReceipt, ...] = ()
+    semantic_delta: SemanticDeltaReceipt | None = None
     schema_version: str = RECEIPT_SCHEMA
 
     def __post_init__(self) -> None:
@@ -147,11 +148,14 @@ class DeliveryReceipt:
                 or len(self.fixture_manifest_sha256) != 64
                 or not isinstance(self.candidate_attempts, tuple)
                 or any(type(item) is not CandidateAttemptReceipt
-                       for item in self.candidate_attempts)):
+                       for item in self.candidate_attempts)
+                or (self.semantic_delta is not None
+                    and type(self.semantic_delta) is not SemanticDeltaReceipt)):
             fail("BAMF_C13_DELIVERY_RECEIPT_INVALID")
         has_launch = type(self.launch_receipt) is LaunchReceipt
         if self.status == "PREPARED":
-            if has_launch or self.run_dir is not None or self.candidate_attempts:
+            if (has_launch or self.run_dir is not None or self.candidate_attempts
+                    or self.semantic_delta is not None):
                 fail("BAMF_C13_DELIVERY_RECEIPT_INVALID")
             return
         if (not has_launch or not isinstance(self.run_dir, str) or not self.run_dir

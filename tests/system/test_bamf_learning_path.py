@@ -165,6 +165,31 @@ class BamfLearningPathFoundationTests(BamfFirstStudentCase):
             ("APPEND_ONLY_SEMANTIC_DELTA",),
         )
 
+    def test_semantic_delta_binding_requires_matching_accepted_b13_state(self):
+        from scripts.bamf.c13_delivery_contracts import SemanticDeltaReceipt
+
+        source = EpisodeSourceRelease(
+            self.release.release_sha256,
+            ATLAS_RELEASE,
+            FoundationLaunchInput(self.config(run_id="c13-delta-bind"), self.release),
+        )
+        target = self.root / "delta-bind"
+        with shape_patch(), genesis_feature_source_patch(), patch(
+                "bilqis_mlx.runtime.bamf_first_student.resolve_atlas_artifact_selection",
+                return_value=self.selection), patch.object(
+                mlx_checkpoint, "assert_headroom"), patch(
+                "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom"):
+            delivery = prove_bamf_delivery(DeliveryConfig(), source, target, 0)
+        delta = SemanticDeltaReceipt("new.semantic", 0, 1, 0, True, ((0, 1),))
+        accepted = SimpleNamespace(
+            generation=1, retained_state=SimpleNamespace(optimizer_step=0))
+        with patch.object(
+                delivery_runtime, "load_accepted_generation", return_value=accepted):
+            bound = delivery_runtime.bind_semantic_delta_receipt(delivery, delta)
+        self.assertIn("APPEND_ONLY_SEMANTIC_DELTA", bound.exercised_behaviors)
+        self.assertNotIn("APPEND_ONLY_SEMANTIC_DELTA", bound.remaining_behaviors)
+        self.assertEqual(bound.semantic_delta, delta)
+
 
 class BamfLearningPathCandidateAccountingTests(unittest.TestCase):
     @staticmethod
@@ -274,7 +299,6 @@ class BamfLearningPathSemanticDeltaTests(unittest.TestCase):
         self.assertEqual(receipt.current_generation, 5)
         self.assertEqual(receipt.optimizer_step, 9)
         self.assertEqual(receipt.new_rows, ((0, 1),))
-
 
 class BamfLearningPathEpisodeSourceTests(unittest.TestCase):
     def test_disposable_episode_provider_compiles_and_redraws_through_factory(self):

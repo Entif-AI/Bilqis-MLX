@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from dataclasses import replace
 
 import numpy as np
 
@@ -160,7 +161,35 @@ def record_append_only_semantic_delta(
     )
 
 
+def bind_semantic_delta_receipt(delivery, semantic_delta: SemanticDeltaReceipt):
+    """Bind verified C07 delta state into a C13 delivery receipt without rerunning C07."""
+    from scripts.bamf.c13_delivery_contracts import DeliveryReceipt
+
+    if (type(delivery) is not DeliveryReceipt
+            or type(semantic_delta) is not SemanticDeltaReceipt
+            or delivery.run_dir is None
+            or delivery.semantic_delta is not None):
+        raise ValueError("BAMF_C13_SEMANTIC_DELTA_BINDING_INVALID")
+    accepted = load_accepted_generation(Path(delivery.run_dir))
+    if (accepted.generation != semantic_delta.current_generation
+            or accepted.retained_state.optimizer_step != semantic_delta.optimizer_step):
+        raise ValueError("BAMF_C13_SEMANTIC_DELTA_ACCEPTED_STATE_DRIFT")
+    exercised = tuple(dict.fromkeys((*delivery.exercised_behaviors,
+                                     "APPEND_ONLY_SEMANTIC_DELTA")))
+    remaining = tuple(
+        item for item in delivery.remaining_behaviors
+        if item != "APPEND_ONLY_SEMANTIC_DELTA")
+    status = "EXECUTED" if not remaining else delivery.status
+    return replace(
+        delivery,
+        status=status,
+        exercised_behaviors=exercised,
+        remaining_behaviors=remaining,
+        semantic_delta=semantic_delta,
+    )
+
+
 __all__ = (
-    "attempt_owner_candidate", "cold_restart_identity", "record_append_only_semantic_delta",
-    "run_candidate_attempts",
+    "attempt_owner_candidate", "bind_semantic_delta_receipt", "cold_restart_identity",
+    "record_append_only_semantic_delta", "run_candidate_attempts",
 )
