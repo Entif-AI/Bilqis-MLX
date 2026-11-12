@@ -4,8 +4,9 @@ import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.teacher_lineage import (
-    HISTORICAL_REPLAY_HEAD, adaptation_authority_ref, advance_teacher_lineage,
-    bind_next_teacher_epoch, initialize_teacher_lineage, restore_teacher_lineage,
+    HISTORICAL_REPLAY_HEAD, adaptation_authority_ref, advance_priority_rotation,
+    advance_teacher_lineage, bind_next_teacher_epoch, initialize_teacher_lineage,
+    priority_rotation_state, restore_teacher_lineage,
 )
 from bilqis_mlx.learning.teacher_visit_identity import (
     TeacherVisitIdentity, derive_teacher_visit_identity,
@@ -198,6 +199,20 @@ class TeacherLineageTests(unittest.TestCase):
         self.assertEqual(advanced.teacher_state["last_visit"], visit.to_record())
         self.assertEqual(advanced.teacher_state["next_seed"], 43)
         self.assertEqual(advanced.teacher_state["cursor"], "lesson:8")
+
+    def test_priority_rotation_is_grade_neutral_backward_compatible_and_monotonic(self):
+        _teacher, _adaptation, projection = self.initialize()
+        self.assertEqual(priority_rotation_state(projection.teacher_state), (0, {}))
+        first = advance_priority_rotation(projection.teacher_state, "capability:zeta")
+        second = advance_priority_rotation(first, "capability:alpha")
+        third = advance_priority_rotation(second, "capability:zeta")
+        self.assertEqual(priority_rotation_state(third), (
+            3, {"capability:alpha": 2, "capability:zeta": 3}))
+        self.assertNotIn("grade", third)
+        malformed = dict(third)
+        malformed["priority_last_selected"] = {"capability:zeta": 4}
+        with self.assertRaises(BilqisError):
+            restore_teacher_lineage(malformed)
 
 
 if __name__ == "__main__":

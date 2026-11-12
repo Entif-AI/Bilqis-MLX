@@ -57,6 +57,31 @@ class IterationTest(TestCase):
         self.assertEqual(reason, "ATLAS_ADMISSION_ADOPTED_COLD_RESUME")
         self.assertEqual(records, [])
 
+    def test_out_of_scope_atlas_stage_allows_existing_learning_to_continue(self):
+        staged = AdmissionResult(
+            AdmissionStatus.STAGED,
+            "1" * 64,
+            "2" * 64,
+            "3" * 64,
+            "4" * 64,
+            "OUT_OF_LEASE_SCOPE",
+            "Renew the lease for the new release; keep current learning active.",
+        )
+        records = []
+        with patch(
+            "bilqis_mlx.runtime.atlas_admission.dispatch_atlas_frontier_proposal",
+            return_value=staged,
+        ):
+            control, reason = subject._dispatch_atlas_frontier_attempt(
+                "run", {"generation": 7}, object(),
+                "autonomy/proposals/fixture.json",
+                record=lambda _path, event: records.append(event),
+            )
+        self.assertIs(control, DispatchControl.PROCEED)
+        self.assertEqual(reason, "ATLAS_ADMISSION_STAGED")
+        self.assertEqual(records[0]["reason"], "OUT_OF_LEASE_SCOPE")
+        self.assertEqual(records[0]["actual_neural_updates"], 0)
+
     def test_time_limit_stops_before_assessment(self):
         receipt = {"school": {}}
         school = SimpleNamespace(stage="MAIN", grade="A")

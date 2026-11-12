@@ -6,10 +6,12 @@ import io
 import json
 from pathlib import Path
 import shutil
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from bilqis_mlx.cli import main
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+from bilqis_mlx.runtime.atlas_flywheel import AdmissionFlywheelStatus
 from bilqis_mlx.runtime.tests.bamf_first_student._bamf_first_student_support import BamfFirstStudentCase
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
     source_features,
@@ -114,21 +116,53 @@ class BamfResumeTests(BamfFirstStudentCase):
         self.assertNotIn("BAMF_ATLAS_ENROLLMENT_REQUEST_INVALID", errors)
         self.assertEqual(_tree_snapshot(target), before)
 
-    def test_human_resume_is_cold_validation_only_and_neural_inert(self):
+    def test_human_resume_dispatches_bamf_native_operator_after_validation(self):
         target = self.root / "accepted-bamf"
         self.preflight(target)
         before = _tree_snapshot(target)
+        from bilqis_mlx.runtime.bamf_operator import BamfOperatorResult
         with self.accepted_read_context(), patch(
                 "bilqis_mlx.presentation.operator_cli.command._invoke_learner",
-                side_effect=AssertionError("C16.2 owns later neural execution")):
+                side_effect=AssertionError("legacy learner must remain untouched")), patch(
+                "bilqis_mlx.runtime.bamf_operator.operate_bamf",
+                return_value=BamfOperatorResult(
+                    "VISIT_LIMIT", 1, 1, 0, 1, 1)) as operate:
+            code, output, errors = self.invoke([
+                "--human-run", "--resume", "--run-dir", str(target),
+                "--max-visits", "1",
+            ])
+        self.assertEqual((code, errors), (0, ""))
+        report = json.loads(output)
+        self.assertEqual(report["status"], "VISIT_LIMIT")
+        self.assertEqual(report["generation"], 1)
+        operate.assert_called_once_with(
+            target, minutes=90, max_visits=1, reserve_gib=100.0)
+        self.assertEqual(_tree_snapshot(target), before)
+
+    def test_human_resume_with_saved_atlas_lease_reaches_cold_flywheel(self):
+        target = self.root / "accepted-bamf"
+        self.preflight(target)
+        with self.accepted_read_context(), patch(
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle._saved_policy",
+                return_value="atlas-release"), patch(
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.source_foundation",
+                return_value=(None, None, {"fixture": "accepted-source-graph"})), patch(
+                "bilqis_mlx.runtime.atlas_flywheel_runtime.run_accepted_atlas_flywheel",
+                return_value=SimpleNamespace(
+                    status=AdmissionFlywheelStatus.WAITING_FOR_EVIDENCE,
+                )) as flywheel, patch(
+                "bilqis_mlx.presentation.operator_cli.command._invoke_learner",
+                side_effect=AssertionError("cold flywheel must not reuse a live learner")):
             code, output, errors = self.invoke([
                 "--human-run", "--resume", "--run-dir", str(target),
             ])
         self.assertEqual((code, errors), (0, ""))
         report = json.loads(output)
-        self.assertEqual(report["result"], "READY_TO_RESUME")
-        self.assertFalse(report["ready_for_training"])
-        self.assertEqual(_tree_snapshot(target), before)
+        self.assertEqual(report["result"], "WAITING_FOR_EVIDENCE")
+        self.assertEqual(report["admission_policy"], "atlas-release")
+        self.assertEqual(report["neural_updates"], 0)
+        flywheel.assert_called_once()
+        self.assertEqual(Path(flywheel.call_args.args[0]), target.resolve())
 
     def test_human_resume_run_id_conflict_never_reaches_learner(self):
         target = self.root / "accepted-bamf"

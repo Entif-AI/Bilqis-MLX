@@ -6,7 +6,8 @@ import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.salience_teacher import (
-    AttentionFrontier, choose_priority_teaching, propose_attention_options,
+    AttentionFrontier, PrioritySchoolContext, PriorityStudentIdentity,
+    choose_priority_teaching, propose_attention_options,
 )
 from bilqis_mlx.learning.salience_history import SalienceHistory
 from bilqis_mlx.learning.tests.test_salience_history import _window_policy
@@ -66,6 +67,22 @@ class PriorityTeacherTests(unittest.TestCase):
         self.assertEqual(result.teacher_epoch.prior_json, epoch.prior_json)
         contexts = teacher['causal_experiment']['diagnostic_contexts'].values()
         self.assertTrue(any(row.get('salience', {}).get('ordinals') == [1, 1, 0] for row in contexts))
+
+    def test_bamf_priority_context_matches_legacy_school_selection(self):
+        epoch, frontier, history, school, _ = _fixture()
+        program = schedule_program(("any-grade", (_CONTEXT.capability_id,)))
+        projected = PrioritySchoolContext(
+            program.digest(), tuple(grade.id for grade in program.grades),
+            PriorityStudentIdentity(epoch.student_sha256))
+        legacy = choose_priority_teaching(
+            frontier, history, epoch, engine, school, random.Random(12), Settings(),
+            program=program)
+        bamf = choose_priority_teaching(
+            frontier, history, epoch, engine, projected, random.Random(12), Settings(),
+            program=program)
+        self.assertEqual(bamf, legacy)
+        self.assertFalse(hasattr(projected, "grade_index"))
+        self.assertFalse(hasattr(projected, "first_recovery"))
 
     def test_holds_and_correction_do_not_select_teaching(self):
         for held, correction, expected in ((True, False, "NO_ADMISSIBLE_TEACHING"),

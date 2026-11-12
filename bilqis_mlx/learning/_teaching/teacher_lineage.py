@@ -86,9 +86,14 @@ def restore_teacher_lineage(
     expected_outer = {
         "schema", "teacher_identity", "teacher_epoch", "next_seed", "cursor", "c03_lineage",
     }
+    priority_outer = {"priority_counter", "priority_last_selected"}
     actual_outer = set(teacher_state) if isinstance(teacher_state, Mapping) else set()
     if (not isinstance(teacher_state, Mapping)
-            or actual_outer not in (expected_outer, expected_outer | {"last_visit"})
+            or actual_outer not in (
+                expected_outer, expected_outer | {"last_visit"},
+                expected_outer | priority_outer,
+                expected_outer | priority_outer | {"last_visit"},
+            )
             or teacher_state.get("schema") != TEACHER_STATE_SCHEMA
             or not valid_hex(teacher_state.get("teacher_identity"), SHA256_HEX_LENGTH)
             or type(teacher_state.get("teacher_epoch")) is not int
@@ -98,6 +103,13 @@ def restore_teacher_lineage(
             or not isinstance(teacher_state.get("cursor"), str)
             or not teacher_state["cursor"]):
         invalid("TEACHER_STATE_INVALID")
+    if priority_outer <= actual_outer:
+        counter = teacher_state["priority_counter"]
+        selected = teacher_state["priority_last_selected"]
+        if (type(counter) is not int or counter < 0 or not isinstance(selected, Mapping)
+                or any(not isinstance(key, str) or not key or type(value) is not int
+                       or not 0 < value <= counter for key, value in selected.items())):
+            invalid("TEACHER_PRIORITY_ROTATION_INVALID")
     lineage = teacher_state["c03_lineage"]
     expected_lineage = {
         "schema", "historical_replay", "adaptation_authority", "student_sha256",
@@ -137,6 +149,27 @@ def restore_teacher_lineage(
         lineage["prior_region"], lineage["current_region"], lineage["student_sha256"],
         HISTORICAL_REPLAY_HEAD, canonical(lineage["prior_teacher"]),
         canonical(lineage["current_teacher"]))
+
+
+def priority_rotation_state(teacher_state: Mapping) -> tuple[int, dict[str, int]]:
+    """Read C03's accepted grade-neutral fair-rotation clock."""
+    restore_teacher_lineage(teacher_state)
+    return (teacher_state.get("priority_counter", 0),
+            dict(teacher_state.get("priority_last_selected", {})))
+
+
+def advance_priority_rotation(teacher_state: Mapping, capability_id: str) -> dict:
+    """Advance fairness only for one accepted C03 capability selection."""
+    counter, selected = priority_rotation_state(teacher_state)
+    if not isinstance(capability_id, str) or not capability_id:
+        invalid("TEACHER_PRIORITY_ROTATION_INVALID")
+    counter += 1
+    selected[capability_id] = counter
+    result = dict(teacher_state)
+    result["priority_counter"] = counter
+    result["priority_last_selected"] = dict(sorted(selected.items()))
+    restore_teacher_lineage(result)
+    return result
 
 
 def bind_next_teacher_epoch(
@@ -179,5 +212,6 @@ def advance_teacher_lineage(
 __all__ = (
     "ADAPTATION_SCHEMA", "HISTORICAL_REPLAY_HEAD", "LINEAGE_SCHEMA",
     "TeacherCustodyProjection", "adaptation_authority_ref", "advance_teacher_lineage",
-    "bind_next_teacher_epoch", "initialize_teacher_lineage", "restore_teacher_lineage",
+    "advance_priority_rotation", "bind_next_teacher_epoch", "initialize_teacher_lineage",
+    "priority_rotation_state", "restore_teacher_lineage",
 )

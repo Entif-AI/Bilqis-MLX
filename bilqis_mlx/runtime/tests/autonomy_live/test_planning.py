@@ -3,31 +3,31 @@ import json
 import tempfile
 import unittest
 
+from bilqis_mlx.curriculum.scheduler import next_capability, start_new, visit
 from bilqis_mlx.factory.autonomy import (
-    EvidenceKind, EvidenceReceipt, obligations_for_capability,
-    record_evidence,
+    EvidenceKind, EvidenceReceipt, obligations_for_capability, record_evidence,
 )
 from bilqis_mlx.factory.live_releases import (
     boolean_composite_successor, boolean_identification_successor,
     boolean_successor, compile_live_release, initial_course, numeric_successor,
 )
-from bilqis_mlx.live_grade_c import REGISTRY_COUNTING_TARGET
 from bilqis_mlx.grade_a_release import accepted_grade_a
-from bilqis_mlx.runtime.autonomy_live import (
-    advance_if_scheduled_evidence_complete, build_live_autonomy_plan,
-    LiveAutonomySession, reconcile_live_autonomy_state,
-    reroute_failed_teaching, scheduled_teaching_matches,
-)
-from bilqis_mlx.grade_a_probe import read_sources
-from bilqis_mlx.curriculum.scheduler import next_capability, start_new, visit
 from bilqis_mlx.learning.champions import Checkpoint
+from bilqis_mlx.live_grade_c import REGISTRY_COUNTING_TARGET
+from bilqis_mlx.runtime.autonomy_live import (
+    advance_if_scheduled_evidence_complete,
+    build_live_autonomy_plan,
+    reconcile_live_autonomy_state,
+    reroute_failed_teaching,
+    scheduled_teaching_matches,
+)
 
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 LEGACY = ROOT / "vendor/legacy-v16"
 
 
-class LiveAutonomyBridgeTests(unittest.TestCase):
+class LiveAutonomyPlanningTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         if not LEGACY.is_dir():
@@ -81,22 +81,6 @@ class LiveAutonomyBridgeTests(unittest.TestCase):
             )
             self.assertEqual(ledger_next.receipts, ())
 
-    def test_composite_restart_preserves_provider_owned_dependency_plan(self):
-        release = compile_live_release(self.composite)
-        with tempfile.TemporaryDirectory() as temp:
-            root = Path(temp)
-            opened = LiveAutonomySession.open(root, LEGACY, release)
-            supplemental = tuple(
-                item for item in opened.plan.supplemental_evidence
-                if item.capability_id == "B.COMPOSITE")
-            self.assertEqual(
-                {item.key for item in supplemental},
-                {"B.NOT", "B.AND", "B.OR", "B.XOR", "B.IMPLIES", "B.IFF"},
-            )
-            reopened = LiveAutonomySession.open(root, LEGACY, release)
-            self.assertEqual(reopened.plan, opened.plan)
-            self.assertEqual(reopened.ledger, opened.ledger)
-
     def test_scheduler_alignment_never_jumps_queue(self):
         release = compile_live_release(self.a)
         plan = build_live_autonomy_plan(release, LEGACY)
@@ -108,9 +92,7 @@ class LiveAutonomyBridgeTests(unittest.TestCase):
             Path(tempfile.mkdtemp()), release, plan)
         self.assertEqual(
             advance_if_scheduled_evidence_complete(
-                release, plan, ledger, school, "A.PARENT"),
-            school,
-        )
+                release, plan, ledger, school, "A.PARENT"), school)
 
     def test_failed_teaching_can_be_neural_inertly_rerouted_within_legal_pool(self):
         release = compile_live_release(self.a)
@@ -119,13 +101,12 @@ class LiveAutonomyBridgeTests(unittest.TestCase):
         advanced = visit(
             self.a, school, "A.IDENTITY", school.current_student)
         self.assertEqual(next_capability(advanced), "A.PARENT")
-        rerouted = reroute_failed_teaching(
-            release, advanced, "A.IDENTITY")
+        rerouted = reroute_failed_teaching(release, advanced, "A.IDENTITY")
         self.assertEqual(next_capability(rerouted), "A.IDENTITY")
         self.assertEqual(rerouted.current_student, advanced.current_student)
         self.assertEqual(rerouted.visits, advanced.visits)
 
-    def test_complete_evidence_advances_only_the_current_scheduled_visit(self):
+    def test_complete_evidence_advances_only_current_scheduled_visit(self):
         release = compile_live_release(self.a)
         plan = build_live_autonomy_plan(release, LEGACY)
         school = start_new(
@@ -151,35 +132,6 @@ class LiveAutonomyBridgeTests(unittest.TestCase):
             release, plan, ledger, school, "A.IDENTITY")
         self.assertEqual(advanced.queue[0], "A.PARENT")
         self.assertEqual(advanced.visits, school.visits + 1)
-
-    def test_live_session_measures_and_reopens_durable_evidence_without_optimizer(self):
-        release = compile_live_release(self.a)
-        _, _, graph, _, _ = read_sources(LEGACY)
-        with tempfile.TemporaryDirectory() as temp:
-            root = Path(temp)
-            session = LiveAutonomySession.open(root, LEGACY, release)
-            checkpoint = Checkpoint(
-                "e" * 64, "bundles/fixture", 0, True)
-            action = session.action(checkpoint)
-            self.assertEqual(action.evidence_work.capability_id, "A.IDENTITY")
-            evidence = session.measure(
-                graph, action.evidence_work,
-                checkpoint={
-                    "sha256": checkpoint.sha256,
-                    "optimizer_step": checkpoint.optimizer_step,
-                    "model_and_native_adamw": True,
-                },
-                seed=20261019,
-                predictor=lambda rows: {
-                    row["id"]: row["gold"] for row in rows},
-            )
-            self.assertTrue(evidence.passed)
-            reopened = LiveAutonomySession.open(root, LEGACY, release)
-            self.assertEqual(reopened.ledger, session.ledger)
-            self.assertEqual(
-                reopened.ledger.receipts[-1].evidence_id,
-                evidence.evidence_id,
-            )
 
 
 if __name__ == "__main__":

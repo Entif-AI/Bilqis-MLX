@@ -43,7 +43,12 @@ def _dispatch_atlas_frontier_attempt(
         "operator_action": result.operator_action,
         "actual_neural_updates": result.actual_neural_updates,
     })
-    return DispatchControl.STOP, _operator_vocabulary.ATLAS_ADMISSION_STAGED.code
+    control = (
+        DispatchControl.PROCEED
+        if result.reason == "OUT_OF_LEASE_SCOPE"
+        else DispatchControl.STOP
+    )
+    return control, _operator_vocabulary.ATLAS_ADMISSION_STAGED.code
 
 
 def prepare_operator_iteration(*, experiment_budget, run_dir, receipt, course_a,

@@ -57,6 +57,19 @@ def _validate_feature_binding(compiler, invalid):
             or len(set(grades)) != len(grades)
             or any(type(grade) is not str or not grade for grade in grades)):
         invalid()
+    graph = compiler.get('factory_semantic_catalog')
+    graph_sha256 = compiler.get('factory_semantic_graph_sha256')
+    graph_present = 'factory_semantic_catalog' in compiler
+    graph_digest_present = 'factory_semantic_graph_sha256' in compiler
+    if graph_present != graph_digest_present:
+        invalid()
+    if graph is not None:
+        if (not isinstance(graph, dict) or not _digest(graph_sha256)
+                or not _digest(compiler.get('factory_semantic_catalog_sha256'))):
+            invalid()
+        from bilqis_mlx.runtime.state import _fingerprint
+        if _fingerprint(graph) != graph_sha256:
+            invalid()
 
 
 def validate_identity_sidecars(extents, provenance, records, invalid):

@@ -50,6 +50,48 @@ Message: BAMF Atlas admission is invalid: {reason}
 
 Recovery: Keep the retained run unchanged; reconcile explicit human authorization, source rights and exact successor custody.
 
+### `SCHOOL.BAMF_ATLAS_ADMISSION.FLYWHEEL_RUNTIME_INVALID`
+
+Accepted Atlas flywheel runtime invalid.
+
+Owner: `runtime.atlas_flywheel_runtime`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: The accepted-custody flywheel runtime inputs are invalid.
+
+Recovery: Preserve accepted custody and reconstruct the flywheel only from the accepted run, source graph and configured reserve.
+
+Legacy aliases: `BAMF_ATLAS_FLYWHEEL_RUNTIME_INVALID`
+
+### `SCHOOL.BAMF_ATLAS_ADMISSION.ACCEPTED_LEASE_REQUIRED`
+
+Accepted Atlas lease required.
+
+Owner: `runtime.atlas_flywheel_runtime`
+Disposition: `STAGE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: The cold admission flywheel has no accepted Atlas v2 lease for this run.
+
+Recovery: Leave accepted custody unchanged and require the existing explicit human enrollment path before admission can continue.
+
+Legacy aliases: `BAMF_ATLAS_V2_ACCEPTED_LEASE_REQUIRED`
+
+### `SCHOOL.BAMF_ATLAS_ADMISSION.FLYWHEEL_PREDECESSOR_DRIFT`
+
+Atlas flywheel predecessor drift.
+
+Owner: `runtime.atlas_flywheel_runtime`
+Disposition: `PRESERVE_AND_RELOAD`
+Self-heal owner: `none`
+
+Message: The accepted Factory release no longer matches the predecessor bound into the proposed Atlas handoff.
+
+Recovery: Reject the stale handoff, preserve the accepted generation, and rebuild planner state from current accepted custody.
+
+Legacy aliases: `BAMF_ATLAS_FLYWHEEL_ACCEPTED_PREDECESSOR_DRIFT`
+
 ### `SCHOOL.BAMF_SALIENCE.INVALID`
 
 BAMF salience evidence or policy invalid.
@@ -1772,7 +1814,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2092** raw raises across **262** files. The baseline gate permits only reduction.
+Current production scan: **2093** raw raises across **265** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -1816,17 +1858,17 @@ Current production scan: **2092** raw raises across **262** files. The baseline 
 | `AUTONOMY_EVIDENCE_RECEIPT_VALUE_INVALID` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_EVIDENCE_REQUIRES_DURABLE_CHECKPOINT` | 1 | `bilqis_mlx/runtime/operator_session/operator_autonomy.py` |
 | `AUTONOMY_EXECUTOR_INPUT_INVALID` | 1 | `bilqis_mlx/runtime/_admission/autonomy_loop.py` |
-| `AUTONOMY_FRONTIER_BUILDER_MISSING` | 1 | `bilqis_mlx/runtime/autonomy_live.py` |
+| `AUTONOMY_FRONTIER_BUILDER_MISSING` | 1 | `bilqis_mlx/runtime/_autonomy_live/frontier.py` |
 | `AUTONOMY_INSUFFICIENT_EVIDENCE_SPECIMENS` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_INVALID_EVIDENCE_RECEIPT` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_INVALID_INPUT` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_INVALID_PLAN` | 2 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_INVALID_REJECTED_TEACHING_ATTEMPT` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_INVALID_TEACHING_RECEIPT` | 1 | `bilqis_mlx/factory/autonomy.py` |
-| `AUTONOMY_JIT_PROPOSAL_DIRECTORY_UNSAFE` | 1 | `bilqis_mlx/runtime/autonomy_live.py` |
-| `AUTONOMY_JIT_PROPOSAL_IMMUTABLE_DRIFT` | 1 | `bilqis_mlx/runtime/autonomy_live.py` |
-| `AUTONOMY_JIT_PROPOSAL_PATH_UNSAFE` | 1 | `bilqis_mlx/runtime/autonomy_live.py` |
-| `AUTONOMY_JIT_PROPOSAL_READBACK_DRIFT` | 1 | `bilqis_mlx/runtime/autonomy_live.py` |
+| `AUTONOMY_JIT_PROPOSAL_DIRECTORY_UNSAFE` | 1 | `bilqis_mlx/runtime/_autonomy_live/frontier.py` |
+| `AUTONOMY_JIT_PROPOSAL_IMMUTABLE_DRIFT` | 1 | `bilqis_mlx/runtime/_autonomy_live/frontier.py` |
+| `AUTONOMY_JIT_PROPOSAL_PATH_UNSAFE` | 1 | `bilqis_mlx/runtime/_autonomy_live/frontier.py` |
+| `AUTONOMY_JIT_PROPOSAL_READBACK_DRIFT` | 1 | `bilqis_mlx/runtime/_autonomy_live/frontier.py` |
 | `AUTONOMY_LEARNING_ACTION_INVALID` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_PLAN_INVALID` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_PLAN_MISMATCH` | 1 | `bilqis_mlx/factory/autonomy.py` |
@@ -1839,7 +1881,7 @@ Current production scan: **2092** raw raises across **262** files. The baseline 
 | `AUTONOMY_QUALIFICATION_ACTION_INVALID` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_REJECTED_ATTEMPT_CURRENT_CHECKPOINT_MISMATCH` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_REJECTED_ATTEMPT_DIGEST_INVALID` | 1 | `bilqis_mlx/factory/autonomy.py` |
-| `AUTONOMY_REJECTED_ATTEMPT_EVENT_INVALID` | 1 | `bilqis_mlx/runtime/autonomy_live.py` |
+| `AUTONOMY_REJECTED_ATTEMPT_EVENT_INVALID` | 1 | `bilqis_mlx/runtime/_autonomy_live/recovery.py` |
 | `AUTONOMY_REJECTED_ATTEMPT_IDENTITY_INVALID` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_REJECTED_ATTEMPT_OPTION_NOT_RELEASED` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_REJECTED_ATTEMPT_PARENT_EVIDENCE_MISMATCH` | 1 | `bilqis_mlx/factory/autonomy.py` |
@@ -1871,7 +1913,7 @@ Current production scan: **2092** raw raises across **262** files. The baseline 
 | `AUTONOMY_STATE_POINTER_BINDING_DRIFT` | 1 | `bilqis_mlx/runtime/_admission/autonomy_state.py` |
 | `AUTONOMY_STATE_POINTER_INVALID` | 2 | `bilqis_mlx/runtime/_admission/autonomy_state.py` |
 | `AUTONOMY_STATE_POINTER_MISSING` | 1 | `bilqis_mlx/runtime/_admission/autonomy_state.py` |
-| `AUTONOMY_STATE_POINTER_UNSAFE` | 1 | `bilqis_mlx/runtime/autonomy_live.py` |
+| `AUTONOMY_STATE_POINTER_UNSAFE` | 1 | `bilqis_mlx/runtime/_autonomy_live/planning.py` |
 | `AUTONOMY_STATE_POINTER_UNSAFE_PATH` | 1 | `bilqis_mlx/runtime/_admission/autonomy_state.py` |
 | `AUTONOMY_STATE_SNAPSHOT_BINDING_DRIFT` | 1 | `bilqis_mlx/runtime/_admission/autonomy_state.py` |
 | `AUTONOMY_STATE_SNAPSHOT_INVALID` | 1 | `bilqis_mlx/runtime/_admission/autonomy_state.py` |
@@ -1896,13 +1938,13 @@ Current production scan: **2092** raw raises across **262** files. The baseline 
 | `AUTONOMY_TEACHING_RECEIPT_NO_CHECKPOINT_PROGRESS` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_TEACHING_RECEIPT_PROVENANCE_INVALID` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_TEACHING_RECEIPT_STEP_DELTA_INVALID` | 1 | `bilqis_mlx/factory/autonomy.py` |
-| `AUTONOMY_TEACHING_RECOVERY_CAPABILITY_INVALID` | 1 | `bilqis_mlx/runtime/autonomy_live.py` |
-| `AUTONOMY_TEACHING_RECOVERY_SPECIMEN_DRIFT` | 1 | `bilqis_mlx/runtime/autonomy_live.py` |
-| `AUTONOMY_TEACHING_RECOVERY_SPECIMEN_MISSING` | 1 | `bilqis_mlx/runtime/autonomy_live.py` |
-| `AUTONOMY_TEACHING_RECOVERY_SPECIMEN_PATH_DRIFT` | 1 | `bilqis_mlx/runtime/autonomy_live.py` |
+| `AUTONOMY_TEACHING_RECOVERY_CAPABILITY_INVALID` | 1 | `bilqis_mlx/runtime/_autonomy_live/recovery.py` |
+| `AUTONOMY_TEACHING_RECOVERY_SPECIMEN_DRIFT` | 1 | `bilqis_mlx/runtime/_autonomy_live/recovery.py` |
+| `AUTONOMY_TEACHING_RECOVERY_SPECIMEN_MISSING` | 1 | `bilqis_mlx/runtime/_autonomy_live/recovery.py` |
+| `AUTONOMY_TEACHING_RECOVERY_SPECIMEN_PATH_DRIFT` | 1 | `bilqis_mlx/runtime/_autonomy_live/recovery.py` |
 | `AUTONOMY_TEACHING_REQUIRES_FAILED_EVIDENCE` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_TEACHING_REROUTE_FAILED` | 1 | `bilqis_mlx/runtime/operator_session/operator_autonomy.py` |
-| `AUTONOMY_TEACHING_REROUTE_OUTSIDE_SCHEDULER_SCOPE` | 1 | `bilqis_mlx/runtime/autonomy_live.py` |
+| `AUTONOMY_TEACHING_REROUTE_OUTSIDE_SCHEDULER_SCOPE` | 1 | `bilqis_mlx/runtime/_autonomy_live/planning.py` |
 | `AUTONOMY_TEACHING_VARIATION_AXES_MISMATCH` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_TEACHING_WORK_ITEM_INVALID` | 1 | `bilqis_mlx/factory/autonomy.py` |
 | `AUTONOMY_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/autonomy.py` |
@@ -3662,6 +3704,7 @@ Current production scan: **2092** raw raises across **262** files. The baseline 
 | `_DIGEST_INVALID` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `_INVALID` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `_STALE` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
+| `bamf_operator must not inspect Factory capability order` | 1 | `bilqis_mlx/runtime/tests/operator/test_bamf_operator_session.py` |
 | `boom` | 1 | `bilqis_mlx/runtime/tests/model/parity/test_mlx_memory.py` |
 | `disposable interruption before pointer publication` | 1 | `bilqis_mlx/runtime/tests/admission/atlas/lease/test_renewal.py` |
 | `durability failure` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py` |
