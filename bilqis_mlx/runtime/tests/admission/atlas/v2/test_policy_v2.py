@@ -1,6 +1,7 @@
 """Atlas admission policy v2 verifier tests."""
 
 from bilqis_mlx.runtime.tests.admission.atlas.v2.policy_support import *
+from bilqis_mlx.learning.tests.test_atlas_salience import _signed
 from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import (
     _REGISTRY,
     _lease,
@@ -88,6 +89,38 @@ class AtlasPolicyV2Tests(PolicyV2Support):
                 context, AtlasDeltaEnvelopeV2(handoff, native), _lease())
         self.assertEqual(result.reason, "V2_ATLAS_LEASE_REQUIRED")
         self.assertIsNone(result.lease_sha256)
+
+
+    def test_semantic_release_outside_current_lease_stages_without_mutation(self):
+        _capability, semantic_id, handoff, plan, ledger, checkpoint = self._event_handoff()
+        approval, _lease_v2 = self._authority(handoff)
+        outside = _signed(replace(
+            approval, atlas_release_sha256="f" * 64, signature_hex="0" * 128))
+        lease = issue_atlas_lease_v2(
+            "fixture-v2-other-release", _run(), outside,
+            ResourceCeilingV2(4, 4, 32768, 1 << 40, 1 << 40),
+            requested_at="2026-11-10T16:15:00Z",
+            human_command_sha256="8" * 64, human_started=True, registry=_REGISTRY)
+        context = self._context(handoff, plan, ledger, checkpoint, outside)
+        native = self._a02_staged(semantic_id)
+        before_release = context.legacy.current_release
+        before_ledger = context.legacy.ledger
+
+        with patch(
+                "bilqis_mlx.runtime.atlas_admission_policy_v2._accepted_run_bindings"), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_admission_policy_v2._require_current_v2_lease"), \
+                patch(
+                    "bilqis_mlx.runtime.atlas_admission_policy_v2._require_exact_atlas_release",
+                    side_effect=AssertionError("out-of-scope release reached in-scope verifier")):
+            result = advance_atlas_frontier_v2(
+                context, AtlasDeltaEnvelopeV2(handoff, native), lease)
+
+        self.assertEqual(result.status.value, "STAGED")
+        self.assertEqual(result.reason, "OUT_OF_LEASE_SCOPE")
+        self.assertFalse(result.state_adopted)
+        self.assertIs(context.legacy.current_release, before_release)
+        self.assertIs(context.legacy.ledger, before_ledger)
 
     def test_resource_policy_uses_only_a02_sealed_v2_facts(self):
         _capability, semantic_id, handoff, plan, ledger, checkpoint = self._event_handoff()

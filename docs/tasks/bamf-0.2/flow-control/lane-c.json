@@ -314,6 +314,15 @@
       "summary": "C06 parent integration: reconcile accepted C06.1-.4 with actual A09/B11/B13/A05 interfaces and inherited parent acceptance. Owner-directed work 2026-11-11; isolated codex/379-c06-salience-integration-20261111.",
       "resume_trigger": null,
       "preserved_branch": "codex/379-c06-salience-integration-20261111"
+    },
+    {
+      "issue": 511,
+      "pr": 1006,
+      "state": "TURNED_IN",
+      "head_sha": "66f176198af5ebc03fbbdc0269c36f557d65da71",
+      "summary": "C07.2/#511 turned in after consuming reviewed unified 16fe1bc9 and merged C07 prerequisites. Out-of-lease semantic releases remain staged while already-authorized learning may continue; current debt, numeric scope and Factory policy identity come from the exact current manifest/release boundary; the existing custody-backed C07 witness proves one persisted lease across three data-defined successors with cold resume from the second. Fresh independent exact-head review at semantic head 66f17619 found 0 Blockers / 0 Majors / 0 Minors. Post-sync bounded affected checks remain green; no live learner mutation, over-budget test, or self-merge authority was used.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/511-c07-out-of-scope-debt-v2-20261112"
     }
   ]
 }
