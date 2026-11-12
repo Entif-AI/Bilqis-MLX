@@ -191,6 +191,23 @@ def _credited_requested_keys(coverage_epoch: AtlasCoverageEpoch) -> tuple[tuple[
     return tuple(sorted(requested_keys(credited)))
 
 
+def _accepted_requested_keys(
+    coverage_epoch: AtlasCoverageEpoch,
+) -> tuple[tuple[str, str], ...]:
+    """Recover accepted realization credit from the durable current release."""
+    current = current_obligations(coverage_epoch.closure)
+    capabilities = coverage_epoch.current_release.execution_plan.capability_map
+    accepted = []
+    for semantic_id, digest in current.items():
+        try:
+            capability_id = candidate_realizations.realized_capability_id(semantic_id)
+        except ValueError:
+            continue
+        if capability_id in capabilities:
+            accepted.append((semantic_id, digest))
+    return tuple(sorted(accepted))
+
+
 def next_atlas_delta(
     coverage_epoch: AtlasCoverageEpoch,
     learner_evidence: AtlasLearnerEvidence,
@@ -211,7 +228,10 @@ def next_atlas_delta(
             coverage_epoch.snapshot, coverage_epoch.closure,
             prior=coverage_epoch.prior).status
 
-    requested = _credited_requested_keys(coverage_epoch)
+    requested = tuple(sorted(set(
+        (*_credited_requested_keys(coverage_epoch),
+         *_accepted_requested_keys(coverage_epoch))
+    )))
     try:
         semantic_id, rows = ranked_frontier_target(
             coverage_epoch.snapshot, coverage_epoch.closure, requested)
