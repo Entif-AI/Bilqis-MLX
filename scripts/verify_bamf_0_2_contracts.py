@@ -13,6 +13,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts" / "bamf"))
+sys.path.insert(0, str(ROOT / "scripts" / "bamf" / "workstack"))
 from scripts.check_bamf_workstack import validate_workstack
 from scripts.bamf.workstack_dependencies import (
     EvidenceStatus, check_dependency_evidence, load_dependency_sources,

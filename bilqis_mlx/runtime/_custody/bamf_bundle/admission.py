@@ -141,7 +141,8 @@ def derive_participation_inputs(parent: CompleteStudent):
 
 def _admit_loaded_candidate_step(
         parent: CompleteStudent, identity: AcceptedGenerationIdentity, gradients=None, *,
-        loss_bearing_target, gradient_execution=None, teacher_hparams,
+        loss_bearing_target, gradient_execution=None, logical_batch_execution=None,
+        training_batch=None, logical_batch_plan=None, teacher_hparams,
         max_norm: float) -> CandidateTransaction:
     """Pass custody-verified state plus B11 execution truth to B09/B12.
 
@@ -165,6 +166,9 @@ def _admit_loaded_candidate_step(
         begin_candidate(parent.retained_state), gradients,
         loss_bearing_target=loss_bearing_target,
         gradient_execution=gradient_execution,
+        logical_batch_execution=logical_batch_execution,
+        training_batch=training_batch,
+        logical_batch_plan=logical_batch_plan,
         group_eligible=eligibility,
         spec=parent.topology, extents=parent.extents,
         run_id=identity.run_id, generation=identity.generation + 1,
@@ -178,7 +182,8 @@ def _admit_loaded_candidate_step(
 
 def admit_uninterrupted_candidate_step(
         run_dir: Path, parent: CompleteStudent, gradients=None, *,
-        loss_bearing_target, gradient_execution=None, teacher_hparams,
+        loss_bearing_target, gradient_execution=None, logical_batch_execution=None,
+        training_batch=None, logical_batch_plan=None, teacher_hparams,
         max_norm: float) -> CandidateTransaction:
     """Continue held state only after full current B13 custody authentication."""
     identity = _published_in_memory_identity(run_dir, parent)
@@ -186,11 +191,16 @@ def admit_uninterrupted_candidate_step(
         parent, identity, gradients,
         loss_bearing_target=loss_bearing_target,
         gradient_execution=gradient_execution,
+        logical_batch_execution=logical_batch_execution,
+        training_batch=training_batch,
+        logical_batch_plan=logical_batch_plan,
         teacher_hparams=teacher_hparams, max_norm=max_norm)
 
 
 def admit_candidate_step(run_dir: Path, gradients=None, *,
-                         loss_bearing_target, gradient_execution=None, teacher_hparams,
+                         loss_bearing_target, gradient_execution=None,
+                         logical_batch_execution=None, training_batch=None,
+                         logical_batch_plan=None, teacher_hparams,
                          max_norm: float) -> CandidateTransaction:
     """Cold-load the accepted state and enter the production execution guard."""
     pointer, parent = _read_accepted(run_dir)
@@ -199,6 +209,9 @@ def admit_candidate_step(run_dir: Path, gradients=None, *,
         parent, identity, gradients,
         loss_bearing_target=loss_bearing_target,
         gradient_execution=gradient_execution,
+        logical_batch_execution=logical_batch_execution,
+        training_batch=training_batch,
+        logical_batch_plan=logical_batch_plan,
         teacher_hparams=teacher_hparams, max_norm=max_norm)
 
 

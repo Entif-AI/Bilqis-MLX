@@ -132,6 +132,25 @@ class RunTestsTests(unittest.TestCase):
             self.assertFalse(result.errors)
             self.assertFalse(result.failures)
 
+    def test_default_discovery_excludes_detached_only_test_files(self):
+        runner = _runner_module()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            normal = root / "tests" / "test_normal.py"
+            detached = root / "tests" / "test_detached.py"
+            normal.parent.mkdir(parents=True)
+            normal.write_text(
+                "import unittest\n"
+                "class Example(unittest.TestCase):\n"
+                "    def test_ok(self): pass\n")
+            detached.write_text(
+                'BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"\n'
+                "import unittest\n"
+                "class Expensive(unittest.TestCase):\n"
+                "    def test_expensive(self): raise AssertionError('must not run')\n")
+
+            self.assertEqual(runner.discover_test_files(root), (normal,))
+
     def test_empty_discovery_fails_closed_with_totals(self):
         runner = _runner_module()
         with tempfile.TemporaryDirectory() as temporary:

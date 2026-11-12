@@ -12,8 +12,9 @@ from bilqis_mlx.runtime.atlas_optimizer import (
 )
 from ..atlas_execution_provenance import StepExecutionProvenance, mask_digest, participation_digest
 from ..atlas_participation import optimizer_participation_mask
-from .common import (LEGACY_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA, RETAINED_STATE_ISSUER,
-    STATE_SCHEMA, TRANSACTION_ISSUER, TRANSACTION_SCHEMA, invalid)
+from .common import (LEGACY_STEP_PROOF_SCHEMA, LOGICAL_BATCH_STEP_PROOF_SCHEMA,
+    STEP_PROOF_SCHEMA, RETAINED_STATE_ISSUER, STATE_SCHEMA, TRANSACTION_ISSUER,
+    TRANSACTION_SCHEMA, invalid)
 from .proofs import CandidateStepProof
 from .state import CandidateState, _is_genesis_allocations
 from .motif_transition import (
@@ -125,23 +126,7 @@ def begin_candidate(parent: CandidateState, *, budget=None,
     return _issue_transaction(parent, parent.optimizer, teacher_requests_full)
 
 
-def candidate_step(candidate: CandidateTransaction, gradients, execution,
-                   teacher_hparams, *, spec, extents, loss_bearing: bool,
-                   max_norm: float, training_authority=None) -> CandidateTransaction:
-    """Bind the step to owner-issued execution provenance, then run native AdamW.
-
-    The mask comes from the B09.2 owner's provenance, never from a caller
-    mapping. Counts identify actual participating rows, including
-    numerical-zero gradients. No-loss and wholly frozen steps preserve the
-    transaction object.
-    """
-    if type(candidate) is not CandidateTransaction:
-        invalid()
-    candidate.__post_init__()
-    if candidate.motif_transition is not None:
-        invalid()
-    if type(execution) is not StepExecutionProvenance:
-        invalid()
+def _validated_step_decay(candidate, execution, spec, extents):
     custody = candidate.parent.custody
     if custody is None:
         invalid()
@@ -166,13 +151,11 @@ def candidate_step(candidate: CandidateTransaction, gradients, execution,
             or execution.parent_optimizer_step != candidate.parent.optimizer_step
             or execution.candidate_step != candidate.update_steps + 1):
         invalid()
-    update_mask = optimizer_participation_mask(
-        execution.mask, candidate.optimizer.update_counts)
-    optimizer = _adamw_update(
-        candidate.optimizer, gradients, update_mask, teacher_hparams,
-        decay=decay, loss_bearing=loss_bearing, max_norm=max_norm)
-    if optimizer is candidate.optimizer:
-        return candidate
+    return decay
+
+
+def _candidate_step_proof(candidate, execution, update_mask, loss_bearing,
+                          training_authority):
     proof_args = dict(
         step_index=candidate.update_steps + 1,
         provenance_sha256=execution.digest,
@@ -181,22 +164,64 @@ def candidate_step(candidate: CandidateTransaction, gradients, execution,
         parameter_names=tuple(sorted(update_mask)),
         loss_bearing=bool(loss_bearing))
     if training_authority is None:
-        proof = CandidateStepProof(
+        return CandidateStepProof(
             **proof_args, schema_version=LEGACY_STEP_PROOF_SCHEMA)
-    else:
-        from bilqis_mlx.runtime.atlas_training_authority import BamfTrainingAuthority
-        if type(training_authority) is not BamfTrainingAuthority:
-            invalid()
-        training_authority.__post_init__()
-        proof = CandidateStepProof(
-            **proof_args,
-            source_release_sha256=training_authority.release_sha256,
-            training_batch_sha256=training_authority.training_batch_sha256,
-            target_capability_id=training_authority.delivery_capability,
-            training_authority_sha256=training_authority.digest,
+    from bilqis_mlx.runtime.atlas_training_authority import (
+        BamfLogicalBatchTrainingAuthority, BamfTrainingAuthority,
+    )
+    if type(training_authority) not in (
+            BamfTrainingAuthority, BamfLogicalBatchTrainingAuthority):
+        invalid()
+    training_authority.__post_init__()
+    common = dict(
+        source_release_sha256=training_authority.release_sha256,
+        training_batch_sha256=training_authority.training_batch_sha256,
+        target_capability_id=training_authority.delivery_capability,
+        training_authority_sha256=training_authority.digest,
+    )
+    if type(training_authority) is BamfTrainingAuthority:
+        return CandidateStepProof(
+            **proof_args, **common,
             source_family_id=training_authority.source_family_id,
             episode_id=training_authority.episode_id,
             schema_version=STEP_PROOF_SCHEMA)
+    if type(training_authority) is BamfLogicalBatchTrainingAuthority:
+        return CandidateStepProof(
+            **proof_args, **common,
+            training_authority_members=tuple(
+                (member.digest, member.source_family_id, member.episode_id)
+                for member in training_authority.members),
+            schema_version=LOGICAL_BATCH_STEP_PROOF_SCHEMA)
+    invalid()
+
+
+def candidate_step(candidate: CandidateTransaction, gradients, execution,
+                   teacher_hparams, *, spec, extents, loss_bearing: bool,
+                   max_norm: float, training_authority=None) -> CandidateTransaction:
+    """Bind the step to owner-issued execution provenance, then run native AdamW.
+
+    The mask comes from the B09.2 owner's provenance, never from a caller
+    mapping. Counts identify actual participating rows, including
+    numerical-zero gradients. No-loss and wholly frozen steps preserve the
+    transaction object.
+    """
+    if type(candidate) is not CandidateTransaction:
+        invalid()
+    candidate.__post_init__()
+    if candidate.motif_transition is not None:
+        invalid()
+    if type(execution) is not StepExecutionProvenance:
+        invalid()
+    decay = _validated_step_decay(candidate, execution, spec, extents)
+    update_mask = optimizer_participation_mask(
+        execution.mask, candidate.optimizer.update_counts)
+    optimizer = _adamw_update(
+        candidate.optimizer, gradients, update_mask, teacher_hparams,
+        decay=decay, loss_bearing=loss_bearing, max_norm=max_norm)
+    if optimizer is candidate.optimizer:
+        return candidate
+    proof = _candidate_step_proof(
+        candidate, execution, update_mask, loss_bearing, training_authority)
     return _issue_transaction(
         candidate.parent, optimizer, candidate.teacher_requests_full,
         candidate.update_steps + 1, candidate.step_proofs + (proof,),

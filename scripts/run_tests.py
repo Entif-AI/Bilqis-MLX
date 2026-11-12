@@ -2,6 +2,7 @@
 """Run every repository test file without relying on package discovery."""
 
 import argparse
+import ast
 import hashlib
 import importlib
 import importlib.util
@@ -15,6 +16,8 @@ import unittest
 IGNORED_DIRECTORIES = frozenset({
     ".git", ".local", ".venv", "__pycache__", "node_modules", "runs", "vendor", "venv",
 })
+LEAF_GATE_POLICY_NAME = "BILQIS_LEAF_GATE_POLICY"
+DETACHED_ONLY_POLICY = "DETACHED_ONLY"
 
 
 def _install_source_only_legacy_geometry_shim() -> bool:
@@ -52,6 +55,25 @@ class _LoadFailure(unittest.TestCase):
         return f"load test module {self._path}"
 
 
+def _default_schedulable(path: Path) -> bool:
+    """Exclude explicit detached-only witnesses from aggregate discovery."""
+    try:
+        tree = ast.parse(path.read_text(errors="ignore"))
+    except (OSError, SyntaxError):
+        return True
+    for node in tree.body:
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+            continue
+        targets = node.targets if isinstance(node, ast.Assign) else (node.target,)
+        value = node.value
+        if not isinstance(value, ast.Constant) or not isinstance(value.value, str):
+            continue
+        if any(isinstance(target, ast.Name) and target.id == LEAF_GATE_POLICY_NAME
+               for target in targets):
+            return value.value != DETACHED_ONLY_POLICY
+    return True
+
+
 def discover_test_files(root: Path) -> tuple[Path, ...]:
     """Return test files held in any repository test directory."""
     files = []
@@ -59,7 +81,11 @@ def discover_test_files(root: Path) -> tuple[Path, ...]:
         children[:] = sorted(child for child in children if child not in IGNORED_DIRECTORIES)
         path = Path(directory)
         if "tests" in path.relative_to(root).parts:
-            files.extend(path / name for name in names if name.startswith("test_") and name.endswith(".py"))
+            files.extend(
+                candidate for name in names
+                if name.startswith("test_") and name.endswith(".py")
+                and _default_schedulable(candidate := path / name)
+            )
     return tuple(sorted(files))
 
 

@@ -41,6 +41,15 @@ GROUPS = MappingProxyType({
     "_projection": ("akasha_outbox", "akasha_staging", "bamf_projection",
                     "generation_projection", "owner_receipt_fixture", "rosetta_observation"),
 })
+BATCH_TRAINING_MODULES = (
+    "atlas_training_adapter",
+    "atlas_training_contracts",
+    "atlas_training_delivery",
+    "atlas_visit_provenance",
+    "batch_training_authority",
+    "training_input_authority",
+    "training_request",
+)
 
 
 class GroupedRuntimeIdentityTests(unittest.TestCase):
@@ -74,6 +83,23 @@ for group, names in groups.items():
         result = subprocess.run([sys.executable, "-B", "-c", probe, json.dumps(dict(GROUPS))],
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_batch_training_modules_keep_canonical_identity_in_nested_owner(self):
+        for name in BATCH_TRAINING_MODULES:
+            with self.subTest(name=name):
+                canonical = "bilqis_mlx.runtime." + name
+                spec = importlib.util.find_spec(canonical)
+                parts = Path(spec.origin).parts
+                self.assertTrue(any(
+                    parts[index:index + 2] == ("_batch", "training")
+                    for index in range(len(parts) - 1)))
+                module = importlib.import_module(canonical)
+                self.assertEqual(module.__name__, canonical)
+                alternate = "bilqis_mlx.runtime._batch.training." + name
+                with self.assertRaises(ModuleNotFoundError) as caught:
+                    importlib.import_module(alternate)
+                self.assertEqual(
+                    caught.exception.name, "bilqis_mlx.runtime._batch.training")
 
     def test_teacher_epoch_hashes_canonical_owner_bytes(self):
         from bilqis_mlx.runtime.teacher_observation_capture import policy_epoch

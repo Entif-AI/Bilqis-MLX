@@ -79,19 +79,37 @@ def _verify_anchor_proofs(binding, student, capability_id):
                     if _source_anchor(anchor).capability_id == capability_id)
     if not anchors:
         _invalid("BAMF_C09_CAPABILITY_SUPPORT_SOURCE_MISSING")
-    proofs = {proof.training_authority_sha256: proof
-              for proof in student.retained_state.step_proofs}
-    if None in proofs or len(proofs) != len(student.retained_state.step_proofs):
-        _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
+    proofs = {}
+
+    def register(digest, proof):
+        if digest in proofs:
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
+        proofs[digest] = proof
+
+    for proof in student.retained_state.step_proofs:
+        if proof.training_authority_sha256 is None:
+            _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
+        register(proof.training_authority_sha256, proof)
+        for member in proof.training_authority_members:
+            register(member[0], proof)
     for anchor in anchors:
         source = _source_anchor(anchor)
         proof = proofs.get(source.training_authority_sha256)
-        if (proof is None
+        member = (
+            (source.training_authority_sha256,
+             source.source_family_id,
+             source.episode_id) in proof.training_authority_members
+            if proof is not None else False)
+        scalar = (
+            proof is not None
+            and proof.training_authority_sha256 == source.training_authority_sha256)
+        if (proof is None or not (scalar or member)
                 or proof.source_release_sha256 != source.release_sha256
                 or proof.training_batch_sha256 != source.training_batch_sha256
                 or proof.target_capability_id != source.capability_id
-                or proof.source_family_id != source.source_family_id
-                or proof.episode_id != source.episode_id):
+                or (scalar and (
+                    proof.source_family_id != source.source_family_id
+                    or proof.episode_id != source.episode_id))):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
     return anchors
 

@@ -6,7 +6,7 @@ import sys
 import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT / "scripts" / "bamf"))
+sys.path.insert(0, str(ROOT / "scripts" / "bamf" / "workstack"))
 
 import bamf02_groom_contracts as contracts
 
