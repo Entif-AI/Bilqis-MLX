@@ -57,7 +57,7 @@ class AdmissionFlywheelTests(AtlasDeltaAdapterFixture):
             AdmissionStatus.ADOPTED,
             handoff.proposal.proposal_sha256,
             "1" * 64,
-            self.current.release_sha256,
+            handoff.staged_candidate.successor.release_sha256,
             handoff.staged_candidate.successor.release_sha256,
             "ADOPTED",
             "Reload accepted custody before replanning.",
@@ -151,6 +151,26 @@ class AdmissionFlywheelTests(AtlasDeltaAdapterFixture):
         self.assertEqual(result.status, AdmissionFlywheelStatus.HELD)
         self.assertEqual(result.reason, "REPLAN_WITHOUT_STATE_ADVANCE")
         self.assertEqual(result.advances, 0)
+
+    def test_replan_state_advances_respect_budget_before_another_reload(self):
+        first = self.state()
+        second = self.state(
+            learner=AtlasLearnerEvidence(
+                self.learner.ledger, "f" * 64, 1))
+        states = iter((first, second))
+        with patch(
+                "bilqis_mlx.runtime.autonomy_loop.next_atlas_delta",
+                side_effect=(FrontierStatus.REPLAN_REQUIRED,
+                             FrontierStatus.REPLAN_REQUIRED)):
+            result = run_admission_flywheel(
+                lambda: next(states),
+                lambda _handoff: self.fail("replan status dispatched"),
+                max_advances=1,
+            )
+        self.assertEqual(result.status, AdmissionFlywheelStatus.HELD)
+        self.assertEqual(result.reason, "ADVANCE_BUDGET_EXHAUSTED")
+        self.assertEqual(result.advances, 1)
+        self.assertIs(result.final_state, second)
 
     def test_admission_result_must_bind_exact_planner_handoff(self):
         state = self.state()

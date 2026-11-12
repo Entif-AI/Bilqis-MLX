@@ -166,6 +166,10 @@ def run_admission_flywheel(
                 return terminal
             if planned is not FrontierStatus.REPLAN_REQUIRED:
                 _invalid("BAMF_ATLAS_FLYWHEEL_PLANNER_STATUS_INVALID")
+            if advances >= max_advances:
+                return AdmissionFlywheelResult(
+                    AdmissionFlywheelStatus.HELD,
+                    "ADVANCE_BUDGET_EXHAUSTED", advances, state)
             refreshed = load_state()
             if type(refreshed) is not AdmissionFlywheelState:
                 _invalid("BAMF_ATLAS_FLYWHEEL_STATE_INVALID")
@@ -184,9 +188,13 @@ def run_admission_flywheel(
             result = admission_executor(planned)
             if not isinstance(result, AdmissionResult):
                 _invalid("BAMF_ATLAS_FLYWHEEL_ADMISSION_RESULT_INVALID")
+            expected_retained_release = (
+                planned.staged_candidate.successor.release_sha256
+                if result.status is AdmissionStatus.ADOPTED
+                else state.epoch.current_release.release_sha256)
             if (result.proposal_sha256 != planned.proposal.proposal_sha256
                     or result.retained_release_sha256
-                       != state.epoch.current_release.release_sha256
+                       != expected_retained_release
                     or result.staged_successor_sha256
                        != planned.staged_candidate.successor.release_sha256):
                 return AdmissionFlywheelResult(
