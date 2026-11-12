@@ -6,18 +6,30 @@ retention, source, optimizer, or publication authority.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from hashlib import sha256
 from pathlib import Path
 import time
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
+from bilqis_mlx.learning.atlas_candidate import resolve_candidate
+from bilqis_mlx.learning.atlas_retention_decision import issue_factory_retention_decision
 from bilqis_mlx.paths import LEGACY_SOURCE
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+from bilqis_mlx.runtime.accepted_priority_visit import (
+    accepted_priority_school, execute_accepted_priority_candidate,
+)
 from bilqis_mlx.runtime.bamf_bundle import (
     authenticate_bamf_execution_feature_context,
-    read_accepted_generation_feature_context,
+    read_accepted_generation_feature_context, record_bamf_rejection,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    load_accepted_generation,
+    accept_and_publish, load_accepted_generation,
+)
+from bilqis_mlx.runtime.factory_candidate_training import FactoryDeliveryObservation
+from bilqis_mlx.runtime.factory_retention_owner import evaluate_factory_retention_candidate
+from bilqis_mlx.runtime.foundation_teacher_owner import (
+    derive_accepted_teacher_successor, select_foundation_priority_visit,
 )
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 from bilqis_mlx.semantics.atlas.snapshot import (
@@ -80,13 +92,84 @@ def _execution_context(run_dir: Path):
     return parent, context, selection.path, feature.path
 
 
+class _Capture:
+    """Minimal durable #545 delivery evidence; owns no teacher or source choice."""
+
+    def __init__(self, run_dir: Path, selection):
+        from bilqis_mlx.runtime.teacher_observation_capture import store_sidecar
+        self.run_dir = run_dir
+        self.selected_option = selection.option_id
+        self.attempt_id = sha256(
+            f"bamf-c16.3:{selection.visit.identity.visit_id}".encode()).hexdigest()
+        self.proposal_id = store_sidecar(run_dir, {
+            "schema": "bilqis.bamf.c16.3-priority-proposal/v1",
+            "attempt_id": self.attempt_id,
+            "visit_id": selection.visit.identity.visit_id,
+            "selected_option": selection.option_id,
+        })["sha256"]
+
+    def delivery(self, _release, capability, step, rows, **evidence):
+        from bilqis_mlx.runtime.teacher_observation_capture import store_sidecar
+        store_sidecar(self.run_dir, {
+            "schema": "bilqis.bamf.c16.3-priority-delivery/v1",
+            "attempt_id": self.attempt_id,
+            "proposal_id": self.proposal_id,
+            "capability": capability,
+            "step": step,
+            "row_ids": [row["id"] for row in rows],
+            "seed": evidence.get("seed"),
+        })
+
+
+def _step_seed(visit_id: str) -> int:
+    return int.from_bytes(sha256(
+        f"bilqis.bamf.c16.3-step-seed/v1|{visit_id}".encode()).digest()[:8], "big")
+
+
 def _visit(run_dir: Path, reserve_gib: float):
-    # C03.4 owns persistent WHAT ordering.  The accepted runtime does not yet
-    # expose production issuers/loaders for its signed C06 frontier/history,
-    # A09 planning input, or BAMF scheduler projection.  Fail closed rather
-    # than reintroducing a release-order or grade-derived scheduler here.
-    _execution_context(run_dir)
-    _invalid("BAMF_OPERATOR_PRIORITY_AUTHORITY_UNAVAILABLE")
+    parent, context, atlas_path, feature_path = _execution_context(run_dir)
+    program = schedule_program_from_executable_release(context.release)
+    school = accepted_priority_school(parent, program)
+    selection = select_foundation_priority_visit(
+        run_dir, context, atlas_path, program=program, school=school)
+    if selection.status != "TEACHER_SELECTED":
+        return "ACTION_REQUIRED" if selection.status == "ACTION_REQUIRED" else "HELD"
+    rows = selection.offer.rows()
+    observation = FactoryDeliveryObservation(
+        _Capture(run_dir, selection), parent.retained_state.optimizer_step + 1,
+        rows, selection.offer.source_seed)
+    step = execute_accepted_priority_candidate(
+        selection, context, atlas_path, feature_path,
+        teacher_hparams=parent.optimizer_hyperparameters,
+        observation=observation,
+        optimizer_step_seed=_step_seed(selection.visit.identity.visit_id),
+        max_norm=1.0)
+    capability = selection.offer.capability_id
+    evaluation = evaluate_factory_retention_candidate(
+        context, step.transaction, atlas_path, capability, run_dir=run_dir)
+    decision = issue_factory_retention_decision(evaluation)
+    retained = resolve_candidate(step.transaction, accepted=decision.accepted)
+    if not decision.accepted:
+        record_bamf_rejection(run_dir, parent, {
+            "schema": "bilqis.bamf.c16.3-rejection/v2",
+            "visit_id": selection.visit.identity.visit_id,
+            "capability": capability,
+            "decision": decision.to_record(),
+        })
+        return "REJECTED"
+    successor = derive_accepted_teacher_successor(
+        run_dir, retained, selection.visit,
+        delivery_events=({
+            "event": "BAMF_C16_3_ACCEPTED",
+            "optimizer_step": retained.optimizer_step,
+            "capability": capability,
+        },))
+    accept_and_publish(
+        run_dir, successor, retained, decision=decision,
+        feature_sha256=successor.extents.factor_map_digest,
+        reserve_gib=reserve_gib,
+        training_authorities=step.transaction.training_authorities)
+    return "ACCEPTED"
 
 
 def operate_bamf(
@@ -104,8 +187,8 @@ def operate_bamf(
     with bamf_operator_lock(run_dir):
         while time.monotonic() < deadline and (not max_visits or visits < max_visits):
             outcome = _visit(run_dir, reserve_gib)
-            if outcome == "COMPLETE":
-                status = "FOUNDATION_COMPLETE"
+            if outcome in {"HELD", "ACTION_REQUIRED"}:
+                status = "PRIORITY_HOLD" if outcome == "HELD" else "ACTION_REQUIRED"
                 break
             visits += 1
             if outcome == "REJECTED":

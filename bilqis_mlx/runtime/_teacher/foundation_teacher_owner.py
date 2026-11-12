@@ -7,6 +7,8 @@ import random
 from bilqis_mlx.compatibility.legacy_trainer_authority import live_authority
 from bilqis_mlx.compatibility import historical_teacher_policy
 from bilqis_mlx.learning.teacher_lineage import adaptation_authority_ref
+from bilqis_mlx.learning.teacher_lineage import advance_priority_rotation
+from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
 from bilqis_mlx.learning.teacher_lineage_records import digest, invalid
 from bilqis_mlx.runtime.accepted_teacher_custody import BoundTeacherVisit
 
@@ -86,6 +88,56 @@ def foundation_teacher_bootstrap() -> FoundationTeacherBootstrap:
     return result
 
 
+def current_foundation_teacher_projection(run_dir):
+    """Project the current accepted C03 teacher without selecting a capability."""
+    from bilqis_mlx.runtime.accepted_teacher_custody import _c03_projection
+    from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+
+    parent = load_accepted_generation(run_dir)
+    state = parent.teacher_state
+    bootstrap = {"legacy_receipt": None, "adaptation": None, "prior_region": None}
+    if "c03_lineage" not in state:
+        owned = foundation_teacher_bootstrap()
+        bootstrap = {
+            "legacy_receipt": owned.legacy_receipt,
+            "adaptation": owned.adaptation,
+            "prior_region": owned.prior_region,
+        }
+    projection = _c03_projection(parent, **bootstrap)
+    restore_teacher_lineage(projection.teacher_state)
+    return projection
+
+
+def select_foundation_priority_visit(
+        run_dir, source_context, atlas_artifact_path, *, program, school):
+    """Compose C16.3 bootstrap with the production C03.4 priority owner."""
+    from bilqis_mlx.learning.learning_experiment import Settings
+    from bilqis_mlx.runtime.accepted_priority_visit import select_accepted_priority_visit
+    from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+    from bilqis_mlx.runtime.priority_authority import issue_foundation_priority_authority
+
+    parent = load_accepted_generation(run_dir)
+    projection = current_foundation_teacher_projection(run_dir)
+    epoch = restore_teacher_lineage(projection.teacher_state)
+    authority = issue_foundation_priority_authority(
+        run_dir, source_context, parent, epoch, atlas_artifact_path)
+    bootstrap = {"legacy_receipt": None, "adaptation": None, "prior_region": None}
+    if "c03_lineage" not in parent.teacher_state:
+        owned = foundation_teacher_bootstrap()
+        bootstrap = {
+            "legacy_receipt": owned.legacy_receipt,
+            "adaptation": owned.adaptation,
+            "prior_region": owned.prior_region,
+        }
+    return select_accepted_priority_visit(
+        run_dir, source_context, authority.frontier, authority.history, None,
+        authority.offers, historical_teacher_policy, school,
+        random.Random(parent.teacher_state["next_seed"]), Settings(),
+        program=program, now=authority.now,
+        total_capabilities=len(source_context.release.execution_plan.capabilities),
+        **bootstrap)
+
+
 def accepted_teacher_trajectory(visit: BoundTeacherVisit) -> TeacherTrajectoryAdvance:
     """Advance only from the exact accepted visit identity.
 
@@ -147,15 +199,22 @@ def derive_accepted_teacher_successor(
         derive_c03_successor_bundle,
     )
     trajectory = accepted_teacher_trajectory(visit)
-    return derive_c03_successor_bundle(
+    candidate = derive_c03_successor_bundle(
         run_dir, retained_state, visit,
         next_seed=trajectory.next_seed, cursor=trajectory.cursor,
         delivery_events=delivery_events)
+    from dataclasses import replace
+    return replace(
+        candidate,
+        teacher_state=advance_priority_rotation(
+            candidate.teacher_state, visit.identity.capability_id),
+    )
 
 
 __all__ = (
     "FoundationTeacherBootstrap", "TeacherTrajectoryAdvance",
     "TRAJECTORY_SCHEMA", "accepted_teacher_trajectory",
-    "derive_accepted_teacher_successor", "foundation_teacher_bootstrap",
+    "current_foundation_teacher_projection", "derive_accepted_teacher_successor",
+    "foundation_teacher_bootstrap", "select_foundation_priority_visit",
     "select_foundation_teacher_visit",
 )
