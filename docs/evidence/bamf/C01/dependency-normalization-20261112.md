@@ -208,3 +208,40 @@ normalizes those additional obligations explicitly.
 
 With either hold present, C01 correctly retains `order=[]`. This follow-up does not
 claim #347 complete.
+
+## Final source-owner authority amendments
+
+The remaining ambiguity was closed append-only on the two canonical source-owner
+issues rather than by inferring edges from accepted implementations.
+
+### A05.5 #594
+
+Source-owner amendment
+`https://github.com/Entif-AI/Bilqis-MLX/issues/594#issuecomment-6838106985`
+defines the exact child-level inbound graph as `A01,A13`. It explicitly classifies
+A03/A04 as inherited A05 parent/compiler authority, B02/B03 as downstream
+numerical consumer/proof surfaces, B11.1a/B05.4 as downstream consumers, and A05
+itself as the ownership parent rather than an edge. PR #618 remains a required
+acceptance receipt, not a graph node. The pinned amendment SHA-256 is
+`85e237de0d9755337655d7224a9a20064c57ef2c21ddccf293d45e7bcb5774f3`.
+
+### A08.1b.5 #557
+
+Source-owner amendment
+`https://github.com/Entif-AI/Bilqis-MLX/issues/557#issuecomment-6838107336`
+defines the exact graph as `A08.1a,A08.1b.1,A08.1b.2,A08.1b.3,A08.1b.4`.
+The five source-owner obligations in the checked-in specification are classified
+as receipt-level acceptance obligations rather than additional A01/A03/A13 graph
+edges. Their accepted integration receipt is PR #657, head
+`a6bb632750e26dd6a3e73395e0d1904e1142bf74`, merge
+`351a7f69ede047b9678c095864e4ba324acc4a0e`. The pinned amendment SHA-256 is
+`20d67eb8750d1554e872086c3c4689e7b3103f4e5e79e642241e21f51fdffb3d`.
+
+Both parsers require the exact amendment content digest and exact accepted PR
+snapshot before resolution. Removing the amendment, relabelling/re-hashing its
+content, or removing the required receipt fails closed.
+
+With both amendments pinned, all eight original C01 dependency-normalization holds
+are resolved. The registry may produce an executable order only if the complete
+graph remains valid under the ordinary workstack validator; no issue closure or PR
+ancestry is used as a substitute for that proof.

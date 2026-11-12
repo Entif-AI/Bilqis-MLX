@@ -173,7 +173,7 @@ class DependencyEvidenceTests(unittest.TestCase):
                     present, {'C01.1': body}, evidence_sources=sources)
                 self.assertEqual(report['status'], 'invalid')
 
-    def test_actual_expanded_registry_has_integrity_but_no_runnable_order(self):
+    def test_actual_expanded_registry_has_integrity_and_runnable_order(self):
         root = Path(__file__).resolve().parents[3] / 'docs/tasks/bamf-0.2'
         manifest = json.loads((root / 'workstack.json').read_text())
         registry = json.loads((root / 'children/registry.json').read_text())
@@ -184,15 +184,10 @@ class DependencyEvidenceTests(unittest.TestCase):
             evidence_sources=load_dependency_sources(root, registry))
         self.assertEqual(report['child_count'], len(registry['entries']))
         self.assertEqual(report['registry_integrity'], 'valid')
-        self.assertEqual(report['status'], 'held')
-        self.assertEqual(report['order'], [])
-        self.assertEqual(
-            report['dependency_resolution']['held_keys'],
-            sorted(
-                entry['key'] for entry in registry['entries']
-                if entry.get('dependency_evidence', {}).get('resolution') == 'held'
-            ),
-        )
+        self.assertEqual(report['status'], 'valid')
+        self.assertTrue(report['order'])
+        self.assertEqual(report['dependency_resolution'],
+                         {'status': 'resolved', 'held_keys': []})
         self.assertEqual(numbers['C14.3'], 535)
         self.assertNotIn('C14.4', numbers)
         self.assertEqual(numbers['B10.5'], 635)
@@ -202,11 +197,11 @@ class DependencyEvidenceTests(unittest.TestCase):
         self.assertEqual(parent['kind'], 'leaf')
         self.assertIn('B11.1a', parent['deps'])
 
-    def test_real_cli_exits_nonzero_for_held_registry(self):
+    def test_real_cli_exits_zero_for_resolved_registry(self):
         root = Path(__file__).resolve().parents[3]
         result = subprocess.run([sys.executable, '-B', str(root / 'scripts/check_bamf_workstack.py'),
             str(root / 'docs/tasks/bamf-0.2/workstack.json')],
             capture_output=True, text=True, timeout=20)
-        self.assertEqual(result.returncode, 1, result.stderr)
-        self.assertEqual(json.loads(result.stdout)['status'], 'held')
-        self.assertEqual(json.loads(result.stdout)['order'], [])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)['status'], 'valid')
+        self.assertTrue(json.loads(result.stdout)['order'])
