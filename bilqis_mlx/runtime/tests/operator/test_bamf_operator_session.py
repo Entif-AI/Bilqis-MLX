@@ -79,6 +79,67 @@ class BamfOperatorRoutingTests(unittest.TestCase):
                 side_effect=AssertionError("optimizer candidate must not run")):
             self.assertEqual(_visit("/run", 0.0), "HELD")
 
+    def test_rejection_records_priority_replay_fields_without_advancing_parent(self):
+        parent = SimpleNamespace(
+            retained_state=SimpleNamespace(optimizer_step=11),
+            optimizer_hyperparameters="hparams",
+        )
+        context = SimpleNamespace(release=object())
+        identity = SimpleNamespace(visit_id="visit:beta", policy_key="policy:beta")
+        selection = SimpleNamespace(
+            status="TEACHER_SELECTED",
+            option_id="capability:beta",
+            visit=SimpleNamespace(identity=identity),
+            offer=SimpleNamespace(
+                capability_id="capability:beta", source_seed=17,
+                rows=lambda: ({"id": "row:1"},),
+            ),
+        )
+        transaction = SimpleNamespace(
+            parent=SimpleNamespace(optimizer_step=11),
+            update_steps=1,
+            training_authorities=("authority",),
+        )
+        step = SimpleNamespace(transaction=transaction)
+        decision = SimpleNamespace(
+            accepted=False,
+            reason="retention_gate",
+            to_record=lambda: {"decision": "REJECTED"},
+        )
+        with patch(
+                "bilqis_mlx.runtime.bamf_operator.session._execution_context",
+                return_value=(parent, context, "atlas", "feature")), patch(
+                "bilqis_mlx.runtime.bamf_operator.session.schedule_program_from_executable_release",
+                return_value="program"), patch(
+                "bilqis_mlx.runtime.bamf_operator.session.accepted_priority_school",
+                return_value="school"), patch(
+                "bilqis_mlx.runtime.bamf_operator.session.select_foundation_priority_visit",
+                return_value=selection), patch(
+                "bilqis_mlx.runtime.bamf_operator.session._Capture",
+                return_value="capture"), patch(
+                "bilqis_mlx.runtime.bamf_operator.session.FactoryDeliveryObservation",
+                return_value="observation"), patch(
+                "bilqis_mlx.runtime.bamf_operator.session.execute_accepted_priority_candidate",
+                return_value=step), patch(
+                "bilqis_mlx.runtime.bamf_operator.session.evaluate_factory_retention_candidate",
+                return_value="evaluation"), patch(
+                "bilqis_mlx.runtime.bamf_operator.session.issue_factory_retention_decision",
+                return_value=decision), patch(
+                "bilqis_mlx.runtime.bamf_operator.session.resolve_candidate",
+                return_value=parent.retained_state), patch(
+                "bilqis_mlx.runtime.bamf_operator.session.record_bamf_rejection") as rejection:
+            self.assertEqual(_visit("/run", 0.0), "REJECTED")
+
+        evidence = rejection.call_args.args[2]
+        self.assertEqual(evidence["schema"], "bilqis.bamf.c16.3-rejection/v2")
+        self.assertEqual(evidence["visit_id"], "visit:beta")
+        self.assertEqual(evidence["selected_option_id"], "capability:beta")
+        self.assertEqual(evidence["selected_policy_key"], "policy:beta")
+        self.assertEqual(evidence["candidate_optimizer_step"], 12)
+        self.assertEqual(evidence["retained_optimizer_step"], 11)
+        self.assertEqual(evidence["retention_reason"], "retention_gate")
+        self.assertEqual(parent.retained_state.optimizer_step, 11)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -133,6 +133,12 @@ def _visit(run_dir: Path, reserve_gib: float):
         record_bamf_rejection(run_dir, parent, {
             "schema": "bilqis.bamf.c16.3-rejection/v2",
             "visit_id": selection.visit.identity.visit_id,
+            "selected_option_id": selection.option_id,
+            "selected_policy_key": selection.visit.identity.policy_key,
+            "candidate_optimizer_step": (
+                step.transaction.parent.optimizer_step + step.transaction.update_steps),
+            "retained_optimizer_step": parent.retained_state.optimizer_step,
+            "retention_reason": decision.reason,
             "capability": capability,
             "decision": decision.to_record(),
         })
