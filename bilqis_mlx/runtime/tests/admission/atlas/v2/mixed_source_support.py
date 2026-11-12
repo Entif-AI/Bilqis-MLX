@@ -250,7 +250,7 @@ class MixedSourceSupport(EventCandidateRealizationFixture):
 
     def event_handoff(
             self, current_release, *, capability="D.EVENT_OCCURRENCE",
-            mastered=None, graph=None):
+            mastered=None, graph=None, accepted_receipts=()):
         candidate, source_frontier, policy = self.atlas_fixture()
         semantic_id = event_frames.atlas_semantic_id(capability)
         current_graph = self.parent_graph if graph is None else graph
@@ -271,7 +271,12 @@ class MixedSourceSupport(EventCandidateRealizationFixture):
             checkpoint_sha256=checkpoint_sha256, optimizer_step=step)
         handoff = next_atlas_delta(
             AtlasCoverageEpoch(
-                snapshot, closure, self.frontier, current_release, (staged,), None),
+                snapshot, closure, self.frontier, current_release, (staged,), None,
+                accepted_receipts),
             learner, plan)
         handoff.verify()
         return semantic_id, handoff, plan, ledger, checkpoint_sha256, step
+
+    @staticmethod
+    def accepted_receipts(handoff):
+        return (handoff.receipt,)

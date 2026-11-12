@@ -146,6 +146,18 @@ class AtlasDeltaAdapterTests(AtlasDeltaAdapterFixture):
             "BAMF_PLANNER_ADAPTER_STAGED_SET_INVALID",
         )
 
+    def test_unaccepted_receipt_cannot_mint_cold_obligation_credit(self):
+        handoff = self._handoff()
+        epoch = self._epoch(accepted_receipts=(handoff.receipt,))
+
+        with self.assertRaises(BilqisError) as caught:
+            epoch.verify()
+
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PLANNER_ACCEPTED_RECEIPT_LINEAGE_INVALID",
+        )
+
     def test_ready_semantic_without_realized_staged_binding_is_explicit_debt(self):
         with patch(
             "bilqis_mlx.factory.candidate_realizations.project_realized_target",

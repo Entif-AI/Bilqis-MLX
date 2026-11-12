@@ -79,6 +79,7 @@ class AtlasCoverageEpoch:
     current_release: ExecutableFactoryRelease
     staged_candidates: tuple[StagedCandidate, ...]
     prior: FrontierProgress | None = None
+    accepted_receipts: tuple[StagedSelectionReceipt, ...] = ()
 
     def verify(self) -> None:
         if (type(self.snapshot) is not CurriculumSnapshot
@@ -87,7 +88,10 @@ class AtlasCoverageEpoch:
                 or not isinstance(self.current_release, ExecutableFactoryRelease)
                 or type(self.staged_candidates) is not tuple
                 or any(type(item) is not StagedCandidate for item in self.staged_candidates)
-                or (self.prior is not None and type(self.prior) is not FrontierProgress)):
+                or (self.prior is not None and type(self.prior) is not FrontierProgress)
+                or type(self.accepted_receipts) is not tuple
+                or any(type(item) is not StagedSelectionReceipt
+                       for item in self.accepted_receipts)):
             _fail("BAMF_PLANNER_ADAPTER_INPUT_INVALID")
         self.snapshot.verify()
         self.closure.verify()
@@ -107,6 +111,7 @@ class AtlasCoverageEpoch:
             _fail("BAMF_PLANNER_ADAPTER_STAGED_SET_INVALID")
         for item in self.staged_candidates:
             item.verify(self.candidate_frontier, self.current_release)
+        _verify_accepted_receipt_chain(self)
         if self.prior is not None:
             self.prior.verify()
 
@@ -194,18 +199,42 @@ def _credited_requested_keys(coverage_epoch: AtlasCoverageEpoch) -> tuple[tuple[
 def _accepted_requested_keys(
     coverage_epoch: AtlasCoverageEpoch,
 ) -> tuple[tuple[str, str], ...]:
-    """Recover accepted realization credit from the durable current release."""
+    """Credit exact obligation identities from the accepted receipt lineage."""
     current = current_obligations(coverage_epoch.closure)
-    capabilities = coverage_epoch.current_release.execution_plan.capability_map
-    accepted = []
-    for semantic_id, digest in current.items():
-        try:
-            capability_id = candidate_realizations.realized_capability_id(semantic_id)
-        except ValueError:
-            continue
-        if capability_id in capabilities:
-            accepted.append((semantic_id, digest))
-    return tuple(sorted(accepted))
+    return tuple(
+        key for key in sorted(requested_keys(coverage_epoch.accepted_receipts))
+        if current.get(key[0]) == key[1]
+    )
+
+
+def _verify_accepted_receipt_chain(coverage_epoch: AtlasCoverageEpoch) -> None:
+    """Require one content-addressed direct-successor chain ending at current."""
+    receipts = coverage_epoch.accepted_receipts
+    if not receipts:
+        return
+    for receipt in receipts:
+        receipt.verify()
+    successor_by_sha = {
+        receipt.staged_successor_sha256: receipt for receipt in receipts
+    }
+    if len(successor_by_sha) != len(receipts):
+        _fail("BAMF_PLANNER_ACCEPTED_RECEIPT_LINEAGE_INVALID")
+    predecessor_counts = {}
+    for receipt in receipts:
+        predecessor = receipt.predecessor_release.release_sha256
+        predecessor_counts[predecessor] = predecessor_counts.get(predecessor, 0) + 1
+    current_sha = coverage_epoch.current_release.release_sha256
+    roots = tuple(
+        receipt for receipt in receipts
+        if receipt.predecessor_release.release_sha256 not in successor_by_sha
+    )
+    if (current_sha not in successor_by_sha
+            or current_sha in predecessor_counts
+            or len(roots) != 1
+            or any(
+                predecessor_counts.get(successor_sha, 0) != 1
+                for successor_sha in successor_by_sha if successor_sha != current_sha)):
+        _fail("BAMF_PLANNER_ACCEPTED_RECEIPT_LINEAGE_INVALID")
 
 
 def next_atlas_delta(

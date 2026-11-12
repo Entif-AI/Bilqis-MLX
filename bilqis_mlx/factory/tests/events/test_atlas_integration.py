@@ -211,8 +211,9 @@ class EventCandidateAtlasIntegrationTests(EventCandidateRealizationFixture, unit
     def test_cold_rebuild_skips_realized_semantic_already_in_accepted_release(self):
         candidate, source_frontier, policy = self.atlas_fixture()
         state = (self.current, self.parent_graph, {"A.IDENTITY"}, None, None)
-        current, graph, mastered, _prior, _admitted_snapshot = self._stage_capability(
+        current, graph, mastered, prior, _admitted_snapshot = self._stage_capability(
             candidate, source_frontier, policy, state, "D.EVENT_OCCURRENCE")
+        accepted_receipts = prior.staged_receipts
 
         semantic_id = event_frames.atlas_semantic_id("D.COMMENCEMENT")
         staged = candidate_realizations.prepare_realized_candidate(
@@ -232,12 +233,54 @@ class EventCandidateAtlasIntegrationTests(EventCandidateRealizationFixture, unit
 
         handoff = next_atlas_delta(
             AtlasCoverageEpoch(
-                snapshot, closure, self.frontier, current, (staged,), None),
+                snapshot, closure, self.frontier, current, (staged,), None,
+                accepted_receipts),
             learner, plan)
 
         self.assertIsInstance(handoff, AtlasDeltaScopeHandoff)
         handoff.verify()
         self.assertEqual(handoff.receipt.selected_semantic_id, semantic_id)
+
+    def test_cold_rebuild_reopens_accepted_semantic_when_obligation_changes(self):
+        candidate, source_frontier, policy = self.atlas_fixture()
+        state = (self.current, self.parent_graph, {"A.IDENTITY"}, None, None)
+        current, graph, mastered, prior, _admitted_snapshot = self._stage_capability(
+            candidate, source_frontier, policy, state, "D.EVENT_OCCURRENCE")
+        accepted_receipts = prior.staged_receipts
+
+        semantic_id = event_frames.atlas_semantic_id("D.COMMENCEMENT")
+        staged = candidate_realizations.prepare_realized_candidate(
+            self.frontier, current, graph, semantic_id,
+            source_root=LEGACY, source_registry=self.source_registry,
+            answer_registry=self.answer_registry)
+        snapshot = self.build_snapshot(
+            candidate, source_frontier, policy, current, staged)
+        snapshot = bind_realized_snapshot(
+            snapshot, candidate, self.frontier, current, (staged,))
+        occurrence_id = event_frames.atlas_semantic_id("D.EVENT_OCCURRENCE")
+        rows = tuple(
+            replace(row, source_evidence_sha256="c" * 64)
+            if row.semantic_id == occurrence_id else row
+            for row in snapshot.coverage_rows)
+        changed = replace(
+            snapshot, coverage_rows=rows,
+            correction_generation=snapshot.correction_generation + 1,
+            snapshot_sha256="0" * 64)
+        snapshot = replace(changed, snapshot_sha256=changed.expected_digest())
+        plan, checkpoint, step, ledger, learner = self.learner_evidence(
+            current, mastered, "D.COMMENCEMENT")
+        closure = resolve_frontier_closure(
+            snapshot, candidate.census, current_release=current,
+            evidence_ledger=ledger, autonomy_plan=plan,
+            checkpoint_sha256=checkpoint, optimizer_step=step)
+
+        result = next_atlas_delta(
+            AtlasCoverageEpoch(
+                snapshot, closure, self.frontier, current, (staged,), None,
+                accepted_receipts),
+            learner, plan)
+
+        self.assertIs(result, FrontierStatus.IMPLEMENTATION_UNCOVERED)
 
 
 if __name__ == "__main__":

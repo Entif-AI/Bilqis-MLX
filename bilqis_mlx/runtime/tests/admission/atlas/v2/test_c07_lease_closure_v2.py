@@ -106,7 +106,8 @@ class C07LeaseClosureV2Tests(MixedWitnessSupport, unittest.TestCase):
             h2.staged_candidate, self.parent_graph)
         semantic3, h3, plan3, ledger3, checkpoint3, step3 = self.event_handoff(
             cold2, capability="D.COMMENCEMENT",
-            mastered={"A.IDENTITY", "D.EVENT_OCCURRENCE"}, graph=graph2)
+            mastered={"A.IDENTITY", "D.EVENT_OCCURRENCE"}, graph=graph2,
+            accepted_receipts=self.accepted_receipts(h2))
         self.assertEqual(
             h3.staged_candidate.successor.transition.added_capabilities,
             ("D.COMMENCEMENT",))
