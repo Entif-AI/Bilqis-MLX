@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 import json
+import re
 
 from ..curriculum.state import SchoolState
 from ..factory.schedule import ScheduleProgram
@@ -31,6 +32,34 @@ class AttentionFrontier:
         rank_attention_options(self.options, dict(self.evidence), self.snapshot)
 
 
+@dataclass(frozen=True)
+class PriorityStudentIdentity:
+    """The only student fact C03 priority selection needs from school custody."""
+    sha256: str
+
+    def __post_init__(self):
+        if re.fullmatch(r"[0-9a-f]{64}", self.sha256) is None:
+            _invalid("BAMF_PRIORITY_STUDENT_IDENTITY_INVALID")
+
+
+@dataclass(frozen=True)
+class PrioritySchoolContext:
+    """Grade-neutral C03 view of accepted BAMF custody, not legacy SchoolState."""
+    course_digest: str
+    active_grades: tuple[str, ...]
+    current_student: PriorityStudentIdentity
+    stage: str = "MAIN"
+
+    def __post_init__(self):
+        if (not _sha(self.course_digest)
+                or not isinstance(self.active_grades, tuple) or not self.active_grades
+                or any(not _name(grade) for grade in self.active_grades)
+                or len(set(self.active_grades)) != len(self.active_grades)
+                or not isinstance(self.current_student, PriorityStudentIdentity)
+                or self.stage != "MAIN"):
+            _invalid("BAMF_PRIORITY_SCHOOL_CONTEXT_INVALID")
+
+
 def propose_attention_options(frontier, history):
     if not isinstance(frontier, AttentionFrontier) or not isinstance(history, SalienceHistory):
         _invalid("BAMF_SALIENCE_FRONTIER_OR_HISTORY_REQUIRED")
@@ -40,7 +69,8 @@ def propose_attention_options(frontier, history):
 
 
 def _teacher(epoch, school):
-    if (not isinstance(epoch, TeacherEpoch) or not isinstance(school, SchoolState)
+    if (not isinstance(epoch, TeacherEpoch)
+            or not isinstance(school, (SchoolState, PrioritySchoolContext))
             or epoch.schema != "bilqis.bamf.teacher-epoch/v1"
             or epoch.replay_head != "d21797e72365bf93ea7cad3a4ef9020ec9817f23"
             or not _sha(epoch.student_sha256) or school.current_student.sha256 != epoch.student_sha256
