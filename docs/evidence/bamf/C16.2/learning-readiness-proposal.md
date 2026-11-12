@@ -159,40 +159,38 @@ source-exclusion claim.
 - **Package-import side effects:** reuse the same C05 fixed school while keeping
   the package-import training-exclusion set empty.
 
-## Disposable foundation witness
+## Disposable foundation evidence
 
-Add one cohesive witness to the prescribed C16 package-local test surface. It
-must exercise the actual owner chain rather than merely combine synthetic
-decision objects.
+Compose exact, current evidence across the C16 owner chain. ADR-141 and the
+2026-11-12 owner amendment do not require one process or one pytest node to
+traverse the full model. Each claimed production seam must still be covered by
+accepted owner evidence or by a bounded integration check that exercises the
+relevant real owners.
 
 ### Accepted path
 
-The witness must:
+The bounded evidence set must account for:
 
-1. create or publish an isolated accepted BAMF generation zero using existing
-   B13/C16.1 owners;
-2. bind the exact source context and accepted runtime host;
-3. select a source-qualified visit through the real C03 owner;
-4. construct C03 visit provenance and execute the real C02/C08/B11 candidate
-   step;
-5. let the real C05 owner materialize or cold-load its BAMF-native whole-school
-   custody without target `state.json`;
-6. evaluate the candidate through the unchanged public C05 Factory retention
-   owner;
-7. issue the existing owner retention decision and resolve the candidate;
-8. derive the C03 successor through the existing B13 successor constructor;
-9. publish through the existing B13 acceptance path;
-10. cold-load the accepted successor and compare the next legal C03 selection
-    with uninterrupted execution.
+1. accepted BAMF generation-zero and exact source-context custody through
+   C16.1/B13 and #992;
+2. source-qualified C03 visit identity and exact provenance transport into the
+   candidate-step boundary;
+3. current C02/C08/B11 real Factory candidate execution under accepted source
+   authority;
+4. C05-owned BAMF fixed-school materialization/cold reuse through #993, without
+   target `state.json`;
+5. the public C05 evaluation/decision and candidate-resolution path together
+   with B13 accepted publication;
+6. bounded uninterrupted-versus-cold continuation evidence on accepted B13
+   custody.
 
-The receipt must bind literal parent/retained generation identities, optimizer
-steps, selected capability/visit identity, fixed-school cohort identity and the
-source-valid developmental evidence disposition.
+The aggregate receipt binds the exact owner evidence to the current branch and
+reviewed-unified base. It does not synthesize one new full-model run solely to
+replay already accepted owners.
 
 ### Rejected path
 
-Using a disposable copy, deliberately produce a candidate that the real C05
-screen rejects. Resolve it through the normal rejection path and prove:
+Use current C05 rejection and B13 rejection-custody evidence to prove:
 
 - the accepted B13 pointer bytes are unchanged;
 - the accepted parent bundle bytes remain unchanged;
@@ -200,13 +198,13 @@ screen rejects. Resolve it through the normal rejection path and prove:
 - observational rejection evidence is recorded;
 - cold load returns the exact accepted parent.
 
-The witness must not weaken C05 thresholds or bypass its decision owner merely
+No bounded check may weaken C05 thresholds or bypass its decision owner merely
 to obtain a rejection.
 
 ## Grade-neutral and first-start negatives
 
-The cohesive C16.2 acceptance ring must retain the already implemented C16
-first-start evidence:
+The C16.2 acceptance ring must retain the already implemented C16 first-start
+evidence:
 
 - differently named admitted grade declarations produce equivalent
   source-qualified scheduling/debt behavior when semantic inputs are equal;
@@ -279,16 +277,16 @@ The minimum sufficient evidence set is:
 
 1. focused C05 unit regression proving explicit fixed-school custody works with
    no target `state.json` and legacy fallback remains unchanged;
-2. cohesive disposable C16.2 retained-path witness using real candidate step,
-   real C05 evaluation and real B13 publication;
+2. exact accepted C03/C02-C08-B11/C05/B13 owner evidence, including the bounded
+   real candidate, C05 decision and B13 publication seams;
 3. destructive-candidate rollback witness;
 4. cold-restart next-selection/optimizer equivalence;
 5. existing C16.1 first-start grade-neutral/prerequisite/legacy-B negatives;
 6. operator routing regressions proving BAMF v2 remains neural-inert in #544;
 7. changed-surface structure/governance/error-control/diff checks;
 8. fresh post-implementation EGM drift review;
-9. premerge aggregate gate only at final turn-in, with reviewed-unified baseline
-   classification for inherited failures.
+9. bounded turn-in controls against reviewed unified; an unbounded full-suite
+   premerge run is not launched under ADR-141.
 
 No real persistent learner, teacher episode or operator optimizer run is part of
 this implementation session.
@@ -299,8 +297,8 @@ this implementation session.
    B13 custody. Complete.
 2. **#993 / C16.2b.** Add C05-owned immutable whole-school custody and prove the
    public candidate/package-import routes remain owner-controlled and state-free.
-3. **#994 / C16.2c.** Compose the real retained/rejected/cold-restart disposable
-   proof and publish the owner-start/cold-resume command contract.
+3. **#994 / C16.2c.** Compose exact retained/rejected/cold-restart owner evidence
+   and publish the owner-start/cold-resume command contract.
 4. **Parent turn-in.** Run aggregate exact-head controls, fresh EGM,
    diff/premerge checks and publish the #544 receipt for human review.
 
