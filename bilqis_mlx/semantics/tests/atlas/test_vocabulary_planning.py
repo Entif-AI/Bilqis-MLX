@@ -20,7 +20,10 @@ from bilqis_mlx.semantics.atlas_features.records import (
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas.vocabulary import VocabularyPrior, plan_vocabulary_extension
 from bilqis_mlx.semantics.atlas.vocabulary_contracts import UINT32_MAX
-from bilqis_mlx.semantics.atlas.vocabulary_planning import _plan_from_snapshot
+from bilqis_mlx.semantics.atlas.vocabulary_planning import (
+    _plan_authenticated_vocabulary_extension,
+    _plan_from_snapshot,
+)
 from bilqis_mlx.semantics.atlas.vocabulary_resources import build_registry_mirror_delta
 from bilqis_mlx.semantics.tests.test_atlas_projection import PRIOR_ABI, _bindings
 from bilqis_mlx.semantics.tests.atlas.vocabulary_fixtures import _allocation_fixture
@@ -111,6 +114,33 @@ class AtlasVocabularyPlanningTests(unittest.TestCase):
             tuple((item.abi_index, item.bank, item.row)
                   for item in third.allocations), ((16384, 2, 0),))
         self.assertEqual(third.bank_count, 3)
+
+    def test_authenticated_same_feature_active_set_can_extend_again(self):
+        snapshot, prior = _allocation_fixture()
+        accepted = replace(
+            prior,
+            active_semantic_ids=("urn:concept:prior", "urn:concept:8191"),
+            extents=replace(
+                prior.extents,
+                active_semantic_digest=_atlas_sha256(_atlas_bytes([0, 8191]))),
+            generation_id="f" * 64,
+        )
+        with patch(
+            "bilqis_mlx.semantics.atlas.vocabulary_planning."
+            "load_pinned_atlas_snapshot",
+            return_value=snapshot,
+        ):
+            with self.assertRaises(BilqisError) as untrusted:
+                plan_vocabulary_extension(
+                    accepted, ("urn:concept:8192",), ModelTopologySpecV2())
+            plan = _plan_authenticated_vocabulary_extension(
+                accepted, ("urn:concept:8192",), ModelTopologySpecV2(),
+                accepted.features, None)
+
+        self.assertEqual(
+            untrusted.exception.context["reason"],
+            "BAMF_VOCABULARY_PRIOR_ACTIVE_SET_DRIFT")
+        self.assertEqual(plan.active_indices, (0, 8191, 8192))
 
     def test_a02_extended_uint32_index_beyond_65535_is_not_aliased(self):
         snapshot, prior = _allocation_fixture(highest=65536)

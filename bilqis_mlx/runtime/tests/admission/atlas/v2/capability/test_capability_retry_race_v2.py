@@ -1,9 +1,13 @@
 """Concurrent exact-retry convergence for C07 v2 capability adoption."""
 
-from bilqis_mlx.runtime.tests.admission.atlas.v2.capability_support import *
+from bilqis_mlx.runtime.tests.admission.atlas.v2.capability.capability_support import *
 from bilqis_mlx.runtime.jit_adoption import _PreparedSuccessorRuntime
 from bilqis_mlx.runtime.atlas_capability_adoption_v2 import (
     _accepted_capability_only_retry_state_v2,
+)
+from bilqis_mlx.factory.atlas_frontier_progress_validation import requested_keys
+from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
+    FACTORY_RELEASE_ADMISSION_SCHEMA_V2,
 )
 
 
@@ -93,6 +97,8 @@ class CapabilityRetryRaceV2Tests(CapabilityV2Support):
             ).contract_digest(lease.source_approval)
             predecessor_factory_release_sha256 = predecessor
             factory_release_sha256 = successor
+            schema_version = FACTORY_RELEASE_ADMISSION_SCHEMA_V2
+            accepted_obligation_keys = tuple(requested_keys((handoff.receipt,)))
 
         return SimpleNamespace(
             handoff=handoff, lease=lease, current=current,

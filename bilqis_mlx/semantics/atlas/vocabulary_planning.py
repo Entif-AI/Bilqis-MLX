@@ -33,7 +33,8 @@ def _validate_prior_record(prior: VocabularyPrior) -> None:
 
 def _verify_prior_snapshot(
         prior: VocabularyPrior,
-        snapshot: FrozenAtlasSnapshot) -> FrozenAtlasSnapshot:
+        snapshot: FrozenAtlasSnapshot, *,
+        require_initial_active_set: bool = True) -> FrozenAtlasSnapshot:
     """Verify one source-replayed prior after its predecessor authority is settled."""
     if type(snapshot) is not FrozenAtlasSnapshot:
         _invalid("BAMF_VOCABULARY_PRIOR_INVALID")
@@ -54,7 +55,8 @@ def _verify_prior_snapshot(
         _invalid("BAMF_VOCABULARY_PRIOR_ACTIVE_ID_UNKNOWN")
     if (active != tuple(sorted(set(active)))
             or any(index > UINT32_MAX for index in active)
-            or (prior.feature_schema.predecessor is None
+            or (require_initial_active_set
+                and prior.feature_schema.predecessor is None
                 and tuple(item.semantic_id for item in prior.features.concepts)
                 != tuple(sorted(
                     prior.active_semantic_ids, key=lambda name: name.encode("utf-8"))))
@@ -80,18 +82,24 @@ def _verified_prior(prior: VocabularyPrior) -> FrozenAtlasSnapshot:
 def _verified_authenticated_prior(
         prior: VocabularyPrior,
         accepted_features: AtlasFeatures,
-        predecessor: AtlasFeatures) -> FrozenAtlasSnapshot:
-    """Owner-only successor validation after B13 authenticates the predecessor."""
+        predecessor: AtlasFeatures | None) -> FrozenAtlasSnapshot:
+    """Owner-only validation after B13 authenticates the accepted generation."""
     _validate_prior_record(prior)
     if (type(accepted_features) is not AtlasFeatures
-            or type(predecessor) is not AtlasFeatures
             or prior.features != accepted_features
-            or prior.feature_schema.predecessor != predecessor
-            or accepted_features.predecessor_digest != predecessor.digest
             or prior.extents.factor_map_digest != accepted_features.digest):
         _invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
+    if predecessor is None:
+        if (prior.feature_schema.predecessor is not None
+                or accepted_features.predecessor_digest is not None):
+            _invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
+    elif (type(predecessor) is not AtlasFeatures
+            or prior.feature_schema.predecessor != predecessor
+            or accepted_features.predecessor_digest != predecessor.digest):
+        _invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
     return _verify_prior_snapshot(
-        prior, load_pinned_atlas_snapshot(prior.source_selection))
+        prior, load_pinned_atlas_snapshot(prior.source_selection),
+        require_initial_active_set=False)
 
 
 def _plan_from_snapshot(
@@ -172,9 +180,9 @@ def _plan_authenticated_vocabulary_extension(
     admissions: tuple[str, ...],
     shape_policy: ModelTopologySpecV2,
     accepted_features: AtlasFeatures,
-    predecessor: AtlasFeatures,
+    predecessor: AtlasFeatures | None,
 ) -> VocabularyExtension:
-    """Owner path for a successor whose predecessor was authenticated by B13."""
+    """Owner path for a generation whose feature authority was authenticated by B13."""
     snapshot = _verified_authenticated_prior(
         prior, accepted_features, predecessor)
     return _plan_from_snapshot(prior, admissions, shape_policy, snapshot)

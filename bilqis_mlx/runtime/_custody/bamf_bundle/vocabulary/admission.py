@@ -23,15 +23,13 @@ from bilqis_mlx.semantics.atlas_projection import (
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
 from bilqis_mlx.semantics.atlas.vocabulary import VocabularyBankParent, VocabularyPrior
 from bilqis_mlx.semantics.atlas.vocabulary_planning import (
-    _plan_authenticated_vocabulary_extension, plan_vocabulary_extension,
+    _plan_authenticated_vocabulary_extension,
 )
 from bilqis_mlx.semantics.atlas.vocabulary_resources import (
     RESOURCE_SCHEMA, _build_authenticated_registry_mirror_delta,
-    build_registry_mirror_delta,
 )
 from bilqis_mlx.semantics.atlas.vocabulary_transaction import (
     FullVocabularyParent, _stage_authenticated_full_vocabulary_extension,
-    stage_full_vocabulary_extension,
 )
 from .admission_records import (
     A02StagedVocabularyExtension, A02VocabularyStagingReceipt, STAGED_EVENT,
@@ -215,14 +213,6 @@ def _prepare_vocabulary_extension(
         run_dir: Path, source_bundle_path: Path, admissions: tuple[str, ...],
         parent, features, predecessor, prior):
     full_parent = _full_parent(parent, prior, int(shutil.disk_usage(run_dir).free))
-    if predecessor is None:
-        if features.predecessor_digest is not None:
-            invalid("BAMF_VOCABULARY_PREDECESSOR_FEATURE_AUTHORITY_REQUIRED")
-        plan = plan_vocabulary_extension(prior, admissions, parent.topology)
-        prepared = stage_full_vocabulary_extension(full_parent, plan)
-        mirror = build_registry_mirror_delta(
-            prior, plan, source_bundle_path=source_bundle_path)
-        return plan, prepared, mirror
     plan = _plan_authenticated_vocabulary_extension(
         prior, admissions, parent.topology, features, predecessor)
     prepared = _stage_authenticated_full_vocabulary_extension(

@@ -9,6 +9,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate, CompleteStudent
 from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
+    ATLAS_ADMISSION_SCHEMA_V2,
     AtlasAdmissionBinding, _issue_atlas_admission_binding,
 )
 from bilqis_mlx.runtime.bamf_bundle.genesis import BamfRunIdentity
@@ -71,6 +72,64 @@ class AtlasAdmissionBindingTests(unittest.TestCase):
         historical = AtlasAdmissionBinding.from_record(binding.to_record())
         self.assertNotEqual(type(historical), AtlasAdmissionBinding)
         self.assertEqual(historical.digest, binding.digest)
+
+    def test_v2_binding_roundtrip_seals_selection_and_cumulative_obligation_keys(self):
+        parent, staged = self._parent_and_candidate()
+        keys = (("semantic:event", "2" * 64),)
+        binding = _issue_atlas_admission_binding(
+            staged, parent,
+            lease_sha256="9" * 64,
+            source_approval_sha256="8" * 64,
+            proposal_sha256="7" * 64,
+            factory_release_sha256="6" * 64,
+            staging_receipt_sha256="5" * 64,
+            parent_feature_receipt_sha256="4" * 64,
+            selection_receipt_sha256="3" * 64,
+            selected_obligation_keys=keys,
+        )
+        historical = AtlasAdmissionBinding.from_record(binding.to_record())
+        self.assertEqual(binding.schema_version, ATLAS_ADMISSION_SCHEMA_V2)
+        self.assertEqual(historical.selection_receipt_sha256, "3" * 64)
+        self.assertEqual(historical.selected_obligation_keys, keys)
+        self.assertEqual(historical.digest, binding.digest)
+
+    def test_cold_obligation_credit_is_minted_from_v2_b13_binding(self):
+        from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_obligation_credit
+
+        parent, staged = self._parent_and_candidate()
+        keys = (("semantic:event", "2" * 64),)
+        binding = _issue_atlas_admission_binding(
+            staged, parent,
+            lease_sha256="9" * 64,
+            source_approval_sha256="8" * 64,
+            proposal_sha256="7" * 64,
+            factory_release_sha256="6" * 64,
+            staging_receipt_sha256="5" * 64,
+            parent_feature_receipt_sha256="4" * 64,
+            selection_receipt_sha256="3" * 64,
+            selected_obligation_keys=keys,
+        )
+        parsed = AtlasAdmissionBinding.from_record(binding.to_record())
+        pointer = {
+            "generation": 1,
+            "manifest_sha256": "a" * 64,
+            "acceptance_sha256": binding.digest,
+        }
+        accepted = CompleteStudent(**staged.__dict__)
+        with patch(
+                "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_generation",
+                return_value=(pointer, accepted)), patch(
+                    "bilqis_mlx.runtime.bamf_bundle.feature.acceptance."
+                    "accepted_binding_for_manifest",
+                    return_value=parsed), patch(
+                        "bilqis_mlx.runtime.atlas_admission."
+                        "read_accepted_atlas_factory_release",
+                        return_value=type("Release", (), {
+                            "release_sha256": "6" * 64})()):
+            credit = read_accepted_atlas_obligation_credit(Path("/unused"))
+        self.assertEqual(credit.factory_release_sha256, "6" * 64)
+        self.assertEqual(credit.acceptance_sha256, binding.digest)
+        self.assertEqual(credit.obligation_keys, keys)
 
     def test_b13_publication_accepts_live_c07_binding_without_relabeling_it_as_retention(self):
         parent, staged = self._parent_and_candidate()

@@ -22,6 +22,13 @@ def _accepted_parameter_extension_retry_once_v2(current, handoff, native_staged,
         require_issued_a02_staged_vocabulary_extension,
     )
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import accepted_generation
+    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
+        accepted_binding_for_manifest,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
+        ATLAS_ADMISSION_SCHEMA_V2, ParsedAtlasAdmissionBinding,
+    )
+    from bilqis_mlx.factory.atlas_frontier_progress_validation import requested_keys
 
     native_staged = require_issued_a02_staged_vocabulary_extension(native_staged)
     pointer, accepted = accepted_generation(current.run_dir / "bamf-state.json")
@@ -49,6 +56,16 @@ def _accepted_parameter_extension_retry_once_v2(current, handoff, native_staged,
         selected=handoff.staged_candidate,
     )
     if retry is not None:
+        binding = accepted_binding_for_manifest(
+            current.run_dir, pointer["manifest_sha256"], accepted,
+            expected_acceptance_sha256=pointer["acceptance_sha256"])
+        expected_keys = set(requested_keys((handoff.receipt,)))
+        if (isinstance(binding, ParsedAtlasAdmissionBinding)
+                and binding.schema_version == ATLAS_ADMISSION_SCHEMA_V2
+                and (binding.selection_receipt_sha256
+                     != handoff.receipt.receipt_sha256
+                     or not expected_keys.issubset(binding.selected_obligation_keys))):
+            _invalid("BAMF_ATLAS_NATIVE_RETRY_DRIFT")
         cold = read_accepted_atlas_factory_release(current.run_dir)
         if cold.release_sha256 != handoff.staged_candidate.successor.release_sha256:
             _invalid("BAMF_ATLAS_NATIVE_RETRY_DRIFT")
@@ -179,6 +196,7 @@ def _publish_native_staged_candidate_v2_locked(
     """Publish A02 state while human v2 lease renewal is excluded."""
     from . import admission as runtime_admission
     from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_factory_release
+    from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_obligation_credit
     from bilqis_mlx.runtime.bamf_bundle import (
         publish_atlas_admission_generation,
         require_issued_a02_staged_vocabulary_extension,
@@ -188,6 +206,7 @@ def _publish_native_staged_candidate_v2_locked(
         _issue_atlas_admission_binding,
     )
     from bilqis_mlx.semantics.domains import contract_digest
+    from bilqis_mlx.factory.atlas_frontier_progress_validation import requested_keys
 
     native_staged = require_issued_a02_staged_vocabulary_extension(native_staged)
     candidate = native_staged.candidate
@@ -202,6 +221,12 @@ def _publish_native_staged_candidate_v2_locked(
     if raced is not None:
         return raced
     require_staged_vocabulary_admission_headroom(runtime.run_dir, native_staged)
+    handoff.receipt.verify()
+    inherited = read_accepted_atlas_obligation_credit(runtime.run_dir)
+    accepted_obligation_keys = tuple(sorted(set(
+        (() if inherited is None else inherited.obligation_keys)
+        + tuple(requested_keys((handoff.receipt,)))
+    )))
     release_file = runtime_admission._persist_executable_factory_release(
         runtime.run_dir, selected.successor)
     expected_release_file = "factory-releases/" + selected.successor.release_sha256 + ".json"
@@ -215,6 +240,8 @@ def _publish_native_staged_candidate_v2_locked(
         factory_release_sha256=selected.successor.release_sha256,
         staging_receipt_sha256=staging_receipt.digest,
         parent_feature_receipt_sha256=staging_receipt.parent_feature_receipt_sha256,
+        selection_receipt_sha256=handoff.receipt.receipt_sha256,
+        selected_obligation_keys=accepted_obligation_keys,
     )
     pointer = publish_atlas_admission_generation(
         runtime.run_dir, candidate, admission=binding,

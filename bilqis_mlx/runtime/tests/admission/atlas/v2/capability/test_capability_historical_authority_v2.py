@@ -1,6 +1,6 @@
 """Historical capability retry authority must fail before the live verifier."""
 
-from bilqis_mlx.runtime.tests.admission.atlas.v2.capability_support import *
+from bilqis_mlx.runtime.tests.admission.atlas.v2.capability.capability_support import *
 from bilqis_mlx.runtime.jit_adoption import _PreparedSuccessorRuntime
 
 

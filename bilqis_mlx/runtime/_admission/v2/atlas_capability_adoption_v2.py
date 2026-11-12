@@ -69,6 +69,7 @@ def _accepted_capability_only_retry_state_once_v2(current, handoff, lease):
     )
     from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
+        FACTORY_RELEASE_ADMISSION_SCHEMA_V2,
         ParsedFactoryReleaseAdmissionBinding,
     )
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
@@ -77,6 +78,7 @@ def _accepted_capability_only_retry_state_once_v2(current, handoff, lease):
         parent_acceptance_anchor_from_manifest,
     )
     from bilqis_mlx.semantics.domains import contract_digest
+    from bilqis_mlx.factory.atlas_frontier_progress_validation import requested_keys
 
     pointer, accepted = accepted_generation(current.run_dir / "bamf-state.json")
     accepted_release = read_accepted_atlas_factory_release(current.run_dir)
@@ -124,6 +126,10 @@ def _accepted_capability_only_retry_state_once_v2(current, handoff, lease):
                != handoff.staged_candidate.staged_sha256
             or accepted.retained_state.optimizer_step
                != current.legacy.checkpoint.optimizer_step):
+        _invalid("BAMF_FACTORY_RELEASE_ADMISSION_BINDING_DRIFT")
+    if (binding.schema_version == FACTORY_RELEASE_ADMISSION_SCHEMA_V2
+            and not set(requested_keys((handoff.receipt,))).issubset(
+                binding.accepted_obligation_keys)):
         _invalid("BAMF_FACTORY_RELEASE_ADMISSION_BINDING_DRIFT")
     parent_manifest = accepted.parent_manifest_sha256
     parent_acceptance = parent_acceptance_anchor_from_manifest(
@@ -255,7 +261,10 @@ def _publish_capability_only_factory_successor_locked(
         current, handoff, lease, *, expected_parent_pointer):
     """Publish while human v2 lease renewal is structurally excluded."""
     from . import admission as runtime_admission
-    from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_factory_release
+    from bilqis_mlx.runtime.atlas_admission import (
+        read_accepted_atlas_factory_release,
+        read_accepted_atlas_obligation_credit,
+    )
     from bilqis_mlx.runtime.bamf_bundle.factory_release_adoption import (
         _issue_factory_release_adoption_transition,
         derive_factory_release_adoption_candidate,
@@ -267,6 +276,7 @@ def _publish_capability_only_factory_successor_locked(
         publish_factory_release_adoption_generation,
     )
     from bilqis_mlx.semantics.domains import contract_digest
+    from bilqis_mlx.factory.atlas_frontier_progress_validation import requested_keys
 
     runtime = current.runtime
     source_authority = current.source_authority
@@ -297,10 +307,17 @@ def _publish_capability_only_factory_successor_locked(
         lease_sha256=lease.digest(),
         source_approval_sha256=contract_digest(lease.source_approval),
     )
+    handoff.receipt.verify()
+    inherited = read_accepted_atlas_obligation_credit(runtime.run_dir)
+    accepted_obligation_keys = tuple(sorted(set(
+        (() if inherited is None else inherited.obligation_keys)
+        + tuple(requested_keys((handoff.receipt,)))
+    )))
     candidate = derive_factory_release_adoption_candidate(
         parent, parent_manifest_sha256=parent_manifest, transition=transition)
     binding = _issue_factory_release_admission_binding(
-        candidate, parent, transition=transition)
+        candidate, parent, transition=transition,
+        accepted_obligation_keys=accepted_obligation_keys)
     release_file = runtime_admission._persist_executable_factory_release(
         runtime.run_dir, handoff.staged_candidate.successor)
     expected_release_file = (

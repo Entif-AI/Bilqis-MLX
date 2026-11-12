@@ -1,4 +1,4 @@
-"""Authority-correct support for the #955 same-v2-lease mixed witness."""
+"""Authority-correct support for mixed same-v2-lease admission witnesses."""
 from contextlib import ExitStack
 from dataclasses import asdict, replace
 import os
@@ -64,22 +64,27 @@ class MixedWitnessSupport(MixedSourceSupport):
         factory_admission._persist_executable_factory_release(self.run, self.current)
         return pointer
 
-    def runtime(self, current_release, checkpoint):
+    def runtime(self, current_release, checkpoint, graph=None):
         from bilqis_mlx.curriculum.scheduler import start_new
         from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
         program = schedule_program_from_executable_release(current_release)
         return _PreparedSuccessorRuntime(
             None, self.run, {"school": asdict(start_new(program, checkpoint))},
-            None, LEGACY, self.parent_graph, object(), object(), 0.)
+            None, LEGACY, self.parent_graph if graph is None else graph,
+            object(), object(), 0.)
 
-    def issue_mixed_lease(self, h1, event_candidate, snapshot):
-        event_operator = event_frames.SYMBOLS["D.EVENT_OCCURRENCE"]
+    def issue_mixed_lease(
+            self, h1, event_candidate, snapshot,
+            event_capabilities=("D.EVENT_OCCURRENCE",)):
+        event_operators = {
+            event_frames.SYMBOLS[capability] for capability in event_capabilities
+        }
         approval = _signed(replace(
             AtlasSourceApproval(
                 "mixed-v2-witness-approval", snapshot.release_sha256,
                 tuple(sorted(set(h1.family_ids)
                              | set(event_candidate.census.required_source_family_ids))),
-                tuple(sorted(set(h1.operator_ids) | {event_operator})),
+                tuple(sorted(set(h1.operator_ids) | event_operators)),
                 "b" * 64, 1, "c" * 64, "d" * 64, "e" * 64,
                 True, True, "fixture:salience-owner", "0" * 128),
             signature_hex="0" * 128))
@@ -144,10 +149,10 @@ class MixedWitnessSupport(MixedSourceSupport):
 
     def parameter_context(
             self, handoff, plan, ledger, checkpoint_sha256, step,
-            approval, native_staged, source_authority, current_release):
+            approval, native_staged, source_authority, current_release, graph=None):
         checkpoint = Checkpoint(
             checkpoint_sha256, "bundles/mixed-v2-parameter", step, True)
-        runtime = self.runtime(current_release, checkpoint)
+        runtime = self.runtime(current_release, checkpoint, graph=graph)
         legacy = AtlasAdmissionContext(
             _accepted_run_lease_identity(self.run), current_release,
             handoff.candidate_frontier, ledger, plan, checkpoint,
@@ -158,7 +163,8 @@ class MixedWitnessSupport(MixedSourceSupport):
     def complete_parameter_leg(
             self, *, semantic_id, h2, plan2, ledger2, checkpoint2, step2,
             approval, lease, cold1, pointer1, accepted1, binding1,
-            snapshot, schema, features, combined):
+            snapshot, schema, features, combined, expected_generation=2,
+            graph=None):
         from bilqis_mlx.runtime.atlas_admission import (
             adopt_parameter_extension_atlas_successor_v2,
             read_accepted_atlas_factory_release,
@@ -179,7 +185,7 @@ class MixedWitnessSupport(MixedSourceSupport):
                          pointer1["manifest_sha256"])
         current2 = self.parameter_context(
             h2, plan2, ledger2, checkpoint2, step2, approval, native2,
-            self.accepted_source_authority(), cold1)
+            self.accepted_source_authority(), cold1, graph=graph)
         with patch(
                 "bilqis_mlx.source_adapters.school.live_source_registry",
                 return_value=combined), patch(
@@ -189,7 +195,7 @@ class MixedWitnessSupport(MixedSourceSupport):
                             "bilqis_mlx.runtime.mlx_checkpoint.assert_headroom"):
             result2 = adopt_parameter_extension_atlas_successor_v2(
                 current2, AtlasDeltaEnvelopeV2(h2, native2), lease)
-        self.assertEqual(result2.accepted_generation, 2)
+        self.assertEqual(result2.accepted_generation, expected_generation)
         pointer2, accepted2 = accepted_generation(self.run / "bamf-state.json")
         binding2 = accepted_binding_for_manifest(
             self.run, pointer2["manifest_sha256"], accepted2,
@@ -228,14 +234,26 @@ class MixedWitnessSupport(MixedSourceSupport):
         self.assertEqual(
             {identity: candidate_ages[identity] for identity in parent_ages},
             parent_ages)
-        new_ages = tuple(
-            age for identity, age in candidate_ages.items() if identity not in parent_ages)
-        self.assertEqual(new_ages, (0,))
+        new_rows = tuple(
+            item for item in candidate_policy.row_ages
+            if item.identity not in parent_ages)
+        self.assertEqual(tuple(item.accepted_age for item in new_rows), (0,))
+        mutable_parameter_rows = {
+            f"identity.bank.{bank}": tuple(sorted(rows))
+            for bank, rows in {
+                item.bank_index: tuple(
+                    row.row_index for row in new_rows
+                    if row.bank_index == item.bank_index)
+                for item in new_rows
+            }.items()
+        }
         self.assertNotEqual(native2.candidate.extents.digest, accepted1.extents.digest)
         for field in ("parameters", "m", "v", "update_counts"):
             self.assert_tree_prefix(
                 self, getattr(accepted1.retained_state.optimizer, field),
-                getattr(accepted2.retained_state.optimizer, field))
+                getattr(accepted2.retained_state.optimizer, field),
+                mutable_rows_by_key=(
+                    mutable_parameter_rows if field == "parameters" else None))
         self.assertEqual(self.neural_fingerprint(accepted2),
                          self.neural_fingerprint(native2.candidate))
         fingerprint = self.run_fingerprint()
@@ -250,3 +268,4 @@ class MixedWitnessSupport(MixedSourceSupport):
         self.assertEqual(retry2.accepted_manifest_sha256, pointer2["manifest_sha256"])
         self.assertEqual(self.run_fingerprint(), fingerprint)
         self.assertFalse((self.run / "autonomy/atlas-admission/current.json").exists())
+        return pointer2, accepted2, binding2

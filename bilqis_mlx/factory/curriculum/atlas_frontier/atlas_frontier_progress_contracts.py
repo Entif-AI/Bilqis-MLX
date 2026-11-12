@@ -9,6 +9,7 @@ from .atlas_frontier_contracts import CurriculumSnapshot, _bytes, _fail
 from .atlas_frontier_selection import FrontierDeltaSelection
 from .atlas_frontier_selection_validation import (
     TargetDeltaProjection,
+    snapshot_graph,
     validate_target_projection,
 )
 from .executable_release import ExecutableFactoryRelease
@@ -64,6 +65,8 @@ class StagedSelectionReceipt:
     def verify(self) -> None:
         self.selection.verify()
         self.selection_snapshot.verify()
+        _verify_selection_obligation_identity(
+            self.selection_snapshot, self.selection)
         self.predecessor_release.verify()
         validate_target_projection(
             self.predecessor_release,
@@ -100,6 +103,29 @@ class StagedSelectionReceipt:
                    != self.selection.introduced_semantic_ids
                 or self.receipt_sha256 != self.expected_digest()):
             _fail("BAMF_PLANNER_STAGED_SELECTION_INVALID")
+
+
+def _verify_selection_obligation_identity(
+    snapshot: CurriculumSnapshot,
+    selection: FrontierDeltaSelection,
+) -> None:
+    """Bind receipt obligation identity to the frozen source/prerequisite census."""
+    graph = snapshot_graph(snapshot)
+    semantic_id = selection.selected_semantic_id
+    prerequisites = graph.get(semantic_id)
+    if prerequisites is None:
+        _fail("BAMF_PLANNER_STAGED_SELECTION_INVALID")
+    expected = tuple(sorted(
+        (row.semantic_id, row.family_id, row.source_evidence_sha256, prerequisites)
+        for row in snapshot.coverage_rows
+        if row.semantic_id == semantic_id
+    ))
+    actual = tuple(sorted(
+        (row.semantic_id, row.family_id, row.source_evidence_sha256, row.prerequisites)
+        for row in selection.selected_obligations
+    ))
+    if not expected or actual != expected:
+        _fail("BAMF_PLANNER_STAGED_SELECTION_INVALID")
 
 
 @dataclass(frozen=True)
