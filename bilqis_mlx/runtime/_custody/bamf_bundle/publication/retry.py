@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from bilqis_mlx.data_plane import DataPlaneError
+from bilqis_mlx.data_plane import DataPlaneError, SHA256_HEX_LENGTH
 from bilqis_mlx.learning.atlas_acceptance import (
     AcceptedCandidateBinding, ParsedAcceptedCandidateBinding, candidate_identity_digest,
 )
@@ -78,7 +78,7 @@ def _prepared_unsealed_manifest(run_dir: Path, prepared, load_bundle) -> str | N
     target = entries[0]
     manifest_sha256 = target.name
     if (target.is_symlink() or not target.is_dir()
-            or len(manifest_sha256) != 64
+            or len(manifest_sha256) != SHA256_HEX_LENGTH
             or any(char not in "0123456789abcdef" for char in manifest_sha256)):
         invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
     student = load_bundle(target, expected_manifest_sha256=manifest_sha256)

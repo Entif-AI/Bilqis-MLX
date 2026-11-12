@@ -34,6 +34,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.teacher_custody_fixtures impor
 CAPABILITY = "B.IDBOOLOPS"
 SOURCE_SEED = 37116
 C03_FIXTURE_SEED_OFFSET = 1
+WITNESS_STAGE_INVALID = "C16_2C_WITNESS_STAGE_INVALID"
 
 
 def bound_visit(parent, target, capability=CAPABILITY, lesson_grade="B"):
@@ -126,7 +127,7 @@ def accepted_witness_receipt(
     """Persist accepted publication plus its same-process next update."""
     if (not isinstance(uninterrupted, dict)
             or not isinstance(process_nonce, str) or not process_nonce):
-        raise ValueError("C16_2C_WITNESS_STAGE_INVALID")
+        raise ValueError(WITNESS_STAGE_INVALID)
     source = (context.release.source_bindings.source_attestation_sha256
               or context.release.source_bindings.digest())
     return {
@@ -158,7 +159,7 @@ def finalize_witness_receipt(accepted, cold):
     if (not isinstance(accepted, dict)
             or accepted.get("schema") != "bilqis.mlx.c16.2c-accepted-stage/v1"
             or not isinstance(cold, dict)):
-        raise ValueError("C16_2C_WITNESS_STAGE_INVALID")
+        raise ValueError(WITNESS_STAGE_INVALID)
     return {
         **accepted,
         "schema": "bilqis.mlx.c16.2c-launch-witness/v1",

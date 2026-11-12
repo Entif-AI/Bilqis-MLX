@@ -12,13 +12,13 @@ from bilqis_mlx.runtime.capability_evaluation import _invalid
 from bilqis_mlx.semantics.domains import contract_digest
 
 SCHEMA = "bilqis.mlx.c05-bamf-fixed-school/v1"
-KEYS = {
+KEYS = frozenset({
     "schema", "run_id", "run_identity_sha256",
     "foundation_parent_manifest_sha256", "factory_release_sha256",
     "source_identity_sha256", "semantic_catalog_sha256", "capabilities",
     "rubric_sha256", "source_sha256", "generator_version", "seed",
     "cohort_sha256", "cohort_file", "cohort_seed",
-}
+})
 
 
 def is_hex(value) -> bool:
