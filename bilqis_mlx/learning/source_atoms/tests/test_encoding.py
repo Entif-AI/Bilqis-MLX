@@ -18,7 +18,14 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 )
 from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
 from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
-from bilqis_mlx.semantics.frame_compiler import compile_prefix_rows
+from bilqis_mlx.semantics.context_eligibility import (
+    PUBLIC_FORMAL, ContextEligibility, ContextMember, SourceFrontier, SourceGrant,
+    frame_evidence_digest, member_evidence_digest, project_context,
+)
+from bilqis_mlx.semantics.frame_compiler import (
+    StreamingAST, compile_prefix_rows, validate_partial_visible_forest,
+)
+from bilqis_mlx.semantics.frame_schema import FrameTree, SourceSpan, atomic_fallback
 from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE, source_case
 
 
@@ -61,6 +68,51 @@ class SourceEncodingTests(TestCase):
             banks,
             self.artifact_owner)
 
+    def atomic_case(self, span_end=1):
+        ast, config, _, _, selection, row, graph, args = source_case(
+            visible_end=span_end)
+        atomic = atomic_fallback(
+            {"kind": "source-atom", "token": ast.atoms[0].token},
+            source_instance_id=ast.source_instance_id, structural_path=(0,),
+            source_span=SourceSpan(0, span_end), parent_occurrence_id=None,
+            causal_prefix_end=span_end)
+        frame_handle = "source-atomic:test:frame"
+        member = ContextMember(
+            "<atomic>", 0, "source-atomic:test:member", span_end)
+        envelope = ContextEligibility(
+            frame_handle, atomic, "source-atomic:test:source", (member,),
+            config.task.principal_id, config.task.tenant_id, config.task.purpose,
+            PUBLIC_FORMAL, self.snapshot.release_sha256,
+            config.task.jurisdiction, config.task.scope, PUBLIC_FORMAL,
+            config.policy.policy_epoch, config.frontier.rights_epoch,
+            config.frontier.correction_generation, 0, 0, None, span_end)
+        grants = list(config.frontier.grants)
+        for handle, digest in (
+            (envelope.source_handle, frame_evidence_digest(atomic)),
+            (member.source_handle, member_evidence_digest(atomic, member)),
+        ):
+            grants.append(SourceGrant(
+                handle, config.task.principal_id, config.task.tenant_id,
+                PUBLIC_FORMAL, self.snapshot.release_sha256, digest,
+                (config.task.purpose,), (config.task.jurisdiction,),
+                (config.task.scope,), config.frontier.rights_epoch,
+                config.frontier.correction_generation, 0, 0))
+        frontier = SourceFrontier(
+            config.frontier.rights_epoch, config.frontier.correction_generation,
+            tuple(sorted(grants, key=lambda item: item.source_handle)))
+        projection = project_context(
+            (envelope,), config.task, frontier, config.policy)
+        config = replace(config, approved=projection, frontier=frontier)
+        ast = StreamingAST(
+            ast.source_instance_id, ast.atoms, (FrameTree(atomic),))
+        rows = compile_prefix_rows(
+            ((ast, span_end, config),), self.snapshot.release_sha256)
+        receipt = validate_partial_visible_forest(rows.rows[0], ast, config)
+        compiled = CompiledEncoderInput(
+            rows, (config,), self.compiled.features, self.compiled.extents,
+            source_asts=(ast,), partial_forest_receipts=(receipt,))
+        return compiled, SourceAtomRow(selection, row, graph, **args)
+
     def test_real_b03_result_matches_literal_source_owned_identity_and_factor_equation(self):
         before = {key: id(value) for key, value in self.parameters.items()}
         result = self.encode()
@@ -85,6 +137,30 @@ class SourceEncodingTests(TestCase):
         self.assertGreater(float(mx.abs(gradients["features.project_type"][2, 0])), 0)
         self.assertGreater(float(mx.abs(gradients["features.type"][1, 0])), 0)
         self.assertEqual(float(mx.abs(gradients["identity.bank.1"]).sum()), 0)
+
+    def test_atomic_fallback_reuses_exact_source_atom_embedding_and_gradient(self):
+        compiled, source = self.atomic_case()
+        encoded = self.encode(compiled=compiled, source=source)
+        np.testing.assert_array_equal(
+            np.asarray(encoded.global_seeds[0, -1]),
+            np.asarray(encoded.global_seeds[0, 0]))
+
+        def loss(identity):
+            parameters = {**self.parameters, "identity.bank.0": identity}
+            return self.encode(
+                parameters, compiled=compiled, source=source).global_seeds[0, -1, 2]
+
+        gradient = mx.grad(loss)(self.parameters["identity.bank.0"])
+        row = source.source_row["tokens"][0]
+        self.assertGreater(float(mx.abs(gradient[row, 2])), 0)
+
+    def test_multi_atom_atomic_fallback_remains_held_without_composition_law(self):
+        compiled, source = self.atomic_case(span_end=2)
+        with self.assertRaises(BilqisError) as caught:
+            self.encode(compiled=compiled, source=source)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_SOURCE_ATOM_ATOMIC_FRAME_SPAN_UNAVAILABLE")
 
     def test_source_known_inactive_rows_do_not_force_unadmitted_bank_expansion(self):
         compiled = replace(self.compiled, extents=replace(
