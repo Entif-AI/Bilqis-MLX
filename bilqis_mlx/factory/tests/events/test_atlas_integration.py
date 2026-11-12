@@ -2,6 +2,7 @@ import hashlib
 from dataclasses import replace
 import unittest
 
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory import candidate_realizations
 from bilqis_mlx.factory.atlas_frontier import (
     AtlasCoverageEpoch,
@@ -16,6 +17,8 @@ from bilqis_mlx.factory.atlas_frontier_progress_contracts import FrontierStatus
 from bilqis_mlx.factory.atlas_frontier_progress_validation import requested_keys
 from bilqis_mlx.factory.atlas_delta_scope import AtlasDeltaScopeHandoff
 from bilqis_mlx.factory.atlas_frontier_selection import select_frontier_delta_for_projection
+from bilqis_mlx.factory.atlas_frontier_selection import _candidate_signature
+from bilqis_mlx.factory.atlas_frontier_selection_validation import obligation_signature
 from bilqis_mlx.factory.autonomy import (
     EvidenceReceipt,
     compile_autonomy_plan,
@@ -281,6 +284,56 @@ class EventCandidateAtlasIntegrationTests(EventCandidateRealizationFixture, unit
             learner, plan)
 
         self.assertIs(result, FrontierStatus.IMPLEMENTATION_UNCOVERED)
+
+    def test_staged_receipt_rejects_rehashed_obligation_substitution(self):
+        candidate, source_frontier, policy = self.atlas_fixture()
+        state = (self.current, self.parent_graph, {"A.IDENTITY"}, None, None)
+        _current, _graph, _mastered, prior, _snapshot = self._stage_capability(
+            candidate, source_frontier, policy, state, "D.EVENT_OCCURRENCE")
+        receipt = prior.staged_receipts[0]
+        selected = receipt.selection.selected_obligations
+        forged_rows = (
+            replace(selected[0], source_evidence_sha256="c" * 64),
+            *selected[1:],
+        )
+        forged_projection = replace(
+            receipt.projection,
+            obligation_signature=obligation_signature(forged_rows),
+            projection_sha256="0" * 64,
+        )
+        forged_projection = replace(
+            forged_projection,
+            projection_sha256=forged_projection.expected_digest(),
+        )
+        forged_selection = replace(
+            receipt.selection,
+            selected_obligations=forged_rows,
+            candidate_signature=_candidate_signature(
+                receipt.selected_semantic_id,
+                forged_rows,
+                receipt.selection.introduced_capability_ids,
+                receipt.selection.introduced_semantic_ids,
+            ),
+            selection_sha256="0" * 64,
+        )
+        forged_selection = replace(
+            forged_selection,
+            selection_sha256=forged_selection.expected_digest(),
+        )
+        forged = replace(
+            receipt,
+            selection=forged_selection,
+            projection=forged_projection,
+            receipt_sha256="0" * 64,
+        )
+        forged = replace(forged, receipt_sha256=forged.expected_digest())
+
+        with self.assertRaises(BilqisError) as caught:
+            forged.verify()
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_PLANNER_STAGED_SELECTION_INVALID",
+        )
 
 
 if __name__ == "__main__":
