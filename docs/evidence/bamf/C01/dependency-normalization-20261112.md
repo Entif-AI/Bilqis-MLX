@@ -176,3 +176,35 @@ acceptance. The packet resolves to issue edges `B01,B04,A05.5` and requires rece
 `#552,#618`. PR #618 is the
 already-pinned accepted A05.5 source-ingress receipt. Removing either receipt, removing the pinned amendment source, or changing the
 cycle clause fails closed. No B05, B05.4 or B13 graph edge is added.
+
+## Remaining deliberate holds after this pass
+
+Six of the eight 1 November C01 dependency holds now have exact source-backed
+normalization. Two remain held deliberately; neither may be cleared from issue
+closure or implementation references alone.
+
+### A05.5 #594
+
+No canonical source declares a complete direct inbound prerequisite list. The
+issue body and checked-in spec describe A01 semantic identity, A13 rights and
+corrections, B01-derived B02/B03 embedding behavior, inherited A05/A03/A04
+requirements, and downstream B11/B05.4 consumers, but they do not classify those
+references into a complete direct-edge set. Accepted PR #618 proves the
+implementation and source-owner result; it does not establish the missing graph
+semantics. Preserve `known_edges=[]` as unknown, not as an assertion of zero
+prerequisites.
+
+### A08.1b.5 #557
+
+The issue body explicitly names A08.1b.1-.4, but the checked-in specification also
+requires the A08.1a frozen census and a source-owner program spanning exact row
+bytes, released SKOS/Ithkuil-to-A03 frame adaptation, per-edge relation evidence,
+A13 grant issuance, and a fresh ApprovedContextProjection crosswalk. Those
+obligations were intentionally surfaced by independent review and are not mapped
+to one canonical direct-prerequisite edge set. PR #657 proves the owned
+constructive-family implementation; it does not retroactively classify the missing
+source-owner dependency graph. The range therefore remains held until authority
+normalizes those additional obligations explicitly.
+
+With either hold present, C01 correctly retains `order=[]`. This follow-up does not
+claim #347 complete.

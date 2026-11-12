@@ -265,7 +265,7 @@ class DependencyEvidenceTests(unittest.TestCase):
             'Full B11.1 remains responsible for complete model assembly after the surrounding owners are accepted.'
         )
         args = packet(clause, edges=('B01', 'B04', 'A05.5'))
-        args[2].update({'B01': 346, 'B04': 355, 'A05.5': 594})
+        args[2].update({'B01': 346, 'B04': 350, 'A05.5': 594})
         evidence = args[0]['dependency_evidence']
         for number in (552, 618):
             source_id = 'C01.1.pr-' + str(number)
@@ -278,7 +278,12 @@ class DependencyEvidenceTests(unittest.TestCase):
             evidence['external_receipts'].append(dict(number=number, role='prerequisite',
                 head_sha='a'*40, merge_sha='b'*40, url=url, source_id=source_id))
         amendment_id = 'B11.1a.comment-6505193864'
-        amendment_raw = b'#594 must provide real source-positive/rights/prefix proof and reach unified before #586 producer acceptance.'
+        amendment_raw = (
+            b'Source-owner blocker formalized: new Lane A child #594 (A05.5) owns source-visible SourceAtom -> admitted A01 semantic ABI binding. '
+            b'Current A05 atoms carry token/index/reference but no source-attested semantic identity; B03 accepts supplied atom vectors, so #586 cannot truthfully issue an h0 producer receipt. '
+            b'Spec committed/pushed in Lane A at `ff2857c207d279526dc0f00c73682e296951fab9`. #590 has an explicit fail-closed bridge; '
+            b'#594 must provide real source-positive/rights/prefix proof and reach unified before #586 producer acceptance. B08 no-hit remains separately held. No B05 admission.'
+        )
         args[3][amendment_id] = amendment_raw
         evidence['source_records'].append(dict(source_id=amendment_id, kind='comment',
             locator='https://github.com/Entif-AI/Bilqis-MLX/issues/586#issuecomment-6505193864',
@@ -306,6 +311,16 @@ class DependencyEvidenceTests(unittest.TestCase):
         missing_amendment[3].pop(amendment_id, None)
         missing_amendment[3]['reviewed-packets'] = pinned_matrix(missing_amendment[0])
         self.assertIs(check_dependency_evidence(*missing_amendment).status, EvidenceStatus.INVALID)
+
+        relabelled = deepcopy(args)
+        forged = b'unrelated comment text relabelled as the amendment'
+        relabelled[3][amendment_id] = forged
+        amendment_record = next(item for item in relabelled[0]['dependency_evidence']['source_records']
+                                if item['source_id'] == amendment_id)
+        amendment_record['sha256'] = hashlib.sha256(forged).hexdigest()
+        amendment_record['excerpt'] = forged.decode()
+        relabelled[3]['reviewed-packets'] = pinned_matrix(relabelled[0])
+        self.assertIs(check_dependency_evidence(*relabelled).status, EvidenceStatus.INVALID)
 
         changed = deepcopy(args)
         changed[0]['dependency_evidence']['clause'] = clause.replace(

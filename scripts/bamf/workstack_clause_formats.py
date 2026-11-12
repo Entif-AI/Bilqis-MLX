@@ -62,7 +62,7 @@ def _released_schema_serialization_prerequisites(text, numbers):
     return (('A01',), (551,))
 
 
-def _b11_cycle_prerequisites(text, numbers, source_ids):
+def _b11_cycle_prerequisites(text, numbers, source_hashes):
     expected = (
         '## Dependency-cycle rule\n'
         'This child is deliberately carved out of B11.1 so it can precede B05 parent acceptance. '
@@ -74,7 +74,7 @@ def _b11_cycle_prerequisites(text, numbers, source_ids):
     keys = ('B01', 'B04', 'A05.5')
     if (text != expected or any(type(numbers.get(key)) is not int for key in keys)
             or numbers['A05.5'] != 594
-            or 'B11.1a.comment-6505193864' not in source_ids):
+            or source_hashes.get('B11.1a.comment-6505193864') != '7e495f4438216b078f8551a31b046982f35e6b027fc68df8def65080b028aeb0'):
         return None
     return (keys, (552, 618))
 
@@ -147,8 +147,8 @@ def _parent_amendment(clause, numbers):
     return (*original, *child), ()
 
 
-def parse_clause(clause, numbers, source_ids=()):
-    b11_cycle = _b11_cycle_prerequisites(clause, numbers, frozenset(source_ids))
+def parse_clause(clause, numbers, source_hashes=None):
+    b11_cycle = _b11_cycle_prerequisites(clause, numbers, source_hashes or {})
     if b11_cycle is not None:
         return b11_cycle
     b02_child = _b02_child_handle_prerequisites(clause, numbers)
