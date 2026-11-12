@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from bilqis_mlx.data_plane import DataPlaneError
+from bilqis_mlx.data_plane import DataPlaneError, SHA256_HEX_LENGTH
 from bilqis_mlx.learning.atlas_acceptance import (
     AcceptedCandidateBinding, ParsedAcceptedCandidateBinding, candidate_identity_digest,
 )
@@ -24,6 +24,10 @@ from .authority import (
     require_published_acceptance as _require_published_acceptance_impl,
 )
 from .events import reconcile_bamf_outbox
+from .factory_release import (
+    persist_prepared_initial_factory_release,
+    require_initial_factory_release,
+)
 from .storage import (
     _atomic_pointer, _live_bundle_manifest, _pointer_lock, _read_pointer,
     _initial_generation_pointer_lock, _remove_stage, _write_acceptance,
@@ -61,13 +65,38 @@ def _recovery_pointer(run_dir: Path, manifest_sha256: str, prepared) -> dict:
     }
 
 
+def _prepared_unsealed_manifest(run_dir: Path, prepared, load_bundle) -> str | None:
+    """Find the one exact unsealed generation-zero bundle under prepared authority."""
+    root = run_dir / "bamf-bundles"
+    if not root.exists() and not root.is_symlink():
+        return None
+    if root.is_symlink() or not root.is_dir():
+        invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
+    entries = tuple(root.iterdir())
+    if len(entries) != 1:
+        invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+    target = entries[0]
+    manifest_sha256 = target.name
+    if (target.is_symlink() or not target.is_dir()
+            or len(manifest_sha256) != SHA256_HEX_LENGTH
+            or any(char not in "0123456789abcdef" for char in manifest_sha256)):
+        invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+    student = load_bundle(target, expected_manifest_sha256=manifest_sha256)
+    if not _same_initial_candidate(student, prepared.candidate):
+        invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+    return manifest_sha256
+
+
 def _unpointed_initial_generation_retry(
         run_dir: Path, prepared, *, load_bundle, require_published_acceptance,
         atomic_pointer, reconcile, sealed_manifest, write_acceptance):
     """Recover an exact durable genesis whose pointer install was interrupted."""
     manifest_sha256 = sealed_manifest(prepared)
     if manifest_sha256 is None:
-        return None
+        manifest_sha256 = _prepared_unsealed_manifest(
+            run_dir, prepared, load_bundle)
+        if manifest_sha256 is None:
+            return None
     target = run_dir / "bamf-bundles" / manifest_sha256
     if not target.exists() and not target.is_symlink():
         return None
@@ -75,6 +104,9 @@ def _unpointed_initial_generation_retry(
     pointer = _recovery_pointer(run_dir, manifest_sha256, prepared)
     if not _same_initial_candidate(student, prepared.candidate):
         invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+    persist_prepared_initial_factory_release(run_dir, prepared)
+    from .genesis_trust import publish_initial_generation_trust_root
+    publish_initial_generation_trust_root(run_dir, prepared, manifest_sha256)
     write_acceptance(run_dir, manifest_sha256, prepared.binding)
     acceptance = require_published_acceptance(run_dir, pointer, student)
     if (acceptance.digest != prepared.binding.digest
@@ -115,6 +147,7 @@ def existing_initial_generation_retry(
         if (acceptance.digest != prepared.binding.digest
                 or not _same_initial_candidate(student, candidate)):
             invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+        require_initial_factory_release(run_dir, student)
         reconcile(run_dir, student)
         return current
 
@@ -148,7 +181,7 @@ def _existing_initial_generation_retry(
 
 
 def recover_prepared_initial_generation(run_dir: Path, prepared):
-    """Converge an already sealed generation zero from the exact prepared authority."""
+    """Converge exact prepared generation zero before or after trust sealing."""
     return _existing_initial_generation_retry(
         Path(run_dir), prepared.candidate, prepared)
 
@@ -236,6 +269,7 @@ def recover_sealed_initial_generation(
             expected_atlas_artifact=expected_atlas_artifact,
             expected_optimizer_hyperparameters_sha256=
                 expected_optimizer_hyperparameters_sha256)
+        require_initial_factory_release(run_dir, student)
         expected_acceptance = trust.get("acceptance_sha256")
         binding = _sealed_genesis_binding(student, expected_acceptance)
         pointer = {
@@ -286,6 +320,7 @@ def reconcile_already_pointed_retry(
         run_dir / current["bundle"], expected_manifest_sha256=digest)
     if prepared is not None:
         from .genesis_trust import require_initial_generation_trust_root
+        require_initial_factory_release(run_dir, student)
         require_initial_generation_trust_root(current, student, authority)
     else:
         parent, persisted = authenticate_current_successor_retry(

@@ -30,7 +30,7 @@ def _write_developmental_policy_fixture(root: Path) -> None:
         path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(marker)
-    owner = root / "bilqis_mlx/runtime/_capability/factory_retention_owner.py"
+    owner = root / "bilqis_mlx/runtime/_capability/factory/factory_retention_owner.py"
     owner.parent.mkdir(parents=True, exist_ok=True)
     owner.write_text(
         "CURRENT_EVIDENCE_STAGE = EvidenceStage.FOUNDATION_ACQUISITION\n")

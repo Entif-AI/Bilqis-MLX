@@ -1772,7 +1772,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2085** raw raises across **260** files. The baseline gate permits only reduction.
+Current production scan: **2092** raw raises across **262** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -1999,6 +1999,12 @@ Current production scan: **2085** raw raises across **260** files. The baseline 
 | `C05 target diagnostic training authority drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_target_diagnostic.py` |
 | `C06 Factory C05 rejected labeled candidate` | 1 | `bilqis_mlx/runtime/tests/model/salience/retained_publication_witness.py` |
 | `C09 hold` | 1 | `bilqis_mlx/runtime/tests/teacher/priority/test_priority_execution.py` |
+| `C16_2C_MLX_MEMORY_PRESSURE free_percent=` | 1 | `bilqis_mlx/runtime/tests/capability/factory/owner/c16_2c_resource_preflight.py` |
+| `C16_2C_MLX_MEMORY_PRESSURE_UNREADABLE` | 1 | `bilqis_mlx/runtime/tests/capability/factory/owner/c16_2c_resource_preflight.py` |
+| `C16_2C_MLX_SWAP_UNREADABLE` | 1 | `bilqis_mlx/runtime/tests/capability/factory/owner/c16_2c_resource_preflight.py` |
+| `C16_2C_MLX_WORKERS_UNSAFE expected=1` | 1 | `bilqis_mlx/runtime/tests/capability/factory/owner/c16_2c_resource_preflight.py` |
+| `C16_2C_RESOURCE_PREFLIGHT_FAILED command=` | 1 | `bilqis_mlx/runtime/tests/capability/factory/owner/c16_2c_resource_preflight.py` |
+| `C16_2C_WITNESS_STAGE_INVALID` | 2 | `bilqis_mlx/runtime/tests/capability/factory/owner/bamf_c16_2c_witness_support.py` |
 | `CANDIDATE_FRONTIER_ARTIFACT_UNREADABLE` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `CANDIDATE_FRONTIER_BUILDER_STALE` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `CANDIDATE_FRONTIER_CANDIDATE_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |

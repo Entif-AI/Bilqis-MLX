@@ -8,7 +8,7 @@ from bilqis_mlx.errors import BilqisError
 import bilqis_mlx.runtime._coordination as coordination
 from bilqis_mlx.runtime.atlas_admission import persist_atlas_lease, renew_atlas_lease
 from bilqis_mlx.runtime.atlas_lease_v2 import persist_atlas_lease_v2, renew_atlas_lease_v2
-from bilqis_mlx.runtime.tests._bamf_first_student_support import BamfFirstStudentCase
+from bilqis_mlx.runtime.tests.bamf_first_student._bamf_first_student_support import BamfFirstStudentCase
 from bilqis_mlx.runtime.tests.admission.atlas.test_atlas_admission import (
     _lease, _REGISTRY, _run,
 )

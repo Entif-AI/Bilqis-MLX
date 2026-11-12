@@ -8,20 +8,31 @@ import unittest
 from unittest.mock import patch
 
 import bilqis_mlx.runtime.model_topology_v2 as model_topology_v2
+import bilqis_mlx.runtime.bamf_bundle.publication as bamf_publication
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.presentation.dashboard import build as build_dashboard
+from bilqis_mlx.presentation.operator_cli.parser import parse_args
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
 from bilqis_mlx.runtime.bamf_first_student import (
     BamfFoundationConfig,
     LaunchReceipt,
     preflight_bamf_foundation,
 )
-from bilqis_mlx.runtime.tests._bamf_first_student_support import BamfFirstStudentCase
+from bilqis_mlx.runtime.tests.bamf_first_student._bamf_first_student_support import BamfFirstStudentCase
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import REGISTRY
 
 
 class BamfFirstStudentTests(BamfFirstStudentCase):
+    def test_c16_2_future_owner_resume_command_parser_contract(self):
+        target = self.root / "accepted-bamf-run"
+        args = parse_args([
+            "train", "--human-run", "--resume", "--run-dir", str(target),
+        ])
+        self.assertTrue(args.human_run)
+        self.assertTrue(args.resume)
+        self.assertEqual(args.run_dir, target)
+
     def test_cli_reexports_foundation_contract_without_owning_dispatch(self):
         from bilqis_mlx import cli
 
@@ -40,6 +51,81 @@ class BamfFirstStudentTests(BamfFirstStudentCase):
         self.assert_owner_identity(receipt, student, manifest_sha256)
         self.assert_zero_optimizer_and_semantics(receipt, student, declared)
         self.assert_teacher_and_dashboard(receipt, student, target)
+
+    def test_preflight_persists_exact_factory_release_into_accepted_target(self):
+        target = self.root / "factory-custody-run"
+        receipt = self.preflight(target)
+        release_file = (
+            target / "factory-releases"
+            / f"{receipt.factory_release_sha256}.json"
+        )
+
+        self.assertTrue(release_file.is_file())
+        from bilqis_mlx.runtime.admission import (
+            _read_executable_factory_release_artifact,
+        )
+        persisted = _read_executable_factory_release_artifact(
+            target,
+            {
+                "factory_release_sha256": receipt.factory_release_sha256,
+                "factory_release_file": str(release_file.relative_to(target)),
+            },
+        )
+        self.assertEqual(persisted, self.release)
+        self.assertFalse((target / "state.json").exists())
+
+    def test_preflight_recovers_exact_factory_release_after_pre_pointer_crash(self):
+        target = self.root / "factory-custody-retry"
+        with patch.object(
+                bamf_publication, "_atomic_pointer",
+                side_effect=RuntimeError("pointer crash")):
+            with self.assertRaisesRegex(RuntimeError, "pointer crash"):
+                self.preflight(target)
+
+        release_file = (
+            target / "factory-releases" / f"{self.release.release_sha256}.json")
+        self.assertTrue(release_file.is_file())
+        self.assertFalse((target / "bamf-state.json").exists())
+
+        receipt = self.preflight(target)
+        self.assertEqual(receipt.factory_release_sha256, self.release.release_sha256)
+        self.assertTrue(release_file.is_file())
+        self.assertFalse((target / "state.json").exists())
+
+    def test_preflight_recovers_bundle_and_factory_release_before_trust_seal(self):
+        target = self.root / "factory-custody-pretrust-retry"
+        with patch.object(
+                bamf_publication, "publish_initial_generation_trust_root",
+                side_effect=RuntimeError("trust crash")):
+            with self.assertRaisesRegex(RuntimeError, "trust crash"):
+                self.preflight(target)
+
+        release_file = (
+            target / "factory-releases" / f"{self.release.release_sha256}.json")
+        self.assertTrue(release_file.is_file())
+        self.assertFalse((target / "bamf-state.json").exists())
+
+        receipt = self.preflight(target)
+        self.assertEqual(receipt.factory_release_sha256, self.release.release_sha256)
+        self.assertTrue(release_file.is_file())
+        self.assertTrue((target / "bamf-state.json").is_file())
+        self.assertFalse((target / "state.json").exists())
+
+    def test_accepted_runtime_host_selects_factory_release_from_b13_custody(self):
+        target = self.root / "host-owned-release"
+        self.preflight(target)
+        from bilqis_mlx.factory.tests.test_executable_release import _answers
+        from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_registry
+        from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+
+        with patch(
+                "bilqis_mlx.source_adapters.school.live_source_registry",
+                return_value=_synthetic_registry()), patch(
+                "bilqis_mlx.factory.live_answers.live_answer_registry",
+                return_value=_answers()), shape_patch():
+            context = AcceptedRuntimeHost(target).source_context(
+                graph=self.graph, source_root=None)
+        self.assertEqual(context.release, self.release)
 
     def test_preflight_consumes_fixed_host_source_authority_without_target_provisioning(self):
         target = self.root / "host-rooted-run"

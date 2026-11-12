@@ -168,7 +168,6 @@ class AdoptionHarness(TestCase):
 
     def source_context(self):
         host = AcceptedRuntimeHost(self.run)
-        receipt = {"factory_release_sha256": self.factory_release.release_sha256}
         with patch(
             "bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
             return_value=self.factory_release,
@@ -180,7 +179,7 @@ class AdoptionHarness(TestCase):
             return_value=self.answer_registry,
         ):
             return host.source_context(
-                receipt, graph=self.source_graph, source_root=None)
+                graph=self.source_graph, source_root=None)
 
     def parent_acceptance_path(self):
         return (self.run / "bamf-acceptance"
