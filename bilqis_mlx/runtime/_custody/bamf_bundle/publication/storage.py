@@ -243,6 +243,7 @@ def _classify_initial_generation_target(run_dir: Path) -> str:
 
     lock = entries.get(".bamf-pointer.lock")
     stage = entries.get(".bamf-staging")
+    factory_releases = entries.get("factory-releases")
     if lock is not None:
         if lock.is_symlink() or not lock.is_file():
             invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
@@ -251,6 +252,9 @@ def _classify_initial_generation_target(run_dir: Path) -> str:
             invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
         if any(stage.iterdir()):
             invalid("BAMF_FIRST_STUDENT_PRESEAL_STAGING_RESIDUE")
+    if factory_releases is not None:
+        if factory_releases.is_symlink() or not factory_releases.is_dir():
+            invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
 
     if lock is None:
         if stage is not None:
@@ -265,7 +269,7 @@ def _classify_initial_generation_target(run_dir: Path) -> str:
 
     allowed_recovery = {
         ".bamf-pointer.lock", ".bamf-staging",
-        "bamf-bundles", "bamf-acceptance",
+        "bamf-bundles", "bamf-acceptance", "factory-releases",
     }
     if not names <= allowed_recovery:
         invalid("BAMF_FIRST_STUDENT_PRESEAL_STAGING_RESIDUE")

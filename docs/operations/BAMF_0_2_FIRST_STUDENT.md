@@ -129,3 +129,72 @@ receipt, and preflight API for #542; #543 adds no parser flag or command dispatc
 Focused verification:
 
 `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_bamf_first_student.py`
+
+### C16.2 disposable launch witness and future handoff command
+
+C16.2 proves disposable learning readiness; it does not start the persistent BAMF
+learner. Its exact future owner-start command is:
+
+`npm run train -- --human-run --resume --run-dir <accepted-bamf-run>`
+
+Cold resume after interruption uses the same command shape. The parser and current
+resume preflight accept this form against accepted B13 custody, but the C16.1a
+lifecycle remains neural-inert and returns `READY_TO_RESUME`; C16.3/#545 owns the
+persistent production dispatch that follows this handoff.
+
+The C16.2c disposable acceptance witness uses the real accepted owner chain:
+accepted B13 custody, C03 teacher selection/provenance, C02/C08/B11 candidate
+execution, C05 owner-derived fixed-school retention, and B13 publication/rejection.
+It also requires a real damaging disposable candidate to be rejected and durably
+recorded without changing accepted parent custody, plus uninterrupted versus
+cold-process equivalence of the next bounded update. No target `state.json` is part
+of this witness, and no persistent student or persistent optimizer is started.
+
+For the disposable accepted-generation transition only, C16.2c owns a deterministic
+test fixture for the still-caller-supplied C03 successor fields: `next_seed` is the
+selected visit seed plus one and `cursor` is the taught source row id. Those values
+make the witness reproducible; they do **not** claim production teacher-trajectory
+authority. The resulting launch-witness receipt records that limitation together
+with parent/retained generations, optimizer state digests and steps, selected visit,
+C05 decision, Factory/source identities, and the uninterrupted-versus-cold next
+update result.
+
+### C16.2c bounded verification under ADR-141
+
+C16.2c does not use a full-model real-source pytest run as a leaf or turn-in gate.
+The historical four-node live module is retained only as provenance and implementation
+reference. ADR-141 retires it from executable qualification because one isolated node
+ran for more than fourteen hours without producing a result. Do not launch those
+historical nodes again as tests.
+
+The over-budget run was not waiting on useful learner feedback. A process sample showed
+the dominant work in canonical JSON encoding, `bytes.hex()`, and SHA-256 over large
+model and optimizer state. The run was terminated as incomplete and over-budget. Its
+partial receipt and sample remain evidence; they are neither PASS nor product failure.
+
+Close C16.2c with claim-specific bounded proof:
+
+1. Reuse exact-head C16.1, #992, #993, C03 custody, C05 fixed-school, B13 publication
+   and rejection receipts while their tested assumptions remain unchanged.
+2. Run the cheap C16.2c contract regressions for mature C03 lineage reuse, source
+   blocking of non-admitted capabilities, two-family release/scope equivalence, and
+   staged receipt composition.
+3. Use existing bounded cold-resume and rejection-custody regressions to prove pointer,
+   parent, optimizer, and owner-visible continuation invariants. Do not rebuild a
+   full model merely to re-prove those owners together.
+4. Add a new integration check only when its expected wall-clock duration is known and
+   below two hours. Prefer seconds-to-minutes checks. Convert any discovered defect
+   into a cheap deterministic regression before another attempt.
+
+A whole-system learner exercise that cannot satisfy ADR-141 is not a test. Defer it
+until the system is assembled and the human operator explicitly starts a non-test run
+with live dashboard visibility. That run is exploratory operational diagnosis, not a
+hidden prerequisite for #994 or #544. It may reveal behavior that no assertion suite
+knew to ask about.
+
+The future owner-start command remains:
+
+`npm run train -- --human-run --resume --run-dir <accepted-bamf-run>`
+
+C16.3/#545 still owns persistent production dispatch. C16.2 remains neural-inert
+outside bounded disposable checks.

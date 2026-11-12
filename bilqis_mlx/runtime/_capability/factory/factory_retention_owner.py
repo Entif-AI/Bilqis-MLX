@@ -31,6 +31,7 @@ from .factory_complete_solver import (
     FactoryEvaluationInstrument, _factory_evaluation_instrument, _generation,
     factory_complete_solver,
 )
+from .factory_fixed_school import _bamf_fixed_school_cohort
 
 
 CURRENT_EVIDENCE_STAGE = EvidenceStage.FOUNDATION_ACQUISITION
@@ -110,17 +111,23 @@ from ._factory_retention_support import (
 )
 
 def _fixed_school_instruments(
-    source_context, candidate_bundle, artifact_path, run_dir, release,
+    source_context, candidate_bundle, artifact_path, run_dir, release, *,
+    parent, cache,
 ):
-    receipt = read_current(run_dir)
-    if receipt.get("factory_release_sha256") != release.release_sha256:
-        _invalid("BAMF_C05_FACTORY_RELEASE_DRIFT")
-    fixed_exam = frontier_exam(receipt)
-    fixed = load_frontier_cohort(run_dir, fixed_exam)
-    if fixed is None:
-        _invalid("BAMF_C05_FIXED_SCHOOL_COHORT_REQUIRED")
-    if fixed_exam.get("factory_release_sha256") != release.release_sha256:
-        _invalid("BAMF_C05_FIXED_SCHOOL_RELEASE_DRIFT")
+    if parent.run_identity is not None:
+        fixed = _bamf_fixed_school_cohort(
+            source_context, run_dir,
+            expected_parent_manifest_sha256=cache.accepted_manifest_sha256)
+    else:
+        receipt = read_current(run_dir)
+        if receipt.get("factory_release_sha256") != release.release_sha256:
+            _invalid("BAMF_C05_FACTORY_RELEASE_DRIFT")
+        fixed_exam = frontier_exam(receipt)
+        fixed = load_frontier_cohort(run_dir, fixed_exam)
+        if fixed is None:
+            _invalid("BAMF_C05_FIXED_SCHOOL_COHORT_REQUIRED")
+        if fixed_exam.get("factory_release_sha256") != release.release_sha256:
+            _invalid("BAMF_C05_FIXED_SCHOOL_RELEASE_DRIFT")
     return _instruments(
         source_context, candidate_bundle, artifact_path, fixed.rows,
         seed=fixed.seed)
@@ -236,7 +243,8 @@ def evaluate_factory_retention_candidate(
     parent, candidate_bundle, candidate_state, cache = _candidate_from_live_parent(
         run_dir, candidate)
     fixed_instruments = _fixed_school_instruments(
-        source_context, candidate_bundle, artifact_path, run_dir, release)
+        source_context, candidate_bundle, artifact_path, run_dir, release,
+        parent=parent, cache=cache)
 
     if CURRENT_EVIDENCE_STAGE is EvidenceStage.FOUNDATION_ACQUISITION:
         return _foundation_retention_evaluation(
@@ -279,7 +287,8 @@ def evaluate_factory_package_import(
     parent, candidate_bundle, candidate_state, cache = _package_import_from_live_parent(
         run_dir, transaction)
     fixed_instruments = _fixed_school_instruments(
-        source_context, candidate_bundle, artifact_path, run_dir, release)
+        source_context, candidate_bundle, artifact_path, run_dir, release,
+        parent=parent, cache=cache)
 
     if CURRENT_EVIDENCE_STAGE is EvidenceStage.FOUNDATION_ACQUISITION:
         return _foundation_retention_evaluation(

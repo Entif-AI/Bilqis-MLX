@@ -102,7 +102,7 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
                     create=True,
                     _training_exclusions=Mock(return_value=(("trained-family",), ("trained-episode",))),
                     _candidate_from_live_parent=Mock(return_value=(
-                        SimpleNamespace(retained_state=object()),
+                        SimpleNamespace(retained_state=object(), run_identity=None),
                     SimpleNamespace(
                         retained_state=object(),
                         transition={

@@ -119,17 +119,8 @@ class FactoryTrainingBridgeFixture(SourceBackboneTestBase):
         )
 
     def accepted_source_context(self, run_dir: Path):
-        from bilqis_mlx.runtime import admission as factory_admission
-
-        release_file = factory_admission._persist_executable_factory_release(
-            run_dir, self.context.release)
-        receipt = {
-            "factory_release_sha256": self.context.release.release_sha256,
-            "factory_release_file": release_file,
-        }
         return AcceptedRuntimeHost(run_dir).source_context(
-            receipt, graph=self.context.graph,
-            source_root=self.context.source_root)
+            graph=self.context.graph, source_root=self.context.source_root)
 
 
 __all__ = ("FactoryTrainingBridgeFixture",)

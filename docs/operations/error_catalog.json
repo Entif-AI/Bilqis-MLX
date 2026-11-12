@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 260,
-  "legacy_raw_raise_count": 2085,
+  "legacy_raw_file_count": 262,
+  "legacy_raw_raise_count": 2092,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -11264,6 +11264,48 @@
       "exception": "AssertionError",
       "expression": "'model-input planning entered before A06 authority rejection'",
       "path": "bilqis_mlx/runtime/tests/batch/training/test_atlas_training_real_source.py"
+    },
+    {
+      "code_hint": "C16_2C_WITNESS_STAGE_INVALID",
+      "count": 2,
+      "exception": "ValueError",
+      "expression": "'C16_2C_WITNESS_STAGE_INVALID'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/owner/bamf_c16_2c_witness_support.py"
+    },
+    {
+      "code_hint": "C16_2C_MLX_MEMORY_PRESSURE_UNREADABLE",
+      "count": 1,
+      "exception": "RuntimeError",
+      "expression": "'C16_2C_MLX_MEMORY_PRESSURE_UNREADABLE'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/owner/c16_2c_resource_preflight.py"
+    },
+    {
+      "code_hint": "C16_2C_MLX_SWAP_UNREADABLE",
+      "count": 1,
+      "exception": "RuntimeError",
+      "expression": "'C16_2C_MLX_SWAP_UNREADABLE'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/owner/c16_2c_resource_preflight.py"
+    },
+    {
+      "code_hint": "C16_2C_MLX_WORKERS_UNSAFE expected=1",
+      "count": 1,
+      "exception": "RuntimeError",
+      "expression": "'C16_2C_MLX_WORKERS_UNSAFE expected=1'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/owner/c16_2c_resource_preflight.py"
+    },
+    {
+      "code_hint": "C16_2C_MLX_MEMORY_PRESSURE free_percent=",
+      "count": 1,
+      "exception": "RuntimeError",
+      "expression": "f'C16_2C_MLX_MEMORY_PRESSURE free_percent={memory_free}'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/owner/c16_2c_resource_preflight.py"
+    },
+    {
+      "code_hint": "C16_2C_RESOURCE_PREFLIGHT_FAILED command=",
+      "count": 1,
+      "exception": "RuntimeError",
+      "expression": "f'C16_2C_RESOURCE_PREFLIGHT_FAILED command={command!r}'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/owner/c16_2c_resource_preflight.py"
     },
     {
       "code_hint": "C05 fixed diagnostic Factory release drift",
