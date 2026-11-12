@@ -1,4 +1,5 @@
 """A09/source construction support for mixed v2 admission witnesses."""
+from collections.abc import Mapping
 from contextlib import ExitStack
 from dataclasses import replace
 import hashlib
@@ -211,7 +212,8 @@ class MixedSourceSupport(EventCandidateRealizationFixture):
 
     @staticmethod
     def assert_tree_prefix(test_case, parent, child):
-        if isinstance(parent, dict):
+        if isinstance(parent, Mapping):
+            test_case.assertIsInstance(child, Mapping)
             test_case.assertEqual(set(child), set(parent))
             for key in parent:
                 MixedSourceSupport.assert_tree_prefix(
