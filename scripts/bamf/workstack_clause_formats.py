@@ -49,6 +49,19 @@ def _genesis_custody_prerequisites(text, numbers):
     return (keys, (885, 802)) if text == expected else None
 
 
+def _released_schema_serialization_prerequisites(text, numbers):
+    expected = (
+        '## Dependency / handoff\n'
+        'Consumes A01 release identity and accepted A03/A04 schema serialization. '
+        'B07.1 #456 must consume this witness together with the existing source-owned A13 grant machinery; '
+        'B08.1 #460 must additionally bind complete rights/revocation/generation dependencies into its cache/read identity.\n\n'
+        'No neural/source admission or training is authorized by this issue.'
+    )
+    if text != expected or type(numbers.get('A01')) is not int:
+        return None
+    return (('A01',), (551,))
+
+
 def _producer_correction(clause, numbers):
     if not re.search(r'^## Producer-authority correction(?: |$)', clause, re.M):
         return None
@@ -90,6 +103,9 @@ def parse_clause(clause, numbers):
         if edges is not None:
             return edges, ()
         return _genesis_custody_prerequisites(clause, numbers)
+    released_schema = _released_schema_serialization_prerequisites(clause, numbers)
+    if released_schema is not None:
+        return released_schema
     match = re.match(r'Direct prerequisites: merged #(\d+)/#(\d+); exact qualified #(\d+)/#(\d+) receipts for final composition turn-in; existing (' + KEY + r'(?:/' + KEY + r')*) source interfaces\.', clause)
     if match:
         return tuple(match[5].split('/')), tuple(int(match[i]) for i in range(1, 5))

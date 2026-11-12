@@ -296,13 +296,22 @@
       "parent_number": 349,
       "dependency_evidence": {
         "schema": "bilqis.bamf.dependency-evidence/v1",
-        "resolution": "held",
+        "resolution": "resolved",
         "body_sha256": "331ee8b91744384367b590efeca3d51f79f9a846509d5813985db54c32a8d994",
         "clause": "## Dependency / handoff\nConsumes A01 release identity and accepted A03/A04 schema serialization. B07.1 #456 must consume this witness together with the existing source-owned A13 grant machinery; B08.1 #460 must additionally bind complete rights/revocation/generation dependencies into its cache/read identity.\n\nNo neural/source admission or training is authorized by this issue.",
         "known_edges": [
           "A01"
         ],
-        "external_receipts": [],
+        "external_receipts": [
+          {
+            "number": 551,
+            "role": "prerequisite",
+            "head_sha": "fadbe684140220776f906627a1c4ec28b41ba216",
+            "merge_sha": "6b5460032fc0b19115843cce95fe8be9582af141",
+            "url": "https://github.com/Entif-AI/Bilqis-MLX/pull/551",
+            "source_id": "A03.4.pr-551"
+          }
+        ],
         "source_records": [
           {
             "source_id": "A03.4.body",
@@ -310,12 +319,19 @@
             "locator": "https://github.com/Entif-AI/Bilqis-MLX/issues/578",
             "sha256": "331ee8b91744384367b590efeca3d51f79f9a846509d5813985db54c32a8d994",
             "excerpt": "## Dependency / handoff\nConsumes A01 release identity and accepted A03/A04 schema serialization. B07.1 #456 must consume this witness together with the existing source-owned A13 grant machinery; B08.1 #460 must additionally bind complete rights/revocation/generation dependencies into its cache/read identity.\n\nNo neural/source admission or training is authorized by this issue."
+          },
+          {
+            "source_id": "A03.4.pr-551",
+            "kind": "pull_request",
+            "locator": "https://github.com/Entif-AI/Bilqis-MLX/pull/551",
+            "sha256": "9a049baca0e3099055a137343c4379c5ad99ba870f17ed14c74892c153a54652",
+            "excerpt": "6b5460032fc0b19115843cce95fe8be9582af141"
           }
         ],
         "obligations": [
           "Accepted A03/A04 serialization is required; B07.1/B08.1 are consumers; A13 independently owns source grants."
         ],
-        "unresolved": "Accepted A03/A04 serialization receipts are unnamed; do not infer parent-acceptance or child edges."
+        "unresolved": null
       }
     },
     {

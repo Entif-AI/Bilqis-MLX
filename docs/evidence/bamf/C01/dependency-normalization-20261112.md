@@ -70,3 +70,19 @@ The exact B13.6 clause grammar now returns both issue edges and required PR rece
 numbers `(885, 802)`. Those records use the existing `prerequisite` receipt role,
 which remains receipt provenance rather than an issue-graph node. A regression
 removes both receipts from an otherwise exact packet and requires `INVALID`.
+
+## A03.4 changed condition
+
+A03.4 #578 names one issue-graph prerequisite, A01, and separately requires
+**accepted A03/A04 schema serialization**. Treating A03 or A04 parent identity as a
+new graph edge would manufacture semantics and can create parent/child cycles.
+Merged PR #551 is the accepted serialization integration receipt. Its reviewed Lane A cut is rooted at `fadbe684...`, which contains the final reviewed A03.1/.2/.3 and A04.1/.2/.3 repair/evidence commits before the cut entered reviewed unified. The original leaf receipts and EGM outcomes remain preserved in that ancestry.
+
+PR #551 is pinned at head `fadbe684140220776f906627a1c4ec28b41ba216`
+and merge `6b5460032fc0b19115843cce95fe8be9582af141`. The exact A03.4
+handoff clause now resolves to issue edge `A01` plus required receipt `#551`.
+B07.1/B08.1 remain downstream consumers and A13 remains an independent authority;
+none is promoted to a direct prerequisite by this normalization. Removing #551 or
+changing the exact clause fails closed.
+
+Pinned EGM codebase review rejected an earlier draft that used PR #546: the A03/A04 repair/evidence commits were already ancestors of #546's base, so #546 inherited rather than accepted them. The candidate was corrected to the causal reviewed-unified integration PR #551 before commit.

@@ -94,6 +94,42 @@ class DependencyEvidenceTests(unittest.TestCase):
                 forged[2].update({'B13.1': 478, 'B13.4': 481, 'B01': 346})
                 self.assertIs(check_dependency_evidence(*forged).status, EvidenceStatus.INVALID)
 
+    def test_a03_released_schema_clause_requires_the_accepted_serialization_receipt(self):
+        clause = (
+            '## Dependency / handoff\n'
+            'Consumes A01 release identity and accepted A03/A04 schema serialization. '
+            'B07.1 #456 must consume this witness together with the existing source-owned A13 grant machinery; '
+            'B08.1 #460 must additionally bind complete rights/revocation/generation dependencies into its cache/read identity.\n\n'
+            'No neural/source admission or training is authorized by this issue.'
+        )
+        args = packet(clause, edges=('A01',))
+        number = 551
+        source_id = 'C01.1.pr-551'
+        url = 'https://github.com/Entif-AI/Bilqis-MLX/pull/551'
+        raw = json.dumps(dict(number=number, url=url, state='MERGED',
+            headRefOid='a'*40, mergeCommit={'oid': 'b'*40})).encode()
+        evidence = args[0]['dependency_evidence']
+        args[3][source_id] = raw
+        evidence['source_records'].append(dict(source_id=source_id, kind='pull_request',
+            locator=url, sha256=hashlib.sha256(raw).hexdigest(), excerpt='b'*40))
+        evidence['external_receipts'].append(dict(number=number, role='prerequisite',
+            head_sha='a'*40, merge_sha='b'*40, url=url, source_id=source_id))
+        args[3]['reviewed-packets'] = pinned_matrix(args[0])
+        result = check_dependency_evidence(*args)
+        self.assertIs(result.status, EvidenceStatus.RESOLVED)
+        self.assertEqual(result.known_edges, ('A01',))
+
+        missing = deepcopy(args)
+        missing[0]['dependency_evidence']['external_receipts'] = []
+        missing[3]['reviewed-packets'] = pinned_matrix(missing[0])
+        self.assertIs(check_dependency_evidence(*missing).status, EvidenceStatus.INVALID)
+
+        changed = deepcopy(args)
+        changed[0]['dependency_evidence']['clause'] = clause.replace(
+            'accepted A03/A04 schema serialization', 'accepted A03/A04 schema serialization plus A13')
+        changed[3]['reviewed-packets'] = pinned_matrix(changed[0])
+        self.assertIs(check_dependency_evidence(*changed).status, EvidenceStatus.INVALID)
+
     def test_unknown_edge_or_missing_range_member_is_invalid(self):
         args = packet(edges=('A99',))
         self.assertIs(check_dependency_evidence(*args).status, EvidenceStatus.INVALID)
