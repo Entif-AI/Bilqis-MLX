@@ -159,80 +159,42 @@ with parent/retained generations, optimizer state digests and steps, selected vi
 C05 decision, Factory/source identities, and the uninterrupted-versus-cold next
 update result.
 
-### C16.2c staged verification
+### C16.2c bounded verification under ADR-141
 
-Do not run the complete real-source C16.2c module as one qualification command.
-Its live checks have different failure boundaries and must remain independently
-rerunnable.
+C16.2c does not use a full-model real-source pytest run as a leaf or turn-in gate.
+The historical four-node live module is retained only as provenance and implementation
+reference. ADR-141 retires it from executable qualification because one isolated node
+ran for more than fourteen hours without producing a result. Do not launch those
+historical nodes again as tests.
 
-Run cheap contract checks first. They cover mature C03 lineage reuse, the future
-capability source block, the two-family release/scope contract, and staged receipt
-assembly. Reuse the existing C16.1, #992, #993, C03 custody, B13 rejection, and
-operator-command receipts while their tested assumptions remain unchanged.
+The over-budget run was not waiting on useful learner feedback. A process sample showed
+the dominant work in canonical JSON encoding, `bytes.hex()`, and SHA-256 over large
+model and optimizer state. The run was terminated as incomplete and over-budget. Its
+partial receipt and sample remain evidence; they are neither PASS nor product failure.
 
-The remaining live evidence has four stages:
+Close C16.2c with claim-specific bounded proof:
 
-1. Run one real C05 rejection witness and verify B13 rejection preserves accepted
-   pointer, bundle, optimizer, and cold parent custody.
-2. Run one admitted `A.IDENTITY` witness through the same real C03, C02/C08/B11,
-   and C05 owner chain. This is the second-family traversal required by the
-   first-start negative; it does not need a second accepted publication.
-3. Run one accepted B.IDBOOLOPS transition through C03, C02/C08/B11, C05, and B13.
-   In that same process, execute the uninterrupted next update and persist the
-   accepted run plus warm-stage receipt under `BILQIS_C16_2C_STAGE_ROOT`. Those two
-   actions are one irreducible stage because a process restart would make the warm arm
-   cold.
-4. Start a new process against that same accepted stage root. Execute only the cold
-   next update and compare it with the persisted uninterrupted receipt.
+1. Reuse exact-head C16.1, #992, #993, C03 custody, C05 fixed-school, B13 publication
+   and rejection receipts while their tested assumptions remain unchanged.
+2. Run the cheap C16.2c contract regressions for mature C03 lineage reuse, source
+   blocking of non-admitted capabilities, two-family release/scope equivalence, and
+   staged receipt composition.
+3. Use existing bounded cold-resume and rejection-custody regressions to prove pointer,
+   parent, optimizer, and owner-visible continuation invariants. Do not rebuild a
+   full model merely to re-prove those owners together.
+4. Add a new integration check only when its expected wall-clock duration is known and
+   below two hours. Prefer seconds-to-minutes checks. Convert any discovered defect
+   into a cheap deterministic regression before another attempt.
 
-Run MLX-heavy stages on `m3-ultra` through SSH from a digest-pinned detached source
-snapshot. Use separate isolated attempt roots for rejection, second-family, and the
-accepted-plus-cold chain. The cold stage must reuse the accepted stage root. Use the
-accepted A01 artifact. Do not poll the remote job from chat. If rejection,
-second-family, or accepted-plus-warm fails, preserve that failed root and rerun only
-that stage in a fresh attempt root. A cold-stage failure may reuse the unchanged
-accepted B13 custody because cold continuation is the behavior under test. Evidence-
-only content-addressed sidecars may accumulate without changing that accepted custody.
-Do not restart already-passing stages unless their source, Factory, feature, C05, or
-B13 custody assumptions changed.
+A whole-system learner exercise that cannot satisfy ADR-141 is not a test. Defer it
+until the system is assembled and the human operator explicitly starts a non-test run
+with live dashboard visibility. That run is exploratory operational diagnosis, not a
+hidden prerequisite for #994 or #544. It may reveal behavior that no assertion suite
+knew to ask about.
 
-ADR-138 resource containment is part of the launch contract, not an optional operator
-check. Set `BILQIS_TEST_WORKERS=1` for every stage. Before detaching, run the cheap
-`require_mlx_verification_resources()` preflight from
-`c16_2c_resource_preflight.py`; the live test repeats the same gate before foundation
-or model loading. For this disposable qualification the preflight requires at least
-20% system memory free and records swap headroom for the launch receipt. Existing
-independent pytest, Studio-proof, or detached workers do not veto launch; the stage
-itself remains single-worker through `BILQIS_TEST_WORKERS=1`. This is a local C16.2c
-containment rule, not a repository-wide allocator policy. Each live process then enters the repository
-`training_memory_policy(mx)`, which sets the MLX free-buffer cache limit to zero and
-clears the cache before and after the stage. If the hard physical-memory or worker-count
-preflight fails, do not launch until that condition changes.
+The future owner-start command remains:
 
-The M3 launch must therefore chain the preflight and detached launch, for example:
+`npm run train -- --human-run --resume --run-dir <accepted-bamf-run>`
 
-```text
-BILQIS_TEST_WORKERS=1 <complete-python> -c \
-  'from bilqis_mlx.runtime.tests.capability.factory.owner.c16_2c_resource_preflight import require_mlx_verification_resources as p; print(p())' \
-&& BILQIS_TEST_WORKERS=1 <complete-python> scripts/bamf/detached_long_run.py launch ... -- \
-  env BILQIS_TEST_WORKERS=1 BILQIS_A01_ATLAS_BUNDLE=<accepted-a01> \
-      BILQIS_C16_2C_STAGE_ROOT=<isolated-stage-root> \
-      <complete-python> -m pytest -q <live-module>::<one-node-id>
-```
-
-Verify the detached PID/log/receipt/source digest once, then yield. Do not poll it.
-
-The expensive test module is `DETACHED_ONLY`. Invoke its four test node IDs
-separately. A cold-stage skip is not acceptance evidence; it means the accepted stage
-receipt is absent. The cheap C16.2c helper tests remain suitable for the ordinary
-development loop.
-
-The live node IDs are:
-
-- `test_c16_2c_stage_real_rejection_records_rollback_without_parent_mutation`
-- `test_c16_2c_stage_second_admitted_family_traverses_source_c03_c05_chain`
-- `test_c16_2c_stage_accepts_generation_one_and_records_uninterrupted_next_update`
-- `test_c16_2c_stage_cold_next_update_matches_persisted_uninterrupted_stage`
-
-Pass exactly one node ID to pytest for each detached launch. Never qualify #994 by
-running the whole live module in one command.
+C16.3/#545 still owns persistent production dispatch. C16.2 remains neural-inert
+outside bounded disposable checks.

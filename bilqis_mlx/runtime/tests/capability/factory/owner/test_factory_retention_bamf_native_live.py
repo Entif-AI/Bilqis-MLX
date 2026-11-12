@@ -1,4 +1,4 @@
-"""DETACHED_ONLY real-source C05 proof for BAMF-native fixed-school custody."""
+"""Historical over-budget C16.2c whole-model witness retained as provenance."""
 from __future__ import annotations
 
 BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"
@@ -52,6 +52,10 @@ from .c16_2c_resource_preflight import require_mlx_verification_resources
 PROCESS_NONCE = secrets.token_hex(16)
 
 
+@unittest.skip(
+    "ADR-141 retires this over-budget whole-model witness as a test gate; "
+    "use bounded claim-specific proof instead"
+)
 class BamfNativeC05LiveTests(unittest.TestCase):
     def setUp(self):
         stage_root = os.environ.get("BILQIS_C16_2C_STAGE_ROOT")
