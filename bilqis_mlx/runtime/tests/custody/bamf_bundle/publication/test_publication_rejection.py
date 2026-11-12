@@ -63,6 +63,14 @@ class BamfPublicationRejectionTests(unittest.TestCase):
         rejected_events = [row for row in events if row["event"] == "BAMF_CANDIDATE_REJECTED"]
         self.assertEqual(len(rejected_events), 1)
         self.assertEqual(rejected_events[0]["optimizer_step"], 12)
+        authority_sha256 = rejected_events[0]["rejection_authority_sha256"]
+        authority = json.loads(data_plane().get_object(authority_sha256))
+        self.assertEqual(authority["schema"], "bilqis.mlx.bamf-rejection-authority/v1")
+        self.assertEqual(authority["run_id"], student.run_id)
+        self.assertEqual(authority["generation"], student.generation)
+        self.assertEqual(authority["student_manifest_sha256"], second["manifest_sha256"])
+        self.assertEqual(authority["optimizer_step"], 12)
+        self.assertEqual(authority["evidence"], evidence)
         with shape_patch():
             resumed = load_bamf_generation(self.run / "bamf-state.json")
         self.assertEqual(resumed.generation, 1)

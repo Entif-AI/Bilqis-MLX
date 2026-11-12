@@ -35,12 +35,24 @@ def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dic
         optimizer_step = manifest.get("optimizer", {}).get("step") if isinstance(manifest, dict) else None
         if type(optimizer_step) is not int or optimizer_step != manifest.get("tensors", {}).get("optimizer_step"):
             invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
+        authority = {
+            "schema": "bilqis.mlx.bamf-rejection-authority/v1",
+            "run_id": student.run_id,
+            "generation": student.generation,
+            "student_manifest_sha256": pointer["manifest_sha256"],
+            "optimizer_step": optimizer_step,
+            "evidence": dict(evidence),
+        }
+        authority_raw = canonical(authority)
+        authority_sha256 = sha(authority_raw)
+        data_plane().put_object(authority_sha256, authority_raw)
         event = {
             "event": "BAMF_CANDIDATE_REJECTED",
             "generation": pointer["generation"],
             "student_manifest_sha256": pointer["manifest_sha256"],
             "optimizer_step": optimizer_step,
             "evidence": dict(evidence),
+            "rejection_authority_sha256": authority_sha256,
         }
         record = {"run_id": pointer["run_id"], "generation": pointer["generation"]}
         outbox = checkpoint_outbox.with_delivery_outbox(record, (event,))["delivery_outbox"]

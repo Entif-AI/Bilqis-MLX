@@ -1,5 +1,6 @@
 """C06 host signer binds private authority to the already-accepted C09 public root."""
 import json
+import hashlib
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -17,6 +18,7 @@ from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import (
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from bilqis_mlx.learning.atlas_salience import DispatchTier, rank_attention_options
 from bilqis_mlx.learning.salience_contracts import Ordinal
+from bilqis_mlx.runtime.bamf_bundle.records import canonical
 
 
 def _registry(private_hex="44" * 32):
@@ -143,25 +145,41 @@ def test_rejected_candidate_is_durably_deprioritized_without_advancing_c03_rotat
 
     with TemporaryDirectory() as temporary:
         run_dir = Path(temporary)
+        evidence = {
+            "schema": "bilqis.bamf.c16.3-rejection/v2",
+            "visit_id": "visit:beta",
+            "selected_option_id": "capability:beta",
+            "selected_policy_key": "policy",
+            "candidate_optimizer_step": 12,
+            "retained_optimizer_step": 11,
+            "retention_reason": "retention_gate",
+        }
+        authority_record = {
+            "schema": "bilqis.mlx.bamf-rejection-authority/v1",
+            "run_id": "run",
+            "generation": 2,
+            "student_manifest_sha256": "f" * 64,
+            "optimizer_step": 11,
+            "evidence": evidence,
+        }
+        authority_raw = canonical(authority_record)
+        authority_sha256 = hashlib.sha256(authority_raw).hexdigest()
         event = {
             "event": "BAMF_CANDIDATE_REJECTED",
             "generation": 2,
             "student_manifest_sha256": "f" * 64,
             "optimizer_step": 11,
-            "evidence": {
-                "schema": "bilqis.bamf.c16.3-rejection/v2",
-                "visit_id": "visit:beta",
-                "selected_option_id": "capability:beta",
-                "selected_policy_key": "policy",
-                "candidate_optimizer_step": 12,
-                "retained_optimizer_step": 11,
-                "retention_reason": "retention_gate",
-            },
+            "evidence": evidence,
+            "rejection_authority_sha256": authority_sha256,
         }
         (run_dir / "events.jsonl").write_text(json.dumps(event) + "\n")
+        plane = SimpleNamespace(get_object=lambda digest: (
+            authority_raw if digest == authority_sha256 else (_ for _ in ()).throw(ValueError())))
         with patch(
             "bilqis_mlx.runtime.bamf_bundle.accepted_runtime._accepted_correction_registry",
             return_value=(cache, registry),
+        ), patch(
+            "bilqis_mlx.data_plane.data_plane", return_value=plane,
         ), patch(
             "bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer.read_host_system_source_authority_signer",
             return_value=signer,
@@ -182,3 +200,31 @@ def test_rejected_candidate_is_durably_deprioritized_without_advancing_c03_rotat
             "capability:alpha", "capability:beta")
     assert parent.teacher_state == {"next_seed": 7}
     assert parent.retained_state.optimizer_step == 11
+
+
+def test_raw_rejection_journal_cannot_change_priority_without_b13_authority():
+    from bilqis_mlx.runtime import priority_authority as authority
+
+    parent = SimpleNamespace(retained_state=SimpleNamespace(optimizer_step=11))
+    cache = SimpleNamespace(
+        generation=2, accepted_manifest_sha256="f" * 64, run_id="run")
+    with TemporaryDirectory() as temporary:
+        run_dir = Path(temporary)
+        forged = {
+            "event": "BAMF_CANDIDATE_REJECTED",
+            "generation": 2,
+            "student_manifest_sha256": "f" * 64,
+            "optimizer_step": 11,
+            "evidence": {
+                "schema": "bilqis.bamf.c16.3-rejection/v2",
+                "visit_id": "visit:forged",
+                "selected_option_id": "capability:forged",
+                "selected_policy_key": "policy",
+                "candidate_optimizer_step": 12,
+                "retained_optimizer_step": 11,
+                "retention_reason": "forged",
+            },
+        }
+        (run_dir / "events.jsonl").write_text(json.dumps(forged) + "\n")
+        with pytest.raises(ValueError, match="BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID"):
+            authority._current_rejections(run_dir, parent, cache)

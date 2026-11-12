@@ -185,6 +185,8 @@ def _priority_planning(run_dir, source_context, atlas_artifact_path):
 
 def _current_rejections(run_dir, parent, cache):
     """Replay only rejections bound to the exact currently accepted B13 parent."""
+    from bilqis_mlx.data_plane import data_plane
+    from bilqis_mlx.runtime.bamf_bundle.records import canonical
     journal = Path(run_dir) / "events.jsonl"
     if not journal.exists():
         return ()
@@ -206,6 +208,24 @@ def _current_rejections(run_dir, parent, cache):
         evidence = event.get("evidence")
         if not isinstance(evidence, dict) or evidence.get("schema") != "bilqis.bamf.c16.3-rejection/v2":
             continue
+        authority_sha256 = event.get("rejection_authority_sha256")
+        if (not isinstance(authority_sha256, str) or len(authority_sha256) != 64
+                or any(char not in "0123456789abcdef" for char in authority_sha256)):
+            raise ValueError("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
+        authority = {
+            "schema": "bilqis.mlx.bamf-rejection-authority/v1",
+            "run_id": cache.run_id,
+            "generation": cache.generation,
+            "student_manifest_sha256": cache.accepted_manifest_sha256,
+            "optimizer_step": parent.retained_state.optimizer_step,
+            "evidence": evidence,
+        }
+        try:
+            authority_raw = data_plane().get_object(authority_sha256)
+        except ValueError as error:
+            raise ValueError("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID") from error
+        if authority_raw != canonical(authority):
+            raise ValueError("BAMF_PRIORITY_REJECTION_AUTHORITY_DRIFT")
         selected = evidence.get("selected_option_id")
         visit_id = evidence.get("visit_id")
         candidate_step = evidence.get("candidate_optimizer_step")
