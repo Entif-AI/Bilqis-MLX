@@ -22,10 +22,12 @@ from bilqis_mlx.paths import LEGACY_SOURCE
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.atlas_visit_provenance import BamfVisitProvenance
 from bilqis_mlx.runtime.bamf_bundle import (
-    accept_and_publish, authenticate_bamf_execution_feature_context,
+    authenticate_bamf_execution_feature_context,
     read_accepted_generation_feature_context, record_bamf_rejection,
 )
-from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    accept_and_publish, load_accepted_generation,
+)
 from bilqis_mlx.runtime.factory_candidate_training import FactoryDeliveryObservation
 from bilqis_mlx.runtime.factory_retention_owner import (
     evaluate_factory_retention_candidate, measure_factory_foundation_progress,
