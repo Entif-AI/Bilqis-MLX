@@ -56,6 +56,9 @@ def adopt_capability_only_atlas_successor_v2(current, delta, lease):
         accepted_capability_only_retry_v2,
         publish_capability_only_factory_successor,
     )
+    from bilqis_mlx.runtime.atlas_flywheel_runtime_context import (
+        is_atlas_admission_runtime,
+    )
 
     if (not isinstance(current, AtlasAdmissionContextV2)
             or not isinstance(delta, AtlasDeltaEnvelopeV2)
@@ -65,7 +68,7 @@ def adopt_capability_only_atlas_successor_v2(current, delta, lease):
     handoff.verify()
     legacy = current.legacy
     unavailable = (
-        not isinstance(current.runtime, _PreparedSuccessorRuntime)
+        not is_atlas_admission_runtime(current.runtime)
         or current.source_authority is None
         or current.runtime.run_dir != current.run_dir
         or legacy.source_registry is None
@@ -118,6 +121,9 @@ def adopt_parameter_extension_atlas_successor_v2(current, delta, lease):
         publish_native_staged_candidate_v2,
     )
     from bilqis_mlx.runtime.bamf_bundle import require_issued_a02_staged_vocabulary_extension
+    from bilqis_mlx.runtime.atlas_flywheel_runtime_context import (
+        is_atlas_admission_runtime,
+    )
 
     if (not isinstance(current, AtlasAdmissionContextV2)
             or not isinstance(delta, AtlasDeltaEnvelopeV2)
@@ -130,7 +136,7 @@ def adopt_parameter_extension_atlas_successor_v2(current, delta, lease):
     unavailable = (
         current.runtime is not None
         or current.source_authority is not None
-        or not isinstance(legacy.runtime, _PreparedSuccessorRuntime)
+        or not is_atlas_admission_runtime(legacy.runtime)
         or legacy.runtime.run_dir != current.run_dir
         or legacy.native_staged is not native
         or legacy.source_authority is None
