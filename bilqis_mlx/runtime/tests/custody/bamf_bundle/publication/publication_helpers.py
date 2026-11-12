@@ -22,12 +22,12 @@ from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import REGISTRY
 
 
 @contextmanager
-def host_source_authority_patch():
+def host_source_authority_patch(registry=REGISTRY):
     """Substitute the fixed host reader for one complete test scenario."""
     with patch(
             "bilqis_mlx.runtime.bamf_bundle.source_authority_custody."
             "read_host_system_source_authority_registry",
-            return_value=REGISTRY):
+            return_value=registry):
         yield
 
 

@@ -49,7 +49,7 @@ class FactoryTrainingBridgeFixture(SourceBackboneTestBase):
             self.skipTest("BILQIS_A01_ATLAS_BUNDLE fixture is not mounted")
         self.artifact = Path(artifact)
         super().setUp()
-        self.enterContext(host_source_authority_patch())
+        self.enterContext(host_source_authority_patch(AUTHORITY))
         self.root = Path.cwd()
         self.context, _ = live_factory_context(
             self.root, (self.root / "vendor/legacy-v16").resolve())
