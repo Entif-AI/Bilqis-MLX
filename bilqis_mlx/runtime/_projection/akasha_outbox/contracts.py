@@ -91,8 +91,6 @@ class AkashaEventKind(str, Enum):
 NATIVE_EVENT_KINDS = MappingProxyType({
     'SCHOOL_TEACHER_VISIT_COMMITTED': AkashaEventKind.TEACHER_VISIT,
     'SCHOOL_FACTORY_RELEASE_MIGRATED': AkashaEventKind.FACTORY_RELEASE,
-    'SCHOOL_EXECUTION_PROFILE_ADOPTED': AkashaEventKind.FACTORY_RELEASE,
-    'SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED': AkashaEventKind.FACTORY_RELEASE,
     'SCHOOL_CAPABILITY_BEST_COMMITTED': AkashaEventKind.CAPABILITY_OUTCOME,
 })
 
@@ -111,7 +109,7 @@ _PRODUCTION_FIELDS = MappingProxyType({
     AkashaEventKind.PLASTICITY_EPOCH: frozenset({
         "run_id", "generation", "optimizer_step", "mode",
         "parent_policy_sha256", "policy_sha256",
-        "admission_receipt_sha256",
+        "parent_acceptance_receipt_sha256", "admission_receipt_sha256",
     }),
     AkashaEventKind.PACKAGE_EXPORT: frozenset({
         "package_digest", "generation_id", "semantic_release",
@@ -159,7 +157,8 @@ _DIGEST_FIELDS = frozenset({
     "generation_sha256", "assessment_receipt_sha256",
     "eligibility_digest", "checkpoint_digest", "manifest_digest",
     "feature_sha256", "factory_release_sha256", "admission_receipt_sha256",
-    "parent_policy_sha256", "policy_sha256", "package_digest",
+    "parent_policy_sha256", "policy_sha256", "parent_acceptance_receipt_sha256",
+    "package_digest",
     "semantic_release", "clearance_sha256",
     "predecessor_factory_release_sha256", "transition_sha256",
     "motif_candidate_sha256", "approved_context_sha256",
@@ -168,27 +167,23 @@ _DIGEST_FIELDS = frozenset({
 _NONEMPTY_LIST_FIELDS = frozenset({"source_refs", "derived_path"})
 
 
-def _payload_for(kind: AkashaEventKind, payload_json: str) -> dict:
-    try:
-        payload = json.loads(payload_json)
-    except (TypeError, ValueError):
-        _invalid("BAMF_C10_PAYLOAD_NOT_CANONICAL")
-    if (not isinstance(payload, dict)
-            or any(not isinstance(key, str) for key in payload)
-            or payload_json != _canonical(payload)):
-        _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
-    required = _REQUIRED_FIELDS[kind]
+def _payload_form(kind, payload):
     production_owner = kind in OWNER_FIXTURE_KINDS and payload.get("verification_mode") is None
-    accepted_factory = (kind is AkashaEventKind.FACTORY_RELEASE
-                        and payload.get("owner_event_type") is not None)
-    accepted_motif = (kind is AkashaEventKind.MOTIF_CANDIDATE
-                      and payload.get("transition_sha256") is not None)
-    if production_owner:
-        required = _PRODUCTION_FIELDS[kind]
-    elif accepted_factory:
-        required = _FACTORY_ACCEPTANCE_FIELDS
-    elif accepted_motif:
-        required = _MOTIF_ACCEPTANCE_FIELDS
+    accepted_factory = (
+        kind is AkashaEventKind.FACTORY_RELEASE
+        and payload.get("owner_event_type") is not None)
+    accepted_motif = (
+        kind is AkashaEventKind.MOTIF_CANDIDATE
+        and payload.get("transition_sha256") is not None)
+    required = (
+        _PRODUCTION_FIELDS[kind] if production_owner
+        else _FACTORY_ACCEPTANCE_FIELDS if accepted_factory
+        else _MOTIF_ACCEPTANCE_FIELDS if accepted_motif
+        else _REQUIRED_FIELDS[kind])
+    return required, production_owner, accepted_factory, accepted_motif
+
+
+def _validate_required_payload(payload, required):
     if not required.issubset(payload):
         _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
     for key in required:
@@ -202,32 +197,50 @@ def _payload_for(kind: AkashaEventKind, payload_json: str) -> dict:
                      or not value
                      or any(not _name(item) for item in value))):
             _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
+
+
+def _validate_production_owner_payload(kind, payload):
+    if (kind in (AkashaEventKind.BANK_ALLOCATION, AkashaEventKind.PLASTICITY_EPOCH)
+            and (not _name(payload["run_id"])
+                 or type(payload["generation"]) is not int
+                 or payload["generation"] < 1)):
+        _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
+    if (kind is AkashaEventKind.BANK_ALLOCATION
+            and payload["transition_kind"] != "PARAMETER_EXTENSION"):
+        _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
+    if (kind is AkashaEventKind.PLASTICITY_EPOCH
+            and (type(payload["optimizer_step"]) is not int
+                 or payload["optimizer_step"] < 0
+                 or not _name(payload["mode"]))):
+        _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
+    if (kind is AkashaEventKind.PACKAGE_EXPORT
+            and (not _name(payload["generation_id"])
+                 or not _name(payload["source_owner"])
+                 or type(payload["rights_epoch"]) is not int
+                 or payload["rights_epoch"] < 0
+                 or type(payload["correction_generation"]) is not int
+                 or payload["correction_generation"] < 0)):
+        _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
+
+
+def _payload_for(kind: AkashaEventKind, payload_json: str) -> dict:
+    try:
+        payload = json.loads(payload_json)
+    except (TypeError, ValueError):
+        _invalid("BAMF_C10_PAYLOAD_NOT_CANONICAL")
+    if (not isinstance(payload, dict)
+            or any(not isinstance(key, str) for key in payload)
+            or payload_json != _canonical(payload)):
+        _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
+    required, production_owner, accepted_factory, accepted_motif = _payload_form(
+        kind, payload)
+    _validate_required_payload(payload, required)
     if kind in OWNER_FIXTURE_KINDS and not production_owner:
         if (payload['verification_mode'] != 'DISPOSABLE_CONTRACT'
                 or any(not _name(payload[key]) for key in ('owner_source_event_id', 'producer_id', 'artifact_schema'))):
             _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
     if production_owner:
-        if (kind in (AkashaEventKind.BANK_ALLOCATION, AkashaEventKind.PLASTICITY_EPOCH)
-                and (not _name(payload['run_id'])
-                     or type(payload['generation']) is not int
-                     or payload['generation'] < 1)):
-            _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
-        if (kind is AkashaEventKind.BANK_ALLOCATION
-                and payload['transition_kind'] != 'PARAMETER_EXTENSION'):
-            _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
-        if (kind is AkashaEventKind.PLASTICITY_EPOCH
-                and (type(payload['optimizer_step']) is not int
-                     or payload['optimizer_step'] < 0
-                     or not _name(payload['mode']))):
-            _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
-        if (kind is AkashaEventKind.PACKAGE_EXPORT
-                and (not _name(payload['generation_id'])
-                     or not _name(payload['source_owner'])
-                     or type(payload['rights_epoch']) is not int
-                     or payload['rights_epoch'] < 0
-                     or type(payload['correction_generation']) is not int
-                     or payload['correction_generation'] < 0)):
-            _invalid("BAMF_C10_PROJECTION_FIELDS_INVALID")
+        _validate_production_owner_payload(kind, payload)
     if kind in NATIVE_EVENT_KINDS.values() and not accepted_factory:
         if (type(payload['generation']) is not int or payload['generation'] < 0
                 or not _name(payload['run_id']) or not _sha(payload['native_event_id'])

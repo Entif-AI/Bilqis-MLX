@@ -29,9 +29,17 @@ class GenerationProjectionTests(unittest.TestCase):
                 factory_admission_v2=asdict(admission), semantic_graph_sha256=_fingerprint(graph),
                 school={'current_student': asdict(student)}), (
                 {'event': 'SCHOOL_TEACHER_VISIT_COMMITTED', 'capability': 'renamed.capability',
+                 'generation': 1, 'optimizer_step': 0,
+                 'recovered_at_student_sha256': '2' * 64,
+                 'checkpoint_status': 'RECORDED_AT_BOUNDARY',
                  'source_time': 570, 'effective_time': 575, 'observed_at': 580, 'recorded_at': 585},
                 {'event': 'UNKNOWN_NATIVE_EVENT'},
                 {'event': 'SCHOOL_TEACHER_VISIT_COMMITTED', 'capability': 'legacy:no-times'},
+                {'event': 'SCHOOL_TEACHER_VISIT_COMMITTED', 'capability': 'lookalike',
+                 'generation': 1, 'optimizer_step': 0,
+                 'recovered_at_student_sha256': 'f' * 64,
+                 'checkpoint_status': 'RECORDED_AT_BOUNDARY',
+                 'source_time': 590, 'effective_time': 591, 'observed_at': 592, 'recorded_at': 593},
                 {'event': 'BAMF_FACTORY_RELEASE_ADOPTION_COMMITTED',
                  'factory_release_sha256': '9' * 64,
                  'source_time': 586, 'effective_time': 587, 'observed_at': 588, 'recorded_at': 589},
@@ -50,6 +58,7 @@ class GenerationProjectionTests(unittest.TestCase):
                 record['delivery_outbox'][2]['event_id'],
                 record['delivery_outbox'][3]['event_id'],
                 record['delivery_outbox'][4]['event_id'],
+                record['delivery_outbox'][5]['event_id'],
             ))
             self.assertEqual(first.receipt.appended_count, 1)
             self.assertEqual(project().receipt.duplicate_count, 1)
@@ -125,7 +134,10 @@ class GenerationProjectionTests(unittest.TestCase):
                 supplied_graph = {**graph, 'tokens': ['foreign']} if case == 'graph' else graph
                 if case == 'later':
                     result = project_accepted_generation(root, 1, domain, graph=supplied_graph)
-                    self.assertEqual(result.receipt.appended_count, 1)
+                    self.assertEqual(result.receipt.appended_count, 0)
+                    self.assertEqual(
+                        result.uncovered_native_event_ids,
+                        (record['delivery_outbox'][0]['event_id'],))
                 else:
                     with self.assertRaises((ValueError, BilqisError)):
                         project_accepted_generation(root, 1, domain, graph=supplied_graph)

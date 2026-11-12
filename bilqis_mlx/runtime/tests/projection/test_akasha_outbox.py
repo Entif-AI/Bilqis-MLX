@@ -140,7 +140,7 @@ class AkashaOutboxTests(unittest.TestCase):
             with self.assertRaises(BilqisError) as caught:
                 replace(event, payload_digest="0" * 64)
             self.assertEqual(caught.exception.context["reason"],
-                             "BAMF_C10_EVENT_IDENTITY_INVALID")
+                             "BAMF_C10_EVENT_CONSTRUCTION_FORBIDDEN")
             with sqlite3.connect(db) as connection:
                 with self.assertRaisesRegex(
                         sqlite3.IntegrityError, "AKASHA_APPEND_ONLY"):

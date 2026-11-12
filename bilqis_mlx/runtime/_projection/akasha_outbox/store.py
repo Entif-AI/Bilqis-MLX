@@ -6,7 +6,7 @@ from pathlib import Path
 import sqlite3
 
 from .contracts import OWNER_FIXTURE_KINDS, _canonical, _digest, _invalid, _name, _sha, _time, _DELIVERY_STATUSES
-from .events import AkashaEvent
+from .events import AkashaEvent, _restore_event
 from .contracts import AkashaEventKind
 
 _SCHEMA_SQL = """
@@ -124,7 +124,7 @@ def append_outbox(path: Path, event: AkashaEvent, *, projection_binding=None) ->
 def _read_event(row: tuple[str]) -> AkashaEvent:
     try:
         payload = json.loads(row[0])
-        return AkashaEvent(
+        return _restore_event(
             **{**payload, "kind": AkashaEventKind(payload["kind"])})
     except (TypeError, ValueError, KeyError):
         _invalid("BAMF_C10_STORED_EVENT_INVALID")

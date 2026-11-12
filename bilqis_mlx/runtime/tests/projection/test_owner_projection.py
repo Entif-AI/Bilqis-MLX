@@ -10,8 +10,10 @@ import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.akasha_outbox import AkashaEvent, AkashaEventKind, read_outbox
 from bilqis_mlx.runtime.akasha_staging import build_staging_projection
+from bilqis_mlx.runtime.bamf_projection import read_projection_outbox
 from bilqis_mlx.runtime.tests.projection.test_bamf_projection import _contract, _projected
 from bilqis_mlx.runtime.owner_projection import (
+    _accepted_generation,
     _motif_event,
     append_accepted_bamf_generation,
     append_public_package_export,
@@ -30,6 +32,8 @@ from bilqis_mlx.runtime.bamf_bundle.publication import (
     publish_atlas_admission_generation,
     publish_factory_release_adoption_generation,
 )
+from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
+from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
 from bilqis_mlx.runtime.cognitive_package import export_capability
 from bilqis_mlx.runtime.cognitive_package.exchange import publish_package
 from bilqis_mlx.runtime.cognitive_package.staging import authorize_public_export
@@ -47,6 +51,10 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.acceptance.test_atla
     AtlasAdmissionPublicationTests,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import next_accepted_step
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
+    acceptance,
+)
 
 
 class AcceptedOwnerProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
@@ -84,10 +92,19 @@ class AcceptedOwnerProjectionTests(GenerationAcceptanceFixture, unittest.TestCas
             (None, None, None, None))
         self.assertIn(binding.digest, event.payload_json)
         path = self.root / "factory-outbox.sqlite3"
+        domain = _contract(path)
         with shape_patch():
-            self.assertEqual(append_accepted_bamf_generation(path, self.run), 1)
-            self.assertEqual(append_accepted_bamf_generation(path, self.run), 0)
+            self.assertEqual(
+                append_accepted_bamf_generation(self.run, domain).appended_count, 1)
+            self.assertEqual(
+                append_accepted_bamf_generation(self.run, domain).duplicate_count, 1)
         self.assertEqual(read_outbox(path), events)
+        self.assertEqual(
+            tuple(item.event for item in read_projection_outbox(path)), events)
+        with tempfile.TemporaryDirectory() as folder:
+            domain = _contract(Path(folder) / "outbox.sqlite3")
+            with self.assertRaises(BilqisError):
+                build_staging_projection((_projected(event, domain),), domain)
 
     def test_parameter_extension_projects_bank_allocation_from_c07_binding(self):
         parent, source = AtlasAdmissionPublicationTests.extension(self)
@@ -113,12 +130,31 @@ class AcceptedOwnerProjectionTests(GenerationAcceptanceFixture, unittest.TestCas
 
     def test_retained_policy_change_projects_plasticity_epoch_from_accepted_generation(self):
         source = self.source(alternate=True)
-        self.publish(source, acceptance=self.binding(source))
+        first = self.publish(source, acceptance=self.binding(source))
         with shape_patch():
+            parent = load_bamf_generation(self.run / "bamf-state.json")
+            retained = next_accepted_step(parent.retained_state, parent.extents)
+        successor = derive_successor_bundle(
+            parent,
+            retained,
+            parent_manifest_sha256=first["manifest_sha256"],
+            delivery_events=({"event": "FIXTURE_SUCCESSOR"},),
+        )
+        self.publish(
+            successor,
+            acceptance=acceptance(successor, parent=parent.retained_state),
+        )
+        with shape_patch():
+            accepted_source = _accepted_generation(self.run)
+            self.assertIsNotNone(accepted_source.parent_binding)
+            self.assertNotEqual(
+                accepted_source.student.retained_state.policy.to_record(),
+                accepted_source.parent.retained_state.policy.to_record(),
+            )
             events = events_from_accepted_bamf_generation(self.run)
         self.assertEqual(tuple(event.kind for event in events),
                          (AkashaEventKind.PLASTICITY_EPOCH,))
-        self.assertIn('"optimizer_step":', events[0].payload_json)
+        self.assertIn('"parent_acceptance_receipt_sha256":', events[0].payload_json)
         self.assertIn('"parent_policy_sha256":', events[0].payload_json)
 
 
@@ -147,12 +183,16 @@ class PackageOwnerProjectionTests(unittest.TestCase):
                  event.observed_at, event.recorded_at),
                 (None, None, None, None))
             outbox = root / "outbox.sqlite3"
+            domain = _contract(outbox)
             self.assertEqual(append_public_package_export(
-                outbox, package, published, receipt, selection, frontier,
-                EXPORT_REGISTRY), 1)
+                package, published, receipt, selection, frontier,
+                EXPORT_REGISTRY, domain).appended_count, 1)
             self.assertEqual(append_public_package_export(
-                outbox, package, published, receipt, selection, frontier,
-                EXPORT_REGISTRY), 0)
+                package, published, receipt, selection, frontier,
+                EXPORT_REGISTRY, domain).duplicate_count, 1)
+            self.assertEqual(
+                tuple(item.event for item in read_projection_outbox(outbox)),
+                (event,))
             published.write_text("tampered")
             with self.assertRaises(Exception):
                 event_from_public_package_export(
@@ -169,16 +209,30 @@ class OwnerProjectionContractTests(unittest.TestCase):
             "factory_release_sha256": "2" * 64,
             "admission_receipt_sha256": "3" * 64,
         }
-        event = AkashaEvent.from_payload(
-            kind=AkashaEventKind.BANK_ALLOCATION,
-            subject_id="feature-allocation:" + "1" * 64,
-            source_receipt_sha256="3" * 64,
-            payload=payload,
-            source_time=None,
-            effective_time=None,
-            observed_at=None,
-            recorded_at=None,
-        )
+        with self.assertRaises(BilqisError):
+            AkashaEvent.from_payload(
+                kind=AkashaEventKind.BANK_ALLOCATION,
+                subject_id="feature-allocation:" + "1" * 64,
+                source_receipt_sha256="3" * 64,
+                payload=payload,
+                source_time=None,
+                effective_time=None,
+                observed_at=None,
+                recorded_at=None,
+            )
+        with self.assertRaises(BilqisError):
+            AkashaEvent(
+                event_id="4" * 64,
+                payload_digest="5" * 64,
+                kind=AkashaEventKind.BANK_ALLOCATION,
+                subject_id="feature-allocation:" + "1" * 64,
+                source_receipt_sha256="3" * 64,
+                payload_json="{}",
+                source_time=None,
+                effective_time=None,
+                observed_at=None,
+                recorded_at=None,
+            )
         with self.assertRaises(BilqisError):
             AkashaEvent.from_payload(
                 kind=AkashaEventKind.BANK_ALLOCATION,
@@ -190,10 +244,6 @@ class OwnerProjectionContractTests(unittest.TestCase):
                 observed_at=None,
                 recorded_at=None,
             )
-        with tempfile.TemporaryDirectory() as folder:
-            domain = _contract(Path(folder) / "outbox.sqlite3")
-            with self.assertRaises(BilqisError):
-                build_staging_projection((_projected(event, domain),), domain)
 
     def test_legacy_native_event_still_requires_concrete_time(self):
         payload = {
@@ -215,34 +265,9 @@ class OwnerProjectionContractTests(unittest.TestCase):
                 recorded_at=None,
             )
 
-    def test_motif_projection_uses_validated_b13_transition_identity(self):
-        transition = {
-            "schema": "bilqis.mlx.bamf-generation-transition/v3",
-            "kind": "MOTIF_ALLOCATION",
-            "invalidate_derived_caches": True,
-            "added_pages": 1,
-            "b12_transition_sha256": "1" * 64,
-            "parent_extents_sha256": "2" * 64,
-            "candidate_extents_sha256": "3" * 64,
-            "parent_allocation_sha256": "4" * 64,
-            "candidate_allocation_sha256": "5" * 64,
-            "motif_candidate_sha256": "6" * 64,
-            "approved_context_sha256": "7" * 64,
-            "candidate_identity_sha256": "8" * 64,
-        }
-        student = type("Student", (), {
-            "run_id": "fixture-run",
-            "generation": 2,
-            "transition": transition,
-        })()
-        binding = type("Binding", (), {"digest": "9" * 64})()
-        event = _motif_event(student, binding)
-        self.assertEqual(event.kind, AkashaEventKind.MOTIF_CANDIDATE)
-        self.assertIn('"motif_candidate_sha256":"' + "6" * 64 + '"', event.payload_json)
-        altered = dict(transition, added_pages=2)
-        student.transition = altered
+    def test_owner_projection_helper_rejects_motif_lookalike(self):
         with self.assertRaises(BilqisError):
-            _motif_event(student, binding)
+            _motif_event(object())
 
 
 if __name__ == "__main__":

@@ -1,18 +1,55 @@
 """C10.1 projections derived only from authenticated production owner custody."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from bilqis_mlx.semantics.domains import contract_digest
 
-from .akasha_outbox import AkashaEvent, AkashaEventKind, append_outbox_batch, _invalid
+from .akasha_outbox import AkashaEvent, AkashaEventKind, _invalid
+from .akasha_outbox.events import _from_owner_payload
+
+
+_ACCEPTED_SOURCE_ISSUER = object()
+
+
+@dataclass(frozen=True, init=False)
+class _AcceptedGenerationProjectionSource:
+    root: Path
+    student: object
+    binding: object
+    parent: object | None
+    parent_binding: object | None
+    _issuance: object
+
+    def __init__(self, *args, **kwargs):
+        _invalid("BAMF_C10_ACCEPTED_OWNER_SOURCE_REQUIRED")
+
+
+def _issue_accepted_source(root, student, binding, parent, parent_binding):
+    source = object.__new__(_AcceptedGenerationProjectionSource)
+    for name, value in (
+            ("root", root), ("student", student), ("binding", binding),
+            ("parent", parent), ("parent_binding", parent_binding),
+            ("_issuance", _ACCEPTED_SOURCE_ISSUER)):
+        object.__setattr__(source, name, value)
+    return source
+
+
+def _require_accepted_source(source):
+    if (type(source) is not _AcceptedGenerationProjectionSource
+            or source._issuance is not _ACCEPTED_SOURCE_ISSUER):
+        _invalid("BAMF_C10_ACCEPTED_OWNER_SOURCE_REQUIRED")
+    return source
 
 
 def _accepted_generation(root: Path):
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
         accepted_binding_for_manifest,
         accepted_generation,
+        parent_acceptance_anchor_from_manifest,
     )
+    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
 
     pointer, student = accepted_generation(root / "bamf-state.json")
     binding = accepted_binding_for_manifest(
@@ -21,12 +58,28 @@ def _accepted_generation(root: Path):
         student,
         expected_acceptance_sha256=pointer["acceptance_sha256"],
     )
-    return pointer, student, binding
+    parent = None
+    parent_binding = None
+    if student.parent_manifest_sha256 is not None:
+        parent = load_bamf_bundle(
+            root / "bamf-bundles" / student.parent_manifest_sha256,
+            expected_manifest_sha256=student.parent_manifest_sha256,
+        )
+        parent_acceptance_sha256 = parent_acceptance_anchor_from_manifest(
+            root, pointer["manifest_sha256"])
+        if parent_acceptance_sha256 is not None:
+            parent_binding = accepted_binding_for_manifest(
+                root,
+                student.parent_manifest_sha256,
+                parent,
+                expected_acceptance_sha256=parent_acceptance_sha256,
+            )
+    return _issue_accepted_source(root, student, binding, parent, parent_binding)
 
 
 def _event(kind, subject_id, source_receipt_sha256, payload):
     """Owner facts without source clocks retain explicit unknown-time semantics."""
-    return AkashaEvent.from_payload(
+    return _from_owner_payload(
         kind=kind,
         subject_id=subject_id,
         source_receipt_sha256=source_receipt_sha256,
@@ -38,11 +91,13 @@ def _event(kind, subject_id, source_receipt_sha256, payload):
     )
 
 
-def _factory_release_event(student, binding):
+def _factory_release_event(source):
     from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
         ParsedFactoryReleaseAdmissionBinding,
     )
 
+    source = _require_accepted_source(source)
+    student, binding = source.student, source.binding
     if not isinstance(binding, ParsedFactoryReleaseAdmissionBinding):
         return None
     transition = dict(student.transition)
@@ -63,9 +118,11 @@ def _factory_release_event(student, binding):
     )
 
 
-def _bank_allocation_event(student, binding):
+def _bank_allocation_event(source):
     from bilqis_mlx.runtime.bamf_bundle.atlas_admission import ParsedAtlasAdmissionBinding
 
+    source = _require_accepted_source(source)
+    student, binding = source.student, source.binding
     if (not isinstance(binding, ParsedAtlasAdmissionBinding)
             or dict(student.transition).get("kind") != "PARAMETER_EXTENSION"):
         return None
@@ -84,15 +141,19 @@ def _bank_allocation_event(student, binding):
     )
 
 
-def _motif_event(student, binding):
+def _motif_event(source):
+    from bilqis_mlx.learning.atlas_acceptance import MOTIF_CLOSURE_ACCEPTANCE_SCHEMA
     from bilqis_mlx.runtime.bamf_bundle.motif.transition import (
         is_motif_allocation_transition,
         validate_motif_allocation_transition,
     )
     from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
 
+    source = _require_accepted_source(source)
+    student, binding = source.student, source.binding
     transition = dict(student.transition)
-    if not is_motif_allocation_transition(transition):
+    if (getattr(binding, "schema_version", None) != MOTIF_CLOSURE_ACCEPTANCE_SCHEMA
+            or not is_motif_allocation_transition(transition)):
         return None
     validate_motif_allocation_transition(transition)
     return _event(
@@ -112,18 +173,15 @@ def _motif_event(student, binding):
     )
 
 
-def _plasticity_event(root: Path, student, binding):
-    if student.generation == 0 or student.parent_manifest_sha256 is None:
+def _plasticity_event(source):
+    source = _require_accepted_source(source)
+    student, binding = source.student, source.binding
+    parent, parent_binding = source.parent, source.parent_binding
+    if parent_binding is None or parent is None:
         return None
-    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
-
-    parent = load_bamf_bundle(
-        root / "bamf-bundles" / student.parent_manifest_sha256,
-        expected_manifest_sha256=student.parent_manifest_sha256,
-    )
-    parent_policy = parent.retained_state.policy.to_record()
-    policy = student.retained_state.policy.to_record()
-    if policy == parent_policy:
+    parent_policy_sha256 = contract_digest(parent.retained_state.policy.to_record())
+    policy_sha256 = contract_digest(student.retained_state.policy.to_record())
+    if policy_sha256 == parent_policy_sha256:
         return None
     return _event(
         AkashaEventKind.PLASTICITY_EPOCH,
@@ -134,8 +192,9 @@ def _plasticity_event(root: Path, student, binding):
             "generation": student.generation,
             "optimizer_step": student.retained_state.optimizer_step,
             "mode": student.retained_state.policy.mode,
-            "parent_policy_sha256": contract_digest(parent_policy),
-            "policy_sha256": contract_digest(policy),
+            "parent_policy_sha256": parent_policy_sha256,
+            "policy_sha256": policy_sha256,
+            "parent_acceptance_receipt_sha256": parent_binding.digest,
             "admission_receipt_sha256": binding.digest,
         },
     )
@@ -144,19 +203,35 @@ def _plasticity_event(root: Path, student, binding):
 def events_from_accepted_bamf_generation(run_dir: Path) -> tuple[AkashaEvent, ...]:
     """Project the current accepted B13 generation without minting owner authority."""
     root = Path(run_dir)
-    _pointer, student, binding = _accepted_generation(root)
+    source = _accepted_generation(root)
     events = (
-        _factory_release_event(student, binding),
-        _bank_allocation_event(student, binding),
-        _motif_event(student, binding),
-        _plasticity_event(root, student, binding),
+        _factory_release_event(source),
+        _bank_allocation_event(source),
+        _motif_event(source),
+        _plasticity_event(source),
     )
     return tuple(event for event in events if event is not None)
 
 
-def append_accepted_bamf_generation(path: Path, run_dir: Path) -> int:
+def _project_owner_events(events, domain):
+    from .bamf_projection import BamfProjectionEvent, ProjectionDomainContract, project_generation_outbox
+    if not isinstance(domain, ProjectionDomainContract):
+        _invalid("BAMF_C10_OWNER_PROJECTION_DOMAIN_REQUIRED")
+    projected = tuple(BamfProjectionEvent(
+        event,
+        domain.source_id,
+        domain.release_digest,
+        domain.model_digest,
+        domain.evaluator_digest,
+        domain.rights_digest,
+        domain.as_of,
+    ) for event in events)
+    return project_generation_outbox(projected, domain)
+
+
+def append_accepted_bamf_generation(run_dir: Path, domain):
     events = events_from_accepted_bamf_generation(Path(run_dir))
-    return append_outbox_batch(Path(path), tuple((event, None) for event in events))
+    return _project_owner_events(events, domain)
 
 
 def event_from_public_package_export(
@@ -213,14 +288,14 @@ def event_from_public_package_export(
 
 
 def append_public_package_export(
-    path: Path,
     package,
     published_path: Path,
     clearance_receipt,
     selection,
     source_frontier,
     authority_registry,
-) -> int:
+    domain,
+):
     event = event_from_public_package_export(
         package,
         published_path,
@@ -229,7 +304,7 @@ def append_public_package_export(
         source_frontier,
         authority_registry,
     )
-    return int(append_outbox_batch(Path(path), ((event, None),)))
+    return _project_owner_events((event,), domain)
 
 
 __all__ = (

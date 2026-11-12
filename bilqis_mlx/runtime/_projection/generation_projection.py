@@ -9,6 +9,39 @@ from .akasha_outbox import AkashaEvent, NATIVE_EVENT_KINDS
 from .bamf_projection import BamfProjectionEvent, project_generation_outbox, _invalid
 
 
+def _native_owner_kind(native: dict, record: dict):
+    """Classify only events whose owner-specific fields bind to committed state."""
+    name = native.get("event")
+    kind = NATIVE_EVENT_KINDS.get(name)
+    if kind is None:
+        return None
+    student = record.get("school", {}).get("current_student", {})
+    generation = record.get("generation")
+    if name == "SCHOOL_TEACHER_VISIT_COMMITTED":
+        if (native.get("generation") != generation
+                or native.get("optimizer_step") != student.get("optimizer_step")
+                or native.get("recovered_at_student_sha256") != student.get("sha256")
+                or native.get("checkpoint_status") != "RECORDED_AT_BOUNDARY"):
+            return None
+    elif name == "SCHOOL_CAPABILITY_BEST_COMMITTED":
+        if (native.get("generation") != generation
+                or native.get("optimizer_step") != student.get("optimizer_step")
+                or native.get("student_sha256") != student.get("sha256")
+                or not isinstance(native.get("capabilities"), list)
+                or not native["capabilities"]
+                or not isinstance(native.get("rubric"), str)
+                or not native["rubric"]):
+            return None
+    elif name == "SCHOOL_FACTORY_RELEASE_MIGRATED":
+        if (native.get("generation") != generation
+                or native.get("factory_release_sha256") != record.get("factory_release_sha256")
+                or native.get("student_sha256") != student.get("sha256")
+                or native.get("optimizer_step") != student.get("optimizer_step")
+                or native.get("actual_neural_updates") != 0):
+            return None
+    return kind
+
+
 
 @dataclass(frozen=True)
 class GenerationProjection:
@@ -44,7 +77,7 @@ def project_accepted_generation(run_dir: Path, generation: int, domain, *, graph
     generation_digest = _fingerprint(record)
     projected, covered, uncovered = [], [], []
     for native in outbox:
-        kind = NATIVE_EVENT_KINDS.get(native.get('event'))
+        kind = _native_owner_kind(native, record)
         times = {key: native.get(key) for key in (
             "source_time", "effective_time", "observed_at", "recorded_at")}
         if kind is None or any(type(value) is not int or value < 0 for value in times.values()):
