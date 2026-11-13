@@ -2,9 +2,10 @@
 
 Issue: #347 (`BAMF-0.2 C01`)
 
-Normalization candidate base merged by PR #1022:
-`bd5ed28610351d37907671c6002d2fc8d20d5124` (PR merge
-`554af14fe2e5e0f5b78ac07d9b067c4a5a96678d`). The post-merge EGM repair
+Normalization PR #1022 used reviewed-unified base
+`bd5ed28610351d37907671c6002d2fc8d20d5124`, reviewed candidate head
+`38a540b88658985569acff8aca7716686fc5a281`, and merge commit
+`554af14fe2e5e0f5b78ac07d9b067c4a5a96678d`. The post-merge EGM repair
 follow-up consumes current reviewed-unified
 `0ae919779e1de44f5c7c96e911b3f61780099e21`.
 
