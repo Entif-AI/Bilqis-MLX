@@ -135,6 +135,7 @@ class ControlPlaneService:
             socket_path=str(self.socket_path),
             run_dir=str(self.run_dir),
         )
+        self._service_state = ControlPlaneState.HEALTHY
         self._socket_identity: tuple[int, int] | None = None
         server = _ThreadedUnixServer(
             str(self.socket_path), _RequestHandler, bind_and_activate=False)
@@ -202,16 +203,16 @@ class ControlPlaneService:
     def _health(self, session: SessionIdentity, surface: str) -> dict:
         learner = self._learner()
         overall = (
-            ControlPlaneState.HEALTHY
-            if learner.state is ControlPlaneState.HEALTHY
+            self._service_state
+            if self._service_state is not ControlPlaneState.HEALTHY
             else learner.state)
         return {
             "schema": HEALTH_SCHEMA,
             "surface": surface,
             "state": overall.value,
-            "service_state": ControlPlaneState.HEALTHY.value,
+            "service_state": self._service_state.value,
             "service_live": True,
-            "service_ready": True,
+            "service_ready": self._service_state is ControlPlaneState.HEALTHY,
             "learner_ready": learner.ready,
             "learner_active": learner.operator_active,
             "service": self.identity.to_record(),
@@ -242,7 +243,13 @@ class ControlPlaneService:
         finally:
             self.server_close()
 
-    def shutdown(self) -> None:
+    def prepare_restart(self) -> None:
+        """Expose explicit graceful-restart intent without inferring it from errno."""
+        self._service_state = ControlPlaneState.SERVICE_RESTARTING
+
+    def shutdown(self, *, restarting: bool = False) -> None:
+        if restarting:
+            self.prepare_restart()
         self._server.shutdown()
 
     def server_close(self) -> None:

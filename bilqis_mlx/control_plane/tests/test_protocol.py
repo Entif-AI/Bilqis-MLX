@@ -107,6 +107,27 @@ class ControlPlaneProtocolTests(unittest.TestCase):
             self.assertEqual(
                 disconnected.state, ControlPlaneState.DISCONNECTED)
 
+    def test_explicit_restart_intent_is_distinct_from_disconnected_transport(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            socket_path = root / "cp.sock"
+            service = ControlPlaneService(root / "missing-run", socket_path)
+            thread = start_service(service)
+            client = ControlPlaneClient(socket_path)
+            client.connect()
+            service.prepare_restart()
+            restarting = client.request("health")
+            self.assertEqual(
+                restarting["state"], ControlPlaneState.SERVICE_RESTARTING.value)
+            self.assertEqual(
+                restarting["service_state"],
+                ControlPlaneState.SERVICE_RESTARTING.value)
+            self.assertTrue(restarting["service_live"])
+            self.assertFalse(restarting["service_ready"])
+            client.close()
+            service.shutdown()
+            thread.join(2)
+
     def test_discovery_distinguishes_stale_from_degraded_learner_state(self):
         with TemporaryDirectory() as temporary:
             run_dir = Path(temporary) / "run"
