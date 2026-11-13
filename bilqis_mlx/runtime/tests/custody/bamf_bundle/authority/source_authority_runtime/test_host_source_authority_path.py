@@ -1,148 +1,69 @@
-"""Darwin path-traversal proof for the fixed C09 host trust root."""
-import errno
+"""Path-selection proof for the fixed ordinary-user C09 authority store."""
+import os
 import stat
 from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
-from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import _darwin_source_authority as darwin
 
 
-def _info(*, directory=False, uid=0, mode=0o600, size=32, dev=1, ino=2):
-    kind = stat.S_IFDIR if directory else stat.S_IFREG
-    return SimpleNamespace(
-        st_mode=kind | mode, st_uid=uid, st_size=size, st_dev=dev, st_ino=ino)
+def _file_info(*, uid=501, size=64):
+    return SimpleNamespace(st_mode=stat.S_IFREG | 0o600, st_uid=uid, st_size=size)
 
 
-class DarwinHostPathTests(unittest.TestCase):
-    def test_fixed_opener_uses_exact_etc_alias_and_fd_relative_chain(self):
-        opened = iter((10, 11, 12, 13, 14, 15))
+class DarwinUserPathTests(unittest.TestCase):
+    def test_registry_path_comes_from_effective_account_not_home_env_or_cwd(self):
         calls = []
 
-        def open_fd(name, flags, **kwargs):
-            calls.append((name, flags, kwargs.get("dir_fd")))
-            return next(opened)
+        def open_fd(path, flags):
+            calls.append((path, flags))
+            return 7
 
-        def safe(fd, *, directory):
-            return _info(directory=directory, size=64, dev=1, ino=2 if fd == 12 else fd)
-
-        with patch.object(darwin.os, "lstat", return_value=SimpleNamespace(
-                st_mode=stat.S_IFLNK | 0o777, st_uid=0)), \
-                patch.object(darwin.os, "readlink", return_value="private/etc"), \
-                patch.object(darwin.os, "stat", return_value=_info(directory=True, dev=1, ino=2)), \
+        with patch.dict(os.environ, {"HOME": "/tmp/attacker-home"}), \
+                patch.object(darwin.os, "geteuid", return_value=501), \
+                patch.object(darwin.pwd, "getpwuid", return_value=SimpleNamespace(
+                    pw_dir="/Users/operator")), \
+                patch.object(darwin.os, "getcwd", return_value="/tmp/attacker-cwd"), \
                 patch.object(darwin.os, "open", side_effect=open_fd), \
-                patch.object(darwin.os, "fstat", return_value=_info(directory=True, dev=1, ino=2)), \
-                patch.object(darwin.os, "close"), \
-                patch.object(darwin, "require_safe_host_descriptor", side_effect=safe):
-            result = darwin.open_host_source_authority_registry_fd(max_bytes=128)
-        self.assertEqual(result, 15)
+                patch.object(darwin.os, "fstat", return_value=_file_info()), \
+                patch.object(darwin.os, "close"):
+            fd = darwin.open_host_source_authority_registry_fd(max_bytes=128)
+
+        self.assertEqual(fd, 7)
         self.assertEqual(
-            [(name, parent) for name, _flags, parent in calls],
-            [("/", None), ("private", 10), ("etc", 11), ("entif-ai", 12),
-             ("bilqis", 13), ("source-authority-registry.json", 14)])
-
-    def test_missing_administered_component_is_required_not_invalid(self):
-        def open_fd(name, _flags, **_kwargs):
-            if name == "entif-ai":
-                raise FileNotFoundError(errno.ENOENT, "missing")
-            return {"/": 10, "private": 11, "etc": 12}[name]
-
-        with patch.object(darwin.os, "lstat", return_value=SimpleNamespace(
-                st_mode=stat.S_IFLNK | 0o777, st_uid=0)), \
-                patch.object(darwin.os, "readlink", return_value="private/etc"), \
-                patch.object(darwin.os, "stat", return_value=_info(directory=True, dev=1, ino=2)), \
-                patch.object(darwin.os, "open", side_effect=open_fd), \
-                patch.object(darwin.os, "fstat", return_value=_info(directory=True, dev=1, ino=2)), \
-                patch.object(darwin.os, "close"), \
-                patch.object(darwin, "require_safe_host_descriptor",
-                             return_value=_info(directory=True, dev=1, ino=2)), \
-                self.assertRaises(BilqisError) as caught:
-            darwin.open_host_source_authority_registry_fd(max_bytes=128)
-        self.assertEqual(caught.exception.context["reason"],
-                         "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED")
-
-    def test_bad_etc_alias_and_physical_inode_mismatch_reject(self):
-        with patch.object(darwin.os, "lstat", return_value=SimpleNamespace(
-                st_mode=stat.S_IFLNK | 0o777, st_uid=0)), \
-                patch.object(darwin.os, "readlink", return_value="not-private/etc"), \
-                self.assertRaises(BilqisError):
-            darwin.open_host_source_authority_registry_fd(max_bytes=128)
-
-        opened = iter((10, 11, 12))
-        with patch.object(darwin.os, "lstat", return_value=SimpleNamespace(
-                st_mode=stat.S_IFLNK | 0o777, st_uid=0)), \
-                patch.object(darwin.os, "readlink", return_value="private/etc"), \
-                patch.object(darwin.os, "stat", return_value=_info(directory=True, dev=1, ino=999)), \
-                patch.object(darwin.os, "open", side_effect=lambda *_a, **_k: next(opened)), \
-                patch.object(darwin.os, "fstat", return_value=_info(directory=True, dev=1, ino=12)), \
-                patch.object(darwin.os, "close"), \
-                patch.object(darwin, "require_safe_host_descriptor",
-                             side_effect=lambda fd, *, directory: _info(
-                                 directory=directory, dev=1, ino=fd)), \
-                self.assertRaises(BilqisError):
-            darwin.open_host_source_authority_registry_fd(max_bytes=128)
-
-    def test_symlinked_admin_component_and_oversized_final_file_reject(self):
-        def symlink_open(name, _flags, **_kwargs):
-            if name == "entif-ai":
-                raise OSError(errno.ELOOP, "symlink")
-            return {"/": 10, "private": 11, "etc": 12}[name]
-
-        common = (
-            patch.object(darwin.os, "lstat", return_value=SimpleNamespace(
-                st_mode=stat.S_IFLNK | 0o777, st_uid=0)),
-            patch.object(darwin.os, "readlink", return_value="private/etc"),
-            patch.object(darwin.os, "stat", return_value=_info(directory=True, dev=1, ino=12)),
+            calls[0][0],
+            "/Users/operator/.entif-ai/bilqis/source-authority-registry.json",
         )
-        with common[0], common[1], common[2], \
-                patch.object(darwin.os, "open", side_effect=symlink_open), \
-                patch.object(darwin.os, "fstat", return_value=_info(directory=True, dev=1, ino=12)), \
-                patch.object(darwin.os, "close"), \
-                patch.object(darwin, "require_safe_host_descriptor",
-                             side_effect=lambda fd, *, directory: _info(
-                                 directory=directory, dev=1, ino=12 if fd == 12 else fd)), \
-                self.assertRaises(BilqisError) as caught:
-            darwin.open_host_source_authority_registry_fd(max_bytes=128)
-        self.assertEqual(caught.exception.context["reason"],
-                         "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_INVALID")
+        self.assertTrue(calls[0][1] & os.O_NOFOLLOW)
+        self.assertNotIn("attacker", calls[0][0])
 
-        opened = iter((20, 21, 22, 23, 24, 25))
-        with patch.object(darwin.os, "lstat", return_value=SimpleNamespace(
-                st_mode=stat.S_IFLNK | 0o777, st_uid=0)), \
-                patch.object(darwin.os, "readlink", return_value="private/etc"), \
-                patch.object(darwin.os, "stat", return_value=_info(directory=True, dev=1, ino=22)), \
-                patch.object(darwin.os, "open", side_effect=lambda *_a, **_k: next(opened)), \
-                patch.object(darwin.os, "fstat", return_value=_info(directory=True, dev=1, ino=22)), \
-                patch.object(darwin.os, "close"), \
-                patch.object(darwin, "require_safe_host_descriptor",
-                             side_effect=lambda fd, *, directory: _info(
-                                 directory=directory, dev=1, ino=22 if fd == 22 else fd,
-                                 size=129 if not directory else 32)), \
-                self.assertRaises(BilqisError):
-            darwin.open_host_source_authority_registry_fd(max_bytes=128)
+    def test_registry_and_signer_share_fixed_account_directory(self):
+        calls = []
 
-    def test_failure_closes_every_opened_ancestor(self):
-        closed = Mock()
+        def open_fd(path, flags):
+            calls.append(path)
+            return len(calls) + 10
 
-        def open_fd(name, _flags, **_kwargs):
-            if name == "bilqis":
-                raise OSError(errno.EACCES, "denied")
-            return {"/": 30, "private": 31, "etc": 32, "entif-ai": 33}[name]
-
-        with patch.object(darwin.os, "lstat", return_value=SimpleNamespace(
-                st_mode=stat.S_IFLNK | 0o777, st_uid=0)), \
-                patch.object(darwin.os, "readlink", return_value="private/etc"), \
-                patch.object(darwin.os, "stat", return_value=_info(directory=True, dev=1, ino=32)), \
+        with patch.object(darwin.os, "geteuid", return_value=501), \
+                patch.object(darwin.pwd, "getpwuid", return_value=SimpleNamespace(
+                    pw_dir="/Users/operator")), \
                 patch.object(darwin.os, "open", side_effect=open_fd), \
-                patch.object(darwin.os, "fstat", return_value=_info(directory=True, dev=1, ino=32)), \
-                patch.object(darwin.os, "close", closed), \
-                patch.object(darwin, "require_safe_host_descriptor",
-                             side_effect=lambda fd, *, directory: _info(
-                                 directory=directory, dev=1, ino=32 if fd == 32 else fd)), \
-                self.assertRaises(BilqisError):
-            darwin.open_host_source_authority_registry_fd(max_bytes=128)
-        self.assertEqual([call.args[0] for call in closed.call_args_list], [33, 32, 31, 30])
+                patch.object(darwin.os, "fstat", return_value=_file_info()), \
+                patch.object(darwin.os, "close"):
+            registry_fd = darwin.open_host_source_authority_registry_fd(max_bytes=128)
+            signer_fd = darwin.open_host_source_authority_signer_fd(max_bytes=128)
+
+        self.assertEqual((registry_fd, signer_fd), (11, 12))
+        self.assertEqual(calls, [
+            "/Users/operator/.entif-ai/bilqis/source-authority-registry.json",
+            "/Users/operator/.entif-ai/bilqis/source-authority-signer.json",
+        ])
+
+    def test_reader_api_exposes_no_path_argument(self):
+        with self.assertRaises(TypeError):
+            darwin.open_host_source_authority_registry_fd(  # type: ignore[call-arg]
+                max_bytes=128, path="/tmp/alternate.json")
 
 
 if __name__ == "__main__":

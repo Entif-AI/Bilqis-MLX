@@ -15,13 +15,14 @@ moments and update counts. Historical optimizer state is never migrated.
 The low-level fresh preflight owner accepts an absent or empty target and, for an exact
 C16.1a fresh-create retry, the two durable B13 pre-seal prefixes or an exact sealed
 generation-zero recovery candidate. Arbitrary occupied targets still fail closed;
-pointerless `--resume` never invokes this recovery path. C16.1c/#950 moves new
-generation-zero C09 authority completely outside that target: on Darwin the host
-administrator provisions `/etc/entif-ai/bilqis/source-authority-registry.json`
-independently of Bilqis. The path is fixed in production; the CLI, config,
-environment, package API, and target run directory cannot select it. Runtime may
-read and validate the host file but never creates, replaces, repairs, relocates, or
-populates it.
+pointerless `--resume` never invokes this recovery path. #1031 keeps new
+generation-zero C09 authority outside that target while removing the old privileged
+host-admin placement: on Darwin the fixed registry lives under the effective OS
+account home at `.entif-ai/bilqis/source-authority-registry.json`. The account home is
+resolved from EUID plus the OS account database. CLI/config values, `$HOME`/XDG
+variables, package input, current working directory, and the target run directory
+cannot select another production root. Runtime reads and validates the file but never
+creates, replaces, repairs, relocates, or populates it.
 
 During generation-zero preparation B13 snapshots the exact validated host registry
 record, digest, and origin `HOST_SYSTEM_V1` into the owner-derived correction
@@ -30,7 +31,7 @@ requires exact equality with that prepared binding. Missing, unsafe, malformed, 
 drifted host authority therefore fails before a new run becomes current. A copied
 registry inside the target run directory has no authority for a new lineage.
 
-Host-root rotation is not supported by #950. Administrators must not rotate the file
+Trust-root rotation remains unsupported. Operators must not rotate the file
 concurrently with Bilqis operations; later authority boundaries reread the selected
 root and fail closed on drift. Historical pre-#950 lineages retain their recorded
 run-local #917 custody semantics and may use the narrowly defined one-time ordinary
@@ -38,33 +39,21 @@ retained-successor compatibility anchor. That historical path is derived from
 authenticated accepted custody and is never selected by a caller or used by a new
 C16.1c generation zero.
 
-### Host-administrator installation and recovery
+### Ordinary-user authority store
 
-Provisioning the fixed C09 root is an operating-system administration task, not a
-Bilqis command. Derive the registry record from the separately governed C09
-key/rights source; Bilqis neither generates those keys nor decides their rights.
-Before installation, create any missing administered `entif-ai` / `bilqis`
-directories as root, then verify the complete physical
-`/private/etc/entif-ai/bilqis` directory chain is UID 0 owned, not group/world writable,
-and has no extended ACL ALLOW grant
-that gives a non-root principal mutation rights. `/etc` itself must be the standard
-UID-0 Darwin symlink whose relative target is exactly `private/etc`.
+The launch path requires no `sudo`, root/admin membership, privileged helper/daemon,
+ACL escalation, or system-owned write. The registry remains the existing C09
+`SourceAuthorityRegistry` record and keeps its existing semantic digest. The private
+C06 signer, where needed by the existing trainer path, lives beside it at the fixed
+`source-authority-signer.json` filename and still proves its public identity against
+the accepted registry. #1031 does not define a new PKI, key hierarchy, rotation
+protocol, or secret manager.
 
-Install only a complete registry. Create the temporary file inside the already
-verified `bilqis` directory, write the canonical registry bytes, `fsync` the file,
-then set UID 0 ownership and the approved non-group/world-writable mode/ACL, atomically
-rename it to `source-authority-registry.json`, and `fsync` the containing directory.
-Do not install through a symlink, a caller-selected path, or a Bilqis runtime helper.
-After installation, preserve the exact bytes, canonical record, and digest in the
-host backup/recovery system so an accepted lineage can be recovered without changing
-its trust root.
-
-Recovery for an existing accepted lineage is deliberately narrow: restore the exact
-previously accepted registry bytes through the same ownership, mode, ACL, durable
-temporary-file, atomic-rename, and directory-`fsync` checks, or stop. Substituting a
-different registry is rotation/migration, even when it contains otherwise valid C09
-keys, and is forbidden until a separate governed protocol authorizes that transition.
-Never restore or rotate the fixed root concurrently with Bilqis operations.
+Recovery of an already accepted lineage remains narrow: restore the exact registry
+record previously bound in accepted custody at the same account-scoped location, or
+stop. More elaborate installer/recovery hardening is deferred until after the first
+BAMF trainer is wired and testable unless a concrete current requirement proves it is
+needed sooner.
 
 Preflight replays the current Factory admission from the source run, resolves the
 source-owned Atlas artifact, derives the ordinary Factory teacher projection and B01
