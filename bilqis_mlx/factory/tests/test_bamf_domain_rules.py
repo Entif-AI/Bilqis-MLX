@@ -1,5 +1,4 @@
 """C14.3 recursive grade-neutral domain-rule and succession contract."""
-from dataclasses import replace
 import unittest
 
 from bilqis_mlx.errors import BilqisError
