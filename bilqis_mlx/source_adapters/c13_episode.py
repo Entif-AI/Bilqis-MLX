@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
+from bilqis_mlx.errors import BilqisError, ErrorBus, SOURCE
 from bilqis_mlx.factory.adapters import RegisteredSourceAdapter
 from bilqis_mlx.factory.model import SourceAdapter
 from bilqis_mlx.generated_assessment import digest
@@ -20,6 +21,11 @@ ORACLE_ID = "bilqis.c13.episode-binding-checker/v1"
 ACTOR_ROOT = "ithkuil:ATOM-5d7116db8e1508"
 TIME_ROOT = "ithkuil:ATOM-ef7cf17b427af9"
 ADD_ROOT = "school.op.ADD"
+MAX_DRAW_EACH = 128
+
+
+def _fail(reason: str) -> None:
+    ErrorBus.raise_(SOURCE.BAMF_C13_EPISODE.INVALID, reason=reason)
 
 
 def _symbols(case: EpisodeBindingCase) -> tuple[str, ...]:
@@ -55,12 +61,12 @@ def _symbols(case: EpisodeBindingCase) -> tuple[str, ...]:
 
 def encode_case(case: EpisodeBindingCase, graph: dict) -> list[int]:
     if not isinstance(graph, dict) or not isinstance(graph.get("tokens"), list):
-        raise ValueError("BAMF_C13_EPISODE_GRAPH_INVALID")
+        _fail("BAMF_C13_EPISODE_GRAPH_INVALID")
     ids = {token: index for index, token in enumerate(graph["tokens"])}
     try:
         return [ids[symbol] for symbol in _symbols(case)]
-    except KeyError as error:
-        raise ValueError("BAMF_C13_EPISODE_GRAPH_SYMBOL_MISSING") from error
+    except KeyError:
+        _fail("BAMF_C13_EPISODE_GRAPH_SYMBOL_MISSING")
 
 
 def _depths(profile_parameters) -> tuple[int, ...]:
@@ -69,10 +75,10 @@ def _depths(profile_parameters) -> tuple[int, ...]:
     values = tuple(profile_parameters.get("depths", ("1",)))
     try:
         depths = tuple(int(value) for value in values)
-    except (TypeError, ValueError) as error:
-        raise ValueError("BAMF_C13_EPISODE_PROFILE_VALUE_INVALID") from error
+    except (TypeError, ValueError):
+        _fail("BAMF_C13_EPISODE_PROFILE_VALUE_INVALID")
     if not depths or any(depth not in DEPTHS for depth in depths):
-        raise ValueError("BAMF_C13_EPISODE_PROFILE_INVALID")
+        _fail("BAMF_C13_EPISODE_PROFILE_INVALID")
     return depths
 
 
@@ -82,8 +88,8 @@ def draw_episode(
 ) -> tuple[dict, ...]:
     del source_root
     if (capability != CAPABILITY or type(seed) is not int or seed < 0
-            or type(each) is not int or not 1 <= each <= 128):
-        raise ValueError("BAMF_C13_EPISODE_DRAW_INVALID")
+            or type(each) is not int or not 1 <= each <= MAX_DRAW_EACH):
+        _fail("BAMF_C13_EPISODE_DRAW_INVALID")
     depths = _depths(profile_parameters)
     rows = []
     for index in range(each):
@@ -94,8 +100,8 @@ def draw_episode(
         number_identity = "school.number." + gold
         try:
             native_token_id = graph["tokens"].index(number_identity)
-        except (KeyError, ValueError) as error:
-            raise ValueError("BAMF_C13_EPISODE_NATIVE_TARGET_MISSING") from error
+        except (KeyError, ValueError):
+            _fail("BAMF_C13_EPISODE_NATIVE_TARGET_MISSING")
         rows.append({
             "id": row_id,
             "source_id": row_id,
@@ -138,7 +144,7 @@ def check_episode_row(row: dict, *, graph: dict, **_) -> bool:
             and row.get("native_output") == native_output
             and row.get("tokens") == encode_case(case, graph)
         )
-    except (KeyError, TypeError, ValueError):
+    except (BilqisError, KeyError, TypeError, ValueError):
         return False
 
 

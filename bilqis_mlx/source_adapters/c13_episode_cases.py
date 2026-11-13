@@ -4,11 +4,21 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import random
 
+from bilqis_mlx.errors import ErrorBus, SOURCE
+
 
 CASE_SCHEMA = "bilqis.c13.episode-binding-case/v1"
 SOURCE_FAMILY = "bamf.c13.episode-binding/v1"
 ACTORS = ("A", "B", "C")
 DEPTHS = (1, 2, 3, 4)
+EVENT_ORDINALS = (0, 1)
+EXPECTED_EVENT_COUNT = len(ACTORS) * len(EVENT_ORDINALS)
+MAX_DURATION_MINUTES = 10
+QUERY_ALTERNATION = 2
+
+
+def _fail(reason: str) -> None:
+    ErrorBus.raise_(SOURCE.BAMF_C13_EPISODE.INVALID, reason=reason)
 
 
 @dataclass(frozen=True)
@@ -19,11 +29,11 @@ class EpisodeEvent:
     duration_minutes: int
 
     def __post_init__(self) -> None:
-        if (self.actor not in ACTORS or self.ordinal not in (0, 1)
+        if (self.actor not in ACTORS or self.ordinal not in EVENT_ORDINALS
                 or type(self.start_minute) is not int or self.start_minute < 0
                 or type(self.duration_minutes) is not int
-                or not 1 <= self.duration_minutes <= 10):
-            raise ValueError("BAMF_C13_EPISODE_EVENT_INVALID")
+                or not 1 <= self.duration_minutes <= MAX_DURATION_MINUTES):
+            _fail("BAMF_C13_EPISODE_EVENT_INVALID")
 
 
 @dataclass(frozen=True)
@@ -41,9 +51,10 @@ class EpisodeBindingCase:
                 or self.seed < 0 or self.depth not in DEPTHS
                 or self.cue_actor not in ACTORS
                 or self.query_kind not in ("LATER_DURATION", "SUM_DURATIONS")
-                or len(self.events) != 6 or len(set(keys)) != 6
+                or len(self.events) != EXPECTED_EVENT_COUNT
+                or len(set(keys)) != EXPECTED_EVENT_COUNT
                 or set(actor for actor, _ in keys) != set(ACTORS)):
-            raise ValueError("BAMF_C13_EPISODE_CASE_INVALID")
+            _fail("BAMF_C13_EPISODE_CASE_INVALID")
 
     def source_view(self) -> dict:
         return {
@@ -64,7 +75,7 @@ class EpisodeBindingCase:
 
 def episode_binding_case(seed: int, depth: int = 1) -> EpisodeBindingCase:
     if type(seed) is not int or seed < 0 or depth not in DEPTHS:
-        raise ValueError("BAMF_C13_EPISODE_SEED_INVALID")
+        _fail("BAMF_C13_EPISODE_SEED_INVALID")
     rng = random.Random(seed)
     order = list(ACTORS)
     rng.shuffle(order)
@@ -77,16 +88,16 @@ def episode_binding_case(seed: int, depth: int = 1) -> EpisodeBindingCase:
             actor,
             ordinal,
             starts[actor] + ordinal * 5,
-            1 + rng.randrange(1, 10),
+            1 + rng.randrange(1, MAX_DURATION_MINUTES),
         )
-        for actor in ACTORS for ordinal in (0, 1)
+        for actor in ACTORS for ordinal in EVENT_ORDINALS
     )
     return EpisodeBindingCase(
         seed,
         depth,
         events,
         order[0],
-        "LATER_DURATION" if seed % 2 == 0 else "SUM_DURATIONS",
+        "LATER_DURATION" if seed % QUERY_ALTERNATION == 0 else "SUM_DURATIONS",
     )
 
 
@@ -103,7 +114,7 @@ def case_from_record(record: dict) -> EpisodeBindingCase:
             or set(record["relation_cue"]) != {"kind", "from_actor", "hops"}
             or record["relation_cue"].get("kind") != "FIRST_EVENT_SUCCESSOR"
             or record["relation_cue"].get("hops") != record.get("depth")):
-        raise ValueError("BAMF_C13_EPISODE_RECORD_INVALID")
+        _fail("BAMF_C13_EPISODE_RECORD_INVALID")
     return EpisodeBindingCase(
         record["seed"],
         record["depth"],
@@ -115,7 +126,7 @@ def case_from_record(record: dict) -> EpisodeBindingCase:
 
 def check_episode_binding(case: EpisodeBindingCase) -> int:
     if type(case) is not EpisodeBindingCase:
-        raise ValueError("BAMF_C13_EPISODE_CHECK_INPUT_INVALID")
+        _fail("BAMF_C13_EPISODE_CHECK_INPUT_INVALID")
     first = {
         event.actor: event.start_minute
         for event in case.events if event.ordinal == 0

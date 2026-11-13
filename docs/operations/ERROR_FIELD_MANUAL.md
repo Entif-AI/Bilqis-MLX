@@ -26,6 +26,18 @@ Message: Factory semantic rule contract invalid: {reason}
 
 Recovery: Restore the canonical semantic rule identity, source authority, and registry binding before retrying.
 
+### `SOURCE.BAMF_C13_EPISODE.INVALID`
+
+C13 episode source contract invalid.
+
+Owner: `source_adapters.c13_episode`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: C13 episode source contract invalid: {reason}
+
+Recovery: Restore the admitted C13 episode source, profile, canonical graph, and source-visible episode facts before retrying.
+
 ### `SOURCE.BAMF_WORLD.INVALID`
 
 Qualified world source contract invalid.

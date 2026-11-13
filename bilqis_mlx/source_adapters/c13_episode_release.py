@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from bilqis_mlx.curriculum import AnswerFamily
+from bilqis_mlx.errors import ErrorBus, SOURCE
 from bilqis_mlx.factory.curriculum_definition import (
     CapabilitySourceBinding, CapabilitySpec, CurriculumDefinition, GradeSpec,
     SourceBindingSet,
@@ -20,6 +21,10 @@ from .c13_episode_cases import DEPTHS, SOURCE_FAMILY
 
 
 SOURCE_ATTESTATION_SCHEMA = "bilqis.c13.episode-source-attestation/v1"
+
+
+def _fail(reason: str) -> None:
+    ErrorBus.raise_(SOURCE.BAMF_C13_EPISODE.INVALID, reason=reason)
 
 
 def source_attestation_sha256() -> str:
@@ -45,7 +50,7 @@ def compile_episode_release(
     """Compile the disposable C13 family from repository-owned registries."""
     if (not depths or any(type(depth) is not int or depth not in DEPTHS for depth in depths)
             or tuple(dict.fromkeys(depths)) != depths):
-        raise ValueError("BAMF_C13_EPISODE_PROFILE_INVALID")
+        _fail("BAMF_C13_EPISODE_PROFILE_INVALID")
     roots = (ACTOR_ROOT, TIME_ROOT, ADD_ROOT)
     capability = CapabilitySpec(
         CAPABILITY,

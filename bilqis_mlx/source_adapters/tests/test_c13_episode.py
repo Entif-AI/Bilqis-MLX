@@ -73,9 +73,12 @@ class C13EpisodeSourceTests(unittest.TestCase):
             token for token in self.graph["tokens"]
             if token != "development.Event.E1"
         ]
-        with self.assertRaisesRegex(
-                ValueError, "BAMF_C13_EPISODE_GRAPH_SYMBOL_MISSING"):
+        with self.assertRaises(BilqisError) as caught:
             draw_episode(None, graph, seed=23, each=1)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C13_EPISODE_GRAPH_SYMBOL_MISSING",
+        )
 
     def test_lowerer_is_gold_blind_and_equal_values_do_not_choose_binding(self):
         events = tuple(
