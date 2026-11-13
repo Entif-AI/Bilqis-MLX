@@ -151,6 +151,7 @@ def record_schema(record_type: type[WireRecord]) -> dict:
         schema["x-bilqis-runtime-invariants"] = [
             "meta.as_of == stale_as_of",
             "stale_as_of < requested_as_of",
+            "requested_as_of <= meta.materialized_at",
         ]
     elif record_type.__name__ == "EventEnvelope":
         schema["x-bilqis-runtime-invariants"] = [

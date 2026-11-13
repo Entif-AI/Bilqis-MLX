@@ -109,6 +109,11 @@ class MissionControlStateTests(unittest.TestCase):
                 meta("stale-mismatch", coverage=CoverageState.PARTIAL),
                 "school", 100, 118,
             )
+        with self.assertRaises(MissionControlContractError):
+            StaleEnvelope(
+                meta("stale-future", coverage=CoverageState.PARTIAL, as_of=100),
+                "school", 100, 121,
+            )
 
     def test_action_acknowledgement_cannot_masquerade_as_completion(self):
         complete = next(sample for sample in SAMPLES if type(sample) is OperatorActionReceipt)

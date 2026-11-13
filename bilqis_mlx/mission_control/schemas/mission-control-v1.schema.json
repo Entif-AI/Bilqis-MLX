@@ -7183,7 +7183,8 @@
       "type": "object",
       "x-bilqis-runtime-invariants": [
         "meta.as_of == stale_as_of",
-        "stale_as_of < requested_as_of"
+        "stale_as_of < requested_as_of",
+        "requested_as_of <= meta.materialized_at"
       ],
       "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record"
     },

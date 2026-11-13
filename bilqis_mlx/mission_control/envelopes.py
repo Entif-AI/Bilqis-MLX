@@ -99,6 +99,7 @@ class StaleEnvelope(WireRecord):
         require(is_time(self.stale_as_of) and is_time(self.requested_as_of)
                 and self.stale_as_of < self.requested_as_of, "STALE_TIME")
         require(self.meta.as_of == self.stale_as_of, "STALE_AS_OF")
+        require(self.requested_as_of <= self.meta.materialized_at, "STALE_REQUEST_FUTURE")
 
 
 @dataclass(frozen=True)
