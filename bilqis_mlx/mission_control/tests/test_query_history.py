@@ -6,6 +6,7 @@ from bilqis_mlx.mission_control.envelopes import (
     PartialEnvelope, StaleEnvelope, UnavailableEnvelope, UnavailableReason,
 )
 from bilqis_mlx.mission_control.model import AuthorityClass, CoverageState, RecordMeta
+from bilqis_mlx.mission_control.observability import GenerationManifest
 from bilqis_mlx.mission_control.query_contracts import (
     DEFAULT_PAGE_SIZE, QueryFamily, QueryMode, QueryRequest, QueryState,
 )
@@ -86,6 +87,37 @@ class MissionControlQueryHistoryTests(unittest.TestCase):
         self.assertEqual(exact_reference.state, QueryState.PRESENT)
         self.assertEqual(
             [link.source_record_id for link in exact_reference.links], ["operator:7"])
+
+    def test_exact_historical_checkpoint_id_beats_current_generation(self):
+        run6 = replace(
+            RUN, generation=6, generation_manifest_sha256="6" * 64)
+        old = GenerationManifest(
+            _meta("generation:6", run6, as_of=106),
+            "a" * 64, "b" * 64, "c" * 64, None, "ACCEPTED")
+        current = GenerationManifest(
+            _meta("generation:7", RUN, as_of=118),
+            "d" * 64, "e" * 64, "f" * 64, "6" * 64, "ACCEPTED")
+        index = MissionControlQueryCatalog((old, current))
+        historical = index.query(QueryRequest(
+            QueryFamily.LINKS, mode=QueryMode.HISTORICAL,
+            record_id="generation:6", generation=6))
+        checkpoint = next(
+            link.target_record_id for link in historical.links
+            if link.relation == "CHECKPOINT")
+        self.assertEqual(checkpoint, "checkpoint:" + "a" * 64)
+
+        exact = index.query(QueryRequest(
+            QueryFamily.LINKS, record_id=checkpoint))
+        self.assertEqual(exact.state, QueryState.PRESENT)
+        self.assertEqual(
+            [link.target_ref for link in exact.links if link.relation == "RECEIPT"],
+            ["receipt:generation:6"],
+        )
+        conflicting = index.query(QueryRequest(
+            QueryFamily.LINKS, mode=QueryMode.HISTORICAL,
+            record_id=checkpoint, generation=7))
+        self.assertEqual(conflicting.state, QueryState.MISSING)
+        self.assertEqual(conflicting.links, ())
 
     def test_historical_frontier_query_is_exact(self):
         index = MissionControlQueryCatalog((SAMPLES[4],))

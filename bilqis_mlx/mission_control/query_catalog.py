@@ -124,7 +124,14 @@ class MissionControlQueryCatalog:
                 item for item in self._records
                 if matches_identity(item, request, match_record_id=False)
             ]
-            if request.mode is QueryMode.CURRENT:
+            exact_checkpoint = request.record_id.startswith("checkpoint:")
+            if exact_checkpoint:
+                source_records = [
+                    item for item in source_records
+                    if type(item) is GenerationManifest
+                    and f"checkpoint:{item.checkpoint_sha256}" == request.record_id
+                ]
+            elif request.mode is QueryMode.CURRENT:
                 source_records = select_current(source_records)
             links = tuple(
                 link
