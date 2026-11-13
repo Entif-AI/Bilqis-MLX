@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bilqis Mission Control</title>
+    <link rel="stylesheet" href="./shell.css" />
+  </head>
+  <body>
+    <div id="shell" class="shell" data-posture="live">
+      <aside class="rail" aria-label="Primary navigation">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">B</span>
+          <div><strong>Bilqis</strong><small>Mission Control</small></div>
+        </div>
+        <nav id="primary-nav"></nav>
+        <button id="palette-trigger" class="utility-button" type="button" aria-keyshortcuts="Control+K">
+          <span>Command</span><kbd>⌘K</kbd>
+        </button>
+      </aside>
+
+      <main class="workspace">
+        <header class="context-bar">
+          <div class="identity">
+            <span id="mode-badge" class="mode-badge">LIVE</span>
+            <div><strong id="run-id">Unknown run</strong><small id="generation-id">Generation unknown</small></div>
+          </div>
+          <div id="context-facts" class="context-facts" aria-label="Inspected context"></div>
+          <div class="context-actions">
+            <label class="selector"><span>Run</span><select id="run-selector" aria-label="Run selector"><option>fixture:prometheus-disposable</option></select></label>
+            <label class="selector"><span>As of</span><select id="generation-selector" aria-label="Generation selector"><option>44238 · LIVE</option></select></label>
+            <span id="freshness" class="freshness">UNKNOWN</span>
+            <button id="density-trigger" type="button">Density</button>
+            <button id="theme-trigger" type="button">Theme</button>
+          </div>
+        </header>
+
+        <section class="view-host" aria-live="polite">
+          <div class="eyebrow">Current destination</div>
+          <h1 id="view-title">Mission Control</h1>
+          <p id="view-summary">Shell foundation ready for provider-neutral BAMF views.</p>
+          <div class="fixture-card">
+            <div><span class="status-dot" aria-hidden="true"></span><strong>Fixture-backed shell</strong></div>
+            <p>GUI01 proves navigation, context custody, deep links, inspection, and global stale/historical posture. Domain telemetry remains owned by later GUI issues.</p>
+            <div class="demo-actions" id="demo-actions"></div>
+          </div>
+        </section>
+      </main>
+
+      <aside id="inspector" class="inspector" aria-label="Global inspector" aria-hidden="true">
+        <div class="inspector-heading">
+          <div><span class="eyebrow">Global inspector</span><h2 id="inspector-title">No selection</h2></div>
+          <button id="inspector-close" type="button" aria-label="Close inspector">×</button>
+        </div>
+        <dl id="inspector-details"></dl>
+        <button id="open-owner" type="button">Open in owning view</button>
+      </aside>
+    </div>
+    <script type="module" src="./renderer.mjs"></script>
+  </body>
+</html>
