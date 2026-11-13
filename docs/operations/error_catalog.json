@@ -13784,6 +13784,20 @@
   "schema": "bilqis.error-catalog/v1",
   "typed_errors": [
     {
+      "code": "FACTORY.DEVELOPMENTAL_PROGRAM.INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.factory.developmental_program.invalid.message",
+      "message_template": "Factory developmental program invalid: {reason}",
+      "next_action": "Restore the immutable C14 developmental-program manifest and source-qualified domain declarations before retrying.",
+      "operator_steps": [],
+      "owner": "factory.curriculum.developmental_program",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.developmental_program.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Factory developmental program invalid"
+    },
+    {
       "code": "FACTORY.SOURCE_BINDING.INVALID",
       "disposition": "CORRECT_INPUT_OR_STATE",
       "legacy_codes": [],
