@@ -22,7 +22,7 @@ class BamfTrainingProgramTests(unittest.TestCase):
         )
         self.assertEqual(
             program.require_level("L0").domains,
-            ("positive-identity", "boolean", "integer"),
+            ("positive-identity", "boolean", "numeric"),
         )
         self.assertEqual(
             program.require_level("L0").constructive_steps,
@@ -58,6 +58,48 @@ class BamfTrainingProgramTests(unittest.TestCase):
             first.program_id = "other"
         with self.assertRaises(FrozenInstanceError):
             first.levels[0].purpose = "other"
+
+
+    def test_public_constructors_reject_mutable_collections(self):
+        from bilqis_mlx.factory.curriculum.developmental_program import (
+            BamfDevelopmentalProgram, DevelopmentalDomainProgram, SCHEMA)
+
+        with self.assertRaises(BilqisError):
+            DevelopmentalDomainProgram(
+                DevelopmentalLevel.L0, "bad", ["numeric"],
+                ("POSITIVE_IDENTITY",), ("ADMITTED_RELEASE",))
+        level = load_bamf_developmental_program().levels[0]
+        with self.assertRaises(BilqisError):
+            BamfDevelopmentalProgram(SCHEMA, "bad", "v1", [level])
+
+    def test_default_manifest_is_packaged_and_operator_path_is_same_data(self):
+        from importlib import resources
+        from bilqis_mlx.factory.curriculum import developmental_program as owner
+
+        packaged = resources.files(owner.__package__).joinpath(
+            owner.DEFAULT_PROGRAM_RESOURCE).read_bytes()
+        operator_path = (Path(__file__).resolve().parents[3] / "configs" /
+                         "curricula" / "bamf-developmental-v1.json")
+        self.assertEqual(operator_path.read_bytes(), packaged)
+        self.assertIn(b'"numeric"', packaged)
+
+    def test_malformed_json_collection_shape_fails_typed_boundary(self):
+        path = Path(__file__).resolve().parents[3] / "configs" / "curricula" / "bamf-developmental-v1.json"
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload["levels"][0]["domains"] = "numeric"
+        with tempfile.TemporaryDirectory() as tmp:
+            candidate = Path(tmp) / "program.json"
+            candidate.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaises(BilqisError):
+                load_bamf_developmental_program(candidate)
+
+    def test_invalid_utf8_fails_through_typed_error_bus(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            candidate = Path(tmp) / "program.json"
+            candidate.write_bytes(b"\xff\xfe\xfd")
+            with self.assertRaises(BilqisError) as caught:
+                load_bamf_developmental_program(candidate)
+        self.assertIn("FACTORY.DEVELOPMENTAL_PROGRAM.INVALID", str(caught.exception))
 
     def test_invalid_level_order_fails_through_typed_error_bus(self):
         path = Path(__file__).resolve().parents[3] / "configs" / "curricula" / "bamf-developmental-v1.json"

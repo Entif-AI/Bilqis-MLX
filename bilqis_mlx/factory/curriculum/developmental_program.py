@@ -5,16 +5,14 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 import hashlib
 import json
+from importlib import resources
 from pathlib import Path
 
 from bilqis_mlx.errors import ErrorBus, FACTORY
 
 
 SCHEMA = "bilqis.bamf.developmental-program/v1"
-DEFAULT_PROGRAM_PATH = (
-    Path(__file__).resolve().parents[3] / "configs" / "curricula" /
-    "bamf-developmental-v1.json"
-)
+DEFAULT_PROGRAM_RESOURCE = "bamf-developmental-v1.json"
 
 
 def _fail(reason: str) -> None:
@@ -57,7 +55,8 @@ class DevelopmentalDomainProgram:
                  "DEVELOPMENTAL_DOMAIN_PROGRAM_STEPS_INVALID"),
                 (self.source_requirements,
                  "DEVELOPMENTAL_DOMAIN_PROGRAM_SOURCES_INVALID")):
-            if (not values or len(values) != len(set(values))
+            if (type(values) is not tuple or not values
+                    or len(values) != len(set(values))
                     or any(not isinstance(item, str) or not item.strip()
                            for item in values)):
                 _fail(reason)
@@ -73,6 +72,7 @@ class BamfDevelopmentalProgram:
     def __post_init__(self) -> None:
         expected = tuple(DevelopmentalLevel)
         if (self.schema != SCHEMA
+                or type(self.levels) is not tuple
                 or not isinstance(self.program_id, str) or not self.program_id
                 or not isinstance(self.policy_version, str) or not self.policy_version
                 or tuple(item.level for item in self.levels) != expected):
@@ -114,6 +114,9 @@ def _domain_program(payload: dict) -> DevelopmentalDomainProgram:
         }
         if set(payload) != expected:
             _fail("DEVELOPMENTAL_DOMAIN_PROGRAM_FIELDS_INVALID")
+        for name in ("domains", "constructive_steps", "source_requirements"):
+            if type(payload[name]) is not list:
+                _fail("DEVELOPMENTAL_DOMAIN_PROGRAM_PAYLOAD_INVALID")
         return DevelopmentalDomainProgram(
             DevelopmentalLevel(payload["level"]),
             payload["purpose"],
@@ -128,15 +131,22 @@ def _domain_program(payload: dict) -> DevelopmentalDomainProgram:
 
 
 def load_bamf_developmental_program(
-        path: str | Path = DEFAULT_PROGRAM_PATH) -> BamfDevelopmentalProgram:
-    """Load the C14 program as data; this function performs no admission or training."""
+        path: str | Path | None = None) -> BamfDevelopmentalProgram:
+    """Load C14 program data from package resources or an explicit manifest."""
     try:
-        payload = json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, TypeError, json.JSONDecodeError):
+        text = (
+            resources.files(__package__).joinpath(DEFAULT_PROGRAM_RESOURCE)
+            .read_text(encoding="utf-8")
+            if path is None else Path(path).read_text(encoding="utf-8")
+        )
+        payload = json.loads(text)
+    except (OSError, TypeError, UnicodeError, json.JSONDecodeError):
         _fail("DEVELOPMENTAL_PROGRAM_READ_INVALID")
     if not isinstance(payload, dict) or set(payload) != {
             "schema", "program_id", "policy_version", "levels"}:
         _fail("DEVELOPMENTAL_PROGRAM_FIELDS_INVALID")
+    if type(payload["levels"]) is not list:
+        _fail("DEVELOPMENTAL_PROGRAM_PAYLOAD_INVALID")
     try:
         levels = tuple(_domain_program(item) for item in payload["levels"])
         return BamfDevelopmentalProgram(
