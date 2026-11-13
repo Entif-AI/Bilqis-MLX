@@ -2,7 +2,7 @@
 from pathlib import Path
 import socket
 from tempfile import TemporaryDirectory
-from threading import Barrier, Thread
+from threading import Event, Thread
 import unittest
 from unittest.mock import patch
 
@@ -54,15 +54,17 @@ class ControlPlaneTransportTests(unittest.TestCase):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
             socket_path = root / "cp.sock"
-            barrier = Barrier(2)
-            original_prepare = service_module._prepare_socket_path
+            bound, release = Event(), Event()
             services, failures = [], []
+            original_activate = (
+                service_module._ThreadedUnixServer.server_activate)
 
-            def synchronized_prepare(path):
-                original_prepare(path)
-                barrier.wait(timeout=2)
+            def blocked_activate(server):
+                bound.set()
+                release.wait(2)
+                return original_activate(server)
 
-            def launch():
+            def launch_first():
                 try:
                     services.append(
                         ControlPlaneService(root / "missing-run", socket_path))
@@ -70,19 +72,21 @@ class ControlPlaneTransportTests(unittest.TestCase):
                     failures.append(error)
 
             with patch.object(
-                    service_module, "_prepare_socket_path",
-                    side_effect=synchronized_prepare):
-                threads = [Thread(target=launch), Thread(target=launch)]
-                for thread in threads:
-                    thread.start()
-                for thread in threads:
-                    thread.join(3)
+                    service_module._ThreadedUnixServer, "server_activate",
+                    autospec=True, side_effect=blocked_activate):
+                first = Thread(target=launch_first)
+                first.start()
+                self.assertTrue(bound.wait(1))
+                with self.assertRaises(BilqisError) as caught:
+                    ControlPlaneService(root / "missing-run", socket_path)
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "CONTROL_PLANE_SOCKET_ALREADY_ACTIVE")
+                self.assertTrue(socket_path.exists())
+                release.set()
+                first.join(3)
 
-            self.assertEqual((len(services), len(failures)), (1, 1))
-            self.assertIsInstance(failures[0], BilqisError)
-            self.assertEqual(
-                failures[0].context["reason"],
-                "CONTROL_PLANE_SOCKET_BIND_FAILED")
+            self.assertEqual((len(services), len(failures)), (1, 0))
             winner = services[0]
             thread = start_service(winner)
             try:

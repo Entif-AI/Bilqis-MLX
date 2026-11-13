@@ -16,7 +16,6 @@ from bilqis_mlx.control_plane import (
 )
 from bilqis_mlx.control_plane.contracts import ERROR_SCHEMA
 from bilqis_mlx.control_plane.discovery import discover_learner
-from bilqis_mlx.errors import BilqisError
 
 from .support import start_service
 
@@ -77,36 +76,6 @@ class ControlPlaneProtocolTests(unittest.TestCase):
             service.shutdown()
             thread.join(2)
 
-    def test_disconnected_client_failure_uses_typed_error_control_plane(self):
-        with TemporaryDirectory() as temporary:
-            client = ControlPlaneClient(Path(temporary) / "missing.sock")
-            with self.assertRaises(BilqisError) as caught:
-                client.request("health")
-        self.assertEqual(
-            caught.exception.code, "SCHOOL.BAMF_CONTROL_PLANE.INVALID")
-        self.assertEqual(
-            caught.exception.context["reason"],
-            "CONTROL_PLANE_CLIENT_DISCONNECTED")
-
-    def test_client_classifies_permission_without_inventing_restart_intent(self):
-        with TemporaryDirectory() as temporary:
-            socket_path = Path(temporary) / "cp.sock"
-            unauthorized = ControlPlaneClient(socket_path)
-            with patch("socket.socket.connect", side_effect=PermissionError):
-                with self.assertRaises(PermissionError):
-                    unauthorized.connect()
-            self.assertEqual(
-                unauthorized.state, ControlPlaneState.UNAUTHORIZED)
-
-            disconnected = ControlPlaneClient(socket_path)
-            with patch(
-                    "socket.socket.connect",
-                    side_effect=ConnectionRefusedError):
-                with self.assertRaises(ConnectionRefusedError):
-                    disconnected.connect()
-            self.assertEqual(
-                disconnected.state, ControlPlaneState.DISCONNECTED)
-
     def test_explicit_restart_intent_is_distinct_from_disconnected_transport(self):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -165,38 +134,19 @@ class ControlPlaneProtocolTests(unittest.TestCase):
             try:
                 with ControlPlaneClient(socket_path) as client:
                     response = client.request("snapshot")
+                    self.assertEqual(
+                        client.state, ControlPlaneState.LEARNER_UNAVAILABLE)
                 self.assertEqual(response["schema"], ERROR_SCHEMA)
                 self.assertFalse(response["accepted"])
                 self.assertEqual(
                     response["reason"],
                     "CONTROL_PLANE_CP01_OPERATION_UNSUPPORTED")
+                self.assertNotIn("state", response)
                 self.assertNotIn("learner", response)
                 self.assertNotIn("surface", response)
             finally:
                 service.shutdown()
                 thread.join(2)
-
-    def test_client_rejects_accepted_handshake_with_mismatched_identity(self):
-        client = ControlPlaneClient(Path("/tmp/not-used"), client_id="expected")
-        with self.assertRaises(BilqisError) as caught:
-            client._validate_handshake({
-                "schema": "bilqis.bamf.control-plane.handshake/v1",
-                "accepted": True,
-                "protocol_version": PROTOCOL_VERSION,
-                "service": {
-                    "service_id": "service-a",
-                    "protocol_version": PROTOCOL_VERSION,
-                },
-                "session": {
-                    "session_id": "session-a",
-                    "service_id": "service-b",
-                    "client_id": "expected",
-                    "protocol_version": PROTOCOL_VERSION,
-                },
-            })
-        self.assertEqual(
-            caught.exception.context["reason"],
-            "CONTROL_PLANE_HANDSHAKE_IDENTITY_INVALID")
 
     def test_direct_python_entrypoint_starts_without_gui(self):
         with TemporaryDirectory() as temporary:

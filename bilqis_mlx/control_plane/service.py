@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -47,6 +48,43 @@ def _unlink_socket_if_identity(
         return False
     path.unlink()
     return True
+
+
+def _acquire_service_lock(socket_path: Path) -> int:
+    """Hold one exclusive owner across stale-check, bind, listen, and cleanup."""
+    lock_path = Path(f"{socket_path}.lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    if lock_path.is_symlink():
+        _invalid("CONTROL_PLANE_SERVICE_LOCK_UNSAFE")
+    nofollow = getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(
+            lock_path, os.O_RDWR | os.O_CREAT | nofollow, 0o600)
+    except OSError:
+        _invalid("CONTROL_PLANE_SERVICE_LOCK_UNSAFE")
+    try:
+        opened = os.fstat(fd)
+        named = os.stat(lock_path, follow_symlinks=False)
+        if (not stat.S_ISREG(opened.st_mode) or not stat.S_ISREG(named.st_mode)
+                or (opened.st_dev, opened.st_ino)
+                != (named.st_dev, named.st_ino)):
+            _invalid("CONTROL_PLANE_SERVICE_LOCK_UNSAFE")
+        os.fchmod(fd, 0o600)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            _invalid("CONTROL_PLANE_SOCKET_ALREADY_ACTIVE")
+        return fd
+    except Exception:
+        os.close(fd)
+        raise
+
+
+def _release_service_lock(fd: int | None) -> None:
+    if fd is None:
+        return
+    fcntl.flock(fd, fcntl.LOCK_UN)
+    os.close(fd)
 
 
 def _utc_now() -> str:
@@ -127,7 +165,13 @@ class ControlPlaneService:
     def __init__(self, run_dir: Path, socket_path: Path):
         self.run_dir = Path(run_dir).expanduser().resolve()
         self.socket_path = Path(socket_path).expanduser().resolve()
-        _prepare_socket_path(self.socket_path)
+        self._service_lock_fd = _acquire_service_lock(self.socket_path)
+        try:
+            _prepare_socket_path(self.socket_path)
+        except Exception:
+            _release_service_lock(self._service_lock_fd)
+            self._service_lock_fd = None
+            raise
         self.identity = ServiceIdentity(
             service_id=str(uuid4()),
             pid=os.getpid(),
@@ -150,6 +194,8 @@ class ControlPlaneService:
         except OSError as error:
             server.server_close()
             _unlink_socket_if_identity(self.socket_path, bound_identity)
+            _release_service_lock(self._service_lock_fd)
+            self._service_lock_fd = None
             try:
                 _invalid("CONTROL_PLANE_SOCKET_BIND_FAILED")
             except Exception as typed:
@@ -157,6 +203,8 @@ class ControlPlaneService:
         except Exception:
             server.server_close()
             _unlink_socket_if_identity(self.socket_path, bound_identity)
+            _release_service_lock(self._service_lock_fd)
+            self._service_lock_fd = None
             raise
         self._server = server
         self._socket_identity = bound_identity
@@ -224,8 +272,8 @@ class ControlPlaneService:
         return {
             "schema": ERROR_SCHEMA,
             "accepted": False,
-            "state": ControlPlaneState.HEALTHY.value,
             "reason": reason,
+            "service_state": self._service_state.value,
             "service": self.identity.to_record(),
             "session": session.to_record(),
         }
@@ -256,3 +304,5 @@ class ControlPlaneService:
         self._server.server_close()
         _unlink_socket_if_identity(self.socket_path, self._socket_identity)
         self._socket_identity = None
+        _release_service_lock(self._service_lock_fd)
+        self._service_lock_fd = None

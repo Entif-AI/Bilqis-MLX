@@ -7,7 +7,10 @@ import socket
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
-from .contracts import ControlPlaneState, HANDSHAKE_SCHEMA, PROTOCOL_VERSION
+from .contracts import (
+    ControlPlaneState, HANDSHAKE_SCHEMA, HEALTH_SCHEMA, PROTOCOL_VERSION,
+    SERVICE_IDENTITY_SCHEMA, SESSION_IDENTITY_SCHEMA,
+)
 
 
 MAX_RESPONSE_BYTES = 64 * 1024
@@ -57,6 +60,8 @@ class ControlPlaneClient:
         session = response.get("session")
         if (not isinstance(service, dict) or not isinstance(session, dict)
                 or response.get("protocol_version") != self.protocol_version
+                or service.get("schema") != SERVICE_IDENTITY_SCHEMA
+                or session.get("schema") != SESSION_IDENTITY_SCHEMA
                 or service.get("protocol_version") != self.protocol_version
                 or session.get("protocol_version") != self.protocol_version
                 or not isinstance(service.get("service_id"), str)
@@ -81,6 +86,8 @@ class ControlPlaneClient:
                 "protocol_version": self.protocol_version,
                 "client_id": self.client_id,
             })
+            self._validate_handshake(response)
+            next_state = ControlPlaneState(response["state"])
         except PermissionError:
             connection.close()
             self._socket = None
@@ -93,8 +100,7 @@ class ControlPlaneClient:
             self._stream = None
             self.state = ControlPlaneState.DISCONNECTED
             raise
-        self._validate_handshake(response)
-        self.state = ControlPlaneState(response["state"])
+        self.state = next_state
         if not response.get("accepted"):
             self.close(preserve_state=True)
         return response
@@ -103,7 +109,7 @@ class ControlPlaneClient:
         if self._stream is None:
             _invalid("CONTROL_PLANE_CLIENT_DISCONNECTED")
         response = self._send({"type": surface})
-        if "state" in response:
+        if response.get("schema") == HEALTH_SCHEMA and "state" in response:
             self.state = ControlPlaneState(response["state"])
         return response
 
