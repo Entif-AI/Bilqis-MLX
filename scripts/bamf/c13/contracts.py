@@ -14,6 +14,8 @@ CASE_SCHEMA = "bilqis.c13.episode-binding-case/v1"
 RECEIPT_SCHEMA = "bilqis.c13.delivery-receipt/v1"
 SEMANTIC_DELTA_SCHEMA = "bilqis.c13.semantic-delta-receipt/v1"
 SOLVER_PROBE_SCHEMA = "bilqis.c13.complete-solver-probe/v1"
+NEXT_UPDATE_SCHEMA = "bilqis.c13.next-update-receipt/v1"
+ROLLBACK_RESUME_SCHEMA = "bilqis.c13.rollback-resume-receipt/v1"
 MAX_STEPS = 64
 ACTORS = ("A", "B", "C")
 
@@ -171,6 +173,70 @@ class SemanticDeltaReceipt:
 
 
 @dataclass(frozen=True)
+class NextUpdateReceipt:
+    accepted_manifest_sha256: str
+    parent_generation_sha256: str
+    visit_id: str
+    capability_id: str
+    decision_sha256: str
+    parent_candidate_sha256: str
+    speculative_candidate_sha256: str
+    retained_candidate_sha256: str
+    training_authority_sha256s: tuple[str, ...]
+    step_proof_sha256s: tuple[str, ...]
+    schema_version: str = NEXT_UPDATE_SCHEMA
+
+    def __post_init__(self) -> None:
+        digests = (
+            self.accepted_manifest_sha256, self.parent_generation_sha256,
+            self.decision_sha256, self.parent_candidate_sha256,
+            self.speculative_candidate_sha256, self.retained_candidate_sha256,
+            *self.training_authority_sha256s, *self.step_proof_sha256s,
+        )
+        if (self.schema_version != NEXT_UPDATE_SCHEMA
+                or not self.visit_id or not self.capability_id
+                or any(len(value) != 64
+                       or any(char not in "0123456789abcdef" for char in value)
+                       for value in digests)
+                or not self.training_authority_sha256s
+                or not self.step_proof_sha256s):
+            fail("BAMF_C13_NEXT_UPDATE_RECEIPT_INVALID")
+
+
+@dataclass(frozen=True)
+class RollbackResumeReceipt:
+    accepted_manifest_sha256: str
+    parent_generation_sha256: str
+    cold_generation_sha256: str
+    parent_candidate_sha256: str
+    speculative_candidate_sha256: str
+    rolled_back_candidate_sha256: str
+    warm_next_update: NextUpdateReceipt
+    cold_next_update: NextUpdateReceipt
+    schema_version: str = ROLLBACK_RESUME_SCHEMA
+
+    def __post_init__(self) -> None:
+        digests = (
+            self.accepted_manifest_sha256, self.parent_generation_sha256,
+            self.cold_generation_sha256, self.parent_candidate_sha256,
+            self.speculative_candidate_sha256, self.rolled_back_candidate_sha256,
+        )
+        if (self.schema_version != ROLLBACK_RESUME_SCHEMA
+                or any(len(value) != 64
+                       or any(char not in "0123456789abcdef" for char in value)
+                       for value in digests)
+                or type(self.warm_next_update) is not NextUpdateReceipt
+                or type(self.cold_next_update) is not NextUpdateReceipt
+                or self.parent_generation_sha256 != self.cold_generation_sha256
+                or self.parent_candidate_sha256 != self.rolled_back_candidate_sha256
+                or self.speculative_candidate_sha256 == self.parent_candidate_sha256
+                or self.warm_next_update != self.cold_next_update
+                or self.warm_next_update.accepted_manifest_sha256
+                != self.accepted_manifest_sha256):
+            fail("BAMF_C13_ROLLBACK_RESUME_RECEIPT_INVALID")
+
+
+@dataclass(frozen=True)
 class DeliveryReceipt:
     source_release_sha256: str
     semantic_release: str
@@ -223,5 +289,6 @@ class DeliveryReceipt:
 __all__ = (
     "ACTORS", "CASE_SCHEMA", "CandidateAttemptReceipt", "DeliveryConfig",
     "DeliveryReceipt", "EpisodeSourceRelease", "FoundationLaunchInput",
-    "MAX_STEPS", "SemanticDeltaReceipt", "SolverProbeReceipt", "fail",
+    "MAX_STEPS", "NextUpdateReceipt", "RollbackResumeReceipt",
+    "SemanticDeltaReceipt", "SolverProbeReceipt", "fail",
 )

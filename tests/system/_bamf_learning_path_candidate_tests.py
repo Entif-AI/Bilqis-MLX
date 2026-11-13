@@ -5,8 +5,10 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+from bilqis_mlx.errors import BilqisError
 from scripts.bamf.c13 import delivery_runtime
 from scripts.bamf.c13.contracts import CandidateAttemptReceipt
+from scripts.bamf.c13.contracts import NextUpdateReceipt, RollbackResumeReceipt
 
 
 class BamfLearningPathCandidateAccountingTests(unittest.TestCase):
@@ -82,10 +84,66 @@ class BamfLearningPathCandidateAccountingTests(unittest.TestCase):
                     "generation": 4,
                     "optimizer_step": 9,
                     "candidate_identity_sha256": "7" * 64,
+                    "generation_identity_sha256": "8" * 64,
                 }) + "\n")
-            receipt = delivery_runtime.cold_restart_identity(Path("/tmp/disposable"))
+            with patch.object(
+                    delivery_runtime, "successor_candidate_identity_digest",
+                    return_value="8" * 64):
+                receipt = delivery_runtime.cold_restart_identity(Path("/tmp/disposable"))
         self.assertEqual(receipt["candidate_identity_sha256"], "7" * 64)
+        self.assertEqual(receipt["generation_identity_sha256"], "8" * 64)
         self.assertIn("-c", run.call_args.args[0])
+
+    def test_rollback_resume_receipt_requires_exact_parent_and_next_update_identity(self):
+        update = NextUpdateReceipt(
+            "1" * 64, "2" * 64, "visit", "Z.C13_EPISODE", "3" * 64,
+            "4" * 64, "5" * 64, "6" * 64, ("7" * 64,), ("8" * 64,))
+        receipt = RollbackResumeReceipt(
+            "1" * 64, "2" * 64, "2" * 64, "4" * 64, "5" * 64,
+            "4" * 64, update, update)
+        self.assertEqual(receipt.warm_next_update, receipt.cold_next_update)
+
+    def test_rollback_resume_receipt_rejects_drift(self):
+        update = NextUpdateReceipt(
+            "1" * 64, "2" * 64, "visit", "Z.C13_EPISODE", "3" * 64,
+            "4" * 64, "5" * 64, "6" * 64, ("7" * 64,), ("8" * 64,))
+        with self.assertRaises(BilqisError):
+            RollbackResumeReceipt(
+                "1" * 64, "2" * 64, "9" * 64, "4" * 64, "5" * 64,
+                "4" * 64, update, update)
+
+    def test_next_update_identity_binds_real_owner_coordinates_without_publication(self):
+        parent = SimpleNamespace(retained_state=object())
+        transaction = SimpleNamespace(
+            parent=object(),
+            training_authorities=(SimpleNamespace(digest="7" * 64),),
+            step_proofs=(SimpleNamespace(digest="8" * 64),),
+        )
+        prepared = SimpleNamespace(
+            status="ACCEPTED", parent=parent,
+            selection=SimpleNamespace(visit=SimpleNamespace(
+                identity=SimpleNamespace(visit_id="visit-1"))),
+            step=SimpleNamespace(transaction=transaction),
+            decision=SimpleNamespace(accepted=True, digest="3" * 64),
+            capability="Z.C13_EPISODE",
+        )
+        with patch.object(
+                delivery_runtime, "bind_accepted_execution_cache",
+                return_value=SimpleNamespace(accepted_manifest_sha256="1" * 64)), patch.object(
+                delivery_runtime, "prepare_bamf_visit", return_value=prepared), patch.object(
+                delivery_runtime, "resolve_candidate",
+                side_effect=(SimpleNamespace(), SimpleNamespace())), patch.object(
+                delivery_runtime, "successor_candidate_identity_digest",
+                return_value="2" * 64), patch.object(
+                delivery_runtime, "candidate_identity_digest",
+                side_effect=("4" * 64, "5" * 64, "6" * 64)):
+            receipt = delivery_runtime.next_update_identity(Path("/tmp/disposable"))
+        self.assertEqual(receipt.decision_sha256, "3" * 64)
+        self.assertEqual(receipt.speculative_candidate_sha256, "5" * 64)
+        self.assertEqual(receipt.retained_candidate_sha256, "6" * 64)
+        self.assertEqual(receipt.parent_candidate_sha256, "4" * 64)
+        self.assertEqual(receipt.training_authority_sha256s, ("7" * 64,))
+        self.assertEqual(receipt.step_proof_sha256s, ("8" * 64,))
 
 
 __all__ = ("BamfLearningPathCandidateAccountingTests",)

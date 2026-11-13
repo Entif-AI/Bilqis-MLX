@@ -11,11 +11,20 @@ from dataclasses import replace
 import numpy as np
 
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning.atlas_candidate import resolve_candidate
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
+from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
+    successor_candidate_identity_digest,
+)
 from bilqis_mlx.runtime.bamf_operator.session import operate_bamf
+from bilqis_mlx.runtime.bamf_operator.session import prepare_bamf_visit
 
 from scripts.bamf.c13.candidate_evidence import event_offset, owner_event_after
-from scripts.bamf.c13.contracts import CandidateAttemptReceipt, SemanticDeltaReceipt
+from scripts.bamf.c13.contracts import (
+    CandidateAttemptReceipt, NextUpdateReceipt, RollbackResumeReceipt,
+    SemanticDeltaReceipt,
+)
 
 PRODUCTION_RESERVE_GIB = 100.0
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -33,14 +42,16 @@ def cold_restart_identity(run_dir: Path) -> dict:
         "generation": parent.generation,
         "optimizer_step": parent.retained_state.optimizer_step,
         "candidate_identity_sha256": _identity(parent),
+        "generation_identity_sha256": successor_candidate_identity_digest(parent),
     }
     script = "\n".join((
         "import json,sys",
         "from pathlib import Path",
         "from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest",
         "from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation",
+        "from bilqis_mlx.runtime.bamf_bundle.genesis.records import successor_candidate_identity_digest",
         "student=load_accepted_generation(Path(sys.argv[1]))",
-        "print(json.dumps({'generation':student.generation,'optimizer_step':student.retained_state.optimizer_step,'candidate_identity_sha256':candidate_identity_digest(student.retained_state)},sort_keys=True))",
+        "print(json.dumps({'generation':student.generation,'optimizer_step':student.retained_state.optimizer_step,'candidate_identity_sha256':candidate_identity_digest(student.retained_state),'generation_identity_sha256':successor_candidate_identity_digest(student)},sort_keys=True))",
     ))
     completed = subprocess.run(
         [sys.executable, "-c", script, str(run_dir)],
@@ -60,6 +71,82 @@ def cold_restart_identity(run_dir: Path) -> dict:
     if observed != expected:
         raise RuntimeError("BAMF_C13_COLD_RESTART_IDENTITY_DRIFT")
     return observed
+
+
+def _next_update_receipt(cache, prepared) -> NextUpdateReceipt:
+    if prepared.status not in ("ACCEPTED", "REJECTED") or prepared.step is None:
+        raise RuntimeError("BAMF_C13_NEXT_UPDATE_NOT_AVAILABLE")
+    transaction = prepared.step.transaction
+    speculative = resolve_candidate(transaction, accepted=True)
+    retained = resolve_candidate(transaction, accepted=prepared.decision.accepted)
+    return NextUpdateReceipt(
+        cache.accepted_manifest_sha256,
+        successor_candidate_identity_digest(prepared.parent),
+        prepared.selection.visit.identity.visit_id,
+        prepared.capability,
+        prepared.decision.digest,
+        candidate_identity_digest(transaction.parent),
+        candidate_identity_digest(speculative),
+        candidate_identity_digest(retained),
+        tuple(authority.digest for authority in transaction.training_authorities),
+        tuple(proof.digest for proof in transaction.step_proofs),
+    )
+
+
+def next_update_identity(run_dir: Path) -> NextUpdateReceipt:
+    """Prepare one real owner candidate without publishing and bind its exact identity."""
+    run_dir = Path(run_dir).resolve()
+    cache = bind_accepted_execution_cache(run_dir)
+    return _next_update_receipt(cache, prepare_bamf_visit(run_dir))
+
+
+def prove_rollback_resume(run_dir: Path) -> RollbackResumeReceipt:
+    """Prove speculative rollback and cold next-update equivalence without publication."""
+    run_dir = Path(run_dir).resolve()
+    cache = bind_accepted_execution_cache(run_dir)
+    parent = load_accepted_generation(run_dir)
+    prepared = prepare_bamf_visit(run_dir)
+    warm = _next_update_receipt(cache, prepared)
+    if prepared.status not in ("ACCEPTED", "REJECTED") or prepared.step is None:
+        raise RuntimeError("BAMF_C13_ROLLBACK_PROBE_NOT_AVAILABLE")
+    transaction = prepared.step.transaction
+    speculative = resolve_candidate(transaction, accepted=True)
+    rolled_back = resolve_candidate(transaction, accepted=False)
+    parent_candidate = candidate_identity_digest(transaction.parent)
+    speculative_candidate = candidate_identity_digest(speculative)
+    rolled_candidate = candidate_identity_digest(rolled_back)
+    if parent_candidate != rolled_candidate or parent_candidate == speculative_candidate:
+        raise RuntimeError("BAMF_C13_ROLLBACK_IDENTITY_INVALID")
+    if bind_accepted_execution_cache(run_dir).accepted_manifest_sha256 != cache.accepted_manifest_sha256:
+        raise RuntimeError("BAMF_C13_ROLLBACK_MUTATED_ACCEPTED_MANIFEST")
+
+    script = "\n".join((
+        "import json,sys",
+        "from dataclasses import asdict",
+        "from pathlib import Path",
+        "from scripts.bamf.c13.delivery_runtime import next_update_identity",
+        "print(json.dumps(asdict(next_update_identity(Path(sys.argv[1]))),sort_keys=True))",
+    ))
+    completed = subprocess.run(
+        [sys.executable, "-c", script, str(run_dir)], cwd=str(_REPOSITORY_ROOT),
+        env=dict(os.environ), capture_output=True, text=True, timeout=600, check=False)
+    if completed.returncode != 0:
+        raise RuntimeError("BAMF_C13_COLD_NEXT_UPDATE_FAILED:" + completed.stderr[-1000:])
+    try:
+        cold = NextUpdateReceipt(**json.loads(completed.stdout.strip().splitlines()[-1]))
+    except (IndexError, json.JSONDecodeError, TypeError) as error:
+        raise RuntimeError("BAMF_C13_COLD_NEXT_UPDATE_OUTPUT_INVALID") from error
+    cold_parent = load_accepted_generation(run_dir)
+    return RollbackResumeReceipt(
+        cache.accepted_manifest_sha256,
+        successor_candidate_identity_digest(parent),
+        successor_candidate_identity_digest(cold_parent),
+        parent_candidate,
+        speculative_candidate,
+        rolled_candidate,
+        warm,
+        cold,
+    )
 
 
 def attempt_owner_candidate(run_dir: Path) -> CandidateAttemptReceipt:

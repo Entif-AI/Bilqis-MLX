@@ -34,6 +34,9 @@ from tests.system._bamf_learning_path_episode_tests import (
 from tests.system._bamf_learning_path_semantic_tests import (
     BamfLearningPathSemanticDeltaTests as _SemanticDeltaTests,
 )
+from tests.system._bamf_c13_qualification_tests import (
+    BamfC13QualificationTests as _QualificationTests,
+)
 
 
 class BamfLearningPathFixtureTests(unittest.TestCase):
@@ -228,6 +231,10 @@ class BamfLearningPathSemanticDeltaTests(_SemanticDeltaTests):
 
 class BamfLearningPathEpisodeSourceTests(_EpisodeSourceTests):
     """Expose live source-authority tests through the prescribed root test file."""
+
+
+class BamfC13QualificationTests(_QualificationTests):
+    """Expose C13.2 qualification-receipt tests through the prescribed root file."""
 
 
 if __name__ == "__main__":
