@@ -105,7 +105,7 @@ def _bind_host_source_authority_registry(run_dir: Path, correction_frontier):
 
 
 def read_host_system_source_authority_registry():
-    """Read the one fixed host-administered C09 root without a caller-selected path."""
+    """Read the one fixed account-scoped C09 root without a caller-selected path."""
     from .._darwin_source_authority import open_host_source_authority_registry_fd
 
     fd = open_host_source_authority_registry_fd(max_bytes=_MAX_REGISTRY_BYTES)
