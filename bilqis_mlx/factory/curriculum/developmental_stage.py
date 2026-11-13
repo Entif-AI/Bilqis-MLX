@@ -65,6 +65,7 @@ class StageIntent:
     retained_mastery_debt: tuple[str, ...]
     teacher_epoch: int
     remediation: tuple[StageRemediation, ...]
+    blocking_source_requirements: tuple[str, ...]
     nonblocking_levels: tuple[str, ...] = ("L3", "L4")
     authorizes_learning: bool = False
 
@@ -73,7 +74,8 @@ class StageIntent:
             self.selected_family_ids, self.active_grade_ids,
             self.active_capability_ids, self.source_eligible_concept_ids,
             self.covered_semantic_ids, self.retained_mastery_debt,
-            self.remediation, self.nonblocking_levels,
+            self.remediation, self.blocking_source_requirements,
+            self.nonblocking_levels,
         )
         if (not isinstance(self.status, FrontierStatus)
                 or any(type(value) is not tuple for value in tuple_fields)
@@ -177,5 +179,5 @@ def resolve_training_stage(
         _numeric_maximum_from_capabilities(release.execution_plan.capabilities),
         snapshot.source_eligible_concept_ids, covered,
         snapshot.retained_mastery_debt, snapshot.teacher_epoch,
-        _remediation(source_coverage),
+        _remediation(source_coverage), program.education_source_requirements(),
     )

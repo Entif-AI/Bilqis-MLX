@@ -1,5 +1,5 @@
 """C14 developmental-program data contract."""
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 import json
 from pathlib import Path
 import tempfile
@@ -161,6 +161,10 @@ class BamfTrainingStageTests(unittest.TestCase):
         self.assertEqual(intent.covered_semantic_ids, snapshot.source_eligible_concept_ids)
         self.assertEqual(intent.retained_mastery_debt, snapshot.retained_mastery_debt)
         self.assertEqual(intent.teacher_epoch, snapshot.teacher_epoch)
+        self.assertIn("SOURCE_QUALIFIED_PREREQUISITES",
+                      intent.blocking_source_requirements)
+        self.assertNotIn("RESOURCE_AUTHORITY", intent.blocking_source_requirements)
+        self.assertNotIn("RIGHTS_AUTHORITY", intent.blocking_source_requirements)
         self.assertEqual(intent.nonblocking_levels, ("L3", "L4"))
         self.assertFalse(intent.authorizes_learning)
         self.assertTrue(any(
@@ -190,6 +194,72 @@ class BamfTrainingStageTests(unittest.TestCase):
         self.assertEqual(first.selected_semantic_id, second.selected_semantic_id)
         self.assertEqual(first.selected_family_ids, second.selected_family_ids)
         self.assertEqual(first.status, second.status)
+
+    def test_l3_l4_requirements_cannot_block_earlier_stage_selection(self):
+        from bilqis_mlx.factory.curriculum.developmental_program import BamfDevelopmentalProgram
+        from bilqis_mlx.factory.curriculum.developmental_stage import (
+            DevelopmentalLearnerState, DevelopmentalSourceCoverage,
+        )
+
+        release, snapshot, closure = self._coverage_fixture()
+        ordinary = load_bamf_developmental_program()
+        late_changed = tuple(
+            replace(item, source_requirements=("UNAVAILABLE_LATE_RESOURCE",))
+            if item.level in {DevelopmentalLevel.L3, DevelopmentalLevel.L4} else item
+            for item in ordinary.levels)
+        candidate = BamfDevelopmentalProgram(
+            ordinary.schema, ordinary.program_id, ordinary.policy_version, late_changed)
+
+        first = ordinary.resolve_training_stage(
+            DevelopmentalSourceCoverage(snapshot, closure),
+            DevelopmentalLearnerState(release))
+        second = candidate.resolve_training_stage(
+            DevelopmentalSourceCoverage(snapshot, closure),
+            DevelopmentalLearnerState(release))
+
+        self.assertEqual(first.selected_semantic_id, second.selected_semantic_id)
+        self.assertEqual(first.selected_family_ids, second.selected_family_ids)
+        self.assertEqual(first.status, second.status)
+        self.assertNotIn("UNAVAILABLE_LATE_RESOURCE",
+                         second.blocking_source_requirements)
+
+    def test_protected_debt_is_visible_but_does_not_create_named_grade_priority(self):
+        from bilqis_mlx.factory.curriculum.developmental_stage import (
+            DevelopmentalLearnerState, DevelopmentalSourceCoverage,
+        )
+        from bilqis_mlx.factory.tests.curriculum.frontier.atlas_frontier_closure_fixtures import rehash
+
+        program = load_bamf_developmental_program()
+        release, base, _ = self._coverage_fixture()
+        first_snapshot = rehash(
+            base, grade_labels=("A", "B"), retained_mastery_debt=("A.DEBT",),
+            retained_debt_source_sha256="d" * 64)
+        second_snapshot = rehash(
+            base, grade_labels=("Q", "R"), retained_mastery_debt=("R.DEBT",),
+            retained_debt_source_sha256="e" * 64)
+        _, _, first_closure = self._coverage_fixture(("A", "B"))
+        _, _, second_closure = self._coverage_fixture(("Q", "R"))
+        first_closure = replace(
+            first_closure, snapshot_sha256=first_snapshot.snapshot_sha256,
+            closure_sha256="0" * 64)
+        first_closure = replace(
+            first_closure, closure_sha256=first_closure.expected_digest())
+        second_closure = replace(
+            second_closure, snapshot_sha256=second_snapshot.snapshot_sha256,
+            closure_sha256="0" * 64)
+        second_closure = replace(
+            second_closure, closure_sha256=second_closure.expected_digest())
+
+        first = program.resolve_training_stage(
+            DevelopmentalSourceCoverage(first_snapshot, first_closure),
+            DevelopmentalLearnerState(release))
+        second = program.resolve_training_stage(
+            DevelopmentalSourceCoverage(second_snapshot, second_closure),
+            DevelopmentalLearnerState(release))
+        self.assertEqual(first.selected_semantic_id, second.selected_semantic_id)
+        self.assertEqual(first.status, second.status)
+        self.assertEqual(first.retained_mastery_debt, ("A.DEBT",))
+        self.assertEqual(second.retained_mastery_debt, ("R.DEBT",))
 
     def test_numeric_scope_is_projected_from_admitted_release_parameters(self):
         from types import SimpleNamespace
