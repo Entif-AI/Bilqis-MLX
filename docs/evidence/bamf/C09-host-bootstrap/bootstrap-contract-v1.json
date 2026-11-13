@@ -1,0 +1,195 @@
+{
+  "a12_canary": {
+    "atlas_bundle_id": "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+    "atlas_source_pin_registry_sha256": "842b66ad7b19ddb333610668410820b3f5d703fa1e452d014755c2c5cc308cee",
+    "correction_generation": 0,
+    "export_artifact_digests": [
+      "1111111111111111111111111111111111111111111111111111111111111111",
+      "2222222222222222222222222222222222222222222222222222222222222222"
+    ],
+    "private_artifact_digests": [
+      "3333333333333333333333333333333333333333333333333333333333333333"
+    ],
+    "release_sha256": "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306",
+    "revocation_lineage": [
+      "5555555555555555555555555555555555555555555555555555555555555555"
+    ],
+    "revoked_artifact_digests": [
+      "4444444444444444444444444444444444444444444444444444444444444444"
+    ],
+    "rights_epoch": 0,
+    "selection_path": "bootstrap-canary-a01",
+    "source_bundle_id": "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec"
+  },
+  "canary_templates": {
+    "c07_atlas_source_approval": {
+      "approval_id": "bootstrap-c07-canary",
+      "atlas_release_sha256": "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306",
+      "audit_passed": true,
+      "authority_audit_receipt_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "operator_ids": [],
+      "prerequisite_policy_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+      "progression_policy_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+      "rights_compatible": true,
+      "rights_epoch": 0,
+      "rights_receipt_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+      "source_family_ids": ["bamf.c13.episode-binding/v1"],
+      "source_owner": "owner:bamf-source"
+    },
+    "c13_rights_correction": {
+      "dependency_key": "c13-source-rights:Z.C13_EPISODE:6666666666666666666666666666666666666666666666666666666666666666",
+      "dependency_kind": "RIGHTS",
+      "effective_time": 1,
+      "event_id": "bootstrap-c13-rights-canary",
+      "new_evidence_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+      "observed_at": 1,
+      "old_evidence_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+      "reason_code": "BOOTSTRAP_CANARY",
+      "recorded_at": 1,
+      "source_owner": "owner:c13-rights",
+      "source_receipt_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+      "source_time": 1,
+      "supersedes_event_ids": []
+    },
+    "c13_support_revalidation": {
+      "artifact_id": "capability-support:Z.C13_EPISODE",
+      "content_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "correction_event_id": "bootstrap-c13-rights-canary",
+      "correction_receipt_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "eligible": true,
+      "immediate_dependencies": [
+        {
+          "key": "c13-source-rights:Z.C13_EPISODE:6666666666666666666666666666666666666666666666666666666666666666",
+          "kind": "RIGHTS"
+        }
+      ],
+      "source_owner": "owner:bamf-source",
+      "source_receipt_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "transition": {
+        "changed": false,
+        "new_content_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "new_eligible": true,
+        "previous_content_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "previous_eligible": true
+      }
+    }
+  },
+  "canonical_json": {
+    "allow_nan": false,
+    "encoding": "utf-8",
+    "ensure_ascii": false,
+    "separators": [",", ":"],
+    "sort_keys": true
+  },
+  "cli": {
+    "entrypoint": "scripts/operations/bamf_source_authority_bootstrap.py",
+    "host-install": [
+      "--runtime-user",
+      "--package",
+      "--package-sha256",
+      "--canary-bundle",
+      "--c06-signer",
+      "--c06-signer-sha256",
+      "--receipt-out"
+    ],
+    "host-verify": [
+      "--runtime-user",
+      "--package",
+      "--package-sha256",
+      "--canary-bundle",
+      "--c06-signer",
+      "--c06-signer-sha256",
+      "--receipt-out"
+    ],
+    "operator-init": [
+      "--c06-primary",
+      "--c06-recovery",
+      "--source-owner-primary",
+      "--source-owner-recovery",
+      "--c13-rights-primary",
+      "--c13-rights-recovery",
+      "--package-primary",
+      "--package-recovery",
+      "--canary-out"
+    ],
+    "operator-verify": [
+      "--c06-primary",
+      "--c06-recovery",
+      "--source-owner-primary",
+      "--source-owner-recovery",
+      "--c13-rights-primary",
+      "--c13-rights-recovery",
+      "--package-primary",
+      "--package-recovery",
+      "--canary-out"
+    ]
+  },
+  "host_paths": {
+    "directory": "/private/etc/entif-ai/bilqis",
+    "package_pending": "/private/etc/entif-ai/bilqis/.source-authority-bootstrap-package.pending",
+    "canary_pending": "/private/etc/entif-ai/bilqis/.source-authority-canaries.pending",
+    "registry_logical": "/etc/entif-ai/bilqis/source-authority-registry.json",
+    "registry_pending": "/private/etc/entif-ai/bilqis/.source-authority-registry.pending",
+    "signer_logical": "/etc/entif-ai/bilqis/source-authority-signer.json",
+    "signer_pending": "/private/etc/entif-ai/bilqis/.source-authority-signer.pending"
+  },
+  "schemas": {
+    "external_private_key": {
+      "fields": ["schema", "owner_id", "private_key_hex"],
+      "schema": "bilqis.mlx.external-source-owner-key/v1"
+    },
+    "host_receipt": {
+      "fields": [
+        "schema",
+        "source_revision",
+        "authority_manifest_sha256",
+        "bootstrap_package_sha256",
+        "canary_bundle_sha256",
+        "registry_record",
+        "registry_semantic_digest",
+        "registry_file_sha256",
+        "owners",
+        "runtime_user",
+        "runtime_uid",
+        "runtime_gid",
+        "registry_path",
+        "signer_path",
+        "registry_stat",
+        "signer_stat",
+        "signer_acl_summary",
+        "signer_record_sha256",
+        "runtime_uid_smoke",
+        "activated_at"
+      ],
+      "schema": "bilqis.mlx.c09-host-bootstrap-receipt/v1"
+    },
+    "public_package": {
+      "fields": [
+        "schema",
+        "authority_manifest_sha256",
+        "source_revision",
+        "c06_public",
+        "source_owner_public",
+        "c13_rights_owner_public",
+        "b14_cache_public",
+        "c06_signer_record_sha256",
+        "canary_bundle_sha256"
+      ],
+      "schema": "bilqis.mlx.c09-host-bootstrap-package/v1"
+    },
+    "protected_canary_bundle": {
+      "fields": [
+        "schema",
+        "source_revision",
+        "source_owner_id",
+        "c13_rights_owner_id",
+        "c07_atlas_source_approval",
+        "a12_export_clearance",
+        "c13_rights_correction",
+        "c13_support_revalidation"
+      ],
+      "schema": "bilqis.mlx.c09-host-bootstrap-canaries/v1"
+    }
+  },
+  "schema": "bilqis.mlx.c09-host-bootstrap-contract/v1"
+}
