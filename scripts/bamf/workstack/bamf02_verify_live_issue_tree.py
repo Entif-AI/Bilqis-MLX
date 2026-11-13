@@ -16,6 +16,10 @@ def gh(path):
 def digest(text):
     return hashlib.sha256(text.encode()).hexdigest()
 
+def canonical_issue_body(text):
+    """GitHub's API may omit one terminal LF; semantic body bytes do not."""
+    return text.rstrip('\n') + '\n'
+
 def main():
     owners=json.loads((TASKS/'workstack.json').read_text())['items']
     children=json.loads((TASKS/'children/registry.json').read_text())['entries']
@@ -25,7 +29,7 @@ def main():
         key,num,sha,path=record
         body=path.read_text()
         remote=gh(f'{REPO}/issues/{num}')
-        if digest(body)!=sha or remote.get('body')!=body:
+        if digest(body)!=sha or canonical_issue_body(remote.get('body') or '')!=canonical_issue_body(body):
             return f'{key} #{num}: local/registry/live issue body mismatch'
         return None
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
@@ -39,10 +43,11 @@ def main():
         return None
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         failures += [v for v in pool.map(check_links,sorted(hierarchy.items())) if v]
-    edges={i['key']:list(i['deps'])+list(i.get('children',[])) for i in owners}
+    # Native parent/child relationships are validated above against GitHub's
+    # sub-issue API. They are hierarchy edges, not prerequisite edges, and must
+    # not participate in dependency cycle detection.
+    edges={i['key']:list(i['deps']) for i in owners}
     for c in children:edges[c['key']]=list(c['deps'])
-    for c in children:
-        if c['key'] not in edges[c['parent_key']]:edges[c['parent_key']].append(c['key'])
     done=set(); active=set()
     def visit(key):
         if key in active:failures.append(f'dependency cycle at {key}');return
