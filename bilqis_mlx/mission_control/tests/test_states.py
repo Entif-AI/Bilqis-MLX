@@ -1,5 +1,6 @@
 """Explicit degraded-state and compatibility semantics for CP02."""
 from dataclasses import FrozenInstanceError
+import math
 import unittest
 
 from bilqis_mlx.mission_control.codec import decode_record, encode_record
@@ -13,7 +14,7 @@ from bilqis_mlx.mission_control.model import (
     ValueOrigin, ValueState,
 )
 from bilqis_mlx.mission_control.operator import (
-    ActionReceiptState, OperatorActionReceipt,
+    ActionParameter, ActionReceiptState, OperatorActionReceipt,
 )
 from bilqis_mlx.mission_control.tests.samples import SAMPLES
 
@@ -70,9 +71,35 @@ class MissionControlStateTests(unittest.TestCase):
         self.assertEqual(event.position.stream_id, "run-7:candidate")
         self.assertEqual(event.position.epoch_id, "epoch-1")
         self.assertEqual(event.position.ordinal, 9)
-        self.assertEqual(event.position.cursor_sha256, "3" * 64)
         self.assertEqual(event.position.previous_cursor_sha256, "4" * 64)
         self.assertNotEqual(event.event_id, event.position.cursor_sha256)
+
+    def test_event_cursor_cannot_be_reused_for_a_different_position(self):
+        event = next(sample for sample in SAMPLES if type(sample) is EventEnvelope)
+        forged_position = type(event.position)(
+            event.position.stream_id,
+            event.position.epoch_id,
+            event.position.ordinal + 1,
+            event.position.cursor_sha256,
+            event.position.previous_cursor_sha256,
+        )
+        with self.assertRaises(MissionControlContractError):
+            EventEnvelope(
+                event.meta,
+                event.event_id,
+                forged_position,
+                event.event_family,
+                event.payload_schema_version,
+                event.payload_record_id,
+                event.payload_sha256,
+                event.payload_ref,
+            )
+
+    def test_action_parameters_reject_non_finite_float_values(self):
+        for value in (math.nan, math.inf, -math.inf):
+            with self.subTest(value=value):
+                with self.assertRaises(MissionControlContractError):
+                    ActionParameter("weight", value)
 
     def test_unknown_and_missing_schema_errors_are_deterministic(self):
         for payload, code in (

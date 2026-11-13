@@ -3,8 +3,38 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+import hashlib
+import json
 
 from .model import RecordMeta, WireRecord, is_name, is_names, is_sha256, is_time, require
+
+
+def event_cursor_sha256(
+    *,
+    stream_id: str,
+    epoch_id: str,
+    ordinal: int,
+    event_id: str,
+    payload_schema_version: str,
+    payload_record_id: str,
+    payload_sha256: str,
+) -> str:
+    """Bind replay position to the exact event identity and payload witness."""
+    material = json.dumps(
+        {
+            "epoch_id": epoch_id,
+            "event_id": event_id,
+            "ordinal": ordinal,
+            "payload_record_id": payload_record_id,
+            "payload_schema_version": payload_schema_version,
+            "payload_sha256": payload_sha256,
+            "stream_id": stream_id,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return hashlib.sha256(material).hexdigest()
 
 
 class UnavailableReason(StrEnum):
@@ -113,3 +143,15 @@ class EventEnvelope(WireRecord):
             self.event_family, self.payload_schema_version,
             self.payload_record_id, self.payload_ref)), "EVENT_PAYLOAD_REF")
         require(is_sha256(self.payload_sha256), "EVENT_PAYLOAD_DIGEST")
+        require(
+            self.position.cursor_sha256 == event_cursor_sha256(
+                stream_id=self.position.stream_id,
+                epoch_id=self.position.epoch_id,
+                ordinal=self.position.ordinal,
+                event_id=self.event_id,
+                payload_schema_version=self.payload_schema_version,
+                payload_record_id=self.payload_record_id,
+                payload_sha256=self.payload_sha256,
+            ),
+            "EVENT_CURSOR_BINDING",
+        )

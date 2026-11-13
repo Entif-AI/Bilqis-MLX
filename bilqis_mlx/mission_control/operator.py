@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+import math
 
 from .model import RecordMeta, Scalar, WireRecord, is_name, is_time, require
 
@@ -25,6 +26,8 @@ class ActionParameter:
         require(is_name(self.key), "ACTION_PARAMETER_KEY")
         require(self.value is None or type(self.value) in (str, int, float, bool),
                 "ACTION_PARAMETER_VALUE")
+        if type(self.value) is float:
+            require(math.isfinite(self.value), "ACTION_PARAMETER_FINITE")
 
 
 @dataclass(frozen=True)

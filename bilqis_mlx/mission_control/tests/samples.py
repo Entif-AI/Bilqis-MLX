@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from bilqis_mlx.mission_control.envelopes import (
     ErrorEnvelope, EventEnvelope, PartialEnvelope, StaleEnvelope,
-    StreamPosition, UnavailableEnvelope, UnavailableReason,
+    StreamPosition, UnavailableEnvelope, UnavailableReason, event_cursor_sha256,
 )
 from bilqis_mlx.mission_control.events import (
     CandidateDecision, CandidateOutcome, CorrectionEvent, FrameCompileReceipt,
@@ -85,6 +85,28 @@ SAMPLES = (
     StaleEnvelope(meta("stale", coverage=CoverageState.PARTIAL), "operator-view", 100, 118),
     PartialEnvelope(meta("partial", coverage=CoverageState.PARTIAL), "school",
                     ("mastered_count",)),
-    EventEnvelope(meta("event"), "event-9", StreamPosition("run-7:candidate", "epoch-1", 9, D3, D4),
-                  "candidate", CandidateDecision.SCHEMA, "decision", D1, "evidence:event-9"),
+    EventEnvelope(
+        meta("event"),
+        "event-9",
+        StreamPosition(
+            "run-7:candidate",
+            "epoch-1",
+            9,
+            event_cursor_sha256(
+                stream_id="run-7:candidate",
+                epoch_id="epoch-1",
+                ordinal=9,
+                event_id="event-9",
+                payload_schema_version=CandidateDecision.SCHEMA,
+                payload_record_id="decision",
+                payload_sha256=D1,
+            ),
+            D4,
+        ),
+        "candidate",
+        CandidateDecision.SCHEMA,
+        "decision",
+        D1,
+        "evidence:event-9",
+    ),
 )
