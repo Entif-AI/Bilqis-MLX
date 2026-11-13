@@ -114,9 +114,24 @@ class ControlPlaneService:
             socket_path=str(self.socket_path),
             run_dir=str(self.run_dir),
         )
-        self._server = _ThreadedUnixServer(str(self.socket_path), _RequestHandler)
+        server = _ThreadedUnixServer(
+            str(self.socket_path), _RequestHandler, bind_and_activate=False)
+        try:
+            server.server_bind()
+            os.chmod(self.socket_path, 0o600)
+            server.server_activate()
+        except Exception:
+            server.server_close()
+            try:
+                mode = self.socket_path.lstat().st_mode
+            except FileNotFoundError:
+                pass
+            else:
+                if stat.S_ISSOCK(mode):
+                    self.socket_path.unlink()
+            raise
+        self._server = server
         self._server.control_plane = self
-        os.chmod(self.socket_path, 0o600)
 
     def _learner(self):
         return discover_learner(self.run_dir)

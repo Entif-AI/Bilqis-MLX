@@ -108,6 +108,25 @@ class ControlPlaneTransportTests(unittest.TestCase):
                 caught.exception.context["reason"],
                 "CONTROL_PLANE_SOCKET_PATH_OCCUPIED")
 
+    def test_second_service_cannot_steal_an_active_local_socket(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            socket_path = root / "cp.sock"
+            first = ControlPlaneService(root / "missing-run", socket_path)
+            thread = _start(first)
+            try:
+                with self.assertRaises(BilqisError) as caught:
+                    ControlPlaneService(root / "missing-run", socket_path)
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "CONTROL_PLANE_SOCKET_ALREADY_ACTIVE")
+                with ControlPlaneClient(socket_path) as client:
+                    self.assertEqual(
+                        client.request("liveness")["service_state"], "healthy")
+            finally:
+                first.shutdown()
+                thread.join(2)
+
     def test_disconnected_client_failure_uses_typed_error_control_plane(self):
         with TemporaryDirectory() as temporary:
             client = ControlPlaneClient(Path(temporary) / "missing.sock")
