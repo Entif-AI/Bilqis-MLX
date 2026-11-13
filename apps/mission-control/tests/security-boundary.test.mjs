@@ -21,8 +21,11 @@ test("GUI01 startup uses the GUI20 window, IPC and custom-protocol boundary", ()
   assert.match(main, /registerMissionControlProtocol\(/);
   assert.match(main, /createMissionControlWindow\(/);
   assert.match(main, /registerMissionControlIpc\(/);
+  assert.match(main, /AcceptedControlPlaneAdapter/);
+  assert.match(main, /createAcceptedValidators/);
   assert.doesNotMatch(main, /loadFile\(/);
   assert.doesNotMatch(main, /bamf:shell-bootstrap/);
+  assert.doesNotMatch(main, /createGui01FixtureAdapter|GUI01_FIXTURE_VALIDATORS/);
 
   const options = createSecureWindowOptions("/fixture/preload.cjs");
   assert.equal(securityDiagnostic(options).passed, true);

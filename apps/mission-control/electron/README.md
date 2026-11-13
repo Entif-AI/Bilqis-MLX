@@ -21,22 +21,30 @@ the following main-process methods:
 - `receipt(session, stableRef)`
 - `subscribe(session, callback) -> unsubscribe`
 
-The `session` value is opaque and never crosses into renderer state. CP01 should
-implement the transport/version/session handshake behind this adapter. CP02 should
-define and validate the request, stable-ref, event, and response records passed
-through the typed methods. GUI20 intentionally does not define a competing CP02
-grammar. `ControlPlaneBridge` requires injected CP02 validators for request/event
-records and applies only bounded-JSON plus credential-leak guards itself.
+The `session` value is opaque and never crosses into renderer state. The accepted
+CP01 `ControlPlaneClient` is consumed through a private Python stdio broker owned by
+Electron main. The broker emits only a sanitized service/learner health record; CP01
+socket path, run path, service identity and session identity remain behind that
+boundary. Electron never invokes a shell: the broker is started with fixed argv and
+`shell: false`.
+
+The fixture-backed GUI01/GUI02 shell consumes the accepted canonical CP02
+`OperatorView` fixture and the merged cross-runtime `assertOperatorView` consumer.
+GUI20 therefore does not define a competing CP02 record grammar. CP01 explicitly
+does not transport CP02 snapshots/actions/events yet, so command, dry-run, receipt
+and event capabilities fail closed rather than inventing unsupported service
+semantics. The snapshot capability is restricted to the accepted `OperatorView`
+fixture until a later service owner supplies a real CP02 transport surface.
 
 `createMissionControlWindow` forces `contextIsolation`, sandboxing, no Node
 integration, no webviews, and normal web security even when caller options try to
 weaken them. Production renderer loading is pinned to
 `bamf-mc://app/index.html`; `file:`, `http:`, `https:`, `data:` and `javascript:`
-documents are never privileged renderer locations. GUI01 must register the
-`bamf-mc` scheme before Electron readiness and serve only its packaged renderer
-assets from that origin. The scheme is registered as standard/secure without a CSP
-bypass. New windows, external navigation, webview attachment, and renderer
-permission requests are denied.
+documents are never privileged renderer locations. The real Mission Control entry
+point registers the `bamf-mc` scheme before Electron readiness and serves only the
+checked-in GUI01/GUI02 asset allowlist from that origin. The scheme is registered as
+standard/secure without a CSP bypass. New windows, external navigation, webview
+attachment, and renderer permission requests are denied.
 
 IPC sender trust binds all three identities: the exact BrowserWindow WebContents,
 its exact top frame, and the `bamf-mc://app` origin/document. Service exceptions
@@ -56,9 +64,9 @@ Run the bounded security suite with:
 npm run mission-control:security:test
 ```
 
-The suite is Node-only. It does not launch Electron, touch the learner, read a run
-directory, or require CP01/CP02 to be present. Final GUI20 integration must still
-consume the accepted CP01 and CP02 implementations and GUI01's packaged renderer
-protocol handler before the issue closes. The canonical leaf and premerge commands
-and the hosted portable-core workflow run this suite so CJS-only security changes
-cannot bypass repository gates.
+The suite does not launch Electron or a learner. It does exercise a disposable CP01
+service over its real Unix socket, the Node-to-Python broker, the accepted CP01
+client, the CP02 `OperatorView` consumer, the actual sandboxed preload source and
+the GUI01/GUI02 renderer asset protocol. The canonical leaf/premerge commands and
+the hosted portable-core workflow run the Mission Control suites so CJS-only
+security changes cannot bypass repository gates.

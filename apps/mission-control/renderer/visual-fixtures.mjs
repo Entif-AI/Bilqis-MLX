@@ -1,5 +1,6 @@
 export const VISUAL_FIXTURES = Object.freeze({
   live: { mode: "LIVE", freshness: "FRESH", state: "healthy", label: "Live healthy" },
+  unknown: { mode: "LIVE", freshness: "UNKNOWN", state: "unknown", label: "Freshness unknown" },
   historical: { mode: "HISTORICAL", freshness: "FRESH", state: "historical", label: "Historical / as-of" },
   stale: { mode: "LIVE", freshness: "STALE", state: "stale", label: "Stale connection" },
   denied: { mode: "LIVE", freshness: "FRESH", state: "denied", label: "Denied operation" },

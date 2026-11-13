@@ -5,6 +5,7 @@ import {
   navigate,
   openSelectionOwner,
   shellPosture,
+  withRoute,
 } from "./shell-state.mjs";
 import { buildDeepLink, parseDeepLink } from "./deep-link.mjs";
 import { renderComponentCatalog } from "./component-catalog.mjs";
@@ -32,6 +33,15 @@ const demoObjects = [
 let state;
 let displaySettings;
 
+function connectionFreshness(connectionState) {
+  if (connectionState === "healthy") return "FRESH";
+  if (connectionState === "stale") return "STALE";
+  if ([
+    "disconnected", "service-restarting", "incompatible-version", "unauthorized",
+  ].includes(connectionState)) return "DISCONNECTED";
+  return "UNKNOWN";
+}
+
 function setHash() {
   const next = buildDeepLink(state);
   if (window.location.hash !== next) history.replaceState(null, "", next);
@@ -43,7 +53,7 @@ function renderContext() {
   document.querySelector("#mode-badge").textContent = context.mode;
   document.querySelector("#run-id").textContent = context.runId;
   document.querySelector("#generation-id").textContent =
-    `Generation ${context.generation} · checkpoint ${context.checkpoint}`;
+    `Generation ${context.generation} · manifest ${context.generationManifest}`;
   document.querySelector("#freshness").textContent = context.freshness;
   const facts = [
     ["Topology", context.topologyId],
@@ -53,6 +63,7 @@ function renderContext() {
     ["Lease", context.admissionLease],
     ["Frontier", context.correctionFrontier],
     ["Resources", context.resourceHealth],
+    ["Coverage", context.coverage],
   ];
   document.querySelector("#context-facts").innerHTML = facts
     .map(([label, value]) => `<span><small>${label}</small><strong>${value}</strong></span>`)
@@ -113,14 +124,21 @@ function render() {
 }
 
 async function bootstrap() {
-  await window.bamfMissionControl.connect();
-  const bootstrapState = await window.bamfMissionControl.querySnapshot({
-    schemaVersion: "bamf.gui01.bootstrap-query.fixture/v1",
-    objectRef: "shell-bootstrap",
+  const connection = await window.bamfMissionControl.connect();
+  const operatorView = await window.bamfMissionControl.querySnapshot({
+    schemaVersion: "bamf.gui20.operator-view-query/v1",
+    schema: "bilqis.bamf.mission-control.operator-view/v1",
   });
   displaySettings = loadDisplaySettings(window.localStorage);
   applyDisplaySettings(document.documentElement, displaySettings);
-  state = createShellState(bootstrapState.context, parseDeepLink(window.location.hash));
+  state = createShellState(operatorView, parseDeepLink(window.location.hash));
+  state = {
+    ...state,
+    context: Object.freeze({
+      ...state.context,
+      freshness: connectionFreshness(connection.state),
+    }),
+  };
   document.querySelector("#inspector-close").addEventListener("click", () => {
     state = inspect(state, null);
     render();
@@ -143,7 +161,7 @@ async function bootstrap() {
   });
   window.addEventListener("hashchange", () => {
     const route = parseDeepLink(window.location.hash);
-    state = createShellState(state.context, route);
+    state = withRoute(state, route);
     render();
   });
   render();

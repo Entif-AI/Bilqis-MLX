@@ -3,11 +3,11 @@
 const path = require("node:path");
 const { app, BrowserWindow, ipcMain, net, protocol } = require("electron");
 
+const { AcceptedControlPlaneAdapter } = require(
+  "./electron/accepted-control-plane-adapter.cjs",
+);
+const { createAcceptedValidators } = require("./electron/accepted-contracts.cjs");
 const { ControlPlaneBridge } = require("./electron/control-plane-bridge.cjs");
-const {
-  GUI01_FIXTURE_VALIDATORS,
-  createGui01FixtureAdapter,
-} = require("./electron/gui01-fixture.cjs");
 const { registerMissionControlIpc } = require("./electron/main-ipc.cjs");
 const { registerRendererSchemePrivileges } = require("./electron/renderer-location.cjs");
 const { registerMissionControlProtocol } = require("./electron/renderer-protocol.cjs");
@@ -15,9 +15,13 @@ const { createMissionControlWindow } = require("./electron/window-security.cjs")
 
 registerRendererSchemePrivileges(protocol);
 
-let disposeIpc = null;
-
-function createWindow() {
+async function createWindow() {
+  const { assertOperatorView } = await import("./renderer/shell-state.mjs");
+  const adapter = new AcceptedControlPlaneAdapter();
+  const bridge = new ControlPlaneBridge(
+    adapter,
+    createAcceptedValidators(assertOperatorView),
+  );
   const { window } = createMissionControlWindow({
     BrowserWindow,
     preloadPath: path.join(__dirname, "electron", "preload.cjs"),
@@ -28,32 +32,29 @@ function createWindow() {
       minHeight: 620,
     },
   });
-  const bridge = new ControlPlaneBridge(
-    createGui01FixtureAdapter(),
-    GUI01_FIXTURE_VALIDATORS,
-  );
-  disposeIpc = registerMissionControlIpc({
+  const disposeIpc = registerMissionControlIpc({
     ipcMain,
     bridge,
     trustedWebContents: window.webContents,
   });
   window.once("closed", () => {
-    disposeIpc?.();
-    disposeIpc = null;
-    void bridge.disconnect();
+    disposeIpc();
+    void bridge.disconnect().finally(() => adapter.close());
   });
   return window;
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   registerMissionControlProtocol({
     protocol,
     net,
     assetRoot: path.join(__dirname, "renderer"),
   });
-  createWindow();
+  await createWindow();
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      void createWindow();
+    }
   });
 });
 
