@@ -76,7 +76,7 @@ class FinalAuthorityNormalizationTests(unittest.TestCase):
 
         split_source = deepcopy(entry)
         original_receipt = split_source['dependency_evidence']['external_receipts'][0]
-        forged_source_id = original_receipt['source_id'] + '.forged'
+        forged_source_id = key + '.pr-9999'
         forged_pr = json.dumps({
             'number': original_receipt['number'],
             'state': 'MERGED',
