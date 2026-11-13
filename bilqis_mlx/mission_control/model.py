@@ -54,7 +54,7 @@ def is_time(value: object) -> bool:
 def is_names(value: object, *, allow_empty: bool = True) -> bool:
     return (type(value) is tuple and (allow_empty or bool(value))
             and all(is_name(item) for item in value)
-            and value == tuple(sorted(set(value))))
+            and len(value) == len(set(value)))
 
 
 class CoverageState(StrEnum):

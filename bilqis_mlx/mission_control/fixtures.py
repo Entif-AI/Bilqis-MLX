@@ -1,7 +1,6 @@
-"""Shared terminal/GUI fixture proving both clients consume one record family."""
+"""Representative CP02 fixture materialized for cross-language consumers."""
 from __future__ import annotations
 
-from .codec import encode_record
 from .model import AuthorityClass, CoverageState, RecordMeta, RunRef
 from .snapshots import OperatorView
 
@@ -42,22 +41,3 @@ def representative_operator_view() -> OperatorView:
         active_capability_id="B.EXAMPLE",
         related_record_ids=("school:fixture-run:7",),
     )
-
-
-def terminal_status(view: OperatorView) -> tuple[str, ...]:
-    """Tiny terminal consumer, deliberately not a second status model."""
-    run = view.meta.run
-    if type(view) is not OperatorView or run is None:
-        raise TypeError
-    return (
-        f"run={run.run_id} generation={run.generation}",
-        f"state={view.learner_state} stage={view.stage}",
-        f"record={view.meta.record_id}",
-    )
-
-
-def gui_status_fixture(view: OperatorView) -> dict:
-    """GUI-facing fixture payload; layout remains GUI01+ ownership."""
-    if type(view) is not OperatorView:
-        raise TypeError
-    return {"kind": "operator-status", "record": encode_record(view)}

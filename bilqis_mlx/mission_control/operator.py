@@ -46,10 +46,10 @@ class OperatorActionRequest(WireRecord):
         require(all(is_name(item) for item in (
             self.request_id, self.idempotency_key, self.action)), "ACTION_REQUEST_ID")
         require(type(self.parameters) is tuple
-                and all(type(item) is ActionParameter for item in self.parameters)
-                and self.parameters == tuple(sorted(self.parameters))
-                and len({item.key for item in self.parameters}) == len(self.parameters),
+                and all(type(item) is ActionParameter for item in self.parameters),
                 "ACTION_PARAMETERS")
+        keys = tuple(item.key for item in self.parameters)
+        require(len(keys) == len(set(keys)), "ACTION_PARAMETER_KEYS")
         require(type(self.dry_run) is bool and is_time(self.requested_at), "ACTION_REQUEST_STATE")
 
 

@@ -24,20 +24,28 @@ export const INSPECTOR_OWNERS = Object.freeze({
   warning: "resources",
 });
 
+export const OPERATOR_VIEW_SCHEMA = "bilqis.bamf.mission-control.operator-view/v1";
+
 export function normalizeContext(raw = {}) {
+  if (raw.schema_version !== OPERATOR_VIEW_SCHEMA || !raw.meta?.run) {
+    throw new TypeError("MISSION_CONTROL_OPERATOR_VIEW_SCHEMA_UNSUPPORTED");
+  }
+  const run = raw.meta.run;
   return Object.freeze({
-    runId: raw.runId ?? "UNKNOWN_RUN",
-    mode: raw.mode === "HISTORICAL" ? "HISTORICAL" : "LIVE",
-    generation: raw.generation ?? "UNKNOWN",
-    checkpoint: raw.checkpoint ?? "UNKNOWN",
-    topologyId: raw.topologyId ?? "UNKNOWN",
-    factoryRelease: raw.factoryRelease ?? "UNKNOWN",
-    semanticRelease: raw.semanticRelease ?? "UNKNOWN",
-    optimizerStep: raw.optimizerStep ?? "UNKNOWN",
-    admissionLease: raw.admissionLease ?? "UNKNOWN",
-    correctionFrontier: raw.correctionFrontier ?? "UNKNOWN",
-    freshness: raw.freshness ?? "UNKNOWN",
-    resourceHealth: raw.resourceHealth ?? "UNKNOWN",
+    runId: run.run_id,
+    mode: "LIVE",
+    generation: run.generation,
+    checkpoint: run.generation_manifest_sha256,
+    topologyId: run.topology_sha256,
+    factoryRelease: run.factory_release_sha256,
+    semanticRelease: run.semantic_release_sha256,
+    optimizerStep: "UNKNOWN",
+    admissionLease: "UNKNOWN",
+    correctionFrontier: "UNKNOWN",
+    freshness: raw.meta.coverage === "COMPLETE" ? "FRESH" : "STALE",
+    resourceHealth: "UNKNOWN",
+    schemaVersion: raw.schema_version,
+    recordId: raw.meta.record_id,
   });
 }
 

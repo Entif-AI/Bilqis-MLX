@@ -25,6 +25,10 @@ class MissionControlSchemaTests(unittest.TestCase):
                     record_type.SCHEMA,
                 )
                 self.assertFalse(schema["additionalProperties"])
+                self.assertEqual(
+                    schema["x-bilqis-runtime-validator"],
+                    "bilqis_mlx.mission_control.codec.decode_record",
+                )
                 json.dumps(schema, sort_keys=True)
 
     def test_schema_required_keys_match_literal_wire_records(self):
@@ -43,6 +47,32 @@ class MissionControlSchemaTests(unittest.TestCase):
             + "\n"
         ).encode("utf-8")
         self.assertEqual(path.read_bytes(), expected)
+
+    def test_schema_projects_digest_and_degraded_state_constraints(self):
+        bundle = schema_bundle()["records"]
+        atlas = bundle["bilqis.bamf.mission-control.semantic-atlas-snapshot/v1"]
+        self.assertEqual(
+            atlas["properties"]["atlas_bundle_id"]["pattern"],
+            "^[0-9a-f]{64}$",
+        )
+        unavailable = bundle["bilqis.bamf.mission-control.unavailable-envelope/v1"]
+        self.assertEqual(
+            unavailable["properties"]["meta"]["properties"]["coverage"]["const"],
+            "UNKNOWN",
+        )
+        partial = bundle["bilqis.bamf.mission-control.partial-envelope/v1"]
+        self.assertEqual(
+            partial["properties"]["meta"]["properties"]["coverage"]["const"],
+            "PARTIAL",
+        )
+        run_context = bundle["bilqis.bamf.mission-control.run-context/v1"]
+        self.assertEqual(run_context["properties"]["optimizer_step"]["minimum"], 0)
+        receipt = bundle["bilqis.bamf.mission-control.operator-action-receipt/v1"]
+        self.assertIn("COMPLETED requires postcondition_ref", receipt[
+            "x-bilqis-runtime-invariants"
+        ][0])
+        request = bundle["bilqis.bamf.mission-control.operator-action-request/v1"]
+        self.assertEqual(request["properties"]["parameters"]["x-bilqis-unique-by"], "key")
 
 
 if __name__ == "__main__":

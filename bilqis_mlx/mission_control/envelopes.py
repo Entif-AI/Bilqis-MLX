@@ -6,7 +6,10 @@ from enum import StrEnum
 import hashlib
 import json
 
-from .model import RecordMeta, WireRecord, is_name, is_names, is_sha256, is_time, require
+from .model import (
+    CoverageState, RecordMeta, WireRecord, is_name, is_names, is_sha256,
+    is_time, require,
+)
 
 
 def event_cursor_sha256(
@@ -18,6 +21,7 @@ def event_cursor_sha256(
     payload_schema_version: str,
     payload_record_id: str,
     payload_sha256: str,
+    previous_cursor_sha256: str | None,
 ) -> str:
     """Bind replay position to the exact event identity and payload witness."""
     material = json.dumps(
@@ -28,6 +32,7 @@ def event_cursor_sha256(
             "payload_record_id": payload_record_id,
             "payload_schema_version": payload_schema_version,
             "payload_sha256": payload_sha256,
+            "previous_cursor_sha256": previous_cursor_sha256,
             "stream_id": stream_id,
         },
         sort_keys=True,
@@ -73,8 +78,10 @@ class UnavailableEnvelope(WireRecord):
         require(is_name(self.resource) and type(self.reason) is UnavailableReason,
                 "UNAVAILABLE_ENVELOPE")
         require(self.detail_ref is None or is_name(self.detail_ref), "UNAVAILABLE_DETAIL")
+        require(self.meta.coverage is CoverageState.UNKNOWN, "UNAVAILABLE_COVERAGE")
         if self.reason is UnavailableReason.DENIED:
-            require(not self.meta.source_refs and not self.meta.evidence_refs
+            require(self.meta.run is None
+                    and not self.meta.source_refs and not self.meta.evidence_refs
                     and not self.meta.receipt_refs, "DENIED_PROVENANCE_LEAK")
 
 
@@ -91,6 +98,7 @@ class StaleEnvelope(WireRecord):
         require(is_name(self.stale_record_id), "STALE_RECORD")
         require(is_time(self.stale_as_of) and is_time(self.requested_as_of)
                 and self.stale_as_of < self.requested_as_of, "STALE_TIME")
+        require(self.meta.as_of == self.stale_as_of, "STALE_AS_OF")
 
 
 @dataclass(frozen=True)
@@ -104,6 +112,7 @@ class PartialEnvelope(WireRecord):
         super().__post_init__()
         require(is_name(self.partial_record_id), "PARTIAL_RECORD")
         require(is_names(self.missing_fields, allow_empty=False), "PARTIAL_FIELDS")
+        require(self.meta.coverage is CoverageState.PARTIAL, "PARTIAL_COVERAGE")
 
 
 @dataclass(frozen=True)
@@ -121,6 +130,10 @@ class StreamPosition:
         require(self.previous_cursor_sha256 is None
                 or is_sha256(self.previous_cursor_sha256), "PREVIOUS_CURSOR")
         require(self.previous_cursor_sha256 != self.cursor_sha256, "CURSOR_SELF_LINK")
+        if self.ordinal == 0:
+            require(self.previous_cursor_sha256 is None, "STREAM_GENESIS_PREDECESSOR")
+        else:
+            require(self.previous_cursor_sha256 is not None, "STREAM_PREDECESSOR_REQUIRED")
 
 
 @dataclass(frozen=True)
@@ -152,6 +165,7 @@ class EventEnvelope(WireRecord):
                 payload_schema_version=self.payload_schema_version,
                 payload_record_id=self.payload_record_id,
                 payload_sha256=self.payload_sha256,
+                previous_cursor_sha256=self.position.previous_cursor_sha256,
             ),
             "EVENT_CURSOR_BINDING",
         )

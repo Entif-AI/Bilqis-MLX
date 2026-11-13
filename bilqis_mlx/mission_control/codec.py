@@ -127,10 +127,25 @@ def decode_record(payload: Mapping) -> WireRecord:
 
 
 def decode_json(payload: bytes | str) -> WireRecord:
+    def reject_constant(_value: str):
+        _fail(ContractErrorCode.PAYLOAD_INVALID, "json-constant")
+
+    def unique_object(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                _fail(ContractErrorCode.PAYLOAD_INVALID, "duplicate-key")
+            result[key] = value
+        return result
+
     try:
         if isinstance(payload, bytes):
             payload = payload.decode("utf-8")
-        parsed = json.loads(payload)
+        parsed = json.loads(
+            payload,
+            object_pairs_hook=unique_object,
+            parse_constant=reject_constant,
+        )
     except (UnicodeDecodeError, json.JSONDecodeError, TypeError):
         _fail(ContractErrorCode.PAYLOAD_INVALID, "json")
     return decode_record(parsed)

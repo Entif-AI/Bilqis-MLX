@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   DESTINATIONS,
   createShellState,
@@ -10,14 +11,9 @@ import {
 } from "../renderer/shell-state.mjs";
 import { buildDeepLink, parseDeepLink } from "../renderer/deep-link.mjs";
 
-const context = {
-  runId: "run-1",
-  mode: "LIVE",
-  generation: 42,
-  checkpoint: "cp-42",
-  topologyId: "topology-1",
-  freshness: "FRESH",
-};
+const context = JSON.parse(
+  readFileSync(new URL("../fixtures/operator-view-v1.json", import.meta.url), "utf8"),
+);
 
 test("all required GUI01 destinations remain stable and reachable", () => {
   assert.deepEqual(
@@ -31,8 +27,9 @@ test("switching views preserves exact inspected context", () => {
   const next = navigate(initial, "atlas");
   assert.equal(next.view, "atlas");
   assert.equal(next.context, initial.context);
-  assert.equal(next.context.generation, 42);
-  assert.equal(next.context.runId, "run-1");
+  assert.equal(next.context.generation, 7);
+  assert.equal(next.context.runId, "fixture-run");
+  assert.equal(next.context.schemaVersion, "bilqis.bamf.mission-control.operator-view/v1");
 });
 
 test("deep links restore view and selected object without encoding run context", () => {
@@ -43,14 +40,22 @@ test("deep links restore view and selected object without encoding run context",
   const hash = buildDeepLink(initial);
   assert.equal(hash, "#/view/evidence?kind=evidence&id=receipt%3A123");
   const restored = createShellState(context, parseDeepLink(hash));
-  assert.equal(restored.context.runId, "run-1");
+  assert.equal(restored.context.runId, "fixture-run");
   assert.deepEqual(restored.selected, { kind: "evidence", id: "receipt:123" });
 });
 
 test("historical and stale states are shell-global postures", () => {
-  assert.equal(shellPosture(createShellState({ ...context, mode: "HISTORICAL" }).context), "historical");
-  assert.equal(shellPosture(createShellState({ ...context, freshness: "STALE" }).context), "stale");
-  assert.equal(shellPosture(createShellState(context).context), "live");
+  const normalized = createShellState(context).context;
+  assert.equal(shellPosture({ ...normalized, mode: "HISTORICAL" }), "historical");
+  assert.equal(shellPosture({ ...normalized, freshness: "STALE" }), "stale");
+  assert.equal(shellPosture(normalized), "live");
+});
+
+test("unversioned bootstrap context fails closed", () => {
+  assert.throws(
+    () => createShellState({ runId: "legacy" }),
+    /MISSION_CONTROL_OPERATOR_VIEW_SCHEMA_UNSUPPORTED/,
+  );
 });
 
 test("inspector routes at least five stable object classes to owning views", () => {

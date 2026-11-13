@@ -32,9 +32,9 @@ RUN = RunRef("run-7", D4, 7, D1, D2, D2, D3, D4)
 
 
 def meta(name: str, *, run=RUN, authority=AuthorityClass.DERIVED,
-         coverage=CoverageState.COMPLETE) -> RecordMeta:
+         coverage=CoverageState.COMPLETE, as_of=118) -> RecordMeta:
     return RecordMeta(
-        record_id=name, run=run, materialized_at=120, observed_at=118, as_of=118,
+        record_id=name, run=run, materialized_at=120, observed_at=118, as_of=as_of,
         coverage=coverage, authority=authority,
         source_refs=("source:a",), evidence_refs=("evidence:a",),
         receipt_refs=("receipt:a",),
@@ -57,7 +57,7 @@ SAMPLES = (
                     "COMPLETED", 100, 110),
     CandidateDecision(meta("decision"), "candidate-1", "B.EXAMPLE",
                       CandidateOutcome.ACCEPTED, "SOURCE_GOLD_PASS"),
-    SemanticAtlasSnapshot(meta("atlas"), "atlas-bundle", D1, "source-bundle",
+    SemanticAtlasSnapshot(meta("atlas"), D2, D1, D3,
                           value(30), value(40), value(10)),
     FrameCompileReceipt(meta("frame"), "frame-1", D1, D2, False, 2),
     NeuralRuntimeSample(meta("runtime"), 42, value(12.5, "ms"),
@@ -82,7 +82,8 @@ SAMPLES = (
     ErrorEnvelope(meta("error", run=None), "RUN_NOT_FOUND", "run unavailable", None),
     UnavailableEnvelope(meta("unavailable", run=None, coverage=CoverageState.UNKNOWN),
                         "run:missing", UnavailableReason.MISSING, None),
-    StaleEnvelope(meta("stale", coverage=CoverageState.PARTIAL), "operator-view", 100, 118),
+    StaleEnvelope(meta("stale", coverage=CoverageState.PARTIAL, as_of=100),
+                  "operator-view", 100, 118),
     PartialEnvelope(meta("partial", coverage=CoverageState.PARTIAL), "school",
                     ("mastered_count",)),
     EventEnvelope(
@@ -100,6 +101,7 @@ SAMPLES = (
                 payload_schema_version=CandidateDecision.SCHEMA,
                 payload_record_id="decision",
                 payload_sha256=D1,
+                previous_cursor_sha256=D4,
             ),
             D4,
         ),

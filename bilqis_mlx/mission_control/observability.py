@@ -19,7 +19,8 @@ class SemanticAtlasSnapshot(WireRecord):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        require(is_name(self.atlas_bundle_id) and is_name(self.source_bundle_id), "ATLAS_ID")
+        require(is_sha256(self.atlas_bundle_id)
+                and is_sha256(self.source_bundle_id), "ATLAS_ID")
         require(is_sha256(self.atlas_release_sha256), "ATLAS_RELEASE")
         require(all(type(item) is DataValue for item in (
             self.active_concepts, self.source_eligible, self.source_held)), "ATLAS_VALUES")
