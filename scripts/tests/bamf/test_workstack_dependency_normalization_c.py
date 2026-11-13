@@ -74,6 +74,33 @@ class FinalAuthorityNormalizationTests(unittest.TestCase):
             wrong_role, body, self.numbers, wrong_role_sources).status,
             EvidenceStatus.INVALID)
 
+        split_source = deepcopy(entry)
+        original_receipt = split_source['dependency_evidence']['external_receipts'][0]
+        forged_source_id = original_receipt['source_id'] + '.forged'
+        forged_pr = json.dumps({
+            'number': original_receipt['number'],
+            'state': 'MERGED',
+            'url': original_receipt['url'],
+            'headRefOid': 'c' * 40,
+            'mergeCommit': {'oid': 'd' * 40},
+        }, sort_keys=True).encode()
+        split_source_sources = dict(sources)
+        split_source_sources[forged_source_id] = forged_pr
+        split_source['dependency_evidence']['source_records'].append({
+            'source_id': forged_source_id,
+            'kind': 'pull_request',
+            'locator': original_receipt['url'],
+            'sha256': hashlib.sha256(forged_pr).hexdigest(),
+            'excerpt': 'd' * 40,
+        })
+        original_receipt['source_id'] = forged_source_id
+        original_receipt['head_sha'] = 'c' * 40
+        original_receipt['merge_sha'] = 'd' * 40
+        split_source_sources['reviewed-packets'] = pinned_matrix(split_source)
+        self.assertIs(check_dependency_evidence(
+            split_source, body, self.numbers, split_source_sources).status,
+            EvidenceStatus.INVALID)
+
     def test_a05_5_authority_amendment_resolves_exact_a01_a13_edges(self):
         entry = self.entry('A05.5')
         self.assertEqual(entry['deps'], ['A01', 'A13'])

@@ -2,7 +2,8 @@
 
 Issue: #347 (`BAMF-0.2 C01`)
 
-Reviewed-unified base: `009263acb78662f9933469ebf9f666722c1c7679`
+Reviewed-unified base for this final closeout candidate:
+`bd5ed28610351d37907671c6002d2fc8d20d5124`
 
 This follow-up preserves the 1 November rule: dependency edges are not guessed and
 implementation closure is not treated as complete dependency normalization. It
@@ -222,7 +223,14 @@ defines the exact child-level inbound graph as `A01,A13`. It explicitly classifi
 A03/A04 as inherited A05 parent/compiler authority, B02/B03 as downstream
 numerical consumer/proof surfaces, B11.1a/B05.4 as downstream consumers, and A05
 itself as the ownership parent rather than an edge. PR #618 remains a required
-acceptance receipt, not a graph node. The pinned amendment SHA-256 is
+implementation/acceptance receipt, not a graph node or prerequisite receipt. Its
+`external_receipts` role is exactly `implementation`; wrong-role substitution
+fails. The accepted snapshot is head
+`eac29b8be9e4e92470422570ce4fc0a96837f05e`, merge
+`a02b9ed45ead1801be6dff655866b73be0ffc8ff`, source ID
+`A05.5.pr-618`, source SHA-256
+`6cf936f2c092e318c41ce71748da3c2bfcbddf4be0863afa78e0a49341aa2991`.
+The pinned amendment SHA-256 is
 `85e237de0d9755337655d7224a9a20064c57ef2c21ddccf293d45e7bcb5774f3`.
 
 ### A08.1b.5 #557
@@ -232,16 +240,27 @@ Source-owner amendment
 defines the exact graph as `A08.1a,A08.1b.1,A08.1b.2,A08.1b.3,A08.1b.4`.
 The five source-owner obligations in the checked-in specification are classified
 as receipt-level acceptance obligations rather than additional A01/A03/A13 graph
-edges. Their accepted integration receipt is PR #657, head
-`a6bb632750e26dd6a3e73395e0d1904e1142bf74`, merge
-`351a7f69ede047b9678c095864e4ba324acc4a0e`. The pinned amendment SHA-256 is
+edges. Their accepted integration receipt is PR #657 with `external_receipts`
+role exactly `implementation`; wrong-role substitution fails. The accepted
+snapshot is head `a6bb632750e26dd6a3e73395e0d1904e1142bf74`, merge
+`351a7f69ede047b9678c095864e4ba324acc4a0e`, source ID
+`A08.1b.5.pr-657`, source SHA-256
+`c43309ecd54f1516b86a89f06c355f31bde98c4171632dd6660324794ddf535e`.
+The pinned amendment SHA-256 is
 `20d67eb8750d1554e872086c3c4689e7b3103f4e5e79e642241e21f51fdffb3d`.
 
-Both parsers require the exact amendment content digest and exact accepted PR
-snapshot before resolution. Removing the amendment, relabelling/re-hashing its
-content, or removing the required receipt fails closed.
+Both special parsers are selected by exact registry entry identity before any
+generic clause grammar. For `A05.5` and `A08.1b.5`, failure of the special parser
+is terminal: there is no generic-parser fallback. Each special parser requires
+the exact amendment content digest and exact `(receipt number, source_id)`
+implementation-receipt identity above, while ordinary receipt validation checks
+the MERGED state, URL, head SHA and merge SHA from that same authenticated source
+record. Removing the amendment, relabelling/re-hashing its content, removing the
+required receipt, changing its role, or repointing it to a different same-number
+PR source fails closed.
 
 With both amendments pinned, all eight original C01 dependency-normalization holds
-are resolved. The registry may produce an executable order only if the complete
-graph remains valid under the ordinary workstack validator; no issue closure or PR
-ancestry is used as a substitute for that proof.
+are resolved. Exact-head verification reports `held_keys=[]`,
+`dependency_resolution=resolved`, and an executable order of 215 unique entries
+over the valid 172-child registry. No issue closure or PR ancestry is used as a
+substitute for that proof.

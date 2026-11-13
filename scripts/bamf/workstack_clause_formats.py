@@ -75,7 +75,7 @@ def _a05_source_binding_prerequisites(text, numbers, source_hashes, implementati
             or numbers.get('A13') != 354
             or source_hashes.get('A05.5.comment-6838106985') != '85e237de0d9755337655d7224a9a20064c57ef2c21ddccf293d45e7bcb5774f3'
             or source_hashes.get('A05.5.pr-618') != '6cf936f2c092e318c41ce71748da3c2bfcbddf4be0863afa78e0a49341aa2991'
-            or 618 not in implementation_receipts):
+            or (618, 'A05.5.pr-618') not in implementation_receipts):
         return None
     return keys, ()
 
@@ -91,7 +91,7 @@ def _a08_family_integration_prerequisites(text, numbers, source_hashes, implemen
             or tuple(numbers.get(key) for key in keys) != expected_numbers
             or source_hashes.get('A08.1b.5.comment-6838107336') != '20d67eb8750d1554e872086c3c4689e7b3103f4e5e79e642241e21f51fdffb3d'
             or source_hashes.get('A08.1b.5.pr-657') != 'c43309ecd54f1516b86a89f06c355f31bde98c4171632dd6660324794ddf535e'
-            or 657 not in implementation_receipts):
+            or (657, 'A08.1b.5.pr-657') not in implementation_receipts):
         return None
     return keys, ()
 
