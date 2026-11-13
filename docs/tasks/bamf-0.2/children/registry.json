@@ -2196,7 +2196,7 @@
       ],
       "kind": "group",
       "title": "BAMF-0.2 C07.1 | Own persisted authorization lease and atomic staged-admission interfaces",
-      "body_sha256": "eee0838d5814e272c60f55b23848f2b1a53436d3224ca3fedfebb1de39f62bed",
+      "body_sha256": "155a20846119c4ebef53e0f0079af78b8321a47f1213af08380551149980e2ed",
       "clause_span": [],
       "source_parent_sha256": "80292df2adac2aa32b26cadd4d1f5ff0c87e034dea2a7ebbd65417df75df6e74"
     },
