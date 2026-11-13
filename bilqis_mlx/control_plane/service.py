@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import math
 from pathlib import Path
 import os
 from uuid import uuid4
@@ -34,6 +35,20 @@ class ControlPlaneService:
         event_retention_limit: int = 256, event_queue_limit: int = 64,
         resource_bucket_span: int = 5, event_heartbeat_seconds: float = 0.25,
     ):
+        if (
+            type(event_retention_limit) is not int
+            or type(event_queue_limit) is not int
+            or type(resource_bucket_span) is not int
+            or min(
+                event_retention_limit,
+                event_queue_limit,
+                resource_bucket_span,
+            ) <= 0
+            or type(event_heartbeat_seconds) not in (int, float)
+            or not math.isfinite(event_heartbeat_seconds)
+            or event_heartbeat_seconds <= 0
+        ):
+            _invalid("CONTROL_PLANE_EVENT_CONFIG_INVALID")
         self.run_dir = Path(run_dir).expanduser().resolve()
         self.socket_path = Path(socket_path).expanduser().resolve()
         self._service_lock_fd = _acquire_service_lock(self.socket_path)

@@ -170,9 +170,59 @@ class ControlPlaneEventStreamTests(unittest.TestCase):
                         caught.exception.code,
                         "SCHOOL.BAMF_CONTROL_PLANE.INVALID",
                     )
+                    self.assertEqual(
+                        caught.exception.context["reason"],
+                        "CONTROL_PLANE_EVENT_CURSOR_INVALID",
+                    )
             finally:
                 service.shutdown()
                 thread.join(2)
+
+    def test_invalid_stream_config_fails_before_socket_ownership(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            socket_path = root / "cp.sock"
+            with self.assertRaises(BilqisError) as caught:
+                ControlPlaneService(
+                    root / "missing-run",
+                    socket_path,
+                    event_queue_limit=0,
+                )
+            self.assertEqual(
+                caught.exception.context["reason"],
+                "CONTROL_PLANE_EVENT_CONFIG_INVALID",
+            )
+            service = ControlPlaneService(root / "missing-run", socket_path)
+            service.server_close()
+
+    def test_reference_path_emits_families_without_inventing_payload_schema(self):
+        broker = EventStreamBroker()
+        episode = _sample(LearningEpisode)
+        emitted = []
+        for index, family in enumerate((
+            EventFamily.CANDIDATE_STARTED,
+            EventFamily.WARNING_FAILURE,
+        )):
+            emitted.append(broker.publish_reference(
+                family,
+                meta=_at(episode, f"reference:{index}", 121 + index).meta,
+                payload_schema_version=episode.schema_version,
+                payload_record_id=f"authoritative:{index}",
+                payload_sha256=str(index + 5) * 64,
+                payload_ref=f"evidence:authoritative:{index}",
+                event_id=f"event-reference-{index}",
+            ))
+        self.assertEqual(
+            [event.event_family for event in emitted],
+            [
+                EventFamily.CANDIDATE_STARTED.value,
+                EventFamily.WARNING_FAILURE.value,
+            ],
+        )
+        self.assertEqual(
+            [event.payload_record_id for event in emitted],
+            ["authoritative:0", "authoritative:1"],
+        )
 
     def test_slow_consumer_overflow_marks_gap_without_blocking_publisher(self):
         broker = EventStreamBroker(

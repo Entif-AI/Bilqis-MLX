@@ -10,7 +10,7 @@ from bilqis_mlx.mission_control.codec import decode_record
 from bilqis_mlx.mission_control.envelopes import EventEnvelope
 
 from .contracts import (
-    ControlPlaneState, HANDSHAKE_SCHEMA, HEALTH_SCHEMA, PROTOCOL_VERSION,
+    ControlPlaneState, ERROR_SCHEMA, HANDSHAKE_SCHEMA, HEALTH_SCHEMA, PROTOCOL_VERSION,
     SERVICE_IDENTITY_SCHEMA, SESSION_IDENTITY_SCHEMA,
 )
 from .event_stream import (
@@ -171,6 +171,12 @@ class ControlPlaneEventSubscription:
         if schema == EVENT_GAP_SCHEMA and accepted is False:
             self.gap = acknowledgement
             self._closed = True
+        elif schema == ERROR_SCHEMA and accepted is False:
+            reason = acknowledgement.get("reason")
+            _invalid(
+                reason if isinstance(reason, str) and reason
+                else "CONTROL_PLANE_EVENT_SUBSCRIPTION_INVALID"
+            )
         elif schema != EVENT_SUBSCRIPTION_SCHEMA or accepted is not True:
             _invalid("CONTROL_PLANE_EVENT_SUBSCRIPTION_INVALID")
 
