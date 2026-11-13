@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import hashlib
+import json
 from types import MappingProxyType
 
 from .codec import encode_record
@@ -55,18 +57,35 @@ def _record_sort_key(record: WireRecord):
     )
 
 
-def _cursor(request: QueryRequest, offset: int) -> str:
-    return f"cp03:{request.query_id}:{offset}"
+def _rows_digest(rows) -> str:
+    payload = [
+        encode_record(item) if isinstance(item, WireRecord) else item.to_record()
+        for item in rows
+    ]
+    raw = json.dumps(
+        payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
 
 
-def _offset(request: QueryRequest) -> int:
+def _cursor(request: QueryRequest, rows, offset: int) -> str:
+    return f"cp03:{request.query_id}:{_rows_digest(rows)}:{offset}"
+
+
+def _offset(request: QueryRequest, rows) -> int:
     if request.cursor is None:
         return 0
     prefix = f"cp03:{request.query_id}:"
     require(request.cursor.startswith(prefix), "QUERY_CURSOR_IDENTITY")
     suffix = request.cursor[len(prefix):]
-    require(suffix.isdigit() and len(suffix) <= 16, "QUERY_CURSOR_OFFSET")
-    offset = int(suffix)
+    parts = suffix.split(":")
+    require(
+        len(parts) == 2 and len(parts[0]) == 64
+        and all(char in "0123456789abcdef" for char in parts[0]),
+        "QUERY_CURSOR_DIGEST",
+    )
+    require(parts[0] == _rows_digest(rows), "QUERY_CURSOR_STALE")
+    require(parts[1].isdigit() and len(parts[1]) <= 16, "QUERY_CURSOR_OFFSET")
+    offset = int(parts[1])
     require(is_wire_integer(offset) and offset >= 0, "QUERY_CURSOR_OFFSET")
     return offset
 
@@ -209,11 +228,13 @@ class MissionControlQueryCatalog:
 
     def _page(self, request, records, markers, links=(), *, exact_missing=False):
         rows = links if request.family in {QueryFamily.LINKS, QueryFamily.REFERENCE} else records
-        offset = _offset(request)
+        offset = _offset(request, rows)
         require(offset <= len(rows), "QUERY_CURSOR_RANGE")
         page_rows = rows[offset:offset + request.limit]
         next_offset = offset + len(page_rows)
-        next_cursor = _cursor(request, next_offset) if next_offset < len(rows) else None
+        next_cursor = (
+            _cursor(request, rows, next_offset)
+            if next_offset < len(rows) else None)
         page_records = tuple(page_rows) if rows is records else ()
         page_links = tuple(page_rows) if rows is links else ()
         page_ids = {item.meta.record_id for item in page_records}

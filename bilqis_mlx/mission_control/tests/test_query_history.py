@@ -114,6 +114,11 @@ class MissionControlQueryHistoryTests(unittest.TestCase):
                 cursor=first.next_cursor,
             ))
 
+        changed = MissionControlQueryCatalog(capabilities[1:])
+        with self.assertRaisesRegex(ValueError, "QUERY_CURSOR_STALE"):
+            changed.query(replace(
+                first_request, cursor=first.next_cursor))
+
     def test_partial_stale_denied_unknown_and_unavailable_do_not_collapse(self):
         school = SAMPLES[2]
         partial_meta = replace(
