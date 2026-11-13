@@ -16,9 +16,13 @@ def gh(path):
 def digest(text):
     return hashlib.sha256(text.encode()).hexdigest()
 
-def canonical_issue_body(text):
-    """GitHub's API may omit one terminal LF; semantic body bytes do not."""
-    return text.rstrip('\n') + '\n'
+def issue_body_matches(local, remote):
+    """Accept equal content with at most one terminal LF of GitHub transport drift."""
+    if local.rstrip('\n') != remote.rstrip('\n'):
+        return False
+    local_lf=len(local)-len(local.rstrip('\n'))
+    remote_lf=len(remote)-len(remote.rstrip('\n'))
+    return abs(local_lf-remote_lf) <= 1
 
 def main():
     owners=json.loads((TASKS/'workstack.json').read_text())['items']
@@ -29,7 +33,7 @@ def main():
         key,num,sha,path=record
         body=path.read_text()
         remote=gh(f'{REPO}/issues/{num}')
-        if digest(body)!=sha or canonical_issue_body(remote.get('body') or '')!=canonical_issue_body(body):
+        if digest(body)!=sha or not issue_body_matches(body, remote.get('body') or ''):
             return f'{key} #{num}: local/registry/live issue body mismatch'
         return None
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
@@ -61,7 +65,7 @@ def main():
     if failures:
         for error in failures:print('FAIL:',error)
         raise SystemExit(1)
-    print(f'PASS: {len(owners)} original full issue bodies and {len(children)} child bodies match live GitHub exactly')
+    print(f'PASS: {len(owners)} original full issue bodies and {len(children)} child bodies match live GitHub content with <=1 terminal-LF transport delta')
     print(f'PASS: {len(hierarchy)} native parent-child groups and {len(edges)} DAG nodes verified')
     print('NOTE: this checks publication only; no model or trainer execution')
 
