@@ -1,6 +1,6 @@
 # BAMF-0.2 C13 integration handoff
 
-Status: **prepared on #529 exact head; final unified merge SHA pending PR #1041**.
+Status: **ready for C13.3 turn-in on merged #529 authority**.
 
 ## Release boundary
 
@@ -17,8 +17,9 @@ custody.
 
 - C13.1 #528 merged through PR #1040.
 - PR #1040 merge commit: `47e57f05574b7702a85772003c5fc892ff206a33`.
-- C13.2 #529 prepared head: `7dc5711aee26a2d2050153384622e2da4574711f`.
-- C13.2 turn-in: PR #1041, pending human merge when this receipt was prepared.
+- C13.2 #529 turned in from head: `7dc5711aee26a2d2050153384622e2da4574711f`.
+- PR #1041 merged as `b99810cbf69bf6a379e00056fdec9845dca1245d`.
+- Current reviewed unified authority after #1041: `b99810cbf69bf6a379e00056fdec9845dca1245d`.
 - C13.1 real M3 Ultra evidence created and accepted disposable generation zero
   under the current ordinary-user C09/C06 path and B13 custody.
 - The superseded long #528 probe was stopped after about 86 minutes at
@@ -81,8 +82,8 @@ resource problems after the owner starts the trainer.
 
 ## C13 completion rule
 
-After PR #1041 merges, replace the pending #529 entry above with its exact merge
-commit and current unified SHA. No additional long learner run is required.
-That readback completes #530 and the release-scoped C13 handoff. C14 #386 and
-C15 #387 may then consume C13 without waiting for BAMF-0.3 #1039.
+PR #1041 is merged and its exact merge/unified SHA is recorded above. No
+additional long learner run is required. This receipt completes the #530
+release-scoped handoff once its documentation-only PR merges. C14 #386 and C15
+#387 may then consume C13 without waiting for BAMF-0.3 #1039.
 
