@@ -928,6 +928,21 @@ and stale-evidence F15 is `REQUALIFICATION_REQUIRED`. Software delivery and late
 student full-atlas mastery are separate statuses; neither the source-attested Atlas
 release nor C15 software evidence claims neural admission or learned mastery.
 
+**C15.2 proof admission:** The conformance record uses
+`bilqis.bamf.delivery-conformance/v2`. Every requirement/fixture row carries a
+structured evidence binding for SPEC revision, direct owner ticket/commit field,
+contract path, literal fixture, independent expectation, observed result,
+runner/environment, fresh receipt, reviewer decision and source/contract/issue
+identity. `EXECUTED_PASS` is rejected when that tuple is incomplete. A changed
+source/contract/issue identity forces `REQUALIFICATION_REQUIRED`; an explicit
+failure gate takes precedence over otherwise-green evidence. Grade-label
+invariance and absence of a legacy BAV runtime namespace are named global refusal
+gates. Software cannot become `READY_FOR_OWNER_MERGE` or `DELIVERED` until all
+44 rows and both refusal gates are actually `EXECUTED_PASS`. The public-safe
+authority/dependency/privacy boundary is frozen in
+`docs/evidence/bamf/delivery/c15-2-evidence-boundary.json`; private-real evidence
+is not copied into the repository to make that proof look fuller than it is.
+
 #### [C16: #382](https://github.com/Entif-AI/Bilqis-MLX/issues/382) | Open the first durable BAMF student path before optional projection work
 
 **Depends on:** [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372), [C02: #371](https://github.com/Entif-AI/Bilqis-MLX/issues/371), [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378), [C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374).

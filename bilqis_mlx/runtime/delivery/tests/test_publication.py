@@ -4,7 +4,7 @@ import unittest
 
 from bilqis_mlx.runtime.delivery import load_manifest_record
 from bilqis_mlx.runtime.delivery.publication import (
-    published_conformance_record, published_manifest_record,
+    published_boundary_record, published_conformance_record, published_manifest_record,
 )
 
 
@@ -27,6 +27,10 @@ class DeliveryPublicationTests(unittest.TestCase):
         self.assertEqual(rows["BAMF-REQ-024"]["state"], "BLOCKED")
         self.assertEqual(rows["F15"]["state"], "REQUALIFICATION_REQUIRED")
         self.assertEqual(rows["F20"]["state"], "BLOCKED")
+        gates = {gate["gate_id"]: gate for gate in record["failure_gates"]}
+        self.assertEqual(set(gates), {
+            "GRADE_NEUTRAL_INVARIANCE", "NO_LEGACY_BAV_RUNTIME_NAMESPACE"})
+        self.assertEqual(gates["GRADE_NEUTRAL_INVARIANCE"]["state"], "CODE_PRESENT")
         self.assertEqual(record["software_delivery_status"], "IN_PROGRESS")
         self.assertEqual(record["student_mastery_status"], "NOT_CLAIMED")
 
@@ -37,6 +41,15 @@ class DeliveryPublicationTests(unittest.TestCase):
                          published_manifest_record())
         self.assertEqual(json.loads((evidence / "conformance.json").read_text()),
                          published_conformance_record())
+        self.assertEqual(json.loads((evidence / "c15-2-evidence-boundary.json").read_text()),
+                         published_boundary_record())
+
+    def test_boundary_is_public_safe_and_dependency_graph_is_explicit(self):
+        boundary = published_boundary_record()
+        self.assertEqual(boundary["dependency_graph"]["held_keys"], [])
+        self.assertEqual(boundary["dependency_graph"]["executable_order_length"], 215)
+        self.assertIn("PRIVATE_REAL", boundary["source_privacy_boundary"]["protected_excluded"])
+        self.assertEqual(boundary["cross_document_diff"]["normative_conflicts"], [])
 
 
 if __name__ == "__main__":

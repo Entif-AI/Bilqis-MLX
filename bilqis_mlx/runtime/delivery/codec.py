@@ -9,11 +9,11 @@ from .contracts import (
     canonical, invalid, require,
 )
 
-_MANIFEST_KEYS = {
+_MANIFEST_KEYS = frozenset((
     "schema", "components", "issues", "commits", "proofs", "egm",
     "operator_commands", "software_delivery_status", "student_mastery_status",
-}
-_SEALED_KEYS = _MANIFEST_KEYS | {"manifest_sha256"}
+))
+_SEALED_KEYS = _MANIFEST_KEYS | frozenset(("manifest_sha256",))
 
 
 def seal_manifest(manifest: BamfDeliveryManifest) -> dict:
@@ -22,7 +22,7 @@ def seal_manifest(manifest: BamfDeliveryManifest) -> dict:
     return {**record, "manifest_sha256": manifest.digest()}
 
 
-def _exact(record: object, keys: set[str], reason: str) -> dict:
+def _exact(record: object, keys: frozenset[str], reason: str) -> dict:
     require(type(record) is dict and set(record) == keys, reason)
     return record
 

@@ -1,9 +1,39 @@
 {
-  "conformance_sha256": "39c5d1cd730ee41a8c0199b942b9c772b33f48889395c0a672ea300602d83965",
+  "conformance_sha256": "a9073b1b1666bad164b4e2c285cbe52dfdc063ad82e90abf04c2f0eecce856a3",
+  "failure_gates": [
+    {
+      "gate_id": "GRADE_NEUTRAL_INVARIANCE",
+      "observed": "explicit grade-ID permutation witness present; fresh current-head run pending",
+      "state": "CODE_PRESENT",
+      "test_ref": "bilqis_mlx/learning/tests/teaching/test_c03_parent_acceptance.py"
+    },
+    {
+      "gate_id": "NO_LEGACY_BAV_RUNTIME_NAMESPACE",
+      "observed": "runtime namespace refusal witness present; fresh current-head run pending",
+      "state": "CODE_PRESENT",
+      "test_ref": "bilqis_mlx/runtime/delivery/tests/test_no_legacy_bav_namespace.py"
+    }
+  ],
   "rows": [
     {
       "claim_id": "BAMF-REQ-001",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-001",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A01/A02/A12.tests",
+        "issue_digest": "dc422b88f788efa9b863ed1336923b293d3cfa2cd60d3b0a3bf545b3a18a4ea7",
+        "normative_text": "single semantic authority and identity",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 345,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A01/A02/A12",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A01/A02/A12.tests"
@@ -11,6 +41,22 @@
     {
       "claim_id": "BAMF-REQ-002",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-002",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A01/A02/A12.tests",
+        "issue_digest": "dc422b88f788efa9b863ed1336923b293d3cfa2cd60d3b0a3bf545b3a18a4ea7",
+        "normative_text": "single semantic authority and identity",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 345,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A01/A02/A12",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A01/A02/A12.tests"
@@ -18,6 +64,22 @@
     {
       "claim_id": "BAMF-REQ-003",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-003",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A03/A04/A05.tests",
+        "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
+        "normative_text": "reversible frames and 64-bit codec",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 349,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A03/A04/A05",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A04/A05.tests"
@@ -25,6 +87,22 @@
     {
       "claim_id": "BAMF-REQ-004",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-004",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A03/A04/A05.tests",
+        "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
+        "normative_text": "reversible frames and 64-bit codec",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 349,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A03/A04/A05",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A04/A05.tests"
@@ -32,6 +110,22 @@
     {
       "claim_id": "BAMF-REQ-005",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-005",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A05/B04/B06/B08/B11/C13.tests",
+        "issue_digest": "e1913519e9b8017caa0e393d3b92139d03713d12483136ab2bed4bda25d0dcbb",
+        "normative_text": "causal prefix",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 357,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A05/B04/B06/B08/B11/C13",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A05/B04/B06/B08/B11/C13.tests"
@@ -39,6 +133,22 @@
     {
       "claim_id": "BAMF-REQ-006",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-006",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A03/A10/C10.tests",
+        "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
+        "normative_text": "Rosetta meaning/identity",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 349,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A03/A10/C10",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A10/C10.tests"
@@ -46,6 +156,22 @@
     {
       "claim_id": "BAMF-REQ-007",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-007",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:B01/B04/B11.tests",
+        "issue_digest": "56bb04763143cfe0711894d9b4e4cad98d913024f42453b9f3320ac3f5392db0",
+        "normative_text": "topology and CCGQA",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 346,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B01/B04/B11",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:B01/B04/B11.tests"
@@ -53,6 +179,22 @@
     {
       "claim_id": "BAMF-REQ-008",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-008",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:B01/B04/B11.tests",
+        "issue_digest": "56bb04763143cfe0711894d9b4e4cad98d913024f42453b9f3320ac3f5392db0",
+        "normative_text": "topology and CCGQA",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 346,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B01/B04/B11",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:B01/B04/B11.tests"
@@ -60,6 +202,22 @@
     {
       "claim_id": "BAMF-REQ-009",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-009",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:B05.tests",
+        "issue_digest": "fb1a8cfbffdfc9c18fa75f42d9bd785093dbff21a4ff7d11671b11d59b6f4b70",
+        "normative_text": "Block AttnRes",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 355,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B05",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:B05.tests"
@@ -67,6 +225,22 @@
     {
       "claim_id": "BAMF-REQ-010",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-010",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:B07/B08/A02/B13/A13.tests",
+        "issue_digest": "504d6f8b89731ad82886ac9b4e35c1ef1a5d59e46b6202260606532bb0680633",
+        "normative_text": "motif and active semantics",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 356,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B07/B08/A02/B13/A13",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:B07/B08/A02/B13/A13.tests"
@@ -74,6 +248,22 @@
     {
       "claim_id": "BAMF-REQ-011",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-011",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:B07/B08/A02/B13/A13.tests",
+        "issue_digest": "504d6f8b89731ad82886ac9b4e35c1ef1a5d59e46b6202260606532bb0680633",
+        "normative_text": "motif and active semantics",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 356,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B07/B08/A02/B13/A13",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:B07/B08/A02/B13/A13.tests"
@@ -81,6 +271,22 @@
     {
       "claim_id": "BAMF-REQ-012",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-012",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:B06/C04.tests",
+        "issue_digest": "5d9ecee21b11eef1a5ff41eca590bf97eaf196655c984fe483bce4d264e55768",
+        "normative_text": "local/dependency refinement",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 365,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B06/C04",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:B06/C04.tests"
@@ -88,6 +294,22 @@
     {
       "claim_id": "BAMF-REQ-013",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-013",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:B06/C04.tests",
+        "issue_digest": "5d9ecee21b11eef1a5ff41eca590bf97eaf196655c984fe483bce4d264e55768",
+        "normative_text": "local/dependency refinement",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 365,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B06/C04",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:B06/C04.tests"
@@ -95,6 +317,22 @@
     {
       "claim_id": "BAMF-REQ-014",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-014",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:B14.tests",
+        "issue_digest": "9916d84433fc4719950d35d28caa0c11e1df13441ebdca6a5831224e6c43234f",
+        "normative_text": "derived cache",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 375,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B14",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:B14.tests"
@@ -102,6 +340,22 @@
     {
       "claim_id": "BAMF-REQ-015",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-015",
+        "fresh_run_receipt": "BLOCKED",
+        "input_fixture": "blocked:C13/C14 accepted integrated witness",
+        "issue_digest": "7337f48ccbb3dbd89c5d1d114c28d01815ed3e19b4c5008c66495ea36838c187",
+        "normative_text": "Factory teaching",
+        "observed_output": "BLOCKED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 371,
+        "reviewer_decision": "BLOCKED",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "C02/C07/C14",
       "state": "BLOCKED",
       "test_ref": "blocked:C13/C14 accepted integrated witness"
@@ -109,6 +363,22 @@
     {
       "claim_id": "BAMF-REQ-016",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-016",
+        "fresh_run_receipt": "BLOCKED",
+        "input_fixture": "blocked:C13/C14 accepted integrated witness",
+        "issue_digest": "b5edb774f8382aea8c96dd2085f437e63dfe7b3b8c85f45495cabffc861d1a60",
+        "normative_text": "rollback",
+        "observed_output": "BLOCKED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 370,
+        "reviewer_decision": "BLOCKED",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B12/B13/C05/C13",
       "state": "BLOCKED",
       "test_ref": "blocked:C13/C14 accepted integrated witness"
@@ -116,6 +386,22 @@
     {
       "claim_id": "BAMF-REQ-017",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-017",
+        "fresh_run_receipt": "BLOCKED",
+        "input_fixture": "blocked:C13/C14 accepted integrated witness",
+        "issue_digest": "37670d77ccdd31054adcde4a215a52e6e2b82c72953d60c6eadd8c6793340d59",
+        "normative_text": "replay teacher",
+        "observed_output": "BLOCKED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 376,
+        "reviewer_decision": "BLOCKED",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "C03/C13/C14",
       "state": "BLOCKED",
       "test_ref": "blocked:C13/C14 accepted integrated witness"
@@ -123,6 +409,22 @@
     {
       "claim_id": "BAMF-REQ-018",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-018",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:C06.tests",
+        "issue_digest": "d04579ae7efb3d69f02ff28f612b292f418b1496a7fe6842026bd9885d893944",
+        "normative_text": "salience",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 379,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "C06",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:C06.tests"
@@ -130,6 +432,22 @@
     {
       "claim_id": "BAMF-REQ-019",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-019",
+        "fresh_run_receipt": "BLOCKED",
+        "input_fixture": "blocked:C13/C14 accepted integrated witness",
+        "issue_digest": "cd464f940e15817d2e5beced7a4046e2c0473cb5dcd4e10d878d62c04d824001",
+        "normative_text": "correction chronology",
+        "observed_output": "BLOCKED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 362,
+        "reviewer_decision": "BLOCKED",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A11/C09/C13",
       "state": "BLOCKED",
       "test_ref": "blocked:C13/C14 accepted integrated witness"
@@ -137,6 +455,22 @@
     {
       "claim_id": "BAMF-REQ-020",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-020",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:C09/C10.tests",
+        "issue_digest": "9ec8a74f7585c20afb9ede0a9e650ac11ecd874271e439c5a1b7f62298f98e05",
+        "normative_text": "descendants",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 377,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "C09/C10",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:C09/C10.tests"
@@ -144,6 +478,22 @@
     {
       "claim_id": "BAMF-REQ-021",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-021",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A10/C05/C12.tests",
+        "issue_digest": "91480f0f8905960e8c31f2f58820cc4ac499400b72121e23e6f8d55e6f985d4b",
+        "normative_text": "source-family independence",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 361,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A10/C05/C12",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A10/C05/C12.tests"
@@ -151,6 +501,22 @@
     {
       "claim_id": "BAMF-REQ-022",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-022",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:C08/C11/C16.tests",
+        "issue_digest": "7533433c24484977a27db7ea4fbe39d3b8ac19eb4cbc743750e1659cb0e69bd2",
+        "normative_text": "resources/commands",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 374,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "C08/C11/C16",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:C08/C11/C16.tests"
@@ -158,6 +524,22 @@
     {
       "claim_id": "BAMF-REQ-023",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-023",
+        "fresh_run_receipt": "BLOCKED",
+        "input_fixture": "blocked:C13/C14 accepted integrated witness",
+        "issue_digest": "1be6636da570a6c4f69bca9304f75ce44d5d93d7878adfc3836d852355bb6505",
+        "normative_text": "history",
+        "observed_output": "BLOCKED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 347,
+        "reviewer_decision": "BLOCKED",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "C01/B13/C13",
       "state": "BLOCKED",
       "test_ref": "blocked:C13/C14 accepted integrated witness"
@@ -165,6 +547,22 @@
     {
       "claim_id": "BAMF-REQ-024",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for BAMF-REQ-024",
+        "fresh_run_receipt": "BLOCKED",
+        "input_fixture": "blocked:C13/C14 accepted integrated witness",
+        "issue_digest": "ec9e3cfccaef9cb6fc9e69c1cdc63f3bf31b0edee30e3ae1f09b90de0a08d07c",
+        "normative_text": "actual capability",
+        "observed_output": "BLOCKED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 378,
+        "reviewer_decision": "BLOCKED",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "C05/C11/C13/C14",
       "state": "BLOCKED",
       "test_ref": "blocked:C13/C14 accepted integrated witness"
@@ -172,6 +570,22 @@
     {
       "claim_id": "F01",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F01",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A03/A11.tests",
+        "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
+        "normative_text": "negative fixture F01 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 349,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A03/A11",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A11.tests"
@@ -179,6 +593,22 @@
     {
       "claim_id": "F02",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F02",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A03/A04.tests",
+        "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
+        "normative_text": "negative fixture F02 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 349,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A03/A04",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A04.tests"
@@ -186,6 +616,22 @@
     {
       "claim_id": "F03",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F03",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A03/A04.tests",
+        "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
+        "normative_text": "negative fixture F03 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 349,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A03/A04",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A04.tests"
@@ -193,6 +639,22 @@
     {
       "claim_id": "F04",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F04",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A03/A04.tests",
+        "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
+        "normative_text": "negative fixture F04 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 349,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A03/A04",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A04.tests"
@@ -200,6 +662,22 @@
     {
       "claim_id": "F05",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F05",
+        "fresh_run_receipt": "BLOCKED",
+        "input_fixture": "blocked:C13/C14 accepted integrated witness",
+        "issue_digest": "e1913519e9b8017caa0e393d3b92139d03713d12483136ab2bed4bda25d0dcbb",
+        "normative_text": "negative fixture F05 from BAMF-0.2-SPEC-001",
+        "observed_output": "BLOCKED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 357,
+        "reviewer_decision": "BLOCKED",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A05/B04/B06/B11/C13",
       "state": "BLOCKED",
       "test_ref": "blocked:C13/C14 accepted integrated witness"
@@ -207,6 +685,22 @@
     {
       "claim_id": "F06",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F06",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A10/C09.tests",
+        "issue_digest": "91480f0f8905960e8c31f2f58820cc4ac499400b72121e23e6f8d55e6f985d4b",
+        "normative_text": "negative fixture F06 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 361,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A10/C09",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A10/C09.tests"
@@ -214,6 +708,22 @@
     {
       "claim_id": "F07",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F07",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:C09.tests",
+        "issue_digest": "9ec8a74f7585c20afb9ede0a9e650ac11ecd874271e439c5a1b7f62298f98e05",
+        "normative_text": "negative fixture F07 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 377,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "C09",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:C09.tests"
@@ -221,6 +731,22 @@
     {
       "claim_id": "F08",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F08",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A13/C06.tests",
+        "issue_digest": "fb2464fbce8d5cc93c357ca926d35b24f403c1c5ceb8a762b1e46ae488c235d0",
+        "normative_text": "negative fixture F08 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 354,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A13/C06",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A13/C06.tests"
@@ -228,6 +754,22 @@
     {
       "claim_id": "F09",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F09",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A13.tests",
+        "issue_digest": "fb2464fbce8d5cc93c357ca926d35b24f403c1c5ceb8a762b1e46ae488c235d0",
+        "normative_text": "negative fixture F09 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 354,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A13",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A13.tests"
@@ -235,6 +777,22 @@
     {
       "claim_id": "F10",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F10",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A10/C05.tests",
+        "issue_digest": "91480f0f8905960e8c31f2f58820cc4ac499400b72121e23e6f8d55e6f985d4b",
+        "normative_text": "negative fixture F10 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 361,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A10/C05",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A10/C05.tests"
@@ -242,6 +800,22 @@
     {
       "claim_id": "F11",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F11",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:B07.tests",
+        "issue_digest": "504d6f8b89731ad82886ac9b4e35c1ef1a5d59e46b6202260606532bb0680633",
+        "normative_text": "negative fixture F11 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 356,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B07",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:B07.tests"
@@ -249,6 +823,22 @@
     {
       "claim_id": "F12",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F12",
+        "fresh_run_receipt": "BLOCKED",
+        "input_fixture": "blocked:C13/C14 accepted integrated witness",
+        "issue_digest": "504d6f8b89731ad82886ac9b4e35c1ef1a5d59e46b6202260606532bb0680633",
+        "normative_text": "negative fixture F12 from BAMF-0.2-SPEC-001",
+        "observed_output": "BLOCKED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 356,
+        "reviewer_decision": "BLOCKED",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B07/B09/B12/B13/C13",
       "state": "BLOCKED",
       "test_ref": "blocked:C13/C14 accepted integrated witness"
@@ -256,6 +846,22 @@
     {
       "claim_id": "F13",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F13",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:B14.tests",
+        "issue_digest": "9916d84433fc4719950d35d28caa0c11e1df13441ebdca6a5831224e6c43234f",
+        "normative_text": "negative fixture F13 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 375,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B14",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:B14.tests"
@@ -263,6 +869,22 @@
     {
       "claim_id": "F14",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F14",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:B01/B13.tests",
+        "issue_digest": "56bb04763143cfe0711894d9b4e4cad98d913024f42453b9f3320ac3f5392db0",
+        "normative_text": "negative fixture F14 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 346,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B01/B13",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:B01/B13.tests"
@@ -270,6 +892,22 @@
     {
       "claim_id": "F15",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F15",
+        "fresh_run_receipt": "BLOCKED",
+        "input_fixture": "bilqis_mlx/runtime/tests/correction/test_atlas_stale_replay.py",
+        "issue_digest": "9ec8a74f7585c20afb9ede0a9e650ac11ecd874271e439c5a1b7f62298f98e05",
+        "normative_text": "negative fixture F15 from BAMF-0.2-SPEC-001",
+        "observed_output": "BLOCKED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 377,
+        "reviewer_decision": "BLOCKED",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "C09",
       "state": "REQUALIFICATION_REQUIRED",
       "test_ref": "bilqis_mlx/runtime/tests/correction/test_atlas_stale_replay.py"
@@ -277,6 +915,22 @@
     {
       "claim_id": "F16",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F16",
+        "fresh_run_receipt": "BLOCKED",
+        "input_fixture": "blocked:C13/C14 accepted integrated witness",
+        "issue_digest": "e1913519e9b8017caa0e393d3b92139d03713d12483136ab2bed4bda25d0dcbb",
+        "normative_text": "negative fixture F16 from BAMF-0.2-SPEC-001",
+        "observed_output": "BLOCKED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 357,
+        "reviewer_decision": "BLOCKED",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A05/C02/C05/C13/C14",
       "state": "BLOCKED",
       "test_ref": "blocked:C13/C14 accepted integrated witness"
@@ -284,6 +938,22 @@
     {
       "claim_id": "F17",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F17",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:A01/A12/C07.tests",
+        "issue_digest": "dc422b88f788efa9b863ed1336923b293d3cfa2cd60d3b0a3bf545b3a18a4ea7",
+        "normative_text": "negative fixture F17 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 345,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "A01/A12/C07",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:A01/A12/C07.tests"
@@ -291,6 +961,22 @@
     {
       "claim_id": "F18",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F18",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:C05.tests",
+        "issue_digest": "ec9e3cfccaef9cb6fc9e69c1cdc63f3bf31b0edee30e3ae1f09b90de0a08d07c",
+        "normative_text": "negative fixture F18 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 378,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "C05",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:C05.tests"
@@ -298,6 +984,22 @@
     {
       "claim_id": "F19",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F19",
+        "fresh_run_receipt": "NOT_EXECUTED",
+        "input_fixture": "docs/tasks/bamf-0.2/workstack.json:C06/C09.tests",
+        "issue_digest": "d04579ae7efb3d69f02ff28f612b292f418b1496a7fe6842026bd9885d893944",
+        "normative_text": "negative fixture F19 from BAMF-0.2-SPEC-001",
+        "observed_output": "NOT_EXECUTED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 379,
+        "reviewer_decision": "PENDING",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "C06/C09",
       "state": "CODE_PRESENT",
       "test_ref": "docs/tasks/bamf-0.2/workstack.json:C06/C09.tests"
@@ -305,12 +1007,28 @@
     {
       "claim_id": "F20",
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "evidence": {
+        "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+        "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "expected_behavior": "independent literal behavior for F20",
+        "fresh_run_receipt": "BLOCKED",
+        "input_fixture": "blocked:C13/C14 accepted integrated witness",
+        "issue_digest": "2ee76692706486f543cfed7f9926c3519c5cfdc33b81630a92d49020a31e9215",
+        "normative_text": "negative fixture F20 from BAMF-0.2-SPEC-001",
+        "observed_output": "BLOCKED",
+        "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "owner_issue": 372,
+        "reviewer_decision": "BLOCKED",
+        "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
+        "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+        "variant_revision": "BAMF-0.2-SPEC-001@v0.2.0"
+      },
       "owner_ref": "B13/C13/C16",
       "state": "BLOCKED",
       "test_ref": "blocked:C13/C14 accepted integrated witness"
     }
   ],
-  "schema": "bilqis.bamf.delivery-conformance/v1",
+  "schema": "bilqis.bamf.delivery-conformance/v2",
   "software_delivery_status": "IN_PROGRESS",
   "student_mastery_status": "NOT_CLAIMED"
 }

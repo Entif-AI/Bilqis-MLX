@@ -1,0 +1,38 @@
+{
+  "authority_digests": {
+    "architecture": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+    "issue_539_body": "f9250ec8759dff1251598333b8aa88e69d81e1f7ed33aafc58809191ab8d6caa",
+    "issue_book": "21a82b966c52ad13480b7021e9163efaacc7f6f70c9c4eac5d7277f05d355425",
+    "workstack": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+  },
+  "branch": "codex/bamf02-c-runtime",
+  "cross_document_diff": {
+    "disposition": "NO_CONFLICT_FOUND_IN_C15_OWNED_PUBLIC_CONTRACTS",
+    "normative_conflicts": [],
+    "scope": "C15 behavioral-conformance and grade-neutrality clauses"
+  },
+  "dependency_graph": {
+    "child_count": 172,
+    "executable_order_length": 215,
+    "held_keys": [],
+    "registry_integrity": "valid",
+    "status": "valid"
+  },
+  "fresh_behavioral_proof": "PENDING_ENVIRONMENT_WITH_RDFLIB_AND_MLX_AS_REQUIRED",
+  "reviewed_unified": "97a018ed7e9697fe284abd9fa8197cd7f4194b45",
+  "schema": "bilqis.bamf.delivery-evidence-boundary/v1",
+  "source_head": "030aa51d5e3f1e669648831cee2b7b340dab1c67",
+  "source_privacy_boundary": {
+    "protected_excluded": [
+      "PRIVATE_REAL",
+      "private journal payloads",
+      "unclassified payloads"
+    ],
+    "public_allowed": [
+      "PUBLIC_FIXTURE",
+      "PUBLIC_DERIVED",
+      "public issue receipts"
+    ],
+    "rule": "protected evidence remains behind protected authority; public artifacts carry dispositions only"
+  }
+}
