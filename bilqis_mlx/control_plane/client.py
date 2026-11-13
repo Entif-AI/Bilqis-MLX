@@ -6,10 +6,15 @@ from pathlib import Path
 import socket
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.mission_control.codec import decode_record
+from bilqis_mlx.mission_control.envelopes import EventEnvelope
 
 from .contracts import (
-    ControlPlaneState, HANDSHAKE_SCHEMA, HEALTH_SCHEMA, PROTOCOL_VERSION,
+    ControlPlaneState, ERROR_SCHEMA, HANDSHAKE_SCHEMA, HEALTH_SCHEMA, PROTOCOL_VERSION,
     SERVICE_IDENTITY_SCHEMA, SESSION_IDENTITY_SCHEMA,
+)
+from .event_stream import (
+    EVENT_GAP_SCHEMA, EVENT_HEARTBEAT_SCHEMA, EVENT_SUBSCRIPTION_SCHEMA,
 )
 
 
@@ -33,12 +38,16 @@ class ControlPlaneClient:
         self._socket: socket.socket | None = None
         self._stream = None
 
-    def _send(self, payload: dict) -> dict:
+    def _write_request(self, payload: dict) -> None:
         if self._stream is None:
             _invalid("CONTROL_PLANE_CLIENT_DISCONNECTED")
         self._stream.write(json.dumps(
             payload, separators=(",", ":"), sort_keys=True).encode("utf-8") + b"\n")
         self._stream.flush()
+
+    def _read_response(self) -> dict:
+        if self._stream is None:
+            _invalid("CONTROL_PLANE_CLIENT_DISCONNECTED")
         raw = self._stream.readline(MAX_RESPONSE_BYTES + 2)
         if not raw or len(raw) > MAX_RESPONSE_BYTES + 1:
             _invalid("CONTROL_PLANE_RESPONSE_INVALID")
@@ -49,6 +58,10 @@ class ControlPlaneClient:
         if not isinstance(response, dict):
             _invalid("CONTROL_PLANE_RESPONSE_INVALID")
         return response
+
+    def _send(self, payload: dict) -> dict:
+        self._write_request(payload)
+        return self._read_response()
 
     def _validate_handshake(self, response: dict) -> None:
         if (response.get("schema") != HANDSHAKE_SCHEMA
@@ -113,6 +126,18 @@ class ControlPlaneClient:
             self.state = ControlPlaneState(response["state"])
         return response
 
+    def subscribe_events(
+        self, *, after_cursor: str | None = None,
+    ) -> "ControlPlaneEventSubscription":
+        if self._stream is None:
+            _invalid("CONTROL_PLANE_CLIENT_DISCONNECTED")
+        self._write_request({
+            "type": "event-subscribe",
+            "after_cursor": after_cursor,
+        })
+        acknowledgement = self._read_response()
+        return ControlPlaneEventSubscription(self, acknowledgement)
+
     def close(self, *, preserve_state: bool = False) -> None:
         if self._stream is not None:
             self._stream.close()
@@ -129,3 +154,50 @@ class ControlPlaneClient:
 
     def __exit__(self, *_exc):
         self.close()
+
+
+class ControlPlaneEventSubscription:
+    """Dedicated streaming view on one already-handshaken client connection."""
+
+    def __init__(self, client: ControlPlaneClient, acknowledgement: dict):
+        self.client = client
+        self.acknowledgement = acknowledgement
+        self.gap: dict | None = None
+        self.latest_cursor: str | None = acknowledgement.get(
+            "latest_cursor_sha256")
+        self._closed = False
+        schema = acknowledgement.get("schema")
+        accepted = acknowledgement.get("accepted")
+        if schema == EVENT_GAP_SCHEMA and accepted is False:
+            self.gap = acknowledgement
+            self._closed = True
+        elif schema == ERROR_SCHEMA and accepted is False:
+            reason = acknowledgement.get("reason")
+            _invalid(
+                reason if isinstance(reason, str) and reason
+                else "CONTROL_PLANE_EVENT_SUBSCRIPTION_INVALID"
+            )
+        elif schema != EVENT_SUBSCRIPTION_SCHEMA or accepted is not True:
+            _invalid("CONTROL_PLANE_EVENT_SUBSCRIPTION_INVALID")
+
+    def __iter__(self):
+        return self
+
+    def __next__(self) -> EventEnvelope:
+        if self._closed:
+            raise StopIteration
+        while True:
+            record = self.client._read_response()
+            schema = record.get("schema")
+            if schema == EVENT_HEARTBEAT_SCHEMA:
+                self.latest_cursor = record.get("latest_cursor_sha256")
+                continue
+            if schema == EVENT_GAP_SCHEMA:
+                self.gap = record
+                self._closed = True
+                raise StopIteration
+            decoded = decode_record(record)
+            if type(decoded) is not EventEnvelope:
+                _invalid("CONTROL_PLANE_EVENT_DELIVERY_INVALID")
+            self.latest_cursor = decoded.position.cursor_sha256
+            return decoded
