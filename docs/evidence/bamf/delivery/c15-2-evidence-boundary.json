@@ -8,13 +8,14 @@
   "branch": "codex/bamf02-c-runtime",
   "cross_document_diff": {
     "candidate_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
-    "disposition": "REPAIR_IN_PROGRESS_TARGETED_REAUDIT_REQUIRED",
+    "disposition": "PASS_0_BLOCKERS_0_MAJORS_0_NITS",
     "initial_findings": {
       "blockers": 4,
       "majors": 5,
       "nits": 1
     },
     "repair_sha": "66277ed61d0ae4cabb088dfb508ab7188415003c",
+    "report_head": "fc04b9379e5657cd046836c4af9ea4dd76df4795",
     "reviewer": "google-egm-b3a359-initial",
     "scope": "C15 behavioral-conformance and grade-neutrality clauses"
   },

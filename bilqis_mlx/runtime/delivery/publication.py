@@ -23,6 +23,7 @@ C15_1B_HEAD = "030aa51d5e3f1e669648831cee2b7b340dab1c67"
 C15_2_HEAD = "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111"
 C15_EGM_REPAIR_HEAD = "a008e1d2770c968e1b7784d00194e4f75e402041"
 C15_EGM_CANDIDATE = "66277ed61d0ae4cabb088dfb508ab7188415003c"
+C15_EGM_REPORT_HEAD = "fc04b9379e5657cd046836c4af9ea4dd76df4795"
 SOURCE_DIGEST = file_digest(WORKSTACK)
 CONTRACT_DIGEST = file_digest(ARCHITECTURE)
 ISSUE_BOOK_DIGEST = file_digest(ISSUE_BOOK)
@@ -188,8 +189,9 @@ def _commands() -> tuple[OperatorCommandReceipt, ...]:
 
 
 def published_manifest_record() -> dict:
-    egm = tuple(EgmReceipt(name, EgmStatus.PENDING, C15_EGM_CANDIDATE,
-                           "EGM_TARGETED_REAUDIT_PENDING:C15.1a-C15.2")
+    egm = tuple(EgmReceipt(
+        name, EgmStatus.PASS, C15_EGM_CANDIDATE,
+        f"git:{C15_EGM_REPORT_HEAD}:docs/evidence/bamf/delivery/egm-c15-537-539-20261113.md")
                 for name in ("codebase-details", "implementation-readiness"))
     conformance_record = published_conformance_record()
     from .conformance import load_conformance_record
@@ -300,7 +302,8 @@ def published_boundary_record() -> dict:
             "candidate_sha": C15_2_HEAD,
             "repair_sha": C15_EGM_CANDIDATE,
             "initial_findings": {"blockers": 4, "majors": 5, "nits": 1},
-            "disposition": "REPAIR_IN_PROGRESS_TARGETED_REAUDIT_REQUIRED",
+            "disposition": "PASS_0_BLOCKERS_0_MAJORS_0_NITS",
+            "report_head": C15_EGM_REPORT_HEAD,
         },
         "dependency_graph": {
             "status": graph.status,

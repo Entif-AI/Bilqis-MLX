@@ -55,7 +55,7 @@ class DeliveryPublicationTests(unittest.TestCase):
         self.assertEqual(boundary["dependency_graph"]["node_count"], 215)
         self.assertIn("PRIVATE_REAL", boundary["source_privacy_boundary"]["protected_excluded"])
         self.assertEqual(boundary["cross_document_diff"]["disposition"],
-                         "REPAIR_IN_PROGRESS_TARGETED_REAUDIT_REQUIRED")
+                         "PASS_0_BLOCKERS_0_MAJORS_0_NITS")
         self.assertEqual(boundary["live_issue_parity"], "SEPARATE_C15_3_AUDIT_REQUIRED")
 
     def test_roadmap_projects_exact_checkpoint_heads_without_completion_claims(self):

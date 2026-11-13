@@ -160,15 +160,15 @@
   "egm": [
     {
       "candidate_sha": "66277ed61d0ae4cabb088dfb508ab7188415003c",
-      "report_ref": "EGM_TARGETED_REAUDIT_PENDING:C15.1a-C15.2",
+      "report_ref": "git:fc04b9379e5657cd046836c4af9ea4dd76df4795:docs/evidence/bamf/delivery/egm-c15-537-539-20261113.md",
       "reviewer": "codebase-details",
-      "status": "EGM_PENDING"
+      "status": "EGM_PASS"
     },
     {
       "candidate_sha": "66277ed61d0ae4cabb088dfb508ab7188415003c",
-      "report_ref": "EGM_TARGETED_REAUDIT_PENDING:C15.1a-C15.2",
+      "report_ref": "git:fc04b9379e5657cd046836c4af9ea4dd76df4795:docs/evidence/bamf/delivery/egm-c15-537-539-20261113.md",
       "reviewer": "implementation-readiness",
-      "status": "EGM_PENDING"
+      "status": "EGM_PASS"
     }
   ],
   "issues": [
@@ -245,7 +245,7 @@
       "status": "PROVISIONAL"
     }
   ],
-  "manifest_sha256": "836d0c15d0782f0d22285b04afab1f8e63f2b09a93caaf2e48285f920d99c9d6",
+  "manifest_sha256": "3a7b419213a48047fd817569e0054b75fb2520aa0be3f6e2d3b0b7473104a4ef",
   "operator_commands": [
     {
       "argv": [
