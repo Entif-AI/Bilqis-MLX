@@ -16,6 +16,18 @@ class FACTORY:
                 "source-qualified domain declarations before retrying."),
         )
 
+    class SOURCE_BINDING:
+        INVALID = _spec(
+            ("FACTORY", "SOURCE_BINDING", "INVALID"),
+            owner="factory.curriculum_definition",
+            title="Factory source binding invalid",
+            message_template="Factory source binding invalid: {reason}",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action=(
+                "Restore the canonical capability/source binding and reserved "
+                "namespace ownership before retrying."),
+        )
+
     class SEMANTIC_RULE:
         INVALID = _spec(
             ("FACTORY", "SEMANTIC_RULE", "INVALID"),
