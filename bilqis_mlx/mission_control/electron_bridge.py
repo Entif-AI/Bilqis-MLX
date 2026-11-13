@@ -12,6 +12,7 @@ from bilqis_mlx.paths import active_run_dir
 
 
 _CLIENT_ID = "mission-control-electron"
+MAX_BROKER_REQUEST_BYTES = 64 * 1024
 
 
 def _socket_path() -> Path:
@@ -82,7 +83,7 @@ def main() -> int:
     bridge = ElectronBridge()
     for raw in sys.stdin:
         request = None
-        if len(raw) > 64 * 1024:
+        if len(raw) > MAX_BROKER_REQUEST_BYTES:
             _reply(None, error="BAMF_GUI20_BROKER_REQUEST_INVALID")
             continue
         try:
