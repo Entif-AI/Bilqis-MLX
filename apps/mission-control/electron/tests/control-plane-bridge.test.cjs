@@ -22,6 +22,7 @@ function adapterFixture() {
       return {
         session,
         publicStatus: {
+          schemaVersion: "cp01.public-status.fixture/v1",
           state: "HEALTHY",
           protocolVersion: "cp01/v1",
           runId: "run-1",
@@ -33,23 +34,38 @@ function adapterFixture() {
     },
     async status(session) {
       calls.push(["status", session]);
-      return { state: "HEALTHY", runId: "run-1" };
+      return {
+        schemaVersion: "cp01.status.fixture/v1",
+        state: "HEALTHY",
+        runId: "run-1",
+      };
     },
     async snapshot(session, request) {
       calls.push(["snapshot", session, request]);
-      return { schemaVersion: "snapshot/v1", objectRef: request.objectRef };
+      return {
+        schemaVersion: "cp02.snapshot.result.fixture/v1",
+        objectRef: request.objectRef,
+      };
     },
     async dryRun(session, request) {
       calls.push(["dryRun", session, request]);
-      return { state: "READY", requestId: request.requestId };
+      return {
+        schemaVersion: "cp02.dry-run.result.fixture/v1",
+        state: "READY",
+        requestId: request.requestId,
+      };
     },
     async command(session, request) {
       calls.push(["command", session, request]);
-      return { state: "ACCEPTED", requestId: request.requestId };
+      return {
+        schemaVersion: "cp02.command.result.fixture/v1",
+        state: "ACCEPTED",
+        requestId: request.requestId,
+      };
     },
     async receipt(session, ref) {
       calls.push(["receipt", session, ref]);
-      return { ref, verified: true };
+      return { schemaVersion: "cp02.receipt.fixture/v1", ref, verified: true };
     },
     async subscribe(session, next) {
       calls.push(["subscribe", session]);
@@ -69,6 +85,7 @@ test("connection session and credential material remain main-process only", asyn
   const publicStatus = await bridge.connect();
 
   assert.deepEqual(publicStatus, {
+    schemaVersion: "cp01.public-status.fixture/v1",
     state: "HEALTHY",
     protocolVersion: "cp01/v1",
     runId: "run-1",
@@ -115,13 +132,16 @@ test("reconnect invalidates old subscriptions and obsolete session state", async
   await bridge.connect();
   await bridge.subscribe((event) => observed.push(event));
   const staleListener = adapter.listener;
-  staleListener({ cursor: "event:1" });
+  staleListener({ schemaVersion: "cp02.event.fixture/v1", cursor: "event:1" });
 
   const second = await bridge.connect();
-  staleListener({ cursor: "event:stale" });
+  staleListener({ schemaVersion: "cp02.event.fixture/v1", cursor: "event:stale" });
 
   assert.equal(second.connectionEpoch, 2);
-  assert.deepEqual(observed, [{ cursor: "event:1" }]);
+  assert.deepEqual(observed, [{
+    schemaVersion: "cp02.event.fixture/v1",
+    cursor: "event:1",
+  }]);
   assert.equal(adapter.calls.filter(([name]) => name === "unsubscribe").length, 1);
   assert.equal(adapter.calls.filter(([name]) => name === "disconnect").length, 1);
 });
@@ -132,18 +152,44 @@ test("bridge forwards opaque CP02-shaped data while enforcing transport safety",
   await bridge.connect();
 
   assert.deepEqual(
-    await bridge.snapshot({ schemaVersion: "snapshot-query/v1", objectRef: "capability:A.ADD" }),
-    { schemaVersion: "snapshot/v1", objectRef: "capability:A.ADD" },
+    await bridge.snapshot({
+      schemaVersion: "cp02.snapshot.fixture/v1",
+      objectRef: "capability:A.ADD",
+    }),
+    {
+      schemaVersion: "cp02.snapshot.result.fixture/v1",
+      objectRef: "capability:A.ADD",
+    },
   );
   assert.deepEqual(
-    await bridge.dryRun({ schemaVersion: "action/v1", requestId: "r1" }),
-    { state: "READY", requestId: "r1" },
+    await bridge.dryRun({
+      schemaVersion: "cp02.dry-run.fixture/v1",
+      requestId: "r1",
+      action: "preflight",
+    }),
+    {
+      schemaVersion: "cp02.dry-run.result.fixture/v1",
+      state: "READY",
+      requestId: "r1",
+    },
   );
   assert.deepEqual(
-    await bridge.command({ schemaVersion: "action/v1", requestId: "r2" }),
-    { state: "ACCEPTED", requestId: "r2" },
+    await bridge.command({
+      schemaVersion: "cp02.command.fixture/v1",
+      requestId: "r2",
+      action: "owner-action",
+    }),
+    {
+      schemaVersion: "cp02.command.result.fixture/v1",
+      state: "ACCEPTED",
+      requestId: "r2",
+    },
   );
-  assert.deepEqual(await bridge.receipt("receipt:abc"), { ref: "receipt:abc", verified: true });
+  assert.deepEqual(await bridge.receipt("receipt:abc"), {
+    schemaVersion: "cp02.receipt.fixture/v1",
+    ref: "receipt:abc",
+    verified: true,
+  });
 
   await assert.rejects(
     bridge.command(["not", "a", "typed", "record"]),
@@ -176,6 +222,15 @@ test("CP02 validators reject semantically invalid records before adapter invocat
   assert.equal(adapter.calls.length, before);
 });
 
+test("response validators reject structurally safe but contract-invalid service data", async () => {
+  const adapter = adapterFixture();
+  adapter.status = async () => ({ schemaVersion: "wrong/v1", state: "HEALTHY" });
+  const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS);
+  await bridge.connect();
+
+  await assert.rejects(bridge.status(), /FIXTURE_CP02_RECORD_INVALID/);
+});
+
 test("unsafe service event is dropped without throwing through the main event loop", async () => {
   const adapter = adapterFixture();
   const violations = [];
@@ -186,7 +241,11 @@ test("unsafe service event is dropped without throwing through the main event lo
   await bridge.connect();
   await bridge.subscribe((value) => observed.push(value));
 
-  assert.doesNotThrow(() => adapter.listener({ cursor: "event:1", sessionToken: "leak" }));
+  assert.doesNotThrow(() => adapter.listener({
+    schemaVersion: "cp02.event.fixture/v1",
+    cursor: "event:1",
+    sessionToken: "leak",
+  }));
   assert.deepEqual(observed, []);
   assert.deepEqual(violations, ["BAMF_GUI20_RENDERER_PAYLOAD_UNSAFE"]);
 });

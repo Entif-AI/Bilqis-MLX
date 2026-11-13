@@ -3,10 +3,7 @@
 const { CHANNELS, HANDLER_CHANNELS } = require("./channels.cjs");
 const { createTrustedSender, requireTrustedSender } = require("./sender-trust.cjs");
 
-function safeBoundaryError(error) {
-  if (typeof error?.code === "string" && error.code.startsWith("BAMF_GUI20_")) {
-    return error;
-  }
+function safeBoundaryError(_error) {
   const safe = new Error("BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED");
   safe.code = "BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED";
   return safe;

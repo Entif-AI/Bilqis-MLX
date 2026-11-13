@@ -54,14 +54,39 @@ function adapterFixture() {
     async connect() {
       return {
         session: { token: "main-only" },
-        publicStatus: { state: "HEALTHY", protocolVersion: "cp01/v1" },
+        publicStatus: {
+          schemaVersion: "cp01.public-status.fixture/v1",
+          state: "HEALTHY",
+          protocolVersion: "cp01/v1",
+        },
       };
     },
-    async status() { return { state: "HEALTHY" }; },
-    async snapshot(_session, request) { return { request }; },
-    async dryRun(_session, request) { return { request }; },
-    async command(_session, request) { return { request }; },
-    async receipt(_session, ref) { return { ref }; },
+    async status() {
+      return { schemaVersion: "cp01.status.fixture/v1", state: "HEALTHY" };
+    },
+    async snapshot(_session, request) {
+      return {
+        schemaVersion: "cp02.snapshot.result.fixture/v1",
+        objectRef: request.objectRef,
+      };
+    },
+    async dryRun(_session, request) {
+      return {
+        schemaVersion: "cp02.dry-run.result.fixture/v1",
+        state: "READY",
+        requestId: request.requestId,
+      };
+    },
+    async command(_session, request) {
+      return {
+        schemaVersion: "cp02.command.result.fixture/v1",
+        state: "ACCEPTED",
+        requestId: request.requestId,
+      };
+    },
+    async receipt(_session, ref) {
+      return { schemaVersion: "cp02.receipt.fixture/v1", ref };
+    },
     async subscribe(_session, next) {
       listener = next;
       return () => { listener = null; };
@@ -134,14 +159,17 @@ test("trusted renderer uses typed handlers and cannot inject credential material
   const { event } = sender;
 
   await ipcMain.handlers.get(CHANNELS.connect)(event);
-  assert.deepEqual(await ipcMain.handlers.get(CHANNELS.status)(event), { state: "HEALTHY" });
+  assert.deepEqual(await ipcMain.handlers.get(CHANNELS.status)(event), {
+    schemaVersion: "cp01.status.fixture/v1",
+    state: "HEALTHY",
+  });
   await assert.rejects(
     ipcMain.handlers.get(CHANNELS.snapshot)(event, { sessionCapability: "forged" }),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID:FORBIDDEN_KEY:sessionCapability/,
+    /BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED/,
   );
   await assert.rejects(
     ipcMain.handlers.get(CHANNELS.command)(event, "open -a Terminal"),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID:REQUEST_OBJECT_REQUIRED/,
+    /BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED/,
   );
 });
 
@@ -157,13 +185,25 @@ test("event subscription only forwards renderer-safe control-plane events", asyn
 
   await ipcMain.handlers.get(CHANNELS.connect)(sender.event);
   await ipcMain.handlers.get(CHANNELS.eventsSubscribe)(sender.event);
-  adapter.emit({ cursor: "event:1", state: "RUNNING" });
-  assert.deepEqual(sender.sent, [[CHANNELS.event, { cursor: "event:1", state: "RUNNING" }]]);
+  adapter.emit({
+    schemaVersion: "cp02.event.fixture/v1",
+    cursor: "event:1",
+    state: "RUNNING",
+  });
+  assert.deepEqual(sender.sent, [[CHANNELS.event, {
+    schemaVersion: "cp02.event.fixture/v1",
+    cursor: "event:1",
+    state: "RUNNING",
+  }]]);
 
-  assert.doesNotThrow(() => adapter.emit({ cursor: "event:2", sessionToken: "leak" }));
+  assert.doesNotThrow(() => adapter.emit({
+    schemaVersion: "cp02.event.fixture/v1",
+    cursor: "event:2",
+    sessionToken: "leak",
+  }));
   assert.deepEqual(violations, ["BAMF_GUI20_RENDERER_PAYLOAD_UNSAFE"]);
   await ipcMain.handlers.get(CHANNELS.eventsUnsubscribe)(sender.event);
-  adapter.emit({ cursor: "event:3" });
+  adapter.emit({ schemaVersion: "cp02.event.fixture/v1", cursor: "event:3" });
   assert.equal(sender.sent.length, 1);
 });
 
@@ -171,7 +211,9 @@ test("adapter exception messages are not exposed to the renderer", async () => {
   const ipcMain = ipcMainFixture();
   const adapter = adapterFixture();
   adapter.status = async () => {
-    throw new Error("token=super-secret /Users/operator/private-run");
+    const error = new Error("token=super-secret /Users/operator/private-run");
+    error.code = "BAMF_GUI20_FAKE_ADAPTER_ERROR";
+    throw error;
   };
   const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS);
   const sender = senderFixture();

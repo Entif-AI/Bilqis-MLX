@@ -30,6 +30,10 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Verify Mission Control Electron security boundary
+        run: |
+          node --version
+          npm run mission-control:security:test
       - name: Validate release manifests and changelog
         run: python3 -B scripts/maintenance/release_version.py --check
       - name: Determine whether passing expensive suites were invalidated

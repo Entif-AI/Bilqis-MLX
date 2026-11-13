@@ -60,4 +60,5 @@ The suite is Node-only. It does not launch Electron, touch the learner, read a r
 directory, or require CP01/CP02 to be present. Final GUI20 integration must still
 consume the accepted CP01 and CP02 implementations and GUI01's packaged renderer
 protocol handler before the issue closes. The canonical leaf and premerge commands
-also run this suite so CJS-only security changes cannot bypass repository gates.
+and the hosted portable-core workflow run this suite so CJS-only security changes
+cannot bypass repository gates.

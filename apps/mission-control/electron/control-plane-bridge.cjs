@@ -11,7 +11,15 @@ class ControlPlaneBridge {
     if (!adapter || typeof adapter.connect !== "function") {
       throw new TypeError("BAMF_GUI20_CONTROL_PLANE_ADAPTER_REQUIRED");
     }
-    for (const name of ["snapshotRequest", "dryRunRequest", "commandRequest", "receiptRef", "event"]) {
+    for (const name of [
+      "publicStatus",
+      "snapshotRequest",
+      "dryRunRequest",
+      "commandRequest",
+      "receiptRef",
+      "response",
+      "event",
+    ]) {
       if (!validators || typeof validators[name] !== "function") {
         throw new TypeError(`BAMF_GUI20_CP02_VALIDATOR_REQUIRED:${name}`);
       }
@@ -32,7 +40,9 @@ class ControlPlaneBridge {
     }
     let publicStatus;
     try {
-      publicStatus = assertRendererSafePayload(connection.publicStatus ?? {});
+      publicStatus = this.validators.publicStatus(
+        assertRendererSafePayload(connection.publicStatus ?? {}),
+      );
     } catch (error) {
       if (typeof this.adapter.disconnect === "function") {
         await this.adapter.disconnect(connection.session);
@@ -125,7 +135,7 @@ class ControlPlaneBridge {
     const result = argument === undefined
       ? await this.adapter[method](session)
       : await this.adapter[method](session, argument);
-    return assertRendererSafePayload(result);
+    return this.validators.response(method, assertRendererSafePayload(result));
   }
 
   async #invalidateSession() {

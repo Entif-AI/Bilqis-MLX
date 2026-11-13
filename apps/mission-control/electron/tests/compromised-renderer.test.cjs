@@ -21,20 +21,41 @@ test("compromised renderer cannot turn the preload bridge into file or trainer e
     async connect() {
       return {
         session: { sessionToken: "main-only-token" },
-        publicStatus: { state: "HEALTHY", protocolVersion: "cp01/v1" },
+        publicStatus: {
+          schemaVersion: "cp01.public-status.fixture/v1",
+          state: "HEALTHY",
+          protocolVersion: "cp01/v1",
+        },
       };
     },
     async command(_session, request) {
       adapterCalls.push(request);
-      return { state: "ACCEPTED" };
+      return {
+        schemaVersion: "cp02.command.result.fixture/v1",
+        state: "ACCEPTED",
+        requestId: request.requestId,
+      };
     },
     async dryRun(_session, request) {
       adapterCalls.push(request);
-      return { state: "READY" };
+      return {
+        schemaVersion: "cp02.dry-run.result.fixture/v1",
+        state: "READY",
+        requestId: request.requestId,
+      };
     },
-    async status() { return { state: "HEALTHY" }; },
-    async snapshot() { return { schemaVersion: "fixture/v1" }; },
-    async receipt() { return { ref: "receipt:fixture" }; },
+    async status() {
+      return { schemaVersion: "cp01.status.fixture/v1", state: "HEALTHY" };
+    },
+    async snapshot(_session, request) {
+      return {
+        schemaVersion: "cp02.snapshot.result.fixture/v1",
+        objectRef: request.objectRef,
+      };
+    },
+    async receipt(_session, ref) {
+      return { schemaVersion: "cp02.receipt.fixture/v1", ref };
+    },
     async subscribe() { return () => {}; },
   };
   const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS);
@@ -82,13 +103,42 @@ test("compromised renderer cannot turn the preload bridge into file or trainer e
     /NO_HANDLER:shell:exec/,
   );
 
+  const beforeHostileRequests = adapterCalls.length;
+  await assert.rejects(
+    api.querySnapshot({
+      schemaVersion: "cp02.snapshot.fixture/v1",
+      objectRef: "run:fixture",
+      path: "/etc/passwd",
+    }),
+    /BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED/,
+  );
+  await assert.rejects(
+    api.requestCommand({
+      schemaVersion: "cp02.command.fixture/v1",
+      requestId: "hostile-command",
+      action: "owner-action",
+      argv: ["python3", "-m", "bilqis_mlx.cli", "train"],
+    }),
+    /BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED/,
+  );
+  await assert.rejects(
+    api.requestDryRun({
+      schemaVersion: "cp02.dry-run.fixture/v1",
+      requestId: "hostile-dry-run",
+      action: "preflight",
+      shell: "python3 -m bilqis_mlx.cli train",
+    }),
+    /BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED/,
+  );
+  assert.equal(adapterCalls.length, beforeHostileRequests);
+
   await api.requestCommand({
-    schemaVersion: "cp02-fixture/v1",
+    schemaVersion: "cp02.command.fixture/v1",
     requestId: "request-1",
     action: "owner-action",
   });
   assert.deepEqual(adapterCalls, [{
-    schemaVersion: "cp02-fixture/v1",
+    schemaVersion: "cp02.command.fixture/v1",
     requestId: "request-1",
     action: "owner-action",
   }]);

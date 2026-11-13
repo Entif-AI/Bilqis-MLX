@@ -81,9 +81,20 @@ test("preload invokes only fixed channels and unsubscribes its fixed event liste
 
   await api.connect();
   await api.status();
-  await api.querySnapshot({ schemaVersion: "fixture/v1", objectRef: "run:one" });
-  await api.requestDryRun({ schemaVersion: "fixture/v1", action: "preflight" });
-  await api.requestCommand({ schemaVersion: "fixture/v1", action: "resume" });
+  await api.querySnapshot({
+    schemaVersion: "cp02.snapshot.fixture/v1",
+    objectRef: "run:one",
+  });
+  await api.requestDryRun({
+    schemaVersion: "cp02.dry-run.fixture/v1",
+    requestId: "dry-1",
+    action: "preflight",
+  });
+  await api.requestCommand({
+    schemaVersion: "cp02.command.fixture/v1",
+    requestId: "command-1",
+    action: "owner-action",
+  });
   await api.fetchReceipt("receipt:abc-123");
 
   const events = [];
