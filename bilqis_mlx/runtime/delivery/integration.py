@@ -11,7 +11,7 @@ REQUIRED_COMMANDS = ("cold-resume", "owner-start", "preflight", "read-only-statu
 
 
 def integrate_delivery_receipts(*, components, issues, commits, proofs, egm,
-                                operator_commands) -> BamfDeliveryManifest:
+                                operator_commands, conformance) -> BamfDeliveryManifest:
     """Compose owned receipts without promoting provisional evidence to acceptance."""
     component_ids = tuple(item.component_id for item in components)
     require(all(name in component_ids for name in REQUIRED_COMPONENTS),
@@ -22,16 +22,29 @@ def integrate_delivery_receipts(*, components, issues, commits, proofs, egm,
             "C15_OPERATOR_COMMANDS")
     require(all(item.state is ProofState.EXECUTED_PASS for item in operator_commands),
             "C15_OPERATOR_COMMAND_PROOF")
+    require(getattr(conformance, "student_mastery_status", None) == "NOT_CLAIMED",
+            "C15_CONFORMANCE_MASTERY_SEPARATION")
+    conformance_status = getattr(conformance, "software_delivery_status", None)
+    require(conformance_status in {
+        "IN_PROGRESS", "READY_FOR_OWNER_MERGE", "DELIVERED", "BLOCKED",
+    }, "C15_CONFORMANCE_STATUS")
 
     blocked = any(item.status is ReceiptStatus.BLOCKED for item in components)
     provisional = any(item.status is ReceiptStatus.PROVISIONAL for item in components)
     failed_review = any(item.status is EgmStatus.FAIL for item in egm)
     pending_review = any(item.status is EgmStatus.PENDING for item in egm)
-    software_status = (
+    receipts_status = (
         "BLOCKED" if blocked or failed_review else
         "IN_PROGRESS" if provisional or pending_review else
-        "READY_FOR_OWNER_MERGE"
-    )
+        "READY_FOR_OWNER_MERGE")
+    if "BLOCKED" in {receipts_status, conformance_status}:
+        software_status = "BLOCKED"
+    elif "IN_PROGRESS" in {receipts_status, conformance_status}:
+        software_status = "IN_PROGRESS"
+    else:
+        require(conformance_status in {"READY_FOR_OWNER_MERGE", "DELIVERED"},
+                "C15_CONFORMANCE_NOT_READY")
+        software_status = "READY_FOR_OWNER_MERGE"
     return BamfDeliveryManifest(
         components, issues, commits, proofs, egm, operator_commands,
         software_delivery_status=software_status,

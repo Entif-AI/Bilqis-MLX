@@ -7,22 +7,33 @@
   },
   "branch": "codex/bamf02-c-runtime",
   "cross_document_diff": {
-    "disposition": "NO_CONFLICT_FOUND_IN_C15_OWNED_PUBLIC_CONTRACTS",
-    "normative_conflicts": [],
+    "candidate_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
+    "disposition": "REPAIR_IN_PROGRESS_TARGETED_REAUDIT_REQUIRED",
+    "initial_findings": {
+      "blockers": 4,
+      "majors": 5,
+      "nits": 1
+    },
+    "reviewer": "google-egm-b3a359-initial",
     "scope": "C15 behavioral-conformance and grade-neutrality clauses"
   },
   "dependency_graph": {
     "child_count": 172,
-    "executable_order_length": 215,
+    "cycles": [],
     "held_keys": [],
-    "registry_integrity": "valid",
-    "status": "valid"
+    "mirror_mismatches": [],
+    "node_count": 215,
+    "owner_count": 43,
+    "status": "valid",
+    "unknown_dependencies": []
   },
   "fresh_behavioral_proof": "PENDING_ENVIRONMENT_WITH_RDFLIB_AND_MLX_AS_REQUIRED",
+  "live_issue_parity": "SEPARATE_C15_3_AUDIT_REQUIRED",
   "reviewed_unified": "97a018ed7e9697fe284abd9fa8197cd7f4194b45",
   "schema": "bilqis.bamf.delivery-evidence-boundary/v1",
   "source_head": "030aa51d5e3f1e669648831cee2b7b340dab1c67",
   "source_privacy_boundary": {
+    "disposition": "PROTECTED_EVIDENCE_NOT_COPIED_TO_PUBLIC_ARTIFACTS",
     "protected_excluded": [
       "PRIVATE_REAL",
       "private journal payloads",
@@ -33,6 +44,7 @@
       "PUBLIC_DERIVED",
       "public issue receipts"
     ],
-    "rule": "protected evidence remains behind protected authority; public artifacts carry dispositions only"
+    "source_sha256": "bca4f72eccc9002ce7db93cf5aead11a3ccfb1a1ebaad198365bdc4129ca5732",
+    "source_text": "Use Rosetta v3 existing Observation, Frame, Conjecture, Evaluation and Run/Action/ToolCall/Receipt semantics with application namespaced envelopes. Keep CID content identity, stable RID and external XID separate. Akasha consumes immutable source/release/learner events through a local outbox, projects them into declared namespaces, and is rebuildable. #297 owns domain/authority contracts; #299/#300 own release and run/evidence projection; #301 recovery. Store source/effective/observed/recorded times where relevant. A live Falkor service is not a training dependency: compile neighborhoods into a release artifact and enqueue observations locally. Mutation remains with the source/run owners. PRIVATE_REAL data stays outside public worktrees, CI, issue bodies and exports; #327 protects the private pilot. PUBLIC_FIXTURE development continues independently."
   }
 }

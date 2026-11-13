@@ -6,6 +6,8 @@ from bilqis_mlx.runtime.delivery import (
     OperatorCommandReceipt, ProofReceipt, ProofState, ReceiptStatus,
     integrate_delivery_receipts,
 )
+from bilqis_mlx.runtime.delivery.tests.test_conformance import gates, rows
+from bilqis_mlx.runtime.delivery.conformance import ConformanceProjection
 
 
 SHA = "b" * 40
@@ -19,20 +21,28 @@ def component(name, status=ReceiptStatus.ACCEPTED):
     return ComponentReceipt(name, number, SHA, status, f"issue:{number}")
 
 
-def command(name):
+def command(name, state=ProofState.EXECUTED_PASS):
     return OperatorCommandReceipt(
-        name, ("npm", "run", "train", "--", "--help"),
-        ProofState.EXECUTED_PASS, "test_operator_parser.py", "docs:runbook")
+        name, ("npm", "run", "train", "--", "--help"), state,
+        "test_operator_parser.py", "docs:runbook")
 
 
-def integrate(components, egm_status=EgmStatus.PASS):
+def conformance(ready=False):
+    state = ProofState.EXECUTED_PASS if ready else ProofState.SPECIFIED
+    gate_state = ProofState.EXECUTED_PASS if ready else ProofState.CODE_PRESENT
+    return ConformanceProjection(
+        rows(state), gates(gate_state),
+        "READY_FOR_OWNER_MERGE" if ready else "IN_PROGRESS", "NOT_CLAIMED")
+
+
+def integrate(components, egm_status=EgmStatus.PASS, *, ready=False,
+              command_state=ProofState.EXECUTED_PASS):
     dependency_components = tuple(item for item in components
                                   if item.component_id in COMPONENTS)
     issues = tuple(sorted(
         (IssueReceipt(item.owner_issue, item.component_id, "CLOSED",
                       item.status, item.head_sha, item.evidence_ref)
-         for item in dependency_components),
-        key=lambda item: item.issue))
+         for item in dependency_components), key=lambda item: item.issue))
     commits = tuple(CommitReceipt(item.head_sha[:-1] + str(index), item.owner_issue,
                                   "delivery owner")
                     for index, item in enumerate(dependency_components))
@@ -42,10 +52,10 @@ def integrate(components, egm_status=EgmStatus.PASS):
                            "scripts/check_bamf_workstack.py", "held_keys=[]"),)
     egm = tuple(EgmReceipt(name, egm_status, SHA, "report:egm")
                 for name in ("codebase-details", "implementation-readiness"))
-    commands = tuple(command(name) for name in COMMANDS)
+    commands = tuple(command(name, command_state) for name in COMMANDS)
     return integrate_delivery_receipts(
         components=components, issues=issues, commits=commits, proofs=proofs,
-        egm=egm, operator_commands=commands)
+        egm=egm, operator_commands=commands, conformance=conformance(ready))
 
 
 class DeliveryIntegrationTests(unittest.TestCase):
@@ -57,12 +67,14 @@ class DeliveryIntegrationTests(unittest.TestCase):
         value = integrate(components, EgmStatus.PENDING)
         self.assertEqual(value.software_delivery_status, "IN_PROGRESS")
         self.assertEqual(value.student_mastery_status, "NOT_CLAIMED")
-        self.assertEqual([item.component_id for item in value.components], list(COMPONENTS))
 
-    def test_complete_owner_receipts_and_independent_reviews_reach_owner_merge_gate(self):
-        value = integrate(tuple(component(name) for name in COMPONENTS))
+    def test_receipts_cannot_reach_ready_without_conformance_closure(self):
+        value = integrate(tuple(component(name) for name in COMPONENTS), ready=False)
+        self.assertEqual(value.software_delivery_status, "IN_PROGRESS")
+
+    def test_complete_receipts_and_conformance_reach_owner_merge_gate(self):
+        value = integrate(tuple(component(name) for name in COMPONENTS), ready=True)
         self.assertEqual(value.software_delivery_status, "READY_FOR_OWNER_MERGE")
-        self.assertEqual(value.student_mastery_status, "NOT_CLAIMED")
 
     def test_additional_component_pins_do_not_replace_required_dependencies(self):
         components = tuple(sorted(
@@ -70,13 +82,17 @@ class DeliveryIntegrationTests(unittest.TestCase):
              ComponentReceipt("topology", 382, "c" * 64, ReceiptStatus.ACCEPTED,
                               "configs/models/bamf-0.2.json")),
             key=lambda item: item.component_id))
-        value = integrate(components)
-        self.assertEqual(value.software_delivery_status, "READY_FOR_OWNER_MERGE")
+        value = integrate(components, ready=True)
         self.assertIn("topology", {item.component_id for item in value.components})
+
+    def test_code_present_operator_command_cannot_integrate(self):
+        with self.assertRaises(BilqisError):
+            integrate(tuple(component(name) for name in COMPONENTS), ready=True,
+                      command_state=ProofState.CODE_PRESENT)
 
     def test_missing_required_component_refuses_integration(self):
         with self.assertRaises(BilqisError) as caught:
-            integrate(tuple(component(name) for name in COMPONENTS[:-1]))
+            integrate(tuple(component(name) for name in COMPONENTS[:-1]), ready=True)
         self.assertIs(caught.exception.spec, SCHOOL.BAMF_DELIVERY.INVALID)
 
 

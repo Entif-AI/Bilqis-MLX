@@ -1,6 +1,11 @@
 {
   "commits": [
     {
+      "owner_issue": 538,
+      "role": "C15.1b development checkpoint",
+      "sha": "030aa51d5e3f1e669648831cee2b7b340dab1c67"
+    },
+    {
       "owner_issue": 384,
       "role": "C11 accepted integration",
       "sha": "0ae919779e1de44f5c7c96e911b3f61780099e21"
@@ -19,6 +24,11 @@
       "owner_issue": 381,
       "role": "C12 accepted integration",
       "sha": "516725b6170f258ad86b0c5d4ca050907238e59d"
+    },
+    {
+      "owner_issue": 539,
+      "role": "C15.2 development checkpoint",
+      "sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111"
     },
     {
       "owner_issue": 382,
@@ -50,8 +60,8 @@
     },
     {
       "component_id": "C13",
-      "evidence_ref": "issue:528#issuecomment-6837301659",
-      "head_sha": "1150f7d8ca65b564906150c266c3b261ccb3b030",
+      "evidence_ref": "issue:528#issuecomment-6856864895",
+      "head_sha": "549d84d5cb58862c92eca2dd25277d5ca0665fd7",
       "owner_issue": 385,
       "status": "PROVISIONAL"
     },
@@ -71,10 +81,10 @@
     },
     {
       "component_id": "architecture",
-      "evidence_ref": "docs/architecture/BAMF_0_2.md",
-      "head_sha": "264d46cf51635f42e48befe09401588f833d1312e3f6f6e995d02246f08d1d5c",
+      "evidence_ref": "docs/architecture/BAMF_0_2.md@sha256:948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+      "head_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
       "owner_issue": 387,
-      "status": "ACCEPTED"
+      "status": "PROVISIONAL"
     },
     {
       "component_id": "codec",
@@ -92,9 +102,9 @@
     },
     {
       "component_id": "delivery-tests",
-      "evidence_ref": "bilqis_mlx/runtime/delivery/tests",
-      "head_sha": "4759336facf7a3482254b32c8647013ae447f074",
-      "owner_issue": 538,
+      "evidence_ref": "git:96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111:bilqis_mlx/runtime/delivery/tests",
+      "head_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
+      "owner_issue": 539,
       "status": "PROVISIONAL"
     },
     {
@@ -106,8 +116,8 @@
     },
     {
       "component_id": "issue-book",
-      "evidence_ref": "docs/tasks/bamf-0.2/ISSUE_BOOK.md",
-      "head_sha": "21a82b966c52ad13480b7021e9163efaacc7f6f70c9c4eac5d7277f05d355425",
+      "evidence_ref": "docs/tasks/bamf-0.2/ISSUE_BOOK.md@sha256:21a82b966c52ad13480b7021e9163efaacc7f6f70c9c4eac5d7277f05d355425",
+      "head_sha": "97a018ed7e9697fe284abd9fa8197cd7f4194b45",
       "owner_issue": 341,
       "status": "ACCEPTED"
     },
@@ -141,22 +151,22 @@
     },
     {
       "component_id": "workstack",
-      "evidence_ref": "docs/tasks/bamf-0.2/workstack.json",
-      "head_sha": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+      "evidence_ref": "docs/tasks/bamf-0.2/workstack.json@sha256:e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+      "head_sha": "97a018ed7e9697fe284abd9fa8197cd7f4194b45",
       "owner_issue": 341,
       "status": "ACCEPTED"
     }
   ],
   "egm": [
     {
-      "candidate_sha": "4759336facf7a3482254b32c8647013ae447f074",
-      "report_ref": "EGM_PENDING:C15.1a-C15.2",
+      "candidate_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
+      "report_ref": "EGM_INITIAL_REVIEW_PENDING:C15.1a-C15.2",
       "reviewer": "codebase-details",
       "status": "EGM_PENDING"
     },
     {
-      "candidate_sha": "4759336facf7a3482254b32c8647013ae447f074",
-      "report_ref": "EGM_PENDING:C15.1a-C15.2",
+      "candidate_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
+      "report_ref": "EGM_INITIAL_REVIEW_PENDING:C15.1a-C15.2",
       "reviewer": "implementation-readiness",
       "status": "EGM_PENDING"
     }
@@ -195,8 +205,8 @@
       "status": "ACCEPTED"
     },
     {
-      "evidence_ref": "issue:528#issuecomment-6837301659",
-      "head_sha": "1150f7d8ca65b564906150c266c3b261ccb3b030",
+      "evidence_ref": "issue:528#issuecomment-6856864895",
+      "head_sha": "549d84d5cb58862c92eca2dd25277d5ca0665fd7",
       "issue": 385,
       "issue_key": "C13",
       "state": "OPEN",
@@ -219,15 +229,23 @@
       "status": "PROVISIONAL"
     },
     {
-      "evidence_ref": "issue:538",
-      "head_sha": "4759336facf7a3482254b32c8647013ae447f074",
+      "evidence_ref": "issue:538#issuecomment-6856845206",
+      "head_sha": "030aa51d5e3f1e669648831cee2b7b340dab1c67",
       "issue": 538,
       "issue_key": "C15.1b",
       "state": "OPEN",
       "status": "PROVISIONAL"
+    },
+    {
+      "evidence_ref": "issue:539#issuecomment-6857007014",
+      "head_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
+      "issue": 539,
+      "issue_key": "C15.2",
+      "state": "OPEN",
+      "status": "PROVISIONAL"
     }
   ],
-  "manifest_sha256": "fcf4be4f9157e3fb3545e039d3d9b3c48e7bf1fcecc87df656fc0aca89870572",
+  "manifest_sha256": "d3050ce447420bed6481066adbb5c8c4bde484253f89a41e6ad5b8f38f13e2f2",
   "operator_commands": [
     {
       "argv": [
@@ -313,9 +331,9 @@
       "state": "EXECUTED_PASS"
     },
     {
-      "evidence_ref": "issue:528#issuecomment-6837301659",
+      "evidence_ref": "issue:528#issuecomment-6856864895",
       "input_schema": "bilqis.c13.episode-binding-generator/v1",
-      "observed": "source authority landed later; disposable candidate/rollback/cold-resume not yet accepted",
+      "observed": "portable implementation checkpoint current; Studio hardware/authority witness not yet accepted",
       "output_schema": "bilqis.c13.acceptance/v1",
       "proof_id": "c13.integrated-learning",
       "state": "BLOCKED"

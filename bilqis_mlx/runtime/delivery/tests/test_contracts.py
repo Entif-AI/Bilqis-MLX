@@ -46,7 +46,7 @@ class DeliveryContractTests(unittest.TestCase):
                                  value.egm, value.operator_commands)
         self.assertIs(caught.exception.spec, SCHOOL.BAMF_DELIVERY.INVALID)
 
-    def test_command_receipt_requires_executed_parser_evidence(self):
+    def test_command_receipt_requires_nonempty_argv(self):
         with self.assertRaises(BilqisError) as caught:
             OperatorCommandReceipt("resume", (), ProofState.CODE_PRESENT,
                                    "test_bamf_resume.py", "docs:runbook")

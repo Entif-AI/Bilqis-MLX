@@ -42,7 +42,8 @@ API:
 The manifest is canonical-JSON content addressed. Receipt collections are tuples,
 sorted and unique. Every component/issue/commit carries an exact SHA or evidence
 identity. Proof receipts bind input/output schema versions. The integration rule
-requires exactly B14, C11, C12, C13, C14 and C16, exactly the independent
+requires these six dependency components: B14, C11, C12, C13, C14 and C16;
+additional immutable component pins are permitted but cannot replace them. It also requires exactly the independent
 `codebase-details` and `implementation-readiness` EGM slots, and exactly the four
 operator command roles below. Provisional upstream or pending EGM evidence keeps
 software delivery `IN_PROGRESS`; it can never become an implicit PASS. Student

@@ -2,9 +2,10 @@ import json
 from pathlib import Path
 import unittest
 
-from bilqis_mlx.runtime.delivery import load_manifest_record
+from bilqis_mlx.runtime.delivery import load_conformance_record, load_manifest_record
 from bilqis_mlx.runtime.delivery.publication import (
     published_boundary_record, published_conformance_record, published_manifest_record,
+    published_roadmap_record,
 )
 
 
@@ -33,6 +34,8 @@ class DeliveryPublicationTests(unittest.TestCase):
         self.assertEqual(gates["GRADE_NEUTRAL_INVARIANCE"]["state"], "CODE_PRESENT")
         self.assertEqual(record["software_delivery_status"], "IN_PROGRESS")
         self.assertEqual(record["student_mastery_status"], "NOT_CLAIMED")
+        self.assertEqual(load_conformance_record(record).digest(),
+                         record["conformance_sha256"])
 
     def test_checked_in_publication_exactly_matches_deterministic_projection(self):
         root = Path(__file__).resolve().parents[4]
@@ -43,13 +46,28 @@ class DeliveryPublicationTests(unittest.TestCase):
                          published_conformance_record())
         self.assertEqual(json.loads((evidence / "c15-2-evidence-boundary.json").read_text()),
                          published_boundary_record())
+        self.assertEqual(json.loads((evidence / "roadmap-projection.json").read_text()),
+                         published_roadmap_record())
 
     def test_boundary_is_public_safe_and_dependency_graph_is_explicit(self):
         boundary = published_boundary_record()
         self.assertEqual(boundary["dependency_graph"]["held_keys"], [])
-        self.assertEqual(boundary["dependency_graph"]["executable_order_length"], 215)
+        self.assertEqual(boundary["dependency_graph"]["node_count"], 215)
         self.assertIn("PRIVATE_REAL", boundary["source_privacy_boundary"]["protected_excluded"])
-        self.assertEqual(boundary["cross_document_diff"]["normative_conflicts"], [])
+        self.assertEqual(boundary["cross_document_diff"]["disposition"],
+                         "REPAIR_IN_PROGRESS_TARGETED_REAUDIT_REQUIRED")
+        self.assertEqual(boundary["live_issue_parity"], "SEPARATE_C15_3_AUDIT_REQUIRED")
+
+    def test_roadmap_projects_exact_checkpoint_heads_without_completion_claims(self):
+        record = published_roadmap_record()
+        leaves = {row["issue"]: row for row in record["leaves"]}
+        self.assertEqual(leaves[538]["head_sha"],
+                         "030aa51d5e3f1e669648831cee2b7b340dab1c67")
+        self.assertEqual(leaves[539]["head_sha"],
+                         "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111")
+        self.assertEqual(leaves[539]["status"], "DEVELOPMENT_RECEIPT")
+        self.assertEqual(leaves[540]["status"], "PENDING")
+        self.assertEqual(record["student_mastery_status"], "NOT_CLAIMED")
 
 
 if __name__ == "__main__":
