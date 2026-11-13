@@ -14,6 +14,18 @@ The runtime error catalog is the authority for new failures. Raw string exceptio
 
 ## Typed catalog
 
+### `FACTORY.SOURCE_BINDING.INVALID`
+
+Factory source binding invalid.
+
+Owner: `factory.curriculum_definition`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Factory source binding invalid: {reason}
+
+Recovery: Restore the canonical capability/source binding and reserved namespace ownership before retrying.
+
 ### `FACTORY.SEMANTIC_RULE.INVALID`
 
 Factory semantic rule contract invalid.
