@@ -1,34 +1,61 @@
+"use strict";
+
 const path = require("node:path");
-const { app, BrowserWindow, ipcMain } = require("electron");
-const OPERATOR_VIEW_FIXTURE = require("./fixtures/operator-view-v1.json");
+const { app, BrowserWindow, ipcMain, net, protocol } = require("electron");
 
-const BOOTSTRAP_STATE = Object.freeze({
-  context: OPERATOR_VIEW_FIXTURE,
-  selection: null,
-});
+const { AcceptedControlPlaneAdapter } = require(
+  "./electron/accepted-control-plane-adapter.cjs",
+);
+const { createAcceptedValidators } = require("./electron/accepted-contracts.cjs");
+const { ControlPlaneBridge } = require("./electron/control-plane-bridge.cjs");
+const { registerMissionControlIpc } = require("./electron/main-ipc.cjs");
+const { registerRendererSchemePrivileges } = require("./electron/renderer-location.cjs");
+const { registerMissionControlProtocol } = require("./electron/renderer-protocol.cjs");
+const { createMissionControlWindow } = require("./electron/window-security.cjs");
 
-function createWindow() {
-  const window = new BrowserWindow({
-    width: 1440,
-    height: 920,
-    minWidth: 760,
-    minHeight: 620,
-    webPreferences: {
-      preload: path.join(__dirname, "preload.cjs"),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
+registerRendererSchemePrivileges(protocol);
+
+async function createWindow() {
+  const { assertOperatorView } = await import("./renderer/shell-state.mjs");
+  const adapter = new AcceptedControlPlaneAdapter();
+  const bridge = new ControlPlaneBridge(
+    adapter,
+    createAcceptedValidators(assertOperatorView),
+  );
+  const { window, loadRenderer } = createMissionControlWindow({
+    BrowserWindow,
+    preloadPath: path.join(__dirname, "electron", "preload.cjs"),
+    browserWindowOptions: {
+      width: 1440,
+      height: 920,
+      minWidth: 760,
+      minHeight: 620,
     },
   });
-
-  window.loadFile(path.join(__dirname, "renderer", "index.html"));
+  const disposeIpc = registerMissionControlIpc({
+    ipcMain,
+    bridge,
+    trustedWebContents: window.webContents,
+  });
+  await loadRenderer();
+  window.once("closed", () => {
+    disposeIpc();
+    void bridge.disconnect().finally(() => adapter.close());
+  });
+  return window;
 }
 
-app.whenReady().then(() => {
-  ipcMain.handle("bamf:shell-bootstrap", () => BOOTSTRAP_STATE);
-  createWindow();
+app.whenReady().then(async () => {
+  registerMissionControlProtocol({
+    protocol,
+    net,
+    assetRoot: path.join(__dirname, "renderer"),
+  });
+  await createWindow();
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      void createWindow();
+    }
   });
 });
 
