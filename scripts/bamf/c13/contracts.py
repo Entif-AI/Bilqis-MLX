@@ -13,6 +13,7 @@ SOURCE_SCHEMA = "bilqis.c13.episode-source-release/v1"
 CASE_SCHEMA = "bilqis.c13.episode-binding-case/v1"
 RECEIPT_SCHEMA = "bilqis.c13.delivery-receipt/v1"
 SEMANTIC_DELTA_SCHEMA = "bilqis.c13.semantic-delta-receipt/v1"
+SOLVER_PROBE_SCHEMA = "bilqis.c13.complete-solver-probe/v1"
 MAX_STEPS = 64
 ACTORS = ("A", "B", "C")
 
@@ -82,6 +83,8 @@ class CandidateAttemptReceipt:
     parent_candidate_sha256: str
     current_candidate_sha256: str
     attempted_steps: int
+    owner_event: str | None = None
+    owner_evidence_sha256: str | None = None
 
     def __post_init__(self) -> None:
         attempted = self.outcome in ("ACCEPTED", "REJECTED")
@@ -98,6 +101,51 @@ class CandidateAttemptReceipt:
                 or self.current_optimizer_step != self.parent_optimizer_step
                 or self.current_candidate_sha256 != self.parent_candidate_sha256):
             fail("BAMF_C13_NONACCEPTED_PARENT_DRIFT")
+        if (self.owner_event is None) != (self.owner_evidence_sha256 is None):
+            fail("BAMF_C13_CANDIDATE_OWNER_EVIDENCE_INVALID")
+        if self.owner_event is not None:
+            expected = {
+                "ACCEPTED": "BAMF_C16_3_ACCEPTED",
+                "REJECTED": "BAMF_CANDIDATE_REJECTED",
+            }.get(self.outcome)
+            if (self.owner_event != expected
+                    or len(self.owner_evidence_sha256) != 64
+                    or any(char not in "0123456789abcdef"
+                           for char in self.owner_evidence_sha256)):
+                fail("BAMF_C13_CANDIDATE_OWNER_EVIDENCE_INVALID")
+
+
+@dataclass(frozen=True)
+class SolverProbeReceipt:
+    split: str
+    depth: int
+    correct: int
+    total: int
+    neural_calls: int
+    source_only_correct: int
+    generation_sha256: str
+    schema_version: str = SOLVER_PROBE_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (self.schema_version != SOLVER_PROBE_SCHEMA
+                or self.split not in ("BASELINE", "FRESH")
+                or self.depth not in (1, 2, 3, 4)
+                or self.total != 64
+                or not 0 <= self.correct <= self.total
+                or type(self.neural_calls) is not int or self.neural_calls < 0
+                or not 0 <= self.source_only_correct <= self.correct
+                or len(self.generation_sha256) != 64
+                or any(char not in "0123456789abcdef"
+                       for char in self.generation_sha256)):
+            fail("BAMF_C13_SOLVER_PROBE_RECEIPT_INVALID")
+
+    @property
+    def solved(self) -> bool:
+        return self.correct == self.total
+
+    @property
+    def source_only_solved(self) -> bool:
+        return self.solved and self.source_only_correct == self.total
 
 
 @dataclass(frozen=True)
@@ -137,12 +185,15 @@ class DeliveryReceipt:
     run_dir: str | None = None
     candidate_attempts: tuple[CandidateAttemptReceipt, ...] = ()
     semantic_delta: SemanticDeltaReceipt | None = None
+    baseline_probe: SolverProbeReceipt | None = None
+    fresh_probe: SolverProbeReceipt | None = None
     schema_version: str = RECEIPT_SCHEMA
 
     def __post_init__(self) -> None:
         if (self.schema_version != RECEIPT_SCHEMA
                 or self.status not in (
-                    "PREPARED", "FOUNDATION_CREATED", "CANDIDATE_EXERCISED", "EXECUTED")
+                    "PREPARED", "FOUNDATION_CREATED", "CANDIDATE_EXERCISED",
+                    "BASELINE_SOLVED_ADVANCE_REQUIRED", "EXECUTED")
                 or self.baseline_case_count != 64 or self.fresh_case_count != 64
                 or not 0 <= self.max_steps <= MAX_STEPS
                 or len(self.fixture_manifest_sha256) != 64
@@ -150,12 +201,17 @@ class DeliveryReceipt:
                 or any(type(item) is not CandidateAttemptReceipt
                        for item in self.candidate_attempts)
                 or (self.semantic_delta is not None
-                    and type(self.semantic_delta) is not SemanticDeltaReceipt)):
+                    and type(self.semantic_delta) is not SemanticDeltaReceipt)
+                or (self.baseline_probe is not None
+                    and type(self.baseline_probe) is not SolverProbeReceipt)
+                or (self.fresh_probe is not None
+                    and type(self.fresh_probe) is not SolverProbeReceipt)):
             fail("BAMF_C13_DELIVERY_RECEIPT_INVALID")
         has_launch = type(self.launch_receipt) is LaunchReceipt
         if self.status == "PREPARED":
             if (has_launch or self.run_dir is not None or self.candidate_attempts
-                    or self.semantic_delta is not None):
+                    or self.semantic_delta is not None or self.baseline_probe is not None
+                    or self.fresh_probe is not None):
                 fail("BAMF_C13_DELIVERY_RECEIPT_INVALID")
             return
         if (not has_launch or not isinstance(self.run_dir, str) or not self.run_dir
@@ -167,5 +223,5 @@ class DeliveryReceipt:
 __all__ = (
     "ACTORS", "CASE_SCHEMA", "CandidateAttemptReceipt", "DeliveryConfig",
     "DeliveryReceipt", "EpisodeSourceRelease", "FoundationLaunchInput",
-    "MAX_STEPS", "SemanticDeltaReceipt", "fail",
+    "MAX_STEPS", "SemanticDeltaReceipt", "SolverProbeReceipt", "fail",
 )

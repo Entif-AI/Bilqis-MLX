@@ -14,7 +14,8 @@ from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 from bilqis_mlx.runtime.bamf_operator.session import operate_bamf
 
-from scripts.bamf.c13_delivery_contracts import CandidateAttemptReceipt, SemanticDeltaReceipt
+from scripts.bamf.c13.candidate_evidence import event_offset, owner_event_after
+from scripts.bamf.c13.contracts import CandidateAttemptReceipt, SemanticDeltaReceipt
 
 PRODUCTION_RESERVE_GIB = 100.0
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
@@ -63,6 +64,7 @@ def cold_restart_identity(run_dir: Path) -> dict:
 
 def attempt_owner_candidate(run_dir: Path) -> CandidateAttemptReceipt:
     parent = load_accepted_generation(run_dir)
+    offset = event_offset(run_dir)
     result = operate_bamf(
         run_dir, minutes=1, max_visits=1, reserve_gib=PRODUCTION_RESERVE_GIB)
     current = load_accepted_generation(run_dir)
@@ -76,6 +78,13 @@ def attempt_owner_candidate(run_dir: Path) -> CandidateAttemptReceipt:
         outcome = "ACTION_REQUIRED"
     else:
         raise ValueError("BAMF_C13_OWNER_VISIT_RESULT_INVALID")
+    owner_event, owner_evidence_sha256 = owner_event_after(
+        run_dir,
+        offset,
+        outcome,
+        generation=current.generation,
+        optimizer_step=current.retained_state.optimizer_step,
+    )
     return CandidateAttemptReceipt(
         outcome,
         parent.generation,
@@ -85,6 +94,8 @@ def attempt_owner_candidate(run_dir: Path) -> CandidateAttemptReceipt:
         _identity(parent),
         _identity(current),
         int(outcome in ("ACCEPTED", "REJECTED")),
+        owner_event,
+        owner_evidence_sha256,
     )
 
 
@@ -163,7 +174,7 @@ def record_append_only_semantic_delta(
 
 def bind_semantic_delta_receipt(delivery, semantic_delta: SemanticDeltaReceipt):
     """Bind verified C07 delta state into a C13 delivery receipt without rerunning C07."""
-    from scripts.bamf.c13_delivery_contracts import DeliveryReceipt
+    from scripts.bamf.c13.contracts import DeliveryReceipt
 
     if (type(delivery) is not DeliveryReceipt
             or type(semantic_delta) is not SemanticDeltaReceipt
