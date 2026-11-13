@@ -274,6 +274,29 @@ class MissionControlStateTests(unittest.TestCase):
                 MAX_WIRE_INTEGER + 1,
             )
 
+    def test_scalar_union_preserves_literal_float_identity(self):
+        scalar = DataValue(
+            ValueState.PRESENT,
+            ValueOrigin.MEASURED,
+            7.0,
+            "count",
+        )
+        school = next(sample for sample in SAMPLES if type(sample) is SchoolSnapshot)
+        school = replace(school, mastered_count=scalar)
+        decoded = decode_json(canonical_json(school))
+        self.assertIs(type(decoded.mastered_count.value), float)
+        self.assertEqual(decoded.mastered_count.value, 7.0)
+        self.assertEqual(canonical_json(decoded), canonical_json(school))
+
+        action = next(
+            sample for sample in SAMPLES if type(sample) is OperatorActionRequest
+        )
+        action = replace(action, parameters=(ActionParameter("ratio", 7.0),))
+        decoded_action = decode_json(canonical_json(action))
+        self.assertIs(type(decoded_action.parameters[0].value), float)
+        self.assertEqual(decoded_action.parameters[0].value, 7.0)
+        self.assertEqual(canonical_json(decoded_action), canonical_json(action))
+
     def test_extra_wire_field_fails_closed_and_records_are_frozen(self):
         sample = SAMPLES[0]
         payload = encode_record(sample)

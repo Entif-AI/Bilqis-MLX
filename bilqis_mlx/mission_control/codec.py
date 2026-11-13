@@ -105,11 +105,20 @@ def _decode_primitive(expected, value):
     return value
 
 
+def _union_options(args, value):
+    """Prefer the literal JSON scalar type before any compatible coercion."""
+    exact = tuple(
+        option for option in args
+        if option in (str, int, float, bool) and type(value) is option
+    )
+    return exact + tuple(option for option in args if option not in exact)
+
+
 def _decode(expected, value):
     origin = get_origin(expected)
     args = get_args(expected)
     if origin in (types.UnionType, Union):
-        for option in args:
+        for option in _union_options(args, value):
             try:
                 return _decode(option, value)
             except MissionControlContractError:
