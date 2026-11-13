@@ -33,6 +33,15 @@ const demoObjects = [
 let state;
 let displaySettings;
 
+function connectionFreshness(connectionState) {
+  if (connectionState === "healthy") return "FRESH";
+  if (connectionState === "stale") return "STALE";
+  if ([
+    "disconnected", "service-restarting", "incompatible-version", "unauthorized",
+  ].includes(connectionState)) return "DISCONNECTED";
+  return "UNKNOWN";
+}
+
 function setHash() {
   const next = buildDeepLink(state);
   if (window.location.hash !== next) history.replaceState(null, "", next);
@@ -115,10 +124,21 @@ function render() {
 }
 
 async function bootstrap() {
-  const bootstrapState = await window.bamfShell.getBootstrapState();
+  const connection = await window.bamfMissionControl.connect();
+  const operatorView = await window.bamfMissionControl.querySnapshot({
+    schemaVersion: "bamf.gui20.operator-view-query/v1",
+    schema: "bilqis.bamf.mission-control.operator-view/v1",
+  });
   displaySettings = loadDisplaySettings(window.localStorage);
   applyDisplaySettings(document.documentElement, displaySettings);
-  state = createShellState(bootstrapState.context, parseDeepLink(window.location.hash));
+  state = createShellState(operatorView, parseDeepLink(window.location.hash));
+  state = {
+    ...state,
+    context: Object.freeze({
+      ...state.context,
+      freshness: connectionFreshness(connection.state),
+    }),
+  };
   document.querySelector("#inspector-close").addEventListener("click", () => {
     state = inspect(state, null);
     render();
