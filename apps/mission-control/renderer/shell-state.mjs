@@ -41,6 +41,10 @@ const RUN_KEYS = [
   "candidate_identity_sha256", "factory_release_sha256",
   "semantic_release_sha256", "topology_sha256",
 ];
+// Python str.isspace()/strip whitespace used by mission_control.model.is_name.
+// ECMAScript String.trim() differs for U+0085 and U+001C-U+001F, so keep the
+// shared wire-domain rule explicit instead of delegating to either runtime.
+const PYTHON_WHITESPACE_ONLY = /^[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/u;
 
 function sameKeys(value, expected) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
@@ -66,7 +70,8 @@ function isUnicodeScalarText(value) {
 }
 
 function isName(value) {
-  return isUnicodeScalarText(value) && value.trim().length > 0 && !value.includes("\n");
+  return isUnicodeScalarText(value) && value.length > 0 &&
+    !PYTHON_WHITESPACE_ONLY.test(value) && !value.includes("\n");
 }
 
 function isDigest(value) {

@@ -103,6 +103,15 @@ test("malformed versioned operator views fail closed at the Electron boundary", 
     () => assertOperatorView(surrogate),
     /MISSION_CONTROL_OPERATOR_VIEW_INVALID:stage/,
   );
+
+  for (const pythonOnlyWhitespace of ["\u0085", "\u001c", "\u001f"]) {
+    const blankName = structuredClone(context);
+    blankName.meta.run.run_id = pythonOnlyWhitespace;
+    assert.throws(
+      () => assertOperatorView(blankName),
+      /MISSION_CONTROL_OPERATOR_VIEW_INVALID:run\.run_id/,
+    );
+  }
 });
 
 test("inspector routes at least five stable object classes to owning views", () => {
