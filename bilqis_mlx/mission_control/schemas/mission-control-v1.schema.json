@@ -1,0 +1,5575 @@
+{
+  "records": {
+    "bilqis.bamf.mission-control.candidate-decision/v1": {
+      "$id": "bilqis.bamf.mission-control.candidate-decision/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "type": "string"
+        },
+        "capability_id": {
+          "type": "string"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "outcome": {
+          "enum": [
+            "ACCEPTED",
+            "REJECTED",
+            "HELD",
+            "ACTION_REQUIRED"
+          ],
+          "type": "string"
+        },
+        "reason_code": {
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.candidate-decision/v1",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "candidate_id",
+        "capability_id",
+        "outcome",
+        "reason_code"
+      ],
+      "title": "CandidateDecision",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.capability-snapshot/v1": {
+      "$id": "bilqis.bamf.mission-control.capability-snapshot/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "capability_id": {
+          "type": "string"
+        },
+        "debt": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "grade_id": {
+          "type": "string"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.capability-snapshot/v1",
+          "type": "string"
+        },
+        "score_correct": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "score_total": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "capability_id",
+        "grade_id",
+        "status",
+        "score_correct",
+        "score_total",
+        "debt"
+      ],
+      "title": "CapabilitySnapshot",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.correction-event/v1": {
+      "$id": "bilqis.bamf.mission-control.correction-event/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "correction_generation": {
+          "type": "integer"
+        },
+        "correction_id": {
+          "type": "string"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "new_digest": {
+          "type": "string"
+        },
+        "old_digest": {
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.correction-event/v1",
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "target_ref": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "correction_id",
+        "correction_generation",
+        "target_ref",
+        "old_digest",
+        "new_digest",
+        "state"
+      ],
+      "title": "CorrectionEvent",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.curriculum-frontier/v1": {
+      "$id": "bilqis.bamf.mission-control.curriculum-frontier/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "admitted_capability_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "frontier_id": {
+          "type": "string"
+        },
+        "held_capability_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "ready_capability_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.curriculum-frontier/v1",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "frontier_id",
+        "ready_capability_ids",
+        "held_capability_ids",
+        "admitted_capability_ids"
+      ],
+      "title": "CurriculumFrontier",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.error-envelope/v1": {
+      "$id": "bilqis.bamf.mission-control.error-envelope/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "related_record_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.error-envelope/v1",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "code",
+        "message",
+        "related_record_id"
+      ],
+      "title": "ErrorEnvelope",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.event-envelope/v1": {
+      "$id": "bilqis.bamf.mission-control.event-envelope/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "event_family": {
+          "type": "string"
+        },
+        "event_id": {
+          "type": "string"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "payload_record_id": {
+          "type": "string"
+        },
+        "payload_ref": {
+          "type": "string"
+        },
+        "payload_schema_version": {
+          "type": "string"
+        },
+        "payload_sha256": {
+          "type": "string"
+        },
+        "position": {
+          "additionalProperties": false,
+          "properties": {
+            "cursor_sha256": {
+              "type": "string"
+            },
+            "epoch_id": {
+              "type": "string"
+            },
+            "ordinal": {
+              "type": "integer"
+            },
+            "previous_cursor_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "stream_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "stream_id",
+            "epoch_id",
+            "ordinal",
+            "cursor_sha256",
+            "previous_cursor_sha256"
+          ],
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.event-envelope/v1",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "event_id",
+        "position",
+        "event_family",
+        "payload_schema_version",
+        "payload_record_id",
+        "payload_sha256",
+        "payload_ref"
+      ],
+      "title": "EventEnvelope",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.frame-compile-receipt/v1": {
+      "$id": "bilqis.bamf.mission-control.frame-compile-receipt/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "compiled_frame_sha256": {
+          "type": "string"
+        },
+        "constituent_expansions": {
+          "type": "integer"
+        },
+        "fallback_used": {
+          "type": "boolean"
+        },
+        "frame_id": {
+          "type": "string"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.frame-compile-receipt/v1",
+          "type": "string"
+        },
+        "source_frame_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "frame_id",
+        "source_frame_sha256",
+        "compiled_frame_sha256",
+        "fallback_used",
+        "constituent_expansions"
+      ],
+      "title": "FrameCompileReceipt",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.generation-manifest/v1": {
+      "$id": "bilqis.bamf.mission-control.generation-manifest/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "checkpoint_sha256": {
+          "type": "string"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "optimizer_state_sha256": {
+          "type": "string"
+        },
+        "parent_manifest_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.generation-manifest/v1",
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "student_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "checkpoint_sha256",
+        "student_sha256",
+        "optimizer_state_sha256",
+        "parent_manifest_sha256",
+        "status"
+      ],
+      "title": "GenerationManifest",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.learning-episode/v1": {
+      "$id": "bilqis.bamf.mission-control.learning-episode/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "capability_id": {
+          "type": "string"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "episode_id": {
+          "type": "string"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.learning-episode/v1",
+          "type": "string"
+        },
+        "started_at": {
+          "type": "integer"
+        },
+        "state": {
+          "type": "string"
+        },
+        "visit_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "episode_id",
+        "capability_id",
+        "visit_id",
+        "state",
+        "started_at",
+        "completed_at"
+      ],
+      "title": "LearningEpisode",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.memory-snapshot/v1": {
+      "$id": "bilqis.bamf.mission-control.memory-snapshot/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "budget_bytes": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "hits": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "misses": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "requalifications": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.memory-snapshot/v1",
+          "type": "string"
+        },
+        "used_bytes": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "used_bytes",
+        "budget_bytes",
+        "hits",
+        "misses",
+        "requalifications"
+      ],
+      "title": "MemorySnapshot",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.neural-runtime-sample/v1": {
+      "$id": "bilqis.bamf.mission-control.neural-runtime-sample/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "active_parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "optimizer_step": {
+          "type": "integer"
+        },
+        "refinement_fraction": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.neural-runtime-sample/v1",
+          "type": "string"
+        },
+        "step_duration_ms": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "optimizer_step",
+        "step_duration_ms",
+        "active_parameters",
+        "refinement_fraction"
+      ],
+      "title": "NeuralRuntimeSample",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.operator-action-receipt/v1": {
+      "$id": "bilqis.bamf.mission-control.operator-action-receipt/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "acknowledged_at": {
+          "type": "integer"
+        },
+        "error_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "operation_id": {
+          "type": "string"
+        },
+        "postcondition_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "request_id": {
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.operator-action-receipt/v1",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "ACCEPTED",
+            "PENDING",
+            "COMPLETED",
+            "REJECTED",
+            "FAILED",
+            "OUTCOME_UNKNOWN"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "request_id",
+        "operation_id",
+        "state",
+        "acknowledged_at",
+        "postcondition_ref",
+        "error_ref"
+      ],
+      "title": "OperatorActionReceipt",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.operator-action-request/v1": {
+      "$id": "bilqis.bamf.mission-control.operator-action-request/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "type": "string"
+        },
+        "dry_run": {
+          "type": "boolean"
+        },
+        "idempotency_key": {
+          "type": "string"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "parameters": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "key",
+              "value"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "request_id": {
+          "type": "string"
+        },
+        "requested_at": {
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.operator-action-request/v1",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "request_id",
+        "idempotency_key",
+        "action",
+        "parameters",
+        "dry_run",
+        "requested_at"
+      ],
+      "title": "OperatorActionRequest",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.operator-view/v1": {
+      "$id": "bilqis.bamf.mission-control.operator-view/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "active_capability_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "learner_state": {
+          "type": "string"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "related_record_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.operator-view/v1",
+          "type": "string"
+        },
+        "stage": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "learner_state",
+        "stage",
+        "active_capability_id",
+        "related_record_ids"
+      ],
+      "title": "OperatorView",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.partial-envelope/v1": {
+      "$id": "bilqis.bamf.mission-control.partial-envelope/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "missing_fields": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "partial_record_id": {
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.partial-envelope/v1",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "partial_record_id",
+        "missing_fields"
+      ],
+      "title": "PartialEnvelope",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.resource-sample/v1": {
+      "$id": "bilqis.bamf.mission-control.resource-sample/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "disk_used_bytes": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "memory_budget_bytes": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "memory_used_bytes": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.resource-sample/v1",
+          "type": "string"
+        },
+        "step_rate_per_minute": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "memory_used_bytes",
+        "memory_budget_bytes",
+        "disk_used_bytes",
+        "step_rate_per_minute"
+      ],
+      "title": "ResourceSample",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.run-context/v1": {
+      "$id": "bilqis.bamf.mission-control.run-context/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "optimizer_step": {
+          "type": "integer"
+        },
+        "run_state": {
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.run-context/v1",
+          "type": "string"
+        },
+        "stage": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "run_state",
+        "optimizer_step",
+        "stage"
+      ],
+      "title": "RunContext",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.salience-event/v1": {
+      "$id": "bilqis.bamf.mission-control.salience-event/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "action_kind": {
+          "type": "string"
+        },
+        "capability_id": {
+          "type": "string"
+        },
+        "exigency": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "impact": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "novelty": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "salience_id": {
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.salience-event/v1",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "salience_id",
+        "capability_id",
+        "impact",
+        "exigency",
+        "novelty",
+        "action_kind"
+      ],
+      "title": "SalienceEvent",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.school-snapshot/v1": {
+      "$id": "bilqis.bamf.mission-control.school-snapshot/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "admitted_grades": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "capability_count": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "current_grade": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mastered_count": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.school-snapshot/v1",
+          "type": "string"
+        },
+        "school_state": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "school_state",
+        "current_grade",
+        "admitted_grades",
+        "capability_count",
+        "mastered_count"
+      ],
+      "title": "SchoolSnapshot",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.semantic-atlas-snapshot/v1": {
+      "$id": "bilqis.bamf.mission-control.semantic-atlas-snapshot/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "active_concepts": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "atlas_bundle_id": {
+          "type": "string"
+        },
+        "atlas_release_sha256": {
+          "type": "string"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.semantic-atlas-snapshot/v1",
+          "type": "string"
+        },
+        "source_bundle_id": {
+          "type": "string"
+        },
+        "source_eligible": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "source_held": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "atlas_bundle_id",
+        "atlas_release_sha256",
+        "source_bundle_id",
+        "active_concepts",
+        "source_eligible",
+        "source_held"
+      ],
+      "title": "SemanticAtlasSnapshot",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.stale-envelope/v1": {
+      "$id": "bilqis.bamf.mission-control.stale-envelope/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "requested_as_of": {
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.stale-envelope/v1",
+          "type": "string"
+        },
+        "stale_as_of": {
+          "type": "integer"
+        },
+        "stale_record_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "stale_record_id",
+        "stale_as_of",
+        "requested_as_of"
+      ],
+      "title": "StaleEnvelope",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.teacher-snapshot/v1": {
+      "$id": "bilqis.bamf.mission-control.teacher-snapshot/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "attempts": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "rejected": {
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.teacher-snapshot/v1",
+          "type": "string"
+        },
+        "strategy_id": {
+          "type": "string"
+        },
+        "teacher_epoch": {
+          "type": "integer"
+        },
+        "teacher_identity": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "teacher_identity",
+        "teacher_epoch",
+        "strategy_id",
+        "attempts",
+        "accepted",
+        "rejected"
+      ],
+      "title": "TeacherSnapshot",
+      "type": "object"
+    },
+    "bilqis.bamf.mission-control.unavailable-envelope/v1": {
+      "$id": "bilqis.bamf.mission-control.unavailable-envelope/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "detail_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "materialized_at": {
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "record_id": {
+              "type": "string"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "type": "string"
+                    },
+                    "factory_release_sha256": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "run_id": {
+                      "type": "string"
+                    },
+                    "run_identity_sha256": {
+                      "type": "string"
+                    },
+                    "semantic_release_sha256": {
+                      "type": "string"
+                    },
+                    "topology_sha256": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "reason": {
+          "enum": [
+            "MISSING",
+            "UNKNOWN",
+            "DENIED",
+            "UNAVAILABLE"
+          ],
+          "type": "string"
+        },
+        "resource": {
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.unavailable-envelope/v1",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "resource",
+        "reason",
+        "detail_ref"
+      ],
+      "title": "UnavailableEnvelope",
+      "type": "object"
+    }
+  },
+  "schema_version": "bilqis.bamf.mission-control.schema-bundle/v1"
+}
