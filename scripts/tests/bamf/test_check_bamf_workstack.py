@@ -17,7 +17,7 @@ def item(key, lane, dependencies=(), paths=()):
             'body_sha256': 'a' * 64}
 
 
-def run(items, children=None, expected_map=None, omit_registry=False, queues=None, mirror_deps=None, mirror_lines=None, live_bodies=None, owner_bodies=None, gh_failure=False):
+def run(items, children=None, expected_map=None, omit_registry=False, queues=None, mirror_deps=None, mirror_lines=None, mirror_bodies=None, release_overrides=None, live_bodies=None, owner_bodies=None, gh_failure=False):
     with tempfile.TemporaryDirectory() as temp:
         path = Path(temp) / 'workstack.json'
         path.write_text(json.dumps({'schema': 'bilqis.bamf.workstack/v1',
@@ -30,12 +30,19 @@ def run(items, children=None, expected_map=None, omit_registry=False, queues=Non
                 if isinstance(row, dict) and isinstance(row.get('key'), str):
                     deps = (mirror_deps or {}).get(row['key'], row.get('deps', []))
                     all_numbers = {r['key']: r['number'] for r in items + children if isinstance(r, dict) and isinstance(r.get('key'), str) and isinstance(r.get('number'), int)}
-                    body = '## Direct prerequisites\n' + (mirror_lines or {}).get(row['key'], ', '.join(f'[{d} #{all_numbers.get(d, 999)}](https://github.com/Entif-AI/Bilqis-MLX/issues/{all_numbers.get(d, 999)})' for d in deps)) + '\n'
+                    body = (mirror_bodies or {}).get(row['key'])
+                    if body is None:
+                        body = '## Direct prerequisites\n' + (mirror_lines or {}).get(row['key'], ', '.join(f'[{d} #{all_numbers.get(d, 999)}](https://github.com/Entif-AI/Bilqis-MLX/issues/{all_numbers.get(d, 999)})' for d in deps)) + '\n'
                     (registry.parent / (row['key'] + '.md')).write_text(body)
                     row['body_sha256'] = hashlib.sha256(body.encode()).hexdigest()
             registry.write_text(json.dumps({'schema': 'bilqis.bamf.all-child-registry/v1', 'entries': children}))
             issue_map = expected_map if expected_map is not None else {r['key']: r['number'] for r in items + children if isinstance(r, dict) and isinstance(r.get('key'), str) and isinstance(r.get('number'), int)}
             (Path(temp) / 'issue-map.json').write_text(json.dumps(issue_map))
+            if release_overrides is not None:
+                (Path(temp) / 'release-boundary-overrides.json').write_text(json.dumps({
+                    'schema': 'bilqis.bamf.release-boundary-overrides/v1',
+                    'entries': release_overrides,
+                }))
         elif expected_map is not None:
             (Path(temp) / 'issue-map.json').write_text(json.dumps(expected_map))
         args = [sys.executable, '-B', str(SCRIPT), str(path)]
@@ -255,6 +262,28 @@ class BamfWorkstackTest(unittest.TestCase):
         code, report = run([item('C01', 'C')], children, mirror_deps={'C01.2': ['C01.1']})
         self.assertEqual(code, 1)
         self.assertIn('MIRROR_DEPENDENCIES_MISMATCH', [i['reason'] for i in report['issues']])
+
+    def test_exact_release_override_preserves_dependency_graph_after_owner_body_rewrite(self):
+        child = {'key': 'C01.1', 'number': 486, 'parent_key': 'C01', 'parent_number': 347,
+                 'deps': ['A01']}
+        body = '## Outcome\nRelease-scoped body intentionally omits the old packet grammar.\n'
+        code, report = run([item('A01', 'A'), item('C01', 'C')], [dict(child)],
+                           mirror_bodies={'C01.1': body})
+        self.assertEqual(code, 1)
+        self.assertIn('MIRROR_DEPENDENCIES_MISSING', [i['reason'] for i in report['issues']])
+        digest = hashlib.sha256(body.encode()).hexdigest()
+        override = {'key': 'C01.1', 'number': 486, 'live_body_sha256': digest,
+                    'superseded_body_sha256': 'b' * 64, 'preserved_deps': ['A01'],
+                    'reason': 'owner release-boundary rewrite preserves the frozen dependency graph'}
+        code, report = run([item('A01', 'A'), item('C01', 'C')], [dict(child)],
+                           mirror_bodies={'C01.1': body}, release_overrides=[override])
+        self.assertEqual(code, 0)
+        self.assertEqual(report['status'], 'valid')
+        forged = dict(override, preserved_deps=[])
+        code, report = run([item('A01', 'A'), item('C01', 'C')], [dict(child)],
+                           mirror_bodies={'C01.1': body}, release_overrides=[forged])
+        self.assertEqual(code, 1)
+        self.assertIn('RELEASE_OVERRIDE_INVALID', [i['reason'] for i in report['issues']])
 
     def test_live_owner_mirror_reconciliation_detects_drift(self):
         row = item('C01', 'C')

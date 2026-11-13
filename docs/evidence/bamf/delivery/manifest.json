@@ -16,6 +16,11 @@
       "sha": "4759336facf7a3482254b32c8647013ae447f074"
     },
     {
+      "owner_issue": 385,
+      "role": "C13 accepted release-scoped handoff",
+      "sha": "4b486268825f07330c4bd8147ca2439a36be5fee"
+    },
+    {
       "owner_issue": 375,
       "role": "B14 accepted integration",
       "sha": "5166aca71f01f09cfb4e533d61dc41e53a987726"
@@ -60,15 +65,15 @@
     },
     {
       "component_id": "C13",
-      "evidence_ref": "issue:528#issuecomment-6856864895",
-      "head_sha": "549d84d5cb58862c92eca2dd25277d5ca0665fd7",
+      "evidence_ref": "issue:530#issuecomment-6864723375",
+      "head_sha": "4b486268825f07330c4bd8147ca2439a36be5fee",
       "owner_issue": 385,
-      "status": "PROVISIONAL"
+      "status": "ACCEPTED"
     },
     {
       "component_id": "C14",
-      "evidence_ref": "issue:532#issuecomment-6856445395",
-      "head_sha": "77006d2370a16e0bfb4ca1a10cc516a6e4d011f8",
+      "evidence_ref": "issue:535#issuecomment-6864928413",
+      "head_sha": "29101af83aaa592ab1ace59c68bfdba153c7fb53",
       "owner_issue": 386,
       "status": "PROVISIONAL"
     },
@@ -82,7 +87,7 @@
     {
       "component_id": "architecture",
       "evidence_ref": "docs/architecture/BAMF_0_2.md@sha256:af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
-      "head_sha": "3b5e920ff074f0ebd0908edd739c16fb98fc8eac",
+      "head_sha": "16117bfb782ce0b1a3f301e2f5441917a915fd9d",
       "owner_issue": 540,
       "status": "PROVISIONAL"
     },
@@ -117,7 +122,7 @@
     {
       "component_id": "issue-book",
       "evidence_ref": "docs/tasks/bamf-0.2/ISSUE_BOOK.md@sha256:21a82b966c52ad13480b7021e9163efaacc7f6f70c9c4eac5d7277f05d355425",
-      "head_sha": "97a018ed7e9697fe284abd9fa8197cd7f4194b45",
+      "head_sha": "9e06ea557c910bae7ecd879fe83f4d50aed84eb9",
       "owner_issue": 341,
       "status": "ACCEPTED"
     },
@@ -151,8 +156,8 @@
     },
     {
       "component_id": "workstack",
-      "evidence_ref": "docs/tasks/bamf-0.2/workstack.json@sha256:e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
-      "head_sha": "97a018ed7e9697fe284abd9fa8197cd7f4194b45",
+      "evidence_ref": "docs/tasks/bamf-0.2/workstack.json@sha256:32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d",
+      "head_sha": "9e06ea557c910bae7ecd879fe83f4d50aed84eb9",
       "owner_issue": 341,
       "status": "ACCEPTED"
     }
@@ -205,16 +210,16 @@
       "status": "ACCEPTED"
     },
     {
-      "evidence_ref": "issue:528#issuecomment-6856864895",
-      "head_sha": "549d84d5cb58862c92eca2dd25277d5ca0665fd7",
+      "evidence_ref": "pull:1042",
+      "head_sha": "9e06ea557c910bae7ecd879fe83f4d50aed84eb9",
       "issue": 385,
       "issue_key": "C13",
-      "state": "OPEN",
-      "status": "PROVISIONAL"
+      "state": "CLOSED",
+      "status": "ACCEPTED"
     },
     {
-      "evidence_ref": "issue:532#issuecomment-6856445395",
-      "head_sha": "77006d2370a16e0bfb4ca1a10cc516a6e4d011f8",
+      "evidence_ref": "issue:535#issuecomment-6864928413",
+      "head_sha": "29101af83aaa592ab1ace59c68bfdba153c7fb53",
       "issue": 386,
       "issue_key": "C14",
       "state": "OPEN",
@@ -245,7 +250,7 @@
       "status": "PROVISIONAL"
     }
   ],
-  "manifest_sha256": "ab7d2f500df3a0b40ef5ae7bb29d3ab7f6c5a4d10652ca6f64983759e4ecbac6",
+  "manifest_sha256": "dd3915ad474bbe8d6112dd81f3f41e4fcd8a2aee4a076cee553ce80c38984cd6",
   "operator_commands": [
     {
       "argv": [
@@ -331,17 +336,17 @@
       "state": "EXECUTED_PASS"
     },
     {
-      "evidence_ref": "issue:528#issuecomment-6856864895",
+      "evidence_ref": "docs/evidence/bamf/C13/integration-handoff-20261113.md",
       "input_schema": "bilqis.c13.episode-binding-generator/v1",
-      "observed": "portable implementation checkpoint current; Studio hardware/authority witness not yet accepted",
+      "observed": "release-scoped integrated wiring accepted: C13 owner 13/13 and rollback/custody 54/54 PASS; real M3 Ultra generation-zero path accepted; extended learning soak deferred to BAMF-0.3 #1039",
       "output_schema": "bilqis.c13.acceptance/v1",
       "proof_id": "c13.integrated-learning",
-      "state": "BLOCKED"
+      "state": "EXECUTED_PASS"
     },
     {
-      "evidence_ref": "issue:532#issuecomment-6856445395",
+      "evidence_ref": "issue:535#issuecomment-6864928413",
       "input_schema": "bilqis.bamf.developmental-program/v1",
-      "observed": "C14.1a review-clean; remaining C14 leaves and C13 receipt pending",
+      "observed": "complete C14 stack review-clean at 29101af83aaa592ab1ace59c68bfdba153c7fb53; parent acceptance waits on human PR chain #1043 -> #1044 -> #1045 -> #535 turn-in",
       "output_schema": "bilqis.bamf.training-program-proof/v1",
       "proof_id": "c14.training-program",
       "state": "BLOCKED"

@@ -24,12 +24,12 @@ C15_2_HEAD = "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111"
 C15_EGM_REPAIR_HEAD = "a008e1d2770c968e1b7784d00194e4f75e402041"
 C15_EGM_CANDIDATE = "66277ed61d0ae4cabb088dfb508ab7188415003c"
 C15_EGM_REPORT_HEAD = "fc04b9379e5657cd046836c4af9ea4dd76df4795"
-C15_3_RECONCILIATION_HEAD = "3b5e920ff074f0ebd0908edd739c16fb98fc8eac"
+C15_3_RECONCILIATION_HEAD = "16117bfb782ce0b1a3f301e2f5441917a915fd9d"
 SOURCE_DIGEST = file_digest(WORKSTACK)
 CONTRACT_DIGEST = file_digest(ARCHITECTURE)
 ISSUE_BOOK_DIGEST = file_digest(ISSUE_BOOK)
 C15_2_ISSUE_DIGEST = child_by_key("C15.2")["body_sha256"]
-REVIEWED_UNIFIED = "97a018ed7e9697fe284abd9fa8197cd7f4194b45"
+REVIEWED_UNIFIED = "9e06ea557c910bae7ecd879fe83f4d50aed84eb9"
 
 
 def _component_receipts() -> tuple[ComponentReceipt, ...]:
@@ -40,10 +40,10 @@ def _component_receipts() -> tuple[ComponentReceipt, ...]:
                          ReceiptStatus.ACCEPTED, "issue:384#issuecomment-6840426430"),
         ComponentReceipt("C12", 381, "516725b6170f258ad86b0c5d4ca050907238e59d",
                          ReceiptStatus.ACCEPTED, "issue:381#issuecomment-6754534350"),
-        ComponentReceipt("C13", 385, "549d84d5cb58862c92eca2dd25277d5ca0665fd7",
-                         ReceiptStatus.PROVISIONAL, "issue:528#issuecomment-6856864895"),
-        ComponentReceipt("C14", 386, "77006d2370a16e0bfb4ca1a10cc516a6e4d011f8",
-                         ReceiptStatus.PROVISIONAL, "issue:532#issuecomment-6856445395"),
+        ComponentReceipt("C13", 385, "4b486268825f07330c4bd8147ca2439a36be5fee",
+                         ReceiptStatus.ACCEPTED, "issue:530#issuecomment-6864723375"),
+        ComponentReceipt("C14", 386, "29101af83aaa592ab1ace59c68bfdba153c7fb53",
+                         ReceiptStatus.PROVISIONAL, "issue:535#issuecomment-6864928413"),
         ComponentReceipt("C16", 382, "c672c62113108695a2a60cd0eb0d7f19d085f838",
                          ReceiptStatus.ACCEPTED, "issue:382#issuecomment-6832648874"),
         ComponentReceipt("architecture", 540, C15_3_RECONCILIATION_HEAD,
@@ -99,12 +99,12 @@ def _issue_receipts() -> tuple[IssueReceipt, ...]:
         IssueReceipt(384, "C11", "CLOSED", ReceiptStatus.ACCEPTED,
                      "ce09a0c1887069385b903ac10a4d576d22d04881",
                      "issue:384#issuecomment-6840426430"),
-        IssueReceipt(385, "C13", "OPEN", ReceiptStatus.PROVISIONAL,
-                     "549d84d5cb58862c92eca2dd25277d5ca0665fd7",
-                     "issue:528#issuecomment-6856864895"),
+        IssueReceipt(385, "C13", "CLOSED", ReceiptStatus.ACCEPTED,
+                     "9e06ea557c910bae7ecd879fe83f4d50aed84eb9",
+                     "pull:1042"),
         IssueReceipt(386, "C14", "OPEN", ReceiptStatus.PROVISIONAL,
-                     "77006d2370a16e0bfb4ca1a10cc516a6e4d011f8",
-                     "issue:532#issuecomment-6856445395"),
+                     "29101af83aaa592ab1ace59c68bfdba153c7fb53",
+                     "issue:535#issuecomment-6864928413"),
         IssueReceipt(537, "C15.1a", "OPEN", ReceiptStatus.PROVISIONAL,
                      C15_1A_HEAD, "issue:537#issuecomment-6856503488"),
         IssueReceipt(538, "C15.1b", "OPEN", ReceiptStatus.PROVISIONAL,
@@ -126,6 +126,8 @@ def _commit_receipts() -> tuple[CommitReceipt, ...]:
         CommitReceipt(C15_1A_HEAD, 537, "C15.1a development checkpoint"),
         CommitReceipt(C15_1B_HEAD, 538, "C15.1b development checkpoint"),
         CommitReceipt(C15_2_HEAD, 539, "C15.2 development checkpoint"),
+        CommitReceipt("4b486268825f07330c4bd8147ca2439a36be5fee", 385,
+                      "C13 accepted release-scoped handoff"),
         CommitReceipt("c672c62113108695a2a60cd0eb0d7f19d085f838", 382,
                       "C16 accepted integration"),
     )
@@ -138,14 +140,14 @@ def _proof_receipts() -> tuple[ProofReceipt, ...]:
                      "bilqis.bamf.operator-cli/v2", "bilqis.bamf.operator-lifecycle/v1",
                      "issue:384#issuecomment-6840426430",
                      "73/73 parent selections PASS; final review 0 Blocker/Major/Minor/Nit"),
-        ProofReceipt("c13.integrated-learning", ProofState.BLOCKED,
+        ProofReceipt("c13.integrated-learning", ProofState.EXECUTED_PASS,
                      "bilqis.c13.episode-binding-generator/v1", "bilqis.c13.acceptance/v1",
-                     "issue:528#issuecomment-6856864895",
-                     "portable implementation checkpoint current; Studio hardware/authority witness not yet accepted"),
+                     "docs/evidence/bamf/C13/integration-handoff-20261113.md",
+                     "release-scoped integrated wiring accepted: C13 owner 13/13 and rollback/custody 54/54 PASS; real M3 Ultra generation-zero path accepted; extended learning soak deferred to BAMF-0.3 #1039"),
         ProofReceipt("c14.training-program", ProofState.BLOCKED,
                      "bilqis.bamf.developmental-program/v1", "bilqis.bamf.training-program-proof/v1",
-                     "issue:532#issuecomment-6856445395",
-                     "C14.1a review-clean; remaining C14 leaves and C13 receipt pending"),
+                     "issue:535#issuecomment-6864928413",
+                     "complete C14 stack review-clean at 29101af83aaa592ab1ace59c68bfdba153c7fb53; parent acceptance waits on human PR chain #1043 -> #1044 -> #1045 -> #535 turn-in"),
         ProofReceipt("c15.delivery-contract", ProofState.EXECUTED_PASS,
                      "bilqis.bamf.delivery-manifest/v1", "bilqis.bamf.delivery-manifest/v1",
                      "issue:537#issuecomment-6856503488", "9/9 focused C15.1a ring PASS"),
@@ -324,8 +326,8 @@ def published_boundary_record() -> dict:
             "protected_excluded": ["PRIVATE_REAL", "private journal payloads", "unclassified payloads"],
             "disposition": "PROTECTED_EVIDENCE_NOT_COPIED_TO_PUBLIC_ARTIFACTS",
         },
-        "live_issue_parity": "SEPARATE_C15_3_AUDIT_REQUIRED",
-        "fresh_behavioral_proof": "PENDING_ENVIRONMENT_WITH_RDFLIB_AND_MLX_AS_REQUIRED",
+        "live_issue_parity": "PASS_43_OWNERS_172_CHILDREN_190_NATIVE_EDGES_215_DAG_NODES",
+        "fresh_behavioral_proof": "C15_3_FACTORY_WITNESSES_64_OF_64_PASS_AT_16117BFB",
     }
 
 
@@ -348,17 +350,17 @@ def published_roadmap_record() -> dict:
             {"issue": 539, "key": "C15.2", "head_sha": C15_2_HEAD,
              "status": "DEVELOPMENT_RECEIPT",
              "final_gate": "EGM_AND_ACCEPTED_C13_C14"},
-            {"issue": 540, "key": "C15.3", "head_sha": None,
-             "status": "PENDING",
-             "final_gate": "C15_2_EGM_AND_ACCEPTED_C13_C14"},
+            {"issue": 540, "key": "C15.3", "head_sha": C15_3_RECONCILIATION_HEAD,
+             "status": "DEVELOPMENT_RECEIPT_FACTORY_PASS",
+             "final_gate": "ACCEPTED_C14_AND_FINAL_REQUALIFICATION"},
         ],
         "egm_repair_head": C15_EGM_CANDIDATE,
         "upstream": [
             {"issue": 385, "key": "C13",
-             "head_sha": "549d84d5cb58862c92eca2dd25277d5ca0665fd7",
-             "status": "PROVISIONAL_REMOTE_HEAD_NO_PARENT_ACCEPTANCE"},
+             "head_sha": "9e06ea557c910bae7ecd879fe83f4d50aed84eb9",
+             "status": "ACCEPTED_RELEASE_SCOPED_INTEGRATION"},
             {"issue": 386, "key": "C14",
-             "head_sha": "77006d2370a16e0bfb4ca1a10cc516a6e4d011f8",
-             "status": "PROVISIONAL_REMOTE_HEAD_NO_PARENT_ACCEPTANCE"},
+             "head_sha": "29101af83aaa592ab1ace59c68bfdba153c7fb53",
+             "status": "REVIEW_CLEAN_PENDING_HUMAN_PR_CHAIN"},
         ],
     }

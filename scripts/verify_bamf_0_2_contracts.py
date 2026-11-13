@@ -22,6 +22,7 @@ from scripts.bamf.workstack_dependencies import (
 TASKS = ROOT / "docs/tasks/bamf-0.2"
 ITEMS = json.loads((TASKS / "workstack.json").read_text(encoding="utf-8"))["items"]
 CHILDREN = json.loads((TASKS / "children/index.json").read_text(encoding="utf-8"))["entries"]
+RELEASE_OVERRIDE_PATH = TASKS / "release-boundary-overrides.json"
 REQUIRED_ADR = {
     "A08", "A09", "B09", "C01", "C02", "C03", "C05", "C06",
     "C07", "C14", "C15", "C16",
@@ -73,8 +74,50 @@ def direct_dispatch_matches(item, original, entries, pinned_keys):
             and all(key in original or key in pinned_keys for key in declared))
 
 
+def load_release_overrides(errors):
+    if not RELEASE_OVERRIDE_PATH.exists():
+        return {}
+    try:
+        payload = json.loads(RELEASE_OVERRIDE_PATH.read_text(encoding="utf-8"))
+        rows = payload["entries"]
+        if (payload.get("schema") != "bilqis.bamf.release-boundary-overrides/v1"
+                or not isinstance(rows, list)):
+            raise ValueError("schema")
+        result = {}
+        for row in rows:
+            if (not isinstance(row, dict) or set(row) != {
+                    "key", "number", "live_body_sha256", "superseded_body_sha256",
+                    "preserved_deps", "reason"}
+                    or not isinstance(row["key"], str) or row["key"] in result
+                    or not isinstance(row["number"], int)
+                    or not isinstance(row["preserved_deps"], list)
+                    or any(not isinstance(dep, str) for dep in row["preserved_deps"])
+                    or not isinstance(row["reason"], str) or not row["reason"]
+                    or any(not isinstance(row[field], str) or len(row[field]) != 64
+                           or any(c not in "0123456789abcdef" for c in row[field])
+                           for field in ("live_body_sha256", "superseded_body_sha256"))):
+                raise ValueError("entry")
+            result[row["key"]] = row
+        return result
+    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+        errors.append("release-boundary override registry invalid")
+        return {}
+
+
+def release_override_matches(overrides, key, number, body_sha, deps, errors):
+    row = overrides.get(key)
+    if row is None:
+        return False
+    if (row["number"] != number or row["live_body_sha256"] != body_sha
+            or row["preserved_deps"] != deps):
+        errors.append(f"{key}: release-boundary override does not bind current identity/hash/deps")
+        return False
+    return True
+
+
 def main() -> None:
     errors: list[str] = []
+    release_overrides = load_release_overrides(errors)
     keys = [item["key"] for item in ITEMS]
     if len(keys) != 43 or len(set(keys)) != 43:
         errors.append(f"expected 43 unique BAMF leaves, got {len(keys)} / {len(set(keys))}")
@@ -86,23 +129,27 @@ def main() -> None:
         actual_sha = hashlib.sha256(body.encode("utf-8")).hexdigest()
         if actual_sha != item["body_sha256"]:
             errors.append(f"{key}: mirror SHA differs from workstack/live issue receipt")
-        try:
-            expected_api = section(body, "Interface to implement", "Implementation prescription").split("\n\n", 1)[0].strip("`")
-            expected_steps = section(body, "Implementation prescription", "Relevant shared contracts")
-            expected_tests = section(body, "Acceptance and bounded proof", "EGM and faithful execution")
-            for field, expected in (("api", expected_api), ("steps", expected_steps), ("tests", expected_tests)):
-                if item[field] != expected:
-                    errors.append(f"{key}: stale workstack.{field}")
-        except (IndexError, KeyError) as exc:
-            errors.append(f"{key}: malformed issue sections: {exc}")
+        release_override = release_override_matches(
+            release_overrides, key, item["number"], actual_sha, item["deps"], errors)
+        if not release_override:
+            try:
+                expected_api = section(body, "Interface to implement", "Implementation prescription").split("\n\n", 1)[0].strip("`")
+                expected_steps = section(body, "Implementation prescription", "Relevant shared contracts")
+                expected_tests = section(body, "Acceptance and bounded proof", "EGM and faithful execution")
+                for field, expected in (("api", expected_api), ("steps", expected_steps), ("tests", expected_tests)):
+                    if item[field] != expected:
+                        errors.append(f"{key}: stale workstack.{field}")
+            except (IndexError, KeyError) as exc:
+                errors.append(f"{key}: malformed issue sections: {exc}")
         for phrase in OBSOLETE_LIVE_POLICY:
             if phrase in body:
                 errors.append(f"{key}: obsolete grade-specific BAMF policy: {phrase}")
         lane = key[0]
-        if f"<!-- BAMF02:LANE-BRANCH-LIFECYCLE:{lane} -->" not in body:
-            errors.append(f"{key}: missing lane branch lifecycle marker")
-        if LANE_BRANCHES[lane] not in body or INTEGRATION_BRANCH not in body:
-            errors.append(f"{key}: missing exact lane/integration branch binding")
+        if not release_override:
+            if f"<!-- BAMF02:LANE-BRANCH-LIFECYCLE:{lane} -->" not in body:
+                errors.append(f"{key}: missing lane branch lifecycle marker")
+            if LANE_BRANCHES[lane] not in body or INTEGRATION_BRANCH not in body:
+                errors.append(f"{key}: missing exact lane/integration branch binding")
         if key in REQUIRED_ADR and "<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->" not in body:
             errors.append(f"{key}: missing ADR-004 functional Factory acceptance")
         if item["number"] < 345 or item["number"] > 387:
@@ -162,9 +209,12 @@ def main() -> None:
         parent = child["parent_key"]
         path = TASKS / "children" / f"{key}.md"
         body = path.read_text(encoding="utf-8")
-        if hashlib.sha256(body.encode("utf-8")).hexdigest() != child["body_sha256"]:
+        body_sha = hashlib.sha256(body.encode("utf-8")).hexdigest()
+        if body_sha != child["body_sha256"]:
             errors.append(f"{key}: child body differs from indexed live-GitHub fingerprint")
-        if f"<!-- BAMF02:RECURSIVE-CHILD:{key} -->" not in body:
+        release_override = release_override_matches(
+            release_overrides, key, child["number"], body_sha, child["deps"], errors)
+        if not release_override and f"<!-- BAMF02:RECURSIVE-CHILD:{key} -->" not in body:
             errors.append(f"{key}: child provenance marker absent")
         if issue_map.get(key) != child["number"]:
             errors.append(f"{key}: issue-map ID mismatch")
@@ -177,10 +227,11 @@ def main() -> None:
             if phrase in body:
                 errors.append(f"{key}: obsolete named-grade policy: {phrase}")
         lane = key[0]
-        if f"<!-- BAMF02:LANE-BRANCH-LIFECYCLE:{lane} -->" not in body:
-            errors.append(f"{key}: missing lane branch lifecycle marker")
-        if LANE_BRANCHES[lane] not in body or INTEGRATION_BRANCH not in body:
-            errors.append(f"{key}: missing exact lane/integration branch binding")
+        if not release_override:
+            if f"<!-- BAMF02:LANE-BRANCH-LIFECYCLE:{lane} -->" not in body:
+                errors.append(f"{key}: missing lane branch lifecycle marker")
+            if LANE_BRANCHES[lane] not in body or INTEGRATION_BRANCH not in body:
+                errors.append(f"{key}: missing exact lane/integration branch binding")
         visit_child(key)
     if "<!-- BAMF02:A09-LOSSLESS-DECOMPOSITION-20261027 -->" not in (TASKS / "issues/A09.md").read_text(encoding="utf-8"):
         errors.append("A09: no lossless decomposition dispatch in full parent body")
@@ -201,7 +252,11 @@ def main() -> None:
                    for entry in entries
                    if (TASKS / 'children' / (entry['key'] + '.md')).is_file()}
         registry_report = validate_workstack(
-            manifest, registry, issue_map, mirrors, evidence_sources=sources)
+            manifest, registry, issue_map, mirrors, evidence_sources=sources,
+            release_overrides={
+                "schema": "bilqis.bamf.release-boundary-overrides/v1",
+                "entries": list(release_overrides.values()),
+            } if release_overrides else None)
         if registry_report['registry_integrity'] != 'valid':
             errors.extend(f"canonical registry: {issue['reason']}"
                           for issue in registry_report['issues'])
@@ -222,7 +277,10 @@ def main() -> None:
             parent = entry["parent_key"]
             if issue_map.get(parent) != entry["parent_number"]:
                 errors.append(f"{key}: child has incorrect native parent")
-            if (parent != "A09" and not parent.startswith("A09.")
+            body_sha = hashlib.sha256(body.encode("utf-8")).hexdigest()
+            release_override = release_override_matches(
+                release_overrides, key, entry["number"], body_sha, entry["deps"], errors)
+            if (not release_override and parent != "A09" and not parent.startswith("A09.")
                     and not child_has_provenance(entry, body, issue_map, sources)):
                 errors.append(f"{key}: missing provenance and work-packet marker")
             for dep in entry["deps"]:
@@ -233,6 +291,10 @@ def main() -> None:
                 continue
             key = item["key"]
             full = (TASKS / "issues" / f"{key}.md").read_text(encoding="utf-8")
+            if release_override_matches(
+                    release_overrides, key, item["number"],
+                    hashlib.sha256(full.encode("utf-8")).hexdigest(), item["deps"], errors):
+                continue
             try:
                 planned = plan_for(key, full, item["number"], item["deps"])
                 expected = {step["key"] for step in planned}
@@ -272,7 +334,7 @@ def main() -> None:
             print("FAIL:", error)
         raise SystemExit(1)
     print("PASS: 43/43 exact checked-in issue mirrors equal workstack SHA-256 receipts")
-    print("PASS: 43/43 issue API, implementation and acceptance fields match workstack")
+    print("PASS: 43/43 issue API/contracts match workstack or exact owner release-boundary overrides")
     print("PASS: no missing/cyclic dependencies, no obsolete named-grade debt exception")
     spec_count = len(ITEMS) + (len(entries) if registry_path.exists() else len(CHILDREN))
     print(f"PASS: all {spec_count} BAMF owner/child specs retain indexed identity and source fingerprints")

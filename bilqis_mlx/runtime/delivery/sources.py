@@ -19,8 +19,36 @@ ISSUE_BOOK = TASKS / "ISSUE_BOOK.md"
 WORKSTACK = TASKS / "workstack.json"
 REGISTRY = TASKS / "children" / "registry.json"
 
+# Physical test locations move as large owner modules are split. The workstack
+# keeps the original logical owner surface for provenance; C15 binds each primary
+# owner to the current executable test surface below. This is intentionally small
+# and explicit so a future structural move fails closed instead of silently
+# falling back to the generic runner.
+_OWNER_TEST_REFS = (
+    ("A01", "bilqis_mlx/semantics/tests/test_atlas_projection.py"),
+    ("A03", "bilqis_mlx/semantics/tests/core/test_frame_schema.py"),
+    ("A05", "bilqis_mlx/semantics/tests/test_frame_compiler.py"),
+    ("A10", "bilqis_mlx/source_adapters/tests/test_evidence_frames.py"),
+    ("A11", "bilqis_mlx/factory/tests/semantic_contrast/test_semantic_contrasts.py"),
+    ("A13", "bilqis_mlx/semantics/tests/test_context_eligibility.py"),
+    ("B01", "bilqis_mlx/runtime/tests/model/test_model_topology_v2.py"),
+    ("B05", "bilqis_mlx/runtime/tests/depth/test_block_attnres.py"),
+    ("B06", "bilqis_mlx/runtime/tests/model/test_atlas_refinement.py"),
+    ("B07", "bilqis_mlx/learning/tests/test_atlas_engram_allocation.py"),
+    ("B12", "bilqis_mlx/runtime/tests/model/optimization/test_atlas_optimizer.py"),
+    ("B13", "bilqis_mlx/runtime/tests/custody/bamf_bundle/test_cold_resume_continuation.py"),
+    ("B14", "bilqis_mlx/runtime/tests/model/attention/cache/test_atlas_cache_codec.py"),
+    ("C01", "scripts/check_bamf_workstack.py"),
+    ("C02", "bilqis_mlx/runtime/tests/batch/test_atlas_training_adapter.py"),
+    ("C03", "bilqis_mlx/learning/tests/teaching/test_bamf_teacher.py"),
+    ("C05", "bilqis_mlx/runtime/tests/capability/test_bamf_capability_retention.py"),
+    ("C06", "bilqis_mlx/learning/_salience/tests/test_atlas_salience.py"),
+    ("C08", "bilqis_mlx/runtime/tests/model/test_atlas_resources.py"),
+    ("C09", "bilqis_mlx/runtime/tests/test_atlas_revalidation.py"),
+)
+
 _REQ = re.compile(r"BAMF-REQ-(\d{3})(?:/(\d{3}))?")
-_PATH = re.compile(r"(?:bilqis_mlx|scripts|configs)/[A-Za-z0-9_./-]+(?:\.py|\.json)")
+_PATH = re.compile(r"(?:bilqis_mlx|scripts|configs|tests)/[A-Za-z0-9_./-]+(?:\.py|\.json)")
 
 
 def sha256_bytes(value: bytes) -> str:
@@ -90,11 +118,21 @@ def fixture_source_text(claim_id: str, owner_key: str) -> str:
 
 def literal_test_ref(owner_key: str, claim_id: str) -> str:
     """Choose an existing literal test/config path from the source-owned work packet."""
+    owner_ref = next((ref for key, ref in _OWNER_TEST_REFS if key == owner_key), None)
+    if owner_ref is not None:
+        require((ROOT / owner_ref).is_file(), "PUBLICATION_OWNER_TEST_REF")
+        return owner_ref
     candidates = []
     for item in workstack_items():
         if item["key"] == owner_key or claim_id in item.get("tests", ""):
             candidates.extend(_PATH.findall(item.get("tests", "")))
-    for candidate in candidates:
+    # The work packets spell commands as ``scripts/run_tests.py <test-path>``.
+    # The executable fixture is the concrete test/config path, not the runner
+    # wrapper itself. Prefer that source-owned fixture so execution receipts bind
+    # the behavior being proved rather than a generic launcher.
+    ordered = [candidate for candidate in candidates if candidate != "scripts/run_tests.py"]
+    ordered += [candidate for candidate in candidates if candidate == "scripts/run_tests.py"]
+    for candidate in ordered:
         if (ROOT / candidate).is_file():
             return candidate
     return f"BLOCKED_SOURCE_OWNER:{owner_key}:{claim_id}"

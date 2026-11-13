@@ -37,6 +37,12 @@ class DeliveryPublicationTests(unittest.TestCase):
         self.assertEqual(load_conformance_record(record).digest(),
                          record["conformance_sha256"])
 
+    def test_conformance_rows_bind_concrete_owner_fixtures_not_generic_runner(self):
+        record = published_conformance_record()
+        for row in record["rows"]:
+            if row["state"] not in {"BLOCKED", "REQUALIFICATION_REQUIRED"}:
+                self.assertNotEqual(row["test_ref"], "scripts/run_tests.py")
+
     def test_checked_in_publication_exactly_matches_deterministic_projection(self):
         root = Path(__file__).resolve().parents[4]
         evidence = root / "docs" / "evidence" / "bamf" / "delivery"
@@ -56,7 +62,9 @@ class DeliveryPublicationTests(unittest.TestCase):
         self.assertIn("PRIVATE_REAL", boundary["source_privacy_boundary"]["protected_excluded"])
         self.assertEqual(boundary["cross_document_diff"]["disposition"],
                          "PASS_0_BLOCKERS_0_MAJORS_0_NITS")
-        self.assertEqual(boundary["live_issue_parity"], "SEPARATE_C15_3_AUDIT_REQUIRED")
+        self.assertEqual(
+            boundary["live_issue_parity"],
+            "PASS_43_OWNERS_172_CHILDREN_190_NATIVE_EDGES_215_DAG_NODES")
 
     def test_roadmap_projects_exact_checkpoint_heads_without_completion_claims(self):
         record = published_roadmap_record()
@@ -66,7 +74,10 @@ class DeliveryPublicationTests(unittest.TestCase):
         self.assertEqual(leaves[539]["head_sha"],
                          "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111")
         self.assertEqual(leaves[539]["status"], "DEVELOPMENT_RECEIPT")
-        self.assertEqual(leaves[540]["status"], "PENDING")
+        self.assertEqual(leaves[540]["status"], "DEVELOPMENT_RECEIPT_FACTORY_PASS")
+        upstream = {row["issue"]: row for row in record["upstream"]}
+        self.assertEqual(upstream[385]["status"], "ACCEPTED_RELEASE_SCOPED_INTEGRATION")
+        self.assertEqual(upstream[386]["status"], "REVIEW_CLEAN_PENDING_HUMAN_PR_CHAIN")
         self.assertEqual(record["student_mastery_status"], "NOT_CLAIMED")
 
 

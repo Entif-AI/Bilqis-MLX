@@ -1,5 +1,5 @@
 {
-  "conformance_sha256": "c24bc933301c718e38a1215af7bd60dd02232a4894ade381c0fa85009d3e1692",
+  "conformance_sha256": "8c4acf405e593e9f4e60d8f4fd5c9f63265490d283ca301357ff3ce5b8634e60",
   "failure_gates": [
     {
       "gate_id": "GRADE_NEUTRAL_INVARIANCE",
@@ -22,11 +22,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "dc422b88f788efa9b863ed1336923b293d3cfa2cd60d3b0a3bf545b3a18a4ea7",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Two clean builds from the same pinned release have identical digests. A literal root with two source-attested senses stays two senses. A held mapping stays held and absent from active indices. Reordering input files does not renumber prior indices. A stale coverage receipt yields an explicit source-owned error before output promotion. Record the real corpus census and one formal-domain binding; do not substitute an empty toy atlas for the corpus build.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/semantics/tests/test_atlas_projection.py",
         "normative_text": "| BAMF-REQ-001/002 single semantic authority and identity | [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345),[A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348),[A12: #364](https://github.com/Entif-AI/Bilqis-MLX/issues/364) | Canonical source, preserved senses/indices, deterministic rebuild |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -39,7 +39,7 @@
       },
       "owner_ref": "A01/A02/A12",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/semantics/tests/test_atlas_projection.py"
     },
     {
       "claim_id": "BAMF-REQ-002",
@@ -48,11 +48,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "dc422b88f788efa9b863ed1336923b293d3cfa2cd60d3b0a3bf545b3a18a4ea7",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Two clean builds from the same pinned release have identical digests. A literal root with two source-attested senses stays two senses. A held mapping stays held and absent from active indices. Reordering input files does not renumber prior indices. A stale coverage receipt yields an explicit source-owned error before output promotion. Record the real corpus census and one formal-domain binding; do not substitute an empty toy atlas for the corpus build.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/semantics/tests/test_atlas_projection.py",
         "normative_text": "| BAMF-REQ-001/002 single semantic authority and identity | [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345),[A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348),[A12: #364](https://github.com/Entif-AI/Bilqis-MLX/issues/364) | Canonical source, preserved senses/indices, deterministic rebuild |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -65,7 +65,7 @@
       },
       "owner_ref": "A01/A02/A12",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/semantics/tests/test_atlas_projection.py"
     },
     {
       "claim_id": "BAMF-REQ-003",
@@ -74,11 +74,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Round-trip[0,1,8190,8191], all-zero and all-max words against literal expected integers. Version mismatch and illegal presence mask reject.17th schema, index8192, five-slot frame and nested frame all choose extended encoding and reconstruct exactly. Two frame occurrences with identical contents share content identity but retain distinct occurrence IDs.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/semantics/tests/core/test_frame_schema.py",
         "normative_text": "| BAMF-REQ-003/004 reversible frames and64-bit codec | [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349),[A04: #351](https://github.com/Entif-AI/Bilqis-MLX/issues/351),[A05: #357](https://github.com/Entif-AI/Bilqis-MLX/issues/357) | Exact role/occurrence/order; extended encoding after first bank |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -91,7 +91,7 @@
       },
       "owner_ref": "A03/A04/A05",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/semantics/tests/core/test_frame_schema.py"
     },
     {
       "claim_id": "BAMF-REQ-004",
@@ -100,11 +100,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Literal TRANSFER fixtures swap agent/recipient and yield different bindings/content IDs. Repeated same-type members in distinct roles survive. Singular-role duplication fails; explicitly plural role with occurrence0/1 succeeds. Nested negation/scope round-trips without flattening. Unknown schema takes the atomic fallback with all source data preserved. A foreign semantic-release ID fails before neural use.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/semantics/tests/core/test_frame_schema.py",
         "normative_text": "| BAMF-REQ-003/004 reversible frames and64-bit codec | [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349),[A04: #351](https://github.com/Entif-AI/Bilqis-MLX/issues/351),[A05: #357](https://github.com/Entif-AI/Bilqis-MLX/issues/357) | Exact role/occurrence/order; extended encoding after first bank |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -117,7 +117,7 @@
       },
       "owner_ref": "A03/A04/A05",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/semantics/tests/core/test_frame_schema.py"
     },
     {
       "claim_id": "BAMF-REQ-005",
@@ -126,11 +126,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "e1913519e9b8017caa0e393d3b92139d03713d12483136ab2bed4bda25d0dcbb",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Compile every prefix of a literal four-member frame and show unavailable members never appear in embeddings or handles. At A05 completion, compare literal compiled source-visible prefix tensors, handles, masks, sidecars and cache identities with changed future suffixes; they must be identical at the fixed prediction prefix. Final neural-logit equivalence is a separate downstream F05 witness owned by B11 #369 and integration C13 #385; A05 may not claim that proof before B11 exists. Mixed atomic/nested/packed sequences reconstruct the same visible AST. Streamed closure changes cache identity rather than mutating old keys. A two-row batch with unequal lengths has no cross-row content or padding visibility.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/semantics/tests/test_frame_compiler.py",
         "normative_text": "| BAMF-REQ-005 causal prefix | [A05: #357](https://github.com/Entif-AI/Bilqis-MLX/issues/357),[B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350),[B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365),[B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366),[B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) | Same visibility through every path |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -143,7 +143,7 @@
       },
       "owner_ref": "A05/B04/B06/B08/B11/C13",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/semantics/tests/test_frame_compiler.py"
     },
     {
       "claim_id": "BAMF-REQ-006",
@@ -152,11 +152,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Literal TRANSFER fixtures swap agent/recipient and yield different bindings/content IDs. Repeated same-type members in distinct roles survive. Singular-role duplication fails; explicitly plural role with occurrence0/1 succeeds. Nested negation/scope round-trips without flattening. Unknown schema takes the atomic fallback with all source data preserved. A foreign semantic-release ID fails before neural use.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/semantics/tests/core/test_frame_schema.py",
         "normative_text": "| BAMF-REQ-006 Rosetta meaning/identity | [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349),[A10: #361](https://github.com/Entif-AI/Bilqis-MLX/issues/361),[C10: #383](https://github.com/Entif-AI/Bilqis-MLX/issues/383) | Existing interpretation and trace semantics |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -169,7 +169,7 @@
       },
       "owner_ref": "A03/A10/C10",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/semantics/tests/core/test_frame_schema.py"
     },
     {
       "claim_id": "BAMF-REQ-007",
@@ -178,11 +178,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "56bb04763143cfe0711894d9b4e4cad98d913024f42453b9f3320ac3f5392db0",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Exact generated shapes agree with an instantiated tree and serialized tree. Seed equality reproduces initialization. Invalid16Q/7KV, oddRoPE24-mismatch or different FFN method rejects. v1 historical metadata still reads. v2 bank extension changes extent receipt but not stable dense-topology digest. Report all tensors and exact parameters without constructing alternative model sizes.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/runtime/tests/model/test_model_topology_v2.py",
         "normative_text": "| BAMF-REQ-007/008 topology andCCGQA | [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346),[B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350),[B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) | Same12x768/16Q/8KV body and two-matrixFFN |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -195,7 +195,7 @@
       },
       "owner_ref": "B01/B04/B11",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/runtime/tests/model/test_model_topology_v2.py"
     },
     {
       "claim_id": "BAMF-REQ-008",
@@ -204,11 +204,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "56bb04763143cfe0711894d9b4e4cad98d913024f42453b9f3320ac3f5392db0",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Exact generated shapes agree with an instantiated tree and serialized tree. Seed equality reproduces initialization. Invalid16Q/7KV, oddRoPE24-mismatch or different FFN method rejects. v1 historical metadata still reads. v2 bank extension changes extent receipt but not stable dense-topology digest. Report all tensors and exact parameters without constructing alternative model sizes.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/runtime/tests/model/test_model_topology_v2.py",
         "normative_text": "| BAMF-REQ-007/008 topology andCCGQA | [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346),[B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350),[B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) | Same12x768/16Q/8KV body and two-matrixFFN |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -221,7 +221,7 @@
       },
       "owner_ref": "B01/B04/B11",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/runtime/tests/model/test_model_topology_v2.py"
     },
     {
       "claim_id": "BAMF-REQ-009",
@@ -230,11 +230,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "fb1a8cfbffdfc9c18fa75f42d9bd785093dbff21a4ff7d11671b11d59b6f4b70",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Source weights sum to1. Changing a future group cannot change an earlier boundary. All three boundaries remain finite. A nondegenerate loss reaches multiple source states and selector weights. Save/load preserves output. Assert that all three group boundaries execute the module, rather than merely declaring it in configuration.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/runtime/tests/depth/test_block_attnres.py",
         "normative_text": "| BAMF-REQ-009 Block AttnRes | [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355) | Shared Q/K/V/output projections and three context gates |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -247,7 +247,7 @@
       },
       "owner_ref": "B05",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/runtime/tests/depth/test_block_attnres.py"
     },
     {
       "claim_id": "BAMF-REQ-010",
@@ -256,11 +256,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "504d6f8b89731ad82886ac9b4e35c1ef1a5d59e46b6202260606532bb0680633",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Inject two distinct canonical full motif keys into the same deterministic test bucket/index through a test-only bucket seam (or explicitly reduced bucket width); exact full-key comparison must discriminate them and never return the other slot. Do not require finding a cryptographic SHA collision. Different fillers share a permitted structural motif; role swap changes the key. Rejection restores allocation, tensor and counters byte-for-byte. Restart reproduces pending slot IDs. Capacity exhaustion uses fallback without overwrite. Page growth preserves all old slots and moments.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/learning/tests/test_atlas_engram_allocation.py",
         "normative_text": "| BAMF-REQ-010/011 motif and active semantics | [B07: #356](https://github.com/Entif-AI/Bilqis-MLX/issues/356),[B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366),[A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348),[B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372),[A13: #354](https://github.com/Entif-AI/Bilqis-MLX/issues/354) | Initial capacities retained; explicit generation-bound expansion |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -273,7 +273,7 @@
       },
       "owner_ref": "B07/B08/A02/B13/A13",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/learning/tests/test_atlas_engram_allocation.py"
     },
     {
       "claim_id": "BAMF-REQ-011",
@@ -282,11 +282,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "504d6f8b89731ad82886ac9b4e35c1ef1a5d59e46b6202260606532bb0680633",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Inject two distinct canonical full motif keys into the same deterministic test bucket/index through a test-only bucket seam (or explicitly reduced bucket width); exact full-key comparison must discriminate them and never return the other slot. Do not require finding a cryptographic SHA collision. Different fillers share a permitted structural motif; role swap changes the key. Rejection restores allocation, tensor and counters byte-for-byte. Restart reproduces pending slot IDs. Capacity exhaustion uses fallback without overwrite. Page growth preserves all old slots and moments.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/learning/tests/test_atlas_engram_allocation.py",
         "normative_text": "| BAMF-REQ-010/011 motif and active semantics | [B07: #356](https://github.com/Entif-AI/Bilqis-MLX/issues/356),[B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366),[A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348),[B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372),[A13: #354](https://github.com/Entif-AI/Bilqis-MLX/issues/354) | Initial capacities retained; explicit generation-bound expansion |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -299,7 +299,7 @@
       },
       "owner_ref": "B07/B08/A02/B13/A13",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/learning/tests/test_atlas_engram_allocation.py"
     },
     {
       "claim_id": "BAMF-REQ-012",
@@ -308,11 +308,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "5d9ecee21b11eef1a5ff41eca590bf97eaf196655c984fe483bce4d264e55768",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Current A/B/C answer mappings remain unchanged. Four-role outputs preserve binding under role swaps. A bank1 concept can be predicted and an inactive concept cannot. Earlier output positions cannot inspect later targets. UNKNOWN differs from empty set. The64-decision ceiling returns a typed budget status. Gradients reach identity and role heads. A two-step fixture first chooses a source actor and then its event role; changing step2 gold leaves step1 logits unchanged. Inference step2 receives predicted step1, training receives only prior teacher-forced step1. Missing parent, dependency cycle, END_FRAME before a required role and64-step exhaustion are literal cases.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/runtime/tests/model/test_atlas_refinement.py",
         "normative_text": "| BAMF-REQ-012/013 local/dependency refinement | [B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365),[C04: #373](https://github.com/Entif-AI/Bilqis-MLX/issues/373) |768-wide local state,192-channel attention,0/1/2passes and typed DAG |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -325,7 +325,7 @@
       },
       "owner_ref": "B06/C04",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/runtime/tests/model/test_atlas_refinement.py"
     },
     {
       "claim_id": "BAMF-REQ-013",
@@ -334,11 +334,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "5d9ecee21b11eef1a5ff41eca590bf97eaf196655c984fe483bce4d264e55768",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Zero passes is identity. One/two passes change only selected frames. Future members remain inaccessible. Original input is re-injected every pass. Backward reaches refinement parameters and two-pass save/resume repeats. Exhausted budget records remaining needs and returns the baseline answer path. One finite disposable update reduces a literal nested-role target loss. Append high-priority future frames across the8-to9 quota boundary; earlier selection IDs, pass counts and logits at fixed p are identical. Repeat with different batch padding and future teacher-forcing targets.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/runtime/tests/model/test_atlas_refinement.py",
         "normative_text": "| BAMF-REQ-012/013 local/dependency refinement | [B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365),[C04: #373](https://github.com/Entif-AI/Bilqis-MLX/issues/373) |768-wide local state,192-channel attention,0/1/2passes and typed DAG |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -351,7 +351,7 @@
       },
       "owner_ref": "B06/C04",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/runtime/tests/model/test_atlas_refinement.py"
     },
     {
       "claim_id": "BAMF-REQ-014",
@@ -360,11 +360,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "9916d84433fc4719950d35d28caa0c11e1df13441ebdca6a5831224e6c43234f",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Literal code sequence0..7 round-trips through bit packing. Zero vectors decode exactly zero. Full256-vector records use<=3.5 effective bits/channel. The fixed attention fixture meets relative-L2<=0.10 and exact chosen-answer agreement or selects FP32 fallback. Wrong generation/offset/scope/codebook rejects. No training gradient reads decoded cache tensors.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/runtime/tests/model/attention/cache/test_atlas_cache_codec.py",
         "normative_text": "| BAMF-REQ-014 derived cache | [B14: #375](https://github.com/Entif-AI/Bilqis-MLX/issues/375) | Versioned approximate cache; canonicalFP32 preserved |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -377,7 +377,7 @@
       },
       "owner_ref": "B14",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/runtime/tests/model/attention/cache/test_atlas_cache_codec.py"
     },
     {
       "claim_id": "BAMF-REQ-015",
@@ -386,7 +386,7 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "7337f48ccbb3dbd89c5d1d114c28d01815ed3e19b4c5008c66495ea36838c187",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Build the actual full-atlas coverage ledger, with eligible/held counts reconciling to source concept census. Demonstrate current numeric/Boolean family plus one real source-attested morphology/role family. New concept within a supported family changes data only. Missing constructor/checker is IMPLEMENTATION_UNCOVERED with exact owner/reason while unrelated ready families still compile. Teaching construction explicitly contains its declared constituents before composite tests.",
@@ -412,7 +412,7 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "b5edb774f8382aea8c96dd2085f437e63dfe7b3b8c85f45495cabffc861d1a60",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Initial adapter output equals its input. FAST changes only eligible parameters and rows. Rejected FAST candidates do not advance clocks. Eight accepted FAST candidates schedule FULL across restart. Row establishment counts once per ACCEPTED participating candidate, not once per internal optimizer step. Teacher-triggered FULL uses the same generic visit path. Test FOUNDATION promotion-with-debt transition, accepted/rejected FAST/FULL schedules, teacher early FULL reset, a new semantic row, and cold resume on either side of the transition.",
@@ -438,7 +438,7 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "37670d77ccdd31054adcde4a215a52e6e2b82c72953d60c6eadd8c6793340d59",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Replay a fixed observation sequence and match strategy eligibility, no-gain resets and canary fallback with the baseline functions. Changed retained checkpoint resets same-student retirement. Destructive interference and no-target-gain produce distinct histories. A stale teacher geometry region cannot qualify a canary. Actual proposed/delivered/outcome/cost records survive checkpoint/restart exactly once.",
@@ -464,11 +464,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "d04579ae7efb3d69f02ff28f612b292f418b1496a7fe6842026bd9885d893944",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "A time-critical known problem can outrank a novel low-impact curiosity; a useful new cross-domain relation can outrank routine repetition when deadlines are equal. Missing expected report differs from explicitnegative report. Repeated identical failure triggers one grouped repair candidate, not20newdiscoveries. Head losses mask UNKNOWN-without-label cases. Priority changes do not override teacher strategy or fabricate semantic truth.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/learning/_salience/tests/test_atlas_salience.py",
         "normative_text": "| BAMF-REQ-018 salience | [C06: #379](https://github.com/Entif-AI/Bilqis-MLX/issues/379) | OrthogonalI/E/N with task-relative consequences |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -481,7 +481,7 @@
       },
       "owner_ref": "C06",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/learning/_salience/tests/test_atlas_salience.py"
     },
     {
       "claim_id": "BAMF-REQ-019",
@@ -490,7 +490,7 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "cd464f940e15817d2e5beced7a4046e2c0473cb5dcd4e10d878d62c04d824001",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "One public structured summary becomes a source-linked typed lesson and independent exact check.0.25h/15min match; blank differs from0; planned differs fromcompleted; contradictory dates remain alternatives. Unclassified/private source is rejected by public export. One held narrative span does not block qualified structured summaries. A source interpretation correction changes only dependent lesson families. T1 emits completed and15-minute derived answer; T2 retains PLANNED and cannot satisfy an occurred predicate; T3 has UNKNOWN, not0. A missing qualified private stratum changes only its held count. Existing public snapshots continue through the same Factory.",
@@ -516,11 +516,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "9ec8a74f7585c20afb9ede0a9e650ac11ecd874271e439c5a1b7f62298f98e05",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Change one source premise and repair only its affected direct chain. An unrelated source edit causes no rebuild. Recomputed equal output stops propagation. A revoked motif is ineligible before retraining. Two concurrent incompatible corrections remain branches. Capability requalification is visible while source history remains immutable. A synthetic planned09:30 activity, missing expected report, explicit non-occurrence, later10:20 correction and stale replay remain five distinct cases; a later actor/time fixture exercises the corrected behavior.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/runtime/tests/test_atlas_revalidation.py",
         "normative_text": "| BAMF-REQ-020 descendants | [C09: #377](https://github.com/Entif-AI/Bilqis-MLX/issues/377),[C10: #383](https://github.com/Entif-AI/Bilqis-MLX/issues/383) | Immediate dependencies and scoped requalification |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -533,7 +533,7 @@
       },
       "owner_ref": "C09/C10",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/runtime/tests/test_atlas_revalidation.py"
     },
     {
       "claim_id": "BAMF-REQ-021",
@@ -542,11 +542,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "91480f0f8905960e8c31f2f58820cc4ac499400b72121e23e6f8d55e6f985d4b",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "One public structured summary becomes a source-linked typed lesson and independent exact check.0.25h/15min match; blank differs from0; planned differs fromcompleted; contradictory dates remain alternatives. Unclassified/private source is rejected by public export. One held narrative span does not block qualified structured summaries. A source interpretation correction changes only dependent lesson families. T1 emits completed and15-minute derived answer; T2 retains PLANNED and cannot satisfy an occurred predicate; T3 has UNKNOWN, not0. A missing qualified private stratum changes only its held count. Existing public snapshots continue through the same Factory.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/source_adapters/tests/test_evidence_frames.py",
         "normative_text": "| BAMF-REQ-021 source-family independence | [A10: #361](https://github.com/Entif-AI/Bilqis-MLX/issues/361),[C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378),[C12: #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381) | Root lineage preserved across derivatives |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -559,7 +559,7 @@
       },
       "owner_ref": "A10/C05/C12",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/source_adapters/tests/test_evidence_frames.py"
     },
     {
       "claim_id": "BAMF-REQ-022",
@@ -568,11 +568,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "7533433c24484977a27db7ea4fbe39d3b8ac19eb4cbc743750e1659cb0e69bd2",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Accumulated gradient matches an unsplit small batch within declaredFP32 tolerance. Two CPU source workers produce same packets as serial. Stale prepared packet rejects. OOM simulation retries once and retains source/stepidentity. Batch1 exhaustion preserves parent. Disk guard considers complete weights,moments,manifest and publication overhead.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/runtime/tests/model/test_atlas_resources.py",
         "normative_text": "| BAMF-REQ-022 resources/commands | [C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374),[C11: #384](https://github.com/Entif-AI/Bilqis-MLX/issues/384),[C16: #382](https://github.com/Entif-AI/Bilqis-MLX/issues/382) | ExistingM3Ultra; local compiled input; verified operator commands |",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -585,7 +585,7 @@
       },
       "owner_ref": "C08/C11/C16",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/runtime/tests/model/test_atlas_resources.py"
     },
     {
       "claim_id": "BAMF-REQ-023",
@@ -594,7 +594,7 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "1be6636da570a6c4f69bca9304f75ce44d5d93d7878adfc3836d852355bb6505",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "**FOUNDATION_EVIDENCE_POLICY_ACTIVE:** Record exact baseline and clean integration diff. Workstack detects a cycle, missing dependency and overlapping shared-file ownership. EGM path resolves and a genuinely fresh reviewer reads one leaf without transcript. Existing Factory/SKOS focused checks run once at the combined baseline; report actual failures by owner. No model/run data or private sources enter the commit. C16 acceptance records parent and retained generation IDs, developmental evidence kind, preserved cumulative retention, rejected-candidate complete-state identity, and equivalent cold-resume output or next update. Fresh target improvement is not a foundation requirement.",
@@ -620,7 +620,7 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "ec9e3cfccaef9cb6fc9e69c1cdc63f3bf31b0edee30e3ae1f09b90de0a08d07c",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "An exact answer and neural answer with the same correct semantics receive identical task credit. During foundation acquisition, source-valid teacher-forced acquisition, exact taught recall or taught-composition replication with admissible protected effects can retain the whole candidate. A destructive candidate restores everything. A perfect source-visible lookup does not consume an optimizer visit. Fresh generalization is not required.",
@@ -646,11 +646,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Literal TRANSFER fixtures swap agent/recipient and yield different bindings/content IDs. Repeated same-type members in distinct roles survive. Singular-role duplication fails; explicitly plural role with occurrence0/1 succeeds. Nested negation/scope round-trips without flattening. Unknown schema takes the atomic fallback with all source data preserved. A foreign semantic-release ID fails before neural use.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/semantics/tests/core/test_frame_schema.py",
         "normative_text": "**Canonical proof references:** BAMF-REQ-003; fixtures: F01, F02, F03. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -663,7 +663,7 @@
       },
       "owner_ref": "A03/A11",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/semantics/tests/core/test_frame_schema.py"
     },
     {
       "claim_id": "F02",
@@ -672,11 +672,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Two clean builds from the same pinned release have identical digests. A literal root with two source-attested senses stays two senses. A held mapping stays held and absent from active indices. Reordering input files does not renumber prior indices. A stale coverage receipt yields an explicit source-owned error before output promotion. Record the real corpus census and one formal-domain binding; do not substitute an empty toy atlas for the corpus build.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/semantics/tests/core/test_frame_schema.py",
         "normative_text": "**Canonical proof references:** BAMF-REQ-003; fixtures: F01, F02, F03. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -689,7 +689,7 @@
       },
       "owner_ref": "A03/A04",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/semantics/tests/core/test_frame_schema.py"
     },
     {
       "claim_id": "F03",
@@ -698,11 +698,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Round-trip[0,1,8190,8191], all-zero and all-max words against literal expected integers. Version mismatch and illegal presence mask reject.17th schema, index8192, five-slot frame and nested frame all choose extended encoding and reconstruct exactly. Two frame occurrences with identical contents share content identity but retain distinct occurrence IDs.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/semantics/tests/core/test_frame_schema.py",
         "normative_text": "**Canonical proof references:** BAMF-REQ-003; fixtures: F01, F02, F03. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -715,7 +715,7 @@
       },
       "owner_ref": "A03/A04",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/semantics/tests/core/test_frame_schema.py"
     },
     {
       "claim_id": "F04",
@@ -724,11 +724,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Round-trip[0,1,8190,8191], all-zero and all-max words against literal expected integers. Version mismatch and illegal presence mask reject.17th schema, index8192, five-slot frame and nested frame all choose extended encoding and reconstruct exactly. Two frame occurrences with identical contents share content identity but retain distinct occurrence IDs.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/semantics/tests/core/test_frame_schema.py",
         "normative_text": "**Canonical proof references:** BAMF-REQ-003, BAMF-REQ-004; fixtures: F02, F03, F04. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -741,7 +741,7 @@
       },
       "owner_ref": "A03/A04",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/semantics/tests/core/test_frame_schema.py"
     },
     {
       "claim_id": "F05",
@@ -750,7 +750,7 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "e1913519e9b8017caa0e393d3b92139d03713d12483136ab2bed4bda25d0dcbb",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Compile every prefix of a literal four-member frame and show unavailable members never appear in embeddings or handles. At A05 completion, compare literal compiled source-visible prefix tensors, handles, masks, sidecars and cache identities with changed future suffixes; they must be identical at the fixed prediction prefix. Final neural-logit equivalence is a separate downstream F05 witness owned by B11 #369 and integration C13 #385; A05 may not claim that proof before B11 exists. Mixed atomic/nested/packed sequences reconstruct the same visible AST. Streamed closure changes cache identity rather than mutating old keys. A two-row batch with unequal lengths has no cross-row content or padding visibility.",
@@ -776,11 +776,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "91480f0f8905960e8c31f2f58820cc4ac499400b72121e23e6f8d55e6f985d4b",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "One public structured summary becomes a source-linked typed lesson and independent exact check.0.25h/15min match; blank differs from0; planned differs fromcompleted; contradictory dates remain alternatives. Unclassified/private source is rejected by public export. One held narrative span does not block qualified structured summaries. A source interpretation correction changes only dependent lesson families. T1 emits completed and15-minute derived answer; T2 retains PLANNED and cannot satisfy an occurred predicate; T3 has UNKNOWN, not0. A missing qualified private stratum changes only its held count. Existing public snapshots continue through the same Factory.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/source_adapters/tests/test_evidence_frames.py",
         "normative_text": "**Canonical proof references:** BAMF-REQ-006, BAMF-REQ-019, BAMF-REQ-021; fixtures: F06, F10. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -793,7 +793,7 @@
       },
       "owner_ref": "A10/C09",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/source_adapters/tests/test_evidence_frames.py"
     },
     {
       "claim_id": "F07",
@@ -802,11 +802,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "9ec8a74f7585c20afb9ede0a9e650ac11ecd874271e439c5a1b7f62298f98e05",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Change one source premise and repair only its affected direct chain. An unrelated source edit causes no rebuild. Recomputed equal output stops propagation. A revoked motif is ineligible before retraining. Two concurrent incompatible corrections remain branches. Capability requalification is visible while source history remains immutable. A synthetic planned09:30 activity, missing expected report, explicit non-occurrence, later10:20 correction and stale replay remain five distinct cases; a later actor/time fixture exercises the corrected behavior.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/runtime/tests/test_atlas_revalidation.py",
         "normative_text": "**Canonical proof references:** BAMF-REQ-019, BAMF-REQ-020; fixtures: F06, F07, F15, F19. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -819,7 +819,7 @@
       },
       "owner_ref": "C09",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/runtime/tests/test_atlas_revalidation.py"
     },
     {
       "claim_id": "F08",
@@ -828,11 +828,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "fb2464fbce8d5cc93c357ca926d35b24f403c1c5ceb8a762b1e46ae488c235d0",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "A time-critical known problem can outrank a novel low-impact curiosity; a useful new cross-domain relation can outrank routine repetition when deadlines are equal. Missing expected report differs from explicitnegative report. Repeated identical failure triggers one grouped repair candidate, not20newdiscoveries. Head losses mask UNKNOWN-without-label cases. Priority changes do not override teacher strategy or fabricate semantic truth.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/semantics/tests/test_context_eligibility.py",
         "normative_text": "**Canonical proof references:** BAMF-REQ-010, BAMF-REQ-018; fixtures: F08, F09. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -845,7 +845,7 @@
       },
       "owner_ref": "A13/C06",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/semantics/tests/test_context_eligibility.py"
     },
     {
       "claim_id": "F09",
@@ -854,11 +854,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "fb2464fbce8d5cc93c357ca926d35b24f403c1c5ceb8a762b1e46ae488c235d0",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Two individually allowed frames with a forbidden joint scope produce ContextHold before any pooling or lookup. Revocation invalidates a formerly permitted view. Different policy/time frontiers produce different cache identities. A future constituent has no eligible handle. PUBLIC_FORMAL A/B/C fixtures remain executable without NLP or network calls. The full-set positive case produces an identical eligibility digest across input enumeration order while preserving source order inside each frame.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/semantics/tests/test_context_eligibility.py",
         "normative_text": "Implement versioned ContextEligibility and EligibleContext records using the shared eligibility contract. Validate all member handles and pair/set joins before A05 packing and B08 motif reads. Produce stable reason codes for release mismatch, revoked source, temporal mismatch, forbidden join, unresolved purpose and invisible prefix. Retain blocked evidence only in the authorized source store; return source handles and bounded diagnostics to the caller. Emit a digest over the approved membership and relevant policy/time/rights projections. Runtime exact operators, neural attention and cached transforms consume only this approved view. Provide PUBLIC_FORMAL envelopes for existing source-grounded A/B/C constructors. Public tests use independent synthetic actors/scopes. Changes to eligibility generate C09 invalidations; a live external policy service is not required for each gradient step because the visit pins one approved frontier. Predecessor trace: BAMF-REQ-010/F09; the implementation follows the explicit BAMF-0.2 contract repeated here.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -871,7 +871,7 @@
       },
       "owner_ref": "A13",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/semantics/tests/test_context_eligibility.py"
     },
     {
       "claim_id": "F10",
@@ -880,11 +880,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "91480f0f8905960e8c31f2f58820cc4ac499400b72121e23e6f8d55e6f985d4b",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "One public structured summary becomes a source-linked typed lesson and independent exact check.0.25h/15min match; blank differs from0; planned differs fromcompleted; contradictory dates remain alternatives. Unclassified/private source is rejected by public export. One held narrative span does not block qualified structured summaries. A source interpretation correction changes only dependent lesson families. T1 emits completed and15-minute derived answer; T2 retains PLANNED and cannot satisfy an occurred predicate; T3 has UNKNOWN, not0. A missing qualified private stratum changes only its held count. Existing public snapshots continue through the same Factory.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/source_adapters/tests/test_evidence_frames.py",
         "normative_text": "**Canonical proof references:** BAMF-REQ-006, BAMF-REQ-019, BAMF-REQ-021; fixtures: F06, F10. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -897,7 +897,7 @@
       },
       "owner_ref": "A10/C05",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/source_adapters/tests/test_evidence_frames.py"
     },
     {
       "claim_id": "F11",
@@ -906,11 +906,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "504d6f8b89731ad82886ac9b4e35c1ef1a5d59e46b6202260606532bb0680633",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Inject two distinct canonical full motif keys into the same deterministic test bucket/index through a test-only bucket seam (or explicitly reduced bucket width); exact full-key comparison must discriminate them and never return the other slot. Do not require finding a cryptographic SHA collision. Different fillers share a permitted structural motif; role swap changes the key. Rejection restores allocation, tensor and counters byte-for-byte. Restart reproduces pending slot IDs. Capacity exhaustion uses fallback without overwrite. Page growth preserves all old slots and moments.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/learning/tests/test_atlas_engram_allocation.py",
         "normative_text": "**Canonical proof references:** BAMF-REQ-010, BAMF-REQ-020; fixtures: F11, F12. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -923,7 +923,7 @@
       },
       "owner_ref": "B07",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/learning/tests/test_atlas_engram_allocation.py"
     },
     {
       "claim_id": "F12",
@@ -932,7 +932,7 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "504d6f8b89731ad82886ac9b4e35c1ef1a5d59e46b6202260606532bb0680633",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Inject two distinct canonical full motif keys into the same deterministic test bucket/index through a test-only bucket seam (or explicitly reduced bucket width); exact full-key comparison must discriminate them and never return the other slot. Do not require finding a cryptographic SHA collision. Different fillers share a permitted structural motif; role swap changes the key. Rejection restores allocation, tensor and counters byte-for-byte. Restart reproduces pending slot IDs. Capacity exhaustion uses fallback without overwrite. Page growth preserves all old slots and moments.",
@@ -958,11 +958,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "9916d84433fc4719950d35d28caa0c11e1df13441ebdca6a5831224e6c43234f",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Literal code sequence0..7 round-trips through bit packing. Zero vectors decode exactly zero. Full256-vector records use<=3.5 effective bits/channel. The fixed attention fixture meets relative-L2<=0.10 and exact chosen-answer agreement or selects FP32 fallback. Wrong generation/offset/scope/codebook rejects. No training gradient reads decoded cache tensors.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/runtime/tests/model/attention/cache/test_atlas_cache_codec.py",
         "normative_text": "**Canonical proof references:** BAMF-REQ-014; fixtures: F13. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -975,7 +975,7 @@
       },
       "owner_ref": "B14",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/runtime/tests/model/attention/cache/test_atlas_cache_codec.py"
     },
     {
       "claim_id": "F14",
@@ -984,11 +984,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "56bb04763143cfe0711894d9b4e4cad98d913024f42453b9f3320ac3f5392db0",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Exact generated shapes agree with an instantiated tree and serialized tree. Seed equality reproduces initialization. Invalid16Q/7KV, oddRoPE24-mismatch or different FFN method rejects. v1 historical metadata still reads. v2 bank extension changes extent receipt but not stable dense-topology digest. Report all tensors and exact parameters without constructing alternative model sizes.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/runtime/tests/model/test_model_topology_v2.py",
         "normative_text": "**Canonical proof references:** BAMF-REQ-007; fixtures: F14. Read the current BAMF-0.2-SPEC-001 acceptance and Blueprint before implementation, without exposing protected detail in public. Runtime and operator reason names are BAMF_*; old BAV names are not active contracts.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -1001,7 +1001,7 @@
       },
       "owner_ref": "B01/B13",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/runtime/tests/model/test_model_topology_v2.py"
     },
     {
       "claim_id": "F15",
@@ -1010,7 +1010,7 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "9ec8a74f7585c20afb9ede0a9e650ac11ecd874271e439c5a1b7f62298f98e05",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Change one source premise and repair only its affected direct chain. An unrelated source edit causes no rebuild. Recomputed equal output stops propagation. A revoked motif is ineligible before retraining. Two concurrent incompatible corrections remain branches. Capability requalification is visible while source history remains immutable. A synthetic planned09:30 activity, missing expected report, explicit non-occurrence, later10:20 correction and stale replay remain five distinct cases; a later actor/time fixture exercises the corrected behavior.",
@@ -1036,7 +1036,7 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "e1913519e9b8017caa0e393d3b92139d03713d12483136ab2bed4bda25d0dcbb",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Compile every prefix of a literal four-member frame and show unavailable members never appear in embeddings or handles. At A05 completion, compare literal compiled source-visible prefix tensors, handles, masks, sidecars and cache identities with changed future suffixes; they must be identical at the fixed prediction prefix. Final neural-logit equivalence is a separate downstream F05 witness owned by B11 #369 and integration C13 #385; A05 may not claim that proof before B11 exists. Mixed atomic/nested/packed sequences reconstruct the same visible AST. Streamed closure changes cache identity rather than mutating old keys. A two-row batch with unequal lengths has no cross-row content or padding visibility.",
@@ -1062,11 +1062,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "dc422b88f788efa9b863ed1336923b293d3cfa2cd60d3b0a3bf545b3a18a4ea7",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Two clean builds from the same pinned release have identical digests. A literal root with two source-attested senses stays two senses. A held mapping stays held and absent from active indices. Reordering input files does not renumber prior indices. A stale coverage receipt yields an explicit source-owned error before output promotion. Record the real corpus census and one formal-domain binding; do not substitute an empty toy atlas for the corpus build.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/semantics/tests/test_atlas_projection.py",
         "normative_text": "**Canonical proof references:** BAMF-REQ-001, BAMF-REQ-002; fixtures: F17. Apply the detailed acceptance in the BAMF-0.2-SPEC-001 and current Blueprint; publication of this issue does not declassify private implementation evidence. The current model/operator identifiers are BAMF-0.2 and BAMF_*; do not revive legacy BAV names.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -1079,7 +1079,7 @@
       },
       "owner_ref": "A01/A12/C07",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/semantics/tests/test_atlas_projection.py"
     },
     {
       "claim_id": "F18",
@@ -1088,11 +1088,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "ec9e3cfccaef9cb6fc9e69c1cdc63f3bf31b0edee30e3ae1f09b90de0a08d07c",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "An exact answer and neural answer with the same correct semantics receive identical task credit. During foundation acquisition, source-valid teacher-forced acquisition, exact taught recall or taught-composition replication with admissible protected effects can retain the whole candidate. A destructive candidate restores everything. A perfect source-visible lookup does not consume an optimizer visit. Fresh generalization is not required.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/runtime/tests/capability/test_bamf_capability_retention.py",
         "normative_text": "**Canonical proof references:** BAMF-REQ-017, BAMF-REQ-021, BAMF-REQ-024; fixtures: F10, F16, F18. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -1105,7 +1105,7 @@
       },
       "owner_ref": "C05",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/runtime/tests/capability/test_bamf_capability_retention.py"
     },
     {
       "claim_id": "F19",
@@ -1114,11 +1114,11 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "d04579ae7efb3d69f02ff28f612b292f418b1496a7fe6842026bd9885d893944",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "A time-critical known problem can outrank a novel low-impact curiosity; a useful new cross-domain relation can outrank routine repetition when deadlines are equal. Missing expected report differs from explicitnegative report. Repeated identical failure triggers one grouped repair candidate, not20newdiscoveries. Head losses mask UNKNOWN-without-label cases. Priority changes do not override teacher strategy or fabricate semantic truth.",
-        "input_fixture": "scripts/run_tests.py",
+        "input_fixture": "bilqis_mlx/learning/_salience/tests/test_atlas_salience.py",
         "normative_text": "**Required contrast fixtures (BAMF-REQ-018; F08/F19):** A single minor mismatch remains below the declared candidate threshold, but many distinct, source-qualified analogous mismatches produce an aggregate trend candidate with a recorded lineage set; unrelated mismatches and many paraphrases of one event do NOT produce that trend. Revoke training rights on an otherwise high-novelty example: no optimizer input or admitted gold may result, regardless of novelty or impact. The unknown-label auxiliary heads remain masked. Neither the aggregate nor novelty alone may promote a source or turn conjecture into observation.",
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
@@ -1131,7 +1131,7 @@
       },
       "owner_ref": "C06/C09",
       "state": "CODE_PRESENT",
-      "test_ref": "scripts/run_tests.py"
+      "test_ref": "bilqis_mlx/learning/_salience/tests/test_atlas_salience.py"
     },
     {
       "claim_id": "F20",
@@ -1140,7 +1140,7 @@
         "authority_identity": {
           "contract_digest": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
           "issue_digest": "2ee76692706486f543cfed7f9926c3519c5cfdc33b81630a92d49020a31e9215",
-          "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
+          "source_digest": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
         },
         "contract_path": "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "expected_behavior": "Save/load reproduces parameters, moments, local counts, teacher context, active ABI and next seed. Crash before pointer keeps the old generation; crash after pointer before outbox delivery replays exactly once without another optimizer step. Wrong motif map, bank extent, compiler, topology or correction epoch fails before mutation. Accepted then rejected candidate followed by cold resume yields only accepted state.",

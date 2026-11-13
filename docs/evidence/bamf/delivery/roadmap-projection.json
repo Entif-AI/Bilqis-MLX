@@ -1,7 +1,7 @@
 {
   "egm_repair_head": "66277ed61d0ae4cabb088dfb508ab7188415003c",
   "historical_issue_book_sha256": "21a82b966c52ad13480b7021e9163efaacc7f6f70c9c4eac5d7277f05d355425",
-  "historical_workstack_sha256": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057",
+  "historical_workstack_sha256": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d",
   "leaves": [
     {
       "final_gate": "EGM_AND_ACCEPTED_C13_C14",
@@ -25,29 +25,29 @@
       "status": "DEVELOPMENT_RECEIPT"
     },
     {
-      "final_gate": "C15_2_EGM_AND_ACCEPTED_C13_C14",
-      "head_sha": null,
+      "final_gate": "ACCEPTED_C14_AND_FINAL_REQUALIFICATION",
+      "head_sha": "16117bfb782ce0b1a3f301e2f5441917a915fd9d",
       "issue": 540,
       "key": "C15.3",
-      "status": "PENDING"
+      "status": "DEVELOPMENT_RECEIPT_FACTORY_PASS"
     }
   ],
   "schema": "bilqis.bamf.delivery-roadmap-projection/v2",
   "software_delivery_status": "IN_PROGRESS",
-  "source_reviewed_unified": "97a018ed7e9697fe284abd9fa8197cd7f4194b45",
+  "source_reviewed_unified": "9e06ea557c910bae7ecd879fe83f4d50aed84eb9",
   "student_mastery_status": "NOT_CLAIMED",
   "upstream": [
     {
-      "head_sha": "549d84d5cb58862c92eca2dd25277d5ca0665fd7",
+      "head_sha": "9e06ea557c910bae7ecd879fe83f4d50aed84eb9",
       "issue": 385,
       "key": "C13",
-      "status": "PROVISIONAL_REMOTE_HEAD_NO_PARENT_ACCEPTANCE"
+      "status": "ACCEPTED_RELEASE_SCOPED_INTEGRATION"
     },
     {
-      "head_sha": "77006d2370a16e0bfb4ca1a10cc516a6e4d011f8",
+      "head_sha": "29101af83aaa592ab1ace59c68bfdba153c7fb53",
       "issue": 386,
       "key": "C14",
-      "status": "PROVISIONAL_REMOTE_HEAD_NO_PARENT_ACCEPTANCE"
+      "status": "REVIEW_CLEAN_PENDING_HUMAN_PR_CHAIN"
     }
   ]
 }
