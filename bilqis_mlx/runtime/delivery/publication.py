@@ -27,7 +27,8 @@ C15_EGM_REPAIR_HEAD = "a008e1d2770c968e1b7784d00194e4f75e402041"
 C15_EGM_CANDIDATE = "66277ed61d0ae4cabb088dfb508ab7188415003c"
 C15_EGM_REPORT_HEAD = "fc04b9379e5657cd046836c4af9ea4dd76df4795"
 C15_3_RECONCILIATION_HEAD = "16117bfb782ce0b1a3f301e2f5441917a915fd9d"
-C15_REQUALIFICATION_RECEIPT_COMMIT: str | None = None
+C15_FINAL_CANDIDATE = "c4197f28c4aa2e3972634b1dbea255832d4b6d7b"
+C15_REQUALIFICATION_RECEIPT_COMMIT: str | None = "f2189cce5d49b1c97dcf1ff67b70b0925322b663"
 SOURCE_DIGEST = file_digest(WORKSTACK)
 CONTRACT_DIGEST = file_digest(ARCHITECTURE)
 ISSUE_BOOK_DIGEST = file_digest(ISSUE_BOOK)
@@ -49,9 +50,9 @@ def _component_receipts() -> tuple[ComponentReceipt, ...]:
                          ReceiptStatus.ACCEPTED, "issue:386#issuecomment-6865294741"),
         ComponentReceipt("C16", 382, "c672c62113108695a2a60cd0eb0d7f19d085f838",
                          ReceiptStatus.ACCEPTED, "issue:382#issuecomment-6832648874"),
-        ComponentReceipt("architecture", 540, C15_3_RECONCILIATION_HEAD,
-                         ReceiptStatus.PROVISIONAL,
-                         f"docs/architecture/BAMF_0_2.md@sha256:{CONTRACT_DIGEST}"),
+        ComponentReceipt("architecture", 540, C15_FINAL_CANDIDATE,
+                         ReceiptStatus.ACCEPTED,
+                         f"git:{C15_FINAL_CANDIDATE}:docs/architecture/BAMF_0_2.md"),
         ComponentReceipt("codec", 375,
                          "1265200be9bac5b97a3aecd0e82127af1dd4d98ca86da6829ea0ce0e9b69c000",
                          ReceiptStatus.ACCEPTED,
@@ -60,9 +61,9 @@ def _component_receipts() -> tuple[ComponentReceipt, ...]:
                          "acafc03e20353d55bd02c4a0d70ab3d7b36c1558632932b0d75b1cf9399de3a1",
                          ReceiptStatus.ACCEPTED,
                          "bilqis_mlx/runtime/_custody/bamf_bundle/vocabulary/compiler_binding.py"),
-        ComponentReceipt("delivery-tests", 539, C15_EGM_CANDIDATE,
-                         ReceiptStatus.PROVISIONAL,
-                         f"git:{C15_EGM_CANDIDATE}:bilqis_mlx/runtime/delivery/tests"),
+        ComponentReceipt("delivery-tests", 539, C15_FINAL_CANDIDATE,
+                         ReceiptStatus.ACCEPTED,
+                         f"git:{C15_FINAL_CANDIDATE}:bilqis_mlx/runtime/delivery/tests"),
         ComponentReceipt("factory-head", 358, "0b9b6d8589e7cea1fcd03aeac270b2488736d2a2",
                          ReceiptStatus.ACCEPTED, "git:bilqis_mlx/factory"),
         ComponentReceipt("issue-book", 341, REVIEWED_UNIFIED,
@@ -114,6 +115,8 @@ def _issue_receipts() -> tuple[IssueReceipt, ...]:
                      C15_1B_HEAD, "issue:538#issuecomment-6856845206"),
         IssueReceipt(539, "C15.2", "OPEN", ReceiptStatus.PROVISIONAL,
                      C15_2_HEAD, "issue:539#issuecomment-6857007014"),
+        IssueReceipt(540, "C15.3", "OPEN", ReceiptStatus.PROVISIONAL,
+                     C15_FINAL_CANDIDATE, "docs/evidence/bamf/delivery/runs/index.json"),
     )
     return tuple(sorted(rows, key=lambda item: item.issue))
 
@@ -129,6 +132,9 @@ def _commit_receipts() -> tuple[CommitReceipt, ...]:
         CommitReceipt(C15_1A_HEAD, 537, "C15.1a development checkpoint"),
         CommitReceipt(C15_1B_HEAD, 538, "C15.1b development checkpoint"),
         CommitReceipt(C15_2_HEAD, 539, "C15.2 development checkpoint"),
+        CommitReceipt(C15_FINAL_CANDIDATE, 540, "C15 final tested candidate"),
+        CommitReceipt(C15_REQUALIFICATION_RECEIPT_COMMIT, 540,
+                      "C15 immutable requalification receipt custody"),
         CommitReceipt("4b486268825f07330c4bd8147ca2439a36be5fee", 385,
                       "C13 accepted release-scoped handoff"),
         CommitReceipt("d81c1ae5ab951bfbefb5d72e9dc04f9f746bc9b1", 386,
@@ -363,7 +369,7 @@ def published_boundary_record() -> dict:
     return {
         "schema": "bilqis.bamf.delivery-evidence-boundary/v1",
         "branch": "codex/bamf02-c-runtime",
-        "source_head": C15_3_RECONCILIATION_HEAD,
+        "source_head": C15_FINAL_CANDIDATE,
         "reviewed_unified": REVIEWED_UNIFIED,
         "authority_digests": {
             "architecture": CONTRACT_DIGEST,
@@ -376,7 +382,7 @@ def published_boundary_record() -> dict:
             "reviewer": "google-egm-b3a359-initial",
             "candidate_sha": C15_2_HEAD,
             "repair_sha": C15_EGM_CANDIDATE,
-            "active_reconciliation_sha": C15_3_RECONCILIATION_HEAD,
+            "active_reconciliation_sha": C15_FINAL_CANDIDATE,
             "initial_findings": {"blockers": 4, "majors": 5, "nits": 1},
             "disposition": "PASS_0_BLOCKERS_0_MAJORS_0_NITS",
             "report_head": C15_EGM_REPORT_HEAD,
@@ -399,7 +405,7 @@ def published_boundary_record() -> dict:
             "disposition": "PROTECTED_EVIDENCE_NOT_COPIED_TO_PUBLIC_ARTIFACTS",
         },
         "live_issue_parity": "PASS_43_OWNERS_172_CHILDREN_190_NATIVE_EDGES_215_DAG_NODES",
-        "fresh_behavioral_proof": "C15_3_FACTORY_WITNESSES_64_OF_64_PASS_AT_16117BFB",
+        "fresh_behavioral_proof": "C15_FINAL_REQUALIFICATION_44_OF_44_PLUS_2_GATES_PASS_AT_C4197F28",
     }
 
 
@@ -410,21 +416,21 @@ def published_roadmap_record() -> dict:
         "source_reviewed_unified": REVIEWED_UNIFIED,
         "historical_issue_book_sha256": ISSUE_BOOK_DIGEST,
         "historical_workstack_sha256": SOURCE_DIGEST,
-        "software_delivery_status": "IN_PROGRESS",
+        "software_delivery_status": "READY_FOR_OWNER_MERGE",
         "student_mastery_status": "NOT_CLAIMED",
         "leaves": [
             {"issue": 537, "key": "C15.1a", "head_sha": C15_1A_HEAD,
-             "status": "DEVELOPMENT_RECEIPT",
-             "final_gate": "FINAL_REQUALIFICATION"},
+             "status": "FINAL_REQUALIFICATION_PASS",
+             "final_gate": "OWNER_MERGE"},
             {"issue": 538, "key": "C15.1b", "head_sha": C15_1B_HEAD,
-             "status": "DEVELOPMENT_RECEIPT",
-             "final_gate": "FINAL_REQUALIFICATION"},
+             "status": "FINAL_REQUALIFICATION_PASS",
+             "final_gate": "OWNER_MERGE"},
             {"issue": 539, "key": "C15.2", "head_sha": C15_2_HEAD,
-             "status": "DEVELOPMENT_RECEIPT",
-             "final_gate": "FINAL_REQUALIFICATION"},
-            {"issue": 540, "key": "C15.3", "head_sha": C15_3_RECONCILIATION_HEAD,
-             "status": "DEVELOPMENT_RECEIPT_FACTORY_PASS",
-             "final_gate": "FINAL_REQUALIFICATION"},
+             "status": "FINAL_REQUALIFICATION_PASS",
+             "final_gate": "OWNER_MERGE"},
+            {"issue": 540, "key": "C15.3", "head_sha": C15_FINAL_CANDIDATE,
+             "status": "FINAL_REQUALIFICATION_PASS",
+             "final_gate": "OWNER_MERGE"},
         ],
         "egm_repair_head": C15_EGM_CANDIDATE,
         "upstream": [

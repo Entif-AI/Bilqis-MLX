@@ -18,21 +18,21 @@ class DeliveryPublicationTests(unittest.TestCase):
                      "compiler", "plasticity", "codec", "delivery-tests", "architecture",
                      "workstack"):
             self.assertIn(name, components)
-        self.assertEqual(manifest.software_delivery_status, "IN_PROGRESS")
+        self.assertEqual(manifest.software_delivery_status, "READY_FOR_OWNER_MERGE")
         self.assertEqual(manifest.student_mastery_status, "NOT_CLAIMED")
 
     def test_conformance_projection_is_complete_and_keeps_known_gaps_visible(self):
         record = published_conformance_record()
         rows = {row["claim_id"]: row for row in record["rows"]}
         self.assertEqual(len(rows), 44)
-        self.assertEqual(rows["BAMF-REQ-024"]["state"], "BLOCKED")
-        self.assertEqual(rows["F15"]["state"], "REQUALIFICATION_REQUIRED")
-        self.assertEqual(rows["F20"]["state"], "BLOCKED")
+        self.assertEqual(rows["BAMF-REQ-024"]["state"], "EXECUTED_PASS")
+        self.assertEqual(rows["F15"]["state"], "EXECUTED_PASS")
+        self.assertEqual(rows["F20"]["state"], "EXECUTED_PASS")
         gates = {gate["gate_id"]: gate for gate in record["failure_gates"]}
         self.assertEqual(set(gates), {
             "GRADE_NEUTRAL_INVARIANCE", "NO_LEGACY_BAV_RUNTIME_NAMESPACE"})
-        self.assertEqual(gates["GRADE_NEUTRAL_INVARIANCE"]["state"], "CODE_PRESENT")
-        self.assertEqual(record["software_delivery_status"], "IN_PROGRESS")
+        self.assertEqual(gates["GRADE_NEUTRAL_INVARIANCE"]["state"], "EXECUTED_PASS")
+        self.assertEqual(record["software_delivery_status"], "READY_FOR_OWNER_MERGE")
         self.assertEqual(record["student_mastery_status"], "NOT_CLAIMED")
         self.assertEqual(load_conformance_record(record).digest(),
                          record["conformance_sha256"])
@@ -77,8 +77,9 @@ class DeliveryPublicationTests(unittest.TestCase):
                          "030aa51d5e3f1e669648831cee2b7b340dab1c67")
         self.assertEqual(leaves[539]["head_sha"],
                          "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111")
-        self.assertEqual(leaves[539]["status"], "DEVELOPMENT_RECEIPT")
-        self.assertEqual(leaves[540]["status"], "DEVELOPMENT_RECEIPT_FACTORY_PASS")
+        self.assertEqual(leaves[539]["status"], "FINAL_REQUALIFICATION_PASS")
+        self.assertEqual(leaves[540]["status"], "FINAL_REQUALIFICATION_PASS")
+        self.assertEqual(record["software_delivery_status"], "READY_FOR_OWNER_MERGE")
         upstream = {row["issue"]: row for row in record["upstream"]}
         self.assertEqual(upstream[385]["status"], "ACCEPTED_RELEASE_SCOPED_INTEGRATION")
         self.assertEqual(upstream[386]["status"], "ACCEPTED_CONTINUING_DEVELOPMENT_PROGRAM")

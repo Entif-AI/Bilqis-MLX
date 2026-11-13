@@ -7,7 +7,7 @@
   },
   "branch": "codex/bamf02-c-runtime",
   "cross_document_diff": {
-    "active_reconciliation_sha": "16117bfb782ce0b1a3f301e2f5441917a915fd9d",
+    "active_reconciliation_sha": "c4197f28c4aa2e3972634b1dbea255832d4b6d7b",
     "candidate_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
     "disposition": "PASS_0_BLOCKERS_0_MAJORS_0_NITS",
     "initial_findings": {
@@ -30,11 +30,11 @@
     "status": "valid",
     "unknown_dependencies": []
   },
-  "fresh_behavioral_proof": "C15_3_FACTORY_WITNESSES_64_OF_64_PASS_AT_16117BFB",
+  "fresh_behavioral_proof": "C15_FINAL_REQUALIFICATION_44_OF_44_PLUS_2_GATES_PASS_AT_C4197F28",
   "live_issue_parity": "PASS_43_OWNERS_172_CHILDREN_190_NATIVE_EDGES_215_DAG_NODES",
   "reviewed_unified": "de84266ba3db79b6545ff484f3268a99ea8872f6",
   "schema": "bilqis.bamf.delivery-evidence-boundary/v1",
-  "source_head": "16117bfb782ce0b1a3f301e2f5441917a915fd9d",
+  "source_head": "c4197f28c4aa2e3972634b1dbea255832d4b6d7b",
   "source_privacy_boundary": {
     "disposition": "PROTECTED_EVIDENCE_NOT_COPIED_TO_PUBLIC_ARTIFACTS",
     "protected_excluded": [
