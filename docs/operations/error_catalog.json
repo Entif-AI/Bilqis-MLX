@@ -13854,6 +13854,20 @@
       "title": "Qualified world source contract invalid"
     },
     {
+      "code": "SCHOOL.BAMF_CONTROL_PLANE.INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_control_plane.invalid.message",
+      "message_template": "The BAMF local control-plane boundary is invalid: {reason}",
+      "next_action": "Keep learner and checkpoint custody unchanged; reconcile the local service transport, protocol session, or accepted-generation read boundary before retry.",
+      "operator_steps": [],
+      "owner": "control_plane.service",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_control_plane.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF local control-plane boundary invalid"
+    },
+    {
       "code": "SCHOOL.BAMF_ATLAS_ADMISSION.INVALID",
       "disposition": "STAGE_AND_INSPECT",
       "legacy_codes": [],
