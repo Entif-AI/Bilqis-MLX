@@ -2,7 +2,7 @@
 
 Issue: #539 (`C15.2`)
 
-- Manifest digest: `d3050ce447420bed6481066adbb5c8c4bde484253f89a41e6ad5b8f38f13e2f2`
+- Manifest digest: `54df145601534de1a8900653b41e18288337d362f90658a1bdc7dfe0ada666a4`
 - Conformance digest: `8fe0f1a9ec34e94f8a367b88e1ae094ed877a903c0e0e58c7a75a53cd8fa7beb`
 - Software delivery: **IN_PROGRESS**
 - Student full-atlas mastery: **NOT_CLAIMED**
@@ -63,8 +63,8 @@ Issue: #539 (`C15.2`)
 | F19 | **Required contrast fixtures (BAMF-REQ-018; F08/F19):** A single minor mismatch remains below the declared candidate threshold, but many distinct, source-qualified analogous mismatches produce an aggregate trend candidate with a recorded lineage set; unrelated mismatches and many paraphrases of one event do NOT produce that trend. Revoke training rights on an otherwise high-novelty example: no optimizer input or admitted gold may result, regardless of novelty or impact. The unknown-label auxiliary heads remain masked. Neither the aggregate nor novelty alone may promote a source or turn conjecture into observation. | #379 | CODE_PRESENT | `scripts/run_tests.py` | NOT_EXECUTED | none | PENDING |
 | F20 | **Canonical proof references:** BAMF-REQ-007, BAMF-REQ-009, BAMF-REQ-016, BAMF-REQ-023; fixtures: F12, F14, F20. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts. | #372 | BLOCKED | `BLOCKED_SOURCE_OWNER:C13/C14:accepted-integrated-witness` | BLOCKED | none | BLOCKED |
 
-Every row binds a repository-derived authority identity over the current workstack bytes, architecture bytes, and direct owner issue-mirror bytes. Requirement wording is extracted from the public continuity table; negative-fixture wording is extracted from the public owner/issue-book fixture contract. Expected behavior is taken from independently authored workstack acceptance text, not generated from the claim ID.
+Every row binds a repository-derived authority identity over the current workstack bytes, architecture bytes, and direct owner issue-mirror bytes. Requirement wording comes from the public continuity table; negative-fixture wording comes from the public owner/issue-book fixture contract. Expected behavior comes from independently authored workstack acceptance text.
 
-`EXECUTED_PASS` requires a structured `bilqis.bamf.execution-receipt/v1` whose candidate, fixture, expected, observed and runner digests recompute from the literal evidence. Authority-byte drift forces `REQUALIFICATION_REQUIRED`; explicit failure gates take precedence. `READY_FOR_OWNER_MERGE`/`DELIVERED` remains impossible until all 44 rows and both refusal gates are `EXECUTED_PASS`.
+`EXECUTED_PASS` requires a structured `bilqis.bamf.execution-receipt/v1` whose candidate, fixture, expected, observed and runner digests recompute from literal evidence. Authority-byte drift forces `REQUALIFICATION_REQUIRED`; explicit failure gates take precedence. `READY_FOR_OWNER_MERGE`/`DELIVERED` remains impossible until all 44 rows and both refusal gates are `EXECUTED_PASS`.
 
-The current local environment still lacks `rdflib`, so full grade-neutral behavior witnesses remain `CODE_PRESENT`, not `EXECUTED_PASS`. Protected `PRIVATE_REAL` evidence remains outside public artifacts. The EGM cross-document review is explicitly in repair/re-audit state in `c15-2-evidence-boundary.json`; it is not represented by a self-authored empty conflict list.
+The local environment still lacks `rdflib`, so full grade-neutral behavior witnesses remain `CODE_PRESENT`, not `EXECUTED_PASS`. Protected `PRIVATE_REAL` evidence remains outside public artifacts. The EGM cross-document review remains explicitly in targeted-re-audit state until the independent reviewers close their prior findings.

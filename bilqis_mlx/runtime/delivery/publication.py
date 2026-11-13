@@ -21,6 +21,7 @@ PINNED_EGM = "b3a35956759bf7f024af2ff061b2e0b44b438e4c"
 C15_1A_HEAD = "4759336facf7a3482254b32c8647013ae447f074"
 C15_1B_HEAD = "030aa51d5e3f1e669648831cee2b7b340dab1c67"
 C15_2_HEAD = "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111"
+C15_EGM_REPAIR_HEAD = "a008e1d2770c968e1b7784d00194e4f75e402041"
 SOURCE_DIGEST = file_digest(WORKSTACK)
 CONTRACT_DIGEST = file_digest(ARCHITECTURE)
 ISSUE_BOOK_DIGEST = file_digest(ISSUE_BOOK)
@@ -53,9 +54,9 @@ def _component_receipts() -> tuple[ComponentReceipt, ...]:
                          "acafc03e20353d55bd02c4a0d70ab3d7b36c1558632932b0d75b1cf9399de3a1",
                          ReceiptStatus.ACCEPTED,
                          "bilqis_mlx/runtime/_custody/bamf_bundle/vocabulary/compiler_binding.py"),
-        ComponentReceipt("delivery-tests", 539, C15_2_HEAD,
+        ComponentReceipt("delivery-tests", 539, C15_EGM_REPAIR_HEAD,
                          ReceiptStatus.PROVISIONAL,
-                         f"git:{C15_2_HEAD}:bilqis_mlx/runtime/delivery/tests"),
+                         f"git:{C15_EGM_REPAIR_HEAD}:bilqis_mlx/runtime/delivery/tests"),
         ComponentReceipt("factory-head", 358, "0b9b6d8589e7cea1fcd03aeac270b2488736d2a2",
                          ReceiptStatus.ACCEPTED, "git:bilqis_mlx/factory"),
         ComponentReceipt("issue-book", 341, REVIEWED_UNIFIED,
@@ -186,8 +187,8 @@ def _commands() -> tuple[OperatorCommandReceipt, ...]:
 
 
 def published_manifest_record() -> dict:
-    egm = tuple(EgmReceipt(name, EgmStatus.PENDING, C15_2_HEAD,
-                           "EGM_INITIAL_REVIEW_PENDING:C15.1a-C15.2")
+    egm = tuple(EgmReceipt(name, EgmStatus.PENDING, C15_EGM_REPAIR_HEAD,
+                           "EGM_TARGETED_REAUDIT_PENDING:C15.1a-C15.2")
                 for name in ("codebase-details", "implementation-readiness"))
     conformance_record = published_conformance_record()
     from .conformance import load_conformance_record
@@ -283,7 +284,7 @@ def published_boundary_record() -> dict:
     return {
         "schema": "bilqis.bamf.delivery-evidence-boundary/v1",
         "branch": "codex/bamf02-c-runtime",
-        "source_head": C15_1B_HEAD,
+        "source_head": C15_EGM_REPAIR_HEAD,
         "reviewed_unified": REVIEWED_UNIFIED,
         "authority_digests": {
             "architecture": CONTRACT_DIGEST,
@@ -295,6 +296,7 @@ def published_boundary_record() -> dict:
             "scope": "C15 behavioral-conformance and grade-neutrality clauses",
             "reviewer": "google-egm-b3a359-initial",
             "candidate_sha": C15_2_HEAD,
+            "repair_sha": C15_EGM_REPAIR_HEAD,
             "initial_findings": {"blockers": 4, "majors": 5, "nits": 1},
             "disposition": "REPAIR_IN_PROGRESS_TARGETED_REAUDIT_REQUIRED",
         },
@@ -343,6 +345,7 @@ def published_roadmap_record() -> dict:
              "status": "PENDING",
              "final_gate": "C15_2_EGM_AND_ACCEPTED_C13_C14"},
         ],
+        "egm_repair_head": C15_EGM_REPAIR_HEAD,
         "upstream": [
             {"issue": 385, "key": "C13",
              "head_sha": "549d84d5cb58862c92eca2dd25277d5ca0665fd7",

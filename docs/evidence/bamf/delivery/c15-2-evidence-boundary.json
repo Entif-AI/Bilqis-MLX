@@ -14,6 +14,7 @@
       "majors": 5,
       "nits": 1
     },
+    "repair_sha": "a008e1d2770c968e1b7784d00194e4f75e402041",
     "reviewer": "google-egm-b3a359-initial",
     "scope": "C15 behavioral-conformance and grade-neutrality clauses"
   },
@@ -31,7 +32,7 @@
   "live_issue_parity": "SEPARATE_C15_3_AUDIT_REQUIRED",
   "reviewed_unified": "97a018ed7e9697fe284abd9fa8197cd7f4194b45",
   "schema": "bilqis.bamf.delivery-evidence-boundary/v1",
-  "source_head": "030aa51d5e3f1e669648831cee2b7b340dab1c67",
+  "source_head": "a008e1d2770c968e1b7784d00194e4f75e402041",
   "source_privacy_boundary": {
     "disposition": "PROTECTED_EVIDENCE_NOT_COPIED_TO_PUBLIC_ARTIFACTS",
     "protected_excluded": [

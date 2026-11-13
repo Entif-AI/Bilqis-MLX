@@ -102,8 +102,8 @@
     },
     {
       "component_id": "delivery-tests",
-      "evidence_ref": "git:96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111:bilqis_mlx/runtime/delivery/tests",
-      "head_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
+      "evidence_ref": "git:a008e1d2770c968e1b7784d00194e4f75e402041:bilqis_mlx/runtime/delivery/tests",
+      "head_sha": "a008e1d2770c968e1b7784d00194e4f75e402041",
       "owner_issue": 539,
       "status": "PROVISIONAL"
     },
@@ -159,14 +159,14 @@
   ],
   "egm": [
     {
-      "candidate_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
-      "report_ref": "EGM_INITIAL_REVIEW_PENDING:C15.1a-C15.2",
+      "candidate_sha": "a008e1d2770c968e1b7784d00194e4f75e402041",
+      "report_ref": "EGM_TARGETED_REAUDIT_PENDING:C15.1a-C15.2",
       "reviewer": "codebase-details",
       "status": "EGM_PENDING"
     },
     {
-      "candidate_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
-      "report_ref": "EGM_INITIAL_REVIEW_PENDING:C15.1a-C15.2",
+      "candidate_sha": "a008e1d2770c968e1b7784d00194e4f75e402041",
+      "report_ref": "EGM_TARGETED_REAUDIT_PENDING:C15.1a-C15.2",
       "reviewer": "implementation-readiness",
       "status": "EGM_PENDING"
     }
@@ -245,7 +245,7 @@
       "status": "PROVISIONAL"
     }
   ],
-  "manifest_sha256": "d3050ce447420bed6481066adbb5c8c4bde484253f89a41e6ad5b8f38f13e2f2",
+  "manifest_sha256": "54df145601534de1a8900653b41e18288337d362f90658a1bdc7dfe0ada666a4",
   "operator_commands": [
     {
       "argv": [
