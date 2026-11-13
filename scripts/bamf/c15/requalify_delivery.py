@@ -26,12 +26,12 @@ _TOTALS = re.compile(
     r"TEST_TOTALS total=(\d+) passed=(\d+) failed=(\d+) skipped=(\d+) errors=(\d+)"
 )
 
-GATES = {
-    "GRADE_NEUTRAL_INVARIANCE":
-        "bilqis_mlx/learning/tests/teaching/test_c03_parent_acceptance.py",
-    "NO_LEGACY_" + "BA" + "V_RUNTIME_NAMESPACE":
-        "bilqis_mlx/runtime/delivery/tests/test_no_legacy_" + "ba" + "v_namespace.py",
-}
+GATES = (
+    ("GRADE_NEUTRAL_INVARIANCE",
+     "bilqis_mlx/learning/tests/teaching/test_c03_parent_acceptance.py"),
+    ("NO_LEGACY_" + "BA" + "V_RUNTIME_NAMESPACE",
+     "bilqis_mlx/runtime/delivery/tests/test_no_legacy_" + "ba" + "v_namespace.py"),
+)
 
 
 def _sha(value: str) -> str:
@@ -106,6 +106,51 @@ def _passed(test_ref: str, completed: subprocess.CompletedProcess[str], observed
                 and match.group(5) == "0")
 
 
+def _execute_surfaces(python: str, surfaces: tuple[str, ...], timeout_seconds: int) -> dict:
+    execution = {}
+    for test_ref in surfaces:
+        command = _command(python, test_ref)
+        completed = subprocess.run(
+            command, cwd=ROOT, text=True, capture_output=True,
+            timeout=timeout_seconds, check=False)
+        observed = _observed(test_ref, completed)
+        execution[test_ref] = {
+            "argv": list(command),
+            "runner": " ".join(command),
+            "returncode": completed.returncode,
+            "observed": observed,
+            "stdout_sha256": _sha(completed.stdout),
+            "stderr_sha256": _sha(completed.stderr),
+            "pass": _passed(test_ref, completed, observed),
+        }
+        print(f"{test_ref}: {observed}")
+    return execution
+
+
+def _write_claim_receipts(rows: tuple[dict, ...], execution: dict,
+                          candidate: str) -> list[dict]:
+    claims = []
+    for row in rows:
+        run = execution[row["test_ref"]]
+        receipt_ref = f"docs/evidence/bamf/delivery/runs/{row['claim_id'].lower()}.json"
+        receipt = ExecutionReceipt.from_execution(
+            receipt_ref=receipt_ref, candidate_sha=candidate,
+            fixture=row["test_ref"], expected=row["expected_behavior"],
+            observed=run["observed"], runner=run["runner"],
+            disposition="PASS" if run["pass"] else "FAIL")
+        record = {
+            "schema": receipt.schema, "receipt_ref": receipt.receipt_ref,
+            "candidate_sha": receipt.candidate_sha, "fixture_sha256": receipt.fixture_sha256,
+            "expected_sha256": receipt.expected_sha256,
+            "observed_sha256": receipt.observed_sha256,
+            "runner_sha256": receipt.runner_sha256, "disposition": receipt.disposition,
+        }
+        (ROOT / receipt_ref).write_text(json.dumps(record, indent=2) + "\n")
+        claims.append({**row, "observed_output": run["observed"],
+                       "runner_environment": run["runner"], "run_receipt": record})
+    return claims
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--python", default=sys.executable,
@@ -118,7 +163,8 @@ def main() -> int:
     rows = claim_plan()
     surfaces = tuple(dict.fromkeys(row["test_ref"] for row in rows))
     if args.list:
-        print(json.dumps({"claims": len(rows), "surfaces": list(surfaces), "gates": GATES}, indent=2))
+        print(json.dumps({"claims": len(rows), "surfaces": list(surfaces),
+                          "gates": dict(GATES)}, indent=2))
         return 0
 
     candidate = args.candidate_sha or _git("rev-parse", "HEAD")
@@ -130,52 +176,14 @@ def main() -> int:
         raise SystemExit("C15 requalification requires a clean candidate worktree")
     subprocess.run(["git", "cat-file", "-e", f"{candidate}^{{commit}}"], cwd=ROOT, check=True)
 
-    execution = {}
-    all_surfaces = tuple(dict.fromkeys((*surfaces, *GATES.values())))
-    for test_ref in all_surfaces:
-        command = _command(args.python, test_ref)
-        completed = subprocess.run(
-            command, cwd=ROOT, text=True, capture_output=True,
-            timeout=args.timeout_seconds, check=False)
-        observed = _observed(test_ref, completed)
-        execution[test_ref] = {
-            "argv": list(command),
-            "runner": " ".join(command),
-            "returncode": completed.returncode,
-            "observed": observed,
-            "stdout_sha256": _sha(completed.stdout),
-            "stderr_sha256": _sha(completed.stderr),
-            "pass": _passed(test_ref, completed, observed),
-        }
-        print(f"{test_ref}: {observed}")
+    all_surfaces = tuple(dict.fromkeys((*surfaces, *(ref for _gate, ref in GATES))))
+    execution = _execute_surfaces(args.python, all_surfaces, args.timeout_seconds)
 
     OUT_ROOT.mkdir(parents=True, exist_ok=True)
-    claims = []
-    for row in rows:
-        run = execution[row["test_ref"]]
-        receipt_ref = f"docs/evidence/bamf/delivery/runs/{row['claim_id'].lower()}.json"
-        receipt = ExecutionReceipt.from_execution(
-            receipt_ref=receipt_ref, candidate_sha=candidate,
-            fixture=row["test_ref"], expected=row["expected_behavior"],
-            observed=run["observed"], runner=run["runner"],
-            disposition="PASS" if run["pass"] else "FAIL")
-        record = {
-            "schema": receipt.schema,
-            "receipt_ref": receipt.receipt_ref,
-            "candidate_sha": receipt.candidate_sha,
-            "fixture_sha256": receipt.fixture_sha256,
-            "expected_sha256": receipt.expected_sha256,
-            "observed_sha256": receipt.observed_sha256,
-            "runner_sha256": receipt.runner_sha256,
-            "disposition": receipt.disposition,
-        }
-        (ROOT / receipt_ref).write_text(json.dumps(record, indent=2) + "\n")
-        claims.append({**row, "observed_output": run["observed"],
-                       "runner_environment": run["runner"],
-                       "run_receipt": record})
+    claims = _write_claim_receipts(rows, execution, candidate)
 
     gates = []
-    for gate_id, test_ref in GATES.items():
+    for gate_id, test_ref in GATES:
         run = execution[test_ref]
         gates.append({"gate_id": gate_id, "test_ref": test_ref,
                       "observed": run["observed"], "pass": run["pass"]})
