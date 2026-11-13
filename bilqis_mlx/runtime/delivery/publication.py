@@ -24,6 +24,7 @@ C15_2_HEAD = "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111"
 C15_EGM_REPAIR_HEAD = "a008e1d2770c968e1b7784d00194e4f75e402041"
 C15_EGM_CANDIDATE = "66277ed61d0ae4cabb088dfb508ab7188415003c"
 C15_EGM_REPORT_HEAD = "fc04b9379e5657cd046836c4af9ea4dd76df4795"
+C15_3_RECONCILIATION_HEAD = "3b5e920ff074f0ebd0908edd739c16fb98fc8eac"
 SOURCE_DIGEST = file_digest(WORKSTACK)
 CONTRACT_DIGEST = file_digest(ARCHITECTURE)
 ISSUE_BOOK_DIGEST = file_digest(ISSUE_BOOK)
@@ -45,7 +46,7 @@ def _component_receipts() -> tuple[ComponentReceipt, ...]:
                          ReceiptStatus.PROVISIONAL, "issue:532#issuecomment-6856445395"),
         ComponentReceipt("C16", 382, "c672c62113108695a2a60cd0eb0d7f19d085f838",
                          ReceiptStatus.ACCEPTED, "issue:382#issuecomment-6832648874"),
-        ComponentReceipt("architecture", 387, C15_EGM_CANDIDATE,
+        ComponentReceipt("architecture", 540, C15_3_RECONCILIATION_HEAD,
                          ReceiptStatus.PROVISIONAL,
                          f"docs/architecture/BAMF_0_2.md@sha256:{CONTRACT_DIGEST}"),
         ComponentReceipt("codec", 375,
@@ -288,7 +289,7 @@ def published_boundary_record() -> dict:
     return {
         "schema": "bilqis.bamf.delivery-evidence-boundary/v1",
         "branch": "codex/bamf02-c-runtime",
-        "source_head": C15_EGM_CANDIDATE,
+        "source_head": C15_3_RECONCILIATION_HEAD,
         "reviewed_unified": REVIEWED_UNIFIED,
         "authority_digests": {
             "architecture": CONTRACT_DIGEST,
@@ -301,6 +302,7 @@ def published_boundary_record() -> dict:
             "reviewer": "google-egm-b3a359-initial",
             "candidate_sha": C15_2_HEAD,
             "repair_sha": C15_EGM_CANDIDATE,
+            "active_reconciliation_sha": C15_3_RECONCILIATION_HEAD,
             "initial_findings": {"blockers": 4, "majors": 5, "nits": 1},
             "disposition": "PASS_0_BLOCKERS_0_MAJORS_0_NITS",
             "report_head": C15_EGM_REPORT_HEAD,

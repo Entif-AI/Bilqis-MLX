@@ -1,12 +1,13 @@
 {
   "authority_digests": {
-    "architecture": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
+    "architecture": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
     "issue_539_body": "f9250ec8759dff1251598333b8aa88e69d81e1f7ed33aafc58809191ab8d6caa",
     "issue_book": "21a82b966c52ad13480b7021e9163efaacc7f6f70c9c4eac5d7277f05d355425",
     "workstack": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
   },
   "branch": "codex/bamf02-c-runtime",
   "cross_document_diff": {
+    "active_reconciliation_sha": "3b5e920ff074f0ebd0908edd739c16fb98fc8eac",
     "candidate_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
     "disposition": "PASS_0_BLOCKERS_0_MAJORS_0_NITS",
     "initial_findings": {
@@ -33,7 +34,7 @@
   "live_issue_parity": "SEPARATE_C15_3_AUDIT_REQUIRED",
   "reviewed_unified": "97a018ed7e9697fe284abd9fa8197cd7f4194b45",
   "schema": "bilqis.bamf.delivery-evidence-boundary/v1",
-  "source_head": "66277ed61d0ae4cabb088dfb508ab7188415003c",
+  "source_head": "3b5e920ff074f0ebd0908edd739c16fb98fc8eac",
   "source_privacy_boundary": {
     "disposition": "PROTECTED_EVIDENCE_NOT_COPIED_TO_PUBLIC_ARTIFACTS",
     "protected_excluded": [

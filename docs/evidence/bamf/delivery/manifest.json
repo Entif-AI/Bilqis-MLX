@@ -81,9 +81,9 @@
     },
     {
       "component_id": "architecture",
-      "evidence_ref": "docs/architecture/BAMF_0_2.md@sha256:77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
-      "head_sha": "66277ed61d0ae4cabb088dfb508ab7188415003c",
-      "owner_issue": 387,
+      "evidence_ref": "docs/architecture/BAMF_0_2.md@sha256:af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
+      "head_sha": "3b5e920ff074f0ebd0908edd739c16fb98fc8eac",
+      "owner_issue": 540,
       "status": "PROVISIONAL"
     },
     {
@@ -245,7 +245,7 @@
       "status": "PROVISIONAL"
     }
   ],
-  "manifest_sha256": "3a7b419213a48047fd817569e0054b75fb2520aa0be3f6e2d3b0b7473104a4ef",
+  "manifest_sha256": "ab7d2f500df3a0b40ef5ae7bb29d3ab7f6c5a4d10652ca6f64983759e4ecbac6",
   "operator_commands": [
     {
       "argv": [
