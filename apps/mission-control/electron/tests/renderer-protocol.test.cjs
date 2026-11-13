@@ -10,7 +10,7 @@ const {
   registerMissionControlProtocol,
 } = require("../renderer-protocol.cjs");
 
-test("renderer protocol resolves only the checked-in GUI01 asset allowlist", () => {
+test("renderer protocol resolves only the checked-in Mission Control asset allowlist", () => {
   const root = "/Applications/Bilqis/MissionControl/renderer";
   assert.equal(
     assetPathForRendererRequest(RENDERER_ENTRY_URL, root),
@@ -21,11 +21,17 @@ test("renderer protocol resolves only the checked-in GUI01 asset allowlist", () 
     `${root}/renderer.mjs`,
   );
   assert.deepEqual([...RENDERER_ASSETS.keys()].sort(), [
+    "/component-catalog.mjs",
+    "/components.css",
     "/deep-link.mjs",
     "/index.html",
     "/renderer.mjs",
+    "/settings.mjs",
     "/shell-state.mjs",
     "/shell.css",
+    "/visual-fixtures.mjs",
+    "/visual-language.mjs",
+    "/visual-tokens.css",
   ]);
 });
 

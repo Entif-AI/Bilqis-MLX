@@ -7,6 +7,15 @@ import {
   shellPosture,
 } from "./shell-state.mjs";
 import { buildDeepLink, parseDeepLink } from "./deep-link.mjs";
+import { renderComponentCatalog } from "./component-catalog.mjs";
+import {
+  DENSITIES,
+  THEMES,
+  applyDisplaySettings,
+  cycleSetting,
+  loadDisplaySettings,
+  saveDisplaySettings,
+} from "./settings.mjs";
 
 const labels = new Map(DESTINATIONS);
 const demoObjects = [
@@ -21,6 +30,7 @@ const demoObjects = [
 ];
 
 let state;
+let displaySettings;
 
 function setHash() {
   const next = buildDeepLink(state);
@@ -95,7 +105,10 @@ function render() {
   renderNavigation();
   renderInspector();
   renderDemoActions();
+  document.querySelector("#visual-catalog").innerHTML = renderComponentCatalog();
   document.querySelector("#view-title").textContent = labels.get(state.view);
+  document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;
+  document.querySelector("#density-trigger").textContent = "Density · " + displaySettings.density;
   setHash();
 }
 
@@ -105,6 +118,8 @@ async function bootstrap() {
     schemaVersion: "bamf.gui01.bootstrap-query.fixture/v1",
     objectRef: "shell-bootstrap",
   });
+  displaySettings = loadDisplaySettings(window.localStorage);
+  applyDisplaySettings(document.documentElement, displaySettings);
   state = createShellState(bootstrapState.context, parseDeepLink(window.location.hash));
   document.querySelector("#inspector-close").addEventListener("click", () => {
     state = inspect(state, null);
@@ -112,6 +127,18 @@ async function bootstrap() {
   });
   document.querySelector("#open-owner").addEventListener("click", () => {
     state = openSelectionOwner(state);
+    render();
+  });
+  document.querySelector("#theme-trigger").addEventListener("click", () => {
+    displaySettings = { ...displaySettings, theme: cycleSetting(displaySettings.theme, THEMES) };
+    saveDisplaySettings(window.localStorage, displaySettings);
+    applyDisplaySettings(document.documentElement, displaySettings);
+    render();
+  });
+  document.querySelector("#density-trigger").addEventListener("click", () => {
+    displaySettings = { ...displaySettings, density: cycleSetting(displaySettings.density, DENSITIES) };
+    saveDisplaySettings(window.localStorage, displaySettings);
+    applyDisplaySettings(document.documentElement, displaySettings);
     render();
   });
   window.addEventListener("hashchange", () => {

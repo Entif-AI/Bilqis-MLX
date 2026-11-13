@@ -6,11 +6,17 @@ const { pathToFileURL } = require("node:url");
 const { RENDERER_HOST, RENDERER_SCHEME } = require("./renderer-location.cjs");
 
 const RENDERER_ASSETS = Object.freeze(new Map([
-  ["/index.html", "index.html"],
-  ["/shell.css", "shell.css"],
-  ["/renderer.mjs", "renderer.mjs"],
-  ["/shell-state.mjs", "shell-state.mjs"],
+  ["/component-catalog.mjs", "component-catalog.mjs"],
+  ["/components.css", "components.css"],
   ["/deep-link.mjs", "deep-link.mjs"],
+  ["/index.html", "index.html"],
+  ["/renderer.mjs", "renderer.mjs"],
+  ["/settings.mjs", "settings.mjs"],
+  ["/shell-state.mjs", "shell-state.mjs"],
+  ["/shell.css", "shell.css"],
+  ["/visual-fixtures.mjs", "visual-fixtures.mjs"],
+  ["/visual-language.mjs", "visual-language.mjs"],
+  ["/visual-tokens.css", "visual-tokens.css"],
 ]));
 
 function assetPathForRendererRequest(requestUrl, assetRoot) {

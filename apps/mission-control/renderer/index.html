@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
     <title>Bilqis Mission Control</title>
+    <link rel="stylesheet" href="./visual-tokens.css" />
     <link rel="stylesheet" href="./shell.css" />
+    <link rel="stylesheet" href="./components.css" />
   </head>
   <body>
     <div id="shell" class="shell" data-posture="live">
@@ -31,8 +33,8 @@
             <label class="selector"><span>Run</span><select id="run-selector" aria-label="Run selector"><option>fixture:prometheus-disposable</option></select></label>
             <label class="selector"><span>As of</span><select id="generation-selector" aria-label="Generation selector"><option>44238 · LIVE</option></select></label>
             <span id="freshness" class="freshness">UNKNOWN</span>
-            <button id="density-trigger" type="button">Density</button>
-            <button id="theme-trigger" type="button">Theme</button>
+            <button id="density-trigger" type="button" aria-label="Change information density">Density</button>
+            <button id="theme-trigger" type="button" aria-label="Change theme">Theme</button>
           </div>
         </header>
 
@@ -45,6 +47,7 @@
             <p>GUI01 proves navigation, context custody, deep links, inspection, and global stale/historical posture. Domain telemetry remains owned by later GUI issues.</p>
             <div class="demo-actions" id="demo-actions"></div>
           </div>
+          <section id="visual-catalog" class="visual-catalog" aria-label="Scientific visual language catalog"></section>
         </section>
       </main>
 
