@@ -284,6 +284,8 @@ def main() -> None:
         held = registry_report['dependency_resolution']['held_keys']
         if held:
             print(f"NOTE: {len(held)} dependency normalization holds retained; no executable order: {', '.join(held)}")
+        else:
+            print(f"PASS: dependency normalization resolved; executable order contains {len(registry_report['order'])} entries")
     print("NOTE: live GitHub SHA readback and executable Factory behavior require separate checks")
 
 

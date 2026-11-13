@@ -7,7 +7,7 @@ from types import MappingProxyType
 from ...factory.adapters import RegisteredSourceAdapter
 from ..atlas_projection import FrozenAtlasSnapshot
 from ..frame_schema import FrameTree, SourceSpan, atomic_fallback, validate_frame_tree
-from .common import BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER, BOOLEAN_IDENTIFICATION_ADAPTER, FINITE_NUMERIC_ADAPTER, MICRO_PREDICATE_ADAPTER, _adapter_fail, _source_id
+from .common import BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER, BOOLEAN_IDENTIFICATION_ADAPTER, C13_EPISODE_ADAPTER, FINITE_NUMERIC_ADAPTER, MICRO_PREDICATE_ADAPTER, _adapter_fail, _source_id
 from .micro import _bind_source_row
 from .numeric import _bind_numeric_row
 
@@ -36,6 +36,32 @@ def _bind_identification_row(
     )
     return validate_frame_tree(FrameTree(atomic))
 
+
+def _bind_c13_episode_row(
+    row: dict,
+    snapshot: FrozenAtlasSnapshot,
+    graph: dict,
+    *,
+    adapter_id: str,
+    span: SourceSpan,
+    causal_prefix_end: int,
+) -> FrameTree:
+    del snapshot, graph
+    record = row.get("record")
+    if (not isinstance(record, dict)
+            or record.get("source_family_id") != "bamf.c13.episode-binding/v1"):
+        _adapter_fail("FRAME_C13_EPISODE_RECORD_INVALID",
+                      adapter_id, span, "<source-row>")
+    atomic = atomic_fallback(
+        {"task": "bamf.c13.episode-binding/v1", "record": record},
+        source_instance_id=_source_id(row, adapter_id, span),
+        structural_path=(),
+        source_span=span,
+        parent_occurrence_id=None,
+        causal_prefix_end=causal_prefix_end,
+    )
+    return validate_frame_tree(FrameTree(atomic))
+
 RowBinder = Callable[..., FrameTree]
 
 _ROW_BINDERS: Mapping[str, RowBinder] = MappingProxyType({
@@ -44,6 +70,7 @@ _ROW_BINDERS: Mapping[str, RowBinder] = MappingProxyType({
     BOOLEAN_COMPOSITE_ADAPTER: _bind_source_row,
     BOOLEAN_IDENTIFICATION_ADAPTER: _bind_identification_row,
     FINITE_NUMERIC_ADAPTER: _bind_numeric_row,
+    C13_EPISODE_ADAPTER: _bind_c13_episode_row,
 })
 
 @dataclass(frozen=True)

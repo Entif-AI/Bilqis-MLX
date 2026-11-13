@@ -31,7 +31,17 @@ PHYSICAL_OWNER_GROUPS = frozenset({
     "_projection", "_admission", "_capability", "_source", "_model", "_custody",
     "_operator", "_teacher", "_depth", "_correction", "_batch",
 })
-NESTED_PHYSICAL_OWNER_GROUPS = frozenset({("_batch", "training")})
+NESTED_PHYSICAL_OWNER_GROUPS = frozenset({
+    ("_batch", "training"),
+    ("_admission", "v2"),
+    ("_admission", "jit"),
+    ("_admission", "lease"),
+    ("_capability", "factory"),
+    ("_model", "cache"),
+    ("_model", "backbone"),
+    ("_correction", "owners"),
+    ("_correction", "accepted"),
+})
 
 
 def logical_source_path(path: str) -> str:

@@ -26,6 +26,18 @@ Message: Factory semantic rule contract invalid: {reason}
 
 Recovery: Restore the canonical semantic rule identity, source authority, and registry binding before retrying.
 
+### `SOURCE.BAMF_C13_EPISODE.INVALID`
+
+C13 episode source contract invalid.
+
+Owner: `source_adapters.c13_episode`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: C13 episode source contract invalid: {reason}
+
+Recovery: Restore the admitted C13 episode source, profile, canonical graph, and source-visible episode facts before retrying.
+
 ### `SOURCE.BAMF_WORLD.INVALID`
 
 Qualified world source contract invalid.
@@ -3132,11 +3144,11 @@ Current production scan: **2093** raw raises across **265** files. The baseline 
 | `INVALID_TEACHER_GRADE_ROSTER` | 1 | `bilqis_mlx/learning/_teaching/teacher_votes.py` |
 | `ISSUE349_EXISTING_RUN_REQUIRES_RESUME` | 1 | `bilqis_mlx/presentation/operator_cli/lifecycle.py` |
 | `ISSUE349_EXPERIMENT_RUN_MUST_BE_DIRECT_CHILD` | 1 | `bilqis_mlx/presentation/operator_cli/lifecycle.py` |
-| `JIT_ADOPTION_ANSWER_IMPLEMENTATION_DRIFT` | 1 | `bilqis_mlx/runtime/_admission/jit_adoption.py` |
-| `JIT_ADOPTION_EXACT_SUCCESSOR_REQUIRED` | 1 | `bilqis_mlx/runtime/_admission/jit_adoption.py` |
-| `JIT_ADOPTION_PROPOSAL_CONTEXT_CHANGED` | 1 | `bilqis_mlx/runtime/_admission/jit_adoption.py` |
-| `JIT_ADOPTION_READY_PROPOSAL_REQUIRED` | 1 | `bilqis_mlx/runtime/_admission/jit_adoption.py` |
-| `JIT_ADOPTION_SOURCE_IMPLEMENTATION_DRIFT` | 1 | `bilqis_mlx/runtime/_admission/jit_adoption.py` |
+| `JIT_ADOPTION_ANSWER_IMPLEMENTATION_DRIFT` | 1 | `bilqis_mlx/runtime/_admission/jit/jit_adoption.py` |
+| `JIT_ADOPTION_EXACT_SUCCESSOR_REQUIRED` | 1 | `bilqis_mlx/runtime/_admission/jit/jit_adoption.py` |
+| `JIT_ADOPTION_PROPOSAL_CONTEXT_CHANGED` | 1 | `bilqis_mlx/runtime/_admission/jit/jit_adoption.py` |
+| `JIT_ADOPTION_READY_PROPOSAL_REQUIRED` | 1 | `bilqis_mlx/runtime/_admission/jit/jit_adoption.py` |
+| `JIT_ADOPTION_SOURCE_IMPLEMENTATION_DRIFT` | 1 | `bilqis_mlx/runtime/_admission/jit/jit_adoption.py` |
 | `JIT_CANDIDATE_BINDING_INVALID` | 1 | `bilqis_mlx/factory/curriculum/jit_curriculum.py` |
 | `JIT_CANDIDATE_NATIVE_CATALOG_REQUIRED` | 1 | `bilqis_mlx/factory/candidate_realizations.py` |
 | `JIT_CURRICULUM_BINDING_INVALID` | 1 | `bilqis_mlx/factory/curriculum/jit_curriculum.py` |

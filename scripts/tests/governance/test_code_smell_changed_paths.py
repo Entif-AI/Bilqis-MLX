@@ -86,6 +86,23 @@ class ChangedPathSmellTests(unittest.TestCase):
         self.assertEqual([audit.fingerprint(item) for item in prior], [
             (canonical, "module-mutable-literal", "EXISTING")])
 
+    def test_nested_runtime_owner_groups_preserve_canonical_identity(self):
+        cases = {
+            "bilqis_mlx/runtime/_admission/jit/jit_adoption.py":
+                "bilqis_mlx/runtime/jit_adoption.py",
+            "bilqis_mlx/runtime/_admission/lease/atlas_lease_v2.py":
+                "bilqis_mlx/runtime/atlas_lease_v2.py",
+            "bilqis_mlx/runtime/_admission/v2/atlas_adoption_v2.py":
+                "bilqis_mlx/runtime/atlas_adoption_v2.py",
+            "bilqis_mlx/runtime/_capability/factory/owner.py":
+                "bilqis_mlx/runtime/owner.py",
+            "bilqis_mlx/runtime/_correction/accepted/accepted_corrections.py":
+                "bilqis_mlx/runtime/accepted_corrections.py",
+        }
+        for owner, canonical in cases.items():
+            with self.subTest(owner=owner):
+                self.assertEqual(audit.logical_source_path(owner), canonical)
+
     def test_added_canonical_owner_compartment_preserves_existing_smell_identity(self):
         canonical = "bilqis_mlx/semantics/cognitive_dag.py"
         physical = "bilqis_mlx/semantics/_cognitive_dag/execution.py"
