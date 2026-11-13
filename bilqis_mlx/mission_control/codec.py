@@ -73,6 +73,38 @@ def _decode_dataclass(expected, value):
         _fail(ContractErrorCode.PAYLOAD_INVALID, expected.__name__)
 
 
+def _decode_tuple(args, value):
+    if type(value) not in (list, tuple):
+        _fail(ContractErrorCode.PAYLOAD_INVALID, "tuple")
+    if len(args) == _VARIADIC_TUPLE_ARITY and args[1] is Ellipsis:
+        return tuple(_decode(args[0], item) for item in value)
+    if len(value) != len(args):
+        _fail(ContractErrorCode.PAYLOAD_INVALID, "tuple-length")
+    return tuple(_decode(kind, item) for kind, item in zip(args, value))
+
+
+def _decode_integer(value):
+    if type(value) is int:
+        if is_wire_integer(value):
+            return value
+        _fail(ContractErrorCode.PAYLOAD_INVALID, "int")
+    if type(value) is float and value.is_integer():
+        converted = int(value)
+        if is_wire_integer(converted):
+            return converted
+    _fail(ContractErrorCode.PAYLOAD_INVALID, "int")
+
+
+def _decode_primitive(expected, value):
+    if expected is int:
+        return _decode_integer(value)
+    if type(value) is not expected:
+        _fail(ContractErrorCode.PAYLOAD_INVALID, expected.__name__)
+    if expected is str and not is_text(value):
+        _fail(ContractErrorCode.PAYLOAD_INVALID, "unicode-scalar")
+    return value
+
+
 def _decode(expected, value):
     origin = get_origin(expected)
     args = get_args(expected)
@@ -84,13 +116,7 @@ def _decode(expected, value):
                 continue
         _fail(ContractErrorCode.PAYLOAD_INVALID, "union")
     if origin is tuple:
-        if type(value) not in (list, tuple):
-            _fail(ContractErrorCode.PAYLOAD_INVALID, "tuple")
-        if len(args) == _VARIADIC_TUPLE_ARITY and args[1] is Ellipsis:
-            return tuple(_decode(args[0], item) for item in value)
-        if len(value) != len(args):
-            _fail(ContractErrorCode.PAYLOAD_INVALID, "tuple-length")
-        return tuple(_decode(kind, item) for kind, item in zip(args, value))
+        return _decode_tuple(args, value)
     if expected is type(None):
         if value is not None:
             _fail(ContractErrorCode.PAYLOAD_INVALID, "null")
@@ -103,21 +129,7 @@ def _decode(expected, value):
     if isinstance(expected, type) and is_dataclass(expected):
         return _decode_dataclass(expected, value)
     if expected in (str, int, float, bool):
-        if expected is int:
-            if type(value) is int:
-                if not is_wire_integer(value):
-                    _fail(ContractErrorCode.PAYLOAD_INVALID, "int")
-                return value
-            if type(value) is float and value.is_integer():
-                converted = int(value)
-                if is_wire_integer(converted):
-                    return converted
-            _fail(ContractErrorCode.PAYLOAD_INVALID, "int")
-        if type(value) is not expected:
-            _fail(ContractErrorCode.PAYLOAD_INVALID, expected.__name__)
-        if expected is str and not is_text(value):
-            _fail(ContractErrorCode.PAYLOAD_INVALID, "unicode-scalar")
-        return value
+        return _decode_primitive(expected, value)
     _fail(ContractErrorCode.PAYLOAD_INVALID, str(expected))
 
 

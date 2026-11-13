@@ -28,6 +28,80 @@ def _string_schema(field_name: str | None) -> dict:
     return schema
 
 
+def _tuple_schema(args, field_name: str | None) -> dict:
+    if len(args) == _VARIADIC_TUPLE_ARITY and args[1] is Ellipsis:
+        schema = {
+            "type": "array",
+            "items": _schema_for_type(args[0], field_name=field_name),
+            "uniqueItems": True,
+        }
+        if field_name == "parameters":
+            schema["x-bilqis-unique-by"] = "key"
+        return schema
+    return {
+        "type": "array",
+        "prefixItems": [
+            _schema_for_type(option, field_name=field_name) for option in args
+        ],
+        "minItems": len(args),
+        "maxItems": len(args),
+    }
+
+
+def _datavalue_constraints() -> list[dict]:
+    return [{
+        "if": {"properties": {"state": {"const": "PRESENT"}}, "required": ["state"]},
+        "then": {"properties": {
+            "origin": {"not": {"type": "null"}},
+            "value": {"not": {"type": "null"}},
+        }},
+        "else": {"properties": {
+            "origin": {"type": "null"},
+            "value": {"type": "null"},
+        }},
+    }]
+
+
+def _stream_position_constraints() -> list[dict]:
+    return [{
+        "if": {"properties": {"ordinal": {"const": 0}}, "required": ["ordinal"]},
+        "then": {"properties": {"previous_cursor_sha256": {"type": "null"}}},
+        "else": {"properties": {"previous_cursor_sha256": {
+            "type": "string", "pattern": _SHA256_PATTERN,
+        }}},
+    }]
+
+
+def _dataclass_schema(expected) -> dict:
+    hints = get_type_hints(expected)
+    properties = {
+        field.name: _schema_for_type(hints[field.name], field_name=field.name)
+        for field in fields(expected)
+    }
+    schema = {
+        "type": "object",
+        "properties": properties,
+        "required": list(properties),
+        "additionalProperties": False,
+    }
+    if expected.__name__ == "DataValue":
+        schema["allOf"] = _datavalue_constraints()
+    if expected.__name__ == "StreamPosition":
+        schema["allOf"] = _stream_position_constraints()
+    return schema
+
+
+def _integer_schema(field_name: str | None) -> dict:
+    schema = {
+        "type": "integer",
+        "maximum": MAX_WIRE_INTEGER,
+        "minimum": -MAX_WIRE_INTEGER,
+    }
+    if field_name != "value":
+        schema["minimum"] = 0
+    return schema
+
+
 def _schema_for_type(expected, *, field_name: str | None = None):
     origin = get_origin(expected)
     args = get_args(expected)
@@ -36,79 +110,17 @@ def _schema_for_type(expected, *, field_name: str | None = None):
             _schema_for_type(option, field_name=field_name) for option in args
         ]}
     if origin is tuple:
-        if len(args) == _VARIADIC_TUPLE_ARITY and args[1] is Ellipsis:
-            schema = {
-                "type": "array",
-                "items": _schema_for_type(args[0], field_name=field_name),
-                "uniqueItems": True,
-            }
-            if field_name == "parameters":
-                schema["x-bilqis-unique-by"] = "key"
-            return schema
-        return {
-            "type": "array",
-            "prefixItems": [
-                _schema_for_type(option, field_name=field_name) for option in args
-            ],
-            "minItems": len(args),
-            "maxItems": len(args),
-        }
+        return _tuple_schema(args, field_name)
     if expected is type(None):
         return {"type": "null"}
     if isinstance(expected, type) and issubclass(expected, Enum):
         return {"type": "string", "enum": [item.value for item in expected]}
     if isinstance(expected, type) and is_dataclass(expected):
-        hints = get_type_hints(expected)
-        properties = {
-            field.name: _schema_for_type(hints[field.name], field_name=field.name)
-            for field in fields(expected)
-        }
-        schema = {
-            "type": "object",
-            "properties": properties,
-            "required": list(properties),
-            "additionalProperties": False,
-        }
-        if expected.__name__ == "DataValue":
-            schema["allOf"] = [{
-                "if": {"properties": {"state": {"const": "PRESENT"}},
-                       "required": ["state"]},
-                "then": {
-                    "properties": {
-                        "origin": {"not": {"type": "null"}},
-                        "value": {"not": {"type": "null"}},
-                    }
-                },
-                "else": {
-                    "properties": {
-                        "origin": {"type": "null"},
-                        "value": {"type": "null"},
-                    }
-                },
-            }]
-        if expected.__name__ == "StreamPosition":
-            schema["allOf"] = [{
-                "if": {"properties": {"ordinal": {"const": 0}},
-                       "required": ["ordinal"]},
-                "then": {"properties": {"previous_cursor_sha256": {"type": "null"}}},
-                "else": {"properties": {
-                    "previous_cursor_sha256": {
-                        "type": "string", "pattern": _SHA256_PATTERN,
-                    }
-                }},
-            }]
-        return schema
+        return _dataclass_schema(expected)
     if expected is str:
         return _string_schema(field_name)
     if expected is int:
-        schema = {
-            "type": "integer",
-            "maximum": MAX_WIRE_INTEGER,
-            "minimum": -MAX_WIRE_INTEGER,
-        }
-        if field_name != "value":
-            schema["minimum"] = 0
-        return schema
+        return _integer_schema(field_name)
     if expected is float:
         return {"type": "number"}
     if expected is bool:
