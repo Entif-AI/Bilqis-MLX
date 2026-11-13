@@ -5,6 +5,7 @@ import {
   navigate,
   openSelectionOwner,
   shellPosture,
+  withRoute,
 } from "./shell-state.mjs";
 import { buildDeepLink, parseDeepLink } from "./deep-link.mjs";
 import { renderComponentCatalog } from "./component-catalog.mjs";
@@ -43,7 +44,7 @@ function renderContext() {
   document.querySelector("#mode-badge").textContent = context.mode;
   document.querySelector("#run-id").textContent = context.runId;
   document.querySelector("#generation-id").textContent =
-    `Generation ${context.generation} · checkpoint ${context.checkpoint}`;
+    `Generation ${context.generation} · manifest ${context.generationManifest}`;
   document.querySelector("#freshness").textContent = context.freshness;
   const facts = [
     ["Topology", context.topologyId],
@@ -53,6 +54,7 @@ function renderContext() {
     ["Lease", context.admissionLease],
     ["Frontier", context.correctionFrontier],
     ["Resources", context.resourceHealth],
+    ["Coverage", context.coverage],
   ];
   document.querySelector("#context-facts").innerHTML = facts
     .map(([label, value]) => `<span><small>${label}</small><strong>${value}</strong></span>`)
@@ -139,7 +141,7 @@ async function bootstrap() {
   });
   window.addEventListener("hashchange", () => {
     const route = parseDeepLink(window.location.hash);
-    state = createShellState(state.context, route);
+    state = withRoute(state, route);
     render();
   });
   render();

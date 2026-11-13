@@ -1,21 +1,9 @@
 const path = require("node:path");
 const { app, BrowserWindow, ipcMain } = require("electron");
+const OPERATOR_VIEW_FIXTURE = require("./fixtures/operator-view-v1.json");
 
 const BOOTSTRAP_STATE = Object.freeze({
-  context: {
-    runId: "fixture:prometheus-disposable",
-    mode: "LIVE",
-    generation: 44238,
-    checkpoint: "fixture-checkpoint",
-    topologyId: "bamf-0.2-fixture",
-    factoryRelease: "fixture-release",
-    semanticRelease: "fixture-semantic",
-    optimizerStep: 0,
-    admissionLease: "NOT_HELD",
-    correctionFrontier: "fixture-frontier",
-    freshness: "FRESH",
-    resourceHealth: "NOMINAL",
-  },
+  context: OPERATOR_VIEW_FIXTURE,
   selection: null,
 });
 

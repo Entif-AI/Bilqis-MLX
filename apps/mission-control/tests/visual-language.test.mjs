@@ -67,8 +67,11 @@ test("theme and density settings persist only in UI-local keys", () => {
 });
 
 test("visual regression fixtures cover required safety postures", () => {
-  assert.deepEqual(visualFixtureNames(), ["live", "historical", "stale", "denied", "invalidEvidence"]);
-  assert.equal(VISUAL_REGRESSION_CASES.length, 10);
+  assert.deepEqual(
+    visualFixtureNames(),
+    ["live", "unknown", "historical", "stale", "denied", "invalidEvidence"],
+  );
+  assert.equal(VISUAL_REGRESSION_CASES.length, 12);
   assert.deepEqual(
     new Set(VISUAL_REGRESSION_CASES.map(({ theme }) => theme)),
     new Set(["dark", "light"]),

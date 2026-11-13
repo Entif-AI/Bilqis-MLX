@@ -53,6 +53,8 @@ kbd { color: var(--text-muted); }
 .shell[data-posture="historical"] .mode-badge { color: var(--historical); border: 3px double var(--historical); background: var(--surface-1); }
 .shell[data-posture="stale"] .context-bar { border-bottom: 3px dashed var(--invalid); }
 .shell[data-posture="stale"] .freshness { color: var(--invalid); border-style: dashed; background: var(--surface-2); }
+.shell[data-posture="unknown"] .context-bar { border-bottom: 3px dotted var(--attention); }
+.shell[data-posture="unknown"] .freshness { color: var(--attention); border-style: dotted; background: var(--surface-2); }
 
 @media (max-width: 980px) {
   .shell { grid-template-columns: 76px minmax(0, 1fr); }
