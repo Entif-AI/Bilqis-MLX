@@ -1,0 +1,60 @@
+{
+  "roles": [
+    {
+      "key_material": "HOST_PRIVATE_SIGNER",
+      "owner_id": "owner:c06",
+      "scopes": [
+        {
+          "key_prefix": "salience-event:",
+          "kind": "ARTIFACT"
+        },
+        {
+          "key_prefix": "salience-option:",
+          "kind": "ARTIFACT"
+        },
+        {
+          "key_prefix": "salience-policy:",
+          "kind": "POLICY"
+        },
+        {
+          "key_prefix": "salience-fact:",
+          "kind": "SOURCE"
+        }
+      ]
+    },
+    {
+      "key_material": "PUBLIC_IDENTITY_ONLY",
+      "owner_id": "owner:b14-cache",
+      "scopes": [
+        {
+          "key_prefix": "cache:",
+          "kind": "ARTIFACT"
+        }
+      ]
+    },
+    {
+      "key_material": "EXTERNAL_PRIVATE_SIGNER",
+      "owner_id": "owner:bamf-source",
+      "scopes": [
+        {
+          "key_prefix": "a12-export:",
+          "kind": "ARTIFACT"
+        },
+        {
+          "key_prefix": "atlas-approval:",
+          "kind": "ARTIFACT"
+        },
+        {
+          "key_prefix": "capability-support:Z.C13_EPISODE",
+          "kind": "ARTIFACT",
+          "scope_intent": "PREFIX_NAMESPACE"
+        },
+        {
+          "key_prefix": "rights:",
+          "kind": "RIGHTS"
+        }
+      ]
+    }
+  ],
+  "schema": "bilqis.mlx.c09-host-bootstrap-authority-manifest/v1"
+}
