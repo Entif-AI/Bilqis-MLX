@@ -1,0 +1,72 @@
+import unittest
+
+from bilqis_mlx.errors import BilqisError, SCHOOL
+from bilqis_mlx.runtime.delivery import (
+    CommitReceipt, ComponentReceipt, EgmReceipt, EgmStatus, IssueReceipt,
+    OperatorCommandReceipt, ProofReceipt, ProofState, ReceiptStatus,
+    integrate_delivery_receipts,
+)
+
+
+SHA = "b" * 40
+COMPONENTS = ("B14", "C11", "C12", "C13", "C14", "C16")
+COMMANDS = ("cold-resume", "owner-start", "preflight", "read-only-status")
+
+
+def component(name, status=ReceiptStatus.ACCEPTED):
+    number = {"B14": 375, "C11": 384, "C12": 381,
+              "C13": 385, "C14": 386, "C16": 382}[name]
+    return ComponentReceipt(name, number, SHA, status, f"issue:{number}")
+
+
+def command(name):
+    return OperatorCommandReceipt(
+        name, ("npm", "run", "train", "--", "--help"),
+        ProofState.EXECUTED_PASS, "test_operator_parser.py", "docs:runbook")
+
+
+def integrate(components, egm_status=EgmStatus.PASS):
+    issues = tuple(sorted(
+        (IssueReceipt(item.owner_issue, item.component_id, "CLOSED",
+                      item.status, item.head_sha, item.evidence_ref)
+         for item in components),
+        key=lambda item: item.issue))
+    commits = tuple(CommitReceipt(item.head_sha[:-1] + str(index), item.owner_issue,
+                                  "delivery owner")
+                    for index, item in enumerate(components))
+    proofs = (ProofReceipt("workstack", ProofState.EXECUTED_PASS,
+                           "bilqis.bamf.workstack/v1",
+                           "bilqis.bamf.workstack.validation/v1",
+                           "scripts/check_bamf_workstack.py", "held_keys=[]"),)
+    egm = tuple(EgmReceipt(name, egm_status, SHA, "report:egm")
+                for name in ("codebase-details", "implementation-readiness"))
+    commands = tuple(command(name) for name in COMMANDS)
+    return integrate_delivery_receipts(
+        components=components, issues=issues, commits=commits, proofs=proofs,
+        egm=egm, operator_commands=commands)
+
+
+class DeliveryIntegrationTests(unittest.TestCase):
+    def test_pending_upstream_receipt_stays_in_progress_without_mastery_claim(self):
+        components = tuple(component(name, ReceiptStatus.PROVISIONAL
+                                     if name in {"C13", "C14"}
+                                     else ReceiptStatus.ACCEPTED)
+                           for name in COMPONENTS)
+        value = integrate(components, EgmStatus.PENDING)
+        self.assertEqual(value.software_delivery_status, "IN_PROGRESS")
+        self.assertEqual(value.student_mastery_status, "NOT_CLAIMED")
+        self.assertEqual([item.component_id for item in value.components], list(COMPONENTS))
+
+    def test_complete_owner_receipts_and_independent_reviews_reach_owner_merge_gate(self):
+        value = integrate(tuple(component(name) for name in COMPONENTS))
+        self.assertEqual(value.software_delivery_status, "READY_FOR_OWNER_MERGE")
+        self.assertEqual(value.student_mastery_status, "NOT_CLAIMED")
+
+    def test_missing_required_component_refuses_integration(self):
+        with self.assertRaises(BilqisError) as caught:
+            integrate(tuple(component(name) for name in COMPONENTS[:-1]))
+        self.assertIs(caught.exception.spec, SCHOOL.BAMF_DELIVERY.INVALID)
+
+
+if __name__ == "__main__":
+    unittest.main()
