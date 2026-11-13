@@ -26,6 +26,7 @@ from bilqis_mlx.semantics.frame_adapters import (
     BOOLEAN_COMPOSITE_ADAPTER,
     BOOLEAN_CONNECTIVE_ADAPTER,
     BOOLEAN_IDENTIFICATION_ADAPTER,
+    C13_EPISODE_ADAPTER,
     FINITE_NUMERIC_ADAPTER,
     MICRO_PREDICATE_ADAPTER,
     bind_registered_source_row,
@@ -56,6 +57,7 @@ class RegistryTests(FrameAdapterTestCase):
             BOOLEAN_CONNECTIVE_ADAPTER,
             BOOLEAN_COMPOSITE_ADAPTER,
             BOOLEAN_IDENTIFICATION_ADAPTER,
+            C13_EPISODE_ADAPTER,
             FINITE_NUMERIC_ADAPTER,
         }
         actual = {

@@ -21,7 +21,9 @@ def canonical_graph_for(generator: str, source_root: str | Path) -> dict:
     """Resolve only existing source owners, never a caller-selected token graph."""
     from ..copular import GENERATOR as COPULAR_GENERATOR, ORACLE as COPULAR_ORACLE
     from ..school import live_source_registry
-    from ...semantics.frame_adapters import FINITE_NUMERIC_ADAPTER, released_frame_adapter_ids
+    from ...semantics.frame_adapters import (
+        C13_EPISODE_ADAPTER, FINITE_NUMERIC_ADAPTER, released_frame_adapter_ids,
+    )
 
     owner = live_source_registry().resolve_owner(generator)
     if (generator == COPULAR_GENERATOR and
@@ -32,7 +34,7 @@ def canonical_graph_for(generator: str, source_root: str | Path) -> dict:
         graph = expanded_graph(registry_graph())
     elif owner.descriptor.adapter_id in released_frame_adapter_ids():
         expected_root = ROOT / "vendor/legacy-v16"
-        if owner.descriptor.adapter_id == FINITE_NUMERIC_ADAPTER:
+        if owner.descriptor.adapter_id in (FINITE_NUMERIC_ADAPTER, C13_EPISODE_ADAPTER):
             from ...live_grade_c import registry_graph
             graph = registry_graph()
         else:

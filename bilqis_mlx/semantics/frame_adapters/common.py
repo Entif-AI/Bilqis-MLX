@@ -18,6 +18,8 @@ BOOLEAN_IDENTIFICATION_ADAPTER = "source.micro.boolean-identification/v1"
 
 FINITE_NUMERIC_ADAPTER = "source.finite-numeric/v2"
 
+C13_EPISODE_ADAPTER = "source.bamf.c13.episode-binding/v1"
+
 PUBLIC_FORMAL_TIMELESS_EPOCH = 0
 
 MAX_PUBLIC_FORMAL_DRAW_EACH = 128

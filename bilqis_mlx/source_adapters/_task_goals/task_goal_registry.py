@@ -48,6 +48,13 @@ def live_task_goal_lowerers():
         a_provider_digest, b_composite_digest, b_digest, b_idboolops_digest,
         c_provider_digest,
     )
+    from bilqis_mlx.source_adapters.c13_episode import (
+        PROVIDER_ID as C13_PROVIDER_ID,
+        provider_implementation_digest as c13_provider_digest,
+    )
+    from .c13_episode_task_goal import (
+        lower_c13_episode_task_goal, resolve_c13_episode_task_goal,
+    )
 
     root = Path(__file__).resolve().parent
     path = root / "numeric_task_goal.py"
@@ -77,7 +84,16 @@ def live_task_goal_lowerers():
             "bilqis.c04.answer-choice-task-goal/v1", answer_digest,
             lower_answer_choice_task_goal, resolve_answer_choice_task_goal),
     )
-    return (numeric, *choices)
+    c13_path = root / "c13_episode_task_goal.py"
+    c13 = RegisteredTaskGoalLowerer(
+        C13_PROVIDER_ID,
+        c13_provider_digest(),
+        "bilqis.c13.episode-binding-task-goal/v1",
+        _digest(c13_path),
+        lower_c13_episode_task_goal,
+        resolve_c13_episode_task_goal,
+    )
+    return (numeric, *choices, c13)
 
 
 def require_task_goal_lowerer(provider_id: str, provider_sha256: str):

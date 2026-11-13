@@ -13798,6 +13798,20 @@
       "title": "Factory semantic rule contract invalid"
     },
     {
+      "code": "SOURCE.BAMF_C13_EPISODE.INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.source.bamf_c13_episode.invalid.message",
+      "message_template": "C13 episode source contract invalid: {reason}",
+      "next_action": "Restore the admitted C13 episode source, profile, canonical graph, and source-visible episode facts before retrying.",
+      "operator_steps": [],
+      "owner": "source_adapters.c13_episode",
+      "preserve_state": true,
+      "recovery_key": "errors.source.bamf_c13_episode.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "C13 episode source contract invalid"
+    },
+    {
       "code": "SOURCE.BAMF_WORLD.INVALID",
       "disposition": "CORRECT_INPUT_OR_STATE",
       "legacy_codes": [],

@@ -4,6 +4,18 @@ from __future__ import annotations
 from .base import _spec
 
 class SOURCE:
+    class BAMF_C13_EPISODE:
+        INVALID = _spec(
+            ("SOURCE", "BAMF_C13_EPISODE", "INVALID"),
+            owner="source_adapters.c13_episode",
+            title="C13 episode source contract invalid",
+            message_template="C13 episode source contract invalid: {reason}",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action=(
+                "Restore the admitted C13 episode source, profile, canonical graph, "
+                "and source-visible episode facts before retrying."),
+        )
+
     class BAMF_WORLD:
         INVALID = _spec(
             ("SOURCE", "BAMF_WORLD", "INVALID"),

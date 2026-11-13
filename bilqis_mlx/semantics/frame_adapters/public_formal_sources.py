@@ -15,7 +15,7 @@ from ..frame_schema import SourceSpan
 from .common import (
     BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER,
     BOOLEAN_IDENTIFICATION_ADAPTER, FINITE_NUMERIC_ADAPTER,
-    MAX_PUBLIC_FORMAL_DRAW_EACH, MICRO_PREDICATE_ADAPTER, _adapter_fail,
+    C13_EPISODE_ADAPTER, MAX_PUBLIC_FORMAL_DRAW_EACH, MICRO_PREDICATE_ADAPTER, _adapter_fail,
 )
 
 
@@ -123,7 +123,7 @@ def canonical_graph(source_root, graph, adapter_id, span):
 def source_graph_for_adapter(adapter_id: str):
     """Return the repository-owned source graph for a registered formal adapter."""
     root = Path(__file__).resolve().parents[3] / "vendor/legacy-v16"
-    if adapter_id == FINITE_NUMERIC_ADAPTER:
+    if adapter_id in (FINITE_NUMERIC_ADAPTER, C13_EPISODE_ADAPTER):
         from ...live_grade_c import registry_graph
         return root, registry_graph()
     if adapter_id not in {
