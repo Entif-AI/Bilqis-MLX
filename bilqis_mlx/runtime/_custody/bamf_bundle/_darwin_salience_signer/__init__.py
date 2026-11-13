@@ -9,52 +9,15 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyRef
-from .._darwin_source_authority import require_safe_host_descriptor
+from .._darwin_source_authority import (
+    HOST_SALIENCE_SIGNER_LOGICAL_PATH,
+    open_host_source_authority_signer_fd,
+)
 from ..records import invalid
 
 
-HOST_SALIENCE_SIGNER_LOGICAL_PATH = "/etc/entif-ai/bilqis/source-authority-signer.json"
-_COMPONENTS = ("private", "etc", "entif-ai", "bilqis", "source-authority-signer.json")
 _MAX_BYTES = 16 * 1024
 _HEX_32 = re.compile(r"[0-9a-f]{64}")
-
-
-def _open_component(parent_fd: int, name: str, *, directory: bool) -> int:
-    flags = os.O_RDONLY | os.O_NOFOLLOW | (os.O_DIRECTORY if directory else 0)
-    try:
-        return os.open(name, flags, dir_fd=parent_fd)
-    except OSError:
-        invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED")
-
-
-def _open_signer_fd() -> int:
-    """Open one root-owned fixed signer file without accepting a caller path."""
-    try:
-        root_fd = os.open("/", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-    except OSError:
-        invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED")
-    opened = [root_fd]
-    final_fd = None
-    try:
-        require_safe_host_descriptor(root_fd, directory=True)
-        parent = root_fd
-        for name in _COMPONENTS[:-1]:
-            child = _open_component(parent, name, directory=True)
-            opened.append(child)
-            require_safe_host_descriptor(child, directory=True)
-            parent = child
-        final_fd = _open_component(parent, _COMPONENTS[-1], directory=False)
-        info = require_safe_host_descriptor(final_fd, directory=False)
-        if not 1 <= info.st_size <= _MAX_BYTES:
-            invalid("BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_INVALID")
-        return final_fd
-    except BaseException:
-        if final_fd is not None:
-            os.close(final_fd)
-        raise
-    finally:
-        for fd in reversed(opened):
-            os.close(fd)
 
 
 class HostSourceAuthoritySigner:
@@ -85,7 +48,7 @@ class HostSourceAuthoritySigner:
 
 def read_host_system_source_authority_signer(registry) -> HostSourceAuthoritySigner:
     """Read the fixed private signer and bind it to the already-accepted C09 registry."""
-    fd = _open_signer_fd()
+    fd = open_host_source_authority_signer_fd(max_bytes=_MAX_BYTES)
     try:
         size = os.fstat(fd).st_size
         raw = os.read(fd, size + 1)
