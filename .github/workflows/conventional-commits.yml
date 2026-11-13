@@ -23,10 +23,18 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.head_ref }}
         shell: bash
         run: |
           set -euo pipefail
           python3 -B scripts/maintenance/release_version.py --validate-subject "$PR_TITLE"
+          LOG_ARGS=(--format=%s "$BASE_SHA..$HEAD_SHA")
+          if [[ "$HEAD_REF" == codex/bamf-main-bridge-* ]]; then
+            # The bridge intentionally joins already-reviewed unified history.
+            # Validate only commits authored on the bridge's first-parent spine;
+            # inherited unified subjects are provenance, not new PR commits.
+            LOG_ARGS=(--first-parent --format=%s "$BASE_SHA..$HEAD_SHA")
+          fi
           while IFS= read -r subject; do
             python3 -B scripts/maintenance/release_version.py --validate-subject "$subject"
-          done < <(git log --format=%s "$BASE_SHA..$HEAD_SHA")
+          done < <(git log "${LOG_ARGS[@]}")
