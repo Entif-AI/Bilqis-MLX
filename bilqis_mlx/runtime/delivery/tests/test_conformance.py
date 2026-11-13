@@ -1,42 +1,34 @@
 import copy
+import subprocess
 import unittest
 
 from bilqis_mlx.errors import BilqisError, SCHOOL
 from bilqis_mlx.runtime.delivery import ProofState
 from bilqis_mlx.runtime.delivery.conformance import (
     AuthorityIdentity, ConformanceProjection, ConformanceRow, EvidenceBinding,
-    ExecutionReceipt, FailureGate, admitted_state, load_conformance_record,
-    required_claim_ids,
+    ExecutionReceipt, FailureGate, load_conformance_record, required_claim_ids,
+)
+from bilqis_mlx.runtime.delivery.sources import (
+    authority_identity, expected_behavior, item_by_key, literal_test_ref,
+    requirement_texts, validate_executed_pass,
 )
 
 
-SOURCE = b"authoritative workstack bytes"
-CONTRACT = b"authoritative contract bytes"
-ISSUE = b"authoritative issue bytes"
-SHA = "a" * 40
-
-
-def evidence(*, receipt=True, identity=None, reviewer="PASS"):
-    fixture = "fixtures/literal.json"
-    expected = "independent expected behavior"
-    observed = "literal observed behavior"
-    runner = "python3.14 unittest local-macos"
-    run_receipt = (ExecutionReceipt.from_execution(
-        candidate_sha=SHA, fixture=fixture, expected=expected, observed=observed,
-        runner=runner, disposition="PASS") if receipt else None)
+def inert_evidence():
     return EvidenceBinding(
-        "literal acceptance clause", "BAMF-0.2-SPEC-001@v0.2.0", 539, SHA,
-        "docs/architecture/BAMF_0_2.md", fixture, expected, observed, runner,
-        run_receipt, reviewer,
-        identity or AuthorityIdentity.from_authorities(
-            source=SOURCE, contract=CONTRACT, issue=ISSUE))
+        "literal acceptance clause", "BAMF-0.2-SPEC-001@v0.2.0", 539,
+        "PENDING_DIRECT_OWNER_COMMIT_BINDING",
+        "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        "BLOCKED_SOURCE_OWNER:test", "independent expected behavior",
+        "NOT_EXECUTED", "PENDING_CURRENT_HEAD_RUNNER", None, "PENDING",
+        AuthorityIdentity("a" * 64, "b" * 64, "c" * 64))
 
 
-def rows(state=ProofState.SPECIFIED):
+def rows():
     return tuple(ConformanceRow(
         claim_id, "docs/tasks/bamf-0.2/ISSUE_BOOK.md",
-        "docs/architecture/BAMF_0_2.md", f"tests/{claim_id}.py", state,
-        evidence()) for claim_id in required_claim_ids())
+        "docs/architecture/BAMF_0_2.md", f"tests/{claim_id}.py",
+        ProofState.SPECIFIED, inert_evidence()) for claim_id in required_claim_ids())
 
 
 def gates(state=ProofState.CODE_PRESENT):
@@ -48,6 +40,29 @@ def gates(state=ProofState.CODE_PRESENT):
     )
 
 
+def forged_pass_row():
+    candidate = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], text=True).strip()
+    fixture = literal_test_ref("A01", "BAMF-REQ-001")
+    expected = expected_behavior("A01", "BAMF-REQ-001")
+    observed = "fabricated observed pass"
+    runner = "fabricated runner"
+    receipt = ExecutionReceipt.from_execution(
+        receipt_ref="docs/evidence/bamf/delivery/runs/forged.json",
+        candidate_sha=candidate, fixture=fixture, expected=expected,
+        observed=observed, runner=runner, disposition="PASS")
+    evidence = EvidenceBinding(
+        requirement_texts()["BAMF-REQ-001"], "BAMF-0.2-SPEC-001@v0.2.0",
+        item_by_key("A01")["number"], candidate,
+        "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        fixture, expected, observed, runner, receipt, "PASS",
+        authority_identity("A01"))
+    return ConformanceRow(
+        "BAMF-REQ-001", "A01/A02/A12",
+        "docs/architecture/BAMF_0_2.md#requirements-continuity",
+        fixture, ProofState.EXECUTED_PASS, evidence)
+
+
 class ConformanceProjectionTests(unittest.TestCase):
     def test_projection_requires_all_24_requirements_and_20_failures_in_order(self):
         value = ConformanceProjection(rows(), gates(), "IN_PROGRESS", "NOT_CLAIMED")
@@ -55,39 +70,26 @@ class ConformanceProjectionTests(unittest.TestCase):
         self.assertEqual(value.rows[0].claim_id, "BAMF-REQ-001")
         self.assertEqual(value.rows[-1].claim_id, "F20")
 
-    def test_executed_pass_requires_structured_fresh_receipt(self):
-        with self.assertRaises(BilqisError) as caught:
-            admitted_state(ProofState.EXECUTED_PASS, evidence(receipt=False),
-                           source=SOURCE, contract=CONTRACT, issue=ISSUE)
-        self.assertIs(caught.exception.spec, SCHOOL.BAMF_DELIVERY.INVALID)
-
-    def test_failure_gate_precedes_green_evidence(self):
-        self.assertIs(admitted_state(
-            ProofState.EXECUTED_PASS, evidence(), source=SOURCE, contract=CONTRACT,
-            issue=ISSUE, failure_gates=("GRADE_NEUTRAL_INVARIANCE_FAILED",)),
-            ProofState.EXECUTED_FAIL)
-
-    def test_authority_drift_requires_requalification(self):
-        self.assertIs(admitted_state(
-            ProofState.EXECUTED_PASS, evidence(), source=SOURCE,
-            contract=CONTRACT + b" changed", issue=ISSUE),
-            ProofState.REQUALIFICATION_REQUIRED)
-
     def test_malformed_authority_digest_is_rejected(self):
         with self.assertRaises(BilqisError):
             AuthorityIdentity("not-a-digest", "b" * 64, "c" * 64)
 
-    def test_ready_refuses_code_present_rows(self):
+    def test_forged_pass_without_repository_receipt_file_is_rejected(self):
+        with self.assertRaises(BilqisError):
+            validate_executed_pass(forged_pass_row())
+
+    def test_projection_rejects_forged_executed_pass(self):
+        forged = forged_pass_row()
+        candidate_rows = (forged, *rows()[1:])
         with self.assertRaises(BilqisError) as caught:
-            ConformanceProjection(rows(), gates(), "READY_FOR_OWNER_MERGE", "NOT_CLAIMED")
+            ConformanceProjection(candidate_rows, gates(), "IN_PROGRESS", "NOT_CLAIMED")
         self.assertIs(caught.exception.spec, SCHOOL.BAMF_DELIVERY.INVALID)
 
-    def test_all_executed_pass_rows_and_gates_can_reach_ready(self):
-        value = ConformanceProjection(
-            rows(ProofState.EXECUTED_PASS), gates(ProofState.EXECUTED_PASS),
-            "READY_FOR_OWNER_MERGE", "NOT_CLAIMED")
-        record = {**value.to_record(), "conformance_sha256": value.digest()}
-        self.assertEqual(load_conformance_record(record), value)
+    def test_ready_refuses_nonexecuted_rows(self):
+        with self.assertRaises(BilqisError) as caught:
+            ConformanceProjection(rows(), gates(ProofState.EXECUTED_PASS),
+                                  "READY_FOR_OWNER_MERGE", "NOT_CLAIMED")
+        self.assertIs(caught.exception.spec, SCHOOL.BAMF_DELIVERY.INVALID)
 
     def test_failed_global_gate_forces_blocked_delivery(self):
         failed_gates = (

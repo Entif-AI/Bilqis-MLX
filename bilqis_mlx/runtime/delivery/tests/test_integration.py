@@ -27,16 +27,12 @@ def command(name, state=ProofState.EXECUTED_PASS):
         "test_operator_parser.py", "docs:runbook")
 
 
-def conformance(ready=False):
-    state = ProofState.EXECUTED_PASS if ready else ProofState.SPECIFIED
-    gate_state = ProofState.EXECUTED_PASS if ready else ProofState.CODE_PRESENT
-    return ConformanceProjection(
-        rows(state), gates(gate_state),
-        "READY_FOR_OWNER_MERGE" if ready else "IN_PROGRESS", "NOT_CLAIMED")
+def conformance():
+    return ConformanceProjection(rows(), gates(), "IN_PROGRESS", "NOT_CLAIMED")
 
 
-def integrate(components, egm_status=EgmStatus.PASS, *, ready=False,
-              command_state=ProofState.EXECUTED_PASS):
+def integrate(components, egm_status=EgmStatus.PASS, *,
+              command_state=ProofState.EXECUTED_PASS, conformance_value=None):
     dependency_components = tuple(item for item in components
                                   if item.component_id in COMPONENTS)
     issues = tuple(sorted(
@@ -55,7 +51,8 @@ def integrate(components, egm_status=EgmStatus.PASS, *, ready=False,
     commands = tuple(command(name, command_state) for name in COMMANDS)
     return integrate_delivery_receipts(
         components=components, issues=issues, commits=commits, proofs=proofs,
-        egm=egm, operator_commands=commands, conformance=conformance(ready))
+        egm=egm, operator_commands=commands,
+        conformance=conformance_value or conformance())
 
 
 class DeliveryIntegrationTests(unittest.TestCase):
@@ -69,12 +66,16 @@ class DeliveryIntegrationTests(unittest.TestCase):
         self.assertEqual(value.student_mastery_status, "NOT_CLAIMED")
 
     def test_receipts_cannot_reach_ready_without_conformance_closure(self):
-        value = integrate(tuple(component(name) for name in COMPONENTS), ready=False)
+        value = integrate(tuple(component(name) for name in COMPONENTS))
         self.assertEqual(value.software_delivery_status, "IN_PROGRESS")
 
-    def test_complete_receipts_and_conformance_reach_owner_merge_gate(self):
-        value = integrate(tuple(component(name) for name in COMPONENTS), ready=True)
-        self.assertEqual(value.software_delivery_status, "READY_FOR_OWNER_MERGE")
+    def test_duck_typed_ready_conformance_is_rejected(self):
+        class FakeReady:
+            software_delivery_status = "READY_FOR_OWNER_MERGE"
+            student_mastery_status = "NOT_CLAIMED"
+        with self.assertRaises(BilqisError):
+            integrate(tuple(component(name) for name in COMPONENTS),
+                      conformance_value=FakeReady())
 
     def test_additional_component_pins_do_not_replace_required_dependencies(self):
         components = tuple(sorted(
@@ -82,17 +83,17 @@ class DeliveryIntegrationTests(unittest.TestCase):
              ComponentReceipt("topology", 382, "c" * 64, ReceiptStatus.ACCEPTED,
                               "configs/models/bamf-0.2.json")),
             key=lambda item: item.component_id))
-        value = integrate(components, ready=True)
+        value = integrate(components)
         self.assertIn("topology", {item.component_id for item in value.components})
 
     def test_code_present_operator_command_cannot_integrate(self):
         with self.assertRaises(BilqisError):
-            integrate(tuple(component(name) for name in COMPONENTS), ready=True,
+            integrate(tuple(component(name) for name in COMPONENTS),
                       command_state=ProofState.CODE_PRESENT)
 
     def test_missing_required_component_refuses_integration(self):
         with self.assertRaises(BilqisError) as caught:
-            integrate(tuple(component(name) for name in COMPONENTS[:-1]), ready=True)
+            integrate(tuple(component(name) for name in COMPONENTS[:-1]))
         self.assertIs(caught.exception.spec, SCHOOL.BAMF_DELIVERY.INVALID)
 
 

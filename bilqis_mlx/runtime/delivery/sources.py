@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import subprocess
 
 from .contracts import require
 from .conformance import AuthorityIdentity
@@ -167,3 +168,55 @@ def privacy_clause() -> tuple[str, str]:
     line = next(line.strip() for line in ARCHITECTURE.read_text(encoding="utf-8").splitlines()
                 if "PRIVATE_REAL data stays outside public worktrees" in line)
     return line, sha256_bytes(line.encode())
+
+
+def validate_executed_pass(row: object) -> bool:
+    """Validate one PASS row against repository-owned authority and evidence sources."""
+    from .conformance import ConformanceRow
+    require(type(row) is ConformanceRow, "PUBLICATION_PASS_ROW_TYPE")
+    evidence = row.evidence
+    primary = row.owner_ref.split("/")[0]
+    item = item_by_key(primary)
+    normative = (requirement_texts()[row.claim_id]
+                 if row.claim_id.startswith("BAMF-REQ-")
+                 else fixture_source_text(row.claim_id, primary))
+    fixture = literal_test_ref(primary, row.claim_id)
+    require(not fixture.startswith("BLOCKED_SOURCE_OWNER:"),
+            "PUBLICATION_PASS_FIXTURE_MISSING")
+    require(evidence.normative_text == normative, "PUBLICATION_PASS_NORMATIVE")
+    require(evidence.owner_issue == item["number"], "PUBLICATION_PASS_OWNER")
+    require(evidence.contract_path ==
+            "docs/architecture/BAMF_0_2.md#requirements-continuity",
+            "PUBLICATION_PASS_CONTRACT")
+    require(evidence.input_fixture == fixture, "PUBLICATION_PASS_FIXTURE")
+    require(evidence.expected_behavior == expected_behavior(primary, row.claim_id),
+            "PUBLICATION_PASS_EXPECTED")
+    require(evidence.authority_identity == authority_identity(primary),
+            "PUBLICATION_PASS_AUTHORITY")
+    require(evidence.complete_for_pass(), "PUBLICATION_PASS_RECEIPT")
+    require(evidence.run_receipt is not None
+            and evidence.run_receipt.candidate_sha == evidence.owner_commit,
+            "PUBLICATION_PASS_CANDIDATE")
+    receipt_path = ROOT / evidence.run_receipt.receipt_ref
+    require(receipt_path.is_file(), "PUBLICATION_PASS_RECEIPT_FILE")
+    try:
+        receipt_record = json.loads(receipt_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        require(False, "PUBLICATION_PASS_RECEIPT_FILE")
+        raise AssertionError("unreachable")
+    require(receipt_record == {
+        "schema": evidence.run_receipt.schema,
+        "receipt_ref": evidence.run_receipt.receipt_ref,
+        "candidate_sha": evidence.run_receipt.candidate_sha,
+        "fixture_sha256": evidence.run_receipt.fixture_sha256,
+        "expected_sha256": evidence.run_receipt.expected_sha256,
+        "observed_sha256": evidence.run_receipt.observed_sha256,
+        "runner_sha256": evidence.run_receipt.runner_sha256,
+        "disposition": evidence.run_receipt.disposition,
+    }, "PUBLICATION_PASS_RECEIPT_FILE")
+    completed = subprocess.run(
+        ["git", "cat-file", "-e", f"{evidence.owner_commit}^{{commit}}"],
+        cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        check=False)
+    require(completed.returncode == 0, "PUBLICATION_PASS_COMMIT")
+    return True

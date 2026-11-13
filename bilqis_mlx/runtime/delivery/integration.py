@@ -4,6 +4,7 @@ from __future__ import annotations
 from .contracts import (
     BamfDeliveryManifest, EgmStatus, ProofState, ReceiptStatus, require,
 )
+from .conformance import ConformanceProjection
 
 REQUIRED_COMPONENTS = ("B14", "C11", "C12", "C13", "C14", "C16")
 REQUIRED_EGM_REVIEWERS = ("codebase-details", "implementation-readiness")
@@ -22,9 +23,11 @@ def integrate_delivery_receipts(*, components, issues, commits, proofs, egm,
             "C15_OPERATOR_COMMANDS")
     require(all(item.state is ProofState.EXECUTED_PASS for item in operator_commands),
             "C15_OPERATOR_COMMAND_PROOF")
-    require(getattr(conformance, "student_mastery_status", None) == "NOT_CLAIMED",
+    require(type(conformance) is ConformanceProjection,
+            "C15_CONFORMANCE_TYPE")
+    require(conformance.student_mastery_status == "NOT_CLAIMED",
             "C15_CONFORMANCE_MASTERY_SEPARATION")
-    conformance_status = getattr(conformance, "software_delivery_status", None)
+    conformance_status = conformance.software_delivery_status
     require(conformance_status in {
         "IN_PROGRESS", "READY_FOR_OWNER_MERGE", "DELIVERED", "BLOCKED",
     }, "C15_CONFORMANCE_STATUS")

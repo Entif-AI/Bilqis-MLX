@@ -42,6 +42,7 @@ class AuthorityIdentity:
 @dataclass(frozen=True)
 class ExecutionReceipt:
     schema: str
+    receipt_ref: str
     candidate_sha: str
     fixture_sha256: str
     expected_sha256: str
@@ -50,8 +51,12 @@ class ExecutionReceipt:
     disposition: str
 
     def __post_init__(self) -> None:
-        require(self.schema == "bilqis.bamf.execution-receipt/v1",
+        require(self.schema == "bilqis.bamf.execution-receipt/v2",
                 "CONFORMANCE_RUN_RECEIPT_SCHEMA")
+        require(isinstance(self.receipt_ref, str)
+                and self.receipt_ref.startswith("docs/evidence/bamf/delivery/runs/")
+                and self.receipt_ref.endswith(".json"),
+                "CONFORMANCE_RUN_RECEIPT_REF")
         require(isinstance(self.candidate_sha, str)
                 and _SHA40.fullmatch(self.candidate_sha) is not None,
                 "CONFORMANCE_RUN_RECEIPT_CANDIDATE")
@@ -62,14 +67,14 @@ class ExecutionReceipt:
                 "CONFORMANCE_RUN_RECEIPT_DISPOSITION")
 
     @classmethod
-    def from_execution(cls, *, candidate_sha: str, fixture: str,
+    def from_execution(cls, *, receipt_ref: str, candidate_sha: str, fixture: str,
                        expected: str, observed: str, runner: str,
                        disposition: str) -> "ExecutionReceipt":
         values = (fixture, expected, observed, runner)
         require(all(isinstance(value, str) and value.strip() for value in values),
                 "CONFORMANCE_RUN_RECEIPT_INPUT")
         return cls(
-            "bilqis.bamf.execution-receipt/v1", candidate_sha,
+            "bilqis.bamf.execution-receipt/v2", receipt_ref, candidate_sha,
             *(_sha256(value.encode()) for value in values), disposition)
 
     def verifies(self, *, candidate_sha: str, fixture: str, expected: str,
@@ -132,25 +137,6 @@ class EvidenceBinding:
         )
 
 
-def admitted_state(requested: ProofState, evidence: EvidenceBinding, *,
-                   source: bytes, contract: bytes, issue: bytes,
-                   failure_gates: tuple[str, ...] = ()) -> ProofState:
-    """Apply failure/drift precedence before admitting an evidence state."""
-    require(type(requested) is ProofState, "CONFORMANCE_REQUESTED_STATE")
-    current_identity = AuthorityIdentity.from_authorities(
-        source=source, contract=contract, issue=issue)
-    require(type(failure_gates) is tuple
-            and all(isinstance(value, str) and value.strip() for value in failure_gates),
-            "CONFORMANCE_FAILURE_GATES")
-    if failure_gates:
-        return ProofState.EXECUTED_FAIL
-    if evidence.authority_identity != current_identity:
-        return ProofState.REQUALIFICATION_REQUIRED
-    if requested is ProofState.EXECUTED_PASS:
-        require(evidence.complete_for_pass(), "CONFORMANCE_EXECUTED_PASS_EVIDENCE")
-    return requested
-
-
 @dataclass(frozen=True)
 class FailureGate:
     gate_id: str
@@ -199,6 +185,13 @@ class ConformanceProjection:
         ids = tuple(row.claim_id for row in self.rows)
         require(ids == required_claim_ids(), "CONFORMANCE_COMPLETE_ORDER")
         require(len(set(ids)) == len(ids), "CONFORMANCE_DUPLICATE")
+        require(all(type(row) is ConformanceRow for row in self.rows),
+                "CONFORMANCE_ROW_TYPE")
+        for row in self.rows:
+            if row.state is ProofState.EXECUTED_PASS:
+                from .sources import validate_executed_pass
+                require(validate_executed_pass(row),
+                        "CONFORMANCE_EXECUTED_PASS_ADMISSION")
         gate_ids = tuple(gate.gate_id for gate in self.failure_gates)
         require(gate_ids == ("GRADE_NEUTRAL_INVARIANCE", "NO_LEGACY_BAV_RUNTIME_NAMESPACE"),
                 "CONFORMANCE_FAILURE_GATE_SET")
