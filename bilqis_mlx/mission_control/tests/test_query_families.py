@@ -41,6 +41,17 @@ class MissionControlQueryFamilyTests(unittest.TestCase):
                 self.assertGreaterEqual(page.total_matches, 1)
                 self.assertTrue(page.records)
 
+        self.assertEqual(
+            {type(item).__name__ for item in self.index.query(
+                QueryRequest(QueryFamily.SCHOOL)).records},
+            {"SchoolSnapshot", "CurriculumFrontier"},
+        )
+        self.assertEqual(
+            {type(item).__name__ for item in self.index.query(
+                QueryRequest(QueryFamily.EPISODE)).records},
+            {"LearningEpisode", "CandidateDecision"},
+        )
+
     def test_current_operator_view_is_the_same_cp02_truth_used_by_status(self):
         page = self.index.query(QueryRequest(QueryFamily.RUN))
         operator = next(
@@ -73,10 +84,14 @@ class MissionControlQueryFamilyTests(unittest.TestCase):
             QueryFamily.LINKS, record_id="generation"))
         checkpoint = next(
             link for link in generation.links if link.relation == "CHECKPOINT")
-        self.assertTrue(checkpoint.target_ref.startswith("checkpoint:"))
+        expected_checkpoint = "checkpoint:" + SAMPLES[14].checkpoint_sha256
+        self.assertEqual(checkpoint.target_ref, expected_checkpoint)
+        self.assertEqual(checkpoint.target_record_id, expected_checkpoint)
+        checkpoint_links = self.index.query(QueryRequest(
+            QueryFamily.LINKS, record_id=checkpoint.target_record_id))
         self.assertIn(
             "receipt:a",
-            {link.target_ref for link in generation.links
+            {link.target_ref for link in checkpoint_links.links
              if link.relation == "RECEIPT"},
         )
 
@@ -86,6 +101,11 @@ class MissionControlQueryFamilyTests(unittest.TestCase):
         self.assertEqual(page.state, QueryState.PRESENT)
         self.assertGreater(page.total_matches, 1)
         self.assertTrue(all(link.target_ref == "evidence:a" for link in page.links))
+        receipt_page = self.index.query(QueryRequest(
+            QueryFamily.REFERENCE, reference="receipt:a", limit=32))
+        self.assertEqual(receipt_page.state, QueryState.PRESENT)
+        self.assertTrue(all(
+            link.target_ref == "receipt:a" for link in receipt_page.links))
 
     def test_index_rejects_duplicate_record_identity(self):
         with self.assertRaises(ValueError):

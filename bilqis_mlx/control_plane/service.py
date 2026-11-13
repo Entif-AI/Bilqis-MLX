@@ -29,6 +29,7 @@ from .discovery import discover_learner
 
 
 MAX_REQUEST_BYTES = 64 * 1024
+MAX_RESPONSE_BYTES = 64 * 1024
 MAX_UNIX_SOCKET_PATH_BYTES = 100
 
 
@@ -305,14 +306,25 @@ class ControlPlaneService:
                 session, "CONTROL_PLANE_QUERY_SOURCE_INVALID")
         try:
             page = catalog.query(query)
-        except MissionControlContractError:
-            return self.rejected_request(session, "CONTROL_PLANE_QUERY_INVALID")
-        return {
+        except MissionControlContractError as error:
+            reason = (
+                "CONTROL_PLANE_QUERY_RESPONSE_TOO_LARGE"
+                if error.detail == "QUERY_ROW_TOO_LARGE"
+                else "CONTROL_PLANE_QUERY_INVALID"
+            )
+            return self.rejected_request(session, reason)
+        response = {
             **catalog.encode_page(page),
             "accepted": True,
             "service": self.identity.to_record(),
             "session": session.to_record(),
         }
+        encoded = json.dumps(
+            response, separators=(",", ":"), sort_keys=True).encode("utf-8") + b"\n"
+        if len(encoded) > MAX_RESPONSE_BYTES:
+            return self.rejected_request(
+                session, "CONTROL_PLANE_QUERY_RESPONSE_TOO_LARGE")
+        return response
 
     def dispatch(self, session: SessionIdentity, request: dict) -> dict:
         surface = request.get("type")

@@ -125,6 +125,38 @@ class ControlPlaneQueryTests(unittest.TestCase):
                 service.shutdown()
                 thread.join(2)
 
+    def test_oversized_legal_record_is_typed_error_without_connection_loss(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            capability = SAMPLES[3]
+            records = [replace(
+                capability,
+                meta=replace(
+                    capability.meta,
+                    evidence_refs=tuple(f"evidence:{index}" for index in range(5000)),
+                ),
+            )]
+
+            def source():
+                return MissionControlQueryCatalog(tuple(records))
+
+            service = ControlPlaneService(
+                root / "missing-run", root / "cp.sock", query_source=source)
+            thread = start_service(service)
+            try:
+                with ControlPlaneClient(root / "cp.sock") as client:
+                    rejected = client.query(QueryRequest(QueryFamily.CAPABILITY, limit=1))
+                    self.assertEqual(rejected["schema"], ERROR_SCHEMA)
+                    self.assertFalse(rejected["accepted"])
+                    self.assertEqual(
+                        rejected["reason"], "CONTROL_PLANE_QUERY_RESPONSE_TOO_LARGE")
+                    records[:] = [SAMPLES[3]]
+                    follow_up = client.query(QueryRequest(QueryFamily.CAPABILITY))
+                    self.assertEqual(follow_up["schema"], QUERY_PAGE_SCHEMA)
+            finally:
+                service.shutdown()
+                thread.join(2)
+
     def test_default_service_reports_query_source_unavailable_not_empty(self):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -14,6 +14,7 @@ QUERY_REQUEST_SCHEMA = "bilqis.bamf.control-plane.query/v1"
 QUERY_PAGE_SCHEMA = "bilqis.bamf.control-plane.query-page/v1"
 DEFAULT_PAGE_SIZE = 8
 MAX_PAGE_SIZE = 32
+MAX_PAGE_ROWS_BYTES = 48 * 1024
 
 
 class QueryFamily(StrEnum):

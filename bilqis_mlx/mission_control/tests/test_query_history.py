@@ -53,6 +53,40 @@ class MissionControlQueryHistoryTests(unittest.TestCase):
         self.assertEqual(old.meta.evidence_refs, ("evidence:operator:6",))
         self.assertEqual(current.meta.evidence_refs, ("evidence:operator:7",))
 
+    def test_current_selects_latest_snapshot_inside_same_generation(self):
+        older = OperatorView(
+            _meta("operator:7:old", RUN, as_of=100),
+            "READY", "ASSESS_OLD", None, ())
+        newer = OperatorView(
+            _meta("operator:7:new", RUN, as_of=118),
+            "READY", "ASSESS_MAIN", None, ())
+        page = MissionControlQueryCatalog((older, newer)).query(
+            QueryRequest(QueryFamily.RUN, run_id="run-7"))
+        self.assertEqual(
+            [item.meta.record_id for item in page.records], ["operator:7:new"])
+
+    def test_historical_link_and_reference_queries_bind_exact_identity(self):
+        current = OperatorView(
+            _meta("operator:7", RUN, as_of=118),
+            "READY", "ASSESS_MAIN", None, ())
+        index = MissionControlQueryCatalog((current,))
+        missing_links = index.query(QueryRequest(
+            QueryFamily.LINKS, mode=QueryMode.HISTORICAL,
+            record_id="operator:7", generation=6))
+        self.assertEqual(missing_links.state, QueryState.MISSING)
+        self.assertEqual(missing_links.links, ())
+        missing_reference = index.query(QueryRequest(
+            QueryFamily.REFERENCE, mode=QueryMode.HISTORICAL,
+            generation=6, reference="receipt:operator:7"))
+        self.assertEqual(missing_reference.state, QueryState.MISSING)
+        self.assertEqual(missing_reference.links, ())
+        exact_reference = index.query(QueryRequest(
+            QueryFamily.REFERENCE, mode=QueryMode.HISTORICAL,
+            generation=7, as_of=118, reference="receipt:operator:7"))
+        self.assertEqual(exact_reference.state, QueryState.PRESENT)
+        self.assertEqual(
+            [link.source_record_id for link in exact_reference.links], ["operator:7"])
+
     def test_historical_frontier_query_is_exact(self):
         index = MissionControlQueryCatalog((SAMPLES[4],))
         page = index.query(QueryRequest(
@@ -118,6 +152,9 @@ class MissionControlQueryHistoryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "QUERY_CURSOR_STALE"):
             changed.query(replace(
                 first_request, cursor=first.next_cursor))
+        forged_end = first.next_cursor.rsplit(":", 1)[0] + f":{len(capabilities)}"
+        with self.assertRaisesRegex(ValueError, "QUERY_CURSOR_RANGE"):
+            index.query(replace(first_request, cursor=forged_end))
 
     def test_partial_stale_denied_unknown_and_unavailable_do_not_collapse(self):
         school = SAMPLES[2]
