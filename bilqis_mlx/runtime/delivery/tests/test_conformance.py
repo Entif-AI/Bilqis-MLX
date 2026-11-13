@@ -1,4 +1,6 @@
 import copy
+import json
+from pathlib import Path
 import subprocess
 import unittest
 
@@ -77,6 +79,28 @@ class ConformanceProjectionTests(unittest.TestCase):
     def test_forged_pass_without_repository_receipt_file_is_rejected(self):
         with self.assertRaises(BilqisError):
             validate_executed_pass(forged_pass_row())
+
+    def test_untracked_local_receipt_cannot_satisfy_commit_bound_pass(self):
+        row = forged_pass_row()
+        root = Path(__file__).resolve().parents[4]
+        path = root / row.evidence.run_receipt.receipt_ref
+        path.parent.mkdir(parents=True, exist_ok=True)
+        receipt = row.evidence.run_receipt
+        path.write_text(json.dumps({
+            "schema": receipt.schema,
+            "receipt_ref": receipt.receipt_ref,
+            "candidate_sha": receipt.candidate_sha,
+            "fixture_sha256": receipt.fixture_sha256,
+            "expected_sha256": receipt.expected_sha256,
+            "observed_sha256": receipt.observed_sha256,
+            "runner_sha256": receipt.runner_sha256,
+            "disposition": receipt.disposition,
+        }))
+        try:
+            with self.assertRaises(BilqisError):
+                validate_executed_pass(row)
+        finally:
+            path.unlink(missing_ok=True)
 
     def test_projection_rejects_forged_executed_pass(self):
         forged = forged_pass_row()

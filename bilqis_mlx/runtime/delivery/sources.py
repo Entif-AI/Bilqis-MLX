@@ -197,11 +197,14 @@ def validate_executed_pass(row: object) -> bool:
     require(evidence.run_receipt is not None
             and evidence.run_receipt.candidate_sha == evidence.owner_commit,
             "PUBLICATION_PASS_CANDIDATE")
-    receipt_path = ROOT / evidence.run_receipt.receipt_ref
-    require(receipt_path.is_file(), "PUBLICATION_PASS_RECEIPT_FILE")
+    receipt_path = evidence.run_receipt.receipt_ref
     try:
-        receipt_record = json.loads(receipt_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+        completed = subprocess.run(
+            ["git", "show", f"{evidence.owner_commit}:{receipt_path}"], cwd=ROOT,
+            text=True, capture_output=True, check=False)
+        require(completed.returncode == 0, "PUBLICATION_PASS_RECEIPT_COMMIT_FILE")
+        receipt_record = json.loads(completed.stdout)
+    except json.JSONDecodeError:
         require(False, "PUBLICATION_PASS_RECEIPT_FILE")
         raise AssertionError("unreachable")
     require(receipt_record == {
