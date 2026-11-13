@@ -8,7 +8,7 @@ All new releases use [Semantic Versioning](https://semver.org/) and Conventional
 
 This release joins the complete reviewed BAMF-0.2 unified lineage to `main`. The mainline bridge in [#1029](https://github.com/Entif-AI/Bilqis-MLX/pull/1029) imported the reviewed parallel history after `v1.0.0`; the complete release DAG through `21a84db` contains **2,996 commits**, including **2,264 commit subjects that explicitly name BAMF**. Because that history arrived through a merge parent, the normal Release Please traversal surfaced only the small linear tip and under-reported the release. This section is the explicit `v1.1.0` history backfill.
 
-The release DAG contains **374 feat**, **767 fix**, **9 perf**, **216 refactor**, **645 docs**, **298 test**, **1 build**, **23 ci**, **199 chore**, and **464 merge/non-conventional** commits. See the [complete 2,996-commit release ledger](docs/history/releases/v1.1.0-bamf-unified-history.md) and the [GitHub DAG comparison](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.0.0...21a84dba60b19027ae77fdfe4b722ff860a2f3f8).
+The release DAG contains **374 feat**, **767 fix**, **9 perf**, **216 refactor**, **645 docs**, **298 test**, **1 build**, **23 ci**, **199 chore**, and **464 merge/non-conventional** commits. The complete 2,996-commit inventory is embedded below in this changelog; see also the [GitHub DAG comparison](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.0.0...21a84dba60b19027ae77fdfe4b722ff860a2f3f8).
 
 
 ### Features
