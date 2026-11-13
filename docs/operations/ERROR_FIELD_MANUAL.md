@@ -74,6 +74,18 @@ Message: Qualified world source contract invalid: {reason}
 
 Recovery: Restore the pinned source rows, canonical provider, and exact world query contract before retrying.
 
+### `SCHOOL.BAMF_CONTROL_PLANE.INVALID`
+
+BAMF local control-plane boundary invalid.
+
+Owner: `control_plane.service`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: The BAMF local control-plane boundary is invalid: {reason}
+
+Recovery: Keep learner and checkpoint custody unchanged; reconcile the local service transport, protocol session, or accepted-generation read boundary before retry.
+
 ### `SCHOOL.BAMF_ATLAS_ADMISSION.INVALID`
 
 BAMF Atlas lease or admission boundary invalid.
