@@ -269,6 +269,6 @@ def load_conformance_record(record: object) -> ConformanceProjection:
             record["student_mastery_status"], schema=record["schema"])
     except (KeyError, TypeError, ValueError):
         require(False, "CONFORMANCE_RECORD_VALUE")
-        raise AssertionError("unreachable")
+        raise AssertionError
     require(record["conformance_sha256"] == value.digest(), "CONFORMANCE_RECORD_DIGEST")
     return value

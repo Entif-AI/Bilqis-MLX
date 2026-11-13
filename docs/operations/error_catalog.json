@@ -15800,6 +15800,20 @@
       "title": "BAMF first-student preflight is invalid"
     },
     {
+      "code": "SCHOOL.BAMF_DELIVERY.INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_delivery.invalid.message",
+      "message_template": "BAMF delivery evidence is invalid: {reason}",
+      "next_action": "Preserve the last valid delivery receipt; reconcile immutable issue, commit, proof, review and command evidence before publication.",
+      "operator_steps": [],
+      "owner": "runtime.delivery",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_delivery.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF delivery evidence invalid"
+    },
+    {
       "code": "SCHOOL.BAMF_PACKAGE.INVALID",
       "disposition": "PRESERVE_AND_INSPECT",
       "legacy_codes": [],

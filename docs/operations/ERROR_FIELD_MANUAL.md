@@ -1773,6 +1773,18 @@ Message: The BAMF first-student preflight is invalid: {reason}
 
 Recovery: Keep the admitted source run unchanged; reconcile the launch config, Factory/Atlas bindings and empty target before retrying.
 
+### `SCHOOL.BAMF_DELIVERY.INVALID`
+
+BAMF delivery evidence invalid.
+
+Owner: `runtime.delivery`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: BAMF delivery evidence is invalid: {reason}
+
+Recovery: Preserve the last valid delivery receipt; reconcile immutable issue, commit, proof, review and command evidence before publication.
+
 ### `SCHOOL.BAMF_PACKAGE.INVALID`
 
 BAMF cognitive package invalid.

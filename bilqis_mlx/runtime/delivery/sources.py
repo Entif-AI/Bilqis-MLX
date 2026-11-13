@@ -244,7 +244,7 @@ def validate_executed_pass(row: object) -> bool:
         receipt_record = json.loads(completed.stdout)
     except json.JSONDecodeError:
         require(False, "PUBLICATION_PASS_RECEIPT_FILE")
-        raise AssertionError("unreachable")
+        raise AssertionError
     require(receipt_record == {
         "schema": evidence.run_receipt.schema,
         "receipt_ref": evidence.run_receipt.receipt_ref,

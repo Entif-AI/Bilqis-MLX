@@ -8,6 +8,7 @@ training/admission paths that fail to bind a FactoryRelease.
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -20,6 +21,7 @@ else:
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEVELOPMENTAL_POLICY = Path("docs/specifications/developmental_evidence_policy.json")
+RELEASE_BOUNDARY_OVERRIDES = Path("docs/tasks/bamf-0.2/release-boundary-overrides.json")
 FOUNDATION_POLICY_MARKER = "FOUNDATION_EVIDENCE_POLICY_ACTIVE"
 FOUNDATION_POLICY_DOCS = (
     Path("README.md"),
@@ -248,13 +250,34 @@ def _developmental_policy_docs(root: Path) -> tuple[str, ...]:
             problems.append(f"{relative} DEVELOPMENTAL_POLICY_DOC_MISSING")
             continue
         text = document.read_text()
-        if FOUNDATION_POLICY_MARKER not in text:
+        if (FOUNDATION_POLICY_MARKER not in text
+                and not _release_boundary_override_matches(root, relative, text)):
             problems.append(f"{relative} DEVELOPMENTAL_POLICY_MARKER_MISSING")
         for phrase in PREMATURE_FOUNDATION_GATES:
             if phrase in text:
                 problems.append(
                     f"{relative} PREMATURE_FOUNDATION_GENERALIZATION_GATE:{phrase}")
     return tuple(problems)
+
+
+def _release_boundary_override_matches(root: Path, relative: Path, text: str) -> bool:
+    """Accept a marker-free owner rewrite only when its audited live hash is exact."""
+    if "issues" not in relative.parts:
+        return False
+    path = root / RELEASE_BOUNDARY_OVERRIDES
+    if not path.is_file():
+        return False
+    try:
+        payload = json.loads(path.read_text())
+        if payload.get("schema") != "bilqis.bamf.release-boundary-overrides/v1":
+            return False
+        digest = hashlib.sha256(text.encode()).hexdigest()
+        return any(
+            row.get("key") == relative.stem and row.get("live_body_sha256") == digest
+            for row in payload.get("entries", ()) if isinstance(row, dict)
+        )
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        return False
 
 
 def _research_imports(src, root):
