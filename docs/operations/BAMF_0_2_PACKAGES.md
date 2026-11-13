@@ -45,12 +45,12 @@ historical `SourceRights`; they cannot reconstruct or invent source-export
 authority and cannot republish the cold-decoded object through the sender API.
 Do not pass private metadata to the public export API.
 
-For a C16.1c-born lineage, the host administrator provisions C09 registry material
-independently at the fixed Darwin path
-`/etc/entif-ai/bilqis/source-authority-registry.json`. Bilqis runtime reads and
-validates that fixed root but never provisions it and exposes no package, CLI,
-configuration, environment, or run-directory selector for it. New generation zero
-records the exact registry record, digest, and `HOST_SYSTEM_V1` origin in accepted
+For a new BAMF-0.2 lineage, #1031 places C09 registry material at the fixed ordinary-
+user Darwin path `<account-home>/.entif-ai/bilqis/source-authority-registry.json`.
+The account home is resolved from EUID plus the OS account database, not from `$HOME`,
+XDG, package, CLI/config, current-working-directory, or run-directory input. Bilqis
+runtime reads and validates that fixed root but never provisions it. New generation
+zero records the exact registry record, digest, and `HOST_SYSTEM_V1` origin in accepted
 custody; every later authority consumer derives system-vs-legacy behavior from that
 authenticated custody rather than from caller input.
 

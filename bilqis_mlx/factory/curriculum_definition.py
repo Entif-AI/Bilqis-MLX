@@ -19,6 +19,37 @@ from ..curriculum import AnswerFamily, Course, GRADE_IDS, validate as validate_c
 
 V2_GRADE_CAPABILITY_MAX = 12
 
+C13_RESERVED_CAPABILITY_ID = "Z.C13_EPISODE"
+C13_RESERVED_SOURCE_ANCHOR = "public-formal:bamf.c13.episode-binding/v1"
+C13_RESERVED_GENERATOR_ID = "bilqis.c13.episode-binding-generator/v1"
+C13_RESERVED_ORACLE_ID = "bilqis.c13.episode-binding-checker/v1"
+
+
+def _validate_reserved_source_binding_namespace(
+        binding: "CapabilitySourceBinding") -> None:
+    """Keep the C13 capability/source namespace one-to-one at admission time."""
+    reserved = (
+        C13_RESERVED_CAPABILITY_ID,
+        C13_RESERVED_SOURCE_ANCHOR,
+        C13_RESERVED_GENERATOR_ID,
+        C13_RESERVED_ORACLE_ID,
+    )
+    observed = (
+        binding.capability_id,
+        binding.source_anchor,
+        binding.generator_id,
+        binding.oracle_id,
+    )
+    capability_collision = binding.capability_id.startswith(C13_RESERVED_CAPABILITY_ID)
+    source_collision = any(
+        value == reserved_value
+        for value, reserved_value in zip(observed[1:], reserved[1:]))
+    if (capability_collision or source_collision) and observed != reserved:
+        ErrorBus.raise_(
+            FACTORY.SOURCE_BINDING.INVALID,
+            reason="RESERVED_C13_NAMESPACE_COLLISION",
+        )
+
 
 def _digest(value) -> str:
     return hashlib.sha256(json.dumps(
@@ -202,6 +233,8 @@ def validate_source_bindings(
     observed = tuple(item.capability_id for item in bindings.bindings)
     if expected != observed or len(set(observed)) != len(observed):
         raise ValueError("FACTORY_SOURCE_BINDINGS_SCOPE_DRIFT")
+    for binding in bindings.bindings:
+        _validate_reserved_source_binding_namespace(binding)
 
 
 def from_legacy_course(
