@@ -303,7 +303,10 @@ class ControlPlaneService:
         if not isinstance(catalog, MissionControlQueryCatalog):
             return self.rejected_request(
                 session, "CONTROL_PLANE_QUERY_SOURCE_INVALID")
-        page = catalog.query(query)
+        try:
+            page = catalog.query(query)
+        except MissionControlContractError:
+            return self.rejected_request(session, "CONTROL_PLANE_QUERY_INVALID")
         return {
             **catalog.encode_page(page),
             "accepted": True,

@@ -1,4 +1,5 @@
 """CP03 query transport over the accepted CP01 local service boundary."""
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -80,6 +81,46 @@ class ControlPlaneQueryTests(unittest.TestCase):
                     second = client.query(QueryRequest(QueryFamily.RUN))
                 self.assertEqual(first["total_matches"], 1)
                 self.assertEqual(second["total_matches"], 2)
+            finally:
+                service.shutdown()
+                thread.join(2)
+
+    def test_stale_cursor_is_typed_error_without_dropping_connection(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            capability = SAMPLES[3]
+            records = [
+                replace(
+                    capability,
+                    meta=replace(capability.meta, record_id=f"capability:{index}"),
+                    capability_id=f"B.EXAMPLE{index}",
+                )
+                for index in range(3)
+            ]
+
+            def source():
+                return MissionControlQueryCatalog(tuple(records))
+
+            service = ControlPlaneService(
+                root / "missing-run", root / "cp.sock", query_source=source)
+            thread = start_service(service)
+            try:
+                with ControlPlaneClient(root / "cp.sock") as client:
+                    request = QueryRequest(QueryFamily.CAPABILITY, limit=1)
+                    first = client.query(request)
+                    self.assertIsNotNone(first["next_cursor"])
+                    records.pop(0)
+                    rejected = client.query(QueryRequest(
+                        QueryFamily.CAPABILITY,
+                        cursor=first["next_cursor"],
+                        limit=1,
+                    ))
+                    self.assertEqual(rejected["schema"], ERROR_SCHEMA)
+                    self.assertFalse(rejected["accepted"])
+                    self.assertEqual(
+                        rejected["reason"], "CONTROL_PLANE_QUERY_INVALID")
+                    follow_up = client.query(QueryRequest(QueryFamily.CAPABILITY))
+                    self.assertEqual(follow_up["schema"], QUERY_PAGE_SCHEMA)
             finally:
                 service.shutdown()
                 thread.join(2)
