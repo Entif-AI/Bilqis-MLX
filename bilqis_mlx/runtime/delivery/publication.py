@@ -1,18 +1,20 @@
 """Deterministic public-safe C15.1b delivery publication."""
 from __future__ import annotations
+import json
 
 from bilqis_mlx.runtime.delivery import (
     CommitReceipt, ComponentReceipt, EgmReceipt, EgmStatus, IssueReceipt,
     OperatorCommandReceipt, ProofReceipt, ProofState, ReceiptStatus,
     integrate_delivery_receipts, seal_manifest,
 )
+from .conformance import ExecutionReceipt
 
 from .conformance import (
     ConformanceProjection, ConformanceRow, EvidenceBinding, FailureGate,
     required_claim_ids,
 )
 from .sources import (
-    ARCHITECTURE, ISSUE_BOOK, WORKSTACK, authority_identity, child_by_key,
+    ARCHITECTURE, ISSUE_BOOK, ROOT, WORKSTACK, authority_identity, child_by_key,
     expected_behavior, file_digest, fixture_source_text, item_by_key, literal_test_ref,
     local_graph_proof, privacy_clause, requirement_texts,
 )
@@ -25,6 +27,7 @@ C15_EGM_REPAIR_HEAD = "a008e1d2770c968e1b7784d00194e4f75e402041"
 C15_EGM_CANDIDATE = "66277ed61d0ae4cabb088dfb508ab7188415003c"
 C15_EGM_REPORT_HEAD = "fc04b9379e5657cd046836c4af9ea4dd76df4795"
 C15_3_RECONCILIATION_HEAD = "16117bfb782ce0b1a3f301e2f5441917a915fd9d"
+C15_REQUALIFICATION_RECEIPT_COMMIT: str | None = None
 SOURCE_DIGEST = file_digest(WORKSTACK)
 CONTRACT_DIGEST = file_digest(ARCHITECTURE)
 ISSUE_BOOK_DIGEST = file_digest(ISSUE_BOOK)
@@ -249,7 +252,74 @@ def _evidence_binding(claim_id: str, owner: str, index: int,
     )
 
 
+def _requalification_index() -> dict | None:
+    if C15_REQUALIFICATION_RECEIPT_COMMIT is None:
+        return None
+    path = ROOT / "docs/evidence/bamf/delivery/runs/index.json"
+    record = json.loads(path.read_text())
+    if (record.get("schema") != "bilqis.bamf.c15-requalification/v1"
+            or not record.get("all_pass")
+            or len(record.get("claims", ())) != len(required_claim_ids())
+            or len(record.get("gates", ())) != 2):
+        raise ValueError("invalid C15 requalification index")
+    return record
+
+
+def _executed_binding(claim_id: str, owner: str, index: int,
+                      run: dict) -> EvidenceBinding:
+    primary = owner.split("/")[0]
+    test_ref = literal_test_ref(primary, claim_id)
+    expected = expected_behavior(primary, claim_id)
+    if (run.get("claim_id") != claim_id or run.get("owner_ref") != owner
+            or run.get("primary_owner") != primary or run.get("test_ref") != test_ref
+            or run.get("expected_behavior") != expected):
+        raise ValueError(f"stale C15 requalification row: {claim_id}")
+    receipt = ExecutionReceipt(**run["run_receipt"])
+    state = ProofState.EXECUTED_PASS if receipt.disposition == "PASS" else ProofState.EXECUTED_FAIL
+    return EvidenceBinding(
+        normative_text=(requirement_texts()[claim_id] if index < len(_REQ_OWNERS)
+                        else fixture_source_text(claim_id, primary)),
+        variant_revision="BAMF-0.2-SPEC-001@v0.2.0",
+        owner_issue=item_by_key(primary)["number"],
+        owner_commit=receipt.candidate_sha,
+        contract_path="docs/architecture/BAMF_0_2.md#requirements-continuity",
+        input_fixture=test_ref,
+        expected_behavior=expected,
+        observed_output=run["observed_output"],
+        runner_environment=run["runner_environment"],
+        run_receipt=receipt,
+        receipt_commit=C15_REQUALIFICATION_RECEIPT_COMMIT,
+        reviewer_decision="PASS" if state is ProofState.EXECUTED_PASS else "FAIL",
+        authority_identity=authority_identity(primary),
+    )
+
+
 def published_conformance_record() -> dict:
+    requalification = _requalification_index()
+    if requalification is not None:
+        by_claim = {row["claim_id"]: row for row in requalification["claims"]}
+        rows = []
+        for index, claim_id in enumerate(required_claim_ids()):
+            owner = (_REQ_OWNERS[index] if index < len(_REQ_OWNERS)
+                     else _FIXTURE_OWNERS[index - len(_REQ_OWNERS)])
+            evidence = _executed_binding(claim_id, owner, index, by_claim[claim_id])
+            rows.append(ConformanceRow(
+                claim_id, owner, "docs/architecture/BAMF_0_2.md#requirements-continuity",
+                evidence.input_fixture,
+                ProofState.EXECUTED_PASS if evidence.run_receipt.disposition == "PASS"
+                else ProofState.EXECUTED_FAIL,
+                evidence))
+        gates_by_id = {gate["gate_id"]: gate for gate in requalification["gates"]}
+        gates = tuple(FailureGate(
+            gate_id, gates_by_id[gate_id]["test_ref"],
+            ProofState.EXECUTED_PASS if gates_by_id[gate_id]["pass"]
+            else ProofState.EXECUTED_FAIL,
+            gates_by_id[gate_id]["observed"])
+            for gate_id in ("GRADE_NEUTRAL_INVARIANCE", "NO_LEGACY_BAV_RUNTIME_NAMESPACE"))
+        projection = ConformanceProjection(
+            tuple(rows), gates, "READY_FOR_OWNER_MERGE", "NOT_CLAIMED")
+        return {**projection.to_record(), "conformance_sha256": projection.digest()}
+
     rows = []
     for index, claim_id in enumerate(required_claim_ids()):
         owner = (_REQ_OWNERS[index] if index < len(_REQ_OWNERS)
