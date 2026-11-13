@@ -114,7 +114,7 @@ test("navigation, new windows, webviews and permissions fail closed", () => {
   assert.equal(contents.permissionCheck({}, "clipboard-read"), false);
 });
 
-test("window factory applies the hardened preferences before loading renderer content", () => {
+test("window factory hardens first and requires an explicit renderer load", async () => {
   const instances = [];
   function BrowserWindow(options) {
     this.options = options;
@@ -131,12 +131,14 @@ test("window factory applies the hardened preferences before loading renderer co
   });
 
   assert.equal(instances.length, 1);
-  assert.equal(result.window.loaded, RENDERER_ENTRY_URL);
+  assert.equal(result.window.loaded, null);
   assert.equal(result.window.options.show, false);
   assert.equal(result.window.options.webPreferences.nodeIntegration, false);
   assert.equal(result.window.options.webPreferences.contextIsolation, true);
   assert.equal(result.window.options.webPreferences.sandbox, true);
   assert.equal(result.diagnostic.passed, true);
+  await result.loadRenderer();
+  assert.equal(result.window.loaded, RENDERER_ENTRY_URL);
 });
 
 test("privileged renderer scheme is secure and does not bypass CSP", () => {

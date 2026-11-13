@@ -6,13 +6,15 @@ const readline = require("node:readline");
 
 class Cp01PythonBroker {
   constructor({
-    pythonExecutable = process.env.BILQIS_PYTHON || "python3",
+    pythonExecutable = "python3",
     cwd = path.resolve(__dirname, "../../.."),
     env = process.env,
+    requestTimeoutMs = 3000,
   } = {}) {
     this.pythonExecutable = pythonExecutable;
     this.cwd = cwd;
     this.env = env;
+    this.requestTimeoutMs = requestTimeoutMs;
     this.process = null;
     this.pending = new Map();
     this.nextId = 1;
@@ -72,7 +74,21 @@ class Cp01PythonBroker {
     const child = this.#ensureProcess();
     const id = this.nextId++;
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
+      const timeout = setTimeout(() => {
+        if (!this.pending.delete(id)) return;
+        reject(this.#unavailable());
+      }, this.requestTimeoutMs);
+      timeout.unref?.();
+      this.pending.set(id, {
+        resolve: (value) => {
+          clearTimeout(timeout);
+          resolve(value);
+        },
+        reject: (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        },
+      });
       child.stdin.write(`${JSON.stringify({ id, op })}\n`, (error) => {
         if (!error) return;
         this.pending.delete(id);

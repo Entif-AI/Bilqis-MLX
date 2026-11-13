@@ -21,6 +21,7 @@ test("GUI01 startup uses the GUI20 window, IPC and custom-protocol boundary", ()
   assert.match(main, /registerMissionControlProtocol\(/);
   assert.match(main, /createMissionControlWindow\(/);
   assert.match(main, /registerMissionControlIpc\(/);
+  assert.match(main, /await loadRenderer\(\)/);
   assert.match(main, /AcceptedControlPlaneAdapter/);
   assert.match(main, /createAcceptedValidators/);
   assert.doesNotMatch(main, /loadFile\(/);

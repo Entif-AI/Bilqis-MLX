@@ -77,8 +77,8 @@ function createMissionControlWindow({
   }
   const window = new BrowserWindow(options);
   hardenWebContents(window.webContents);
-  window.loadURL(RENDERER_ENTRY_URL);
-  return Object.freeze({ window, diagnostic });
+  const loadRenderer = () => window.loadURL(RENDERER_ENTRY_URL);
+  return Object.freeze({ window, diagnostic, loadRenderer });
 }
 
 module.exports = {

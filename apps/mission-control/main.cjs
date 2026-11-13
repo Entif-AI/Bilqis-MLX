@@ -22,7 +22,7 @@ async function createWindow() {
     adapter,
     createAcceptedValidators(assertOperatorView),
   );
-  const { window } = createMissionControlWindow({
+  const { window, loadRenderer } = createMissionControlWindow({
     BrowserWindow,
     preloadPath: path.join(__dirname, "electron", "preload.cjs"),
     browserWindowOptions: {
@@ -37,6 +37,7 @@ async function createWindow() {
     bridge,
     trustedWebContents: window.webContents,
   });
+  await loadRenderer();
   window.once("closed", () => {
     disposeIpc();
     void bridge.disconnect().finally(() => adapter.close());
