@@ -34,6 +34,15 @@
       "preserved_branch": "codex/534-c14-runbook-20261113"
     },
     {
+      "issue": 535,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "39c25883fc72dcd4751c242ae99cf5ae08d4cd38",
+      "summary": "C14.3 recursive grade-neutral domain rules and succession is the active Lane C leaf stacked from repaired/reconciled #534 exact remote receipt 39c25883.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/535-c14-domain-rules-20261113"
+    },
+    {
       "issue": 950,
       "pr": null,
       "state": "TURNED_IN",
