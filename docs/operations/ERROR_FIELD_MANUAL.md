@@ -26,6 +26,18 @@ Message: Factory developmental program invalid: {reason}
 
 Recovery: Restore the immutable C14 developmental-program manifest and source-qualified domain declarations before retrying.
 
+### `FACTORY.SOURCE_BINDING.INVALID`
+
+Factory source binding invalid.
+
+Owner: `factory.curriculum_definition`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Factory source binding invalid: {reason}
+
+Recovery: Restore the canonical capability/source binding and reserved namespace ownership before retrying.
+
 ### `FACTORY.SEMANTIC_RULE.INVALID`
 
 Factory semantic rule contract invalid.
