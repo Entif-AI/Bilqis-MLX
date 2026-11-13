@@ -1,0 +1,27 @@
+{
+  "schema": "bilqis.bamf.domain-rules/v1",
+  "policy_version": "c14-grade-neutral-v1",
+  "family_ids": [
+    "boolean_composition",
+    "morphology_composition",
+    "morphology_decomposition",
+    "numeric_composition",
+    "positive_identity",
+    "qualified_world_model",
+    "released_transformations",
+    "scope_modality_time",
+    "source_attested_relation",
+    "typed_role_binding"
+  ],
+  "shared_contracts": [
+    "SOURCE_QUALIFIED_PREREQUISITES",
+    "CURRENT_EVIDENCE_REQUIRED",
+    "FAMILY_OWNED_TEACHING_ASSESSMENT",
+    "GRADE_NEUTRAL_PROMOTION_DEBT",
+    "FACTORY_RELEASE_ADMISSION"
+  ],
+  "grade_introduction": "FACTORY_RELEASE_DATA_OPERATION",
+  "cross_domain_blocking": "TYPED_PREREQUISITE_EDGES_ONLY",
+  "named_grade_priority": false,
+  "named_grade_debt_exception": false
+}
