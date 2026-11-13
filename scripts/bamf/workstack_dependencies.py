@@ -93,7 +93,7 @@ def _receipts(receipts, records, sources):
         if receipt['role'] == 'prerequisite':
             prerequisite.append(receipt['number'])
         else:
-            implementation.append(receipt['number'])
+            implementation.append((receipt['number'], receipt['source_id']))
     return tuple(prerequisite), tuple(implementation)
 
 
