@@ -32,7 +32,7 @@ SOURCE_DIGEST = file_digest(WORKSTACK)
 CONTRACT_DIGEST = file_digest(ARCHITECTURE)
 ISSUE_BOOK_DIGEST = file_digest(ISSUE_BOOK)
 C15_2_ISSUE_DIGEST = child_by_key("C15.2")["body_sha256"]
-REVIEWED_UNIFIED = "9e06ea557c910bae7ecd879fe83f4d50aed84eb9"
+REVIEWED_UNIFIED = "de84266ba3db79b6545ff484f3268a99ea8872f6"
 
 
 def _component_receipts() -> tuple[ComponentReceipt, ...]:
@@ -45,8 +45,8 @@ def _component_receipts() -> tuple[ComponentReceipt, ...]:
                          ReceiptStatus.ACCEPTED, "issue:381#issuecomment-6754534350"),
         ComponentReceipt("C13", 385, "4b486268825f07330c4bd8147ca2439a36be5fee",
                          ReceiptStatus.ACCEPTED, "issue:530#issuecomment-6864723375"),
-        ComponentReceipt("C14", 386, "29101af83aaa592ab1ace59c68bfdba153c7fb53",
-                         ReceiptStatus.PROVISIONAL, "issue:535#issuecomment-6864928413"),
+        ComponentReceipt("C14", 386, "d81c1ae5ab951bfbefb5d72e9dc04f9f746bc9b1",
+                         ReceiptStatus.ACCEPTED, "issue:386#issuecomment-6865294741"),
         ComponentReceipt("C16", 382, "c672c62113108695a2a60cd0eb0d7f19d085f838",
                          ReceiptStatus.ACCEPTED, "issue:382#issuecomment-6832648874"),
         ComponentReceipt("architecture", 540, C15_3_RECONCILIATION_HEAD,
@@ -105,9 +105,9 @@ def _issue_receipts() -> tuple[IssueReceipt, ...]:
         IssueReceipt(385, "C13", "CLOSED", ReceiptStatus.ACCEPTED,
                      "9e06ea557c910bae7ecd879fe83f4d50aed84eb9",
                      "pull:1042"),
-        IssueReceipt(386, "C14", "OPEN", ReceiptStatus.PROVISIONAL,
-                     "29101af83aaa592ab1ace59c68bfdba153c7fb53",
-                     "issue:535#issuecomment-6864928413"),
+        IssueReceipt(386, "C14", "CLOSED", ReceiptStatus.ACCEPTED,
+                     "de84266ba3db79b6545ff484f3268a99ea8872f6",
+                     "issue:386#issuecomment-6865294741"),
         IssueReceipt(537, "C15.1a", "OPEN", ReceiptStatus.PROVISIONAL,
                      C15_1A_HEAD, "issue:537#issuecomment-6856503488"),
         IssueReceipt(538, "C15.1b", "OPEN", ReceiptStatus.PROVISIONAL,
@@ -131,6 +131,8 @@ def _commit_receipts() -> tuple[CommitReceipt, ...]:
         CommitReceipt(C15_2_HEAD, 539, "C15.2 development checkpoint"),
         CommitReceipt("4b486268825f07330c4bd8147ca2439a36be5fee", 385,
                       "C13 accepted release-scoped handoff"),
+        CommitReceipt("d81c1ae5ab951bfbefb5d72e9dc04f9f746bc9b1", 386,
+                      "C14 accepted continuing-development program"),
         CommitReceipt("c672c62113108695a2a60cd0eb0d7f19d085f838", 382,
                       "C16 accepted integration"),
     )
@@ -147,10 +149,10 @@ def _proof_receipts() -> tuple[ProofReceipt, ...]:
                      "bilqis.c13.episode-binding-generator/v1", "bilqis.c13.acceptance/v1",
                      "docs/evidence/bamf/C13/integration-handoff-20261113.md",
                      "release-scoped integrated wiring accepted: C13 owner 13/13 and rollback/custody 54/54 PASS; real M3 Ultra generation-zero path accepted; extended learning soak deferred to BAMF-0.3 #1039"),
-        ProofReceipt("c14.training-program", ProofState.BLOCKED,
+        ProofReceipt("c14.training-program", ProofState.EXECUTED_PASS,
                      "bilqis.bamf.developmental-program/v1", "bilqis.bamf.training-program-proof/v1",
-                     "issue:535#issuecomment-6864928413",
-                     "complete C14 stack review-clean at 29101af83aaa592ab1ace59c68bfdba153c7fb53; parent acceptance waits on human PR chain #1043 -> #1044 -> #1045 -> #535 turn-in"),
+                     "issue:386#issuecomment-6865294741",
+                     "all C14 BAMF-0.2 descendants integrated through PR #1048; fresh parent acceptance 18/18 PASS on reviewed unified de84266ba3db79b6545ff484f3268a99ea8872f6"),
         ProofReceipt("c15.delivery-contract", ProofState.EXECUTED_PASS,
                      "bilqis.bamf.delivery-manifest/v1", "bilqis.bamf.delivery-manifest/v1",
                      "issue:537#issuecomment-6856503488", "9/9 focused C15.1a ring PASS"),
@@ -413,16 +415,16 @@ def published_roadmap_record() -> dict:
         "leaves": [
             {"issue": 537, "key": "C15.1a", "head_sha": C15_1A_HEAD,
              "status": "DEVELOPMENT_RECEIPT",
-             "final_gate": "EGM_AND_ACCEPTED_C13_C14"},
+             "final_gate": "FINAL_REQUALIFICATION"},
             {"issue": 538, "key": "C15.1b", "head_sha": C15_1B_HEAD,
              "status": "DEVELOPMENT_RECEIPT",
-             "final_gate": "EGM_AND_ACCEPTED_C13_C14"},
+             "final_gate": "FINAL_REQUALIFICATION"},
             {"issue": 539, "key": "C15.2", "head_sha": C15_2_HEAD,
              "status": "DEVELOPMENT_RECEIPT",
-             "final_gate": "EGM_AND_ACCEPTED_C13_C14"},
+             "final_gate": "FINAL_REQUALIFICATION"},
             {"issue": 540, "key": "C15.3", "head_sha": C15_3_RECONCILIATION_HEAD,
              "status": "DEVELOPMENT_RECEIPT_FACTORY_PASS",
-             "final_gate": "ACCEPTED_C14_AND_FINAL_REQUALIFICATION"},
+             "final_gate": "FINAL_REQUALIFICATION"},
         ],
         "egm_repair_head": C15_EGM_CANDIDATE,
         "upstream": [
@@ -430,7 +432,7 @@ def published_roadmap_record() -> dict:
              "head_sha": "9e06ea557c910bae7ecd879fe83f4d50aed84eb9",
              "status": "ACCEPTED_RELEASE_SCOPED_INTEGRATION"},
             {"issue": 386, "key": "C14",
-             "head_sha": "29101af83aaa592ab1ace59c68bfdba153c7fb53",
-             "status": "REVIEW_CLEAN_PENDING_HUMAN_PR_CHAIN"},
+             "head_sha": "de84266ba3db79b6545ff484f3268a99ea8872f6",
+             "status": "ACCEPTED_CONTINUING_DEVELOPMENT_PROGRAM"},
         ],
     }

@@ -4,28 +4,28 @@
   "historical_workstack_sha256": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d",
   "leaves": [
     {
-      "final_gate": "EGM_AND_ACCEPTED_C13_C14",
+      "final_gate": "FINAL_REQUALIFICATION",
       "head_sha": "4759336facf7a3482254b32c8647013ae447f074",
       "issue": 537,
       "key": "C15.1a",
       "status": "DEVELOPMENT_RECEIPT"
     },
     {
-      "final_gate": "EGM_AND_ACCEPTED_C13_C14",
+      "final_gate": "FINAL_REQUALIFICATION",
       "head_sha": "030aa51d5e3f1e669648831cee2b7b340dab1c67",
       "issue": 538,
       "key": "C15.1b",
       "status": "DEVELOPMENT_RECEIPT"
     },
     {
-      "final_gate": "EGM_AND_ACCEPTED_C13_C14",
+      "final_gate": "FINAL_REQUALIFICATION",
       "head_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
       "issue": 539,
       "key": "C15.2",
       "status": "DEVELOPMENT_RECEIPT"
     },
     {
-      "final_gate": "ACCEPTED_C14_AND_FINAL_REQUALIFICATION",
+      "final_gate": "FINAL_REQUALIFICATION",
       "head_sha": "16117bfb782ce0b1a3f301e2f5441917a915fd9d",
       "issue": 540,
       "key": "C15.3",
@@ -34,7 +34,7 @@
   ],
   "schema": "bilqis.bamf.delivery-roadmap-projection/v2",
   "software_delivery_status": "IN_PROGRESS",
-  "source_reviewed_unified": "9e06ea557c910bae7ecd879fe83f4d50aed84eb9",
+  "source_reviewed_unified": "de84266ba3db79b6545ff484f3268a99ea8872f6",
   "student_mastery_status": "NOT_CLAIMED",
   "upstream": [
     {
@@ -44,10 +44,10 @@
       "status": "ACCEPTED_RELEASE_SCOPED_INTEGRATION"
     },
     {
-      "head_sha": "29101af83aaa592ab1ace59c68bfdba153c7fb53",
+      "head_sha": "de84266ba3db79b6545ff484f3268a99ea8872f6",
       "issue": 386,
       "key": "C14",
-      "status": "REVIEW_CLEAN_PENDING_HUMAN_PR_CHAIN"
+      "status": "ACCEPTED_CONTINUING_DEVELOPMENT_PROGRAM"
     }
   ]
 }

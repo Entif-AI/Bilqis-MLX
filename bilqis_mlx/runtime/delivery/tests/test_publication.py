@@ -77,7 +77,7 @@ class DeliveryPublicationTests(unittest.TestCase):
         self.assertEqual(leaves[540]["status"], "DEVELOPMENT_RECEIPT_FACTORY_PASS")
         upstream = {row["issue"]: row for row in record["upstream"]}
         self.assertEqual(upstream[385]["status"], "ACCEPTED_RELEASE_SCOPED_INTEGRATION")
-        self.assertEqual(upstream[386]["status"], "REVIEW_CLEAN_PENDING_HUMAN_PR_CHAIN")
+        self.assertEqual(upstream[386]["status"], "ACCEPTED_CONTINUING_DEVELOPMENT_PROGRAM")
         self.assertEqual(record["student_mastery_status"], "NOT_CLAIMED")
 
 

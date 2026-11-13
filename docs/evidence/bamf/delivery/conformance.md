@@ -2,7 +2,7 @@
 
 Issue: #539 (`C15.2`), integrated by #540 (`C15.3`).
 
-- Manifest digest: `dd3915ad474bbe8d6112dd81f3f41e4fcd8a2aee4a076cee553ce80c38984cd6`
+- Manifest digest: `731c881525242cb7fa266b2206225b88af92db536056f815578acd98bdbad17f`
 - Conformance digest: `8c4acf405e593e9f4e60d8f4fd5c9f63265490d283ca301357ff3ce5b8634e60`
 - Software delivery: **IN_PROGRESS**
 - Student full-atlas mastery: **NOT_CLAIMED**

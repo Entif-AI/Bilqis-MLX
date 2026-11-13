@@ -39,6 +39,11 @@
       "owner_issue": 382,
       "role": "C16 accepted integration",
       "sha": "c672c62113108695a2a60cd0eb0d7f19d085f838"
+    },
+    {
+      "owner_issue": 386,
+      "role": "C14 accepted continuing-development program",
+      "sha": "d81c1ae5ab951bfbefb5d72e9dc04f9f746bc9b1"
     }
   ],
   "components": [
@@ -72,10 +77,10 @@
     },
     {
       "component_id": "C14",
-      "evidence_ref": "issue:535#issuecomment-6864928413",
-      "head_sha": "29101af83aaa592ab1ace59c68bfdba153c7fb53",
+      "evidence_ref": "issue:386#issuecomment-6865294741",
+      "head_sha": "d81c1ae5ab951bfbefb5d72e9dc04f9f746bc9b1",
       "owner_issue": 386,
-      "status": "PROVISIONAL"
+      "status": "ACCEPTED"
     },
     {
       "component_id": "C16",
@@ -122,7 +127,7 @@
     {
       "component_id": "issue-book",
       "evidence_ref": "docs/tasks/bamf-0.2/ISSUE_BOOK.md@sha256:21a82b966c52ad13480b7021e9163efaacc7f6f70c9c4eac5d7277f05d355425",
-      "head_sha": "9e06ea557c910bae7ecd879fe83f4d50aed84eb9",
+      "head_sha": "de84266ba3db79b6545ff484f3268a99ea8872f6",
       "owner_issue": 341,
       "status": "ACCEPTED"
     },
@@ -157,7 +162,7 @@
     {
       "component_id": "workstack",
       "evidence_ref": "docs/tasks/bamf-0.2/workstack.json@sha256:32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d",
-      "head_sha": "9e06ea557c910bae7ecd879fe83f4d50aed84eb9",
+      "head_sha": "de84266ba3db79b6545ff484f3268a99ea8872f6",
       "owner_issue": 341,
       "status": "ACCEPTED"
     }
@@ -218,12 +223,12 @@
       "status": "ACCEPTED"
     },
     {
-      "evidence_ref": "issue:535#issuecomment-6864928413",
-      "head_sha": "29101af83aaa592ab1ace59c68bfdba153c7fb53",
+      "evidence_ref": "issue:386#issuecomment-6865294741",
+      "head_sha": "de84266ba3db79b6545ff484f3268a99ea8872f6",
       "issue": 386,
       "issue_key": "C14",
-      "state": "OPEN",
-      "status": "PROVISIONAL"
+      "state": "CLOSED",
+      "status": "ACCEPTED"
     },
     {
       "evidence_ref": "issue:537#issuecomment-6856503488",
@@ -250,7 +255,7 @@
       "status": "PROVISIONAL"
     }
   ],
-  "manifest_sha256": "dd3915ad474bbe8d6112dd81f3f41e4fcd8a2aee4a076cee553ce80c38984cd6",
+  "manifest_sha256": "731c881525242cb7fa266b2206225b88af92db536056f815578acd98bdbad17f",
   "operator_commands": [
     {
       "argv": [
@@ -344,12 +349,12 @@
       "state": "EXECUTED_PASS"
     },
     {
-      "evidence_ref": "issue:535#issuecomment-6864928413",
+      "evidence_ref": "issue:386#issuecomment-6865294741",
       "input_schema": "bilqis.bamf.developmental-program/v1",
-      "observed": "complete C14 stack review-clean at 29101af83aaa592ab1ace59c68bfdba153c7fb53; parent acceptance waits on human PR chain #1043 -> #1044 -> #1045 -> #535 turn-in",
+      "observed": "all C14 BAMF-0.2 descendants integrated through PR #1048; fresh parent acceptance 18/18 PASS on reviewed unified de84266ba3db79b6545ff484f3268a99ea8872f6",
       "output_schema": "bilqis.bamf.training-program-proof/v1",
       "proof_id": "c14.training-program",
-      "state": "BLOCKED"
+      "state": "EXECUTED_PASS"
     },
     {
       "evidence_ref": "issue:537#issuecomment-6856503488",
