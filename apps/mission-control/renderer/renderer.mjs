@@ -100,7 +100,11 @@ function render() {
 }
 
 async function bootstrap() {
-  const bootstrapState = await window.bamfShell.getBootstrapState();
+  await window.bamfMissionControl.connect();
+  const bootstrapState = await window.bamfMissionControl.querySnapshot({
+    schemaVersion: "bamf.gui01.bootstrap-query.fixture/v1",
+    objectRef: "shell-bootstrap",
+  });
   state = createShellState(bootstrapState.context, parseDeepLink(window.location.hash));
   document.querySelector("#inspector-close").addEventListener("click", () => {
     state = inspect(state, null);
