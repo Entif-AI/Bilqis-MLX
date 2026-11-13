@@ -82,7 +82,7 @@
     {
       "component_id": "architecture",
       "evidence_ref": "docs/architecture/BAMF_0_2.md@sha256:77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
-      "head_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
+      "head_sha": "66277ed61d0ae4cabb088dfb508ab7188415003c",
       "owner_issue": 387,
       "status": "PROVISIONAL"
     },
@@ -102,8 +102,8 @@
     },
     {
       "component_id": "delivery-tests",
-      "evidence_ref": "git:a008e1d2770c968e1b7784d00194e4f75e402041:bilqis_mlx/runtime/delivery/tests",
-      "head_sha": "a008e1d2770c968e1b7784d00194e4f75e402041",
+      "evidence_ref": "git:66277ed61d0ae4cabb088dfb508ab7188415003c:bilqis_mlx/runtime/delivery/tests",
+      "head_sha": "66277ed61d0ae4cabb088dfb508ab7188415003c",
       "owner_issue": 539,
       "status": "PROVISIONAL"
     },
@@ -159,13 +159,13 @@
   ],
   "egm": [
     {
-      "candidate_sha": "a008e1d2770c968e1b7784d00194e4f75e402041",
+      "candidate_sha": "66277ed61d0ae4cabb088dfb508ab7188415003c",
       "report_ref": "EGM_TARGETED_REAUDIT_PENDING:C15.1a-C15.2",
       "reviewer": "codebase-details",
       "status": "EGM_PENDING"
     },
     {
-      "candidate_sha": "a008e1d2770c968e1b7784d00194e4f75e402041",
+      "candidate_sha": "66277ed61d0ae4cabb088dfb508ab7188415003c",
       "report_ref": "EGM_TARGETED_REAUDIT_PENDING:C15.1a-C15.2",
       "reviewer": "implementation-readiness",
       "status": "EGM_PENDING"
@@ -245,7 +245,7 @@
       "status": "PROVISIONAL"
     }
   ],
-  "manifest_sha256": "a8c4d94a9ed1f3d3f5a0ca8e6ed2f7ace8891edeee8af465c11a7b8c3f5c48ea",
+  "manifest_sha256": "836d0c15d0782f0d22285b04afab1f8e63f2b09a93caaf2e48285f920d99c9d6",
   "operator_commands": [
     {
       "argv": [
