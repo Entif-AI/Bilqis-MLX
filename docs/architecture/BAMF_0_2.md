@@ -916,6 +916,52 @@ No additional trainable tensor may be silently created by a convenience layer. B
 
 **Verify:** Each required leaf has an exact commit, proof and EGM disposition or an owned blocker. Links resolve and the dependency graph is acyclic. Shared paths have one writer. A cold reviewer reconstructs create->learn->retain->expand->resume from the artifacts alone. Delivery manifest reproduces. Root closeout never invents live training or full-atlas mastery.
 
+**Current C15 projection (13 November 2026):** C15 publishes a deterministic,
+content-addressed public-safe delivery record at
+`docs/evidence/bamf/delivery/manifest.json` and the complete BAMF-REQ-001..024 /
+F01..F20 projection at `docs/evidence/bamf/delivery/conformance.json`. The human
+projection is `docs/evidence/bamf/delivery/conformance.md`; the append-only roadmap
+view is `docs/evidence/bamf/delivery/roadmap-projection.json`. These files preserve
+the historical workstack/issue-book identities rather than rewriting old rows.
+`CODE_PRESENT` is not an execution claim, C13/C14-dependent gaps stay `BLOCKED`,
+and stale-evidence F15 is `REQUALIFICATION_REQUIRED`. Software delivery and later
+student full-atlas mastery are separate statuses; neither the source-attested Atlas
+release nor C15 software evidence claims neural admission or learned mastery.
+
+**C15.2 proof admission:** The conformance record uses
+`bilqis.bamf.delivery-conformance/v2`. Every requirement/fixture row carries a
+structured evidence binding for SPEC revision, direct owner ticket/candidate commit,
+contract path, literal fixture, independent expectation, observed result,
+runner/environment, a distinct later attestation commit carrying the immutable
+execution receipt, reviewer decision and source/contract/issue
+identity. `EXECUTED_PASS` is rejected when that tuple is incomplete. A changed
+source/contract/issue identity forces `REQUALIFICATION_REQUIRED`; an explicit
+failure gate takes precedence over otherwise-green evidence. Grade-label
+invariance and absence of a legacy BAV runtime namespace are named global refusal
+gates. Software cannot become `READY_FOR_OWNER_MERGE` or `DELIVERED` until all
+44 rows and both refusal gates are actually `EXECUTED_PASS`. The public-safe
+authority/dependency/privacy boundary is frozen in
+`docs/evidence/bamf/delivery/c15-2-evidence-boundary.json`; private-real evidence
+is not copied into the repository to make that proof look fuller than it is.
+
+**C15.3 reconciliation checkpoint:** The live publication audit is recorded in
+`docs/evidence/bamf/delivery/c15-3-reconciliation-20261113.json` with its human
+projection beside it. The repaired verifier treats native parent/child hierarchy
+separately from prerequisite edges and normalizes GitHub's optional terminal line
+feed without weakening registry-to-file SHA checks. Current readback proves 43
+owner bodies, 172 child bodies, 53 native parent/child groups and the 215-node
+dependency graph agree with live GitHub after source-authorized reconciliation.
+Both approved BAMF native Docs were reread at their current revisions with no C15
+contract conflict found. The seven required functional Factory witness families
+exist in current code but remain non-PASS in this checkpoint because no available
+local interpreter can execute the complete current dependency set: the Python 3.14
+environment lacks `pyshacl`, NumPy and MLX, while the MLX/NumPy system interpreter
+is Python 3.9 and cannot execute the repository's current syntax. These are
+environment blocks, not behavioral failures. C13/C14-dependent acceptance remains
+explicitly blocked, software delivery remains `IN_PROGRESS`, full-atlas mastery is
+`NOT_CLAIMED`, and protected `PRIVATE_REAL` evidence remains outside public
+artifacts.
+
 #### [C16: #382](https://github.com/Entif-AI/Bilqis-MLX/issues/382) | Open the first durable BAMF student path before optional projection work
 
 **Depends on:** [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372), [C02: #371](https://github.com/Entif-AI/Bilqis-MLX/issues/371), [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378), [C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374).

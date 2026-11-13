@@ -225,6 +225,16 @@ class MODEL_TOPOLOGY:
     )
 
 
+class BAMF_DELIVERY:
+    INVALID = _spec(
+        ("SCHOOL", "BAMF_DELIVERY", "INVALID"), owner="runtime.delivery",
+        title="BAMF delivery evidence invalid",
+        message_template="BAMF delivery evidence is invalid: {reason}",
+        disposition="PRESERVE_AND_INSPECT",
+        next_action="Preserve the last valid delivery receipt; reconcile immutable issue, commit, proof, review and command evidence before publication.",
+    )
+
+
 class BAMF_PACKAGE:
     INVALID = _spec(
         ("SCHOOL", "BAMF_PACKAGE", "INVALID"), owner="runtime.cognitive_package",

@@ -1,0 +1,397 @@
+{
+  "commits": [
+    {
+      "owner_issue": 538,
+      "role": "C15.1b development checkpoint",
+      "sha": "030aa51d5e3f1e669648831cee2b7b340dab1c67"
+    },
+    {
+      "owner_issue": 384,
+      "role": "C11 accepted integration",
+      "sha": "0ae919779e1de44f5c7c96e911b3f61780099e21"
+    },
+    {
+      "owner_issue": 537,
+      "role": "C15.1a development checkpoint",
+      "sha": "4759336facf7a3482254b32c8647013ae447f074"
+    },
+    {
+      "owner_issue": 385,
+      "role": "C13 accepted release-scoped handoff",
+      "sha": "4b486268825f07330c4bd8147ca2439a36be5fee"
+    },
+    {
+      "owner_issue": 375,
+      "role": "B14 accepted integration",
+      "sha": "5166aca71f01f09cfb4e533d61dc41e53a987726"
+    },
+    {
+      "owner_issue": 381,
+      "role": "C12 accepted integration",
+      "sha": "516725b6170f258ad86b0c5d4ca050907238e59d"
+    },
+    {
+      "owner_issue": 539,
+      "role": "C15.2 development checkpoint",
+      "sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111"
+    },
+    {
+      "owner_issue": 540,
+      "role": "C15 final tested candidate",
+      "sha": "c4197f28c4aa2e3972634b1dbea255832d4b6d7b"
+    },
+    {
+      "owner_issue": 382,
+      "role": "C16 accepted integration",
+      "sha": "c672c62113108695a2a60cd0eb0d7f19d085f838"
+    },
+    {
+      "owner_issue": 386,
+      "role": "C14 accepted continuing-development program",
+      "sha": "d81c1ae5ab951bfbefb5d72e9dc04f9f746bc9b1"
+    },
+    {
+      "owner_issue": 540,
+      "role": "C15 immutable requalification receipt custody",
+      "sha": "f2189cce5d49b1c97dcf1ff67b70b0925322b663"
+    }
+  ],
+  "components": [
+    {
+      "component_id": "B14",
+      "evidence_ref": "issue:375#issuecomment-6800933565",
+      "head_sha": "dd63880fdfde9d01eccbbff876e39828dbded3f6",
+      "owner_issue": 375,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "C11",
+      "evidence_ref": "issue:384#issuecomment-6840426430",
+      "head_sha": "ce09a0c1887069385b903ac10a4d576d22d04881",
+      "owner_issue": 384,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "C12",
+      "evidence_ref": "issue:381#issuecomment-6754534350",
+      "head_sha": "516725b6170f258ad86b0c5d4ca050907238e59d",
+      "owner_issue": 381,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "C13",
+      "evidence_ref": "issue:530#issuecomment-6864723375",
+      "head_sha": "4b486268825f07330c4bd8147ca2439a36be5fee",
+      "owner_issue": 385,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "C14",
+      "evidence_ref": "issue:386#issuecomment-6865294741",
+      "head_sha": "d81c1ae5ab951bfbefb5d72e9dc04f9f746bc9b1",
+      "owner_issue": 386,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "C16",
+      "evidence_ref": "issue:382#issuecomment-6832648874",
+      "head_sha": "c672c62113108695a2a60cd0eb0d7f19d085f838",
+      "owner_issue": 382,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "architecture",
+      "evidence_ref": "git:c4197f28c4aa2e3972634b1dbea255832d4b6d7b:docs/architecture/BAMF_0_2.md",
+      "head_sha": "c4197f28c4aa2e3972634b1dbea255832d4b6d7b",
+      "owner_issue": 540,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "codec",
+      "evidence_ref": "bilqis_mlx/runtime/_model/cache/atlas_cache_codec.py",
+      "head_sha": "1265200be9bac5b97a3aecd0e82127af1dd4d98ca86da6829ea0ce0e9b69c000",
+      "owner_issue": 375,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "compiler",
+      "evidence_ref": "bilqis_mlx/runtime/_custody/bamf_bundle/vocabulary/compiler_binding.py",
+      "head_sha": "acafc03e20353d55bd02c4a0d70ab3d7b36c1558632932b0d75b1cf9399de3a1",
+      "owner_issue": 357,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "delivery-tests",
+      "evidence_ref": "git:c4197f28c4aa2e3972634b1dbea255832d4b6d7b:bilqis_mlx/runtime/delivery/tests",
+      "head_sha": "c4197f28c4aa2e3972634b1dbea255832d4b6d7b",
+      "owner_issue": 539,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "factory-head",
+      "evidence_ref": "git:bilqis_mlx/factory",
+      "head_sha": "0b9b6d8589e7cea1fcd03aeac270b2488736d2a2",
+      "owner_issue": 358,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "issue-book",
+      "evidence_ref": "docs/tasks/bamf-0.2/ISSUE_BOOK.md@sha256:21a82b966c52ad13480b7021e9163efaacc7f6f70c9c4eac5d7277f05d355425",
+      "head_sha": "de84266ba3db79b6545ff484f3268a99ea8872f6",
+      "owner_issue": 341,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "plasticity",
+      "evidence_ref": "bilqis_mlx/learning/_retention/atlas_plasticity.py",
+      "head_sha": "8f7d65638b2cb6978f924c4b803982a2a0283e46756336129e903a04a193e8c9",
+      "owner_issue": 368,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "semantic-release",
+      "evidence_ref": "bilqis_mlx/semantics/atlas_source_pins_v1.json:A01_SOURCE_ATTESTED_NOT_NEURAL_ADMITTED",
+      "head_sha": "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306",
+      "owner_issue": 345,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "teacher-head",
+      "evidence_ref": "git:bilqis_mlx/runtime/_teacher",
+      "head_sha": "0b9b6d8589e7cea1fcd03aeac270b2488736d2a2",
+      "owner_issue": 376,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "topology",
+      "evidence_ref": "configs/models/bamf-0.2.json",
+      "head_sha": "3e7f7ff6e83096fcd66c611d9188b3473160237ca4a69aee61a6b3eeed6fa428",
+      "owner_issue": 382,
+      "status": "ACCEPTED"
+    },
+    {
+      "component_id": "workstack",
+      "evidence_ref": "docs/tasks/bamf-0.2/workstack.json@sha256:32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d",
+      "head_sha": "de84266ba3db79b6545ff484f3268a99ea8872f6",
+      "owner_issue": 341,
+      "status": "ACCEPTED"
+    }
+  ],
+  "egm": [
+    {
+      "candidate_sha": "66277ed61d0ae4cabb088dfb508ab7188415003c",
+      "report_ref": "git:fc04b9379e5657cd046836c4af9ea4dd76df4795:docs/evidence/bamf/delivery/egm-c15-537-539-20261113.md",
+      "reviewer": "codebase-details",
+      "status": "EGM_PASS"
+    },
+    {
+      "candidate_sha": "66277ed61d0ae4cabb088dfb508ab7188415003c",
+      "report_ref": "git:fc04b9379e5657cd046836c4af9ea4dd76df4795:docs/evidence/bamf/delivery/egm-c15-537-539-20261113.md",
+      "reviewer": "implementation-readiness",
+      "status": "EGM_PASS"
+    }
+  ],
+  "issues": [
+    {
+      "evidence_ref": "issue:375#issuecomment-6800933565",
+      "head_sha": "dd63880fdfde9d01eccbbff876e39828dbded3f6",
+      "issue": 375,
+      "issue_key": "B14",
+      "state": "CLOSED",
+      "status": "ACCEPTED"
+    },
+    {
+      "evidence_ref": "issue:381#issuecomment-6754534350",
+      "head_sha": "516725b6170f258ad86b0c5d4ca050907238e59d",
+      "issue": 381,
+      "issue_key": "C12",
+      "state": "CLOSED",
+      "status": "ACCEPTED"
+    },
+    {
+      "evidence_ref": "issue:382#issuecomment-6832648874",
+      "head_sha": "c672c62113108695a2a60cd0eb0d7f19d085f838",
+      "issue": 382,
+      "issue_key": "C16",
+      "state": "CLOSED",
+      "status": "ACCEPTED"
+    },
+    {
+      "evidence_ref": "issue:384#issuecomment-6840426430",
+      "head_sha": "ce09a0c1887069385b903ac10a4d576d22d04881",
+      "issue": 384,
+      "issue_key": "C11",
+      "state": "CLOSED",
+      "status": "ACCEPTED"
+    },
+    {
+      "evidence_ref": "pull:1042",
+      "head_sha": "9e06ea557c910bae7ecd879fe83f4d50aed84eb9",
+      "issue": 385,
+      "issue_key": "C13",
+      "state": "CLOSED",
+      "status": "ACCEPTED"
+    },
+    {
+      "evidence_ref": "issue:386#issuecomment-6865294741",
+      "head_sha": "de84266ba3db79b6545ff484f3268a99ea8872f6",
+      "issue": 386,
+      "issue_key": "C14",
+      "state": "CLOSED",
+      "status": "ACCEPTED"
+    },
+    {
+      "evidence_ref": "issue:537#issuecomment-6856503488",
+      "head_sha": "4759336facf7a3482254b32c8647013ae447f074",
+      "issue": 537,
+      "issue_key": "C15.1a",
+      "state": "OPEN",
+      "status": "PROVISIONAL"
+    },
+    {
+      "evidence_ref": "issue:538#issuecomment-6856845206",
+      "head_sha": "030aa51d5e3f1e669648831cee2b7b340dab1c67",
+      "issue": 538,
+      "issue_key": "C15.1b",
+      "state": "OPEN",
+      "status": "PROVISIONAL"
+    },
+    {
+      "evidence_ref": "issue:539#issuecomment-6857007014",
+      "head_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
+      "issue": 539,
+      "issue_key": "C15.2",
+      "state": "OPEN",
+      "status": "PROVISIONAL"
+    },
+    {
+      "evidence_ref": "docs/evidence/bamf/delivery/runs/index.json",
+      "head_sha": "c4197f28c4aa2e3972634b1dbea255832d4b6d7b",
+      "issue": 540,
+      "issue_key": "C15.3",
+      "state": "OPEN",
+      "status": "PROVISIONAL"
+    }
+  ],
+  "manifest_sha256": "5ca90f32e3dfacc698a69a049221fa00df6bd5f8dcc2069ae7f21fa55c95b215",
+  "operator_commands": [
+    {
+      "argv": [
+        "npm",
+        "run",
+        "train",
+        "--",
+        "--human-run",
+        "--resume",
+        "--run-dir",
+        "<accepted-bamf-run>"
+      ],
+      "command_id": "cold-resume",
+      "evidence_ref": "issue:384#issuecomment-6840426430",
+      "parser_test": "bilqis_mlx/presentation/operator_cli/tests/bamf_lifecycle/test_bamf_resume.py",
+      "state": "EXECUTED_PASS"
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "train",
+        "--",
+        "--human-run",
+        "--resume",
+        "--run-dir",
+        "/absolute/path/to/bamf-run",
+        "--minutes",
+        "90",
+        "--reserve-gib",
+        "100",
+        "--max-visits",
+        "1"
+      ],
+      "command_id": "owner-start",
+      "evidence_ref": "docs/operations/BAMF_0_2_RUNBOOK.md",
+      "parser_test": "bilqis_mlx/presentation/operator_cli/tests/bamf_lifecycle/test_bamf_resume.py",
+      "state": "EXECUTED_PASS"
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "train",
+        "--",
+        "--dry-run",
+        "--model-topology",
+        "configs/models/bamf-0.2.json",
+        "--atlas-release-manifest",
+        "<manifest.json>",
+        "--run-dir",
+        "<new-bamf-run>"
+      ],
+      "command_id": "preflight",
+      "evidence_ref": "issue:384#issuecomment-6840426430",
+      "parser_test": "bilqis_mlx/presentation/operator_cli/tests/test_bamf_preflight.py",
+      "state": "EXECUTED_PASS"
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "dashboard",
+        "--",
+        "--run-dir",
+        "/absolute/path/to/run",
+        "--once",
+        "--atlas-details"
+      ],
+      "command_id": "read-only-status",
+      "evidence_ref": "docs/operations/BAMF_0_2_RUNBOOK.md",
+      "parser_test": "bilqis_mlx/presentation/tests/test_operator_dashboard_events.py",
+      "state": "EXECUTED_PASS"
+    }
+  ],
+  "proofs": [
+    {
+      "evidence_ref": "issue:384#issuecomment-6840426430",
+      "input_schema": "bilqis.bamf.operator-cli/v2",
+      "observed": "73/73 parent selections PASS; final review 0 Blocker/Major/Minor/Nit",
+      "output_schema": "bilqis.bamf.operator-lifecycle/v1",
+      "proof_id": "c11.operator-contract",
+      "state": "EXECUTED_PASS"
+    },
+    {
+      "evidence_ref": "docs/evidence/bamf/C13/integration-handoff-20261113.md",
+      "input_schema": "bilqis.c13.episode-binding-generator/v1",
+      "observed": "release-scoped integrated wiring accepted: C13 owner 13/13 and rollback/custody 54/54 PASS; real M3 Ultra generation-zero path accepted; extended learning soak deferred to BAMF-0.3 #1039",
+      "output_schema": "bilqis.c13.acceptance/v1",
+      "proof_id": "c13.integrated-learning",
+      "state": "EXECUTED_PASS"
+    },
+    {
+      "evidence_ref": "issue:386#issuecomment-6865294741",
+      "input_schema": "bilqis.bamf.developmental-program/v1",
+      "observed": "all C14 BAMF-0.2 descendants integrated through PR #1048; fresh parent acceptance 18/18 PASS on reviewed unified de84266ba3db79b6545ff484f3268a99ea8872f6",
+      "output_schema": "bilqis.bamf.training-program-proof/v1",
+      "proof_id": "c14.training-program",
+      "state": "EXECUTED_PASS"
+    },
+    {
+      "evidence_ref": "issue:537#issuecomment-6856503488",
+      "input_schema": "bilqis.bamf.delivery-manifest/v1",
+      "observed": "9/9 focused C15.1a ring PASS",
+      "output_schema": "bilqis.bamf.delivery-manifest/v1",
+      "proof_id": "c15.delivery-contract",
+      "state": "EXECUTED_PASS"
+    },
+    {
+      "evidence_ref": "scripts/check_bamf_workstack.py",
+      "input_schema": "bilqis.bamf.workstack/v1",
+      "observed": "172 children; 43 live owner mirrors; held_keys=[]; executable order 215",
+      "output_schema": "bilqis.bamf.workstack.validation/v1",
+      "proof_id": "c15.workstack",
+      "state": "EXECUTED_PASS"
+    }
+  ],
+  "schema": "bilqis.bamf.delivery-manifest/v1",
+  "software_delivery_status": "READY_FOR_OWNER_MERGE",
+  "student_mastery_status": "NOT_CLAIMED"
+}
