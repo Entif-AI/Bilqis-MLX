@@ -1,0 +1,42 @@
+test_equal_time_followup_is_not_a_later_measured_effect (_bilqis_test_684f84f0c9824d114059096fe3175f67c4ddff5033e25f97795da6aa3eaa9dcd.SalienceWindowTests.test_equal_time_followup_is_not_a_later_measured_effect) ... FAIL
+test_followups_require_exact_receipt_and_explicit_observations (_bilqis_test_684f84f0c9824d114059096fe3175f67c4ddff5033e25f97795da6aa3eaa9dcd.SalienceWindowTests.test_followups_require_exact_receipt_and_explicit_observations) ... ok
+test_interleaved_epochs_and_late_events_never_rewrite_closed_window (_bilqis_test_684f84f0c9824d114059096fe3175f67c4ddff5033e25f97795da6aa3eaa9dcd.SalienceWindowTests.test_interleaved_epochs_and_late_events_never_rewrite_closed_window) ... ok
+test_nineteen_twenty_twentyone_and_exact_replay (_bilqis_test_684f84f0c9824d114059096fe3175f67c4ddff5033e25f97795da6aa3eaa9dcd.SalienceWindowTests.test_nineteen_twenty_twentyone_and_exact_replay) ... ok
+test_paraphrase_lineage_does_not_mint_a_process_candidate (_bilqis_test_684f84f0c9824d114059096fe3175f67c4ddff5033e25f97795da6aa3eaa9dcd.SalienceWindowTests.test_paraphrase_lineage_does_not_mint_a_process_candidate) ... ok
+test_revoked_fact_signer_cannot_hide_behind_valid_event_signer (_bilqis_test_684f84f0c9824d114059096fe3175f67c4ddff5033e25f97795da6aa3eaa9dcd.SalienceWindowTests.test_revoked_fact_signer_cannot_hide_behind_valid_event_signer) ... ERROR
+
+======================================================================
+ERROR: test_revoked_fact_signer_cannot_hide_behind_valid_event_signer (_bilqis_test_684f84f0c9824d114059096fe3175f67c4ddff5033e25f97795da6aa3eaa9dcd.SalienceWindowTests.test_revoked_fact_signer_cannot_hide_behind_valid_event_signer)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/tests/test_salience_history.py", line 122, in test_revoked_fact_signer_cannot_hide_behind_valid_event_signer
+    fact_owner = SourceAuthorityKey("fixture:fact-owner",
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in __init__
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/atlas_revalidation.py", line 98, in __post_init__
+    _invalid("BAMF_C09_SOURCE_AUTHORITY_KEY_INVALID")
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/atlas_revalidation.py", line 37, in _invalid
+    ErrorBus.raise_(SCHOOL.BAMF_REVALIDATION.INVALID, reason=reason)
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/errors/bus.py", line 20, in raise_
+    ErrorBus.Raise(spec, **context)
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/errors/bus.py", line 15, in Raise
+    raise BilqisError(spec, context)
+bilqis_mlx.errors.model.BilqisError: SCHOOL.BAMF_REVALIDATION.INVALID
+
+======================================================================
+FAIL: test_equal_time_followup_is_not_a_later_measured_effect (_bilqis_test_684f84f0c9824d114059096fe3175f67c4ddff5033e25f97795da6aa3eaa9dcd.SalienceWindowTests.test_equal_time_followup_is_not_a_later_measured_effect)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/learning/tests/test_salience_history.py", line 115, in test_equal_time_followup_is_not_a_later_measured_effect
+    self.assertEqual(completed_windows(history)[0].correction_followups[0].status, "NOT_MEASURED")
+AssertionError: 'NO_RECURRENCE_IN_MEASURED_FOLLOWUP' != 'NOT_MEASURED'
+- NO_RECURRENCE_IN_MEASURED_FOLLOWUP
++ NOT_MEASURED
+
+
+----------------------------------------------------------------------
+Ran 6 tests in 2.044s
+
+FAILED (failures=1, errors=1)
+TEST_TOTALS total=6 passed=4 failed=2 skipped=0 errors=1
+4 passed, 2 failed, 0 skipped

@@ -9,7 +9,7 @@ from bilqis_mlx.semantics.copular import (
     SYMBOL, SEMANTIC_ID, ReferentWorld, bind_operation, identify, evaluate,
 )
 from bilqis_mlx.source_adapters.copular import (
-    draw, encode, decode, check, verify_source, registered_adapter,
+    draw, encode, decode, check, verify_source, registered_adapter, semantic_footprint,
 )
 from bilqis_mlx.verification.copular import independent_answer
 from bilqis_mlx.vocabulary_growth import digest
@@ -35,6 +35,16 @@ class CopularTests(unittest.TestCase):
     def setUpClass(cls):
         cls.graph = proposed_graph()
         cls.operation = bind_operation(cls.graph)
+
+    def test_copular_provider_owns_check_without_using_generator(self):
+        from unittest.mock import patch
+        from bilqis_mlx.factory.verification import check_copular
+        self.assertEqual(check.__module__, "bilqis_mlx.source_adapters.copular")
+        self.assertIs(check_copular, check)
+        rows = draw(None, self.graph, seed=17, each=12)
+        with patch("bilqis_mlx.source_adapters.copular.draw",
+                   side_effect=AssertionError("checker invoked generator")):
+            self.assertTrue(all(check(row, graph=self.graph) for row in rows))
 
     def test_positive_identity_is_about_denotation(self):
         world = ReferentWorld(("A", "B", "C"),
@@ -109,6 +119,15 @@ class CopularTests(unittest.TestCase):
         self.assertEqual(witness["scope"], "finite-reference-identity")
         self.assertEqual(registered_adapter().descriptor.variation_axes,
             ("reference-identity", "denotation", "universe-size", "fact-order", "fresh-seed"))
+
+    def test_source_owns_instructional_semantic_footprint(self):
+        row = draw(None, self.graph, seed=17, each=1)[0]
+        self.assertEqual(semantic_footprint(row),
+                         ("micro.compare.EQ", "development.op.MAPS"))
+        changed = copy.deepcopy(row)
+        changed["record"]["query"]["operator"] = "unrelated.operator"
+        with self.assertRaises(ValueError):
+            semantic_footprint(changed)
 
     def test_unselected_source_integrity_is_checked_at_its_draw_boundary(self):
         from unittest.mock import patch

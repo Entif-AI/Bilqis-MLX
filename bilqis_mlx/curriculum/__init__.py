@@ -16,6 +16,8 @@ import re
 
 
 BINARY = ("FALSE", "TRUE")
+BOOLEAN_SIGNATURE_OPERAND_COUNT = 2
+BOOLEAN_COMPOSITION_OPERATION_COUNTS = (2, 3)
 INT_0_3 = ("0", "1", "2", "3")
 BOOLEAN_OPERATORS = ("NOT", "AND", "OR", "XOR", "IMPLIES", "IFF")
 GRADE_IDS = tuple(chr(i) for i in range(ord("A"), ord("Z") + 1))

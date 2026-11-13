@@ -7,12 +7,48 @@ implementations can evolve through FactoryRelease without rewriting the AST.
 """
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, FACTORY
+
 from dataclasses import asdict, dataclass
 import hashlib
 import json
 import re
 
 from ..curriculum import AnswerFamily, Course, GRADE_IDS, validate as validate_course
+
+
+V2_GRADE_CAPABILITY_MAX = 12
+
+C13_RESERVED_CAPABILITY_ID = "Z.C13_EPISODE"
+C13_RESERVED_SOURCE_ANCHOR = "public-formal:bamf.c13.episode-binding/v1"
+C13_RESERVED_GENERATOR_ID = "bilqis.c13.episode-binding-generator/v1"
+C13_RESERVED_ORACLE_ID = "bilqis.c13.episode-binding-checker/v1"
+
+
+def _validate_reserved_source_binding_namespace(
+        binding: "CapabilitySourceBinding") -> None:
+    """Keep the C13 capability/source namespace one-to-one at admission time."""
+    reserved = (
+        C13_RESERVED_CAPABILITY_ID,
+        C13_RESERVED_SOURCE_ANCHOR,
+        C13_RESERVED_GENERATOR_ID,
+        C13_RESERVED_ORACLE_ID,
+    )
+    observed = (
+        binding.capability_id,
+        binding.source_anchor,
+        binding.generator_id,
+        binding.oracle_id,
+    )
+    capability_collision = binding.capability_id.startswith(C13_RESERVED_CAPABILITY_ID)
+    source_collision = any(
+        value == reserved_value
+        for value, reserved_value in zip(observed[1:], reserved[1:]))
+    if (capability_collision or source_collision) and observed != reserved:
+        ErrorBus.raise_(
+            FACTORY.SOURCE_BINDING.INVALID,
+            reason="RESERVED_C13_NAMESPACE_COLLISION",
+        )
 
 
 def _digest(value) -> str:
@@ -106,7 +142,7 @@ def validate_curriculum_definition(
     seen_grades = set()
     for grade in curriculum.grades:
         if (grade.grade_id not in GRADE_IDS or grade.grade_id in seen_grades or
-                not 1 <= len(grade.capabilities) <= 9):
+                not 1 <= len(grade.capabilities) <= V2_GRADE_CAPABILITY_MAX):
             raise ValueError("FACTORY_CURRICULUM_GRADE_INVALID")
         seen_grades.add(grade.grade_id)
         ids = tuple(cap.capability_id for cap in grade.capabilities)
@@ -166,6 +202,29 @@ def validate_curriculum_definition(
         previous_roots.update(grade_roots)
 
 
+def instructional_constituent_roots(
+        curriculum: CurriculumDefinition, capability_id: str) -> tuple[str, ...]:
+    """Return own and structurally earlier instructional roots in stable order."""
+    if not isinstance(curriculum, CurriculumDefinition):
+        raise TypeError(FACTORY.EXECUTION.CURRICULUM_DEFINITION_REQUIRED.legacy_codes[0])
+    validate_curriculum_definition(curriculum, answer_kinds=tuple(dict.fromkeys(
+        family.kind for grade in curriculum.grades for cap in grade.capabilities
+        for family in cap.answer_families)))
+    earlier_roots = []
+    for grade in curriculum.grades:
+        capabilities = {cap.capability_id: cap for cap in grade.capabilities}
+        if capability_id in capabilities:
+            for stage in grade.teaching_stages:
+                if capability_id in stage:
+                    break
+                earlier_roots.extend(root for name in stage
+                                     for root in capabilities[name].taught_roots)
+            return tuple(dict.fromkeys((
+                *earlier_roots, *capabilities[capability_id].taught_roots)))
+        earlier_roots.extend(root for cap in grade.capabilities for root in cap.taught_roots)
+    raise ErrorBus.legacy_error(FACTORY.EXECUTION.CURRICULUM_UNKNOWN_CAPABILITY)
+
+
 def validate_source_bindings(
         curriculum: CurriculumDefinition, bindings: SourceBindingSet) -> None:
     if not isinstance(bindings, SourceBindingSet):
@@ -174,6 +233,8 @@ def validate_source_bindings(
     observed = tuple(item.capability_id for item in bindings.bindings)
     if expected != observed or len(set(observed)) != len(observed):
         raise ValueError("FACTORY_SOURCE_BINDINGS_SCOPE_DRIFT")
+    for binding in bindings.bindings:
+        _validate_reserved_source_binding_namespace(binding)
 
 
 def from_legacy_course(

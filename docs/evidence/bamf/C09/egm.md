@@ -1,0 +1,103 @@
+# C09.1–C09.3 independent review ledger
+
+Review authority: pinned google/elephant-goldfish-model
+`b3a35956759bf7f024af2ff061b2e0b44b438e4c`,
+read-only fresh-context Goldfish workers.
+
+## Initial independent dispositions
+
+Worker-7 reviewed immutable C09.1 `d0fd5ab`, executed
+12 focused tests and found **0 Blockers, 2 Majors**:
+transitive held-ancestor readiness and unverified source-owner
+receipt authority. It did not issue EGM PASS.
+
+Worker-8 reviewed C09.1/.2/.3 at immutable `053f6f4`,
+executed 17 focused tests, and found **0 Blockers, 2 Majors**
+in C09.3: actor-prefix collision (`a` versus `a:b`) and
+receipt-only relabeling of stale post-remediation evidence.
+Its C09.1/.2 scoped checks passed, but worker-7's additional
+C09.1 findings remain authoritative until repaired.
+
+## Prime repair candidate
+
+Immutable pushed repair `cd3ec533a823eea3bd407d5e9ac13c87cfb42230`:
+
+1. Full transitive DAG readiness before lazy revalidation.
+2. Host-provisioned Ed25519 public-key source authority,
+   dependency-kind and key-scope binding; v2 signed correction,
+   recomputation and transition records. No self-attested hash
+   grants access. Actual upstream key provisioning is pending.
+3. Length-prefixed actor identity in TIME dependencies.
+4. Remediation v2 original actor binding and receipt-only
+   stale replay escalation, preserving legitimate later actor/time
+   evidence.
+5. C09.2 moved into `atlas_requalification.py` to keep
+   source files small and independently reviewable.
+
+Prime's combined C09/C08/C02/source-prefetch/error-control
+suite after repair: **79 passed, 0 failed, 1 optional skip**.
+No new C09-specific static error-control or module-size debt.
+
+**Disposition: RE-REVIEW PENDING.** These repairs are not
+silently marked EGM PASS. Actual source-owner A01/B07/B13/C04
+keys, C10 delivery, C09 parent integration and neural runtime
+remain separate gates. No merge or live training occurred.
+
+## Second targeted C09.1 review
+
+Worker-7 inspected immutable `cd3ec53` and found **0 Blockers,
+2 new Majors**: signed old recomputation evidence was not
+bound to the active correction, and the key's independent
+kind/prefix allowlists created cross-scope authority.
+
+Repair `8ee79c23ec7e88b7915bc185e8c5c61ccc7fce79`
+binds v3 signed recomputation/transition records to the
+exact active correction event and receipt. It replaces
+Cartesian allowlists with v2 explicit kind+prefix scope
+pairs. Both failing-before adversaries now reject.
+Combined focused prime tests: **90 passed, 1 optional skip**.
+
+**Latest C09.1 EGM: RE-REVIEW PENDING.** Earlier C09.3
+actor-prefix and receipt-relabel repairs also await
+independent readback. No scoped EGM PASS is inferred.
+
+## #917 accepted-run source-authority remediation
+
+The post-merge #917 repair at `ec87edac08a7f43b5fa44ff9278d0f0b2b91e855`
+received a fresh three-lens review from the pinned EGM above. The deduplicated
+result was **3 Blockers, 2 Majors, 0 Nits**. The candidate therefore remained
+failed and draft PR #927 was not merge-ready.
+
+The review found five authority defects: the genesis candidate could still select
+its own C09 trust root; a duck-typed package `source_context` could clear the
+pre-staging gate; accepted-cache installation raced accepted-pointer advancement;
+an importable cache owner could mint alternate accepted-cache credentials; and B14
+could accept a caller-selected source-authority registry. A direct adversarial
+witness confirmed the first defect by swapping only the registry after a valid
+retention decision and obtaining a live source-authority runtime.
+
+The next two immutable candidates were also rejected. `200441d3dbc27221fd2d77a1c6d14a1a5360d1a8`
+failed a fresh diagnostic review before qualification. The repaired
+`cd20336ef8747d86a831ce09487522892affd79b` then passed exact-head deterministic
+proof and hosted checks but failed its own fresh three-lens EGM at a deduplicated
+**3 Blockers, 2 Majors, 0 Nits**. That review showed that authority had still moved
+rather than disappeared: the runtime trust-root writer was first-caller-selectable;
+the exact retained registry could still be recovered and used to mutate accepted
+owners outside durable ledger dispatch; stale accepted host/context handles could
+roll forward into a successor generation; and the C09/B13 integration had created
+a B14 issuer whose policy/context resolver was both first-caller-selected and
+TOCTOU-sensitive.
+
+The current repair removes the runtime C09 trust-root provisioner, keeps accepted
+correction runtimes and verifier roots closure-private, authorizes accepted-owner
+mutation only while dispatching an already-durable accepted event, and rechecks the
+originating accepted host/context before every registration or mutation seam. It
+also restores the accepted B14.1/#719 boundary: C09/B13 does **not** manufacture a
+production B14 authority while no real upstream B14 owner exists. The native B14
+test-only owner remains available for B14 contract tests without becoming a
+production issuer.
+
+**Disposition: REPAIR / RE-PROVE IN PROGRESS.** `cd20336e...` remains immutable
+failed evidence. A later committed SHA must pass full deterministic and hosted
+proof, then receive three completely fresh reviewers and **0 Blockers / 0 Majors**.
+No neural, student, trainer, optimizer, or checkpoint workload was run.

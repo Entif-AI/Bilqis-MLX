@@ -1,0 +1,4 @@
+LEGACY_TRAINER_SOURCE_OMITTED docs/evidence/bamf/B13/parent-closeout-20261110.md
+LEGACY_TRAINER_SOURCE_OMITTED docs/evidence/bamf/C07.1b/atomic-adoption-20261109.md
+LEGACY_TRAINER_SOURCE_OMITTED docs/evidence/bamf/C12.3/drift.md
+LEGACY_TRAINER_AUTHORITY_FAIL mode=static violations=3

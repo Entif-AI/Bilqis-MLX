@@ -1,0 +1,75 @@
+DETACHED_LONG_RUN_START 2026-11-11T23:11:24.435541+00:00 label='C06-379-d97ab0c1-concurrent-24g' pid=65788 command=['/usr/bin/env', 'BILQIS_A01_ATLAS_BUNDLE=/Users/emilie/Code/371-c02-complete-20261106/.local/c02-a01-rebuild/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7', 'BILQIS_ATLAS_REAL_ARTIFACT=/Users/emilie/Code/371-c02-complete-20261106/.local/c02-a01-rebuild/5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7', '/usr/local/bin/python3', '-B', 'bilqis_mlx/runtime/tests/model/salience/run_studio_proof.py', '--lock', '/Users/emilie/Code/.bilqis-studio-c06-379.lock', '--allow-concurrent-mlx', '--max-memory-gib', '24']
+C06_STUDIO_SERIAL_LANE_ACQUIRED
+vm.swapusage: total = 58368.00M  used = 56645.50M  free = 1722.50M  (encrypted)
+The system has 103079215104 (6291456 pages with a page size of 16384).
+System-wide memory free percentage: 82%
+
+C06_STUDIO_CONCURRENT_RESOURCE_OVERRIDE max_memory_gib=24.0
+C06_STAGE_START ordinal-loss
+C06_MEMORY_POLICY {'policy': 'bilqis.mlx.training-memory/no-free-buffer-cache-v1', 'cache_limit_bytes': 0, 'previous_cache_limit_bytes': 97925254348} memory_limit_bytes=25769803776
+test_absent_head_has_zero_gradient_and_explicit_unknown_is_supervised (bilqis_mlx.runtime.tests.model.salience._bilqis_test_1c8ae22d127c66b6987a12f0cde93e1651b78f209cab04e6d1aa1c3384e95ccd.SalienceLossTests.test_absent_head_has_zero_gradient_and_explicit_unknown_is_supervised) ... ok
+test_each_present_head_is_point_zero_five_cross_entropy (bilqis_mlx.runtime.tests.model.salience._bilqis_test_1c8ae22d127c66b6987a12f0cde93e1651b78f209cab04e6d1aa1c3384e95ccd.SalienceLossTests.test_each_present_head_is_point_zero_five_cross_entropy) ... ok
+test_unknown_values_and_nonordinal_labels_fail (bilqis_mlx.runtime.tests.model.salience._bilqis_test_1c8ae22d127c66b6987a12f0cde93e1651b78f209cab04e6d1aa1c3384e95ccd.SalienceLossTests.test_unknown_values_and_nonordinal_labels_fail) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.023s
+
+OK
+TEST_TOTALS total=3 passed=3 failed=0 skipped=0 errors=0
+3 passed, 0 failed, 0 skipped
+C06_MEMORY_PEAK bytes=64640 limit_bytes=25769803776
+C06_STAGE_DONE ordinal-loss exit=0 seconds=1.038
+vm.swapusage: total = 58368.00M  used = 56645.50M  free = 1722.50M  (encrypted)
+The system has 103079215104 (6291456 pages with a page size of 16384).
+System-wide memory free percentage: 84%
+
+C06_STUDIO_CONCURRENT_RESOURCE_OVERRIDE max_memory_gib=24.0
+C06_STAGE_START factory-integration
+C06_MEMORY_POLICY {'policy': 'bilqis.mlx.training-memory/no-free-buffer-cache-v1', 'cache_limit_bytes': 0, 'previous_cache_limit_bytes': 97925254348} memory_limit_bytes=25769803776
+test_real_factory_step_uses_present_heads_and_preserves_missing_head (bilqis_mlx.runtime.tests.model.salience._bilqis_test_6fb3529fbd0bfea751c212682aa3813c7cc5549879eb1ddff812b6e15e2b06c7.FactorySalienceExecutionTests.test_real_factory_step_uses_present_heads_and_preserves_missing_head) ... C06_STAGE source_setup started
+C06_STAGE source_setup elapsed_seconds=3.210
+C06_STAGE bootstrap_prepare started
+C06_STAGE bootstrap_prepare elapsed_seconds=32.638
+C06_STAGE bootstrap_publish started
+{"event": "FIXTURE_GENESIS", "event_id": "72f035b08e33100e12863aeedf2505d850a55aad0db03128e837b3a139643b50", "optimizer_step": 0}
+C06_STAGE bootstrap_publish elapsed_seconds=111.599
+C06_STAGE priority_offer started
+C06_STAGE priority_offer elapsed_seconds=974.533
+C06_STAGE a09_planning started
+C06_STAGE a09_planning elapsed_seconds=21.961
+C06_STAGE priority_selection started
+C06_STAGE priority_selection elapsed_seconds=1028.473
+C06_STAGE candidate_step started
+C06_STAGE candidate_step elapsed_seconds=2776.617
+C06_STAGE retained_closure started
+C06_STAGE retained_closure elapsed_seconds=15.650
+C06_STAGE retained_publication started
+C06_RETENTION fixed_school_started
+C06_RETENTION owner_screen_started
+C06_STAGE retained_publication elapsed_seconds=30311.072
+FAIL
+
+======================================================================
+FAIL: test_real_factory_step_uses_present_heads_and_preserves_missing_head (bilqis_mlx.runtime.tests.model.salience._bilqis_test_6fb3529fbd0bfea751c212682aa3813c7cc5549879eb1ddff812b6e15e2b06c7.FactorySalienceExecutionTests.test_real_factory_step_uses_present_heads_and_preserves_missing_head)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/c06-379-d97ab0c1-source/bilqis_mlx/runtime/tests/model/salience/test_factory_salience_execution.py", line 210, in test_real_factory_step_uses_present_heads_and_preserves_missing_head
+    assert_retained_publication_witness(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, run_dir, context, parent, result, self.artifact, capability)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/c06-379-d97ab0c1-source/bilqis_mlx/runtime/tests/model/salience/retained_publication_witness.py", line 59, in assert_retained_publication_witness
+    raise AssertionError(
+    ...<3 lines>...
+        f'blocking_capability={evaluation.decision.blocking_capability}')
+AssertionError: C06 Factory C05 rejected labeled candidate: reason=PROTECTED_CAPABILITY_REGRESSION; evidence=be5c0a20261ea8bca998b06de5bebacf7eeefc288782b5c4430d289b15593889; policy=51e78f230d468964e8b1dea7bb812f4c9533fc7981674f477cbd3874e0381f8a; blocking_capability=A.PARENT
+
+----------------------------------------------------------------------
+Ran 1 test in 35478.744s
+
+FAILED (failures=1)
+TEST_TOTALS total=1 passed=0 failed=1 skipped=0 errors=0
+0 passed, 1 failed, 0 skipped
+C06_MEMORY_PEAK bytes=6027280464 limit_bytes=25769803776
+C06_STAGE_DONE factory-integration exit=1 seconds=35481.132
+DETACHED_LONG_RUN_END 2026-11-12T09:02:47.486384+00:00 label='C06-379-d97ab0c1-concurrent-24g' returncode=1 source_mutated=False

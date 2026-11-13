@@ -1,0 +1,9 @@
+{
+  "number": 587,
+  "canonical_number": 586,
+  "state": "CLOSED",
+  "resolution": {
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/587#issuecomment-6504833044",
+    "body": "Duplicate-work reconciliation (2026-10-29): #586 and this #587 were created concurrently for the same B11.1a execution-owned group producer seam. **#586 is canonical** because it predates this issue and has the fuller producer-authenticity contract. No requirement is discarded: the repo-local spec `docs/tasks/bamf-0.2/children/B11.1a.md` and numerical precursor draft PR #588 remain valid under #586, while worker18's follow-on draft PR #590 extends #588 with observed parameter/cache/tensor-chain fingerprints. Both are explicitly UNADMITTED_NUMERICAL until B03/A05/B02, B08 motif read and B13 generation custody produce actual source authority. Closing #587 as a duplicate, NOT as a completed implementation or B05.4 #577 acceptance."
+  }
+}

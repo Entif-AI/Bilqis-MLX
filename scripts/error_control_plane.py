@@ -12,6 +12,7 @@ import ast
 from collections import Counter, defaultdict
 from dataclasses import asdict
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -21,6 +22,14 @@ OPERATIONS = ROOT / "docs" / "operations"
 CATALOG_JSON = OPERATIONS / "error_catalog.json"
 MANUAL = OPERATIONS / "ERROR_FIELD_MANUAL.md"
 BASELINE = ROOT / "docs/evidence/development/operator_contract_baseline.json"
+
+
+def quality_base_ref(explicit: str | None, environ=None) -> str | None:
+    """Use the exact reviewed base when a local/CI quality caller supplies it."""
+    if explicit:
+        return explicit
+    environment = os.environ if environ is None else environ
+    return environment.get("BILQIS_QUALITY_BASE_REF") or None
 
 
 def _call_name(node: ast.AST) -> str:
@@ -51,13 +60,15 @@ def _code_hint(node: ast.AST) -> str:
 
 def raw_error_sites() -> tuple[dict, ...]:
     """Return grouped production raise sites whose identity contains raw prose."""
-    from operator_contract_audit import _repository_python_files
+    from operations.operator_contract_audit import _repository_python_files
+    from operations.operator_contract_scan import _module_string_constants
 
     counts: Counter[tuple[str, str, str, str]] = Counter()
     for path in _repository_python_files(ROOT):
         if "__pycache__" in path.parts:
             continue
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        module_strings = _module_string_constants(tree)
         for node in ast.walk(tree):
             if not isinstance(node, ast.Raise) or not isinstance(node.exc, ast.Call):
                 continue
@@ -65,6 +76,8 @@ def raw_error_sites() -> tuple[dict, ...]:
             if not exception.endswith("Error") or not node.exc.args:
                 continue
             identity = node.exc.args[0]
+            if isinstance(identity, ast.Name) and identity.id in module_strings:
+                identity = ast.Constant(value=module_strings[identity.id])
             if not _contains_string_literal(identity):
                 continue
             expression = ast.unparse(identity)
@@ -262,16 +275,19 @@ def write_docs() -> None:
     MANUAL.write_text(render_manual(payload), encoding="utf-8")
 
 
-def check() -> int:
+def check(base_ref: str | None = None) -> int:
     if not BASELINE.is_file():
         print("ERROR_CONTROL_BASELINE_MISSING", file=sys.stderr)
         return 2
-    from operator_contract_audit import (
-        _read_baseline, debt_counter, new_debt, scan_tree,
+    from operations.operator_contract_audit import (
+        _read_baseline, debt_counter, new_debt, scan_git_tree, scan_tree,
     )
     source_report = scan_tree(ROOT)
+    allowed = _read_baseline(BASELINE)
+    if base_ref:
+        allowed = debt_counter(scan_git_tree(ROOT, base_ref).debt)
     introduced = new_debt(
-        debt_counter(source_report.debt), _read_baseline(BASELINE))
+        debt_counter(source_report.debt), allowed)
     if introduced:
         print("NEW_OPAQUE_OPERATOR_CONTRACT_DEBT_FORBIDDEN", file=sys.stderr)
         for item in introduced[:30]:
@@ -301,11 +317,16 @@ def main() -> int:
     actions = parser.add_mutually_exclusive_group(required=True)
     actions.add_argument("--write-docs", action="store_true")
     actions.add_argument("--check", action="store_true")
+    parser.add_argument(
+        "--base-ref",
+        help=("For a pull request, reject debt added beyond this exact base "
+              "tree instead of charging the PR for debt already present there."),
+    )
     args = parser.parse_args()
     if args.write_docs:
         write_docs()
         return 0
-    return check()
+    return check(quality_base_ref(args.base_ref))
 
 
 if __name__ == "__main__":

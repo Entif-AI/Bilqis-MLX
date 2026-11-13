@@ -1,0 +1,249 @@
+"""Norm blocks and small-record fallback for the BAMF rot3/v1 cache."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+import numpy as np
+
+if TYPE_CHECKING:
+    from .atlas_cache_codec import Rot3Manifest
+    from .atlas_cache_runtime import CacheAuthorityRuntime
+
+from .atlas_cache_binding import (
+    CacheArtifact, CacheBinding, binding_digest, _payload_authenticator_fields,
+    _require_cache_binding, validate_binding,
+    cache_byte_cost, MAX_EFFECTIVE_BITS, CACHE_MODE_FP32, CACHE_MODE_ROT3,
+)
+
+
+BLOCK_VECTORS = 32
+MIN_COMPRESSED_VECTORS = 256
+VECTOR_DIMS = 2
+
+
+def _codec():
+    from . import atlas_cache_codec
+    return atlas_cache_codec
+
+
+def _invalid() -> None:
+    _codec()._invalid()
+
+
+def _vectors(cache, head_width: int) -> np.ndarray:
+    values = np.asarray(cache)
+    if (
+        values.ndim != VECTOR_DIMS
+        or values.shape[0] <= 0
+        or values.shape[1] != head_width
+        or values.dtype != np.float32
+        or not np.isfinite(values).all()
+    ):
+        _invalid()
+    return values
+
+
+def _validate_manifest(manifest: Rot3Manifest) -> None:
+    codec = _codec()
+    if not isinstance(manifest, codec.Rot3Manifest):
+        _invalid()
+    manifest.validate()
+
+
+def _fp32_artifact(values, bound, binding, authority) -> CacheArtifact:
+    count, width = values.shape
+    payload = np.asarray(values, dtype="<f4", order="C").tobytes(order="C")
+    tag = _payload_authenticator_fields(
+        authority, binding, CACHE_MODE_FP32, count, count, width, bound,
+        b"", b"", b"", payload,
+    )
+    return CacheArtifact(
+        CACHE_MODE_FP32, count, count, width, bound, b"", b"", b"", payload, tag,
+    )
+
+
+def _encode_cold_cache(
+    cache,
+    codec_manifest: Rot3Manifest,
+    *,
+    binding: CacheBinding,
+    authority: CacheAuthorityRuntime,
+) -> CacheArtifact:
+    """Encode one [vectors,24] cold record under the B14.2 size policy."""
+    _validate_manifest(codec_manifest)
+    validate_binding(binding, codec_manifest)
+    bound = binding_digest(binding)
+    codec = _codec()
+    values = _vectors(cache, codec.HEAD_WIDTH)
+    true_vectors = int(values.shape[0])
+    if true_vectors < MIN_COMPRESSED_VECTORS:
+        return _fp32_artifact(values, bound, binding, authority)
+
+    padded_vectors = (
+        (true_vectors + BLOCK_VECTORS - 1) // BLOCK_VECTORS * BLOCK_VECTORS
+    )
+    padded = np.zeros((padded_vectors, codec.HEAD_WIDTH), dtype=np.float32)
+    padded[:true_vectors] = values
+    norms = np.linalg.norm(padded.astype(np.float64), axis=-1)
+    if np.any(norms > np.finfo(np.float32).max):
+        _invalid()
+    blocks = norms.reshape(-1, BLOCK_VECTORS)
+    maxima = np.max(blocks, axis=1)
+    relative = np.zeros_like(blocks, dtype=np.uint8)
+    nonzero = maxima > 0
+    if np.any(nonzero):
+        scaled = (
+            blocks[nonzero]
+            / maxima[nonzero, None]
+            * np.float32(np.iinfo(np.uint8).max)
+        )
+        relative[nonzero] = np.rint(scaled).astype(np.uint8)
+
+    codes = codec.quantize_directions(padded).reshape(-1)
+    direction_codes = codec.pack_3bit(codes)
+    relative_norms = relative.reshape(-1).tobytes(order="C")
+    block_max_norms = np.asarray(
+        maxima, dtype="<f4", order="C"
+    ).tobytes(order="C")
+    tag = _payload_authenticator_fields(
+        authority,
+        binding,
+        CACHE_MODE_ROT3,
+        true_vectors,
+        padded_vectors,
+        codec.HEAD_WIDTH,
+        bound,
+        direction_codes,
+        relative_norms,
+        block_max_norms,
+        b"",
+    )
+    artifact = CacheArtifact(
+        CACHE_MODE_ROT3,
+        true_vectors,
+        padded_vectors,
+        codec.HEAD_WIDTH,
+        bound,
+        direction_codes,
+        relative_norms,
+        block_max_norms,
+        b"",
+        tag,
+    )
+    if cache_byte_cost(artifact).effective_bits_per_channel > MAX_EFFECTIVE_BITS:
+        return _fp32_artifact(values, bound, binding, authority)
+    _require_cache_binding(artifact, binding, authority)
+    return artifact
+
+
+def _validate_artifact(
+    artifact: CacheArtifact,
+    binding: CacheBinding,
+    authority: CacheAuthorityRuntime,
+) -> None:
+    if not isinstance(artifact, CacheArtifact) or not isinstance(binding, CacheBinding):
+        _invalid()
+    _require_cache_binding(artifact, binding, authority)
+    codec = _codec()
+    if (
+        type(artifact.true_vectors) is not int
+        or type(artifact.padded_vectors) is not int
+        or artifact.true_vectors <= 0
+        or artifact.head_width != codec.HEAD_WIDTH
+        or not all(
+            type(payload) is bytes
+            for payload in (
+                artifact.direction_codes,
+                artifact.relative_norms,
+                artifact.block_max_norms_fp32,
+                artifact.fp32_payload,
+            )
+        )
+    ):
+        _invalid()
+
+
+def _decode_cache(
+    artifact: CacheArtifact,
+    expected_binding: CacheBinding,
+    *,
+    authority: CacheAuthorityRuntime,
+) -> np.ndarray:
+    """Decode B14.2 record bytes and restore the stored vector norm."""
+    _validate_artifact(artifact, expected_binding, authority)
+    codec = _codec()
+    if artifact.mode == CACHE_MODE_FP32:
+        if (
+            artifact.padded_vectors != artifact.true_vectors
+            or artifact.direction_codes
+            or artifact.relative_norms
+            or artifact.block_max_norms_fp32
+            or len(artifact.fp32_payload)
+            != artifact.true_vectors * codec.HEAD_WIDTH * np.dtype("<f4").itemsize
+        ):
+            _invalid()
+        decoded = (
+            np.frombuffer(artifact.fp32_payload, dtype="<f4")
+            .reshape(artifact.true_vectors, codec.HEAD_WIDTH)
+            .astype(np.float32, copy=True)
+        )
+        if not np.isfinite(decoded).all():
+            _invalid()
+        return decoded
+
+    if artifact.mode != CACHE_MODE_ROT3:
+        _invalid()
+    if (
+        artifact.true_vectors < MIN_COMPRESSED_VECTORS
+        or artifact.padded_vectors < artifact.true_vectors
+        or artifact.padded_vectors % BLOCK_VECTORS
+        or artifact.padded_vectors - artifact.true_vectors >= BLOCK_VECTORS
+        or artifact.fp32_payload
+    ):
+        _invalid()
+    blocks = artifact.padded_vectors // BLOCK_VECTORS
+    code_count = artifact.padded_vectors * codec.HEAD_WIDTH
+    expected_code_bytes = (code_count * 3 + 7) // 8
+    if (
+        len(artifact.direction_codes) != expected_code_bytes
+        or len(artifact.relative_norms) != artifact.padded_vectors
+        or len(artifact.block_max_norms_fp32)
+        != blocks * np.dtype("<f4").itemsize
+    ):
+        _invalid()
+
+    maxima = np.frombuffer(artifact.block_max_norms_fp32, dtype="<f4")
+    if not np.isfinite(maxima).all() or np.any(maxima < 0):
+        _invalid()
+    relative = np.frombuffer(artifact.relative_norms, dtype=np.uint8).reshape(
+        blocks, BLOCK_VECTORS
+    )
+    zero_blocks = maxima == 0
+    if np.any(relative[zero_blocks]):
+        _invalid()
+    if np.any(~zero_blocks) and np.any(
+        np.max(relative[~zero_blocks], axis=1) != np.iinfo(np.uint8).max
+    ):
+        _invalid()
+    flat_relative = relative.reshape(-1)
+    if np.any(flat_relative[artifact.true_vectors:]):
+        _invalid()
+    norms = (
+        relative.astype(np.float64)
+        / float(np.iinfo(np.uint8).max)
+        * maxima[:, None]
+    ).reshape(-1, 1)
+    codes = codec.unpack_3bit(artifact.direction_codes, code_count).reshape(
+        artifact.padded_vectors, codec.HEAD_WIDTH
+    )
+    tail_count = artifact.padded_vectors - artifact.true_vectors
+    if tail_count:
+        canonical_tail = codec.quantize_directions(
+            np.zeros((tail_count, codec.HEAD_WIDTH), dtype=np.float32)
+        )
+        if not np.array_equal(codes[artifact.true_vectors:], canonical_tail):
+            _invalid()
+    directions = codec.decode_directions(codes)
+    with np.errstate(under="ignore"):
+        decoded = (directions * norms).astype(np.float32)
+    return decoded[:artifact.true_vectors]

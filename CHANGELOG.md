@@ -404,6 +404,24 @@ All new releases use [Semantic Versioning](https://semver.org/) and Conventional
 * **storage:** share hardlink digest proofs ([4140e05](https://github.com/Entif-AI/Bilqis-MLX/commit/4140e051c0edd11d57925397ac070a0b0f6a59f8))
 * **trainer:** add three-lane source prefetch ([bfe172a](https://github.com/Entif-AI/Bilqis-MLX/commit/bfe172a0daa18d8c9f844b13bb6a6cef76727cc2))
 
+## [0.5.0] - 2026-10-26
+
+### Added
+- Immutable retained-learning qualification manifests, evidence-bound preflight and explicit human launch for two controlled topology arms.
+- Fresh seeded initialization, frozen prerequisite-compatible workload prefixes, finite visit budgets and independently seeded post-acquisition/fresh-probe receipts.
+
+## [0.4.0] - 2026-10-26
+
+### Added
+- Replayable Factory teacher observations with ordered delivery sidecars, explicit measurement missingness, topology/policy partitions and canonical checkpoint-outbox joins.
+- Read-only reconstruction and diagnostic summaries, without changing teacher selection, source draws, candidate horizons or retention authority.
+
+## [0.3.0] - 2026-10-26
+
+### Added
+- Typed, versioned structural model topology selected at run creation, recorded with run/checkpoint identity and verified on resume independently of semantic vocabulary growth.
+- Deterministic disposable non-default model construction with explicit initialization provenance; historical defaults retain their imported student and own AdamW.
+
 ## [0.2.0] - 2026-10-17
 
 ### Added

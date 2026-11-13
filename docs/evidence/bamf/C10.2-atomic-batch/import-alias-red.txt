@@ -1,0 +1,25 @@
+test_conflicting_source_identities_in_new_batch_leave_no_events (_bilqis_test_1043a919a951eeccd253f83c9733f1a1160f884594deee40bc4b5ac954bcdf56.BamfProjectionBatchTests.test_conflicting_source_identities_in_new_batch_leave_no_events) ... ok
+test_existing_projection_import_paths_remain_usable (_bilqis_test_1043a919a951eeccd253f83c9733f1a1160f884594deee40bc4b5ac954bcdf56.BamfProjectionBatchTests.test_existing_projection_import_paths_remain_usable) ... ok
+test_late_durable_conflict_rolls_back_entire_batch (_bilqis_test_1043a919a951eeccd253f83c9733f1a1160f884594deee40bc4b5ac954bcdf56.BamfProjectionBatchTests.test_late_durable_conflict_rolls_back_entire_batch) ... ok
+test_late_source_identity_conflict_rolls_back_entire_batch (_bilqis_test_1043a919a951eeccd253f83c9733f1a1160f884594deee40bc4b5ac954bcdf56.BamfProjectionBatchTests.test_late_source_identity_conflict_rolls_back_entire_batch) ... ok
+test_physical_directory_cannot_create_an_alternate_module_identity (_bilqis_test_1043a919a951eeccd253f83c9733f1a1160f884594deee40bc4b5ac954bcdf56.BamfProjectionBatchTests.test_physical_directory_cannot_create_an_alternate_module_identity) ... FAIL
+
+======================================================================
+FAIL: test_physical_directory_cannot_create_an_alternate_module_identity (_bilqis_test_1043a919a951eeccd253f83c9733f1a1160f884594deee40bc4b5ac954bcdf56.BamfProjectionBatchTests.test_physical_directory_cannot_create_an_alternate_module_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf-c10-520/bilqis_mlx/runtime/tests/projection/test_bamf_projection_batch.py", line 33, in test_physical_directory_cannot_create_an_alternate_module_identity
+    self.assertEqual(completed.returncode, 0, completed.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 11, in <module>
+    raise AssertionError("alternate module identity loaded")
+AssertionError: alternate module identity loaded
+
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.135s
+
+FAILED (failures=1)
+TEST_TOTALS total=5 passed=4 failed=1 skipped=0 errors=0
+4 passed, 1 failed, 0 skipped

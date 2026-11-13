@@ -1,0 +1,78 @@
+"""Source-context helpers for the C02 Factory training composition seam."""
+from __future__ import annotations
+
+from bilqis_mlx.semantics.context_eligibility import (
+    PUBLIC_FORMAL, ContextPolicy, SourceFrontier, TaskScope,
+)
+from bilqis_mlx.semantics.frame_schema import FrameInstance, FrameTree
+
+
+def source_frame_inventory(source_context, row, atlas_selection):
+    """Derive the complete framed/atomic choice from the registered source owner."""
+    from bilqis_mlx.factory.generation import runtime_adapter_for_release
+    from bilqis_mlx.semantics.atlas.snapshot import load_pinned_atlas_snapshot
+    from bilqis_mlx.semantics.atlas_features.formal import source_family_for_adapter
+    from bilqis_mlx.semantics.frame_adapters import bind_registered_source_row
+    from bilqis_mlx.semantics.frame_schema import SourceSpan
+    from bilqis_mlx.semantics.released_frame_schemas import _load_pinned_released_frame_schemas
+    from bilqis_mlx.source_adapters.atoms.authority import canonical_graph_for
+
+    execution = source_context.release.execution_plan.capability_map[row['capability']]
+    adapter = runtime_adapter_for_release(
+        source_context.source_root, source_context.graph, source_context.release,
+        source_context.source_registry, execution)
+    manifest = _load_pinned_released_frame_schemas(
+        source_family_for_adapter(adapter.descriptor.adapter_id), atlas_selection).manifest
+    graph = canonical_graph_for(row.get('generator'), source_context.source_root)
+    end = len(row['tokens'])
+    tree = bind_registered_source_row(
+        adapter, row, load_pinned_atlas_snapshot(atlas_selection),
+        source_root=source_context.source_root, graph=graph,
+        source_span=SourceSpan(0, end), causal_prefix_end=end,
+        course=source_context.release.curriculum)
+    schemas = frozenset(body.schema_id for body in manifest.bodies)
+    return tree.root.source_instance_id, ((tree,) if schemas_cover_tree(tree, schemas) else ())
+
+
+def training_answer_plan(prefix, release, kind, generation_binding):
+    head = next(item for item in release.answer_heads if item.kind == kind)
+    return {
+        "modalityID": head.modality_id,
+        "input_prefix_end": prefix.visible_end,
+        "decisions": [
+            {"id": "value", "roleID": "answer", "occurrence": 0,
+             "kind": "VALUE", "legalValues": list(head.values),
+             "depends_on": []},
+            {"id": "end", "roleID": "end", "occurrence": 0,
+             "kind": "CONTROL", "legalValues": ["END_FRAME"],
+             "depends_on": ["value"]},
+        ],
+        "allowedOutputSchema": "factory-training/v1",
+        "maximum_decisions": 2,
+        "generation_binding": generation_binding,
+    }
+
+
+def public_training_context(release: str, capability: str, prefix_end: int):
+    task = TaskScope(
+        "bamf-factory-trainer", "bamf-factory", "TRAINING", release,
+        "LOCAL", capability, 0, 0, prefix_end)
+    policy = ContextPolicy(
+        "bamf-factory-public-formal/v1", 1, 1,
+        ("TRAINING",), (PUBLIC_FORMAL,), ("LOCAL",), (capability,),
+        (PUBLIC_FORMAL,), ((PUBLIC_FORMAL, PUBLIC_FORMAL),),
+        tuple((PUBLIC_FORMAL,) * count for count in range(3, 25)))
+    return task, SourceFrontier(1, 1, ()), policy
+
+
+def schemas_cover_tree(tree: FrameTree, schema_ids: frozenset[str]) -> bool:
+    root = tree.root
+    return ((isinstance(root, FrameInstance)
+             and root.frame_schema_id in schema_ids)
+            and all(schemas_cover_tree(child, schema_ids) for child in tree.children))
+
+
+__all__ = (
+    "public_training_context", "schemas_cover_tree", "training_answer_plan",
+    "source_frame_inventory",
+)

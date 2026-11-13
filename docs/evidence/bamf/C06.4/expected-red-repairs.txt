@@ -1,0 +1,42 @@
+test_current_rights_hold_applies_without_optional_aggregation (_bilqis_test_b5717ab8af51adc78d315c81b95c465dcec4bf2290d95858aefb037add81be4d.SalienceDiagnosticsTests.test_current_rights_hold_applies_without_optional_aggregation) ... ok
+test_first_correction_anchor_is_not_reinterpreted_as_accepted_lesson (_bilqis_test_b5717ab8af51adc78d315c81b95c465dcec4bf2290d95858aefb037add81be4d.SalienceDiagnosticsTests.test_first_correction_anchor_is_not_reinterpreted_as_accepted_lesson) ... FAIL
+test_missing_vs_measured_unchanged_and_explicit_later_changes (_bilqis_test_b5717ab8af51adc78d315c81b95c465dcec4bf2290d95858aefb037add81be4d.SalienceDiagnosticsTests.test_missing_vs_measured_unchanged_and_explicit_later_changes) ... ok
+test_native_grade_renaming_preserves_priority_and_actionable_holds (_bilqis_test_b5717ab8af51adc78d315c81b95c465dcec4bf2290d95858aefb037add81be4d.SalienceDiagnosticsTests.test_native_grade_renaming_preserves_priority_and_actionable_holds) ... ok
+test_partial_trailing_and_future_events_remain_authority_observations (_bilqis_test_b5717ab8af51adc78d315c81b95c465dcec4bf2290d95858aefb037add81be4d.SalienceDiagnosticsTests.test_partial_trailing_and_future_events_remain_authority_observations) ... ERROR
+test_prior_window_anchor_changed_axis_and_cumulative_corrections (_bilqis_test_b5717ab8af51adc78d315c81b95c465dcec4bf2290d95858aefb037add81be4d.SalienceDiagnosticsTests.test_prior_window_anchor_changed_axis_and_cumulative_corrections) ... ok
+test_separate_dimensions_order_masks_and_held_evidence (_bilqis_test_b5717ab8af51adc78d315c81b95c465dcec4bf2290d95858aefb037add81be4d.SalienceDiagnosticsTests.test_separate_dimensions_order_masks_and_held_evidence) ... ok
+
+======================================================================
+ERROR: test_partial_trailing_and_future_events_remain_authority_observations (_bilqis_test_b5717ab8af51adc78d315c81b95c465dcec4bf2290d95858aefb037add81be4d.SalienceDiagnosticsTests.test_partial_trailing_and_future_events_remain_authority_observations)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/diagnostics/tests/test_salience.py", line 168, in test_partial_trailing_and_future_events_remain_authority_observations
+    self.assertNotEqual(twenty.history_digest, trailing.history_digest)
+                        ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SaliencePriorityObservation' object has no attribute 'history_digest'. Did you mean: 'roster_digest'?
+
+======================================================================
+FAIL: test_first_correction_anchor_is_not_reinterpreted_as_accepted_lesson (_bilqis_test_b5717ab8af51adc78d315c81b95c465dcec4bf2290d95858aefb037add81be4d.SalienceDiagnosticsTests.test_first_correction_anchor_is_not_reinterpreted_as_accepted_lesson)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/diagnostics/tests/test_salience.py", line 192, in test_first_correction_anchor_is_not_reinterpreted_as_accepted_lesson
+    self.assertEqual(recovery.lesson_effects, ())
+AssertionError: Tuples differ: (LessonEffect(anchor_receipt_sha256='00000[294 chars]D'),) != ()
+
+First tuple contains 1 additional elements.
+First extra element 0:
+LessonEffect(anchor_receipt_sha256='0000000000000000000000000000000000000000000000000000000000000001', anchor_event_digest='2f7937403faceb52785c37488f7735cadd226e46893ae5379ab118a9cd6642a4', followup_event_digests=('2beb5027d9082b6f205437fb23b2c55f17939bb74348048e97221e27de0a7840',), action_status='CHANGED', route_status='NOT_MEASURED')
+
++ ()
+- (LessonEffect(anchor_receipt_sha256='0000000000000000000000000000000000000000000000000000000000000001',
+-               anchor_event_digest='2f7937403faceb52785c37488f7735cadd226e46893ae5379ab118a9cd6642a4',
+-               followup_event_digests=('2beb5027d9082b6f205437fb23b2c55f17939bb74348048e97221e27de0a7840',),
+-               action_status='CHANGED',
+-               route_status='NOT_MEASURED'),)
+
+----------------------------------------------------------------------
+Ran 7 tests in 2.059s
+
+FAILED (failures=1, errors=1)
+TEST_TOTALS total=7 passed=5 failed=2 skipped=0 errors=1
+5 passed, 2 failed, 0 skipped

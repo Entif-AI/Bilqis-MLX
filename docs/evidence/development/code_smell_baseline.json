@@ -683,17 +683,17 @@
       "inspect"
     ],
     [
-      "scripts/audit_championship_quarantine.py",
+      "scripts/operations/audit_championship_quarantine.py",
       "module-mutable-literal",
       "SETTLED"
     ],
     [
-      "scripts/audit_championship_quarantine.py",
+      "scripts/operations/audit_championship_quarantine.py",
       "branch-density",
       "audit"
     ],
     [
-      "scripts/audit_championship_quarantine.py",
+      "scripts/operations/audit_championship_quarantine.py",
       "long-function",
       "audit"
     ],
@@ -713,12 +713,12 @@
       "ALLOWED_LITERALS"
     ],
     [
-      "scripts/relocate_legacy_worktrees.py",
+      "scripts/operations/relocate_legacy_worktrees.py",
       "branch-density",
       "execute"
     ],
     [
-      "scripts/relocate_legacy_worktrees.py",
+      "scripts/operations/relocate_legacy_worktrees.py",
       "long-function",
       "execute"
     ],

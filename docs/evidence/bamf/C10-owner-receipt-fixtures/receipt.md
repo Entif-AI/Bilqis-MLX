@@ -1,0 +1,11 @@
+# C10 opaque owner receiving fixtures
+
+PARTIAL_PENDING_NATIVE_OWNERS_AND_ROSETTA. IPR-0220/PM009; base d77ae1d31df4c15bc86b1cd4633951d74fb784d8, unified da0431bee37c0e4f766f05cc94ceb6b23ac7d054.
+
+C-owned OwnerReceiptFixture/v1 adds bank-allocation, plasticity-epoch and package-export receiving fixtures with fixed DISPOSABLE_CONTRACT status. Every field except signature is covered by a distinct signing domain. Exact opaque artifact bytes are verified against their SHA. Scoped C09 verify_detached is reused; correction signing semantics are untouched. Artifact digest, signed receipt digest, original external source ID and derived Akasha ID remain distinct. Only opaque references/status enter the internal payload, never artifact bytes. Signature means fixture artifact attestation, not domain/rights/admission/mastery authority.
+
+Existing SQLite queue uses a unique immutable owner-source key for category/producer/original event. Identical retries converge; divergent attestations under one identity reject. Historical schema adds nullable key/index without rewriting old event rows.
+
+Review discovered public staging erased fixture status. Builder-only rejection was insufficient: canonical deserialization could bypass it. The single guard is now in PublicEvent construction, so direct construction, canonical reader and promotion entry reject these fixture kinds until an explicit public maturity schema exists. No public fixture stage is claimed supported.
+
+18 tests pass. Fresh pinned independent EGM scoped PASS, independently18/18 plus former canonical-read/verify/promote bypass replay for all3kinds. Earlier independent probes validated signature/schema/producer/time tampering and historical SQLite migration. Raw red bytes are preserved gzip; readable red text only strips trailing whitespace. The public-red run includes an expected-exception failure plus a follow-on test context lookup error, not two independent production defects; permanent subtest nesting was corrected. Native producer integration, actual TeacherEpoch identity adapter, domain authorization, Rosetta consumption and full C10 acceptance remain OPEN. No actual learner/AdamW/MLX/graph/services or source promotion. PR550 draft/unmerged;519-521 remain open.

@@ -1,0 +1,168 @@
+{
+  "schema": "bilqis.bamf.c15-3-reconciliation/v1",
+  "issue": 540,
+  "key": "C15.3",
+  "reviewed_unified": "97a018ed7e9697fe284abd9fa8197cd7f4194b45",
+  "publication_reconciliation_head": "9dac7223b8dc03ff56470f2a8ce72bc01151ca25",
+  "live_publication": {
+    "status": "PASS",
+    "verifier": "python3 -B scripts/bamf/workstack/bamf02_verify_live_issue_tree.py",
+    "owner_bodies": 43,
+    "child_bodies": 172,
+    "native_parent_child_groups": 53,
+    "native_parent_child_edges": 190,
+    "native_parent_child_groups_with_supplement": 65,
+    "native_hierarchy_supplement_head": "4212d278ee1b97d87ea6855172ca76fb2b1e6562",
+    "dependency_nodes": 215,
+    "body_repairs": [
+      {
+        "issue": 508,
+        "key": "C07.1",
+        "direction": "LIVE_TO_REPOSITORY",
+        "canonical_sha256": "155a20846119c4ebef53e0f0079af78b8321a47f1213af08380551149980e2ed",
+        "reason": "live source-owner body and closeout add accepted third grandchild C07.1c/#955"
+      },
+      {
+        "issue": 522,
+        "key": "C11.1",
+        "direction": "REPOSITORY_TO_LIVE",
+        "canonical_sha256": "c5764d334491fe895387993784fa1e54b8ac3e0a2c3d0aeb446249ed7a1efa91",
+        "reason": "repository mirror contains later accepted C16.1a/current-unified contract confirmed by final live closeout"
+      }
+    ],
+    "transport_normalization": {
+      "issue": 905,
+      "key": "C02.5",
+      "disposition": "TERMINAL_LF_ONLY_NOT_SEMANTIC_DRIFT"
+    },
+    "native_links_restored": [
+      [349, 578], [355, 577], [357, 575], [357, 594], [359, 576],
+      [367, 635], [371, 905], [372, 904], [418, 553], [418, 554],
+      [418, 555], [418, 556], [418, 557], [471, 586], [541, 950]
+    ]
+  },
+  "active_google_docs": [
+    {
+      "title": "BAMF-0.2-SPEC-001 - Bilqis Aspirant Metacog Frame v0.2 - 20261027 - Entif.AI",
+      "document_id": "17wc-tYdQGlHydP38aMlMtBismpEywIPs4IiMUXnKpxc",
+      "revision_id": "AHj4eMT4yuCdrqqcsVeDBo39xdWKf_NqHK6iPCwc85JqjCjHptkysHa8hNDUVkCMHJBUsQwuTTQFE6g-9veHxsVU0hXTDWhRyHu1qXGA7dQ",
+      "disposition": "NO_C15_CONTRACT_CONFLICT_FOUND",
+      "observed_contract": "C15 checks current live issue bodies, exact repository mirrors, workstack fingerprints, both approved native Docs and executable acceptance receipts; unexecuted fixtures remain unverified"
+    },
+    {
+      "title": "BAMF-0.2 - Bilqis Aspirant Metacog Frame Blueprint - 20261027 - Entif.AI",
+      "document_id": "1V0cSgWeTt0EX4oxlphkw2mWYwrjJz5r-OQEVGYYEH7Q",
+      "revision_id": "AHj4eMQOSvC0rE8_HsJoSAoGQf0778EpjQDP1Myw7A9tuV2InQXPHH4sQOpxJcGSeXr10fEk8C2ztbJCNeYBVOKUvxrXpV7NqD5CogVKzDg",
+      "disposition": "NO_C15_CONTRACT_CONFLICT_FOUND",
+      "observed_contract": "functional recursive self-maintaining Factory, grade-neutral discriminators, executable observations, and PRIVATE_REAL exclusion remain mandatory"
+    }
+  ],
+  "factory_behavior": {
+    "overall": "EXECUTED_PASS",
+    "witnesses": [
+      {
+        "behavior": "PURE_IDEMPOTENT_PLANNING",
+        "state": "EXECUTED_PASS",
+        "tests": [
+          "bilqis_mlx/factory/tests/curriculum/frontier/test_atlas_frontier_events.py",
+          "bilqis_mlx/factory/tests/curriculum/frontier/test_atlas_frontier_progress.py"
+        ]
+      },
+      {
+        "behavior": "GRADE_LABEL_PERMUTATION_SYMMETRIC_DEBT_AND_TRUE_HOLDS",
+        "state": "EXECUTED_PASS",
+        "tests": [
+          "bilqis_mlx/learning/tests/teaching/test_c03_parent_acceptance.py",
+          "bilqis_mlx/runtime/tests/admission/atlas/v2/capability/test_capability_verification_decisions_v2.py",
+          "bilqis_mlx/runtime/tests/capability/factory/retention/test_plasticity_promotion_adversaries.py"
+        ]
+      },
+      {
+        "behavior": "SOURCE_FAMILY_DOMAIN_RULE_VARIATION",
+        "state": "EXECUTED_PASS",
+        "tests": [
+          "bilqis_mlx/factory/tests/curriculum/test_rule_registry.py"
+        ]
+      },
+      {
+        "behavior": "RECURSIVE_REPLAN_AFTER_ADMISSION_AND_CORRECTION",
+        "state": "EXECUTED_PASS",
+        "tests": [
+          "bilqis_mlx/runtime/tests/admission/test_admission_flywheel.py",
+          "bilqis_mlx/factory/tests/curriculum/frontier/test_atlas_frontier_progress.py"
+        ]
+      },
+      {
+        "behavior": "FIXED_POINT_AND_HELD_TERMINATION",
+        "state": "EXECUTED_PASS",
+        "tests": [
+          "bilqis_mlx/runtime/tests/admission/test_admission_flywheel.py"
+        ]
+      },
+      {
+        "behavior": "SINGLE_AUTHORITY_ADMISSION",
+        "state": "EXECUTED_PASS",
+        "tests": [
+          "bilqis_mlx/runtime/tests/admission/atlas/test_atlas_epoch_serialization.py",
+          "bilqis_mlx/runtime/tests/admission/atlas/test_atlas_admission_binding.py"
+        ]
+      },
+      {
+        "behavior": "EXACT_COLD_RESUME",
+        "state": "EXECUTED_PASS",
+        "tests": [
+          "bilqis_mlx/runtime/tests/custody/bamf_bundle/test_cold_resume_continuation.py",
+          "bilqis_mlx/presentation/operator_cli/tests/bamf_lifecycle/test_bamf_first_start_witness.py"
+        ]
+      }
+    ],
+    "environment_attempts": [
+      {
+        "interpreter": ".venv/bin/python",
+        "result": "COLLECTION_BLOCKED",
+        "missing": ["pyshacl", "numpy", "mlx"]
+      },
+      {
+        "interpreter": "/usr/bin/python3",
+        "result": "PARSE_RUNTIME_BLOCKED",
+        "available": ["mlx", "numpy"],
+        "reason": "Python 3.9 cannot execute repository union-type syntax or scripts/run_tests.py"
+      },
+      {
+        "interpreter": "/Users/cr8s/Code/Bilqis-485-venv/bin/python",
+        "result": "EXECUTED_PASS",
+        "preexisting_dependencies": ["pyshacl", "numpy", "mlx"],
+        "package_install_performed": false,
+        "test_totals": {
+          "total": 64,
+          "passed": 64,
+          "failed": 0,
+          "skipped": 0,
+          "errors": 0
+        }
+      }
+    ],
+    "observed_behavioral_failures": []
+  },
+  "upstream_blockers": [
+    {
+      "issue": 385,
+      "key": "C13",
+      "state": "PROVISIONAL",
+      "blocks": "accepted integrated retained-learning, rollback and cold-resume witness"
+    },
+    {
+      "issue": 386,
+      "key": "C14",
+      "state": "PROVISIONAL",
+      "blocks": "accepted continuing-program multi-family, grade-permutation, recursive-cycle and all-held fixed-point witness"
+    }
+  ],
+  "privacy": {
+    "public_artifact_contains_private_real": false,
+    "protected_classes_excluded": ["PRIVATE_REAL", "private journal payloads", "unclassified payloads"],
+    "disposition": "PUBLIC_SUMMARY_ONLY"
+  },
+  "software_delivery_status": "IN_PROGRESS",
+  "student_full_atlas_mastery": "NOT_CLAIMED"
+}

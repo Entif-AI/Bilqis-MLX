@@ -1,0 +1,12 @@
+{
+  "issues": 43,
+  "lanes": {
+    "A": 13,
+    "B": 14,
+    "C": 16
+  },
+  "dag_acyclic": true,
+  "max_issue_chars": 24912,
+  "master_chars": 171125,
+  "all_have_prescription_proof_egm": true
+}

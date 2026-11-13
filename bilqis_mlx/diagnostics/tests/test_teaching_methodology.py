@@ -1,5 +1,6 @@
 """Practical first-lesson and cross-grade warning checks, without item-ID gating."""
 from copy import deepcopy
+from dataclasses import replace
 import json
 from pathlib import Path
 import unittest
@@ -31,27 +32,42 @@ class TeachingMethodologyTests(unittest.TestCase):
         shape = inspect_source_query(row["record"]["query"])
         return shape.semantic_operations, len(row["tokens"])
 
-    def test_real_grade_b_examples_link_source_semantics_to_grade_a(self):
+    def test_real_grade_b_direct_source_examples_need_no_grade_a_prerequisites(self):
         row = min(self.rows, key=self.complexity)
         step = inspect_lesson_step(self.course, "B.NOT", self.rows, [row])
         self.assertGreaterEqual(step.delivered_count, 1)
         self.assertEqual(step.simplest_delivered, step.simplest_offered)
-        self.assertTrue(set(step.prerequisite_capabilities) <=
-                        {"A.IDENTITY", "A.PARENT", "A.LINK"})
-        self.assertTrue(step.prerequisite_capabilities)
+        self.assertEqual(step.prerequisite_capabilities, ())
         s4, s5 = diagnose_teaching_visit(self.course, "B.NOT", (step,),
                                         introductory=True)
         self.assertEqual(s4.signal, LearningSignal.DISCONNECTED_PREREQUISITES)
-        self.assertEqual(s4.status, DiagnosticStatus.NOT_OBSERVED)
+        self.assertEqual(s4.status, DiagnosticStatus.NOT_APPLICABLE)
         self.assertEqual(s5.status, DiagnosticStatus.NOT_OBSERVED)
 
     def test_missing_earlier_semantic_construction_is_detected_without_question_ids(self):
+        grade_b = self.course.grades[1]
+        diagnostic_course = replace(
+            self.course,
+            grades=(
+                self.course.grades[0],
+                replace(
+                    grade_b,
+                    capabilities=tuple(
+                        replace(capability, prerequisites=("A.IDENTITY",))
+                        if capability.id == "B.NOT" else capability
+                        for capability in grade_b.capabilities
+                    ),
+                ),
+            ),
+        )
         broken = deepcopy(self.rows[0])
         broken["record"]["query"]["args"] = [{"kind": "literal", "value": True}]
         # Deliberately malformed structural lesson: source admission would also
         # reject it. This unit verifies the independent S4 warning mechanism.
-        step = inspect_lesson_step(self.course, "B.NOT", [broken], [broken])
-        s4, _ = diagnose_teaching_visit(self.course, "B.NOT", (step,),
+        step = inspect_lesson_step(
+            diagnostic_course, "B.NOT", [broken], [broken])
+        s4, _ = diagnose_teaching_visit(
+            diagnostic_course, "B.NOT", (step,),
                                         introductory=True)
         self.assertEqual(s4.status, DiagnosticStatus.OBSERVED_IN_INSTRUCTION)
         self.assertEqual(step.prerequisite_capabilities, ())
@@ -75,7 +91,11 @@ class TeachingMethodologyTests(unittest.TestCase):
 
     def test_unsupported_semantic_root_and_unoffered_example_fail_closed(self):
         row = deepcopy(self.rows[0])
-        row["record"]["query"]["args"][0]["name"] = "UNADMITTED"
+        row["record"]["query"]["args"][0] = {
+            "kind": "apply",
+            "operator": "UNADMITTED",
+            "args": [{"kind": "literal", "value": True}],
+        }
         with self.assertRaisesRegex(ValueError, "UNADMITTED_CONSTITUENT"):
             inspect_lesson_step(self.course, "B.NOT", [row], [row])
         unrelated = deepcopy(self.rows[0])

@@ -1,330 +1,66 @@
-# CURRENT SUPERSESSION | 2026-10-26 | Promotion sweep hysteresis + Teacher vNext canary
+# Issue #324 qualification preparation | 2026-10-26
 
-The canonical repository is `/Users/emilie/Code/bilqis-mlx` on branch
-`349-bouta-tree-fitty`. Teacher vNext has moved beyond shadow-only proposal ranking:
-the pending implementation gives it bounded real proposal-selection authority while
-leaving all neural admission/safety authority unchanged. The assistant did not start,
-stop or otherwise manipulate neural training.
+**QUALIFICATION_MANIFEST_FROZEN_AND_READY_FOR_HUMAN_INITIATION**
+**NO OFFICIAL V3 QUALIFICATION ARM HAS BEEN EXECUTED.** Do not launch either arm without deliberate human initiation.
 
-Promotion-sweep diagnosis over generations 42711+ found 31 sweep attempts: 12 at C
-introduction stage 4, 16 at stage 5, and 3 final-stage attempts at stage 6. Twenty-four
-attempts had no retained update; 22 of those still fell below the
-old 90% continuation floor on an unchanged student. The final-stage attempt began at
-208/231 = 90.04%; a perfect-target C.COUNT skip performed no neural update, then one
-fresh-cohort miss changed only C.COUNT from 33/33 to 32/33 and immediately dropped the
-stitched mean to 207/231 = 89.61%. The governing user correction therefore replaces
-the old single 90% threshold with **92% entry / 87% failure hysteresis**. A sweep starts
-only at mean >=92% and continues while the running stitched mean is >=87%; below 87%
-aborts. Replay of all 31 historical launches shows only 4 would have entered at 92%,
-suppressing 27/31 (87.1%) of the observed sweep launches. The existing
-one-attempt-per-student+scope latch remains unchanged.
+- Preparation branch: `codex/324-learning-qualification-20261026`.
+- Parent: #333 / PR #335 at `35cf2b8ccb6c7d0e9f195d7e65e4ef990bfe5994`.
+- Exact executable commit: `2e5ee21a97a66c683c61f74419da03500c30d2c4`.
+- Frozen execution checkout: `/Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-v3-20261026`.
+- Qualification-only suite: 15 tests pass, including a regression that terminal
+  evaluation restores the school against the currently admitted staged release.
+- One exact one-visit qualification-path repair validation completes end to end
+  and emits the expected `FULL_WORKLOAD_NOT_YET_INTRODUCED` result instead of
+  crashing. It is a disposable debug epoch and is not #324 baseline evidence.
+- Governing issue #324 comment6412618439 explicitly accepts exact-head engineering
+  evidence. #150/#320/#333 may remain open, draft and unmerged. Do not merge,
+  retarget or modify their frozen branches to alter lifecycle state.
+- IPR-0220 remains OPEN; protected checkpoint carries its private location. Public
+  projections use only this opaque identifier.
+- Current incident: PM-2026-10-26-007 / RC-135 / PAT-096, native ledger readback
+  verified. Earlier #333 incident PM-2026-10-26-003 remains separate history.
 
-The append-only ledger contains **267 actual teacher proposals, 17 retained visits and
-228 retained optimizer updates**: 6.37% proposal retention. The dominant failure remains
-`NO_MEASURABLE_TARGET_GAIN` at **175/267 (65.54%)**. Every actual policy-selection
-receipt still reports `INHERITED_LEGACY_UCB`, so this result does **not** establish that
-Teacher vNext proposal selection failed; vNext was observing and shadow-ranking only.
+## Frozen review packet
 
-Teacher vNext multi-fidelity calibration now uses shadow policy v2. It waits through
-step 8 and recommends stopping there only when no probe through step 8 has shown a
-positive target gain. Replay of the completed run gives **125 hypothetical stops, one
-false kill (0.8%), and 1,000/3,996 candidate optimizer steps saved (25.03%)**. The
-configured shadow gate reports `QUALIFIED` on this run, but `authority_changed=false`:
-actual candidates still run their full authorized horizon and the existing retention
-decision remains sovereign. A second human-operated calibration run is required before
-considering a separate activation patch.
+See `docs/evidence/qualification/ISSUE324_REVIEW_PACKET_20261026.md` for exact
+commands, resource bounds, remaining acceptance and scientific assumptions.
 
-The learned local proposal distribution's structural starvation is repaired with a
-hierarchical evidence backoff. Exact `StudentRegion` identity and all receipts remain
-unchanged; prediction may back off through compatible capability+phase, capability,
-grade+phase and grade neighborhoods while preserving curriculum scope, geometry epoch
-and numeric scope. The learned distribution still requires **16 observations / 3
-retentions**. On a clean replay of 160 states from the completed first calibration run,
-95 states now qualify and 65 remain underpowered.
+Active manifest: `docs/evidence/qualification/issue324-20261026-v3.json`.
+Canonical digest: `7f1968f38b2a062df7dbaae586ccecc3327ff5885a72cb7c368938ecec92aea1`.
+V1/v2 remain immutable superseded provenance. V3 is the single active manifest.
+The workload is A6/B8/C7, numeric inputs0..8, frozen from live source generation44238.
+Future ceiling10 is excluded. Same-ABI A/A+B/A+B+C releases preserve prerequisite
+admission; no untaught B/C examination occurs at initialization.
 
-The bounded canary schedules one opportunity every four actual teacher candidates. A
-vNext proposal receives real authority only if it maps to an existing executable
-strategy, has at least eight compatible observations plus one retained observation, and
-remains in the inherited controller's post-retirement active effective-policy set.
-Otherwise the visit falls back to legacy selection. Legacy selection is still computed
-first and retained as a counterfactual receipt. Novel learned/local policies remain
-shadow-only. Clean first-run replay of the last 160 states schedules 40 canary slots;
-14 have enough retained evidence for vNext selection and 26 safely fall back. This is a
-support/coverage replay, not a claim that those counterfactual choices would retain.
+Baseline:6 layers/24 heads/width384/FFN1536/context96.
+Capacity:8 layers/32 heads/width512/FFN2048/context96.
+Both use fresh FP32 weights, native zero AdamW, initialization seed324, training
+seed3240, identical pinned teacher/runtime policy and finite per-arm budget:
+1000 visits, at most16000 attempted steps,90 minutes at safe boundaries,100 GiB reserve.
+Acquisition seed32401; post seeds32403/32405/32407. Existing mean proficiency rules
+apply. Fresh-probe scope/overlap/missingness remain explicit; no teaching embargo.
 
-Multi-fidelity early stopping remains shadow-only. Source/oracle truth, lesson
-validation, candidate retention, student/AdamW custody, promotion, qualification,
-championship authority and human ownership of neural training are unchanged. A later
-human run advanced the durable run head to generation 43286 while this checkout was
-dirty during implementation; treat that run as exploratory only because exact code
-provenance is ambiguous. There is currently no live trainer process. Verify the exact
-Git SHA and remote state after the pending commit/push before the next human rerun.
+Both v3 arm dry-runs pass with no neural authority and zero optimizer updates.
+Seven altered manifest/identity cases fail closed. The official v3 baseline and
+capacity run folders do not exist. Production byte hashes, source identities and
+the executable head are pinned independently of review-only documentation commits.
 
----
-
-# PRIOR SUPERSESSION | 2026-10-23 | Prometheus direct-U7C + C promotion sweep
-
-This supersedes the issue-349 run snapshot below for current operator state. The active
-run is `runs/codex-0001-prometheus`, generation **27343**, factory release
-`83f9f052e40983b879a9e0495ad93d3d3fce31d10e0d12395e0b12499b17c654`.
-The causal student is SHA `83322a22071e2ecaee149b6f0990e9ef73f21afe66ceff65466f0ddafe865c63`
-at native AdamW step **142748**, Grade B `MAIN`, queue
-`B.AND → B.OR → B.XOR → B.IMPLIES → B.IFF → B.COMPOSITE → B.IDBOOLOPS`,
-visit **19463**. A bounded repair reproduction consumed the already-due `B.NOT` visit
-but retained no candidate update; student SHA and AdamW step remained unchanged.
-Canonical open-ended optimization remains human-only.
-
-Grade B now admits `NOT, AND, OR, XOR, IMPLIES, IFF`, plus `COMPOSITE` and
-`IDBOOLOPS`, all through direct typed Boolean-AST/U7C source construction with no
-world records. B remains nongating debt. Historical ADR-090's at-most-20% candidate-
-visit policy is superseded by **ADR-094's bounded grade-turn cadence**: after at most four completed non-B
-training turns, B receives one complete pass over every currently imperfect admitted
-B capability, then yields for four further non-B turns. At generation 27189, the
-next reconstructed B pass is already due and contains all eight admitted B capabilities;
-the latest cumulative B slice is 49/96 (51.0%). The active C promotion sweep remains
-uninterrupted and B takes the next ordinary training turn after it resolves. Commit
-`2ed45db` also separates capability-scoped row identity
-from record-scoped source identity, repairing the teacher-miss collision that caused
-`TEACHER_MISS_HISTORY_IDENTITY_CONFLICT`. Generation 27116 removed obsolete
-world-based B miss debt and rekeyed direct-U7C misses; immutable historical evidence
-was not rewritten. Fragile OR/XOR replay now understands direct-U7C records and
-reserves mandatory preservation capacity before optional fresh support, preventing
-`FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED` without weakening source truth.
-The later `TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT` was a distinct source-generator
-defect: `B.COMPOSITE` deduplicated identities only inside each 12-row generation
-cycle, while trainer draws request 32 rows and concatenate multiple cycles. A later
-cycle could therefore repeat the same capability-scoped semantic row with different
-`composition_pass` metadata. The public draw now deduplicates across the complete
-requested batch, and the generic factory boundary independently rejects any adapter
-that returns duplicate row IDs.
-
-The repository quality gate that was previously hidden behind
-`GENERIC_GRADE_IDENTITY_DISPATCH` is also repaired. ADR-094's historical B/C
-behavior is now expressed structurally: once at least three grades are active, the
-latest active grade is the progression frontier and its immediate predecessor may
-receive the bounded nongating-debt turn when both still carry mastery debt. Generic
-scheduler code no longer branches on literal grade letters. The cleanup extracted
-typed school state/program adoption and lesson-selection modules, reduced
-`_take_visit` below its inherited size ceiling, named the recent U7C operator
-contracts, and regenerated the error manual/catalog. No module-size, operator-contract,
-or code-smell baseline was expanded. `npm run quality:check` is green; focused
-curriculum/learning/runtime coverage is 476 tests + 25 subtests and full-B/factory
-coverage is 22 tests + 12 subtests. The repository-wide runner still has seven
-unrelated pre-existing failures (source-prefetch fixture schema, two typed-soup
-fixtures, one historical Grade-C compatibility fixture, and three teaching-methodology
-fixtures); each reproduces on untouched commit `8a0c19b`. The one full-suite
-scheduler regression introduced during this refactor was fixed before publication.
-Prometheus resume preflight remains neural-inert with no blockers or migration.
-
-ADR-093 clarifies the automatic C mean-stability sweep. A fresh complete grade mean
-strictly above 90% freezes the initial current-grade score vector. The canonical
-one-pass sweep then replaces only the semantic just rescored; unrelated fresh-cohort
-variance cannot overwrite unswept entries. Generation 27151 did enter this sweep at
-179/198 = 90.404%. Its first `C.COUNT` rescore moved 32/33 to 31/33 with zero retained
-optimizer updates, which alone would move the running mean to 178/198 = 89.899% and
-correctly abort. The old implementation additionally replaced all other C scores from
-the new cohort, exaggerating that apparent drop to 84.848%. Resume preflight at the
-current generation reports no blockers, no migration, and zero neural updates.
-
----
-
-# Issue349 handoff | 2026-10-22 | COUNT opens NUMBER
-
-## Read this first: the user's controlling course
-
-**Teach concepts through fundamentals already expressible by prior understanding.**
-The course is **logic and basic cognitive algebra → mathematics → physics**, with
-selective New Ithkuil Lexicon **Chapters2,3,6** supplying concepts as their
-constituents become available. A “narrow staircase built exclusively upon its
-foundations” must appear in actual lesson construction, not just prerequisite labels.
-**We are not building tiny world models at this stage.** Event lookup, before/after
-classification and larger distractor worlds were an experimental detour. Preserve
-their evidence; do not resume them as the next curriculum.
-
-**NOT and AND may be introduced, but mastery of them must not gate Grade C.**
-The user explicitly authorized that progression. C keeps its designed numeric
-prerequisites and stages. Carry unresolved A/B debt; do not fabricate graduation
-or add a blanket perfect-school gate. ADR-087/088 record these decisions. AGENTS.md
-and README.md lead with the same direction. Earlier D–O and event-first plans are
-historical research, not current sequencing authority.
-
-## Current branch and stopped student
-
-Branch `codex/349-autonomous-jit-ithkuil-20261020`; [draft PR11](https://github.com/Entif-AI/Bilqis-MLX/pull/11).
-Managed worktree `/Users/emilie/Code/.worktrees/Bilqis-MLX/349-autonomous-jit-ithkuil-20261020`.
-Main `025bca51c78509acd0b1b898f16e9fcf84d25941` is integrated through staging
-`94c2e500523b45472ee257cf4021730309f5b848`, including the B-stagnation fix and DAG
-retry correction. Read actual HEAD/PR for the final merge SHA. Feature preservation
-ref: `codex/349-before-premerge-20261022` at b73f47e.
-IPR-0220 remediation and execution authorities remain relevant; when authorized, read their protected current
-checkpoints before changing semantics or custody. Issue346 remains excluded.
-**Bilqis-MLX and its implementation are public.** Publish repository-owned code, tests, architecture, and ordinary handoffs directly; keep private-only source text, credentials, attachments, and protected repository URLs out of tracked public artifacts unless separately released.
-
-Selected run: `runs/issue-349-experiments/primary`, generation **492**.
-Native step **117296**, student + own AdamW SHA
-`756061ff78f931be96987af430fbc16dbca66f476d00c8c9ea67d30811387a2a`,
-bundle `bundles/working-190-4316e72c43f8`.
-Executable release `48bde559d301964ee012acd48e2606ac0e7dc725f52d22032afac65427ec454e`.
-Both issue runs are stopped; operator locks were checked. No canonical/historical
-run was modified, no student reset, third lineage or AdamW merge occurred.
-
-Active grades **A+B+C**. B exposes only **NOT/AND**. C exposes COUNT → NUMBER →
-SUCCESSOR → ADD → SUB at **0..3**, with persisted final ceiling **4**; MUL/DIV are
-not enabled. **COUNT and NUMBER are introduced**, introduction_stage1, queue C.NUMBER,
-RECOVERY_1. A perfect COUNT routine panel opened NUMBER through the existing stage
-rule. SUCCESSOR and later stages await C's own constituent criteria, not B mastery.
-All six A capabilities plus B.NOT/B.AND remain carried mastery debt.
-
-## Current software integration (no new learning)
-
-The pre-merge packet's storage, performance, weakness-target, no-gain, mean-promotion
-and earlier-grade spiral behavior is ported into the extracted owners. `trainer.py`
-remains a 307-line compatibility facade. Pure promotion invariants live beside the
-scheduler in `curriculum/promotion.py`; size/error ratchets remain active.
-
-Known A/B/C automatic debt transitions remeasure exact checkpoint boundaries,
-retain thin NOT/AND and saved numeric ceiling4. Unsupported JIT grades keep their
-existing complete-prefix/factory gate. B stays measured and taught but cannot
-actuate quarantine or a stagnation-review exit; C containment stays independent.
-Incoming ADR083–086 keep their IDs; feature foundations083→087 and Boolean
-non-gating084→088, with provenance recorded in ADR.md. Earlier receipts retain
-source-local historical references.
-
-An additional red/green test caught orphan DAG recovery from a verified legacy
-JSON head. The retry path now accepts only identical immutable receipts linked
-to the verified current legacy generation or its direct successor; changed or
-stale receipts still fail closed. No run history was rewritten.
-
-Read-only actual primary `_resume` passed at492/117296 with the entire logical
-receipt unchanged. Publication failed closed and stale-soup retirement was
-disabled for that protocol; this is not a normal writable-resume/cleanup trial.
-No --human-run, experimental/canonical neural update, optimizer reset or new
-lineage was launched during integration. **Current validation:1,276 passed /41 skipped /0 failed**, plus final56/56
-focused checks after the saved-profile resume extraction. Architecture/size/docs/
-error-plane/code-smell guards pass; external ABI enforcement remains advisory.
-This supersedes the prior wave's red-suite status below; its failure logs remain
-historical. [Integration receipt](docs/evidence/development/ISSUE349_MAIN_INTEGRATION_20261022.md)
-records limits. Prior learning observations below remain historical evidence.
-
-## Latest continuation: actual learning, no product-code changes
-
-Three further bounded commands stopped normally: **34 optimizer visits /1,088
-attempted updates /192 retained** (COUNT160, NUMBER32). Two perfect-target visits
-were skipped. No teacher policy, retention threshold, generator or release changed.
-The third command retained zero updates: NUMBER candidates either failed to improve
-the target or regressed the same-grade panel. Preserve this plateau as evidence.
-
-On the same seeded panel, COUNT **154/180 →178/180 →180/180**; direct numbers
-**56/60→60/60**, equality **98/120→120/120**. These180 rows contain **27 unique
-input token sequences:20/27→26/27→27/27**. NUMBER is **165/180**, representing
-**11/12 unique inputs**. Its one error is literal3→2; all120 equality rows pass.
-NUMBER currently presents a literal numeral and equality true/false contrasts;
-COUNT presents visible finite sets. This is finite0..3 symbol learning, not broad
-number understanding or unexposed generalization. Exposure overlap NOT_MEASURED.
-
-Final seeded A: IDENTITY86/113, PARENT72/132, LINK73/147, MEMBER66/121,
-EDGE80/142, MAPS70/139. B.NOT100/180 and B.AND90/180 remain debt. SUCCESSOR,
-ADD and SUB have not been introduced. No graduation is claimed.
-
-Actual final cold `_resume` at492/117296 preserved the **entire logical state** and
-native optimizer step. Both operator locks checked; preserved event control still
-676/119940/9f5b196a. Current measured collective use **18,153,443,328 bytes**.
-
-Receipt: `docs/evidence/experiments/20261022-issue349-count-to-number.json`.
-Raw probes, scripts and cold-resume readback: `.local/issue349-count-continuation/`.
-The receipt binds exact logs, checkpoints, per-phase decisions and unique-input
-counts. Prior full-suite/storage limitations and incidents below remain unchanged.
-
-## Prior wave observations (historical generation421)
-
-Four bounded commands: **34 optimizer visits / 1,088 attempted updates / 288 retained**.
-A repair retained64; the two Boolean introductions retained32 (AND); C.COUNT
-retained192 across24 visits. No new-grade admission performed an optimizer update.
-
-On the **same180 seeded COUNT questions**, the preserved pre-C-teaching checkpoint
-scored **69/180**, versus **154/180** at the final checkpoint:
-
-- Direct numeric cardinality: **15/60 → 56/60**.
-- Equality true/false contrast views: **54/120 → 98/120**.
-
-The second C pass alone moved the panel138/180→154/180. Final routine COUNT is
-**28/33**. Final seeded B.NOT is91/180 and B.AND95/180; neither is mastered and
-neither blocked C. Earlier A skills remain uneven. These are finite0..3 symbolic
-set-cardinality results. Training-exposure overlap is **NOT_MEASURED**; new seeds
-do not establish unexposed generalization, complete concepts or grade graduation.
-
-Actual COUNT input is a typed finite set, e.g. COUNT({0,1})→2; the same construction
-also offers EQ(COUNT({0,1}),2)→TRUE and a source-valid wrong-number contrast→FALSE.
-The set members are visible in input. It adds no event or physical-world semantics.
-Keep using `numeric_curriculum`/the typed AST and independent oracle; do not invent
-new root-specific trainers or increase scope to make the result look stronger.
-
-Receipt: `docs/evidence/experiments/20261022-issue349-foundations-through-counting.json`.
-Raw local admissions, recovery and paired probes: `.local/issue349-debt-continuation/`.
-The earlier `20261022-issue349-foundation-realignment.json` is the historical
-pre-adoption selection, not current state.
-
-## Prior implementation and verification
-
-The compatibility Course view can project a legal thin Boolean roster, and legacy
-resume defaults no longer replace this selection with AND/IFF. Numeric entry
-preserves the admitted Boolean profile. Same-ABI next-grade admission explicitly
-reuses complete exact-checkpoint boundary measurement + debt custody; ordinary
-append still requires its existing graduated boundary. Debt is an explicit caller
-choice, never inferred from an omitted option.
-
-A real first B resume exposed dropped cohort schema. Routine exams now preserve
-the complete cohort pointer; debt receipts keep their separate `boundary_schema`.
-Debt profile admission retains the fresh verified predecessor boundary. Strict
-release/source/student guards remain. Generation365 was preserved; generation366
-appended a newly source-scored A+B boundary at the unchanged checkpoint before
-normal training resumed. No historical scores or checkpoints were rewritten.
-
-Actual cold `_resume` also verified the complete saved state at historical generation421 /
-step117104 without any logical receipt change or optimizer update.
-
-**41 focused tests pass**, including real-provider A→thinB→C with unresolved
-NOT/AND, stale-boundary rejection, cold cohort verification after both transitions,
-and the actual toy A teaching/exam path. Architecture/docs/error-plane/size checks
-pass. ABI remains advisory without an independent expected digest. Broader legacy
-A/C storage tests are **not green**: raw Merkle-pointer readers, pre-C recovery and
-diagnostic readback failed in logs09-59-49-507Z-49026,10-01-36-963Z-80273 and
-10-03-12-121Z-580. Only the affected A end-to-end test reader was updated; do not
-claim the entire storage migration or full suite is repaired. The extra factory
-closure check's two inherited numeric-provider imports remain prior recorded debt.
-
-PM-2026-10-22-005 (selection drift, RC-047/RC-096, PAT-076) and
-PM-2026-10-20-003 / RC-116 (producer/consumer schema propagation) were enriched
-and exact native Sheet readbacks verified. Preserve their separate meanings.
+The user's first v2 launch exposed two runtime defects after preparation had
+passed: lesson methodology received scheduler-only `ScheduleCapability` objects,
+and terminal evaluation reconstructed an early staged school against the final
+A+B+C schedule. Commits `1edba645…` and `b4e535c5…`, with regression lock
+`6c815d4f…`, repair those seams. `895a1532…` satisfies the repository error-control
+plane without changing the valid semantic-authority path, and `2e5ee21a…` defers
+the native MLX import until full-workload inference is actually required so early
+staged terminal evaluation remains portable. The aborted v2 run is preserved and MUST NOT be
+resumed or counted. The live source run has advanced since generation44238, so v3
+intentionally carries forward the already-frozen workload/policy/fixtures instead
+of silently refreezing today's source state.
 
 ## Next permitted action
 
-Continue from NUMBER, inspecting its literal3→2 error and delivered teacher
-strategies. The latest12 NUMBER attempts retained nothing; prefer a small useful
-trial informed by those receipts over blindly enlarging scope. Let existing C
-stages progress on their own evidence. Keep
-NOT/AND and earlier A mistakes in debt/rehearsal. No event-control resume, new
-qualification framework, teacher-policy override or invented Boolean prerequisite.
-
-```sh
-cd /Users/emilie/Code/.worktrees/Bilqis-MLX/349-autonomous-jit-ithkuil-20261020
-export BILQIS_DATA_PLANE="$PWD/runs/issue-349-experiments/primary/data-plane.sqlite3"
-export BILQIS_INTEGER_MAX=4
-python3 -B -m bilqis_mlx.cli train --human-run --resume \
-  --run-dir "$PWD/runs/issue-349-experiments/primary" \
-  --issue-349-experiment-root "$PWD/runs/issue-349-experiments" \
-  --minutes 4 --max-visits 12 --steps-per-visit 32 --source-prefetch-workers 0
-```
-
-The saved numeric profile/ceiling survives resume; no new admission flag is needed.
-Before any continuation inspect current state/lock and remeasure the collective
-budget through `ExperimentRunBudget`. Use `state_dag.read_current` or
-`read_current_fields`, not raw state.json. The counted SQLite/WAL is durable run
-state; never delete it independently of its heads. Never use --no-retention here.
-
-The preserved event control remains generation676 / step119940 / SHA
-`9f5b196a559929a211ce10e1878def3ac89b5222dc6eee4c47085d4bf00c525a`.
-It has its **own** data plane under plasticity-control, which must be selected for
-any read of that run. Exactly two registered directories measure
-**18,153,443,328 allocated bytes /100,000,000,000**. Keep both current
-students and required recovery evidence. Do not merge main or close the execution issue.
+Human reviews the v3 packet and may explicitly initiate the two official commands,
+sequentially. Neither official v3 arm has run. No scientifically valid
+QUALIFIED/NOT_QUALIFIED #324 result exists. Do not extend budgets, widen semantics,
+resume the aborted v2 epoch, or introduce Grade D/SKOS/historical migration. A
+changed prerequisite or implementation requires another revalidated manifest.

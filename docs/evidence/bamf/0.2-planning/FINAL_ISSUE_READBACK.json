@@ -1,0 +1,432 @@
+[
+  {
+    "key": "A01",
+    "number": 345,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/345",
+    "body_sha256": "81ae5551d1150f6e1c90a17dcb9b90b96cd6acb9aa2abe93966d58b948c94704",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:02.645771+00:00"
+  },
+  {
+    "key": "A02",
+    "number": 348,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/348",
+    "body_sha256": "3d4fcbf20453e674557606de663338d04475546c814dd570fdded4a5d15d10f3",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:02.761178+00:00"
+  },
+  {
+    "key": "A03",
+    "number": 349,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/349",
+    "body_sha256": "36eafe09da1055eaccbb09366a83e217b4f2b5db43b459bbc787393af614d443",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:02.686040+00:00"
+  },
+  {
+    "key": "A04",
+    "number": 351,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/351",
+    "body_sha256": "356feccfb559a0ca5d3fe67f5386f2872eefd5245faf791b53f3a1855e79a83a",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:02.682333+00:00"
+  },
+  {
+    "key": "A05",
+    "number": 357,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/357",
+    "body_sha256": "9db32fb5fc54526e7ec15e33f31e9b216e34bf36273e90fb5195c5e437686a58",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:02.970569+00:00"
+  },
+  {
+    "key": "A06",
+    "number": 352,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/352",
+    "body_sha256": "e01fa9afe09d387b2a0cbad0e1753aeb93fbcd7833a0f532557965c14213a1e8",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:04.152677+00:00"
+  },
+  {
+    "key": "A07",
+    "number": 353,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/353",
+    "body_sha256": "4c854319e1d4366d99a16db16ea131c9693833810de57f210e01ea7e99a23cc7",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:02.947956+00:00"
+  },
+  {
+    "key": "A08",
+    "number": 358,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/358",
+    "body_sha256": "7f79d4196a10ac142385f9b75da5145789340d2fa2ee110f03279dba3e4717ca",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:03.037591+00:00"
+  },
+  {
+    "key": "A09",
+    "number": 360,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/360",
+    "body_sha256": "c6d7b37ebaf0a80ac70c4dc060194148ca08731e847c249c00e1f8601b3b71ed",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:03.217669+00:00"
+  },
+  {
+    "key": "A10",
+    "number": 361,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/361",
+    "body_sha256": "c4c87b7300d701944356a40df9c736db8946a2f128950fc017fff8fef50999a6",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:04.285631+00:00"
+  },
+  {
+    "key": "A11",
+    "number": 362,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/362",
+    "body_sha256": "6314a4902e1bbe09618320941b7d2ffeae8bd3ff65b0059bb449b69ab29cab8d",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:03.314279+00:00"
+  },
+  {
+    "key": "A12",
+    "number": 364,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/364",
+    "body_sha256": "72d53cd55c2a2834ff4f1f36c4f56bd5cef94254ca048fb37e9880ea8370e29b",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:04.586236+00:00"
+  },
+  {
+    "key": "A13",
+    "number": 354,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/354",
+    "body_sha256": "f481133e5ebcd71dd026ab89b1f31a2c80543185f72b348a9846333cfbb912d0",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:03.582306+00:00"
+  },
+  {
+    "key": "B01",
+    "number": 346,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/346",
+    "body_sha256": "69be3bdeb783228646aaabdf9dc7342d46f99e039619850215929e9af7e0433b",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:04.992005+00:00"
+  },
+  {
+    "key": "B02",
+    "number": 359,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/359",
+    "body_sha256": "35b4fd88be01e12dff47af869c4891d5180878f0e6179b81620f15a5e78bae93",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:05.503319+00:00"
+  },
+  {
+    "key": "B03",
+    "number": 363,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/363",
+    "body_sha256": "6d09501534c219cd65888cfa7d127db63a3a86c423136211422236e2d84a74e1",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:05.616063+00:00"
+  },
+  {
+    "key": "B04",
+    "number": 350,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/350",
+    "body_sha256": "4d44aeaae23d53a303d3ad40f6321a30ef0f1a972319fa9d298a76f17a71344a",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:04.850728+00:00"
+  },
+  {
+    "key": "B05",
+    "number": 355,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/355",
+    "body_sha256": "e43b7c43894a93c73b108652cc82434498eda26bd041cd3d44209e4d284a8002",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:06.456683+00:00"
+  },
+  {
+    "key": "B06",
+    "number": 365,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/365",
+    "body_sha256": "fd2940dbb67de12d774e9b43217a8f3c9bbc8fcf08db96f4666b0fac1c331014",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:06.301357+00:00"
+  },
+  {
+    "key": "B07",
+    "number": 356,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/356",
+    "body_sha256": "f7f0ab22986f7b80a358188ffbcd371d87cc8c2c76d622b3d94d9923c8e52e1d",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:06.978791+00:00"
+  },
+  {
+    "key": "B08",
+    "number": 366,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/366",
+    "body_sha256": "e790951bfa07fbba65bd698d9a1cb7a1590f52f23687a5578f0772ac863aaf70",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:05.871582+00:00"
+  },
+  {
+    "key": "B09",
+    "number": 368,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/368",
+    "body_sha256": "5954c96ae574582d1f84347f877fb8894d529a180007a97a245cdca8ff91dfc8",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:07.298706+00:00"
+  },
+  {
+    "key": "B10",
+    "number": 367,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/367",
+    "body_sha256": "17330d223455944843fcdb5f06e8d2f403982032e2043e1e3dd0a3b13eea2804",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:07.787456+00:00"
+  },
+  {
+    "key": "B11",
+    "number": 369,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/369",
+    "body_sha256": "58802214e4ba9a2dcd553b8373bb0f5cb9c003aab139ba3462829bc7cedef7cf",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:07.969783+00:00"
+  },
+  {
+    "key": "B12",
+    "number": 370,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/370",
+    "body_sha256": "02bbe946accf6b9c24d840ed997285f05c3803f99ce4649de9c9428aa0c4695b",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:08.372060+00:00"
+  },
+  {
+    "key": "B13",
+    "number": 372,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/372",
+    "body_sha256": "bb1dcd4c1c4c802ff92e1c3713dd1349d234933f8aca3c3049b2fd949d23926d",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:08.902514+00:00"
+  },
+  {
+    "key": "B14",
+    "number": 375,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/375",
+    "body_sha256": "9679f376feac05669908280befa88198622801d6c754f429c56c0af5dd6bfe7c",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:08.337886+00:00"
+  },
+  {
+    "key": "C01",
+    "number": 347,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/347",
+    "body_sha256": "257f93e02b91a246d40867189d9b74ece395a983f1ba64050ebb358b444ba2b6",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:09.381007+00:00"
+  },
+  {
+    "key": "C02",
+    "number": 371,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/371",
+    "body_sha256": "153d241e3b2dda66fde30b3d4ae6dcdef010a0c139a3377fd46343941e4e29bd",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:09.812366+00:00"
+  },
+  {
+    "key": "C03",
+    "number": 376,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/376",
+    "body_sha256": "b493096416118e81071e7cd88fa8108feacb3faad4afb42fb14e7efae4522b20",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:09.942155+00:00"
+  },
+  {
+    "key": "C04",
+    "number": 373,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/373",
+    "body_sha256": "c639c13f41955248b9e66b1960fbc979d917afd963e63a141621d4e93488f0cd",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:10.435141+00:00"
+  },
+  {
+    "key": "C05",
+    "number": 378,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/378",
+    "body_sha256": "ec4197cf93279e9c58dbd6f8d18b8dfb1ae233776407642a588d904d379ca6d7",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:09.658257+00:00"
+  },
+  {
+    "key": "C06",
+    "number": 379,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/379",
+    "body_sha256": "c18460fe7fd7ab2e16e8b9cfc3d02d81b4052237b58e31b6a5849ee4a645a588",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:09.928402+00:00"
+  },
+  {
+    "key": "C07",
+    "number": 380,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/380",
+    "body_sha256": "b79a8b549d734105a08440e7ab91edb711cbcdecb2a674829649cb23ad487618",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:10.100926+00:00"
+  },
+  {
+    "key": "C08",
+    "number": 374,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/374",
+    "body_sha256": "76495da174b3c36ff9be13aa38d5b6f33c3495d769a18cfe53d8210431e27a4d",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:10.256620+00:00"
+  },
+  {
+    "key": "C09",
+    "number": 377,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/377",
+    "body_sha256": "f0b2950c03ad1effebd1395eabc558191cd2e92ef2ba4abd0824b46a4388ccfe",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:10.191930+00:00"
+  },
+  {
+    "key": "C10",
+    "number": 383,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/383",
+    "body_sha256": "7b6950bd4fb1ebbe64af7bac08add473ac6d314e53565c40e9d30648caec1e51",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:10.355980+00:00"
+  },
+  {
+    "key": "C11",
+    "number": 384,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/384",
+    "body_sha256": "2862d8abcc5a93bf5c72f33f8bee8f733f1bc6ae643358b3a11274d1562c5d81",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:10.472230+00:00"
+  },
+  {
+    "key": "C12",
+    "number": 381,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/381",
+    "body_sha256": "490aeb204d04ffee897afb56ba999aa7261b085dd4947a6e3440e166ef9bcf97",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:11.934563+00:00"
+  },
+  {
+    "key": "C13",
+    "number": 385,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/385",
+    "body_sha256": "0706a20b66f8bf2a64841fdd774c4be59290502d1a6d7a6fed01a7a09d87736c",
+    "verified": true,
+    "status": "unchanged",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:10.635754+00:00"
+  },
+  {
+    "key": "C14",
+    "number": 386,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/386",
+    "body_sha256": "d0ad27e09c418862654192bf31d6ea2ac04136e2ed148d375cdb1792a34495cd",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:11.886665+00:00"
+  },
+  {
+    "key": "C15",
+    "number": 387,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/387",
+    "body_sha256": "84fb59a7fdd4e3defa92c14ea9c555f95dd170abd1dfce964fca6aa51062abc1",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:11.849081+00:00"
+  },
+  {
+    "key": "C16",
+    "number": 382,
+    "url": "https://github.com/Entif-AI/Bilqis-MLX/issues/382",
+    "body_sha256": "dde8bbffeac114ce75e9e09d959541fa72db4d8b69d146ab6258de86716c9b49",
+    "verified": true,
+    "status": "updated",
+    "revision": "EGM-repaired",
+    "at": "2026-10-27T16:15:12.060701+00:00"
+  }
+]

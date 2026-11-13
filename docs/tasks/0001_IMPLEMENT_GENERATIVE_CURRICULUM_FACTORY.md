@@ -149,18 +149,17 @@ Implement the assessment classes from SPEC-0001:
 
 - fresh routine MAIN/RECOVERY assessment;
 - fixed promotion attempt whose failed questions and gold remain teachable after scoring;
-- independent fresh generalization gate;
 - cumulative whole-school graduation under existing governing championship rules.
 
 Do not reintroduce the unauthorized frozen-routine-exam behavior.
 
 Preserve the user's explicit no-holdout rule for promotion: failed promotion questions and gold may be used as supervised lessons, and the same fixed promotion attempt may be retried. Do not pass gold into scoring inference.
 
-Treat promotion and generalization as separate proofs. Passing a familiar fixed promotion cohort never substitutes for a new source-valid generalization cohort. If a failed generalization cohort later becomes teaching material, burn it and generate a different fresh generalization cohort for the next qualification decision.
+Treat promotion as the current developmental qualification proof. Do not describe it as proof of broad generalization. Fresh GENERALIZATION is dormant until a future explicit human maturity decision re-admits it.
 
-### 6. Encode generalization proof in the factory
+### 6. Preserve dormant generalization compatibility without activating it
 
-Generalization obligations belong to the release, not to one grade's hand-written evaluator.
+Historical generalization artifacts belong to compatibility/research surfaces, not the current live developmental graduation path.
 
 Implement:
 
@@ -169,9 +168,10 @@ Implement:
 - contamination state;
 - cheap surface-leakage baselines where applicable;
 - source/oracle provenance;
-- fail-closed graduation on missing generalization evidence.
+- fail-closed parsing and provenance for historical generalization evidence;
+- no automatic live scheduling or graduation dependency on that evidence.
 
-Use the known historical B false-mastery case as a permanent regression target. The pre-C checkpoint that passed the familiar B cohort but performed around 62% across fresh B cohorts must fail the new B graduation/generalization contract.
+Use the known historical B false-mastery case as a permanent diagnostic fixture showing that familiar-cohort mastery and fresh-cohort performance are distinct measurements. It must not reintroduce a current graduation gate.
 
 ### 7. Preserve existing candidate-retention and championship contracts
 
@@ -239,7 +239,7 @@ The proof must add Grade Z without modifying generic:
 - trainer code;
 - scheduler code;
 - evaluator code;
-- promotion/generalization logic;
+- promotion logic;
 - dashboard code;
 - checkpoint code;
 - teacher runtime.
@@ -255,7 +255,7 @@ Preserve historical release readers, but remove current production authority fro
 Prove:
 
 - A source/evaluation parity and historical ABI compatibility;
-- B source/oracle correctness and fresh-generalization failure of the known false-positive graduate;
+- B source/oracle correctness and compatibility readback of the known fresh-cohort diagnostic;
 - C source/typed-answer behavior without granting C a special runtime path.
 
 ### 13. Unfuck `docs/`
@@ -317,10 +317,10 @@ Use existing read-only checkpoints/cohorts and disposable clones where available
 
 At minimum preserve the evidence that:
 
-- historical A genuinely generalizes across fresh cohorts;
-- the pre-C B "graduate" passes its familiar cohort but fails fresh B generalization;
+- historical A fresh-cohort evidence remains readable;
+- the pre-C B "graduate" passes its familiar cohort but scores materially lower on historical fresh B cohorts;
 - C vocabulary admission alone does not perturb old A/B outputs;
-- the factory's new graduation gate detects the historical B false-positive.
+- current developmental graduation does not depend on a generalization gate.
 
 Do not reinterpret historical event records under new semantics without an explicit compatibility adapter.
 
@@ -351,7 +351,8 @@ Do not close this task while any of the following are true:
 - the live trainer still imports canonical grade-specific constructors;
 - a new grade can bypass the factory;
 - A/B/C use materially different admission/evaluation lifecycles because of grade identity;
-- a familiar fixed promotion cohort can by itself authorize graduation without an independent fresh generalization pass;
+- ordinary scheduler movement can open promotion without an authoritative grade-exam epoch advance;
+- the live developmental path can automatically schedule GENERALIZATION;
 - the runtime can train a grade without a validated factory release and admission receipt;
 - unit tests remain primarily dumped into one flat top-level directory;
 - `docs/` remains a root-level pile of dated reports and current contracts;
@@ -367,7 +368,7 @@ The final report must identify:
 - preserved compatibility surfaces;
 - A/B/C migration evidence;
 - Grade Z proof;
-- generalization-gate proof using the historical B false-positive;
+- proof that historical generalization evidence remains readable but dormant;
 - complete test results;
 - any remaining blocker that requires the human.
 

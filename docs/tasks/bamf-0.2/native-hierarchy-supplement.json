@@ -1,0 +1,169 @@
+{
+  "entries": [
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "4809c5f8bdcb3c49d6f275c14c926f0fd30f578671ab9be6b50f148bd0154bf0",
+      "child_number": 863,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 B05.2a | Execute B01 adapters after source-backed group selection",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 450
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "c1c62c29be63deff2b87d8fd0f2fcc80dd3d2f364eb7a222f4fd0ab3acfeb5f2",
+      "child_number": 714,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Reject caller-substituted B03 embedding vectors during refinement",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 454
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "74ac3dae57b7f1950e71fa1528b2eb098eeb3cb7b37641f1111b54765f4ac30b",
+      "child_number": 715,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Make RefinementParameterView truly differentiable and immutable",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 455
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "8401d312f1a2ed5f8a671541befb4aa25cc9ba763ebddaabeb6dd2341ee51143",
+      "child_number": 711,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Make B09.2 participation and update masks production-authoritative",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 465
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "9b4e24180068cd82e2a7f05bdf8e159ce91436200914728a0e63b9e2ee087a0d",
+      "child_number": 710,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Bind B12.2 candidate-step masks to execution-owned provenance",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 475
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "74879719319bd870b89f5926abccd9daf864ccafc7cce6ec88e12ca7c7ab6d4d",
+      "child_number": 706,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Canonicalize B13 bundle paths and reject nested symlink custody escape",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 478
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "6671c0ab7e5dee0fe3dbb0606fb8661b55faa8c4357a64629d13a79bdc01abe9",
+      "child_number": 707,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Bind rejection evidence to the live B13 bundle and manifest lineage",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 478
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "0538d1cc16dee4bcc048f6a9ac74165c4f7364f771e181df18b777f59074cc8c",
+      "child_number": 709,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Prove real B13.2 cold resume through the next controlled optimizer step",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 479
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "89f2324289f91e73a5d69356f832998c6caf9bca8dd5312786de73b8d9b7960b",
+      "child_number": 719,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Bind B14.4 cache eligibility to accepted generation and current source rights",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 485
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "247f2d895f64f4200c02bf6c4c988c8f8373c63b067f206885803f13df1733de",
+      "child_number": 720,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Make CacheAuthorityRuntime issuance non-forgeable by ordinary callers",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 485
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "7eea7d40f20dae92877cd4edfd68fe803e8ea45f6662c8a0180f92d4ad4bb06f",
+      "child_number": 713,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Re-enter canonical A05/A06 authority at the C02.1 model-input boundary",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 490
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "9adf3845059d5c4477f6dfa041b6aca32afa29019f0341756e015cdd6f580781",
+      "child_number": 716,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Preserve checkpoints facade interception across structural extraction",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 524
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "a72e0c9fb4cc576c8968a81480bb87335fd3ad361cefb526f871132a112fc88c",
+      "child_number": 717,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Derive C12.2 receiver and parent-generation identity from B13 authority",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 526
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "8d06e84cffa6d9c40275a6d8a9a199c554ae201bbf1b4aef7a1a7dc28d467395",
+      "child_number": 718,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Consume authoritative C05/A12/B13 screening and source-rights evidence in C12.2",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 526
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "7d4ce3ec2a00752accc2f0c96bc3bfbc4c390a22a91e5948c0897aef11aa9f3a",
+      "child_number": 712,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Carry current formal-source selection through the B05 producer path",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 586
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "0fb8df9a72c4b4a6ea193ed10b1849bb71a8eee82817914ce30c3510460bd67d",
+      "child_number": 747,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Bind B11 boundary receipt shape and dtype into execution provenance",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 586
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "0bca18f40e44c54c7a3d1af0e2ba187ea1320b608196d2f777c054b58eaa4244",
+      "child_number": 748,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 remediation | Make B11 real-source receipt proofs consume accepted atlas selection",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 586
+    },
+    {
+      "authority": "live GitHub native sub-issue relationship + child issue body",
+      "child_body_content_sha256": "6e219099b20a603026cf0950b2c8beb008620d829238d69741aabcce57d1ef91",
+      "child_number": 955,
+      "child_state": "CLOSED",
+      "child_title": "BAMF-0.2 C07.1c | Admit capability-only Factory successors without neural mutation",
+      "kind": "accepted_remediation_or_subleaf",
+      "parent_number": 508
+    }
+  ],
+  "program": "BAMF-0.2",
+  "purpose": "Native GitHub hierarchy added after the frozen 172-child planning/dependency registry; these edges are hierarchy only and do not create prerequisite edges.",
+  "schema": "bilqis.bamf.native-hierarchy-supplement/v1"
+}

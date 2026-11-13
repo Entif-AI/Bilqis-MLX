@@ -1,0 +1,28 @@
+{
+  "before": {
+    "totals": "total=13 passed=5 failed=8 skipped=0 errors=3",
+    "nonpassing_test_names": [
+      "test_full_staircase_redraws_routine_test_at_every_evaluation",
+      "test_id_parent_preview_and_answer_head_custody_survive_c_and_staircase",
+      "test_interrupted_enrollment_recovers_without_changing_student",
+      "test_numeric_profile_sequence_cannot_skip_or_exceed_final_maximum",
+      "test_opt_in_preview_and_repeated_preview_do_not_enroll_or_train",
+      "test_question_inventory_change_globally_resets_live_champions_and_soups",
+      "test_staircase_entry_preserves_optimizer_teacher_and_admits_bounded_catalog",
+      "test_wide_old_mistakes_are_deferred_without_being_discarded"
+    ]
+  },
+  "after": {
+    "totals": "total=13 passed=6 failed=7 skipped=0 errors=2",
+    "nonpassing_test_names": [
+      "test_full_staircase_redraws_routine_test_at_every_evaluation",
+      "test_id_parent_preview_and_answer_head_custody_survive_c_and_staircase",
+      "test_interrupted_enrollment_recovers_without_changing_student",
+      "test_numeric_profile_sequence_cannot_skip_or_exceed_final_maximum",
+      "test_opt_in_preview_and_repeated_preview_do_not_enroll_or_train",
+      "test_question_inventory_change_globally_resets_live_champions_and_soups",
+      "test_staircase_entry_preserves_optimizer_teacher_and_admits_bounded_catalog"
+    ]
+  },
+  "new_nonpassing_test_names": []
+}

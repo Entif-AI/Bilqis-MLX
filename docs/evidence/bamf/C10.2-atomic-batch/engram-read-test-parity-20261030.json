@@ -1,0 +1,25 @@
+{
+  "identical": true,
+  "before": {
+    "test_public_read_entrypoint_requires_source_qualified_contract": "4d2f72ae105a803a2f66eba75490855157f20c3cac2e0c53d6a34713f1fd5b74",
+    "test_group1_second_read_is_source_qualified_but_quarantined_no_hit": "6112373e269595a6140c7bd5f91cfd603f3f9e1733427f55918cc8fc84b429ff",
+    "test_exact_hit_both_sites_use_literal_gate_and_keep_padding_unchanged": "1b2aba8bf9990e4bd2a7d99c16376f68965dfcdea68c7b8fc7f21f6a4dfd8cd2",
+    "test_structural_hit_then_missing_scope_and_foreign_release_are_safe": "1d3347a6c3143b67ca9462e9b8b9608bba1a003ec12a13a35e67b332b143816f",
+    "test_revoked_frame_grant_and_missing_keys_return_exact_input_identity": "995dd115a82fe9e028b1e18c5f626b0cdf91f1cc8838daaae2fb9a5bbcf3872b",
+    "test_schema_grant_is_required_and_cannot_be_forged_or_revoked": "25b0fed5c783bc3faf027710e6dc7a08faf0640144f48e48397908c9a8b918fe",
+    "test_hit_gradients_reach_page_projection_and_gate_at_each_site": "f5b2c652ef67900d85a6fb1fe6975f3bec4e1fb7a6630b99c5efcd448b83c129",
+    "test_nonzero_gate_inputs_train_norm_and_both_gate_vectors": "c2f972ad3bda16c6bd4e3ef88e348a40bd9658ca6396ad6228129d8da9d71deb",
+    "test_wrong_site_or_invalid_tensor_rejects_before_gather": "577209b5d9a14993301e2b31e212272ca386028e471bf6c937dd578679284847"
+  },
+  "after": {
+    "test_public_read_entrypoint_requires_source_qualified_contract": "4d2f72ae105a803a2f66eba75490855157f20c3cac2e0c53d6a34713f1fd5b74",
+    "test_group1_second_read_is_source_qualified_but_quarantined_no_hit": "6112373e269595a6140c7bd5f91cfd603f3f9e1733427f55918cc8fc84b429ff",
+    "test_wrong_site_or_invalid_tensor_rejects_before_gather": "577209b5d9a14993301e2b31e212272ca386028e471bf6c937dd578679284847",
+    "test_exact_hit_both_sites_use_literal_gate_and_keep_padding_unchanged": "1b2aba8bf9990e4bd2a7d99c16376f68965dfcdea68c7b8fc7f21f6a4dfd8cd2",
+    "test_structural_hit_then_missing_scope_and_foreign_release_are_safe": "1d3347a6c3143b67ca9462e9b8b9608bba1a003ec12a13a35e67b332b143816f",
+    "test_revoked_frame_grant_and_missing_keys_return_exact_input_identity": "995dd115a82fe9e028b1e18c5f626b0cdf91f1cc8838daaae2fb9a5bbcf3872b",
+    "test_schema_grant_is_required_and_cannot_be_forged_or_revoked": "25b0fed5c783bc3faf027710e6dc7a08faf0640144f48e48397908c9a8b918fe",
+    "test_hit_gradients_reach_page_projection_and_gate_at_each_site": "f5b2c652ef67900d85a6fb1fe6975f3bec4e1fb7a6630b99c5efcd448b83c129",
+    "test_nonzero_gate_inputs_train_norm_and_both_gate_vectors": "c2f972ad3bda16c6bd4e3ef88e348a40bd9658ca6396ad6228129d8da9d71deb"
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "schema": "bilqis.mlx.embedding-update-coverage/v1",
+  "scope": "disposable-native-adamw-coordinate-probes",
+  "whole_model_or_masked_optimizer_qualification": false,
+  "parameters": [
+    {
+      "parameter": "features.gates",
+      "shape": [
+        4
+      ],
+      "nonzero_gradient_elements": 4,
+      "gradient_l1": 2.3778433799743652,
+      "probe_flat_coordinate": 1,
+      "before": -2.0,
+      "after": -1.9996999502182007,
+      "weight_decay": 0
+    },
+    {
+      "parameter": "features.local_slot",
+      "shape": [
+        16,
+        768
+      ],
+      "nonzero_gradient_elements": 5,
+      "gradient_l1": 9.871315956115723,
+      "probe_flat_coordinate": 1,
+      "before": 0.0,
+      "after": 0.0002999999560415745,
+      "weight_decay": 0.1
+    },
+    {
+      "parameter": "features.norm",
+      "shape": [
+        768
+      ],
+      "nonzero_gradient_elements": 2,
+      "gradient_l1": 5.934311866760254,
+      "probe_flat_coordinate": 0,
+      "before": 1.0,
+      "after": 0.9997000098228455,
+      "weight_decay": 0
+    },
+    {
+      "parameter": "features.project_graph",
+      "shape": [
+        768,
+        64
+      ],
+      "nonzero_gradient_elements": 5,
+      "gradient_l1": 0.11765240132808685,
+      "probe_flat_coordinate": 68,
+      "before": 0.0,
+      "after": 0.000299999926937744,
+      "weight_decay": 0.1
+    },
+    {
+      "parameter": "features.project_role",
+      "shape": [
+        768,
+        128
+      ],
+      "nonzero_gradient_elements": 640,
+      "gradient_l1": 150.6162872314453,
+      "probe_flat_coordinate": 128,
+      "before": 3.0,
+      "after": 3.0002100467681885,
+      "weight_decay": 0.1
+    },
+    {
+      "parameter": "features.project_schema",
+      "shape": [
+        768,
+        128
+      ],
+      "nonzero_gradient_elements": 640,
+      "gradient_l1": 37.65407180786133,
+      "probe_flat_coordinate": 128,
+      "before": 0.0,
+      "after": 0.0002999999560415745,
+      "weight_decay": 0.1
+    },
+    {
+      "parameter": "features.project_type",
+      "shape": [
+        768,
+        128
+      ],
+      "nonzero_gradient_elements": 640,
+      "gradient_l1": 75.30814361572266,
+      "probe_flat_coordinate": 128,
+      "before": 0.0,
+      "after": 0.0002999999560415745,
+      "weight_decay": 0.1
+    },
+    {
+      "parameter": "features.role",
+      "shape": [
+        512,
+        128
+      ],
+      "nonzero_gradient_elements": 1,
+      "gradient_l1": 2.3170289993286133,
+      "probe_flat_coordinate": 256,
+      "before": 1.0,
+      "after": 1.0002700090408325,
+      "weight_decay": 0.1
+    },
+    {
+      "parameter": "features.schema",
+      "shape": [
+        512,
+        128
+      ],
+      "nonzero_gradient_elements": 1,
+      "gradient_l1": 0.0014736326411366463,
+      "probe_flat_coordinate": 256,
+      "before": 0.25,
+      "after": 0.25029250979423523,
+      "weight_decay": 0.1
+    },
+    {
+      "parameter": "features.type",
+      "shape": [
+        512,
+        128
+      ],
+      "nonzero_gradient_elements": 1,
+      "gradient_l1": 0.7643198370933533,
+      "probe_flat_coordinate": 256,
+      "before": 0.5,
+      "after": 0.49968501925468445,
+      "weight_decay": 0.1
+    },
+    {
+      "parameter": "identity.bank.0",
+      "shape": [
+        8192,
+        768
+      ],
+      "nonzero_gradient_elements": 10,
+      "gradient_l1": 63.186771392822266,
+      "probe_flat_coordinate": 9220,
+      "before": 0.0,
+      "after": 0.0002999999560415745,
+      "weight_decay": 0.1
+    }
+  ]
+}

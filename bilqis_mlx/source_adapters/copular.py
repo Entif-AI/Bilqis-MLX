@@ -15,7 +15,7 @@ from ..factory.model import SourceAdapter
 from ..semantics.copular import (
     SYMBOL, ENTITIES, ReferentWorld, bind_operation, identify, evaluate, references,
 )
-from ..factory.verification import COPULAR_ORACLE as ORACLE, check_copular as check
+ORACLE = "bilqis.ithkuil-reference-identity-oracle/v1"
 from ..vocabulary_growth import digest
 
 
@@ -167,18 +167,52 @@ def draw(source_root, graph, *, seed: int, each: int = 12,
     return tuple(rows[:each])
 
 
+def check_copular(row, *, graph, **_):
+    from ..vocabulary_growth import digest
+    try:
+        record = row["record"]
+        tokens = row["tokens"]
+        if (not isinstance(tokens, list) or
+                any(type(index) is not int or not 0 <= index < len(graph["tokens"]) for index in tokens)):
+            return False
+        world, expression = decode([graph["tokens"][index] for index in tokens], graph)
+        gold = "TRUE" if evaluate(world, expression) else "FALSE"
+        return (record == _record(world, expression) and
+                row["gold"] == gold and row["id"] == row["source_id"] == digest(record) and
+                row["capability"] == CAPABILITY and row["root"] == SYMBOL and
+                row["generator"] == GENERATOR and row["oracle"] == ORACLE and
+                row["answer_kind"] == "binary" and row["source_sense_id"] == SENSE_ID and
+                row["universe_size"] == len(world.entities) and
+                row["reference_pattern"] == _pattern(world, expression))
+    except (KeyError, ValueError, TypeError, AttributeError):
+        return False
+
+
+check = check_copular
+
+
+def semantic_footprint(row: dict) -> tuple[str, ...]:
+    """Return the admitted source semantics used by one copular specimen."""
+    record = row.get("record") if isinstance(row, dict) else None
+    query = record.get("query") if isinstance(record, dict) else None
+    if (not isinstance(record, dict) or record.get("task") != DIALECT or
+            not isinstance(query, dict) or query.get("operator") != SYMBOL):
+        raise ValueError
+    return ("micro.compare.EQ", "development.op.MAPS")
+
+
 def registered_adapter() -> RegisteredSourceAdapter:
     home = Path(__file__).resolve().parents[1]
     implementation = digest(dict(
         source=_expected_witness(),
         files={name: hashlib.sha256((home / name).read_bytes()).hexdigest()
-               for name in ("source_adapters/copular.py", "semantics/copular.py",
+               for name in ("source_adapters/copular.py", "semantics/foundation/copular.py",
                             "verification/copular.py", "factory/verification.py")}))
     return RegisteredSourceAdapter(SourceAdapter(
         adapter_id="source.ithkuil-reference-identity/v1", generator_id=GENERATOR,
         accepted_oracle_ids=(ORACLE,), implementation_sha256=implementation,
         variation_axes=("reference-identity", "denotation", "universe-size", "fact-order", "fresh-seed")),
-        draw, check, witness=witness)
+        draw, check, witness=witness, semantic_footprint=semantic_footprint)
 
 
 def witness(row, obligation, *, graph, **_) -> bool:

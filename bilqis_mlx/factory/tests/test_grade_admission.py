@@ -14,8 +14,8 @@ from bilqis_mlx.curriculum_compiler import (
     compile_typed_candidate_package,
     compile_ast,
 )
-from bilqis_mlx.grade_transition import (candidate_package_digest, cumulative_exam_digest,
-                                       next_grade_readiness)
+from bilqis_mlx.grade_transition import candidate_package_digest, cumulative_exam_digest
+from bilqis_mlx.compatibility.grade_transition import next_grade_readiness
 from bilqis_mlx.curriculum.scheduler import Assessment, Score, start_new
 from bilqis_mlx.semantics.core import Operation, Signature
 from bilqis_mlx.next_grade_review import QUESTION_IDS, SCHEMA, evidence_references, load_review, subject_digest

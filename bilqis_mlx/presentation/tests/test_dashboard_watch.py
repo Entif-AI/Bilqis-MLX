@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from bilqis_mlx.presentation.dashboard import _replay_dashboard_journal, build
+from bilqis_mlx.presentation.dashboard import _dashboard_state, _replay_dashboard_journal, build
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard
 from bilqis_mlx.presentation.dashboard_watch import JournalReplaced, JournalTail, watch
 from bilqis_mlx.presentation.run_discovery import (
@@ -18,6 +18,24 @@ from bilqis_mlx.presentation.run_discovery import (
 
 
 class DashboardWatchTests(unittest.TestCase):
+    def test_bamf_pointer_takes_precedence_over_legacy_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "bamf-state.json").write_text("{}")
+            (root / "state.json").write_text("{}")
+            bamf = {"school": {"active_grades": ["violet"], "grade_index": 0}}
+            with patch(
+                "bilqis_mlx.presentation.dashboard._bamf_accepted_dashboard_state",
+                return_value=bamf,
+            ) as accepted, patch(
+                "bilqis_mlx.presentation.dashboard.read_current",
+            ) as legacy:
+                _path, state, _school, _active, current = _dashboard_state(root)
+        self.assertIs(state, bamf)
+        self.assertEqual(current, "violet")
+        accepted.assert_called_once_with(root)
+        legacy.assert_not_called()
+
     def test_initial_replay_decodes_only_the_dashboard_record_window(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -37,6 +55,44 @@ class DashboardWatchTests(unittest.TestCase):
 
             self.assertEqual(seen, events[-2:])
             self.assertEqual(board.journal_offset, path.stat().st_size)
+
+    def test_build_reconstructs_graduations_from_full_journal_not_recent_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "events.jsonl"
+            history = [
+                {"event": "SCHOOL_SESSION_STARTED", "grade": "A",
+                 "generation": 1, "optimizer_step": 100},
+                {"event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "A",
+                 "generation": 2, "introduction_stage": 0,
+                 "phase": "PROMOTION_SWEEP"},
+                {"event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "A",
+                 "generation": 3, "introduction_stage": 0, "phase": "MAIN"},
+                {"event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "A",
+                 "generation": 4, "introduction_stage": 1, "phase": "MAIN"},
+                {"event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "A",
+                 "generation": 5, "introduction_stage": 1,
+                 "phase": "PROMOTION_SWEEP"},
+                {"event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "A",
+                 "generation": 6, "introduction_stage": 1,
+                 "phase": "AWAITING_NEXT_GRADE_WITH_DEBT"},
+            ]
+            history.extend({"event": "IGNORED", "n": n} for n in range(520))
+            history.extend([
+                {"event": "SCHOOL_SESSION_STARTED", "grade": "B",
+                 "generation": 600, "optimizer_step": 200},
+                {"event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "B",
+                 "generation": 601, "introduction_stage": 0,
+                 "phase": "PROMOTION_SWEEP"},
+                {"event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "B",
+                 "generation": 602, "introduction_stage": 0,
+                 "phase": "RECOVERY_1"},
+            ])
+            path.write_text("".join(json.dumps(event) + "\n" for event in history))
+
+            board = build(root, stream=io.StringIO())
+
+            self.assertEqual(board.state["graduations"], "0.0.1 / 2.2.3")
 
     def test_automatically_selects_the_only_active_cross_worktree_run(self):
         with tempfile.TemporaryDirectory() as tmp:

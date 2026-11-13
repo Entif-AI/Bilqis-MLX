@@ -1,0 +1,32 @@
+# BAMF-0.2 A08.1b.2 | Formal Boolean and numeric constructive operators
+
+Parent: A08.1b #418. Lane: `codex/bamf02-a-semantics`.
+Issue number: #554. Source spec: A08.1b and
+`BAMF-0.2-SPEC-001`, both preserved in full.
+
+## Exact owned result
+
+Bind the A01-released formal Boolean/numeric identities to the
+existing A07 source-qualified pure-operator registry, A13 source
+rights and the original Factory construction/checker contract.
+For each source-attested formal family, generate positive
+constituent-first teaching, legal source-valid contrasts,
+canonical typed answer, independent executable checker,
+prerequisite closure and real variation axes. Reuse A07
+operator semantics, domain/arity/error contracts and exact
+source authority; never infer laws from labels or let a caller
+substitute a different formal family under the same ABI index.
+
+Do not grant `ADAPTER_READY` for a named registry entry without
+an actual registered generator/checker pair. No synthetic
+checker success becomes `LEARNING_VERIFIED`. Preserve all
+unsupported/held obligations in the A08.1a denominator.
+
+## Finish gate
+
+Literal Boolean and numeric examples, cross-family spoof,
+wrong-arity/type, rights/release revocation, contrast and
+checker-independence negatives. Consume A08.1a, A07.1/A07.2
+and A13.1 receipts. Focused tests and independent EGM PASS,
+immutable branch/issue/PR receipts. No grade-specific dispatch,
+live training, source promotion or self-merge.

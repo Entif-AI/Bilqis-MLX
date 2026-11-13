@@ -1,0 +1,34 @@
+{
+  "identical": true,
+  "before": {
+    "_identity": "4e218954c12cd6ad870be641359ed55c259871b9fc75f2aa5f6ee46a7ada1356",
+    "_canonical_names": "8c29173e1a86f15115be71ba15d6b25c354b5770ada83ef98cfa713b32764719",
+    "CorrectionBranch": "afd9cafbb05c65e8e0fe255e8b0bc4bf92153226bac83c753807048598000219",
+    "CorrectionBranches": "4efa35c06fcc9e44fcf10532b7bd7ebfb02514cb5535b89d1c22c5e5f6079cc4",
+    "add_correction": "ca5c94219b8686312eb37cd5d4d6ac16f24e21ab2c48a566b30a1c687d24dcb5",
+    "RequalificationStatus": "f13b0596e2ffa6b67812ebc02a352e3fe80c32a9166bd82aa9e2027bb20b2cf1",
+    "CapabilitySupport": "2dd439d29bf2c8eba6b78b06b4733009c93e47b8d33bb3eccf7252542644e779",
+    "TargetedSourceTask": "09c533ef1ae803158ab94d245b4ad6c48f4de898e41cabf26e5c2126adaf6234",
+    "C10InvalidationIntent": "42190071172390c89a9104b2e9c2f214c60285414d42569ea7dd387ae83b8f86",
+    "RequalificationLedger": "34e9865c18cd7d925c0c1d95f79c1c2abd444fda3b73f62d7a454a867640b842",
+    "RequalificationUpdate": "b8ffb96e8eab12506a444e5d46c6c596d631b15d2b163ac856ca3419d3cdcc87",
+    "_support_impacted_artifacts": "dfdbb49ddadf1a7d132fb4e600f423206152fd0aef988493871615d5a2fac22a",
+    "mark_affected_capabilities": "96f5aea11aa5bdc0ad8ad84479566650200cf0cda0aef44f96aba8ea4a4565fd"
+  },
+  "after": {
+    "_support_impacted_artifacts": "dfdbb49ddadf1a7d132fb4e600f423206152fd0aef988493871615d5a2fac22a",
+    "mark_affected_capabilities": "96f5aea11aa5bdc0ad8ad84479566650200cf0cda0aef44f96aba8ea4a4565fd",
+    "_identity": "4e218954c12cd6ad870be641359ed55c259871b9fc75f2aa5f6ee46a7ada1356",
+    "_canonical_names": "8c29173e1a86f15115be71ba15d6b25c354b5770ada83ef98cfa713b32764719",
+    "CorrectionBranch": "afd9cafbb05c65e8e0fe255e8b0bc4bf92153226bac83c753807048598000219",
+    "CorrectionBranches": "4efa35c06fcc9e44fcf10532b7bd7ebfb02514cb5535b89d1c22c5e5f6079cc4",
+    "add_correction": "ca5c94219b8686312eb37cd5d4d6ac16f24e21ab2c48a566b30a1c687d24dcb5",
+    "RequalificationStatus": "f13b0596e2ffa6b67812ebc02a352e3fe80c32a9166bd82aa9e2027bb20b2cf1",
+    "CapabilitySupport": "2dd439d29bf2c8eba6b78b06b4733009c93e47b8d33bb3eccf7252542644e779",
+    "TargetedSourceTask": "09c533ef1ae803158ab94d245b4ad6c48f4de898e41cabf26e5c2126adaf6234",
+    "C10InvalidationIntent": "42190071172390c89a9104b2e9c2f214c60285414d42569ea7dd387ae83b8f86",
+    "RequalificationLedger": "34e9865c18cd7d925c0c1d95f79c1c2abd444fda3b73f62d7a454a867640b842",
+    "RequalificationUpdate": "b8ffb96e8eab12506a444e5d46c6c596d631b15d2b163ac856ca3419d3cdcc87"
+  },
+  "test_methods_identical": 18
+}

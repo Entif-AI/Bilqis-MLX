@@ -1,0 +1,34 @@
+<!-- BAMF02:WORK-PACKET:B02.4 -->
+# B02.4 | Bind child-frame constituents without fabricating semantic identities
+
+**Program:** BAMF-0.2 root #341. **Lane:** B. **Parent:** B02 #359. **Originating blocker:** B03.3 #444.
+
+## Outcome
+Define the neural constituent binding for a nested `ChildFrameRef` so B03 can encode parent/child structure and preserve gradients without inventing a `ConceptRef`, ABI row, or semantic identity for the child frame itself.
+
+The current seam is underspecified: `ChildFrameRef` carries child occurrence/content/type identity, while the ordinary B02 feature request path expects a source `ConceptRef`/ABI identity. A frame occurrence is not automatically a semantic concept.
+
+## Authority and constraints
+- Canonical semantic identity remains owned by the admitted semantic ABI. A child frame does not gain an ABI row merely because it needs a 768-wide neural constituent representation.
+- Preserve child occurrence ID, content digest, type IDs, source/scope lineage, and parent role/slot binding separately from any semantic filler identity.
+- Parent-to-child gradients must reach the actual child frame representation and the parent role/slot interaction path.
+- No synthetic semantic ID, placeholder ABI index, UNKNOWN row, or copied parent identity may stand in for the child frame.
+- Atomic/concept constituents continue using their existing B02 path unchanged.
+
+## Required deliverable
+Introduce an explicit typed constituent binding/view for nested child frames, with a deterministic 768-wide representation derived from already-authoritative child-frame state plus the declared parent role/slot features. The API must make the distinction between `ConceptRef` and `ChildFrameRef` unambiguous to B03.
+
+## Acceptance
+- Nested parent with one child frame encodes without fabricating a semantic/ABI identity.
+- Role swap or child occurrence swap changes the parent constituent binding as specified.
+- Two identical child contents at different occurrences remain separately addressable.
+- Backward reaches the child frame representation and parent role/slot parameters.
+- Mutating a child content digest, source binding, or parent role fails/rekeys rather than aliasing an earlier binding.
+- Concept/atomic constituent behavior is unchanged.
+- B03.3 can consume the typed binding directly and pass its full nested-gradient proof.
+- Fresh independent EGM required before integration.
+
+## Dependency / handoff
+Consumes B01 parameter/feature authority, actual A05 compiled child handles, and the A05.4 partial-visible-forest contract. Completion unblocks the neural half of B03.3 #444.
+
+No source admission, ABI allocation, or durable training is authorized by this issue.

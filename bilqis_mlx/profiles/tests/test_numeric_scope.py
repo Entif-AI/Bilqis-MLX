@@ -33,6 +33,34 @@ class NumericScopeTests(unittest.TestCase):
 
 
 class NumericEntryProfileTests(unittest.TestCase):
+    def test_canonical_numeric_scope_runs_from_four_through_ten(self):
+        from bilqis_mlx.profiles.catalog import numeric_scope_bounds
+
+        self.assertEqual(numeric_scope_bounds(), (4, 10))
+
+    def test_b_to_c_entry_uses_four_to_ten_independent_of_legacy_flag(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from bilqis_mlx.profiles.catalog import (
+            CatalogProfileTransition, next_school_transition)
+
+        release = SimpleNamespace(
+            execution_plan=SimpleNamespace(grades=(
+                SimpleNamespace(grade_id='A'), SimpleNamespace(grade_id='B'))),
+            curriculum=SimpleNamespace(grades=(
+                SimpleNamespace(grade_id='A'), SimpleNamespace(grade_id='B'),
+                SimpleNamespace(grade_id='C'))))
+        base = CatalogProfileTransition(profile=object(), graph={'fixture': True})
+        for legacy_flag in (False, True):
+            with self.subTest(legacy_flag=legacy_flag), patch(
+                    'bilqis_mlx.profiles.catalog.numeric_entry_transition',
+                    return_value=base) as entry:
+                transition = next_school_transition(
+                    release, {}, full_boolean=False,
+                    numeric_staircase=legacy_flag)
+                self.assertEqual(transition.numeric_scope_final_maximum, 10)
+                self.assertEqual(entry.call_args.kwargs['maximum'], 4)
+
     def test_numeric_entry_preserves_introduced_boolean_slice_without_mastery_gate(self):
         from types import SimpleNamespace
         from unittest.mock import Mock, patch
@@ -50,12 +78,51 @@ class NumericEntryProfileTests(unittest.TestCase):
         release.curriculum = SimpleNamespace(grades=(None, None, SimpleNamespace(grade_id='C',
             capabilities=tuple(SimpleNamespace(capability_id=cap) for cap in numeric_ids))))
         with patch('bilqis_mlx.profiles.catalog.expanded_graph', return_value={'fixture': True}):
-            transition = numeric_entry_transition(release, {}, full_boolean=False, maximum=3)
+            transition = numeric_entry_transition(release, {}, full_boolean=False)
         grades = {grade.grade_id: grade for grade in transition.profile.grades}
         self.assertEqual(grades['B'], profile.grades[0])
-        self.assertEqual(grades['C'].enabled_capabilities, numeric_ids[:5])
+        self.assertEqual(grades['C'].enabled_capabilities, numeric_ids)
         self.assertEqual(dict(grades['C'].capabilities[0].provider_parameters)['numbers'],
-                         ('0', '1', '2', '3'))
+                         ('0', '1', '2', '3', '4'))
+        self.assertEqual(transition.numeric_scope_final_maximum, 10)
+
+    def test_numeric_scope_advances_exactly_one_root_and_stops_at_ten(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from bilqis_mlx.factory.executable_release import ExecutableFactoryRelease
+        from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
+        from bilqis_mlx.profiles.catalog import next_numeric_scope_profile
+
+        numeric_ids = ('C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD',
+                       'C.SUB', 'C.MUL', 'C.DIV')
+        release = Mock(spec=ExecutableFactoryRelease)
+        release.profile = CurriculumProfile('school/test/numeric-0-4', (
+            GradeProfile('A', enabled_capabilities=('A.IDENTITY',)),
+            GradeProfile('B', enabled_capabilities=('B.AND',)),
+            GradeProfile('C', enabled_capabilities=numeric_ids),))
+        release.execution_plan = SimpleNamespace(
+            grades=(SimpleNamespace(grade_id='A'), SimpleNamespace(grade_id='B'),
+                    SimpleNamespace(grade_id='C')),
+            capabilities=(SimpleNamespace(
+                grade_id='C', answer_families=(SimpleNamespace(
+                    kind='numeric_active', values=tuple(str(i) for i in range(5))),)),))
+        release.curriculum = SimpleNamespace(grades=(
+            SimpleNamespace(grade_id='A', capabilities=()),
+            SimpleNamespace(grade_id='B', capabilities=()),
+            SimpleNamespace(grade_id='C', capabilities=tuple(
+                SimpleNamespace(capability_id=cap) for cap in numeric_ids)),))
+
+        next_profile = next_numeric_scope_profile(release, final_maximum=10)
+        self.assertTrue(next_profile.profile_id.endswith('/numeric-0-5'))
+        c_grade = next(g for g in next_profile.grades if g.grade_id == 'C')
+        self.assertEqual(
+            dict(c_grade.capabilities[0].answer_family_values)['numeric_active'],
+            ('0', '1', '2', '3', '4', '5'))
+
+        release.execution_plan.capabilities = (SimpleNamespace(
+            grade_id='C', answer_families=(SimpleNamespace(
+                kind='numeric_active', values=tuple(str(i) for i in range(11))),)),)
+        self.assertIsNone(next_numeric_scope_profile(release, final_maximum=10))
 
 
 if __name__ == "__main__":

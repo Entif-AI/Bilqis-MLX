@@ -1308,540 +1308,2157 @@ boundary, avoiding another starvation epoch without rewriting historical visits 
 claiming neural progress.
 
 
-## ADR-095 | 2026-10-25 | IDBOOLOPS restores proposition landmarks without restoring worlds
-
-**Direct user decision after comparing pre- and post-U7C learning behavior.** Keep
-`B.IDBOOLOPS` as a genuine inverse Boolean-identification problem: the target
-operator stays absent from the student input, the complete FF/FT/TF/TT observation
-set stays shuffled, and the answer remains the admitted Boolean-operator head.
-Do not canonicalize row order or reintroduce `A.LINK`, `A.IDENTITY`, or a finite
-world merely to make the task easier.
-
-The direct-U7C representation may, however, restore **structural landmarks** that
-make each shuffled observation internally bindable. Each observation now names the
-already-admitted Boolean proposition slots `P` and `Q` and uses the existing
-`syntax.bind` token to attach each slot to its TRUE/FALSE value before the observed
-result. The representation therefore exposes `P=<value>, Q=<value> -> <result>`
-without exposing the hidden operator. These landmarks are answer-independent and
-add no new semantic token or world-model prerequisite.
-
-This is a source/presentation revision, not claimed neural mastery. Existing cohorts,
-scores, checkpoints, student weights and own AdamW remain immutable historical
-evidence. A live run whose admitted factory release predates the landmark contract
-must adopt one verified same-profile source successor with **zero neural updates**
-before drawing new IDBOOLOPS rows. The scheduler projection and causal student are
-preserved, stale assessment evidence is invalidated, and the changed factory-release
-identity follows the existing championship-identity reset/archive rules rather than
-silently comparing old and new presentation strata.
-
-
-## ADR-096 | 2026-10-25 | AND/IMPLIES complete truth cells and expose outer operand roles
-
-**Direct user decision after observing repeated Grade-B frontier-loss rejections.**
-Extend the narrow information-geometry repair to `B.AND` and `B.IMPLIES` without
-reintroducing world models, hidden-state auxiliary losses, or a new token ABI. The
-source AST, independent Boolean oracle, answer modality, scheduler, retention gates,
-student/AdamW custody and historical evidence remain unchanged.
-
-For 12-row source cohorts, keep exact 6/6 TRUE/FALSE balance while restoring the
-previously omitted truth cells. `B.AND` uses `TT=6, TF=2, FT=2, FF=2`;
-`B.IMPLIES` uses `TF=6, TT=2, FF=2, FT=2`. The original U7C causal-core cells remain
-present as a subset, so the earlier counterfactual influence witness is preserved,
-but the full released source family now exposes all four operand truth combinations.
-This intentionally favors semantic closure over keeping the full 12-row marginal
-distribution optimized for the old sparse single-arm-baseline heuristic.
-
-The student-facing encoding now makes only the two **outer operand roles** explicit:
-`premise P bind <left source expression> ; premise Q bind <right source expression>`.
-The original source-expression diversity and P/Q variable bindings inside those
-expressions remain available; the landmarks factor the outer tree without replacing
-the source expressions with bare truth values. `B.NOT`, `B.OR`, `B.XOR` and `B.IFF`
-retain the historical logic codec. This is narrower than the AST-boundary and
-auxiliary-hidden-state experiments rejected by ADR-066 and makes no claim of neural
-improvement before live evidence exists.
-
-Because the canonical full-B factory currently routes atomic Boolean capabilities
-through the umbrella Boolean-identification provider, that provider explicitly
-declares this presentation variation as well. A run whose admitted release predates
-the marker adopts one verified same-profile `REVISE_SOURCE` successor with zero
-neural updates. The causal student and scheduler projection are preserved while
-stale assessment/championship authority is handled by the existing source-revision
-identity rules.
-
-
-## ADR-097 | 2026-10-25 | Teacher evidence follows teaching geometry; interference throttling is consecutive
-
-**Direct user decision after revising IDBOOLOPS, AND and IMPLIES presentation.**
-Adaptive teacher evidence is causally comparable only while the student's teaching
-surface is unchanged. A capability-local teaching-geometry epoch therefore becomes
-part of contextual policy identity for the revised `B.IDBOOLOPS`, `B.AND` and
-`B.IMPLIES` surfaces. Unchanged capabilities keep their historical context keys.
-The strategy inventory is preserved, but the revised capabilities start fresh
-contextual reward, rejection-pressure and diagnostic evidence. Historical grade/global
-bandit reward is at most a weak prior and is not mutated by geometry-epoch visits
-while the causal experiment channel is active.
-
-Contextual strategy identity also follows behavior rather than nominal knob spelling.
-`preview` remains unavailable and excluded; `depth=1/2` share the shallow policy,
-`depth=3/4` share the deep policy, and `contrast=0.5/1.0` share the diversity policy
-because those are the actual selector thresholds. This prevents the finite strategy
-inventory from fragmenting evidence across behaviorally identical variants.
-
-Exact unresolved-miss specimens from a retired geometry are not replayed into the
-new one. Their historical events/exposure receipts remain evidence, while fresh
-source-equivalent misses may repopulate the active queue under the current admitted
-representation. Negative interference archetypes are likewise compared only inside
-the current teacher context scope rather than across incompatible presentations.
-
-The disposable candidate-step controller is also corrected to match its documented
-intent. Halving/quartering depends on **consecutive interference rejections**, not the
-cumulative count of every interference reason since the last retained candidate.
-`NO_MEASURABLE_TARGET_GAIN` breaks that interference streak; retained candidates
-reset current rejection pressure. Pre-fix receipts lack the new consecutive counter
-and therefore resume at the configured candidate horizon instead of inheriting an
-indefinite 4/16 or 8/16 throttle from old failures. Retention criteria themselves are
-unchanged: full-horizon candidates remain disposable until the same source-grounded
-retention gates accept them.
-
-This corrects a self-locking failure mode observed in the live Prometheus run: many
-capabilities had accumulated old frontier/interference rejects, were permanently
-reduced to four or eight attempted updates, then repeatedly failed to produce target
-gain at that shortened horizon. The resulting rejected attempts did not advance the
-durable optimizer step, causing command-level retained-step progress to collapse even
-while hundreds of disposable updates were being attempted.
-
-
-## ADR-098 | 2026-10-25 | Teacher strategies use a bounded active population
-
-**Direct user decision after retention remained poor despite restoring candidate
-horizons.** Preserve the inherited 512-strategy teacher inventory as historical
-provenance, but stop treating every nominal strategy as a live arm. The current
-trainer first canonicalizes behaviorally equivalent policies, then admits at most 16
-effective strategies into each capability/phase/teaching-geometry context. Up to
-eight active slots are context-local incumbents that have actually retained at least
-one candidate, ranked conservatively by retention evidence; remaining slots are the
-least-observed challengers. Failed challengers rotate back to the dormant bench as
-untried alternatives receive their turn. Dormant policies are not deleted and may
-become active again when context or teaching geometry changes.
-
-Contextual selection is **archive-immutable**. The historical teacher's original
-mutation function remains available for compatibility, but the live contextual path
-uses a non-mutating existing-policy picker and cannot regrow or rewrite the archive.
-This turns `512` from an active-search-space target into a provenance ceiling. The
-active/dormant population is derived from evidence and need not be serialized as a
-second source of truth. Visit telemetry records archive, active-effective and dormant-
-effective counts so policy-space dilution is observable.
-
-
-## ADR-099 | 2026-10-25 | 90% starts stability qualification and telemetry must not round upward across the gate
-
-**Direct user correction after Grade C appeared to reach 90% without sweeping.**
-A grade mean of exactly 90% is sufficient to start
-the existing stability/promotion sweep. The previous strict `> 90%` comparison is
-replaced by `>= 90%`; no downstream graduation or retention criterion is weakened.
-Live history also showed that genuinely above-90% Grade-C exams already entered
-`PROMOTION_SWEEP` (for example 208/231 and 210/231), while compact operator telemetry
-could round a sub-threshold 89.899% score to `90%`. Compact score summaries therefore
-show one decimal place so a displayed `90.0%` corresponds to an actual qualifying
-boundary rather than display rounding.
-
-
-## ADR-100 | 2026-10-25 | COMPOSITE exposes recursive proof-role factorization
-
-**Direct user decision:** apply the previously deferred information-geometry repair to
-`B.COMPOSITE`. Preserve the exact mixed-operator source ASTs, operator-width schedule,
-leaf randomization, P/Q bindings, gold labels, answer modality, and independent oracle,
-but make the recursive compositional roles visible in the student token stream.
-
-Each connective node is now introduced with `micro.proof.conclusion`; each child
-operand or nested subtree is introduced with `micro.proof.premise`; binary siblings
-are separated with the existing `syntax.separator`. The complete tree is followed by
-the historical `syntax.bind` assignment block and one final `syntax.end`. No hidden
-target, intermediate truth label, new semantic root, or auxiliary neural loss is
-introduced. Historical pre-landmark COMPOSITE records remain readable through the
-legacy codec.
-
-This is deliberately **not** a resurrection of ADR-066's failed generic syntax-end,
-child-query/end, postfix, or auxiliary operand-truth experiments. Those variants used
-generic structural delimiters or extra supervision. This revision uses already-known
-proof-role tokens to label the semantic edge relation itself: result node versus
-premise subtree. It therefore remains an empirical representation experiment, not a
-claim that COMPOSITE is solved.
-
-The new presentation is an explicit factory variation axis on both the standalone
-COMPOSITE provider and the canonical umbrella Boolean-identification provider. Runs
-whose admitted release predates it adopt one same-profile `REVISE_SOURCE` successor
-with zero neural updates. `B.COMPOSITE` also opens a fresh teacher geometry epoch so
-old policy rewards, exact miss specimens, and interference evidence do not govern the
-new representation. Retention, student/AdamW custody, and promotion authority remain
-unchanged.
-
-
-## ADR-101 | 2026-10-25 | Quarantine re-probes, decayed foundations rehearse, qualification state is explicit
-
-**Direct user decision after a long-lived Grade-C run exposed three liveness and
-operator-visibility failures.** Stagnation containment remains valid, but a
-quarantined progression-gating capability may not disappear until the human command
-happens to end. After one complete intervening recovery cycle, quarantined debt in
-the current grade is released for one bounded re-probe cycle and injected at the
-front of the recovery queue. It is judged by the same ordinary fresh-score,
-same-checkpoint retention and two-round stagnation evidence. If it again satisfies
-the quarantine predicate it is re-contained; otherwise it remains released. No
-synthetic score, promotion shortcut, or weakened retention rule is introduced.
-
-Previously mastered foundation grades also remain live learning territory when
-current cumulative evidence shows decay. In the three-grade priority topology, the
-immediate predecessor continues its existing one-in-four nongating debt cadence; a
-mastered grade older than that pair receives a bounded imperfect-capability rehearsal
-turn after twice that interval. The policy is grade-neutral and evidence-driven: only
-currently imperfect capabilities are queued, and the cadence resets when the
-foundational run completes. Legacy long-lived receipts begin with one rehearsal due
-check so existing foundation decay is not forced to wait through a new full interval.
-
-Operator telemetry must distinguish a partial active-scope score from qualification
-authority. If any capability in the displayed grade is withheld, the mastery row and
-operator summary explicitly say `ACTIVE-SCOPE` and `QUALIFICATION BLOCKED`, naming
-the withheld capabilities. Likewise, `PROMOTION_SWEEP` and
-`ASSESS_PROMOTION_SWEEP` are rendered as `GRADUATION SWEEP IN PROGRESS` so repeated
-90%+ observations cannot look like an inert ordinary mean while stability
-qualification is actually being rechecked capability by capability.
-
-
-## ADR-102 | 2026-10-25 | Teacher credit follows realized lesson delivery
-
-**Evidence-driven completion of the contextual teacher experiment.** After the
-candidate horizon and active-strategy population repairs, the live run continued to
-show that most rejected teacher visits produced no measurable target gain even though
-full-horizon candidates were again the normal case. Inspection of the delivery
-receipts established a distinct causal problem: source availability, weakness replay,
-fragile preservation, retention support and reserved batch capacity can make the
-lesson actually delivered to the optimizer differ materially from the strategy that
-requested it. Rewarding only the nominal request therefore merges unlike experiments
-and can teach the selector the wrong causal lesson.
-
-The immutable historical strategy archive remains the request/provenance surface, but
-new contextual evidence is additionally keyed by a **realized teacher action** derived
-from what the optimizer actually received. The realized identity includes learning
-rate and candidate horizon, observed depth and contrast modes, actual old-grade,
-preservation, retention-support and fresh-support delivery, weakness-target and
-semantic-pattern coverage, applied confidence/distillation guidance, enrichment and
-answer-kind geometry. A nominal field that did not change delivery does not by itself
-split realized-action evidence.
-
-Each nominal policy retains its historical compatibility record and its sequence of
-realized actions. Contextual selection and the bounded active-population evidence use
-the latest realized action when present, while pre-ADR-102 records remain readable and
-fall back to their existing nominal effective-policy identity. This is a forward-only
-evidence refinement: previous reward is not rewritten or fabricated.
-
-When source-paired contextual retention evidence exists, new outcomes no longer feed
-the legacy nominal grade/global bandit as though the requested strategy alone caused
-the delivered lesson. Historical grade/global statistics remain available only as the
-existing bounded exploration prior. Retention, source-gold, custody, promotion,
-qualification and student/AdamW rules are unchanged.
-
-
-## ADR-103 | 2026-10-25 | Promotion sweep retries are bound to student checkpoint and semantic scope
-
-**Direct user correction after live Grade-C qualification repeatedly fired on an
-unchanged student.** Fresh generated assessment cohorts are intentionally variable,
-so a fixed student can drift above and below the 90% promotion floor without any
-retained neural update. That score flux is useful assessment evidence, but it is not
-new learning and may not repeatedly manufacture graduation attempts.
-
-Each promotion-sweep attempt is therefore durably bound to the exact causal student
-checkpoint and the exact introduced semantic scope that triggered it. The first
-qualifying assessment for a previously unattempted checkpoint/scope pair may start the
-sweep. If that sweep fails, later cohorts for the same unchanged student and same
-scope remain ordinary assessment evidence and cannot re-enter `PROMOTION_SWEEP`.
-A retained candidate changes the causal student checkpoint and may re-arm that same
-scope. A successful sweep that expands the introduced semantic scope also creates a
-new qualification contract and may receive one attempt even if the student itself did
-not change between the two scopes.
-
-Historical receipts predate this attempt memory. On resume, they migrate
-neural-inertly by treating the currently loaded student and current introduced scope
-as already attempted. This conservative migration prevents an immediate score-flux
-retry while preserving all historical exams, weights, own AdamW, retention evidence,
-mastery debt and promotion criteria. No threshold is lowered and no score is
-discarded; the change only prevents repeated qualification authority from being
-created by question-set variance alone.
-
-
-## ADR-104 | 2026-10-25 | Teacher selection exploits retained incumbents and aggregates realized-delivery outcomes
-
-**Direct user correction after a long no-retention interval following the bounded
-teacher-strategy and realized-delivery changes.** The 16-strategy active population
-bounded the search space but did not bound novelty pressure inside that population.
-The inherited UCB still assigned every untried challenger an overwhelming novelty
-bonus, so contexts with a proven retained incumbent could repeatedly choose unseen
-challengers instead. This defeated the purpose of maintaining an incumbent bench.
-
-Contextual selection now prefers the best retained active strategy whenever one exists
-and remains in force while that incumbent continues to work. Exploration is not
-removed: after four consecutive rejected attempts for the capability/scope, one
-selection slot is returned to challenger exploration before incumbent exploitation
-resumes. Contexts with no retained evidence continue to explore normally. Retention,
-source-gold, custody, AdamW, promotion and qualification criteria are unchanged.
-
-This ADR also supersedes ADR-102's rule that contextual selection should use only the
-**latest** realized-action identity. Exact realized deliveries remain individually
-receipted and outcome-credited for diagnostics, but they are post-action facts: the
-next exact delivery signature is not knowable until after a nominal policy has already
-been chosen and the lesson assembled. Selection therefore uses the aggregate outcome
-distribution produced by each nominal effective policy across all of its exact
-realized deliveries. This preserves realized-delivery provenance without fragmenting
-predictive evidence across batch-level signatures that may never repeat, and a later
-failed realized variant no longer erases earlier retained evidence for the same policy.
-
-
-## ADR-105 | 2026-10-25 | Teacher vNext begins as portable evidence and shadow control
-
-**Issue #321 creates the successor teacher-learning control plane without granting it
-new neural authority.** The current strategy bandit remains the actual Prometheus
-selector while vNext records an architecture-neutral learner/action/outcome ledger,
-estimates retention probability plus target/protected/cost effects with uncertainty,
-and evaluates multi-fidelity and proposal-family decisions in shadow mode.
-
-The predictive learner state is a coarse `StudentRegion`, not an exact checkpoint or
-generated-batch identity. Exact student, source, cohort, proposal and realized-delivery
-identities remain immutable provenance outside the generalization key. This prevents
-the evidence fragmentation observed during the first realized-action experiment.
-The region nevertheless preserves material learner topology: active-grade capability
-score bands, mastery-debt shape and differentiated high rejection-pressure bands keep
-distinct learner states from aliasing merely because they share one aggregate grade
-mean. This is semantic state generalization, not checkpoint identity.
-
-Candidate evaluation now supports neural-inert target probes at a versioned
-multi-fidelity ladder (`2/4/8/16` in the first policy). The candidate still runs its
-existing full authorized horizon and the existing retention decision remains the sole
-durable student/AdamW admission authority. Shadow receipts measure hypothetical early
-stops, false kills/continues and compute savings. An explicit evidence gate can report
-that active early stopping appears qualified, but that receipt does not activate it.
-
-The shadow proposal layer distinguishes incumbent replay, local incumbent mutation,
-neighbor transfer, global challenge and a learned local proposal distribution. It may
-recommend parameter combinations absent from the historical 512-strategy archive;
-the archive itself remains immutable. Thompson-style acquisition uses predicted
-retention, target gain, protected risk, compute cost and uncertainty instead of an
-unbounded unseen-arm novelty bonus. No shadow proposal changes actual policy selection
-in this epoch.
-
-The portable contract and fixture are shared authority for the divergent developmental
-teacher in #130. Shared code is optional; compatible evidence semantics, replay,
-calibration, multi-fidelity authority boundaries and final-retention authority are
-mandatory. See `docs/architecture/TEACHER_VNEXT_PORTABLE_CONTRACT_V1.md`.
-
-
-## ADR-106 | 2026-10-25 | Incumbent evidence is checkpoint-local when the student is unchanged
-
-**Live evidence falsified the assumption that a strategy which retained on an older
-student remains a useful incumbent for the current student.** The same effective
-policy can improve a capability at one durable checkpoint and push that capability in
-the opposite direction after later retained learning, even when capability, phase,
-curriculum scope and teaching geometry are otherwise unchanged.
-
-Prometheus therefore treats repeated failures of one effective policy against one
-unchanged durable student as checkpoint-local negative evidence. After a bounded
-number of failures, that policy rotates out of the active contextual bench for the
-remainder of that exact student checkpoint and a fresh eligible challenger rotates in.
-The historical strategy/archive record is not deleted or rewritten. A retained update
-changes the student checkpoint and automatically gives the policy a clean opportunity
-against the new learner state.
-
-This is a liveness/efficiency correction, not a retention shortcut. Candidate
-retention, source/oracle truth, custody, AdamW, promotion and qualification authority
-are unchanged. Teacher vNext's `StudentRegion` remains the longer-term generalization
-surface; exact checkpoint identity here is used only to prevent redundant retries
-against an actually unchanged learner, not as the predictive region key.
-
-
-## ADR-107 | 2026-10-25 | Trainer software identity is SemVer-governed and run-owned
-
-**Direct user request to make fast-moving trainer changes operationally legible.**
-Bilqis MLX software releases use Semantic Versioning, a dated checked-in changelog,
-and one version value shared by the Python package, Python project manifest and npm
-manifest. Compatible fixes increment PATCH, backward-compatible capability additions
-increment MINOR, and breaking software/runtime contracts increment MAJOR. A release
-tranche updates its version and changelog together; immutable release tags remain
-`vMAJOR.MINOR.PATCH` after reviewed integration.
-
-The dashboard distinguishes the version of the trainer that produced the run from the
-version of the dashboard code rendering it. `SCHOOL_SESSION_STARTED` records the
-trainer `software_version`, and the active receipt carries the same value for durable
-readback. A detached dashboard displays that run-owned value when available and its
-own UI package version separately. Historical sessions that predate software-version
-telemetry are explicitly displayed as `unversioned`; they must never borrow the
-version number of a newer observer checkout.
-
-The first release under this clarified operator contract is `0.3.0`. This versioning
-surface is provenance and operator telemetry only: it does not alter neural state,
-curriculum authority, retention, custody, promotion, qualification or championship
+## ADR-095 | 2026-10-23 | Factory micro-specs decompose reusable mechanics, not semantic roots
+
+**Direct user correction for issue #150 execution.** The factory/runway work is
+primarily about making the curriculum factory capable of handling whatever future
+source-qualified semantic roots are admitted through its typed contracts. The
+micro-spec corpus MUST therefore decompose reusable factory invariants, ownership
+boundaries, migrations, compatibility boundaries and proofs. It MUST NOT create a
+specification or GitHub issue for every prospective semantic root merely because
+that root may be taught later.
+
+A particular root belongs in #150 only when it exposes a missing reusable factory
+primitive or is required as a bounded conformance fixture. Curriculum selection,
+root sourcing and future grade composition remain separately governed work. This
+keeps #150 focused on the architecture originally intended from the beginning: one
+generic factory through which later semantics become declarative inputs rather than
+new implementation families.
+
+## ADR-096 | 2026-10-25 | Conjoined Triangle authority, immutable identity and projection boundaries
+
+**Direct user decision.** The Bilqis semantic corpus, curriculum factory, Akasha and Mission Control must converge without collapsing their authority boundaries. State transitions should follow functional, append-only semantics wherever practical: a correction or revision creates a new immutable artifact, event, receipt or projection version. Historical evidence is never rewritten to make current state look cleaner.
+
+### Semantic authority and Rosetta boundary
+
+The canonical New Ithkuil relational IR and its deterministic SKOS/RDF release own the meaning of Bilqis semantic primitives and their ontology relationships. SKOS is the dictionary. It does not own trainer mechanics, process execution, learner state or operational policy.
+
+Rosetta is the narrow waist for representing and communicating meaning, process evidence and protocol relationships. It must not presume implementation mechanics, choose policies, express opinions, or turn an external vocabulary into Rosetta core semantics. The Bilqis SKOS corpus integrates through a governed Rosetta VocabPack with stable anchors. Standards such as OWL 2, SHACL and SPARQL may be used through packs, validators or projections where their own contracts apply. They do not expand Rosetta core by convenience. Rosetta core process semantics describe interoperable protocol artifacts and update propagation, not the internal algorithms of surrounding Entif projects.
+
+The source vocabulary, Rosetta representation and executable implementation therefore remain separate authorities. A source term can retain one stable semantic identity across many implementation revisions.
+
+### Identity taxonomy and provider attestation
+
+Semantic identity MUST NOT depend on provider implementation bytes.
+
+A stable semantic identity names what a concept or semantic contract means. An immutable semantic release digest identifies the exact released semantic content. A provider implementation has its own independently versioned implementation identity or digest. An admission receipt binds the semantic identity/release, provider implementation identity, applicable proof evidence and admitted runtime target.
+
+A semantics-preserving provider refactor may change the provider implementation digest without changing semantic identity. A semantic change requires a new semantic release identity/version. Historical admission receipts remain immutable and continue to attest the exact semantic and implementation identities that existed when they were issued.
+
+Cross-system contracts must use explicit identity classes rather than an ambiguous generic `id` where confusion is possible. The intended classes include stable semantic identity, exact content/release digest, external source anchor, provider implementation digest, run identity, checkpoint identity, projection identity and receipt identity.
+
+### Akasha domain and projection model
+
+Akasha is a governed data plane and query substrate, not a semantic source of truth. Its initial deployment may be physically consolidated, but its domains are logically federated. Semantic projection, learner evidence, factory/release state, training/run history, receipts/provenance and program/operational state remain distinct namespaces with explicit owners and mutation laws.
+
+Derived Akasha projections must be disposable. Deleting a derived projection must not destroy canonical meaning or historical evidence. The system must be able to rebuild it from canonical immutable releases, artifacts, events and receipts.
+
+Learner evidence is immutable event history. Corrections, disputes and later evaluations append new evidence or superseding relationships rather than overwriting prior observations. "Current mastery", confidence, fragility, debt and similar learner-state values are projections over that history, not mutable canonical facts.
+
+### Curriculum admission state
+
+Source availability does not imply curriculum admission. The normal progression is:
+
+`SOURCE_AVAILABLE -> SEMANTICALLY_MAPPED -> CURRICULUM_CANDIDATE -> FACTORY_VALIDATED -> QUALIFIED -> STAGED -> ADMITTED`.
+
+Automation may advance deterministic and evidence-backed stages through `STAGED`. `ADMITTED` remains an explicit human-authority transition unless a later ADR changes that boundary. Parsing, mapping, materializing or validating a semantic source must never silently authorize neural training.
+
+Every cross-leg artifact must name the semantic/factory release it expects. Stale or mismatched identity fails explicitly. Implementations must not silently substitute "latest", guess a translation or repair identity drift by convenience.
+
+### Integration and Mission Control
+
+PR-level completion is not holistic qualification. Each implementation payload must first qualify independently. Exact qualified heads are then combined into an ephemeral integration candidate. Cross-boundary tests and one reproducible qualification receipt govern merge readiness. The tested combination, or a sequence proven equivalent to it, is the merge authority.
+
+Mission Control begins as a read-only control plane over durable sources and projections. It must not become semantic, learner-evidence, factory or receipt authority through UI convenience. Operator status distinguishes at least implemented, turned in, individually qualified, integrated, launch qualified, blocked and superseded. These states must derive from their owning evidence rather than a generic mutable `done` flag.
+
+The Conjoined Triangle tracker is temporary. Mission Control replaces bespoke project trackers only after the same Program, WorkItem, Dependency, Gate, Evidence, Risk, Decision and Notification model can onboard a second non-Bilqis project without a core schema fork or another spreadsheet.
+
+### Write-admission boundary reserved for follow-up
+
+The user agrees with the core direction that canonical mutations must pass through governed authority and that Mission Control or arbitrary workers must not write source meaning or canonical evidence directly. The detailed information-flow model, including writer topology, command brokering, authorization stages and propagation mechanics, is intentionally **not frozen by this ADR**. That design remains open for the next architecture discussion. Future implementation must not infer a more specific write topology from this ADR.
+
+## ADR-097 | 2026-10-27 | Suspend developmental generalization until explicit maturity admission
+
+**Direct user correction; supersedes the active-generalization portions of ADR-067 and SPEC-0001 as they existed before this decision.** Bilqis is currently a small developmental student learning a narrow semantic inventory. Fresh GENERALIZATION assessment is not appropriate as a routine, promotion-adjacent, or graduation-gating mechanism at this stage and must not be inferred from ordinary LLM evaluation practice.
+
+The active developmental assessment lifecycle is therefore **fresh routine measurement plus fixed-within-attempt promotion**. The live runtime MUST NOT automatically generate fresh generalization cohorts, require generalization evidence for grade or whole-school graduation, inject generalization-only misses into teacher priorities, or mix generalization scores into routine/promotion longitudinal telemetry. Historical generalization cohorts, burn ledgers, readers, enums, and research fixtures remain preserved as compatibility evidence. They are not current execution authority.
+
+Promotion authority is also narrowed structurally. Ordinary recovery, debt, spiral, or grade/stage movement does not open promotion. A promotion attempt may be created only when the scheduler records an actual qualification transition by advancing `grade_exam_epoch` after a complete assessment. This prevents recovery movement from manufacturing promotion/generalization work for an imperfect grade.
+
+Generalization may return only through a future explicit human-directed maturity decision that defines when the student's semantic base is sufficiently stable, what kind of transfer/invariance is pedagogically appropriate, how the evidence is scored, and whether it can affect training or graduation. Until then, "generalization" is a dormant research/compatibility capability, not part of the school.
+
+
+## ADR-098 | 2026-10-27 | Candidate retention protects the current parent, not an older cumulative peak
+
+**SUPERSEDED by ADR-099.** This intermediate repair narrowed the diagnosed fault
+to the historical retention anchor, but the subsequent exact-control experiment
+showed that the correct operational recovery is to excise commit `1324082`
+wholesale rather than retain selected mechanics from it.
+
+**Direct user correction after the step-127096 retention deadlock.** The mature-grade anti-ratchet introduced on 2026-10-27 correctly intended to prevent later-grade learning from spending already-earned Grade-A performance, but its immutable cumulative retention anchor was the wrong baseline for individual candidate admission. Once the retained student itself sat below that older peak, each later candidate was required both to improve its target and to repair historical debt back to the old peak in the same local optimizer update. The run then produced more than two thousand consecutive zero-retention visits despite hundreds of target-positive candidates.
+
+Candidate admission therefore compares the challenger against the **current retained parent** on the current parent's verified fixed whole-school cohort. The current parent SHA and native AdamW optimizer step must match that frontier exactly or the screen fails closed. Fresh target gain remains mandatory. Same-grade, fixed lesson-grade, active developmental-frontier grade, mature-grade, protected-capability and whole-school non-regression remain mandatory relative to that current parent. In particular, a candidate that makes mature Grade A worse than the retained parent is still rejected; Grade A is not currency for later-grade gains.
+
+Historical cumulative/high-water frontier receipts remain immutable provenance and may continue to inform recovery, debt analysis and diagnostics. They are not a second candidate parent and MUST NOT veto a challenger merely because the retained parent already carries older debt relative to them. Existing cumulative same-checkpoint mastery and promotion/graduation requirements remain unchanged; this ADR does not forgive debt, mint mastery, alter source-gold, weaken student/native-AdamW custody, or authorize agent-operated production training.
+
+The correction is empirically bounded. From the exact live step-127096 student, a disposable clone using current compatible code with only the candidate-frontier baseline corrected retained a `B.COMPOSITE` candidate on the 22nd actual candidate attempt: target 9→10, same-grade net +1, fixed B 41→41, mature A 58→58, whole school 99→99, and 16 optimizer updates retained. The production lineage was not mutated by that proof.
+
+
+## ADR-099 | 2026-10-27 | Excise commit 1324082 wholesale after exact-old retention control
+
+**Direct user correction after bounded regression isolation.** Do not preserve a
+selected subset of commit `13240828cd15612e9a84f0f6222484cf2e18cb96`
+(`fix(trainer): prevent cumulative mature-grade regression`). The commit is to be
+reverted as a unit while retaining later independent work whose mechanics exist
+without it.
+
+The decisive control used the exact parent commit
+`5b84eca610f471630ee5c2fb27c15359a58f6766`, with its tracked tree unchanged.
+Because that executable cannot legally resume the newer durable factory receipt,
+a one-time disposable initializer loaded only the exact then-current neural
+student and its own AdamW (`7ea07d9d...`, optimizer step `127096`) into a fresh
+old-code school. Actual training then ran with the plain unmodified old CLI. In
+30 teacher-candidate visits it retained 4 candidates and 64 optimizer updates,
+for **13.33% retention**, advancing only the disposable control from step 127096
+to 127160. This restored the healthy retention range the user reported from
+before the regression.
+
+Accordingly, all code introduced by `1324082` is removed. Later changes remain
+when they are independently meaningful after that removal. In particular, the
+same-student unretained-policy rotation, the later fresh retention-support
+selection change, developmental GENERALIZATION suspension, recovery-custody
+repair, dashboard corrections, and unrelated subsequent work remain. A later
+patch whose sole purpose was to modify machinery introduced by `1324082` does
+not require preserving that removed machinery.
+
+Candidate retention therefore returns to the pre-`1324082` contract already
+specified by ADR-054 through ADR-057 and ADR-079: strict source-oracled target
+gain, same-grade and fixed-frontier safeguards, protected-capability budgets,
+exact current-parent frontier identity, and intact student/native-AdamW custody.
+This ADR does not authorize weaker source gold, custody bypass, hand-edited run
+state, or agent-operated production training. The human operator owns the live
+verification run after this code excision.
+
+**Rollback compatibility for existing admitted releases.** A run admitted while
+`1324082` was active may still contain the exact Grade-A predicates provider
+descriptor introduced by that commit (`source.micro.predicates/v1`, implementation
+`f8e5aec...`, including `generalization-only-source-context-v3`). After the
+wholesale revert and ADR-100 developmental-presentation correction, the runtime
+provider uses implementation `c451c3e...` without that generalization-only axis.
+Resume may recognize exactly that one-way
+descriptor pair as the ADR-099 rollback of the same provider. This is not a
+general provider-drift exemption: any other adapter identity, hash, axis, oracle,
+generator, release, teaching option, or profile difference still fails closed.
+
+
+## ADR-100 | 2026-10-27 | Bounded mature-grade debt with active repair
+
+**User-directed replacement for the failed cumulative anti-ratchet.** Later-grade
+optimization may temporarily spend a small amount of already-graduated skill,
+because requiring every local candidate to match an older historical peak made
+the admissible region collapse. The opposite extreme is also unacceptable:
+before the failed anti-ratchet, Grade-B optimization could slowly erode Grade A
+for hours. Retention therefore needs a bounded memory budget plus an explicit
+repair loop.
+
+For every retained candidate with measured fixed-frontier evidence, mature debt
+is updated from the **net fixed-grade delta** for each already-graduated grade.
+A net loss of two A answers adds two units of `mature_grade_debt`; a later net
+gain of three pays three units back, clamped at zero. Do not carry row-level or
+capability-local debt across changing fixed cohorts: those identities are useful
+diagnostics inside one parent-versus-candidate screen, but they are not a stable
+cross-visit currency. This ledger is derived only from successive current-parent
+comparisons. It does not compare a challenger to an older checkpoint and cannot
+resurrect ADR-098's historical-anchor deadlock.
+
+The initial control thresholds are deliberately small and inspectable. A mature
+grade with at least **2** debt answers enters repair priority. Debt identifies
+the grade that needs attention; it does **not** narrow training to only the
+capabilities carrying debt. One repair turn is a complete ordinary same-grade
+MAIN pass, restoring direct access to the whole grade's earned champion,
+frozen-soup guidance, miss replay, and neighboring semantics. A mature grade may
+receive at most one such repair pass in one school sweep before the scheduler
+must yield to other eligible work. This prevents a stubborn debt item from
+re-arming the same tiny queue indefinitely. A mature grade may carry at most
+**4** debt answers without additional restriction. A candidate that would
+increase that grade above 4 is rejected as `MATURE_GRADE_DEBT_LIMIT`. Holding or
+reducing debt is allowed even when the ledger is already at or above the limit,
+so repair is never blocked by the safeguard itself. The repair pressure releases
+once debt falls below the 2-answer trigger.
+
+Existing pre-ADR-100 runs decode with an empty prospective ledger. Runs produced
+by the initial ADR-100 implementation may contain legacy per-capability debt;
+resume migrates that ledger by summing each capability amount into its owning
+grade, then clears the obsolete capability ledger. Do not invent additional
+retroactive debt from fresh-cohort score differences.
+
+Separately, ordinary developmental Grade-A presentation returns to plain
+`draw_predicates()` rows. The source-valid contextual/irrelevant presentation is
+retained as dormant research machinery rather than mixed into routine learning
+or examination. This is the presentation separation that was useful inside
+`1324082`, reintroduced independently under ADR-097 without restoring any of the
+offending commit's retention mechanics.
+
+
+## ADR-101 | 2026-10-27 | Exploration must mean novel teacher strategy
+
+**User-directed correction after repeated zero-retention loops.** The dashboard
+previously rendered `UNCERTAIN_EXPLORING` as `EXPLORE`, although that health state
+only meant that an exact capability/phase/policy tuple had fewer than eight
+observations. Meanwhile the contextual teacher's rejection-pressure exploration
+path deliberately called `pick_existing()`, so it could repeatedly select known
+policies while the UI claimed exploration. Historical evidence confirmed this:
+in one 90-visit zero-retention streak, 58 nominal policy IDs represented 55
+effective strategies, but several exact effective policies recurred four to
+eight times and some capabilities repeated the same policy before trying a new
+one.
+
+`EXPLORE` is therefore reserved for an actual fresh mutation. Low-support policy
+health renders as `UNCERTAIN`. On every fourth sustained rejection-pressure
+attempt for a capability/context, the teacher now tries to mint one genuinely
+novel **effective** strategy from the existing bounded knob vocabulary. Novelty
+is checked against the effective strategy inventory, so preview-only or other
+behaviorally equivalent aliases do not count as exploration. The existing
+512-strategy archive ceiling, knob ranges, context-size limit, and bounded
+mutation-attempt count remain authoritative. If the active engine does not
+expose that bounded mutation vocabulary, selection falls back to the existing
+non-mutating compatibility behavior.
+
+Each visit records `teacher_selection_reason`; a genuinely minted policy uses
+`FRESH_MUTATED_CHALLENGER`. This makes later forensic review able to distinguish
+real search expansion from ordinary UCB rotation through the existing archive.
+
+
+## ADR-102 | 2026-10-27 | Capability cooldown survives checkpoints without permanent exile
+
+**Conservative response to repeated incumbent resurrection.** A strategy that is
+locally exhausted must not become immediately eligible merely because some other
+capability retained and changed the student SHA. Conversely, historically useful
+strategies must not be permanently blacklisted because one student neighborhood
+was hostile.
+
+The existing same-student retirement remains the first line of defense: four
+unretained attempts against one exact capability/phase/student checkpoint retire
+that effective strategy for the current checkpoint. Durable capability cooldown
+requires stronger evidence: the same effective strategy must independently hit
+that same-student unretained limit on **two distinct student checkpoints** for the
+same capability and curriculum scope. Phase does not partition the durable
+cooldown, because repeated failure in MAIN versus recovery is still evidence
+about the capability neighborhood.
+
+Once triggered, cooldown lasts for only **eight subsequent visits to that
+capability**. Visits elsewhere do not consume it. Expiry decays one failed-student
+epoch rather than deleting all evidence, so a reopened policy needs another
+materially bad student epoch before cooling again. A retained candidate using
+that policy on the cooled capability clears the durable cooldown immediately.
+There is no permanent blacklist.
+
+Cooldown is authoritative for exact-capability selection and therefore applies
+to both contextual selection and Teacher vNext canary selection. Sibling
+capabilities in the same grade receive only a small ranking penalty while the
+cooldown is active: `0.025` per cooled sibling, capped at `0.05`. This is evidence
+sharing, not exclusion; a policy exhausted for `B.IFF` may still be tried for
+`B.COMPOSITE` when its own evidence warrants it.
+
+Dashboard semantics must reflect selector authority. `EXHAUSTED` is reserved for
+an active selector-visible durable cooldown. A policy with enough observations
+but poor retention and no active cooldown is `LOW-YIELD`; low-support evidence is
+`UNCERTAIN`; actual strategy mutation remains `EXPLORE`. Presentation history may
+estimate retention probability, but it must not invent retirement authority.
+
+
+## ADR-103 | 2026-10-27 | New frontier grades receive bounded catch-up priority
+
+When a newly introduced highest active grade has far fewer semantics than the
+already mature school, raw capability-count fairness under-allocates learning to
+the frontier. Ten mature A/B semantics plus one new C semantic naturally gives C
+about one eleventh of a plain full-school pass, even when C is dramatically
+behind the rest of the student.
+
+During an ordinary cross-grade MAIN sweep, compare the newest active grade's mean
+accuracy across its currently introduced/eligible semantics with the median
+accuracy of all currently introduced/eligible active semantics. If the frontier
+is at or above that median, no catch-up applies. If it is below the median, give
+that frontier enough separately assessed MAIN passes to target roughly one
+quarter of visit opportunities for the sweep. The total frontier-pass budget is
+`ceil(non_frontier_semantics / (3 * frontier_semantics))`, with a minimum of one.
+Thus the current 10:1 A/B:C shape receives four C passes, about 29% of visits,
+rather than permanent 1/11 capability-count weighting.
+
+Catch-up is deliberately subordinate to existing safety/progression machinery.
+It never replaces promotion-sweep handling, failed-sweep recovery, weakest-three
+recovery, mature-grade debt repair, or explicit debt cadence. It only repeats the
+frontier's ordinary MAIN pass after at least one other grade has already
+completed its MAIN pass in that school sweep. The counter resets when the
+ordinary sweep resets. Old receipts decode with zero catch-up passes.
+
+Operator presentation must make qualification activity explicit. While the
+school stage is `PROMOTION_SWEEP` or `ASSESS_PROMOTION_SWEEP`, the compact header
+shows an explicit `SWEEP = GRADUATION <grade>` field rather than relying on the
+generic phase text alone.
+
+
+## ADR-104 | 2026-10-27 | Bespoke hereditary exploration with scalable live strategy ecology
+
+**Direct user correction after renewed rejection hell.** Policy novelty must not
+be confused with useful exploration. A policy that is merely new to one
+capability does not regain epistemic innocence when its broader history is
+already poor, and sustained rejection pressure must not devolve into cycling
+through old archive members labeled `UNCERTAIN`.
+
+When a capability reaches sustained rejection pressure (four consecutive
+rejections), exploration becomes **bespoke hereditary search**. The teacher
+attempts to breed a genuinely novel effective policy for that capability on
+every exploratory visit rather than selecting another untried archive member.
+Parent ancestry is evidence-seeded in this order:
+
+1. retained policy for the same capability under the same diagnostic context;
+2. retained policy for the same capability across phases;
+3. retained same-grade policy under the same diagnostic context;
+4. retained same-grade policy generally;
+5. grade reward history, then global reward history as fallbacks.
+
+Champion-derived weakness evidence participates through the diagnostic-context
+identity, so a policy that previously retained when champion-directed examples
+were present is preferred as ancestry for another champion-bearing attempt.
+Children preserve the chosen parent and mutate one effective knob at a time;
+behaviorally equivalent variants do not count as novelty. Teacher vNext may not
+override a freshly bred challenger on that same visit.
+
+New bespoke policies are capability-local while unproven. They may not
+immediately become `FRESH_ACTIVE_CHALLENGER` material for sibling capabilities.
+Once a bespoke policy has actually retained, that locality restriction is
+released: a later numeric-scope revision within the same release family may give
+the proven policy one fresh challenger trial for the same capability. Prior-scope
+reward/context evidence is not copied forward; the revised scope must earn its
+own evidence normally. Unproven children remain scope-local.
+A retention on their originating capability marks them proven and permits
+same-grade reuse thereafter. The newest eight unproven bespoke policies per
+capability receive a probationary opportunity; older unproven siblings may be
+retired from the live population.
+
+The teacher population is now an **effective-strategy live ecology**, separate
+from the immutable historical archive. Historical strategy definitions and
+outcomes remain available for provenance and ancestry; pruning means retirement
+from live selection, not deletion of evidence. Population limits scale with the
+number of currently active capabilities:
+
+- live effective capacity = `max(48, 24 * active_capabilities)`;
+- active working set = `min(live_capacity, max(8, 2 * active_capabilities))`.
+
+Thus the present 11-capability school has a 264-effective live population and a
+22-effective active working set rather than a fixed 512/16 regime. Rebalancing
+keeps newborn policies with fewer than four trials long enough to audition, then
+ranks mature strategies by retained outcomes, retention rate, mean contextual
+reward, historical reward, recent use, and birth/usage recency. Old,
+never-retained, low-reward strategies therefore lose live slots before proven
+productive ancestry. When the curriculum grows, capacity grows automatically
+and strong retired historical strategies may re-enter the live population.
+
+The historical nominal strategy ceiling no longer blocks invention merely
+because aliases or retired definitions occupy archive slots. New effective
+children may extend the immutable historical archive while the live effective
+population remains bounded by the curriculum-scaled capacity. Visit receipts
+record historical archive count, live effective count/capacity, active working
+set count/capacity, retired effective count, mutation parent, ancestry basis and
+changed fields.
+
+Dashboard health also becomes cross-context aware. `UNCERTAIN` is reserved for
+policies that are genuinely under-observed at every available evidence scope.
+When exact capability evidence is sparse, health falls back through capability,
+grade-phase, grade and global policy history. A policy with substantial
+zero-retention evidence therefore remains `LOW-YIELD` when first tried on a new
+capability instead of being relabeled `UNCERTAIN` merely because the local tuple
+is new. Selector-visible durable cooldown remains the only authority for
+`EXHAUSTED`.
+
+
+## ADR-105 | 2026-10-27 | Restore integer-root scope telemetry and normalize repeated champion specimens
+
+The compact operator header must expose the active integer-root training/test
+scope as `INTROOT`, using the durable `numeric_maximum` authority. At startup a
+saved maximum `N` renders as `0...N`; profile-adoption telemetry carries the new
+maximum so the header updates immediately when numeric scope changes instead of
+waiting for dashboard restart. Execution-profile and semantic-catalog adoption
+events share this presentation contract. This restores the final compact 349
+behavior from `c9ed590`/`7fef150` without making presentation state authoritative
+over curriculum admission.
+
+Source lesson cohorts may contain repeated occurrences of the same exact
+specimen. Champion weakness discovery is set-valued evidence: if one or more
+mentors identify the same source row, that exact row is emitted at most once as
+a weakness target. This normalization occurs before weakness-target selection.
+The downstream target identity validator remains strict; duplicate identities
+arriving from any other malformed target construction still raise
+`TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT`. Do not weaken that guard to make a
+run proceed.
+
+
+## ADR-106 | 2026-10-27 | GRAD counts distinct model grades; Grade C climbs integer roots 4 through 10
+
+The compact `GRAD` field has three coordinates on each side of `current / lifetime`:
+
+`distinct grades reached . successful promotion sweeps . promotion-sweep attempts`.
+
+The first coordinate is a model-progression count, not a count of repeated grade
+boundary successes. Revalidating or re-promoting A/B must never inflate it. The
+lifetime coordinate is reconstructed from distinct grade admission/discovery in
+the full journal; the current-run coordinate increments only when a genuinely new
+grade is admitted/reached during that execution. A model that has reached A, B,
+and C therefore reports lifetime grade count `3` regardless of how many A/B
+promotion sweeps were repeated. The second coordinate is likewise a progression
+count, not a revalidation count: one grade/introduction frontier may contribute at
+most one successful promotion sweep. Re-running an already-crossed A/B frontier,
+or merely returning from an old-grade sweep to a later already-admitted grade,
+must never mint another success. Attempts remain historical attempts and may
+increase on repeated sweeps. For the current replay lineage, A→B and B→C are the
+only two unique successful progression frontiers recorded so far; while the live
+command continues to add attempts its journal reconstructs as `0.0.2 / 3.2.x`.
+
+Grade C owns a mandatory integer-root staircase. Canonical C admission begins at
+`0...4`. Once the student fully masters the current admitted C scope and reaches
+the normal grade boundary, the runtime performs a neural-inert profile revision
+to the next scope exactly one root wider: `0...5`, then `0...6`, through
+`0...10`. Scope 10 is terminal for Grade C; no further numeric profile is
+generated after it. The terminal numeric ceiling is the registry counting target
+(`10`), while `4` is both the entry scope and the full-operation unlock.
+
+The staircase is intrinsic to canonical Grade-C progression. It must not depend
+on the legacy `--numeric-staircase` CLI flag. Normal B→C admission therefore
+records `numeric_maximum=4` and `numeric_scope_final_maximum=10` (except bounded
+experiment runs that intentionally cap themselves at the entry scope).
+
+Existing replay state that was incorrectly admitted directly to profile
+`numeric-0-10` with `numeric_maximum=10` and **no**
+`numeric_scope_final_maximum` is treated as a one-shot wide-admission migration
+signature, not as evidence that the model legitimately climbed the staircase.
+When C next becomes the scheduler's active grade, the runtime rebinds that grade
+neural-inertly to `numeric-0-4`, sets terminal scope 10, preserves the student and
+native AdamW, and resumes ordinary staged C learning. A legitimately completed
+scope-10 run has `numeric_scope_final_maximum=10` and is never rewound.
+
+The current executable curriculum contains grades A/B/C only. Grade-D source
+adapters exist, but no executable D grade is presently admitted in this release;
+do not fabricate a D curriculum as part of the numeric staircase repair. Once a
+future executable curriculum actually contains D, ordinary next-grade admission
+is eligible only after terminal C@0...10 mastery.
+
+
+## ADR-107 | 2026-10-28 | Teacher evolution refines bounded numeric genes and measures realized-action novelty
+
+ADR-104 remains the governing ancestry, evidence, locality, population, and
+retention contract, but exhausting the legacy discrete policy lattice must not
+terminate invention. The immutable historical archive may contain every legacy
+effective policy without making the teacher evolutionarily sterile.
+
+The teacher first preserves the existing one-effective-knob hereditary search.
+When that discrete neighborhood cannot produce a novel effective child, it may
+refine exactly one controllable numeric gene locally around a retained parent:
+
+- `old` remains an integer inside the historical `old` envelope;
+- `lr` remains positive inside the historical learning-rate envelope;
+- `distill` remains inside the historical distillation envelope;
+- `depth` and `contrast` remain categorical until runtime behavior actually
+  supports more than SHALLOW/DEEP and RANDOM/DIVERSE;
+- `preview` remains excluded from effective identity while future-grade preview
+  is intentionally unavailable.
+
+Adaptive mutation bisects the local gap between the parent and its nearest
+already-observed numeric neighbor, with deterministic bounded quantization. It
+does not invent out-of-envelope optimizer or guidance settings, mutate more than
+one effective gene in a child, rewrite any historical policy, or weaken
+retention, source, custody, preservation, mature-debt, or frontier gates.
+
+Static genotype novelty is insufficient evidence of useful exploration. Every
+delivered candidate already emits a `teacher-realized-action` receipt describing
+the optimizer experience that actually occurred. The teacher therefore maintains
+an append-only realized-action ecology recording first-seen action identities,
+trials, retained outcomes, and the effective policies that produced them.
+Bespoke birth receipts record which realized actions they caused and whether
+those actions were novel. Realized-action novelty may break otherwise-equal
+exploration/ancestry ties, but is never retention credit and cannot authorize an
+otherwise rejected candidate.
+
+This keeps the proven ADR-104 control plane intact: evidence chooses ancestry,
+mutation remains local and bounded, actual delivered behavior measures novelty,
+and ordinary retention decides what survives.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-117 | 2026-10-28 | Debt cadence is factory-role based, with B/C confined to legacy migration
+
+**Follow-up after ADR-116 restored useful progression.** The current Prometheus
+behavior is now the compatibility specimen, not the schema. Grade B is the
+current bounded-debt grade and Grade C is the current progression-priority grade,
+but later factory progression must not inherit those identities accidentally.
+
+Persist candidate-level cadence state with role-neutral fields:
+`bounded_debt_visits` and `priority_visits_since_bounded_debt`. Historical
+`nongating_b_visits` and `non_b_training_turns_since_b_run` remain accepted only
+at deserialization and are removed before constructing canonical `SchoolState`.
+New state never writes the historical names.
+
+For a factory append with explicit carried mastery debt, derive the cadence roles
+from the admitted transition itself. The bounded-debt role is the latest prior
+grade represented by the carried debt; the progression-priority role is the newly
+appended grade. Preserve an existing cadence value when retargeting; otherwise use
+the current default of four priority visits per bounded-debt visit. Reset the two
+role-local counters when the roles change. A clean append with no carried mastery
+debt clears any stale cadence policy and those counters.
+
+Literal B/C construction remains only in the ADR-094 compatibility adapter for
+historical receipts. A historical receipt with B-named counter fields and a
+missing/null cadence policy may still rehydrate the old bounded-B / priority-C
+contract neural-inertly. Once role-neutral counter fields exist, explicit null is
+authoritative and must not trigger B/C inference.
+
+Synthetic factory tests use non-letter semantic grade IDs and prove that a debt
+append retargets `FOUNDATION -> RELATIONS` into `RELATIONS -> WORLD_MODEL`, that a
+non-default cadence survives retargeting, and that a clean append clears stale
+roles. Existing Prometheus B/C 20% cadence and rotation tests remain unchanged as
+the behavioral compatibility gate.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-112 | 2026-10-28 | Full Grade B is the default; reduced Boolean B is explicit only
+
+The canonical U7C Grade B capability set is the normal executable curriculum:
+`B.NOT`, `B.AND`, `B.OR`, `B.XOR`, `B.IMPLIES`, `B.IFF`, `B.COMPOSITE`, and
+`B.IDBOOLOPS`. The historical reduced AND/IFF kernel is retained only as an
+explicit experimental profile selected by `--reduced-grade-b` (alias
+`--minimal-grade-b`). `--full-grade-b` remains accepted but is now the default.
+
+Existing durable runs admitted under the known historical reduced profile must
+not remain narrowed forever merely because later grades have already been
+admitted. On resume under the default policy, the runtime performs a neural-inert
+same-school profile expansion that restores the missing B semantics while
+preserving the exact causal student and its native AdamW. Added B semantics become
+carried mastery debt, stale B championship/assessment authority is invalidated,
+and the scheduler returns to the newest active progression frontier before normal
+debt cadence resumes. No historical score is fabricated for newly restored
 semantics.
 
+This expansion is curriculum/profile state only. It does not itself perform a
+neural update, declare the restored semantics mastered, lower B's bounded debt
+share, or weaken source/custody/promotion/retention gates.
 
-## ADR-108 | 2026-10-25 | Release Please owns future SemVer transitions
-
-**ADR-107 established software-version provenance; this ADR clarifies who advances
-that version.** `v0.2.0` remains the last actually tagged source release. Ordinary
-feature/fix branches retain the last released SemVer and express release intent through
-Conventional Commit history instead of pre-claiming a future version. After reviewed
-changes reach `main`, Release Please computes the next SemVer, updates the generated
-release changelog and all checked-in version surfaces in one release PR, and creates
-the immutable tag/GitHub Release only after that PR passes review and merges. The first
-expected generated successor from the present feature set is `v0.3.0`; it is not
-considered released until that automation completes on `main`.
-
-The local commit-msg Husky hook and GitHub PR workflow both enforce Conventional
-Commits. Release Please uses `fix` as PATCH evidence, `feat` as MINOR evidence, and a
-breaking marker as MAJOR evidence. The release PR is the sole ordinary writer of
-`CHANGELOG.md`, `package.json`, `package-lock.json`, `pyproject.toml`,
-`bilqis_mlx.__version__`, and `.release-please-manifest.json` for release advancement.
-The existing tag workflow becomes verification-only so there is exactly one release
-publisher. No synthetic check-run attestation or branch-protection bypass is adopted;
-bot-created PR CI follows GitHub's normal approval-required security gate when it
-applies.
-
-This release automation remains source provenance only. It cannot start neural
-training, alter a student or AdamW, certify curriculum mastery, or convert a source
-release into a neural qualification claim.
+**Status:** Accepted for implementation and neural-inert migration verification.
 
 
-## ADR-109 | 2026-10-26 | Same-student retirement requires consecutive target inertia
+## ADR-113 | 2026-10-28 | Frontier recovery effort scales with measured weakness
 
-**A completed 57-minute control run on the pre-vNext controller refined ADR-106 before
-its checkpoint-retirement rule reached production.** The run ended at optimizer step
-147376 after 290 command visits. Its append-only teacher ledger contained 273 actual
-teacher proposals: 182 (66.7%) failed with `NO_MEASURABLE_TARGET_GAIN`, 72 moved the
-target but failed a preservation/interference gate, and 19 were retained. The run was
-still executing source commit `13e5252`, so it did not exercise ADR-106 or Teacher
-vNext and is treated as control evidence rather than validation of those changes.
+Weakest-first recovery must allocate effort proportionally enough to matter. A
+progression blocker near 50% while the school mean is near 90% must not receive
+the same single recovery visit as a near-mastered capability around 90%.
 
-Replay showed that retiring an effective policy after two arbitrary rejections was
-too aggressive: across the available post-generation-39000 history it would suppress
-several later retained winners, including one C.SUB winner in this control run. A
-rejection that measurably moves the target is not evidence that the teaching policy is
-target-inert; it may instead be an interference problem. Checkpoint-local retirement
-therefore counts only **consecutive `NO_MEASURABLE_TARGET_GAIN` outcomes** for the
-same effective policy/context/unchanged student. Any measurable target movement resets
-that policy-local streak even if the candidate is rejected by a later preservation
-gate. Retirement begins after four consecutive no-target-gain outcomes. Historical
-replay at that threshold removed 73 later failed retries / 1,160 attempted optimizer
-steps with zero observed retained winners in the blocked class. This replay is evidence
-for containment, not a guarantee of future retention probability.
+Within the ADR-094/109 progression-priority recovery path, rank the up-to-three
+imperfect frontier capabilities by accuracy as before, then assign each a bounded
+visit weight from its deficit below the unweighted whole-school capability mean.
+Each imperfect frontier capability receives one maintenance visit; for every
+additional 10 percentage points below the school mean it receives one additional
+visit, capped at six visits in one recovery queue. Interleave weighted visits by
+rank rather than running one capability's entire weight consecutively.
 
-The same control run exposed a dashboard accounting defect: command-local `visits`
-reset at `SCHOOL_SESSION_STARTED`, while attempted steps, retained steps and retained
-visits did not. Ratios shown across those counters could therefore mix different
-execution epochs. `begin_execution` now resets all four command-local counters together
-and resets the attempted-step rate sampler. Historical append-only events remain
-unchanged; this is an operator-telemetry correction only.
+Weighted visit multiplicity belongs only to the executable recovery `queue`.
+`first_recovery` is stagnation-control membership metadata and must remain the
+unique ordered capability set underlying that queue. Never copy repeated weighted
+visits into `first_recovery`; doing so violates the stagnation cycle invariant and
+can block resume with `STAGNATION_FIRST_RECOVERY_DUPLICATE`.
 
-Candidate retention, source/oracle truth, student/AdamW custody, promotion,
-qualification and human ownership of neural training remain unchanged.
+This is scheduling pressure, not evidence or retention credit. Exams remain
+unchanged, near-mastered imperfect semantics still receive maintenance exposure,
+and B debt cadence, promotion thresholds, plasticity bounds, mature-debt repair,
+source/custody and retention gates remain authoritative. The weighting exists to
+turn large measured deficits into correspondingly larger learning effort instead
+of merely labeling them "weakest" once.
 
-## ADR-110 | 2026-10-26 | Shadow early stopping requires target inertia through step eight
+**Status:** Accepted for bounded implementation and scheduler verification.
 
-The first completed human calibration run on merged Teacher vNext ended normally at
-generation 43120 / optimizer step 148016 after 292 command visits. Its append-only
-ledger contains 267 actual teacher proposals, 17 retained candidates and 228 retained
-optimizer updates, for 6.37% proposal retention. Legacy UCB selected all 267 actual
-policies; Teacher vNext remained evidence/shadow-only. `NO_MEASURABLE_TARGET_GAIN`
-remained dominant at 175/267 proposals (65.54%), so this run is evidence about the
-legacy selector plus vNext calibration, not a test of learned proposal authority.
 
-The original multi-fidelity shadow rule was too eager: stopping at the first inert
-2/4/8-step probe would have recommended 231 stops and falsely killed 9 eventual
-retentions. Replay of the completed run establishes a safer shadow policy: **do not
-recommend an early stop before step 8, and at step 8 stop only when no earlier probe
-through that rung has shown the configured positive target gain.** This preserves a
-candidate such as `[0, 1, 0, 2]`, whose transient step-4 gain is evidence against target
-inertia even though its step-8 cumulative delta returns to zero.
+## ADR-110 | 2026-10-28 | School-wide retention drought can activate plasticity for below-mean semantics
 
-Under this v2 shadow rule, the completed run yields 125 hypothetical stops, one false
-kill (generation 42833, `C.COUNT`, trajectory `[0, 0, 0, 2]`) and 1,000 saved candidate
-optimizer steps out of 3,996 attempted (25.03%). The false-kill rate among stop
-recommendations is 0.8% and mean savings are 3.75 steps/review, satisfying the current
-shadow activation evidence thresholds on this run. **Qualification is evidence, not
-authority:** actual early stopping remains disabled, full candidate execution and the
-existing retention gate remain authoritative, and another human-operated run is
-required before any separate activation decision.
+**Direct user correction to ADR-108's scaling behavior.** Capability-local
+starvation remains useful for one stubborn semantic, but it scales poorly when
+the school contains many active semantics and failures are distributed across
+them. Plasticity therefore gains a second, school-wide activation path.
 
-The same run also reveals support starvation in the learned local proposal model:
-267 visits produced 223 exact `StudentRegion` keys, with no exact region receiving more
-than four observations, while the learned distribution requires at least 16 observations
-and three retentions. Do not lower those evidence thresholds or collapse materially
-different learner states merely to force qualification. Any future pooling/backoff or
-authority-transition design requires separate evidence and review.
+The teacher maintains a durable `school_attempts_since_retained` counter in its
+causal state. It increments once for every committed teacher visit that does not
+retain a candidate and resets to zero on any retained/provisional candidate whose
+trial is actually committed. This counter is independent of which capability was
+visited.
 
-## ADR-111 | 2026-10-26 | Teacher vNext receives bounded proposal canary authority
+For each visit, plasticity activates when either:
 
-The first merged vNext calibration established that exact `StudentRegion` evidence was
-too fragmented to support a learned proposer: 267 candidate observations produced 223
-exact regions. The predictive contract therefore keeps every exact region and receipt
-unchanged while adding a versioned hierarchical evidence backoff. Prediction first uses
-exact evidence when supported, then progressively compatible capability+phase,
-capability, grade+phase, and grade neighborhoods. Curriculum scope, geometry epoch and
-numeric scope remain compatibility boundaries; exact checkpoint identity remains
-forbidden as a predictive region key.
+1. the existing ADR-108 capability-local starvation threshold is reached; **or**
+2. at least 24 school-wide visits have elapsed since any retention **and** the
+   current capability's latest examination accuracy is strictly below the
+   unweighted mean of all valid capability accuracies in the latest whole-school
+   exam.
 
-The learned local proposal distribution may use the nearest compatible backoff level,
-but its evidence gate remains unchanged at **16 observations and 3 retentions**. The
-system does not manufacture qualification by lowering support thresholds. Replay over
-160 states from the clean first merged-vNext run changes learned-distribution status
-from structurally starved to `QUALIFIED` in 95 states and `NOT_QUALIFIED` in 65.
+Each capability receives one vote in the school mean regardless of exam-row
+count. A capability absent from the latest exam cannot activate the global-drought
+path until it has authoritative score evidence. Equality with the mean is not
+below mean. The global path remains disabled outside developmental MAIN /
+RECOVERY_1 / RECOVERY_2 stages, exactly like local plasticity.
 
-Teacher vNext now receives a deliberately bounded **real proposal-selection canary**.
-Every fourth actual teacher candidate is eligible. A canary proposal must map to an
-existing executable strategy, have at least eight compatible observations and at least
-one retained observation, and remain inside the legacy selector's post-retirement active
-effective-policy set. If any condition is missing, selection falls back to the inherited
-controller. Novel local/learned parameter proposals remain shadow-only until a separate
-non-archive custody and causal-credit path exists. This preserves the immutable
-historical strategy archive and prevents vNext from resurrecting a policy retired for
-same-student target inertia.
+The new path changes only *eligibility for ADR-108's existing bounded slack*.
+It does not widen any loss tolerance: strict positive target gain remains
+mandatory; same-grade/fixed/frontier losses remain capped by ADR-108; fragile
+replay, source/custody/semantic identity and mature-debt hard limits remain hard.
+A single retained candidate anywhere in the school closes the global drought path
+for subsequent visits by resetting the counter to zero.
 
-The inherited controller still computes its selection first on every visit. Canary
-receipts preserve that `legacy_policy_key` as a counterfactual and explicitly record
-selector origin, actual authority change, vNext policy version, evidence level/support,
-selected family/policy and predicted retention. This makes the next bounded human run a
-direct vNext-versus-legacy experiment instead of another shadow-only observation hour.
-On a clean-run replay of the last 160 states, 40 canary slots were scheduled, 14 had
-enough retained evidence to select a vNext policy and 26 safely fell back; selected
-policies had mean predicted retention about 11.3% with a 6.25% minimum. These are
-counterfactual support diagnostics, not claimed realized improvement.
+Telemetry must distinguish `LOCAL_STARVATION` from
+`SCHOOL_RETENTION_DROUGHT_BELOW_MEAN`, report the school-wide drought count and
+threshold, and report the current capability score and school mean used by the
+global predicate.
 
-This authority is only over **which valid teaching policy to try**. Source/oracle truth,
-lesson validation, candidate execution, retention admission, student/AdamW custody,
-promotion, qualification and championship authority are unchanged. Multi-fidelity
-early stopping remains shadow-only and is not activated by this decision. Neural
-training remains human-operated.
+**Status:** Accepted for bounded implementation and non-neural verification.
 
-## ADR-112 | 2026-10-26 | Promotion sweeps use 92/87 hysteresis
 
-**Direct user correction after live sweep diagnosis.** The one-attempt-per-student and
-introduced-scope latch from ADR-103 is working: unchanged failed attempts do not re-arm
-from cohort reshuffling alone. The remaining failure is the sweep threshold itself.
-Across 31 observed sweep attempts, the median trigger mean was 90.91%; 24 attempts had
-no retained student update, yet 22 of those still crossed below the old 90% continuation
-floor. The final-stage C attempt demonstrated the mechanism cleanly: the unchanged
-student entered at 208/231 = 90.04%, C.COUNT was already perfect so no neural update
-occurred, and the next fresh cohort scored that capability 32/33 instead of 33/33,
-dropping the stitched mean to 207/231 = 89.61% and aborting immediately.
+## ADR-111 | 2026-10-28 | Failed promotion sweeps require blocker improvement before retry
 
-The active promotion policy therefore uses explicit hysteresis. A previously unattempted
-student+scope pair may enter `PROMOTION_SWEEP` only when the fresh introduced-grade mean
-is **at least 92%**. Once the sweep is active, the running stitched grade mean may vary
-inside the hysteresis band and the sweep aborts only when that mean falls **below 87%**.
-Exactly 92% starts; exactly 87% continues. Every other sweep invariant remains intact:
-canonical capability order, per-capability fresh authoritative replacement, frozen
-unswept scores, checkpoint/scope-bound attempt memory, mastery-debt carry-forward,
-source/oracle truth, retention custody, student+own-AdamW custody, championship
-authority, and human ownership of neural training.
+**Direct user correction after repeated graduation attempts failed without
+converging.** A changed whole-student checkpoint is not sufficient evidence that
+the reason a promotion sweep failed has changed. Retentions on unrelated
+capabilities must not repeatedly re-arm the same expensive sweep against an
+unchanged blocker profile.
 
-This intentionally supersedes the single-threshold portions of ADR-084/085/093/099/103
-without rewriting those historical decisions. It is a pragmatic buffer, not a claim
-that 92/87 is statistically optimal. Future evidence may replace these constants with a
-calibrated readiness model, but until then no first-crossing near 90% may launch a sweep.
-Replay of those 31 historical launches shows that only 4 began at or above 92%; the
-entry buffer would therefore have suppressed 27/31 (87.1%) of the observed launches.
+When a promotion sweep aborts below its hysteresis floor, or completes on an
+already-admitted older grade without advancing that grade, the scheduler records
+the imperfect capabilities in that sweep and their exact correct/total scores as
+the retry baseline. A later assessment for the same promotion scope may re-arm the
+sweep only when both ordinary entry eligibility is satisfied **and** the unweighted
+mean accuracy across those recorded blockers is strictly better than the failed
+baseline. A new student hash by itself is insufficient.
+
+Successful semantic introduction, actual grade promotion, or reaching an
+authorized next-grade boundary clears the failed-sweep blocker baseline. A changed
+promotion scope also supersedes it naturally. The blocker baseline is evidence
+about retry eligibility, not a new mastery threshold: existing 92% entry, 87%
+hysteresis, promotion, retention, source/custody, and mature-debt rules remain
+unchanged.
+
+This is deliberately compatible with ADR-094 and ADR-109. Failed B revalidation
+sweeps do not create extra B training share; B continues to receive its bounded
+debt turns, and another B sweep waits until those turns have measurably improved
+the B blocker set. Failed progression-frontier sweeps continue ordinary frontier
+recovery, but unrelated A/B retentions cannot manufacture another nominal
+graduation attempt.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-108 | 2026-10-28 | Retention starvation opens a bounded plasticity escape hatch
+
+**Direct user correction after sustained zero-retention calcification.** Normal
+retention remains conservative, but a capability that has gone a long time
+without retaining must not be forced to preserve every local optimum forever.
+When the teacher has positive source-paired evidence that the active capability
+actually improved, sustained retention starvation may temporarily tolerate a
+small amount of collateral regression so the learner can move to a different
+basin and repair displaced skills afterward.
+
+This is a derived, capability-local mode, not a persistent switch. It activates
+after 32 consecutive attempts without a retained candidate for an ordinary
+capability, or after 16 for the newest active grade or a semantic in the current
+introduction stage. A retained candidate resets `attempts_since_retained` to zero
+and therefore closes the escape hatch immediately on the next visit.
+
+Plasticity escape never waives the requirement for a strict positive gain on the
+active capability. It also never waives fragile-composition replay, source-gold,
+custody/provenance, semantic identity, or the mature-grade debt hard limit. When
+active, it may relax only these retention boundaries:
+
+- same-grade net change may be as low as `-1` correct answer;
+- a protected capability may exceed its ordinary per-capability loss tolerance
+  by at most one additional wrong answer;
+- fixed same-grade cohort net change may be as low as `-1`;
+- protected active-grade frontier change may be as low as `-1`;
+- whole-school fixed-frontier net change may be as low as `-1`.
+
+Anything worse remains rejected. Candidates with no measurable target gain remain
+rejected. When frontier evidence makes mature-grade debt exceed its existing hard
+limit, the candidate remains rejected even if every plasticity bound otherwise
+passes. Accepted escape candidates carry explicit telemetry naming the ordinary
+rejection reason that was conditionally waived, the starvation count, activation
+threshold, frontier-priority status, and each temporary loss bound. Ordinary
+assessment, recovery, and mature-debt repair then own earning displaced
+capabilities back; plasticity mode itself does not declare those regressions
+repaired.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-109 | 2026-10-28 | Progression-frontier visit priority persists until advancement
+
+**Direct user correction after `C.COUNT` fell back to roughly one visit in ten.**
+ADR-103 correctly recognized that raw capability-count fairness starves a newly
+introduced frontier semantic, but it ended catch-up priority once the frontier
+mean reached the school median. That statistical condition is not the progression
+condition. A frontier semantic can be near or above the school median and still be
+the sole blocker preventing introduction of the next semantic.
+
+While the newest active grade is the explicit progression-priority grade and any
+currently introduced eligible semantic in that grade remains imperfect, its
+ordinary MAIN sweep retains the existing ADR-103 visit-allocation floor of roughly
+one quarter of candidate opportunities. The existing bounded pass formula remains:
+
+`ceil(non_frontier_semantics / (3 * frontier_semantics))`
+
+with a minimum of one frontier pass. The school-median comparison is no longer an
+off-switch for this progression allocation. Once every currently introduced
+frontier semantic is perfect, the extra passes disappear normally and ordinary
+promotion/semantic-introduction machinery decides the next transition.
+
+This is scheduler priority only. It does not lower promotion thresholds, change
+retention gates, suppress mature-grade repair, erase A/B debt, or make B a
+progression prerequisite. ADR-094's bounded B debt turns remain intact; this
+correction prevents their surrounding multi-capability work from reducing the
+actual progression frontier to raw 1/N capability frequency between boundaries.
+
+Historical and migrated C-frontier receipts may carry an explicit
+`debt_cadence_policy: null`. That value is stale compatibility state, not an
+intentional revocation of ADR-094. When B and C are admitted and C is the newest
+active grade, deserialization neural-inertly rehydrates the canonical bounded-B /
+progression-C cadence exactly as it already does when the field is absent. The
+policy remains dormant unless both B and C actually carry unfinished debt.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-114 | 2026-10-28 | Plasticity trades normalized mastery debt, not raw correct-answer counts
+
+**Direct user correction after active Grade-C plasticity still rejected useful
+frontier trades.** A correct-answer loss has different developmental cost at
+100% mastery than it has in an already weak capability. Plasticity therefore
+must not compare collateral changes as raw answer counts or as one fixed
+`-1` allowance across heterogeneous capability cohorts.
+
+When plasticity is active, every measured capability receives one vote
+independent of its row count. For capability accuracy `a`, define normalized
+mastery debt `d = 1 - a` and mastery-debt energy `E = d^2`. The utility of a
+candidate on one capability is `E_before - E_after`; scope utility is the sum of
+those capability utilities. Positive utility means the candidate reduced total
+normalized mastery debt. The square is deliberate: borrowing a few points from
+a nearly perfect capability is cheap, but repeatedly degrading the same
+capability becomes progressively more expensive.
+
+The active capability must still show a strict positive source-paired gain.
+Plasticity may relax an otherwise raw-count-based same-grade or protected-loss
+rejection only when both the complete same-grade paired scope and the complete
+paired protection scope have strictly positive mastery-debt utility. A negative
+fixed same-grade, active-frontier, or whole-school fixed-frontier raw delta may
+likewise be waived only when that exact evidence surface has detailed
+per-capability scores and strictly positive mastery-debt utility. If an older
+evidence surface lacks per-capability paired scores, a negative raw delta remains
+non-relaxable rather than guessing a utility value.
+
+This supersedes ADR-108's fixed `-1` plasticity loss caps and one-extra-answer
+protected tolerance as the plasticity trade criterion. Ordinary retention outside
+active plasticity remains unchanged. Fragile-composition replay, source-gold,
+semantic identity, custody/provenance, strict target gain, and the mature-grade
+debt hard limit remain hard gates. Plasticity still does not declare displaced
+skills repaired; normal assessment and recovery own that work.
+
+Because activation changes candidate admissibility, the teacher must not discard
+a previously observed target-improving near miss merely because it was rejected
+before plasticity opened. On the first eligible active-plasticity opportunity,
+selection may retry an otherwise active, previously rejected target-gaining
+policy that has not yet been evaluated under plasticity before breeding another
+pressure challenger. The retry receives fresh source-paired scoring and ordinary
+retention authority; historical rejection evidence is never rewritten.
+
+Telemetry records the quadratic power and per-surface, per-capability utility so
+operators can see why a raw regression was accepted or rejected.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-115 | 2026-10-28 | Retained teacher policies outrank newborn pressure exploration
+
+**Direct user correction after a 40-visit zero-retention run.** The run still
+produced target gains, but the teacher selected a fresh mutated challenger on
+39 of those 40 visits. The last policy that retained a candidate was not reused
+after retention and was later absent from the live strategy population.
+
+Two control-plane rules caused the failure. First, unproven newborn grace ranked
+ahead of retention evidence in live-population pruning. A stream of one-trial
+children could therefore displace a strategy that had passed the real retention
+gate. Second, the sustained-pressure branch minted a child before current-context
+retained evidence could be exploited. Together these rules turned rejection
+pressure into nearly continuous mutation.
+
+Retention evidence now has priority over newborn grace in the live population.
+Newborn grace still protects young unretained strategies from older unretained
+strategies, but it cannot evict an effective strategy with a retained outcome.
+
+Sustained rejection pressure still enables ADR-104 hereditary exploration. It no
+longer makes every pressure visit an exploration visit. If the current context
+contains an active retained effective policy, the teacher uses the best retained
+policy before minting another child. Existing checkpoint-local retirement remains
+the bound: after four unretained or no-target-gain uses on the same student, that
+effective policy leaves the active set and hereditary search resumes. This uses
+the existing failure memory instead of adding a new cadence or timeout.
+
+When no active retained policy exists in the current context, ADR-104 ancestry
+still applies. Retained same-capability evidence from another phase may seed a
+new child, followed by same-grade and reward fallbacks. Teacher vNext keeps its
+bounded existing-policy canary cadence.
+
+This correction changes policy selection and live-population survival only. It
+does not weaken candidate retention, plasticity utility, fixed-frontier checks,
+source or custody rules, fragile replay, or mature-grade debt limits.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-116 | 2026-10-28 | Retention support follows veto surfaces; B returns to a 20% candidate-effort ceiling
+
+**Direct correction after the restarted run remained near 3% retention.** The
+post-restart session retained only about one candidate in forty even though many
+rejected candidates still improved their target probe. Two allocation defects
+were visible in the live receipts.
+
+First, generic retention support rotated uniformly across the whole admitted
+school. After full Grade B was restored, the same optimizer batch also reserved
+four fresh B.OR and four fresh B.XOR preservation siblings. Generic support could
+therefore spend another turn on those already-preserved connectives while a hard
+lesson-grade or active-frontier surface received little rehearsal. Candidate
+construction now spends generic support on the complete lesson grade and latest
+active progression frontier. Verified fragile-preservation capabilities are
+removed from that generic schedule. Short budgets rotate across the priority
+surface between visits. Earlier-grade rehearsal remains controlled by the
+teacher's existing `old` policy.
+
+Second, ADR-094's full-grade B turn no longer matches the user's later operating
+constraint. A due B turn could expand into seven consecutive candidate visits,
+so B consumed roughly one quarter of live candidate work while C remained the
+progression frontier. Full U7C B remains admitted, but allocation returns to a
+candidate-effort boundary: four progression-frontier candidate visits earn one B
+candidate visit. Each earned visit teaches one currently imperfect B semantic,
+rotating in canonical order so no admitted Boolean semantic starves. The cadence
+resets after that B visit. This supersedes ADR-094 only for the allocation unit;
+it does not restore a reduced B curriculum or make B a C prerequisite.
+
+These changes do not relax target gain, lesson-grade, active-frontier,
+whole-school, protected-capability, fragile replay, mature-debt, source-gold,
+semantic identity or AdamW custody requirements. They change what is taught
+before those gates judge the candidate.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
+## ADR-118 | 2026-10-28 | Current BAMF issues remain authoritative; future work carries its normative spec in-repo
+
+For the three current BAMF-0.2 workstreams represented by GitHub issues
+#341 through #545, GitHub remains the authoritative source for issue scope,
+requirements, acceptance criteria, status, and any later issue-level correction.
+The mirrored issue/specification files already present under
+`docs/tasks/bamf-0.2/` are retained as durable planning and implementation
+context, but they must not silently supersede a changed GitHub issue during these
+existing workstreams. If an existing issue is intentionally migrated to repo-spec
+authority, that migration must be explicit in both the issue and its specification.
+
+This is a transition rule, not the long-term documentation model. For new work
+created after this decision, the normative engineering specification should live
+with the work in the repository and branch where it is being implemented, under
+ordinary version control. GitHub issues should become deliberately smaller:
+concise problem statements, ownership/navigation metadata, execution status, and
+a direct pointer to the authoritative repository specification rather than a
+second full copy of the same requirements.
+
+The repository specification is authoritative because its changes travel through
+the same commit graph as the implementation. A branch, fork, release, or archived
+commit therefore carries an explicable specification snapshot for the code state
+it contains. Requirements can be reviewed, diffed, reverted, blamed, and evolved
+with the implementation instead of relying on mutable issue text whose edit
+history is not part of the repository lineage.
+
+Future issue creation and decomposition should preserve this single-source rule:
+the issue may summarize or index the work, but normative detail belongs in the
+versioned repo specification. Agents must not maintain two independently editable
+full specifications and then guess which one wins.
+
+**Status:** Accepted as the authority-transition contract for the BAMF unified
+base and future Bilqis-MLX work shaping.
+
+
+## ADR-119 | 2026-10-28 | BAMF uses three long-lived lane branches around a living reviewed integration trunk
+
+The BAMF unified branch is not frozen after its initial composition. Git history
+already preserves the exact common ancestor, so freezing the integration branch
+would add no meaningful provenance while delaying useful cross-lane integration.
+
+`codex/bamf-unified-base-20261028` is therefore the living reviewed integration
+trunk. Lane A works on `codex/bamf02-a-semantics`, Lane B on
+`codex/bamf02-b-neural`, and Lane C on `codex/bamf02-c-runtime`.
+
+Every implementing issue begins with a sync-in boundary. The lane fetches `origin`
+and merges the current `origin/codex/bamf-unified-base-20261028` into its own lane
+branch before issue-owned edits. The receipt records the consumed unified SHA. If
+the lane already equals that head, record the SHA rather than manufacturing a
+no-op merge. Resolve conflicts and run the smallest affected verification before
+continuing. Lanes do not merge `main` or sibling lanes directly; accepted
+cross-lane work travels through unified.
+
+Every completed issue has a reviewed return path. After its owned acceptance
+passes, the lane pushes and opens a pull request from the lane branch into
+`codex/bamf-unified-base-20261028`. Human sign-off is required before merge; issue
+execution does not delegate self-merge authority. After accepted work lands on
+unified, subsequent issues in all lanes consume it at their next sync-in boundary.
+This exposes shared interfaces, tests, instrumentation, and conflict pressure
+early while preserving lane ownership and an explicit integration approval gate.
+
+The three lane branches remain long-lived across issues. Merge commits from unified
+into a lane are preferred over rebasing because issue receipts, reviews, and other
+agents may already reference lane commit SHAs. Non-implementing group or
+integration-parent issues inherit this lifecycle through their implementing
+descendants and do not create empty bookkeeping code PRs.
+
+**Status:** Accepted as the BAMF branch topology and integration lifecycle.
+
+## ADR-120 | 2026-10-28 | BAMF successor outcome, admission and baseline custody
+
+**Scope:** BAMF-0.2 successor only; issue #486 under #347 and #344. This
+records the selected policy and baseline evidence; it does not implement a
+student, grant admission, authorize neural training or alter #324.
+
+**Decision:** Judge useful capability by complete-system outcomes. Exact retrieval,
+declared deterministic operators, learned memory, neural prediction and their
+compositions each count equally when they solve a source-valid task. All admitted
+grades use the same grade-neutral Factory, teacher, retention and assessment
+policy. Source-gold, prerequisites, whole-school retention, checkpoint and own
+optimizer custody, and the sovereign MLX writer remain binding.
+
+Semantic releases default to staging. A human-started BAMF run may delegate later
+source-valid expansion through an explicit persisted admission lease and the
+existing Factory/admission owner. The source bridge can be built now. Its first
+live adoption requires BAMF's disposable C16 ([#382](https://github.com/Entif-AI/Bilqis-MLX/issues/382)) source/custody/retained-learning
+witness, including a strictly improved fresh target, preserved cumulative retention,
+complete rejection rollback and equivalent cold-resume output and next update,
+before the operator starts the first persistent lineage, rather than waiting for
+the historical #324 model-size comparison. Persistent-student learning receipts
+are subsequent operating evidence. The operator owns every
+durable-student start, resume and stop. This is a desired-state contract, not
+proof the lease or successor learner has been implemented.
+
+**Baseline evidence:** Lane C starts from reviewed unified
+`44f78431709ec3b8fc23f47b45d9b18f167c7354`. Replay
+`d21797e72365bf93ea7cad3a4ef9020ec9817f23` is its Git ancestor. The historical
+SKOS merge `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8` and its PR head
+`0561e67eada816a999841aab3d9d5080e8f99bed` are **not** ancestors of unified.
+Unified commit `77d4f6869b782fc24341e6e6ec8f2601e1dd3873` imported the SKOS
+files. At this baseline, `lib/ithkuil/src/skos` and `lib/ithkuil/_data` match
+the historical SKOS merge; `lib/ithkuil/RELEASE_REBUILD.md` differs. Content
+inclusion is not Git ancestry. No second integration branch or main merge is
+needed. The discrepancy is recorded as PM-2026-10-28-001.
+
+**Custody:** The frozen #324 v3 executable
+`2e5ee21a97a66c683c61f74419da03500c30d2c4` and manifest
+`7f1968f38b2a062df7dbaae586ccecc3327ff5885a72cb7c368938ecec92aea1` remain
+historical controls. Do not modify, substitute or rebase them or their student
+and optimizer state. Disposable-witness retained learning remains unmeasured until
+that witness runs; persistent-student learning remains unmeasured until the
+human-owned successor run produces its own evidence.
+
+## ADR-121 | 2026-10-31 | Close satisfied child issues; keep integration authority at parents
+
+GitHub issue state now answers a narrow operational question: **does actionable work remain inside this issue's own durable contract?** It does not mirror the completion state of every ancestor, sibling, or downstream integration gate.
+
+An implementing child or leaf issue should close once its own bounded outcome and acceptance contract are satisfied and its accepted work is integrated into the reviewed unified trunk. A parent issue may remain open for aggregate integration, cross-lane qualification, retained-learning proof, production authority, or other owner-level acceptance without forcing already-delivered children to remain open. Closing a satisfied child is therefore not a claim that its parent, workstream, BAMF gate, learner, or durable runtime is complete.
+
+If a merged pull request delivered only a proper subset of the issue's own stated contract, either keep that issue open while concrete work still remains at the same durable boundary or, preferably when the residual is independently actionable, create a smaller successor issue for the residual gap and link it to the historical issue/PR. Later regressions, newly discovered integration gaps, and changed requirements should normally become new self-contained issues with a concise current reproduction, relevant authority/spec pointer, dependency context, and acceptance criteria. Reopen a closed issue only when its original acceptance was actually invalidated, reverted, or the delivered outcome itself must be restored.
+
+Open parent/integration issues remain the durable place for unresolved aggregate acceptance. Closed children remain provenance and may be referenced by successors. The desired operational result is that the open-issue set approximates the **current executable frontier plus meaningful parent/integration containers**, rather than every historical work packet whose ancestors are still incomplete. This reduces triage noise and lets lower-reasoning agents act on bounded current tickets without reconstructing the full historical issue tree.
+
+For the existing BAMF-0.2 hierarchy, this decision authorizes a reconciliation sweep of open issues: close merged-and-satisfied leaves, close superseded historical paths, split independently actionable residuals when useful, and leave genuinely unfinished leaves plus integration/acceptance parents open. GitHub remains authoritative for the current #341-#545 issue scopes under ADR-118; this lifecycle decision changes state semantics, not the normative requirements of those issues.
+
+**Status:** Accepted as the GitHub issue-lifecycle and backlog-visibility contract for BAMF-0.2 and successor Bilqis-MLX work shaping.
+
+## ADR-122 | 2026-11-01 | A09.4 proves exact A09.3 projection custody from release + projection evidence
+
+**Scope:** BAMF-0.2 A09.4 issue #394 only. This is a narrow amendment to the
+issue's `Precise inputs and existing owners` contract after adversarial review
+proved that the A09.3 bounded proposal alone cannot authenticate its ordered
+capability and semantic-identity introductions.
+
+**Decision:** A09.4 direct-proposal validation MUST consume the current
+`ExecutableFactoryRelease` together with the exact selected
+`TargetDeltaProjection` used by A09.3, and MUST validate the supplied A09.3
+selection against that derivation evidence before granting proposal/progress
+credit. Staged/cold-resume custody MUST carry the exact projection evidence needed
+to reproduce and revalidate the same derivation rather than trusting only a
+self-consistent proposal digest or a successor transition that happens to match
+caller-supplied introduction fields.
+
+This closes the reproduced same-semantic forgery in which
+`introduced_capability_ids` or `introduced_semantic_ids` could be changed and all
+proposal/projection hashes recomputed consistently while A09.4 still accepted the
+payload. Digest integrity remains necessary but is not derivation authority.
+
+The amendment deliberately leaves the accepted A09.3 selection schema and ranking
+semantics unchanged. It does not move staging ownership away from the existing
+#296 Factory/adoption path, create a parallel registry, grant admission rights, or
+alter the C07 persisted-lease boundary. A09.4 remains proposal/staging logic only;
+runtime admission and durable mutation stay with their existing owners.
+
+**Human ratification:** Option A from the #394 architecture checkpoint was
+explicitly selected by the project owner on 2026-11-01. Option B, which would
+change the already-accepted A09.3/#296 output contract to mint a new upstream
+projection receipt, is not adopted.
+
+**Status:** Accepted as the controlling A09.4 projection-custody amendment.
+
+
+
+## ADR-123 | 2026-11-01 | A09.4 projection truth is deterministic derivation, not caller assertion
+
+**Scope:** BAMF-0.2 A09.4 issue #394. This is the follow-on authority decision
+required after fresh exact-head EGM proved that ADR-122's caller-supplied
+`TargetDeltaProjection` evidence could still be forged self-consistently with a
+matching `FrontierDeltaSelection`.
+
+**Decision:** The authoritative `TargetDeltaProjection` is the deterministic
+result of the trusted A09 planning derivation. A09.4 MUST independently derive
+or invoke the canonical pure derivation of that projection from the authenticated
+A09.3 inputs that determine it, including the current
+`ExecutableFactoryRelease` and validated predecessor snapshot / legal-closure /
+selection context. A projection supplied by a caller, proposal, staged receipt,
+or cold-resume payload is evidence to compare against that derivation; it is not
+itself projection authority.
+
+For direct proposal validation, A09.4 MUST rederive the expected projection from
+trusted inputs and require an exact match before granting `PROPOSAL` or progress
+credit. A self-consistent caller pair of `FrontierDeltaSelection` and
+`TargetDeltaProjection` that does not equal the independently derived projection
+MUST fail closed with a typed planner/custody error.
+
+For staged or cold-resume validation, persisted receipts MUST retain enough
+authenticated predecessor coordinates to rerun the same deterministic derivation.
+Persisting projection bytes or digests is useful for replay and corruption
+detection, but those stored values do not become an independent trust root merely
+because they were persisted. Current credit is granted only after rederivation
+from authenticated predecessor authority and exact comparison.
+
+This decision does **not** change A09.3 winner ranking, comparator semantics,
+budget rules, or accepted selection behavior. It does not move staging ownership
+away from #296, create a new registry or parallel source of truth, or alter C07's
+exclusive admission / persisted-lease authority. The derivation may be factored
+into a reusable pure planner owner, but its semantic authority remains the
+existing A09 planning inputs rather than a new caller-controlled artifact.
+
+**Supersession:** ADR-122 remains valid for carrying exact projection evidence,
+but is superseded wherever it could be read to mean that supplying a
+self-consistent projection is sufficient derivation authority. Exact evidence
+must now be checked against an independently rederived expected projection.
+
+**Human ratification:** The project owner explicitly approved this trust-anchor
+rule on 2026-11-01 after requesting the architecture be stated in plain language:
+the system must recreate the projection from trusted inputs rather than trust the
+projection presented to it.
+
+**Acceptance effect:** This removes the architecture/authority block on #394
+implementation. #394 is not accepted until the implementation receives a fresh
+independent exact-head adversarial EGM and ordinary turn-in gates. #395 remains
+dependency-waiting until #394 is accepted sufficiently for its stated prerequisite.
+
+**Status:** Accepted as the controlling A09.4 projection-authenticity rule.
+
+## ADR-124 | 2026-11-02 | BAMF lane flow control freezes parked PRs and bounds active implementation WIP
+
+**Scope:** BAMF-0.2 execution across Lanes A, B and C. This decision governs
+work-in-progress classification, parked pull-request handling and lane take-up. It
+does not weaken issue acceptance, EGM, human merge, dependency, custody or source
+authority requirements.
+
+**Problem:** Open PR count and owner-level `implementation incomplete` status had
+begun to masquerade as active engineering concurrency. Review-waiting,
+dependency-waiting and authority-waiting PRs were repeatedly merge-forwarded,
+revalidated and re-reviewed whenever reviewed unified advanced. Those refreshes
+consumed substantial execution capacity without moving the blocked gate, while the
+existing WIP measure excluded the same PRs because their feature coding was not
+actually active. The result was a feedback loop in which parked inventory generated
+work merely by existing.
+
+**Decision:** BAMF uses an explicit lane-local flow state. `ACTIVE` is the only
+state that counts as implementation WIP and the only state that permits substantive
+branch mutation. `READY`, `WAITING`, `BLOCKED` and `TURNED_IN` are non-WIP states.
+The normal ceiling is **two ACTIVE implementation leaves per lane**. This is a
+maximum, not a target: workers should preferentially drive the active item with the
+fewest remaining gates to accepted integration before taking another leaf.
+
+A `WAITING` or `BLOCKED` item MUST carry a concrete resume trigger. Parked work
+MUST NOT be merge-forwarded, rebased, fully revalidated, sent for fresh exact-head
+review or otherwise refreshed merely because the unified branch advanced. A newer
+unified SHA is not, by itself, a resume trigger. When the recorded gate actually
+changes, the operator verifies that trigger, updates the lane state to `ACTIVE`,
+then performs the one synchronization/revalidation pass required by the leaf
+contract.
+
+Every active lane-owned BAMF implementation leaf and every open BAMF lane PR MUST be
+represented in the lane's machine-readable state under `docs/tasks/bamf-0.2/flow-control/`.
+`scripts/check_bamf_flow_control.py` validates the declared state, required resume
+triggers and normal per-lane WIP ceiling, and is part of the repository quality
+path. A lane may exceed the normal ceiling only with an explicit machine-readable
+exception naming the reason, authority and expiry condition. Exceptions are
+temporary evidence, not a new default.
+
+**Limits of mechanical enforcement:** Repository checks can validate declared
+state. They cannot observe an agent silently reading or mutating a remote branch
+without updating the lane record. Therefore changing the lane state before
+substantive mutation remains an agent/operator duty enforced by `AGENTS.md` and the
+BAMF lane execution contracts. Future GitHub-event integration may strengthen
+remote-drift detection without changing this decision.
+
+**Operational effect:** Review and external-gate inventory remains visible but
+stops consuming continuous refresh work. A lane with one ACTIVE leaf and several
+WAITING PRs has WIP=1, not WIP equal to its open PR count. When an external gate
+fires, the parked PR competes for the next active slot according to merge proximity,
+dependency unlock and lane priority rather than waking automatically.
+
+**Human ratification:** The project owner approved the proposed enforcement and
+socialization controls on 2026-11-02 and explicitly required this decision to be
+recorded in `ADR.md`.
+
+**Status:** Accepted as the controlling BAMF-0.2 lane flow-control and parked-PR
+discipline.
+## ADR-125 | 2026-11-02 | Remediation artifacts close at local acceptance; parent owns aggregate EGM
+
+**Problem:** BAMF review findings had begun to accumulate as open issues and draft
+PRs even after their exact defects were repaired. Those artifacts were being kept
+open until the entire parent feature, sibling set, dependency graph and final EGM
+cycle completed. That turns GitHub's open set into historical storage. Every agent
+that searches for related open issues or current PRs then pays a growing discovery,
+classification and context cost for work that is already finished.
+
+**Decision:** Open issues and PRs represent the current actionable working set.
+Historical provenance belongs in closed issues and merged/closed PRs.
+
+A remediation issue closes when its exact recorded defect has been reproduced,
+repaired, regression-covered and verified on a durable PR/head. The issue does not
+remain open merely because a parent issue or integration PR still awaits EGM,
+sibling remediation, dependency acceptance or final human merge. The linked PR and
+closed issue retain the implementation and provenance receipt.
+
+A remediation PR remains draft only while its own scoped implementation is
+incomplete or a known Blocker/Major against that scope remains unresolved. Parent
+EGM debt is not a draft condition. Once the PR's scoped acceptance is satisfied,
+mark it ready for review. Merge or close it promptly when its change is consumed by
+the intended parent/candidate branch. Do not retain an open PR merely as evidence.
+Do not create a separate remediation PR merely to preserve a review finding when
+the authorized parent candidate branch can safely accept the fix under current
+writer coordination. The remediation issue is the durable finding record. A stacked
+PR is justified when it provides necessary writer isolation, branch ownership, or
+focused review; otherwise repair the parent candidate directly.
+Because the reviewed BAMF integration trunk is not the repository default branch,
+GitHub closing keywords are not sufficient closeout machinery. Operators must
+explicitly verify the linked remediation issue state and close satisfied children
+after their repair is accepted or consumed.
+
+The owning parent issue/PR carries aggregate merge-readiness state, including the
+fresh pinned EGM result. A later EGM or integration finding reopens a closed
+remediation issue only when it proves the same original defect still exists, was
+reverted, or its stated acceptance was false. A different failure mechanism,
+newly exposed gap or new acceptance failure gets a new remediation issue with its
+own reproduction and bounded acceptance.
+
+**Relationship to ADR-121:** ADR-121 remains the general issue-lifecycle contract.
+For remediation children, this ADR narrows ADR-121's earlier requirement that
+accepted work first be integrated into reviewed unified before issue closure. A
+durable verified remediation PR is sufficient to close the child issue; the parent
+still cannot claim acceptance until it consumes that fix and satisfies its own
+integration and EGM gates.
+
+**Operational effect:** The open issue/PR set should approximate executable work
+plus meaningful parent/integration containers. Review sweeps search a bounded current
+frontier instead of repeatedly rediscovering completed defects. EGM can continue to
+unlock new defects without causing the backlog to grow monotonically.
+
+**Human ratification:** The project owner explicitly directed this lifecycle on
+2026-11-02 after observing that retaining repaired children until whole-program
+completion was neither sensible nor scalable.
+
+**Status:** Accepted as the remediation issue/PR lifecycle for BAMF-0.2 and
+successor Bilqis-MLX work.
+
+## ADR-126 | 2026-11-02 | Bound integration inventory and gate PR admission
+
+**Scope:** BAMF-0.2 implementation across Lanes A, B and C. This decision governs
+open implementation-PR inventory, PR admission, blocked-candidate retirement and
+queue-drain behavior. ADR-124 continues to govern active implementation WIP and
+parked-branch mutation. ADR-125 continues to govern remediation lifecycle.
+
+**Problem:** ADR-124 limits `ACTIVE` implementation work but deliberately excludes
+`READY`, `WAITING`, `BLOCKED` and `TURNED_IN` items from WIP. This prevents
+parked work from consuming continuous engineering capacity, but it does not bound
+integration inventory. A lane can therefore satisfy its ACTIVE WIP limit while
+accumulating arbitrarily many open pull requests.
+
+Open PRs impose integration cost even when nobody is modifying them. They enlarge
+the review frontier, age against the reviewed integration trunk, accumulate
+conflicts, obscure merge priority, increase discovery and reconciliation work, and
+encourage remediation around candidates that are not presently capable of
+integration.
+
+An implementable issue is not automatically entitled to an open pull request.
+Issues define durable work and ownership. Commits preserve implementation
+provenance. Pull requests are temporary integration vehicles.
+
+**Decision:** BAMF tracks **active implementation WIP** and **open
+implementation-PR inventory** as separate quantities. ADR-124's lane-local ACTIVE
+ceiling remains unchanged.
+
+The normal open implementation-PR ceiling is **three total across BAMF**, with at
+most one current integration candidate for each of Lanes A, B and C. The unified
+integration PR into `main` is a separate program-level container and does not
+consume one of these three implementation slots. The ceiling is a maximum, not a
+target. A lane does not open a PR merely because a leaf implementation is complete.
+
+### PR admission
+
+A new implementation PR may be opened only when all of the following are true:
+
+- an implementation-PR slot is available;
+- the candidate has a durable owning issue and implementation head;
+- every hard prerequisite required for its current integration boundary is
+  consumable;
+- the candidate has synchronized with the reviewed integration trunk when its
+  contract requires synchronization;
+- its scoped acceptance and affected verification are green;
+- no known Blocker or Major owned by the candidate remains unresolved;
+- no existing open PR already owns the same integration delta;
+- opening the PR creates a credible path to integration rather than durable
+  parking.
+
+Implementation may continue on an authorized branch without an open PR. Completion
+of a leaf does not override PR admission.
+
+### Blocked and waiting work
+
+A branch, commit, issue and verification receipt are sufficient to preserve blocked
+or waiting implementation.
+
+An implementation PR that becomes materially blocked by another owner or by an
+external prerequisite SHOULD be closed after its exact head and continuation
+trigger are preserved. Reopen the PR or create a new integration vehicle when the
+trigger is satisfied.
+
+A long-lived open `WAITING` or `BLOCKED` PR requires an explicit exception that
+identifies why an open PR is required instead of durable branch/issue custody, the
+blocking condition, the exact resume trigger, the authority for retaining the PR,
+and the expiry condition. Review convenience and historical provenance are not
+sufficient exceptions.
+
+### Remediation and EGM
+
+ADR-125 remains controlling. A review finding may receive a durable remediation
+issue without receiving another PR. Repair the authorized parent candidate directly
+when writer coordination permits. A stacked remediation PR is justified only when
+independent writer custody, branch ownership, necessary review isolation or another
+concrete integration constraint requires it. Once consumed, merge or close it
+promptly.
+
+Fresh pinned EGM remains a merge-readiness gate. Do not create or retain additional
+PR inventory merely to obtain separate EGM receipts for individual repairs.
+Complete the known engineering and remediation queue first, stabilize the
+candidate, then obtain fresh exact-head EGM for the whole merge candidate.
+
+### Drain mode
+
+If open BAMF implementation-PR inventory exceeds the normal ceiling, BAMF enters
+**DRAIN** mode automatically.
+
+While DRAIN is active:
+
+- no new implementation PR may be opened unless it replaces another PR that is
+  closed in the same operation or carries an explicit owner-authorized exception;
+- new implementation work may proceed only when it does not increase open PR
+  inventory;
+- priority goes to merging, consuming, repairing in place, closing, superseding or
+  directly unlocking existing integration candidates;
+- decomposition and issue creation may continue when they clarify durable
+  ownership.
+
+DRAIN ends when live open implementation-PR inventory is at or below the normal
+ceiling. The PRs open at adoption are transitional grandfathered inventory only;
+grandfathering permits them to drain, not to reproduce.
+
+### Mechanical enforcement
+
+Repository-declared flow state is not sufficient evidence of compliance. The BAMF
+flow-control checker MUST reconcile its machine-readable ledger against live GitHub
+state.
+
+The live gate fails when an open BAMF implementation PR is absent from the ledger,
+the ledger retains a closed or merged PR as open inventory, a newly admitted PR
+violates DRAIN, a non-grandfathered `WAITING` or `BLOCKED` open PR lacks its
+required retention exception, or multiple PRs claim an unapproved integration
+surface.
+
+CI MUST run the live reconciliation. During the initial drain epoch, the current
+open implementation PR set is explicitly grandfathered so existing candidates can
+merge or close; the global overage itself does not block the very merges needed to
+reduce it. No new implementation PR is grandfathered automatically.
+
+### Operational effect
+
+Issue decomposition may remain fine-grained without producing matching PR
+cardinality.
+
+**Issues optimize ownership and specification. Commits optimize provenance and
+reversibility. PRs optimize integration.**
+
+**Relationship to ADR-124:** ADR-124 continues to limit simultaneous branch
+mutation. Its definition of ACTIVE WIP is unchanged. This ADR adds a separate bound
+on integration inventory.
+
+**Relationship to ADR-125:** ADR-125 continues to govern remediation closeout and
+parent-owned aggregate EGM. This ADR adds admission and inventory controls that
+prevent remediation artifacts from recreating the same queue growth elsewhere.
+
+**Human ratification:** The project owner explicitly directed this decision on
+2026-11-02 after reviewing ADR-124/125 and requiring both a new ADR and stronger
+mechanical enforcement.
+
+**Initial drain attempt (reversed):** The first implementation temporarily
+closed 17 parked `WAITING` PRs after preserving their branch/head/issue/resume
+custody. This was an incorrect interpretation of DRAIN. The project owner clarified
+that existing candidates must remain open while pinned EGM, remediation and
+merge-readiness work proceeds. All 17 PRs were reopened at their original exact
+heads; the implementation inventory returned to the 19 adoption-time candidates,
+all of which remain grandfathered for this drain epoch. See the owner clarification
+below.
+
+**Status:** Accepted as the controlling BAMF-0.2 integration-inventory and PR
+admission policy.
+
+### ADR-126 Clarification | 2026-11-02 | Drain through EGM and merge, not bulk closure
+
+**Owner clarification:** DRAIN means stop admitting new implementation PRs and reduce
+existing inventory by satisfying its merge requirements, including fresh pinned EGM,
+repairing candidates in place, and merging eligible candidates. It does **not** mean
+closing every PR whose flow state is `WAITING`.
+
+A PR awaiting required EGM review or other merge-readiness evidence is still an
+actionable integration candidate. EGM review is a merge prerequisite, not a reason
+to close the PR. Keep such candidates open while the authorized EGM/repair/merge
+process is active. Do not close a PR solely to make the inventory number smaller or
+to make the checker report NORMAL.
+
+Close a parked PR only when it is genuinely superseded, duplicate, no longer
+selected for integration, materially blocked with no active EGM/merge path, or
+otherwise explicitly directed by the project owner. Preserve its exact head,
+branch, issue and resume trigger before closure.
+
+The bulk closure of 17 `WAITING` PRs performed during the first ADR-126
+implementation on 2026-11-02 was an incorrect interpretation and was reversed.
+All 17 PRs were reopened at their original heads. The existing 19 implementation
+PRs are the one-time grandfathered drain inventory; the normal ceiling of three
+still blocks new admission. The drain proceeds through EGM, repair and merge, not
+through summary closure. This correction supersedes any contrary initial-drain
+description in the first implementation of ADR-126.
+## ADR-127 | 2026-11-03 | EGM review episodes are bounded, persistent, and root-cause routed
+
+**Scope:** BAMF-0.2 implementation and merge-readiness review. This decision
+governs how fresh-context Goldfish review is counted, invalidated, repeated, and
+terminated across repair commits. ADR-125 continues to govern remediation
+lifecycle and parent-owned aggregate EGM. ADR-126 continues to govern PR
+inventory and drain behavior.
+
+**Problem:** BAMF pins Google Elephant-Goldfish Model commit
+`b3a35956759bf7f024af2ff061b2e0b44b438e4c` for reviewer/persona
+reproducibility. That historical review-loop implementation repeats until zero
+findings or explicit human halt. In BAMF practice, a whole-candidate review could
+find one new Major, cause a repair and new exact head, then begin another
+apparently fresh review cycle with no durable episode counter. Exact-head
+reproducibility therefore interacted with repair churn as an accidental liveness
+bug: changing the candidate revision could erase the operational history of how
+many whole-candidate review rounds had already occurred.
+
+The same failure pattern appears when mechanical proof gaps, shared-contract
+defects, or unstable parent assumptions are repeatedly handed back to Goldfish as
+if each were a new local semantic question. This spends fresh-context review on
+facts that deterministic tooling or one canonical owner can settle, and can turn
+review into an expanding remediation tree rather than a bounded merge-readiness
+gate.
+
+**Decision:** Preserve the pinned `b3a359...` checkout for historical
+reproducibility of reviewer personas and standards, but do not inherit its
+unbounded termination behavior as BAMF orchestration policy.
+
+One merge-candidate lineage owns one persistent EGM review episode across ordinary
+repair commits. The episode identity and round count survive exact-head changes
+that repair findings from that same lineage. A new Git SHA does not reset the
+episode.
+
+The default episode cap is **five complete whole-candidate Goldfish rounds**.
+One complete round with no unsettled Blocker/Major and no requested reviewer
+missing or failed is sufficient for BAMF implementation merge readiness. At the
+five-round cap, or when review churn is detected, automatic Goldfish review stops.
+The candidate returns to design or requires explicit human authority to continue.
+Rewriting, rebasing, merge-forwarding, or otherwise changing target bytes does not
+silently mint another episode.
+
+**Churn** exists when a later blocking finding reverses or materially conflicts
+with a repair made to satisfy an earlier finding at the same ownership locus, or
+when successive rounds repeatedly move the same contract boundary instead of
+converging. Churn is a design/control signal, not a reason to consume an unlimited
+number of additional reviewers.
+
+### Finding basis and ownership
+
+Every Blocker/Major must identify at least one blocking basis:
+
+- a violated named requirement, invariant, or authority;
+- a concrete in-scope failure scenario; or
+- a missing required ownership, interface, or acceptance seam whose absence
+  prevents correct implementation.
+
+A reviewer preference, speculative future feature, or generalized desire for
+additional future-proofing is not blocking by itself.
+
+Before repair, classify the finding locus as:
+
+- `TARGET_LOCAL`;
+- `SHARED_CONTRACT`;
+- `PARENT_INTEGRATION`;
+- `AUTHORITY_GAP`; or
+- `MECHANICAL_PROOF`.
+
+Target-local defects may be repaired at the candidate. Shared-contract,
+parent-integration, and authority defects are promoted to their canonical owner;
+affected descendants pause rather than independently encoding competing local
+repairs. If multiple late findings share one root premise or canonical owner,
+promote one systemic finding and treat only the impacted subtree as stale.
+
+### Proof routing
+
+Use the cheapest proof mechanism capable of establishing the invariant.
+Traceability, schema shape, counts, contract mirrors, source census, dependency
+readiness, file/ABI identity, and other mechanically decidable facts belong in
+validators, tests, or focused audits before Goldfish. A `MECHANICAL_PROOF`
+finding closes through deterministic red/green proof and does not require a fresh
+Goldfish round solely because its implementation changed.
+
+Goldfish remains the review mechanism for adversarial semantic ambiguity, hidden
+ownership, unsafe integration behavior, cross-boundary failure modes, and
+implementation-readiness questions that deterministic proof cannot establish.
+
+When the same mechanically recognizable defect class appears repeatedly, encode
+that lesson in executable validation rather than paying fresh review cost every
+time.
+
+### Semantic staleness
+
+Review applicability is invalidated by semantic impact, not arbitrary byte drift.
+Classify candidate changes as:
+
+- `NONSEMANTIC`: prose, formatting, bookkeeping, receipt/link cleanup. Existing
+  review remains applicable.
+- `MECHANICAL_CONFORMANCE`: machine-checkable traceability, mirror, census,
+  schema, or identity repair. Deterministic proof is required; full fresh EGM is
+  not required solely for this change.
+- `LOCAL_SEMANTIC`: meaning or behavior changes inside one owned boundary.
+  Re-review that scope.
+- `DEPENDENCY_SEMANTIC`: consumed authority, interface, or source meaning
+  changed. Re-review only impacted consumers.
+- `ARCHITECTURE`: ownership, decomposition, or topology changed. Return the
+  affected scope to design before implementation review resumes.
+
+An unrelated reviewed-unified advance does not by itself stale a parked
+candidate.
+
+### Durable episode evidence
+
+The owning issue records the episode ID, monotonic round count, latest reviewed
+head, unresolved finding IDs/loci, and current disposition. That state survives
+agent turnover and context compaction. Historical EGM receipts remain valid
+provenance under the method/tool pin recorded when they were produced; this ADR
+does not retroactively relabel them.
+
+**Relationship to ADR-125:** ADR-125 already makes the parent candidate the owner
+of aggregate EGM and prevents every remediation child from retaining its own
+review queue. ADR-127 adds a finite review budget and root-cause routing to that
+parent-owned aggregate review.
+
+**Relationship to ADR-126:** ADR-126 drains integration inventory through EGM,
+repair, and merge rather than bulk closure. ADR-127 prevents EGM itself from
+becoming an unbounded reason that grandfathered integration candidates never
+leave DRAIN.
+
+**Human ratification:** On 2026-11-03 the project owner explicitly challenged the
+absence of an ADR for this governance change. This entry records the controlling
+decision rather than leaving the behavior only in agent instructions and an
+execution guide.
+
+**Status:** Accepted as the controlling BAMF-0.2 EGM convergence and review-episode
+policy.
+
+## ADR-128 | 2026-11-04 | Expand independent BAMF throughput and distinguish writer continuity from locks
+
+**Status:** Accepted by direct owner instruction on 2026-11-04. Amends the
+concurrency ceilings in ADR-124 and ADR-126; leaves their dependency, review,
+source-gold, actual mutation safety and merge-authority requirements intact.
+
+**Problem:** The original three-open-PR cap and one-candidate-per-lane expectation
+serialized independent agents. Hosted CI also fetched mutable global GitHub PR
+inventory and failed unrelated change sets when its live count/ledger timing
+diverged. Separately, compacted agents sometimes treated the prior agent's
+`ACTIVE` issue, worktree, branch or checkpoint as an exclusive lock held by a
+different agent, declining to resume their own in-flight issue.
+
+**Decision:** Permit up to **twelve** open BAMF implementation PRs overall, with
+no per-lane PR cap; permit up to **six** simultaneous `ACTIVE` items in each lane.
+Within those bounds, independent issue-scoped branches/worktrees and agent
+writers can make progress concurrently. Hosted quality CI checks the static
+flow-control schema/state but does not perform a live
+GitHub PR-inventory reconciliation. The operator still performs the `--live`
+inventory check at actual PR admission and resolves tracked-state drift then.
+Where that optional live endpoint is unavailable (for example local TLS failure),
+an alternative authenticated GitHub read is sufficient; network failure or
+brief ledger lag does not itself prohibit opening an otherwise qualified PR.
+
+**Compaction continuity:** A context compaction, handoff, unchanged `ACTIVE`
+ledger item, previous agent identity, checkpoint comment or recorded worktree
+does **not** grant another actor exclusive ownership of an issue. Recover on
+the same preserved branch/worktree; inspect working-tree changes, local HEAD,
+remote head and any actual concurrent writer before changing shared paths.
+When a successor really is continuing the same work epoch with unchanged Git
+state, it may continue without reacquiring the issue or inventing a lease.
+Checkpoint comments and WIP ledgers are not atomic locks. Independent branches
+on the same issue may exist, but they must not write to the same branch or
+shared file concurrently without explicit coordination. An observed competing
+process or unexpected remote mutation requires reconciliation before writing;
+the mere existence of another worktree or previous agent name does not.
+
+**Executable continuity receipt:** `scripts/bamf/writer_handoff.py` emits a
+versioned JSON handoff bearing issue, execution epoch, canonical worktree path,
+branch, local HEAD, upstream, exact live remote HEAD and content-sensitive dirty
+worktree fingerprint. The resumed worker verifies that snapshot before editing;
+matching state is `CONTINUATION_MATCH`, not a requirement to acquire the issue
+again. A mismatch requires a targeted reconciliation of that field; neither
+stale handoff nor tool/network failure establishes someone else's ownership.
+Live remote verification is required for a positive match. A matching snapshot
+does not grant exclusive process-level lock ownership, so actual concurrent
+writers still require coordination.
+
+**Preserved boundaries:** No forced pushes; no overwrite of another writer's
+uncommitted work; no self-merge, bypass of scoped verification/EGM, or automatic
+neural-training/optimizer/checkpoint mutation. PR-count and WIP expansions are
+throughput permissions, not proof that a specific candidate is ready to merge.
+
+**Implementation:** `AGENTS.md`, `docs/tasks/bamf-0.2/README.md`, the
+flow-control policy, hosted `.github/workflows/quality.yml`, and focused tests.
+
+## ADR-129 | 2026-11-04 | Passing verification remains valid until its dependency surface changes
+
+**Status:** Accepted by direct owner instruction on 2026-11-04.
+
+**Problem:** Several repository suites now cost roughly 10-15 minutes or more.
+Agents and hosted CI have been rerunning them at branch/PR/agent boundaries even
+when no intervening change could affect the behavior those suites established.
+This consumes scarce execution time and serializes parallel work without adding
+evidence.
+
+**Decision:** Treat a successful test receipt as reusable evidence bound to its
+exact tested head, suite identity and environment. A later candidate must rerun
+that suite only when the diff since the tested head intersects the suite's actual
+dependency surface: implementation code, fixtures/goldens, tests, generators,
+dependencies, relevant runtime configuration, or the harness itself. Agent
+handoff/compaction, PR metadata, governance/docs changes, flow-control policy,
+unrelated CI orchestration, and merge commits carrying only such changes do not
+invalidate behavioral suites. Where only a narrow dependency changed, run the
+smallest affected check rather than the broad suite.
+
+**Evidence rule:** If a prior pass is reused, record `TEST_EVIDENCE_REUSED`, the
+prior tested SHA, current candidate SHA, comparison range and why no invalidating
+path changed. Fresh broad verification remains mandatory when dependency impact
+cannot be bounded, the prior receipt is missing/incomplete/untrustworthy, an
+environment dependency changed, or the owner explicitly requests it.
+
+**Hosted implementation:** `quality.yml` classifies the diff before expensive
+verification and skips broad semantic/custody suites when their dependency
+surface is untouched. Static governance/docs/architecture checks may still run.
+Manual workflow dispatch intentionally requests a fresh run. The exhaustive
+semantic workflow is no longer triggered merely because `quality.yml` changed.
+
+**Application to ADR-128/PR #822:** The concurrency, compaction-handoff and CI
+governance changes do not modify Bilqis semantic, Factory, custody, neural, source,
+fixture or runtime behavior. Existing passing expensive-suite evidence therefore
+remains applicable; this change requires only lightweight structural/workflow
+validation, not another broad test campaign.
+
+## ADR-130 | 2026-11-05 | Gate scope expansion, not decomposition
+
+**Status:** Accepted by direct owner instruction on 2026-11-05.
+
+**Problem:** ADR-127 can stop an EGM loop only after substantial work has already
+been spent. But treating issue/branch creation itself as the waste would recreate
+the opposite failure: giant tickets, serialized execution, slow turn-in, late
+failure discovery, and poor parallelism. BAMF's recursive decomposition exists to
+avoid exactly that.
+
+**Decision:** Distinguish **decomposition** from **scope expansion**. A child that
+inherits a strict subset of already-authorized required acceptance and adds no new
+obligation may be given its own issue, branch/worktree, and PR whenever that improves
+parallelism, failure locality, review isolation, turn-in speed, or information yield.
+Its minimal receipt names the parent, exact inherited clauses, and
+`new_acceptance=false`. It does not need to prove that creating the child is itself
+a present blocker.
+
+Only a delta that cannot be traced to existing required acceptance is scope
+expansion. Before spending on that delta, record in at most 120 words the current
+delivery, named requirement/blocker, concrete consequence of deferral, and cheapest
+adequate next step; classify it `PROCEED`, `PARK`, or `DROP`. `PROCEED` means the
+new obligation is required for current delivery/correctness/safety. `PARK` preserves
+only a small pointer until selected. `DROP` ends spend.
+
+New remediation issue bodies should remain concise (about 250 words or less by
+default), pointing to inherited/versioned authority under ADR-118. Crossing 3
+commits, 3 touched files, or 250 net changed lines is a **scope-drift tripwire**, not
+a command to absorb the child back into its parent. Re-check clause traceability:
+if all work is still inherited, continue and decompose again when useful; only the
+untraceable delta requires expansion authority. Discovery of a second independent
+problem gets the same classification.
+
+EGM remains a merge-readiness tool for already-authorized scope. It may discover a
+real defect, but cannot by itself convert a peripheral improvement into a new project
+obligation. This rule suppresses net-new scope creep while preserving aggressive
+decomposition as a throughput strategy.
+
+**Diagnostic spend is also governed:** a manually constructed end-to-end probe is
+not exempt merely because it is not called a test. Repeating an expensive probe with
+unchanged relevant code and inputs adds no evidence and should reuse the prior
+result. Repeated parameter exploration must amortize invariant setup in one process.
+After two unsuccessful full-cost attempts under the same hypothesis, further
+end-to-end execution pauses until a cheaper staged/profiled diagnostic changes the
+evidence. Compaction must preserve in-flight probe status to prevent duplicate runs.
+
+## ADR-131 | 2026-11-05 | Expensive qualification diagnosis follows decision precedence and preserves full authority at the boundary
+
+**Status:** Accepted by direct owner instruction on 2026-11-05 after the #708 C05
+source-owned acceptance witness required 1768.874 seconds and returned only a
+generic rejection.
+
+**Problem:** A logically single acceptance assertion can hide a large qualification
+workload. The #708 C05 witness currently spans 6 fresh-target cases, 24 fresh
+same-grade cases and 43 fixed-school cases. Its present construction performs 73
+instrument compilations, another parent and candidate compilation for each case,
+and 146 parent/candidate solves before the test can report acceptance. When an early
+retention predicate already determines rejection, eagerly paying the remaining
+cohort cost adds no diagnostic evidence. Worse, a generic Boolean rejection after a
+multi-minute run forces another expensive execution merely to learn which predicate
+failed.
+
+**Decision:** Expensive acceptance/retention diagnosis must follow the production
+decision's rejection precedence. Evaluate the cheapest decisive predicate first and
+stop when its result already fixes the production outcome. For C05 this means
+testing the exact fresh-target cohort first; only positive target gain justifies
+fresh same-grade evaluation, and only a surviving same-grade result justifies the
+fixed-school screen. The diagnostic may reuse the exact production source rows,
+candidate state, solver semantics and policy inputs, but remains explicitly
+**non-authorizing**. It must not issue a Factory retention evaluation, accepted
+generation, or equivalent production authority. The full owner-controlled screen
+remains the sole acceptance authority and runs at the final stable boundary after a
+cheaper diagnostic has demonstrated a relevant repair.
+
+**Cost discipline:** Invariant setup is hoisted and reused within one process where
+semantics permit: source compilation, Factory/model construction, bundle loading,
+custody validation and other unchanged setup must not be rebuilt per seed, case,
+parent/candidate comparison or diagnostic stage merely for convenience. Before a
+multi-minute witness is launched, the operator should account for case count,
+repeated compilation/setup passes and solve count, then split mechanically separable
+cost from semantic proof. This extends ADR-129's evidence-reuse rule and ADR-130's
+diagnostic-loop budget from rerun prevention to the internal structure of a single
+expensive witness.
+
+**Observability:** Every expensive rejection path must report the exact rejection
+reason and enough stage timing/score evidence to determine the next bounded
+diagnostic. A multi-minute witness that returns only `accepted = false` or an
+equivalent generic assertion is not an acceptable debugging interface. Repair that
+observability before repeating the same execution family.
+
+**Preserved boundaries:** This ADR does not weaken C05, alter retention thresholds,
+replace source-qualified evidence with synthetic fixtures, or authorize acceptance
+from a partial screen. It changes the development and diagnostic path only. The
+final production acceptance witness remains complete and authoritative.
+
+## ADR-132 | 2026-11-05 | Long local commands detach from interactive agent sockets and notify the operator
+
+**Status:** Accepted by direct owner instruction on 2026-11-05.
+
+**Problem:** Some legitimate BAMF qualification, EGM, neural and integration tasks
+cannot always be reduced below several minutes. Holding an interactive execution
+socket open while such a command runs consumes platform resources, degrades service
+quality, and encourages agents to sit in a polling loop rather than yield cleanly.
+The repository therefore needs a durable asynchronous handoff for local computation,
+not merely a request that agents "wait less."
+
+**Decision:** Five minutes is the interactive socket ceiling. Any local command that
+could plausibly exceed it is launched detached with
+`scripts/bamf/detached_long_run.py`. The launcher gives the child an independent
+session, closes interactive stdin, writes a durable PID file, combined stdout/stderr
+log and machine-readable completion receipt, and on macOS emits a desktop
+notification with the `Glass` sound when the command exits. The initiating agent
+verifies launch only, reports the artifact paths and continuation instruction, then
+ends its turn. It does not hold the chat/tool socket open and does not poll.
+
+After the notification, the human returns control to an agent. That agent reads the
+completion receipt and log, reconciles the result against current Git/worktree state
+and continues from the recorded outcome. The detached command is computation, not a
+background agent: it may not make unapproved external/public/destructive decisions,
+self-merge, or infer authority from successful exit.
+
+**Failure semantics:** Missing receipt, stale PID, command crash, notification
+failure, or ambiguous external side effect is not success. Reconcile the durable log
+and target state before retry. The five-minute boundary does not justify detaching an
+interactive command that requires human input or credentials mid-run; such work must
+be redesigned or explicitly handled at its interaction boundary.
+
+**Implementation:** Root `AGENTS.md` plus
+`scripts/bamf/detached_long_run.py`. This ADR composes with ADR-129 evidence reuse,
+ADR-130 diagnostic-loop budgeting and ADR-131 precedence-ordered qualification.
+
+## ADR-133 | 2026-11-05 | Foundation learning accepts taught acquisition; fixed generalization gates wait for maturity
+
+**Status:** Accepted by direct owner correction on 2026-11-05; measurement semantics refined by ADR-134.
+
+**Problem:** The repository repeatedly reintroduced conventional held-out and
+generalization requirements while Bilqis still had a tiny semantic inventory. This
+conflicted with the intended developmental curriculum and with the architecture's
+deliberate use of exact retrieval, memoization, caches, motif memory and rote learning.
+It also turned foundation integration witnesses into premature transfer tests.
+
+**Decision:** The current stage is FOUNDATION_ACQUISITION. Teacher-forced gold may be
+present in teaching and integration witnesses. The same specimen may be taught and
+replayed. Exact memorization, cache retrieval, memoized procedures and learned memory
+are valid successful mechanisms. Foundation acceptance may use
+TEACHER_FORCED_ACQUISITION, EXACT_TAUGHT_RECALL or
+TAUGHT_COMPOSITION_REPLICATION. It does not require a held-out specimen, independent
+source family, fresh episode, unseen filler or novel composition.
+
+Generalization, transfer and independence tests remain useful instruments, but they are
+not live acceptance gates. ADR-134 clarifies that BAMF-0.2 alpha should measure them
+continuously as non-authorizing competence-frontier telemetry rather than leaving them
+dormant. Any later fixed novelty or held-out gate requires explicit human admission.
+
+**Structural enforcement:** The machine authority is
+`docs/specifications/developmental_evidence_policy.json`. Root guidance, SPEC-0001,
+BAMF-0.2, C05 and C16 carry the FOUNDATION_EVIDENCE_POLICY_ACTIVE marker.
+`scripts/check_factory_architecture.py` validates the policy and those markers so a
+later edit cannot silently restore premature generalization as a foundation gate.
+
+**Still enforced:** Source correctness, rights, semantic identity, custody, rollback,
+protected-retention limits and human neural-update authority remain active. This ADR
+changes developmental evidence maturity, not those safety or provenance boundaries.
+
+## ADR-134 | 2026-11-05 | Alpha advancement follows earned complexity; novelty is measured, not gated
+
+**Status:** Accepted by direct owner correction on 2026-11-05. This refines ADR-097
+and ADR-133 for BAMF-0.2 alpha.
+
+**Problem:** Treating held-out or generalized performance as a separate pass/fail gate
+misrepresents Bilqis's developmental training regime. The system intentionally builds a
+large explicit semantic memory through repetition, retrieval, composition and gradual
+curriculum growth rather than learning from trillions of stochastic examples. Exact
+repetition therefore remains useful evidence even when a specimen has been seen many
+times. The curriculum's rising semantic breadth and composition complexity already
+create increasing difficulty.
+
+**Decision:** BAMF-0.2 alpha advancement uses the success ratio at the learner's current
+earned complexity. Previously shown examples count fully. Training and evaluation pools
+may grow incrementally or logarithmically as the curriculum expands. Generalization,
+transfer and novelty remain continuously measured, but no held-out, fresh-family or
+novel-composition result may independently veto retention, promotion or graduation.
+Candidate retention also does not require an immediate target-score increase from every
+optimizer step. Non-destructive intermediate updates may accumulate. The existing
+teacher-owned no-gain retirement remains responsible for abandoning strategies that
+repeatedly fail to produce useful learning.
+
+Novelty diagnostics should begin with small meaning-preserving changes such as surface
+name substitutions, then increase role changes, relation polarity changes, composition
+depth, distractors and semantic distance. Record pass/failure ratios by complexity and
+variation distance and report the first region where competence breaks down. This
+competence frontier is more useful during alpha than a binary generalization gate.
+
+**Interpretation:** A correct answer may come from exact memory, cache retrieval,
+memoized procedure, learned weights, deterministic composition or another authorized
+route. Familiarity does not invalidate the answer. A later fixed held-out/generalization
+gate requires a new explicit human decision.
+
+**Structural enforcement:** docs/specifications/developmental_evidence_policy.json
+sets generalization_status=MEASURE_ONLY, keeps novelty non-authorizing, and defines
+alpha advancement as CURRENT_EARNED_COMPLEXITY_SUCCESS_RATIO.
+scripts/check_factory_architecture.py validates these fields and the active
+FOUNDATION_EVIDENCE_POLICY_ACTIVE markers.
+
+## ADR-135 | 2026-11-05 | Detached long runs execute from digest-pinned source snapshots
+
+**Status:** Accepted by direct owner instruction on 2026-11-05 while the #708/#709
+acceptance witness was active.
+
+**Problem:** ADR-132 detached long work from the interactive socket but still executed
+the command and any later subprocesses from the live mutable worktree. A long parent
+process could therefore import one version of a module, then spawn a clean child after
+an agent edited the same worktree, causing source and destination arms of one witness
+to execute different code. Avoiding edits by convention is not concurrency control.
+
+**Decision:** Every new detached long run must first materialize a complete source
+snapshot of its requested worktree, excluding only non-source/runtime-cache roots such
+as `.git`, `.local`, virtual environments, bytecode caches and `node_modules`. The
+launcher verifies that the source digest is stable across the copy and that the copied
+tree has the same digest, rejects source symlinks that escape the worktree, then starts
+the detached worker from the copied runner inside that snapshot. The command executes
+with the snapshot as cwd, so recursively spawned relative-path Python processes inherit
+the same source image even while development continues in the original worktree.
+
+The receipt records original worktree, snapshot path, source digest and snapshot
+digest. The worker re-verifies the snapshot before command execution and again after
+the command. If the command mutates its own source snapshot, the run fails even when
+the command itself returned zero. Run-local logs, receipts and PIDs remain outside the
+snapshot. Snapshot isolation is the concurrency mechanism; promises not to edit the
+live worktree are not.
+
+**Transition:** A detached process already launched under the v1 runner cannot be
+redirected into a snapshot without changing its execution environment mid-witness.
+Such an in-flight v1 run keeps its relevant source surface frozen until completion;
+all newly launched runs use the v2 snapshot contract.
+
+## ADR-136 | 2026-11-07 | Semantic artifact authority is pathless and portable
+
+**Status:** Accepted by direct owner correction on 2026-11-07 while resolving the
+#697 B13.5 capped-review multi-release replay finding.
+
+**Problem:** B13 accepted-generation feature replay carried the correct immutable
+Atlas bundle/release/source identities but still required a caller-supplied local
+`artifact_path`. That makes a host pathname participate in historical authority,
+prevents one argument from naming multiple historical releases, and makes exact
+replication brittle when custody is copied to another machine or mounted under a
+different root.
+
+**Decision:** Filesystem paths are storage placement, never semantic identity or
+authority. Portable receipts and accepted historical lineage bind immutable
+content/source identities. A machine-local artifact resolver may translate those
+identities to whatever local path currently contains the bytes, but that location
+is below the authority boundary and is not part of the semantic receipt. Every
+resolved Atlas artifact must still pass the existing registered A01 source pin and
+exact bundle, release and source-bundle identity checks before use.
+
+B13 historical replay must resolve each generation's own source identity rather
+than reuse one caller path across the lineage. Copying an accepted run and its
+required immutable source custody to a different root or machine must reproduce
+the same accepted-generation feature receipt and content identity. Missing,
+substituted, corrupted or unregistered source content fails closed.
+
+**Scope:** This does not transfer A02/#399 authority into B13, authorize new
+semantic admission, or change neural state. Reuse existing content-addressed/Data
+Plane storage primitives where they fit; do not create a second path-as-authority
+registry under another name.
+
+## ADR-137 | 2026-11-08 | Separate design review, implementation proof, drift, and integration
+
+**Status:** Accepted by direct owner instruction on 2026-11-08 after reviewing the
+project's recent BAMF execution history and the intended Elephant-Goldfish Model
+lifecycle.
+
+**Problem:** BAMF had gradually repurposed fresh EGM Goldfish review into a
+post-implementation merge-readiness loop. That mixed four different questions:
+whether a design was ready to implement, whether the implementation behaved
+correctly, whether the implementation still matched the approved design, and whether
+the exact candidate was ready for integration. The overlap caused repeated broad
+review and test cycles, consumed expensive evidence after its relevant fact was
+already established, and encouraged agents to rerun work after context changes rather
+than reuse valid receipts.
+
+The same execution history also showed a language-quality problem. Bilqis is an
+ML/runtime, provenance, lifecycle, and state-consistency project, but descriptions of
+ordinary correctness work sometimes borrowed terminology from unrelated technical
+domains. Automated systems and human reviewers may classify work partly from the
+language used to describe it. Inaccurate framing can therefore cause benign work to
+be misclassified, producing avoidable warnings, latency, resource consumption, and
+workflow interruption. The project needs descriptions that are both technically
+exact and faithful to the actual domain.
+
+**Decision:** BAMF now uses the lifecycle
+
+`DESIGN -> EGM REVIEW -> IMPLEMENT -> VERIFY -> DRIFT -> PREMERGE -> HUMAN REVIEW`.
+
+EGM review is a pre-implementation design/specification gate. Goldfish review the
+design using only the personas and standards appropriate to the unresolved design
+questions. In particular, Implementation Readiness evaluates whether a plan can be
+executed without unresolved design choices; it is not a finished-code review rubric.
+`EGM-Pending`, `EGM-Passed`, and `EGM-Failed` therefore describe design-review
+state. Historical uses of those labels under the earlier convention remain
+provenance and are not rewritten.
+
+Implementation correctness is established through claim-first differential
+verification. Before running a check, identify the claim, changed surface, prior
+evidence, reason that evidence no longer settles the claim, and the cheapest next
+proof. Escalate from deterministic checks to focused regressions, affected owner
+tests, dependency-closure integration tests, expensive witnesses, and finally the
+premerge aggregate gate only while relevant uncertainty remains. Passing evidence is
+reused until a change can plausibly invalidate the assumptions on which it depends.
+Agent turnover, elapsed time, issue bookkeeping, or equivalent branch movement do not
+by themselves invalidate proof.
+
+When implementation becomes behaviorally stable, compare the approved design with
+the code that implements it. Drift analysis is bounded to the approved design,
+implementation surfaces, and directly affected shared contracts. Differences are
+classified as implementation defects, design drift, design evolution, documentation
+staleness, or no drift. A code repair that restores the already-approved design uses
+focused engineering verification; only a genuine design change returns the affected
+design scope to EGM.
+
+Integration uses the minimum sufficient evidence set that makes the current decision
+defensible. Expensive witnesses are terminal proofs for requirements that cheaper
+evidence cannot establish, not ordinary debugging loops. Broad aggregate verification
+runs at an actual integration boundary and is reused when its exact assumptions
+remain valid.
+
+**Language discipline:** New issues, specifications, implementation plans, review
+assignments, findings, test descriptions, commits, pull requests, handoffs, and
+receipts should describe the software relationships actually being evaluated:
+component ownership, canonical sources of truth, provenance, lineage, state and
+identity consistency, lifecycle transitions, validation order, acceptance and
+publication, retry/recovery behavior, compatibility, reproducibility, design
+fidelity, concrete mismatched inputs, and deterministic proof.
+
+Describe the expected relationship, observed relationship, exact difference, smallest
+material consequence, and evidence directly. Existing code symbols, schemas, issue
+identifiers, and externally defined terms remain verbatim where necessary; surrounding
+prose explains their actual software role. This changes wording and process routing,
+not correctness requirements.
+
+**Structural enforcement:** `AGENTS.md` and
+`docs/tasks/bamf-0.2/EGM_EXECUTION.md` carry the canonical lifecycle. Lane A/B/C
+execution entrypoints delegate to it. `scripts/verify_bamf_0_2_contracts.py` checks
+the lifecycle marker and design-first EGM rule, and its focused regression protects
+the cutover. Existing differential-test receipts, dependency mapping, diagnostic-loop
+budgets, precedence-ordered diagnosis, and snapshot-pinned detached execution remain
+the proof-economy mechanisms for implementation work.
+
+## ADR-138 | 2026-11-11 | MLX verification is resource-bounded; planner budgets are not allocator guarantees
+
+**Status:** Accepted by direct owner instruction after the 2026-11-11 #354
+qualification run exhausted host memory and swap.
+
+**Observed incident:** The #354 differential leaf gate launched pytest-xdist with
+four persistent workers. The selected dependency cone was MLX-capable and included
+model, optimizer, custody, serialization, gradient, and full-model-adjacent tests.
+During the run macOS repeatedly reported that the system had run out of memory,
+Activity Monitor showed extreme Python memory accounting, xdist workers died, and
+the 96 GiB M3 Ultra reached approximately **65.2 GiB used swap**.
+
+Fresh-process inspection of installed MLX 0.31.1 established the mechanism:
+`mx.set_cache_limit(0)` returned a previous default free-buffer cache limit of
+`97,925,254,348` bytes, and `mx.set_memory_limit(1 GiB)` returned the same
+previous default memory limit. That is about **91.2 GiB per process**. Four
+unconstrained MLX-capable xdist workers therefore permitted about **364.8 GiB** of
+aggregate MLX-managed demand before ordinary Python memory, the operating system,
+other applications, or concurrent workstreams were counted. Exact instantaneous
+attribution among live tensors, allocator cache, compressed memory, and swap is not
+required to establish the failure: the parallel worker topology admitted demand far
+beyond host capacity and the host demonstrably exhausted memory and swap.
+
+**Decision for verification:** MLX-capable tests are serialized unless a future
+harness proves and enforces a safe aggregate memory budget. Agents set
+`BILQIS_TEST_WORKERS=1` and must not use pytest `-n > 1` for any selected suite
+that imports MLX directly or can reach MLX transitively through BAMF model, optimizer,
+custody, serialization, gradient, or full-model owners. Long-lived MLX test
+processes disable the free-buffer cache with `mx.set_cache_limit(0)` and
+`mx.clear_cache()`, or use the repository memory-policy context where appropriate.
+Parallel MLX becomes lawful only when every worker has an explicit applied memory
+policy and the sum of worker limits plus host headroom fits the machine.
+
+Detached execution under ADR-132/135 is orthogonal to resource safety. A detached
+process may still exhaust the host. Before launching an expensive MLX witness,
+inspect current swap/memory pressure and concurrent MLX-heavy jobs. Do not overlap
+full-model witnesses by default. System out-of-memory warnings, near-saturated swap,
+OOMs, or memory-pressure worker deaths invalidate the run; preserve the receipt/log,
+terminate the owned process group when needed to protect the host, diagnose the root
+cause, and do not rerun the unchanged workload.
+
+**Decision for production training:** The production operator remains one sovereign
+MLX writer. `runtime/operating_loop.py` enters `training_memory_policy(mx)`, which
+sets the MLX free-buffer cache limit to zero for the long-running trainer; therefore
+the specific four-process cache multiplication that caused this incident is not an
+expected production topology.
+
+However, C08's current **48 GiB trainer envelope is an analytical planning budget,
+not a hard allocator guarantee**. The planner uses it to choose/reject
+microbatches, but current production execution does not enforce a corresponding
+`mx.set_memory_limit(48 GiB)`, and the implemented C08 MLX telemetry/OOM
+restore-and-retry machinery is not yet connected around the production candidate
+gradient execution seam. Until those runtime controls are wired and verified,
+agents must describe 48 GiB as a planned envelope, not a measured or enforced peak.
+
+Before the first durable successor training run is treated as resource-qualified,
+the disposable/current-production execution path must record actual MLX active,
+cache, and peak memory together with process/system memory pressure and swap delta,
+compare them with the C08 estimate, and prove that any OOM follows the retained-state
+restore/retry contract rather than destabilizing the host or student. This resource
+qualification does not authorize an agent to start or resume the human-owned durable
+trainer.
+## ADR-139 | 2026-11-11 | Expensive verification uses fail-fast staged preflight before full execution
+
+**Status:** Accepted by direct owner instruction on 2026-11-11 after issue #374
+repeatedly spent full Factory/MLX execution time before exposing cheap fixture and
+test-contract defects.
+
+**Problem:** A long-running test can contain three different kinds of work: cheap
+contract validation, production-fixture setup, and the expensive computation that
+actually requires MLX or a full model. When these are bundled into one opaque test,
+a trivial defect at the end can consume the full cost of the expensive phase before
+the developer learns anything useful. During #374, one real-Factory witness ran for
+about 25 minutes before a missing observation-fixture field failed. The next ran for
+about 27 minutes before a stale authority-digest assertion failed, even though the
+neural path had already completed. Both failures could have been detected without
+paying the full neural cost.
+
+**Decision:** Expensive verification is an ordered pipeline. The repository uses the
+following stages whenever a test or witness contains a multi-minute Factory, MLX,
+full-model, or equivalent expensive phase.
+
+1. **Repository-static preflight.** At integration/turn-in boundaries, run every
+   applicable neural-inert quality/static gate before mounted real-fixture or
+   full-model work. Governance, documentation, source/authority scanners,
+   changed-file quality, and other deterministic repository checks belong here.
+   A cheap static failure discovered after expensive execution is a harness-ordering
+   defect and must be moved ahead of the expensive stage before another rerun.
+2. **Cheap contracts.** Run focused neural-inert checks for imports, fixture shape,
+   deterministic invariants, assertion semantics, and other preconditions that do
+   not require the expensive output.
+3. **Real-fixture preflight.** When production artifacts or custody matter, use the
+   real artifact/configuration and the same shared setup as the full witness. Execute
+   every cheap production operation through the immediate boundary before the
+   expensive call, including applicable accepted-runtime, custody, generation,
+   feature-authentication, target, route, observation, and resource-plan checks.
+   Stop before the expensive computation itself.
+4. **Expensive execution.** Start the full witness only after every required earlier
+   stage succeeds. Preserve the exact production acceptance path for facts that
+   genuinely depend on the expensive computation.
+
+The staged runner must enforce this ordering and abort on the first failure. A
+required preflight may not pass because pytest skipped the case. The runner must
+verify that required external artifacts, runtime state, and custody inputs exist and
+are usable, and it must distinguish `passed`, `failed`, and `skipped/not-run` rather
+than treating process exit code zero as sufficient proof.
+
+**Aggregate selection:** A test module that declares
+`BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"` is not part of default aggregate test
+discovery. Such witnesses run only through explicit targeted execution or their
+dedicated detached harness, where their artifact, resource, mutation, and receipt
+contracts can be enforced. Broad premerge verification must not accidentally repay
+or bypass a separately governed expensive witness.
+
+**Shared-path requirement:** Preflight and full witness share setup, fixture, and
+assertion helpers wherever semantics permit. A hand-copied lightweight imitation is
+not sufficient because it can drift from the expensive path. Cheap preflight should
+reach the actual seam immediately before the expensive call, or use an explicit seam
+that proves equivalent production inputs and checks. Expensive-output-specific
+assertions remain in the final witness, but every assertion contract that can be
+tested synthetically should also have a focused cheap regression.
+
+**Failure learning:** If a full-cost run discovers a banal fixture, import,
+precondition, or assertion-contract defect, repairing that defect is not enough. Add
+or strengthen an earlier stage so the same defect class fails before expensive
+execution on the next run. This converts diagnostic history into a durable test
+boundary instead of relying on agent memory.
+
+**Execution and authority:** ADR-132 still governs commands that can exceed five
+minutes. The complete staged pipeline runs detached from a digest-verified source
+snapshot, emits stage markers into its durable log, stops immediately on failed
+preflight, notifies the operator on exit, and is never polled from chat. Preflight is
+diagnostic and non-authorizing. Only the complete production witness can satisfy an
+acceptance requirement that depends on the expensive computation. This ADR composes
+with ADR-129 evidence reuse, ADR-130 diagnostic-loop budgeting, ADR-131
+precedence-ordered diagnosis, ADR-132 detached execution, and ADR-137 claim-first
+verification.
+
+## ADR-140 | 2026-11-11 | M3 Ultra verification concurrency is bounded per job, not serialized host-wide
+
+**Status:** Accepted by direct owner instruction on 2026-11-11 after C08 turn-in
+needlessly waited behind other bounded MLX verification jobs.
+
+**Context:** ADR-138 correctly diagnosed the 2026-11-11 OOM incident as an
+unbounded aggregate-allocation failure. Four MLX-capable xdist workers each inherited
+a roughly host-sized default allocator/cache allowance. The resulting rule was too
+coarse when applied as host-wide serialization. Independent detached jobs with
+explicit limits differ from unconstrained xdist workers inside one runner. The M3
+Ultra is expected to execute multiple bounded jobs concurrently.
+
+**Decision:** MLX-capable pytest remains single-worker within one runner unless that
+runner proves an aggregate budget. Independent MLX/full-model jobs may run
+concurrently on the M3 Ultra when every job applies a memory/cache policy. Their
+configured aggregate ceilings must leave host headroom. Another bounded MLX job is
+not a blocker. Agents must not insert a host-wide wait merely to avoid concurrency.
+
+Current swap occupancy is an observation, not an automatic veto. Launch decisions
+use applied job limits and actual physical-memory pressure/headroom. Refuse or stop
+work when a participating job is unbounded. Do the same when configured aggregate
+ceilings exceed safe host capacity or the OS reports memory-pressure/OOM symptoms.
+Preserve per-job RSS/wall guards and detached receipts. One job can then be contained
+without serializing unrelated bounded work.
+
+This ADR supersedes only ADR-138's host-wide no-overlap interpretation. ADR-138's
+measured OOM incident, single-worker default inside a runner, cache containment,
+explicit memory limits, and production-trainer distinction remain in force.
+
+## ADR-141 | 2026-11-12 | Verification test suites have a two-hour wall-clock ceiling
+
+**Status:** Accepted by direct owner instruction on 2026-11-12 after the C06 #379
+turn-in showed that a leaf-development witness had absorbed later system
+qualification and ran for about 9 hours 51 minutes before a whole-school rejection.
+
+**Problem:** ADR-129, ADR-137 and ADR-139 already require evidence reuse,
+claim-first differential verification and fail-fast staged preflight. ADR-132 governs
+detached execution for commands that can exceed five minutes. Those controls reduce
+waste and protect the agent session, but they do not set an absolute wall-clock
+limit. A test can therefore remain technically lawful while still consuming most of
+a working day, delaying review and mixing unrelated system qualification into
+ordinary development feedback.
+
+**Decision:** No agent may launch or require a test suite, verification command,
+hosted verification workflow, witness, or composed verification run whose planned or
+expected wall-clock duration exceeds **2 hours**. Two hours is an absolute ceiling,
+not a target. Normal leaf development and turn-in should use checks that complete in
+seconds to minutes whenever the claim permits it.
+
+Before launch, use prior receipts, selected-test scope, stage timings, or another
+concrete estimate to bound the expected duration. If the bound is unknown or can
+exceed two hours, the run is not ready to start. Split it into claim-specific stages
+that each stay within the ceiling and emit durable receipts. Arbitrary time slicing
+does not satisfy this rule: every stage must prove an independently meaningful claim
+and have explicit inputs plus a resumable or terminal result.
+
+If an agent-launched test reaches two hours without completing, stop or contain the
+owned process at the next safe boundary. Preserve its partial log and receipt, and
+record the result as incomplete or over-budget rather than PASS. Diagnose the
+expensive stage and convert any discovered fixture, assertion, ownership or contract
+failure into a cheaper deterministic regression before another attempt. Still-valid
+passing evidence remains reusable and must not be repaid solely because a session
+resumed, a branch moved equivalently, or time elapsed.
+
+Detached execution, snapshot isolation, bounded MLX concurrency and operator
+observation do not waive the ceiling for tests. Whole-system qualification that
+cannot be made meaningful within two hours is not an ordinary test gate. Redesign it
+as bounded staged qualification, or hand it to the human operator as a separately
+authorized non-test training or production exercise. A multi-stage qualification may
+span more than two hours in aggregate only when each stage is independently bounded,
+interpretable and receipted; it may not disguise one opaque monolithic test behind
+restarts.
+
+Historical test evidence from runs longer than two hours remains valid provenance and
+is not erased by this decision. This ADR changes future verification posture, not the
+historical record. Only a new owner-ratified ADR amendment may raise or remove the
+two-hour ceiling.
+
+**Relationship to existing decisions:** ADR-137 still governs claim-first proof and
+evidence reuse. ADR-139 still governs fail-fast staging. ADR-132 still requires
+detached execution for sufficiently long commands. ADR-138 and ADR-140 still govern
+MLX memory and concurrency. ADR-141 adds the wall-clock ceiling above those controls.
+

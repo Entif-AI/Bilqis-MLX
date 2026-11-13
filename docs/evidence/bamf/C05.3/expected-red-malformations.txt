@@ -1,0 +1,80 @@
+test_foreign_source_or_invalid_destination_translation_fails_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_foreign_source_or_invalid_destination_translation_fails_closed) ... ok
+test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) ...
+  test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) (mutation=<function CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed.<locals>.<lambda> at 0x10296f4c0>) ... FAIL
+  test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) (mutation=<function CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed.<locals>.<lambda> at 0x10296d800>) ... FAIL
+  test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) (mutation=<function CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed.<locals>.<lambda> at 0x10296eb60>) ... FAIL
+  test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) (mutation=<function CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed.<locals>.<lambda> at 0x10296d3a0>) ... FAIL
+  test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) (mutation=<function CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed.<locals>.<lambda> at 0x10296d620>) ... FAIL
+  test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) (mutation=<function CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed.<locals>.<lambda> at 0x10296cb80>) ... FAIL
+test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) ... FAIL
+test_translation_preserves_original_bytes_and_cannot_claim_learning (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_translation_preserves_original_bytes_and_cannot_claim_learning) ... ok
+
+======================================================================
+FAIL: test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) (mutation=<function CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed.<locals>.<lambda> at 0x10296f4c0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_capability_evidence_history.py", line 62, in test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed
+    with self.subTest(mutation=mutate), self.assertRaises(BilqisError):
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BilqisError not raised
+
+======================================================================
+FAIL: test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) (mutation=<function CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed.<locals>.<lambda> at 0x10296d800>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_capability_evidence_history.py", line 62, in test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed
+    with self.subTest(mutation=mutate), self.assertRaises(BilqisError):
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BilqisError not raised
+
+======================================================================
+FAIL: test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) (mutation=<function CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed.<locals>.<lambda> at 0x10296eb60>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_capability_evidence_history.py", line 62, in test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed
+    with self.subTest(mutation=mutate), self.assertRaises(BilqisError):
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BilqisError not raised
+
+======================================================================
+FAIL: test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) (mutation=<function CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed.<locals>.<lambda> at 0x10296d3a0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_capability_evidence_history.py", line 62, in test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed
+    with self.subTest(mutation=mutate), self.assertRaises(BilqisError):
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BilqisError not raised
+
+======================================================================
+FAIL: test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) (mutation=<function CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed.<locals>.<lambda> at 0x10296d620>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_capability_evidence_history.py", line 62, in test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed
+    with self.subTest(mutation=mutate), self.assertRaises(BilqisError):
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BilqisError not raised
+
+======================================================================
+FAIL: test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed) (mutation=<function CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed.<locals>.<lambda> at 0x10296cb80>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_capability_evidence_history.py", line 62, in test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed
+    with self.subTest(mutation=mutate), self.assertRaises(BilqisError):
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BilqisError not raised
+
+======================================================================
+FAIL: test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed (_bilqis_test_da02a22d7257c929308584c7298c984e618a81f92e6e2b177aa103e9d4de1514.CapabilityHistoryTests.test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_capability_evidence_history.py", line 65, in test_rehashed_malformed_replay_and_noncanonical_bytes_fail_closed
+    with self.assertRaises(BilqisError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BilqisError not raised
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.543s
+
+FAILED (failures=7)
+TEST_TOTALS total=3 passed=-4 failed=7 skipped=0 errors=0
+-4 passed, 7 failed, 0 skipped
