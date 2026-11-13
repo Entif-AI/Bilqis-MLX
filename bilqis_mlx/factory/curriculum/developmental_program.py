@@ -103,6 +103,23 @@ class BamfDevelopmentalProgram:
     def digest(self) -> str:
         return _digest(self.manifest())
 
+    def education_source_requirements(self) -> tuple[str, ...]:
+        """Return only L0-L2 requirements; later extension/packaging cannot gate them."""
+        level_map = self.level_map
+        if (level_map[DevelopmentalLevel.L3].optional is not True
+                or level_map[DevelopmentalLevel.L4].packages_bounded_capabilities is not True):
+            _fail("DEVELOPMENTAL_PROGRAM_LATE_LEVEL_POLICY_INVALID")
+        requirements = {
+            item for level in (
+                DevelopmentalLevel.L0, DevelopmentalLevel.L1, DevelopmentalLevel.L2)
+            for item in level_map[level].source_requirements
+        }
+        return tuple(sorted(requirements))
+
+    def resolve_training_stage(self, source_coverage, learner_state):
+        from .developmental_stage import resolve_training_stage
+        return resolve_training_stage(self, source_coverage, learner_state)
+
 
 def _domain_program(payload: dict) -> DevelopmentalDomainProgram:
     if not isinstance(payload, dict):
