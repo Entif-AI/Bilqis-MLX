@@ -83,6 +83,7 @@ class ControlPlaneTransportTests(unittest.TestCase):
                 self.assertTrue(handshake["service_live"])
                 self.assertTrue(handshake["service_ready"])
                 self.assertFalse(handshake["learner_ready"])
+                self.assertFalse(handshake["learner_active"])
                 self.assertEqual(
                     handshake["learner"]["state"], "learner-unavailable")
                 self.assertEqual(handshake["state"], "learner-unavailable")
@@ -262,7 +263,9 @@ class ControlPlaneLearnerIntegrationTests(BamfCreateResumeCase):
             service = ControlPlaneService(target, socket_path)
             service_thread = _start(service)
             client = ControlPlaneClient(socket_path, client_id="crash-fixture")
-            client.connect()
+            attached = client.connect()
+            self.assertTrue(attached["learner"]["operator_active"])
+            self.assertTrue(client.request("health")["learner_active"])
             client.close()
             self.assertTrue(owner.is_alive())
             self.assertEqual(pointer.read_bytes(), before)

@@ -51,6 +51,7 @@ class ServiceIdentity:
 class LearnerIdentity:
     state: ControlPlaneState
     run_dir: str
+    operator_active: bool = False
     run_id: str | None = None
     run_identity_sha256: str | None = None
     generation: int | None = None
@@ -70,6 +71,7 @@ class LearnerIdentity:
             "schema": self.schema,
             "state": self.state.value,
             "run_dir": self.run_dir,
+            "operator_active": self.operator_active,
             "run_id": self.run_id,
             "run_identity_sha256": self.run_identity_sha256,
             "generation": self.generation,

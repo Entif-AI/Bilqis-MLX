@@ -185,6 +185,7 @@ class ControlPlaneService:
             "service_live": True,
             "service_ready": True,
             "learner_ready": learner.ready,
+            "learner_active": learner.operator_active,
             "service": self.identity.to_record(),
             "session": session.to_record(),
             "learner": learner.to_record(),
