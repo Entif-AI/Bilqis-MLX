@@ -9,7 +9,7 @@ import types
 from typing import get_args, get_origin, get_type_hints, Union
 
 from .model import (
-    ContractErrorCode, MissionControlContractError, WireRecord,
+    ContractErrorCode, MissionControlContractError, WireRecord, is_text,
 )
 
 
@@ -27,7 +27,11 @@ def _encode(value):
         return {field.name: _encode(getattr(value, field.name)) for field in fields(value)}
     if type(value) is tuple:
         return [_encode(item) for item in value]
-    if value is None or type(value) in (str, int, float, bool):
+    if type(value) is str:
+        if not is_text(value):
+            _fail(ContractErrorCode.PAYLOAD_INVALID, "unicode-scalar")
+        return value
+    if value is None or type(value) in (int, float, bool):
         return value
     _fail(ContractErrorCode.PAYLOAD_INVALID, type(value).__name__)
 
@@ -101,6 +105,8 @@ def _decode(expected, value):
     if expected in (str, int, float, bool):
         if type(value) is not expected:
             _fail(ContractErrorCode.PAYLOAD_INVALID, expected.__name__)
+        if expected is str and not is_text(value):
+            _fail(ContractErrorCode.PAYLOAD_INVALID, "unicode-scalar")
         return value
     _fail(ContractErrorCode.PAYLOAD_INVALID, str(expected))
 

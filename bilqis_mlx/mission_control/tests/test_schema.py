@@ -67,6 +67,15 @@ class MissionControlSchemaTests(unittest.TestCase):
         )
         run_context = bundle["bilqis.bamf.mission-control.run-context/v1"]
         self.assertEqual(run_context["properties"]["optimizer_step"]["minimum"], 0)
+        self.assertEqual(
+            run_context["properties"]["meta"]["properties"]["run"]["type"],
+            "object",
+        )
+        correction = bundle["bilqis.bamf.mission-control.correction-event/v1"]
+        self.assertEqual(correction["properties"]["old_digest"]["pattern"],
+                         "^[0-9a-f]{64}$")
+        self.assertEqual(correction["properties"]["new_digest"]["pattern"],
+                         "^[0-9a-f]{64}$")
         receipt = bundle["bilqis.bamf.mission-control.operator-action-receipt/v1"]
         self.assertIn("COMPLETED requires postcondition_ref", receipt[
             "x-bilqis-runtime-invariants"

@@ -47,8 +47,7 @@ class AtlasOperatorView:
 
 def bamf_status(receipt: Mapping) -> AtlasOperatorView | MissionControlOperatorView:
     """Validate and copy an external observation before replacing any live view."""
-    if (isinstance(receipt, Mapping)
-            and receipt.get("schema_version") == MissionControlOperatorView.SCHEMA):
+    if isinstance(receipt, Mapping) and "schema_version" in receipt:
         return decode_mission_control_operator_view(receipt)
     if not isinstance(receipt, Mapping) or receipt.get("schema") != SCHEMA:
         _invalid("schema")

@@ -39,8 +39,13 @@ def require(condition: bool, detail: str) -> None:
         invalid(detail)
 
 
+def is_text(value: object) -> bool:
+    return (isinstance(value, str)
+            and all(not 0xD800 <= ord(char) <= 0xDFFF for char in value))
+
+
 def is_name(value: object) -> bool:
-    return isinstance(value, str) and bool(value.strip()) and "\n" not in value
+    return is_text(value) and bool(value.strip()) and "\n" not in value
 
 
 def is_sha256(value: object) -> bool:
@@ -148,6 +153,8 @@ class DataValue:
         if self.state is ValueState.PRESENT:
             require(self.origin is not None and self.value is not None, "VALUE_PRESENT")
             require(type(self.value) in (str, int, float, bool), "VALUE_TYPE")
+            if type(self.value) is str:
+                require(is_text(self.value), "VALUE_TEXT")
             if type(self.value) is float:
                 require(math.isfinite(self.value), "VALUE_FINITE")
         else:

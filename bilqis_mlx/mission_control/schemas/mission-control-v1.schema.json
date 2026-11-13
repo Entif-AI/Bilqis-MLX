@@ -11,7 +11,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "capability_id": {
           "minLength": 1,
@@ -19,7 +20,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "meta": {
           "additionalProperties": false,
@@ -60,7 +62,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -87,7 +90,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -98,66 +102,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -166,7 +171,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -201,7 +207,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "schema_version": {
           "const": "bilqis.bamf.mission-control.candidate-decision/v1",
@@ -231,7 +238,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "debt": {
           "additionalProperties": false,
@@ -308,7 +316,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -318,7 +327,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -349,7 +359,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "meta": {
           "additionalProperties": false,
@@ -390,7 +401,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -417,7 +429,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -428,66 +441,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -496,7 +510,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -595,7 +610,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -605,7 +621,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -705,7 +722,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -715,7 +733,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -746,7 +765,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         }
       },
       "required": [
@@ -778,7 +798,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "meta": {
           "additionalProperties": false,
@@ -819,7 +840,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -846,7 +868,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -857,66 +880,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -925,7 +949,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -946,20 +971,14 @@
           "type": "object"
         },
         "new_digest": {
-          "minLength": 1,
-          "not": {
-            "pattern": "\\n"
-          },
-          "pattern": "\\S",
-          "type": "string"
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "old_digest": {
-          "minLength": 1,
-          "not": {
-            "pattern": "\\n"
-          },
-          "pattern": "\\S",
-          "type": "string"
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "schema_version": {
           "const": "bilqis.bamf.mission-control.correction-event/v1",
@@ -971,7 +990,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "target_ref": {
           "minLength": 1,
@@ -979,7 +999,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         }
       },
       "required": [
@@ -1008,7 +1029,8 @@
               "pattern": "\\n"
             },
             "pattern": "\\S",
-            "type": "string"
+            "type": "string",
+            "x-bilqis-unicode-domain": "scalar-values"
           },
           "type": "array",
           "uniqueItems": true
@@ -1019,7 +1041,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "held_capability_ids": {
           "items": {
@@ -1028,7 +1051,8 @@
               "pattern": "\\n"
             },
             "pattern": "\\S",
-            "type": "string"
+            "type": "string",
+            "x-bilqis-unicode-domain": "scalar-values"
           },
           "type": "array",
           "uniqueItems": true
@@ -1072,7 +1096,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -1099,7 +1124,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -1110,66 +1136,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -1178,7 +1205,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -1205,7 +1233,8 @@
               "pattern": "\\n"
             },
             "pattern": "\\S",
-            "type": "string"
+            "type": "string",
+            "x-bilqis-unicode-domain": "scalar-values"
           },
           "type": "array",
           "uniqueItems": true
@@ -1238,7 +1267,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "message": {
           "minLength": 1,
@@ -1246,7 +1276,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "meta": {
           "additionalProperties": false,
@@ -1287,7 +1318,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -1314,7 +1346,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -1325,7 +1358,8 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
               "anyOf": [
@@ -1334,11 +1368,13 @@
                   "properties": {
                     "candidate_identity_sha256": {
                       "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "factory_release_sha256": {
                       "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "generation": {
                       "minimum": 0,
@@ -1346,7 +1382,8 @@
                     },
                     "generation_manifest_sha256": {
                       "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "run_id": {
                       "minLength": 1,
@@ -1354,19 +1391,23 @@
                         "pattern": "\\n"
                       },
                       "pattern": "\\S",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "run_identity_sha256": {
                       "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "semantic_release_sha256": {
                       "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "topology_sha256": {
                       "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     }
                   },
                   "required": [
@@ -1393,7 +1434,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -1421,7 +1463,8 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             {
               "type": "null"
@@ -1455,7 +1498,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "event_id": {
           "minLength": 1,
@@ -1463,7 +1507,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "meta": {
           "additionalProperties": false,
@@ -1504,7 +1549,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -1531,7 +1577,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -1542,66 +1589,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -1610,7 +1658,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -1636,7 +1685,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "payload_ref": {
           "minLength": 1,
@@ -1644,7 +1694,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "payload_schema_version": {
           "minLength": 1,
@@ -1652,11 +1703,13 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "payload_sha256": {
           "pattern": "^[0-9a-f]{64}$",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "position": {
           "additionalProperties": false,
@@ -1692,7 +1745,8 @@
           "properties": {
             "cursor_sha256": {
               "pattern": "^[0-9a-f]{64}$",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "epoch_id": {
               "minLength": 1,
@@ -1700,7 +1754,8 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "ordinal": {
               "minimum": 0,
@@ -1710,7 +1765,8 @@
               "anyOf": [
                 {
                   "pattern": "^[0-9a-f]{64}$",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -1723,7 +1779,8 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             }
           },
           "required": [
@@ -1765,7 +1822,8 @@
       "properties": {
         "compiled_frame_sha256": {
           "pattern": "^[0-9a-f]{64}$",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "constituent_expansions": {
           "minimum": 0,
@@ -1780,7 +1838,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "meta": {
           "additionalProperties": false,
@@ -1821,7 +1880,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -1848,7 +1908,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -1859,66 +1920,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -1927,7 +1989,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -1953,7 +2016,8 @@
         },
         "source_frame_sha256": {
           "pattern": "^[0-9a-f]{64}$",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         }
       },
       "required": [
@@ -1976,7 +2040,8 @@
       "properties": {
         "checkpoint_sha256": {
           "pattern": "^[0-9a-f]{64}$",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "meta": {
           "additionalProperties": false,
@@ -2017,7 +2082,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -2044,7 +2110,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -2055,66 +2122,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -2123,7 +2191,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -2145,13 +2214,15 @@
         },
         "optimizer_state_sha256": {
           "pattern": "^[0-9a-f]{64}$",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "parent_manifest_sha256": {
           "anyOf": [
             {
               "pattern": "^[0-9a-f]{64}$",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             {
               "type": "null"
@@ -2168,11 +2239,13 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "student_sha256": {
           "pattern": "^[0-9a-f]{64}$",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         }
       },
       "required": [
@@ -2199,7 +2272,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "completed_at": {
           "anyOf": [
@@ -2218,7 +2292,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "meta": {
           "additionalProperties": false,
@@ -2259,7 +2334,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -2286,7 +2362,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -2297,66 +2374,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -2365,7 +2443,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -2399,7 +2478,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "visit_id": {
           "minLength": 1,
@@ -2407,7 +2487,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         }
       },
       "required": [
@@ -2504,7 +2585,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -2514,7 +2596,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -2614,7 +2697,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -2624,7 +2708,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -2688,7 +2773,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -2715,7 +2801,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -2726,66 +2813,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -2794,7 +2882,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -2889,7 +2978,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -2899,7 +2989,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -2999,7 +3090,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -3009,7 +3101,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -3113,7 +3206,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -3123,7 +3217,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -3242,7 +3337,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -3252,7 +3348,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -3316,7 +3413,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -3343,7 +3441,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -3354,66 +3453,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -3422,7 +3522,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -3521,7 +3622,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -3531,7 +3633,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -3635,7 +3738,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -3645,7 +3749,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -3700,7 +3805,8 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             {
               "type": "null"
@@ -3746,7 +3852,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -3773,7 +3880,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -3784,66 +3892,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -3852,7 +3961,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -3878,7 +3988,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "postcondition_ref": {
           "anyOf": [
@@ -3888,7 +3999,8 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             {
               "type": "null"
@@ -3901,7 +4013,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "schema_version": {
           "const": "bilqis.bamf.mission-control.operator-action-receipt/v1",
@@ -3949,7 +4062,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "dry_run": {
           "type": "boolean"
@@ -3960,7 +4074,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "meta": {
           "additionalProperties": false,
@@ -4001,7 +4116,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -4028,7 +4144,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -4039,66 +4156,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -4107,7 +4225,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -4137,12 +4256,14 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "value": {
                 "anyOf": [
                   {
-                    "type": "string"
+                    "type": "string",
+                    "x-bilqis-unicode-domain": "scalar-values"
                   },
                   {
                     "type": "integer"
@@ -4175,7 +4296,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "requested_at": {
           "minimum": 0,
@@ -4213,7 +4335,8 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             {
               "type": "null"
@@ -4226,7 +4349,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "meta": {
           "additionalProperties": false,
@@ -4267,7 +4391,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -4294,7 +4419,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -4305,66 +4431,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -4373,7 +4500,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -4400,7 +4528,8 @@
               "pattern": "\\n"
             },
             "pattern": "\\S",
-            "type": "string"
+            "type": "string",
+            "x-bilqis-unicode-domain": "scalar-values"
           },
           "type": "array",
           "uniqueItems": true
@@ -4415,7 +4544,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         }
       },
       "required": [
@@ -4469,7 +4599,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -4496,7 +4627,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -4507,66 +4639,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -4575,7 +4708,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -4602,7 +4736,8 @@
               "pattern": "\\n"
             },
             "pattern": "\\S",
-            "type": "string"
+            "type": "string",
+            "x-bilqis-unicode-domain": "scalar-values"
           },
           "minItems": 1,
           "type": "array",
@@ -4614,7 +4749,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "schema_version": {
           "const": "bilqis.bamf.mission-control.partial-envelope/v1",
@@ -4711,7 +4847,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -4721,7 +4858,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -4821,7 +4959,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -4831,7 +4970,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -4931,7 +5071,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -4941,7 +5082,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -5005,7 +5147,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -5032,7 +5175,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -5043,66 +5187,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -5111,7 +5256,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -5210,7 +5356,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -5220,7 +5367,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -5302,7 +5450,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -5329,7 +5478,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -5340,66 +5490,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -5408,7 +5559,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -5438,7 +5590,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "schema_version": {
           "const": "bilqis.bamf.mission-control.run-context/v1",
@@ -5450,7 +5603,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         }
       },
       "required": [
@@ -5475,7 +5629,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "capability_id": {
           "minLength": 1,
@@ -5483,7 +5638,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "exigency": {
           "additionalProperties": false,
@@ -5560,7 +5716,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -5570,7 +5727,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -5670,7 +5828,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -5680,7 +5839,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -5744,7 +5904,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -5771,7 +5932,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -5782,66 +5944,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -5850,7 +6013,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -5945,7 +6109,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -5955,7 +6120,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -5986,7 +6152,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "schema_version": {
           "const": "bilqis.bamf.mission-control.salience-event/v1",
@@ -6019,7 +6186,8 @@
               "pattern": "\\n"
             },
             "pattern": "\\S",
-            "type": "string"
+            "type": "string",
+            "x-bilqis-unicode-domain": "scalar-values"
           },
           "type": "array",
           "uniqueItems": true
@@ -6099,7 +6267,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -6109,7 +6278,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -6142,7 +6312,8 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             {
               "type": "null"
@@ -6224,7 +6395,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -6234,7 +6406,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -6298,7 +6471,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -6325,7 +6499,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -6336,66 +6511,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -6404,7 +6580,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -6434,7 +6611,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         }
       },
       "required": [
@@ -6530,7 +6708,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -6540,7 +6719,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -6567,11 +6747,13 @@
         },
         "atlas_bundle_id": {
           "pattern": "^[0-9a-f]{64}$",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "atlas_release_sha256": {
           "pattern": "^[0-9a-f]{64}$",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "meta": {
           "additionalProperties": false,
@@ -6612,7 +6794,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -6639,7 +6822,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -6650,66 +6834,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -6718,7 +6903,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -6744,7 +6930,8 @@
         },
         "source_bundle_id": {
           "pattern": "^[0-9a-f]{64}$",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "source_eligible": {
           "additionalProperties": false,
@@ -6821,7 +7008,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -6831,7 +7019,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -6931,7 +7120,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -6941,7 +7131,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -7025,7 +7216,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -7052,7 +7244,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -7063,66 +7256,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -7131,7 +7325,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -7169,7 +7364,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         }
       },
       "required": [
@@ -7268,7 +7464,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -7278,7 +7475,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -7378,7 +7576,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -7388,7 +7587,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -7452,7 +7652,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -7479,7 +7680,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -7490,66 +7692,67 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
-              "anyOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "candidate_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "factory_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "generation": {
-                      "minimum": 0,
-                      "type": "integer"
-                    },
-                    "generation_manifest_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "run_id": {
-                      "minLength": 1,
-                      "not": {
-                        "pattern": "\\n"
-                      },
-                      "pattern": "\\S",
-                      "type": "string"
-                    },
-                    "run_identity_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "semantic_release_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    },
-                    "topology_sha256": {
-                      "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "run_id",
-                    "run_identity_sha256",
-                    "generation",
-                    "generation_manifest_sha256",
-                    "candidate_identity_sha256",
-                    "factory_release_sha256",
-                    "semantic_release_sha256",
-                    "topology_sha256"
-                  ],
-                  "type": "object"
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
-                {
-                  "type": "null"
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 }
-              ]
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
             },
             "source_refs": {
               "items": {
@@ -7558,7 +7761,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -7653,7 +7857,8 @@
                     "pattern": "\\n"
                   },
                   "pattern": "\\S",
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "null"
@@ -7663,7 +7868,8 @@
             "value": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
                   "type": "integer"
@@ -7698,7 +7904,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "teacher_epoch": {
           "minimum": 0,
@@ -7710,7 +7917,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         }
       },
       "required": [
@@ -7774,7 +7982,8 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             {
               "type": "null"
@@ -7815,7 +8024,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -7842,7 +8052,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -7853,7 +8064,8 @@
                 "pattern": "\\n"
               },
               "pattern": "\\S",
-              "type": "string"
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
             },
             "run": {
               "anyOf": [
@@ -7862,11 +8074,13 @@
                   "properties": {
                     "candidate_identity_sha256": {
                       "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "factory_release_sha256": {
                       "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "generation": {
                       "minimum": 0,
@@ -7874,7 +8088,8 @@
                     },
                     "generation_manifest_sha256": {
                       "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "run_id": {
                       "minLength": 1,
@@ -7882,19 +8097,23 @@
                         "pattern": "\\n"
                       },
                       "pattern": "\\S",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "run_identity_sha256": {
                       "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "semantic_release_sha256": {
                       "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "topology_sha256": {
                       "pattern": "^[0-9a-f]{64}$",
-                      "type": "string"
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
                     }
                   },
                   "required": [
@@ -7921,7 +8140,8 @@
                   "pattern": "\\n"
                 },
                 "pattern": "\\S",
-                "type": "string"
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
               },
               "type": "array",
               "uniqueItems": true
@@ -7956,7 +8176,8 @@
             "pattern": "\\n"
           },
           "pattern": "\\S",
-          "type": "string"
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
         },
         "schema_version": {
           "const": "bilqis.bamf.mission-control.unavailable-envelope/v1",

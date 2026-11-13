@@ -36,6 +36,13 @@ class MissionControlConsumerFixtureTests(unittest.TestCase):
             decode_operator_view(json.loads(canonical_json(non_operator)))
         self.assertEqual(raised.exception.code, ContractErrorCode.SCHEMA_TYPE_MISMATCH)
 
+    def test_terminal_preserves_cp02_version_error_identity(self):
+        payload = json.loads(canonical_json(representative_operator_view()))
+        payload["schema_version"] = "bilqis.bamf.mission-control.operator-view/v999"
+        with self.assertRaises(MissionControlContractError) as raised:
+            bamf_status(payload)
+        self.assertEqual(raised.exception.code, ContractErrorCode.SCHEMA_UNSUPPORTED)
+
 
 if __name__ == "__main__":
     unittest.main()

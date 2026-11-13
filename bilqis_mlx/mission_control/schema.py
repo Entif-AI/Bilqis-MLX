@@ -6,19 +6,21 @@ from enum import Enum
 import types
 from typing import get_args, get_origin, get_type_hints, Union
 
-from .model import WireRecord
+from .model import RunRef, WireRecord
 
 
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 SCHEMA_BUNDLE_VERSION = "bilqis.bamf.mission-control.schema-bundle/v1"
 _VARIADIC_TUPLE_ARITY = 2
 _SHA256_PATTERN = "^[0-9a-f]{64}$"
-_SHA256_FIELDS = ("atlas_bundle_id", "source_bundle_id")
+_SHA256_FIELDS = (
+    "atlas_bundle_id", "source_bundle_id", "old_digest", "new_digest",
+)
 _FREE_STRING_FIELDS = ("value",)
 
 
 def _string_schema(field_name: str | None) -> dict:
-    schema = {"type": "string"}
+    schema = {"type": "string", "x-bilqis-unicode-domain": "scalar-values"}
     if field_name and (field_name.endswith("_sha256") or field_name in _SHA256_FIELDS):
         schema["pattern"] = _SHA256_PATTERN
     elif field_name not in _FREE_STRING_FIELDS:
@@ -128,6 +130,8 @@ def record_schema(record_type: type[WireRecord]) -> dict:
         "additionalProperties": False,
         "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record",
     }
+    if record_type.RUN_BOUND:
+        properties["meta"]["properties"]["run"] = _schema_for_type(RunRef)
     if record_type.__name__ == "UnavailableEnvelope":
         properties["meta"]["properties"]["coverage"] = {
             "type": "string", "const": "UNKNOWN",

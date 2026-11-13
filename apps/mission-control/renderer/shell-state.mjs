@@ -26,23 +26,120 @@ export const INSPECTOR_OWNERS = Object.freeze({
 
 export const OPERATOR_VIEW_SCHEMA = "bilqis.bamf.mission-control.operator-view/v1";
 
-export function normalizeContext(raw = {}) {
-  if (raw.schema_version !== OPERATOR_VIEW_SCHEMA || !raw.meta?.run) {
+const COVERAGE_STATES = new Set(["COMPLETE", "PARTIAL", "UNKNOWN", "NOT_APPLICABLE"]);
+const AUTHORITY_CLASSES = new Set(["SOURCE_AUTHORITATIVE", "MEASURED", "DERIVED", "INFERRED"]);
+const OPERATOR_KEYS = [
+  "schema_version", "meta", "learner_state", "stage",
+  "active_capability_id", "related_record_ids",
+];
+const META_KEYS = [
+  "record_id", "run", "materialized_at", "observed_at", "as_of",
+  "coverage", "authority", "source_refs", "evidence_refs", "receipt_refs",
+];
+const RUN_KEYS = [
+  "run_id", "run_identity_sha256", "generation", "generation_manifest_sha256",
+  "candidate_identity_sha256", "factory_release_sha256",
+  "semantic_release_sha256", "topology_sha256",
+];
+
+function sameKeys(value, expected) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const actual = Object.keys(value).sort();
+  return actual.length === expected.length &&
+    actual.every((key, index) => key === [...expected].sort()[index]);
+}
+
+function isUnicodeScalarText(value) {
+  if (typeof value !== "string") return false;
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    if (code >= 0xD800 && code <= 0xDBFF) {
+      if (index + 1 >= value.length) return false;
+      const next = value.charCodeAt(index + 1);
+      if (next < 0xDC00 || next > 0xDFFF) return false;
+      index += 1;
+    } else if (code >= 0xDC00 && code <= 0xDFFF) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isName(value) {
+  return isUnicodeScalarText(value) && value.trim().length > 0 && !value.includes("\n");
+}
+
+function isDigest(value) {
+  return typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
+}
+
+function isTime(value) {
+  return Number.isInteger(value) && value >= 0;
+}
+
+function isNames(value) {
+  return Array.isArray(value) && value.every(isName) && new Set(value).size === value.length;
+}
+
+function invalidOperatorView(detail) {
+  throw new TypeError(`MISSION_CONTROL_OPERATOR_VIEW_INVALID:${detail}`);
+}
+
+export function assertOperatorView(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) invalidOperatorView("root");
+  if (raw.schema_version !== OPERATOR_VIEW_SCHEMA) {
     throw new TypeError("MISSION_CONTROL_OPERATOR_VIEW_SCHEMA_UNSUPPORTED");
   }
+  if (!sameKeys(raw, OPERATOR_KEYS)) invalidOperatorView("fields");
+  if (!sameKeys(raw.meta, META_KEYS)) invalidOperatorView("meta.fields");
+  if (!sameKeys(raw.meta.run, RUN_KEYS)) invalidOperatorView("run.fields");
+
+  const run = raw.meta.run;
+  if (!isName(run.run_id)) invalidOperatorView("run.run_id");
+  if (!Number.isInteger(run.generation) || run.generation < 0) invalidOperatorView("run.generation");
+  for (const field of RUN_KEYS.filter((name) => name.endsWith("_sha256"))) {
+    if (!isDigest(run[field])) invalidOperatorView(`run.${field}`);
+  }
+
+  if (!isName(raw.meta.record_id)) invalidOperatorView("meta.record_id");
+  if (!isTime(raw.meta.materialized_at)) invalidOperatorView("meta.materialized_at");
+  for (const field of ["observed_at", "as_of"]) {
+    const value = raw.meta[field];
+    if (value !== null && (!isTime(value) || value > raw.meta.materialized_at)) {
+      invalidOperatorView(`meta.${field}`);
+    }
+  }
+  if (!COVERAGE_STATES.has(raw.meta.coverage)) invalidOperatorView("meta.coverage");
+  if (!AUTHORITY_CLASSES.has(raw.meta.authority)) invalidOperatorView("meta.authority");
+  for (const field of ["source_refs", "evidence_refs", "receipt_refs"]) {
+    if (!isNames(raw.meta[field])) invalidOperatorView(`meta.${field}`);
+  }
+
+  if (!isName(raw.learner_state)) invalidOperatorView("learner_state");
+  if (!isName(raw.stage)) invalidOperatorView("stage");
+  if (raw.active_capability_id !== null && !isName(raw.active_capability_id)) {
+    invalidOperatorView("active_capability_id");
+  }
+  if (!isNames(raw.related_record_ids)) invalidOperatorView("related_record_ids");
+  return raw;
+}
+
+export function normalizeContext(raw = {}) {
+  assertOperatorView(raw);
   const run = raw.meta.run;
   return Object.freeze({
     runId: run.run_id,
     mode: "LIVE",
     generation: run.generation,
-    checkpoint: run.generation_manifest_sha256,
+    generationManifest: run.generation_manifest_sha256,
     topologyId: run.topology_sha256,
     factoryRelease: run.factory_release_sha256,
     semanticRelease: run.semantic_release_sha256,
     optimizerStep: "UNKNOWN",
     admissionLease: "UNKNOWN",
     correctionFrontier: "UNKNOWN",
-    freshness: raw.meta.coverage === "COMPLETE" ? "FRESH" : "STALE",
+    coverage: raw.meta.coverage,
+    freshness: "UNKNOWN",
     resourceHealth: "UNKNOWN",
     schemaVersion: raw.schema_version,
     recordId: raw.meta.record_id,
@@ -50,10 +147,19 @@ export function normalizeContext(raw = {}) {
 }
 
 export function createShellState(context, route = {}) {
+  return withRoute({
+    context: normalizeContext(context),
+    view: "mission-control",
+    selected: null,
+    inspectorOpen: false,
+  }, route);
+}
+
+export function withRoute(state, route = {}) {
   const destinations = new Set(DESTINATIONS.map(([id]) => id));
   const view = destinations.has(route.view) ? route.view : "mission-control";
   return {
-    context: normalizeContext(context),
+    ...state,
     view,
     selected: route.selected ?? null,
     inspectorOpen: Boolean(route.selected),

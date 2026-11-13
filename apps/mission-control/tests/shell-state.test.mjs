@@ -3,11 +3,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   DESTINATIONS,
+  assertOperatorView,
   createShellState,
   inspect,
   navigate,
   openSelectionOwner,
   shellPosture,
+  withRoute,
 } from "../renderer/shell-state.mjs";
 import { buildDeepLink, parseDeepLink } from "../renderer/deep-link.mjs";
 
@@ -44,6 +46,15 @@ test("deep links restore view and selected object without encoding run context",
   assert.deepEqual(restored.selected, { kind: "evidence", id: "receipt:123" });
 });
 
+test("hash-route updates reuse normalized state without re-decoding it as CP02", () => {
+  const initial = createShellState(context);
+  const route = parseDeepLink("#/view/evidence?kind=evidence&id=receipt%3A123");
+  const restored = withRoute(initial, route);
+  assert.equal(restored.context, initial.context);
+  assert.equal(restored.view, "evidence");
+  assert.deepEqual(restored.selected, { kind: "evidence", id: "receipt:123" });
+});
+
 test("historical and stale states are shell-global postures", () => {
   const normalized = createShellState(context).context;
   assert.equal(shellPosture({ ...normalized, mode: "HISTORICAL" }), "historical");
@@ -51,10 +62,46 @@ test("historical and stale states are shell-global postures", () => {
   assert.equal(shellPosture(normalized), "live");
 });
 
+test("coverage remains distinct from freshness and never implies staleness", () => {
+  for (const coverage of ["COMPLETE", "PARTIAL", "UNKNOWN", "NOT_APPLICABLE"]) {
+    const candidate = structuredClone(context);
+    candidate.meta.coverage = coverage;
+    const normalized = createShellState(candidate).context;
+    assert.equal(normalized.coverage, coverage);
+    assert.equal(normalized.freshness, "UNKNOWN");
+    assert.equal(shellPosture(normalized), "live");
+  }
+});
+
 test("unversioned bootstrap context fails closed", () => {
   assert.throws(
     () => createShellState({ runId: "legacy" }),
     /MISSION_CONTROL_OPERATOR_VIEW_SCHEMA_UNSUPPORTED/,
+  );
+});
+
+test("malformed versioned operator views fail closed at the Electron boundary", () => {
+  const malformed = structuredClone(context);
+  malformed.meta.run.run_id = null;
+  malformed.meta.run.generation = "seven";
+  malformed.meta.run.topology_sha256 = "abc";
+  assert.throws(
+    () => createShellState(malformed),
+    /MISSION_CONTROL_OPERATOR_VIEW_INVALID:/,
+  );
+
+  const missing = structuredClone(context);
+  delete missing.meta.record_id;
+  assert.throws(
+    () => assertOperatorView(missing),
+    /MISSION_CONTROL_OPERATOR_VIEW_INVALID:meta\.fields/,
+  );
+
+  const surrogate = structuredClone(context);
+  surrogate.stage = "\uD800";
+  assert.throws(
+    () => assertOperatorView(surrogate),
+    /MISSION_CONTROL_OPERATOR_VIEW_INVALID:stage/,
   );
 });
 

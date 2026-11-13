@@ -20,6 +20,7 @@ from bilqis_mlx.mission_control.operator import (
     OperatorActionRequest,
 )
 from bilqis_mlx.mission_control.snapshots import SchoolSnapshot
+from bilqis_mlx.mission_control.snapshots import RunContext
 from bilqis_mlx.mission_control.tests.samples import RUN, SAMPLES, meta
 
 
@@ -36,6 +37,38 @@ class MissionControlStateTests(unittest.TestCase):
         measured = DataValue(ValueState.PRESENT, ValueOrigin.MEASURED, 0, "count")
         derived = DataValue(ValueState.PRESENT, ValueOrigin.DERIVED, 0, "count")
         self.assertNotEqual(measured.origin, derived.origin)
+
+    def test_record_authority_variants_round_trip_literally(self):
+        for authority in AuthorityClass:
+            with self.subTest(authority=authority):
+                record = RunContext(
+                    replace(meta("authority-record"), authority=authority),
+                    "READY",
+                    42,
+                    "ASSESS_MAIN",
+                )
+                decoded = decode_json(canonical_json(record))
+                self.assertEqual(decoded.meta.authority, authority)
+                self.assertEqual(decoded, record)
+
+    def test_lone_surrogates_are_outside_the_wire_domain(self):
+        surrogate = chr(0xD800)
+        with self.assertRaises(MissionControlContractError):
+            RunContext(meta("surrogate-record"), surrogate, 42, "ASSESS_MAIN")
+        with self.assertRaises(MissionControlContractError):
+            DataValue(ValueState.PRESENT, ValueOrigin.MEASURED, surrogate)
+        with self.assertRaises(MissionControlContractError):
+            ActionParameter("value", surrogate)
+
+        sample = next(sample for sample in SAMPLES if type(sample) is RunContext)
+        wire = canonical_json(sample).decode("utf-8")
+        forged = wire.replace(
+            '"run_state":"READY"',
+            '"run_state":"\\ud800"',
+            1,
+        )
+        with self.assertRaises(MissionControlContractError):
+            decode_json(forged)
 
     def test_absent_values_round_trip_through_a_real_snapshot(self):
         school = next(sample for sample in SAMPLES if type(sample) is SchoolSnapshot)
