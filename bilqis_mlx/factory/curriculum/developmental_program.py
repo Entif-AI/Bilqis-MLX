@@ -103,6 +103,10 @@ class BamfDevelopmentalProgram:
     def digest(self) -> str:
         return _digest(self.manifest())
 
+    def resolve_training_stage(self, source_coverage, learner_state):
+        from .developmental_stage import resolve_training_stage
+        return resolve_training_stage(self, source_coverage, learner_state)
+
 
 def _domain_program(payload: dict) -> DevelopmentalDomainProgram:
     if not isinstance(payload, dict):

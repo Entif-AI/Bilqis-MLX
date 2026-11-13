@@ -113,5 +113,99 @@ class BamfTrainingProgramTests(unittest.TestCase):
         self.assertIn("FACTORY.DEVELOPMENTAL_PROGRAM.INVALID", str(caught.exception))
 
 
+class BamfTrainingStageTests(unittest.TestCase):
+    @staticmethod
+    def _coverage_fixture(grade_labels=()):
+        from bilqis_mlx.factory.atlas_frontier_closure import ClosureReason, ClosureStatus
+        from bilqis_mlx.factory.atlas_frontier_contracts import PrerequisiteEdge
+        from bilqis_mlx.factory.tests.curriculum.frontier.atlas_frontier_closure_fixtures import rehash
+        from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier_selection import (
+            _candidate, _closure, _release, _snapshot,
+        )
+
+        release = _release()
+        snapshot = _snapshot(release, prerequisite_edges=(
+            PrerequisiteEdge("z.op.1", "z.op.2", "a" * 64),
+        ))
+        if grade_labels:
+            snapshot = rehash(snapshot, grade_labels=grade_labels)
+        waiting = ClosureReason(
+            "PREREQUISITE_WAITING_FOR_EVIDENCE", "factory:prerequisite", "z.op.2")
+        closure = _closure(snapshot, (
+            _candidate(snapshot, "z.op.0"),
+            _candidate(snapshot, "z.op.1", status=ClosureStatus.WAITING_FOR_EVIDENCE,
+                       prerequisites=("z.op.2",), reasons=(waiting,)),
+            _candidate(snapshot, "z.op.2"),
+        ))
+        return release, snapshot, closure
+
+    def test_resolves_prerequisite_ranked_interleaved_intent_without_authorizing_learning(self):
+        from bilqis_mlx.factory.curriculum.developmental_stage import (
+            DevelopmentalLearnerState, DevelopmentalSourceCoverage,
+        )
+
+        release, snapshot, closure = self._coverage_fixture()
+        program = load_bamf_developmental_program()
+        intent = program.resolve_training_stage(
+            DevelopmentalSourceCoverage(snapshot, closure),
+            DevelopmentalLearnerState(release),
+        )
+
+        self.assertEqual(intent.selected_semantic_id, "z.op.2")
+        self.assertEqual(intent.selected_family_ids, ("positive_identity",))
+        self.assertEqual(intent.active_grade_ids, tuple(
+            grade.grade_id for grade in release.execution_plan.grades))
+        self.assertEqual(intent.active_capability_ids, tuple(
+            capability.capability_id for capability in release.execution_plan.capabilities))
+        self.assertEqual(intent.source_eligible_concept_ids, snapshot.source_eligible_concept_ids)
+        self.assertEqual(intent.covered_semantic_ids, snapshot.source_eligible_concept_ids)
+        self.assertEqual(intent.retained_mastery_debt, snapshot.retained_mastery_debt)
+        self.assertEqual(intent.teacher_epoch, snapshot.teacher_epoch)
+        self.assertEqual(intent.nonblocking_levels, ("L3", "L4"))
+        self.assertFalse(intent.authorizes_learning)
+        self.assertTrue(any(
+            item.owner == "factory:prerequisite" and item.dependency_id == "z.op.2"
+            for item in intent.remediation))
+        self.assertTrue(any(
+            item.code == "RIGHTS_MISSING" and item.owner == "source:owner"
+            and item.dependency_id == "synthetic/held/row1"
+            for item in intent.remediation))
+
+    def test_grade_label_renaming_does_not_change_stage_selection(self):
+        from bilqis_mlx.factory.curriculum.developmental_stage import (
+            DevelopmentalLearnerState, DevelopmentalSourceCoverage,
+        )
+
+        program = load_bamf_developmental_program()
+        release_a, snapshot_a, closure_a = self._coverage_fixture(("A", "B"))
+        release_b, snapshot_b, closure_b = self._coverage_fixture(("Q", "R"))
+        first = program.resolve_training_stage(
+            DevelopmentalSourceCoverage(snapshot_a, closure_a),
+            DevelopmentalLearnerState(release_a),
+        )
+        second = program.resolve_training_stage(
+            DevelopmentalSourceCoverage(snapshot_b, closure_b),
+            DevelopmentalLearnerState(release_b),
+        )
+        self.assertEqual(first.selected_semantic_id, second.selected_semantic_id)
+        self.assertEqual(first.selected_family_ids, second.selected_family_ids)
+        self.assertEqual(first.status, second.status)
+
+    def test_numeric_scope_is_projected_from_admitted_release_parameters(self):
+        from types import SimpleNamespace
+        from bilqis_mlx.factory.curriculum.developmental_stage import (
+            _numeric_maximum_from_capabilities,
+        )
+
+        capabilities = (
+            SimpleNamespace(provider_parameters=(("numbers", ("0", "1", "2", "3", "4")),)),
+            SimpleNamespace(provider_parameters=()),
+        )
+        self.assertEqual(_numeric_maximum_from_capabilities(capabilities), 4)
+        with self.assertRaises(BilqisError):
+            _numeric_maximum_from_capabilities((
+                SimpleNamespace(provider_parameters=(("numbers", ("0", "2")),)),
+            ))
+
 if __name__ == "__main__":
     unittest.main()
