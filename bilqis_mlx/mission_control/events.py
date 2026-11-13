@@ -4,7 +4,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from .model import DataValue, RecordMeta, WireRecord, is_name, is_sha256, is_time, require
+from .model import (
+    DataValue, RecordMeta, WireRecord, is_name, is_sha256, is_time, is_wire_integer,
+    require,
+)
 
 
 class CandidateOutcome(StrEnum):
@@ -65,7 +68,7 @@ class FrameCompileReceipt(WireRecord):
         require(is_sha256(self.source_frame_sha256)
                 and is_sha256(self.compiled_frame_sha256), "FRAME_DIGEST")
         require(type(self.fallback_used) is bool, "FRAME_FALLBACK")
-        require(type(self.constituent_expansions) is int
+        require(is_wire_integer(self.constituent_expansions)
                 and self.constituent_expansions >= 0, "FRAME_EXPANSIONS")
 
 
@@ -103,6 +106,6 @@ class CorrectionEvent(WireRecord):
         super().__post_init__()
         require(is_name(self.correction_id) and is_name(self.target_ref)
                 and is_name(self.state), "CORRECTION_ID")
-        require(type(self.correction_generation) is int
+        require(is_wire_integer(self.correction_generation)
                 and self.correction_generation >= 0, "CORRECTION_GENERATION")
         require(is_sha256(self.old_digest) and is_sha256(self.new_digest), "CORRECTION_DIGEST")

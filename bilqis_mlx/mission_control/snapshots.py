@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .model import DataValue, RecordMeta, WireRecord, is_name, is_names, require
+from .model import (
+    DataValue, RecordMeta, WireRecord, is_name, is_names, is_wire_integer, require,
+)
 
 
 @dataclass(frozen=True)
@@ -17,7 +19,8 @@ class RunContext(WireRecord):
     def __post_init__(self) -> None:
         super().__post_init__()
         require(is_name(self.run_state) and is_name(self.stage), "RUN_CONTEXT_STATE")
-        require(type(self.optimizer_step) is int and self.optimizer_step >= 0, "OPTIMIZER_STEP")
+        require(is_wire_integer(self.optimizer_step) and self.optimizer_step >= 0,
+                "OPTIMIZER_STEP")
 
 
 @dataclass(frozen=True)

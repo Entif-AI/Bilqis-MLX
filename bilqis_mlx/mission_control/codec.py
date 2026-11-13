@@ -9,7 +9,7 @@ import types
 from typing import get_args, get_origin, get_type_hints, Union
 
 from .model import (
-    ContractErrorCode, MissionControlContractError, WireRecord, is_text,
+    ContractErrorCode, MissionControlContractError, WireRecord, is_text, is_wire_integer,
 )
 
 
@@ -103,6 +103,16 @@ def _decode(expected, value):
     if isinstance(expected, type) and is_dataclass(expected):
         return _decode_dataclass(expected, value)
     if expected in (str, int, float, bool):
+        if expected is int:
+            if type(value) is int:
+                if not is_wire_integer(value):
+                    _fail(ContractErrorCode.PAYLOAD_INVALID, "int")
+                return value
+            if type(value) is float and value.is_integer():
+                converted = int(value)
+                if is_wire_integer(converted):
+                    return converted
+            _fail(ContractErrorCode.PAYLOAD_INVALID, "int")
         if type(value) is not expected:
             _fail(ContractErrorCode.PAYLOAD_INVALID, expected.__name__)
         if expected is str and not is_text(value):

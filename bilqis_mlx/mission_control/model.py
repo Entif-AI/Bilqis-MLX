@@ -10,6 +10,7 @@ from typing import ClassVar, TypeAlias
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _SCHEMA = re.compile(r"bilqis\.bamf\.mission-control\.[a-z0-9-]+/v[1-9][0-9]*\Z")
+MAX_WIRE_INTEGER = (1 << 53) - 1
 Scalar: TypeAlias = str | int | float | bool
 
 
@@ -53,7 +54,11 @@ def is_sha256(value: object) -> bool:
 
 
 def is_time(value: object) -> bool:
-    return type(value) is int and value >= 0
+    return is_wire_integer(value) and value >= 0
+
+
+def is_wire_integer(value: object) -> bool:
+    return type(value) is int and -MAX_WIRE_INTEGER <= value <= MAX_WIRE_INTEGER
 
 
 def is_names(value: object, *, allow_empty: bool = True) -> bool:
@@ -104,7 +109,7 @@ class RunRef:
 
     def __post_init__(self) -> None:
         require(is_name(self.run_id), "RUN_ID")
-        require(type(self.generation) is int and self.generation >= 0, "GENERATION")
+        require(is_wire_integer(self.generation) and self.generation >= 0, "GENERATION")
         require(all(is_sha256(item) for item in (
             self.run_identity_sha256, self.generation_manifest_sha256,
             self.candidate_identity_sha256, self.factory_release_sha256,
@@ -155,6 +160,8 @@ class DataValue:
             require(type(self.value) in (str, int, float, bool), "VALUE_TYPE")
             if type(self.value) is str:
                 require(is_text(self.value), "VALUE_TEXT")
+            if type(self.value) is int:
+                require(is_wire_integer(self.value), "VALUE_INTEGER")
             if type(self.value) is float:
                 require(math.isfinite(self.value), "VALUE_FINITE")
         else:

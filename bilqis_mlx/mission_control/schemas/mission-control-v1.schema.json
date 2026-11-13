@@ -29,6 +29,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -69,12 +70,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -119,6 +122,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -331,6 +335,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -368,6 +374,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -408,12 +415,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -458,6 +467,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -625,6 +635,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -737,6 +749,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -789,6 +803,7 @@
       "additionalProperties": false,
       "properties": {
         "correction_generation": {
+          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer"
         },
@@ -807,6 +822,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -847,12 +863,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -897,6 +915,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -1063,6 +1082,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -1103,12 +1123,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -1153,6 +1175,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -1285,6 +1308,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -1325,12 +1349,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -1377,6 +1403,7 @@
                       "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "generation": {
+                      "maximum": 9007199254740991,
                       "minimum": 0,
                       "type": "integer"
                     },
@@ -1516,6 +1543,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -1556,12 +1584,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -1606,6 +1636,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -1758,6 +1789,7 @@
               "x-bilqis-unicode-domain": "scalar-values"
             },
             "ordinal": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
@@ -1826,6 +1858,7 @@
           "x-bilqis-unicode-domain": "scalar-values"
         },
         "constituent_expansions": {
+          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer"
         },
@@ -1847,6 +1880,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -1887,12 +1921,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -1937,6 +1973,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -2049,6 +2086,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -2089,12 +2127,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -2139,6 +2179,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -2278,6 +2319,7 @@
         "completed_at": {
           "anyOf": [
             {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
@@ -2301,6 +2343,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -2341,12 +2384,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -2391,6 +2436,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -2469,6 +2515,7 @@
           "type": "string"
         },
         "started_at": {
+          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer"
         },
@@ -2600,6 +2647,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -2712,6 +2761,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -2740,6 +2791,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -2780,12 +2832,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -2830,6 +2884,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -2993,6 +3048,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -3105,6 +3162,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -3221,6 +3280,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -3352,6 +3413,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -3380,6 +3443,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -3420,12 +3484,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -3470,6 +3536,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -3544,6 +3611,7 @@
           "type": "object"
         },
         "optimizer_step": {
+          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer"
         },
@@ -3637,6 +3705,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -3753,6 +3823,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -3794,6 +3866,7 @@
       "additionalProperties": false,
       "properties": {
         "acknowledged_at": {
+          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer"
         },
@@ -3819,6 +3892,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -3859,12 +3933,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -3909,6 +3985,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -4083,6 +4160,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -4123,12 +4201,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -4173,6 +4253,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -4266,6 +4347,8 @@
                     "x-bilqis-unicode-domain": "scalar-values"
                   },
                   {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
                     "type": "integer"
                   },
                   {
@@ -4300,6 +4383,7 @@
           "x-bilqis-unicode-domain": "scalar-values"
         },
         "requested_at": {
+          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer"
         },
@@ -4358,6 +4442,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -4398,12 +4483,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -4448,6 +4535,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -4571,6 +4659,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -4606,12 +4695,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -4656,6 +4747,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -4862,6 +4954,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -4974,6 +5068,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -5086,6 +5182,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -5114,6 +5212,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -5154,12 +5253,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -5204,6 +5305,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -5371,6 +5473,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -5417,6 +5521,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -5457,12 +5562,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -5507,6 +5614,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -5581,6 +5689,7 @@
           "type": "object"
         },
         "optimizer_step": {
+          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer"
         },
@@ -5731,6 +5840,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -5843,6 +5954,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -5871,6 +5984,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -5911,12 +6025,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -5961,6 +6077,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -6124,6 +6241,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -6282,6 +6401,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -6410,6 +6531,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -6438,6 +6561,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -6478,12 +6602,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -6528,6 +6654,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -6723,6 +6850,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -6761,6 +6890,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -6801,12 +6931,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -6851,6 +6983,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -7023,6 +7156,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -7135,6 +7270,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -7183,6 +7320,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -7223,12 +7361,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -7273,6 +7413,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -7347,6 +7488,7 @@
           "type": "object"
         },
         "requested_as_of": {
+          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer"
         },
@@ -7355,6 +7497,7 @@
           "type": "string"
         },
         "stale_as_of": {
+          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer"
         },
@@ -7479,6 +7622,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -7591,6 +7736,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -7619,6 +7766,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -7659,12 +7807,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -7709,6 +7859,7 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 "generation": {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -7872,6 +8023,8 @@
                   "x-bilqis-unicode-domain": "scalar-values"
                 },
                 {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
                   "type": "integer"
                 },
                 {
@@ -7908,6 +8061,7 @@
           "x-bilqis-unicode-domain": "scalar-values"
         },
         "teacher_epoch": {
+          "maximum": 9007199254740991,
           "minimum": 0,
           "type": "integer"
         },
@@ -7996,6 +8150,7 @@
             "as_of": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -8031,12 +8186,14 @@
               "uniqueItems": true
             },
             "materialized_at": {
+              "maximum": 9007199254740991,
               "minimum": 0,
               "type": "integer"
             },
             "observed_at": {
               "anyOf": [
                 {
+                  "maximum": 9007199254740991,
                   "minimum": 0,
                   "type": "integer"
                 },
@@ -8083,6 +8240,7 @@
                       "x-bilqis-unicode-domain": "scalar-values"
                     },
                     "generation": {
+                      "maximum": 9007199254740991,
                       "minimum": 0,
                       "type": "integer"
                     },

@@ -5,7 +5,9 @@ from dataclasses import dataclass
 from enum import StrEnum
 import math
 
-from .model import RecordMeta, Scalar, WireRecord, is_name, is_text, is_time, require
+from .model import (
+    RecordMeta, Scalar, WireRecord, is_name, is_text, is_time, is_wire_integer, require,
+)
 
 
 class ActionReceiptState(StrEnum):
@@ -28,6 +30,8 @@ class ActionParameter:
                 "ACTION_PARAMETER_VALUE")
         if type(self.value) is str:
             require(is_text(self.value), "ACTION_PARAMETER_TEXT")
+        if type(self.value) is int:
+            require(is_wire_integer(self.value), "ACTION_PARAMETER_INTEGER")
         if type(self.value) is float:
             require(math.isfinite(self.value), "ACTION_PARAMETER_FINITE")
 

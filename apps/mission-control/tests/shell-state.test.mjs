@@ -59,7 +59,8 @@ test("historical and stale states are shell-global postures", () => {
   const normalized = createShellState(context).context;
   assert.equal(shellPosture({ ...normalized, mode: "HISTORICAL" }), "historical");
   assert.equal(shellPosture({ ...normalized, freshness: "STALE" }), "stale");
-  assert.equal(shellPosture(normalized), "live");
+  assert.equal(shellPosture(normalized), "unknown");
+  assert.equal(shellPosture({ ...normalized, freshness: "FRESH" }), "live");
 });
 
 test("coverage remains distinct from freshness and never implies staleness", () => {
@@ -69,7 +70,7 @@ test("coverage remains distinct from freshness and never implies staleness", () 
     const normalized = createShellState(candidate).context;
     assert.equal(normalized.coverage, coverage);
     assert.equal(normalized.freshness, "UNKNOWN");
-    assert.equal(shellPosture(normalized), "live");
+    assert.equal(shellPosture(normalized), "unknown");
   }
 });
 
@@ -110,6 +111,15 @@ test("malformed versioned operator views fail closed at the Electron boundary", 
     assert.throws(
       () => assertOperatorView(blankName),
       /MISSION_CONTROL_OPERATOR_VIEW_INVALID:run\.run_id/,
+    );
+  }
+
+  for (const unsafeInteger of [Number.MAX_SAFE_INTEGER + 1, -(Number.MAX_SAFE_INTEGER + 1)]) {
+    const unsafe = structuredClone(context);
+    unsafe.meta.run.generation = unsafeInteger;
+    assert.throws(
+      () => assertOperatorView(unsafe),
+      /MISSION_CONTROL_OPERATOR_VIEW_INVALID:run\.generation/,
     );
   }
 });

@@ -12,7 +12,7 @@ from bilqis_mlx.mission_control.envelopes import (
 )
 from bilqis_mlx.mission_control.model import (
     AuthorityClass, ContractErrorCode, CoverageState, DataValue,
-    MissionControlContractError, RecordMeta,
+    MAX_WIRE_INTEGER, MissionControlContractError, RecordMeta,
     ValueOrigin, ValueState,
 )
 from bilqis_mlx.mission_control.operator import (
@@ -243,6 +243,36 @@ class MissionControlStateTests(unittest.TestCase):
                 with self.assertRaises(MissionControlContractError) as raised:
                     decode_json(payload)
                 self.assertEqual(raised.exception.code, ContractErrorCode.PAYLOAD_INVALID)
+
+    def test_integer_wire_domain_matches_javascript_safe_integer_semantics(self):
+        sample = next(sample for sample in SAMPLES if type(sample) is RunContext)
+        wire = canonical_json(sample).decode("utf-8")
+        decimal_integral = wire.replace(
+            f'"generation":{sample.meta.run.generation}',
+            f'"generation":{sample.meta.run.generation}.0',
+            1,
+        )
+        self.assertEqual(
+            decode_json(decimal_integral).meta.run.generation,
+            sample.meta.run.generation,
+        )
+
+        unsafe = wire.replace(
+            f'"generation":{sample.meta.run.generation}',
+            f'"generation":{MAX_WIRE_INTEGER + 1}',
+            1,
+        )
+        with self.assertRaises(MissionControlContractError):
+            decode_json(unsafe)
+
+        with self.assertRaises(MissionControlContractError):
+            replace(sample.meta.run, generation=MAX_WIRE_INTEGER + 1)
+        with self.assertRaises(MissionControlContractError):
+            DataValue(
+                ValueState.PRESENT,
+                ValueOrigin.MEASURED,
+                MAX_WIRE_INTEGER + 1,
+            )
 
     def test_extra_wire_field_fails_closed_and_records_are_frozen(self):
         sample = SAMPLES[0]

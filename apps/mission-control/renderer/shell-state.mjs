@@ -79,7 +79,7 @@ function isDigest(value) {
 }
 
 function isTime(value) {
-  return Number.isInteger(value) && value >= 0;
+  return Number.isSafeInteger(value) && value >= 0;
 }
 
 function isNames(value) {
@@ -101,7 +101,9 @@ export function assertOperatorView(raw) {
 
   const run = raw.meta.run;
   if (!isName(run.run_id)) invalidOperatorView("run.run_id");
-  if (!Number.isInteger(run.generation) || run.generation < 0) invalidOperatorView("run.generation");
+  if (!Number.isSafeInteger(run.generation) || run.generation < 0) {
+    invalidOperatorView("run.generation");
+  }
   for (const field of RUN_KEYS.filter((name) => name.endsWith("_sha256"))) {
     if (!isDigest(run[field])) invalidOperatorView(`run.${field}`);
   }
@@ -199,5 +201,6 @@ export function withContext(state, nextContext) {
 export function shellPosture(context) {
   if (context.mode === "HISTORICAL") return "historical";
   if (context.freshness === "STALE" || context.freshness === "DISCONNECTED") return "stale";
+  if (context.freshness === "UNKNOWN") return "unknown";
   return "live";
 }

@@ -6,7 +6,7 @@ from enum import Enum
 import types
 from typing import get_args, get_origin, get_type_hints, Union
 
-from .model import RunRef, WireRecord
+from .model import MAX_WIRE_INTEGER, RunRef, WireRecord
 
 
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
@@ -101,7 +101,11 @@ def _schema_for_type(expected, *, field_name: str | None = None):
     if expected is str:
         return _string_schema(field_name)
     if expected is int:
-        schema = {"type": "integer"}
+        schema = {
+            "type": "integer",
+            "maximum": MAX_WIRE_INTEGER,
+            "minimum": -MAX_WIRE_INTEGER,
+        }
         if field_name != "value":
             schema["minimum"] = 0
         return schema

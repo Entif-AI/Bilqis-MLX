@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .model import DataValue, RecordMeta, WireRecord, is_name, is_sha256, require
+from .model import (
+    DataValue, RecordMeta, WireRecord, is_name, is_sha256, is_wire_integer, require,
+)
 
 
 @dataclass(frozen=True)
@@ -37,7 +39,8 @@ class NeuralRuntimeSample(WireRecord):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        require(type(self.optimizer_step) is int and self.optimizer_step >= 0, "RUNTIME_STEP")
+        require(is_wire_integer(self.optimizer_step) and self.optimizer_step >= 0,
+                "RUNTIME_STEP")
         require(all(type(item) is DataValue for item in (
             self.step_duration_ms, self.active_parameters,
             self.refinement_fraction)), "RUNTIME_VALUES")
@@ -74,7 +77,8 @@ class TeacherSnapshot(WireRecord):
     def __post_init__(self) -> None:
         super().__post_init__()
         require(is_name(self.teacher_identity) and is_name(self.strategy_id), "TEACHER_ID")
-        require(type(self.teacher_epoch) is int and self.teacher_epoch >= 0, "TEACHER_EPOCH")
+        require(is_wire_integer(self.teacher_epoch) and self.teacher_epoch >= 0,
+                "TEACHER_EPOCH")
         require(all(type(item) is DataValue for item in (
             self.attempts, self.accepted, self.rejected)), "TEACHER_VALUES")
 

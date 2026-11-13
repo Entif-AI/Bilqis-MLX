@@ -8,7 +8,7 @@ import json
 
 from .model import (
     CoverageState, RecordMeta, WireRecord, is_name, is_names, is_sha256,
-    is_time, require,
+    is_time, is_wire_integer, require,
 )
 
 
@@ -126,7 +126,7 @@ class StreamPosition:
 
     def __post_init__(self) -> None:
         require(is_name(self.stream_id) and is_name(self.epoch_id), "STREAM_POSITION")
-        require(type(self.ordinal) is int and self.ordinal >= 0, "STREAM_ORDINAL")
+        require(is_wire_integer(self.ordinal) and self.ordinal >= 0, "STREAM_ORDINAL")
         require(is_sha256(self.cursor_sha256), "STREAM_CURSOR")
         require(self.previous_cursor_sha256 is None
                 or is_sha256(self.previous_cursor_sha256), "PREVIOUS_CURSOR")
