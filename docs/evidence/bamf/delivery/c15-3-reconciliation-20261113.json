@@ -10,6 +10,9 @@
     "owner_bodies": 43,
     "child_bodies": 172,
     "native_parent_child_groups": 53,
+    "native_parent_child_edges": 190,
+    "native_parent_child_groups_with_supplement": 65,
+    "native_hierarchy_supplement_head": "4212d278ee1b97d87ea6855172ca76fb2b1e6562",
     "dependency_nodes": 215,
     "body_repairs": [
       {
@@ -55,11 +58,11 @@
     }
   ],
   "factory_behavior": {
-    "overall": "ENV_BLOCKED_NOT_EXECUTED_PASS",
+    "overall": "EXECUTED_PASS",
     "witnesses": [
       {
         "behavior": "PURE_IDEMPOTENT_PLANNING",
-        "state": "CODE_PRESENT_ENV_BLOCKED",
+        "state": "EXECUTED_PASS",
         "tests": [
           "bilqis_mlx/factory/tests/curriculum/frontier/test_atlas_frontier_events.py",
           "bilqis_mlx/factory/tests/curriculum/frontier/test_atlas_frontier_progress.py"
@@ -67,7 +70,7 @@
       },
       {
         "behavior": "GRADE_LABEL_PERMUTATION_SYMMETRIC_DEBT_AND_TRUE_HOLDS",
-        "state": "CODE_PRESENT_ENV_BLOCKED",
+        "state": "EXECUTED_PASS",
         "tests": [
           "bilqis_mlx/learning/tests/teaching/test_c03_parent_acceptance.py",
           "bilqis_mlx/runtime/tests/admission/atlas/v2/capability/test_capability_verification_decisions_v2.py",
@@ -76,14 +79,14 @@
       },
       {
         "behavior": "SOURCE_FAMILY_DOMAIN_RULE_VARIATION",
-        "state": "CODE_PRESENT_ENV_BLOCKED",
+        "state": "EXECUTED_PASS",
         "tests": [
           "bilqis_mlx/factory/tests/curriculum/test_rule_registry.py"
         ]
       },
       {
         "behavior": "RECURSIVE_REPLAN_AFTER_ADMISSION_AND_CORRECTION",
-        "state": "CODE_PRESENT_ENV_BLOCKED",
+        "state": "EXECUTED_PASS",
         "tests": [
           "bilqis_mlx/runtime/tests/admission/test_admission_flywheel.py",
           "bilqis_mlx/factory/tests/curriculum/frontier/test_atlas_frontier_progress.py"
@@ -91,14 +94,14 @@
       },
       {
         "behavior": "FIXED_POINT_AND_HELD_TERMINATION",
-        "state": "CODE_PRESENT_ENV_BLOCKED",
+        "state": "EXECUTED_PASS",
         "tests": [
           "bilqis_mlx/runtime/tests/admission/test_admission_flywheel.py"
         ]
       },
       {
         "behavior": "SINGLE_AUTHORITY_ADMISSION",
-        "state": "CODE_PRESENT_ENV_BLOCKED",
+        "state": "EXECUTED_PASS",
         "tests": [
           "bilqis_mlx/runtime/tests/admission/atlas/test_atlas_epoch_serialization.py",
           "bilqis_mlx/runtime/tests/admission/atlas/test_atlas_admission_binding.py"
@@ -106,7 +109,7 @@
       },
       {
         "behavior": "EXACT_COLD_RESUME",
-        "state": "CODE_PRESENT_ENV_BLOCKED",
+        "state": "EXECUTED_PASS",
         "tests": [
           "bilqis_mlx/runtime/tests/custody/bamf_bundle/test_cold_resume_continuation.py",
           "bilqis_mlx/presentation/operator_cli/tests/bamf_lifecycle/test_bamf_first_start_witness.py"
@@ -124,6 +127,19 @@
         "result": "PARSE_RUNTIME_BLOCKED",
         "available": ["mlx", "numpy"],
         "reason": "Python 3.9 cannot execute repository union-type syntax or scripts/run_tests.py"
+      },
+      {
+        "interpreter": "/Users/cr8s/Code/Bilqis-485-venv/bin/python",
+        "result": "EXECUTED_PASS",
+        "preexisting_dependencies": ["pyshacl", "numpy", "mlx"],
+        "package_install_performed": false,
+        "test_totals": {
+          "total": 64,
+          "passed": 64,
+          "failed": 0,
+          "skipped": 0,
+          "errors": 0
+        }
       }
     ],
     "observed_behavioral_failures": []
