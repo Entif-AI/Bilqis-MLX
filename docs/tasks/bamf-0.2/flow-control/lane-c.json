@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "97a018ed7e9697fe284abd9fa8197cd7f4194b45",
-  "updated_at": "2026-11-13T15:18:31Z",
+  "updated_at": "2026-11-13T15:20:21Z",
   "exception": null,
   "items": [
     {
@@ -37,9 +37,9 @@
       "issue": 535,
       "pr": null,
       "state": "READY",
-      "head_sha": "014c6b23fc640ba357b6ec64c3703a5c5f386a99",
-      "head_sha_role": "exact C14.3 semantic implementation and review-repair head before this flow-control receipt commit",
-      "summary": "C14.3 immutable grade-neutral domain-rule policy and pure succession projection are implemented on repaired/reconciled #534. The first exact-head review Major/Minor were repaired by making the five shared contracts a runtime invariant and adding a true cross-family prerequisite witness with unrelated ready progress. Focused cumulative proof and static gates are green; exact-head re-review is pending while C13 remains the shared final-turn-in dependency.",
+      "head_sha": "9eb06abe3218d7d4853442d2b0550331c0f49980",
+      "head_sha_role": "exact C14.3 semantic implementation and complete review-repair head before this flow-control receipt commit",
+      "summary": "C14.3 immutable grade-neutral domain-rule policy and pure succession projection are implemented on repaired/reconciled #534. Review findings were repaired by enforcing the five shared contracts, exact policy version and exact family set as semantic-rule authority, binding succession to the canonical packaged manifest, routing failures through FACTORY.SEMANTIC_RULE.INVALID, and adding a true cross-family prerequisite witness with unrelated ready progress. Focused cumulative proof and static gates are green; exact-head re-review is pending while C13 remains the shared final-turn-in dependency.",
       "resume_trigger": null,
       "preserved_branch": "codex/535-c14-domain-rules-20261113"
     },
