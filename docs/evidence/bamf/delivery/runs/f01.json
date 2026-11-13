@@ -1,0 +1,10 @@
+{
+  "schema": "bilqis.bamf.execution-receipt/v2",
+  "receipt_ref": "docs/evidence/bamf/delivery/runs/f01.json",
+  "candidate_sha": "c4197f28c4aa2e3972634b1dbea255832d4b6d7b",
+  "fixture_sha256": "08372bada750d90184c78ab1c663d716cec36ac5bc3a2032a7ee5d861ec60f80",
+  "expected_sha256": "bce5263631fecf4b6e4764c7f797391f44a2a7f45662a7cf5e7e75a367dd2ecb",
+  "observed_sha256": "3be39589479b389e2ba2d656346adeeb289d2309db152d430da20eec8fc5d09d",
+  "runner_sha256": "30b82005a81e42c7fe6149120b5efc6b53e8c847db0da131aca83800d351c6cc",
+  "disposition": "PASS"
+}

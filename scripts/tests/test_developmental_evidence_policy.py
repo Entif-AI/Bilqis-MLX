@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 import tempfile
 import unittest
@@ -63,6 +64,29 @@ class DevelopmentalEvidencePolicyTests(unittest.TestCase):
                         in problem for problem in problems),
                     problems,
                 )
+
+    def test_release_boundary_override_allows_only_exact_audited_issue_body(self):
+        root = self._fixture_root()
+        relative = Path("docs/tasks/bamf-0.2/issues/C13.md")
+        body = "release-scoped owner rewrite\n"
+        (root / relative).write_text(body)
+        override = root / checker.RELEASE_BOUNDARY_OVERRIDES
+        override.parent.mkdir(parents=True, exist_ok=True)
+        override.write_text(json.dumps({
+            "schema": "bilqis.bamf.release-boundary-overrides/v1",
+            "entries": [{
+                "key": "C13",
+                "live_body_sha256": hashlib.sha256(body.encode()).hexdigest(),
+            }],
+        }) + "\n")
+        self.assertFalse(any(
+            str(relative) in problem and "DEVELOPMENTAL_POLICY_MARKER_MISSING" in problem
+            for problem in checker._developmental_policy_docs(root)))
+
+        (root / relative).write_text(body + "drift\n")
+        self.assertTrue(any(
+            str(relative) in problem and "DEVELOPMENTAL_POLICY_MARKER_MISSING" in problem
+            for problem in checker._developmental_policy_docs(root)))
 
 
 if __name__ == "__main__":

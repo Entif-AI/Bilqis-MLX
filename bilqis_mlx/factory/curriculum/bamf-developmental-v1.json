@@ -1,0 +1,107 @@
+{
+  "schema": "bilqis.bamf.developmental-program/v1",
+  "program_id": "bamf-developmental-v1",
+  "policy_version": "BAMF-0.2/C14-v1",
+  "levels": [
+    {
+      "level": "L0",
+      "purpose": "Construct semantic foundations from positive identity through lawful composition.",
+      "domains": [
+        "positive-identity",
+        "boolean",
+        "numeric"
+      ],
+      "constructive_steps": [
+        "POSITIVE_IDENTITY",
+        "DIRECT_CONSTITUENTS",
+        "LAWFUL_COMPOSITION"
+      ],
+      "source_requirements": [
+        "ADMITTED_RELEASE",
+        "SOURCE_QUALIFIED_PREREQUISITES"
+      ],
+      "optional": false,
+      "packages_bounded_capabilities": false
+    },
+    {
+      "level": "L1",
+      "purpose": "Teach released source-grounded semantic distinctions and individually qualified structured BRAVO frames.",
+      "domains": [
+        "skos-roles",
+        "skos-senses",
+        "skos-morphology",
+        "bravo-category-frames",
+        "bravo-time-frames"
+      ],
+      "constructive_steps": [
+        "SOURCE_IDENTITY",
+        "QUALIFIED_STRUCTURE",
+        "CONSTRUCTIVE_COMPOSITION"
+      ],
+      "source_requirements": [
+        "ADMITTED_RELEASE",
+        "RELEASED_SKOS",
+        "INDIVIDUALLY_QUALIFIED_BRAVO"
+      ],
+      "optional": false,
+      "packages_bounded_capabilities": false
+    },
+    {
+      "level": "L2",
+      "purpose": "Extend the admitted program through new concepts, ambiguity, relations, and cross-family composition.",
+      "domains": [
+        "new-concepts",
+        "ambiguity",
+        "relations",
+        "cross-family-composition"
+      ],
+      "constructive_steps": [
+        "NEW_DISTINCTION",
+        "AMBIGUITY_CONTRAST",
+        "RELATION_BINDING",
+        "CROSS_FAMILY_COMPOSITION"
+      ],
+      "source_requirements": [
+        "ADMITTED_RELEASE",
+        "SOURCE_QUALIFIED_PREREQUISITES",
+        "INDEPENDENT_EVIDENCE"
+      ],
+      "optional": false,
+      "packages_bounded_capabilities": false
+    },
+    {
+      "level": "L3",
+      "purpose": "Provide optional capacity or hardware extension without redefining semantic education.",
+      "domains": [
+        "capacity-extension",
+        "hardware-extension"
+      ],
+      "constructive_steps": [
+        "CAPACITY_EXTENSION",
+        "HARDWARE_EXTENSION"
+      ],
+      "source_requirements": [
+        "RESOURCE_AUTHORITY"
+      ],
+      "optional": true,
+      "packages_bounded_capabilities": false
+    },
+    {
+      "level": "L4",
+      "purpose": "Package already bounded capabilities for compatible downstream use.",
+      "domains": [
+        "bounded-capability-packaging"
+      ],
+      "constructive_steps": [
+        "QUALIFY_BOUNDARY",
+        "PACKAGE_CAPABILITY"
+      ],
+      "source_requirements": [
+        "QUALIFIED_CAPABILITY",
+        "RIGHTS_AUTHORITY"
+      ],
+      "optional": false,
+      "packages_bounded_capabilities": true
+    }
+  ]
+}

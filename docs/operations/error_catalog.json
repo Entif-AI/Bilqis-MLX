@@ -13784,6 +13784,34 @@
   "schema": "bilqis.error-catalog/v1",
   "typed_errors": [
     {
+      "code": "FACTORY.DEVELOPMENTAL_PROGRAM.INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.factory.developmental_program.invalid.message",
+      "message_template": "Factory developmental program invalid: {reason}",
+      "next_action": "Restore the immutable C14 developmental-program manifest and source-qualified domain declarations before retrying.",
+      "operator_steps": [],
+      "owner": "factory.curriculum.developmental_program",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.developmental_program.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Factory developmental program invalid"
+    },
+    {
+      "code": "FACTORY.SOURCE_BINDING.INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.factory.source_binding.invalid.message",
+      "message_template": "Factory source binding invalid: {reason}",
+      "next_action": "Restore the canonical capability/source binding and reserved namespace ownership before retrying.",
+      "operator_steps": [],
+      "owner": "factory.curriculum_definition",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.source_binding.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Factory source binding invalid"
+    },
+    {
       "code": "FACTORY.SEMANTIC_RULE.INVALID",
       "disposition": "CORRECT_INPUT_OR_STATE",
       "legacy_codes": [],
@@ -15770,6 +15798,20 @@
       "recovery_key": "errors.school.bamf_first_student.invalid.recovery",
       "self_heal_owner": null,
       "title": "BAMF first-student preflight is invalid"
+    },
+    {
+      "code": "SCHOOL.BAMF_DELIVERY.INVALID",
+      "disposition": "PRESERVE_AND_INSPECT",
+      "legacy_codes": [],
+      "message_key": "errors.school.bamf_delivery.invalid.message",
+      "message_template": "BAMF delivery evidence is invalid: {reason}",
+      "next_action": "Preserve the last valid delivery receipt; reconcile immutable issue, commit, proof, review and command evidence before publication.",
+      "operator_steps": [],
+      "owner": "runtime.delivery",
+      "preserve_state": true,
+      "recovery_key": "errors.school.bamf_delivery.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "BAMF delivery evidence invalid"
     },
     {
       "code": "SCHOOL.BAMF_PACKAGE.INVALID",

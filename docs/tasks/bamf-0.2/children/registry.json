@@ -2196,7 +2196,7 @@
       ],
       "kind": "group",
       "title": "BAMF-0.2 C07.1 | Own persisted authorization lease and atomic staged-admission interfaces",
-      "body_sha256": "eee0838d5814e272c60f55b23848f2b1a53436d3224ca3fedfebb1de39f62bed",
+      "body_sha256": "155a20846119c4ebef53e0f0079af78b8321a47f1213af08380551149980e2ed",
       "clause_span": [],
       "source_parent_sha256": "80292df2adac2aa32b26cadd4d1f5ff0c87e034dea2a7ebbd65417df75df6e74"
     },
@@ -2554,13 +2554,13 @@
         "C10"
       ],
       "kind": "leaf",
-      "title": "BAMF-0.2 C13.1 | Prepare disposable combined-system acceptance and source fixtures",
-      "body_sha256": "5ee91a644d1175d5722b82fb8aca876e4ae15659027eb6b16ca377e26cba5f8c",
+      "title": "BAMF-0.2 C13.1 | Turn in real M3 Ultra integrated wiring path",
+      "body_sha256": "0fe789ba3264292de4ae4f5039d3dae1a40d5590cb50453b400daac9b6ddf8a9",
       "clause_span": [
         0,
         4
       ],
-      "source_parent_sha256": "7c4359ea99c617dd556ca1a88c54e22e85865e0e19d7e3fea0e897910994f12d"
+      "source_parent_sha256": "9829ffeab0b8d028d61e1f4a4ac3366dcdf4a953304daa011f69ef3c9ec01913"
     },
     {
       "key": "C13.2",
@@ -2571,13 +2571,13 @@
         "C13.1"
       ],
       "kind": "leaf",
-      "title": "BAMF-0.2 C13.2 | Exercise native retained learning rollback and correction scenarios",
-      "body_sha256": "5f2711f460b9fee3aedc8f2de224fcc31c733d76a97b3b0c8ac0b2a742646088",
+      "title": "BAMF-0.2 C13.2 | Reconcile targeted rollback, resume and correction proofs",
+      "body_sha256": "48ddbd4e13be4c79ca9ec973d69d60c367f8a98a0e2bb0749423532be212f8b8",
       "clause_span": [
         4,
         8
       ],
-      "source_parent_sha256": "7c4359ea99c617dd556ca1a88c54e22e85865e0e19d7e3fea0e897910994f12d"
+      "source_parent_sha256": "9829ffeab0b8d028d61e1f4a4ac3366dcdf4a953304daa011f69ef3c9ec01913"
     },
     {
       "key": "C13.3",
@@ -2588,13 +2588,13 @@
         "C13.2"
       ],
       "kind": "leaf",
-      "title": "BAMF-0.2 C13.3 | Collect existing guard receipts and responsible issue handoff",
-      "body_sha256": "58d348358c1d63214fc37be0815d245557b1cca84bdd79c0b10829f488b6c659",
+      "title": "BAMF-0.2 C13.3 | Publish integrated wiring receipt and dashboard handoff",
+      "body_sha256": "44a10aebf425f059251d56a3d929c5f96dee8fb7d8b9431c484926717d9f33d0",
       "clause_span": [
         8,
         13
       ],
-      "source_parent_sha256": "7c4359ea99c617dd556ca1a88c54e22e85865e0e19d7e3fea0e897910994f12d"
+      "source_parent_sha256": "9829ffeab0b8d028d61e1f4a4ac3366dcdf4a953304daa011f69ef3c9ec01913"
     },
     {
       "key": "C14.1",

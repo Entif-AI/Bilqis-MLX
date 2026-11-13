@@ -13,16 +13,19 @@ class CatalogTests(unittest.TestCase):
     def test_frozen_catalog_order_and_complete_contracts(self):
         payload = json.dumps([asdict(spec) for spec in CATALOG[:-10]],
                              sort_keys=True, separators=(",", ":"))
-        self.assertEqual(len(CATALOG), 127)
+        self.assertEqual(len(CATALOG), 129)
         self.assertEqual(hashlib.sha256(payload.encode()).hexdigest(),
-                         "f9cd627885c50e7b6cbc85ff6454c6a96a8ef1fbd90d161f7ca270b3d0304a76")
-        self.assertEqual(len(BY_CODE), 127)
+                         "80ec114d560fa1e5e178957305f7ef446812660110ad9d0206d1b58c32778c26")
+        self.assertEqual(len(BY_CODE), 129)
         self.assertIs(BY_CODE["SCHOOL.STATE.COURSE_DIGEST_MISMATCH"],
                       SCHOOL.STATE.COURSE_DIGEST_MISMATCH)
         self.assertIs(CATALOG[-1], SCHOOL.BAMF_PACKAGE.INVALID)
         self.assertEqual(
             BY_CODE["SCHOOL.BAMF_FIRST_STUDENT.INVALID"].owner,
             "runtime.bamf_first_student")
+        self.assertEqual(
+            BY_CODE["SCHOOL.BAMF_DELIVERY.INVALID"].owner,
+            "runtime.delivery")
         for spec in CATALOG:
             for alias in spec.legacy_codes:
                 self.assertIn(spec, BY_LEGACY_CODE[alias])

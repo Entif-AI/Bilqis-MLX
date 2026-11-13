@@ -1,0 +1,37 @@
+{
+  "schema": "bilqis.bamf.release-boundary-overrides/v1",
+  "entries": [
+    {
+      "key": "C13",
+      "number": 385,
+      "live_body_sha256": "9829ffeab0b8d028d61e1f4a4ac3366dcdf4a953304daa011f69ef3c9ec01913",
+      "superseded_body_sha256": "7c4359ea99c617dd556ca1a88c54e22e85865e0e19d7e3fea0e897910994f12d",
+      "preserved_deps": ["A12", "B13", "C05", "C07", "C08", "C09", "C10"],
+      "reason": "Owner release-boundary rewrite narrows C13 acceptance while preserving the frozen planning dependency graph."
+    },
+    {
+      "key": "C13.1",
+      "number": 528,
+      "live_body_sha256": "0fe789ba3264292de4ae4f5039d3dae1a40d5590cb50453b400daac9b6ddf8a9",
+      "superseded_body_sha256": "5ee91a644d1175d5722b82fb8aca876e4ae15659027eb6b16ca377e26cba5f8c",
+      "preserved_deps": ["A12", "B13", "C05", "C07", "C08", "C09", "C10"],
+      "reason": "Owner release-boundary rewrite replaces packet prose after C13.1 acceptance without redefining the frozen dependency graph."
+    },
+    {
+      "key": "C13.2",
+      "number": 529,
+      "live_body_sha256": "48ddbd4e13be4c79ca9ec973d69d60c367f8a98a0e2bb0749423532be212f8b8",
+      "superseded_body_sha256": "5f2711f460b9fee3aedc8f2de224fcc31c733d76a97b3b0c8ac0b2a742646088",
+      "preserved_deps": ["C13.1"],
+      "reason": "Owner release-boundary rewrite replaces packet prose after C13.2 acceptance without redefining the frozen dependency graph."
+    },
+    {
+      "key": "C13.3",
+      "number": 530,
+      "live_body_sha256": "44a10aebf425f059251d56a3d929c5f96dee8fb7d8b9431c484926717d9f33d0",
+      "superseded_body_sha256": "58d348358c1d63214fc37be0815d245557b1cca84bdd79c0b10829f488b6c659",
+      "preserved_deps": ["C13.2"],
+      "reason": "Owner release-boundary rewrite replaces packet prose after C13.3 acceptance without redefining the frozen dependency graph."
+    }
+  ]
+}

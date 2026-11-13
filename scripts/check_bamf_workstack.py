@@ -40,7 +40,7 @@ def _issues_report(issues):
     return sorted(result, key=lambda issue: json.dumps(issue, sort_keys=True))
 
 
-def validate_workstack(manifest: dict, registry: dict | None = None, issue_map: dict | None = None, mirrors: dict | None = None, *, evidence_sources: dict | None = None) -> dict:
+def validate_workstack(manifest: dict, registry: dict | None = None, issue_map: dict | None = None, mirrors: dict | None = None, *, evidence_sources: dict | None = None, release_overrides: dict | None = None) -> dict:
     issues = []
     held_keys = []
     try:
@@ -127,6 +127,30 @@ def validate_workstack(manifest: dict, registry: dict | None = None, issue_map: 
                 issues.append({'code': 'CROSS_LANE_FILE_OWNERSHIP', 'path': path + '/',
                                'lanes': sorted(lanes | other_lanes)})
     graph = {k: tuple(sorted(v.depends)) for k, v in sorted(by_key.items())}
+    release_override_entries = {}
+    if release_overrides is not None:
+        entries = release_overrides.get('entries') if isinstance(release_overrides, dict) else None
+        if (not isinstance(release_overrides, dict)
+                or release_overrides.get('schema') != 'bilqis.bamf.release-boundary-overrides/v1'
+                or not isinstance(entries, list)):
+            issues.append({'code': 'RELEASE_OVERRIDE_INVALID'})
+        else:
+            for override in entries:
+                key = override.get('key') if isinstance(override, dict) else None
+                if (not isinstance(override, dict) or set(override) != {
+                        'key', 'number', 'live_body_sha256', 'superseded_body_sha256',
+                        'preserved_deps', 'reason'}
+                        or not isinstance(key, str) or key in release_override_entries
+                        or not isinstance(override.get('number'), int)
+                        or not isinstance(override.get('preserved_deps'), list)
+                        or any(not isinstance(dep, str) for dep in override['preserved_deps'])
+                        or not isinstance(override.get('reason'), str) or not override['reason']
+                        or any(not isinstance(override.get(field), str)
+                               or not re.fullmatch(r'[0-9a-f]{64}', override[field])
+                               for field in ('live_body_sha256', 'superseded_body_sha256'))):
+                    issues.append({'code': 'RELEASE_OVERRIDE_INVALID', 'key': key or ''})
+                    continue
+                release_override_entries[key] = override
     child_count = 0
     numbers = {item.key: item.issue for item in items}
     if registry is None:
@@ -169,6 +193,13 @@ def validate_workstack(manifest: dict, registry: dict | None = None, issue_map: 
                     body = raw.decode('utf-8')
                 except UnicodeDecodeError:
                     issues.append({'code': 'MIRROR_INVALID', 'key': key}); continue
+                override = release_override_entries.get(key)
+                if override is not None:
+                    if (override['number'] != entry['number']
+                            or override['live_body_sha256'] != entry.get('body_sha256')
+                            or override['preserved_deps'] != entry.get('deps')):
+                        issues.append({'code': 'RELEASE_OVERRIDE_INVALID', 'key': key})
+                    continue
                 if key in pinned_keys or 'dependency_evidence' in entry:
                     evidence = check_dependency_evidence(entry, raw, numbers, evidence_sources)
                     if evidence.status is EvidenceStatus.INVALID:
@@ -276,8 +307,11 @@ def main() -> int:
                     mirror = registry_path.parent / (key + '.md')
                     if mirror.is_file(): mirrors[key] = mirror.read_bytes()
         evidence_sources = load_dependency_sources(args.manifest.parent, registry)
+        overrides_path = args.manifest.parent / 'release-boundary-overrides.json'
+        release_overrides = json.loads(overrides_path.read_text(encoding='utf-8')) if overrides_path.exists() else None
         result = validate_workstack(manifest, registry, issue_map, mirrors,
-                                    evidence_sources=evidence_sources)
+                                    evidence_sources=evidence_sources,
+                                    release_overrides=release_overrides)
         if args.live and result.get('registry_integrity', result['status']) == 'valid':
             live_findings = check_live_owner_mirrors(manifest, args.manifest.parent)
             result['live_owner_mirrors'] = {'checked': len(manifest['items']), 'status': 'invalid' if live_findings else 'valid'}

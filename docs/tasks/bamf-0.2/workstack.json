@@ -1376,7 +1376,7 @@
     },
     {
       "key": "C13",
-      "title": "Run the integrated disposable learning and recovery acceptance slice",
+      "title": "Prove integrated M3 Ultra trainer wiring and handoff",
       "lane": "C",
       "deps": [
         "A12",
@@ -1411,7 +1411,7 @@
         "learning_witness"
       ],
       "number": 385,
-      "body_sha256": "7c4359ea99c617dd556ca1a88c54e22e85865e0e19d7e3fea0e897910994f12d",
+      "body_sha256": "9829ffeab0b8d028d61e1f4a4ac3366dcdf4a953304daa011f69ef3c9ec01913",
       "children": [
         "C13.1",
         "C13.2",

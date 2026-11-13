@@ -1,0 +1,53 @@
+{
+  "authority_digests": {
+    "architecture": "af7a4c19b4132138adb90d57835a1bce206bc2f366f723120c50435e2b1ebf0c",
+    "issue_539_body": "f9250ec8759dff1251598333b8aa88e69d81e1f7ed33aafc58809191ab8d6caa",
+    "issue_book": "21a82b966c52ad13480b7021e9163efaacc7f6f70c9c4eac5d7277f05d355425",
+    "workstack": "32a6eace82b6e7cd970deb4d435bbf412a4087f0799bcfd3a3e38cec5896b46d"
+  },
+  "branch": "codex/bamf02-c-runtime",
+  "cross_document_diff": {
+    "active_reconciliation_sha": "c4197f28c4aa2e3972634b1dbea255832d4b6d7b",
+    "candidate_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
+    "disposition": "PASS_0_BLOCKERS_0_MAJORS_0_NITS",
+    "initial_findings": {
+      "blockers": 4,
+      "majors": 5,
+      "nits": 1
+    },
+    "repair_sha": "66277ed61d0ae4cabb088dfb508ab7188415003c",
+    "report_head": "fc04b9379e5657cd046836c4af9ea4dd76df4795",
+    "reviewer": "google-egm-b3a359-initial",
+    "scope": "C15 behavioral-conformance and grade-neutrality clauses"
+  },
+  "dependency_graph": {
+    "child_count": 172,
+    "cycles": [],
+    "held_keys": [],
+    "mirror_mismatches": [],
+    "node_count": 215,
+    "owner_count": 43,
+    "status": "valid",
+    "unknown_dependencies": []
+  },
+  "fresh_behavioral_proof": "C15_FINAL_REQUALIFICATION_44_OF_44_PLUS_2_GATES_PASS_AT_C4197F28",
+  "live_issue_parity": "PASS_43_OWNERS_172_CHILDREN_190_NATIVE_EDGES_215_DAG_NODES",
+  "reviewed_unified": "de84266ba3db79b6545ff484f3268a99ea8872f6",
+  "schema": "bilqis.bamf.delivery-evidence-boundary/v1",
+  "source_head": "c4197f28c4aa2e3972634b1dbea255832d4b6d7b",
+  "source_privacy_boundary": {
+    "disposition": "PROTECTED_EVIDENCE_NOT_COPIED_TO_PUBLIC_ARTIFACTS",
+    "protected_excluded": [
+      "PRIVATE_REAL",
+      "private journal payloads",
+      "unclassified payloads"
+    ],
+    "public_allowed": [
+      "PUBLIC_FIXTURE",
+      "PUBLIC_DERIVED",
+      "public issue receipts"
+    ],
+    "source_sha256": "bca4f72eccc9002ce7db93cf5aead11a3ccfb1a1ebaad198365bdc4129ca5732",
+    "source_text": "Use Rosetta v3 existing Observation, Frame, Conjecture, Evaluation and Run/Action/ToolCall/Receipt semantics with application namespaced envelopes. Keep CID content identity, stable RID and external XID separate. Akasha consumes immutable source/release/learner events through a local outbox, projects them into declared namespaces, and is rebuildable. #297 owns domain/authority contracts; #299/#300 own release and run/evidence projection; #301 recovery. Store source/effective/observed/recorded times where relevant. A live Falkor service is not a training dependency: compile neighborhoods into a release artifact and enqueue observations locally. Mutation remains with the source/run owners. PRIVATE_REAL data stays outside public worktrees, CI, issue bodies and exports; #327 protects the private pilot. PUBLIC_FIXTURE development continues independently."
+  }
+}
