@@ -2,16 +2,9 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-import fcntl
-import json
-import os
 from pathlib import Path
-import socket
-import socketserver
-import stat
+import os
 from uuid import uuid4
-
-from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 from .contracts import (
     ControlPlaneState, ERROR_SCHEMA,
@@ -22,147 +15,25 @@ from .contracts import (
     SessionIdentity,
 )
 from .discovery import discover_learner
-
-
-MAX_REQUEST_BYTES = 64 * 1024
-MAX_UNIX_SOCKET_PATH_BYTES = 100
-
-
-def _invalid(reason: str):
-    ErrorBus.raise_(SCHOOL.BAMF_CONTROL_PLANE.INVALID, reason=reason)
-
-
-def _socket_identity(path: Path) -> tuple[int, int] | None:
-    try:
-        observed = path.lstat()
-    except FileNotFoundError:
-        return None
-    if not stat.S_ISSOCK(observed.st_mode):
-        return None
-    return observed.st_dev, observed.st_ino
-
-
-def _unlink_socket_if_identity(
-        path: Path, identity: tuple[int, int] | None) -> bool:
-    if identity is None or _socket_identity(path) != identity:
-        return False
-    path.unlink()
-    return True
-
-
-def _acquire_service_lock(socket_path: Path) -> int:
-    """Hold one exclusive owner across stale-check, bind, listen, and cleanup."""
-    lock_path = Path(f"{socket_path}.lock")
-    lock_path.parent.mkdir(parents=True, exist_ok=True)
-    if lock_path.is_symlink():
-        _invalid("CONTROL_PLANE_SERVICE_LOCK_UNSAFE")
-    nofollow = getattr(os, "O_NOFOLLOW", 0)
-    try:
-        fd = os.open(
-            lock_path, os.O_RDWR | os.O_CREAT | nofollow, 0o600)
-    except OSError:
-        _invalid("CONTROL_PLANE_SERVICE_LOCK_UNSAFE")
-    try:
-        opened = os.fstat(fd)
-        named = os.stat(lock_path, follow_symlinks=False)
-        if (not stat.S_ISREG(opened.st_mode) or not stat.S_ISREG(named.st_mode)
-                or (opened.st_dev, opened.st_ino)
-                != (named.st_dev, named.st_ino)):
-            _invalid("CONTROL_PLANE_SERVICE_LOCK_UNSAFE")
-        os.fchmod(fd, 0o600)
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            _invalid("CONTROL_PLANE_SOCKET_ALREADY_ACTIVE")
-        return fd
-    except Exception:
-        os.close(fd)
-        raise
-
-
-def _release_service_lock(fd: int | None) -> None:
-    if fd is None:
-        return
-    fcntl.flock(fd, fcntl.LOCK_UN)
-    os.close(fd)
+from .event_stream import EventFamily, EventStreamBroker
+from .stream_transport import serve_event_subscription
+from .transport import (
+    _RequestHandler, _ThreadedUnixServer, _acquire_service_lock, _invalid,
+    _prepare_socket_path, _release_service_lock, _socket_identity,
+    _unlink_socket_if_identity,
+)
 
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def _prepare_socket_path(path: Path) -> None:
-    if len(os.fsencode(str(path))) > MAX_UNIX_SOCKET_PATH_BYTES:
-        _invalid("CONTROL_PLANE_SOCKET_PATH_TOO_LONG")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        observed = path.lstat()
-    except FileNotFoundError:
-        return
-    if not stat.S_ISSOCK(observed.st_mode):
-        _invalid("CONTROL_PLANE_SOCKET_PATH_OCCUPIED")
-    observed_identity = (observed.st_dev, observed.st_ino)
-    probe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    try:
-        probe.settimeout(0.1)
-        probe.connect(str(path))
-    except (ConnectionRefusedError, FileNotFoundError):
-        if _socket_identity(path) != observed_identity:
-            _invalid("CONTROL_PLANE_SOCKET_CHANGED_DURING_STARTUP")
-        _unlink_socket_if_identity(path, observed_identity)
-        return
-    finally:
-        probe.close()
-    _invalid("CONTROL_PLANE_SOCKET_ALREADY_ACTIVE")
-
-
-class _ThreadedUnixServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
-    daemon_threads = True
-
-
-class _RequestHandler(socketserver.StreamRequestHandler):
-    def _read_request(self) -> tuple[dict | None, str | None]:
-        raw = self.rfile.readline(MAX_REQUEST_BYTES + 2)
-        if not raw:
-            return None, None
-        if len(raw) > MAX_REQUEST_BYTES + 1:
-            return None, "CONTROL_PLANE_REQUEST_TOO_LARGE"
-        try:
-            payload = json.loads(raw)
-        except (UnicodeDecodeError, json.JSONDecodeError):
-            return None, "CONTROL_PLANE_REQUEST_INVALID"
-        if not isinstance(payload, dict):
-            return None, "CONTROL_PLANE_REQUEST_INVALID"
-        return payload, None
-
-    def _write(self, payload: dict) -> None:
-        self.wfile.write(json.dumps(
-            payload, separators=(",", ":"), sort_keys=True).encode("utf-8") + b"\n")
-        self.wfile.flush()
-
-    def handle(self) -> None:
-        service = self.server.control_plane
-        request, error = self._read_request()
-        if error is not None:
-            self._write(service.rejected_handshake(error))
-            return
-        if request is None:
-            return
-        response, session = service.handshake(request)
-        self._write(response)
-        if session is None:
-            return
-        while True:
-            request, error = self._read_request()
-            if request is None:
-                if error is not None:
-                    self._write(service.rejected_request(session, error))
-                return
-            self._write(service.dispatch(session, request))
-
-
 class ControlPlaneService:
-    def __init__(self, run_dir: Path, socket_path: Path):
+    def __init__(
+        self, run_dir: Path, socket_path: Path, *,
+        event_retention_limit: int = 256, event_queue_limit: int = 64,
+        resource_bucket_span: int = 5, event_heartbeat_seconds: float = 0.25,
+    ):
         self.run_dir = Path(run_dir).expanduser().resolve()
         self.socket_path = Path(socket_path).expanduser().resolve()
         self._service_lock_fd = _acquire_service_lock(self.socket_path)
@@ -179,6 +50,13 @@ class ControlPlaneService:
             socket_path=str(self.socket_path),
             run_dir=str(self.run_dir),
         )
+        self.events = EventStreamBroker(
+            epoch_id=self.identity.service_id,
+            retention_limit=event_retention_limit,
+            subscriber_queue_limit=event_queue_limit,
+            resource_bucket_span=resource_bucket_span,
+        )
+        self.event_heartbeat_seconds = event_heartbeat_seconds
         self._service_state = ControlPlaneState.HEALTHY
         self._socket_identity: tuple[int, int] | None = None
         server = _ThreadedUnixServer(
@@ -282,8 +160,26 @@ class ControlPlaneService:
         surface = request.get("type")
         if surface in {"health", "readiness", "liveness"}:
             return {**self._health(session, surface), "accepted": True}
+        if surface == "event-frontier":
+            return {
+                **self.events.frontier().to_record(),
+                "accepted": True,
+                "session": session.to_record(),
+            }
         return self.rejected_request(
             session, "CONTROL_PLANE_CP01_OPERATION_UNSUPPORTED")
+
+    def publish_event(self, family: EventFamily, payload, *, event_id: str | None = None):
+        """Publish one CP02-backed delta without making the stream authoritative."""
+        return self.events.publish_record(family, payload, event_id=event_id)
+
+    def flush_event_telemetry(self):
+        return self.events.flush_resource_samples()
+
+    def stream_events(
+        self, session: SessionIdentity, request: dict, write_record,
+    ) -> None:
+        serve_event_subscription(self, session, request, write_record)
 
     def serve_forever(self) -> None:
         try:
