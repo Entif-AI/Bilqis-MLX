@@ -20,7 +20,7 @@ def _source_rule_categories(
     from ..frame_adapters import (
         BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER,
         BOOLEAN_IDENTIFICATION_ADAPTER, FINITE_NUMERIC_ADAPTER,
-        MICRO_PREDICATE_ADAPTER, _schema_for_symbol,
+        C13_EPISODE_ADAPTER, MICRO_PREDICATE_ADAPTER, _schema_for_symbol,
     )
     from ..frame_schema import SourceSpan
 
@@ -33,6 +33,7 @@ def _source_rule_categories(
         BOOLEAN_COMPOSITE_ADAPTER: micro_graph,
         BOOLEAN_IDENTIFICATION_ADAPTER: micro_graph,
         FINITE_NUMERIC_ADAPTER: numeric_graph,
+        C13_EPISODE_ADAPTER: numeric_graph,
     }
     entries = {
         "frame:" + entry.semantic_id: entry
