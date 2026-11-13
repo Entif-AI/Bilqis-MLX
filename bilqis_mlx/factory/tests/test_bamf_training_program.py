@@ -277,5 +277,18 @@ class BamfTrainingStageTests(unittest.TestCase):
                 SimpleNamespace(provider_parameters=(("numbers", ("0", "2")),)),
             ))
 
+    def test_c14_operator_guide_preserves_human_start_and_truthful_results(self):
+        guide = (Path(__file__).resolve().parents[3] / "docs" / "operations" /
+                 "BAMF_0_2_TRAINING.md").read_text(encoding="utf-8")
+
+        self.assertIn("--dry-run --resume --run-dir", guide)
+        self.assertIn("--admission-policy atlas-release", guide)
+        self.assertIn("--minutes 90 --reserve-gib 100 --max-visits 1", guide)
+        self.assertIn("--once --atlas-details", guide)
+        self.assertIn("NOT MEASURED", guide)
+        self.assertIn("Only after the run is accepted and the operator deliberately chooses", guide)
+        self.assertIn("Grade labels are descriptive metadata only", guide)
+        self.assertIn("not neural-learning results", guide)
+
 if __name__ == "__main__":
     unittest.main()
