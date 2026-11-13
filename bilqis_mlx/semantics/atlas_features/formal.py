@@ -7,6 +7,7 @@ from ..atlas.snapshot import AtlasArtifactSelection, load_pinned_atlas_snapshot
 from ..frame_adapters.common import (
     BOOLEAN_COMPOSITE_ADAPTER, BOOLEAN_CONNECTIVE_ADAPTER,
     BOOLEAN_IDENTIFICATION_ADAPTER, FINITE_NUMERIC_ADAPTER, MICRO_PREDICATE_ADAPTER,
+    C13_EPISODE_ADAPTER,
 )
 from ..frame_adapters.public_formal_sources import source_graph_for_adapter
 from ..frame_schema import FrameInstance, _formal_source_types
@@ -19,6 +20,7 @@ _SOURCE_FAMILIES = (
     (BOOLEAN_COMPOSITE_ADAPTER, 'boolean'),
     (BOOLEAN_IDENTIFICATION_ADAPTER, 'boolean'),
     (FINITE_NUMERIC_ADAPTER, 'numeric'),
+    (C13_EPISODE_ADAPTER, 'numeric'),
 )
 
 

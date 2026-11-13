@@ -124,6 +124,7 @@ from ._school.fragile import (
 )
 
 def live_source_registry() -> SourceAdapterRegistry:
+    from .c13_episode import registered_adapter as c13_episode_adapter
     from .copular import registered_adapter as copular_adapter
     from .event_frames import registered_adapter as event_adapter
     from .event_intro import registered_adapter as event_intro_adapter
@@ -182,6 +183,7 @@ def live_source_registry() -> SourceAdapterRegistry:
         event_adapter(),
         event_intro_adapter(),
         event_pairs_adapter(),
+        c13_episode_adapter(),
     ))
 
 
