@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from importlib import resources
 import json
 
-from .developmental_program import BamfDevelopmentalProgram, _fail
+from bilqis_mlx.errors import ErrorBus, FACTORY
+from .developmental_program import BamfDevelopmentalProgram
 from .developmental_stage import (
     DevelopmentalLearnerState, DevelopmentalSourceCoverage, StageIntent,
 )
@@ -13,8 +14,21 @@ from .developmental_stage import (
 
 SCHEMA = "bilqis.bamf.domain-rules/v1"
 DEFAULT_RULE_RESOURCE = "bamf-domain-rules-v1.json"
+POLICY_VERSION = "c14-grade-neutral-v1"
 GRADE_INTRODUCTION = "FACTORY_RELEASE_DATA_OPERATION"
 CROSS_DOMAIN_BLOCKING = "TYPED_PREREQUISITE_EDGES_ONLY"
+FAMILY_IDS = (
+    "boolean_composition",
+    "morphology_composition",
+    "morphology_decomposition",
+    "numeric_composition",
+    "positive_identity",
+    "qualified_world_model",
+    "released_transformations",
+    "scope_modality_time",
+    "source_attested_relation",
+    "typed_role_binding",
+)
 SHARED_CONTRACTS = (
     "SOURCE_QUALIFIED_PREREQUISITES",
     "CURRENT_EVIDENCE_REQUIRED",
@@ -22,6 +36,10 @@ SHARED_CONTRACTS = (
     "GRADE_NEUTRAL_PROMOTION_DEBT",
     "FACTORY_RELEASE_ADMISSION",
 )
+
+
+def _fail(reason: str) -> None:
+    ErrorBus.raise_(FACTORY.SEMANTIC_RULE.INVALID, reason=reason)
 
 
 @dataclass(frozen=True)
@@ -37,10 +55,8 @@ class DevelopmentalRuleManifest:
 
     def __post_init__(self) -> None:
         if (self.schema != SCHEMA
-                or not isinstance(self.policy_version, str) or not self.policy_version
-                or type(self.family_ids) is not tuple or not self.family_ids
-                or self.family_ids != tuple(sorted(set(self.family_ids)))
-                or any(type(item) is not str or not item for item in self.family_ids)
+                or self.policy_version != POLICY_VERSION
+                or self.family_ids != FAMILY_IDS
                 or self.shared_contracts != SHARED_CONTRACTS
                 or self.grade_introduction != GRADE_INTRODUCTION
                 or self.cross_domain_blocking != CROSS_DOMAIN_BLOCKING
@@ -113,6 +129,8 @@ def resolve_domain_succession(
     """Reuse the existing pure planner and bind its selected families to C14 policy."""
     if type(program) is not BamfDevelopmentalProgram or type(rules) is not DevelopmentalRuleManifest:
         _fail("DEVELOPMENTAL_DOMAIN_SUCCESSION_INPUT_INVALID")
+    if rules != load_developmental_rule_manifest():
+        _fail("DEVELOPMENTAL_DOMAIN_RULE_MANIFEST_NONCANONICAL")
     stage = program.resolve_training_stage(source_coverage, learner_state)
     families = tuple(sorted(stage.selected_family_ids))
     for family_id in families:

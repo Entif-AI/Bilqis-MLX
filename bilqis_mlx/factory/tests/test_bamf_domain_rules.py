@@ -5,7 +5,8 @@ import unittest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.curriculum.developmental_program import load_bamf_developmental_program
 from bilqis_mlx.factory.curriculum.developmental_rules import (
-    CROSS_DOMAIN_BLOCKING, GRADE_INTRODUCTION, SHARED_CONTRACTS,
+    CROSS_DOMAIN_BLOCKING, FAMILY_IDS, GRADE_INTRODUCTION, POLICY_VERSION,
+    SHARED_CONTRACTS,
     DevelopmentalRuleManifest, load_developmental_rule_manifest,
     resolve_domain_succession,
 )
@@ -22,6 +23,8 @@ class BamfDomainRulesTests(unittest.TestCase):
         self.assertIn("boolean_composition", rules.family_ids)
         self.assertIn("numeric_composition", rules.family_ids)
         self.assertIn("qualified_world_model", rules.family_ids)
+        self.assertEqual(rules.policy_version, POLICY_VERSION)
+        self.assertEqual(rules.family_ids, FAMILY_IDS)
         self.assertEqual(rules.grade_introduction, GRADE_INTRODUCTION)
         self.assertEqual(rules.cross_domain_blocking, CROSS_DOMAIN_BLOCKING)
         self.assertFalse(rules.named_grade_priority)
@@ -35,6 +38,18 @@ class BamfDomainRulesTests(unittest.TestCase):
             DevelopmentalRuleManifest(
                 rules.schema, rules.policy_version, rules.family_ids,
                 ("DECORATIVE_POLICY_LABEL",), rules.grade_introduction,
+                rules.cross_domain_blocking, False, False)
+        with self.assertRaises(BilqisError) as minted_policy:
+            DevelopmentalRuleManifest(
+                rules.schema, "caller-minted-policy", rules.family_ids,
+                rules.shared_contracts, rules.grade_introduction,
+                rules.cross_domain_blocking, False, False)
+        self.assertIn("FACTORY.SEMANTIC_RULE.INVALID", str(minted_policy.exception))
+        with self.assertRaises(BilqisError):
+            DevelopmentalRuleManifest(
+                rules.schema, rules.policy_version,
+                tuple(sorted(rules.family_ids + ("unauthorized_future_family",))),
+                rules.shared_contracts, rules.grade_introduction,
                 rules.cross_domain_blocking, False, False)
 
         release, snapshot, closure = BamfTrainingStageTests._coverage_fixture()
