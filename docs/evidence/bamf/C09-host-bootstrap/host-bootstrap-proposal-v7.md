@@ -1,8 +1,8 @@
 # BAMF-0.2 C09 Host Bootstrap Proposal v7
 
-Issue: #1030  
-Status: frozen-design candidate; implementation remains prohibited until fresh formal EGM returns 0 Blockers / 0 Majors  
-Supersedes for future implementation: v6 at `585b0e6a8cdf28e6df920e231908f16b5b67bff9`  
+Issue: #1030
+Status: frozen-design candidate; implementation remains prohibited until fresh formal EGM returns 0 Blockers / 0 Majors
+Supersedes for future implementation: v6 at `585b0e6a8cdf28e6df920e231908f16b5b67bff9`
 Preserves v4-v6 as immutable failed-review evidence
 
 ## 1. Decision
