@@ -13798,6 +13798,20 @@
       "title": "Factory developmental program invalid"
     },
     {
+      "code": "FACTORY.SOURCE_BINDING.INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.factory.source_binding.invalid.message",
+      "message_template": "Factory source binding invalid: {reason}",
+      "next_action": "Restore the canonical capability/source binding and reserved namespace ownership before retrying.",
+      "operator_steps": [],
+      "owner": "factory.curriculum_definition",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.source_binding.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Factory source binding invalid"
+    },
+    {
       "code": "FACTORY.SEMANTIC_RULE.INVALID",
       "disposition": "CORRECT_INPUT_OR_STATE",
       "legacy_codes": [],

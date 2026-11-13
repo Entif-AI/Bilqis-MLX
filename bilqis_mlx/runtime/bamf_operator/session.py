@@ -52,6 +52,20 @@ class BamfOperatorResult:
     optimizer_step: int
 
 
+@dataclass(frozen=True)
+class BamfPreparedVisit:
+    """One owner-composed candidate with no rejection/publication side effect."""
+
+    status: str
+    parent: object
+    selection: object | None = None
+    step: object | None = None
+    decision: object | None = None
+    retained: object | None = None
+    capability: str | None = None
+    successor: object | None = None
+
+
 def _execution_context(run_dir: Path):
     parent = load_accepted_generation(run_dir)
     host = AcceptedRuntimeHost(run_dir)
@@ -106,14 +120,16 @@ def _step_seed(visit_id: str) -> int:
         f"bilqis.bamf.c16.3-step-seed/v1|{visit_id}".encode()).digest()[:8], "big")
 
 
-def _visit(run_dir: Path, reserve_gib: float):
+def prepare_bamf_visit(run_dir: Path) -> BamfPreparedVisit:
+    """Compose the production visit through retention without publishing it."""
     parent, context, atlas_path, feature_path = _execution_context(run_dir)
     program = schedule_program_from_executable_release(context.release)
     school = accepted_priority_school(parent, program)
     selection = select_foundation_priority_visit(
         run_dir, context, atlas_path, program=program, school=school)
     if selection.status != "TEACHER_SELECTED":
-        return "ACTION_REQUIRED" if selection.status == "ACTION_REQUIRED" else "HELD"
+        status = "ACTION_REQUIRED" if selection.status == "ACTION_REQUIRED" else "HELD"
+        return BamfPreparedVisit(status, parent, selection=selection)
     rows = selection.offer.rows()
     observation = FactoryDeliveryObservation(
         _Capture(run_dir, selection), parent.retained_state.optimizer_step + 1,
@@ -129,6 +145,30 @@ def _visit(run_dir: Path, reserve_gib: float):
         context, step.transaction, atlas_path, capability, run_dir=run_dir)
     decision = issue_factory_retention_decision(evaluation)
     retained = resolve_candidate(step.transaction, accepted=decision.accepted)
+    successor = None
+    if decision.accepted:
+        successor = derive_accepted_teacher_successor(
+            run_dir, retained, selection.visit,
+            delivery_events=({
+                "event": "BAMF_C16_3_ACCEPTED",
+                "optimizer_step": retained.optimizer_step,
+                "capability": capability,
+            },))
+    return BamfPreparedVisit(
+        "ACCEPTED" if decision.accepted else "REJECTED",
+        parent, selection, step, decision, retained, capability, successor)
+
+
+def _visit(run_dir: Path, reserve_gib: float):
+    prepared = prepare_bamf_visit(run_dir)
+    if prepared.status in {"HELD", "ACTION_REQUIRED"}:
+        return prepared.status
+    parent = prepared.parent
+    selection = prepared.selection
+    step = prepared.step
+    decision = prepared.decision
+    retained = prepared.retained
+    capability = prepared.capability
     if not decision.accepted:
         record_bamf_rejection(run_dir, parent, {
             "schema": "bilqis.bamf.c16.3-rejection/v2",
@@ -143,13 +183,7 @@ def _visit(run_dir: Path, reserve_gib: float):
             "decision": decision.to_record(),
         })
         return "REJECTED"
-    successor = derive_accepted_teacher_successor(
-        run_dir, retained, selection.visit,
-        delivery_events=({
-            "event": "BAMF_C16_3_ACCEPTED",
-            "optimizer_step": retained.optimizer_step,
-            "capability": capability,
-        },))
+    successor = prepared.successor
     accept_and_publish(
         run_dir, successor, retained, decision=decision,
         feature_sha256=successor.extents.factor_map_digest,
