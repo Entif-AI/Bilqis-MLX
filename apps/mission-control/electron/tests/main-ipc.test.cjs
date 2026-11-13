@@ -6,6 +6,8 @@ const assert = require("node:assert/strict");
 const { CHANNELS, HANDLER_CHANNELS } = require("../channels.cjs");
 const { ControlPlaneBridge } = require("../control-plane-bridge.cjs");
 const { registerMissionControlIpc } = require("../main-ipc.cjs");
+const { RENDERER_ENTRY_URL, RENDERER_ORIGIN } = require("../renderer-location.cjs");
+const { FIXTURE_VALIDATORS } = require("./_contract-fixture.cjs");
 
 function ipcMainFixture() {
   const handlers = new Map();
@@ -23,19 +25,24 @@ function ipcMainFixture() {
   };
 }
 
-function senderFixture(url = "file:///app/index.html") {
+function senderFixture(url = RENDERER_ENTRY_URL) {
   const sent = [];
   const onceHandlers = new Map();
+  const frame = { url, origin: RENDERER_ORIGIN };
+  frame.top = frame;
+  const sender = {
+    id: 17,
+    mainFrame: frame,
+    send(channel, payload) { sent.push([channel, payload]); },
+    isDestroyed() { return false; },
+    once(name, handler) { onceHandlers.set(name, handler); },
+  };
   return {
     event: {
-      senderFrame: { url },
-      sender: {
-        id: 17,
-        send(channel, payload) { sent.push([channel, payload]); },
-        isDestroyed() { return false; },
-        once(name, handler) { onceHandlers.set(name, handler); },
-      },
+      senderFrame: frame,
+      sender,
     },
+    sender,
     sent,
     onceHandlers,
   };
@@ -65,11 +72,12 @@ function adapterFixture() {
 
 test("main registers only the enumerated request channels", () => {
   const ipcMain = ipcMainFixture();
-  const bridge = new ControlPlaneBridge(adapterFixture());
+  const bridge = new ControlPlaneBridge(adapterFixture(), FIXTURE_VALIDATORS);
+  const sender = senderFixture();
   const dispose = registerMissionControlIpc({
     ipcMain,
     bridge,
-    rendererUrl: "file:///app/index.html",
+    trustedWebContents: sender.sender,
   });
 
   assert.deepEqual([...ipcMain.handlers.keys()], [...HANDLER_CHANNELS]);
@@ -83,8 +91,9 @@ test("main registers only the enumerated request channels", () => {
 
 test("untrusted renderer origins cannot invoke even valid channels", async () => {
   const ipcMain = ipcMainFixture();
-  const bridge = new ControlPlaneBridge(adapterFixture());
-  registerMissionControlIpc({ ipcMain, bridge, rendererUrl: "file:///app/index.html" });
+  const bridge = new ControlPlaneBridge(adapterFixture(), FIXTURE_VALIDATORS);
+  const trusted = senderFixture();
+  registerMissionControlIpc({ ipcMain, bridge, trustedWebContents: trusted.sender });
   const { event } = senderFixture("https://evil.example/index.html");
 
   await assert.rejects(
@@ -93,42 +102,88 @@ test("untrusted renderer origins cannot invoke even valid channels", async () =>
   );
 });
 
-test("trusted renderer uses typed handlers and cannot smuggle file or shell arguments", async () => {
+test("same WebContents cannot invoke from a child or wrong-origin frame", async () => {
+  const ipcMain = ipcMainFixture();
+  const bridge = new ControlPlaneBridge(adapterFixture(), FIXTURE_VALIDATORS);
+  const trusted = senderFixture();
+  registerMissionControlIpc({ ipcMain, bridge, trustedWebContents: trusted.sender });
+
+  const child = {
+    url: RENDERER_ENTRY_URL,
+    origin: RENDERER_ORIGIN,
+    top: trusted.sender.mainFrame,
+  };
+  await assert.rejects(
+    ipcMain.handlers.get(CHANNELS.connect)({ sender: trusted.sender, senderFrame: child }),
+    /BAMF_GUI20_UNTRUSTED_IPC_SENDER/,
+  );
+
+  trusted.sender.mainFrame.origin = "https://evil.example";
+  await assert.rejects(
+    ipcMain.handlers.get(CHANNELS.connect)(trusted.event),
+    /BAMF_GUI20_UNTRUSTED_IPC_SENDER/,
+  );
+});
+
+test("trusted renderer uses typed handlers and cannot inject credential material", async () => {
   const ipcMain = ipcMainFixture();
   const adapter = adapterFixture();
-  const bridge = new ControlPlaneBridge(adapter);
-  registerMissionControlIpc({ ipcMain, bridge, rendererUrl: "file:///app/index.html" });
-  const { event } = senderFixture();
+  const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS);
+  const sender = senderFixture();
+  registerMissionControlIpc({ ipcMain, bridge, trustedWebContents: sender.sender });
+  const { event } = sender;
 
   await ipcMain.handlers.get(CHANNELS.connect)(event);
   assert.deepEqual(await ipcMain.handlers.get(CHANNELS.status)(event), { state: "HEALTHY" });
   await assert.rejects(
-    ipcMain.handlers.get(CHANNELS.snapshot)(event, { path: "/etc/passwd" }),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID:FORBIDDEN_KEY:path/,
+    ipcMain.handlers.get(CHANNELS.snapshot)(event, { sessionCapability: "forged" }),
+    /BAMF_GUI20_IPC_ARGUMENT_INVALID:FORBIDDEN_KEY:sessionCapability/,
   );
   await assert.rejects(
-    ipcMain.handlers.get(CHANNELS.command)(event, { shell: "open -a Terminal" }),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID:FORBIDDEN_KEY:shell/,
+    ipcMain.handlers.get(CHANNELS.command)(event, "open -a Terminal"),
+    /BAMF_GUI20_IPC_ARGUMENT_INVALID:REQUEST_OBJECT_REQUIRED/,
   );
 });
 
 test("event subscription only forwards renderer-safe control-plane events", async () => {
   const ipcMain = ipcMainFixture();
   const adapter = adapterFixture();
-  const bridge = new ControlPlaneBridge(adapter);
-  registerMissionControlIpc({ ipcMain, bridge, rendererUrl: "file:///app/index.html" });
+  const violations = [];
+  const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS, {
+    onSecurityViolation: (code) => violations.push(code),
+  });
   const sender = senderFixture();
+  registerMissionControlIpc({ ipcMain, bridge, trustedWebContents: sender.sender });
 
   await ipcMain.handlers.get(CHANNELS.connect)(sender.event);
   await ipcMain.handlers.get(CHANNELS.eventsSubscribe)(sender.event);
   adapter.emit({ cursor: "event:1", state: "RUNNING" });
   assert.deepEqual(sender.sent, [[CHANNELS.event, { cursor: "event:1", state: "RUNNING" }]]);
 
-  assert.throws(
-    () => adapter.emit({ cursor: "event:2", sessionToken: "leak" }),
-    /BAMF_GUI20_RENDERER_PAYLOAD_UNSAFE:FORBIDDEN_KEY:sessionToken/,
-  );
+  assert.doesNotThrow(() => adapter.emit({ cursor: "event:2", sessionToken: "leak" }));
+  assert.deepEqual(violations, ["BAMF_GUI20_RENDERER_PAYLOAD_UNSAFE"]);
   await ipcMain.handlers.get(CHANNELS.eventsUnsubscribe)(sender.event);
   adapter.emit({ cursor: "event:3" });
   assert.equal(sender.sent.length, 1);
+});
+
+test("adapter exception messages are not exposed to the renderer", async () => {
+  const ipcMain = ipcMainFixture();
+  const adapter = adapterFixture();
+  adapter.status = async () => {
+    throw new Error("token=super-secret /Users/operator/private-run");
+  };
+  const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS);
+  const sender = senderFixture();
+  registerMissionControlIpc({ ipcMain, bridge, trustedWebContents: sender.sender });
+  await ipcMain.handlers.get(CHANNELS.connect)(sender.event);
+
+  await assert.rejects(
+    ipcMain.handlers.get(CHANNELS.status)(sender.event),
+    (error) => {
+      assert.equal(error.code, "BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED");
+      assert.equal(error.message, "BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED");
+      return true;
+    },
+  );
 });

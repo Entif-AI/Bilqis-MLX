@@ -7,11 +7,18 @@ const {
 } = require("./validation.cjs");
 
 class ControlPlaneBridge {
-  constructor(adapter) {
+  constructor(adapter, validators, { onSecurityViolation } = {}) {
     if (!adapter || typeof adapter.connect !== "function") {
       throw new TypeError("BAMF_GUI20_CONTROL_PLANE_ADAPTER_REQUIRED");
     }
+    for (const name of ["snapshotRequest", "dryRunRequest", "commandRequest", "receiptRef", "event"]) {
+      if (!validators || typeof validators[name] !== "function") {
+        throw new TypeError(`BAMF_GUI20_CP02_VALIDATOR_REQUIRED:${name}`);
+      }
+    }
     this.adapter = adapter;
+    this.validators = validators;
+    this.onSecurityViolation = typeof onSecurityViolation === "function" ? onSecurityViolation : null;
     this.session = null;
     this.connectionEpoch = 0;
     this.subscriptions = new Set();
@@ -48,23 +55,23 @@ class ControlPlaneBridge {
   }
 
   async snapshot(request) {
-    assertRendererRequest(request);
-    return this.#call("snapshot", request);
+    const safe = assertRendererRequest(request);
+    return this.#call("snapshot", this.validators.snapshotRequest(safe));
   }
 
   async dryRun(request) {
-    assertRendererRequest(request);
-    return this.#call("dryRun", request);
+    const safe = assertRendererRequest(request);
+    return this.#call("dryRun", this.validators.dryRunRequest(safe));
   }
 
   async command(request) {
-    assertRendererRequest(request);
-    return this.#call("command", request);
+    const safe = assertRendererRequest(request);
+    return this.#call("command", this.validators.commandRequest(safe));
   }
 
   async receipt(ref) {
-    assertStableRef(ref);
-    return this.#call("receipt", ref);
+    const safe = assertStableRef(ref);
+    return this.#call("receipt", this.validators.receiptRef(safe));
   }
 
   async subscribe(listener) {
@@ -80,7 +87,14 @@ class ControlPlaneBridge {
       if (this.session !== session || this.connectionEpoch !== epoch) {
         return;
       }
-      listener(assertRendererSafePayload(payload));
+      try {
+        const safe = assertRendererSafePayload(payload);
+        listener(this.validators.event(safe));
+      } catch (error) {
+        this.onSecurityViolation?.(
+          typeof error?.code === "string" ? error.code : "BAMF_GUI20_EVENT_REJECTED",
+        );
+      }
     });
     if (typeof unsubscribe !== "function") {
       throw new TypeError("BAMF_GUI20_CONTROL_PLANE_SUBSCRIPTION_INVALID");

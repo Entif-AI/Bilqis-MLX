@@ -10,6 +10,11 @@ const {
   hardenWebContents,
   securityDiagnostic,
 } = require("../window-security.cjs");
+const {
+  RENDERER_ENTRY_URL,
+  RENDERER_SCHEME,
+  registerRendererSchemePrivileges,
+} = require("../renderer-location.cjs");
 
 function webContentsFixture() {
   const handlers = new Map();
@@ -80,8 +85,7 @@ test("security preferences override attempts to weaken the renderer boundary", (
 
 test("navigation, new windows, webviews and permissions fail closed", () => {
   const contents = webContentsFixture();
-  const rendererUrl = "file:///Applications/Bilqis/MissionControl/index.html";
-  hardenWebContents(contents, rendererUrl);
+  hardenWebContents(contents);
 
   let prevented = false;
   contents.handlers.get("will-navigate")(
@@ -93,7 +97,7 @@ test("navigation, new windows, webviews and permissions fail closed", () => {
   prevented = false;
   contents.handlers.get("will-navigate")(
     { preventDefault() { prevented = true; } },
-    `${rendererUrl}#capability=A.ADD`,
+    `${RENDERER_ENTRY_URL}#capability=A.ADD`,
   );
   assert.equal(prevented, false);
 
@@ -120,19 +124,54 @@ test("window factory applies the hardened preferences before loading renderer co
     instances.push(this);
   }
 
-  const rendererUrl = "file:///Applications/Bilqis/MissionControl/index.html";
   const result = createMissionControlWindow({
     BrowserWindow,
     preloadPath: "/Applications/Bilqis/MissionControl/preload.cjs",
-    rendererUrl,
     browserWindowOptions: { show: false },
   });
 
   assert.equal(instances.length, 1);
-  assert.equal(result.window.loaded, rendererUrl);
+  assert.equal(result.window.loaded, RENDERER_ENTRY_URL);
   assert.equal(result.window.options.show, false);
   assert.equal(result.window.options.webPreferences.nodeIntegration, false);
   assert.equal(result.window.options.webPreferences.contextIsolation, true);
   assert.equal(result.window.options.webPreferences.sandbox, true);
   assert.equal(result.diagnostic.passed, true);
+});
+
+test("privileged renderer scheme is secure and does not bypass CSP", () => {
+  const calls = [];
+  registerRendererSchemePrivileges({
+    registerSchemesAsPrivileged(value) { calls.push(value); },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][0].scheme, RENDERER_SCHEME);
+  assert.deepEqual(calls[0][0].privileges, {
+    standard: true,
+    secure: true,
+    supportFetchAPI: true,
+    codeCache: true,
+  });
+  assert.equal(calls[0][0].privileges.bypassCSP, undefined);
+});
+
+test("navigation rejects file, data, javascript and remote renderer documents", () => {
+  const contents = webContentsFixture();
+  hardenWebContents(contents);
+  for (const targetUrl of [
+    "file:///etc/passwd",
+    "data:text/html,<script>alert(1)</script>",
+    "javascript:alert(1)",
+    "https://evil.example/index.html",
+    "bamf-mc://other/index.html",
+    "bamf-mc://app/other.html",
+  ]) {
+    let prevented = false;
+    contents.handlers.get("will-navigate")(
+      { preventDefault() { prevented = true; } },
+      targetUrl,
+    );
+    assert.equal(prevented, true, targetUrl);
+  }
 });

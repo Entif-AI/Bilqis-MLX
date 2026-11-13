@@ -4,6 +4,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const { ControlPlaneBridge } = require("../control-plane-bridge.cjs");
+const { FIXTURE_VALIDATORS } = require("./_contract-fixture.cjs");
 
 function adapterFixture() {
   const calls = [];
@@ -63,7 +64,7 @@ function adapterFixture() {
 
 test("connection session and credential material remain main-process only", async () => {
   const adapter = adapterFixture();
-  const bridge = new ControlPlaneBridge(adapter);
+  const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS);
 
   const publicStatus = await bridge.connect();
 
@@ -81,7 +82,7 @@ test("connection session and credential material remain main-process only", asyn
 test("unsafe service output is rejected before it reaches the renderer", async () => {
   const adapter = adapterFixture();
   adapter.status = async () => ({ state: "HEALTHY", sessionToken: "leak" });
-  const bridge = new ControlPlaneBridge(adapter);
+  const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS);
   await bridge.connect();
 
   await assert.rejects(
@@ -96,7 +97,7 @@ test("unsafe handshake payload is rejected and its fresh session is disconnected
     session: { token: "secret" },
     publicStatus: { state: "HEALTHY", credential: "leak" },
   });
-  const bridge = new ControlPlaneBridge(adapter);
+  const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS);
 
   await assert.rejects(
     bridge.connect(),
@@ -108,7 +109,7 @@ test("unsafe handshake payload is rejected and its fresh session is disconnected
 
 test("reconnect invalidates old subscriptions and obsolete session state", async () => {
   const adapter = adapterFixture();
-  const bridge = new ControlPlaneBridge(adapter);
+  const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS);
   const observed = [];
 
   await bridge.connect();
@@ -125,9 +126,9 @@ test("reconnect invalidates old subscriptions and obsolete session state", async
   assert.equal(adapter.calls.filter(([name]) => name === "disconnect").length, 1);
 });
 
-test("bridge forwards typed data but rejects path and process escape hatches", async () => {
+test("bridge forwards opaque CP02-shaped data while enforcing transport safety", async () => {
   const adapter = adapterFixture();
-  const bridge = new ControlPlaneBridge(adapter);
+  const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS);
   await bridge.connect();
 
   assert.deepEqual(
@@ -145,15 +146,47 @@ test("bridge forwards typed data but rejects path and process escape hatches", a
   assert.deepEqual(await bridge.receipt("receipt:abc"), { ref: "receipt:abc", verified: true });
 
   await assert.rejects(
-    bridge.command({ argv: ["python3", "trainer.py"] }),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID:FORBIDDEN_KEY:argv/,
+    bridge.command(["not", "a", "typed", "record"]),
+    /BAMF_GUI20_IPC_ARGUMENT_INVALID:REQUEST_OBJECT_REQUIRED/,
   );
   await assert.rejects(
-    bridge.snapshot({ runDir: "/tmp/student" }),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID:FORBIDDEN_KEY:runDir/,
+    bridge.snapshot({ sessionToken: "renderer-must-not-supply-this" }),
+    /BAMF_GUI20_IPC_ARGUMENT_INVALID:FORBIDDEN_KEY:sessionToken/,
   );
   await assert.rejects(
-    bridge.receipt("../../etc/passwd"),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID:STABLE_REF_NOT_PATH/,
+    bridge.receipt(null),
+    /BAMF_GUI20_IPC_ARGUMENT_INVALID:STABLE_REF_REQUIRED/,
   );
+});
+
+test("CP02 validators reject semantically invalid records before adapter invocation", async () => {
+  const adapter = adapterFixture();
+  const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS);
+  await bridge.connect();
+  const before = adapter.calls.length;
+
+  await assert.rejects(
+    bridge.command({ requestId: "missing-schema" }),
+    /FIXTURE_CP02_RECORD_INVALID/,
+  );
+  await assert.rejects(
+    bridge.receipt("not-a-receipt-ref"),
+    /FIXTURE_CP02_RECEIPT_REF_INVALID/,
+  );
+  assert.equal(adapter.calls.length, before);
+});
+
+test("unsafe service event is dropped without throwing through the main event loop", async () => {
+  const adapter = adapterFixture();
+  const violations = [];
+  const observed = [];
+  const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS, {
+    onSecurityViolation: (code) => violations.push(code),
+  });
+  await bridge.connect();
+  await bridge.subscribe((value) => observed.push(value));
+
+  assert.doesNotThrow(() => adapter.listener({ cursor: "event:1", sessionToken: "leak" }));
+  assert.deepEqual(observed, []);
+  assert.deepEqual(violations, ["BAMF_GUI20_RENDERER_PAYLOAD_UNSAFE"]);
 });

@@ -6,7 +6,9 @@ const assert = require("node:assert/strict");
 const { CHANNELS } = require("../channels.cjs");
 const { ControlPlaneBridge } = require("../control-plane-bridge.cjs");
 const { registerMissionControlIpc } = require("../main-ipc.cjs");
-const { installPreloadBridge } = require("../preload-bridge.cjs");
+const { RENDERER_ENTRY_URL, RENDERER_ORIGIN } = require("../renderer-location.cjs");
+const { loadSandboxedPreload } = require("./_preload-fixture.cjs");
+const { FIXTURE_VALIDATORS } = require("./_contract-fixture.cjs");
 
 test("compromised renderer cannot turn the preload bridge into file or trainer execution", async () => {
   const handlers = new Map();
@@ -35,18 +37,22 @@ test("compromised renderer cannot turn the preload bridge into file or trainer e
     async receipt() { return { ref: "receipt:fixture" }; },
     async subscribe() { return () => {}; },
   };
-  const bridge = new ControlPlaneBridge(adapter);
-  registerMissionControlIpc({ ipcMain, bridge, rendererUrl: "file:///app/index.html" });
+  const bridge = new ControlPlaneBridge(adapter, FIXTURE_VALIDATORS);
 
-  const event = {
-    senderFrame: { url: "file:///app/index.html" },
-    sender: {
-      id: 1,
-      send() {},
-      isDestroyed() { return false; },
-      once() {},
-    },
+  const frame = { url: RENDERER_ENTRY_URL, origin: RENDERER_ORIGIN };
+  frame.top = frame;
+  const sender = {
+    id: 1,
+    mainFrame: frame,
+    send() {},
+    isDestroyed() { return false; },
+    once() {},
   };
+  const event = {
+    senderFrame: frame,
+    sender,
+  };
+  registerMissionControlIpc({ ipcMain, bridge, trustedWebContents: sender });
   const listeners = new Map();
   const ipcRenderer = {
     invoke(channel, ...args) {
@@ -59,10 +65,7 @@ test("compromised renderer cannot turn the preload bridge into file or trainer e
     on(channel, listener) { listeners.set(channel, listener); },
     removeListener(channel) { listeners.delete(channel); },
   };
-  let api;
-  installPreloadBridge({
-    exposeInMainWorld(_name, exposed) { api = exposed; },
-  }, ipcRenderer);
+  const api = loadSandboxedPreload(ipcRenderer).api;
 
   const connected = await api.connect();
   assert.equal(JSON.stringify(connected).includes("main-only-token"), false);
@@ -70,18 +73,6 @@ test("compromised renderer cannot turn the preload bridge into file or trainer e
   assert.equal(api.exec, undefined);
   assert.equal(api.invoke, undefined);
 
-  assert.throws(
-    () => api.querySnapshot({ path: "/etc/passwd" }),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID/,
-  );
-  assert.throws(
-    () => api.requestCommand({ argv: ["python3", "-m", "bilqis_mlx.cli", "train"] }),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID/,
-  );
-  assert.throws(
-    () => api.requestDryRun({ shell: "python3 -m bilqis_mlx.cli train" }),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID/,
-  );
   await assert.rejects(
     ipcRenderer.invoke("fs:read", "/etc/passwd"),
     /NO_HANDLER:fs:read/,
@@ -91,6 +82,15 @@ test("compromised renderer cannot turn the preload bridge into file or trainer e
     /NO_HANDLER:shell:exec/,
   );
 
-  assert.deepEqual(adapterCalls, []);
+  await api.requestCommand({
+    schemaVersion: "cp02-fixture/v1",
+    requestId: "request-1",
+    action: "owner-action",
+  });
+  assert.deepEqual(adapterCalls, [{
+    schemaVersion: "cp02-fixture/v1",
+    requestId: "request-1",
+    action: "owner-action",
+  }]);
   assert.equal(handlers.has(CHANNELS.command), true);
 });

@@ -1,6 +1,6 @@
 "use strict";
 
-const { normalizedDocumentUrl } = require("./sender-trust.cjs");
+const { RENDERER_ENTRY_URL, normalizedRendererDocument } = require("./renderer-location.cjs");
 
 const SECURITY_PREFERENCES = Object.freeze({
   contextIsolation: true,
@@ -28,21 +28,17 @@ function createSecureWindowOptions(preloadPath, callerOptions = {}) {
   };
 }
 
-function isSameRendererDocument(candidate, rendererUrl) {
-  return normalizedDocumentUrl(candidate) === normalizedDocumentUrl(rendererUrl);
+function isTrustedRendererDocument(candidate) {
+  return normalizedRendererDocument(candidate) === RENDERER_ENTRY_URL;
 }
 
-function hardenWebContents(webContents, rendererUrl) {
+function hardenWebContents(webContents) {
   if (!webContents || typeof webContents.on !== "function" ||
       typeof webContents.setWindowOpenHandler !== "function") {
     throw new TypeError("BAMF_GUI20_WEB_CONTENTS_REQUIRED");
   }
-  if (normalizedDocumentUrl(rendererUrl) === null) {
-    throw new TypeError("BAMF_GUI20_RENDERER_URL_INVALID");
-  }
-
   webContents.on("will-navigate", (event, targetUrl) => {
-    if (!isSameRendererDocument(targetUrl, rendererUrl)) {
+    if (!isTrustedRendererDocument(targetUrl)) {
       event.preventDefault();
     }
   });
@@ -69,7 +65,6 @@ function securityDiagnostic(windowOptions) {
 function createMissionControlWindow({
   BrowserWindow,
   preloadPath,
-  rendererUrl,
   browserWindowOptions = {},
 }) {
   if (typeof BrowserWindow !== "function") {
@@ -81,8 +76,8 @@ function createMissionControlWindow({
     throw new Error("BAMF_GUI20_SECURITY_DIAGNOSTIC_FAILED");
   }
   const window = new BrowserWindow(options);
-  hardenWebContents(window.webContents, rendererUrl);
-  window.loadURL(rendererUrl);
+  hardenWebContents(window.webContents);
+  window.loadURL(RENDERER_ENTRY_URL);
   return Object.freeze({ window, diagnostic });
 }
 
@@ -91,6 +86,6 @@ module.exports = {
   createMissionControlWindow,
   createSecureWindowOptions,
   hardenWebContents,
-  isSameRendererDocument,
+  isTrustedRendererDocument,
   securityDiagnostic,
 };

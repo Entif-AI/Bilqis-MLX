@@ -1,26 +1,23 @@
 "use strict";
 
-function normalizedDocumentUrl(raw) {
-  if (typeof raw !== "string" || raw.length === 0) {
-    return null;
-  }
-  try {
-    const value = new URL(raw);
-    value.hash = "";
-    return value.href;
-  } catch (_error) {
-    return null;
-  }
-}
+const {
+  RENDERER_ENTRY_URL,
+  RENDERER_ORIGIN,
+  normalizedRendererDocument,
+} = require("./renderer-location.cjs");
 
-function createTrustedSender(rendererUrl) {
-  const expected = normalizedDocumentUrl(rendererUrl);
-  if (expected === null) {
-    throw new TypeError("BAMF_GUI20_RENDERER_URL_INVALID");
+function createTrustedSender(trustedWebContents) {
+  if (!trustedWebContents || !Number.isInteger(trustedWebContents.id) ||
+      !trustedWebContents.mainFrame) {
+    throw new TypeError("BAMF_GUI20_TRUSTED_WEB_CONTENTS_REQUIRED");
   }
   return (event) => {
-    const candidate = event?.senderFrame?.url;
-    return normalizedDocumentUrl(candidate) === expected;
+    const frame = event?.senderFrame;
+    return event?.sender === trustedWebContents &&
+      frame === trustedWebContents.mainFrame &&
+      frame?.top === frame &&
+      frame?.origin === RENDERER_ORIGIN &&
+      normalizedRendererDocument(frame?.url) === RENDERER_ENTRY_URL;
   };
 }
 
@@ -32,4 +29,7 @@ function requireTrustedSender(isTrustedSender, event) {
   }
 }
 
-module.exports = { createTrustedSender, normalizedDocumentUrl, requireTrustedSender };
+module.exports = {
+  createTrustedSender,
+  requireTrustedSender,
+};

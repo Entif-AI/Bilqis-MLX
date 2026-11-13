@@ -5,31 +5,24 @@ const MAX_ARRAY_ITEMS = 4096;
 const MAX_OBJECT_KEYS = 256;
 const MAX_STRING_LENGTH = 64 * 1024;
 
-const FORBIDDEN_RENDERER_KEYS = Object.freeze(new Set([
-  "argv",
+const SECRET_INPUT_KEYS = Object.freeze(new Set([
+  "accesstoken",
   "authorization",
-  "commandline",
+  "authtoken",
+  "bearertoken",
   "credential",
   "credentials",
-  "cwd",
-  "env",
-  "environment",
-  "executable",
-  "file",
-  "filename",
-  "filepath",
-  "path",
   "privatekey",
-  "rundir",
-  "script",
   "secret",
   "sessioncapability",
   "sessiontoken",
-  "shell",
 ]));
 
 const SECRET_OUTPUT_KEYS = Object.freeze(new Set([
+  "accesstoken",
   "authorization",
+  "authtoken",
+  "bearertoken",
   "credential",
   "credentials",
   "privatekey",
@@ -55,7 +48,7 @@ function isPlainObject(value) {
     return false;
   }
   const prototype = Object.getPrototypeOf(value);
-  return prototype === Object.prototype || prototype === null;
+  return prototype === null || Object.prototype.toString.call(value) === "[object Object]";
 }
 
 function normalizedKey(key) {
@@ -64,7 +57,7 @@ function normalizedKey(key) {
 
 function assertSafeValue(value, options = {}, depth = 0, seen = new Set()) {
   const {
-    forbiddenKeys = FORBIDDEN_RENDERER_KEYS,
+    forbiddenKeys = SECRET_INPUT_KEYS,
     rejectForbiddenKeys = true,
     output = false,
   } = options;
@@ -140,21 +133,14 @@ function assertRendererSafePayload(value) {
 }
 
 function assertStableRef(value) {
-  if (typeof value !== "string" || value.length === 0 || value.length > 256) {
+  if (typeof value !== "string" || value.length === 0 || value.length > MAX_STRING_LENGTH) {
     invalid("STABLE_REF_REQUIRED");
-  }
-  if (value.includes("..") || value.includes("\\") || value.startsWith("/") ||
-      value.startsWith("~") || /^file:/i.test(value)) {
-    invalid("STABLE_REF_NOT_PATH");
-  }
-  if (!/^[A-Za-z0-9][A-Za-z0-9._:/@-]*$/.test(value)) {
-    invalid("STABLE_REF_INVALID");
   }
   return value;
 }
 
 module.exports = {
-  FORBIDDEN_RENDERER_KEYS,
+  SECRET_INPUT_KEYS,
   SECRET_OUTPUT_KEYS,
   assertRendererRequest,
   assertRendererSafePayload,

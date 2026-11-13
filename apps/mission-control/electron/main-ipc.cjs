@@ -3,7 +3,16 @@
 const { CHANNELS, HANDLER_CHANNELS } = require("./channels.cjs");
 const { createTrustedSender, requireTrustedSender } = require("./sender-trust.cjs");
 
-function registerMissionControlIpc({ ipcMain, bridge, rendererUrl }) {
+function safeBoundaryError(error) {
+  if (typeof error?.code === "string" && error.code.startsWith("BAMF_GUI20_")) {
+    return error;
+  }
+  const safe = new Error("BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED");
+  safe.code = "BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED";
+  return safe;
+}
+
+function registerMissionControlIpc({ ipcMain, bridge, trustedWebContents }) {
   if (!ipcMain || typeof ipcMain.handle !== "function" ||
       typeof ipcMain.removeHandler !== "function") {
     throw new TypeError("BAMF_GUI20_IPC_MAIN_REQUIRED");
@@ -11,7 +20,7 @@ function registerMissionControlIpc({ ipcMain, bridge, rendererUrl }) {
   if (!bridge) {
     throw new TypeError("BAMF_GUI20_CONTROL_PLANE_BRIDGE_REQUIRED");
   }
-  const isTrustedSender = createTrustedSender(rendererUrl);
+  const isTrustedSender = createTrustedSender(trustedWebContents);
   const subscriptions = new Map();
 
   function senderId(event) {
@@ -32,7 +41,11 @@ function registerMissionControlIpc({ ipcMain, bridge, rendererUrl }) {
   function trusted(handler) {
     return async (event, ...args) => {
       requireTrustedSender(isTrustedSender, event);
-      return handler(event, ...args);
+      try {
+        return await handler(event, ...args);
+      } catch (error) {
+        throw safeBoundaryError(error);
+      }
     };
   }
 
@@ -72,4 +85,4 @@ function registerMissionControlIpc({ ipcMain, bridge, rendererUrl }) {
   };
 }
 
-module.exports = { registerMissionControlIpc };
+module.exports = { registerMissionControlIpc, safeBoundaryError };

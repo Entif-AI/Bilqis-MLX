@@ -4,7 +4,9 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const { CHANNELS } = require("../channels.cjs");
-const { GLOBAL_NAME, installPreloadBridge } = require("../preload-bridge.cjs");
+const { loadSandboxedPreload } = require("./_preload-fixture.cjs");
+
+const GLOBAL_NAME = "bamfMissionControl";
 
 function fakeRenderer() {
   const invoked = [];
@@ -29,17 +31,10 @@ function fakeRenderer() {
 
 test("preload exposes only the enumerated Mission Control capability surface", () => {
   const renderer = fakeRenderer();
-  let exposed;
-  const contextBridge = {
-    exposeInMainWorld(name, api) {
-      exposed = { name, api };
-    },
-  };
-
-  const api = installPreloadBridge(contextBridge, renderer);
+  const exposed = loadSandboxedPreload(renderer);
+  const api = exposed.api;
 
   assert.equal(exposed.name, GLOBAL_NAME);
-  assert.equal(exposed.api, api);
   assert.deepEqual(Object.keys(api).sort(), [
     "connect",
     "fetchReceipt",
@@ -57,32 +52,32 @@ test("preload exposes only the enumerated Mission Control capability surface", (
   assert.equal(api.spawn, undefined);
 });
 
-test("preload rejects filesystem and shell-shaped requests before IPC", async () => {
+test("preload rejects credential injection and malformed requests before IPC", async () => {
   const renderer = fakeRenderer();
-  const api = installPreloadBridge({ exposeInMainWorld() {} }, renderer);
+  const api = loadSandboxedPreload(renderer).api;
 
   assert.throws(
-    () => api.querySnapshot({ path: "/etc/passwd" }),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID:FORBIDDEN_KEY:path/,
+    () => api.querySnapshot({ sessionToken: "stolen" }),
+    /BAMF_GUI20_IPC_ARGUMENT_INVALID:FORBIDDEN_KEY:sessionToken/,
   );
   assert.throws(
-    () => api.requestCommand({ argv: ["python3", "-m", "bilqis_mlx.cli"] }),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID:FORBIDDEN_KEY:argv/,
+    () => api.requestCommand("python3 -m bilqis_mlx.cli train"),
+    /BAMF_GUI20_IPC_ARGUMENT_INVALID:REQUEST_OBJECT_REQUIRED/,
   );
   assert.throws(
-    () => api.requestDryRun({ shell: "rm -rf ~" }),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID:FORBIDDEN_KEY:shell/,
+    () => api.requestDryRun({ credential: "stolen" }),
+    /BAMF_GUI20_IPC_ARGUMENT_INVALID:FORBIDDEN_KEY:credential/,
   );
   assert.throws(
-    () => api.fetchReceipt("../../private-key"),
-    /BAMF_GUI20_IPC_ARGUMENT_INVALID:STABLE_REF_NOT_PATH/,
+    () => api.fetchReceipt(null),
+    /BAMF_GUI20_IPC_ARGUMENT_INVALID:STABLE_REF_REQUIRED/,
   );
   assert.deepEqual(renderer.invoked, []);
 });
 
 test("preload invokes only fixed channels and unsubscribes its fixed event listener", async () => {
   const renderer = fakeRenderer();
-  const api = installPreloadBridge({ exposeInMainWorld() {} }, renderer);
+  const api = loadSandboxedPreload(renderer).api;
 
   await api.connect();
   await api.status();
