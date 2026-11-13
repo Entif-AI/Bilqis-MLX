@@ -4,6 +4,18 @@ from __future__ import annotations
 from .base import _spec
 
 class FACTORY:
+    class DEVELOPMENTAL_PROGRAM:
+        INVALID = _spec(
+            ("FACTORY", "DEVELOPMENTAL_PROGRAM", "INVALID"),
+            owner="factory.curriculum.developmental_program",
+            title="Factory developmental program invalid",
+            message_template="Factory developmental program invalid: {reason}",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action=(
+                "Restore the immutable C14 developmental-program manifest and "
+                "source-qualified domain declarations before retrying."),
+        )
+
     class SEMANTIC_RULE:
         INVALID = _spec(
             ("FACTORY", "SEMANTIC_RULE", "INVALID"),
