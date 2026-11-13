@@ -125,6 +125,17 @@ class ControlPlaneProtocolTests(unittest.TestCase):
             observed.state, ControlPlaneState.LEARNER_UNAVAILABLE)
         self.assertIsNone(observed.operator_active)
 
+    def test_dangling_operator_lock_is_unknown_not_inactive(self):
+        with TemporaryDirectory() as temporary:
+            run_dir = Path(temporary) / "run"
+            run_dir.mkdir()
+            (run_dir / ".bamf-operator.lock").symlink_to(
+                run_dir / "missing-lock-target")
+            observed = discover_learner(run_dir)
+        self.assertEqual(
+            observed.state, ControlPlaneState.LEARNER_UNAVAILABLE)
+        self.assertIsNone(observed.operator_active)
+
     def test_unsupported_cp02_operation_uses_transport_error_envelope(self):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -5,6 +5,7 @@ from contextlib import contextmanager
 import fcntl
 import os
 from pathlib import Path
+import stat
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
@@ -15,14 +16,24 @@ LOCKFILE = ".bamf-operator.lock"
 def bamf_operator_lock_held(run_dir: Path) -> bool | None:
     """Observe writer activity; return None when the lock cannot be inspected."""
     path = Path(run_dir) / LOCKFILE
-    if not path.exists():
+    try:
+        observed = path.lstat()
+    except FileNotFoundError:
         return False
+    except OSError:
+        return None
+    if not stat.S_ISREG(observed.st_mode):
+        return None
     nofollow = getattr(os, "O_NOFOLLOW", 0)
     try:
         fd = os.open(path, os.O_RDONLY | nofollow)
     except OSError:
         return None
     try:
+        opened = os.fstat(fd)
+        if ((opened.st_dev, opened.st_ino)
+                != (observed.st_dev, observed.st_ino)):
+            return None
         try:
             fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
         except BlockingIOError:
