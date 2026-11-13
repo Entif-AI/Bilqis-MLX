@@ -27,6 +27,7 @@ def issue_body_matches(local, remote):
 def main():
     owners=json.loads((TASKS/'workstack.json').read_text())['items']
     children=json.loads((TASKS/'children/registry.json').read_text())['entries']
+    supplement=json.loads((TASKS/'native-hierarchy-supplement.json').read_text())['entries']
     records=[(x['key'],x['number'],x['body_sha256'],TASKS/'issues'/f"{x['key']}.md") for x in owners]
     records += [(x['key'],x['number'],x['body_sha256'],TASKS/'children'/f"{x['key']}.md") for x in children]
     def check_body(record):
@@ -40,13 +41,24 @@ def main():
         failures=[v for v in pool.map(check_body,records) if v]
     hierarchy=defaultdict(set)
     for c in children:hierarchy[c['parent_number']].add(c['number'])
+    for row in supplement:hierarchy[row['parent_number']].add(row['child_number'])
+
+    expected_hierarchy={(parent,child) for parent,numbers in hierarchy.items() for child in numbers}
     def check_links(pair):
         parent,numbers=pair
         actual={v['number'] for v in gh(f'{REPO}/issues/{parent}/sub_issues')}
         if actual!=numbers:return f'{parent}: expected {sorted(numbers)}, got {sorted(actual)}'
         return None
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
         failures += [v for v in pool.map(check_links,sorted(hierarchy.items())) if v]
+
+    for row in supplement:
+        remote=gh(f"{REPO}/issues/{row['child_number']}")
+        body=(remote.get('body') or '').rstrip('\n')
+        if digest(body)!=row['child_body_content_sha256']:
+            failures.append(f"supplement child #{row['child_number']}: body-content digest mismatch")
+        if remote.get('title')!=row['child_title'] or remote.get('state','').upper()!=row['child_state']:
+            failures.append(f"supplement child #{row['child_number']}: title/state mismatch")
     # Native parent/child relationships are validated above against GitHub's
     # sub-issue API. They are hierarchy edges, not prerequisite edges, and must
     # not participate in dependency cycle detection.
@@ -66,7 +78,8 @@ def main():
         for error in failures:print('FAIL:',error)
         raise SystemExit(1)
     print(f'PASS: {len(owners)} original full issue bodies and {len(children)} child bodies match live GitHub content with <=1 terminal-LF transport delta')
-    print(f'PASS: {len(hierarchy)} native parent-child groups and {len(edges)} DAG nodes verified')
+    print(f'PASS: frozen planning hierarchy plus audited supplement: {len(expected_hierarchy)} native edges across {len(hierarchy)} expected parent groups')
+    print(f'PASS: frozen dependency DAG {len(edges)} nodes verified independently of native hierarchy')
     print('NOTE: this checks publication only; no model or trainer execution')
 
 if __name__=='__main__':main()
