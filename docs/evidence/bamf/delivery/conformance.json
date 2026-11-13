@@ -1,5 +1,5 @@
 {
-  "conformance_sha256": "8fe0f1a9ec34e94f8a367b88e1ae094ed877a903c0e0e58c7a75a53cd8fa7beb",
+  "conformance_sha256": "071b7166e50bd97bafac65a2a404549c1f0b78fc60752909a737b71c89478a17",
   "failure_gates": [
     {
       "gate_id": "GRADE_NEUTRAL_INVARIANCE",
@@ -20,7 +20,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "dc422b88f788efa9b863ed1336923b293d3cfa2cd60d3b0a3bf545b3a18a4ea7",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -31,6 +31,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 345,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -45,7 +46,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "dc422b88f788efa9b863ed1336923b293d3cfa2cd60d3b0a3bf545b3a18a4ea7",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -56,6 +57,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 345,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -70,7 +72,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -81,6 +83,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 349,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -95,7 +98,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -106,6 +109,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 349,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -120,7 +124,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "e1913519e9b8017caa0e393d3b92139d03713d12483136ab2bed4bda25d0dcbb",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -131,6 +135,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 357,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -145,7 +150,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -156,6 +161,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 349,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -170,7 +176,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "56bb04763143cfe0711894d9b4e4cad98d913024f42453b9f3320ac3f5392db0",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -181,6 +187,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 346,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -195,7 +202,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "56bb04763143cfe0711894d9b4e4cad98d913024f42453b9f3320ac3f5392db0",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -206,6 +213,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 346,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -220,7 +228,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "fb1a8cfbffdfc9c18fa75f42d9bd785093dbff21a4ff7d11671b11d59b6f4b70",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -231,6 +239,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 355,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -245,7 +254,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "504d6f8b89731ad82886ac9b4e35c1ef1a5d59e46b6202260606532bb0680633",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -256,6 +265,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 356,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -270,7 +280,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "504d6f8b89731ad82886ac9b4e35c1ef1a5d59e46b6202260606532bb0680633",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -281,6 +291,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 356,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -295,7 +306,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "5d9ecee21b11eef1a5ff41eca590bf97eaf196655c984fe483bce4d264e55768",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -306,6 +317,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 365,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -320,7 +332,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "5d9ecee21b11eef1a5ff41eca590bf97eaf196655c984fe483bce4d264e55768",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -331,6 +343,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 365,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -345,7 +358,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "9916d84433fc4719950d35d28caa0c11e1df13441ebdca6a5831224e6c43234f",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -356,6 +369,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 375,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -370,7 +384,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "7337f48ccbb3dbd89c5d1d114c28d01815ed3e19b4c5008c66495ea36838c187",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -381,6 +395,7 @@
         "observed_output": "BLOCKED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 371,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "BLOCKED",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -395,7 +410,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "b5edb774f8382aea8c96dd2085f437e63dfe7b3b8c85f45495cabffc861d1a60",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -406,6 +421,7 @@
         "observed_output": "BLOCKED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 370,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "BLOCKED",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -420,7 +436,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "37670d77ccdd31054adcde4a215a52e6e2b82c72953d60c6eadd8c6793340d59",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -431,6 +447,7 @@
         "observed_output": "BLOCKED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 376,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "BLOCKED",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -445,7 +462,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "d04579ae7efb3d69f02ff28f612b292f418b1496a7fe6842026bd9885d893944",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -456,6 +473,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 379,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -470,7 +488,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "cd464f940e15817d2e5beced7a4046e2c0473cb5dcd4e10d878d62c04d824001",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -481,6 +499,7 @@
         "observed_output": "BLOCKED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 362,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "BLOCKED",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -495,7 +514,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "9ec8a74f7585c20afb9ede0a9e650ac11ecd874271e439c5a1b7f62298f98e05",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -506,6 +525,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 377,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -520,7 +540,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "91480f0f8905960e8c31f2f58820cc4ac499400b72121e23e6f8d55e6f985d4b",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -531,6 +551,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 361,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -545,7 +566,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "7533433c24484977a27db7ea4fbe39d3b8ac19eb4cbc743750e1659cb0e69bd2",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -556,6 +577,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 374,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -570,7 +592,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "1be6636da570a6c4f69bca9304f75ce44d5d93d7878adfc3836d852355bb6505",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -581,6 +603,7 @@
         "observed_output": "BLOCKED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 347,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "BLOCKED",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -595,7 +618,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "ec9e3cfccaef9cb6fc9e69c1cdc63f3bf31b0edee30e3ae1f09b90de0a08d07c",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -606,6 +629,7 @@
         "observed_output": "BLOCKED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 378,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "BLOCKED",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -620,7 +644,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -631,6 +655,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 349,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -645,7 +670,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -656,6 +681,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 349,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -670,7 +696,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -681,6 +707,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 349,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -695,7 +722,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "b4e43f0b594d34ce86ecc7220827f0ba02357577962467530179c7441aac560f",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -706,6 +733,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 349,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -720,7 +748,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "e1913519e9b8017caa0e393d3b92139d03713d12483136ab2bed4bda25d0dcbb",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -731,6 +759,7 @@
         "observed_output": "BLOCKED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 357,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "BLOCKED",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -745,7 +774,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "91480f0f8905960e8c31f2f58820cc4ac499400b72121e23e6f8d55e6f985d4b",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -756,6 +785,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 361,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -770,7 +800,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "9ec8a74f7585c20afb9ede0a9e650ac11ecd874271e439c5a1b7f62298f98e05",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -781,6 +811,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 377,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -795,7 +826,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "fb2464fbce8d5cc93c357ca926d35b24f403c1c5ceb8a762b1e46ae488c235d0",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -806,6 +837,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 354,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -820,7 +852,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "fb2464fbce8d5cc93c357ca926d35b24f403c1c5ceb8a762b1e46ae488c235d0",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -831,6 +863,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 354,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -845,7 +878,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "91480f0f8905960e8c31f2f58820cc4ac499400b72121e23e6f8d55e6f985d4b",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -856,6 +889,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 361,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -870,7 +904,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "504d6f8b89731ad82886ac9b4e35c1ef1a5d59e46b6202260606532bb0680633",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -881,6 +915,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 356,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -895,7 +930,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "504d6f8b89731ad82886ac9b4e35c1ef1a5d59e46b6202260606532bb0680633",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -906,6 +941,7 @@
         "observed_output": "BLOCKED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 356,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "BLOCKED",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -920,7 +956,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "9916d84433fc4719950d35d28caa0c11e1df13441ebdca6a5831224e6c43234f",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -931,6 +967,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 375,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -945,7 +982,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "56bb04763143cfe0711894d9b4e4cad98d913024f42453b9f3320ac3f5392db0",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -956,6 +993,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 346,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -970,7 +1008,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "9ec8a74f7585c20afb9ede0a9e650ac11ecd874271e439c5a1b7f62298f98e05",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -981,6 +1019,7 @@
         "observed_output": "BLOCKED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 377,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "BLOCKED",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -995,7 +1034,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "e1913519e9b8017caa0e393d3b92139d03713d12483136ab2bed4bda25d0dcbb",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -1006,6 +1045,7 @@
         "observed_output": "BLOCKED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 357,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "BLOCKED",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -1020,7 +1060,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "dc422b88f788efa9b863ed1336923b293d3cfa2cd60d3b0a3bf545b3a18a4ea7",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -1031,6 +1071,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 345,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -1045,7 +1086,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "ec9e3cfccaef9cb6fc9e69c1cdc63f3bf31b0edee30e3ae1f09b90de0a08d07c",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -1056,6 +1097,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 378,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -1070,7 +1112,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "d04579ae7efb3d69f02ff28f612b292f418b1496a7fe6842026bd9885d893944",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -1081,6 +1123,7 @@
         "observed_output": "NOT_EXECUTED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 379,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "PENDING",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",
@@ -1095,7 +1138,7 @@
       "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
       "evidence": {
         "authority_identity": {
-          "contract_digest": "948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+          "contract_digest": "77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
           "issue_digest": "2ee76692706486f543cfed7f9926c3519c5cfdc33b81630a92d49020a31e9215",
           "source_digest": "e028a9018c39c87f372082900e49bf00576211f490d9eb84a3eb14ab28614057"
         },
@@ -1106,6 +1149,7 @@
         "observed_output": "BLOCKED",
         "owner_commit": "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "owner_issue": 372,
+        "receipt_commit": "PENDING_ATTESTATION_COMMIT",
         "reviewer_decision": "BLOCKED",
         "run_receipt": null,
         "runner_environment": "PENDING_CURRENT_HEAD_RUNNER",

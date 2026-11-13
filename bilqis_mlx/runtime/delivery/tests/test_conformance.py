@@ -22,7 +22,8 @@ def inert_evidence():
         "PENDING_DIRECT_OWNER_COMMIT_BINDING",
         "docs/architecture/BAMF_0_2.md#requirements-continuity",
         "BLOCKED_SOURCE_OWNER:test", "independent expected behavior",
-        "NOT_EXECUTED", "PENDING_CURRENT_HEAD_RUNNER", None, "PENDING",
+        "NOT_EXECUTED", "PENDING_CURRENT_HEAD_RUNNER", None,
+        "PENDING_ATTESTATION_COMMIT", "PENDING",
         AuthorityIdentity("a" * 64, "b" * 64, "c" * 64))
 
 
@@ -57,7 +58,7 @@ def forged_pass_row():
         requirement_texts()["BAMF-REQ-001"], "BAMF-0.2-SPEC-001@v0.2.0",
         item_by_key("A01")["number"], candidate,
         "docs/architecture/BAMF_0_2.md#requirements-continuity",
-        fixture, expected, observed, runner, receipt, "PASS",
+        fixture, expected, observed, runner, receipt, candidate, "PASS",
         authority_identity("A01"))
     return ConformanceRow(
         "BAMF-REQ-001", "A01/A02/A12",

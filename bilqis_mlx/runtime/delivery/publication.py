@@ -237,6 +237,7 @@ def _evidence_binding(claim_id: str, owner: str, index: int,
         observed_output="BLOCKED" if blocked else "NOT_EXECUTED",
         runner_environment="PENDING_CURRENT_HEAD_RUNNER",
         run_receipt=None,
+        receipt_commit="PENDING_ATTESTATION_COMMIT",
         reviewer_decision="BLOCKED" if blocked else "PENDING",
         authority_identity=authority_identity(primary),
     )

@@ -106,6 +106,7 @@ class EvidenceBinding:
     observed_output: str
     runner_environment: str
     run_receipt: ExecutionReceipt | None
+    receipt_commit: str
     reviewer_decision: str
     authority_identity: AuthorityIdentity
 
@@ -113,7 +114,8 @@ class EvidenceBinding:
         strings = (
             self.normative_text, self.variant_revision, self.owner_commit,
             self.contract_path, self.input_fixture, self.expected_behavior,
-            self.observed_output, self.runner_environment, self.reviewer_decision,
+            self.observed_output, self.runner_environment, self.receipt_commit,
+            self.reviewer_decision,
         )
         require(type(self.owner_issue) is int and self.owner_issue > 0,
                 "CONFORMANCE_EVIDENCE_OWNER")
@@ -128,6 +130,7 @@ class EvidenceBinding:
         return (
             self.reviewer_decision == "PASS"
             and _SHA40.fullmatch(self.owner_commit) is not None
+            and _SHA40.fullmatch(self.receipt_commit) is not None
             and self.run_receipt is not None
             and self.run_receipt.disposition == "PASS"
             and self.run_receipt.verifies(
@@ -253,7 +256,7 @@ def load_conformance_record(record: object) -> ConformanceProjection:
                 evidence["owner_issue"], evidence["owner_commit"],
                 evidence["contract_path"], evidence["input_fixture"],
                 evidence["expected_behavior"], evidence["observed_output"],
-                evidence["runner_environment"], receipt,
+                evidence["runner_environment"], receipt, evidence["receipt_commit"],
                 evidence["reviewer_decision"], identity)
             rows.append(ConformanceRow(
                 item["claim_id"], item["owner_ref"], item["contract_ref"],

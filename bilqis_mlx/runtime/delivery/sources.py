@@ -200,7 +200,7 @@ def validate_executed_pass(row: object) -> bool:
     receipt_path = evidence.run_receipt.receipt_ref
     try:
         completed = subprocess.run(
-            ["git", "show", f"{evidence.owner_commit}:{receipt_path}"], cwd=ROOT,
+            ["git", "show", f"{evidence.receipt_commit}:{receipt_path}"], cwd=ROOT,
             text=True, capture_output=True, check=False)
         require(completed.returncode == 0, "PUBLICATION_PASS_RECEIPT_COMMIT_FILE")
         receipt_record = json.loads(completed.stdout)
@@ -217,6 +217,11 @@ def validate_executed_pass(row: object) -> bool:
         "runner_sha256": evidence.run_receipt.runner_sha256,
         "disposition": evidence.run_receipt.disposition,
     }, "PUBLICATION_PASS_RECEIPT_FILE")
+    ancestry = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", evidence.owner_commit,
+         evidence.receipt_commit], cwd=ROOT, stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL, check=False)
+    require(ancestry.returncode == 0, "PUBLICATION_PASS_RECEIPT_ANCESTRY")
     completed = subprocess.run(
         ["git", "cat-file", "-e", f"{evidence.owner_commit}^{{commit}}"],
         cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,

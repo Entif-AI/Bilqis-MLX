@@ -930,9 +930,10 @@ release nor C15 software evidence claims neural admission or learned mastery.
 
 **C15.2 proof admission:** The conformance record uses
 `bilqis.bamf.delivery-conformance/v2`. Every requirement/fixture row carries a
-structured evidence binding for SPEC revision, direct owner ticket/commit field,
+structured evidence binding for SPEC revision, direct owner ticket/candidate commit,
 contract path, literal fixture, independent expectation, observed result,
-runner/environment, fresh receipt, reviewer decision and source/contract/issue
+runner/environment, a distinct later attestation commit carrying the immutable
+execution receipt, reviewer decision and source/contract/issue
 identity. `EXECUTED_PASS` is rejected when that tuple is incomplete. A changed
 source/contract/issue identity forces `REQUALIFICATION_REQUIRED`; an explicit
 failure gate takes precedence over otherwise-green evidence. Grade-label

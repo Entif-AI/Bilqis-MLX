@@ -81,7 +81,7 @@
     },
     {
       "component_id": "architecture",
-      "evidence_ref": "docs/architecture/BAMF_0_2.md@sha256:948fea0d4b525bb0e18090a36ed105c565ecfdf7d03f061c6e1b2ff7a81f60b7",
+      "evidence_ref": "docs/architecture/BAMF_0_2.md@sha256:77bdd17ef9db061387e25e8ff50aab0e7588bba1a1e7782a4c7d8c1fb04717d9",
       "head_sha": "96ec126f0a9a02d9e1adaafcdd5dbf859d6d1111",
       "owner_issue": 387,
       "status": "PROVISIONAL"
@@ -245,7 +245,7 @@
       "status": "PROVISIONAL"
     }
   ],
-  "manifest_sha256": "54df145601534de1a8900653b41e18288337d362f90658a1bdc7dfe0ada666a4",
+  "manifest_sha256": "a8c4d94a9ed1f3d3f5a0ca8e6ed2f7ace8891edeee8af465c11a7b8c3f5c48ea",
   "operator_commands": [
     {
       "argv": [
