@@ -25,13 +25,13 @@ REGISTRY = TASKS / "children" / "registry.json"
 # and explicit so a future structural move fails closed instead of silently
 # falling back to the generic runner.
 _OWNER_TEST_REFS = (
-    ("A01", "bilqis_mlx/semantics/tests/test_atlas_projection.py"),
-    ("A03", "bilqis_mlx/semantics/tests/core/test_frame_schema.py"),
-    ("A05", "bilqis_mlx/semantics/tests/test_frame_compiler.py"),
-    ("A10", "bilqis_mlx/source_adapters/tests/test_evidence_frames.py"),
+    ("A01", "bilqis_mlx/semantics/tests/atlas/projection/test_compiler.py"),
+    ("A03", "bilqis_mlx/semantics/tests/frame_schema/test_bindings.py"),
+    ("A05", "bilqis_mlx/semantics/tests/frame_compiler/test_visibility.py"),
+    ("A10", "bilqis_mlx/source_adapters/tests/test_evidence_curriculum_lifecycle.py"),
     ("A11", "bilqis_mlx/factory/tests/semantic_contrast/test_semantic_contrasts.py"),
-    ("A13", "bilqis_mlx/semantics/tests/test_context_eligibility.py"),
-    ("B01", "bilqis_mlx/runtime/tests/model/test_model_topology_v2.py"),
+    ("A13", "bilqis_mlx/semantics/tests/context/test_revocation_and_missing_member.py"),
+    ("B01", "bilqis_mlx/runtime/tests/model/topology/test_spec.py"),
     ("B05", "bilqis_mlx/runtime/tests/depth/test_block_attnres.py"),
     ("B06", "bilqis_mlx/runtime/tests/model/test_atlas_refinement.py"),
     ("B07", "bilqis_mlx/learning/tests/test_atlas_engram_allocation.py"),
@@ -43,7 +43,7 @@ _OWNER_TEST_REFS = (
     ("C03", "bilqis_mlx/learning/tests/teaching/test_bamf_teacher.py"),
     ("C05", "bilqis_mlx/runtime/tests/capability/test_bamf_capability_retention.py"),
     ("C06", "bilqis_mlx/learning/_salience/tests/test_atlas_salience.py"),
-    ("C08", "bilqis_mlx/runtime/tests/model/test_atlas_resources.py"),
+    ("C08", "bilqis_mlx/runtime/tests/model/resources/test_microbatch_plans.py"),
     ("C09", "bilqis_mlx/runtime/tests/test_atlas_revalidation.py"),
 )
 

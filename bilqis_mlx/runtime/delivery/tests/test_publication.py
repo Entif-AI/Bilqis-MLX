@@ -39,9 +39,13 @@ class DeliveryPublicationTests(unittest.TestCase):
 
     def test_conformance_rows_bind_concrete_owner_fixtures_not_generic_runner(self):
         record = published_conformance_record()
+        root = Path(__file__).resolve().parents[4]
         for row in record["rows"]:
             if row["state"] not in {"BLOCKED", "REQUALIFICATION_REQUIRED"}:
                 self.assertNotEqual(row["test_ref"], "scripts/run_tests.py")
+                if "/tests/" in row["test_ref"]:
+                    path = root / row["test_ref"]
+                    self.assertTrue(path.is_file(), row["test_ref"])
 
     def test_checked_in_publication_exactly_matches_deterministic_projection(self):
         root = Path(__file__).resolve().parents[4]
