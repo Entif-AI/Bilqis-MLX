@@ -67,3 +67,22 @@ test("Node broker reaches accepted CP01 through the private Python bridge", asyn
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("broker requests fail closed within a bounded timeout when Python wedges", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "bilqis-gui20-hung-"));
+  const executable = path.join(root, "hung-python");
+  fs.writeFileSync(executable, "#!/bin/sh\ncat >/dev/null\n", { mode: 0o700 });
+  const broker = new Cp01PythonBroker({
+    pythonExecutable: executable,
+    cwd: REPO_ROOT,
+    requestTimeoutMs: 25,
+  });
+  const started = Date.now();
+  try {
+    await assert.rejects(broker.disconnect(), /BAMF_GUI20_CP01_UNAVAILABLE/);
+    assert.ok(Date.now() - started < 1000, "broker timeout was not bounded");
+  } finally {
+    broker.close();
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

@@ -31,8 +31,11 @@ function validateStatus(value) {
     "schemaVersion", "state", "protocolVersion", "serviceLive", "serviceReady",
     "learnerReady", "learnerActive",
   ];
+  const protocolVersionValid = value?.state === "incompatible-version"
+    ? typeof value?.protocolVersion === "string" && value.protocolVersion.length > 0
+    : value?.protocolVersion === CP01_PROTOCOL_VERSION;
   if (!exactKeys(value, keys) || value.schemaVersion !== CP01_STATUS_SCHEMA ||
-      value.protocolVersion !== CP01_PROTOCOL_VERSION || !CP01_STATES.has(value.state) ||
+      !protocolVersionValid || !CP01_STATES.has(value.state) ||
       typeof value.serviceLive !== "boolean" || typeof value.serviceReady !== "boolean" ||
       typeof value.learnerReady !== "boolean" ||
       (value.learnerActive !== null && typeof value.learnerActive !== "boolean")) {

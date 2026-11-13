@@ -115,3 +115,22 @@ test("accepted CP01 boundary refuses CP02 operations the service does not suppor
   );
   adapter.close();
 });
+
+test("incompatible-version preserves the observed CP01 protocol version", async () => {
+  const { assertOperatorView } = await import("../../renderer/shell-state.mjs");
+  const validators = createAcceptedValidators(assertOperatorView);
+  const mismatch = {
+    schemaVersion: "bamf.gui20.cp01-status/v1",
+    state: "incompatible-version",
+    protocolVersion: "bilqis.bamf.control-plane/v999",
+    serviceLive: false,
+    serviceReady: false,
+    learnerReady: false,
+    learnerActive: null,
+  };
+  assert.equal(validators.publicStatus(mismatch), mismatch);
+  assert.throws(
+    () => validators.publicStatus({ ...mismatch, state: "healthy" }),
+    /BAMF_GUI20_ACCEPTED_CONTRACT_INVALID:CP01_STATUS/,
+  );
+});

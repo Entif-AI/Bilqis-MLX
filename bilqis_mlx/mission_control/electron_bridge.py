@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 
 from bilqis_mlx.control_plane import ControlPlaneClient
-from bilqis_mlx.control_plane.contracts import PROTOCOL_VERSION
+from bilqis_mlx.control_plane.contracts import ControlPlaneState, PROTOCOL_VERSION
 from bilqis_mlx.paths import active_run_dir
 
 
@@ -42,7 +42,14 @@ class ElectronBridge:
     def connect(self) -> dict:
         self.disconnect()
         client = ControlPlaneClient(_socket_path(), client_id=_CLIENT_ID)
-        payload = client.connect()
+        try:
+            payload = client.connect()
+        except Exception:
+            state = client.state
+            client.close(preserve_state=True)
+            if state is ControlPlaneState.CONNECTING:
+                state = ControlPlaneState.DISCONNECTED
+            return _public_status({"state": state.value}, connected=False)
         if not payload.get("accepted"):
             client.close(preserve_state=True)
             return _public_status(payload, connected=False)
