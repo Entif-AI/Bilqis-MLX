@@ -3,6 +3,8 @@
   "version": "0.5.0",
   "private": true,
   "scripts": {
+    "mission-control": "electron apps/mission-control/main.cjs",
+    "mission-control:test": "node --test apps/mission-control/tests/*.test.mjs",
     "abi:verify": "python3 -B scripts/check_historical_abi.py",
     "backup:copy": "python3 -m bilqis_mlx.backup copy",
     "backup:plan": "python3 -m bilqis_mlx.backup plan",
@@ -61,6 +63,7 @@
     "bamf:flow-control:test": "python3 -B -m unittest scripts.tests.test_bamf_flow_control scripts.tests.test_bamf_flow_control_live"
   },
   "devDependencies": {
+    "electron": "42.11.16",
     "husky": "9.1.7"
   }
 }
