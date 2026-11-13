@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "e53bd672673a40362319db331d28c0fb9ed82760",
-  "updated_at": "2026-11-13T22:29:26Z",
+  "updated_at": "2026-11-13T22:36:14Z",
   "exception": null,
   "items": [
     {
@@ -386,9 +386,9 @@
       "issue": 1049,
       "pr": 1082,
       "state": "TURNED_IN",
-      "head_sha": "69eef70faffb9e3478e575c3fc3ec1862f49c039",
-      "head_sha_role": "exact CP01 semantic head after consuming reviewed-unified e53bd672; the subsequent flow-control turn-in receipt commit is metadata only",
-      "summary": "CP01/#1049 is turned in as PR #1082 after consuming reviewed unified e53bd672. The standalone Python control-plane uses Unix-domain sockets only, version/session handshake, exact service/run/generation identity, metadata-only accepted-generation inspection, explicit service-vs-learner health, tri-state operator activity, explicit restart lifecycle, and lifetime local socket ownership without taking learner custody. Focused plus owner-adjacent verification is 37/37 PASS; structure, smell, Factory architecture, governance, error-control, docs, BAMF mirrors, flow and diff gates are green. Two independent exact-head EGM Goldfish reviews at 69eef70f report 0 Blockers / 0 Majors / 0 Nits. Pre-turn-in review defects were repaired and filed as PM-2026-11-13-001. Snapshot/event/command schemas, Electron UI, Akasha provider code, public networking, live learner/optimizer execution and self-merge remain outside this leaf.",
+      "head_sha": "9828eb2bd8a5343df101b12b8fbbe1fceab8d4d6",
+      "head_sha_role": "exact CP01 semantic head after portable-CI repair and reviewed-unified e53bd672 consumption; the subsequent flow-control receipt commit is metadata only",
+      "summary": "CP01/#1049 is turned in as PR #1082 after consuming reviewed unified e53bd672. The standalone Python control-plane uses Unix-domain sockets only, version/session handshake, exact service/run/generation identity, metadata-only accepted-generation inspection, explicit service-vs-learner health, tri-state operator activity, explicit restart lifecycle, and lifetime local socket ownership without taking learner custody. Hosted portable CI initially exposed two eager-import leaks that pulled MLX into Linux test collection; the exact repair at 9828eb2b extracted the immutable run-identity record to a lightweight custody module and made bamf_operator package exports lazy. The exact portable-core command then passed with MLX forcibly unavailable (147 executed, 7 expected skips, 0 errors), CP01 plus owner-adjacent verification remained 37/37 PASS, static gates remained green, hosted portable-core/portable/semantic-ABI all passed on the repaired head, and independent targeted EGM review found 0 Blockers / 0 Majors / 0 Nits. Pre-turn-in review defects remain filed as PM-2026-11-13-001. Snapshot/event/command schemas, Electron UI, Akasha provider code, public networking, live learner/optimizer execution and self-merge remain outside this leaf.",
       "resume_trigger": null,
       "preserved_branch": "codex/1049-cp01-control-plane-20261113"
     }
