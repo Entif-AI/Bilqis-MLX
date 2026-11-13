@@ -96,7 +96,7 @@ def preflight_sealed_v1_migration(run_dir, receipt, manifest, source_root):
         from ..live_grade_c import registry_graph
         graph = registry_graph()
     else:
-        from ..source import read_sources
+        from ..grade_a_probe import read_sources
         _, _, graph, _, _ = read_sources(source_root)
     if _fingerprint(graph) != receipt["semantic_graph_sha256"]:
         raise ValueError("FACTORY_ADMISSION_SEALED_GRAPH_DRIFT")
@@ -241,7 +241,6 @@ def compile_projected_executable_release(
         source_root=source_root,
         graph=graph,
         verification_seed=LIVE_V2_VERIFICATION_SEED,
-        legacy_course=canonical_course,
         predecessor=predecessor,
     )
     return release, schedule_program_from_executable_release(release), canonical_course

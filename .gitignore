@@ -1,7 +1,9 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.testmondata*
 .venv/
+node_modules/
 .env
 runs/
 vendor/legacy-v16/runs/
@@ -20,4 +22,3 @@ lib/ithkuil/_private/
 *.tar
 *.tmp
 .DS_Store
-node_modules/

@@ -1,0 +1,79 @@
+"""Differentiable raw-atom vectors from the actual released B01 parameters."""
+import mlx.core as mx
+
+from ...runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
+from ...semantics.atlas_features import build_feature_manifest
+from ...semantics.atlas.snapshot import load_pinned_atlas_snapshot
+from ...semantics.source_atom_binding.common import invalid
+from ...source_adapters.atom_binding import (
+    build_source_atom_handoff, require_pinned_embedding_ready,
+)
+from ..frame_embeddings import (
+    SemanticBankView, _released_factor_terms, _validate_banks,
+    embedding_parameter_view,
+)
+from ...runtime.model_topology_v2 import ModelTopologySpecV2
+from .inputs import SourceAtomRow
+
+
+def source_atom_vectors(
+    parameters, compiled, config, source, features, feature_schema, extents,
+    banks, artifact_owner,
+):
+    """Recheck source/rights before gathering any identity tensor.
+
+    Native formal signatures remain source metadata. A06 alone owns categorical
+    feature types. Unframed atoms use its existing NONE role/schema and local
+    slot zero, without casting the atom to a caller-created ConceptRef.
+    """
+    if (type(source) is not SourceAtomRow
+            or type(artifact_owner) is not AtlasFeatureArtifactOwner):
+        invalid("BAMF_SOURCE_ATOM_INPUT_INVALID")
+    snapshot = load_pinned_atlas_snapshot(source.selection)
+    expected_features = build_feature_manifest(snapshot, feature_schema)
+    if (features != expected_features or extents.factor_map_digest != features.digest
+            or type(banks) is not tuple or not banks
+            or any(type(bank) is not SemanticBankView for bank in banks)):
+        invalid("BAMF_SOURCE_ATOM_GENERATION_DRIFT")
+    artifact_owner.require(features)
+    handoff = build_source_atom_handoff(
+        compiled, config, source.selection, source.source_row, source.graph,
+        **source.replay_arguments())
+    require_pinned_embedding_ready(
+        handoff, compiled, config, source.selection, source.source_row,
+        source.graph, **source.replay_arguments())
+    spec = ModelTopologySpecV2()
+    owned = embedding_parameter_view(parameters, spec=spec, extents=extents)
+    _validate_banks(banks)
+    active_indices = tuple(
+        bank.bank_index * spec.semantic_bank_rows + row
+        for bank in banks for row in bank.active_rows)
+    if (len(banks) != extents.semantic_bank_count
+            or banks[0].semantic_release != snapshot.release_sha256
+            or banks[0].active_semantic_digest != extents.active_semantic_digest
+            or any(bank.weights is not owned.get(f"identity.bank.{bank.bank_index}")
+                   for bank in banks)
+            or any(index >= len(snapshot.abi_entries)
+                   or snapshot.abi_entries[index].index != index
+                   for index in active_indices)):
+        invalid("BAMF_SOURCE_ATOM_GENERATION_DRIFT")
+    vectors = []
+    for binding in handoff.bindings:
+        row = features.features_for(
+            binding.candidate_semantic_id, "NONE", "NONE", config.task.scope)
+        if row.abi_index != binding.candidate_abi_index:
+            invalid("BAMF_SOURCE_ATOM_FEATURE_ABI_DRIFT")
+        bank_index, bank_row = divmod(row.abi_index, spec.semantic_bank_rows)
+        if bank_row not in banks[bank_index].active_rows:
+            invalid("BAMF_SOURCE_ATOM_INACTIVE_IDENTITY")
+        factors = _released_factor_terms(owned, row)
+        value = banks[bank_index].weights[bank_row]
+        for term in factors:
+            value = value + term
+        value = value + owned["features.local_slot"][0]
+        vectors.append(value)
+    combined = mx.stack(vectors)
+    vectors = combined * mx.rsqrt(
+        mx.mean(combined * combined, axis=-1, keepdims=True) + spec.rms_norm_epsilon
+    ) * owned["features.norm"]
+    return vectors, banks, handoff

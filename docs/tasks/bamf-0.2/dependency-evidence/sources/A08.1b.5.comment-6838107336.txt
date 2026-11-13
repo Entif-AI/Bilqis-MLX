@@ -1,0 +1,23 @@
+### C01 dependency-authority clarification | 2026-11-12
+
+This is an append-only source-owner clarification for dependency normalization. It does not change A08.1b.5's functional acceptance or reopen its completed implementation.
+
+**Exact inbound BAMF graph prerequisites for A08.1b.5:**
+- A08.1a #417
+- A08.1b.1 #553
+- A08.1b.2 #554
+- A08.1b.3 #555
+- A08.1b.4 #556
+
+The five `Source-owner prerequisites surfaced by independent review` in the checked-in A08.1b.5 specification are **acceptance/receipt obligations**, not additional graph edges. For C01 normalization they are bound to the accepted A08.1b.5 integration receipt rather than expanded into inferred A01/A03/A13 edges:
+1. exact pinned row bytes;
+2. released SKOS/Ithkuil row-to-A03 frame adapter;
+3. per-edge relation evidence where applicable;
+4. source-owner A13 frame/member grant issuance;
+5. lesson-to-fresh-`ApprovedContextProjection` crosswalk for positive and contrast facts.
+
+A01, A03 and A13 remain authority surfaces consumed through A08.1a and the accepted A08.1b.1-.4/source-integration receipts. They are not separate direct A08.1b.5 graph edges under this clarification.
+
+**Receipt classification:** merged PR #657 is the implementation/acceptance receipt for the final constructive-family/source-authority integration. It is required provenance for C01 normalization but is not a dependency-graph node.
+
+C01 may therefore normalize A08.1b.5 as `deps=[A08.1a,A08.1b.1,A08.1b.2,A08.1b.3,A08.1b.4]` only when this exact amendment snapshot and the exact merged #657 receipt are pinned. This clarification authorizes no other inbound edges.

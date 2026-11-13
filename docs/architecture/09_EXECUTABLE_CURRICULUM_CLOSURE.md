@@ -2,6 +2,8 @@
 
 **Authority note:** Read [`10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md`](10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md) with this design. That record owns the cross-source authority hierarchy, supersession conflicts, New Ithkuil integration boundary, and governance-first migration order. This file owns the executable-factory architecture.
 
+**2026-10-27 correction:** GENERALIZATION is dormant compatibility/research machinery, not part of the current developmental runtime or graduation contract. References below to promotion/generalization describe historical factory capability and are superseded for live execution by ADR-097 and SPEC-0001 §7.3.
+
 ## Problem
 
 SPEC-0001 requires one declarative curriculum architecture in which new grades and capability changes flow through a common factory without edits to generic trainer, scheduler, evaluation, promotion, dashboard, checkpoint, or teacher runtime. The present implementation does not satisfy that contract. `FactoryRelease` is compiled and admission-gated, but much of live execution still reconstructs behavior from `Course`, concrete provider modules, release-name switches, CLI flags, and subsystem-local state assumptions. The reduced-Boolean experiment exposed the consequence: changing the active B roster required follow-up repairs in assessment rubric selection, championship source identity, dashboard replay, and stagnation scope.
@@ -276,7 +278,7 @@ A full synthetic Grade Z disposable system proof runs through the same generic r
 - admission;
 - teaching schedule;
 - routine assessment;
-- promotion/generalization lifecycle;
+- promotion lifecycle plus dormant generalization compatibility;
 - championship evidence;
 - stagnation containment;
 - telemetry projection;
@@ -377,7 +379,7 @@ This redesign is an architectural cutover, not permission to maintain both execu
 
 Build `CurriculumDefinition`, `SourceBindingSet`, `CurriculumProfile`, `ExecutionPlan`, scoped projection digests, answer-modality adapters, lineage classification, and mutation tests. The reduced Boolean kernel must compile and generate from the real full-B providers and pinned source without importing or naming a minimal-B release/provider.
 
-Exit gate: mutation tests distinguish roster, schedule, assessment, source, answer-schema, coverage, and teaching dependencies; unrelated capability digests remain unchanged; real pinned-source constrained generation passes; and `scripts/check_factory_closure.py` records the current split-authority baseline.
+Exit gate: mutation tests distinguish roster, schedule, assessment, source, answer-schema, coverage, and teaching dependencies; unrelated capability digests remain unchanged; real pinned-source constrained generation passes; and `scripts/quality/check_factory_closure.py` records the current split-authority baseline.
 
 ### Wave 1: make FactoryRelease carry the executable plan
 
@@ -416,7 +418,7 @@ Exit gate: changing only `CurriculumProfile` changes the live disposable runtime
 
 **Wave 3A profile/ABI checkpoint:** the canonical current school curriculum now declares A, B and C semantics once. A-only and B-only runtime states are executable profiles over that same curriculum with later grades disabled as a canonical prefix; they are not separate semantic releases. B entry and B inventory revision use generic v2 profile adoption, so COMPOSITE and IDBOOLOPS progression comes from canonical teaching stages instead of named B successor releases. C admission is split correctly: the canonical C semantics already exist, while the student semantic catalog grows append-only from the historical 222-token ABI and a numeric execution profile activates the admitted C prefix. Same-curriculum profile changes classify neural geometry as `UNCHANGED`; same-curriculum append-only token growth classifies `APPEND_ONLY_EXPANSION`. The real pinned source-provider proof now exercises A-only -> reduced B -> C(0..3) through one canonical curriculum and source-binding set.
 
-**Wave 3B numeric-scope checkpoint:** numeric scope changes use same-curriculum v2 profile revisions, not a numeric release ladder. While Grade D is not yet admitted, a successful Grade C promotion/graduation sweep temporarily advances the active integer-root domain by one and re-enters Grade C instead of stopping at the old 0..6 ceiling. The bounded sequence is now 0..3 -> 0..4 -> ... -> 0..10, where 10 is the current Grade C registry counting target. The operation-introduction threshold remains 4, so C.MUL/C.DIV unlock at the same point as before. Numeric providers declare a typed `numbers` profile dimension; answer-family domains and source generation consume the same canonical prefix. `ScheduleProgram` identity includes the assessment projection so a changed numeric domain cannot silently reuse old rubric state. The temporary ceiling is persisted as profile execution metadata (`numeric_scope_final_maximum`), including one-time translation of historical staircase receipts capped at 4 or 6. No live loop dispatches on the staircase release identity, and no graduation evidence is weakened: the next scope is adopted only after the existing Grade C boundary has been reached.
+**Wave 3B numeric-scope checkpoint:** numeric scope changes use same-curriculum v2 profile revisions, not a numeric release ladder. The original 0..3 -> 0..4 -> 0..5 -> 0..6 proposal is historical; the active bounded Prometheus experiment is 0..3 -> 0..4, with final maximum 4 and no authorized expansion to 5 or 6. Numeric providers declare a typed `numbers` profile dimension; answer-family domains and source generation consume the same canonical prefix. `ScheduleProgram` identity includes the assessment projection so a changed numeric domain cannot silently reuse old rubric state. The bounded-final policy is persisted as profile execution metadata (`numeric_scope_final_maximum`), including one-time translation of historical staircase receipts in `compatibility/`. No live loop dispatches on the staircase release identity.
 
 **Wave 3C compatibility-boundary checkpoint:** the former `factory/live_releases.py` implementation has been retired from the current factory namespace and moved intact to `compatibility/live_releases.py`. The old import path is a deprecation shim for historical tests/external callers only. Current trainer/CLI compatibility reads import the compatibility module explicitly; live B/C progression already uses profiles, plan diffs and v2 admission. This relocation removed the 129-finding release-switchboard cluster from the closure ledger without deleting historical decode/replay evidence.
 
@@ -450,7 +452,7 @@ the strengthened closure checker finds no current split-authority path.
 
 ### Wave 5: prove Grade Z through the real runtime
 
-A test-only canonical course, profile, and source provider must run through the same disposable top-level orchestration as the human shell, exercising admission, visit scheduling, routine assessment, recovery, promotion/generalization, championship, stagnation, telemetry, checkpoint/recovery, and stop handling.
+A test-only canonical course, profile, and source provider must run through the same disposable top-level orchestration as the human shell, exercising admission, visit scheduling, routine assessment, recovery, promotion, championship, stagnation, telemetry, checkpoint/recovery, and stop handling. Dormant generalization compatibility is tested separately from the live developmental path.
 
 No generic source file may change when the test grade is introduced.
 
@@ -460,7 +462,7 @@ Exit gate: SPEC-0001 §11.1 is satisfied in the actual runtime rather than in is
 
 ### Wave 6: close the checker to zero
 
-`python3 scripts/check_factory_closure.py` must print `FACTORY_CLOSURE_OK`.
+`python3 scripts/quality/check_factory_closure.py` must print `FACTORY_CLOSURE_OK`.
 
 The existing weaker architecture checker remains useful for its original checks, but the closure checker becomes the acceptance gate for split curriculum authority.
 

@@ -8,69 +8,16 @@ import bilqis_mlx.learning.grade_soup as _learning_grade_soup
 import bilqis_mlx.learning.mentor_epoch as _learning_mentor_epoch
 import bilqis_mlx.learning.student_ops as _learning_student_ops
 import bilqis_mlx.runtime.mlx_checkpoint as _runtime_mlx_checkpoint
-import bilqis_mlx.runtime.mlx_parity as _runtime_mlx_parity
-import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.state as _runtime_state
 import bilqis_mlx.source as _bilqis_mlx_source
 import functools as _functools
 import pathlib as _pathlib
-import random as _random
 
-
-def choose_lesson_batch(rows: list[dict], policy: dict,
-                        seed: int, *, batch_size=32) -> list[dict]:
-    """Balance both truth values; policy shapes selection, never gold answers."""
-    if not rows or batch_size < 2 or batch_size % 2:
-        raise ValueError("HUMAN_TRAINER_INVALID_LESSON_BATCH_SIZE")
-    rng = _random.Random(seed)
-    if any(row.get("answer_kind", "binary") != "binary" for row in rows):
-        # Sample linked direct/TRUE/FALSE views from the same verified meaning.
-        # This is an answer contract, independent of old/new lesson allocation.
-        sources = {}
-        for row in rows:
-            sources.setdefault(row["source_id"], []).append(row)
-        chosen = []
-        groups = list(sources.values())
-        while len(chosen) < batch_size:
-            chosen.extend(rng.choice(groups))
-        chosen = chosen[:batch_size]
-        rng.shuffle(chosen)
-        return chosen
-    truths = {label: [r for r in rows if r["gold"] == label]
-              for label in ("FALSE", "TRUE")}
-    if any(not values for values in truths.values()):
-        raise ValueError("HUMAN_TRAINER_MISSING_BINARY_TRAINING_CLASS")
-    if policy["depth"] >= 3:
-        # No invented composite concepts: emphasize long *attested* records.
-        for value in truths.values():
-            value.sort(key=lambda r: (-len(r["tokens"]), r["id"]))
-    if policy["contrast"] >= 0.5:
-        chosen = [rng.choice(truths[label]) for _ in range(batch_size // 2)
-                  for label in ("TRUE", "FALSE")]
-    else:
-        chosen = [rng.choice(rows) for _ in range(batch_size)]
-    rng.shuffle(chosen)
-    return chosen
-
-
-def replay_missed_lessons(chosen: list[dict], missed: list[dict], *,
-                          reserved_ids=()) -> list[dict]:
-    """Guarantee every requested missed construction reaches this optimizer batch."""
-    if len(missed) > len(chosen):
-        raise ValueError("HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH")
-    result = list(chosen)
-    reserved = set(reserved_ids)
-    consumed = {index for index, row in enumerate(result)
-                if row.get("id") in reserved}
-    for item in missed:
-        replacement = next((i for i, row in enumerate(result)
-                            if i not in consumed and row["gold"] == item["gold"]), None)
-        if replacement is None:
-            raise ValueError("HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY")
-        result[replacement] = item
-        consumed.add(replacement)
-    return result
-
+from ._lesson_guidance import (
+    _champion_directed_rows, _confidence_guidance, _cook_new_grade_soups,
+    _mentor_vote_specs, _typed_confidence_guidance, choose_lesson_batch,
+    replay_missed_lessons,
+)
 
 @_functools.lru_cache(maxsize=16)
 def _cached_frozen_champion(path_string, sha, step, file_size, file_mtime_ns):
@@ -145,80 +92,6 @@ def _mentor_sources_for_visit(run_dir, receipt, grade, graph, grade_count):
         run_dir, active, grade, grade_count)
     return tuple(mentors), soups, receipts
 
-
-def _cook_new_grade_soups(mx, run_dir, receipt, frontier, course, graph,
-                          *, reserve_gib, existing=None):
-    """Freeze newly broader or displaced grade-champion weight recipes."""
-    current = dict(receipt.get("grade_soups", {}) if existing is None else existing)
-    refreshed = []
-    program = _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course)
-    for grade in program.grades:
-        plan = _learning_grade_soup.grade_soup_recipe(
-            frontier, grade.id, tuple(cap.id for cap in grade.capabilities))
-        if not _learning_grade_soup.needs_refresh(current.get(grade.id), plan):
-            continue
-        members = []
-        catalogs = {}
-        graph_digests = {}
-        for item in plan["members"]:
-            pointer = item["checkpoint"]
-            path = run_dir / pointer["filename"]
-            if path.is_symlink() or path.parent != run_dir / "bundles":
-                raise ValueError("GRADE_SOUP_UNSAFE_CHAMPION_BUNDLE")
-            weights, own_adamw, manifest, original_graph = _runtime_mlx_checkpoint.load_semantically_bound_bundle(path)
-            if (manifest["source_digest"] != _bilqis_mlx_source.AUDITED_PARENT.sha256 or
-                    manifest["safetensors_sha256"] != pointer["sha256"] or
-                    manifest["optimizer_step"] != pointer["optimizer_step"] or
-                    not _learning_student_ops._compatible_graphs(original_graph, graph)):
-                raise ValueError("GRADE_SOUP_CHAMPION_CUSTODY_DRIFT")
-            sha = pointer["sha256"]
-            graph_digest = _runtime_state._fingerprint(original_graph)
-            if (graph_digest in catalogs and
-                    original_graph != catalogs[graph_digest]):
-                raise ValueError("GRADE_SOUP_INGREDIENT_GRAPH_DIGEST_COLLISION")
-            catalogs[graph_digest] = original_graph
-            graph_digests[sha] = graph_digest
-            members.append((sha, item["votes"], weights))
-            del own_adamw
-        if len(catalogs) == 1:
-            graph_digest, catalog = next(iter(catalogs.items()))
-            combined = _learning_grade_soup.weighted_average(mx, [
-                (votes, weights) for _, votes, weights in members])
-            snapshot = _learning_grade_soup.save_frozen_soup(run_dir, plan, combined,
-                                        reserve_gib=reserve_gib,
-                                        token_count=len(catalog["tokens"]))
-            snapshot["source_graph_sha256"] = graph_digest
-        else:
-            # Each exact source graph owns its own frozen weight mixture.
-            # Append-only older prefixes may advise their supported tokens,
-            # but must never masquerade as expanded embedding matrices.
-            by_sha = {sha: (votes, weights) for sha, votes, weights in members}
-            shards = []
-            for shard_plan in _learning_grade_soup.partitioned_recipe(plan, graph_digests):
-                graph_digest = shard_plan["source_graph_sha256"]
-                combined = _learning_grade_soup.weighted_average(mx, [
-                    by_sha[item["checkpoint"]["sha256"]]
-                    for item in shard_plan["members"]])
-                frozen = _learning_grade_soup.save_frozen_soup(
-                    run_dir, shard_plan, combined, reserve_gib=reserve_gib,
-                    token_count=len(catalogs[graph_digest]["tokens"]))
-                frozen["source_graph_sha256"] = graph_digest
-                shards.append(frozen)
-            snapshot = {**plan, "schema": _learning_grade_soup.PARTITIONED_SCHEMA,
-                        "shards": shards,
-                        "partition_policy": "EXACT_SOURCE_GRAPH_NO_MIXED_PARAMETER_AVERAGE"}
-        previous = current.get(grade.id)
-        if previous is not None:
-            snapshot["coverage_peak"] = max(
-                previous["coverage_peak"], snapshot["coverage_peak"])
-            snapshot["previous"] = [
-                {"filename": part["filename"], "sha256": part["sha256"]}
-                for part in _learning_grade_soup.soup_shards(previous)]
-        current[grade.id] = snapshot
-        refreshed.append(grade.id)
-    return current, tuple(refreshed)
-
-
 @_functools.lru_cache(maxsize=12)
 def _cached_grade_soup(path_string, sha, token_count, stat_size, stat_mtime_ns):
     """Verify a frozen soup once per exact file identity for repeated lessons."""
@@ -259,163 +132,11 @@ def _frozen_grade_soup_votes(run_dir, receipt, lesson_grade, school_grade_count)
                              "source_graph_sha256": shard.get("source_graph_sha256")})
     return tuple(mentors), tuple(receipts)
 
-
-def _mentor_vote_specs(mentor, row_capabilities, *, lesson_grade,
-                       direct_capabilities):
-    """Return per-role row masks; same-grade soup fills uncovered capability rows."""
-    import numpy as np
-    capabilities = tuple(mentor.get("capabilities", ()))
-    if capabilities:
-        return tuple(
-            (1, np.asarray(
-                [row_capability == capability
-                 for row_capability in row_capabilities],
-                dtype=bool))
-            for capability in capabilities
-        )
-    breadth = mentor.get("breadth")
-    if mentor.get("soup_grade") == lesson_grade and direct_capabilities:
-        mask = np.asarray(
-            [capability not in direct_capabilities
-             for capability in row_capabilities],
-            dtype=bool)
-    else:
-        mask = np.ones(len(row_capabilities), dtype=bool)
-    return ((breadth, mask),)
-
-
-def _champion_directed_rows(mx, mentors, student_weights, rows, config,
-                            answer_ids):
-    """Source-gated rows where an owning champion is right and student is wrong."""
-    if not mentors or not rows:
-        return ()
-    student_predictions = _learning_student_ops._predictions(
-        mx, student_weights, rows, config, answer_ids)
-    directed = set()
-    for mentor in mentors:
-        capabilities = set(mentor.get("capabilities", ()))
-        graph = mentor.get("graph")
-        if not capabilities or not isinstance(graph, dict):
-            continue
-        vocabulary = len(graph.get("tokens", ()))
-        eligible = [
-            row for row in rows
-            if row.get("capability") in capabilities and
-            row.get("tokens") and max(row["tokens"]) < vocabulary
-        ]
-        if not eligible:
-            continue
-        mentor_config = _learning_student_ops._compatible_answer_config(
-            config, graph)
-        predictions = _learning_student_ops._predictions(
-            mx, mentor["weights"], eligible, mentor_config, answer_ids)
-        for row in eligible:
-            identity = row["id"]
-            if (student_predictions[identity] != row["gold"] and
-                    predictions[identity] == row["gold"]):
-                directed.add(identity)
-    selected = {}
-    for row in rows:
-        identity = row["id"]
-        if identity not in directed:
-            continue
-        prior = selected.get(identity)
-        if prior is not None and prior != row:
-            raise ValueError(WEAKNESS_TARGET_IDENTITY_CONFLICT)
-        selected.setdefault(identity, row)
-    return tuple(selected.values())
-
-
-def _confidence_guidance(mx, mentors, picked, config, answer_ids,
-                         *, scope_size, teacher_distill, lesson_grade=None):
-    """Gold-agreeing frozen logits are small, policy-shaped gradient advice."""
-    if not mentors or teacher_distill <= 0 or any(
-            row.get("answer_kind", "binary") != "binary" for row in picked):
-        return None
-    import numpy as np
-    ids, lengths, labels = _learning_student_ops._make_batch(picked)
-    vote_logits = []
-    row_capabilities = tuple(row.get("capability") for row in picked)
-    if lesson_grade is None:
-        first_capability = next(
-            (capability for capability in row_capabilities
-             if isinstance(capability, str) and capability), "")
-        lesson_grade = first_capability.partition(".")[0]
-    direct_capabilities = {
-        capability for mentor in mentors
-        for capability in mentor.get("capabilities", ())
-    }
-    for mentor in mentors:
-        vocabulary = (mentor.get("vocab_size") or len(mentor["graph"]["tokens"]))
-        if (max(answer_ids) >= vocabulary or
-                any(max(row["tokens"]) >= vocabulary for row in picked)):
-            continue
-        logits = _runtime_mlx_parity.forward_arrays(mx, mentor["weights"], ids, lengths,
-                                heads=config["heads"], layers=config["layers"],
-                                answer_ids=answer_ids)
-        mx.eval(logits)
-        raw = np.asarray(logits)[:, :2]
-        vote_logits.extend(
-            (breadth, raw, mask)
-            for breadth, mask in _mentor_vote_specs(
-                mentor, row_capabilities, lesson_grade=lesson_grade,
-                direct_capabilities=direct_capabilities)
-        )
-    target, influence = _learning_champion_confidence.vote_targets(vote_logits, labels,
-                                     eligible_capabilities=scope_size,
-                                     teacher_distill=teacher_distill)
-    return (target, influence) if np.any(influence) else None
-
-
-def _typed_confidence_guidance(mx, mentors, picked, config, *, scope_size,
-                               teacher_distill, lesson_grade=None):
-    """Source-gold-agreeing grade-soup/same-grade advice for typed heads.
-
-    The trained student and the frozen mentors are distinct. Historical
-    smaller-vocabulary soups participate only in heads their tokens support.
-    """
-    import numpy as np
-    from bilqis_mlx.typed_answer_training import prepare_typed_batches
-    if teacher_distill <= 0 or not mentors:
-        return None
-    batches = prepare_typed_batches(picked, config["answer_heads"])
-    guidance = {}
-    row_capability = {row["id"]: row["capability"] for row in picked}
-    if lesson_grade is None:
-        lesson_grade = picked[0]["capability"].partition(".")[0]
-    direct_capabilities = {
-        capability for mentor in mentors
-        for capability in mentor.get("capabilities", ())
-    }
-    for kind, batch in batches.items():
-        eligible = []
-        batch_capabilities = tuple(
-            row_capability[row_id] for row_id in batch["row_ids"])
-        answer_ids = batch["answer_ids"]
-        if not answer_ids:
-            continue
-        for mentor in mentors:
-            vocabulary = mentor.get("vocab_size") or len(mentor["graph"]["tokens"])
-            if (max(answer_ids) >= vocabulary or
-                    int(batch["ids"].max()) >= vocabulary):
-                continue
-            logits = _runtime_mlx_parity.forward_arrays(
-                mx, mentor["weights"], batch["ids"], batch["lengths"],
-                heads=config["heads"], layers=config["layers"], answer_ids=answer_ids)
-            mx.eval(logits)
-            raw = np.asarray(logits)
-            eligible.extend(
-                (breadth, raw, mask)
-                for breadth, mask in _mentor_vote_specs(
-                    mentor, batch_capabilities, lesson_grade=lesson_grade,
-                    direct_capabilities=direct_capabilities)
-            )
-        if not eligible:
-            continue
-        target, weight = _learning_champion_confidence.vote_targets_typed(
-            eligible, batch["target_indices"], classes=len(answer_ids),
-            eligible_capabilities=scope_size, teacher_distill=teacher_distill)
-        if np.any(weight):
-            guidance[kind] = (target, weight)
-    return guidance or None
-WEAKNESS_TARGET_IDENTITY_CONFLICT = "TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT"
+__all__ = (
+    "_cached_frozen_champion", "_cached_grade_soup",
+    "_champion_directed_rows", "_confidence_guidance",
+    "_cook_new_grade_soups", "_frozen_confidence_champions",
+    "_frozen_grade_soup_votes", "_mentor_sources_for_visit",
+    "_mentor_vote_specs", "_typed_confidence_guidance",
+    "choose_lesson_batch", "replay_missed_lessons",
+)

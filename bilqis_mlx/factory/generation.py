@@ -1,91 +1,76 @@
 """Grade-neutral specimen generation from a verified FactoryRelease."""
 from __future__ import annotations
 
-from dataclasses import asdict
-import hashlib
-import json
-
-from .adapters import SourceAdapterRegistry
+from .adapters import SourceAdapterRegistry, validate_instructional_constituents
 from .model import FactoryRelease
 from .execution import ExecutionPlan
 from .curriculum_definition import (
     CurriculumDefinition, SourceBindingSet, from_legacy_course,
     validate_source_bindings,
 )
+from ..compatibility.source_adapter_resume import resume_adapter_compatible
 
 
-def _digest(value) -> str:
-    return hashlib.sha256(json.dumps(
-        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
-        allow_nan=False).encode("utf-8")).hexdigest()
+_GRADE_A_DEVELOPMENT_PRESENTATION_IMPLEMENTATION = (
+    "c451c3e6bf5ab538450c691d504230036b9a729ddfc67b53163c6a1f106d62a9")
+_GRADE_A_1324082_IMPLEMENTATION = (
+    "f8e5aec9398538adc633deabe9c41c485e69a96044b9b86a5f1075ce6e201778")
+_GRADE_A_BASE_VARIATION_AXES = (
+    "source-valid", "balanced-gold", "fresh-seed",
+    "member-decoy-set-context-v1", "irrelevant-source-context-v2",
+)
+_GRADE_A_1324082_VARIATION_AXES = (
+    *_GRADE_A_BASE_VARIATION_AXES, "generalization-only-source-context-v3",
+)
 
 
-def _require_unique_row_identities(
-        batch, *, capability: str, error_code: str) -> None:
-    if len({row["id"] for row in batch}) != len(batch):
-        raise ValueError(error_code + ":" + capability)
+def _is_1324082_rollback_adapter_pair(admitted, current) -> bool:
+    """Recognize the exact Grade-A provider identity removed by ADR-099.
 
-
-def _runtime_adapter_contract(descriptor) -> dict:
-    """Return provider identity that must remain stable across code refactors.
-
-    Implementation and historical cohort-code digests are evidence about exact
-    source bytes, not the semantic adapter contract itself. A newer
-    implementation may execute an older admitted release only after it
-    reproduces that release's sealed capability specimens exactly.
+    This is intentionally one-way: a durable release admitted while 1324082 was
+    active may resume on the reverted provider. No other implementation drift is
+    accepted, and the reverted provider may not impersonate the removed one in a
+    newly admitted release.
     """
-    contract = asdict(descriptor)
-    contract.pop("implementation_sha256")
-    releases = contract.pop("cohort_releases")
-    contract["cohort_release_ids"] = tuple(name for name, _ in releases)
-    return contract
-
-
-def _requalifies_sealed_capability(
-        source_root, graph, release, registry, execution, *, legacy_course=None) -> bool:
-    receipt = next((
-        item for item in release.verification.capabilities
-        if item.capability_id == execution.capability_id), None)
-    if receipt is None:
-        return False
-    try:
-        rows = draw_execution_rows(
-            source_root, graph, release.curriculum, release.execution_plan,
-            registry, source_bindings=release.source_bindings,
-            legacy_course=legacy_course, seed=receipt.verification_seed,
-            capability=execution.capability_id, each=receipt.specimen_count)
-    except (KeyError, TypeError, ValueError):
+    if admitted is None:
         return False
     return (
-        len(rows) == receipt.specimen_count and
-        _digest(tuple(row["id"] for row in rows)) == receipt.specimen_ids_sha256 and
-        _digest(rows) == receipt.specimen_content_sha256
-    )
+        admitted.adapter_id == current.adapter_id == "source.micro.predicates/v1" and
+        admitted.generator_id == current.generator_id ==
+        "bilqis_mlx.grade_a_probe.make_record" and
+        admitted.accepted_oracle_ids == current.accepted_oracle_ids ==
+        ("bilqis.mlx.grade-a-record-oracle/v2",) and
+        admitted.cohort_generator_id == current.cohort_generator_id ==
+        "bilqis.mlx.grade-a-live-constructor/v1" and
+        admitted.teaching_option_ids == current.teaching_option_ids == () and
+        admitted.profile_dimensions == current.profile_dimensions == () and
+        admitted.implementation_sha256 == _GRADE_A_1324082_IMPLEMENTATION and
+        current.implementation_sha256 == _GRADE_A_DEVELOPMENT_PRESENTATION_IMPLEMENTATION and
+        len(admitted.cohort_releases) == len(current.cohort_releases) == 1 and
+        admitted.cohort_releases[0][0] == current.cohort_releases[0][0] and
+        admitted.cohort_releases[0][1] == _GRADE_A_1324082_IMPLEMENTATION and
+        current.cohort_releases[0][1] == _GRADE_A_DEVELOPMENT_PRESENTATION_IMPLEMENTATION and
+        admitted.variation_axes == _GRADE_A_1324082_VARIATION_AXES and
+        current.variation_axes == _GRADE_A_BASE_VARIATION_AXES)
 
 
 def runtime_adapter_for_release(
-        source_root, graph, release, registry, execution, *, legacy_course=None,
+        source_root, graph, release, registry, execution, *,
         drift_code="FACTORY_EXECUTABLE_GENERATION_ADAPTER_DRIFT"):
-    """Resolve a runtime provider without confusing refactoring with source drift.
+    """Execute only the exact implementation bound by the admission receipt.
 
-    Exact descriptor identity is the fast path. If only implementation evidence
-    changed while the declared semantic adapter contract stayed intact, require
-    the current implementation to reproduce the admitted release's sealed
-    capability specimens byte-for-byte before allowing execution.
+    Historical releases remain readable. A refactored provider requires its own
+    verified admission; specimen replay cannot substitute a different identity.
     """
     binding = release.source_bindings.by_capability[execution.capability_id]
     registered = registry.require(binding.generator_id, binding.oracle_id)
     admitted = next((
         item for item in release.source_adapters
         if item.adapter_id == execution.provider_id), None)
-    compatible = registered.descriptor == admitted
-    if (not compatible and admitted is not None and
-            _runtime_adapter_contract(registered.descriptor) ==
-            _runtime_adapter_contract(admitted)):
-        compatible = _requalifies_sealed_capability(
-            source_root, graph, release, registry, execution,
-            legacy_course=legacy_course)
-    if not compatible:
+    if (registered.descriptor != admitted and
+            not _is_1324082_rollback_adapter_pair(
+                admitted, registered.descriptor) and
+            not resume_adapter_compatible(admitted, registered.descriptor)):
         raise ValueError(drift_code + ":" + execution.capability_id)
     return registered
 
@@ -128,9 +113,6 @@ def draw_release_rows(source_root, graph, release: FactoryRelease,
                 raise ValueError("FACTORY_GENERATION_ANSWER_CONTRACT_DRIFT:" + cap.id)
             if adapter.check(row, source_root=source_root, graph=graph, course=course) is not True:
                 raise ValueError("FACTORY_GENERATION_SOURCE_ORACLE_DISAGREEMENT:" + cap.id)
-        _require_unique_row_identities(
-            batch, capability=cap.id,
-            error_code="FACTORY_GENERATION_IDENTITY_COLLISION")
         rows.extend(batch)
     expected = {cap.id: (each if each is not None else count)
                 for _, cap, count in selected}
@@ -141,13 +123,84 @@ def draw_release_rows(source_root, graph, release: FactoryRelease,
     return rows
 
 
+def execute_release_family_program(
+        release: FactoryRelease, registry: SourceAdapterRegistry,
+        family_registry, atlas, learned_frontier, capability_id: str, *,
+        construct_args: tuple = (), construct_kwargs: dict | None = None,
+        check_args: tuple = (), check_kwargs: dict | None = None):
+    """Explicit non-admitting A08 family execution against one verified release.
+
+    This does not enter the admitted student draw path. It replays the current A08
+    source/census authority, resolves the exact release capability/provider tuple,
+    then delegates heterogeneous construction/checking to the registered family.
+    """
+    from .skos_curriculum.registry import (
+        FamilyProgramRegistry, bind_factory_release_families,
+        default_family_program_registry,
+        execute_bound_family_program,
+    )
+    from .skos_curriculum.common import _fail
+    from .skos_curriculum.curriculum import LearnedFrontier
+    from .curriculum.capability_identity import (
+        bind_factory_release_capability_identity,
+    )
+    from ..semantics.cognitive_operators.registry import default_registry
+
+    if (type(release) is not FactoryRelease
+            or not isinstance(registry, SourceAdapterRegistry)
+            or type(family_registry) is not FamilyProgramRegistry
+            or type(learned_frontier) is not LearnedFrontier
+            or not isinstance(capability_id, str) or not capability_id):
+        _fail("FACTORY_FAMILY_EXECUTION_INPUT_INVALID")
+    release.verify()
+    canonical_registry = default_family_program_registry()
+    if family_registry.programs != canonical_registry.programs:
+        _fail("FACTORY_FAMILY_EXECUTION_CANONICAL_REGISTRY_REQUIRED")
+    bindings = bind_factory_release_families(
+        release, canonical_registry, registry, atlas, learned_frontier)
+    binding = bindings.require(capability_id)
+    stable_binding = bind_factory_release_capability_identity(
+        release, bindings, capability_id, atlas,
+        default_registry(bindings.semantic_release))
+    stable = stable_binding.stable_identity.identity
+    capability = next((
+        item for item in release.capabilities
+        if item.capability_id == capability_id), None)
+    program = next((
+        item for item in release.construction_programs
+        if item.capability_id == capability_id), None)
+    if (capability is None or program is None
+            or binding.program_key is None
+            or binding.stable_semantic_id != stable.semantic_id
+            or binding.program_key.family_id != stable.family_id
+            or binding.program_key.signature != stable.signature
+            or binding.program_key.answer_kinds != stable.answer_kinds
+            or stable.answer_kinds != tuple(sorted(capability.answer_kinds))
+            or (binding.semantic_operator_id is not None
+                and stable.operator_id != binding.semantic_operator_id)
+            or binding.source_adapter_id != capability.source_adapter_id
+            or binding.generator_id != program.generator_id
+            or binding.oracle_id != program.oracle_id
+            or binding.capability_id != program.capability_id):
+        _fail("FACTORY_FAMILY_EXECUTION_RELEASE_BINDING_DRIFT")
+    registered = registry.require(program.generator_id, program.oracle_id)
+    if registered.descriptor.adapter_id != binding.source_adapter_id:
+        _fail("FACTORY_FAMILY_EXECUTION_SOURCE_ADAPTER_DRIFT")
+    return execute_bound_family_program(
+        canonical_registry, binding,
+        construct_args=construct_args, construct_kwargs=construct_kwargs,
+        check_args=check_args, check_kwargs=check_kwargs,
+        source_registry=registry, atlas=atlas)
+
+
 def draw_execution_rows(
         source_root, graph, curriculum, plan: ExecutionPlan,
         registry: SourceAdapterRegistry, *, seed: int,
         source_bindings: SourceBindingSet | None = None,
-        legacy_course=None, capability: str | None = None,
+        capability: str | None = None,
         each: int | None = None) -> list[dict]:
     """Generate from one compiled execution contract, including profile constraints."""
+    adapter_context = curriculum
     if isinstance(curriculum, CurriculumDefinition):
         if source_bindings is None:
             raise ValueError("FACTORY_EXECUTION_GENERATION_SOURCE_BINDINGS_REQUIRED")
@@ -155,7 +208,6 @@ def draw_execution_rows(
     else:
         if source_bindings is not None:
             raise ValueError("FACTORY_EXECUTION_GENERATION_LEGACY_BINDINGS_AMBIGUOUS")
-        legacy_course = curriculum
         curriculum, source_bindings = from_legacy_course(curriculum)
     if (not isinstance(plan, ExecutionPlan) or
             plan.curriculum_sha256 != curriculum.digest() or
@@ -189,7 +241,7 @@ def draw_execution_rows(
         arguments = {
             "source_root": source_root,
             "graph": graph,
-            "course": legacy_course,
+            "course": adapter_context,
             "capability": execution.capability_id,
             "seed": seed,
             "each": count,
@@ -215,20 +267,20 @@ def draw_execution_rows(
                     + execution.capability_id)
             if adapter.check(
                     row, source_root=source_root, graph=graph,
-                    course=legacy_course) is not True:
+                    course=adapter_context) is not True:
                 raise ValueError(
                     "FACTORY_EXECUTION_GENERATION_SOURCE_ORACLE_DISAGREEMENT:"
                     + execution.capability_id)
-        _require_unique_row_identities(
-            batch, capability=execution.capability_id,
-            error_code="FACTORY_EXECUTION_GENERATION_IDENTITY_COLLISION")
+            validate_instructional_constituents(
+                row, curriculum=curriculum, plan=plan,
+                capability=execution.capability_id, adapter=adapter)
         rows.extend(batch)
     return rows
 
 
 def draw_executable_release_rows(
         source_root, graph, release, registry: SourceAdapterRegistry, *,
-        seed: int, legacy_course=None, capability: str | None = None,
+        seed: int, capability: str | None = None,
         each: int | None = None) -> list[dict]:
     """Generate only from one admitted v2 release and its compiled projections."""
     from .executable_release import ExecutableFactoryRelease
@@ -249,10 +301,9 @@ def draw_executable_release_rows(
         selected = (selected_item,)
     for execution in selected:
         runtime_adapter_for_release(
-            source_root, graph, release, registry, execution,
-            legacy_course=legacy_course)
+            source_root, graph, release, registry, execution)
 
     return draw_execution_rows(
         source_root, graph, release.curriculum, release.execution_plan, registry,
-        source_bindings=release.source_bindings, legacy_course=legacy_course,
+        source_bindings=release.source_bindings,
         seed=seed, capability=capability, each=each)

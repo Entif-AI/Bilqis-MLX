@@ -1,0 +1,16 @@
+
+==================================== ERRORS ====================================
+_ ERROR collecting bilqis_mlx/runtime/tests/teacher/priority/test_priority_source_offer.py _
+ImportError while importing test module '/Users/cr8s/.codex/worktrees/379-c06/Bilqis/bilqis_mlx/runtime/tests/teacher/priority/test_priority_source_offer.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.14/3.14.4/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bilqis_mlx/runtime/tests/teacher/priority/test_priority_source_offer.py:5: in <module>
+    from bilqis_mlx.runtime.priority_source_offer import (
+E   ModuleNotFoundError: No module named 'bilqis_mlx.runtime.priority_source_offer'
+=========================== short test summary info ============================
+ERROR bilqis_mlx/runtime/tests/teacher/priority/test_priority_source_offer.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.08s

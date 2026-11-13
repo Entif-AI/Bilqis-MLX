@@ -1,0 +1,100 @@
+test_exact_roundtrip_idempotence_and_independent_run_identity (_bilqis_test_df92003e8291c46dc05acdbceab1b78541e773976eebae9d1408d46bd0ba0c0c.AtlasLeaseTests.test_exact_roundtrip_idempotence_and_independent_run_identity) ... ok
+test_fixture_lease_cannot_attach_to_a_real_saved_run_or_symlink (_bilqis_test_df92003e8291c46dc05acdbceab1b78541e773976eebae9d1408d46bd0ba0c0c.AtlasLeaseTests.test_fixture_lease_cannot_attach_to_a_real_saved_run_or_symlink) ... ok
+test_lookup_only_scope_can_explicitly_allow_no_deterministic_operators (_bilqis_test_df92003e8291c46dc05acdbceab1b78541e773976eebae9d1408d46bd0ba0c0c.AtlasLeaseTests.test_lookup_only_scope_can_explicitly_allow_no_deterministic_operators) ... ok
+test_missing_tampered_lease_and_unequal_renewal_do_not_become_no_lease (_bilqis_test_df92003e8291c46dc05acdbceab1b78541e773976eebae9d1408d46bd0ba0c0c.AtlasLeaseTests.test_missing_tampered_lease_and_unequal_renewal_do_not_become_no_lease) ... ok
+test_scope_signature_human_request_and_sets_fail_closed (_bilqis_test_df92003e8291c46dc05acdbceab1b78541e773976eebae9d1408d46bd0ba0c0c.AtlasLeaseTests.test_scope_signature_human_request_and_sets_fail_closed) ... ok
+test_actual_frontier_helper_stages_idempotently_without_native_adopter (_bilqis_test_4b2c890f7f1cda71dd6ff5c60e914d4a17df0f1207d039feeedc6e1deb3b4608.AtlasAdmissionCommandTests.test_actual_frontier_helper_stages_idempotently_without_native_adopter) ... ok
+test_cli_request_rejects_before_topology_or_learner_initialization (_bilqis_test_4b2c890f7f1cda71dd6ff5c60e914d4a17df0f1207d039feeedc6e1deb3b4608.AtlasAdmissionCommandTests.test_cli_request_rejects_before_topology_or_learner_initialization) ... ok
+test_exact_scope_and_post_admission_total_ceilings_precede_executor (_bilqis_test_891f1c72ed0299c59a1937e8b54359e217aabf5a621d499ac1ab2e47c030e4a2.AtlasAdmissionPolicyTests.test_exact_scope_and_post_admission_total_ceilings_precede_executor) ... ok
+test_native_proposal_and_signed_scope_cannot_be_relabelled (_bilqis_test_891f1c72ed0299c59a1937e8b54359e217aabf5a621d499ac1ab2e47c030e4a2.AtlasAdmissionPolicyTests.test_native_proposal_and_signed_scope_cannot_be_relabelled) ... ok
+test_no_lease_and_authorized_fixture_stage_without_adoption_claim (_bilqis_test_891f1c72ed0299c59a1937e8b54359e217aabf5a621d499ac1ab2e47c030e4a2.AtlasAdmissionPolicyTests.test_no_lease_and_authorized_fixture_stage_without_adoption_claim) ... ok
+test_three_native_proposals_reuse_one_lease_but_do_not_prove_adoption (_bilqis_test_891f1c72ed0299c59a1937e8b54359e217aabf5a621d499ac1ab2e47c030e4a2.AtlasAdmissionPolicyTests.test_three_native_proposals_reuse_one_lease_but_do_not_prove_adoption) ... ok
+load test module /Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/semantics/tests/test_atlas_vocabulary.py ... ERROR
+load test module /Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/semantics/tests/test_atlas_vocabulary_resources.py ... ERROR
+load test module /Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/semantics/tests/test_atlas_vocabulary_transaction.py ... ERROR
+test_atom_only_stream_needs_no_future_frame_approval (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_atom_only_stream_needs_no_future_frame_approval) ... ok
+test_compact_frame_sidecar_matches_literal_canonical_wire_bytes (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_compact_frame_sidecar_matches_literal_canonical_wire_bytes) ... ok
+test_every_four_member_prefix_preserves_only_visible_atoms (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_every_four_member_prefix_preserves_only_visible_atoms) ... ok
+test_exact_1024_neural_positions_are_admitted (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_exact_1024_neural_positions_are_admitted) ... ok
+test_exact_source_maps_role_access_expansion_and_prefix_ends (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_exact_source_maps_role_access_expansion_and_prefix_ends) ... ok
+test_first_admission_raw_atom_requires_source_owned_grant (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_first_admission_raw_atom_requires_source_owned_grant) ... ok
+test_foreign_release_or_prefix_is_rejected (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_foreign_release_or_prefix_is_rejected) ... ok
+test_future_frame_member_change_cannot_enter_prior_prefix (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_future_frame_member_change_cannot_enter_prior_prefix) ... ok
+test_future_suffix_does_not_change_prior_prefix_or_cache_key (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_future_suffix_does_not_change_prior_prefix_or_cache_key) ... ok
+test_hidden_teacher_targets_are_not_model_input_or_cache_identity (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_hidden_teacher_targets_are_not_model_input_or_cache_identity) ... ok
+test_invalid_future_frame_does_not_poison_earlier_prefix (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_invalid_future_frame_does_not_poison_earlier_prefix) ... ok
+test_lawful_source_boundaries_split_without_truncation (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_lawful_source_boundaries_split_without_truncation) ... ok
+test_member_visible_later_moves_closure_without_rewriting_prefix (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_member_visible_later_moves_closure_without_rewriting_prefix) ... ok
+test_nested_child_closes_before_parent_and_atomic_round_trips (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_nested_child_closes_before_parent_and_atomic_round_trips) ... ok
+test_overflow_fails_before_packing_or_padding (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_overflow_fails_before_packing_or_padding) ... ok
+test_padded_batch_rows_cannot_expose_other_row_or_future_content (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_padded_batch_rows_cannot_expose_other_row_or_future_content) ... ok
+test_parent_cannot_close_while_child_is_future (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_parent_cannot_close_while_child_is_future) ... ok
+test_partial_visible_forest_excludes_future_and_preserves_full_identities (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_partial_visible_forest_excludes_future_and_preserves_full_identities) ... ok
+test_partial_visible_forest_ignores_hidden_parent_member_content (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_partial_visible_forest_ignores_hidden_parent_member_content) ... ok
+test_partial_visible_forest_preserves_hidden_parent_provenance (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_partial_visible_forest_preserves_hidden_parent_provenance) ... ok
+test_partial_visible_forest_receipt_rejects_source_scope_release_drift (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_partial_visible_forest_receipt_rejects_source_scope_release_drift) ... ok
+test_partial_visible_forest_rechecks_hidden_parent_current_grants (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_partial_visible_forest_rechecks_hidden_parent_current_grants) ... ok
+test_partial_visible_forest_rejects_forged_orphan_parent (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_partial_visible_forest_rejects_forged_orphan_parent) ... ok
+test_policy_version_changes_compiler_digest_even_without_frames (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_policy_version_changes_compiler_digest_even_without_frames) ... ok
+test_revoked_frame_grant_blocks_closure_not_raw_atom_prefix (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_revoked_frame_grant_blocks_closure_not_raw_atom_prefix) ... ok
+test_unequal_source_rows_have_separate_positions_and_cache_keys (_bilqis_test_58754a0090409af6feeb11689211fe5b52b6bed7d1bf475b3cb5486e9ff0a66e.FrameCompilerTests.test_unequal_source_rows_have_separate_positions_and_cache_keys) ... ok
+test_foreign_release_and_map_identity_reject_before_lookup (_bilqis_test_7aa20764aeb30138745b0e17f7f7ca92ea8b9057def65e70319694401e979f6b.ReleasedFrameSchemaTests.test_foreign_release_and_map_identity_reject_before_lookup) ... ok
+test_forged_local_catalog_cannot_replace_pinned_source_release (_bilqis_test_7aa20764aeb30138745b0e17f7f7ca92ea8b9057def65e70319694401e979f6b.ReleasedFrameSchemaTests.test_forged_local_catalog_cannot_replace_pinned_source_release) ... ok
+test_missing_trusted_digest_and_noncanonical_manifest_fail_closed (_bilqis_test_7aa20764aeb30138745b0e17f7f7ca92ea8b9057def65e70319694401e979f6b.ReleasedFrameSchemaTests.test_missing_trusted_digest_and_noncanonical_manifest_fail_closed) ... ok
+test_persisted_release_is_append_only_and_snapshot_bound (_bilqis_test_7aa20764aeb30138745b0e17f7f7ca92ea8b9057def65e70319694401e979f6b.ReleasedFrameSchemaTests.test_persisted_release_is_append_only_and_snapshot_bound) ... ok
+test_pinned_release_verifies_exact_schema_and_witness (_bilqis_test_7aa20764aeb30138745b0e17f7f7ca92ea8b9057def65e70319694401e979f6b.ReleasedFrameSchemaTests.test_pinned_release_verifies_exact_schema_and_witness) ... ok
+test_real_registered_a_source_schema_can_be_published_and_verified (_bilqis_test_7aa20764aeb30138745b0e17f7f7ca92ea8b9057def65e70319694401e979f6b.ReleasedFrameSchemaTests.test_real_registered_a_source_schema_can_be_published_and_verified) ... ok
+test_reordered_json_keys_canonicalize_but_role_reorder_does_not (_bilqis_test_7aa20764aeb30138745b0e17f7f7ca92ea8b9057def65e70319694401e979f6b.ReleasedFrameSchemaTests.test_reordered_json_keys_canonicalize_but_role_reorder_does_not) ... ok
+test_repo_owned_pins_load_all_actual_source_schema_families (_bilqis_test_7aa20764aeb30138745b0e17f7f7ca92ea8b9057def65e70319694401e979f6b.ReleasedFrameSchemaTests.test_repo_owned_pins_load_all_actual_source_schema_families) ... skipped 'real repo-pinned A01 artifact supplied at source turn-in'
+test_same_id_revision_cannot_substitute_any_semantic_body (_bilqis_test_7aa20764aeb30138745b0e17f7f7ca92ea8b9057def65e70319694401e979f6b.ReleasedFrameSchemaTests.test_same_id_revision_cannot_substitute_any_semantic_body) ... ok
+
+======================================================================
+ERROR: load test module /Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/semantics/tests/test_atlas_vocabulary.py
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/scripts/run_tests.py", line 48, in runTest
+    raise self._error.with_traceback(self._traceback)
+  File "/Users/cr8s/Code/bamf02-c-runtime/scripts/run_tests.py", line 99, in load_test_files
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/semantics/tests/test_atlas_vocabulary.py", line 12, in <module>
+    import mlx.core as mx
+ModuleNotFoundError: No module named 'mlx'
+
+======================================================================
+ERROR: load test module /Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/semantics/tests/test_atlas_vocabulary_resources.py
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/scripts/run_tests.py", line 48, in runTest
+    raise self._error.with_traceback(self._traceback)
+  File "/Users/cr8s/Code/bamf02-c-runtime/scripts/run_tests.py", line 99, in load_test_files
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/semantics/tests/test_atlas_vocabulary_resources.py", line 17, in <module>
+    from bilqis_mlx.semantics.tests.test_atlas_vocabulary import _allocation_fixture
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/semantics/tests/test_atlas_vocabulary.py", line 12, in <module>
+    import mlx.core as mx
+ModuleNotFoundError: No module named 'mlx'
+
+======================================================================
+ERROR: load test module /Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/semantics/tests/test_atlas_vocabulary_transaction.py
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/scripts/run_tests.py", line 48, in runTest
+    raise self._error.with_traceback(self._traceback)
+  File "/Users/cr8s/Code/bamf02-c-runtime/scripts/run_tests.py", line 99, in load_test_files
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/semantics/tests/test_atlas_vocabulary_transaction.py", line 9, in <module>
+    import mlx.core as mx
+ModuleNotFoundError: No module named 'mlx'
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.410s
+
+FAILED (errors=3, skipped=1)
+TEST_TOTALS total=49 passed=45 failed=3 skipped=1 errors=3
+45 passed, 3 failed, 1 skipped

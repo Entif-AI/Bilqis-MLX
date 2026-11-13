@@ -5,7 +5,7 @@ import unittest
 
 
 def _checker_module():
-    path = Path(__file__).parents[1] / "check_docs.py"
+    path = Path(__file__).parents[1] / "quality" / "check_docs.py"
     spec = importlib.util.spec_from_file_location("bilqis_check_docs", path)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
@@ -96,7 +96,7 @@ class DocumentationChecksTests(unittest.TestCase):
 
         self.assertEqual(issues, ())
 
-    def test_ignores_vendored_run_and_package_manager_markdown(self):
+    def test_ignores_vendored_and_run_markdown(self):
         checker = _checker_module()
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -104,8 +104,6 @@ class DocumentationChecksTests(unittest.TestCase):
             self._write(root, "docs/README.md")
             self._write(root, "vendor/source.md", "[broken](missing.md)\n")
             self._write(root, "runs/receipt.md", "[broken](missing.md)\n")
-            self._write(root, "node_modules/dependency/README.md",
-                        "[broken](missing.md)\n")
 
             issues = checker.inspect_docs(root)
 

@@ -1,0 +1,8 @@
+{
+  "identical": true,
+  "classes": {
+    "MotifKeyTests": "533a07bbe2c09b1bb06bfefb7f137876b01eb5af74b987061a71d15292d62741",
+    "MotifPreparationTests": "6321e235d6ef78592d5c71457db8a837f0e77b505f6b91e4259d96dc59216369",
+    "MotifTransactionTests": "9c5c6b9d25f622a4f456250f724553bd3d3adecc3832b0b7cbfbd06076344f92"
+  }
+}

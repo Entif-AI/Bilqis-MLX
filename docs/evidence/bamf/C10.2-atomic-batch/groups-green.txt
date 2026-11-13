@@ -1,0 +1,6 @@
+----------------------------------------------------------------------
+Ran 111 tests in 12.282s
+
+OK
+TEST_TOTALS total=111 passed=111 failed=0 skipped=0 errors=0
+111 passed, 0 failed, 0 skipped

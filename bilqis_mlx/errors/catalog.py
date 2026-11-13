@@ -8,191 +8,133 @@ Never copy the rendered code into a new string literal.
 """
 from __future__ import annotations
 
-from .model import ErrorSpec, RecoveryContract
+from .specs.base import _spec as _spec
+from .specs.school import SCHOOL as SCHOOL
+from .specs.source import SOURCE as SOURCE
+from .specs.semantic import SEMANTIC_COVERAGE as SEMANTIC_COVERAGE, SEMANTIC_FRAME as SEMANTIC_FRAME
+from .specs.factory import FACTORY as FACTORY
+
+def _bind_namespace(namespace, prefix):
+    namespace.__module__ = __name__
+    namespace.__qualname__ = prefix
+    for name, member in vars(namespace).items():
+        if isinstance(member, type):
+            _bind_namespace(member, prefix + "." + name)
 
 
-def _spec(
-    path: tuple[str, ...], *,
-    owner: str,
-    title: str,
-    message_template: str,
-    disposition: str,
-    next_action: str,
-    operator_steps: tuple[str, ...] = (),
-    self_heal_owner: str | None = None,
-    legacy_codes: tuple[str, ...] = (),
-) -> ErrorSpec:
-    key = ".".join(path).lower()
-    return ErrorSpec(
-        path=path,
-        owner=owner,
-        title=title,
-        message_key="errors." + key + ".message",
-        message_template=message_template,
-        recovery_key="errors." + key + ".recovery",
-        recovery=RecoveryContract(
-            disposition=disposition,
-            next_action=next_action,
-            operator_steps=operator_steps,
-            preserve_state=True,
-            self_heal_owner=self_heal_owner,
-        ),
-        legacy_codes=legacy_codes,
-    )
-
-
-class SCHOOL:
-    class STATE:
-        SCHEMA_MISMATCH = _spec(
-            ("SCHOOL", "STATE", "SCHEMA_MISMATCH"),
-            owner="curriculum.scheduler",
-            title="Saved school schema is not supported",
-            message_template=(
-                "Saved school schema {actual_schema!r} does not match "
-                "the supported schema {expected_schema!r}."),
-            disposition="PRESERVE_AND_MIGRATE",
-            next_action=(
-                "Use the schema-owned compatibility migration before resuming; "
-                "do not edit the saved school JSON by hand."),
-            self_heal_owner="runtime.state",
-            legacy_codes=("INVALID_OR_DRIFTED_SCHOOL_STATE",),
-        )
-        COURSE_DIGEST_MISMATCH = _spec(
-            ("SCHOOL", "STATE", "COURSE_DIGEST_MISMATCH"),
-            owner="curriculum.scheduler",
-            title="Saved school and runtime schedule disagree",
-            message_template=(
-                "Saved school is bound to course {saved_course_digest}; runtime "
-                "loaded {runtime_course_digest}."),
-            disposition="PRESERVE_AND_REPAIR",
-            next_action=(
-                "Reconstruct the schedule from the immutable admitted factory "
-                "artifact that owns the saved course digest, then perform any "
-                "successor migration explicitly."),
-            operator_steps=(
-                "Do not delete, rewrite, or re-hash the saved checkpoint.",
-                "Inspect the admitted factory release recorded in state.json.",
-                "Resume only after its schedule digest matches the saved school.",
-            ),
-            self_heal_owner="runtime.resume_reconciliation",
-            legacy_codes=("INVALID_OR_DRIFTED_SCHOOL_STATE",),
-        )
-        STAGE_INVALID = _spec(
-            ("SCHOOL", "STATE", "STAGE_INVALID"),
-            owner="curriculum.scheduler",
-            title="Saved school stage is not recognized",
-            message_template="Saved stage {actual_stage!r} is outside the admitted state machine.",
-            disposition="PRESERVE_AND_MIGRATE",
-            next_action=(
-                "Run the state-schema migration that owns this stage or restore "
-                "the exact code release that created it."),
-            self_heal_owner="runtime.state",
-            legacy_codes=("INVALID_OR_DRIFTED_SCHOOL_STATE",),
-        )
-        ACTIVE_GRADES_EMPTY = _spec(
-            ("SCHOOL", "STATE", "ACTIVE_GRADES_EMPTY"),
-            owner="curriculum.scheduler",
-            title="Saved school has no active grade",
-            message_template="Saved school contains an empty active_grades sequence.",
-            disposition="PRESERVE_AND_REPAIR",
-            next_action=(
-                "Recover active grades from the admitted schedule/factory artifact; "
-                "do not fabricate a grade list."),
-            self_heal_owner="runtime.resume_reconciliation",
-            legacy_codes=("INVALID_OR_DRIFTED_SCHOOL_STATE",),
-        )
-        GRADE_INDEX_OUT_OF_RANGE = _spec(
-            ("SCHOOL", "STATE", "GRADE_INDEX_OUT_OF_RANGE"),
-            owner="curriculum.scheduler",
-            title="Saved grade index is outside the active grade sequence",
-            message_template=(
-                "grade_index={grade_index} cannot address active_grades length "
-                "{active_grade_count}."),
-            disposition="PRESERVE_AND_REPAIR",
-            next_action=(
-                "Reconcile the saved scheduler state against its admitted schedule "
-                "artifact; do not clamp the index."),
-            self_heal_owner="runtime.resume_reconciliation",
-            legacy_codes=("INVALID_OR_DRIFTED_SCHOOL_STATE",),
-        )
-
-
-class SEMANTIC_COVERAGE:
-    class PLAN:
-        VERSION_MISMATCH = _spec(
-            ("SEMANTIC_COVERAGE", "PLAN", "VERSION_MISMATCH"),
-            owner="semantic_coverage",
-            title="Semantic coverage plan schema does not match the active reader",
-            message_template=(
-                "Coverage plan schema {actual_schema!r} does not match "
-                "{expected_schema!r}."),
-            disposition="PRESERVE_AND_MIGRATE",
-            next_action=(
-                "Load or regenerate the plan with its schema-owned reader. "
-                "Do not overwrite the schema field or historical receipts."),
-            self_heal_owner="semantic_coverage.plan_reader",
-            legacy_codes=("SEMANTIC_COVERAGE_PLAN_VERSION_MISMATCH",),
-        )
-
-    class AUDIT:
-        INVALID_BUDGET = _spec(
-            ("SEMANTIC_COVERAGE", "AUDIT", "INVALID_BUDGET"),
-            owner="semantic_coverage",
-            title="Semantic coverage audit budget violates sampling policy",
-            message_template=(
-                "Audit budget rounds={max_rounds}, samples_per_capability={each} "
-                "does not satisfy {policy}."),
-            disposition="CORRECT_INPUT_OR_STATE",
-            next_action=(
-                "Use a bounded positive round count and a counterbalanced even "
-                "sample size large enough to exercise both truth classes."),
-            operator_steps=(
-                "Choose rounds within the named audit-round policy.",
-                "Choose an even sample size at or above the named contrast minimum.",
-            ),
-            legacy_codes=("SEMANTIC_COVERAGE_INVALID_AUDIT_BUDGET",),
-        )
-
-
-class SOURCE:
-    class SAMPLING:
-        BALANCED_BINARY_COUNT_INVALID = _spec(
-            ("SOURCE", "SAMPLING", "BALANCED_BINARY_COUNT_INVALID"),
-            owner="semantic_sampling",
-            title="Balanced binary sample count is invalid",
-            message_template=(
-                "Sample count {sample_count} violates {policy_name}: minimum "
-                "{minimum_samples}, balance period {balance_period}."),
-            disposition="CORRECT_INPUT_OR_STATE",
-            next_action=(
-                "Use the shared balanced-binary sampling policy rather than "
-                "hand-selecting a count at the caller."),
-            legacy_codes=(
-                "GRADE_B_BALANCED_EVEN_SAMPLE_REQUIRED",
-                "LIVE_GRADE_A_INVALID_DRAW",
-            ),
-        )
-
-
-class FACTORY:
-    class RELEASE:
-        MANIFEST_CONTENT_DRIFT = _spec(
-            ("FACTORY", "RELEASE", "MANIFEST_CONTENT_DRIFT"),
-            owner="runtime.admission",
-            title="Sealed factory release content does not match its wire identity",
-            message_template=(
-                "Factory release {release_sha256} does not match the canonical "
-                "payload or embedded course identity that minted it."),
-            disposition="PRESERVE_AND_REPAIR",
-            next_action=(
-                "Preserve the artifact. Decode it with the schema version that "
-                "minted it; restore the original bytes if that verification fails."),
-            self_heal_owner="compatibility.factory_release_v1",
-            legacy_codes=("FACTORY_RELEASE_MANIFEST_CONTENT_DRIFT",),
-        )
+for _namespace in (SCHOOL, SOURCE, SEMANTIC_COVERAGE, SEMANTIC_FRAME, FACTORY):
+    _bind_namespace(_namespace, _namespace.__name__)
 
 
 CATALOG = (
+    FACTORY.SEMANTIC_RULE.INVALID,
+    SOURCE.BAMF_C13_EPISODE.INVALID,
+    SOURCE.BAMF_WORLD.INVALID,
+    SCHOOL.BAMF_ATLAS_ADMISSION.INVALID,
+    SCHOOL.BAMF_ATLAS_ADMISSION.FLYWHEEL_RUNTIME_INVALID,
+    SCHOOL.BAMF_ATLAS_ADMISSION.ACCEPTED_LEASE_REQUIRED,
+    SCHOOL.BAMF_ATLAS_ADMISSION.FLYWHEEL_PREDECESSOR_DRIFT,
+    SCHOOL.BAMF_SALIENCE.INVALID,
+    SCHOOL.BAMF_CAPABILITY_EVIDENCE.INVALID,
+    SCHOOL.BAMF_SOLVER.INVALID,
+    SCHOOL.BAMF_AKASHA.INVALID,
+    SCHOOL.BAMF_RESOURCES.INVALID,
+    SCHOOL.BAMF_REVALIDATION.INVALID,
+    SCHOOL.BAMF_REVALIDATION.PROPAGATION_FAILURE,
+    SCHOOL.BAMF_TEACHER.INVALID,
+    SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
+    SCHOOL.BAMF_WORKSTACK.INPUT_INVALID,
+    SCHOOL.BAMF_WORKSTACK.VALIDATION_INVALID,
+    SCHOOL.QUALIFICATION.INVALID,
+    SCHOOL.TEACHER_OBSERVATION.INVALID,
+    SCHOOL.TEACHER_OBSERVATION.CONTENT_MISMATCH,
+    SCHOOL.TEACHER_OBSERVATION.DUPLICATE_ATTEMPT,
+    SCHOOL.MODEL_TOPOLOGY.INVALID,
+    SCHOOL.MODEL_TOPOLOGY.RECORD_INVALID,
+    SCHOOL.MODEL_TOPOLOGY.MISMATCH,
+    SCHOOL.MODEL_TOPOLOGY.PARAMETER_SHAPES_INVALID,
+    SCHOOL.STATE.INVALID_GRADE_PROGRAM_OR_CHAMPIONS,
+    SCHOOL.STATE.QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES,
+    SCHOOL.STATE.INVALID_SCHOOL_COUNTER,
+    SCHOOL.STATE.INVALID_INTRODUCTION_FRONTIER_HISTORY,
+    SCHOOL.STATE.INVALID_MAIN_SWEEP_HISTORY,
+    SCHOOL.STATE.INVALID_CARRIED_MASTERY_DEBT,
+    SCHOOL.STATE.INVALID_MATURE_CAPABILITY_DEBT,
+    SCHOOL.STATE.CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY,
+    SCHOOL.STATE.INVALID_INTRODUCTION_STAGE,
+    SCHOOL.STATE.INVALID_PARTIAL_SCHOOL_COMPLETION,
+    SCHOOL.STATE.WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE,
+    SCHOOL.STATE.WEAKEST_THREE_INCOMPLETE_POOL,
+    SCHOOL.STATE.INVALID_CAPABILITY_SCORE,
+    SCHOOL.STATE.ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE,
+    SCHOOL.STATE.ASSESSMENT_RUBRIC_IDENTITY_MISSING,
+    SCHOOL.STATE.ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL,
+    SCHOOL.STATE.ASSESSMENT_HAS_NO_REPRESENTED_GRADE,
+    SCHOOL.STATE.ASSESSMENT_NOT_GRADE_SEALED_RUBRIC,
+    SCHOOL.STATE.ASSESSMENT_NOT_COURSE_SEALED_RUBRIC,
+    SCHOOL.STATE.ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL,
+    SCHOOL.STATE.ASSESSMENT_INVALID_SCORE_TYPE,
+    SCHOOL.STATE.ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT,
+    SCHOOL.STATE.INVALID_GRADE_REVALIDATION_STATE,
+    SCHOOL.LEARNING.BINARY_PATTERN_CAPACITY,
+    SCHOOL.LEARNING.BINARY_CLASS_MISSING,
+    SCHOOL.LEARNING.MISSING_SOURCE_ROWS,
+    FACTORY.EXECUTION.CURRICULUM_DEFINITION_REQUIRED,
+    FACTORY.EXECUTION.CURRICULUM_UNKNOWN_CAPABILITY,
+    SCHOOL.LEARNING.MISSING_FRESH_CURRENT_ROWS,
+    SOURCE.GRADE_A.CONTEXT_ORACLE_DRIFT,
+    SOURCE.GRADE_A.MICRO_CONTEXT_SOURCE_SHAPE_INVALID,
+    SOURCE.GRADE_A.MICRO_CONTEXT_EXHAUSTED,
+    SOURCE.GRADE_A.DEVELOPMENT_CONTEXT_SOURCE_SHAPE_INVALID,
+    SOURCE.GRADE_A.CONTEXT_IDENTITY_COLLISION,
+    SOURCE.BOOLEAN.BOOLEAN_CONTEXT_LENGTH,
+    SOURCE.BOOLEAN.BOOLEAN_SOURCE_ROOT_MISMATCH,
+    SOURCE.BOOLEAN.BOOLEAN_TOKEN_ABI_DRIFT,
+    SOURCE.BOOLEAN.UNKNOWN_OPERATOR,
+    SOURCE.BOOLEAN.NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED,
+    SOURCE.BOOLEAN.MINIMAL_IDBOOLOPS_ORACLE_DRIFT,
+    SOURCE.REPLAY.PRESERVATION_POLICY_INVALID,
+    FACTORY.EXECUTION.ASSESSMENT_SOURCE_CONTEXT_REQUIRED,
+    SOURCE.REPLAY.RETENTION_SUPPORT_ROTATION_INVALID,
+    SOURCE.REPLAY.RETENTION_SUPPORT_ROW_INVALID,
+    FACTORY.EXECUTION.EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED,
+    FACTORY.EXECUTION.EXPECTED_A_SOURCEADAPTERREGISTRY,
+    FACTORY.EXECUTION.EXPECTED_AN_ANSWERMODALITYREGISTRY,
+    FACTORY.EXECUTION.EXPECTED_AN_EXECUTABLEFACTORYRELEASE,
+    FACTORY.EXECUTION.EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY,
+    SOURCE.REPLAY.PRESERVATION_OPERAND_KIND_INVALID,
+    SOURCE.REPLAY.PRESERVATION_OPERAND_PATTERN_INVALID,
+    SOURCE.REPLAY.PRESERVATION_SOURCE_GOLD_DRIFT,
+    SOURCE.REPLAY.PRESERVATION_SOURCE_POLICY_UNKNOWN,
+    SOURCE.REPLAY.PRESERVATION_STRUCTURAL_SIGNATURE_INVALID,
+    SOURCE.REPLAY.PRESERVATION_U7C_PATTERN_CONTRACT_INVALID,
+    SOURCE.REPLAY.PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID,
+    SOURCE.REPLAY.REPLAY_ORACLE_OR_COMPOSITION_DRIFT,
+
+    SOURCE.BOOLEAN.COMPOSITE_ORACLE_COMPOSITION_WIDTH,
+    SOURCE.BOOLEAN.COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY,
+    SOURCE.BOOLEAN.IDBOOLOPS_OBSERVATION_SHAPE,
+    SOURCE.BOOLEAN.IDBOOLOPS_RECORD_SHAPE,
+    SOURCE.BOOLEAN.IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID,
+    SCHOOL.RESUME.BOOLEAN_COMPOSITE_REQUIRES_RESUME,
+    SCHOOL.RESUME.BOOLEAN_IDBOOLOPS_REQUIRES_RESUME,
+    SCHOOL.RESUME.BOOLEAN_REVISION_SOURCE_STUDENT_MISSING,
+    FACTORY.ADMISSION.COMPLETE_PRIOR_EXAM_REQUIRED,
+    SCHOOL.SCHEDULE.PRIOR_GRADE_EXPANSION_CHANGED_EXISTING_CAPABILITY,
+    SCHOOL.SCHEDULE.PRIOR_GRADE_EXPANSION_INVALID,
+    SCHOOL.SCHEDULE.PRIOR_GRADE_EXPANSION_NOT_ADDITIVE,
+    SCHOOL.SCHEDULE.PROGRAM_REQUIRED,
+    SCHOOL.SCHEDULE.INVALID_DEBT_CADENCE_POLICY,
+    SOURCE.BOOLEAN.ORACLE_ASSIGNMENTS_INVALID,
+    SOURCE.BOOLEAN.ORACLE_CONNECTIVE_SHAPE,
+    SOURCE.BOOLEAN.ORACLE_DIRECT_EXPRESSION_INVALID,
+    SOURCE.BOOLEAN.ORACLE_UNKNOWN_TASK_OR_CAPABILITY,
+    SOURCE.REPLAY.PRESERVATION_EXAM_ROW_LEAK,
+    SOURCE.REPLAY.PRESERVATION_MIXED_REPRESENTATION,
+    SOURCE.REPLAY.REPLAY_U7C_PATTERN_DRIFT,
+
+    SCHOOL.STATE.HISTORICAL_NOT_RESUMABLE,
+    SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID,
     SCHOOL.STATE.SCHEMA_MISMATCH,
     SCHOOL.STATE.COURSE_DIGEST_MISMATCH,
     SCHOOL.STATE.STAGE_INVALID,
@@ -200,8 +142,21 @@ CATALOG = (
     SCHOOL.STATE.GRADE_INDEX_OUT_OF_RANGE,
     SEMANTIC_COVERAGE.PLAN.VERSION_MISMATCH,
     SEMANTIC_COVERAGE.AUDIT.INVALID_BUDGET,
+    SEMANTIC_FRAME.BINDING.INVALID,
+    SEMANTIC_FRAME.ADAPTER.INVALID_SOURCE,
+    SEMANTIC_FRAME.CODEC.INVALID,
     SOURCE.SAMPLING.BALANCED_BINARY_COUNT_INVALID,
     FACTORY.RELEASE.MANIFEST_CONTENT_DRIFT,
+    SCHOOL.BAMF_OPERATOR.INVALID,
+    SCHOOL.CHECKPOINT_CUSTODY.MOTIF_SIDECAR_INVALID,
+    SCHOOL.CHECKPOINT_CUSTODY.OUTBOX_LINEAGE_DRIFT,
+    SCHOOL.CHECKPOINT_CUSTODY.NUMERICAL_STATE_INVALID,
+    SCHOOL.CHECKPOINT_CUSTODY.PARAMETER_IDENTITY_DRIFT,
+    SCHOOL.CHECKPOINT_CUSTODY.TENSOR_BINDING_INVALID,
+    SCHOOL.CHECKPOINT_CUSTODY.TENSOR_FILE_CORRUPTED,
+    SCHOOL.CHECKPOINT_CUSTODY.MISSING_OR_EXTRA_TENSORS,
+    SCHOOL.BAMF_FIRST_STUDENT.INVALID,
+    SCHOOL.BAMF_PACKAGE.INVALID,
 )
 
 

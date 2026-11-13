@@ -1,0 +1,11 @@
+test_closed_graph_and_exact_source_context_dependencies (bilqis_mlx.runtime.tests.correction._bilqis_test_673d4b1324a5339f63e73cf21c301983a299568240f98f134c17c822e3d40eee.SalienceEvidenceOwnerTests.test_closed_graph_and_exact_source_context_dependencies) ... ok
+test_context_dependency_comes_from_exact_c02_prefix (bilqis_mlx.runtime.tests.correction._bilqis_test_673d4b1324a5339f63e73cf21c301983a299568240f98f134c17c822e3d40eee.SalienceEvidenceOwnerTests.test_context_dependency_comes_from_exact_c02_prefix) ... ok
+test_divergent_fact_identity_fails_before_graph_publication (bilqis_mlx.runtime.tests.correction._bilqis_test_673d4b1324a5339f63e73cf21c301983a299568240f98f134c17c822e3d40eee.SalienceEvidenceOwnerTests.test_divergent_fact_identity_fails_before_graph_publication) ... ok
+test_source_rights_revocation_holds_prepared_labels (bilqis_mlx.runtime.tests.correction._bilqis_test_673d4b1324a5339f63e73cf21c301983a299568240f98f134c17c822e3d40eee.SalienceEvidenceOwnerTests.test_source_rights_revocation_holds_prepared_labels) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.059s
+
+OK
+TEST_TOTALS total=4 passed=4 failed=0 skipped=0 errors=0
+4 passed, 0 failed, 0 skipped

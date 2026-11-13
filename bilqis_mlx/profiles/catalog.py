@@ -21,6 +21,9 @@ from .school import (
 )
 
 
+NUMERIC_GRADE_PREFIX_SIZE = 3
+
+
 @dataclass(frozen=True)
 class CatalogProfileTransition:
     profile: CurriculumProfile
@@ -28,13 +31,59 @@ class CatalogProfileTransition:
     numeric_scope_final_maximum: int | None = None
 
 
+def numeric_scope_bounds() -> tuple[int, int]:
+    from ..numeric_staircase import INITIAL_MAXIMUM, FINAL_MAXIMUM
+    return INITIAL_MAXIMUM, FINAL_MAXIMUM
+
+
+def displayed_numeric_maximum(state: dict | None):
+    """Project the canonical pending entry rung for a one-shot wide C receipt."""
+    if not isinstance(state, dict):
+        return None
+    maximum = state.get("numeric_maximum")
+    initial, final = numeric_scope_bounds()
+    active = tuple((state.get("school") or {}).get("active_grades", ()))
+    if (state.get("numeric_scope_final_maximum") is None and
+            maximum == final and len(active) >= NUMERIC_GRADE_PREFIX_SIZE):
+        return initial
+    return maximum
+
+
+def next_school_transition(release, graph, *, full_boolean, numeric_staircase,
+                           final_scope=None):
+    """Author the existing school's next profile; runtime consumes the value."""
+    active = tuple(grade.grade_id for grade in release.execution_plan.grades)
+    next_index = len(active)
+    next_grade = (release.curriculum.grades[next_index].grade_id
+                  if next_index < len(release.curriculum.grades) else None)
+    if active == ("A",) and next_grade == "B":
+        profile = with_disabled_future_grades(
+            boolean_entry_profile(full=full_boolean),
+            tuple(grade.grade_id for grade in release.curriculum.grades[2:]))
+        return CatalogProfileTransition(profile, graph)
+    if active == ("A", "B") and next_grade == "C":
+        initial_scope, terminal_scope = numeric_scope_bounds()
+        transition = numeric_entry_transition(
+            release, graph, full_boolean=full_boolean,
+            maximum=initial_scope)
+        from dataclasses import replace
+        transition = replace(
+            transition,
+            numeric_scope_final_maximum=(
+                terminal_scope if final_scope is None else final_scope))
+        return transition
+    return None
+
+
 def numeric_entry_transition(
         release: ExecutableFactoryRelease, graph: dict, *,
-        full_boolean: bool, maximum: int = 3) -> CatalogProfileTransition:
+        full_boolean: bool, maximum: int | None = None) -> CatalogProfileTransition:
     """Build the next canonical grade-prefix profile plus its admitted ABI."""
     if not isinstance(release, ExecutableFactoryRelease):
         raise TypeError("FACTORY_CATALOG_RELEASE_REQUIRED")
     release.verify()
+    if maximum is None:
+        maximum = numeric_scope_bounds()[0]
     next_index = len(release.execution_plan.grades)
     if not 0 <= next_index < len(release.curriculum.grades):
         raise ValueError("FACTORY_CATALOG_NO_DISABLED_GRADE")

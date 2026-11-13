@@ -1,0 +1,33 @@
+..FF                                                                     [100%]
+=================================== FAILURES ===================================
+___________ test_existing_three_argument_issuance_remains_supported ____________
+
+issued_batch = (BamfTrainingBatch(release_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', generation_bindi..._version='bilqis.c09.dependency-ref/v1'),)), auxiliaries=(), rule_policy=()),)), namespace(source_row={'id': 'row-1'}))
+
+    def test_existing_three_argument_issuance_remains_supported(issued_batch):
+        batch, source = issued_batch
+>       assert _issue(batch, source, batch.rows[0].provenance).digest == issue(batch, source).digest
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: _issue() missing 1 required positional argument: 'auxiliaries'
+
+bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py:81: TypeError
+____________ test_executed_artifact_closure_is_bound_and_preserved _____________
+
+issued_batch = (BamfTrainingBatch(release_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', generation_bindi..._version='bilqis.c09.dependency-ref/v1'),)), auxiliaries=(), rule_policy=()),)), namespace(source_row={'id': 'row-1'}))
+
+    def test_executed_artifact_closure_is_bound_and_preserved(issued_batch):
+        from bilqis_mlx.semantics.cognitive_dependencies import ArtifactKind, ArtifactNode
+        from bilqis_mlx.semantics.dependencies.closure import closure_digest
+        batch, source = issued_batch
+        authority = issue(batch, source)
+        node = ArtifactNode('salience:test', ArtifactKind.SALIENCE_EVIDENCE, 'f' * 64,
+                            True, authority.immediate_dependencies, 2, 3)
+>       extended = extend_training_dependencies(authority, (node.reference,), artifact_nodes=(node,))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: extend_training_dependencies() got an unexpected keyword argument 'artifact_nodes'
+
+bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py:91: TypeError
+=========================== short test summary info ============================
+FAILED bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py::test_existing_three_argument_issuance_remains_supported
+FAILED bilqis_mlx/runtime/tests/batch/training/test_training_auxiliary_identity.py::test_executed_artifact_closure_is_bound_and_preserved
+2 failed, 2 passed in 0.26s

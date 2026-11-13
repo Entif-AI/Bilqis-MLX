@@ -16,7 +16,52 @@ def _runner_module():
     return module
 
 
+def _clear_package(package):
+    for name in tuple(sys.modules):
+        if name == package or name.startswith(package + "."):
+            del sys.modules[name]
+
+
 class RunTestsTests(unittest.TestCase):
+    def test_relative_helpers_keep_package_context_and_unique_file_identities(self):
+        runner = _runner_module()
+        for namespace in (False, True):
+            package = 'runner_relative_namespace' if namespace else 'runner_relative_package'
+            with self.subTest(namespace=namespace), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve()
+                paths = []
+                for side in ('left', 'right'):
+                    tests = root / package / side / 'tests'
+                    tests.mkdir(parents=True)
+                    if not namespace:
+                        for directory in (root / package, tests.parent, tests):
+                            (directory / '__init__.py').write_text('')
+                    (tests / 'fixtures.py').write_text(f'VALUE = {side!r}\n')
+                    test = tests / 'test_shared.py'
+                    test.write_text(
+                        'from .fixtures import VALUE\nimport unittest\n'
+                        'class Example(unittest.TestCase):\n'
+                        f'    def test_value(self): self.assertEqual(VALUE, {side!r})\n')
+                    paths.append(test)
+                try:
+                    with patch.object(sys, 'path', sys.path[:]):
+                        suite = runner.load_test_files(tuple(paths), root)
+                        result = unittest.TestResult()
+                        suite.run(result)
+                    self.assertEqual(result.testsRun, 2)
+                    self.assertFalse(result.errors)
+                    self.assertFalse(result.failures)
+                    names = [runner._module_name(path, root) for path in paths]
+                    self.assertEqual(len(set(names)), 2)
+                    for path, name in zip(paths, names):
+                        expected = '.'.join(path.parent.relative_to(root).parts)
+                        self.assertEqual(sys.modules[name].__package__, expected)
+                        self.assertEqual(sys.modules[name].__spec__.parent, expected)
+                finally:
+                    for name in tuple(sys.modules):
+                        if name == package or name.startswith(package + '.'):
+                            del sys.modules[name]
+
     def test_repository_root_precedes_script_local_helper_names(self):
         runner = _runner_module()
         name = "runner_root_precedence_fixture"
@@ -60,16 +105,18 @@ class RunTestsTests(unittest.TestCase):
         runner = _runner_module()
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
+            prefix = root / "runner_discovery_fixture"
+            self.addCleanup(_clear_package, prefix.name)
             paths = (
-                root / "tests" / "test_shared.py",
-                root / "bilqis_mlx" / "factory" / "tests" / "test_shared.py",
-                root / "scripts" / "tests" / "test_runner.py",
-                root / "other" / "tests" / "test_future.py",
+                prefix / "tests" / "test_shared.py",
+                prefix / "factory" / "tests" / "test_shared.py",
+                prefix / "scripts" / "tests" / "test_runner.py",
+                prefix / "other" / "tests" / "test_future.py",
             )
             for path in paths:
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text("import unittest\n\nclass Example(unittest.TestCase):\n    def test_ok(self): pass\n")
-            (root / "other" / "not_a_test.py").write_text("")
+            (prefix / "other" / "not_a_test.py").write_text("")
             for ignored in (root / "vendor" / "tests" / "test_vendor.py",
                             root / "runs" / "tests" / "test_run.py",
                             root / ".local" / "source-archive" / "tests" / "test_old.py"):
@@ -84,6 +131,25 @@ class RunTestsTests(unittest.TestCase):
             self.assertEqual(result.testsRun, 4)
             self.assertFalse(result.errors)
             self.assertFalse(result.failures)
+
+    def test_default_discovery_excludes_detached_only_test_files(self):
+        runner = _runner_module()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            normal = root / "tests" / "test_normal.py"
+            detached = root / "tests" / "test_detached.py"
+            normal.parent.mkdir(parents=True)
+            normal.write_text(
+                "import unittest\n"
+                "class Example(unittest.TestCase):\n"
+                "    def test_ok(self): pass\n")
+            detached.write_text(
+                'BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"\n'
+                "import unittest\n"
+                "class Expensive(unittest.TestCase):\n"
+                "    def test_expensive(self): raise AssertionError('must not run')\n")
+
+            self.assertEqual(runner.discover_test_files(root), (normal,))
 
     def test_empty_discovery_fails_closed_with_totals(self):
         runner = _runner_module()
@@ -114,7 +180,8 @@ class RunTestsTests(unittest.TestCase):
         runner = _runner_module()
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            tests = root / "lib" / "ithkuil" / "tests"
+            tests = root / "runner_directory_fixture" / "lib" / "ithkuil" / "tests"
+            self.addCleanup(_clear_package, "runner_directory_fixture")
             for name in ("test_one.py", "test_two.py"):
                 path = tests / name
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -132,8 +199,9 @@ class RunTestsTests(unittest.TestCase):
         runner = _runner_module()
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            path = root / "tests" / "test_broken.py"
-            path.parent.mkdir()
+            path = root / "runner_error_fixture" / "tests" / "test_broken.py"
+            self.addCleanup(_clear_package, "runner_error_fixture")
+            path.parent.mkdir(parents=True)
             path.write_text("raise RuntimeError('broken fixture')\n")
             output = io.StringIO()
             exit_code = runner.main([], root=root, stream=output)

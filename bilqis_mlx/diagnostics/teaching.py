@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
-from ..curriculum import Course
 from ..source_adapters.structure import (
     inspect_boolean_identification, inspect_source_query,
 )
@@ -25,7 +24,12 @@ class LessonStepEvidence:
     prerequisite_capabilities: tuple[str, ...]
 
 
-def inspect_lesson_step(course: Course, capability: str, offered: list[dict],
+def _capability_id(candidate) -> str:
+    identity = getattr(candidate, "id", None)
+    return identity if identity is not None else candidate.capability_id
+
+
+def inspect_lesson_step(course, capability: str, offered: list[dict],
                         delivered: list[dict]) -> LessonStepEvidence:
     """Use owned course identities, not locally invented semantic labels."""
     caps = course.capability_map
@@ -35,7 +39,7 @@ def inspect_lesson_step(course: Course, capability: str, offered: list[dict],
     root_owners: dict[str, set[str]] = {}
     for candidate in caps.values():
         for root in candidate.taught_roots:
-            root_owners.setdefault(root, set()).add(candidate.id)
+            root_owners.setdefault(root, set()).add(_capability_id(candidate))
 
     def extract(row: dict) -> tuple[tuple[int, int], tuple[str, ...]]:
         if (not isinstance(row, dict) or row.get("capability") != capability or
@@ -86,7 +90,7 @@ def inspect_lesson_step(course: Course, capability: str, offered: list[dict],
     )
 
 
-def diagnose_teaching_visit(course: Course, capability: str,
+def diagnose_teaching_visit(course, capability: str,
                             steps: tuple[LessonStepEvidence, ...], *,
                             introductory: bool | None) -> tuple[DiagnosticFinding, ...]:
     """Warn the inherited teacher; never modify its learned allocation."""
@@ -130,7 +134,7 @@ def diagnose_teaching_visit(course: Course, capability: str,
 METHODOLOGY_VERSION = "bilqis.lesson-methodology/v1"
 
 
-def summarize_teaching_visit(course: Course, capability: str,
+def summarize_teaching_visit(course, capability: str,
                              steps: tuple[LessonStepEvidence, ...], *,
                              introductory: bool, unmeasured_reason: str | None = None) -> dict:
     """Record only compact offered/delivered evidence; no exam-item embargo.

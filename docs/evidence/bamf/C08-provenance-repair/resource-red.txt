@@ -1,0 +1,28 @@
+test_all_declared_microbatch_fallback_sizes_and_frame_components (_bilqis_test_8541cd30ad2e56eb2ec0c0246921be99f1bfcb0ca91725d53bae53c9671c7c40.AtlasResourcesTests.test_all_declared_microbatch_fallback_sizes_and_frame_components) ... ok
+test_batch_one_oom_restores_parent_without_speculative_second_attempt (_bilqis_test_8541cd30ad2e56eb2ec0c0246921be99f1bfcb0ca91725d53bae53c9671c7c40.AtlasResourcesTests.test_batch_one_oom_restores_parent_without_speculative_second_attempt) ... ok
+test_budget_forces_deterministic_two_then_safe_batch_one_failure (_bilqis_test_8541cd30ad2e56eb2ec0c0246921be99f1bfcb0ca91725d53bae53c9671c7c40.AtlasResourcesTests.test_budget_forces_deterministic_two_then_safe_batch_one_failure) ... ok
+test_c02_delivered_row_identity_is_bound_to_compiler_frame_statistics (_bilqis_test_8541cd30ad2e56eb2ec0c0246921be99f1bfcb0ca91725d53bae53c9671c7c40.AtlasResourcesTests.test_c02_delivered_row_identity_is_bound_to_compiler_frame_statistics) ... ERROR
+test_complete_next_bundle_budget_keeps_100_gib_floor_before_write (_bilqis_test_8541cd30ad2e56eb2ec0c0246921be99f1bfcb0ca91725d53bae53c9671c7c40.AtlasResourcesTests.test_complete_next_bundle_budget_keeps_100_gib_floor_before_write) ... ok
+test_full_1024_position_rows_start_at_four_or_fewer (_bilqis_test_8541cd30ad2e56eb2ec0c0246921be99f1bfcb0ca91725d53bae53c9671c7c40.AtlasResourcesTests.test_full_1024_position_rows_start_at_four_or_fewer) ... ok
+test_installed_mlx_memory_getters_are_snapshot_only (_bilqis_test_8541cd30ad2e56eb2ec0c0246921be99f1bfcb0ca91725d53bae53c9671c7c40.AtlasResourcesTests.test_installed_mlx_memory_getters_are_snapshot_only) ... ok
+test_one_oom_retry_preserves_rows_seed_and_parent_then_exhausts_safely (_bilqis_test_8541cd30ad2e56eb2ec0c0246921be99f1bfcb0ca91725d53bae53c9671c7c40.AtlasResourcesTests.test_one_oom_retry_preserves_rows_seed_and_parent_then_exhausts_safely) ... ok
+test_short_rows_start_at_32_and_preserve_exact_logical_batch (_bilqis_test_8541cd30ad2e56eb2ec0c0246921be99f1bfcb0ca91725d53bae53c9671c7c40.AtlasResourcesTests.test_short_rows_start_at_32_and_preserve_exact_logical_batch) ... ok
+test_two_cpu_workers_freeze_same_source_packet_without_neural_authority (_bilqis_test_8541cd30ad2e56eb2ec0c0246921be99f1bfcb0ca91725d53bae53c9671c7c40.AtlasResourcesTests.test_two_cpu_workers_freeze_same_source_packet_without_neural_authority) ... ok
+test_weighted_split_gradient_matches_unsplit_and_applies_one_step (_bilqis_test_8541cd30ad2e56eb2ec0c0246921be99f1bfcb0ca91725d53bae53c9671c7c40.AtlasResourcesTests.test_weighted_split_gradient_matches_unsplit_and_applies_one_step) ... ok
+test_wrong_generation_seed_or_group_rejects_before_backend_call (_bilqis_test_8541cd30ad2e56eb2ec0c0246921be99f1bfcb0ca91725d53bae53c9671c7c40.AtlasResourcesTests.test_wrong_generation_seed_or_group_rejects_before_backend_call) ... ok
+
+======================================================================
+ERROR: test_c02_delivered_row_identity_is_bound_to_compiler_frame_statistics (_bilqis_test_8541cd30ad2e56eb2ec0c0246921be99f1bfcb0ca91725d53bae53c9671c7c40.AtlasResourcesTests.test_c02_delivered_row_identity_is_bound_to_compiler_frame_statistics)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/cr8s/Code/bamf02-c-runtime/bilqis_mlx/runtime/tests/test_atlas_resources.py", line 156, in test_c02_delivered_row_identity_is_bound_to_compiler_frame_statistics
+    resource = ResourceRow.from_training_row(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: ResourceRow.from_training_row() got an unexpected keyword argument 'delivered_content_sha256'
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.208s
+
+FAILED (errors=1)
+TEST_TOTALS total=12 passed=11 failed=1 skipped=0 errors=1
+11 passed, 1 failed, 0 skipped

@@ -1,0 +1,9 @@
+# C10 immutable generation receiving bridge — partial
+
+PARTIAL_PENDING_OWNED_COVERAGE_AND_UPSTREAM. IPR-0220 / PM009; basefb41e8649fa6cce51197d4a594b796849876c955, unified da0431bee37c0e4f766f05cc94ceb6b23ac7d054.
+
+project_accepted_generation reads native state_dag history and consumes checkpoint-owner ordered outbox-ID validation. It never accepts transient event dictionaries, replays journals or touches neural state. Teacher visit, Factory release-change and capability-outcome receiving categories preserve native eventID/digest separately from derived Akasha eventID. Native current release/checkpoint must match requested domain. Missing source-owned times and unknown event kinds remain explicit uncovered delivery IDs; times are never invented from generation numbers. Historical inherited-outbox adaptation remains with its owner and currently rejects here.
+
+13 owner tests pass. Fresh independent pinned EGM scoped PASS after receiving field validation repair: exact nonnegative integer generation, string run/type, native64hex IDs and category/type consistency. Reviewer independently ran13 tests and separately proved forged persisted IDs reject before queue creation. Source identities reviewed by SHA256. No red-before-implementation TDD claim: this bridge draft preceded its new tests; enum-fixture gaps and the receiving-type defect were found and repaired during validation/review.
+
+This is a partial receiving bridge, not full519 acceptance. Missing bank/plasticity/package receiving coverage, Rosetta native consumption, real Factory artifact verification and evaluator/source/rights authority remain OPEN. Hash/model field equality is not full B13 custody or source-rights authentication. No actual learner/AdamW, MLX, graph/services, source promotion or generation publication outside disposable tests. PR550 draft/unmerged;519 stays open.

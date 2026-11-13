@@ -24,11 +24,7 @@ def conventional(subject: str) -> bool:
 
 
 def changelog_section(changelog: str, version: str) -> str:
-    pattern = re.compile(
-        r"^## \[" + re.escape(version) +
-        r"\](?:\([^\n]+\))?(?: - \d{4}-\d{2}-\d{2}| \(\d{4}-\d{2}-\d{2}\))\s*$",
-        re.M,
-    )
+    pattern = re.compile(r"^## \[" + re.escape(version) + r"\] - \d{4}-\d{2}-\d{2}\s*$", re.M)
     match = pattern.search(changelog)
     if not match:
         raise ValueError("RELEASE_CHANGELOG_VERSION_MISSING")

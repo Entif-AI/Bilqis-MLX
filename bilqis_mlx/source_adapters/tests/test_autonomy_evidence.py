@@ -67,6 +67,68 @@ class LiveMicroAutonomyEvidenceTests(unittest.TestCase):
         self.assertEqual(rows[0]["capability"], "C.ADD")
         self.assertEqual(rows[0]["lesson_id"], "LESSON-060")
 
+    def test_numeric_factory_admission_binds_semantics_and_exact_provider(self):
+        from unittest.mock import patch
+        from bilqis_mlx.factory.curriculum_definition import from_legacy_course
+        from bilqis_mlx.factory.execution import CurriculumProfile
+        from bilqis_mlx.factory.executable_release import (
+            ExecutableFactoryRelease, compile_executable_factory_release,
+        )
+        from bilqis_mlx.factory.generation import runtime_adapter_for_release
+        from bilqis_mlx.factory.live_answers import live_answer_registry
+        composite = boolean_composite_successor(self.course, LEGACY)
+        identified = boolean_identification_successor(composite, LEGACY)
+        numeric, graph = numeric_successor(identified, maximum=REGISTRY_COUNTING_TARGET)
+        curriculum, bindings = from_legacy_course(numeric)
+        def compile_with(registry):
+            return compile_executable_factory_release(
+                curriculum, bindings, CurriculumProfile.full(), registry,
+                live_answer_registry(), source_root=LEGACY, graph=graph,
+                verification_seed=19)
+        original = compile_with(live_source_registry())
+        manifest = original.manifest()
+        source_file = ROOT / "bilqis_mlx/source_adapters/numeric.py"
+        read_bytes = Path.read_bytes
+        def refactored_bytes(path):
+            value = read_bytes(path)
+            return value + b"\n# semantics-preserving provider revision\n" if path == source_file else value
+        with patch.object(Path, "read_bytes", refactored_bytes):
+            registry = live_source_registry()
+            revised = compile_with(registry)
+        self.assertEqual(original.semantic_catalog_sha256, revised.semantic_catalog_sha256)
+        self.assertIsNotNone(original.semantic_graph_sha256)
+        self.assertEqual(original.semantic_graph_sha256, revised.semantic_graph_sha256)
+        self.assertEqual(original.source_bindings, revised.source_bindings)
+        self.assertNotEqual(original.verification.provider_descriptors_sha256,
+                            revised.verification.provider_descriptors_sha256)
+        self.assertNotEqual(original.release_sha256, revised.release_sha256)
+        self.assertEqual(original.manifest(), manifest)
+        restored = ExecutableFactoryRelease.from_manifest(manifest, original.release_sha256)
+        self.assertEqual(restored.manifest(), manifest)
+        from copy import deepcopy
+        from bilqis_mlx.generated_assessment import digest
+        for field in ("semantic_catalog_sha256", "implementation_sha256"):
+            incomplete = deepcopy(manifest)
+            target = incomplete if field == "semantic_catalog_sha256" else incomplete["source_adapters"][-1]
+            del target[field]
+            with self.subTest(missing=field), self.assertRaises(ValueError):
+                ExecutableFactoryRelease.from_manifest(incomplete, digest(incomplete))
+        for field in ("semantic_catalog_sha256", "implementation_sha256"):
+            stale = deepcopy(manifest)
+            target = stale if field == "semantic_catalog_sha256" else stale["source_adapters"][-1]
+            target[field] = "f" * 64
+            with self.subTest(stale=field), self.assertRaises(ValueError):
+                ExecutableFactoryRelease.from_manifest(stale, digest(stale))
+        execution = next(item for item in original.execution_plan.capabilities
+                         if item.capability_id == "C.ADD")
+        with self.assertRaisesRegex(ValueError, "FACTORY_EXECUTABLE_GENERATION_ADAPTER_DRIFT"):
+            runtime_adapter_for_release(LEGACY, graph, original, registry, execution)
+        current = next(item for item in revised.execution_plan.capabilities
+                       if item.capability_id == "C.ADD")
+        self.assertIs(runtime_adapter_for_release(LEGACY, graph, revised, registry, current),
+                      registry.require(bindings.by_capability["C.ADD"].generator_id,
+                                       bindings.by_capability["C.ADD"].oracle_id))
+
 
 if __name__ == "__main__":
     unittest.main()

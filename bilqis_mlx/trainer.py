@@ -274,7 +274,6 @@ from bilqis_mlx.runtime.release_adoption import (
     _ensure_executable_release,
     _cached_schedule_program,
     _schedule_for_receipt,
-    _activate_next_admitted_grade,
     _verify_profile_successor,
     _profile_transition,
     _profile_championship_state,
@@ -287,8 +286,6 @@ from bilqis_mlx.runtime.release_adoption import (
     _catalog_adoption_event,
     _adopt_catalog_profile,
     _adopt_jit_proposal,
-    _activate_revised_admitted_grade,
-    _activate_replaced_admitted_grade,
 )
 from bilqis_mlx.runtime.session import (
     operator_lock,

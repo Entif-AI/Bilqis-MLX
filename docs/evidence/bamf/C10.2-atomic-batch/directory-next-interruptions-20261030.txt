@@ -1,0 +1,15 @@
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/_admission/atlas_admission.py before=416 current=416 target=<240
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/_batch/atlas_training_adapter.py before=402 current=402 target=<240
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/_batch/candidate_evidence.py before=415 current=415 target=<240
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/_capability/capability_retention.py before=377 current=377 target=<240
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/_correction/atlas_requalification.py before=393 current=393 target=<240
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/_correction/atlas_temporal_revalidation.py before=443 current=443 target=<240
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/_custody/reconciliation.py before=367 current=367 target=<240
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/_depth/block_attnres.py before=365 current=365 target=<240
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/tests/batch/test_atlas_training_adapter.py before=492 current=492 target=<240
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/tests/capability/test_cognitive_solver.py before=371 current=371 target=<240
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/tests/depth/test_block_attnres.py before=491 current=491 target=<240
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/tests/model/test_atlas_attention.py before=383 current=383 target=<240
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/tests/model/test_atlas_resources.py before=428 current=428 target=<240
+FILE_REFACTOR_REQUIRED bilqis_mlx/runtime/tests/model/test_model_topology_v2.py before=525 current=525 target=<240
+DEVELOPMENT_STRUCTURE_CHECK FAILED violations=14

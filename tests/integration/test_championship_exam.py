@@ -154,31 +154,106 @@ def _take_inert_exam(*, temp, receipt, manifest, course, root, graph, patches,
 
 
 class ChampionshipExamTests(TestCase):
-    def test_spiral_grade_transition_cannot_promote_from_withheld_assessment(self):
-        # An incomplete cross-grade assessment may legitimately move the
-        # scheduler from C to A without conferring a new graduation right.
-        before = SimpleNamespace(grade="C", revalidation_target_grade=None)
+    def test_spiral_grade_transition_is_not_promotion_authority(self):
+        # Ordinary debt/recovery scheduling may move between grades without
+        # satisfying the grade's qualification criterion. Only the scheduler's
+        # authoritative exam-epoch advance may open promotion.
+        before = SimpleNamespace(
+            grade="C", stage="ASSESS_RECOVERY_2",
+            revalidation_target_grade=None, grade_exam_epoch=7)
         after = SimpleNamespace(grade="A", revalidation_target_grade=None,
-                                stage="MAIN")
-        self.assertTrue(trainer._promotion_due_after_routine(before, after))
+                                stage="MAIN", grade_exam_epoch=7)
+        self.assertFalse(trainer._promotion_due_after_routine(before, after))
         self.assertFalse(trainer._promotion_due_after_routine(
             before, after, complete_assessment=False))
+
+        qualified = SimpleNamespace(
+            grade="A", revalidation_target_grade=None,
+            stage="MAIN", grade_exam_epoch=8)
+        self.assertTrue(trainer._promotion_due_after_routine(before, qualified))
 
     def test_mean_stability_debt_progression_is_not_championship_promotion(self):
         before = SimpleNamespace(
             grade="A", stage="ASSESS_PROMOTION_SWEEP",
-            revalidation_target_grade=None)
+            revalidation_target_grade=None, grade_exam_epoch=7)
         debt_advanced = SimpleNamespace(
             grade="B", stage="MAIN", revalidation_target_grade=None,
-            champions={})
+            champions={}, grade_exam_epoch=7)
         mastered = SimpleNamespace(
             grade="B", stage="MAIN", revalidation_target_grade=None,
-            champions={"A": SimpleNamespace()})
+            champions={"A": SimpleNamespace()}, grade_exam_epoch=8)
 
         self.assertFalse(
             trainer._promotion_due_after_routine(before, debt_advanced))
         self.assertTrue(
             trainer._promotion_due_after_routine(before, mastered))
+
+    def test_developmental_promotion_does_not_launch_generalization(self):
+        program = ScheduleProgram(
+            program_digest="d" * 64,
+            grades=(ScheduleGrade(
+                "A", (ScheduleCapability("A.X", 12),), (), "e" * 64),),
+            program_complete=False,
+        )
+        student = Checkpoint("a" * 64, "bundles/disposable", 10, True)
+        school = replace(
+            start_new(program, student),
+            stage="ASSESS_PROMOTION_SWEEP", queue=(),
+            promotion_sweep_scope=("A.X",),
+            promotion_sweep_return_stage="ASSESS_MAIN",
+            promotion_sweep_scores=(("A.X", 12, 12),),
+            promotion_sweep_attempt_student_sha256=student.sha256,
+            promotion_sweep_attempt_scope=("A.X",))
+        rubric = program.grades[0].assessment_sha256
+        routine = _synthetic_exam_cohort(
+            ("A.X",), seed=1, generator_version="g" * 64,
+            rubric_version=rubric)
+        candidate = _synthetic_exam_cohort(
+            ("A.X",), seed=2, generator_version="g" * 64,
+            rubric_version=rubric)
+        executable_release = SimpleNamespace(
+            execution_plan=SimpleNamespace(capability_map={}))
+        manifest = {"manifest_sha256": "b" * 64}
+        graph = {"tokens": ["PAD"]}
+        parameter_shapes = {"embedding.weight": [1, 1]}
+        receipt = _exam_receipt(
+            school=school, run_id="no-developmental-generalization",
+            release="factory-test", manifest=manifest, course=program,
+            graph=graph, parameter_shapes=parameter_shapes,
+            release_sha="f" * 64, championship_origins={})
+
+        def no_generalization(*_args, **_kwargs):
+            raise AssertionError("developmental runtime invoked GENERALIZATION")
+
+        def advance_stagnation(**kwargs):
+            return kwargs["stagnation"], [], kwargs["routine_advanced"], ()
+
+        patches = _exam_patches(
+            executable_release=executable_release, program=program,
+            routine=routine, candidate=candidate, school=school,
+            predict=_perfect_predictions,
+            extra={
+                "_promotion_executable_cohort":
+                    lambda *_a, **_k: (
+                        routine, _cohort_pointer(routine, program)),
+                "_generalization_executable_cohort": no_generalization,
+                "_advance_stagnation_after_routine": advance_stagnation,
+                "_bind_checkpoint_origin": lambda saved, *_a, **_k: saved,
+                "_hydrate_championship_witnesses":
+                    lambda _mx, _run, _receipt, epoch, _graph: epoch,
+                "_advance_exam_championships":
+                    lambda _mx, _run, _receipt, epoch, *_a, **_k:
+                    (epoch, (), ()),
+            })
+        with TemporaryDirectory() as temp:
+            completed = _take_inert_exam(
+                temp=temp, receipt=receipt, manifest=manifest, course=program,
+                root=Path(temp), graph=graph, patches=patches,
+                rubric_sha256=rubric)
+
+        self.assertEqual(completed["last_exam"]["exam_plane"], "PROMOTION")
+        self.assertNotIn("generalization_cohort_sha256", completed["last_exam"])
+        self.assertNotIn("generalization_passed", completed["last_exam"])
     def test_c_era_config_rebuilds_only_idboolops_heads_for_prefix_incumbent(self):
         root = Path(__file__).resolve().parents[2]
         source = root / "vendor/legacy-v16"

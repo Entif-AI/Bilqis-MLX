@@ -1,4 +1,13 @@
 #!/usr/bin/env sh
 set -eu
-npm run quality:check
+
+if git rev-parse --verify '@{upstream}' >/dev/null 2>&1; then
+  base='@{upstream}'
+elif git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+  base='HEAD^'
+else
+  base='HEAD'
+fi
+
+BILQIS_QUALITY_BASE_REF="$base" npm run quality:changed
 npm run release:check

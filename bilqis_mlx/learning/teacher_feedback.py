@@ -79,12 +79,6 @@ class TeacherDecisionInput:
     seed: int
     diagnostic_context_consumed: bool = False
     diagnostic_context_key: str | None = None
-    policy_selection_origin: str = "INHERITED_LEGACY_UCB"
-    actual_authority_changed: bool = False
-    legacy_policy_key: str | None = None
-    vnext_canary_status: str | None = None
-    vnext_canary_policy_version: str | None = None
-    vnext_evidence_level: str | None = None
 
 
 @dataclass(frozen=True)
@@ -198,7 +192,7 @@ def _source_structural_miss_identity(row: dict) -> dict | None:
             not isinstance(answer_kind, str) or
             not isinstance(record, dict)):
         return None
-    if capability.startswith("B."):
+    if capability.startswith("B.") or answer_kind == "boolean_operator":
         try:
             raw = row.get("operand_truths")
             if isinstance(raw, list) and len(raw) == 2:
@@ -212,7 +206,7 @@ def _source_structural_miss_identity(row: dict) -> dict | None:
             from bilqis_mlx.source_adapters.structure import (
                 inspect_boolean_identification, inspect_source_query,
             )
-            if capability == "B.IDBOOLOPS":
+            if answer_kind == "boolean_operator":
                 shape = inspect_boolean_identification(record, row.get("root"))
                 extras = {
                     "operator_options": tuple(row.get("operator_options", ())),
@@ -359,15 +353,7 @@ def _validate_decision_input(request: TeacherDecisionInput) -> None:
         (request.diagnostic_context_key is None or
          isinstance(request.diagnostic_context_key, str) and
          bool(request.diagnostic_context_key)))
-    valid_selection = (
-        isinstance(request.policy_selection_origin, str) and
-        bool(request.policy_selection_origin) and
-        type(request.actual_authority_changed) is bool and
-        all(value is None or isinstance(value, str) and bool(value) for value in (
-            request.legacy_policy_key, request.vnext_canary_status,
-            request.vnext_canary_policy_version, request.vnext_evidence_level)))
-    if not (valid_identity and valid_seed and valid_counts and valid_diagnostics and
-            valid_selection):
+    if not (valid_identity and valid_seed and valid_counts and valid_diagnostics):
         raise ValueError("TEACHER_DECISION_INPUT_INVALID")
 
 
@@ -404,20 +390,11 @@ def _selected_actions(request: TeacherDecisionInput) -> dict:
 
 def _decision_payload(request: TeacherDecisionInput) -> dict:
     policy_selection = {
-        "origin": request.policy_selection_origin,
-        "actual_authority_changed": request.actual_authority_changed,
+        "origin": "INHERITED_LEGACY_UCB",
         "diagnostic_context_consumed": request.diagnostic_context_consumed,
     }
     if request.diagnostic_context_key is not None:
         policy_selection["diagnostic_context_key"] = request.diagnostic_context_key
-    for key, value in (
-        ("legacy_policy_key", request.legacy_policy_key),
-        ("vnext_canary_status", request.vnext_canary_status),
-        ("vnext_canary_policy_version", request.vnext_canary_policy_version),
-        ("vnext_evidence_level", request.vnext_evidence_level),
-    ):
-        if value is not None:
-            policy_selection[key] = value
     return {
         "schema": VERSION,
         "capability": request.capability,
@@ -436,7 +413,7 @@ def _decision_payload(request: TeacherDecisionInput) -> dict:
 
 
 def summarize_teacher_decision(request: TeacherDecisionInput) -> dict:
-    """Record the actual intervention and its auditable policy-selection origin."""
+    """Record the actual intervention under the already selected legacy policy."""
     _validate_decision_input(request)
     payload = _decision_payload(request)
     payload["decision_id"] = _digest(payload)

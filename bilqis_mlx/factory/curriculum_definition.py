@@ -7,12 +7,17 @@ implementations can evolve through FactoryRelease without rewriting the AST.
 """
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, FACTORY
+
 from dataclasses import asdict, dataclass
 import hashlib
 import json
 import re
 
 from ..curriculum import AnswerFamily, Course, GRADE_IDS, validate as validate_course
+
+
+V2_GRADE_CAPABILITY_MAX = 12
 
 
 def _digest(value) -> str:
@@ -106,7 +111,7 @@ def validate_curriculum_definition(
     seen_grades = set()
     for grade in curriculum.grades:
         if (grade.grade_id not in GRADE_IDS or grade.grade_id in seen_grades or
-                not 1 <= len(grade.capabilities) <= 9):
+                not 1 <= len(grade.capabilities) <= V2_GRADE_CAPABILITY_MAX):
             raise ValueError("FACTORY_CURRICULUM_GRADE_INVALID")
         seen_grades.add(grade.grade_id)
         ids = tuple(cap.capability_id for cap in grade.capabilities)
@@ -164,6 +169,29 @@ def validate_curriculum_definition(
             grade_roots.update(capability.taught_roots)
         all_ids.update(grade_ids)
         previous_roots.update(grade_roots)
+
+
+def instructional_constituent_roots(
+        curriculum: CurriculumDefinition, capability_id: str) -> tuple[str, ...]:
+    """Return own and structurally earlier instructional roots in stable order."""
+    if not isinstance(curriculum, CurriculumDefinition):
+        raise TypeError(FACTORY.EXECUTION.CURRICULUM_DEFINITION_REQUIRED.legacy_codes[0])
+    validate_curriculum_definition(curriculum, answer_kinds=tuple(dict.fromkeys(
+        family.kind for grade in curriculum.grades for cap in grade.capabilities
+        for family in cap.answer_families)))
+    earlier_roots = []
+    for grade in curriculum.grades:
+        capabilities = {cap.capability_id: cap for cap in grade.capabilities}
+        if capability_id in capabilities:
+            for stage in grade.teaching_stages:
+                if capability_id in stage:
+                    break
+                earlier_roots.extend(root for name in stage
+                                     for root in capabilities[name].taught_roots)
+            return tuple(dict.fromkeys((
+                *earlier_roots, *capabilities[capability_id].taught_roots)))
+        earlier_roots.extend(root for cap in grade.capabilities for root in cap.taught_roots)
+    raise ErrorBus.legacy_error(FACTORY.EXECUTION.CURRICULUM_UNKNOWN_CAPABILITY)
 
 
 def validate_source_bindings(

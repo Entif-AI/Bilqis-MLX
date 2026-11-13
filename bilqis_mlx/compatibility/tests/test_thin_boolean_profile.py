@@ -1,5 +1,8 @@
 """Compatibility views must preserve a factory-selected Boolean learning slice."""
 from dataclasses import replace
+import inspect
+from pathlib import Path
+import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -40,3 +43,42 @@ class ThinBooleanProfileTests(unittest.TestCase):
         release = SimpleNamespace(execution_plan=SimpleNamespace(
             capability_map={key: None for key in (*self.grade_a.capability_map, 'B.NOT', 'B.AND')}))
         self.assertFalse(profile_has_legacy_inventory(release, self.canonical))
+
+
+class CompatibilityBoundaryTests(unittest.TestCase):
+    def test_projection_is_read_only_under_the_architecture_guard(self):
+        from bilqis_mlx.compatibility import executable_projection
+        from scripts.check_factory_architecture import inspect_factory_architecture
+
+        source = Path(executable_projection.__file__).read_text()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / "bilqis_mlx/compatibility/executable_projection.py"
+            target.parent.mkdir(parents=True)
+            (root / "bilqis_mlx/factory").mkdir()
+            target.write_text(source)
+            self.assertEqual(tuple(finding for finding in inspect_factory_architecture(root)
+                                   if finding.startswith("bilqis_mlx/compatibility/")), ())
+            # A current-state writer added to this translation boundary must fail.
+            target.write_text(source + "\nfrom bilqis_mlx.runtime.checkpoints import _persist\n_persist()\n")
+            self.assertTrue(any("COMPATIBILITY_CALLS_CURRENT_WRITER" in finding
+                                for finding in inspect_factory_architecture(root)))
+
+    def test_projection_signatures_and_trainer_facade_stay_stable(self):
+        from bilqis_mlx.compatibility import executable_projection
+        from bilqis_mlx import trainer
+        from bilqis_mlx.runtime import operating_loop
+
+        signatures = {
+            "resolve_legacy_resume_course": "(accepted, source_root, saved, initial, *, pending=None)",
+            "verify_legacy_resume_binding": "(receipt, course, graph, manifest, fingerprint, *, sealed_v1_release=None) -> 'None'",
+            "preflight_sealed_v1_migration": "(run_dir, receipt, manifest, source_root)",
+            "legacy_course_for_profile": "(grade_a: 'Course', source_root, profile: 'CurriculumProfile') -> 'Course'",
+        }
+        for name, expected in signatures.items():
+            with self.subTest(name=name):
+                function = getattr(executable_projection, name)
+                self.assertEqual(str(inspect.signature(function)), expected)
+                if hasattr(trainer, name):
+                    self.assertIs(getattr(trainer, name), function)
+        self.assertIs(trainer.operate, operating_loop.operate)

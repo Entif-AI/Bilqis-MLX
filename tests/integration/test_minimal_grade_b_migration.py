@@ -29,9 +29,7 @@ from bilqis_mlx.compatibility.executable_projection import (
 )
 from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.trainer import (
-    VERSION, _activate_replaced_admitted_grade, _commit_scored_student,
-    _repair_championship_source_context,
-    _reconcile_stagnation_scope,
+    VERSION, _commit_scored_student, _repair_championship_source_context, _reconcile_stagnation_scope
 )
 
 
@@ -109,90 +107,28 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
         cls.new = minimal_boolean_successor(cls.a, SOURCE)
         _, _, cls.graph, _, _ = read_sources(SOURCE)
 
-    def test_existing_full_b_is_replaced_without_neural_mutation(self):
-        student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)
-        base = start_new(self.old, student)
-        school = replace(
-            base,
-            champions={"A": student, "B": student},
-            queue=tuple(cap.id for cap in self.old.grades[0].capabilities),
+    def test_schedule_topology_is_independent_of_semantic_geometry(self):
+        from bilqis_mlx.curriculum.scheduler import (
+            _program, classify_schedule_topology, ScheduleTopology,
         )
-        receipt = {
-            "schema": VERSION,
-            "generation": 21,
-            "run_id": "minimal-b-migration-fixture",
-            "school": asdict(school),
-            "model_bundle": student.filename,
-            "curriculum_mode": self.old.version,
-            "result": "ACTIVE_GRADE_A",
-            "semantic_graph_sha256": _fingerprint(self.graph),
-            "parameter_shapes": {
-                "embedding.weight": [len(self.graph["tokens"]), 8]},
-            "source_manifest_sha256": self.manifest["manifest_sha256"],
-            "teacher": {"events": 99, "strategies": {}},
-            "config": {
-                "precision": "fp32",
-                "vocab_size": len(self.graph["tokens"]),
-            },
-            "last_exam": {"cohort_sha256": "b" * 64},
-            "qualification_cohort": {"cohort_sha256": "c" * 64},
-            "last_generalization_cohort": {"cohort_sha256": "d" * 64},
-            "burned_generalization_cohorts": ["e" * 64],
-            "capability_best": {"legacy": {"capability": "B.OR"}},
-            "graduation_perfect": {"legacy": {"capability": "B.XOR"}},
-            "whole_student_peaks": [{"legacy": True}],
-            "teacher_misses": [{"id": "miss", "capability": "B.OR"}],
-            "teacher_miss_exposures": {"miss": 4},
-            "stagnation_session": {"required_capabilities": ["B.OR"]},
-            "legacy_frontier_pending_replay": True,
-            "mentor_epoch": {
-                "championship_school_identity": {"old": True},
-                "active_roles": {"B.OR": {"checkpoint": asdict(student)}},
-                "active_grade_soups": {"B": {"grade": "B"}},
-                "settled_matchups": {},
-            },
-        }
-        with TemporaryDirectory() as temp:
-            root = Path(temp)
-            revised = _activate_replaced_admitted_grade(
-                root, receipt, self.old, self.new, self.graph)
-            self.assertEqual(read_current(root), revised)
-            self.assertTrue((root / "states" / "0000022.json").is_file())
-            events = [json.loads(line) for line in (
-                root / "events.jsonl").read_text().splitlines()]
-
-        self.assertEqual(revised["curriculum_mode"], MINIMAL_BOOLEAN_RELEASE)
-        self.assertEqual(revised["live_rubric_sha256"], self.new.grades[0].assessment_sha256)
-        self.assertEqual(revised["model_bundle"], receipt["model_bundle"])
-        self.assertEqual(
-            revised["school"]["current_student"],
-            receipt["school"]["current_student"])
-        self.assertEqual(revised["teacher"], receipt["teacher"])
-        self.assertEqual(set(revised["school"]["champions"]), {"A"})
-        self.assertEqual(
-            revised["config"]["answer_heads"]["boolean_operator"]["values"],
-            ["AND", "IFF"])
-        self.assertEqual(revised["capability_best"], {})
-        self.assertEqual(revised["graduation_perfect"], {})
-        self.assertEqual(revised["whole_student_peaks"], [])
-        self.assertEqual(revised["teacher_misses"], [])
-        self.assertEqual(revised["teacher_miss_exposures"], {})
-        self.assertEqual(revised["burned_generalization_cohorts"], [])
-        self.assertFalse(revised["legacy_frontier_pending_replay"])
-        self.assertIsNone(revised["last_exam"])
-        self.assertIsNone(revised["stagnation_session"])
-        self.assertNotIn("qualification_cohort", revised)
-        self.assertNotIn("last_generalization_cohort", revised)
-        epoch = revised["mentor_epoch"]
-        self.assertEqual(epoch["active_roles"], {})
-        self.assertEqual(epoch["active_grade_soups"], {})
-        self.assertTrue(epoch["school_identity_history"])
-        self.assertEqual(events[-1]["event"], "SCHOOL_GRADE_RELEASE_REPLACED")
-        self.assertEqual(events[-1]["actual_neural_updates"], 0)
-        self.assertEqual(events[-1]["optimizer_step"], 4321)
-        self.assertEqual(
-            set(events[-1]["withheld_capabilities"]),
-            {"B.NOT", "B.OR", "B.XOR", "B.IMPLIES"})
+        previous = _program(self.new)
+        expanded = _program(self.old)
+        prefix = replace(previous, grades=previous.grades[:1])
+        arbitrary = replace(previous, grades=(previous.grades[0],
+            replace(previous.grades[1], id="Z")))
+        cases = (
+            (previous, previous, ScheduleTopology.UNCHANGED),
+            (prefix, arbitrary, ScheduleTopology.APPEND_GRADE),
+            (previous, expanded, ScheduleTopology.SAME_GRADE_EXPANSION),
+            (expanded, previous, ScheduleTopology.SAME_GRADE_REVISION),
+            (previous, replace(previous, program_digest="e" * 64),
+             ScheduleTopology.SAME_GRADE_REVISION),
+            (previous, replace(previous, grades=tuple(reversed(previous.grades))),
+             ScheduleTopology.UNSUPPORTED),
+        )
+        for old, new, expected in cases:
+            with self.subTest(topology=expected):
+                self.assertEqual(classify_schedule_topology(old, new), expected)
 
 
     def test_a_candidate_after_minimal_b_migration_uses_a_scope_rubric(self):
@@ -230,7 +166,7 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
             cohort, _ = _candidate_executable_cohort(
                 root, receipt, self.manifest, release,
                 live_source_registry(), SOURCE, self.graph,
-                capabilities=a_scope, legacy_course=canonical_course)
+                capabilities=a_scope)
             predictions = {row["id"]: row["gold"] for row in cohort.rows}
             with patch('bilqis_mlx.runtime.checkpoints._bundle_pointer', return_value=student):
                 _, frontier, roles, _ = _commit_scored_student(

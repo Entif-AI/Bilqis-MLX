@@ -39,12 +39,20 @@ def _archive_invalid_role(updated: dict, capability: str, role: dict,
     })
 
 
+def _capability_grade(capability: str, grades: dict) -> str:
+    matches = tuple(grade for grade, capabilities in grades.items()
+                    if capability in capabilities)
+    if len(matches) != 1:
+        raise ValueError("CHAMPIONSHIP_CAPABILITY_GROUP_AMBIGUOUS_OR_ABSENT")
+    return matches[0]
+
+
 def _sanitize_role_origins(updated: dict, grades: dict) -> None:
     """Keep title jurisdiction distinct from checkpoint-training provenance."""
     roles = updated.setdefault("active_roles", {})
     invalid = []
     for capability, role in list(roles.items()):
-        title_grade = capability.partition(".")[0]
+        title_grade = _capability_grade(capability, grades)
         if title_grade not in grades or capability not in _grade_caps(grades, title_grade):
             raise ValueError("CHAMPIONSHIP_ACTIVE_ROLE_CAPABILITY_UNKNOWN")
         origin = role.get("origin_grade") if isinstance(role, dict) else None
@@ -345,6 +353,8 @@ def _role_receipt(challenger_exam: dict, capability: str,
     if owner_maxed is None:
         owner_maxed = score["correct"] == score["total"]
     return {
+        **({"complete_solver_provenance": deepcopy(challenger_exam["complete_solver_provenance"])}
+           if "complete_solver_provenance" in challenger_exam else {}),
         "rubric": challenger_exam["rubric_sha256"],
         "cohort_rubric_sha256": challenger_exam.get(
             "cohort_rubric_sha256", challenger_exam["rubric_sha256"]),
@@ -455,7 +465,7 @@ def _resolve_title_match(*, capability: str, prior: dict, challenger_exam: dict,
         winner_exam, capability, mastered, prior=prior,
         scope=qualification_scope, surviving_battery=battery,
         owner_maxed=owner_maxed, archive_exams=(gate_exam,),
-        origin_grade=capability.partition(".")[0],
+        origin_grade=prior["origin_grade"],
         checkpoint_origin_grade=(
             challenger_exam.get("checkpoint_origin_grade")
             if challenger_wins else
@@ -477,6 +487,9 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
                   incumbent_exams: dict, title_matches=None,
                   fanout_screen=None) -> tuple[dict, tuple[str, ...], tuple[dict, ...]]:
     """Capability-local title fights with one non-recursive same-grade fan-out."""
+    census = tuple(capability for capabilities in grades.values() for capability in capabilities)
+    if len(census) != len(set(census)):
+        raise ValueError("CHAMPIONSHIP_CAPABILITY_GROUP_AMBIGUOUS_OR_ABSENT")
     scores = challenger_exam["scores"]
     pointer = _pointer(challenger_exam["checkpoint"])
     updated = deepcopy(epoch)
@@ -517,7 +530,8 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
                 continue
             roles[cap] = _role_receipt(
                 challenger_exam, cap, mastered, scope=(cap,),
-                owner_maxed=(scores[cap]["correct"] == scores[cap]["total"]))
+                owner_maxed=(scores[cap]["correct"] == scores[cap]["total"]),
+                origin_grade=grade)
             changes.append(cap)
             continue
         prior_pointer = _pointer(prior["checkpoint"])
@@ -527,7 +541,8 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
                     challenger_exam, cap, mastered, prior=prior, scope=(cap,),
                     surviving_battery=verified_battery(prior),
                     owner_maxed=bool(prior.get("maxed", maxed_role(prior))) or
-                    scores[cap]["correct"] == scores[cap]["total"])
+                    scores[cap]["correct"] == scores[cap]["total"],
+                    origin_grade=grade)
             continue
         settled = _settled_match(
             updated, cap, prior_pointer["sha256"], pointer["sha256"])

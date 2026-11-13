@@ -6,25 +6,41 @@ adoption. A token proposal never grants current prerequisite evidence.
 from __future__ import annotations
 
 from dataclasses import asdict, replace
+import csv
 import json
 from pathlib import Path
 
 from ..curriculum import AnswerFamily, BINARY
+from ..curriculum import GRADE_IDS
+from ..errors import ErrorBus, FACTORY
 from ..live_grade_c import registry_graph as numeric_registry_graph
 from ..semantics.copular import SYMBOL, SEMANTIC_ID
 from ..source_adapters.copular import (
     CAPABILITY, GENERATOR, ORACLE, SENSE_ID, TEXT_SHA256, MEANING, registered_adapter,
+    verify_source,
 )
 from ..vocabulary_growth import AdmittedToken, append_catalog, digest
 from ..factory.candidate_staging import candidate_source_anchor, compile_candidate_successor
 from ..factory.curriculum_definition import CapabilitySpec, CapabilitySourceBinding, GradeSpec
 from ..factory.execution import CurriculumProfile
+from lib.ithkuil.src.skos.identity import sense_from_source
 
 
 VERSION = "bilqis.ithkuil-reference-identity/20261020-v1"
 AUTHORITY = "https://github.com/socr8s/private-ip/issues/349"
 REGISTRY_ID = "1xtOjO0jGCxjU2bgcg0TKpVruJ4Z5O3vW9ixu6oMQ-so"
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "semantics/copular_registry_v1.json"
+
+
+def atlas_semantic_id() -> str:
+    """Resolve the A01 semantic identity from the same pinned source row."""
+    repo_root = Path(__file__).resolve().parents[2]
+    verify_source(repo_root)
+    path = repo_root / "lib/ithkuil/_data/csv/lexicon_root_senses.csv"
+    with path.open(newline="", encoding="utf-8") as stream:
+        row = next(row for row in csv.DictReader(stream)
+                   if row["lexicon_sense_id"] == SENSE_ID)
+    return sense_from_source("lexicon_root_senses", row).iri
 
 
 def capability_definition() -> CapabilitySpec:
@@ -55,6 +71,10 @@ def token_admission() -> AdmittedToken:
         signature="Entity*Entity->Boolean", arity=2)
 
 
+PROJECTION_REGISTERED_TOKENS = tuple(numeric_registry_graph()["tokens"])
+PROJECTION_ADMISSION_TOKEN = token_admission().token_id
+
+
 def _registered_parent(parent):
     # Preserve the separately admitted numeric allocation at indices 222..226,
     # including when the current student has not allocated those rows yet.
@@ -72,6 +92,19 @@ def proposed_graph(parent):
     """Neural-inert source/Registry proposal, following the existing numeric path."""
     return append_catalog(_registered_parent(parent), (token_admission(),),
                           allow_disposable_fixtures=True)[0]
+
+
+def projected_catalog(current_catalog: tuple[str, ...]) -> tuple[str, ...]:
+    """Derive the exact prospective catalog without staging a Factory release."""
+    registered = tuple(numeric_registry_graph()["tokens"])
+    if (not isinstance(current_catalog, tuple) or not current_catalog
+            or len(current_catalog) > len(registered)
+            or current_catalog != registered[:len(current_catalog)]):
+        raise ValueError
+    admission = token_admission()
+    if admission.token_id in registered:
+        raise ValueError
+    return (*registered, admission.token_id)
 
 
 def expanded_graph(parent, evidence=None):
@@ -96,8 +129,31 @@ def stage_identity(frontier, current, graph, *, source_root, source_registry, an
         raise ValueError("COPULAR_EXACT_NEW_CANDIDATE_REQUIRED")
     candidate_id = matches[0].candidate_id
     capability = capability_definition()
-    curriculum = replace(current.curriculum, grades=(*current.curriculum.grades,
-        GradeSpec("D", (capability,), ((CAPABILITY, 12),), ((CAPABILITY,),))))
+    grades = list(current.curriculum.grades)
+    for index, grade in enumerate(grades):
+        if grade.grade_id != "D" or any(
+                item.difficulty != capability.difficulty
+                for item in grade.capabilities):
+            continue
+        grades[index] = replace(
+            grade,
+            capabilities=(*grade.capabilities, capability),
+            exam_item_counts=(*grade.exam_item_counts, (CAPABILITY, 12)),
+            teaching_stages=(*grade.teaching_stages, (CAPABILITY,)),
+        )
+        break
+    else:
+        used = {grade.grade_id for grade in grades}
+        target_grade = next(
+            (grade_id for grade_id in GRADE_IDS if grade_id not in used), None)
+        if target_grade is None:
+            ErrorBus.raise_(
+                FACTORY.SEMANTIC_RULE.INVALID,
+                reason="COPULAR_GRADE_CAPACITY_EXHAUSTED",
+            )
+        grades.append(GradeSpec(
+            target_grade, (capability,), ((CAPABILITY, 12),), ((CAPABILITY,),)))
+    curriculum = replace(current.curriculum, grades=tuple(grades))
     bindings = replace(current.source_bindings, bindings=(*current.source_bindings.bindings,
         CapabilitySourceBinding(CAPABILITY, candidate_source_anchor(frontier, candidate_id),
                                 GENERATOR, ORACLE)))

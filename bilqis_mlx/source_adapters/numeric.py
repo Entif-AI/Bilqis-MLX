@@ -128,3 +128,17 @@ def inspect_record(record):
 
     symbols, operations, depth = visit(expression)
     return SourceExpressionShape(symbols[0], symbols, operations, depth)
+
+
+def check_numeric(row, *, graph, **_):
+    """Check codec/gold agreement against the source arithmetic semantics."""
+    value = evaluate(decode(row["record"]["symbols"]))
+    gold = ("TRUE" if value else "FALSE") if type(value) is bool else str(value)
+    return (gold == row["gold"] and
+            [graph["tokens"][index] for index in row["tokens"]] ==
+            row["record"]["symbols"])
+
+
+def semantic_footprint(row: dict) -> tuple[str, ...]:
+    """Canonical query roots, excluding representation and equality wrappers."""
+    return tuple(dict.fromkeys(inspect_record(row["record"]).rooted_operators))

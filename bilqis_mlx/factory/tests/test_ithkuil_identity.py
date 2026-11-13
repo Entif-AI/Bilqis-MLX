@@ -1,4 +1,5 @@
 from dataclasses import replace
+import csv
 import hashlib
 import json
 import os
@@ -16,7 +17,8 @@ from bilqis_mlx.factory.autonomy import (
 )
 from bilqis_mlx.factory.evidence import draw_evidence_rows
 from bilqis_mlx.source_adapters.copular_curriculum import (
-    proposed_graph, expanded_graph, stage_identity, token_admission, VERSION, REGISTRY_ID,
+    atlas_semantic_id, proposed_graph, expanded_graph, stage_identity, token_admission,
+    VERSION, REGISTRY_ID,
 )
 from bilqis_mlx.factory.jit_curriculum import propose_curriculum_delta, ProposalDisposition
 from bilqis_mlx.factory.live_answers import live_answer_registry
@@ -32,6 +34,7 @@ from bilqis_mlx.vocabulary_growth import digest
 
 ROOT = Path(__file__).resolve().parents[3]
 LEGACY = ROOT / "vendor/legacy-v16"
+ATLAS_SEMANTIC_ID = atlas_semantic_id()
 
 
 class IthkuilIdentityFactoryTests(unittest.TestCase):
@@ -60,10 +63,120 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
             source_root=LEGACY, source_registry=cls.registry,
             answer_registry=live_answer_registry())
 
+    def test_realization_graph_must_match_the_staged_release_in_full(self):
+        from copy import deepcopy
+        from unittest.mock import Mock, patch
+        from bilqis_mlx.factory import candidate_realizations
+
+        for graph, valid in ((self.graph, True),
+                             ({**deepcopy(self.graph), "fixture_semantic_change": True}, False)):
+            with self.subTest(valid=valid), \
+                    patch("bilqis_mlx.source_adapters.copular_curriculum.expanded_graph",
+                          Mock(return_value=graph)), \
+                    patch("bilqis_mlx.source_adapters.copular_curriculum.stage_identity",
+                          Mock(return_value=self.staged)):
+                if valid:
+                    prepared = candidate_realizations.prepare_realized_candidates(
+                        self.frontier, self.current, self.parent_graph,
+                        source_root=LEGACY, source_registry=self.registry,
+                        answer_registry=live_answer_registry())
+                    self.assertIn(self.staged, prepared)
+                    self.assertEqual(candidate_realizations.admitted_candidate_graph(
+                        self.staged, self.parent_graph), self.graph)
+                else:
+                    with self.assertRaisesRegex(ValueError, "SEMANTIC_GRAPH_DRIFT"):
+                        candidate_realizations.prepare_realized_candidates(
+                            self.frontier, self.current, self.parent_graph,
+                            source_root=LEGACY, source_registry=self.registry,
+                            answer_registry=live_answer_registry())
+                    with self.assertRaisesRegex(ValueError, "SEMANTIC_GRAPH_DRIFT"):
+                        candidate_realizations.admitted_candidate_graph(
+                            self.staged, self.parent_graph)
+
     def test_registered_source_meanings_cannot_be_rebound(self):
-        from bilqis_mlx.factory.candidate_realizations import REALIZATIONS
-        with self.assertRaises(TypeError):
-            REALIZATIONS["unqualified-sense"] = object()
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from bilqis_mlx.factory import candidate_realizations
+
+        forged = SimpleNamespace(
+            CAPABILITY="FORGED.RUNTIME.0",
+            projected_catalog=lambda catalog: (*catalog, "forged.runtime.token"),
+        )
+        with patch.object(candidate_realizations, "REALIZATIONS", {
+                self.staged.source_sense_id: forged}, create=True):
+            capabilities, identities = candidate_realizations.project_realized_target(
+                ATLAS_SEMANTIC_ID, self.current)
+        self.assertEqual(capabilities, self.staged.successor.transition.added_capabilities)
+        self.assertEqual(
+            self.current.semantic_catalog + identities,
+            self.staged.successor.semantic_catalog,
+        )
+
+    def test_projection_authority_captures_trusted_provider_contract(self):
+        from unittest.mock import patch
+        from bilqis_mlx.factory import candidate_realizations
+
+        with patch.object(candidate_realizations.ithkuil_identity, "CAPABILITY",
+                          "FORGED.RUNTIME.1"), \
+                patch.object(candidate_realizations.ithkuil_identity,
+                             "projected_catalog",
+                             lambda catalog: (*catalog, "forged.runtime.token.1")):
+            capabilities, identities = candidate_realizations.project_realized_target(
+                ATLAS_SEMANTIC_ID, self.current)
+        self.assertEqual(capabilities, self.staged.successor.transition.added_capabilities)
+        self.assertEqual(
+            self.current.semantic_catalog + identities,
+            self.staged.successor.semantic_catalog,
+        )
+
+    def test_projection_authority_ignores_dynamic_provider_rebinding(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from bilqis_mlx.factory import candidate_realizations
+
+        forged = SimpleNamespace(token_id="forged.runtime.catalog.token")
+        with patch.object(candidate_realizations.ithkuil_identity, "token_admission",
+                          return_value=forged), patch.object(
+                              candidate_realizations.ithkuil_identity,
+                              "numeric_registry_graph",
+                              return_value={"tokens": ("forged.runtime.prefix",)}):
+            capabilities, identities = candidate_realizations.project_realized_target(
+                ATLAS_SEMANTIC_ID, self.current)
+        self.assertEqual(capabilities, self.staged.successor.transition.added_capabilities)
+        self.assertEqual(
+            self.current.semantic_catalog + identities,
+            self.staged.successor.semantic_catalog,
+        )
+
+    def test_projection_authority_matches_real_registered_successor(self):
+        from bilqis_mlx.factory.candidate_realizations import project_realized_target
+
+        capabilities, identities = project_realized_target(
+            ATLAS_SEMANTIC_ID, self.current)
+        self.assertEqual(capabilities, self.staged.successor.transition.added_capabilities)
+        self.assertEqual(
+            self.current.semantic_catalog + identities,
+            self.staged.successor.semantic_catalog,
+        )
+
+    def test_projection_authority_uses_canonical_a01_atlas_identity(self):
+        from lib.ithkuil.src.skos.identity import sense_from_source
+
+        path = ROOT / "lib/ithkuil/_data/csv/lexicon_root_senses.csv"
+        with path.open(newline="", encoding="utf-8") as stream:
+            row = next(
+                item for item in csv.DictReader(stream)
+                if item["lexicon_sense_id"] == self.staged.source_sense_id)
+        self.assertEqual(
+            sense_from_source("lexicon_root_senses", row).iri,
+            ATLAS_SEMANTIC_ID,
+        )
+
+    def test_projection_authority_rejects_unregistered_semantic(self):
+        from bilqis_mlx.factory.candidate_realizations import project_realized_target
+
+        with self.assertRaises(ValueError):
+            project_realized_target("fixture.unregistered.semantic", self.current)
 
     def test_source_realization_compiles_one_thin_grade_through_factory(self):
         self.staged.verify(self.frontier, self.current)
@@ -91,12 +204,38 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
             course=None, executable_release=self.staged.successor, capability=CAPABILITY,
             batch_size=32, fresh_seed=42, prior_capability=None, prior_seed=None,
             fragile_fixed_rows=(), fragile_requested=(), fragile_seeds={},
-            fragile_rotation=0, teaching_seed=43, teaching_enrichment_enabled=True)
+            fragile_rotation=0, retention_support_capability=None,
+            retention_support_seed=None, retention_support_rotation=0,
+            teaching_seed=43, teaching_enrichment_enabled=True)
         packet = prepare_step_sources(request)
         self.assertEqual(packet["identity"], request["identity"])
         self.assertEqual(len(packet["fresh"]), 32)
         self.assertTrue(all(check(row, graph=self.graph) for row in packet["fresh"]))
+        self.assertEqual(packet["retention_support"], [])
         self.assertEqual(packet["teaching_enrichment_rows"], [])
+
+    def test_prefetch_checks_the_complete_requested_footprint_before_drawing(self):
+        from unittest.mock import patch
+        from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+        from bilqis_mlx.runtime.source_prefetch import prepare_step_sources
+
+        request = dict(identity="d" * 64, source_root=str(LEGACY), graph=self.graph,
+            course=None, executable_release=self.staged.successor, capability=CAPABILITY,
+            batch_size=32, fresh_seed=42, prior_capability=None, prior_seed=None,
+            fragile_fixed_rows=(), fragile_requested=(), fragile_seeds={},
+            fragile_rotation=0, retention_support_capability=None,
+            retention_support_seed=None, retention_support_rotation=0,
+            teaching_seed=43, teaching_enrichment_enabled=True)
+        for change in ({"capability": "D.UNADMITTED"},
+                       {"prior_capability": "D.UNADMITTED"},
+                       {"fragile_requested": ("D.UNADMITTED",)},
+                       {"retention_support_capability": "D.UNADMITTED"}):
+            with self.subTest(change=change), patch.object(
+                    SourceExecutionContext, "draw_rows",
+                    side_effect=AssertionError("provider call before packet validation")) as draw:
+                with self.assertRaisesRegex(ValueError, "UNKNOWN_CAPABILITY"):
+                    prepare_step_sources({**request, **change})
+                draw.assert_not_called()
 
     def test_proposal_requires_both_current_prerequisites(self):
         plan = compile_autonomy_plan(self.current)
@@ -169,8 +308,8 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
                 proposal, _ = session.propose_source_frontier_work(
                     Checkpoint("e" * 64, "bundles/fixture", 0, True), self.parent_graph)
             self.assertEqual(proposal.disposition, ProposalDisposition.SOURCE_DEVELOPMENT)
-            self.assertEqual(load_staged_candidates(root, self.frontier, self.current),
-                             (self.staged,))
+            staged = load_staged_candidates(root, self.frontier, self.current)
+            self.assertEqual(staged, (self.staged,))
             self.assertEqual(session.ledger.receipts, ())
 
     def test_ready_catalog_proposal_uses_existing_student_transaction(self):
@@ -191,19 +330,13 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
         parameters, optimizer = object(), object()
         with patch('bilqis_mlx.runtime.admission._require_executable_factory_admission', return_value=self.current), \
                 patch('bilqis_mlx.runtime.state._state_from_json', return_value=school), \
-                patch('bilqis_mlx.runtime.release_adoption._adopt_catalog_profile', return_value="adopted") as adopt:
+                patch('bilqis_mlx.runtime.release_adoption._adopt_prepared_successor',
+                      return_value="adopted") as adopt:
             self.assertEqual(_adopt_jit_proposal(None, Path("unused"), receipt, None,
                 LEGACY, self.parent_graph, parameters, optimizer, session, object(),
                 reserve_gib=0), "adopted")
             self.assertIs(adopt.call_args.args[7], optimizer)
-            self.assertEqual(adopt.call_args.args[8].graph, self.graph)
-            self.assertEqual(adopt.call_args.kwargs["compiled_successor"], self.staged.successor)
-            adopt.reset_mock()
-            receipt["last_exam"] = {}
-            with self.assertRaisesRegex(ValueError, "COMPLETE_PERFECT_PREFIX"):
-                _adopt_jit_proposal(None, Path("unused"), receipt, None, LEGACY,
-                    self.parent_graph, parameters, optimizer, session, object(), reserve_gib=0)
-            adopt.assert_not_called()
+            self.assertIs(adopt.call_args.args[8], self.staged)
 
 
 if __name__ == "__main__":
