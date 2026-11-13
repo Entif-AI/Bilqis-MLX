@@ -18,6 +18,12 @@ class ReleaseVersionTests(unittest.TestCase):
         example = "# Changes\n\n## [0.2.0] - 2026-10-17\n\n### Added\n- Source custody\n\n## [0.1.0] - 2026-10-15\n### Added\n- Old\n"
         self.assertIn("Source custody", changelog_section(example, "0.2.0"))
         self.assertNotIn("Old", changelog_section(example, "0.2.0"))
+        release_please = (
+            "# Changes\n\n"
+            "## [1.0.0](https://github.com/Entif-AI/Bilqis-MLX/compare/v0.2.0...v1.0.0) "
+            "(2026-11-13)\n\n### Features\n- Generated release notes\n"
+        )
+        self.assertIn("Generated release notes", changelog_section(release_please, "1.0.0"))
         with self.assertRaisesRegex(ValueError, "CHANGELOG_VERSION_MISSING"):
             changelog_section(example, "0.3.0")
 
