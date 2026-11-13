@@ -2,6 +2,34 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.1.0](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.0.0...v1.1.0) (2026-11-13)
+
+
+### Features
+
+* **bamf:** close delivery with immutable conformance receipts (BAMF-0.2 C15) ([057638a](https://github.com/Entif-AI/Bilqis-MLX/commit/057638a2c93cd152516457c6a5b0b92a946454c1))
+* **bamf:** consume accepted C14 for C15 closeout ([e845036](https://github.com/Entif-AI/Bilqis-MLX/commit/e84503682d494f19dece9f531aa4e94e40a4e9a3))
+* **bamf:** consume C15 requalification receipts ([c3649b5](https://github.com/Entif-AI/Bilqis-MLX/commit/c3649b50105325847730e15148966f8369c73342))
+* **bamf:** declare developmental program (BAMF-0.2 C14.1a) ([8a8c974](https://github.com/Entif-AI/Bilqis-MLX/commit/8a8c9744c5c10f8290f1e717b0adc1cbc5ccf191))
+* **bamf:** deliver source-coverage training runbook (BAMF-0.2 C14.2) ([7550492](https://github.com/Entif-AI/Bilqis-MLX/commit/7550492c63eba163daf7d5a0397ab7896cee349b))
+* **bamf:** enforce C13 source binding reservation (BAMF-0.2 [#1030](https://github.com/Entif-AI/Bilqis-MLX/issues/1030)b) ([42c17e5](https://github.com/Entif-AI/Bilqis-MLX/commit/42c17e54bc2e9e2bcea2d82cfe545221498ba62d))
+* **bamf:** move C09 authority to fixed ordinary-user store (BAMF-0.2 [#1031](https://github.com/Entif-AI/Bilqis-MLX/issues/1031)) ([05a32ba](https://github.com/Entif-AI/Bilqis-MLX/commit/05a32baa0c3ced5e986c7de74b1403c1225dc43d))
+* **bamf:** publish C15 ready-for-owner-merge state ([e8262d0](https://github.com/Entif-AI/Bilqis-MLX/commit/e8262d01093fa5ee77991a482d60c8b99585d9e2))
+* **bamf:** publish integrated wiring receipt and dashboard handoff (BAMF-0.2 C13.3) ([9e06ea5](https://github.com/Entif-AI/Bilqis-MLX/commit/9e06ea557c910bae7ecd879fe83f4d50aed84eb9))
+* **bamf:** reconcile rollback, resume and correction proofs (BAMF-0.2 C13.2) ([b99810c](https://github.com/Entif-AI/Bilqis-MLX/commit/b99810cbf69bf6a379e00056fdec9845dca1245d))
+* **bamf:** recursive grade-neutral domain succession (BAMF-0.2 C14.3) ([de84266](https://github.com/Entif-AI/Bilqis-MLX/commit/de84266ba3db79b6545ff484f3268a99ea8872f6))
+* **bamf:** select lawful interleaved stages (BAMF-0.2 C14.1b) ([6719eb5](https://github.com/Entif-AI/Bilqis-MLX/commit/6719eb506bd2b8f2fc2ba92b9113f9b734395295))
+* **bamf:** turn in integrated M3 Ultra wiring path (BAMF-0.2 C13.1) ([47e57f0](https://github.com/Entif-AI/Bilqis-MLX/commit/47e57f05574b7702a85772003c5fc892ff206a33))
+
+
+### Bug Fixes
+
+* **bamf:** bind C15 proof to executable owner tests ([c4197f2](https://github.com/Entif-AI/Bilqis-MLX/commit/c4197f28c4aa2e3972634b1dbea255832d4b6d7b))
+* **bamf:** bound live issue newline transport ([8fd258a](https://github.com/Entif-AI/Bilqis-MLX/commit/8fd258a625f4d7d8c10fd08521594fc0f27960f5))
+* **bamf:** move C09 authority to ordinary-user store ([#1031](https://github.com/Entif-AI/Bilqis-MLX/issues/1031)) ([bc283e9](https://github.com/Entif-AI/Bilqis-MLX/commit/bc283e9480b4dd60957ef5eaafe86dc7bff08496))
+* **bamf:** reconcile C13 release boundary for C15 ([a72192b](https://github.com/Entif-AI/Bilqis-MLX/commit/a72192b0b0cb0fa5aade1f87dd2677603cbcee51))
+* **bamf:** reserve C13 source binding namespace ([#1032](https://github.com/Entif-AI/Bilqis-MLX/issues/1032)) ([07cdf41](https://github.com/Entif-AI/Bilqis-MLX/commit/07cdf41380a6f325f72de9d3b64e7451f74fcca7))
+
 ## [1.0.0](https://github.com/Entif-AI/Bilqis-MLX/compare/v0.2.0...v1.0.0) (2026-11-13)
 
 
