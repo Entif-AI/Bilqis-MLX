@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from types import MappingProxyType
 
 from .codec import encode_record
 from .envelopes import (
@@ -26,7 +27,7 @@ from .snapshots import (
 )
 
 
-_FAMILY_TYPES = {
+_FAMILY_TYPES = MappingProxyType({
     QueryFamily.RUN: (RunContext, OperatorView),
     QueryFamily.SCHOOL: (SchoolSnapshot, CurriculumFrontier),
     QueryFamily.CAPABILITY: (CapabilitySnapshot,),
@@ -40,7 +41,7 @@ _FAMILY_TYPES = {
     QueryFamily.SALIENCE: (SalienceEvent,),
     QueryFamily.CORRECTION: (CorrectionEvent,),
     QueryFamily.RESOURCE: (ResourceSample,),
-}
+})
 
 
 def _record_sort_key(record: WireRecord):
