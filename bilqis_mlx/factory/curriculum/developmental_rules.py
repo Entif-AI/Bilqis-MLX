@@ -15,6 +15,13 @@ SCHEMA = "bilqis.bamf.domain-rules/v1"
 DEFAULT_RULE_RESOURCE = "bamf-domain-rules-v1.json"
 GRADE_INTRODUCTION = "FACTORY_RELEASE_DATA_OPERATION"
 CROSS_DOMAIN_BLOCKING = "TYPED_PREREQUISITE_EDGES_ONLY"
+SHARED_CONTRACTS = (
+    "SOURCE_QUALIFIED_PREREQUISITES",
+    "CURRENT_EVIDENCE_REQUIRED",
+    "FAMILY_OWNED_TEACHING_ASSESSMENT",
+    "GRADE_NEUTRAL_PROMOTION_DEBT",
+    "FACTORY_RELEASE_ADMISSION",
+)
 
 
 @dataclass(frozen=True)
@@ -34,10 +41,7 @@ class DevelopmentalRuleManifest:
                 or type(self.family_ids) is not tuple or not self.family_ids
                 or self.family_ids != tuple(sorted(set(self.family_ids)))
                 or any(type(item) is not str or not item for item in self.family_ids)
-                or type(self.shared_contracts) is not tuple or not self.shared_contracts
-                or len(self.shared_contracts) != len(set(self.shared_contracts))
-                or any(type(item) is not str or not item
-                       for item in self.shared_contracts)
+                or self.shared_contracts != SHARED_CONTRACTS
                 or self.grade_introduction != GRADE_INTRODUCTION
                 or self.cross_domain_blocking != CROSS_DOMAIN_BLOCKING
                 or type(self.named_grade_priority) is not bool
@@ -55,6 +59,7 @@ class DomainSuccessionIntent:
     stage: StageIntent
     rule_policy_version: str
     selected_rule_family_ids: tuple[str, ...]
+    shared_contracts: tuple[str, ...]
     grade_introduction: str = GRADE_INTRODUCTION
     cross_domain_blocking: str = CROSS_DOMAIN_BLOCKING
     named_grade_priority: bool = False
@@ -67,6 +72,7 @@ class DomainSuccessionIntent:
                 or type(self.selected_rule_family_ids) is not tuple
                 or self.selected_rule_family_ids
                    != tuple(sorted(set(self.selected_rule_family_ids)))
+                or self.shared_contracts != SHARED_CONTRACTS
                 or self.grade_introduction != GRADE_INTRODUCTION
                 or self.cross_domain_blocking != CROSS_DOMAIN_BLOCKING
                 or self.named_grade_priority or self.named_grade_debt_exception):
@@ -111,4 +117,5 @@ def resolve_domain_succession(
     families = tuple(sorted(stage.selected_family_ids))
     for family_id in families:
         rules.require_family(family_id)
-    return DomainSuccessionIntent(stage, rules.policy_version, families)
+    return DomainSuccessionIntent(
+        stage, rules.policy_version, families, rules.shared_contracts)
