@@ -1,4 +1,4 @@
-"""BAMF Mission Control CP02 typed view contracts."""
+"""BAMF Mission Control typed records and bounded CP03 query contracts."""
 from .codec import canonical_json, decode_json, decode_record, encode_record
 from .envelopes import (
     ErrorEnvelope, EventEnvelope, PartialEnvelope, StaleEnvelope,
@@ -20,6 +20,11 @@ from .operator import (
     ActionParameter, ActionReceiptState, OperatorActionReceipt,
     OperatorActionRequest,
 )
+from .query_contracts import (
+    DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, QUERY_PAGE_SCHEMA, QUERY_REQUEST_SCHEMA,
+    QueryFamily, QueryLink, QueryMode, QueryPage, QueryRequest, QueryState,
+)
+from .query_catalog import MissionControlQueryCatalog
 from .registry import ALL_RECORD_TYPES, RECORD_BY_SCHEMA
 from .schema import record_schema, schema_bundle
 from .snapshots import (
@@ -34,9 +39,13 @@ __all__ = (
     "CoverageState", "CurriculumFrontier", "DataValue", "ErrorEnvelope",
     "EventEnvelope", "FrameCompileReceipt", "GenerationManifest",
     "LearningEpisode", "MemorySnapshot", "MissionControlContractError",
+    "MissionControlQueryCatalog",
     "NeuralRuntimeSample", "OperatorActionReceipt", "OperatorActionRequest",
     "OperatorView", "PartialEnvelope", "RECORD_BY_SCHEMA", "RecordMeta",
     "ResourceSample", "RunContext", "RunRef", "SalienceEvent",
+    "DEFAULT_PAGE_SIZE", "MAX_PAGE_SIZE", "QUERY_PAGE_SCHEMA",
+    "QUERY_REQUEST_SCHEMA", "QueryFamily", "QueryLink", "QueryMode",
+    "QueryPage", "QueryRequest", "QueryState",
     "SchoolSnapshot", "SemanticAtlasSnapshot", "StaleEnvelope",
     "StreamPosition", "TeacherSnapshot", "UnavailableEnvelope",
     "UnavailableReason", "ValueOrigin", "ValueState", "canonical_json",

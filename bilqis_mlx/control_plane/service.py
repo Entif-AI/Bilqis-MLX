@@ -12,6 +12,9 @@ import stat
 from uuid import uuid4
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.mission_control import (
+    MissionControlContractError, MissionControlQueryCatalog, QueryRequest,
+)
 
 from .contracts import (
     ControlPlaneState, ERROR_SCHEMA,
@@ -162,7 +165,13 @@ class _RequestHandler(socketserver.StreamRequestHandler):
 
 
 class ControlPlaneService:
-    def __init__(self, run_dir: Path, socket_path: Path):
+    def __init__(
+        self, run_dir: Path, socket_path: Path, *,
+        query_catalog: MissionControlQueryCatalog | None = None,
+    ):
+        if query_catalog is not None and not isinstance(
+                query_catalog, MissionControlQueryCatalog):
+            _invalid("CONTROL_PLANE_QUERY_SOURCE_INVALID")
         self.run_dir = Path(run_dir).expanduser().resolve()
         self.socket_path = Path(socket_path).expanduser().resolve()
         self._service_lock_fd = _acquire_service_lock(self.socket_path)
@@ -179,6 +188,9 @@ class ControlPlaneService:
             socket_path=str(self.socket_path),
             run_dir=str(self.run_dir),
         )
+        self._query_catalog = (
+            MissionControlQueryCatalog.unavailable()
+            if query_catalog is None else query_catalog)
         self._service_state = ControlPlaneState.HEALTHY
         self._socket_identity: tuple[int, int] | None = None
         server = _ThreadedUnixServer(
@@ -278,10 +290,25 @@ class ControlPlaneService:
             "session": session.to_record(),
         }
 
+    def _query(self, session: SessionIdentity, request: dict) -> dict:
+        try:
+            query = QueryRequest.from_mapping(request.get("query"))
+            page = self._query_catalog.query(query)
+        except MissionControlContractError:
+            return self.rejected_request(session, "CONTROL_PLANE_QUERY_INVALID")
+        return {
+            **self._query_catalog.encode_page(page),
+            "accepted": True,
+            "service": self.identity.to_record(),
+            "session": session.to_record(),
+        }
+
     def dispatch(self, session: SessionIdentity, request: dict) -> dict:
         surface = request.get("type")
         if surface in {"health", "readiness", "liveness"}:
             return {**self._health(session, surface), "accepted": True}
+        if surface == "query":
+            return self._query(session, request)
         return self.rejected_request(
             session, "CONTROL_PLANE_CP01_OPERATION_UNSUPPORTED")
 
