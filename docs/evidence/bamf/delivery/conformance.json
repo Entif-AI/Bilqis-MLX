@@ -1,0 +1,316 @@
+{
+  "conformance_sha256": "39c5d1cd730ee41a8c0199b942b9c772b33f48889395c0a672ea300602d83965",
+  "rows": [
+    {
+      "claim_id": "BAMF-REQ-001",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A01/A02/A12",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A01/A02/A12.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-002",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A01/A02/A12",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A01/A02/A12.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-003",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A03/A04/A05",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A04/A05.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-004",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A03/A04/A05",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A04/A05.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-005",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A05/B04/B06/B08/B11/C13",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A05/B04/B06/B08/B11/C13.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-006",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A03/A10/C10",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A10/C10.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-007",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B01/B04/B11",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:B01/B04/B11.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-008",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B01/B04/B11",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:B01/B04/B11.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-009",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B05",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:B05.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-010",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B07/B08/A02/B13/A13",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:B07/B08/A02/B13/A13.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-011",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B07/B08/A02/B13/A13",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:B07/B08/A02/B13/A13.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-012",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B06/C04",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:B06/C04.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-013",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B06/C04",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:B06/C04.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-014",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B14",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:B14.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-015",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "C02/C07/C14",
+      "state": "BLOCKED",
+      "test_ref": "blocked:C13/C14 accepted integrated witness"
+    },
+    {
+      "claim_id": "BAMF-REQ-016",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B12/B13/C05/C13",
+      "state": "BLOCKED",
+      "test_ref": "blocked:C13/C14 accepted integrated witness"
+    },
+    {
+      "claim_id": "BAMF-REQ-017",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "C03/C13/C14",
+      "state": "BLOCKED",
+      "test_ref": "blocked:C13/C14 accepted integrated witness"
+    },
+    {
+      "claim_id": "BAMF-REQ-018",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "C06",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:C06.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-019",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A11/C09/C13",
+      "state": "BLOCKED",
+      "test_ref": "blocked:C13/C14 accepted integrated witness"
+    },
+    {
+      "claim_id": "BAMF-REQ-020",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "C09/C10",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:C09/C10.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-021",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A10/C05/C12",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A10/C05/C12.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-022",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "C08/C11/C16",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:C08/C11/C16.tests"
+    },
+    {
+      "claim_id": "BAMF-REQ-023",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "C01/B13/C13",
+      "state": "BLOCKED",
+      "test_ref": "blocked:C13/C14 accepted integrated witness"
+    },
+    {
+      "claim_id": "BAMF-REQ-024",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "C05/C11/C13/C14",
+      "state": "BLOCKED",
+      "test_ref": "blocked:C13/C14 accepted integrated witness"
+    },
+    {
+      "claim_id": "F01",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A03/A11",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A11.tests"
+    },
+    {
+      "claim_id": "F02",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A03/A04",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A04.tests"
+    },
+    {
+      "claim_id": "F03",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A03/A04",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A04.tests"
+    },
+    {
+      "claim_id": "F04",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A03/A04",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A03/A04.tests"
+    },
+    {
+      "claim_id": "F05",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A05/B04/B06/B11/C13",
+      "state": "BLOCKED",
+      "test_ref": "blocked:C13/C14 accepted integrated witness"
+    },
+    {
+      "claim_id": "F06",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A10/C09",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A10/C09.tests"
+    },
+    {
+      "claim_id": "F07",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "C09",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:C09.tests"
+    },
+    {
+      "claim_id": "F08",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A13/C06",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A13/C06.tests"
+    },
+    {
+      "claim_id": "F09",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A13",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A13.tests"
+    },
+    {
+      "claim_id": "F10",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A10/C05",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A10/C05.tests"
+    },
+    {
+      "claim_id": "F11",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B07",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:B07.tests"
+    },
+    {
+      "claim_id": "F12",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B07/B09/B12/B13/C13",
+      "state": "BLOCKED",
+      "test_ref": "blocked:C13/C14 accepted integrated witness"
+    },
+    {
+      "claim_id": "F13",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B14",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:B14.tests"
+    },
+    {
+      "claim_id": "F14",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B01/B13",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:B01/B13.tests"
+    },
+    {
+      "claim_id": "F15",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "C09",
+      "state": "REQUALIFICATION_REQUIRED",
+      "test_ref": "bilqis_mlx/runtime/tests/correction/test_atlas_stale_replay.py"
+    },
+    {
+      "claim_id": "F16",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A05/C02/C05/C13/C14",
+      "state": "BLOCKED",
+      "test_ref": "blocked:C13/C14 accepted integrated witness"
+    },
+    {
+      "claim_id": "F17",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "A01/A12/C07",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:A01/A12/C07.tests"
+    },
+    {
+      "claim_id": "F18",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "C05",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:C05.tests"
+    },
+    {
+      "claim_id": "F19",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "C06/C09",
+      "state": "CODE_PRESENT",
+      "test_ref": "docs/tasks/bamf-0.2/workstack.json:C06/C09.tests"
+    },
+    {
+      "claim_id": "F20",
+      "contract_ref": "docs/architecture/BAMF_0_2.md#requirements-continuity",
+      "owner_ref": "B13/C13/C16",
+      "state": "BLOCKED",
+      "test_ref": "blocked:C13/C14 accepted integrated witness"
+    }
+  ],
+  "schema": "bilqis.bamf.delivery-conformance/v1",
+  "software_delivery_status": "IN_PROGRESS",
+  "student_mastery_status": "NOT_CLAIMED"
+}

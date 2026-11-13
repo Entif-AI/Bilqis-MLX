@@ -916,6 +916,18 @@ No additional trainable tensor may be silently created by a convenience layer. B
 
 **Verify:** Each required leaf has an exact commit, proof and EGM disposition or an owned blocker. Links resolve and the dependency graph is acyclic. Shared paths have one writer. A cold reviewer reconstructs create->learn->retain->expand->resume from the artifacts alone. Delivery manifest reproduces. Root closeout never invents live training or full-atlas mastery.
 
+**Current C15 projection (13 November 2026):** C15 publishes a deterministic,
+content-addressed public-safe delivery record at
+`docs/evidence/bamf/delivery/manifest.json` and the complete BAMF-REQ-001..024 /
+F01..F20 projection at `docs/evidence/bamf/delivery/conformance.json`. The human
+projection is `docs/evidence/bamf/delivery/conformance.md`; the append-only roadmap
+view is `docs/evidence/bamf/delivery/roadmap-projection.json`. These files preserve
+the historical workstack/issue-book identities rather than rewriting old rows.
+`CODE_PRESENT` is not an execution claim, C13/C14-dependent gaps stay `BLOCKED`,
+and stale-evidence F15 is `REQUALIFICATION_REQUIRED`. Software delivery and later
+student full-atlas mastery are separate statuses; neither the source-attested Atlas
+release nor C15 software evidence claims neural admission or learned mastery.
+
 #### [C16: #382](https://github.com/Entif-AI/Bilqis-MLX/issues/382) | Open the first durable BAMF student path before optional projection work
 
 **Depends on:** [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372), [C02: #371](https://github.com/Entif-AI/Bilqis-MLX/issues/371), [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378), [C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374).

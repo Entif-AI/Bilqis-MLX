@@ -26,14 +26,16 @@ def command(name):
 
 
 def integrate(components, egm_status=EgmStatus.PASS):
+    dependency_components = tuple(item for item in components
+                                  if item.component_id in COMPONENTS)
     issues = tuple(sorted(
         (IssueReceipt(item.owner_issue, item.component_id, "CLOSED",
                       item.status, item.head_sha, item.evidence_ref)
-         for item in components),
+         for item in dependency_components),
         key=lambda item: item.issue))
     commits = tuple(CommitReceipt(item.head_sha[:-1] + str(index), item.owner_issue,
                                   "delivery owner")
-                    for index, item in enumerate(components))
+                    for index, item in enumerate(dependency_components))
     proofs = (ProofReceipt("workstack", ProofState.EXECUTED_PASS,
                            "bilqis.bamf.workstack/v1",
                            "bilqis.bamf.workstack.validation/v1",
@@ -61,6 +63,16 @@ class DeliveryIntegrationTests(unittest.TestCase):
         value = integrate(tuple(component(name) for name in COMPONENTS))
         self.assertEqual(value.software_delivery_status, "READY_FOR_OWNER_MERGE")
         self.assertEqual(value.student_mastery_status, "NOT_CLAIMED")
+
+    def test_additional_component_pins_do_not_replace_required_dependencies(self):
+        components = tuple(sorted(
+            (*tuple(component(name) for name in COMPONENTS),
+             ComponentReceipt("topology", 382, "c" * 64, ReceiptStatus.ACCEPTED,
+                              "configs/models/bamf-0.2.json")),
+            key=lambda item: item.component_id))
+        value = integrate(components)
+        self.assertEqual(value.software_delivery_status, "READY_FOR_OWNER_MERGE")
+        self.assertIn("topology", {item.component_id for item in value.components})
 
     def test_missing_required_component_refuses_integration(self):
         with self.assertRaises(BilqisError) as caught:

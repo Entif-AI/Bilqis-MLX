@@ -13,7 +13,8 @@ REQUIRED_COMMANDS = ("cold-resume", "owner-start", "preflight", "read-only-statu
 def integrate_delivery_receipts(*, components, issues, commits, proofs, egm,
                                 operator_commands) -> BamfDeliveryManifest:
     """Compose owned receipts without promoting provisional evidence to acceptance."""
-    require(tuple(item.component_id for item in components) == REQUIRED_COMPONENTS,
+    component_ids = tuple(item.component_id for item in components)
+    require(all(name in component_ids for name in REQUIRED_COMPONENTS),
             "C15_COMPONENT_SET")
     require(tuple(item.reviewer for item in egm) == REQUIRED_EGM_REVIEWERS,
             "C15_EGM_REVIEWERS")

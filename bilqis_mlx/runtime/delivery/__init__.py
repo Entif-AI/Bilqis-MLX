@@ -14,6 +14,7 @@ from .contracts import (
     ReceiptStatus,
 )
 from .integration import integrate_delivery_receipts
+from .codec import load_manifest_record, seal_manifest
 
 __all__ = (
     "BAMF_DELIVERY_SCHEMA",
@@ -28,4 +29,6 @@ __all__ = (
     "ProofState",
     "ReceiptStatus",
     "integrate_delivery_receipts",
+    "load_manifest_record",
+    "seal_manifest",
 )
