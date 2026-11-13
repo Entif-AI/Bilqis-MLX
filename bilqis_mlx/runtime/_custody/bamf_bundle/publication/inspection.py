@@ -7,8 +7,8 @@ from pathlib import Path
 
 from bilqis_mlx.data_plane import DataPlaneError
 
-from ..genesis import BamfRunIdentity
 from ..records import BAMF_POINTER_SCHEMA, canonical, invalid, sha
+from ..run_identity import BamfRunIdentity
 from .storage import ACCEPTANCE_DIR, _live_bundle_manifest, _read_pointer
 
 
