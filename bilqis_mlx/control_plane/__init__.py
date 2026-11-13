@@ -3,6 +3,7 @@
 from .client import ControlPlaneClient
 from .contracts import (
     ControlPlaneState,
+    ERROR_SCHEMA,
     HEALTH_SCHEMA,
     HANDSHAKE_SCHEMA,
     PROTOCOL_VERSION,
@@ -13,6 +14,7 @@ __all__ = (
     "ControlPlaneClient",
     "ControlPlaneService",
     "ControlPlaneState",
+    "ERROR_SCHEMA",
     "HANDSHAKE_SCHEMA",
     "HEALTH_SCHEMA",
     "PROTOCOL_VERSION",

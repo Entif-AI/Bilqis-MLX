@@ -8,6 +8,7 @@ from enum import Enum
 PROTOCOL_VERSION = "bilqis.bamf.control-plane/v1"
 HANDSHAKE_SCHEMA = "bilqis.bamf.control-plane.handshake/v1"
 HEALTH_SCHEMA = "bilqis.bamf.control-plane.health/v1"
+ERROR_SCHEMA = "bilqis.bamf.control-plane.error/v1"
 SERVICE_IDENTITY_SCHEMA = "bilqis.bamf.control-plane.service-identity/v1"
 LEARNER_IDENTITY_SCHEMA = "bilqis.bamf.control-plane.learner-identity/v1"
 SESSION_IDENTITY_SCHEMA = "bilqis.bamf.control-plane.session-identity/v1"
@@ -51,7 +52,7 @@ class ServiceIdentity:
 class LearnerIdentity:
     state: ControlPlaneState
     run_dir: str
-    operator_active: bool = False
+    operator_active: bool | None = None
     run_id: str | None = None
     run_identity_sha256: str | None = None
     generation: int | None = None

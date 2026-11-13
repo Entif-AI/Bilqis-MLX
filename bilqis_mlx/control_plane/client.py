@@ -7,7 +7,7 @@ import socket
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
-from .contracts import ControlPlaneState, PROTOCOL_VERSION
+from .contracts import ControlPlaneState, HANDSHAKE_SCHEMA, PROTOCOL_VERSION
 
 
 MAX_RESPONSE_BYTES = 64 * 1024
@@ -47,6 +47,26 @@ class ControlPlaneClient:
             _invalid("CONTROL_PLANE_RESPONSE_INVALID")
         return response
 
+    def _validate_handshake(self, response: dict) -> None:
+        if (response.get("schema") != HANDSHAKE_SCHEMA
+                or type(response.get("accepted")) is not bool):
+            _invalid("CONTROL_PLANE_HANDSHAKE_INVALID")
+        if not response["accepted"]:
+            return
+        service = response.get("service")
+        session = response.get("session")
+        if (not isinstance(service, dict) or not isinstance(session, dict)
+                or response.get("protocol_version") != self.protocol_version
+                or service.get("protocol_version") != self.protocol_version
+                or session.get("protocol_version") != self.protocol_version
+                or not isinstance(service.get("service_id"), str)
+                or not service["service_id"]
+                or session.get("service_id") != service["service_id"]
+                or session.get("client_id") != self.client_id
+                or not isinstance(session.get("session_id"), str)
+                or not session["session_id"]):
+            _invalid("CONTROL_PLANE_HANDSHAKE_IDENTITY_INVALID")
+
     def connect(self) -> dict:
         self.close()
         self.state = ControlPlaneState.CONNECTING
@@ -67,18 +87,13 @@ class ControlPlaneClient:
             self._stream = None
             self.state = ControlPlaneState.UNAUTHORIZED
             raise
-        except ConnectionRefusedError:
-            connection.close()
-            self._socket = None
-            self._stream = None
-            self.state = ControlPlaneState.SERVICE_RESTARTING
-            raise
         except Exception:
             connection.close()
             self._socket = None
             self._stream = None
             self.state = ControlPlaneState.DISCONNECTED
             raise
+        self._validate_handshake(response)
         self.state = ControlPlaneState(response["state"])
         if not response.get("accepted"):
             self.close(preserve_state=True)

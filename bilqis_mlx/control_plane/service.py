@@ -13,7 +13,7 @@ from uuid import uuid4
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 from .contracts import (
-    ControlPlaneState,
+    ControlPlaneState, ERROR_SCHEMA,
     HANDSHAKE_SCHEMA,
     HEALTH_SCHEMA,
     PROTOCOL_VERSION,
@@ -31,6 +31,24 @@ def _invalid(reason: str):
     ErrorBus.raise_(SCHOOL.BAMF_CONTROL_PLANE.INVALID, reason=reason)
 
 
+def _socket_identity(path: Path) -> tuple[int, int] | None:
+    try:
+        observed = path.lstat()
+    except FileNotFoundError:
+        return None
+    if not stat.S_ISSOCK(observed.st_mode):
+        return None
+    return observed.st_dev, observed.st_ino
+
+
+def _unlink_socket_if_identity(
+        path: Path, identity: tuple[int, int] | None) -> bool:
+    if identity is None or _socket_identity(path) != identity:
+        return False
+    path.unlink()
+    return True
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -40,17 +58,20 @@ def _prepare_socket_path(path: Path) -> None:
         _invalid("CONTROL_PLANE_SOCKET_PATH_TOO_LONG")
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        mode = path.lstat().st_mode
+        observed = path.lstat()
     except FileNotFoundError:
         return
-    if not stat.S_ISSOCK(mode):
+    if not stat.S_ISSOCK(observed.st_mode):
         _invalid("CONTROL_PLANE_SOCKET_PATH_OCCUPIED")
+    observed_identity = (observed.st_dev, observed.st_ino)
     probe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     try:
         probe.settimeout(0.1)
         probe.connect(str(path))
     except (ConnectionRefusedError, FileNotFoundError):
-        path.unlink(missing_ok=True)
+        if _socket_identity(path) != observed_identity:
+            _invalid("CONTROL_PLANE_SOCKET_CHANGED_DURING_STARTUP")
+        _unlink_socket_if_identity(path, observed_identity)
         return
     finally:
         probe.close()
@@ -114,23 +135,30 @@ class ControlPlaneService:
             socket_path=str(self.socket_path),
             run_dir=str(self.run_dir),
         )
+        self._socket_identity: tuple[int, int] | None = None
         server = _ThreadedUnixServer(
             str(self.socket_path), _RequestHandler, bind_and_activate=False)
+        bound_identity = None
         try:
             server.server_bind()
+            bound_identity = _socket_identity(self.socket_path)
+            if bound_identity is None:
+                _invalid("CONTROL_PLANE_SOCKET_BIND_INVALID")
             os.chmod(self.socket_path, 0o600)
             server.server_activate()
+        except OSError as error:
+            server.server_close()
+            _unlink_socket_if_identity(self.socket_path, bound_identity)
+            try:
+                _invalid("CONTROL_PLANE_SOCKET_BIND_FAILED")
+            except Exception as typed:
+                raise typed from error
         except Exception:
             server.server_close()
-            try:
-                mode = self.socket_path.lstat().st_mode
-            except FileNotFoundError:
-                pass
-            else:
-                if stat.S_ISSOCK(mode):
-                    self.socket_path.unlink()
+            _unlink_socket_if_identity(self.socket_path, bound_identity)
             raise
         self._server = server
+        self._socket_identity = bound_identity
         self._server.control_plane = self
 
     def _learner(self):
@@ -193,9 +221,12 @@ class ControlPlaneService:
 
     def rejected_request(self, session: SessionIdentity, reason: str) -> dict:
         return {
-            **self._health(session, "health"),
+            "schema": ERROR_SCHEMA,
             "accepted": False,
+            "state": ControlPlaneState.HEALTHY.value,
             "reason": reason,
+            "service": self.identity.to_record(),
+            "session": session.to_record(),
         }
 
     def dispatch(self, session: SessionIdentity, request: dict) -> dict:
@@ -216,9 +247,5 @@ class ControlPlaneService:
 
     def server_close(self) -> None:
         self._server.server_close()
-        try:
-            mode = self.socket_path.lstat().st_mode
-        except FileNotFoundError:
-            return
-        if stat.S_ISSOCK(mode):
-            self.socket_path.unlink()
+        _unlink_socket_if_identity(self.socket_path, self._socket_identity)
+        self._socket_identity = None
