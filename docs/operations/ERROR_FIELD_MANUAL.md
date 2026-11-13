@@ -14,6 +14,18 @@ The runtime error catalog is the authority for new failures. Raw string exceptio
 
 ## Typed catalog
 
+### `FACTORY.DEVELOPMENTAL_PROGRAM.INVALID`
+
+Factory developmental program invalid.
+
+Owner: `factory.curriculum.developmental_program`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Factory developmental program invalid: {reason}
+
+Recovery: Restore the immutable C14 developmental-program manifest and source-qualified domain declarations before retrying.
+
 ### `FACTORY.SOURCE_BINDING.INVALID`
 
 Factory source binding invalid.
