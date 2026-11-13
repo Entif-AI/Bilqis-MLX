@@ -274,6 +274,7 @@ class MissionControlQueryCatalog:
         return {
             "schema": QUERY_PAGE_SCHEMA,
             "query_id": page.request.query_id,
+            "request": page.request.to_record(),
             "family": page.request.family.value,
             "mode": page.request.mode.value,
             "state": page.state.value,

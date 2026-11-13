@@ -9,6 +9,7 @@ from pathlib import Path
 import socket
 import socketserver
 import stat
+from typing import Callable
 from uuid import uuid4
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -167,10 +168,9 @@ class _RequestHandler(socketserver.StreamRequestHandler):
 class ControlPlaneService:
     def __init__(
         self, run_dir: Path, socket_path: Path, *,
-        query_catalog: MissionControlQueryCatalog | None = None,
+        query_source: Callable[[], MissionControlQueryCatalog] | None = None,
     ):
-        if query_catalog is not None and not isinstance(
-                query_catalog, MissionControlQueryCatalog):
+        if query_source is not None and not callable(query_source):
             _invalid("CONTROL_PLANE_QUERY_SOURCE_INVALID")
         self.run_dir = Path(run_dir).expanduser().resolve()
         self.socket_path = Path(socket_path).expanduser().resolve()
@@ -188,9 +188,9 @@ class ControlPlaneService:
             socket_path=str(self.socket_path),
             run_dir=str(self.run_dir),
         )
-        self._query_catalog = (
-            MissionControlQueryCatalog.unavailable()
-            if query_catalog is None else query_catalog)
+        self._query_source = (
+            MissionControlQueryCatalog.unavailable
+            if query_source is None else query_source)
         self._service_state = ControlPlaneState.HEALTHY
         self._socket_identity: tuple[int, int] | None = None
         server = _ThreadedUnixServer(
@@ -293,11 +293,19 @@ class ControlPlaneService:
     def _query(self, session: SessionIdentity, request: dict) -> dict:
         try:
             query = QueryRequest.from_mapping(request.get("query"))
-            page = self._query_catalog.query(query)
         except MissionControlContractError:
             return self.rejected_request(session, "CONTROL_PLANE_QUERY_INVALID")
+        try:
+            catalog = self._query_source()
+        except Exception:
+            return self.rejected_request(
+                session, "CONTROL_PLANE_QUERY_SOURCE_UNAVAILABLE")
+        if not isinstance(catalog, MissionControlQueryCatalog):
+            return self.rejected_request(
+                session, "CONTROL_PLANE_QUERY_SOURCE_INVALID")
+        page = catalog.query(query)
         return {
-            **self._query_catalog.encode_page(page),
+            **catalog.encode_page(page),
             "accepted": True,
             "service": self.identity.to_record(),
             "session": session.to_record(),

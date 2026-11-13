@@ -29,7 +29,7 @@ class ControlPlaneQueryTests(unittest.TestCase):
             }
             service = ControlPlaneService(
                 run_dir, root / "cp.sock",
-                query_catalog=MissionControlQueryCatalog(SAMPLES[:16]),
+                query_source=lambda: MissionControlQueryCatalog(SAMPLES[:16]),
             )
             thread = start_service(service)
             try:
@@ -45,6 +45,8 @@ class ControlPlaneQueryTests(unittest.TestCase):
                 self.assertTrue(page["accepted"])
                 self.assertEqual(page["state"], QueryState.PRESENT.value)
                 self.assertEqual(
+                    page["request"], QueryRequest(QueryFamily.RUN).to_record())
+                self.assertEqual(
                     {row["schema_version"] for row in page["records"]},
                     {
                         "bilqis.bamf.mission-control.run-context/v1",
@@ -56,6 +58,28 @@ class ControlPlaneQueryTests(unittest.TestCase):
                     for path in run_dir.iterdir() if path.is_file()
                 }
                 self.assertEqual(after, before)
+            finally:
+                service.shutdown()
+                thread.join(2)
+
+    def test_query_source_is_re_evaluated_for_each_current_request(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            records = [SAMPLES[1]]
+
+            def source():
+                return MissionControlQueryCatalog(tuple(records))
+
+            service = ControlPlaneService(
+                root / "missing-run", root / "cp.sock", query_source=source)
+            thread = start_service(service)
+            try:
+                with ControlPlaneClient(root / "cp.sock") as client:
+                    first = client.query(QueryRequest(QueryFamily.RUN))
+                    records[:] = [SAMPLES[0], SAMPLES[1]]
+                    second = client.query(QueryRequest(QueryFamily.RUN))
+                self.assertEqual(first["total_matches"], 1)
+                self.assertEqual(second["total_matches"], 2)
             finally:
                 service.shutdown()
                 thread.join(2)
