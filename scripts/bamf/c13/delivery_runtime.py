@@ -18,7 +18,7 @@ from scripts.bamf.c13.candidate_evidence import event_offset, owner_event_after
 from scripts.bamf.c13.contracts import CandidateAttemptReceipt, SemanticDeltaReceipt
 
 PRODUCTION_RESERVE_GIB = 100.0
-_REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _identity(student) -> str:
