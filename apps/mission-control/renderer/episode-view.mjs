@@ -37,6 +37,7 @@ function headerPanel(episode) {
       <div><small>Retention reason</small><strong>${episode.retentionReason}</strong></div>
       <div><small>Peak memory</small><strong>${episode.resourceCost.peakMemoryBytes ?? "UNAVAILABLE"}</strong></div>
       <div><small>Step rate / min</small><strong>${episode.resourceCost.stepRatePerMinute ?? "UNAVAILABLE"}</strong></div>
+      <div><small>Resource coverage</small><strong>${episode.resourceCost.state}</strong></div>
     </div>
   </section>`;
 }
@@ -64,7 +65,7 @@ function terminalProof(episode) {
   return `<section class="episode-panel">
     <header><div><span class="eyebrow">Rollback proof</span><h3>Rejected candidate did not mutate parent state</h3></div>${stateBadge("REJECTED")}</header>
     <div class="episode-rejection-banner" data-class="${classification}">
-      <strong>${classification === "INTERFERENCE" ? "Destructive-interference rejection" : "No-gain rejection"}</strong>
+      <strong>${classification === "INTERFERENCE" ? "Measured interference / destructive-risk rejection" : "No-gain rejection"}</strong>
       <span>${episode.retentionReason}</span>
     </div>
     <div class="episode-rollback-proof">

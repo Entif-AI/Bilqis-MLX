@@ -67,8 +67,9 @@ test("destructive-interference rejection proves parent state and committed evide
   assert.deepEqual(rejected.target.committedAfter, rejected.target.before);
   assert.deepEqual(rejected.protected.committedAfter, rejected.protected.before);
   assert.equal(rejected.wholeSchool.committedDelta, 0);
-  assert.equal(rejected.memory.committedAfterBytes, rejected.memory.beforeBytes);
+  assert.equal(rejected.memory.state, "UNAVAILABLE");
   assert.equal(rejected.allocation.committedAfterSlots, rejected.allocation.beforeSlots);
+  assert.equal(rejected.allocation.candidateAfterSlots, null);
 });
 
 test("no-gain rejection is semantically and visually distinct from interference rejection", () => {
@@ -78,6 +79,9 @@ test("no-gain rejection is semantically and visually distinct from interference 
   assert.equal(rejectionClass(noGain), "NO_GAIN");
   assert.equal(rejectionClass(interference), "INTERFERENCE");
   assert.deepEqual(noGain.target.candidateAfter, noGain.target.before);
+  assert.equal(noGain.protected.candidateAfter, null);
+  assert.equal(noGain.protected.reason, "TARGET_DID_NOT_GAIN");
+  assert.equal(noGain.stages.find((stage) => stage.id === "protected").state, "MISSING");
   const css = fs.readFileSync(path.join(rendererRoot, "episodes.css"), "utf8");
   assert.match(css, /data-class="INTERFERENCE"/);
   assert.match(css, /data-class="NO_GAIN"/);
@@ -108,7 +112,7 @@ test("lifecycle replay can stop at every evidenced stage without inventing later
 test("pending or lost episode renders partial and missing stages instead of fabricated terminal values", () => {
   const pending = fixture("episode:fixture:reconciliation-pending");
   assert.equal(pending.terminalState, "UNKNOWN");
-  assert.equal(pending.commandState, "UNKNOWN");
+  assert.equal(pending.commandState, "OUTCOME_UNKNOWN");
   assert.equal(pending.retainedOptimizerSteps, null);
   assert.equal(pending.resultingGeneration, null);
   assert.equal(pending.target.candidateAfter, null);

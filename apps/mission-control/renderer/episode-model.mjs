@@ -62,6 +62,7 @@ export function replaySlice(episode, stageIndex) {
 }
 
 export function diffRows(episode) {
+  const scalar = (value) => value ?? "UNAVAILABLE";
   return Object.freeze([
     Object.freeze({
       label: "Target score",
@@ -75,7 +76,9 @@ export function diffRows(episode) {
       before: scoreText(episode.protected.before),
       challenger: scoreText(episode.protected.candidateAfter),
       committed: scoreText(episode.protected.committedAfter),
-      state: episode.protected.candidateAfter ? "PRESENT" : "PARTIAL",
+      state: episode.protected.state === "NOT_MEASURED"
+        ? "MISSING"
+        : episode.protected.candidateAfter ? "PRESENT" : "PARTIAL",
     }),
     Object.freeze({
       label: "Whole-school relevant delta",
@@ -93,16 +96,16 @@ export function diffRows(episode) {
     }),
     Object.freeze({
       label: "Memory bytes",
-      before: episode.memory.beforeBytes,
-      challenger: episode.memory.candidateAfterBytes ?? "UNAVAILABLE",
-      committed: episode.memory.committedAfterBytes ?? "UNAVAILABLE",
+      before: scalar(episode.memory.beforeBytes),
+      challenger: scalar(episode.memory.candidateAfterBytes),
+      committed: scalar(episode.memory.committedAfterBytes),
       state: episode.memory.state,
     }),
     Object.freeze({
       label: "Allocation slots",
-      before: episode.allocation.beforeSlots,
-      challenger: episode.allocation.candidateAfterSlots ?? "UNAVAILABLE",
-      committed: episode.allocation.committedAfterSlots ?? "UNAVAILABLE",
+      before: scalar(episode.allocation.beforeSlots),
+      challenger: scalar(episode.allocation.candidateAfterSlots),
+      committed: scalar(episode.allocation.committedAfterSlots),
       state: episode.allocation.state,
     }),
   ]);
