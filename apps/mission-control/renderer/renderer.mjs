@@ -18,6 +18,7 @@ import {
   saveDisplaySettings,
 } from "./settings.mjs";
 import { renderSchoolView } from "./school-view.mjs";
+import { renderNeuralView } from "./neural-view.mjs";
 
 const labels = new Map(DESTINATIONS);
 const demoObjects = [
@@ -143,6 +144,24 @@ function renderCurrentView() {
       renderInspector();
       setHash();
     }, state.selected?.kind === "capability" ? state.selected.id : null);
+    return;
+  }
+  if (state.view === "model") {
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Topology, attention health, depth routing and local refinement as measured telemetry only.";
+    renderNeuralView(domain, (id, kind) => {
+      state = inspect(state, {
+        kind: "neural",
+        id,
+        details: {
+          "Diagnostic class": kind,
+          "Interpretation boundary": "Measured routing/runtime telemetry only",
+        },
+      });
+      renderInspector();
+      setHash();
+    });
     return;
   }
   fixture.hidden = false;
