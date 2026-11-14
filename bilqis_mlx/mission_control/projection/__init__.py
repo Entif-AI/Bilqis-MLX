@@ -108,10 +108,7 @@ class MissionControlProjection:
             with store.connect(self.path) as db:
                 store.ingest_record(db, payload)
                 store.ingest_record(db, event)
-                store.record_frontier(
-                    db, event.position.stream_id, event.position.epoch_id,
-                    event.position.ordinal + 1, event.position.cursor_sha256,
-                )
+                store.advance_frontier(db, event.position)
                 db.commit()
                 return store.stats(db)
         except sqlite3.Error:

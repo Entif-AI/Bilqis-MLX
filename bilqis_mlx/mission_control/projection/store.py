@@ -7,7 +7,7 @@ from pathlib import Path
 import sqlite3
 
 from ..codec import canonical_json, decode_json
-from ..envelopes import EventEnvelope
+from ..envelopes import EventEnvelope, StreamPosition
 from ..model import MissionControlContractError, WireRecord
 from .contracts import (
     PROJECTION_SCHEMA, PROJECTION_SCHEMA_VERSION, ProjectionStats,
@@ -158,6 +158,30 @@ def record_frontier(
             next_ordinal = excluded.next_ordinal,
             latest_cursor_sha256 = excluded.latest_cursor_sha256""",
         (stream_id, epoch_id, next_ordinal, latest_cursor_sha256),
+    )
+
+
+def advance_frontier(db: sqlite3.Connection, position: StreamPosition) -> None:
+    """Advance only across one contiguous verified CP04 event position."""
+    current = db.execute(
+        "SELECT * FROM event_frontiers WHERE stream_id = ?",
+        (position.stream_id,),
+    ).fetchone()
+    if current is None:
+        if position.ordinal != 0 or position.previous_cursor_sha256 is not None:
+            projection_invalid("PROJECTION_FRONTIER_GAP_REBUILD_REQUIRED")
+    else:
+        if current["epoch_id"] != position.epoch_id:
+            projection_invalid("PROJECTION_FRONTIER_EPOCH_MISMATCH_REBUILD_REQUIRED")
+        if position.ordinal < current["next_ordinal"]:
+            return
+        if (position.ordinal != current["next_ordinal"]
+                or position.previous_cursor_sha256
+                != current["latest_cursor_sha256"]):
+            projection_invalid("PROJECTION_FRONTIER_GAP_REBUILD_REQUIRED")
+    record_frontier(
+        db, position.stream_id, position.epoch_id,
+        position.ordinal + 1, position.cursor_sha256,
     )
 
 

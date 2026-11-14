@@ -119,6 +119,19 @@ class MissionControlProjectionTests(unittest.TestCase):
             self.assertIsNotNone(first)
             self.assertIsNotNone(second)
             frontier = broker.frontier()
+            with self.assertRaises(BilqisError) as skipped:
+                projection.ingest_event(second, second_payload)
+            self.assertEqual(
+                skipped.exception.context["reason"],
+                "PROJECTION_FRONTIER_GAP_REBUILD_REQUIRED",
+            )
+            self.assertEqual(
+                projection.frontier_status(
+                    frontier.stream_id, frontier.epoch_id,
+                    frontier.next_ordinal, frontier.latest_cursor_sha256,
+                ).state,
+                ProjectionFrontierState.EMPTY,
+            )
             projection.ingest_event(first, first_payload)
             lagging = projection.frontier_status(
                 frontier.stream_id, frontier.epoch_id,
