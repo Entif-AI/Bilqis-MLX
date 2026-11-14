@@ -28,7 +28,7 @@ export function selectionNeighborhood(rows, selectedId) {
   };
 }
 
-function matchesFilter(row, filter) {
+export function matchesSchoolFilter(row, filter) {
   if (filter === "imperfect") return row.now < row.total;
   if (filter === "regression") return row.lastRegression !== "none";
   if (filter === "stale-debt") return row.staleDebt;
@@ -41,7 +41,7 @@ function matchesFilter(row, filter) {
 
 export function projectRows(rows, { filters = [], sortKey = "id", direction = "asc", groupByFamily = false } = {}) {
   const activeFilters = filters.filter((filter) => FILTERS.includes(filter));
-  const filtered = rows.filter((row) => activeFilters.every((filter) => matchesFilter(row, filter)));
+  const filtered = rows.filter((row) => activeFilters.every((filter) => matchesSchoolFilter(row, filter)));
   const factor = direction === "desc" ? -1 : 1;
   return [...filtered].sort((a, b) => {
     if (groupByFamily && a.family !== b.family) {

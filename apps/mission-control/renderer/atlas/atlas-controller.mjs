@@ -124,3 +124,32 @@ export async function ensureAtlasOverview(api, context, isActive = () => true) {
   }
   if (isActive()) renderAtlasDomain(api, context, isActive);
 }
+
+export async function ensureAtlasSelection(
+  api, context, semanticId, isActive = () => true,
+) {
+  bindContext(context);
+  if (!semanticId ||
+      (atlasState.status === "ready" && atlasState.selection?.semanticId === semanticId)) {
+    return;
+  }
+  const isCurrent = beginRequest(context, isActive);
+  atlasState = { ...atlasState, status: "loading", error: null };
+  renderAtlasDomain(api, context, isActive);
+  try {
+    const [selection, overview] = await Promise.all([
+      loadSemanticIdentity(api, context, semanticId),
+      atlasState.overview ? Promise.resolve(atlasState.overview) : loadAtlasOverview(api, context),
+    ]);
+    if (!isCurrent()) return;
+    atlasState = { ...atlasState, status: "ready", selection, overview };
+  } catch (error) {
+    if (!isCurrent()) return;
+    atlasState = {
+      ...atlasState,
+      status: "error",
+      error: error?.code ?? error?.message ?? "Semantic query failed",
+    };
+  }
+  if (isActive()) renderAtlasDomain(api, context, isActive);
+}
