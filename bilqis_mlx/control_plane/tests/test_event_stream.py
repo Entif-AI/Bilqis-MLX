@@ -59,6 +59,7 @@ class ControlPlaneEventStreamTests(unittest.TestCase):
                 "correction.requalification.changed",
                 "resource.health.sample",
                 "warning.failure",
+                "operator.action.state",
             ],
         )
 
