@@ -172,8 +172,8 @@ as existing GUI01 links do, and do not purport to encode historical context.
 Selecting a missing frame never silently selects another. Same-view rerenders
 preserve the existing controls; mounting/unmounting invalidates query epochs.
 
-Concrete files: renderer/frame-contract.mjs owns shared validators and constants;
-renderer/frame-model.mjs owns pure metrics/visibility; renderer/frame-explorer.mjs
+Concrete files: renderer/frames/frame-contract.mjs owns shared validators and constants;
+renderer/frames/frame-model.mjs owns pure metrics/visibility; renderer/frames/frame-explorer.mjs
 owns rendering and async interactions; renderer/frame-explorer.css owns styles;
 fixtures/frame-inspections-v1.json owns literal fixture pages. Extend the accepted
 adapter snapshot dispatcher for this exact request, using an Electron-main-only
@@ -220,3 +220,8 @@ script/stylesheet and local JS import in the allowlist resolves to another allow
 asset, so source-import tests cannot miss an unloadable packaged renderer.
 This is required integration scope inherited from #1063 and GUI20, with no new
 compiler, source, learner or mutation behavior.
+
+Structure-gate integration: group the three GUI08 JavaScript modules in
+`renderer/frames/`, retaining their single owners and updating imports and exact
+protocol paths. This keeps the renderer root below its code-file trigger without
+moving unrelated domain modules. CSS remains in the shared stylesheet directory.

@@ -10,8 +10,8 @@ import {
 } from "./shell-state.mjs";
 import { buildDeepLink, parseDeepLink } from "./deep-link.mjs";
 import { renderComponentCatalog } from "./component-catalog.mjs";
-import { mountFrameExplorer } from "./frame-explorer.mjs";
-import { escapeText as esc } from "./frame-model.mjs";
+import { mountFrameExplorer } from "./frames/frame-explorer.mjs";
+import { escapeText as esc } from "./frames/frame-model.mjs";
 import {
   DENSITIES,
   THEMES,

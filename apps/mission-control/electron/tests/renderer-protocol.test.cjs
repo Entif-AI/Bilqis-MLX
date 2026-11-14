@@ -30,10 +30,10 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     "/episode-model.mjs",
     "/episode-view.mjs",
     "/episodes.css",
-    "/frame-contract.mjs",
     "/frame-explorer.css",
-    "/frame-explorer.mjs",
-    "/frame-model.mjs",
+    "/frames/frame-contract.mjs",
+    "/frames/frame-explorer.mjs",
+    "/frames/frame-model.mjs",
     "/index.html",
     "/neural-fixture.mjs",
     "/neural-model.mjs",
@@ -59,9 +59,10 @@ test("packaged renderer assets include every local HTML and JavaScript dependenc
     const source = fs.readFileSync(path.join(root, asset), "utf8");
     const dependencies = asset.endsWith(".html")
       ? [...source.matchAll(/(?:src|href)="\.\/([^"#]+)"/g)].map(match => match[1])
-      : asset.endsWith(".mjs") ? [...source.matchAll(/(?:from\s+|import\s*)["']\.\/([^"']+)["']/g)].map(match => match[1]) : [];
+      : asset.endsWith(".mjs") ? [...source.matchAll(/(?:from\s+|import\s*)["'](\.\.?\/[^"']+)["']/g)].map(match => match[1]) : [];
     for (const dependency of dependencies) {
-      assert.ok(RENDERER_ASSETS.has(`/${dependency}`), `${asset} requires ${dependency}`);
+      const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(asset), dependency));
+      assert.ok(RENDERER_ASSETS.has(`/${resolved}`), `${asset} requires ${dependency}`);
     }
   }
   assert.equal(assetPathForRendererRequest("bamf-mc://app/fixtures/frame-inspections-v1.json", root), null);

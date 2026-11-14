@@ -1,4 +1,4 @@
-import { assertOperatorView } from "./shell-state.mjs";
+import { assertOperatorView } from "../shell-state.mjs";
 
 export const FRAME_QUERY = "bamf.gui08.frame-query/v1";
 export const FRAME_PAGE = "bamf.gui08.frame-page/v1";

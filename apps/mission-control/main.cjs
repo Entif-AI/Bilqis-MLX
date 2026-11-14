@@ -17,7 +17,7 @@ registerRendererSchemePrivileges(protocol);
 
 async function createWindow() {
   const { assertOperatorView } = await import("./renderer/shell-state.mjs");
-  const frameContracts = await import("./renderer/frame-contract.mjs");
+  const frameContracts = await import("./renderer/frames/frame-contract.mjs");
   const adapter = new AcceptedControlPlaneAdapter();
   const bridge = new ControlPlaneBridge(
     adapter,

@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { assertFramePage, assertFrameRequest } from "../renderer/frame-contract.mjs";
-import { packingMetrics, visiblePosition } from "../renderer/frame-model.mjs";
-import { FrameQueryController, renderFrameExample } from "../renderer/frame-explorer.mjs";
+import { assertFramePage, assertFrameRequest } from "../renderer/frames/frame-contract.mjs";
+import { packingMetrics, visiblePosition } from "../renderer/frames/frame-model.mjs";
+import { FrameQueryController, renderFrameExample } from "../renderer/frames/frame-explorer.mjs";
 
 const pages = JSON.parse(readFileSync(new URL("../fixtures/frame-inspections-v1.json", import.meta.url)));
 const page = () => structuredClone(pages[1]);
