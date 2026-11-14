@@ -8,6 +8,7 @@ import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.control_plane.event_stream import EventFamily, EventStreamBroker
+from bilqis_mlx.mission_control.envelopes import event_cursor_sha256
 from bilqis_mlx.mission_control.observability import GenerationManifest
 from bilqis_mlx.mission_control.projection import (
     MissionControlProjection, ProjectionFrontierState,
@@ -103,6 +104,28 @@ class MissionControlProjectionTests(unittest.TestCase):
             self.assertEqual(
                 collision.exception.context["reason"],
                 "PROJECTION_EVENT_IDENTITY_CONFLICT",
+            )
+            alternate_id = "event-position-conflict"
+            alternate_cursor = event_cursor_sha256(
+                stream_id=event.position.stream_id,
+                epoch_id=event.position.epoch_id,
+                ordinal=event.position.ordinal,
+                event_id=alternate_id,
+                payload_schema_version=event.payload_schema_version,
+                payload_record_id=event.payload_record_id,
+                payload_sha256=event.payload_sha256,
+                previous_cursor_sha256=event.position.previous_cursor_sha256,
+            )
+            alternate = replace(
+                event,
+                event_id=alternate_id,
+                position=replace(event.position, cursor_sha256=alternate_cursor),
+            )
+            with self.assertRaises(BilqisError) as position_collision:
+                projection.ingest_event(alternate, payload)
+            self.assertEqual(
+                position_collision.exception.context["reason"],
+                "PROJECTION_EVENT_POSITION_CONFLICT",
             )
 
     def test_event_frontier_lag_clears_only_after_verified_payload_ingestion(self):

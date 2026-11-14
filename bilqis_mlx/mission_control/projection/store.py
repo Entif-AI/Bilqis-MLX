@@ -92,6 +92,18 @@ def ingest_record(db: sqlite3.Connection, record: WireRecord) -> None:
         ).fetchone()
         if existing is not None and existing["payload_sha256"] != digest:
             projection_invalid("PROJECTION_EVENT_IDENTITY_CONFLICT")
+        existing_position = db.execute(
+            """SELECT event_id, payload_sha256 FROM record_revisions
+            WHERE event_stream_id = ? AND event_epoch_id = ? AND event_ordinal = ?""",
+            (
+                record.position.stream_id, record.position.epoch_id,
+                record.position.ordinal,
+            ),
+        ).fetchone()
+        if (existing_position is not None
+                and (existing_position["event_id"] != record.event_id
+                     or existing_position["payload_sha256"] != digest)):
+            projection_invalid("PROJECTION_EVENT_POSITION_CONFLICT")
     current = db.execute(
         "SELECT * FROM record_revisions WHERE record_id = ? AND active = 1",
         (record.meta.record_id,),
@@ -99,14 +111,20 @@ def ingest_record(db: sqlite3.Connection, record: WireRecord) -> None:
     db.execute(
         """INSERT OR IGNORE INTO record_revisions(
             record_id, schema_version, payload_sha256, run_id, generation,
-            materialized_at, observed_at, as_of, event_id, payload_json, active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)""",
+            materialized_at, observed_at, as_of, event_id,
+            event_stream_id, event_epoch_id, event_ordinal, event_cursor_sha256,
+            payload_json, active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)""",
         (
             record.meta.record_id, record.schema_version, digest,
             None if run is None else run.run_id,
             None if run is None else run.generation,
             record.meta.materialized_at, record.meta.observed_at, record.meta.as_of,
             record.event_id if type(record) is EventEnvelope else None,
+            record.position.stream_id if type(record) is EventEnvelope else None,
+            record.position.epoch_id if type(record) is EventEnvelope else None,
+            record.position.ordinal if type(record) is EventEnvelope else None,
+            record.position.cursor_sha256 if type(record) is EventEnvelope else None,
             payload.decode("utf-8"),
         ),
     )

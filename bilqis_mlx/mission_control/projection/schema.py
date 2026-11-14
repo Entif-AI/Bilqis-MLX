@@ -23,6 +23,10 @@ CREATE TABLE record_revisions (
     observed_at INTEGER,
     as_of INTEGER,
     event_id TEXT,
+    event_stream_id TEXT,
+    event_epoch_id TEXT,
+    event_ordinal INTEGER,
+    event_cursor_sha256 TEXT,
     payload_json TEXT NOT NULL,
     active INTEGER NOT NULL CHECK(active IN (0, 1)),
     UNIQUE(record_id, payload_sha256)
@@ -35,6 +39,9 @@ CREATE INDEX records_by_run_generation
 ON record_revisions(run_id, generation, active);
 CREATE UNIQUE INDEX event_identity_unique
 ON record_revisions(event_id) WHERE event_id IS NOT NULL;
+CREATE UNIQUE INDEX event_position_unique
+ON record_revisions(event_stream_id, event_epoch_id, event_ordinal)
+WHERE event_stream_id IS NOT NULL;
 
 CREATE TABLE record_refs (
     revision_id INTEGER NOT NULL REFERENCES record_revisions(revision_id)
