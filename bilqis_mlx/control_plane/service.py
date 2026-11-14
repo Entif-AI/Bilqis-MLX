@@ -7,9 +7,11 @@ from dataclasses import replace
 from pathlib import Path
 import hashlib
 import os
+from typing import Callable
 from uuid import uuid4
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.mission_control import MissionControlQueryCatalog
 from bilqis_mlx.mission_control.codec import canonical_json, decode_record, encode_record
 from bilqis_mlx.mission_control.model import MissionControlContractError
 from bilqis_mlx.mission_control.operator import (
@@ -26,6 +28,7 @@ from .contracts import (
 )
 from .discovery import discover_learner
 from .event_stream import EventFamily, EventStreamBroker
+from .query_transport import serve_query
 from .stream_transport import serve_event_subscription
 from .transport import (
     _RequestHandler, _ThreadedUnixServer, _acquire_service_lock, _invalid,
@@ -41,10 +44,13 @@ def _utc_now() -> str:
 class ControlPlaneService:
     def __init__(
         self, run_dir: Path, socket_path: Path, *,
+        query_source: Callable[[], MissionControlQueryCatalog] | None = None,
         event_retention_limit: int = 256, event_queue_limit: int = 64,
         resource_bucket_span: int = 5, event_heartbeat_seconds: float = 0.25,
         command_store_path: Path | None = None, command_manager=None,
     ):
+        if query_source is not None and not callable(query_source):
+            _invalid("CONTROL_PLANE_QUERY_SOURCE_INVALID")
         if (
             type(event_retention_limit) is not int
             or type(event_queue_limit) is not int
@@ -61,6 +67,18 @@ class ControlPlaneService:
             _invalid("CONTROL_PLANE_EVENT_CONFIG_INVALID")
         self.run_dir = Path(run_dir).expanduser().resolve()
         self.socket_path = Path(socket_path).expanduser().resolve()
+        self.command_store_path = (
+            Path(command_store_path).expanduser().resolve()
+            if command_store_path is not None
+            else self.run_dir.parent
+            / f".{self.run_dir.name}.control-plane-commands"
+        )
+        try:
+            self.command_store_path.relative_to(self.run_dir)
+        except ValueError:
+            pass
+        else:
+            _invalid("CONTROL_PLANE_COMMAND_STORE_INSIDE_RUN")
         self._service_lock_fd = _acquire_service_lock(self.socket_path)
         try:
             _prepare_socket_path(self.socket_path)
@@ -81,19 +99,10 @@ class ControlPlaneService:
             subscriber_queue_limit=event_queue_limit,
             resource_bucket_span=resource_bucket_span,
         )
+        self._query_source = (
+            MissionControlQueryCatalog.unavailable
+            if query_source is None else query_source)
         self.event_heartbeat_seconds = event_heartbeat_seconds
-        self.command_store_path = (
-            Path(command_store_path).expanduser().resolve()
-            if command_store_path is not None
-            else self.run_dir.parent
-            / f".{self.run_dir.name}.control-plane-commands"
-        )
-        try:
-            self.command_store_path.relative_to(self.run_dir)
-        except ValueError:
-            pass
-        else:
-            _invalid("CONTROL_PLANE_COMMAND_STORE_INSIDE_RUN")
         self._commands = command_manager
         self._service_state = ControlPlaneState.HEALTHY
         self._socket_identity: tuple[int, int] | None = None
@@ -205,6 +214,8 @@ class ControlPlaneService:
         surface = request.get("type")
         if surface in {"health", "readiness", "liveness"}:
             return {**self._health(session, surface), "accepted": True}
+        if surface == "query":
+            return serve_query(self, session, request)
         if surface == "event-frontier":
             return {
                 **self.events.frontier().to_record(),

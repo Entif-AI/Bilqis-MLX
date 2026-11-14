@@ -11,6 +11,9 @@ from bilqis_mlx.mission_control.envelopes import EventEnvelope
 from bilqis_mlx.mission_control.operator import (
     OperatorActionReceiptV2, OperatorActionRequestV2,
 )
+from bilqis_mlx.mission_control.query_contracts import (
+    QUERY_PAGE_SCHEMA, QueryRequest,
+)
 
 from .contracts import (
     ControlPlaneState, ERROR_SCHEMA, HANDSHAKE_SCHEMA, HEALTH_SCHEMA, PROTOCOL_VERSION,
@@ -127,6 +130,21 @@ class ControlPlaneClient:
         response = self._send({"type": surface})
         if response.get("schema") == HEALTH_SCHEMA and "state" in response:
             self.state = ControlPlaneState(response["state"])
+        return response
+
+    def query(self, request: QueryRequest) -> dict:
+        if type(request) is not QueryRequest:
+            _invalid("CONTROL_PLANE_QUERY_REQUEST_INVALID")
+        response = self._send({
+            "type": "query",
+            "query": request.to_record(),
+        })
+        if (response.get("schema") == ERROR_SCHEMA
+                and response.get("accepted") is False):
+            return response
+        if (response.get("schema") != QUERY_PAGE_SCHEMA
+                or response.get("accepted") is not True):
+            _invalid("CONTROL_PLANE_QUERY_RESPONSE_INVALID")
         return response
 
     def subscribe_events(
