@@ -19,7 +19,9 @@ from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryMode, Q
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.acceptance._generation_acceptance_support import (
     GenerationAcceptanceFixture,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    retention_decision, shape_patch,
+)
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
 
 from ..support import start_service
@@ -175,6 +177,8 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
             candidate_identity_digest(parent.retained_state),
             state["next_seed"], state["cursor"], "A.REJECT", "policy:native",
         )
+        decision = retention_decision(
+            accepted=False, parent=parent.retained_state, retained=parent.retained_state)
         receipt = record_bamf_rejection(self.run, parent, {
             "schema": "bilqis.bamf.c16.3-rejection/v2",
             "visit_id": visit.visit_id,
@@ -182,9 +186,9 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
             "selected_policy_key": "policy:native",
             "candidate_optimizer_step": parent.retained_state.optimizer_step + 1,
             "retained_optimizer_step": parent.retained_state.optimizer_step,
-            "retention_reason": "NATIVE_REJECTED",
+            "retention_reason": decision.reason,
             "capability": "A.REJECT",
-            "decision": {"decision": "REJECT"},
+            "decision": decision.to_record(),
         })
         material = materialize_native_projection(self.run)
         rejected = [
@@ -193,7 +197,8 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
         ]
         self.assertEqual(len(rejected), 1)
         self.assertEqual(rejected[0].capability_id, "A.REJECT")
-        self.assertEqual(rejected[0].reason_code, "NATIVE_REJECTED")
+        self.assertEqual(rejected[0].reason_code, decision.reason)
+        self.assertEqual(rejected[0].candidate_id, decision.candidate_generation)
         self.assertIn(f"bamf-rejection:{receipt}", rejected[0].meta.receipt_refs)
         self.assertEqual((self.run / "bamf-state.json").read_bytes(), before)
 
@@ -223,6 +228,23 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
             "CONTROL_PLANE_NATIVE_C16_ACCEPTED_INVALID",
         )
 
+    def test_accepted_event_optimizer_step_must_match_generation(self):
+        source = self._successor()
+        source = replace(
+            source,
+            outbox=({
+                **source.outbox[0],
+                "optimizer_step": source.retained_state.optimizer_step + 999,
+            },),
+        )
+        self.publish(source, acceptance=self.binding(source))
+        with self.assertRaises(BilqisError) as caught:
+            materialize_native_projection(self.run)
+        self.assertEqual(
+            caught.exception.context.get("reason"),
+            "CONTROL_PLANE_NATIVE_C16_ACCEPTED_INVALID",
+        )
+
     def test_divergent_duplicate_rejection_event_is_rejected(self):
         parent = self.parent()
         state = parent.teacher_state
@@ -233,6 +255,8 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
             candidate_identity_digest(parent.retained_state),
             state["next_seed"], state["cursor"], "A.REJECT", "policy:native",
         )
+        decision = retention_decision(
+            accepted=False, parent=parent.retained_state, retained=parent.retained_state)
         record_bamf_rejection(self.run, parent, {
             "schema": "bilqis.bamf.c16.3-rejection/v2",
             "visit_id": visit.visit_id,
@@ -240,9 +264,9 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
             "selected_policy_key": "policy:native",
             "candidate_optimizer_step": parent.retained_state.optimizer_step + 1,
             "retained_optimizer_step": parent.retained_state.optimizer_step,
-            "retention_reason": "NATIVE_REJECTED",
+            "retention_reason": decision.reason,
             "capability": "A.REJECT",
-            "decision": {"decision": "REJECT"},
+            "decision": decision.to_record(),
         })
         ledger = self.run / "events.jsonl"
         row = json.loads(ledger.read_text(encoding="utf-8").splitlines()[-1])
@@ -266,6 +290,30 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
             and record.outcome.value == "REJECTED"
         ]
         self.assertEqual(rejected, [])
+
+    def test_c16_rejection_requires_source_retention_decision(self):
+        parent = self.parent()
+        state = parent.teacher_state
+        visit = TeacherVisitIdentity(
+            parent.run_identity.digest, parent.run_identity.run_seed,
+            parent.generation, self._parent_pointer["manifest_sha256"],
+            state["teacher_identity"], state["teacher_epoch"],
+            candidate_identity_digest(parent.retained_state),
+            state["next_seed"], state["cursor"], "A.REJECT", "policy:native",
+        )
+        record_bamf_rejection(self.run, parent, {
+            "schema": "bilqis.bamf.c16.3-rejection/v2",
+            "visit_id": visit.visit_id,
+            "selected_option_id": "option:native",
+            "selected_policy_key": "policy:native",
+            "candidate_optimizer_step": parent.retained_state.optimizer_step + 1,
+            "retained_optimizer_step": parent.retained_state.optimizer_step,
+            "retention_reason": "CLAIMED_REJECT",
+            "capability": "A.REJECT",
+            "decision": {"decision": "ACCEPT"},
+        })
+        with self.assertRaises(BilqisError):
+            materialize_native_projection(self.run)
 
     def test_whole_history_pointer_race_is_retried(self):
         self.parent()

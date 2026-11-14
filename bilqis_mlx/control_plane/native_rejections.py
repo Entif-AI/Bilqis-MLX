@@ -68,12 +68,20 @@ def _project_verified_rejection(verified, generation):
     policy_key = evidence.get("selected_policy_key")
     candidate_step = evidence.get("candidate_optimizer_step")
     retained_step = evidence.get("retained_optimizer_step")
+    from bilqis_mlx.learning.atlas_retention_decision import CandidateRetentionDecision
+
+    decision = CandidateRetentionDecision.from_record(evidence.get("decision"))
+    decision_fields = decision.fields
     if (not isinstance(capability, str) or not capability
             or not isinstance(visit_id, str) or not visit_id
             or not isinstance(policy_key, str) or not policy_key
             or type(candidate_step) is not int
             or candidate_step <= generation.manifest["optimizer"].get("step")
-            or retained_step != generation.manifest["optimizer"].get("step")):
+            or retained_step != generation.manifest["optimizer"].get("step")
+            or decision.decision != "REJECT"
+            or decision_fields.get("parent_generation")
+            != accepted_student_sha256(generation)
+            or evidence.get("retention_reason") != decision.reason):
         invalid("CONTROL_PLANE_NATIVE_REJECTION_INVALID")
     from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity
 
@@ -100,7 +108,7 @@ def _project_verified_rejection(verified, generation):
         record_meta(
             f"candidate:{event_id}", run, generation, evidence_refs=refs,
             receipt_refs=receipts, coverage=CoverageState.PARTIAL),
-        authority_sha, capability, CandidateOutcome.REJECTED,
+        decision_fields["candidate_generation"], capability, CandidateOutcome.REJECTED,
         str(evidence.get("retention_reason") or "REJECTED"))
     return (episode, candidate), (
         (EventFamily.LESSON_VISIT_COMPLETED, episode,

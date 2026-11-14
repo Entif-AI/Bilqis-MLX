@@ -29,6 +29,8 @@ def _append_c16_accepted(generation, parent, run, native, records, events):
     visit = generation.teacher_state.get("last_visit")
     if not isinstance(capability, str) or not isinstance(visit, dict):
         invalid("CONTROL_PLANE_NATIVE_C16_ACCEPTED_INVALID")
+    if native.get("optimizer_step") != generation.manifest["optimizer"].get("step"):
+        invalid("CONTROL_PLANE_NATIVE_C16_ACCEPTED_INVALID")
     from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity
 
     identity = TeacherVisitIdentity.from_record(visit)
