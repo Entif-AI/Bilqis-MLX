@@ -81,6 +81,21 @@ class MissionControlProjection:
             if temp.exists():
                 temp.unlink()
 
+    @classmethod
+    def rebuild_from_bamf(
+        cls, path: Path, run_dir: Path,
+    ) -> "MissionControlProjection":
+        """Rebuild solely from authenticated immutable BAMF run artifacts.
+
+        The adapter is imported lazily so ordinary CP02/CP06 consumers retain
+        their existing lightweight dependency boundary.  No model tensors are
+        hydrated and no learner artifact is mutated by reconstruction.
+        """
+        from bilqis_mlx.control_plane.native_source import materialize_native_projection
+
+        material = materialize_native_projection(Path(run_dir))
+        return cls.rebuild(path, material.records)
+
     def ingest_records(self, records: Iterable[WireRecord]) -> ProjectionStats:
         material = tuple(records)
         if not all(isinstance(record, WireRecord) for record in material):

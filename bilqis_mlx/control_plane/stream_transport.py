@@ -8,11 +8,14 @@ from .event_stream import EVENT_GAP_SCHEMA
 
 
 def serve_event_subscription(service, session, request: dict, write_record) -> None:
+    from .native_source import refresh_native_events
+
     after_cursor = request.get("after_cursor")
     if after_cursor is not None and not is_sha256(after_cursor):
         write_record(service.rejected_request(
             session, "CONTROL_PLANE_EVENT_CURSOR_INVALID"))
         return
+    refresh_native_events(service)
     opened = service.events.open_subscription(after_cursor)
     write_record({
         **opened.acknowledgement,
@@ -26,6 +29,7 @@ def serve_event_subscription(service, session, request: dict, write_record) -> N
         for event in opened.replay:
             write_record(encode_record(event))
         while True:
+            refresh_native_events(service)
             record = subscription.next_record(service.event_heartbeat_seconds)
             if record is None:
                 record = service.events.heartbeat_record()

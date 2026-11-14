@@ -28,6 +28,35 @@ reports `STALE`; an expired or restarted stream requires a fresh snapshot. The
 publisher in this test is the explicit CP02 fixture adapter, not an automatic
 learner event hook.
 
+`test_native_source.py` exercises the production-source boundary directly. It
+starts from the accepted BAMF pointer, authenticates the exact content-addressed
+manifest, acceptance binding, run identity, teacher state and native outbox for
+each generation, then walks the v3 parent-manifest plus parent-acceptance chain
+without scanning for convenient files. Current `BAMF_C16_3_ACCEPTED` events are
+validated against the persisted C03 teacher-visit identity before they become
+CP02 episode, candidate and capability records. Rejection-only
+`BAMF_CANDIDATE_REJECTED` journal rows are accepted only when their deterministic
+event identity, content-addressed rejection authority and content-addressed
+rejection receipt all verify against the already authenticated accepted
+generation. Rejections therefore remain visible without pretending they advanced
+the learner generation.
+
+CP04 now refreshes that authenticated native source before subscription and on
+the heartbeat path. The first successful read establishes the service-local
+snapshot frontier; only later accepted/rejected native facts become live deltas.
+The custody layer's deliberate pointer-change rejection is treated as a transient
+read race and retried on the next heartbeat, while every other authentication
+failure remains fail-closed. Native event identity is retained for the owning
+candidate event and deterministic child identities are derived for its episode
+and capability projections.
+
+CP06 also exposes `rebuild_from_bamf()`. The full CP02 tuple is materialized from
+authenticated native artifacts before the existing atomic temporary-index swap,
+so a failed ancestor/acceptance validation cannot destroy an already usable
+projection. The acceptance witness deletes and rebuilds the disposable database,
+compares the resulting historical/current records, and proves that tampering an
+ancestor acceptance fails while the prior CP06 index remains readable.
+
 `test_cp07_commands.py` invokes C11's accepted dry-run and human-gated genesis
 code within the existing disposable test context. It admits one generation-zero
 creation through CP05, uses the production command manager and durable worker
@@ -57,11 +86,25 @@ python3 -m bilqis_mlx.control_plane \
 
 ## Remaining production acceptance boundaries
 
-The current implementation does **not** automatically translate all live
-learner events into CP02 records or publish them into CP04. It also does not
-reconstruct the full historical CP06 corpus directly from an authenticated BAMF
-run's durable artifact lineage. Those production-source adapters require an
-explicit contract mapping before CP07 can claim universal live-event coverage
-or independent reconstruction of every historical receipt. An injected fixture
-source cannot stand in for these guarantees. Keep #1055 open until that final
-source integration and its end-to-end evidence are proved.
+The production-source adapter now demonstrates automatic CP04 publication for
+the current accepted C16.3 visit/candidate/capability path and for authenticated
+rejection-only events, plus CP06 reconstruction from the accepted BAMF artifact
+chain. Two source-contract debts remain explicit rather than being filled with
+synthetic values:
+
+1. Native C16.3 accepted/rejection artifacts do not carry an authenticated
+   wall-clock visit interval. CP02 therefore uses the accepted generation as a
+   source-owned logical materialization coordinate and marks those episode,
+   candidate and capability projections `PARTIAL`; it does not claim a measured
+   wall-clock timestamp.
+2. The accepted BAMF bundle does not presently expose a semantically unambiguous
+   one-to-one source for all three CP02 `GenerationManifest/v1` digest fields, and
+   no authenticated producer currently supplies the CP02 resource sample's
+   memory/budget/disk/rate facts. Historical generation-manifest and resource
+   queries therefore carry explicit `UNKNOWN` markers instead of aliasing a
+   convenient digest or treating bundle size as machine disk usage.
+
+Those gaps are now visible data-contract debt rather than hidden fixture
+coverage. Keep #1055 open until the owning source contracts exist or CP02 is
+versioned to represent them without semantic distortion, and until the remaining
+native event families required by CP04 have authoritative producers.
