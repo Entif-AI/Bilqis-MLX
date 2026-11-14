@@ -9,6 +9,7 @@ import {
   stableMemoryIdentity,
 } from "../memory/memory-model.mjs";
 import { renderTeacherView } from "../teacher/teacher-view.mjs";
+import { renderEvidenceView } from "../evidence/evidence-view.mjs";
 import { defensiveBannerMarkup } from "./defensive-state.mjs";
 import { bindRovingNavigation } from "./accessibility.mjs";
 
@@ -111,6 +112,7 @@ export function renderInspector(state, defense) {
        <dt>Evidence</dt><dd>${defense.historical ? "Verified prior evidence · inspection only" : "Current verified fixture/reference"}</dd>${exact}`
     : "";
   document.querySelector("#open-owner").disabled = !selected;
+  document.querySelector("#open-evidence").disabled = !selected;
 }
 
 export function renderDemoActions(state, onInspect) {
@@ -130,7 +132,7 @@ export function renderDemoActions(state, onInspect) {
   });
 }
 
-export function renderCurrentView(state, defense, onInspect) {
+export function renderCurrentView(state, defense, onInspect, api, onEvidenceSelect) {
   const domain = document.querySelector("#domain-view");
   const fixture = document.querySelector(".fixture-card");
   const catalog = document.querySelector("#visual-catalog");
@@ -241,6 +243,16 @@ export function renderCurrentView(state, defense, onInspect) {
     }));
     return;
   }
+  if (state.view === "evidence") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Exact Mission Control records, provenance links, bounded pagination and literal raw payloads.";
+    renderEvidenceView(
+      domain, api, state.context, state.selected, onEvidenceSelect,
+    );
+    return;
+  }
   fixture.hidden = false;
   catalog.hidden = false;
   domain.hidden = true;
@@ -269,7 +281,9 @@ export function renderChrome(state, defense, displaySettings, handlers) {
   renderNavigation(state, handlers.onNavigate);
   renderInspector(state, defense);
   renderDemoActions(state, handlers.onInspect);
-  renderCurrentView(state, defense, handlers.onInspect);
+  renderCurrentView(
+    state, defense, handlers.onInspect, handlers.api, handlers.onEvidenceSelect,
+  );
   document.querySelector("#view-title").textContent = labels.get(state?.view ?? "mission-control");
   document.querySelector("#view-title").setAttribute("tabindex", "-1");
   document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;

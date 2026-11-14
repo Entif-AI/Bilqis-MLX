@@ -9,7 +9,7 @@ const QUERY_PAGE_SCHEMA = "bilqis.bamf.control-plane.query-page/v1";
 const QUERY_ERROR_SCHEMA = "bamf.gui07.query-error/v1";
 const EVENT_ENVELOPE_SCHEMA = "bilqis.bamf.mission-control.event-envelope/v1";
 const QUERY_FAMILIES = new Set([
-  "run", "school", "capability", "episode", "generation", "semantic", "frame",
+  "record", "run", "school", "capability", "episode", "generation", "semantic", "frame",
   "neural", "memory", "teacher", "salience", "correction", "resource",
   "reference", "links",
 ]);
