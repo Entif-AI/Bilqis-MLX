@@ -21,7 +21,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.acceptance._generati
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
 
-from .support import start_service
+from ..support import start_service
 
 
 class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):

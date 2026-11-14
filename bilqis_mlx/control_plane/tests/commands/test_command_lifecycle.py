@@ -11,7 +11,7 @@ from bilqis_mlx.mission_control.operator import (
 from bilqis_mlx.control_plane.command.model import CommandMode
 from bilqis_mlx.control_plane.command.manager import CommandManager
 
-from .command_support import FakeExecutor, Launcher, meta, request
+from ..command_support import FakeExecutor, Launcher, meta, request
 
 
 class CommandLifecycleTests(unittest.TestCase):

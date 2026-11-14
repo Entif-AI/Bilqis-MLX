@@ -1,4 +1,4 @@
-"""CP07 non-Electron attach/recovery over disposable accepted BAMF custody."""
+"""CP07 independent non-Electron attach/recovery over accepted BAMF custody."""
 from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path

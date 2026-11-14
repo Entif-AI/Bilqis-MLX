@@ -13,7 +13,7 @@ from bilqis_mlx.mission_control.projection import (
 from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryRequest
 from bilqis_mlx.mission_control.tests.samples import SAMPLES
 
-from .support import start_service
+from ..support import start_service
 
 
 class CP07StreamRecoveryTests(unittest.TestCase):

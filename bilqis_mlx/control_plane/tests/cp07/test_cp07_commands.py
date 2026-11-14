@@ -13,7 +13,7 @@ from bilqis_mlx.presentation.operator_cli.tests.bamf_lifecycle.create_resume_sup
 )
 from bilqis_mlx.runtime.bamf_bundle import inspect_accepted_generation
 
-from .support import start_service
+from ..support import start_service
 
 
 class DisposableC11Executor(C11CommandExecutor):
