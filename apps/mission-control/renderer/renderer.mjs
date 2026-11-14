@@ -4,12 +4,14 @@ import {
   createShellState,
   inspect,
   navigate,
+  openEvidence,
   openSelectionOwner,
+  returnFromEvidence,
   selectObject,
   withDefensiveState,
   withRoute,
 } from "./shell-state.mjs";
-import { buildDeepLink, parseDeepLink } from "./deep-link.mjs";
+import { buildDeepLink, parseDeepLink, routeFromState } from "./deep-link.mjs";
 import {
   DENSITIES,
   THEMES,
@@ -75,6 +77,7 @@ function render() {
   renderChrome(state, defense, displaySettings, {
     api: window.bamfMissionControl,
     onEvidenceSelect: selectEvidenceRecord,
+    onEvidenceReturn: returnEvidenceOrigin,
     onReconnect: () => establishSnapshot({ preserveRoute: true }),
     onNavigate: navigateTo,
     onInspect: openInspector,
@@ -92,6 +95,13 @@ function selectEvidenceRecord(selected) {
   state = selectObject(state, selected);
   renderInspector(state, defense);
   setHash();
+}
+
+function returnEvidenceOrigin() {
+  if (!state?.evidenceOrigin) return;
+  state = returnFromEvidence(state);
+  render();
+  announce("Returned to the inspected evidence origin.");
 }
 
 function navigateTo(view) {
@@ -136,7 +146,7 @@ async function establishSnapshot({ preserveRoute = false } = {}) {
   frameShell.reset();
   if (state) state = { ...state, mutationAvailable: false };
   const route = preserveRoute && state
-    ? { view: state.view, selected: state.selected }
+    ? routeFromState(state)
     : parseDeepLink(window.location.hash);
   defense = defensiveState("loading", {
     snapshotAvailable: Boolean(state),
@@ -212,7 +222,7 @@ function bindStaticInteractions() {
   });
   document.querySelector("#open-evidence").addEventListener("click", () => {
     if (!state?.selected) return;
-    state = navigate(state, "evidence", state.selected);
+    state = openEvidence(state);
     render();
   });
   document.querySelector("#theme-trigger").addEventListener("click", () => {

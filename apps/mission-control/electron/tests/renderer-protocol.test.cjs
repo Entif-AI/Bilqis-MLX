@@ -27,6 +27,7 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     "/atlas/semantic-atlas.css",
     "/atlas/semantic-atlas.mjs",
     "/foundation/accessibility.mjs",
+    "/foundation/current-view.mjs",
     "/component-catalog.mjs",
     "/components.css",
     "/corrections/corrections-fixture.mjs",

@@ -8,6 +8,7 @@ import {
   activateSchoolDomain,
   invalidateSchoolDomainRequests,
 } from "../school/school-domain-controller.mjs";
+import { deactivateEvidenceView } from "../evidence/evidence-view.mjs";
 
 export function activateDomainViews({
   state, getState, defense, api, homeController, resourceController, onInspect,
@@ -32,8 +33,8 @@ export function activateDomainViews({
       isActive: () =>
         getState()?.view === "school" && getState().context === context,
     });
-  }
-  if (state?.view !== "school") invalidateSchoolDomainRequests();
+  } else invalidateSchoolDomainRequests();
+  if (state?.view !== "evidence") deactivateEvidenceView();
   if (state?.view === "mission-control") {
     void homeController.activate(state.context, {
       host: document.querySelector("#domain-view"),
