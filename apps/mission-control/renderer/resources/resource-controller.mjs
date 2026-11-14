@@ -37,7 +37,15 @@ export function createResourceController(api) {
   async function loadCurrent() {
     try {
       const page = await api.query(resourceQuery(context));
-      if (context?.runId === "fixture-run" && (page?.accepted !== true || page?.state === "EMPTY")) {
+      if (context?.runId === "fixture-run" && historical &&
+          context.generation === historicalResourceFixture().generation) {
+        state = Object.freeze({
+          current: historicalResourceFixture(),
+          comparison: state?.comparison ?? null,
+          comparisonState: state?.comparisonState ?? "EMPTY",
+        });
+      } else if (context?.runId === "fixture-run" && !historical &&
+          (page?.accepted !== true || page?.state === "EMPTY")) {
         state = referenceResourceState();
       } else {
         state = Object.freeze({
@@ -47,7 +55,14 @@ export function createResourceController(api) {
         });
       }
     } catch (_error) {
-      if (context?.runId === "fixture-run") state = referenceResourceState();
+      if (context?.runId === "fixture-run" && historical &&
+          context.generation === historicalResourceFixture().generation) {
+        state = Object.freeze({
+          current: historicalResourceFixture(),
+          comparison: null,
+          comparisonState: "EMPTY",
+        });
+      } else if (context?.runId === "fixture-run" && !historical) state = referenceResourceState();
       else state = Object.freeze({ current: null, comparison: null, currentState: "UNAVAILABLE", comparisonState: "EMPTY" });
     }
     render();
@@ -98,7 +113,7 @@ export function createResourceController(api) {
     const stop = unsubscribe;
     unsubscribe = null;
     if (typeof stop === "function") await stop();
-    state = nextContext?.runId === "fixture-run" ? referenceResourceState() : null;
+    state = nextContext?.runId === "fixture-run" && !historical ? referenceResourceState() : null;
     render();
     loadPromise = loadCurrent().then(subscribe);
     return loadPromise;

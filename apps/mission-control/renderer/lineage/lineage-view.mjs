@@ -9,6 +9,7 @@ import {
   manifestFieldRows,
   nodeByIdentity,
 } from "./lineage-model.mjs";
+import { objectDomAttributes } from "../interactions/dom-ref.mjs";
 
 const ui = {
   selected: currentLineageNode().manifestSha256,
@@ -29,6 +30,19 @@ function stateBadge(value) {
 function graphMarkup(selected) {
   const nodes = lineageNodes().map((node) => `<button type="button"
     class="lineage-node" data-lineage-node="${node.manifestSha256}"
+    ${objectDomAttributes({
+      kind: "generation",
+      id: node.recordId,
+      relations: [
+        { kind: "checkpoint", id: `checkpoint:${node.checkpointSha256}`, relation: "checkpoint" },
+        ...(node.parentManifestSha256 ? [{
+          kind: "generation",
+          id: lineageNodes().find((candidate) =>
+            candidate.manifestSha256 === node.parentManifestSha256)?.recordId ?? node.parentManifestSha256,
+          relation: "parent",
+        }] : []),
+      ],
+    })}
     data-transition="${node.transitionClass.toLowerCase().replaceAll("_", "-")}"
     aria-pressed="${selected.manifestSha256 === node.manifestSha256}">
       <span>Generation ${node.generation}</span>
@@ -119,8 +133,22 @@ function bind(container, inspectGeneration) {
   }
 }
 
-export function renderLineageView(container, inspectGeneration, selectedIdentity = null) {
-  const selected = nodeByIdentity(selectedIdentity ?? ui.selected);
+export function renderLineageView(container, inspectGeneration, selectedIdentity = null, context = null) {
+  const exactHistorical = context?.mode === "HISTORICAL"
+    ? lineageNodes().find((node) => node.generation === context.generation) ?? null
+    : null;
+  if (context?.mode === "HISTORICAL" && !exactHistorical) {
+    container.innerHTML = `<div class="lineage-view">
+      <header class="lineage-heading"><div><span class="eyebrow">GUI14 · Lineage and Checkpoints</span><h2>Accepted generation history</h2></div></header>
+      ${graphMarkup(currentLineageNode())}
+      <section class="lineage-panel"><header><div><span class="eyebrow">Historical lens</span><h3>UNAVAILABLE</h3></div>${stateBadge("MISSING")}</header>
+        <p class="lineage-doctrine">Generation ${context.generation} is not present in the accepted lineage fixture. No current node is substituted.</p>
+      </section>
+    </div>`;
+    bind(container, inspectGeneration);
+    return;
+  }
+  const selected = exactHistorical ?? nodeByIdentity(selectedIdentity ?? ui.selected);
   ui.selected = selected.manifestSha256;
   container.innerHTML = `<div class="lineage-view">
     <header class="lineage-heading"><div><span class="eyebrow">GUI14 · Lineage and Checkpoints</span><h2>Accepted generation history</h2></div>

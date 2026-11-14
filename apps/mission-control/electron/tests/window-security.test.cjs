@@ -139,6 +139,11 @@ test("window factory hardens first and requires an explicit renderer load", asyn
   assert.equal(result.diagnostic.passed, true);
   await result.loadRenderer();
   assert.equal(result.window.loaded, RENDERER_ENTRY_URL);
+  await result.loadRenderer("#/view/capability?kind=capability&id=B.AND");
+  assert.equal(
+    result.window.loaded,
+    RENDERER_ENTRY_URL + "#/view/capability?kind=capability&id=B.AND",
+  );
 });
 
 test("privileged renderer scheme is secure and does not bypass CSP", () => {
