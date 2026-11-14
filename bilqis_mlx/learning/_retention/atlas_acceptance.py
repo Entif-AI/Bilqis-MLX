@@ -206,6 +206,50 @@ class AcceptedCandidateBinding:
 _require_issued_binding, _raw_issue_binding = _new_binding_owner()
 
 
+def _binding_schema(decision, generation_authority_sha256):
+    from .atlas_retention_decision import (
+        _issued_decision_generation_authority,
+        _require_issued_decision_generation_authority,
+    )
+
+    required = _issued_decision_generation_authority(decision)
+    if required is not None:
+        if generation_authority_sha256 != required or not _is_digest(required):
+            _invalid()
+        _require_issued_decision_generation_authority(decision, required)
+        return MOTIF_ACCEPTANCE_SCHEMA
+    if generation_authority_sha256 is None:
+        return ACCEPTANCE_SCHEMA
+    if not _is_digest(generation_authority_sha256):
+        _invalid()
+    return EXACT_ACCEPTANCE_SCHEMA
+
+
+def _artifact_closures(state, training_authorities):
+    from bilqis_mlx.semantics.dependencies.closure import closure_digest, encode_closure_nodes
+
+    closures = []
+    for proof, authority in zip(state.step_proofs, training_authorities or ()):
+        digest = getattr(authority, 'artifact_closure_sha256', None)
+        if digest is not None:
+            node_ids = {node.artifact_id for node in authority.artifact_nodes}
+            if any(ref.kind.value == "ARTIFACT" and ref.key not in node_ids
+                   for ref in authority.immediate_dependencies):
+                _invalid()
+            if (proof.artifact_closure_sha256 != digest
+                    or closure_digest(authority.artifact_nodes) != digest):
+                _invalid()
+            closures.append({
+                'step_index': proof.step_index,
+                'training_authority_sha256': authority.digest,
+                'artifact_closure_sha256': digest,
+                'nodes': encode_closure_nodes(authority.artifact_nodes),
+            })
+        elif proof.artifact_closure_sha256 is not None:
+            _invalid()
+    return tuple(closures)
+
+
 def _make_acceptance_minter(raw_issue):
     def mint_acceptance_binding(
             decision: CandidateRetentionDecision, state, *,
@@ -216,9 +260,7 @@ def _make_acceptance_minter(raw_issue):
     ) -> AcceptedCandidateBinding:
         """Bind a C05-approved decision to the exact B12 optimizer state."""
         from .atlas_retention_decision import (
-            _issued_decision_generation_authority,
             _require_issued_decision,
-            _require_issued_decision_generation_authority,
         )
 
         state_digest = candidate_identity_digest(state)
@@ -228,39 +270,9 @@ def _make_acceptance_minter(raw_issue):
         decision.__post_init__()
         if (not decision.accepted or decision.candidate_generation != state_digest):
             _invalid()
-        schema = ACCEPTANCE_SCHEMA
-        required_generation_authority = _issued_decision_generation_authority(decision)
-        if required_generation_authority is not None:
-            if (generation_authority_sha256 != required_generation_authority
-                    or not _is_digest(generation_authority_sha256)):
-                _invalid()
-            _require_issued_decision_generation_authority(
-                decision, generation_authority_sha256)
-            schema = MOTIF_ACCEPTANCE_SCHEMA
-        elif generation_authority_sha256 is not None:
-            if not _is_digest(generation_authority_sha256):
-                _invalid()
-            schema = EXACT_ACCEPTANCE_SCHEMA
+        schema = _binding_schema(decision, generation_authority_sha256)
         source_anchors = _source_anchors(training_authorities, state)
-        from bilqis_mlx.semantics.dependencies.closure import closure_digest, encode_closure_nodes
-        closures = []
-        for proof, authority in zip(state.step_proofs, training_authorities or ()):
-            digest = getattr(authority, 'artifact_closure_sha256', None)
-            if digest is not None:
-                node_ids = {node.artifact_id for node in authority.artifact_nodes}
-                if any(ref.kind.value == "ARTIFACT" and ref.key not in node_ids
-                       for ref in authority.immediate_dependencies):
-                    _invalid()
-                if (proof.artifact_closure_sha256 != digest
-                        or closure_digest(authority.artifact_nodes) != digest):
-                    _invalid()
-                closures.append({'step_index': proof.step_index,
-                    'training_authority_sha256': authority.digest,
-                    'artifact_closure_sha256': digest,
-                    'nodes': encode_closure_nodes(authority.artifact_nodes)})
-            elif proof.artifact_closure_sha256 is not None:
-                _invalid()
-        closures = tuple(closures)
+        closures = _artifact_closures(state, training_authorities)
         if closures:
             schema = (MOTIF_CLOSURE_ACCEPTANCE_SCHEMA
                       if schema == MOTIF_ACCEPTANCE_SCHEMA
