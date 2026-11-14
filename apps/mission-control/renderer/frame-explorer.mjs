@@ -106,7 +106,12 @@ export function mountFrameExplorer(host, { querySnapshot, context, selectedId, o
         ${atoms === null ? '<option>Unavailable</option>' : Array.from({ length: atoms + 1 }, (_, p) => `<option value="${p}">${p} source atoms visible</option>`).join("")}</select></label>
         <div data-frame-positions></div>`;
       const frontier = detail.querySelector("[data-frame-frontier]");
-      const draw = () => { detail.querySelector("[data-frame-positions]").innerHTML = renderFrameExample(example, Number(frontier.value) || 0); };
+      const draw = () => {
+        const positions = detail.querySelector("[data-frame-positions]");
+        const open = [...positions.querySelectorAll("details")].map(node => node.open);
+        positions.innerHTML = renderFrameExample(example, Number(frontier.value) || 0);
+        positions.querySelectorAll("details").forEach((node, index) => { node.open = open[index] ?? false; });
+      };
       if (atoms !== null) frontier.value = String(atoms);
       frontier.addEventListener("change", draw);
       draw();

@@ -187,3 +187,36 @@ Presentation clarification: aggregate metrics use a native collapsed disclosure
 after the selected example, so unavailable totals do not displace the primary
 inspection controls. Missing positions disable the frontier selector. Closing
 the shell inspector preserves the mounted frame selection and frontier.
+
+## Current-unified integration amendment
+
+Unified `55e7ae289c1dee6ee6bfb080526f24e33b8f30cc` adds School, Episodes and
+Neural Runtime renderers. Preserve these owners unchanged. Model now has two
+native buttons, Neural Runtime and Frame Compiler Explorer, selecting one domain
+section at a time. Default to Neural Runtime to preserve unified behavior; a frame
+deep link selects the frame section and a neural deep link selects Neural Runtime.
+Closing an inspector and changing theme/density preserve the selected Model
+section. Section switches clear the prior inspector and dispose pending frame
+requests; other destinations preserve their upstream render paths. Never display
+neural fixture telemetry inside the frame section's inspected context.
+
+Before first entering Frames, retain the exact normalized shell context. On
+leaving Frames (another Model section or destination), restore that context before
+paint and dispose the frame mount. Re-entering Frames saves the then-current
+context and queries an exact fixture generation again. School, Episodes and
+Neural Runtime already own independent fixture datasets; show a persistent
+shell-owned note immediately above their domain host: "Independent illustrative
+fixture: this view uses its own declared provenance and is not bound to the shell
+run/generation." Preserve their internal run/generation labels. This expressly
+prevents the global context from claiming their unrelated fixture identities.
+Test historical Frames -> Neural Runtime -> School and back: frame context is
+restored, unrelated views show the independent-provenance note, pending frame
+queries cannot overwrite them, and frame links still select Frames.
+
+The Electron custom-protocol asset allowlist must explicitly include the three
+frame .mjs modules and frame-explorer.css. Keep fixture JSON main-only and continue
+denying it through the renderer protocol. Add a contract test that every HTML
+script/stylesheet and local JS import in the allowlist resolves to another allowed
+asset, so source-import tests cannot miss an unloadable packaged renderer.
+This is required integration scope inherited from #1063 and GUI20, with no new
+compiler, source, learner or mutation behavior.

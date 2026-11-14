@@ -2,6 +2,8 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const { RENDERER_ENTRY_URL } = require("../renderer-location.cjs");
 const {
@@ -24,8 +26,24 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     "/component-catalog.mjs",
     "/components.css",
     "/deep-link.mjs",
+    "/episode-fixture.mjs",
+    "/episode-model.mjs",
+    "/episode-view.mjs",
+    "/episodes.css",
+    "/frame-contract.mjs",
+    "/frame-explorer.css",
+    "/frame-explorer.mjs",
+    "/frame-model.mjs",
     "/index.html",
+    "/neural-fixture.mjs",
+    "/neural-model.mjs",
+    "/neural-view.mjs",
+    "/neural.css",
     "/renderer.mjs",
+    "/school-fixture.mjs",
+    "/school-model.mjs",
+    "/school-view.mjs",
+    "/school.css",
     "/settings.mjs",
     "/shell-state.mjs",
     "/shell.css",
@@ -33,6 +51,20 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     "/visual-language.mjs",
     "/visual-tokens.css",
   ]);
+});
+
+test("packaged renderer assets include every local HTML and JavaScript dependency", () => {
+  const root = path.resolve(__dirname, "../../renderer");
+  for (const asset of RENDERER_ASSETS.values()) {
+    const source = fs.readFileSync(path.join(root, asset), "utf8");
+    const dependencies = asset.endsWith(".html")
+      ? [...source.matchAll(/(?:src|href)="\.\/([^"#]+)"/g)].map(match => match[1])
+      : asset.endsWith(".mjs") ? [...source.matchAll(/(?:from\s+|import\s*)["']\.\/([^"']+)["']/g)].map(match => match[1]) : [];
+    for (const dependency of dependencies) {
+      assert.ok(RENDERER_ASSETS.has(`/${dependency}`), `${asset} requires ${dependency}`);
+    }
+  }
+  assert.equal(assetPathForRendererRequest("bamf-mc://app/fixtures/frame-inspections-v1.json", root), null);
 });
 
 test("renderer protocol refuses traversal, query aliases and untrusted origins", () => {

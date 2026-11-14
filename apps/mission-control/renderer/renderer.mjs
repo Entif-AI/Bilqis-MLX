@@ -20,11 +20,14 @@ import {
   loadDisplaySettings,
   saveDisplaySettings,
 } from "./settings.mjs";
+import { renderSchoolView } from "./school-view.mjs";
+import { renderNeuralView } from "./neural-view.mjs";
+import { renderEpisodesView } from "./episode-view.mjs";
 
 const labels = new Map(DESTINATIONS);
 const demoObjects = [
   ["capability", "B.AND"],
-  ["episode", "candidate-44238-7"],
+  ["episode", "episode-record:fixture:retained-44239"],
   ["semantic", "sem:logic.and"],
   ["frame", "frame:quad-fast"],
   ["memory", "motif:bool-composition"],
@@ -38,6 +41,8 @@ let state;
 let displaySettings;
 let frameMount;
 let frameRouteId;
+let modelSection = "neural";
+let frameReturnContext;
 
 function connectionFreshness(connectionState) {
   if (connectionState === "healthy") return "FRESH";
@@ -96,12 +101,17 @@ function renderInspector() {
   const selected = state.selected;
   panel.setAttribute("aria-hidden", String(!state.inspectorOpen));
   document.querySelector("#inspector-title").textContent = selected ? selected.id : "No selection";
+  const exact = selected?.details
+    ? Object.entries(selected.details).map(([label, value]) =>
+      `<dt>${esc(label)}</dt><dd>${esc(Array.isArray(value) ? value.join(", ") : value)}</dd>`,
+    ).join("")
+    : "";
   document.querySelector("#inspector-details").innerHTML = selected
     ? `<dt>Object class</dt><dd>${esc(selected.kind)}</dd>
        <dt>Identity</dt><dd>${esc(selected.id)}</dd>
        <dt>Posture</dt><dd>${esc(state.context.mode)}</dd>
        <dt>Generation</dt><dd>${state.context.generation}</dd>
-       <dt>Evidence</dt><dd>Fixture reference only</dd>`
+       <dt>Evidence</dt><dd>Fixture reference only</dd>${exact}`
     : "";
   document.querySelector("#open-owner").disabled = !selected;
 }
@@ -119,12 +129,95 @@ function renderDemoActions() {
   });
 }
 
+function renderCurrentView() {
+  const domain = document.querySelector("#domain-view");
+  const fixture = document.querySelector(".fixture-card");
+  const catalog = document.querySelector("#visual-catalog");
+  const summary = document.querySelector("#view-summary");
+  if (state.selected?.kind === "frame") modelSection = "frames";
+  if (state.selected?.kind === "neural") modelSection = "neural";
+  document.querySelector("#model-nav").hidden = state.view !== "model";
+  document.querySelectorAll("[data-model-section]").forEach(button => {
+    button.setAttribute("aria-pressed", String(button.dataset.modelSection === modelSection));
+  });
+  domain.hidden = state.view === "model" && modelSection === "frames";
+  document.querySelector("#domain-context-note").hidden = !["school", "learning", "model"].includes(state.view) || domain.hidden;
+  if (state.view === "school") {
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Exact capability comparison and declared prerequisite topology. Grade labels organize only.";
+    renderSchoolView(domain, (id, row) => {
+      state = inspect(state, {
+        kind: "capability",
+        id,
+        details: {
+          "WAS/TOP/NOW/ALL": row.was + "/" + row.top + "/" + row.now + "/" + row.total,
+          Debt: row.debt,
+          "P(RET)": row.pRet ?? "NOT MEASURED",
+          Prerequisites: row.prerequisites.length ? row.prerequisites : ["none"],
+          "Source state": row.sourceState,
+          "Implementation state": row.implementationState,
+          "Qualification state": row.qualificationState,
+        },
+      });
+      renderInspector();
+      setHash();
+    }, state.selected?.kind === "capability" ? state.selected.id : null);
+    return;
+  }
+  if (state.view === "model") {
+    fixture.hidden = true;
+    catalog.hidden = true;
+    if (modelSection === "frames") {
+      summary.textContent = "Frame Compiler Explorer · inspect exact packing receipts and causal visibility.";
+      return;
+    }
+    summary.textContent = "Topology, attention health, depth routing and local refinement as measured telemetry only.";
+    renderNeuralView(domain, (id, kind) => {
+      state = inspect(state, {
+        kind: "neural",
+        id,
+        details: {
+          "Diagnostic class": kind,
+          "Interpretation boundary": "Measured routing/runtime telemetry only",
+        },
+      });
+      renderInspector();
+      setHash();
+    });
+    return;
+  }
+  if (state.view === "learning") {
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Candidate proposal, work, assessment, retention and finalization reconstructed from bounded evidence.";
+    renderEpisodesView(domain, (id, evidenceType) => {
+      state = inspect(state, {
+        kind: "evidence",
+        id,
+        details: {
+          "Evidence type": evidenceType,
+          "Episode replay": "Read-only durable evidence reference",
+        },
+      });
+      renderInspector();
+      setHash();
+    }, state.selected?.kind === "episode" ? state.selected.id : null);
+    return;
+  }
+  fixture.hidden = false;
+  catalog.hidden = false;
+  domain.innerHTML = "";
+  summary.textContent = "Shell foundation ready for provider-neutral BAMF views.";
+  catalog.innerHTML = renderComponentCatalog();
+}
+
 function render() {
   renderContext();
   renderNavigation();
   renderInspector();
   renderDemoActions();
-  if (state.view !== "model") document.querySelector("#visual-catalog").innerHTML = renderComponentCatalog();
+  renderCurrentView();
   document.querySelector("#view-title").textContent = labels.get(state.view);
   document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;
   document.querySelector("#density-trigger").textContent = "Density · " + displaySettings.density;
@@ -134,20 +227,21 @@ function render() {
 
 function renderFrameView() {
   const host = document.querySelector("#frame-explorer");
-  const isFrameView = state.view === "model";
+  const isFrameView = state.view === "model" && modelSection === "frames";
   host.hidden = !isFrameView;
-  document.querySelector(".fixture-card").hidden = isFrameView;
-  document.querySelector("#visual-catalog").hidden = isFrameView;
-  document.querySelector("#view-summary").textContent = isFrameView
-    ? "Frame Compiler Explorer · inspect exact packing receipts and causal visibility."
-    : "Shell foundation ready for provider-neutral BAMF views.";
   if (!isFrameView) {
     frameMount?.dispose(); frameMount = null; frameRouteId = null;
+    if (frameReturnContext) {
+      state = { ...state, context: frameReturnContext };
+      frameReturnContext = null;
+      renderContext(); renderInspector();
+    }
     return;
   }
   const selectedId = state.selected?.kind === "frame" ? state.selected.id : null;
   if (frameMount && (!selectedId || frameRouteId === selectedId)) return;
   frameMount?.dispose();
+  frameReturnContext ??= state.context;
   frameRouteId = selectedId;
   frameMount = mountFrameExplorer(host, {
     querySnapshot: request => window.bamfMissionControl.querySnapshot(request),
@@ -184,6 +278,13 @@ async function bootstrap() {
   document.querySelector("#inspector-close").addEventListener("click", () => {
     state = inspect(state, null);
     render();
+  });
+  document.querySelectorAll("[data-model-section]").forEach(button => {
+    button.addEventListener("click", () => {
+      modelSection = button.dataset.modelSection;
+      state = inspect(state, null);
+      render();
+    });
   });
   document.querySelector("#open-owner").addEventListener("click", () => {
     state = openSelectionOwner(state);

@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="./shell.css" />
     <link rel="stylesheet" href="./components.css" />
     <link rel="stylesheet" href="./frame-explorer.css" />
+    <link rel="stylesheet" href="./school.css" />
+    <link rel="stylesheet" href="./neural.css" />
+    <link rel="stylesheet" href="./episodes.css" />
   </head>
   <body>
     <div id="shell" class="shell" data-posture="unknown">
@@ -43,6 +46,10 @@
           <div class="eyebrow">Current destination</div>
           <h1 id="view-title">Mission Control</h1>
           <p id="view-summary">Shell foundation ready for provider-neutral BAMF views.</p>
+          <nav id="model-nav" class="model-nav" hidden aria-label="Model sections">
+            <button type="button" data-model-section="neural">Neural Runtime</button>
+            <button type="button" data-model-section="frames">Frame Compiler Explorer</button>
+          </nav>
           <section id="frame-explorer" hidden aria-label="Frame Compiler Explorer"></section>
           <div class="fixture-card">
             <div><span class="status-dot" aria-hidden="true"></span><strong>Fixture-backed shell</strong></div>
@@ -50,6 +57,8 @@
             <div class="demo-actions" id="demo-actions"></div>
           </div>
           <section id="visual-catalog" class="visual-catalog" aria-label="Scientific visual language catalog"></section>
+          <p id="domain-context-note" hidden>Independent illustrative fixture: this view uses its own declared provenance and is not bound to the shell run/generation.</p>
+          <section id="domain-view" class="domain-view" aria-label="Current domain view"></section>
         </section>
       </main>
 

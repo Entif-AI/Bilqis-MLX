@@ -23,6 +23,7 @@ export const INSPECTOR_OWNERS = Object.freeze({
   evidence: "evidence",
   correction: "corrections",
   warning: "resources",
+  neural: "model",
 });
 
 export const OPERATOR_VIEW_SCHEMA = "bilqis.bamf.mission-control.operator-view/v1";
