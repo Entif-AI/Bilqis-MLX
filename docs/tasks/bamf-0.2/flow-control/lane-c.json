@@ -391,6 +391,15 @@
       "summary": "CP01/#1049 is turned in as PR #1082 after consuming reviewed unified e53bd672. The standalone Python control-plane uses Unix-domain sockets only, version/session handshake, exact service/run/generation identity, metadata-only accepted-generation inspection, explicit service-vs-learner health, tri-state operator activity, explicit restart lifecycle, and lifetime local socket ownership without taking learner custody. Hosted portable CI initially exposed two eager-import leaks that pulled MLX into Linux test collection; the exact repair at 9828eb2b extracted the immutable run-identity record to a lightweight custody module and made bamf_operator package exports lazy. The exact portable-core command then passed with MLX forcibly unavailable (147 executed, 7 expected skips, 0 errors), CP01 plus owner-adjacent verification remained 37/37 PASS, static gates remained green, hosted portable-core/portable/semantic-ABI all passed on the repaired head, and independent targeted EGM review found 0 Blockers / 0 Majors / 0 Nits. Pre-turn-in review defects remain filed as PM-2026-11-13-001. Snapshot/event/command schemas, Electron UI, Akasha provider code, public networking, live learner/optimizer execution and self-merge remain outside this leaf.",
       "resume_trigger": null,
       "preserved_branch": "codex/1049-cp01-control-plane-20261113"
+    },
+    {
+      "issue": 1060,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "bd181b3b7cae23e7e94af1a7784e2deb4b02944f",
+      "preserved_branch": "codex/1060-gui05-capability-explorer-20261113",
+      "summary": "GUI05 capability dossier; user-directed implementation from reviewed unified bd181b3b.",
+      "resume_trigger": null
     }
   ]
 }

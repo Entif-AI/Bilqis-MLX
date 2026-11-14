@@ -3,16 +3,16 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from .envelopes import (
+from .contracts.envelopes import (
     PartialEnvelope, StaleEnvelope, UnavailableEnvelope,
 )
-from .events import LearningEpisode
-from .model import WireRecord, require
-from .observability import GenerationManifest
+from .contracts.events import LearningEpisode
+from .contracts.model import WireRecord, require
+from .contracts.observability import GenerationManifest
 from .query_contracts import (
     QueryFamily, QueryLink, QueryMode, QueryPage, QueryRequest,
 )
-from .snapshots import (
+from .contracts.snapshots import (
     CapabilitySnapshot, OperatorView,
 )
 from .query_support import (
