@@ -1,20 +1,13 @@
 import {
-  DESTINATIONS,
+  assertOperatorView,
   createShellState,
   inspect,
   navigate,
   openSelectionOwner,
-  shellPosture,
+  withDefensiveState,
   withRoute,
 } from "./shell-state.mjs";
 import { buildDeepLink, parseDeepLink } from "./deep-link.mjs";
-import { renderComponentCatalog } from "./component-catalog.mjs";
-import {
-  loadAbiRow,
-  loadAtlasOverview,
-  loadSemanticIdentity,
-  renderAtlasMarkup,
-} from "./semantic-atlas.mjs";
 import {
   DENSITIES,
   THEMES,
@@ -23,324 +16,177 @@ import {
   loadDisplaySettings,
   saveDisplaySettings,
 } from "./settings.mjs";
-import { renderSchoolView } from "./school-view.mjs";
-import { renderNeuralView } from "./neural-view.mjs";
-import { renderEpisodesView } from "./episode-view.mjs";
-import { renderMemoryView } from "./memory-view.mjs";
-import { stableMemoryIdentity, currentMemoryGeneration } from "./memory-model.mjs";
+import {
+  cacheOperatorView,
+  defensiveState,
+  defensiveStateForConnection,
+  defensiveStateForError,
+  loadCachedOperatorView,
+} from "./foundation/defensive-state.mjs";
+import {
+  renderChrome,
+  renderInspector,
+  renderPaletteOptions,
+} from "./foundation/renderer-ui.mjs";
+import {
+  focusToken,
+  restoreFocus,
+} from "./foundation/accessibility.mjs";
+import {
+  ensureAtlasOverview,
+  renderAtlasDomain,
+} from "./atlas/atlas-controller.mjs";
 
-const labels = new Map(DESTINATIONS);
-const demoObjects = [
-  ["capability", "B.AND"],
-  ["episode", "episode-record:fixture:retained-44239"],
-  ["semantic", "sem:logic.and"],
-  ["memory", stableMemoryIdentity(currentMemoryGeneration().slots[0])],
-  ["checkpoint", "generation:44238"],
-  ["evidence", "receipt:fixture-001"],
-  ["correction", "correction:fixture-1"],
-  ["warning", "resource:disk-reserve"],
-];
+const SNAPSHOT_REQUEST = Object.freeze({
+  schemaVersion: "bamf.gui20.operator-view-query/v1",
+  schema: "bilqis.bamf.mission-control.operator-view/v1",
+});
 
-let state;
+let state = null;
 let displaySettings;
-let atlasState = {
-  status: "idle",
-  error: null,
-  overview: null,
-  selection: null,
-  lens: "canonical",
-  selectedBank: null,
-};
-
-function connectionFreshness(connectionState) {
-  if (connectionState === "healthy") return "FRESH";
-  if (connectionState === "stale") return "STALE";
-  if ([
-    "disconnected", "service-restarting", "incompatible-version", "unauthorized",
-  ].includes(connectionState)) return "DISCONNECTED";
-  return "UNKNOWN";
-}
+let defense = defensiveState("loading");
+let focusReturnToken = null;
+let paletteReturnToken = null;
 
 function setHash() {
+  if (!state) return;
   const next = buildDeepLink(state);
   if (window.location.hash !== next) history.replaceState(null, "", next);
 }
 
-function renderContext() {
-  const { context } = state;
-  document.querySelector("#shell").dataset.posture = shellPosture(context);
-  document.querySelector("#mode-badge").textContent = context.mode;
-  document.querySelector("#run-id").textContent = context.runId;
-  document.querySelector("#generation-id").textContent =
-    `Generation ${context.generation} · manifest ${context.generationManifest}`;
-  document.querySelector("#freshness").textContent = context.freshness;
-  const facts = [
-    ["Topology", context.topologyId],
-    ["Factory", context.factoryRelease],
-    ["Semantic", context.semanticRelease],
-    ["Optimizer", context.optimizerStep],
-    ["Lease", context.admissionLease],
-    ["Frontier", context.correctionFrontier],
-    ["Resources", context.resourceHealth],
-    ["Coverage", context.coverage],
-  ];
-  document.querySelector("#context-facts").innerHTML = facts
-    .map(([label, value]) => `<span><small>${label}</small><strong>${value}</strong></span>`)
-    .join("");
-}
-
-function renderNavigation() {
-  const nav = document.querySelector("#primary-nav");
-  nav.innerHTML = DESTINATIONS.map(([id, label]) =>
-    `<button type="button" data-view="${id}" aria-current="${state.view === id ? "page" : "false"}">${label}</button>`,
-  ).join("");
-  nav.querySelectorAll("button").forEach((button) => {
-    button.addEventListener("click", () => {
-      state = navigate(state, button.dataset.view);
-      render();
-    });
-  });
-}
-
-function renderInspector() {
-  const panel = document.querySelector("#inspector");
-  const selected = state.selected;
-  panel.setAttribute("aria-hidden", String(!state.inspectorOpen));
-  document.querySelector("#inspector-title").textContent = selected ? selected.id : "No selection";
-  const exact = selected?.details
-    ? Object.entries(selected.details).map(([label, value]) =>
-      `<dt>${label}</dt><dd>${Array.isArray(value) ? value.join(", ") : value}</dd>`,
-    ).join("")
-    : "";
-  document.querySelector("#inspector-details").innerHTML = selected
-    ? `<dt>Object class</dt><dd>${selected.kind}</dd>
-       <dt>Identity</dt><dd>${selected.id}</dd>
-       <dt>Posture</dt><dd>${state.context.mode}</dd>
-       <dt>Generation</dt><dd>${state.context.generation}</dd>
-       <dt>Evidence</dt><dd>Fixture reference only</dd>${exact}`
-    : "";
-  document.querySelector("#open-owner").disabled = !selected;
-}
-
-function renderDemoActions() {
-  const host = document.querySelector("#demo-actions");
-  host.innerHTML = demoObjects
-    .map(([kind, id]) => `<button type="button" data-kind="${kind}" data-id="${id}">Inspect ${kind}</button>`)
-    .join("");
-  host.querySelectorAll("button").forEach((button) => {
-    button.addEventListener("click", () => {
-      state = inspect(state, { kind: button.dataset.kind, id: button.dataset.id });
-      render();
-    });
-  });
-}
-
-function renderAtlasDomain() {
-  const host = document.querySelector("#domain-view");
-  host.innerHTML = renderAtlasMarkup({ ...atlasState, context: state.context });
-  host.querySelectorAll("[data-atlas-lens]").forEach((button) => {
-    button.addEventListener("click", () => {
-      atlasState = { ...atlasState, lens: button.dataset.atlasLens };
-      renderAtlasDomain();
-    });
-  });
-  host.querySelectorAll("[data-atlas-bank]").forEach((button) => {
-    button.addEventListener("click", () => {
-      atlasState = { ...atlasState, selectedBank: Number(button.dataset.atlasBank) };
-      renderAtlasDomain();
-    });
-  });
-  host.querySelector("#atlas-search-form")?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const semanticId = new FormData(event.currentTarget).get("semanticId")?.toString().trim();
-    if (!semanticId) return;
-    atlasState = { ...atlasState, status: "loading", error: null };
-    renderAtlasDomain();
-    try {
-      const selection = await loadSemanticIdentity(
-        window.bamfMissionControl, state.context, semanticId,
-      );
-      atlasState = { ...atlasState, status: "ready", selection };
-    } catch (error) {
-      atlasState = { ...atlasState, status: "error",
-        error: error?.code ?? error?.message ?? "Semantic query failed" };
-    }
-    renderAtlasDomain();
-  });
-  host.querySelector("#atlas-abi-form")?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const bank = Number(form.get("bank"));
-    const row = Number(form.get("row"));
-    if (!Number.isSafeInteger(bank) || bank < 0 || !Number.isSafeInteger(row) || row < 0) return;
-    atlasState = { ...atlasState, status: "loading", error: null, selectedBank: bank };
-    renderAtlasDomain();
-    try {
-      const selection = await loadAbiRow(window.bamfMissionControl, state.context, bank, row);
-      atlasState = { ...atlasState, status: "ready", selection };
-    } catch (error) {
-      atlasState = { ...atlasState, status: "error",
-        error: error?.code ?? error?.message ?? "ABI query failed" };
-    }
-    renderAtlasDomain();
-  });
-}
-
-async function ensureAtlasOverview() {
-  if (state.view !== "atlas" || atlasState.status !== "idle") return;
-  atlasState = { ...atlasState, status: "loading", error: null };
-  renderAtlasDomain();
-  try {
-    const overview = await loadAtlasOverview(window.bamfMissionControl, state.context);
-    atlasState = { ...atlasState, status: "ready", overview };
-  } catch (error) {
-    atlasState = { ...atlasState, status: "error",
-      error: error?.code ?? error?.message ?? "Semantic Atlas unavailable" };
-  }
-  if (state.view === "atlas") renderAtlasDomain();
-}
-
-function renderCurrentView() {
-  const domain = document.querySelector("#domain-view");
-  const fixture = document.querySelector(".fixture-card");
-  const catalog = document.querySelector("#visual-catalog");
-  const summary = document.querySelector("#view-summary");
-  if (state.view === "school") {
-    domain.hidden = false;
-    fixture.hidden = true;
-    catalog.hidden = true;
-    summary.textContent = "Exact capability comparison and declared prerequisite topology. Grade labels organize only.";
-    renderSchoolView(domain, (id, row) => {
-      state = inspect(state, {
-        kind: "capability",
-        id,
-        details: {
-          "WAS/TOP/NOW/ALL": row.was + "/" + row.top + "/" + row.now + "/" + row.total,
-          Debt: row.debt,
-          "P(RET)": row.pRet ?? "NOT MEASURED",
-          Prerequisites: row.prerequisites.length ? row.prerequisites : ["none"],
-          "Source state": row.sourceState,
-          "Implementation state": row.implementationState,
-          "Qualification state": row.qualificationState,
-        },
-      });
-      renderInspector();
-      setHash();
-    }, state.selected?.kind === "capability" ? state.selected.id : null);
-    return;
-  }
-  if (state.view === "atlas") {
-    domain.hidden = false;
-    fixture.hidden = true;
-    catalog.hidden = true;
-    summary.textContent = "Source-authoritative semantic identity and generation-scoped ABI state, with learned similarity isolated behind a separate lens.";
-    renderAtlasDomain();
-    return;
-  }
-  if (state.view === "model") {
-    domain.hidden = false;
-    fixture.hidden = true;
-    catalog.hidden = true;
-    summary.textContent = "Topology, attention health, depth routing and local refinement as measured telemetry only.";
-    renderNeuralView(domain, (id, kind) => {
-      state = inspect(state, {
-        kind: "neural",
-        id,
-        details: {
-          "Diagnostic class": kind,
-          "Interpretation boundary": "Measured routing/runtime telemetry only",
-        },
-      });
-      renderInspector();
-      setHash();
-    });
-    return;
-  }
-  if (state.view === "learning") {
-    domain.hidden = false;
-    fixture.hidden = true;
-    catalog.hidden = true;
-    summary.textContent = "Candidate proposal, work, assessment, retention and finalization reconstructed from bounded evidence.";
-    renderEpisodesView(domain, (id, evidenceType) => {
-      state = inspect(state, {
-        kind: "evidence",
-        id,
-        details: {
-          "Evidence type": evidenceType,
-          "Episode replay": "Read-only durable evidence reference",
-        },
-      });
-      renderInspector();
-      setHash();
-    }, state.selected?.kind === "episode" ? state.selected.id : null);
-    return;
-  }
-  if (state.view === "memory") {
-    domain.hidden = false;
-    fixture.hidden = true;
-    catalog.hidden = true;
-    summary.textContent = "Retained Engram allocation, retrieval telemetry, correction state, and generation deltas without promoting memory hits into semantic or capability authority.";
-    renderMemoryView(domain, (id, slot) => {
-      state = inspect(state, {
-        kind: "memory",
-        id,
-        details: {
-          "Slot address": `motif.page.${slot.pageIndex}[${slot.rowIndex}]`,
-          "Creation generation": slot.createdGeneration,
-          "Source eligibility": slot.sourceEligibility,
-          "Correction state": slot.correctionState,
-          "Parameter bank": slot.parameterBank,
-          "Related capabilities": slot.capabilities,
-          "Related episodes": slot.episodes,
-        },
-      });
-      renderInspector();
-      setHash();
-    }, state.selected?.kind === "memory" ? state.selected.id : null);
-    return;
-  }
-  domain.hidden = true;
-  fixture.hidden = false;
-  catalog.hidden = false;
-  domain.innerHTML = "";
-  summary.textContent = "Shell foundation ready for provider-neutral BAMF views.";
-  catalog.innerHTML = renderComponentCatalog();
+function announce(message) {
+  const announcer = document.querySelector("#announcer");
+  announcer.textContent = "";
+  window.queueMicrotask(() => { announcer.textContent = message; });
 }
 
 function render() {
-  renderContext();
-  renderNavigation();
-  renderInspector();
-  renderDemoActions();
-  renderCurrentView();
-  document.querySelector("#view-title").textContent = labels.get(state.view);
-  document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;
-  document.querySelector("#density-trigger").textContent = "Density · " + displaySettings.density;
+  renderChrome(state, defense, displaySettings, {
+    onReconnect: () => establishSnapshot({ preserveRoute: true }),
+    onNavigate: navigateTo,
+    onInspect: openInspector,
+  });
   setHash();
-  if (state.view === "atlas") void ensureAtlasOverview();
+  if (state?.view === "atlas") {
+    renderAtlasDomain(window.bamfMissionControl, state.context);
+    void ensureAtlasOverview(
+      window.bamfMissionControl,
+      state.context,
+      () => state?.view === "atlas",
+    );
+  }
 }
 
-async function bootstrap() {
-  const connection = await window.bamfMissionControl.connect();
-  const operatorView = await window.bamfMissionControl.querySnapshot({
-    schemaVersion: "bamf.gui20.operator-view-query/v1",
-    schema: "bilqis.bamf.mission-control.operator-view/v1",
+function navigateTo(view) {
+  state = navigate(state, view);
+  document.querySelector("#command-palette")?.close?.();
+  render();
+  window.queueMicrotask(() => document.querySelector("#view-title")?.focus?.({ preventScroll: true }));
+}
+
+function openInspector(selected) {
+  if (!state) return;
+  focusReturnToken = focusToken(document.activeElement);
+  state = inspect(state, selected);
+  renderInspector(state, defense);
+  setHash();
+  window.queueMicrotask(() => document.querySelector("#inspector-close")?.focus());
+  announce(`Inspector opened for ${selected.id}`);
+}
+
+function closeInspector() {
+  if (!state?.inspectorOpen) return;
+  state = inspect(state, null);
+  renderInspector(state, defense);
+  setHash();
+  window.queueMicrotask(() => restoreFocus(document, focusReturnToken));
+  announce("Inspector closed");
+}
+
+function openPalette() {
+  const dialog = document.querySelector("#command-palette");
+  paletteReturnToken = focusToken(document.activeElement);
+  renderPaletteOptions(state, (view) => {
+    navigateTo(view);
+    window.queueMicrotask(() => document.querySelector("#main-content")?.focus());
   });
-  displaySettings = loadDisplaySettings(window.localStorage);
-  applyDisplaySettings(document.documentElement, displaySettings);
-  state = createShellState(operatorView, parseDeepLink(window.location.hash));
-  state = {
-    ...state,
-    context: Object.freeze({
-      ...state.context,
-      freshness: connectionFreshness(connection.state),
-    }),
-  };
-  document.querySelector("#inspector-close").addEventListener("click", () => {
-    state = inspect(state, null);
+  if (!dialog.open) dialog.showModal();
+  window.queueMicrotask(() => dialog.querySelector("button:not(:disabled)")?.focus());
+}
+
+async function establishSnapshot({ preserveRoute = false } = {}) {
+  const route = preserveRoute && state
+    ? { view: state.view, selected: state.selected }
+    : parseDeepLink(window.location.hash);
+  defense = defensiveState("loading", {
+    snapshotAvailable: Boolean(state),
+    snapshotSource: state ? "previous" : "none",
+  });
+  render();
+
+  let connection = null;
+  let connectError = null;
+  try {
+    connection = await window.bamfMissionControl.connect();
+  } catch (error) {
+    connectError = error;
+  }
+
+  let operatorView = null;
+  let snapshotSource = "none";
+  let snapshotError = null;
+  if (connection !== null) {
+    try {
+      operatorView = await window.bamfMissionControl.querySnapshot(SNAPSHOT_REQUEST);
+      assertOperatorView(operatorView);
+      snapshotSource = "service";
+      cacheOperatorView(window.localStorage, operatorView);
+    } catch (error) {
+      snapshotError = error;
+      operatorView = null;
+    }
+  }
+
+  if (operatorView === null) {
+    const cached = loadCachedOperatorView(window.localStorage);
+    if (cached !== null) {
+      try {
+        assertOperatorView(cached.operatorView);
+        operatorView = cached.operatorView;
+        snapshotSource = "cache";
+      } catch (error) {
+        snapshotError ??= error;
+      }
+    }
+  }
+
+  if (operatorView === null) {
+    defense = defensiveStateForError(snapshotError ?? connectError, {
+      snapshotAvailable: false,
+      snapshotSource: "none",
+    });
+    state = null;
     render();
-  });
+    announce(`${defense.label}. No verified snapshot is available.`);
+    return;
+  }
+
+  const options = { snapshotAvailable: true, snapshotSource };
+  defense = snapshotError || connectError
+    ? defensiveStateForError(snapshotError ?? connectError, options)
+    : defensiveStateForConnection(connection?.state, options);
+  if (snapshotSource === "cache" && defense.id === "live") {
+    defense = defensiveState("stale", options);
+  }
+  state = withDefensiveState(createShellState(operatorView, route), defense);
+  render();
+  announce(`${defense.label}. ${defense.historical ? "Inspection-only evidence is shown." : "Live context established."}`);
+}
+
+function bindStaticInteractions() {
+  document.querySelector("#inspector-close").addEventListener("click", closeInspector);
   document.querySelector("#open-owner").addEventListener("click", () => {
+    if (!state) return;
     state = openSelectionOwner(state);
     render();
   });
@@ -356,12 +202,38 @@ async function bootstrap() {
     applyDisplaySettings(document.documentElement, displaySettings);
     render();
   });
+  document.querySelector("#palette-trigger").addEventListener("click", openPalette);
+  document.querySelector("#palette-close").addEventListener("click", () => {
+    document.querySelector("#command-palette").close();
+  });
+  document.querySelector("#command-palette").addEventListener("close", () => {
+    window.queueMicrotask(() => restoreFocus(document, paletteReturnToken));
+  });
   window.addEventListener("hashchange", () => {
+    if (!state) return;
     const route = parseDeepLink(window.location.hash);
     state = withRoute(state, route);
     render();
   });
+  document.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      openPalette();
+      return;
+    }
+    if (event.key === "Escape" && state?.inspectorOpen && !document.querySelector("#command-palette").open) {
+      event.preventDefault();
+      closeInspector();
+    }
+  });
+}
+
+async function bootstrap() {
+  displaySettings = loadDisplaySettings(window.localStorage);
+  applyDisplaySettings(document.documentElement, displaySettings);
+  bindStaticInteractions();
   render();
+  await establishSnapshot();
 }
 
 bootstrap();
