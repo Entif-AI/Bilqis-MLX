@@ -5,14 +5,16 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.control_plane import ControlPlaneService
+from bilqis_mlx.control_plane.native_contracts import canonical, sha
 from bilqis_mlx.control_plane.native_source import (
     materialize_native_projection, refresh_native_events,
 )
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.learning.teacher_visit_identity import (
-    TeacherVisitIdentity, teacher_visit_receipt_record,
+    TeacherVisitIdentity,
 )
 from bilqis_mlx.mission_control import CandidateDecision
+from bilqis_mlx.runtime import checkpoint_outbox
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import retention_decision
 
@@ -28,7 +30,6 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
             "schema": "bilqis.bamf.c16.3-rejection/v2",
             "visit_id": visit.visit_id,
             "teacher_visit": visit.to_record(),
-            "teacher_visit_receipt": teacher_visit_receipt_record(visit),
             "selected_option_id": "option:native",
             "selected_policy_key": visit.policy_key,
             "candidate_optimizer_step": parent.retained_state.optimizer_step + 1,
@@ -51,7 +52,7 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
                                                 "last_visit": forged.to_record()})
         self.publish(source, acceptance=self.binding(source))
         with self.assertRaises(BilqisError):
-            materialize_native_projection(self.run)
+            materialize_native_projection(self.run, include_live_rejections=True)
 
     def test_unissued_c03_capability_policy_pair_is_rejected(self):
         source = self.successor()
@@ -84,12 +85,50 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
         with ledger.open("a", encoding="utf-8") as stream:
             stream.write(json.dumps(divergent, sort_keys=True) + "\n")
         with self.assertRaises(BilqisError):
-            materialize_native_projection(self.run)
+            materialize_native_projection(self.run, include_live_rejections=True)
+
+    def test_forged_rejection_pair_cannot_become_live_authority(self):
+        parent = self.parent()
+        evidence = self.rejection_evidence(parent)
+        authority = {
+            "schema": "bilqis.mlx.bamf-rejection-authority/v1",
+            "run_id": parent.run_id,
+            "generation": parent.generation,
+            "student_manifest_sha256": self._parent_pointer["manifest_sha256"],
+            "optimizer_step": parent.retained_state.optimizer_step,
+            "evidence": evidence,
+        }
+        payload = {
+            "event": "BAMF_CANDIDATE_REJECTED",
+            "generation": parent.generation,
+            "student_manifest_sha256": self._parent_pointer["manifest_sha256"],
+            "optimizer_step": parent.retained_state.optimizer_step,
+            "evidence": evidence,
+            "rejection_authority_sha256": sha(canonical(authority)),
+        }
+        forged = checkpoint_outbox.with_delivery_outbox(
+            {"run_id": parent.run_id, "generation": parent.generation},
+            (payload,),
+        )["delivery_outbox"][0]
+        with (self.run / "events.jsonl").open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(forged, sort_keys=True) + "\n")
+
+        portable = materialize_native_projection(self.run)
+        self.assertFalse(any(
+            isinstance(record, CandidateDecision) and record.outcome.value == "REJECTED"
+            for record in portable.records))
+        with self.assertRaises(BilqisError) as caught:
+            materialize_native_projection(self.run, include_live_rejections=True)
+        self.assertEqual(
+            caught.exception.context.get("reason"),
+            "CONTROL_PLANE_NATIVE_REJECTION_AUTHORITY_DRIFT",
+        )
 
     def test_generic_rejection_is_authenticated_but_not_projected(self):
         parent = self.parent()
         record_bamf_rejection(self.run, parent, {"reason": "retention_gate"})
-        material = materialize_native_projection(self.run)
+        material = materialize_native_projection(
+            self.run, include_live_rejections=True)
         self.assertFalse(any(isinstance(record, CandidateDecision)
                              and record.outcome.value == "REJECTED"
                              for record in material.records))
@@ -100,19 +139,19 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
             parent, retention_reason="CLAIMED_REJECT", decision={"decision": "ACCEPT"})
         record_bamf_rejection(self.run, parent, evidence)
         with self.assertRaises(BilqisError):
-            materialize_native_projection(self.run)
+            materialize_native_projection(self.run, include_live_rejections=True)
 
     def test_c16_rejection_requires_selected_option(self):
         parent = self.parent()
         record_bamf_rejection(
             self.run, parent, self.rejection_evidence(parent, selected_option_id=""))
         with self.assertRaises(BilqisError):
-            materialize_native_projection(self.run)
+            materialize_native_projection(self.run, include_live_rejections=True)
 
     def test_whole_history_pointer_race_is_retried(self):
         self.parent()
         service = ControlPlaneService(self.run, self.root / "race.sock")
-        def race(_run_dir):
+        def race(_run_dir, **_kwargs):
             ErrorBus.raise_(SCHOOL.BAMF_CONTROL_PLANE.INVALID,
                             reason="CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED")
         with patch("bilqis_mlx.control_plane.native_source.materialize_native_projection",
@@ -127,7 +166,8 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
         with patch("bilqis_mlx.control_plane.native_source.rejection_material",
                    side_effect=advance):
             with self.assertRaises(BilqisError) as caught:
-                materialize_native_projection(self.run)
+                materialize_native_projection(
+                    self.run, include_live_rejections=True)
         self.assertEqual(caught.exception.context.get("reason"),
                          "CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED")
 

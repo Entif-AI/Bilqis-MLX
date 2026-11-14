@@ -38,14 +38,15 @@ of its independently source-issued content-addressed visit receipt before they
 become CP02 episode, candidate, capability and resource records. C03 still issues
 the original receipt at selection time; accepted B13 custody carries the exact
 receipt forward so historical reconstruction does not depend on the workstation
-shared data plane. Generic `BAMF_CANDIDATE_REJECTED` journal rows are first
-authenticated against their deterministic event identity, recomputed rejection
-authority and immutable run-local rejection receipt.
-Only the supported `bilqis.bamf.c16.3-rejection/v2` contract is then projected
-into CP02; other valid B13 rejection schemas are authenticated and ignored by
-this adapter rather than poisoning historical reconstruction. Supported C16.3
-rejections therefore remain visible without pretending they advanced the learner
-generation.
+shared data plane. Generic `BAMF_CANDIDATE_REJECTED` journal rows remain a live
+projection only: they are authenticated against their deterministic event identity,
+the independent data-plane rejection authority/receipt, and the C03-issued visit
+receipt before CP04 delivery. Only the supported
+`bilqis.bamf.c16.3-rejection/v2` contract is projected; other valid B13 rejection
+schemas are authenticated and ignored. Rejections remain visible live without
+pretending they advanced the learner generation, but they are deliberately excluded
+from portable CP06 reconstruction because current B13 run artifacts do not carry an
+independently authenticated portable rejection-decision anchor.
 
 CP04 now refreshes that authenticated native source before subscription and on
 the heartbeat path. The first successful read establishes the service-local
@@ -66,8 +67,9 @@ so a failed ancestor/acceptance validation cannot destroy an already usable
 projection. The acceptance witness deletes and rebuilds the disposable database,
 compares the resulting historical/current records, and proves that tampering an
 ancestor acceptance fails while the prior CP06 index remains readable. A dedicated
-regression makes any shared-data-plane access raise during rebuild; accepted and
-supported rejected C16.3 history still reconstructs from copied run custody alone.
+regression makes any shared-data-plane access raise during rebuild; accepted C16.3
+history still reconstructs from copied run custody alone even when rejection rows
+exist in the event journal.
 
 `test_cp07_commands.py` invokes C11's accepted dry-run and human-gated genesis
 code within the existing disposable test context. It admits one generation-zero
@@ -99,14 +101,15 @@ python3 -m bilqis_mlx.control_plane \
 ## Remaining production acceptance boundaries
 
 The production-source adapter now demonstrates automatic CP04 publication for
-the current accepted C16.3 visit/candidate/capability/resource path and for
-authenticated, supported C16.3 rejection events, plus CP06 reconstruction from
-portable authenticated BAMF run custody. The CP07 fixture obtains its visit through
+the current accepted C16.3 visit/candidate/capability/resource path and for live,
+independently authenticated C16.3 rejection events, plus CP06 reconstruction from
+portable authenticated accepted BAMF run custody. The CP07 fixture obtains its visit through
 the production C03 selection owner and derives the successor through the production
 C03 successor owner; it no longer seeds a teacher-visit receipt by hand. Generic
 B13 rejection receipts outside the supported C16.3 schema remain outside this CP02
-projection. Two narrower data-contract limitations remain explicit rather than
-being filled with synthetic values:
+projection. Rejected C16.3 facts are not reconstructed by portable CP06 until an
+owner-authenticated rejection anchor exists inside portable B13 custody. Two narrower
+data-contract limitations remain explicit rather than being filled with synthetic values:
 
 1. Native C16.3 accepted/rejection artifacts do not carry an authenticated
    wall-clock visit interval. CP02 therefore uses the accepted generation as a

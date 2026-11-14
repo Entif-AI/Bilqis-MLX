@@ -3,7 +3,6 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.learning.teacher_visit_identity import teacher_visit_receipt_record
 from bilqis_mlx.control_plane import ControlPlaneClient, ControlPlaneService, EventFamily
 from bilqis_mlx.control_plane.native_source import (
     authenticated_history, materialize_native_projection, refresh_native_events,
@@ -162,7 +161,6 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             "schema": "bilqis.bamf.c16.3-rejection/v2",
             "visit_id": visit.visit_id,
             "teacher_visit": visit.to_record(),
-            "teacher_visit_receipt": teacher_visit_receipt_record(visit),
             "selected_option_id": "option:native",
             "selected_policy_key": visit.policy_key,
             "candidate_optimizer_step": parent.retained_state.optimizer_step + 1,
@@ -171,10 +169,8 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             "capability": "A.REJECT",
             "decision": decision.to_record(),
         })
-        with patch(
-                "bilqis_mlx.data_plane.data_plane",
-                side_effect=AssertionError("rejection reconstruction accessed shared data plane")):
-            material = materialize_native_projection(self.run)
+        material = materialize_native_projection(
+            self.run, include_live_rejections=True)
         rejected = [
             record for record in material.records
             if isinstance(record, CandidateDecision) and record.outcome.value == "REJECTED"
@@ -185,6 +181,14 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
         self.assertEqual(rejected[0].candidate_id, decision.candidate_generation)
         self.assertIn(f"bamf-rejection:{receipt}", rejected[0].meta.receipt_refs)
         self.assertEqual((self.run / "bamf-state.json").read_bytes(), before)
+
+        with patch(
+                "bilqis_mlx.data_plane.data_plane",
+                side_effect=AssertionError("CP06 reconstruction accessed shared data plane")):
+            portable = materialize_native_projection(self.run)
+        self.assertFalse(any(
+            isinstance(record, CandidateDecision) and record.outcome.value == "REJECTED"
+            for record in portable.records))
 
 if __name__ == "__main__":
     unittest.main()

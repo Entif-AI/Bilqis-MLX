@@ -27,7 +27,9 @@ def _service_lock(service):
         return lock
 
 
-def materialize_native_projection(run_dir: Path) -> NativeProjectionMaterial:
+def materialize_native_projection(
+        run_dir: Path, *, include_live_rejections: bool = False) -> NativeProjectionMaterial:
+    """Materialize portable accepted history; optionally add live rejection facts."""
     history = authenticated_history(run_dir)
     records, events, manifests = [], [], []
     parent = None
@@ -37,7 +39,9 @@ def materialize_native_projection(run_dir: Path) -> NativeProjectionMaterial:
         events.extend(emitted)
         manifests.append(generation.manifest_sha256)
         parent = generation
-    rejected_records, rejected_events = rejection_material(Path(run_dir), history)
+    rejected_records, rejected_events = (
+        rejection_material(Path(run_dir), history)
+        if include_live_rejections else ((), ()))
     from bilqis_mlx.runtime.bamf_bundle import inspect_accepted_generation
 
     after = inspect_accepted_generation(Path(run_dir) / "bamf-state.json")
@@ -54,7 +58,8 @@ def materialize_native_projection(run_dir: Path) -> NativeProjectionMaterial:
 def publish_native_events(service, *, seen_event_ids: set[str] | None = None):
     """Publish authenticated BAMF deltas exactly once per caller-owned frontier."""
     seen = set() if seen_event_ids is None else seen_event_ids
-    material = materialize_native_projection(service.run_dir)
+    material = materialize_native_projection(
+        service.run_dir, include_live_rejections=True)
     published = []
     resource_pending = False
     for family, record, event_id in material.events:
@@ -82,7 +87,8 @@ def refresh_native_events(service):
         try:
             seen = getattr(service, _SEEN_ATTR, None)
             if seen is None:
-                material = materialize_native_projection(service.run_dir)
+                material = materialize_native_projection(
+                    service.run_dir, include_live_rejections=True)
                 setattr(service, _SEEN_ATTR, {
                     event_id for _family, _record, event_id in material.events})
                 return ()

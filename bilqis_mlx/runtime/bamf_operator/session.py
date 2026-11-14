@@ -199,8 +199,6 @@ def _visit(run_dir: Path, reserve_gib: float):
             "schema": "bilqis.bamf.c16.3-rejection/v2",
             "visit_id": selection.visit.identity.visit_id,
             "teacher_visit": selection.visit.identity.to_record(),
-            "teacher_visit_receipt": dict(
-                selection.visit.projection.teacher_state["last_visit_receipt"]),
             "selected_option_id": selection.option_id,
             "selected_policy_key": selection.visit.identity.policy_key,
             "candidate_optimizer_step": (
