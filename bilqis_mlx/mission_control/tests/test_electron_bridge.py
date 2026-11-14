@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -11,7 +12,8 @@ from bilqis_mlx.control_plane import ControlPlaneService
 from bilqis_mlx.control_plane.__main__ import _default_socket
 from bilqis_mlx.control_plane.contracts import ControlPlaneState
 from bilqis_mlx.control_plane.tests.support import start_service
-from bilqis_mlx.mission_control.electron.bridge import ElectronBridge, _socket_path
+from bilqis_mlx.mission_control.electron.bridge import ElectronBridge, _socket_path, stream_events
+from bilqis_mlx.mission_control.envelopes import EventEnvelope
 from bilqis_mlx.mission_control.query_catalog import MissionControlQueryCatalog
 from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryRequest
 from bilqis_mlx.mission_control.tests.samples import SAMPLES
@@ -19,6 +21,23 @@ from bilqis_mlx.paths import active_run_dir
 
 
 class ElectronBridgeTests(unittest.TestCase):
+    def test_event_stream_serializes_cp04_envelopes_without_private_session_state(self):
+        event = next(item for item in SAMPLES if type(item) is EventEnvelope)
+        client = Mock()
+        client.connect.return_value = {"accepted": True}
+        client.subscribe_events.return_value = iter((event,))
+        output = StringIO()
+        with patch(
+            "bilqis_mlx.mission_control.electron.bridge.ControlPlaneClient",
+            return_value=client,
+        ), patch("sys.stdout", output):
+            self.assertEqual(stream_events(), 0)
+        serialized = output.getvalue()
+        self.assertIn(event.event_id, serialized)
+        self.assertIn(event.payload_record_id, serialized)
+        self.assertNotIn("session_id", serialized)
+        client.close.assert_called_once_with()
+
     def test_cp03_query_is_available_without_exposing_cp01_session_or_service_identity(self):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)

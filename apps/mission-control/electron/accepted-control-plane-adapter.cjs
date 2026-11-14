@@ -61,6 +61,14 @@ class AcceptedControlPlaneAdapter {
     return this.broker.query(request);
   }
 
+  async subscribe(session, next) {
+    this.#requireSession(session);
+    if (typeof next !== "function") {
+      throw new TypeError("BAMF_GUI03_EVENT_LISTENER_REQUIRED");
+    }
+    return this.broker.subscribe(next);
+  }
+
   close() {
     this.broker.close();
   }

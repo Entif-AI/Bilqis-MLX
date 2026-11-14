@@ -10,6 +10,7 @@ import {
   stableMemoryIdentity,
 } from "../memory/memory-model.mjs";
 import { renderTeacherView } from "../teacher/teacher-view.mjs";
+import { renderEvidenceView } from "../evidence/evidence-view.mjs";
 import { defensiveBannerMarkup } from "./defensive-state.mjs";
 import { bindRovingNavigation } from "./accessibility.mjs";
 
@@ -25,6 +26,12 @@ const demoObjects = [
   ["correction", "correction:fixture-1"],
   ["warning", "resource:disk-reserve"],
 ];
+
+function compactIdentity(value) {
+  return typeof value === "string" && /^[0-9a-f]{64}$/.test(value)
+    ? `${value.slice(0, 8)}…${value.slice(-8)}`
+    : value;
+}
 
 export function renderContext(state, defense) {
   const shell = document.querySelector("#shell");
@@ -42,8 +49,13 @@ export function renderContext(state, defense) {
   document.querySelector("#mode-badge").textContent = context.mode;
   document.querySelector("#run-id").textContent = context.runId;
   document.querySelector("#run-id").title = context.runId;
-  document.querySelector("#generation-id").textContent =
-    `Generation ${context.generation} · manifest ${context.generationManifest}`;
+  const generationIdentity = document.querySelector("#generation-id");
+  generationIdentity.textContent =
+    `Generation ${context.generation} · manifest ${compactIdentity(context.generationManifest)}`;
+  generationIdentity.setAttribute(
+    "aria-label",
+    `Generation ${context.generation}; manifest ${context.generationManifest}`,
+  );
   document.querySelector("#freshness").textContent = context.freshness;
   document.querySelector("#run-selector").replaceChildren(new Option(context.runId, context.runId));
   document.querySelector("#generation-selector").replaceChildren(new Option(`${context.generation} · ${context.mode}`, String(context.generation)));
@@ -54,7 +66,7 @@ export function renderContext(state, defense) {
     ["Resources", context.resourceHealth], ["Coverage", context.coverage],
   ];
   document.querySelector("#context-facts").innerHTML = facts
-    .map(([label, value]) => `<span><small>${esc(label)}</small><strong title="${esc(value)}">${esc(value)}</strong></span>`)
+    .map(([label, value]) => `<span><small>${esc(label)}</small><strong title="${esc(value)}" aria-label="${esc(label)}: ${esc(value)}">${esc(compactIdentity(value))}</strong></span>`)
     .join("");
 }
 
@@ -104,6 +116,7 @@ export function renderInspector(state, defense) {
        <dt>Evidence</dt><dd>${defense.historical ? "Verified prior evidence · inspection only" : "Current verified fixture/reference"}</dd>${exact}`
     : "";
   document.querySelector("#open-owner").disabled = !selected;
+  document.querySelector("#open-evidence").disabled = !selected;
 }
 
 export function renderDemoActions(state, onInspect) {
@@ -123,11 +136,12 @@ export function renderDemoActions(state, onInspect) {
   });
 }
 
-export function renderCurrentView(state, defense, onInspect) {
+export function renderCurrentView(state, defense, onInspect, api, onEvidenceSelect) {
   const domain = document.querySelector("#domain-view");
   const fixture = document.querySelector(".fixture-card");
   const catalog = document.querySelector("#visual-catalog");
   const summary = document.querySelector("#view-summary");
+  document.querySelector("#shell").dataset.view = state?.view ?? "mission-control";
   if (!state) {
     fixture.hidden = true;
     catalog.hidden = false;
@@ -155,6 +169,13 @@ export function renderCurrentView(state, defense, onInspect) {
         "Qualification state": row.qualificationState,
       },
     }), state.selected?.kind === "capability" ? state.selected.id : null);
+    return;
+  }
+  if (state.view === "mission-control") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Outcome-first learner health, current work, learning pulse and actionable attention.";
     return;
   }
   if (state.view === "atlas") {
@@ -231,6 +252,16 @@ export function renderCurrentView(state, defense, onInspect) {
     }));
     return;
   }
+  if (state.view === "evidence") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Exact Mission Control records, provenance links, bounded pagination and literal raw payloads.";
+    renderEvidenceView(
+      domain, api, state.context, state.selected, onEvidenceSelect,
+    );
+    return;
+  }
   fixture.hidden = false;
   catalog.hidden = false;
   domain.hidden = true;
@@ -259,7 +290,9 @@ export function renderChrome(state, defense, displaySettings, handlers) {
   renderNavigation(state, handlers.onNavigate);
   renderInspector(state, defense);
   renderDemoActions(state, handlers.onInspect);
-  renderCurrentView(state, defense, handlers.onInspect);
+  renderCurrentView(
+    state, defense, handlers.onInspect, handlers.api, handlers.onEvidenceSelect,
+  );
   document.querySelector("#view-title").textContent = labels.get(state?.view ?? "mission-control");
   document.querySelector("#view-title").setAttribute("tabindex", "-1");
   document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;

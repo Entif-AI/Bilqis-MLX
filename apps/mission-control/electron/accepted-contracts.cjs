@@ -7,8 +7,9 @@ const SNAPSHOT_QUERY_SCHEMA = "bamf.gui20.operator-view-query/v1";
 const QUERY_REQUEST_SCHEMA = "bilqis.bamf.control-plane.query/v1";
 const QUERY_PAGE_SCHEMA = "bilqis.bamf.control-plane.query-page/v1";
 const QUERY_ERROR_SCHEMA = "bamf.gui07.query-error/v1";
+const EVENT_ENVELOPE_SCHEMA = "bilqis.bamf.mission-control.event-envelope/v1";
 const QUERY_FAMILIES = new Set([
-  "run", "school", "capability", "episode", "generation", "semantic", "frame",
+  "record", "run", "school", "capability", "episode", "generation", "semantic", "frame",
   "neural", "memory", "teacher", "salience", "correction", "resource",
   "reference", "links",
 ]);
@@ -111,6 +112,37 @@ function validateQueryResponse(value) {
   return value;
 }
 
+function isSha256(value) {
+  return typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
+}
+
+function validateEvent(value) {
+  const keys = [
+    "schema_version", "meta", "event_id", "position", "event_family",
+    "payload_schema_version", "payload_record_id", "payload_sha256", "payload_ref",
+  ];
+  const positionKeys = [
+    "stream_id", "epoch_id", "ordinal", "cursor_sha256", "previous_cursor_sha256",
+  ];
+  if (!exactKeys(value, keys) || value.schema_version !== EVENT_ENVELOPE_SCHEMA ||
+      typeof value.event_id !== "string" || value.event_id.length === 0 ||
+      typeof value.event_family !== "string" || value.event_family.length === 0 ||
+      typeof value.payload_schema_version !== "string" || value.payload_schema_version.length === 0 ||
+      typeof value.payload_record_id !== "string" || value.payload_record_id.length === 0 ||
+      !isSha256(value.payload_sha256) || typeof value.payload_ref !== "string" ||
+      value.payload_ref.length === 0 || !exactKeys(value.position, positionKeys) ||
+      typeof value.position.stream_id !== "string" || value.position.stream_id.length === 0 ||
+      typeof value.position.epoch_id !== "string" || value.position.epoch_id.length === 0 ||
+      !Number.isSafeInteger(value.position.ordinal) || value.position.ordinal < 0 ||
+      !isSha256(value.position.cursor_sha256) ||
+      (value.position.previous_cursor_sha256 !== null &&
+        !isSha256(value.position.previous_cursor_sha256)) ||
+      !value.meta || typeof value.meta !== "object" || Array.isArray(value.meta)) {
+    invalid("EVENT_ENVELOPE");
+  }
+  return value;
+}
+
 function createAcceptedValidators(assertOperatorView, frameContracts) {
   if (typeof assertOperatorView !== "function") {
     throw new TypeError("BAMF_GUI20_OPERATOR_VIEW_VALIDATOR_REQUIRED");
@@ -144,7 +176,7 @@ function createAcceptedValidators(assertOperatorView, frameContracts) {
       if (method === "query") return validateQueryResponse(value);
       unavailable();
     },
-    event: unavailable,
+    event: validateEvent,
   });
 }
 
@@ -155,5 +187,6 @@ module.exports = {
   QUERY_REQUEST_SCHEMA,
   QUERY_PAGE_SCHEMA,
   QUERY_ERROR_SCHEMA,
+  EVENT_ENVELOPE_SCHEMA,
   createAcceptedValidators,
 };

@@ -9,12 +9,14 @@
     <link rel="stylesheet" href="./shell.css" />
     <link rel="stylesheet" href="./components.css" />
     <link rel="stylesheet" href="./frame-explorer.css" />
+    <link rel="stylesheet" href="./home/home.css" />
     <link rel="stylesheet" href="./atlas/semantic-atlas.css" />
     <link rel="stylesheet" href="./school/school.css" />
     <link rel="stylesheet" href="./neural/neural.css" />
     <link rel="stylesheet" href="./episodes/episodes.css" />
     <link rel="stylesheet" href="./memory/memory.css" />
     <link rel="stylesheet" href="./teacher/teacher.css" />
+    <link rel="stylesheet" href="./evidence/evidence.css" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -75,7 +77,10 @@
           <button id="inspector-close" type="button" aria-label="Close inspector">×</button>
         </div>
         <dl id="inspector-details"></dl>
-        <button id="open-owner" type="button">Open in owning view</button>
+        <div class="inspector-actions">
+          <button id="open-owner" type="button">Open in owning view</button>
+          <button id="open-evidence" type="button">Open evidence</button>
+        </div>
       </aside>
 
       <dialog id="command-palette" class="command-palette" aria-labelledby="palette-title">
