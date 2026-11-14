@@ -18,6 +18,7 @@ class Cp01PythonBroker {
     this.process = null;
     this.pending = new Map();
     this.nextId = 1;
+    this.eventProcesses = new Set();
   }
 
   connect() {
@@ -36,7 +37,53 @@ class Cp01PythonBroker {
     return this.#request("disconnect");
   }
 
+  subscribe(listener) {
+    if (typeof listener !== "function") {
+      throw new TypeError("BAMF_GUI03_EVENT_LISTENER_REQUIRED");
+    }
+    const child = spawn(
+      this.pythonExecutable,
+      ["-B", "-m", "bilqis_mlx.mission_control.electron.bridge", "--events"],
+      {
+        cwd: this.cwd,
+        env: { ...this.env, PYTHONUNBUFFERED: "1" },
+        shell: false,
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+    const lines = readline.createInterface({ input: child.stdout });
+    lines.on("line", (line) => {
+      try {
+        const payload = JSON.parse(line);
+        if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+          listener(payload);
+        }
+      } catch (_error) {
+        // Malformed private-broker output is dropped before the renderer boundary.
+      }
+    });
+    child.stderr.resume();
+    this.eventProcesses.add(child);
+    const cleanup = () => {
+      lines.close();
+      this.eventProcesses.delete(child);
+    };
+    child.once("exit", cleanup);
+    child.once("error", cleanup);
+    let active = true;
+    return () => {
+      if (!active) return;
+      active = false;
+      cleanup();
+      if (child.exitCode === null) child.kill();
+    };
+  }
+
   close() {
+    for (const child of this.eventProcesses) {
+      if (child.exitCode === null) child.kill();
+    }
+    this.eventProcesses.clear();
     const process = this.process;
     this.process = null;
     if (process && process.exitCode === null) {

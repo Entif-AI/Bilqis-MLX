@@ -8,6 +8,7 @@ import sys
 
 from bilqis_mlx.control_plane import ControlPlaneClient
 from bilqis_mlx.control_plane.contracts import ControlPlaneState, PROTOCOL_VERSION
+from bilqis_mlx.mission_control.codec import encode_record
 from bilqis_mlx.mission_control.query_contracts import QUERY_PAGE_SCHEMA, QueryRequest
 from bilqis_mlx.paths import active_run_dir
 
@@ -95,6 +96,24 @@ def _reply(identifier, *, result=None, error=None) -> None:
     sys.stdout.flush()
 
 
+def stream_events() -> int:
+    client = ControlPlaneClient(_socket_path(), client_id=f"{_CLIENT_ID}-events")
+    try:
+        payload = client.connect()
+        if not payload.get("accepted"):
+            return 1
+        subscription = client.subscribe_events()
+        for event in subscription:
+            sys.stdout.write(json.dumps(
+                encode_record(event), sort_keys=True, separators=(",", ":")) + "\n")
+            sys.stdout.flush()
+    except Exception:
+        return 1
+    finally:
+        client.close()
+    return 0
+
+
 def main() -> int:
     bridge = ElectronBridge()
     for raw in sys.stdin:
@@ -121,4 +140,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(stream_events() if "--events" in sys.argv[1:] else main())
