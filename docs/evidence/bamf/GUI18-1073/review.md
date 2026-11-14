@@ -173,22 +173,25 @@ Exact composed-tree receipts:
 - development structure: 0 violations;
 - governance integrity: 0 violations;
 - BAMF flow control: PASS, tests 15/15;
-- legacy trainer authority: PASS, tests 7/7;
+- static adaptation-source authority gate: PASS, tests 7/7;
 - `git diff --check`: PASS;
 - `git diff --cached --check`: PASS.
 
-The repository `verify:leaf` wrapper was also exercised before the unified
-merge commit. Its differential selector compares against the pre-merge ancestor,
-so it included the 15 newly consumed unified commits and selected GUI17
-control-plane learner/projection tests. In the fresh worktree those imports
-require MLX. GUI18 does not change that runtime surface and requires no learner
-execution. The exact GUI18 product/security/owner gates above are green. The
-leaf wrapper must be rerun on the clean committed head, where the merge has
-become part of the branch history rather than an uncommitted changed surface.
+The repository `verify:leaf` wrapper was also exercised against the exact
+current unified base. The earlier pre-merge attempt compared against the original
+fork point and therefore selected GUI17 learner/projection tests from the 15
+newly consumed unified commits; those imports require MLX and are not GUI18's
+change surface. The final scoped invocation set both
+`BILQIS_TEST_BASE_REF` and `BILQIS_QUALITY_BASE_REF` to
+`origin/codex/bamf-unified-base-20261028`. The differential planner then
+reported `mode=skip`, `changed=35`, because GUI18 changes only
+JavaScript/CJS/CSS/docs paths, and the wrapper completed PASS with the full
+259/259 renderer and 51/51 + 6/6 security/bridge suites. No MLX or learner
+execution was required.
 
 ## Review decision
 
 The interaction architecture remains aligned with #1073 and the existing
 Mission Control authority model. No control-plane schema or learner mutation is
-required. Local acceptance is complete; only clean-head leaf-wrapper readback,
-remote fencing, and hosted verification remain before human merge review.
+required. Local acceptance and the scoped leaf wrapper are complete; only remote
+fencing and hosted verification remain before human merge review.
