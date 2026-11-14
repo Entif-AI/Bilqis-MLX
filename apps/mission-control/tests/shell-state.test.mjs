@@ -20,7 +20,7 @@ const context = JSON.parse(
 test("all required GUI01 destinations remain stable and reachable", () => {
   assert.deepEqual(
     DESTINATIONS.map(([id]) => id),
-    ["mission-control", "school", "learning", "atlas", "model", "memory", "teacher", "corrections", "lineage", "resources", "evidence", "operate"],
+    ["mission-control", "school", "capability", "learning", "atlas", "model", "memory", "teacher", "corrections", "lineage", "resources", "evidence", "operate"],
   );
 });
 
@@ -34,13 +34,13 @@ test("switching views preserves exact inspected context", () => {
   assert.equal(next.context.schemaVersion, "bilqis.bamf.mission-control.operator-view/v1");
 });
 
-test("deep links restore view and selected object without encoding run context", () => {
+test("deep links restore view and selected object with exact run and generation context", () => {
   const initial = inspect(navigate(createShellState(context), "evidence"), {
     kind: "evidence",
     id: "receipt:123",
   });
   const hash = buildDeepLink(initial);
-  assert.equal(hash, "#/view/evidence?kind=evidence&id=receipt%3A123");
+  assert.equal(hash, "#/view/evidence?kind=evidence&id=receipt%3A123&run=fixture-run&generation=7&mode=LIVE");
   const restored = createShellState(context, parseDeepLink(hash));
   assert.equal(restored.context.runId, "fixture-run");
   assert.deepEqual(restored.selected, { kind: "evidence", id: "receipt:123" });
@@ -48,7 +48,7 @@ test("deep links restore view and selected object without encoding run context",
 
 test("hash-route updates reuse normalized state without re-decoding it as CP02", () => {
   const initial = createShellState(context);
-  const route = parseDeepLink("#/view/evidence?kind=evidence&id=receipt%3A123");
+  const route = parseDeepLink("#/view/evidence?kind=evidence&id=receipt%3A123&run=fixture-run&generation=7&mode=LIVE");
   const restored = withRoute(initial, route);
   assert.equal(restored.context, initial.context);
   assert.equal(restored.view, "evidence");
@@ -126,7 +126,7 @@ test("malformed versioned operator views fail closed at the Electron boundary", 
 
 test("inspector routes at least five stable object classes to owning views", () => {
   const samples = [
-    ["capability", "school"],
+    ["capability", "capability"],
     ["episode", "learning"],
     ["semantic", "atlas"],
     ["memory", "memory"],

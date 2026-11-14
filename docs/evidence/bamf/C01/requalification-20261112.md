@@ -137,3 +137,8 @@ evidence questions are resolved against exact owning evidence. Because C01 is an
 integration/normalization hold rather than a reason to idle an otherwise
 independent worker, the Parallel Workstreams plan may continue WS2 with bounded
 C10.1/#519 preparation while #380 owns its separate final-turn-in gate.
+
+Legacy-trainer authority clarification: the legacy-trainer gate named above checks
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026`, branch
+`codex/337-replay-349-20261026`, run `/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
+This receipt did not use legacy training behavior as an adaptation premise.

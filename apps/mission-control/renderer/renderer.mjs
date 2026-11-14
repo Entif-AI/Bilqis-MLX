@@ -1,3 +1,5 @@
+import { createCapabilityExplorer } from "./capability/app.mjs";
+import { escapeHtml } from "./capability/model.mjs";
 import {
   DESTINATIONS,
   createShellState,
@@ -32,6 +34,7 @@ const demoObjects = [
 
 let state;
 let displaySettings;
+let explorer;
 
 function connectionFreshness(connectionState) {
   if (connectionState === "healthy") return "FRESH";
@@ -49,12 +52,21 @@ function setHash() {
 
 function renderContext() {
   const { context } = state;
+  document.querySelector("#shell").dataset.view = state.view;
   document.querySelector("#shell").dataset.posture = shellPosture(context);
   document.querySelector("#mode-badge").textContent = context.mode;
   document.querySelector("#run-id").textContent = context.runId;
   document.querySelector("#generation-id").textContent =
     `Generation ${context.generation} · manifest ${context.generationManifest}`;
   document.querySelector("#freshness").textContent = context.freshness;
+  const runSelector = document.querySelector("#run-selector");
+  runSelector.replaceChildren(new Option(context.runId, context.runId));
+  runSelector.disabled = true;
+  const generationSelector = document.querySelector("#generation-selector");
+  const generations = context.fixture ? [1, 2, 3] : [context.generation];
+  generationSelector.replaceChildren(...generations.map((g) => new Option(
+    `${g} · ${g === context.generation ? context.mode : "HISTORICAL"}`, g, false, g === context.generation)));
+  generationSelector.disabled = !context.fixture;
   const facts = [
     ["Topology", context.topologyId],
     ["Factory", context.factoryRelease],
@@ -66,7 +78,7 @@ function renderContext() {
     ["Coverage", context.coverage],
   ];
   document.querySelector("#context-facts").innerHTML = facts
-    .map(([label, value]) => `<span><small>${label}</small><strong>${value}</strong></span>`)
+    .map(([label, value]) => `<span><small>${label}</small><strong>${escapeHtml(value)}</strong></span>`)
     .join("");
 }
 
@@ -89,11 +101,11 @@ function renderInspector() {
   panel.setAttribute("aria-hidden", String(!state.inspectorOpen));
   document.querySelector("#inspector-title").textContent = selected ? selected.id : "No selection";
   document.querySelector("#inspector-details").innerHTML = selected
-    ? `<dt>Object class</dt><dd>${selected.kind}</dd>
-       <dt>Identity</dt><dd>${selected.id}</dd>
+    ? `<dt>Object class</dt><dd>${escapeHtml(selected.kind)}</dd>
+       <dt>Identity</dt><dd>${escapeHtml(selected.id)}</dd>
        <dt>Posture</dt><dd>${state.context.mode}</dd>
        <dt>Generation</dt><dd>${state.context.generation}</dd>
-       <dt>Evidence</dt><dd>Fixture reference only</dd>`
+       <dt>Evidence</dt><dd>Open owning view for exact records</dd>`
     : "";
   document.querySelector("#open-owner").disabled = !selected;
 }
@@ -115,8 +127,17 @@ function render() {
   renderContext();
   renderNavigation();
   renderInspector();
+  document.querySelector("#inspector").hidden = !state.inspectorOpen;
   renderDemoActions();
-  document.querySelector("#visual-catalog").innerHTML = renderComponentCatalog();
+  const dossierView = state.view === "capability";
+  document.querySelector("#capability-explorer").hidden = !dossierView;
+  document.querySelector(".fixture-card").hidden = dossierView;
+  document.querySelector("#visual-catalog").hidden = dossierView;
+  document.querySelector("#view-summary").textContent = dossierView
+    ? "Measured chronology, source support, and literal evidence. No inferred causes."
+    : "Shell foundation ready for provider-neutral BAMF views.";
+  if (dossierView) explorer?.update(state); else explorer?.hide();
+  if (!dossierView) document.querySelector("#visual-catalog").innerHTML = renderComponentCatalog();
   document.querySelector("#view-title").textContent = labels.get(state.view);
   document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;
   document.querySelector("#density-trigger").textContent = "Density · " + displaySettings.density;
@@ -139,6 +160,12 @@ async function bootstrap() {
       freshness: connectionFreshness(connection.state),
     }),
   };
+  document.querySelector("#generation-selector").addEventListener("change", (event) => {
+    state = { ...state, context: Object.freeze({ ...state.context,
+      generation: Number(event.target.value), mode: "HISTORICAL", generationManifest: "UNKNOWN",
+      topologyId: "UNKNOWN", factoryRelease: "UNKNOWN", semanticRelease: "UNKNOWN", coverage: "UNKNOWN" }) };
+    render();
+  });
   document.querySelector("#inspector-close").addEventListener("click", () => {
     state = inspect(state, null);
     render();
@@ -163,6 +190,29 @@ async function bootstrap() {
     const route = parseDeepLink(window.location.hash);
     state = withRoute(state, route);
     render();
+  });
+  explorer = createCapabilityExplorer({
+    host: document.querySelector("#capability-explorer"),
+    serviceQuery: (query) => window.bamfMissionControl.querySnapshot(query),
+    changeLens: (lens, capabilityId) => {
+      state = { ...state, context: Object.freeze({ ...state.context, ...lens,
+        generationManifest: "UNKNOWN", topologyId: "UNKNOWN", factoryRelease: "UNKNOWN",
+        semanticRelease: "UNKNOWN", freshness: "UNKNOWN", coverage: "UNKNOWN" }),
+        selected: { kind: "capability", id: capabilityId }, inspectorOpen: false };
+      render();
+    },
+    openObject: (selected) => {
+      state = openSelectionOwner(inspect(state, selected));
+      state.inspectorOpen = false;
+      render();
+    },
+    resolvePins: (meta) => {
+      state = { ...state, context: Object.freeze({ ...state.context,
+        generationManifest: meta.run.generation_manifest_sha256, topologyId: meta.run.topology_sha256,
+        factoryRelease: meta.run.factory_release_sha256, semanticRelease: meta.run.semantic_release_sha256,
+        coverage: meta.coverage }) };
+      renderContext();
+    },
   });
   render();
 }

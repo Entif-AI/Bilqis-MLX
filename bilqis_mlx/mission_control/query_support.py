@@ -6,6 +6,7 @@ import json
 from types import MappingProxyType
 
 from .contracts.codec import encode_record
+from .contracts.dossier import CapabilityDossier
 from .contracts.envelopes import (
     PartialEnvelope, StaleEnvelope, UnavailableEnvelope, UnavailableReason,
 )
@@ -31,7 +32,7 @@ from .contracts.snapshots import (
 FAMILY_TYPES = MappingProxyType({
     QueryFamily.RUN: (RunContext, OperatorView),
     QueryFamily.SCHOOL: (SchoolSnapshot, CurriculumFrontier),
-    QueryFamily.CAPABILITY: (CapabilitySnapshot,),
+    QueryFamily.CAPABILITY: (CapabilitySnapshot, CapabilityDossier),
     QueryFamily.EPISODE: (LearningEpisode, CandidateDecision),
     QueryFamily.GENERATION: (GenerationManifest,),
     QueryFamily.SEMANTIC: (SemanticAtlasSnapshot,),
@@ -71,7 +72,7 @@ def _current_identity(record: WireRecord):
     if run is None:
         return None
     base = (run.run_id, type(record))
-    if type(record) is CapabilitySnapshot:
+    if type(record) in (CapabilitySnapshot, CapabilityDossier):
         return (*base, record.capability_id)
     if type(record) in {
         RunContext, OperatorView, SchoolSnapshot, CurriculumFrontier,

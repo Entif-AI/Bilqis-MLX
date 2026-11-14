@@ -6,6 +6,14 @@ const { pathToFileURL } = require("node:url");
 const { RENDERER_HOST, RENDERER_SCHEME } = require("./renderer-location.cjs");
 
 const RENDERER_ASSETS = Object.freeze(new Map([
+  ["/capability/app.mjs", "capability/app.mjs"],
+  ["/capability/model.mjs", "capability/model.mjs"],
+  ["/capability/controller.mjs", "capability/controller.mjs"],
+  ["/capability/view.mjs", "capability/view.mjs"],
+  ["/capability/fixture.mjs", "capability/fixture.mjs"],
+  ["/capability/fixture-data.mjs", "capability/fixture-data.mjs"],
+  ["/capability/dossier.css", "capability/dossier.css"],
+
   ["/component-catalog.mjs", "component-catalog.mjs"],
   ["/components.css", "components.css"],
   ["/deep-link.mjs", "deep-link.mjs"],

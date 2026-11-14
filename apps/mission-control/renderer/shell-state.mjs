@@ -1,6 +1,7 @@
 export const DESTINATIONS = Object.freeze([
   ["mission-control", "Mission Control"],
   ["school", "School"],
+  ["capability", "Capability Explorer"],
   ["learning", "Learning"],
   ["atlas", "Atlas"],
   ["model", "Model"],
@@ -14,12 +15,13 @@ export const DESTINATIONS = Object.freeze([
 ]);
 
 export const INSPECTOR_OWNERS = Object.freeze({
-  capability: "school",
+  capability: "capability",
   episode: "learning",
   semantic: "atlas",
   memory: "memory",
   checkpoint: "lineage",
   evidence: "evidence",
+  source: "evidence",
   correction: "corrections",
   warning: "resources",
 });
@@ -165,11 +167,16 @@ export function createShellState(context, route = {}) {
 export function withRoute(state, route = {}) {
   const destinations = new Set(DESTINATIONS.map(([id]) => id));
   const view = destinations.has(route.view) ? route.view : "mission-control";
+  const changedLens = route.context && ["runId", "generation", "mode"].some((key) =>
+    route.context[key] !== state.context[key]);
   return {
     ...state,
     view,
+    context: changedLens ? Object.freeze({ ...state.context, ...route.context,
+      generationManifest: "UNKNOWN", topologyId: "UNKNOWN", factoryRelease: "UNKNOWN",
+      semanticRelease: "UNKNOWN", coverage: "UNKNOWN", freshness: "UNKNOWN" }) : state.context,
     selected: route.selected ?? null,
-    inspectorOpen: Boolean(route.selected),
+    inspectorOpen: Boolean(route.selected) && view !== "capability",
   };
 }
 

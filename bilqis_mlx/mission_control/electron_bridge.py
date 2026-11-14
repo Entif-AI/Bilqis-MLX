@@ -9,6 +9,7 @@ import sys
 from bilqis_mlx.control_plane import ControlPlaneClient
 from bilqis_mlx.control_plane.contracts import ControlPlaneState, PROTOCOL_VERSION
 from bilqis_mlx.paths import active_run_dir
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 
 _CLIENT_ID = "mission-control-electron"
@@ -57,6 +58,34 @@ class ElectronBridge:
         self.client = client
         return _public_status(payload, connected=True)
 
+    def query(self, payload: dict) -> dict:
+        from .query_contracts import QueryRequest
+        from .contracts.codec import decode_record
+        from .query_support import encode_query_page, matches_identity
+        from .query_contracts import QueryPage, QueryState
+        from .contracts.model import CoverageState
+        from .query_contracts import QueryLink
+        if self.client is None:
+            ErrorBus.raise_(SCHOOL.BAMF_CONTROL_PLANE.INVALID, reason="CONTROL_PLANE_QUERY_DISCONNECTED")
+        request = QueryRequest.from_mapping(payload)
+        response = self.client.query(request)
+        if response.get("accepted") is not True:
+            ErrorBus.raise_(SCHOOL.BAMF_CONTROL_PLANE.INVALID, reason="CONTROL_PLANE_QUERY_REJECTED")
+        # Reconstruct the public page from typed records; transport sessions stay private.
+        page = QueryPage(
+            request, QueryState(response["state"]), CoverageState(response["coverage"]),
+            response["total_matches"],
+            tuple(decode_record(row) for row in response["records"]),
+            tuple(decode_record(row) for row in response["markers"]),
+            tuple(QueryLink(**row) for row in response["links"]), response["next_cursor"],
+        )
+        if not all(matches_identity(row, request) for row in page.records):
+            ErrorBus.raise_(SCHOOL.BAMF_CONTROL_PLANE.INVALID, reason="CONTROL_PLANE_QUERY_IDENTITY_MISMATCH")
+        expected = encode_query_page(page)
+        if any(response.get(key) != value for key, value in expected.items()):
+            ErrorBus.raise_(SCHOOL.BAMF_CONTROL_PLANE.INVALID, reason="CONTROL_PLANE_QUERY_IDENTITY_MISMATCH")
+        return expected
+
     def status(self) -> dict:
         if self.client is None:
             return _public_status({}, connected=False)
@@ -90,9 +119,10 @@ def main() -> int:
             request = json.loads(raw)
             identifier = request["id"]
             operation = request["op"]
-            if type(identifier) is not int or operation not in {"connect", "status", "disconnect"}:
+            if type(identifier) is not int or operation not in {"connect", "status", "disconnect", "query"}:
                 raise ValueError
-            result = getattr(bridge, operation)()
+            result = (bridge.query(request["query"]) if operation == "query"
+                      else getattr(bridge, operation)())
         except Exception:
             _reply(request.get("id") if isinstance(request, dict) else None,
                    error="BAMF_GUI20_CP01_UNAVAILABLE")

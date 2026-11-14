@@ -21,7 +21,7 @@ ALLOWED_DOCS_DIRECTORIES = frozenset(
         "tasks",
     }
 )
-IGNORED_DIRECTORIES = frozenset({".git", "runs", "vendor"})
+IGNORED_DIRECTORIES = frozenset({".git", "runs", "vendor", "node_modules"})
 INLINE_LINK = re.compile(
     r"(?<!!)\[[^]]*\]\(\s*(?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\s*\)"
 )

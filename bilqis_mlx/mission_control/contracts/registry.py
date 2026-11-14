@@ -20,7 +20,11 @@ from .snapshots import (
 )
 
 
+from .dossier import CapabilityDossier
+
+
 ALL_RECORD_TYPES = (
+    CapabilityDossier,
     RunContext,
     OperatorView,
     SchoolSnapshot,

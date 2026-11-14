@@ -34,6 +34,7 @@ jobs:
       - name: Verify Mission Control shell and Electron security boundary
         run: |
           node --version
+          npm ci --ignore-scripts
           npm run mission-control:test
           npm run mission-control:security:test
       - name: Validate release manifests and changelog

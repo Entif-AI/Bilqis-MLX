@@ -1,0 +1,35 @@
+async (page) => {
+  const check = (condition, message) => { if (!condition) throw new Error(message); };
+  await page.getByRole('heading', {name:'Conjunction', exact:true}).waitFor();
+  check(await page.locator('.dossier-section').count() === 5, 'five sections');
+  check(await page.locator('[data-kind="regression"]').count() === 1, 'regression preserved');
+  check(await page.locator('[data-kind="recovery"]').count() === 1, 'recovery preserved');
+  check(await page.locator('[data-kind="retained"]').count() === 1, 'retained distinct');
+  check(await page.locator('[data-kind="rejected"]').count() === 1, 'rejected distinct');
+  check(await page.locator('[data-kind="no-gain"]').count() === 1, 'no gain distinct');
+  check(await page.locator('[data-kind="interference"]').count() === 1, 'interference distinct');
+  await page.locator('[data-kind="fresh"] summary').click();
+  await page.locator('[data-evidence="evidence:B.AND:fresh:3"]').click();
+  await page.locator('#evidence-detail [data-record]').first().click();
+  await page.getByText('"score_correct":', {exact:false}).last().waitFor();
+  check((await page.locator('#evidence-detail').innerText()).includes('evidence:B.AND:fresh:3'), 'exact evidence');
+  await page.locator('#generation-selector').selectOption('1');
+  await page.getByRole('heading', {name:'Conjunction', exact:true}).waitFor();
+  check(await page.locator('[data-kind="regression"]').count() === 0, 'no future regression at G1');
+  check(await page.locator('[data-kind="recovery"]').count() === 0, 'no future recovery at G1');
+  await page.locator('[data-kind="prerequisite"] summary').click();
+  await page.getByRole('button', {name:'Open capability · B.NOT'}).click();
+  await page.getByRole('heading', {name:'Negation', exact:true}).waitFor();
+  check(page.url().includes('id=B.NOT') && page.url().includes('generation=1'), 'exact dependent lens');
+  await page.getByRole('button', {name:'Change theme'}).click();
+  await page.getByRole('button', {name:'Change information density'}).click();
+  await page.setViewportSize({width:800,height:900});
+  check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'narrow viewport no overflow');
+  await page.locator('[data-section="sources"]').focus();
+  await page.keyboard.press('Enter');
+  check(await page.evaluate(() => document.activeElement.id === 'dossier-sources'), 'keyboard section focus');
+  await page.locator('#dossier-source').selectOption('service');
+  await page.getByRole('heading', {name:'UNAVAILABLE', exact:true}).waitFor();
+  check(await page.locator('.dossier-entry').count() === 0, 'no fixture fallback on service error');
+  return 'GUI05_BROWSER_JOURNEY_PASS';
+}

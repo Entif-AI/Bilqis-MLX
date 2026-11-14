@@ -24,6 +24,10 @@ class Cp01PythonBroker {
     return this.#request("connect");
   }
 
+  query(query) {
+    return this.#request("query", query);
+  }
+
   status() {
     return this.#request("status");
   }
@@ -70,7 +74,7 @@ class Cp01PythonBroker {
     return child;
   }
 
-  #request(op) {
+  #request(op, query) {
     const child = this.#ensureProcess();
     const id = this.nextId++;
     return new Promise((resolve, reject) => {
@@ -89,7 +93,7 @@ class Cp01PythonBroker {
           reject(error);
         },
       });
-      child.stdin.write(`${JSON.stringify({ id, op })}\n`, (error) => {
+      child.stdin.write(`${JSON.stringify({ id, op, ...(query ? { query } : {}) })}\n`, (error) => {
         if (!error) return;
         this.pending.delete(id);
         reject(this.#unavailable());

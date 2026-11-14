@@ -112,3 +112,9 @@ SAMPLES = (
         "evidence:event-9",
     ),
 )
+
+from bilqis_mlx.mission_control.contracts.dossier import CapabilityDossier
+
+SAMPLES += (CapabilityDossier(meta("dossier-sample"), "B.EXAMPLE", "Example",
+    value(7), value(8), value(12), value(5), value("WATCH"), value("ELIGIBLE"),
+    value("QUALIFIED"), value("HELD"), ()),)

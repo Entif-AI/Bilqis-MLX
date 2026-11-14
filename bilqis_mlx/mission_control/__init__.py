@@ -58,4 +58,6 @@ import sys as _sys
 from importlib import import_module as _import_module
 
 for _name in ('codec', 'model', 'envelopes', 'events', 'snapshots', 'observability', 'operator', 'registry', 'schema'):
-    _sys.modules[f"{__name__}.{_name}"] = _import_module(f".contracts.{_name}", __name__)
+    _module = _import_module(f".contracts.{_name}", __name__)
+    _sys.modules[f"{__name__}.{_name}"] = _module
+    globals()[_name] = _module
