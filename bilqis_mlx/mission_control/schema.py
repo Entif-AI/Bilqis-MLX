@@ -15,6 +15,7 @@ _VARIADIC_TUPLE_ARITY = 2
 _SHA256_PATTERN = "^[0-9a-f]{64}$"
 _SHA256_FIELDS = (
     "atlas_bundle_id", "source_bundle_id", "old_digest", "new_digest",
+    "atlas_release_sha256",
 )
 _FREE_STRING_FIELDS = ("value",)
 

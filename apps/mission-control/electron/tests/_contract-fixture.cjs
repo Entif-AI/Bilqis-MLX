@@ -27,6 +27,10 @@ function snapshotRequest(value) {
   return exactRecord(value, "cp02.snapshot.fixture/v1", ["objectRef"]);
 }
 
+function queryRequest(value) {
+  return exactRecord(value, "cp03.query.fixture/v1", ["family"]);
+}
+
 function dryRunRequest(value) {
   return exactRecord(value, "cp02.dry-run.fixture/v1", ["requestId", "action"]);
 }
@@ -50,6 +54,8 @@ function response(method, value) {
       return exactRecord(value, "cp01.status.fixture/v1", ["state"], ["runId"]);
     case "snapshot":
       return exactRecord(value, "cp02.snapshot.result.fixture/v1", ["objectRef"]);
+    case "query":
+      return exactRecord(value, "cp03.query.result.fixture/v1", ["family"]);
     case "dryRun":
       return exactRecord(value, "cp02.dry-run.result.fixture/v1", ["state", "requestId"]);
     case "command":
@@ -75,6 +81,7 @@ function event(value) {
 const FIXTURE_VALIDATORS = Object.freeze({
   publicStatus,
   snapshotRequest,
+  queryRequest,
   dryRunRequest,
   commandRequest,
   receiptRef,

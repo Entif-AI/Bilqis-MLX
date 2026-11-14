@@ -11,6 +11,8 @@ const RENDERER_ASSETS = Object.freeze(new Map([
   ["/deep-link.mjs", "deep-link.mjs"],
   ["/index.html", "index.html"],
   ["/renderer.mjs", "renderer.mjs"],
+  ["/semantic-atlas.css", "semantic-atlas.css"],
+  ["/semantic-atlas.mjs", "semantic-atlas.mjs"],
   ["/settings.mjs", "settings.mjs"],
   ["/shell-state.mjs", "shell-state.mjs"],
   ["/shell.css", "shell.css"],

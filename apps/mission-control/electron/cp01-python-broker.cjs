@@ -28,6 +28,10 @@ class Cp01PythonBroker {
     return this.#request("status");
   }
 
+  query(request) {
+    return this.#request("query", request);
+  }
+
   disconnect() {
     return this.#request("disconnect");
   }
@@ -70,7 +74,7 @@ class Cp01PythonBroker {
     return child;
   }
 
-  #request(op) {
+  #request(op, query) {
     const child = this.#ensureProcess();
     const id = this.nextId++;
     return new Promise((resolve, reject) => {
@@ -89,7 +93,8 @@ class Cp01PythonBroker {
           reject(error);
         },
       });
-      child.stdin.write(`${JSON.stringify({ id, op })}\n`, (error) => {
+      const payload = query === undefined ? { id, op } : { id, op, query };
+      child.stdin.write(`${JSON.stringify(payload)}\n`, (error) => {
         if (!error) return;
         this.pending.delete(id);
         reject(this.#unavailable());

@@ -10,6 +10,12 @@ import {
 import { buildDeepLink, parseDeepLink } from "./deep-link.mjs";
 import { renderComponentCatalog } from "./component-catalog.mjs";
 import {
+  loadAbiRow,
+  loadAtlasOverview,
+  loadSemanticIdentity,
+  renderAtlasMarkup,
+} from "./semantic-atlas.mjs";
+import {
   DENSITIES,
   THEMES,
   applyDisplaySettings,
@@ -32,6 +38,14 @@ const demoObjects = [
 
 let state;
 let displaySettings;
+let atlasState = {
+  status: "idle",
+  error: null,
+  overview: null,
+  selection: null,
+  lens: "canonical",
+  selectedBank: null,
+};
 
 function connectionFreshness(connectionState) {
   if (connectionState === "healthy") return "FRESH";
@@ -111,6 +125,82 @@ function renderDemoActions() {
   });
 }
 
+function renderAtlasDomain() {
+  const host = document.querySelector("#domain-view");
+  const fixture = document.querySelector(".fixture-card");
+  const catalog = document.querySelector("#visual-catalog");
+  const atlasVisible = state.view === "atlas";
+  host.hidden = !atlasVisible;
+  fixture.hidden = atlasVisible;
+  catalog.hidden = atlasVisible;
+  document.querySelector("#view-summary").textContent = atlasVisible
+    ? "Source-authoritative semantic identity and generation-scoped ABI state, with learned similarity isolated behind a separate lens."
+    : "Shell foundation ready for provider-neutral BAMF views.";
+  if (!atlasVisible) return;
+
+  host.innerHTML = renderAtlasMarkup({ ...atlasState, context: state.context });
+  host.querySelectorAll("[data-atlas-lens]").forEach((button) => {
+    button.addEventListener("click", () => {
+      atlasState = { ...atlasState, lens: button.dataset.atlasLens };
+      renderAtlasDomain();
+    });
+  });
+  host.querySelectorAll("[data-atlas-bank]").forEach((button) => {
+    button.addEventListener("click", () => {
+      atlasState = { ...atlasState, selectedBank: Number(button.dataset.atlasBank) };
+      renderAtlasDomain();
+    });
+  });
+  host.querySelector("#atlas-search-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const semanticId = new FormData(event.currentTarget).get("semanticId")?.toString().trim();
+    if (!semanticId) return;
+    atlasState = { ...atlasState, status: "loading", error: null };
+    renderAtlasDomain();
+    try {
+      const selection = await loadSemanticIdentity(
+        window.bamfMissionControl, state.context, semanticId,
+      );
+      atlasState = { ...atlasState, status: "ready", selection };
+    } catch (error) {
+      atlasState = { ...atlasState, status: "error",
+        error: error?.code ?? error?.message ?? "Semantic query failed" };
+    }
+    renderAtlasDomain();
+  });
+  host.querySelector("#atlas-abi-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const bank = Number(form.get("bank"));
+    const row = Number(form.get("row"));
+    if (!Number.isSafeInteger(bank) || bank < 0 || !Number.isSafeInteger(row) || row < 0) return;
+    atlasState = { ...atlasState, status: "loading", error: null, selectedBank: bank };
+    renderAtlasDomain();
+    try {
+      const selection = await loadAbiRow(window.bamfMissionControl, state.context, bank, row);
+      atlasState = { ...atlasState, status: "ready", selection };
+    } catch (error) {
+      atlasState = { ...atlasState, status: "error",
+        error: error?.code ?? error?.message ?? "ABI query failed" };
+    }
+    renderAtlasDomain();
+  });
+}
+
+async function ensureAtlasOverview() {
+  if (state.view !== "atlas" || atlasState.status !== "idle") return;
+  atlasState = { ...atlasState, status: "loading", error: null };
+  renderAtlasDomain();
+  try {
+    const overview = await loadAtlasOverview(window.bamfMissionControl, state.context);
+    atlasState = { ...atlasState, status: "ready", overview };
+  } catch (error) {
+    atlasState = { ...atlasState, status: "error",
+      error: error?.code ?? error?.message ?? "Semantic Atlas unavailable" };
+  }
+  if (state.view === "atlas") renderAtlasDomain();
+}
+
 function render() {
   renderContext();
   renderNavigation();
@@ -118,9 +208,11 @@ function render() {
   renderDemoActions();
   document.querySelector("#visual-catalog").innerHTML = renderComponentCatalog();
   document.querySelector("#view-title").textContent = labels.get(state.view);
+  renderAtlasDomain();
   document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;
   document.querySelector("#density-trigger").textContent = "Density · " + displaySettings.density;
   setHash();
+  if (state.view === "atlas") void ensureAtlasOverview();
 }
 
 async function bootstrap() {

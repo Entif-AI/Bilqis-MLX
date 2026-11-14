@@ -21,6 +21,12 @@ from bilqis_mlx.mission_control.operator import (
     ActionParameter, ActionReceiptState, OperatorActionReceipt,
     OperatorActionRequest,
 )
+from bilqis_mlx.mission_control.semantic import (
+    SemanticAdmissionState, SemanticBankSnapshot, SemanticConceptSnapshot,
+    SemanticGenerationState, SemanticHeldMappingSnapshot, SemanticLabel,
+    SemanticRealization, SemanticRelation, SemanticSimilaritySnapshot,
+    SemanticSourceRow,
+)
 from bilqis_mlx.mission_control.snapshots import (
     CapabilitySnapshot, CurriculumFrontier, OperatorView, RunContext,
     SchoolSnapshot,
@@ -43,6 +49,22 @@ def meta(name: str, *, run=RUN, authority=AuthorityClass.DERIVED,
 
 def value(number, units="count", origin=ValueOrigin.MEASURED) -> DataValue:
     return DataValue(ValueState.PRESENT, origin, number, units)
+
+
+SEMANTIC_ID = "https://github.com/Entif-AI/Bilqis-MLX/id/sense/source/root/STEM%201/BSC"
+SEMANTIC_CONCEPT_ID = f"semantic-concept:{D1}:{SEMANTIC_ID}"
+SEMANTIC_SOURCE_META = RecordMeta(
+    record_id=SEMANTIC_CONCEPT_ID, run=None, materialized_at=120,
+    observed_at=118, as_of=118, coverage=CoverageState.COMPLETE,
+    authority=AuthorityClass.SOURCE_AUTHORITATIVE,
+    source_refs=("atlas-bundle:fixture",), evidence_refs=(), receipt_refs=(),
+)
+SEMANTIC_HELD_META = RecordMeta(
+    record_id=f"semantic-held:{D1}:fixture", run=None, materialized_at=120,
+    observed_at=118, as_of=118, coverage=CoverageState.COMPLETE,
+    authority=AuthorityClass.SOURCE_AUTHORITATIVE,
+    source_refs=("atlas-bundle:fixture",), evidence_refs=(), receipt_refs=(),
+)
 
 
 SAMPLES = (
@@ -75,6 +97,31 @@ SAMPLES = (
     GenerationManifest(meta("generation"), D1, D2, D3, D4, "ACCEPTED"),
     ResourceSample(meta("resources"), value(100, "bytes"), value(1000, "bytes"),
                    value(500, "bytes"), value(1.5, "steps/minute")),
+    SemanticConceptSnapshot(
+        SEMANTIC_SOURCE_META, D1, SEMANTIC_ID, "sense", ("skos:Concept",),
+        (SemanticLabel("definition", "self-same entity", "en"),),
+        (SemanticRealization("č", None, None),),
+        ("lexicon:1.3:2",),
+        (SemanticSourceRow("lexicon", "lexicon_root_senses", "LEXSENSE-fixture"),),
+        (SemanticRelation("skos:broader", "semantic:root"),),
+        9, 0, 9, "ADMITTED", True, "SOURCE_ELIGIBLE",
+        ("frame:fixture/v1",), ("D.COPULAR_IDENTITY",),
+    ),
+    SemanticGenerationState(
+        meta("semantic-state"), SEMANTIC_ID, SEMANTIC_CONCEPT_ID,
+        9, 0, 9, SemanticAdmissionState.ACTIVE, True, True, False,
+    ),
+    SemanticBankSnapshot(meta("semantic-bank"), 0, 8192, 10, 4, 6, 1, 2, 1),
+    SemanticHeldMappingSnapshot(
+        SEMANTIC_HELD_META, D1, "mapping", "lexicon_mapping", "held-1",
+        "semantic:held", "SOURCE_HELD", "IMPLEMENTATION_UNCOVERED",
+        "AMBIGUOUS_MAPPING", "HOLD_FOR_REVIEW", "#55",
+    ),
+    SemanticSimilaritySnapshot(
+        meta("semantic-similarity", authority=AuthorityClass.DERIVED),
+        SEMANTIC_ID, "semantic:distinct", "embedding:fixture",
+        value(0.91, "similarity", ValueOrigin.DERIVED), False,
+    ),
     OperatorActionRequest(meta("action-request"), "request-1", "idem-1", "dry-run",
                           (ActionParameter("mode", "bounded"),), True, 119),
     OperatorActionReceipt(meta("action-receipt"), "request-1", "operation-1",

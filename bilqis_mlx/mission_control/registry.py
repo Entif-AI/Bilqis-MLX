@@ -14,6 +14,10 @@ from .observability import (
     SemanticAtlasSnapshot, TeacherSnapshot,
 )
 from .operator import OperatorActionReceipt, OperatorActionRequest
+from .semantic import (
+    SemanticBankSnapshot, SemanticConceptSnapshot, SemanticGenerationState,
+    SemanticHeldMappingSnapshot, SemanticSimilaritySnapshot,
+)
 from .snapshots import (
     CapabilitySnapshot, CurriculumFrontier, OperatorView, RunContext,
     SchoolSnapshot,
@@ -29,6 +33,11 @@ ALL_RECORD_TYPES = (
     LearningEpisode,
     CandidateDecision,
     SemanticAtlasSnapshot,
+    SemanticConceptSnapshot,
+    SemanticGenerationState,
+    SemanticBankSnapshot,
+    SemanticHeldMappingSnapshot,
+    SemanticSimilaritySnapshot,
     FrameCompileReceipt,
     NeuralRuntimeSample,
     MemorySnapshot,

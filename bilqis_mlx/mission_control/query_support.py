@@ -26,6 +26,10 @@ from .snapshots import (
     CapabilitySnapshot, CurriculumFrontier, OperatorView, RunContext,
     SchoolSnapshot,
 )
+from .semantic import (
+    SemanticBankSnapshot, SemanticConceptSnapshot, SemanticGenerationState,
+    SemanticHeldMappingSnapshot, SemanticSimilaritySnapshot,
+)
 
 
 FAMILY_TYPES = MappingProxyType({
@@ -34,7 +38,10 @@ FAMILY_TYPES = MappingProxyType({
     QueryFamily.CAPABILITY: (CapabilitySnapshot,),
     QueryFamily.EPISODE: (LearningEpisode, CandidateDecision),
     QueryFamily.GENERATION: (GenerationManifest,),
-    QueryFamily.SEMANTIC: (SemanticAtlasSnapshot,),
+    QueryFamily.SEMANTIC: (
+        SemanticAtlasSnapshot, SemanticConceptSnapshot, SemanticGenerationState,
+        SemanticBankSnapshot, SemanticHeldMappingSnapshot, SemanticSimilaritySnapshot,
+    ),
     QueryFamily.FRAME: (FrameCompileReceipt,),
     QueryFamily.NEURAL: (NeuralRuntimeSample,),
     QueryFamily.MEMORY: (MemorySnapshot,),
@@ -73,12 +80,23 @@ def _current_identity(record: WireRecord):
     base = (run.run_id, type(record))
     if type(record) is CapabilitySnapshot:
         return (*base, record.capability_id)
+    if type(record) is SemanticGenerationState:
+        return (*base, record.semantic_id)
+    if type(record) is SemanticBankSnapshot:
+        return (*base, record.bank)
+    if type(record) is SemanticSimilaritySnapshot:
+        return (*base, record.source_semantic_id, record.target_semantic_id, record.basis_ref)
     if type(record) in {
         RunContext, OperatorView, SchoolSnapshot, CurriculumFrontier,
         GenerationManifest, SemanticAtlasSnapshot, NeuralRuntimeSample,
         MemorySnapshot, TeacherSnapshot, ResourceSample,
     }:
         return base
+    if type(record) is SemanticConceptSnapshot:
+        return (type(record), record.atlas_release_sha256, record.semantic_id)
+    if type(record) is SemanticHeldMappingSnapshot:
+        return (type(record), record.atlas_release_sha256,
+                record.domain, record.table, record.key)
     return None
 
 
@@ -111,8 +129,11 @@ def select_current(rows: list[WireRecord]) -> list[WireRecord]:
             generations[run.run_id] = max(
                 run.generation, generations.get(run.run_id, -1))
     if generations:
-        rows = [item for item in rows if item.meta.run is not None
-                and item.meta.run.generation == generations[item.meta.run.run_id]]
+        rows = [
+            item for item in rows
+            if item.meta.run is None
+            or item.meta.run.generation == generations[item.meta.run.run_id]
+        ]
     newest = {}
     passthrough = []
     for item in rows:

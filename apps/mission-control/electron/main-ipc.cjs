@@ -52,6 +52,7 @@ function registerMissionControlIpc({ ipcMain, bridge, trustedWebContents }) {
   }));
   ipcMain.handle(CHANNELS.status, trusted(() => bridge.status()));
   ipcMain.handle(CHANNELS.snapshot, trusted((_event, request) => bridge.snapshot(request)));
+  ipcMain.handle(CHANNELS.query, trusted((_event, request) => bridge.query(request)));
   ipcMain.handle(CHANNELS.dryRun, trusted((_event, request) => bridge.dryRun(request)));
   ipcMain.handle(CHANNELS.command, trusted((_event, request) => bridge.command(request)));
   ipcMain.handle(CHANNELS.receipt, trusted((_event, ref) => bridge.receipt(ref)));

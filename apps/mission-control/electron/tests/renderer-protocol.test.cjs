@@ -26,6 +26,8 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     "/deep-link.mjs",
     "/index.html",
     "/renderer.mjs",
+    "/semantic-atlas.css",
+    "/semantic-atlas.mjs",
     "/settings.mjs",
     "/shell-state.mjs",
     "/shell.css",

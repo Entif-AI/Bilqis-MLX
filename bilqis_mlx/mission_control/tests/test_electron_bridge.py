@@ -12,10 +12,41 @@ from bilqis_mlx.control_plane.__main__ import _default_socket
 from bilqis_mlx.control_plane.contracts import ControlPlaneState
 from bilqis_mlx.control_plane.tests.support import start_service
 from bilqis_mlx.mission_control.electron_bridge import ElectronBridge, _socket_path
+from bilqis_mlx.mission_control.query_catalog import MissionControlQueryCatalog
+from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryRequest
+from bilqis_mlx.mission_control.tests.samples import SAMPLES
 from bilqis_mlx.paths import active_run_dir
 
 
 class ElectronBridgeTests(unittest.TestCase):
+    def test_cp03_query_is_available_without_exposing_cp01_session_or_service_identity(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            socket_path = root / "cp.sock"
+            service = ControlPlaneService(
+                root / "missing-run", socket_path,
+                query_source=lambda: MissionControlQueryCatalog(SAMPLES),
+            )
+            thread = start_service(service)
+            try:
+                with patch.dict(os.environ, {"BILQIS_CONTROL_PLANE_SOCKET": str(socket_path)}):
+                    bridge = ElectronBridge()
+                    bridge.connect()
+                    page = bridge.query(QueryRequest(
+                        QueryFamily.SEMANTIC, limit=32).to_record())
+                    bridge.disconnect()
+            finally:
+                service.shutdown()
+                thread.join(2)
+
+        self.assertTrue(page["accepted"])
+        self.assertEqual(page["family"], "semantic")
+        self.assertGreater(page["total_matches"], 1)
+        self.assertNotIn("service", page)
+        self.assertNotIn("session", page)
+        self.assertNotIn("session_id", repr(page))
+        self.assertNotIn("service_id", repr(page))
+
     def test_real_cp01_handshake_and_health_are_sanitized_for_electron_main(self):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
