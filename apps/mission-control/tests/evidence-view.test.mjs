@@ -52,6 +52,12 @@ function container() {
   return { innerHTML: "", querySelector() { return null; }, querySelectorAll() { return []; } };
 }
 
+function deferred() {
+  let resolve;
+  const promise = new Promise((done) => { resolve = done; });
+  return { promise, resolve };
+}
+
 test("selected-object bootstrap issues one query and does not race context", async () => {
   const seen = [];
   const api = { async query(request) { seen.push(request); return page(request, { records: [capability] }); } };
@@ -61,6 +67,25 @@ test("selected-object bootstrap issues one query and does not race context", asy
   assert.equal(seen.length, 1);
   assert.equal(seen[0].reference, "B.AND");
   assert.equal(seen[0].generation, 71);
+});
+
+test("older async query cannot overwrite a newer evidence identity", async () => {
+  const andResult = deferred();
+  const orResult = deferred();
+  const api = { query(request) {
+    return request.reference === "B.AND" ? andResult.promise : orResult.promise;
+  } };
+  const host = container();
+  renderEvidenceView(host, api, { ...context, generation: 74 }, { kind: "capability", id: "B.AND" });
+  renderEvidenceView(host, api, { ...context, generation: 74 }, { kind: "capability", id: "B.OR" });
+  const orRecord = { ...capability, meta: meta("capability:or"), capability_id: "B.OR" };
+  orResult.resolve(page(buildEvidenceRequest(context, { kind: "capability", value: "B.OR" }), { records: [orRecord] }));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  andResult.resolve(page(buildEvidenceRequest(context, { kind: "capability", value: "B.AND" }), { records: [capability] }));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.ok(host.innerHTML.includes("capability:or"));
+  assert.equal(host.innerHTML.includes("capability:and"), false);
+  assert.ok(host.innerHTML.includes('value="B.OR"'));
 });
 
 test("rejected bootstrap clears evidence and announces query error", async () => {
@@ -86,6 +111,21 @@ test("deep-linked exact evidence restores detail after hydration", async () => {
   assert.ok(host.innerHTML.includes("Exact evidence item"));
   assert.ok(host.innerHTML.includes(receipt.meta.record_id));
   assert.ok(host.innerHTML.includes("Raw structured payload"));
+});
+
+test("secondary provenance hydration failure is explicit, not reported as no links", async () => {
+  const api = { async query(request) {
+    if (request.family === "record") return page(request, { records: [receipt] });
+    if (request.family === "links") return { accepted: false, reason: "QUERY_UNAVAILABLE" };
+    throw new Error("unexpected query");
+  } };
+  const host = container();
+  renderEvidenceView(host, api, { ...context, generation: 75 }, { kind: "evidence", id: receipt.meta.record_id });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.ok(host.innerHTML.includes("Provenance traversal unavailable"));
+  assert.ok(host.innerHTML.includes("QUERY_UNAVAILABLE"));
+  assert.ok(host.innerHTML.includes("LINK HYDRATION UNAVAILABLE"));
+  assert.equal(host.innerHTML.includes("No resolvable links reported."), false);
 });
 
 test("readable and raw views expose the same literal receipt values", () => {
@@ -144,6 +184,18 @@ test("query state is aria-live and memory producer absence is explicit", () => {
   assert.ok(markup.includes('aria-live="polite"'));
   assert.ok(markup.includes("No accepted CP03 record exposes this memory motif/slot identity"));
   assert.ok(markup.includes("GUI10 display fixtures are not durable evidence"));
+});
+
+test("evidence markup exposes explicit return control when origin is retained", () => {
+  const request = buildEvidenceRequest(context, { kind: "context", value: "" });
+  const markup = renderEvidenceMarkup({
+    status: "ready", criteria: { kind: "context", value: "" },
+    page: page(request, { records: [capability] }), records: [capability], links: [],
+    selected: null, selectedLinks: null, raw: false, error: null,
+    traversalError: null, returnAvailable: true,
+  });
+  assert.ok(markup.includes("Return to inspected object"));
+  assert.ok(markup.includes("data-evidence-return"));
 });
 
 test("forensic renderer has no direct provider filesystem process or network escape", () => {

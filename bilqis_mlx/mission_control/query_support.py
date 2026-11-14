@@ -260,12 +260,20 @@ def build_page(*, available: bool, request: QueryRequest, records, markers,
     page_links = tuple(page_rows) if rows is links else ()
     page_ids = {item.meta.record_id for item in page_records}
     page_refs = {item.target_ref for item in page_links}
+    page_sources = {item.source_record_id for item in page_links}
+    relevant_ids = page_ids | page_refs | page_sources
+    if request.reference is not None:
+        relevant_ids.add(request.reference)
     page_markers = tuple(
         item for item in markers
         if ((type(item) is PartialEnvelope
-             and item.partial_record_id in page_ids | page_refs)
+             and item.partial_record_id in relevant_ids)
             or (type(item) is StaleEnvelope
-                and (item.stale_record_id in page_ids | page_refs or not records))
+                and (
+                    item.stale_record_id in relevant_ids
+                    or (request.family not in {QueryFamily.REFERENCE, QueryFamily.LINKS}
+                        and not records)
+                ))
             or (type(item) is UnavailableEnvelope
                 and (not page_links
                      or item.resource in page_refs

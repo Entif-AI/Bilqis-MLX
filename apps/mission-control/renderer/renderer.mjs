@@ -3,7 +3,9 @@ import {
   createShellState,
   inspect,
   navigate,
+  openEvidence,
   openSelectionOwner,
+  returnFromEvidence,
   selectObject,
   withDefensiveState,
   withRoute,
@@ -63,6 +65,7 @@ function render() {
   renderChrome(state, defense, displaySettings, {
     api: window.bamfMissionControl,
     onEvidenceSelect: selectEvidenceRecord,
+    onEvidenceReturn: returnEvidenceOrigin,
     onReconnect: () => establishSnapshot({ preserveRoute: true }),
     onNavigate: navigateTo,
     onInspect: openInspector,
@@ -76,6 +79,13 @@ function selectEvidenceRecord(selected) {
   state = selectObject(state, selected);
   renderInspector(state, defense);
   setHash();
+}
+
+function returnEvidenceOrigin() {
+  if (!state?.evidenceOrigin) return;
+  state = returnFromEvidence(state);
+  render();
+  announce("Returned to the inspected evidence origin.");
 }
 
 function navigateTo(view) {
@@ -193,7 +203,7 @@ function bindStaticInteractions() {
   });
   document.querySelector("#open-evidence").addEventListener("click", () => {
     if (!state?.selected) return;
-    state = navigate(state, "evidence", state.selected);
+    state = openEvidence(state);
     render();
   });
   document.querySelector("#theme-trigger").addEventListener("click", () => {

@@ -6,6 +6,7 @@
 .evidence-search select, .evidence-search input { width: 100%; }
 .evidence-query-state { display: flex; justify-content: space-between; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--line); background: var(--surface-raised); }
 .evidence-query-state[data-state="DENIED"], .evidence-query-state[data-state="error"] { border-style: double; border-width: 3px; }
+.evidence-traversal-error { display: flex; justify-content: space-between; gap: var(--space-3); padding: var(--space-3); border: 3px double var(--line-strong); }
 .evidence-results { display: grid; gap: var(--space-2); }
 .evidence-markers { display: grid; gap: var(--space-2); }
 .evidence-marker { display: grid; grid-template-columns: minmax(14rem, 0.8fr) minmax(12rem, 0.8fr) minmax(18rem, 1.4fr); gap: var(--space-2); padding: var(--space-3); border: 2px dashed var(--line-strong); }

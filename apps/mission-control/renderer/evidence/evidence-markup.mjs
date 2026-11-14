@@ -53,7 +53,7 @@ function refs(meta) {
   ).join("")).join("") || '<span class="evidence-unresolved">No provenance refs reported.</span>';
 }
 
-function readable(record, linksPage) {
+function readable(record, linksPage, linkError = null) {
   const meta = record.meta ?? {};
   const body = Object.entries(record).filter(([key]) => key !== "meta")
     .map(([key, value]) => `<dt>${esc(key)}</dt><dd><code>${esc(
@@ -66,7 +66,10 @@ function readable(record, linksPage) {
     <dt>Materialized</dt><dd>${esc(meta.materialized_at ?? "UNKNOWN")}</dd><dt>Observed</dt><dd>${esc(meta.observed_at ?? "UNKNOWN")}</dd>
     <dt>As of</dt><dd>${esc(meta.as_of ?? "UNKNOWN")}</dd><dt>Record metadata</dt><dd><code>${esc(JSON.stringify(meta))}</code></dd>${body}</dl>
     <section><h4>Provenance chain</h4><div class="evidence-refs">${refs(meta)}</div></section>
-    <section><h4>Exact links</h4><div class="evidence-links">${(linksPage?.links ?? []).map((link, index) => linkSummary(link, index, "selected")).join("") || '<span class="evidence-unresolved">No resolvable links reported.</span>'}</div></section></div>`;
+    <section><h4>Exact links</h4><div class="evidence-links">${linkError
+      ? `<span class="evidence-unresolved">LINK HYDRATION UNAVAILABLE · ${esc(linkError)}</span>`
+      : (linksPage?.links ?? []).map((link, index) => linkSummary(link, index, "selected")).join("")
+        || '<span class="evidence-unresolved">No resolvable links reported.</span>'}</div></section></div>`;
 }
 
 export function renderEvidenceMarkup(state) {
@@ -79,7 +82,7 @@ export function renderEvidenceMarkup(state) {
   const selectedMarkup = !state.selected ? "" : `<section class="evidence-detail">
     <header><div><span class="eyebrow">Exact evidence item</span><h3>${esc(state.selected.meta?.record_id)}</h3></div>
       <button type="button" data-evidence-raw>${state.raw ? "Readable view" : "Raw structured payload"}</button></header>
-    ${state.raw ? `<pre>${esc(JSON.stringify(state.selected, null, 2))}</pre>` : readable(state.selected, state.selectedLinks)}</section>`;
+    ${state.raw ? `<pre>${esc(JSON.stringify(state.selected, null, 2))}</pre>` : readable(state.selected, state.selectedLinks, state.traversalError)}</section>`;
   const emptyText = state.criteria.kind === "memory"
     ? "No accepted CP03 record exposes this memory motif/slot identity. GUI10 display fixtures are not durable evidence."
     : "No evidence rows returned for this exact query.";
@@ -88,12 +91,15 @@ export function renderEvidenceMarkup(state) {
   const queryDetail = state.status === "error"
     ? state.error ?? "Evidence query failed"
     : page ? `${page.returned} returned / ${page.total_matches} exact matches` : "Ready";
+  const returnButton = state.returnAvailable
+    ? '<button type="button" data-evidence-return>Return to inspected object</button>' : "";
   return `<div class="evidence-view"><header class="evidence-heading"><div><span class="eyebrow">GUI16 · Evidence &amp; Receipts</span>
-    <h2>Forensic provenance browser</h2></div><p>Literal CP03 records only. External payloads remain external unless the control plane exposes an exact record identity.</p></header>
+    <h2>Forensic provenance browser</h2></div><p>Literal CP03 records only. External payloads remain external unless the control plane exposes an exact record identity.</p>${returnButton}</header>
     <form id="evidence-search-form" class="evidence-search"><label>Search by<select name="kind">${SEARCH_KINDS.map(([value, label]) =>
       `<option value="${value}"${state.criteria.kind === value ? " selected" : ""}>${label}</option>`).join("")}</select></label>
       <label>Exact identity<input name="value" value="${esc(state.criteria.value)}" autocomplete="off" /></label><button type="submit">Search</button></form>
     <div class="evidence-query-state" data-state="${esc(queryState)}" role="${state.status === "error" ? "alert" : "status"}" aria-live="polite"><strong>${esc(queryLabel)}</strong><span>${esc(queryDetail)}</span></div>
+    ${state.traversalError ? `<div class="evidence-traversal-error" role="alert" aria-live="polite"><strong>Provenance traversal unavailable</strong><span>${esc(state.traversalError)}</span></div>` : ""}
     ${markers ? `<section class="evidence-markers" aria-label="Omissions and degraded evidence">${markers}</section>` : ""}
     <div class="evidence-results">${results || `<div class="evidence-empty">${emptyText}</div>`}</div>
     ${page?.next_cursor ? '<button type="button" data-evidence-more>Load next bounded page</button>' : ""}${selectedMarkup}</div>`;
