@@ -3,7 +3,7 @@ import {
   renderAtlasDomain,
 } from "../atlas/atlas-controller.mjs";
 
-export function activateDomainViews({ state, defense, api, homeController, onInspect }) {
+export function activateDomainViews({ state, defense, api, homeController, resourceController, onInspect }) {
   if (state?.view === "atlas") {
     renderAtlasDomain(api, state.context);
     void ensureAtlasOverview(api, state.context, () => state?.view === "atlas");
@@ -16,5 +16,14 @@ export function activateDomainViews({ state, defense, api, homeController, onIns
     });
   } else {
     void homeController.deactivate();
+  }
+  if (state?.view === "resources") {
+    void resourceController.activate(state.context, {
+      target: document.querySelector("#domain-view"),
+      onInspect,
+      defense,
+    });
+  } else {
+    void resourceController.deactivate();
   }
 }

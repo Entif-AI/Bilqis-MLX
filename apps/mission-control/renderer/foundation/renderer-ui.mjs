@@ -253,6 +253,13 @@ export function renderCurrentView(state, defense, onInspect, api, onEvidenceSele
     );
     return;
   }
+  if (state.view === "resources") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Measured resource budgets, decomposed where instrumented, with exact historical comparison and spike correlation.";
+    return;
+  }
   fixture.hidden = false;
   catalog.hidden = false;
   domain.hidden = true;

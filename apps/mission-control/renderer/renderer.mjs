@@ -34,6 +34,7 @@ import {
   restoreFocus,
 } from "./foundation/accessibility.mjs";
 import { createHomeController } from "./home/home-controller.mjs";
+import { createResourceController } from "./resources/resource-controller.mjs";
 import { activateDomainViews } from "./foundation/domain-controller.mjs";
 
 const SNAPSHOT_REQUEST = Object.freeze({
@@ -46,6 +47,7 @@ let defense = defensiveState("loading");
 let focusReturnToken = null;
 let paletteReturnToken = null;
 const homeController = createHomeController(window.bamfMissionControl);
+const resourceController = createResourceController(window.bamfMissionControl);
 
 function setHash() {
   if (!state) return;
@@ -68,7 +70,10 @@ function render() {
     onInspect: openInspector,
   });
   setHash();
-  activateDomainViews({ state, defense, api: window.bamfMissionControl, homeController, onInspect: openInspector });
+  activateDomainViews({
+    state, defense, api: window.bamfMissionControl,
+    homeController, resourceController, onInspect: openInspector,
+  });
 }
 
 function selectEvidenceRecord(selected) {
