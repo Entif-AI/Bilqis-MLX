@@ -97,6 +97,7 @@ function preview(request = actionRequest()) {
     preflight: preflight(),
     receipt: null,
     postcondition: null,
+    logs: null,
   };
 }
 
@@ -124,6 +125,7 @@ function inspection(request = actionRequest({ humanAuthorized: true }), state = 
     ...preview(request),
     schema: "bilqis.bamf.control-plane.command-inspection/v1",
     receipt: receipt(request, state),
+    logs: { stdout_tail: "trainer ready\n", stderr_tail: null },
   };
 }
 

@@ -13,6 +13,7 @@ from ..transport import _invalid
 COMMAND_PREVIEW_SCHEMA = "bilqis.bamf.control-plane.command-preview/v1"
 COMMAND_INSPECTION_SCHEMA = "bilqis.bamf.control-plane.command-inspection/v1"
 PUBLIC_TARGET_SCHEMA = "bilqis.bamf.control-plane.command-target-public/v1"
+LOG_TAIL_BYTES = 4096
 
 
 def _public_target(target: ResolvedCommandTarget) -> dict:
@@ -103,6 +104,21 @@ def _public_postcondition(value: dict | None) -> dict | None:
     return result
 
 
+def _log_tail(path) -> str | None:
+    if not path.exists() or not path.is_file():
+        return None
+    data = path.read_bytes()
+    tail = data[-LOG_TAIL_BYTES:]
+    return tail.decode("utf-8", errors="replace")
+
+
+def _public_logs(manager, operation_id: str) -> dict:
+    return {
+        "stdout_tail": _log_tail(manager.store.stdout_path(operation_id)),
+        "stderr_tail": _log_tail(manager.store.stderr_path(operation_id)),
+    }
+
+
 def _consequence(mode: CommandMode | None) -> dict:
     mutating = mode is CommandMode.MUTATING
     return {
@@ -113,7 +129,7 @@ def _consequence(mode: CommandMode | None) -> dict:
 
 def _projection(
     *, schema: str, request: OperatorActionRequestV2, plan, preflight: dict,
-    receipt=None, postcondition: dict | None = None,
+    receipt=None, postcondition: dict | None = None, logs: dict | None = None,
 ) -> dict:
     target = plan.target if plan is not None else _target_from_value(preflight.get("target"))
     mode = plan.mode if plan is not None else None
@@ -133,6 +149,7 @@ def _projection(
         "preflight": _public_preflight(request, preflight),
         "receipt": None if receipt is None else encode_record(receipt),
         "postcondition": _public_postcondition(postcondition),
+        "logs": logs,
     }
 
 
@@ -151,6 +168,7 @@ def preview_command(manager, request: OperatorActionRequestV2) -> dict:
         request=request,
         plan=plan,
         preflight=preflight,
+        logs=None,
     )
 
 
@@ -172,4 +190,5 @@ def inspect_command(manager, operation_id: str) -> dict:
         preflight=preflight,
         receipt=receipt,
         postcondition=postcondition,
+        logs=_public_logs(manager, operation_id),
     )

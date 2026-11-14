@@ -72,6 +72,14 @@ test("stale and partial query states remain explicit instead of becoming healthy
   assert.match(markup, /UNAVAILABLE/);
 });
 
+test("RUNNING reflects the live learner-active handshake instead of mere run-record presence", () => {
+  const pages = Object.fromEntries(HOME_FAMILIES.map((family) => [family, emptyPage(family)]));
+  const stopped = projectionFromPages(pages, { ...context, operatorActive: false });
+  const running = projectionFromPages(pages, { ...context, operatorActive: true });
+  assert.match(renderHomeMarkup(stopped), /RUNNING <strong>NO<\/strong>/);
+  assert.match(renderHomeMarkup(running), /RUNNING <strong>YES<\/strong>/);
+});
+
 test("historical home queries bind the explicit prior generation", () => {
   const request = queryRequest("capability", { runId: "run-7", generation: 6, mode: "HISTORICAL" });
   assert.equal(request.mode, "historical");

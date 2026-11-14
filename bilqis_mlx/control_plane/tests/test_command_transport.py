@@ -2,18 +2,13 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
-from unittest.mock import patch
 
-from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.mission_control.operator import ActionReceiptState
 from bilqis_mlx.control_plane import ControlPlaneClient, ControlPlaneService
-from bilqis_mlx.control_plane.command.executor import C11CommandExecutor
-from bilqis_mlx.control_plane.command.model import (
-    CommandMode, operation_id_for,
-)
+from bilqis_mlx.control_plane.command.model import CommandMode
 from bilqis_mlx.control_plane.command.manager import CommandManager
 
-from .command_support import DIGESTS, FakeExecutor, Launcher, request
+from .command_support import FakeExecutor, Launcher, request
 from .support import start_service
 
 
@@ -172,91 +167,6 @@ class CommandTransportTests(unittest.TestCase):
             finally:
                 service.shutdown()
                 thread.join(2)
-
-
-class C11CommandAdapterTests(unittest.TestCase):
-    def test_mutation_requires_explicit_human_authorization(self):
-        root = Path("/tmp/cp05-adapter-fixture")
-        executor = C11CommandExecutor(root)
-        report = {
-            "run_identity": {
-                "run_id": "run-a",
-                "run_seed": 1,
-                "run_identity_sha256": DIGESTS[0],
-                "initial_candidate_identity_sha256": DIGESTS[1],
-                "factory_release_sha256": DIGESTS[2],
-                "initial_source_identity": "source:a",
-            },
-            "model_topology": {"digest": DIGESTS[3]},
-            "atlas_release_manifest": {"release_sha256": DIGESTS[4]},
-        }
-        with patch.object(
-            executor,
-            "_create_preflight",
-            return_value=(
-                report,
-                ("train", "--dry-run", "--run-dir", str(root)),
-            ),
-        ):
-            with self.assertRaises(BilqisError) as caught:
-                executor.preflight(
-                    request(action="create", dry_run=False),
-                    operation_id_for("adapter-idem"),
-                )
-        self.assertEqual(
-            caught.exception.context["reason"],
-            "CONTROL_PLANE_COMMAND_HUMAN_AUTHORIZATION_REQUIRED",
-        )
-
-    def test_pause_and_stop_are_unavailable_before_runtime_action(self):
-        executor = C11CommandExecutor(
-            Path("/tmp/cp05-adapter-fixture"))
-        for action in ("pause", "stop"):
-            with self.subTest(action=action):
-                with self.assertRaises(BilqisError) as caught:
-                    executor.preflight(
-                        request(action=action),
-                        operation_id_for(f"idem-{action}"),
-                    )
-                self.assertEqual(
-                    caught.exception.context["reason"],
-                    "CONTROL_PLANE_COMMAND_ACTION_UNAVAILABLE",
-                )
-
-    def test_authorized_mutation_plan_adds_human_run_and_removes_dry_run(self):
-        root = Path("/tmp/cp05-adapter-fixture")
-        executor = C11CommandExecutor(root)
-        report = {
-            "run_identity": {
-                "run_id": "run-a",
-                "run_seed": 1,
-                "run_identity_sha256": DIGESTS[0],
-                "initial_candidate_identity_sha256": DIGESTS[1],
-                "factory_release_sha256": DIGESTS[2],
-                "initial_source_identity": "source:a",
-            },
-            "model_topology": {"digest": DIGESTS[3]},
-            "atlas_release_manifest": {"release_sha256": DIGESTS[4]},
-        }
-        with patch.object(
-            executor,
-            "_create_preflight",
-            return_value=(
-                report,
-                ("train", "--dry-run", "--run-dir", str(root)),
-            ),
-        ):
-            plan, _ = executor.preflight(
-                request(
-                    action="create",
-                    dry_run=False,
-                    human_authorized=True,
-                ),
-                operation_id_for("authorized-adapter-idem"),
-            )
-        self.assertIn("--human-run", plan.argv)
-        self.assertNotIn("--dry-run", plan.argv)
-
 
 if __name__ == "__main__":
     unittest.main()

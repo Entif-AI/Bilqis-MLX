@@ -184,3 +184,26 @@ test("dry-run remains no-mutation and needs no human authorization", async () =>
   assert.equal(submitted.request.dry_run, true);
   assert.equal(submitted.request.human_authorized, false);
 });
+
+test("accepted owner launch seeds Stop with the exact active operation identity", async () => {
+  let submitted;
+  const api = {
+    async requestDryRun(wrapper) { return previewFor(wrapper); },
+    async requestCommand(wrapper) { submitted = wrapper; return receipt(wrapper.request); },
+    async fetchReceipt() { return inspection(submitted.request, "ACCEPTED"); },
+    subscribeEvents() { return () => {}; },
+  };
+  const host = fakeHost();
+  const controller = createOperateController(api);
+  await controller.activate(context, { target: host, defense });
+  host.clickAction("owner-launch");
+  host.changeDryRun(false);
+  await controller.preview();
+  host.typeAuthorization("AUTHORIZE OWNER-LAUNCH");
+  await controller.submit();
+  host.clickAction("stop");
+  assert.equal(
+    controller.currentState().parametersText,
+    JSON.stringify({ operation_id: `operation:${"b".repeat(64)}` }, null, 2),
+  );
+});
