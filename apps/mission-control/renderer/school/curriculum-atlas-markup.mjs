@@ -143,8 +143,8 @@ function actionsMarkup(node, semanticBinding, ui) {
     '<button type="button" data-school-mode="matrix" data-focus-key="school-mode:matrix">Open in School</button>' +
     '<button type="button" disabled title="Capability Explorer is not landed yet (#1060).">' +
       'Open in Capability · unavailable</button>' + atlas +
-    '<button type="button" disabled title="Lineage domain is not landed yet (#1069).">' +
-      'Open in Lineage · unavailable</button>' +
+    '<button type="button" disabled title="Lineage is available, but GUI14 does not expose a capability-specific generation route.">' +
+      'Open in Lineage · capability route unavailable</button>' +
     '<a href="' + evidence + '">Open in Evidence</a>' +
     '<a href="' + school + '">Stable School deep link</a></div>';
 }

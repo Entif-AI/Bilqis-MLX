@@ -137,7 +137,7 @@ test("GUI22 source keeps learned similarity out of causal edges and unavailable 
   assert.match(model, /DECLARED_PREREQUISITE/);
   assert.match(model, /SCHOOL_DECLARED/);
   assert.match(markup, /Open in Capability · unavailable/);
-  assert.match(markup, /Open in Lineage · unavailable/);
+  assert.match(markup, /Open in Lineage · capability route unavailable/);
   assert.match(markup, /no scheduling guarantee/);
 });
 
