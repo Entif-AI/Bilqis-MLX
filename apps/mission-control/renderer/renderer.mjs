@@ -4,6 +4,7 @@ import {
   inspect,
   navigate,
   openSelectionOwner,
+  selectObject,
   withDefensiveState,
   withRoute,
 } from "./shell-state.mjs";
@@ -63,6 +64,7 @@ function announce(message) {
 function render() {
   renderChrome(state, defense, displaySettings, {
     api: window.bamfMissionControl,
+    onEvidenceSelect: selectEvidenceRecord,
     onReconnect: () => establishSnapshot({ preserveRoute: true }),
     onNavigate: navigateTo,
     onInspect: openInspector,
@@ -76,6 +78,13 @@ function render() {
       () => state?.view === "atlas",
     );
   }
+}
+
+function selectEvidenceRecord(selected) {
+  if (!state) return;
+  state = selectObject(state, selected);
+  renderInspector(state, defense);
+  setHash();
 }
 
 function navigateTo(view) {

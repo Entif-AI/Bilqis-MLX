@@ -34,6 +34,8 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     "/episodes/episode-view.mjs",
     "/episodes/episodes.css",
     "/evidence/evidence-view.mjs",
+    "/evidence/evidence-query.mjs",
+    "/evidence/evidence-markup.mjs",
     "/evidence/evidence.css",
     "/index.html",
     "/memory/memory-fixture.mjs",

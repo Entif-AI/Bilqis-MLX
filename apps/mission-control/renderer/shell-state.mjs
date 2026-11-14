@@ -192,6 +192,10 @@ export function inspect(state, selected) {
   return { ...state, selected, inspectorOpen: Boolean(selected) };
 }
 
+export function selectObject(state, selected) {
+  return { ...state, selected, inspectorOpen: false };
+}
+
 export function openSelectionOwner(state) {
   if (!state.selected) return state;
   const owner = INSPECTOR_OWNERS[state.selected.kind];

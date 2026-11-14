@@ -121,7 +121,7 @@ export function renderDemoActions(state, onInspect) {
   });
 }
 
-export function renderCurrentView(state, defense, onInspect, api) {
+export function renderCurrentView(state, defense, onInspect, api, onEvidenceSelect) {
   const domain = document.querySelector("#domain-view");
   const fixture = document.querySelector(".fixture-card");
   const catalog = document.querySelector("#visual-catalog");
@@ -230,7 +230,7 @@ export function renderCurrentView(state, defense, onInspect, api) {
     catalog.hidden = true;
     summary.textContent = "Exact Mission Control records, provenance links, bounded pagination and literal raw payloads.";
     renderEvidenceView(
-      domain, api, state.context, state.selected,
+      domain, api, state.context, state.selected, onEvidenceSelect,
     );
     return;
   }
@@ -262,7 +262,9 @@ export function renderChrome(state, defense, displaySettings, handlers) {
   renderNavigation(state, handlers.onNavigate);
   renderInspector(state, defense);
   renderDemoActions(state, handlers.onInspect);
-  renderCurrentView(state, defense, handlers.onInspect, handlers.api);
+  renderCurrentView(
+    state, defense, handlers.onInspect, handlers.api, handlers.onEvidenceSelect,
+  );
   document.querySelector("#view-title").textContent = labels.get(state?.view ?? "mission-control");
   document.querySelector("#view-title").setAttribute("tabindex", "-1");
   document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;

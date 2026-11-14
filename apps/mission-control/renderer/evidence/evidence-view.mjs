@@ -1,331 +1,125 @@
-const QUERY_SCHEMA = "bilqis.bamf.control-plane.query/v1";
-const PAGE_SIZE = 16;
+import {
+  buildEvidenceRequest,
+  criteriaForSelection,
+  loadEvidencePage,
+  loadRecordById,
+  loadRecordLinks,
+  mergeEvidencePages,
+} from "./evidence-query.mjs";
+import { renderEvidenceMarkup } from "./evidence-markup.mjs";
 
-export const SEARCH_KINDS = Object.freeze([
-  ["context", "Current run / generation"],
-  ["record", "Exact record ID"],
-  ["run", "Run ID"],
-  ["generation", "Generation"],
-  ["checkpoint", "Checkpoint digest"],
-  ["capability", "Capability ID"],
-  ["episode", "Candidate / episode ID"],
-  ["source", "Source / source revision"],
-  ["semantic", "Semantic ID"],
-  ["frame", "Frame ID"],
-  ["memory", "Memory motif / slot identity"],
-  ["correction", "Correction / requalification ID"],
-  ["command", "Command operation ID"],
-  ["reference", "Receipt / evidence reference"],
-]);
+export {
+  assertEvidencePage,
+  buildEvidenceRequest,
+  criteriaForSelection,
+  loadEvidencePage,
+  loadRecordById,
+  loadRecordLinks,
+  mergeEvidencePages,
+  SEARCH_KINDS,
+} from "./evidence-query.mjs";
+export { renderEvidenceMarkup } from "./evidence-markup.mjs";
 
 const ui = {
-  contextKey: null,
-  status: "idle",
-  criteria: { kind: "context", value: "" },
-  page: null,
-  records: [],
-  links: [],
-  selected: null,
-  selectedLinks: null,
-  raw: false,
-  error: null,
+  contextKey: null, status: "idle", criteria: { kind: "context", value: "" },
+  page: null, records: [], links: [], selected: null, selectedLinks: null,
+  pendingRecordId: null, raw: false, error: null,
 };
 
-function esc(value) {
-  return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
-}
-
-function request(overrides = {}) {
-  return {
-    schema: QUERY_SCHEMA, family: "record", mode: "current", run_id: null,
-    record_id: null, schema_version: null, generation: null, frontier_id: null,
-    as_of: null, reference: null, cursor: null, limit: PAGE_SIZE, ...overrides,
-  };
-}
-
-function scoped(context, overrides = {}) {
-  const historical = context.mode === "HISTORICAL";
-  return request({
-    mode: historical ? "historical" : "current",
-    run_id: context.runId,
-    generation: context.generation,
-    ...overrides,
-  });
-}
-
-export function buildEvidenceRequest(context, criteria = {}, cursor = null) {
-  const kind = criteria.kind ?? "context";
-  const value = String(criteria.value ?? "").trim();
-  if (kind === "context") return scoped(context, { cursor });
-  if (kind === "record") {
-    return request({
-      mode: context.mode === "HISTORICAL" ? "historical" : "current",
-      record_id: value || null,
-      generation: context.mode === "HISTORICAL" ? context.generation : null,
-      run_id: context.mode === "HISTORICAL" ? context.runId : null,
-      cursor,
-    });
-  }
-  if (kind === "run") return request({ run_id: value || null, cursor });
-  if (kind === "generation") {
-    const generation = Number(value);
-    return request({
-      mode: "historical", run_id: context.runId,
-      generation: Number.isSafeInteger(generation) && generation >= 0 ? generation : null,
-      cursor,
-    });
-  }
-  if (kind === "reference") {
-    return scoped(context, { family: "reference", reference: value || null, cursor });
-  }
-  const exact = kind === "checkpoint" && value && !value.startsWith("checkpoint:")
-    ? `checkpoint:${value}` : value;
-  const crossContext = new Set(["source", "semantic", "command"]).has(kind);
-  return crossContext
-    ? request({ reference: exact || null, cursor })
-    : scoped(context, { reference: exact || null, cursor });
-}
-
-export async function loadEvidencePage(api, context, criteria, cursor = null) {
-  return api.query(buildEvidenceRequest(context, criteria, cursor));
-}
-
-export async function loadRecordById(api, context, recordId) {
-  // A stable record ID is globally unique inside the admitted CP03 catalog.
-  // Provenance traversal must therefore hydrate that exact identity without
-  // inheriting the shell's current/historical generation filter.
-  const page = await api.query(request({ record_id: recordId }));
-  return { page, record: page.records?.[0] ?? null };
-}
-
-export async function loadRecordLinks(api, record) {
-  const meta = record?.meta ?? {};
-  const run = meta.run ?? null;
-  return api.query(request({
-    family: "links",
-    mode: run ? "historical" : "current",
-    run_id: run?.run_id ?? null,
-    record_id: meta.record_id ?? null,
-    generation: run?.generation ?? null,
-    as_of: run ? meta.as_of ?? null : null,
-    limit: 32,
-  }));
-}
-
-function pageState(page) {
-  if (!page) return "NOT QUERIED";
-  const suffix = page.truncated ? " · TRUNCATED" : "";
-  return `${page.state} · ${page.coverage}${suffix}`;
-}
-
-function markerSummary(marker) {
-  const meta = marker?.meta ?? {};
-  const details = [
-    ...(Array.isArray(marker?.missing_fields) ? marker.missing_fields : []),
-    marker?.reason ?? null,
-    marker?.resource ?? null,
-    marker?.stale_record_id ?? null,
-    Number.isSafeInteger(marker?.requested_as_of) ? `requested as-of ${marker.requested_as_of}` : null,
-    Number.isSafeInteger(marker?.available_as_of) ? `available as-of ${marker.available_as_of}` : null,
-  ].filter((value) => value !== null && value !== undefined);
-  return `<article class="evidence-marker"><strong>${esc(marker?.schema_version ?? "DEGRADED EVIDENCE MARKER")}</strong>
-    <code>${esc(meta.record_id ?? "marker:unidentified")}</code>
-    <span>${details.length ? esc(details.join(" · ")) : "Exact degraded-state marker; no additional detail reported."}</span></article>`;
-}
-
-function recordSummary(record, index) {
-  const meta = record.meta ?? {};
-  const run = meta.run ?? null;
-  return `<button class="evidence-result" type="button" data-evidence-record="${index}">
-    <strong>${esc(meta.record_id ?? "UNIDENTIFIED RECORD")}</strong>
-    <span>${esc(record.schema_version ?? "SCHEMA UNKNOWN")}</span>
-    <small>${esc(meta.authority ?? "AUTHORITY UNKNOWN")} · ${esc(meta.coverage ?? "COVERAGE UNKNOWN")}${run ? ` · gen ${esc(run.generation)}` : ""}</small>
-  </button>`;
-}
-
-function linkSummary(link, index, scope = "page") {
-  const targetAttribute = scope === "selected"
-    ? `data-evidence-selected-target="${index}"`
-    : `data-evidence-target="${index}"`;
-  const target = link.target_record_id
-    ? `<button type="button" ${targetAttribute}>Open exact record</button>`
-    : `<span class="evidence-unresolved">EXTERNAL / NOT HYDRATED</span>`;
-  return `<article class="evidence-link"><strong>${esc(link.relation)}</strong>
-    <code>${esc(link.source_record_id)}</code><span>→</span><code>${esc(link.target_ref)}</code>${target}</article>`;
-}
-
-function refs(meta) {
-  const groups = [
-    ["SOURCE", meta?.source_refs ?? []],
-    ["EVIDENCE", meta?.evidence_refs ?? []],
-    ["RECEIPT", meta?.receipt_refs ?? []],
-  ];
-  return groups.map(([kind, values]) => values.map((value) =>
-    `<button type="button" data-evidence-ref="${esc(value)}"><b>${kind}</b> ${esc(value)}</button>`,
-  ).join("")).join("") || '<span class="evidence-unresolved">No provenance refs reported.</span>';
-}
-
-function readable(record, linksPage) {
-  const meta = record.meta ?? {};
-  const body = Object.entries(record).filter(([key]) => key !== "meta")
-    .map(([key, value]) => `<dt>${esc(key)}</dt><dd><code>${esc(
-      typeof value === "object" ? JSON.stringify(value) : value,
-    )}</code></dd>`).join("");
-  const verification = record.verification_state ?? record.verification_status ?? "NOT SEPARATELY REPORTED";
-  return `<div class="evidence-readable">
-    <dl><dt>Record ID</dt><dd>${esc(meta.record_id)}</dd><dt>Schema / version</dt><dd>${esc(record.schema_version)}</dd>
-    <dt>Authority</dt><dd>${esc(meta.authority)}</dd><dt>Coverage</dt><dd>${esc(meta.coverage)}</dd>
-    <dt>Verification</dt><dd>${esc(verification)}</dd><dt>Materialized</dt><dd>${esc(meta.materialized_at ?? "UNKNOWN")}</dd>
-    <dt>Observed</dt><dd>${esc(meta.observed_at ?? "UNKNOWN")}</dd><dt>As of</dt><dd>${esc(meta.as_of ?? "UNKNOWN")}</dd>
-    <dt>Record metadata</dt><dd><code>${esc(JSON.stringify(meta))}</code></dd>${body}</dl>
-    <section><h4>Provenance chain</h4><div class="evidence-refs">${refs(meta)}</div></section>
-    <section><h4>Exact links</h4><div class="evidence-links">${(linksPage?.links ?? []).map((link, index) => linkSummary(link, index, "selected")).join("") || '<span class="evidence-unresolved">No resolvable links reported.</span>'}</div></section>
-  </div>`;
-}
-
-export function renderEvidenceMarkup(state = ui) {
-  const page = state.page;
-  const selected = state.selected;
-  const markers = (page?.markers ?? []).map(markerSummary).join("");
-  const results = [
-    ...state.records.map(recordSummary),
-    ...state.links.map((link, index) => linkSummary(link, index)),
-  ].join("");
-  const selectedMarkup = !selected ? "" : `<section class="evidence-detail">
-    <header><div><span class="eyebrow">Exact evidence item</span><h3>${esc(selected.meta?.record_id)}</h3></div>
-      <button type="button" data-evidence-raw>${state.raw ? "Readable view" : "Raw structured payload"}</button></header>
-    ${state.raw ? `<pre>${esc(JSON.stringify(selected, null, 2))}</pre>` : readable(selected, state.selectedLinks)}
-  </section>`;
-  const emptyText = state.criteria.kind === "memory"
-    ? "No accepted CP03 record exposes this memory motif/slot identity. GUI10 display fixtures are not durable evidence."
-    : "No evidence rows returned for this exact query.";
-  return `<div class="evidence-view"><header class="evidence-heading"><div><span class="eyebrow">GUI16 · Evidence &amp; Receipts</span>
-    <h2>Forensic provenance browser</h2></div><p>Literal CP03 records only. External payloads remain external unless the control plane exposes an exact record identity.</p></header>
-    <form id="evidence-search-form" class="evidence-search"><label>Search by<select name="kind">${SEARCH_KINDS.map(([value, label]) =>
-      `<option value="${value}"${state.criteria.kind === value ? " selected" : ""}>${label}</option>`).join("")}</select></label>
-      <label>Exact identity<input name="value" value="${esc(state.criteria.value)}" autocomplete="off" /></label><button type="submit">Search</button></form>
-    <div class="evidence-query-state" data-state="${esc(page?.state ?? state.status)}"><strong>${esc(pageState(page))}</strong>
-      <span>${page ? `${esc(page.returned)} returned / ${esc(page.total_matches)} exact matches` : esc(state.error ?? "Ready")}</span></div>
-    ${markers ? `<section class="evidence-markers" aria-label="Omissions and degraded evidence">${markers}</section>` : ""}
-    <div class="evidence-results">${results || `<div class="evidence-empty">${emptyText}</div>`}</div>
-    ${page?.next_cursor ? '<button type="button" data-evidence-more>Load next bounded page</button>' : ""}${selectedMarkup}</div>`;
-}
-
-const QUERY_STATE_RANK = Object.freeze({
-  EMPTY: 0, PRESENT: 1, PARTIAL: 2, STALE: 3,
-  MISSING: 4, UNKNOWN: 5, UNAVAILABLE: 6, DENIED: 7,
-});
-
-function worseState(left, right) {
-  return (QUERY_STATE_RANK[right] ?? -1) > (QUERY_STATE_RANK[left] ?? -1)
-    ? right : left;
-}
-
-function mergeMarkers(left = [], right = []) {
-  const seen = new Map();
-  for (const marker of [...left, ...right]) {
-    const key = marker?.meta?.record_id ?? JSON.stringify(marker);
-    seen.set(key, marker);
-  }
-  return [...seen.values()];
-}
-
-export function mergeEvidencePages(previous, next) {
-  if (!previous) return next;
-  const state = worseState(previous.state, next.state);
-  const markers = mergeMarkers(previous.markers, next.markers);
-  const coverage = ["MISSING", "UNKNOWN", "UNAVAILABLE", "DENIED"].includes(state)
-    ? "UNKNOWN"
-    : markers.length || ["PARTIAL", "STALE"].includes(state) || next.next_cursor
-      ? "PARTIAL"
-      : next.coverage;
-  return {
-    ...next,
-    state,
-    coverage,
-    markers,
-    returned: (previous.returned ?? 0) + (next.returned ?? 0),
-  };
-}
-
-async function search(container, api, context, criteria, cursor = null, append = false) {
+async function search(
+  container, api, context, criteria, cursor = null, append = false, onSelection = null,
+) {
   ui.status = "loading"; ui.error = null; ui.criteria = criteria;
-  paintEvidenceView(container, api, context);
+  paintEvidenceView(container, api, context, onSelection);
   try {
     const page = await loadEvidencePage(api, context, criteria, cursor);
     ui.page = append ? mergeEvidencePages(ui.page, page) : page; ui.status = "ready";
     ui.records = append ? [...ui.records, ...(page.records ?? [])] : [...(page.records ?? [])];
     ui.links = append ? [...ui.links, ...(page.links ?? [])] : [...(page.links ?? [])];
-    if (!append) { ui.selected = null; ui.selectedLinks = null; ui.raw = false; }
+    if (!append) {
+      ui.selected = null; ui.selectedLinks = null; ui.raw = false;
+      if (ui.pendingRecordId) {
+        ui.selected = ui.records.find(
+          (record) => record?.meta?.record_id === ui.pendingRecordId,
+        ) ?? null;
+        ui.pendingRecordId = null;
+        if (ui.selected) {
+          try { ui.selectedLinks = await loadRecordLinks(api, ui.selected); } catch (_error) { ui.selectedLinks = null; }
+        }
+      }
+    }
   } catch (error) {
     ui.status = "error"; ui.error = error?.code ?? error?.message ?? "Evidence query failed";
+    if (!append) {
+      ui.page = null; ui.records = []; ui.links = [];
+      ui.selected = null; ui.selectedLinks = null; ui.raw = false; ui.pendingRecordId = null;
+    }
   }
-  paintEvidenceView(container, api, context);
+  paintEvidenceView(container, api, context, onSelection);
 }
 
-async function select(container, api, context, record) {
+async function select(container, api, context, record, onSelection = null) {
   ui.selected = record; ui.raw = false; ui.selectedLinks = null;
-  paintEvidenceView(container, api, context);
+  onSelection?.({ kind: "evidence", id: record.meta.record_id });
+  paintEvidenceView(container, api, context, onSelection);
   try { ui.selectedLinks = await loadRecordLinks(api, record); } catch (_error) { ui.selectedLinks = null; }
-  paintEvidenceView(container, api, context);
+  paintEvidenceView(container, api, context, onSelection);
 }
 
-function bind(container, api, context) {
+function bind(container, api, context, onSelection = null) {
   container.querySelector("#evidence-search-form")?.addEventListener("submit", (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     void search(container, api, context, {
       kind: data.get("kind")?.toString() ?? "context",
       value: data.get("value")?.toString() ?? "",
-    });
+    }, null, false, onSelection);
   });
   container.querySelectorAll("[data-evidence-record]").forEach((button) => button.addEventListener("click", () =>
-    void select(container, api, context, ui.records[Number(button.dataset.evidenceRecord)])));
+    void select(container, api, context, ui.records[Number(button.dataset.evidenceRecord)], onSelection)));
   container.querySelectorAll("[data-evidence-target]").forEach((button) => button.addEventListener("click", async () => {
     const link = ui.links[Number(button.dataset.evidenceTarget)];
     if (!link?.target_record_id) return;
     const found = await loadRecordById(api, context, link.target_record_id);
-    if (found.record) void select(container, api, context, found.record);
+    if (found.record) void select(container, api, context, found.record, onSelection);
   }));
   container.querySelectorAll("[data-evidence-selected-target]").forEach((button) => button.addEventListener("click", async () => {
     const link = ui.selectedLinks?.links?.[Number(button.dataset.evidenceSelectedTarget)];
     if (!link?.target_record_id) return;
     const found = await loadRecordById(api, context, link.target_record_id);
-    if (found.record) void select(container, api, context, found.record);
+    if (found.record) void select(container, api, context, found.record, onSelection);
   }));
   container.querySelectorAll("[data-evidence-ref]").forEach((button) => button.addEventListener("click", () =>
-    void search(container, api, context, { kind: "reference", value: button.dataset.evidenceRef })));
+    void search(container, api, context, {
+      kind: "reference", value: button.dataset.evidenceRef,
+    }, null, false, onSelection)));
   container.querySelector("[data-evidence-raw]")?.addEventListener("click", () => {
-    ui.raw = !ui.raw; paintEvidenceView(container, api, context);
+    ui.raw = !ui.raw; paintEvidenceView(container, api, context, onSelection);
   });
   container.querySelector("[data-evidence-more]")?.addEventListener("click", () =>
-    void search(container, api, context, ui.criteria, ui.page?.next_cursor ?? null, true));
+    void search(
+      container, api, context, ui.criteria, ui.page?.next_cursor ?? null, true, onSelection,
+    ));
 }
 
-export function criteriaForSelection(selection) {
-  if (!selection?.id) return { kind: "context", value: "" };
-  const kinds = {
-    evidence: "record", capability: "capability", episode: "episode",
-    semantic: "semantic", memory: "memory", checkpoint: "checkpoint",
-    correction: "correction", strategy: "reference", neural: "reference",
-    warning: "reference",
-  };
-  return { kind: kinds[selection.kind] ?? "record", value: selection.id };
-}
-
-function paintEvidenceView(container, api, context) {
+function paintEvidenceView(container, api, context, onSelection = null) {
   container.innerHTML = renderEvidenceMarkup(ui);
-  bind(container, api, context);
+  bind(container, api, context, onSelection);
 }
 
-export function renderEvidenceView(container, api, context, initialSelection = null) {
+export function renderEvidenceView(
+  container, api, context, initialSelection = null, onSelection = null,
+) {
   const criteria = criteriaForSelection(initialSelection);
   const key = `${context.mode}:${context.runId}:${context.generation}:${criteria.kind}:${criteria.value}`;
   if (ui.contextKey !== key) Object.assign(ui, {
     contextKey: key, status: "idle", criteria,
-    page: null, records: [], links: [], selected: null, selectedLinks: null, raw: false, error: null,
+    page: null, records: [], links: [], selected: null, selectedLinks: null,
+    pendingRecordId: initialSelection?.kind === "evidence" ? initialSelection.id : null,
+    raw: false, error: null,
   });
-  paintEvidenceView(container, api, context);
-  if (ui.status === "idle") void search(container, api, context, ui.criteria);
+  paintEvidenceView(container, api, context, onSelection);
+  if (ui.status === "idle") {
+    void search(container, api, context, ui.criteria, null, false, onSelection);
+  }
 }
