@@ -39,3 +39,7 @@ export function buildDeepLink(state) {
   const query = params.toString();
   return `#/view/${state.view}${query ? `?${query}` : ""}`;
 }
+
+export function routeFromState(state) {
+  return parseDeepLink(buildDeepLink(state));
+}

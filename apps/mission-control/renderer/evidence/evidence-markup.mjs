@@ -87,10 +87,12 @@ export function renderEvidenceMarkup(state) {
     ? "No accepted CP03 record exposes this memory motif/slot identity. GUI10 display fixtures are not durable evidence."
     : "No evidence rows returned for this exact query.";
   const queryState = state.status === "error" ? "error" : page?.state ?? state.status;
-  const queryLabel = state.status === "error" ? "QUERY ERROR" : pageState(page);
+  const queryLabel = state.status === "error"
+    ? "QUERY ERROR" : state.status === "loading" ? "LOADING" : pageState(page);
   const queryDetail = state.status === "error"
     ? state.error ?? "Evidence query failed"
-    : page ? `${page.returned} returned / ${page.total_matches} exact matches` : "Ready";
+    : state.status === "loading" ? "Awaiting bounded evidence page"
+      : page ? `${page.returned} returned / ${page.total_matches} exact matches` : "Ready";
   const returnButton = state.returnAvailable
     ? '<button type="button" data-evidence-return>Return to inspected object</button>' : "";
   return `<div class="evidence-view"><header class="evidence-heading"><div><span class="eyebrow">GUI16 · Evidence &amp; Receipts</span>

@@ -32,13 +32,34 @@ function errorCode(error, fallback = "Evidence traversal failed") {
   return error?.code ?? error?.message ?? fallback;
 }
 
+export function prepareEvidenceSearch(state, criteria, append = false) {
+  const next = {
+    ...state, status: "loading", error: null, traversalError: null, criteria,
+  };
+  if (!append) Object.assign(next, {
+    page: null, records: [], links: [], selected: null, selectedLinks: null, raw: false,
+  });
+  return next;
+}
+
+export function deactivateEvidenceView() {
+  if (ui.contextKey === null && ui.status === "idle") return;
+  queryEpoch += 1;
+  Object.assign(ui, {
+    contextKey: null, status: "idle", criteria: { kind: "context", value: "" },
+    page: null, records: [], links: [], selected: null, selectedLinks: null,
+    pendingRecordId: null, raw: false, error: null, traversalError: null,
+    returnAvailable: false,
+  });
+}
+
 async function search(
   container, api, context, criteria, cursor = null, append = false,
   onSelection = null, onReturnOrigin = null,
 ) {
   const epoch = ++queryEpoch;
   const contextKey = ui.contextKey;
-  ui.status = "loading"; ui.error = null; ui.traversalError = null; ui.criteria = criteria;
+  Object.assign(ui, prepareEvidenceSearch(ui, criteria, append));
   paintEvidenceView(container, api, context, onSelection, onReturnOrigin);
   try {
     const page = await loadEvidencePage(api, context, criteria, cursor);

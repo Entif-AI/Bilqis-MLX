@@ -11,7 +11,7 @@ import {
   withDefensiveState,
   withRoute,
 } from "./shell-state.mjs";
-import { buildDeepLink, parseDeepLink } from "./deep-link.mjs";
+import { buildDeepLink, parseDeepLink, routeFromState } from "./deep-link.mjs";
 import {
   DENSITIES,
   THEMES,
@@ -141,7 +141,7 @@ async function establishSnapshot({ preserveRoute = false } = {}) {
   frameShell.reset();
   if (state) state = { ...state, mutationAvailable: false };
   const route = preserveRoute && state
-    ? { view: state.view, selected: state.selected }
+    ? routeFromState(state)
     : parseDeepLink(window.location.hash);
   defense = defensiveState("loading", {
     snapshotAvailable: Boolean(state),

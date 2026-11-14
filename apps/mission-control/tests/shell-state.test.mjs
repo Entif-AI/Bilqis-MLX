@@ -14,7 +14,7 @@ import {
   shellPosture,
   withRoute,
 } from "../renderer/shell-state.mjs";
-import { buildDeepLink, parseDeepLink } from "../renderer/deep-link.mjs";
+import { buildDeepLink, parseDeepLink, routeFromState } from "../renderer/deep-link.mjs";
 
 const context = JSON.parse(
   readFileSync(new URL("../fixtures/operator-view-v1.json", import.meta.url), "utf8"),
@@ -75,6 +75,7 @@ test("evidence round trip preserves and deep-links the originating inspected obj
   const hash = buildDeepLink(exact);
   const restored = createShellState(context, parseDeepLink(hash));
   assert.deepEqual(restored.evidenceOrigin, exact.evidenceOrigin);
+  assert.deepEqual(routeFromState(exact).evidenceOrigin, exact.evidenceOrigin);
   const returned = returnFromEvidence(restored);
   assert.equal(returned.view, "school");
   assert.deepEqual(returned.selected, { kind: "capability", id: "B.AND" });

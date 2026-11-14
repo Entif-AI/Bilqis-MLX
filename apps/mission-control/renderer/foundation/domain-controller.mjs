@@ -3,6 +3,7 @@ import {
   invalidateAtlasRequests,
   renderAtlasDomain,
 } from "../atlas/atlas-controller.mjs";
+import { deactivateEvidenceView } from "../evidence/evidence-view.mjs";
 
 export function activateDomainViews({ state, getState, defense, api, homeController, onInspect }) {
   if (state?.view === "atlas") {
@@ -12,6 +13,7 @@ export function activateDomainViews({ state, getState, defense, api, homeControl
     void ensureAtlasOverview(api, context, isActive);
   }
   if (state?.view !== "atlas") invalidateAtlasRequests();
+  if (state?.view !== "evidence") deactivateEvidenceView();
   if (state?.view === "mission-control") {
     void homeController.activate(state.context, {
       host: document.querySelector("#domain-view"),
