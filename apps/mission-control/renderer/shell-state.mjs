@@ -24,6 +24,7 @@ export const INSPECTOR_OWNERS = Object.freeze({
   evidence: "evidence",
   correction: "corrections",
   warning: "resources",
+  resource: "resources",
   neural: "model",
   strategy: "teacher",
   "salience-observation": "salience",
