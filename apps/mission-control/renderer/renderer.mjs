@@ -40,6 +40,7 @@ import {
 } from "./foundation/accessibility.mjs";
 import { createHomeController } from "./home/home-controller.mjs";
 import { createResourceController } from "./resources/resource-controller.mjs";
+import { createCapabilityExplorer } from "./capability/app.mjs";
 import { activateDomainViews } from "./foundation/domain-controller.mjs";
 
 const SNAPSHOT_REQUEST = Object.freeze({
@@ -58,6 +59,48 @@ const frameShell = createFrameShell({
   getState: () => state, setState: next => { state = next; }, getDefense: () => defense,
   render, onInspect: openInspector,
   refresh: () => { renderContext(state, defense); renderNavigation(state, navigateTo); renderInspector(state, defense); setHash(); },
+});
+const capabilityExplorer = createCapabilityExplorer({
+  host: document.querySelector("#domain-view"),
+  serviceQuery: request => window.bamfMissionControl.querySnapshot(request),
+  changeLens: (lens, capabilityId) => {
+    if (!state) return;
+    state = {
+      ...state,
+      context: Object.freeze({
+        ...state.context, ...lens,
+        historicalPinned: lens.mode === "HISTORICAL",
+        generationManifest: "UNKNOWN", topologyId: "UNKNOWN",
+        factoryRelease: "UNKNOWN", semanticRelease: "UNKNOWN",
+        coverage: "UNKNOWN", freshness: "UNKNOWN",
+      }),
+      selected: { kind: "capability", id: capabilityId },
+      inspectorOpen: false,
+      mutationAvailable: false,
+    };
+    render();
+  },
+  openObject: (selected) => {
+    if (!state) return;
+    state = { ...openSelectionOwner(inspect(state, selected)), inspectorOpen: false };
+    render();
+  },
+  resolvePins: (meta) => {
+    if (!state) return;
+    state = {
+      ...state,
+      context: Object.freeze({
+        ...state.context,
+        generationManifest: meta.run.generation_manifest_sha256,
+        topologyId: meta.run.topology_sha256,
+        factoryRelease: meta.run.factory_release_sha256,
+        semanticRelease: meta.run.semantic_release_sha256,
+        coverage: meta.coverage,
+      }),
+    };
+    renderContext(state, defense);
+    setHash();
+  },
 });
 
 function setHash() {
@@ -86,7 +129,7 @@ function render() {
   setHash();
   activateDomainViews({
     state, getState: () => state, defense, api: window.bamfMissionControl,
-    homeController, resourceController, onInspect: openInspector,
+    homeController, resourceController, capabilityExplorer, onInspect: openInspector,
   });
 }
 
@@ -243,6 +286,23 @@ function bindStaticInteractions() {
   });
   document.querySelector("#command-palette").addEventListener("close", () => {
     window.queueMicrotask(() => restoreFocus(document, paletteReturnToken));
+  });
+  document.querySelector("#generation-selector").addEventListener("change", (event) => {
+    if (!state) return;
+    const generation = Number(event.currentTarget.value);
+    if (!Number.isSafeInteger(generation) || generation < 0) return;
+    state = {
+      ...state,
+      context: Object.freeze({
+        ...state.context, generation, mode: "HISTORICAL",
+        historicalPinned: true,
+        generationManifest: "UNKNOWN", topologyId: "UNKNOWN",
+        factoryRelease: "UNKNOWN", semanticRelease: "UNKNOWN",
+        coverage: "UNKNOWN", freshness: "UNKNOWN",
+      }),
+      mutationAvailable: false,
+    };
+    render();
   });
   window.addEventListener("hashchange", () => {
     if (!state) return;

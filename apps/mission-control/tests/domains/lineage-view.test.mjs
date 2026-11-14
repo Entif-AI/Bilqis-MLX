@@ -126,7 +126,7 @@ test("rejected candidate never appears as a committed lineage node", () => {
 
 test("GUI14 fixture is grounded in current CP03, B13 and C10 executable contracts", () => {
   const sources = [
-    "bilqis_mlx/mission_control/observability.py",
+    "bilqis_mlx/mission_control/contracts/observability.py",
     "bilqis_mlx/mission_control/query_support.py",
     "bilqis_mlx/runtime/_custody/bamf_bundle/records.py",
     "bilqis_mlx/runtime/_custody/bamf_bundle/feature/receipt.py",

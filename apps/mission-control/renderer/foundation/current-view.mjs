@@ -60,6 +60,13 @@ export function renderCurrentView(
     summary.textContent = "Source-authoritative semantic identity and generation-scoped ABI state, with learned similarity isolated behind a separate lens.";
     return;
   }
+  if (state.view === "capability") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Measured chronology, source support, and literal evidence. No inferred causes.";
+    return;
+  }
   if (state.view === "model") {
     domain.hidden = state.modelSection === "frames";
     if (state.modelSection === "frames") {

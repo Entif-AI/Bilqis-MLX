@@ -31,11 +31,6 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - name: Verify Mission Control shell and Electron security boundary
-        run: |
-          node --version
-          npm run mission-control:test
-          npm run mission-control:security:test
       - name: Validate release manifests and changelog
         run: python3 -B scripts/maintenance/release_version.py --check
       - name: Resolve truthful comparison base
@@ -158,6 +153,12 @@ jobs:
           else
             python3 -B scripts/error_control_plane.py --check
           fi
+      - name: Verify Mission Control shell and Electron security boundary
+        run: |
+          node --version
+          npm ci --ignore-scripts
+          npm run mission-control:test
+          npm run mission-control:security:test
       - name: Reject newly introduced code hygiene regressions
         env:
           QUALITY_BASE_REF: ${{ steps.comparison-base.outputs.base_ref }}

@@ -150,7 +150,7 @@ def decode_record(payload: Mapping) -> WireRecord:
         _fail(ContractErrorCode.SCHEMA_MISSING)
     if type(schema) is not str:
         _fail(ContractErrorCode.SCHEMA_UNSUPPORTED, "non-string")
-    from .contracts.registry import RECORD_BY_SCHEMA
+    from .registry import RECORD_BY_SCHEMA
     record_type = RECORD_BY_SCHEMA.get(schema)
     if record_type is None:
         _fail(ContractErrorCode.SCHEMA_UNSUPPORTED, schema)

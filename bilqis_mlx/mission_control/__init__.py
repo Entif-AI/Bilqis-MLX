@@ -1,22 +1,22 @@
 """BAMF Mission Control typed records and bounded CP03 query contracts."""
-from .codec import canonical_json, decode_json, decode_record, encode_record
-from .envelopes import (
+from .contracts.codec import canonical_json, decode_json, decode_record, encode_record
+from .contracts.envelopes import (
     ErrorEnvelope, EventEnvelope, PartialEnvelope, StaleEnvelope,
     StreamPosition, UnavailableEnvelope, UnavailableReason,
 )
-from .events import (
+from .contracts.events import (
     CandidateDecision, CandidateOutcome, CorrectionEvent, FrameCompileReceipt,
     LearningEpisode, SalienceEvent,
 )
-from .model import (
+from .contracts.model import (
     AuthorityClass, ContractErrorCode, CoverageState, DataValue,
     MissionControlContractError, RecordMeta, RunRef, ValueOrigin, ValueState,
 )
-from .observability import (
+from .contracts.observability import (
     GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, TeacherSnapshot,
 )
-from .operator import (
+from .contracts.operator import (
     ActionParameter, ActionReceiptState, OperatorActionReceipt,
     OperatorActionReceiptV2, OperatorActionRequest, OperatorActionRequestV2,
 )
@@ -37,7 +37,7 @@ from .semantic import (
     SemanticRealization, SemanticRelation, SemanticSimilaritySnapshot,
     SemanticSourceRow,
 )
-from .snapshots import (
+from .contracts.snapshots import (
     CapabilitySnapshot, CurriculumFrontier, OperatorView, RunContext,
     SchoolSnapshot,
 )
@@ -69,3 +69,12 @@ __all__ = (
     "decode_json", "decode_record", "encode_record", "record_schema",
     "schema_bundle",
 )
+
+# Preserve accepted CP02 deep-import paths while contracts have one owner.
+import sys as _sys
+from importlib import import_module as _import_module
+
+for _name in ('codec', 'model', 'envelopes', 'events', 'snapshots', 'observability', 'operator', 'registry', 'schema', 'fixtures'):
+    _module = _import_module(f".contracts.{_name}", __name__)
+    _sys.modules[f"{__name__}.{_name}"] = _module
+    globals()[_name] = _module

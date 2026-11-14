@@ -11,6 +11,7 @@ from bilqis_mlx.control_plane.contracts import ControlPlaneState, PROTOCOL_VERSI
 from bilqis_mlx.mission_control.codec import encode_record
 from bilqis_mlx.mission_control.query_contracts import QUERY_PAGE_SCHEMA, QueryRequest
 from bilqis_mlx.paths import active_run_dir
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 
 _CLIENT_ID = "mission-control-electron"
@@ -60,24 +61,39 @@ class ElectronBridge:
         self.client = client
         return _public_status(payload, connected=True)
 
+    def query(self, payload: dict) -> dict:
+        from ..query_contracts import QueryRequest
+        from ..contracts.codec import decode_record
+        from ..query_support import encode_query_page, matches_identity
+        from ..query_contracts import QueryPage, QueryState
+        from ..contracts.model import CoverageState
+        from ..query_contracts import QueryLink
+        if self.client is None:
+            return {"schema": QUERY_ERROR_SCHEMA, "accepted": False, "reason": "CONTROL_PLANE_NOT_CONNECTED"}
+        request = QueryRequest.from_mapping(payload)
+        response = self.client.query(request)
+        if response.get("accepted") is not True:
+            return {"schema": QUERY_ERROR_SCHEMA, "accepted": False,
+                    "reason": response.get("reason") or "CONTROL_PLANE_QUERY_UNAVAILABLE"}
+        # Reconstruct the public page from typed records; transport sessions stay private.
+        page = QueryPage(
+            request, QueryState(response["state"]), CoverageState(response["coverage"]),
+            response["total_matches"],
+            tuple(decode_record(row) for row in response["records"]),
+            tuple(decode_record(row) for row in response["markers"]),
+            tuple(QueryLink(**row) for row in response["links"]), response["next_cursor"],
+        )
+        if not all(matches_identity(row, request) for row in page.records):
+            ErrorBus.raise_(SCHOOL.BAMF_CONTROL_PLANE.INVALID, reason="CONTROL_PLANE_QUERY_IDENTITY_MISMATCH")
+        expected = encode_query_page(page)
+        if any(response.get(key) != value for key, value in expected.items()):
+            ErrorBus.raise_(SCHOOL.BAMF_CONTROL_PLANE.INVALID, reason="CONTROL_PLANE_QUERY_IDENTITY_MISMATCH")
+        return {**expected, "accepted": True}
+
     def status(self) -> dict:
         if self.client is None:
             return _public_status({}, connected=False)
         return _public_status(self.client.request("health"), connected=True)
-
-    def query(self, payload: dict) -> dict:
-        if self.client is None:
-            return {"schema": QUERY_ERROR_SCHEMA, "accepted": False,
-                    "reason": "CONTROL_PLANE_NOT_CONNECTED"}
-        request = QueryRequest.from_mapping(payload)
-        response = self.client.query(request)
-        if response.get("schema") != QUERY_PAGE_SCHEMA or not response.get("accepted"):
-            reason = response.get("reason")
-            return {"schema": QUERY_ERROR_SCHEMA, "accepted": False,
-                    "reason": reason if isinstance(reason, str) and reason else
-                    "CONTROL_PLANE_QUERY_UNAVAILABLE"}
-        return {key: value for key, value in response.items()
-                if key not in {"service", "session"}}
 
     def disconnect(self) -> dict:
         if self.client is not None:

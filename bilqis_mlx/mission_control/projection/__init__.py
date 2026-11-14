@@ -8,9 +8,9 @@ import sqlite3
 import tempfile
 from typing import Iterable
 
-from ..codec import canonical_json
-from ..envelopes import EventEnvelope
-from ..model import WireRecord, is_name, is_sha256, is_wire_integer
+from ..contracts.codec import canonical_json
+from ..contracts.envelopes import EventEnvelope
+from ..contracts.model import WireRecord, is_name, is_sha256, is_wire_integer
 from .contracts import (
     PROJECTION_SCHEMA, PROJECTION_SCHEMA_VERSION, ProjectionFrontierState,
     ProjectionFrontierStatus, ProjectionStats, projection_invalid,

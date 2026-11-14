@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from ..model import (
+from ..contracts.model import (
     AuthorityClass, DataValue, RecordMeta, WireRecord, is_name, is_sha256,
     is_wire_integer, require,
 )
