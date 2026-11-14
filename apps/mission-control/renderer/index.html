@@ -8,13 +8,15 @@
     <link rel="stylesheet" href="./visual-tokens.css" />
     <link rel="stylesheet" href="./shell.css" />
     <link rel="stylesheet" href="./components.css" />
-    <link rel="stylesheet" href="./domains/semantic-atlas.css" />
-    <link rel="stylesheet" href="./domains/school.css" />
-    <link rel="stylesheet" href="./domains/neural.css" />
-    <link rel="stylesheet" href="./domains/episodes.css" />
-    <link rel="stylesheet" href="./domains/evidence.css" />
+    <link rel="stylesheet" href="./atlas/semantic-atlas.css" />
+    <link rel="stylesheet" href="./school/school.css" />
+    <link rel="stylesheet" href="./neural/neural.css" />
+    <link rel="stylesheet" href="./episodes/episodes.css" />
+    <link rel="stylesheet" href="./teacher/teacher.css" />
+    <link rel="stylesheet" href="./evidence/evidence.css" />
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <div id="shell" class="shell" data-posture="unknown">
       <aside class="rail" aria-label="Primary navigation">
         <div class="brand">
@@ -27,7 +29,7 @@
         </button>
       </aside>
 
-      <main class="workspace">
+      <main id="main-content" class="workspace" tabindex="-1">
         <header class="context-bar">
           <div class="identity">
             <span id="mode-badge" class="mode-badge">LIVE</span>
@@ -43,7 +45,10 @@
           </div>
         </header>
 
-        <section class="view-host" aria-live="polite">
+        <section id="defensive-banner" class="defensive-banner" aria-live="polite" aria-atomic="true"></section>
+        <div id="announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+        <section class="view-host" aria-labelledby="view-title">
           <div class="eyebrow">Current destination</div>
           <h1 id="view-title">Mission Control</h1>
           <p id="view-summary">Shell foundation ready for provider-neutral BAMF views.</p>
@@ -57,7 +62,7 @@
         </section>
       </main>
 
-      <aside id="inspector" class="inspector" aria-label="Global inspector" aria-hidden="true">
+      <aside id="inspector" class="inspector" role="dialog" aria-labelledby="inspector-title" aria-hidden="true" inert>
         <div class="inspector-heading">
           <div><span class="eyebrow">Global inspector</span><h2 id="inspector-title">No selection</h2></div>
           <button id="inspector-close" type="button" aria-label="Close inspector">×</button>
@@ -65,6 +70,15 @@
         <dl id="inspector-details"></dl>
         <button id="open-owner" type="button">Open in owning view</button>
       </aside>
+
+      <dialog id="command-palette" class="command-palette" aria-labelledby="palette-title">
+        <div class="palette-heading">
+          <div><span class="eyebrow">Keyboard navigation</span><h2 id="palette-title">Command palette</h2></div>
+          <button id="palette-close" type="button" aria-label="Close command palette">×</button>
+        </div>
+        <p>Jump to a Mission Control destination. Operator mutation remains unavailable unless the current context is verified live.</p>
+        <div id="palette-options" class="palette-options"></div>
+      </dialog>
     </div>
     <script type="module" src="./renderer.mjs"></script>
   </body>

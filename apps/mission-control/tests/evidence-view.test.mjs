@@ -10,7 +10,7 @@ import {
   loadRecordById,
   loadRecordLinks,
   renderEvidenceMarkup,
-} from "../renderer/domains/evidence-view.mjs";
+} from "../renderer/evidence/evidence-view.mjs";
 
 const context = Object.freeze({ mode: "LIVE", runId: "run-7", generation: 7 });
 const historical = Object.freeze({ mode: "HISTORICAL", runId: "run-7", generation: 6 });
@@ -184,7 +184,7 @@ test("cursor pagination is passed back to CP03 unchanged", () => {
 
 test("forensic renderer has no direct provider, filesystem, process, or network escape", () => {
   const here = path.dirname(fileURLToPath(import.meta.url));
-  const source = fs.readFileSync(path.join(here, "../renderer/domains/evidence-view.mjs"), "utf8");
+  const source = fs.readFileSync(path.join(here, "../renderer/evidence/evidence-view.mjs"), "utf8");
   for (const forbidden of ["require(", "node:fs", "process.", "electron", "fetch(", "XMLHttpRequest"]) {
     assert.equal(source.includes(forbidden), false, forbidden);
   }
