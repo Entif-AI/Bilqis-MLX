@@ -215,7 +215,7 @@ function validatePostcondition(value) {
 function validateProjection(value, schema, receiptRequired) {
   const keys = [
     "schema", "operation_id", "request", "action", "mode", "target", "target_ref",
-    "expected_postcondition", "consequence", "preflight", "receipt", "postcondition",
+    "expected_postcondition", "consequence", "preflight", "receipt", "postcondition", "logs",
   ];
   if (!exactKeys(value, keys) || value.schema !== schema ||
       !/^operation:[0-9a-f]{64}$/.test(value.operation_id) || !ACTIONS.has(value.action) ||
@@ -234,6 +234,13 @@ function validateProjection(value, schema, receiptRequired) {
   if (receiptRequired) validateReceipt(value.receipt);
   else if (value.receipt !== null) invalid("PREVIEW_RECEIPT");
   validatePostcondition(value.postcondition);
+  if (value.logs !== null) {
+    if (!exactKeys(value.logs, ["stdout_tail", "stderr_tail"])) invalid("LOGS");
+    for (const key of ["stdout_tail", "stderr_tail"]) {
+      const tail = value.logs[key];
+      if (tail !== null && (typeof tail !== "string" || tail.length > 4096)) invalid("LOG_TAIL");
+    }
+  }
   return value;
 }
 

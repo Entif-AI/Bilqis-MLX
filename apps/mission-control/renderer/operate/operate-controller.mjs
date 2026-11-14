@@ -62,7 +62,7 @@ export function createOperateController(api) {
     if (!spec?.supported) return;
     const parametersText = action === "stop" && activeTrainingOperationId
       ? JSON.stringify({ operation_id: activeTrainingOperationId }, null, 2)
-      : state.parametersText;
+      : "{}";
     setState({
       ...initialOperateState(), action,
       dryRun: spec.dryRun && spec.mutation,

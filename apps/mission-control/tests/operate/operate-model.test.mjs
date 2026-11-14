@@ -89,6 +89,21 @@ test("Operate markup keeps pause unavailable while exposing stop through the mut
   assert.match(markup, /Observation views cannot dispatch commands/);
 });
 
+test("Operate inspection surfaces bounded trainer log tails for owner diagnosis", () => {
+  const markup = renderOperateMarkup({
+    action: "status", dryRun: false, parametersText: "{}", phase: "TERMINAL",
+    preview: null, conflicts: [], error: null, authorization: "",
+    inspection: {
+      operation_id: "operation:" + "a".repeat(64),
+      receipt: { state: "FAILED", error_ref: "command-error:1:abc" },
+      logs: { stdout_tail: "last good step\n", stderr_tail: "trainer exploded safely\n" },
+    },
+  }, { mutationAllowed: true });
+  assert.match(markup, /Trainer log tail/);
+  assert.match(markup, /trainer exploded safely/);
+  assert.match(markup, /last good step/);
+});
+
 test("operation inspector identities route back to Operate", () => {
   const operatorView = {
     active_capability_id: "B.EXAMPLE", learner_state: "READY", stage: "ASSESS_MAIN",

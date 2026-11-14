@@ -91,33 +91,15 @@ test("CP04 event families refresh only their owning CP03 family", () => {
   assert.equal(familyForEvent({ event_family: "candidate.retained" }), "episode");
   assert.equal(familyForEvent({ event_family: "capability.changed" }), "capability");
   assert.equal(familyForEvent({ event_family: "resource.health.sample" }), "resource");
-  assert.equal(familyForEvent({ event_family: "operator.action.state" }), "run");
   assert.equal(familyForEvent({ event_family: "warning.failure" }), null);
-});
-
-test("live command events refresh learner-active status without reconnecting Mission Control", async () => {
-  let active = false;
-  let listener = null;
-  const api = {
-    async query(request) { return emptyPage(request.family); },
-    async status() { return { learnerActive: active }; },
-    subscribeEvents(next) { listener = next; return async () => { listener = null; }; },
-  };
-  const controller = createHomeController(api);
-  await controller.activate({ runId: "live-run", generation: 7, mode: "LIVE" }, {
-    host: fakeHost(), onInspect: () => {}, defense: { historical: false },
-  });
-  assert.equal(controller.currentModel().runtime.running, false);
-  active = true;
-  await listener({ event_family: "operator.action.state" });
-  assert.equal(controller.currentModel().runtime.running, true);
-  await controller.deactivate();
 });
 
 test("live home uses one family query per CP04 event rather than polling the full view", async () => {
   const calls = [];
+  let active = true;
   let listener = null;
   const api = {
+    async status() { return { learnerActive: active }; },
     async query(request) {
       calls.push(request.family);
       return emptyPage(request.family);
@@ -130,7 +112,12 @@ test("live home uses one family query per CP04 event rather than polling the ful
   const controller = createHomeController(api);
   await controller.activate(context, { host: fakeHost(), onInspect: () => {}, defense: { historical: false } });
   assert.deepEqual(new Set(calls), new Set(HOME_FAMILIES));
+  assert.equal(controller.currentModel().runtime.running, true);
   const baseline = calls.length;
+  active = false;
+  await listener({ event_family: "operator.action.state" });
+  assert.equal(controller.currentModel().runtime.running, false);
+  assert.equal(calls.length, baseline);
   await listener({ event_family: "capability.changed" });
   assert.equal(calls.length, baseline + 1);
   assert.equal(calls.at(-1), "capability");

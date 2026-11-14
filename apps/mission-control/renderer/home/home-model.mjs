@@ -35,7 +35,6 @@ export function familyForEvent(event) {
   if (family.startsWith("teacher.")) return "teacher";
   if (family.startsWith("correction.")) return "correction";
   if (family.startsWith("resource.")) return "resource";
-  if (family.startsWith("operator.action.")) return "run";
   if (family.startsWith("run.") || family.startsWith("checkpoint.")) return "run";
   return null;
 }

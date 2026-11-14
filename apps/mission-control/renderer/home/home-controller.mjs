@@ -8,7 +8,9 @@ import {
 import { bindHomeInteractions, renderHomeMarkup } from "./home-view.mjs";
 
 function contextKey(context) {
-  return context ? [context.runId, context.generation, context.mode].join(":") : "none";
+  return context
+    ? [context.runId, context.generation, context.mode, context.operatorActive].join(":")
+    : "none";
 }
 
 export function createHomeController(api) {
@@ -54,10 +56,31 @@ export function createHomeController(api) {
     render();
   }
 
+  async function refreshOperatorStatus() {
+    let operatorActive = null;
+    if (!historical && typeof api.status === "function") {
+      try {
+        const status = await api.status();
+        operatorActive = typeof status?.learnerActive === "boolean"
+          ? status.learnerActive
+          : null;
+      } catch (_error) {
+        operatorActive = null;
+      }
+    }
+    context = Object.freeze({ ...context, operatorActive });
+  }
+
   async function subscribe() {
     if (historical || typeof api.subscribeEvents !== "function") return;
     try {
       unsubscribe = api.subscribeEvents(async (event) => {
+        if (event?.event_family === "operator.action.state") {
+          await refreshOperatorStatus();
+          model = projectionFromPages(pages, context);
+          render();
+          return;
+        }
         const family = familyForEvent(event);
         if (!family || context?.mode === "HISTORICAL") return;
         try {
@@ -76,9 +99,10 @@ export function createHomeController(api) {
   async function activate(nextContext, { host, onInspect, defense } = {}) {
     renderTarget = host;
     inspectTarget = onInspect;
-    context = nextContext;
     historical = Boolean(defense?.historical || nextContext?.mode === "HISTORICAL");
-    const nextKey = contextKey(nextContext) + `:${historical}`;
+    context = nextContext;
+    await refreshOperatorStatus();
+    const nextKey = contextKey(context) + `:${historical}`;
     if (key === nextKey) {
       render();
       return loadPromise;

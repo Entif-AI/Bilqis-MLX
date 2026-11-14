@@ -22,6 +22,7 @@ SPAWNED_SCHEMA = "bilqis.bamf.control-plane.command-worker-spawned/v1"
 WORKER_RESULT_SCHEMA = "bilqis.bamf.control-plane.command-worker-result/v1"
 TRAINER_PROCESS_SCHEMA = "bilqis.bamf.control-plane.command-trainer-process/v1"
 POSTCONDITION_SCHEMA = "bilqis.bamf.control-plane.command-postcondition/v1"
+SHA256_HEX_LENGTH = 64
 
 
 class CommandStore(CommandStorage):
@@ -168,11 +169,14 @@ class CommandStore(CommandStorage):
             _invalid("CONTROL_PLANE_COMMAND_RECORD_INVALID")
         return payload
 
-    def write_trainer_process(self, operation_id: str, *, pid: int) -> None:
+    def write_trainer_process(
+        self, operation_id: str, *, pid: int, identity_sha256: str,
+    ) -> None:
         self.write_fact(operation_id, "trainer-process.json", {
             "schema": TRAINER_PROCESS_SCHEMA,
             "operation_id": operation_id,
             "pid": pid,
+            "identity_sha256": identity_sha256,
         })
 
     def read_trainer_process(self, operation_id: str) -> dict | None:
@@ -184,6 +188,8 @@ class CommandStore(CommandStorage):
             or payload.get("operation_id") != operation_id
             or type(payload.get("pid")) is not int
             or payload["pid"] <= 0
+            or not isinstance(payload.get("identity_sha256"), str)
+            or len(payload["identity_sha256"]) != SHA256_HEX_LENGTH
         ):
             _invalid("CONTROL_PLANE_COMMAND_RECORD_INVALID")
         return payload
