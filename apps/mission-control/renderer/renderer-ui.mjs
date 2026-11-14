@@ -1,6 +1,7 @@
 import { DESTINATIONS, shellPosture } from "./shell-state.mjs";
 import { renderComponentCatalog } from "./component-catalog.mjs";
 import { renderSchoolView } from "./school-view.mjs";
+import { renderNeuralView } from "./neural-view.mjs";
 import { defensiveBannerMarkup } from "./defensive-state.mjs";
 import { bindRovingNavigation } from "./accessibility.mjs";
 
@@ -141,6 +142,20 @@ export function renderCurrentView(state, defense, onInspect) {
         "Qualification state": row.qualificationState,
       },
     }), state.selected?.kind === "capability" ? state.selected.id : null);
+    return;
+  }
+  if (state.view === "model") {
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Topology, attention health, depth routing and local refinement as measured telemetry only.";
+    renderNeuralView(domain, (id, kind) => onInspect({
+      kind: "neural",
+      id,
+      details: {
+        "Diagnostic class": kind,
+        "Interpretation boundary": "Measured routing/runtime telemetry only",
+      },
+    }));
     return;
   }
   fixture.hidden = false;
