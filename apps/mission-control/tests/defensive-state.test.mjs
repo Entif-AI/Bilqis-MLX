@@ -10,7 +10,7 @@ import {
   defensiveStateForError,
   defensiveStateIds,
   loadCachedOperatorView,
-} from "../renderer/defensive-state.mjs";
+} from "../renderer/foundation/defensive-state.mjs";
 import {
   createShellState,
   inspect,

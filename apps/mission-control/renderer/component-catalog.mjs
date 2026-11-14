@@ -1,6 +1,6 @@
 import { evidenceValue, semanticStateInventory, statusBadge } from "./visual-language.mjs";
 import { VISUAL_FIXTURES } from "./visual-fixtures.mjs";
-import { defensiveCatalogMarkup } from "./defensive-state.mjs";
+import { defensiveCatalogMarkup } from "./foundation/defensive-state.mjs";
 
 function metricTile() {
   return `<article class="metric-tile">

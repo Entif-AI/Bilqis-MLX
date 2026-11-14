@@ -7,7 +7,7 @@ import {
   selectionNeighborhood,
 } from "./school-model.mjs";
 import { schoolFixtureRows } from "./school-fixture.mjs";
-import { isActivationKey, nextRovingIndex } from "./accessibility.mjs";
+import { isActivationKey, nextRovingIndex } from "../foundation/accessibility.mjs";
 
 const rows = schoolFixtureRows();
 const ui = {

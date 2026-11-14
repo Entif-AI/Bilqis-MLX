@@ -1,14 +1,15 @@
-import { DESTINATIONS, shellPosture } from "./shell-state.mjs";
-import { renderComponentCatalog } from "./component-catalog.mjs";
-import { renderSchoolView } from "./school-view.mjs";
-import { renderNeuralView } from "./neural-view.mjs";
+import { DESTINATIONS, shellPosture } from "../shell-state.mjs";
+import { renderComponentCatalog } from "../component-catalog.mjs";
+import { renderSchoolView } from "../school/school-view.mjs";
+import { renderNeuralView } from "../neural/neural-view.mjs";
+import { renderEpisodesView } from "../episodes/episode-view.mjs";
 import { defensiveBannerMarkup } from "./defensive-state.mjs";
 import { bindRovingNavigation } from "./accessibility.mjs";
 
 const labels = new Map(DESTINATIONS);
 const demoObjects = [
   ["capability", "B.AND"],
-  ["episode", "candidate-44238-7"],
+  ["episode", "episode-record:fixture:retained-44239"],
   ["semantic", "sem:logic.and"],
   ["memory", "motif:bool-composition"],
   ["checkpoint", "generation:44238"],
@@ -156,6 +157,17 @@ export function renderCurrentView(state, defense, onInspect) {
         "Interpretation boundary": "Measured routing/runtime telemetry only",
       },
     }));
+    return;
+  }
+  if (state.view === "learning") {
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Durable candidate transaction replay with explicit retention, rollback and evidence boundaries.";
+    renderEpisodesView(domain, (id, kind) => onInspect({
+      kind: "evidence",
+      id,
+      details: { "Evidence type": kind, "Interpretation boundary": "Durable episode evidence only" },
+    }), state.selected?.kind === "episode" ? state.selected.id : null);
     return;
   }
   fixture.hidden = false;

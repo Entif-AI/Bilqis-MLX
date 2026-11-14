@@ -7,7 +7,7 @@ import {
   MANUAL_KEYBOARD_SCENARIO,
   isActivationKey,
   nextRovingIndex,
-} from "../renderer/accessibility.mjs";
+} from "../renderer/foundation/accessibility.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const rendererRoot = path.resolve(here, "../renderer");
@@ -54,7 +54,7 @@ test("focus is visibly retained and reduced-motion plus forced-colors modes are 
 });
 
 test("School graph remains keyboard interactive while exposing an equivalent relationship table", () => {
-  const school = source("school-view.mjs");
+  const school = source("school/school-view.mjs");
   assert.match(school, /role="group" aria-label="Capability prerequisite dependency graph"/);
   assert.match(school, /Equivalent table for the selected capability dependency graph/);
   assert.match(school, /aria-sort=/);
@@ -64,7 +64,7 @@ test("School graph remains keyboard interactive while exposing an equivalent rel
 });
 
 test("renderer blocks Operate unless verified live context is re-established and preserves offline inspection", () => {
-  const renderer = `${source("renderer.mjs")}\n${source("renderer-ui.mjs")}`;
+  const renderer = `${source("renderer.mjs")}\n${source("foundation/renderer-ui.mjs")}`;
   assert.match(renderer, /id === "operate" && !state\.mutationAvailable/);
   assert.match(renderer, /loadCachedOperatorView/);
   assert.match(renderer, /cacheOperatorView/);

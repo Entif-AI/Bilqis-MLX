@@ -22,16 +22,16 @@ import {
   defensiveStateForConnection,
   defensiveStateForError,
   loadCachedOperatorView,
-} from "./defensive-state.mjs";
+} from "./foundation/defensive-state.mjs";
 import {
   renderChrome,
   renderInspector,
   renderPaletteOptions,
-} from "./renderer-ui.mjs";
+} from "./foundation/renderer-ui.mjs";
 import {
   focusToken,
   restoreFocus,
-} from "./accessibility.mjs";
+} from "./foundation/accessibility.mjs";
 
 const labels = new Map(DESTINATIONS);
 const SNAPSHOT_REQUEST = Object.freeze({
