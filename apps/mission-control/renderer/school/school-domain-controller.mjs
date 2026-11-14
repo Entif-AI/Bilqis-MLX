@@ -28,8 +28,11 @@ function subnav(container, mode, onModeChange) {
 
 export function activateSchoolDomain({ state, api, onInspect, isActive = () => true }) {
   if (state?.view !== "school") return;
-  const container = document.querySelector("#domain-view");
-  const summary = document.querySelector("#view-summary");
+  const root = globalThis.document;
+  if (!root) return;
+  const container = root.querySelector("#domain-view");
+  const summary = root.querySelector("#view-summary");
+  if (!container || !summary) return;
   if (state.selected?.kind === "capability" && state.selected.id) {
     schoolSelectedId = state.selected.id;
   }

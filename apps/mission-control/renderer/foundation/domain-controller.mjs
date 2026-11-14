@@ -13,6 +13,7 @@ import { deactivateEvidenceView } from "../evidence/evidence-view.mjs";
 export function activateDomainViews({
   state, getState, defense, api, homeController, resourceController, onInspect,
 }) {
+  if (state?.view !== "evidence") deactivateEvidenceView();
   if (state?.view === "atlas") {
     const context = state.context;
     const isActive = () => getState()?.view === "atlas" && getState().context === context;
@@ -34,7 +35,6 @@ export function activateDomainViews({
         getState()?.view === "school" && getState().context === context,
     });
   } else invalidateSchoolDomainRequests();
-  if (state?.view !== "evidence") deactivateEvidenceView();
   if (state?.view === "mission-control") {
     void homeController.activate(state.context, {
       host: document.querySelector("#domain-view"),
