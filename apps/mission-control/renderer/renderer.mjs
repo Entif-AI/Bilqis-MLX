@@ -19,11 +19,12 @@ import {
 } from "./settings.mjs";
 import { renderSchoolView } from "./school-view.mjs";
 import { renderNeuralView } from "./neural-view.mjs";
+import { renderEpisodesView } from "./episode-view.mjs";
 
 const labels = new Map(DESTINATIONS);
 const demoObjects = [
   ["capability", "B.AND"],
-  ["episode", "candidate-44238-7"],
+  ["episode", "episode-record:fixture:retained-44239"],
   ["semantic", "sem:logic.and"],
   ["memory", "motif:bool-composition"],
   ["checkpoint", "generation:44238"],
@@ -162,6 +163,24 @@ function renderCurrentView() {
       renderInspector();
       setHash();
     });
+    return;
+  }
+  if (state.view === "learning") {
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Candidate proposal, work, assessment, retention and finalization reconstructed from bounded evidence.";
+    renderEpisodesView(domain, (id, evidenceType) => {
+      state = inspect(state, {
+        kind: "evidence",
+        id,
+        details: {
+          "Evidence type": evidenceType,
+          "Episode replay": "Read-only durable evidence reference",
+        },
+      });
+      renderInspector();
+      setHash();
+    }, state.selected?.kind === "episode" ? state.selected.id : null);
     return;
   }
   fixture.hidden = false;
