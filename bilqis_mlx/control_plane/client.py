@@ -159,16 +159,34 @@ class ControlPlaneClient:
         acknowledgement = self._read_response()
         return ControlPlaneEventSubscription(self, acknowledgement)
 
+    def preview_command(self, request: OperatorActionRequestV2) -> dict:
+        from bilqis_mlx.mission_control.codec import encode_record
+        if type(request) is not OperatorActionRequestV2:
+            _invalid("CONTROL_PLANE_COMMAND_REQUEST_INVALID")
+        response = self._send({
+            "type": "command-preview",
+            "request": encode_record(request),
+        })
+        if response.get("schema") == ERROR_SCHEMA and response.get("accepted") is False:
+            reason = response.get("reason")
+            _invalid(reason if isinstance(reason, str) and reason else
+                     "CONTROL_PLANE_COMMAND_PREVIEW_INVALID")
+        return response
+
     def submit_command(
-        self, request: OperatorActionRequestV2,
+        self, request: OperatorActionRequestV2, *,
+        expected_target_ref: str | None = None,
     ) -> OperatorActionReceiptV2:
         from bilqis_mlx.mission_control.codec import encode_record
         if type(request) is not OperatorActionRequestV2:
             _invalid("CONTROL_PLANE_COMMAND_REQUEST_INVALID")
-        return self._decode_command_receipt(self._send({
+        payload = {
             "type": "command-submit",
             "request": encode_record(request),
-        }))
+        }
+        if expected_target_ref is not None:
+            payload["expected_target_ref"] = expected_target_ref
+        return self._decode_command_receipt(self._send(payload))
 
     def command_status(self, operation_id: str) -> OperatorActionReceiptV2:
         if not isinstance(operation_id, str) or not operation_id:
@@ -177,6 +195,19 @@ class ControlPlaneClient:
             "type": "command-status",
             "operation_id": operation_id,
         }))
+
+    def inspect_command(self, operation_id: str) -> dict:
+        if not isinstance(operation_id, str) or not operation_id:
+            _invalid("CONTROL_PLANE_COMMAND_OPERATION_REQUIRED")
+        response = self._send({
+            "type": "command-inspect",
+            "operation_id": operation_id,
+        })
+        if response.get("schema") == ERROR_SCHEMA and response.get("accepted") is False:
+            reason = response.get("reason")
+            _invalid(reason if isinstance(reason, str) and reason else
+                     "CONTROL_PLANE_COMMAND_INSPECTION_INVALID")
+        return response
 
     @staticmethod
     def _decode_command_receipt(response: dict) -> OperatorActionReceiptV2:

@@ -58,10 +58,10 @@ test("GUI08 missing exact historical identity stays missing", async () => {
   }
 });
 
-test("GUI08 main rejects invalid query shapes and current identity", async () => {
+test("GUI08 main rejects invalid query shapes and cannot cross the GUI17 command contract", async () => {
   const { bridge, request } = await setup();
   for (const changed of [{ generation: -1 }, { generation: 6 }, { generation: 1.5 }, { mode: "latest" }, { path: "/tmp" }]) {
     await assert.rejects(bridge.snapshot({ ...request, ...changed }), /FRAME_INSPECTION_INVALID/);
   }
-  await assert.rejects(bridge.command(request), /UNSUPPORTED/);
+  await assert.rejects(bridge.command(request), /BAMF_GUI17_OPERATOR_CONTRACT_INVALID/);
 });
