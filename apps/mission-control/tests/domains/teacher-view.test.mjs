@@ -8,7 +8,7 @@ import {
   STRATEGY_FIXTURES,
   TEACHER_CHECKPOINT,
   TEACHER_PROJECTION,
-} from "../renderer/teacher/teacher-fixture.mjs";
+} from "../../renderer/teacher/teacher-fixture.mjs";
 import {
   aggregateContext,
   comparisonScopes,
@@ -18,12 +18,12 @@ import {
   strategyComparison,
   strategyEpisodes,
   teacherProjectionBoundary,
-} from "../renderer/teacher/teacher-model.mjs";
-import { INSPECTOR_OWNERS } from "../renderer/shell-state.mjs";
+} from "../../renderer/teacher/teacher-model.mjs";
+import { INSPECTOR_OWNERS } from "../../renderer/shell-state.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(here, "../../..");
-const rendererRoot = path.resolve(here, "../renderer");
+const repoRoot = path.resolve(here, "../../../..");
+const rendererRoot = path.resolve(here, "../../renderer");
 
 test("strategy roster contains incumbent challenger canary and retired fixture roles", () => {
   assert.deepEqual(roleCounts(), {
