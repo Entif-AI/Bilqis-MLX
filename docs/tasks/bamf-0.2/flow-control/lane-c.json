@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "e53bd672673a40362319db331d28c0fb9ed82760",
-  "updated_at": "2026-11-14T00:20:24.822022+00:00",
+  "observed_unified": "eabc6758074296e5e767adbb9a43423b175cb2f3",
+  "updated_at": "2026-11-14T01:21:13.691966+00:00",
   "exception": null,
   "items": [
     {
@@ -395,9 +395,9 @@
     {
       "issue": 1063,
       "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "bd181b3b7cae23e7e94af1a7784e2deb4b02944f",
-      "summary": "GUI08 Frame Compiler Explorer; isolated single writer on issue-scoped branch; fixture-backed inspection through accepted Electron adapter.",
+      "state": "READY",
+      "head_sha": "9e8f66c704bc95db899729808023bd9208eda28c",
+      "summary": "GUI08 fixture-backed Frame Compiler Explorer ready for human review: synchronized unified eabc6758, pinned design/amendment PASS and final NO_DRIFT, 161 Node + 4 Python bridge tests, quality/ABI and browser journey green. Source/runtime unchanged; no learner mutation. PM-2026-11-13-002 and PM-2026-11-07-002 native readbacks verified.",
       "resume_trigger": null,
       "preserved_branch": "codex/1063-frame-compiler-explorer-20261113"
     }
