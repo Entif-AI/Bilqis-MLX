@@ -15,6 +15,9 @@ from .receipts import build_receipt, error_ref_from_exception
 from ..transport import _invalid
 
 
+INTERRUPTED_RETURN_CODE = 130
+
+
 def _now() -> int:
     return int(time.time() * 1000)
 
@@ -92,7 +95,7 @@ def _readback_after_execution(executor, plan, returncode, execution_error):
             postcondition = executor.postcondition_after_success(plan)
         except (BilqisError, MissionControlContractError, OSError) as error:
             execution_error = error_ref_from_exception(error)
-    elif returncode == 130:
+    elif returncode == INTERRUPTED_RETURN_CODE:
         try:
             postcondition = executor.postcondition_after_interrupt(plan)
         except (BilqisError, MissionControlContractError, OSError) as error:

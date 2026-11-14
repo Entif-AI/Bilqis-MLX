@@ -35,7 +35,7 @@ class C11CommandAdapterTests(unittest.TestCase):
 
         class FailingStore:
             def write_trainer_process(self, *_args, **_kwargs):
-                raise OSError("custody unavailable")
+                raise OSError
 
         process = Process()
         with TemporaryDirectory() as temporary, patch(

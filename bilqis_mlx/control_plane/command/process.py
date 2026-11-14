@@ -42,7 +42,7 @@ def run_trainer(
                 if store is not None:
                     identity_sha256 = identity_resolver(process.pid)
                     if identity_sha256 is None:
-                        raise RuntimeError("PROCESS_IDENTITY_UNAVAILABLE")
+                        raise RuntimeError
                     store.write_trainer_process(
                         operation_id,
                         pid=process.pid,
