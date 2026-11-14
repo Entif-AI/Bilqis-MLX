@@ -18,7 +18,7 @@ from .observability import (
 )
 from .operator import (
     ActionParameter, ActionReceiptState, OperatorActionReceipt,
-    OperatorActionRequest,
+    OperatorActionReceiptV2, OperatorActionRequest, OperatorActionRequestV2,
 )
 from .query_contracts import (
     DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, QUERY_PAGE_SCHEMA, QUERY_REQUEST_SCHEMA,
@@ -46,7 +46,8 @@ __all__ = (
     "EventEnvelope", "FrameCompileReceipt", "GenerationManifest",
     "LearningEpisode", "MemorySnapshot", "MissionControlContractError",
     "MissionControlQueryCatalog",
-    "NeuralRuntimeSample", "OperatorActionReceipt", "OperatorActionRequest",
+    "NeuralRuntimeSample", "OperatorActionReceipt", "OperatorActionReceiptV2",
+    "OperatorActionRequest", "OperatorActionRequestV2",
     "OperatorView", "PartialEnvelope", "RECORD_BY_SCHEMA", "RecordMeta",
     "ResourceSample", "RunContext", "RunRef", "SalienceEvent",
     "DEFAULT_PAGE_SIZE", "MAX_PAGE_SIZE", "QUERY_PAGE_SCHEMA",

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 
-from bilqis_mlx.data_plane import DataPlaneError
+from bilqis_mlx.data_plane import DataPlaneError, SHA256_HEX_LENGTH
 
 from ..records import BAMF_POINTER_SCHEMA, canonical, invalid, sha
 from ..run_identity import BamfRunIdentity
@@ -21,7 +21,9 @@ class AcceptedGenerationInspection:
     generation: int
     generation_manifest_sha256: str
     optimizer_step: int
+    candidate_identity_sha256: str
     factory_release_sha256: str
+    semantic_release_sha256: str
     topology_sha256: str
     acceptance_sha256: str
 
@@ -45,6 +47,10 @@ def inspect_accepted_generation(pointer_path: Path) -> AcceptedGenerationInspect
     if (not isinstance(acceptance, dict)
             or acceptance.get("binding_sha256") != pointer["acceptance_sha256"]):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    candidate_identity_sha256 = acceptance.get("candidate_identity_sha256")
+    provenance = manifest.get("provenance")
+    semantic_release_sha256 = (
+        provenance.get("release_digest") if isinstance(provenance, dict) else None)
     public_acceptance = {
         key: value for key, value in acceptance.items()
         if key != "binding_sha256"
@@ -72,6 +78,24 @@ def inspect_accepted_generation(pointer_path: Path) -> AcceptedGenerationInspect
         invalid("BAMF_RUN_IDENTITY_INVALID")
     if identity.run_id != pointer["run_id"]:
         invalid("BAMF_RUN_IDENTITY_DRIFT")
+    current_factory_release_sha256 = acceptance.get(
+        "factory_release_sha256", identity.factory_release_sha256)
+    if (not isinstance(candidate_identity_sha256, str)
+            or len(candidate_identity_sha256) != SHA256_HEX_LENGTH
+            or not isinstance(semantic_release_sha256, str)
+            or len(semantic_release_sha256) != SHA256_HEX_LENGTH
+            or not isinstance(current_factory_release_sha256, str)
+            or len(current_factory_release_sha256) != SHA256_HEX_LENGTH
+            or any(
+                char not in "0123456789abcdef"
+                for value in (
+                    candidate_identity_sha256,
+                    semantic_release_sha256,
+                    current_factory_release_sha256,
+                )
+                for char in value
+            )):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     if _read_pointer(pointer_path) != pointer:
         invalid("BAMF_GENERATION_POINTER_CHANGED_DURING_READ")
     return AcceptedGenerationInspection(
@@ -80,7 +104,9 @@ def inspect_accepted_generation(pointer_path: Path) -> AcceptedGenerationInspect
         generation=pointer["generation"],
         generation_manifest_sha256=pointer["manifest_sha256"],
         optimizer_step=manifest["optimizer"]["step"],
-        factory_release_sha256=identity.factory_release_sha256,
+        candidate_identity_sha256=candidate_identity_sha256,
+        factory_release_sha256=current_factory_release_sha256,
+        semantic_release_sha256=semantic_release_sha256,
         topology_sha256=identity.initial_topology_digest,
         acceptance_sha256=pointer["acceptance_sha256"],
     )

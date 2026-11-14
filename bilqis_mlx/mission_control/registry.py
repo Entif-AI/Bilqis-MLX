@@ -13,7 +13,10 @@ from .observability import (
     GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, TeacherSnapshot,
 )
-from .operator import OperatorActionReceipt, OperatorActionRequest
+from .operator import (
+    OperatorActionReceipt, OperatorActionReceiptV2,
+    OperatorActionRequest, OperatorActionRequestV2,
+)
 from .semantic import (
     SemanticBankSnapshot, SemanticConceptSnapshot, SemanticGenerationState,
     SemanticHeldMappingSnapshot, SemanticSimilaritySnapshot,
@@ -48,6 +51,8 @@ ALL_RECORD_TYPES = (
     ResourceSample,
     OperatorActionRequest,
     OperatorActionReceipt,
+    OperatorActionRequestV2,
+    OperatorActionReceiptV2,
     ErrorEnvelope,
     UnavailableEnvelope,
     StaleEnvelope,

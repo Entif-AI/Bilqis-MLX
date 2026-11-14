@@ -23,6 +23,7 @@ import {
   loadDisplaySettings,
   saveDisplaySettings,
 } from "./settings.mjs";
+import { renderSchoolView } from "./school-view.mjs";
 
 const labels = new Map(DESTINATIONS);
 const demoObjects = [
@@ -102,12 +103,17 @@ function renderInspector() {
   const selected = state.selected;
   panel.setAttribute("aria-hidden", String(!state.inspectorOpen));
   document.querySelector("#inspector-title").textContent = selected ? selected.id : "No selection";
+  const exact = selected?.details
+    ? Object.entries(selected.details).map(([label, value]) =>
+      `<dt>${label}</dt><dd>${Array.isArray(value) ? value.join(", ") : value}</dd>`,
+    ).join("")
+    : "";
   document.querySelector("#inspector-details").innerHTML = selected
     ? `<dt>Object class</dt><dd>${selected.kind}</dd>
        <dt>Identity</dt><dd>${selected.id}</dd>
        <dt>Posture</dt><dd>${state.context.mode}</dd>
        <dt>Generation</dt><dd>${state.context.generation}</dd>
-       <dt>Evidence</dt><dd>Fixture reference only</dd>`
+       <dt>Evidence</dt><dd>Fixture reference only</dd>${exact}`
     : "";
   document.querySelector("#open-owner").disabled = !selected;
 }
@@ -127,17 +133,6 @@ function renderDemoActions() {
 
 function renderAtlasDomain() {
   const host = document.querySelector("#domain-view");
-  const fixture = document.querySelector(".fixture-card");
-  const catalog = document.querySelector("#visual-catalog");
-  const atlasVisible = state.view === "atlas";
-  host.hidden = !atlasVisible;
-  fixture.hidden = atlasVisible;
-  catalog.hidden = atlasVisible;
-  document.querySelector("#view-summary").textContent = atlasVisible
-    ? "Source-authoritative semantic identity and generation-scoped ABI state, with learned similarity isolated behind a separate lens."
-    : "Shell foundation ready for provider-neutral BAMF views.";
-  if (!atlasVisible) return;
-
   host.innerHTML = renderAtlasMarkup({ ...atlasState, context: state.context });
   host.querySelectorAll("[data-atlas-lens]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -201,14 +196,58 @@ async function ensureAtlasOverview() {
   if (state.view === "atlas") renderAtlasDomain();
 }
 
+function renderCurrentView() {
+  const domain = document.querySelector("#domain-view");
+  const fixture = document.querySelector(".fixture-card");
+  const catalog = document.querySelector("#visual-catalog");
+  const summary = document.querySelector("#view-summary");
+  if (state.view === "school") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Exact capability comparison and declared prerequisite topology. Grade labels organize only.";
+    renderSchoolView(domain, (id, row) => {
+      state = inspect(state, {
+        kind: "capability",
+        id,
+        details: {
+          "WAS/TOP/NOW/ALL": row.was + "/" + row.top + "/" + row.now + "/" + row.total,
+          Debt: row.debt,
+          "P(RET)": row.pRet ?? "NOT MEASURED",
+          Prerequisites: row.prerequisites.length ? row.prerequisites : ["none"],
+          "Source state": row.sourceState,
+          "Implementation state": row.implementationState,
+          "Qualification state": row.qualificationState,
+        },
+      });
+      renderInspector();
+      setHash();
+    }, state.selected?.kind === "capability" ? state.selected.id : null);
+    return;
+  }
+  if (state.view === "atlas") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Source-authoritative semantic identity and generation-scoped ABI state, with learned similarity isolated behind a separate lens.";
+    renderAtlasDomain();
+    return;
+  }
+  domain.hidden = true;
+  fixture.hidden = false;
+  catalog.hidden = false;
+  domain.innerHTML = "";
+  summary.textContent = "Shell foundation ready for provider-neutral BAMF views.";
+  catalog.innerHTML = renderComponentCatalog();
+}
+
 function render() {
   renderContext();
   renderNavigation();
   renderInspector();
   renderDemoActions();
-  document.querySelector("#visual-catalog").innerHTML = renderComponentCatalog();
+  renderCurrentView();
   document.querySelector("#view-title").textContent = labels.get(state.view);
-  renderAtlasDomain();
   document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;
   document.querySelector("#density-trigger").textContent = "Density · " + displaySettings.density;
   setHash();

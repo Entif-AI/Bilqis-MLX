@@ -178,7 +178,7 @@ def record_schema(record_type: type[WireRecord]) -> dict:
         schema["x-bilqis-runtime-invariants"] = [
             "position.cursor_sha256 is the CP02 cursor digest over position, event and payload identity",
         ]
-    elif record_type.__name__ == "OperatorActionReceipt":
+    elif record_type.__name__ in {"OperatorActionReceipt", "OperatorActionReceiptV2"}:
         schema["x-bilqis-runtime-invariants"] = [
             "COMPLETED requires postcondition_ref and receipt_refs",
             "REJECTED/FAILED require error_ref",
