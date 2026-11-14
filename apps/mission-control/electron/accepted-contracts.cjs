@@ -4,6 +4,19 @@ const CP01_STATUS_SCHEMA = "bamf.gui20.cp01-status/v1";
 const CP01_PROTOCOL_VERSION = "bilqis.bamf.control-plane/v1";
 const OPERATOR_VIEW_SCHEMA = "bilqis.bamf.mission-control.operator-view/v1";
 const SNAPSHOT_QUERY_SCHEMA = "bamf.gui20.operator-view-query/v1";
+const QUERY_REQUEST_SCHEMA = "bilqis.bamf.control-plane.query/v1";
+const QUERY_PAGE_SCHEMA = "bilqis.bamf.control-plane.query-page/v1";
+const QUERY_ERROR_SCHEMA = "bamf.gui07.query-error/v1";
+const QUERY_FAMILIES = new Set([
+  "run", "school", "capability", "episode", "generation", "semantic", "frame",
+  "neural", "memory", "teacher", "salience", "correction", "resource",
+  "reference", "links",
+]);
+const QUERY_MODES = new Set(["current", "historical"]);
+const QUERY_STATES = new Set([
+  "PRESENT", "EMPTY", "MISSING", "UNAVAILABLE", "PARTIAL", "STALE", "DENIED", "UNKNOWN",
+]);
+const COVERAGE_STATES = new Set(["COMPLETE", "PARTIAL", "UNKNOWN", "NOT_APPLICABLE"]);
 const CP01_STATES = new Set([
   "connecting", "healthy", "degraded", "incompatible-version", "unauthorized",
   "learner-unavailable", "service-restarting", "stale", "disconnected",
@@ -44,6 +57,60 @@ function validateStatus(value) {
   return value;
 }
 
+function nullableName(value) {
+  return value === null || (typeof value === "string" && value.length > 0 &&
+    value !== "latest" && !value.includes("\n"));
+}
+
+function validateQueryRequest(value) {
+  const keys = [
+    "schema", "family", "mode", "run_id", "record_id", "schema_version",
+    "generation", "frontier_id", "as_of", "reference", "cursor", "limit",
+  ];
+  if (!exactKeys(value, keys) || value.schema !== QUERY_REQUEST_SCHEMA ||
+      !QUERY_FAMILIES.has(value.family) || !QUERY_MODES.has(value.mode) ||
+      ![value.run_id, value.record_id, value.schema_version, value.frontier_id,
+        value.reference, value.cursor].every(nullableName) ||
+      (value.generation !== null && (!Number.isSafeInteger(value.generation) || value.generation < 0)) ||
+      (value.as_of !== null && (!Number.isSafeInteger(value.as_of) || value.as_of < 0)) ||
+      !Number.isSafeInteger(value.limit) || value.limit < 1 || value.limit > 32) {
+    invalid("QUERY_REQUEST");
+  }
+  if (value.mode === "historical" &&
+      [value.generation, value.frontier_id, value.as_of, value.record_id].every((item) => item === null)) {
+    invalid("QUERY_HISTORICAL_IDENTITY");
+  }
+  if (value.family === "reference" && value.reference === null) invalid("QUERY_REFERENCE");
+  if (value.family === "links" && value.record_id === null) invalid("QUERY_LINKS");
+  return value;
+}
+
+function validateQueryResponse(value) {
+  if (exactKeys(value, ["schema", "accepted", "reason"]) &&
+      value.schema === QUERY_ERROR_SCHEMA && value.accepted === false &&
+      typeof value.reason === "string" && value.reason.length > 0) {
+    return value;
+  }
+  const keys = [
+    "schema", "query_id", "request", "family", "mode", "state", "coverage",
+    "total_matches", "returned", "truncated", "next_cursor", "records", "markers",
+    "links", "accepted",
+  ];
+  if (!exactKeys(value, keys) || value.schema !== QUERY_PAGE_SCHEMA || value.accepted !== true ||
+      typeof value.query_id !== "string" || value.query_id.length !== 64 ||
+      !QUERY_FAMILIES.has(value.family) || !QUERY_MODES.has(value.mode) ||
+      !QUERY_STATES.has(value.state) || !COVERAGE_STATES.has(value.coverage) ||
+      !Number.isSafeInteger(value.total_matches) || value.total_matches < 0 ||
+      !Number.isSafeInteger(value.returned) || value.returned < 0 ||
+      typeof value.truncated !== "boolean" ||
+      (value.next_cursor !== null && typeof value.next_cursor !== "string") ||
+      !Array.isArray(value.records) || !Array.isArray(value.markers) || !Array.isArray(value.links)) {
+    invalid("QUERY_RESPONSE");
+  }
+  validateQueryRequest(value.request);
+  return value;
+}
+
 function createAcceptedValidators(assertOperatorView) {
   if (typeof assertOperatorView !== "function") {
     throw new TypeError("BAMF_GUI20_OPERATOR_VIEW_VALIDATOR_REQUIRED");
@@ -57,12 +124,14 @@ function createAcceptedValidators(assertOperatorView) {
       }
       return value;
     },
+    queryRequest: validateQueryRequest,
     dryRunRequest: unavailable,
     commandRequest: unavailable,
     receiptRef: unavailable,
     response(method, value) {
       if (method === "status") return validateStatus(value);
       if (method === "snapshot") return assertOperatorView(value);
+      if (method === "query") return validateQueryResponse(value);
       unavailable();
     },
     event: unavailable,
@@ -73,5 +142,8 @@ module.exports = {
   CP01_STATUS_SCHEMA,
   OPERATOR_VIEW_SCHEMA,
   SNAPSHOT_QUERY_SCHEMA,
+  QUERY_REQUEST_SCHEMA,
+  QUERY_PAGE_SCHEMA,
+  QUERY_ERROR_SCHEMA,
   createAcceptedValidators,
 };

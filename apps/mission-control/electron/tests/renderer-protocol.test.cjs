@@ -38,6 +38,8 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     "/school-model.mjs",
     "/school-view.mjs",
     "/school.css",
+    "/semantic-atlas.css",
+    "/semantic-atlas.mjs",
     "/settings.mjs",
     "/shell-state.mjs",
     "/shell.css",

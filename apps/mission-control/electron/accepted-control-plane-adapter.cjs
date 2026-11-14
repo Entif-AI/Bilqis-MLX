@@ -54,6 +54,11 @@ class AcceptedControlPlaneAdapter {
     return structuredClone(OPERATOR_VIEW);
   }
 
+  async query(session, request) {
+    this.#requireSession(session);
+    return this.broker.query(request);
+  }
+
   close() {
     this.broker.close();
   }
