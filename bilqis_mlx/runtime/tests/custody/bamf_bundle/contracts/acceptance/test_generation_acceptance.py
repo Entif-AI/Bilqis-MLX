@@ -38,6 +38,34 @@ class GenerationAcceptancePublicationTests(GenerationAcceptanceFixture, unittest
             failure.exception.context["reason"],
             "BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
+    def test_motif_acceptance_with_teacher_anchor_uses_portable_exact_schema(self):
+        source = self.source()
+        decision = retention_decision(
+            parent=self.parent().retained_state,
+            retained=source.retained_state,
+        )
+        generation_authority = "f" * 64
+        teacher_anchor = "e" * 64
+        with patch(
+                "bilqis_mlx.learning.atlas_retention_decision."
+                "_issued_decision_generation_authority",
+                return_value=generation_authority), patch(
+                "bilqis_mlx.learning.atlas_retention_decision."
+                "_require_issued_decision_generation_authority"):
+            binding = mint_acceptance_binding(
+                decision, source.retained_state,
+                run_id=source.run_id, generation=source.generation,
+                feature_sha256=source.extents.factor_map_digest,
+                teacher_state_sha256=teacher_anchor,
+                generation_authority_sha256=generation_authority,
+            )
+        self.assertEqual(binding.schema_version, EXACT_MOTIF_ACCEPTANCE_SCHEMA)
+        self.assertEqual(binding.teacher_state_sha256, teacher_anchor)
+        self.assertEqual(
+            AcceptedCandidateBinding.from_record(binding.to_record()).schema_version,
+            EXACT_MOTIF_ACCEPTANCE_SCHEMA,
+        )
+
     def test_publication_refuses_binding_with_foreign_step_proof(self):
         source = self.source()
         forged = self.binding(source)

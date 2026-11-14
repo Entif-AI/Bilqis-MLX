@@ -15,6 +15,8 @@ _POINTER_V2 = "bilqis.mlx.bamf-generation-pointer/v2"
 _EXACT_ACCEPTANCE_SCHEMAS = (
     "bilqis.mlx.accepted-candidate-binding/v9",
     "bilqis.mlx.accepted-candidate-binding/v10",
+    "bilqis.mlx.accepted-candidate-binding/v11",
+    "bilqis.mlx.accepted-candidate-binding/v12",
 )
 _POINTER = "bamf-state.json"
 

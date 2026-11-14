@@ -55,6 +55,12 @@ pretending they advanced the learner generation, but they are deliberately exclu
 from portable CP06 reconstruction because current B13 run artifacts do not carry an
 independently authenticated portable rejection-decision anchor.
 
+The portable teacher-state anchor applies to every newly accepted successor that
+can carry C03 custody. Ordinary retained successors use exact acceptance schemas
+v9/v10; motif-allocation successors use anchored motif schemas v11/v12. The
+historical v6/v8 motif schemas remain readable by B13 for compatibility, but CP06
+does not promote an unanchored historical C03 receipt into portable authority.
+
 CP04 now refreshes that authenticated native source before subscription and on
 the heartbeat path. The first successful read establishes the service-local
 snapshot frontier; only later accepted/rejected native facts become live deltas.

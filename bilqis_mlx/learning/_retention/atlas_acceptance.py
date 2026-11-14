@@ -14,6 +14,7 @@ from .atlas_retention_decision import CandidateRetentionDecision
 from ._atlas_acceptance_records import (
     ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
     EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+    EXACT_MOTIF_ACCEPTANCE_SCHEMA, EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
     CLOSURE_BINDING_FIELDS, MOTIF_CLOSURE_BINDING_FIELDS,
     EXACT_BINDING_FIELDS, EXACT_CLOSURE_BINDING_FIELDS, normalize_artifact_closures,
     BINDING_FIELDS as _BINDING_FIELDS,
@@ -163,7 +164,8 @@ class AcceptedCandidateBinding:
                 or self.schema_version not in {
                     ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA,
                     CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-                    EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA}
+                    EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+                    EXACT_MOTIF_ACCEPTANCE_SCHEMA, EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA}
                 or (self.schema_version in (ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA)
                     and self.generation_authority_sha256 is not None)
                 or (self.schema_version in (
@@ -172,17 +174,21 @@ class AcceptedCandidateBinding:
                     and self.teacher_state_sha256 is not None)
                 or (self.schema_version in (
                         MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-                        EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA)
+                        EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+                        EXACT_MOTIF_ACCEPTANCE_SCHEMA, EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
                     and not _is_digest(self.generation_authority_sha256))
                 or (self.schema_version in (
-                        EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA)
+                        EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+                        EXACT_MOTIF_ACCEPTANCE_SCHEMA, EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
                     and not _is_digest(self.teacher_state_sha256))
                 or (self.schema_version in (
-                        ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA, EXACT_ACCEPTANCE_SCHEMA)
+                        ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA, EXACT_ACCEPTANCE_SCHEMA,
+                        EXACT_MOTIF_ACCEPTANCE_SCHEMA)
                     and self.artifact_closures)
                 or (self.schema_version in (
                         CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-                        EXACT_CLOSURE_ACCEPTANCE_SCHEMA)
+                        EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+                        EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
                     and not self.artifact_closures)):
             _invalid()
         if self.artifact_closures:
@@ -190,8 +196,11 @@ class AcceptedCandidateBinding:
 
     def _public_record(self) -> dict:
         names = (EXACT_CLOSURE_BINDING_FIELDS
-                 if self.schema_version == EXACT_CLOSURE_ACCEPTANCE_SCHEMA
-                 else EXACT_BINDING_FIELDS if self.schema_version == EXACT_ACCEPTANCE_SCHEMA
+                 if self.schema_version in (
+                     EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+                     EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
+                 else EXACT_BINDING_FIELDS if self.schema_version in (
+                     EXACT_ACCEPTANCE_SCHEMA, EXACT_MOTIF_ACCEPTANCE_SCHEMA)
                  else CLOSURE_BINDING_FIELDS if self.schema_version == CLOSURE_ACCEPTANCE_SCHEMA
                  else MOTIF_CLOSURE_BINDING_FIELDS if self.schema_version == MOTIF_CLOSURE_ACCEPTANCE_SCHEMA
                  else _MOTIF_BINDING_FIELDS if self.schema_version == MOTIF_ACCEPTANCE_SCHEMA
@@ -214,7 +223,7 @@ class AcceptedCandidateBinding:
 _require_issued_binding, _raw_issue_binding = _new_binding_owner()
 
 
-def _binding_schema(decision, generation_authority_sha256):
+def _binding_schema(decision, generation_authority_sha256, teacher_state_sha256):
     from .atlas_retention_decision import (
         _issued_decision_generation_authority,
         _require_issued_decision_generation_authority,
@@ -225,7 +234,8 @@ def _binding_schema(decision, generation_authority_sha256):
         if generation_authority_sha256 != required or not _is_digest(required):
             _invalid()
         _require_issued_decision_generation_authority(decision, required)
-        return MOTIF_ACCEPTANCE_SCHEMA
+        return (EXACT_MOTIF_ACCEPTANCE_SCHEMA
+                if teacher_state_sha256 is not None else MOTIF_ACCEPTANCE_SCHEMA)
     if generation_authority_sha256 is None:
         return ACCEPTANCE_SCHEMA
     if not _is_digest(generation_authority_sha256):
@@ -279,12 +289,15 @@ def _make_acceptance_minter(raw_issue):
         decision.__post_init__()
         if (not decision.accepted or decision.candidate_generation != state_digest):
             _invalid()
-        schema = _binding_schema(decision, generation_authority_sha256)
+        schema = _binding_schema(
+            decision, generation_authority_sha256, teacher_state_sha256)
         source_anchors = _source_anchors(training_authorities, state)
         closures = _artifact_closures(state, training_authorities)
         if closures:
             schema = (MOTIF_CLOSURE_ACCEPTANCE_SCHEMA
                       if schema == MOTIF_ACCEPTANCE_SCHEMA
+                      else EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA
+                      if schema == EXACT_MOTIF_ACCEPTANCE_SCHEMA
                       else EXACT_CLOSURE_ACCEPTANCE_SCHEMA
                       if schema == EXACT_ACCEPTANCE_SCHEMA
                       else CLOSURE_ACCEPTANCE_SCHEMA)
@@ -307,7 +320,8 @@ def _make_acceptance_minter(raw_issue):
         values.append(("teacher_state_sha256", teacher_state_sha256))
         if schema in (
                 MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-                EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA):
+                EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+                EXACT_MOTIF_ACCEPTANCE_SCHEMA, EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA):
             values.append(("generation_authority_sha256", generation_authority_sha256))
         else:
             values.append(("generation_authority_sha256", None))

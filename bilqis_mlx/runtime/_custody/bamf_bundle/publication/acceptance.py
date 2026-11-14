@@ -9,7 +9,8 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_acceptance import (
     ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA,
     MOTIF_CLOSURE_ACCEPTANCE_SCHEMA, EXACT_ACCEPTANCE_SCHEMA,
-    EXACT_CLOSURE_ACCEPTANCE_SCHEMA, AcceptedCandidateBinding,
+    EXACT_CLOSURE_ACCEPTANCE_SCHEMA, EXACT_MOTIF_ACCEPTANCE_SCHEMA,
+    EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA, AcceptedCandidateBinding,
     candidate_identity_digest,
 )
 
@@ -123,7 +124,9 @@ def _require_non_genesis_acceptance_identity(acceptance, pointer, student) -> No
                 and (acceptance.schema_version not in {
                         ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA,
                         CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-                        EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA}
+                        EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+                        EXACT_MOTIF_ACCEPTANCE_SCHEMA,
+                        EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA}
                      or acceptance.step_proof_sha256 != tuple(
                          proof.digest for proof in student.retained_state.step_proofs)
                      or acceptance.source_authority_registry_sha256
@@ -132,7 +135,9 @@ def _require_non_genesis_acceptance_identity(acceptance, pointer, student) -> No
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     if is_motif_allocation_transition(student.transition):
         from ..genesis.records import successor_candidate_identity_digest
-        if (acceptance.schema_version not in (MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
+        if (acceptance.schema_version not in (
+                MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
+                EXACT_MOTIF_ACCEPTANCE_SCHEMA, EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
                 or acceptance.generation_authority_sha256
                 != successor_candidate_identity_digest(student)):
             invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
@@ -146,7 +151,8 @@ def _require_non_genesis_acceptance_identity(acceptance, pointer, student) -> No
     if (not isinstance(acceptance, (
             ParsedAtlasAdmissionBinding, ParsedFactoryReleaseAdmissionBinding))
             and acceptance.schema_version in (
-                EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA)):
+                EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+                EXACT_MOTIF_ACCEPTANCE_SCHEMA, EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)):
         from ..genesis.records import successor_candidate_identity_digest
         from ..records import canonical, sha
         if (acceptance.generation_authority_sha256

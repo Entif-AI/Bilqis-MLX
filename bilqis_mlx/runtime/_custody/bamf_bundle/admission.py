@@ -275,7 +275,6 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
     when the binding matches the candidate it publishes.
     """
     from .genesis.records import successor_candidate_identity_digest
-    from .motif.transition import is_motif_allocation_transition
     from bilqis_mlx.learning.atlas_retention_decision import (
         _issued_decision_generation_authority,
         _require_issued_decision_generation_authority,
@@ -283,7 +282,6 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
 
     trusted_registry = _require_source_authority_for_acceptance(run_dir, bundle)
     exact_generation_authority = successor_candidate_identity_digest(bundle)
-    motif_transition = is_motif_allocation_transition(bundle.transition)
     if _issued_decision_generation_authority(decision) is not None:
         _require_issued_decision_generation_authority(
             decision, exact_generation_authority)
@@ -293,8 +291,7 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
         training_authorities=training_authorities,
         source_authority_registry_sha256=(
             trusted_registry.digest if trusted_registry is not None else None),
-        teacher_state_sha256=(
-            None if motif_transition else sha(canonical(dict(bundle.teacher_state)))),
+        teacher_state_sha256=sha(canonical(dict(bundle.teacher_state))),
         generation_authority_sha256=exact_generation_authority)
     return publish_bamf_generation(
         run_dir, bundle, acceptance=binding, reserve_gib=reserve_gib)

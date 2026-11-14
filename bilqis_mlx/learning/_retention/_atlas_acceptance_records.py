@@ -17,6 +17,8 @@ CLOSURE_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v7"
 MOTIF_CLOSURE_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v8"
 EXACT_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v9"
 EXACT_CLOSURE_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v10"
+EXACT_MOTIF_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v11"
+EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA = "bilqis.mlx.accepted-candidate-binding/v12"
 DIGEST_HEX_LENGTH = 64
 LEGACY_FIELDS = (
     "run_id", "generation", "candidate_identity_sha256", "feature_sha256",
@@ -82,7 +84,8 @@ def normalize_source_anchors(value, schema):
         if schema in (
                 PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA, ACCEPTANCE_SCHEMA,
                 MOTIF_ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-                EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA):
+                EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+                EXACT_MOTIF_ACCEPTANCE_SCHEMA, EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA):
             if len(anchor) != SOURCE_ANCHOR_WIDTH:
                 invalid()
             dependencies = anchor[-1]
@@ -101,7 +104,8 @@ def valid_source_anchors(value, schema=ACCEPTANCE_SCHEMA) -> bool:
     width = (SOURCE_ANCHOR_WIDTH if schema in (
                  PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA, ACCEPTANCE_SCHEMA,
                  MOTIF_ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-                 EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA)
+                 EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+                 EXACT_MOTIF_ACCEPTANCE_SCHEMA, EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
              else V3_SOURCE_ANCHOR_WIDTH)
     for anchor in value:
         if type(anchor) is not tuple or len(anchor) != width:
@@ -114,7 +118,8 @@ def valid_source_anchors(value, schema=ACCEPTANCE_SCHEMA) -> bool:
         if (schema in (
                 PREVIOUS_DEPENDENCY_ACCEPTANCE_SCHEMA, ACCEPTANCE_SCHEMA,
                 MOTIF_ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-                EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA)
+                EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+                EXACT_MOTIF_ACCEPTANCE_SCHEMA, EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
                 and not dependency_records(
                     anchor[SOURCE_ANCHOR_DEPENDENCIES_INDEX])):
             return False
@@ -158,6 +163,8 @@ def parse_accepted_candidate_binding(record) -> ParsedAcceptedCandidateBinding:
         (MOTIF_CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_BINDING_FIELDS),
         (EXACT_ACCEPTANCE_SCHEMA, EXACT_BINDING_FIELDS),
         (EXACT_CLOSURE_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_BINDING_FIELDS),
+        (EXACT_MOTIF_ACCEPTANCE_SCHEMA, EXACT_BINDING_FIELDS),
+        (EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_BINDING_FIELDS),
     ) if version == schema), ())
     if not names or set(record) != set(names) | {"binding_sha256"}:
         invalid()
