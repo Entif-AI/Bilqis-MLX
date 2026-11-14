@@ -14,7 +14,7 @@ import {
   loadAtlasOverview,
   loadSemanticIdentity,
   renderAtlasMarkup,
-} from "./semantic-atlas.mjs";
+} from "./domains/semantic-atlas.mjs";
 import {
   DENSITIES,
   THEMES,
@@ -23,9 +23,9 @@ import {
   loadDisplaySettings,
   saveDisplaySettings,
 } from "./settings.mjs";
-import { renderSchoolView } from "./school-view.mjs";
-import { renderNeuralView } from "./neural-view.mjs";
-import { renderEpisodesView } from "./episode-view.mjs";
+import { renderSchoolView } from "./domains/school-view.mjs";
+import { renderNeuralView } from "./domains/neural-view.mjs";
+import { renderEpisodesView } from "./domains/episode-view.mjs";
 
 const labels = new Map(DESTINATIONS);
 const demoObjects = [

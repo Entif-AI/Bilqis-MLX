@@ -7,7 +7,7 @@ import {
   SCHOOL_TERMINAL_COLUMNS,
   makeLargeSchoolFixture,
   schoolFixtureRows,
-} from "../renderer/school-fixture.mjs";
+} from "../renderer/domains/school-fixture.mjs";
 import {
   equalSchedulingSemantics,
   evidenceTotals,
@@ -16,7 +16,7 @@ import {
   projectRows,
   scoreQuad,
   selectionNeighborhood,
-} from "../renderer/school-model.mjs";
+} from "../renderer/domains/school-model.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const rendererRoot = path.resolve(here, "../renderer");
@@ -51,7 +51,7 @@ test("source-held and implementation-uncovered are separate states", () => {
   assert.equal(held.sourceState, "SOURCE_HELD");
   assert.equal(uncovered.sourceState, "SOURCE_READY");
   assert.equal(uncovered.implementationState, "IMPLEMENTATION_UNCOVERED");
-  const css = fs.readFileSync(path.join(rendererRoot, "school.css"), "utf8");
+  const css = fs.readFileSync(path.join(rendererRoot, "domains", "school.css"), "utf8");
   assert.match(css, /SOURCE_HELD/);
   assert.match(css, /IMPLEMENTATION_UNCOVERED/);
   assert.match(css, /border-style:\s*double/);
@@ -138,7 +138,7 @@ test("graph lifecycle fixtures span ready through qualified plus held", () => {
 });
 
 test("table alternative and direct-unlock graph evidence are present", () => {
-  const source = fs.readFileSync(path.join(rendererRoot, "school-view.mjs"), "utf8");
+  const source = fs.readFileSync(path.join(rendererRoot, "domains", "school-view.mjs"), "utf8");
   assert.match(source, /Use table alternative/);
   assert.match(source, /Enable graph/);
   assert.match(source, /dependency-fallback/);
