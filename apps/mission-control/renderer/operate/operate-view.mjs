@@ -110,8 +110,6 @@ function lifecyclePanel(state) {
   }
   const receipt = inspection.receipt;
   const terminal = terminalReceipt(receipt?.state);
-  const stdoutTail = inspection.logs?.stdout_tail;
-  const stderrTail = inspection.logs?.stderr_tail;
   return `<section class="operate-panel">
     <header><div><span class="eyebrow">4 · Receipt and readback</span><h3>${esc(inspection.operation_id)}</h3></div>${stateBadge(receipt?.state)}</header>
     <div class="operate-lifecycle">
@@ -128,10 +126,6 @@ function lifecyclePanel(state) {
       ${inspection.postcondition ? `<button type="button" data-operate-open-postcondition>Open postcondition</button>` : ""}
       ${!terminal || receipt?.state === "OUTCOME_UNKNOWN" ? `<button type="button" data-operate-reconcile>Reconcile operation</button>` : ""}
     </div>
-    ${(stdoutTail || stderrTail) ? `<details class="operate-command-logs" open><summary>Trainer log tail</summary>
-      ${stderrTail ? `<h4>stderr</h4><pre>${esc(stderrTail)}</pre>` : ""}
-      ${stdoutTail ? `<h4>stdout</h4><pre>${esc(stdoutTail)}</pre>` : ""}
-    </details>` : ""}
     <details><summary>Literal bounded inspection</summary><pre>${esc(JSON.stringify(inspection, null, 2))}</pre></details>
   </section>`;
 }

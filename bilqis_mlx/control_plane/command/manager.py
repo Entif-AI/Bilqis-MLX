@@ -1,26 +1,108 @@
 """CP05 idempotent command admission, dispatch, and reconciliation."""
 from __future__ import annotations
 
+import hashlib
+import json
+import os
 from pathlib import Path
+import time
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.mission_control.model import MissionControlContractError
+from bilqis_mlx.mission_control.model import (
+    AuthorityClass, CoverageState, MissionControlContractError, RecordMeta,
+)
 from bilqis_mlx.mission_control.operator import (
     ActionReceiptState, OperatorActionReceiptV2, OperatorActionRequestV2,
 )
 
 from .launch import launch_command_worker
-from .model import CommandMode, ResolvedCommandTarget, intent_sha256, operation_id_for
-from .receipts import (
-    build_receipt, command_time_ms, error_ref, error_ref_from_exception,
-    minimal_target,
+from .model import (
+    CommandMode, ResolvedCommandTarget, intent_sha256, operation_id_for,
 )
 from .store import CommandStore
-from .status import CommandStatusMixin
 from ..transport import _invalid
 
 
-class CommandManager(CommandStatusMixin):
+def _now() -> int:
+    return int(time.time() * 1000)
+
+
+def _error_ref(code: str, detail: object = None) -> str:
+    raw = json.dumps(
+        {"code": code, "detail": detail},
+        sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+        default=str,
+    ).encode("utf-8")
+    return "command-error:" + hashlib.sha256(raw).hexdigest()
+
+
+def error_ref_from_exception(error: Exception) -> str:
+    if isinstance(error, BilqisError):
+        return _error_ref(error.code, dict(error.context))
+    return _error_ref(type(error).__name__, str(error))
+
+
+def _minimal_target(run_dir: Path) -> ResolvedCommandTarget:
+    return ResolvedCommandTarget(
+        run_dir=str(Path(run_dir).expanduser().resolve()),
+        run_id=None,
+        run_seed=None,
+        run_identity_sha256=None,
+        generation=None,
+        generation_manifest_sha256=None,
+        optimizer_step=None,
+        candidate_identity_sha256=None,
+        factory_release_sha256=None,
+        semantic_release_sha256=None,
+        topology_sha256=None,
+        acceptance_sha256=None,
+        source_identity=None,
+    )
+
+
+def build_receipt(
+    request: OperatorActionRequestV2, *, operation_id: str,
+    request_sha256: str, state: ActionReceiptState,
+    target_ref: str, postcondition_ref: str | None = None,
+    error_ref: str | None = None, receipt_refs: tuple[str, ...] = (),
+) -> OperatorActionReceiptV2:
+    timestamp = _now()
+    meta = RecordMeta(
+        record_id=f"cp05:{operation_id}:{state.value.lower()}",
+        run=None,
+        materialized_at=timestamp,
+        observed_at=timestamp,
+        as_of=timestamp,
+        coverage=CoverageState.COMPLETE,
+        authority=AuthorityClass.DERIVED,
+        source_refs=("authority:c11-bamf-operator",),
+        evidence_refs=(target_ref,),
+        receipt_refs=receipt_refs,
+    )
+    return OperatorActionReceiptV2(
+        meta=meta,
+        request_id=request.request_id,
+        request_sha256=request_sha256,
+        operation_id=operation_id,
+        state=state,
+        acknowledged_at=timestamp,
+        target_ref=target_ref,
+        postcondition_ref=postcondition_ref,
+        error_ref=error_ref,
+    )
+
+
+def _pid_live(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+class CommandManager:
     """Exactly-once admission decision with at-most-once effect dispatch."""
 
     def __init__(
@@ -31,7 +113,7 @@ class CommandManager(CommandStatusMixin):
         self.store = CommandStore(store_root)
         if executor is None:
             from .executor import C11CommandExecutor
-            executor = C11CommandExecutor(self.run_dir, store=self.store)
+            executor = C11CommandExecutor(self.run_dir)
         self.executor = executor
         self.launcher = launcher or (
             lambda operation_id: launch_command_worker(
@@ -45,9 +127,9 @@ class CommandManager(CommandStatusMixin):
         self, request: OperatorActionRequestV2, operation_id: str,
         error: Exception | str, *, target: ResolvedCommandTarget | None = None,
     ) -> OperatorActionReceiptV2:
-        target = target or minimal_target(self.run_dir)
+        target = target or _minimal_target(self.run_dir)
         ref = (
-            error_ref(error)
+            _error_ref(error)
             if isinstance(error, str)
             else error_ref_from_exception(error)
         )
@@ -57,7 +139,7 @@ class CommandManager(CommandStatusMixin):
             request_sha256=self._request_digest(request),
             state=ActionReceiptState.REJECTED,
             target_ref=target.ref,
-            error_ref_value=ref,
+            error_ref=ref,
         )
 
     @staticmethod
@@ -138,12 +220,12 @@ class CommandManager(CommandStatusMixin):
         self, request, operation_id: str, error: Exception | str, *,
         target: ResolvedCommandTarget | None = None,
     ) -> OperatorActionReceiptV2:
-        target = target or minimal_target(self.run_dir)
+        target = target or _minimal_target(self.run_dir)
         self.store.write_preflight(operation_id, {
             "kind": "rejected-preflight",
             "target": target.to_record(),
             "error_ref": (
-                error_ref(error) if isinstance(error, str)
+                _error_ref(error) if isinstance(error, str)
                 else error_ref_from_exception(error)
             ),
         })
@@ -166,7 +248,7 @@ class CommandManager(CommandStatusMixin):
                 request_sha256=plan.request_sha256,
                 state=ActionReceiptState.FAILED,
                 target_ref=plan.target.ref,
-                error_ref_value=error_ref_from_exception(error),
+                error_ref=error_ref_from_exception(error),
             )
             self.store.write_terminal(operation_id, terminal)
             return terminal
@@ -187,7 +269,7 @@ class CommandManager(CommandStatusMixin):
         accepted: OperatorActionReceiptV2,
     ) -> OperatorActionReceiptV2:
         try:
-            self.store.write_dispatch(operation_id, reserved_at=command_time_ms())
+            self.store.write_dispatch(operation_id, reserved_at=_now())
         except (BilqisError, OSError):
             return accepted
         try:
@@ -199,13 +281,76 @@ class CommandManager(CommandStatusMixin):
                 request_sha256=plan.request_sha256,
                 state=ActionReceiptState.FAILED,
                 target_ref=plan.target.ref,
-                error_ref_value=error_ref_from_exception(error),
+                error_ref=error_ref_from_exception(error),
             )
             self.store.write_terminal(operation_id, terminal)
             return terminal
         try:
             self.store.write_spawned(
-                operation_id, pid=pid, spawned_at=command_time_ms())
+                operation_id, pid=pid, spawned_at=_now())
         except (BilqisError, OSError):
             return accepted
         return accepted
+
+    def _target_for(self, operation_id: str) -> ResolvedCommandTarget:
+        plan = self.store.read_plan(operation_id)
+        return plan.target if plan is not None else _minimal_target(self.run_dir)
+
+    def status(self, operation_id: str) -> OperatorActionReceiptV2:
+        with self.store.operation_lock(operation_id):
+            return self._status_locked(operation_id)
+
+    def _status_locked(self, operation_id: str) -> OperatorActionReceiptV2:
+        terminal = self.store.read_terminal(operation_id)
+        if terminal is not None:
+            return terminal
+        submission = self.store.read_submission(operation_id)
+        accepted = self.store.read_accepted(operation_id)
+        plan = self.store.read_plan(operation_id)
+        if submission is None or accepted is None or plan is None:
+            _invalid("CONTROL_PLANE_COMMAND_OPERATION_UNKNOWN")
+        request, request_digest, _semantic = submission
+        dispatch = self.store.read_dispatch(operation_id)
+        if dispatch is None:
+            return accepted
+
+        try:
+            reconciled = self.executor.reconcile(plan)
+        except (BilqisError, MissionControlContractError, OSError):
+            reconciled = None
+        if reconciled is not None:
+            postcondition_ref = self.store.write_postcondition(
+                operation_id, reconciled)
+            terminal = build_receipt(
+                request,
+                operation_id=operation_id,
+                request_sha256=request_digest,
+                state=ActionReceiptState.COMPLETED,
+                target_ref=plan.target.ref,
+                postcondition_ref=postcondition_ref,
+                receipt_refs=(
+                    f"command-plan:{plan.digest}",
+                    postcondition_ref,
+                ),
+            )
+            self.store.write_terminal(operation_id, terminal)
+            return terminal
+
+        worker_result = self.store.read_worker_result(operation_id)
+        spawned = self.store.read_spawned(operation_id)
+        state = (
+            ActionReceiptState.PENDING
+            if (
+                worker_result is None
+                and spawned is not None
+                and _pid_live(spawned["pid"])
+            )
+            else ActionReceiptState.OUTCOME_UNKNOWN
+        )
+        return build_receipt(
+            request,
+            operation_id=operation_id,
+            request_sha256=request_digest,
+            state=state,
+            target_ref=plan.target.ref,
+        )

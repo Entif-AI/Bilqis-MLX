@@ -33,7 +33,6 @@ export function createOperateController(api) {
   let onAnnounce = null;
   let unsubscribe = null;
   let active = false;
-  let activeTrainingOperationId = null;
 
   function setState(next) {
     state = Object.freeze(next);
@@ -60,13 +59,10 @@ export function createOperateController(api) {
   function selectAction(action) {
     const spec = actionSpec(action);
     if (!spec?.supported) return;
-    const parametersText = action === "stop" && activeTrainingOperationId
-      ? JSON.stringify({ operation_id: activeTrainingOperationId }, null, 2)
-      : "{}";
     setState({
       ...initialOperateState(), action,
       dryRun: spec.dryRun && spec.mutation,
-      parametersText,
+      parametersText: state.parametersText,
     });
   }
 
@@ -99,9 +95,6 @@ export function createOperateController(api) {
     if (state.preview.consequence?.mutation === "MUTATING" &&
         state.authorization !== authorizationPhrase(state.preview)) return;
     const request = buildSubmitRequest(state.preview);
-    if (["create", "owner-launch", "resume"].includes(state.action)) {
-      activeTrainingOperationId = state.preview.operation_id;
-    }
     setState({ ...state, phase: "SUBMITTING", error: null });
     try {
       const receipt = await api.requestCommand(request);
@@ -112,10 +105,6 @@ export function createOperateController(api) {
         inspection = null;
       }
       if (inspection) {
-        if (["create", "owner-launch", "resume"].includes(state.action) &&
-            terminalReceipt(inspection.receipt?.state)) {
-          activeTrainingOperationId = null;
-        }
         setState({ ...state, inspection, phase: terminalReceipt(inspection.receipt?.state) ? "TERMINAL" : "PENDING", error: null });
       } else {
         setState({ ...state, phase: "LOST_ACK", error: null });

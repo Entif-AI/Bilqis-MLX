@@ -3,7 +3,6 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
-from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.mission_control.operator import (
@@ -113,40 +112,6 @@ class CommandLifecycleTests(unittest.TestCase):
         self.assertEqual(terminal.state, ActionReceiptState.COMPLETED)
         self.assertEqual(restarted_launcher.calls, [])
         self.assertEqual(len(launcher.calls), 1)
-
-    def test_live_worker_or_recorded_trainer_never_reconciles_to_terminal(self):
-        manager, executor, _launcher = self.manager(CommandMode.MUTATING)
-        accepted = manager.submit(request(
-            action="create", dry_run=False, human_authorized=True))
-        with (
-            patch(
-                "bilqis_mlx.control_plane.command.status.pid_live",
-                return_value=True,
-            ),
-            patch.object(
-                executor, "reconcile",
-                side_effect=AssertionError("live operation must not reconcile"),
-            ),
-        ):
-            pending = manager.status(accepted.operation_id)
-        self.assertEqual(pending.state, ActionReceiptState.PENDING)
-        self.assertIsNone(manager.store.read_terminal(accepted.operation_id))
-
-        manager.store.write_trainer_process(
-            accepted.operation_id, pid=43210, identity_sha256="9" * 64)
-        with (
-            patch(
-                "bilqis_mlx.control_plane.command.status.pid_live",
-                return_value=False,
-            ),
-            patch.object(
-                executor, "reconcile",
-                side_effect=AssertionError("recorded trainer must not reconcile"),
-            ),
-        ):
-            unknown = manager.status(accepted.operation_id)
-        self.assertEqual(unknown.state, ActionReceiptState.OUTCOME_UNKNOWN)
-        self.assertIsNone(manager.store.read_terminal(accepted.operation_id))
 
     def test_target_conflict_rejects_before_dispatch(self):
         manager, executor, launcher = self.manager(CommandMode.MUTATING)

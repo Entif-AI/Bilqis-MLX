@@ -61,7 +61,7 @@ export function renderHomeMarkup(model, { historical = false } = {}) {
       <div><span class="eyebrow">${esc(badge)}</span><h2>${esc(model.learningStatus.replaceAll("_", " "))}</h2>
         <p>${model.learningStatus === "IMPROVING" ? "Fresh retained improvement is evidenced." : model.learningStatus === "THROUGHPUT_ONLY" ? "Throughput is present, but no fresh retained improvement is evidenced." : "No fresh retained improvement is currently evidenced."}</p></div>
       <div class="home-questions" aria-label="Five core operator questions">
-        <span>RUNNING <strong>${runtime.running === true ? "YES" : runtime.running === false ? "NO" : "UNAVAILABLE"}</strong></span>
+        <span>RUNNING <strong>${model.state.run === "PRESENT" ? "YES" : model.state.run}</strong></span>
         <span>LEARNING <strong>${esc(model.learningStatus)}</strong></span>
         <span>WORK <strong>${esc(model.currentWork.capabilityId ?? "UNAVAILABLE")}</strong></span>
         <span>REGRESSION <strong>${model.pulse.some((event) => event.kind === "regress") ? "OBSERVED" : "NONE OBSERVED"}</strong></span>

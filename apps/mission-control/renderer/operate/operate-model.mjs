@@ -8,7 +8,7 @@ const ALLOWED_PARAMETERS = new Set([
   "atlas_admission_scope", "admission_policy", "minutes", "steps_per_visit",
   "max_visits", "source_prefetch_workers", "batch_size", "reserve_gib",
   "autonomous_curriculum", "verify_source", "timing_trace", "flash_mode",
-  "source_teaching_enrichment", "admit_next_grade_with_debt", "operation_id",
+  "source_teaching_enrichment", "admit_next_grade_with_debt",
 ]);
 
 export const OPERATE_ACTIONS = Object.freeze([
@@ -26,8 +26,8 @@ export const OPERATE_ACTIONS = Object.freeze([
     description: "Run the admitted lease operation through the existing C11 policy surface." }),
   Object.freeze({ id: "pause", label: "Pause", supported: false, mutation: false, dryRun: false,
     description: "Unavailable: CP05/C11 does not expose pause semantics." }),
-  Object.freeze({ id: "stop", label: "Stop", supported: true, mutation: true, dryRun: false,
-    description: "Request the active owner-run trainer to stop through its existing safe SIGINT boundary." }),
+  Object.freeze({ id: "stop", label: "Stop", supported: false, mutation: false, dryRun: false,
+    description: "Unavailable: CP05/C11 does not expose stop semantics." }),
 ]);
 
 export function actionSpec(action) {
