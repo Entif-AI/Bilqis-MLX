@@ -20,7 +20,7 @@ const context = JSON.parse(
 test("all required GUI01 destinations remain stable and reachable", () => {
   assert.deepEqual(
     DESTINATIONS.map(([id]) => id),
-    ["mission-control", "school", "learning", "atlas", "model", "memory", "teacher", "corrections", "lineage", "resources", "evidence", "operate"],
+    ["mission-control", "school", "learning", "atlas", "model", "memory", "teacher", "salience", "corrections", "lineage", "resources", "evidence", "operate"],
   );
 });
 
