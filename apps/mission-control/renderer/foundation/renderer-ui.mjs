@@ -121,12 +121,14 @@ export function renderCurrentView(state, defense, onInspect) {
   if (!state) {
     fixture.hidden = true;
     catalog.hidden = false;
+    domain.hidden = true;
     domain.innerHTML = "";
     summary.textContent = defense.description;
     catalog.innerHTML = renderComponentCatalog();
     return;
   }
   if (state.view === "school") {
+    domain.hidden = false;
     fixture.hidden = true;
     catalog.hidden = true;
     summary.textContent = "Exact capability comparison and declared prerequisite topology. Grade labels organize only.";
@@ -145,7 +147,15 @@ export function renderCurrentView(state, defense, onInspect) {
     }), state.selected?.kind === "capability" ? state.selected.id : null);
     return;
   }
+  if (state.view === "atlas") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Source-authoritative semantic identity and generation-scoped ABI state, with learned similarity isolated behind a separate lens.";
+    return;
+  }
   if (state.view === "model") {
+    domain.hidden = false;
     fixture.hidden = true;
     catalog.hidden = true;
     summary.textContent = "Topology, attention health, depth routing and local refinement as measured telemetry only.";
@@ -160,6 +170,7 @@ export function renderCurrentView(state, defense, onInspect) {
     return;
   }
   if (state.view === "learning") {
+    domain.hidden = false;
     fixture.hidden = true;
     catalog.hidden = true;
     summary.textContent = "Durable candidate transaction replay with explicit retention, rollback and evidence boundaries.";
@@ -172,6 +183,7 @@ export function renderCurrentView(state, defense, onInspect) {
   }
   fixture.hidden = false;
   catalog.hidden = false;
+  domain.hidden = true;
   domain.innerHTML = "";
   summary.textContent = defense.historical
     ? "Inspection-only evidence retained while the live command context is unavailable."

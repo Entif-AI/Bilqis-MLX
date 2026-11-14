@@ -6,6 +6,9 @@ const { pathToFileURL } = require("node:url");
 const { RENDERER_HOST, RENDERER_SCHEME } = require("./renderer-location.cjs");
 
 const RENDERER_ASSETS = Object.freeze(new Map([
+  ["/atlas/atlas-controller.mjs", "atlas/atlas-controller.mjs"],
+  ["/atlas/semantic-atlas.css", "atlas/semantic-atlas.css"],
+  ["/atlas/semantic-atlas.mjs", "atlas/semantic-atlas.mjs"],
   ["/component-catalog.mjs", "component-catalog.mjs"],
   ["/components.css", "components.css"],
   ["/foundation/accessibility.mjs", "foundation/accessibility.mjs"],

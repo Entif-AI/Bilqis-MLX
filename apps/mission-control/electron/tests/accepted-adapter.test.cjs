@@ -9,6 +9,8 @@ const {
 } = require("../accepted-control-plane-adapter.cjs");
 const {
   OPERATOR_VIEW_SCHEMA,
+  QUERY_PAGE_SCHEMA,
+  QUERY_REQUEST_SCHEMA,
   SNAPSHOT_QUERY_SCHEMA,
   createAcceptedValidators,
 } = require("../accepted-contracts.cjs");
@@ -42,6 +44,26 @@ function brokerFixture({ fail = false } = {}) {
         serviceReady: true,
         learnerReady: true,
         learnerActive: true,
+      };
+    },
+    async query(request) {
+      calls.push(["query", request]);
+      return {
+        schema: QUERY_PAGE_SCHEMA,
+        query_id: "a".repeat(64),
+        request,
+        family: request.family,
+        mode: request.mode,
+        state: "EMPTY",
+        coverage: "COMPLETE",
+        total_matches: 0,
+        returned: 0,
+        truncated: false,
+        next_cursor: null,
+        records: [],
+        markers: [],
+        links: [],
+        accepted: true,
       };
     },
     async disconnect() { calls.push("disconnect"); },
@@ -78,6 +100,40 @@ test("accepted adapter uses CP01 status and the canonical CP02 OperatorView fixt
   await bridge.disconnect();
   adapter.close();
   assert.deepEqual(broker.calls, ["connect", "status", "disconnect", "close"]);
+});
+
+test("accepted adapter exposes only the bounded CP03 query contract", async () => {
+  const broker = brokerFixture();
+  const { adapter, bridge } = await acceptedBridge(broker);
+  await bridge.connect();
+  const request = {
+    schema: QUERY_REQUEST_SCHEMA,
+    family: "semantic",
+    mode: "current",
+    run_id: "fixture-run",
+    record_id: null,
+    schema_version: "bilqis.bamf.mission-control.semantic-bank-snapshot/v1",
+    generation: null,
+    frontier_id: null,
+    as_of: null,
+    reference: null,
+    cursor: null,
+    limit: 32,
+  };
+  const page = await bridge.query(request);
+  assert.equal(page.schema, QUERY_PAGE_SCHEMA);
+  assert.equal(page.family, "semantic");
+  assert.equal(page.total_matches, 0);
+  assert.deepEqual(broker.calls.at(-1), ["query", request]);
+  await assert.rejects(
+    bridge.query({ ...request, limit: 33 }),
+    /BAMF_GUI20_ACCEPTED_CONTRACT_INVALID:QUERY_REQUEST/,
+  );
+  await assert.rejects(
+    bridge.query({ ...request, mode: "historical", generation: null }),
+    /BAMF_GUI20_ACCEPTED_CONTRACT_INVALID:QUERY_HISTORICAL_IDENTITY/,
+  );
+  adapter.close();
 });
 
 test("missing CP01 service becomes disconnected state without leaking broker errors", async () => {

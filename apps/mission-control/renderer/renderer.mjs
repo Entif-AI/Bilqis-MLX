@@ -32,6 +32,10 @@ import {
   focusToken,
   restoreFocus,
 } from "./foundation/accessibility.mjs";
+import {
+  ensureAtlasOverview,
+  renderAtlasDomain,
+} from "./atlas/atlas-controller.mjs";
 
 const labels = new Map(DESTINATIONS);
 const SNAPSHOT_REQUEST = Object.freeze({
@@ -74,6 +78,14 @@ function render() {
     onInspect: openInspector,
   });
   setHash();
+  if (state?.view === "atlas") {
+    renderAtlasDomain(window.bamfMissionControl, state.context);
+    void ensureAtlasOverview(
+      window.bamfMissionControl,
+      state.context,
+      () => state?.view === "atlas",
+    );
+  }
 }
 
 function navigateTo(view) {
