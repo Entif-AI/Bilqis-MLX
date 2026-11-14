@@ -7,7 +7,7 @@ import {
   SCHOOL_TERMINAL_COLUMNS,
   makeLargeSchoolFixture,
   schoolFixtureRows,
-} from "../renderer/school/school-fixture.mjs";
+} from "../../renderer/school/school-fixture.mjs";
 import {
   equalSchedulingSemantics,
   evidenceTotals,
@@ -16,10 +16,10 @@ import {
   projectRows,
   scoreQuad,
   selectionNeighborhood,
-} from "../renderer/school/school-model.mjs";
+} from "../../renderer/school/school-model.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const rendererRoot = path.resolve(here, "../renderer");
+const rendererRoot = path.resolve(here, "../../renderer");
 const rows = schoolFixtureRows();
 
 test("literal fixture preserves the terminal-class metric contract", () => {
