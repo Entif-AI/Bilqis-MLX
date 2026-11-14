@@ -7,12 +7,14 @@ import {
   createShellState,
   inspect,
   navigate,
+  openEvidence,
   openSelectionOwner,
+  returnFromEvidence,
   selectObject,
   shellPosture,
   withRoute,
 } from "../renderer/shell-state.mjs";
-import { buildDeepLink, parseDeepLink } from "../renderer/deep-link.mjs";
+import { buildDeepLink, parseDeepLink, routeFromState } from "../renderer/deep-link.mjs";
 
 const context = JSON.parse(
   readFileSync(new URL("../fixtures/operator-view-v1.json", import.meta.url), "utf8"),
@@ -57,6 +59,28 @@ test("evidence selection can update URL identity without forcing inspector state
   );
   const restored = createShellState(context, parseDeepLink(buildDeepLink(selected)));
   assert.deepEqual(restored.selected, { kind: "evidence", id: "receipt:exact" });
+});
+
+test("evidence round trip preserves and deep-links the originating inspected object", () => {
+  const owner = inspect(navigate(createShellState(context), "school"), {
+    kind: "capability", id: "B.AND",
+  });
+  const evidence = openEvidence(owner);
+  const exact = selectObject(evidence, { kind: "evidence", id: "receipt:exact" });
+  assert.deepEqual(exact.evidenceOrigin, {
+    view: "school",
+    selected: { kind: "capability", id: "B.AND" },
+    inspectorOpen: true,
+  });
+  const hash = buildDeepLink(exact);
+  const restored = createShellState(context, parseDeepLink(hash));
+  assert.deepEqual(restored.evidenceOrigin, exact.evidenceOrigin);
+  assert.deepEqual(routeFromState(exact).evidenceOrigin, exact.evidenceOrigin);
+  const returned = returnFromEvidence(restored);
+  assert.equal(returned.view, "school");
+  assert.deepEqual(returned.selected, { kind: "capability", id: "B.AND" });
+  assert.equal(returned.inspectorOpen, true);
+  assert.equal(returned.evidenceOrigin, null);
 });
 
 test("hash-route updates reuse normalized state without re-decoding it as CP02", () => {

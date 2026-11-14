@@ -166,6 +166,7 @@ export function createShellState(context, route = {}) {
     context: normalizeContext(context),
     view: "mission-control",
     selected: null,
+    evidenceOrigin: null,
     inspectorOpen: false,
     defensiveState: "unknown",
     mutationAvailable: false,
@@ -175,10 +176,15 @@ export function createShellState(context, route = {}) {
 export function withRoute(state, route = {}) {
   const destinations = new Set(DESTINATIONS.map(([id]) => id));
   const view = destinations.has(route.view) ? route.view : "mission-control";
+  const origin = route.evidenceOrigin;
+  const evidenceOrigin = (
+    view === "evidence" && origin && destinations.has(origin.view)
+  ) ? origin : null;
   return {
     ...state,
     view,
     selected: route.selected ?? null,
+    evidenceOrigin,
     inspectorOpen: Boolean(route.selected),
   };
 }
@@ -190,6 +196,7 @@ export function navigate(state, view, selected = null) {
     ...state,
     view,
     selected,
+    evidenceOrigin: view === "evidence" ? state.evidenceOrigin : null,
     inspectorOpen: selected !== null,
   };
 }
@@ -200,6 +207,33 @@ export function inspect(state, selected) {
 
 export function selectObject(state, selected) {
   return { ...state, selected, inspectorOpen: false };
+}
+
+export function openEvidence(state) {
+  const origin = state.view !== "evidence" && state.selected ? {
+    view: state.view,
+    selected: state.selected,
+    inspectorOpen: state.inspectorOpen,
+  } : state.evidenceOrigin;
+  return {
+    ...state,
+    view: "evidence",
+    selected: state.selected,
+    evidenceOrigin: origin ?? null,
+    inspectorOpen: false,
+  };
+}
+
+export function returnFromEvidence(state) {
+  if (!state.evidenceOrigin) return state;
+  const origin = state.evidenceOrigin;
+  return {
+    ...state,
+    view: origin.view,
+    selected: origin.selected,
+    evidenceOrigin: null,
+    inspectorOpen: origin.inspectorOpen === true,
+  };
 }
 
 export function openSelectionOwner(state) {
