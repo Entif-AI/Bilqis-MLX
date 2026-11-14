@@ -21,11 +21,17 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     `${root}/renderer.mjs`,
   );
   assert.deepEqual([...RENDERER_ASSETS.keys()].sort(), [
+    "/accessibility.mjs",
     "/component-catalog.mjs",
     "/components.css",
     "/deep-link.mjs",
+    "/defensive-state.mjs",
     "/index.html",
     "/renderer.mjs",
+    "/school-fixture.mjs",
+    "/school-model.mjs",
+    "/school-view.mjs",
+    "/school.css",
     "/settings.mjs",
     "/shell-state.mjs",
     "/shell.css",

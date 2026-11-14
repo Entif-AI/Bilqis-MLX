@@ -1,5 +1,6 @@
 import { evidenceValue, semanticStateInventory, statusBadge } from "./visual-language.mjs";
 import { VISUAL_FIXTURES } from "./visual-fixtures.mjs";
+import { defensiveCatalogMarkup } from "./defensive-state.mjs";
 
 function metricTile() {
   return `<article class="metric-tile">
@@ -32,13 +33,7 @@ function evidencePanel() {
 }
 
 function stateSurfaces() {
-  return `<article class="catalog-block"><h3>State surfaces</h3><div class="state-surface-grid">
-    <div class="state-surface" data-state="empty"><strong>Empty</strong><small>No records match this scope.</small></div>
-    <div class="state-surface" data-state="loading"><strong>Loading</strong><small>Awaiting provider snapshot.</small></div>
-    <div class="state-surface" data-state="stale"><strong>Stale</strong><small>Last confirmed 48 s ago.</small></div>
-    <div class="state-surface" data-state="partial"><strong>Partial</strong><small>2 of 3 evidence sources available.</small></div>
-    <div class="state-surface" data-state="invalid"><strong>Error / invalid</strong><small>Receipt verification failed.</small></div>
-  </div></article>`;
+  return `<article class="catalog-block"><h3>Defensive state surfaces</h3><div class="state-surface-grid">${defensiveCatalogMarkup()}</div></article>`;
 }
 
 function evidenceRow() {

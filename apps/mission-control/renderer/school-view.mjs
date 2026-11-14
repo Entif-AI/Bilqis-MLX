@@ -7,6 +7,7 @@ import {
   selectionNeighborhood,
 } from "./school-model.mjs";
 import { schoolFixtureRows } from "./school-fixture.mjs";
+import { isActivationKey, nextRovingIndex } from "./accessibility.mjs";
 
 const rows = schoolFixtureRows();
 const ui = {
@@ -45,7 +46,7 @@ function tableRows(projectedRows) {
     family = row.family;
     const selected = row.id === ui.selectedId ? "true" : "false";
     return group + `<tr data-capability-id="${row.id}" data-selected="${selected}">
-      <th class="capability-cell" scope="row"><button type="button" data-select-capability="${row.id}" title="Inspect exact capability ${row.id}">${row.id}</button></th>
+      <th class="capability-cell" scope="row"><button type="button" data-select-capability="${row.id}" data-focus-key="school:${row.id}" title="Inspect exact capability ${row.id}">${row.id}</button></th>
       <td>${row.grade}</td>
       <td title="${row.prerequisites.join(", ") || "none"}">${row.prerequisites.join(", ") || "—"}</td>
       <td class="num" title="WAS ${row.was}/${row.total}">${row.was}</td>
@@ -78,14 +79,17 @@ function matrix(projectedRows, page) {
     <header><div><span class="eyebrow">Exact comparison</span><h2>Capability matrix</h2></div><div class="coverage-counter">${page.start + 1}–${page.end} of ${page.total}</div></header>
     <div class="matrix-scroll" role="region" aria-label="School capability matrix" tabindex="0">
       <table class="school-matrix">
-        <thead><tr>${headers.map(([key, label]) => `<th><button type="button" data-sort-key="${key}">${label}</button></th>`).join("")}<th colspan="2">Source / implementation / qualification</th></tr></thead>
+        <thead><tr>${headers.map(([key, label]) => {
+          const ariaSort = ui.sortKey === key ? (ui.direction === "asc" ? "ascending" : "descending") : "none";
+          return `<th aria-sort="${ariaSort}"><button type="button" data-sort-key="${key}" data-focus-key="sort:${key}">Sort by ${label}<span aria-hidden="true">${ui.sortKey === key ? (ui.direction === "asc" ? " ↑" : " ↓") : ""}</span></button></th>`;
+        }).join("")}<th colspan="2">Source / implementation / qualification</th></tr></thead>
         <tbody>${tableRows(projectedRows)}</tbody>
       </table>
     </div>
     <footer class="school-pagination">
-      <button type="button" data-page="-1" ${page.page <= 1 ? "disabled" : ""}>Previous</button>
+      <button type="button" data-page="-1" data-focus-key="page:previous" ${page.page <= 1 ? "disabled" : ""}>Previous</button>
       <span>Page ${page.page} / ${page.pages} · complete coverage ${page.total} rows</span>
-      <button type="button" data-page="1" ${page.page >= page.pages ? "disabled" : ""}>Next</button>
+      <button type="button" data-page="1" data-focus-key="page:next" ${page.page >= page.pages ? "disabled" : ""}>Next</button>
     </footer>
   </section>`;
 }
@@ -102,7 +106,7 @@ function graphNode(row, neighborhood, index) {
     ? "blocked"
     : row.lifecycleState === "READY" ? "eligible" : "other";
   const mastery = row.qualificationState === "QUALIFIED" ? "mastered" : "learning";
-  return `<g class="dependency-node" data-capability-id="${row.id}" data-relation="${relation}" data-state="${stateCue(row)}" data-lifecycle="${row.lifecycleState}" data-eligibility="${eligibility}" data-mastery="${mastery}" data-observed-debt="${row.observedDebt}" tabindex="0" role="button" transform="translate(${x} ${y})">
+  return `<g class="dependency-node" data-capability-id="${row.id}" data-focus-key="graph:${row.id}" data-relation="${relation}" data-state="${stateCue(row)}" data-lifecycle="${row.lifecycleState}" data-eligibility="${eligibility}" data-mastery="${mastery}" data-observed-debt="${row.observedDebt}" tabindex="0" role="button" aria-pressed="${isSelected}" aria-label="${row.id}; ${row.lifecycleState}; ${unlocks} direct downstream unlocks" transform="translate(${x} ${y})">
     <title>${row.id}: ${row.lifecycleState}; direct downstream unlocks ${unlocks}</title>
     <rect width="190" height="62" rx="8"></rect>
     <text x="12" y="24">${row.id}</text>
@@ -125,7 +129,7 @@ function graphEdges(neighborhood) {
 }
 
 function dependencyTable(neighborhood) {
-  return `<table class="dependency-fallback"><thead><tr><th>Relation</th><th>Capability ID</th></tr></thead><tbody>
+  return `<table class="dependency-fallback"><caption>Equivalent table for the selected capability dependency graph</caption><thead><tr><th>Relation</th><th>Capability ID</th></tr></thead><tbody>
     ${neighborhood.prerequisites.map((id) => `<tr><td>Prerequisite</td><td>${id}</td></tr>`).join("")}
     ${neighborhood.dependents.map((id) => `<tr><td>Dependent</td><td>${id}</td></tr>`).join("")}
   </tbody></table>`;
@@ -134,21 +138,34 @@ function dependencyTable(neighborhood) {
 function dependencyGraph() {
   const neighborhood = selectionNeighborhood(rows, ui.selectedId);
   if (!ui.graphEnabled) {
-    return `<section class="school-panel graph-panel"><header><div><span class="eyebrow">Topology</span><h2>Dependency table</h2></div><button type="button" data-toggle-graph>Enable graph</button></header>${dependencyTable(neighborhood)}</section>`;
+    return `<section class="school-panel graph-panel"><header><div><span class="eyebrow">Topology</span><h2>Dependency table</h2></div><button type="button" data-toggle-graph data-focus-key="graph:toggle">Enable graph</button></header>${dependencyTable(neighborhood)}</section>`;
   }
-  return `<section class="school-panel graph-panel"><header><div><span class="eyebrow">Topology</span><h2>Prerequisite graph</h2></div><button type="button" data-toggle-graph>Use table alternative</button></header>
+  return `<section class="school-panel graph-panel"><header><div><span class="eyebrow">Topology</span><h2>Prerequisite graph</h2></div><button type="button" data-toggle-graph data-focus-key="graph:toggle">Use table alternative</button></header>
     <div class="graph-legend"><span><i data-edge="source"></i>eligible / qualified</span><span><i data-edge="held"></i>SOURCE_HELD</span><span><i data-edge="derived"></i>IMPLEMENTATION_UNCOVERED</span></div>
-    <svg class="school-graph" viewBox="0 0 760 360" role="img" aria-label="Capability prerequisite dependency graph">${graphEdges(neighborhood)}${rows.map((row, index) => graphNode(row, neighborhood, index)).join("")}</svg>
+    <p id="school-graph-summary" class="sr-only">Interactive prerequisite graph. Arrow keys move between capability nodes. Enter or Space inspects a node. An equivalent relationship table follows the graph.</p>
+    <svg class="school-graph" viewBox="0 0 760 360" role="group" aria-label="Capability prerequisite dependency graph" aria-describedby="school-graph-summary">${graphEdges(neighborhood)}${rows.map((row, index) => graphNode(row, neighborhood, index)).join("")}</svg>
     ${dependencyTable(neighborhood)}
   </section>`;
 }
 
 function filterBar(projectedRows) {
   return `<div class="school-controls">
-    <div class="filter-set" aria-label="School filters">${FILTERS.map((filter) => `<button type="button" data-filter="${filter}" aria-pressed="${ui.filters.has(filter)}">${filter}</button>`).join("")}</div>
-    <label><input type="checkbox" data-group-family ${ui.groupByFamily ? "checked" : ""}/> Group by family</label>
-    <button type="button" data-export>Export ${projectedRows.length} displayed identities</button>
+    <div class="filter-set" role="group" aria-label="School filters">${FILTERS.map((filter) => `<button type="button" data-filter="${filter}" data-focus-key="filter:${filter}" aria-pressed="${ui.filters.has(filter)}">${filter}</button>`).join("")}</div>
+    <label><input type="checkbox" data-group-family data-focus-key="group:family" ${ui.groupByFamily ? "checked" : ""}/> Group by family</label>
+    <button type="button" data-export data-focus-key="school:export">Export ${projectedRows.length} displayed identities</button>
   </div>`;
+}
+
+function restoreSchoolFocus(container, key) {
+  const target = [...container.querySelectorAll("[data-focus-key]")]
+    .find((candidate) => candidate.dataset.focusKey === key);
+  target?.focus();
+}
+
+function rerenderFrom(container, inspectCapability, control) {
+  const key = control?.dataset?.focusKey;
+  renderSchoolView(container, inspectCapability);
+  if (key) restoreSchoolFocus(container, key);
 }
 
 function bind(container, inspectCapability) {
@@ -156,25 +173,25 @@ function bind(container, inspectCapability) {
     const filter = button.dataset.filter;
     ui.filters.has(filter) ? ui.filters.delete(filter) : ui.filters.add(filter);
     ui.page = 1;
-    renderSchoolView(container, inspectCapability);
+    rerenderFrom(container, inspectCapability, button);
   }));
   container.querySelectorAll("[data-sort-key]").forEach((button) => button.addEventListener("click", () => {
     const key = button.dataset.sortKey;
     ui.direction = ui.sortKey === key && ui.direction === "asc" ? "desc" : "asc";
     ui.sortKey = key;
-    renderSchoolView(container, inspectCapability);
+    rerenderFrom(container, inspectCapability, button);
   }));
   container.querySelectorAll("[data-page]").forEach((button) => button.addEventListener("click", () => {
     ui.page += Number(button.dataset.page);
-    renderSchoolView(container, inspectCapability);
+    rerenderFrom(container, inspectCapability, button);
   }));
   container.querySelector("[data-group-family]")?.addEventListener("change", (event) => {
     ui.groupByFamily = event.currentTarget.checked;
-    renderSchoolView(container, inspectCapability);
+    rerenderFrom(container, inspectCapability, event.currentTarget);
   });
-  container.querySelector("[data-toggle-graph]")?.addEventListener("click", () => {
+  container.querySelector("[data-toggle-graph]")?.addEventListener("click", (event) => {
     ui.graphEnabled = !ui.graphEnabled;
-    renderSchoolView(container, inspectCapability);
+    rerenderFrom(container, inspectCapability, event.currentTarget);
   });
   container.querySelectorAll("[data-select-capability], .dependency-node").forEach((node) => {
     const activate = () => {
@@ -184,9 +201,19 @@ function bind(container, inspectCapability) {
     };
     node.addEventListener("click", activate);
     node.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") activate();
+      if (isActivationKey(event.key)) {
+        event.preventDefault();
+        activate();
+      }
     });
   });
+  const graphNodes = [...container.querySelectorAll(".dependency-node")];
+  graphNodes.forEach((node, index) => node.addEventListener("keydown", (event) => {
+    const next = nextRovingIndex(index, event.key, graphNodes.length);
+    if (next === index) return;
+    event.preventDefault();
+    graphNodes[next]?.focus();
+  }));
   container.querySelector("[data-export]")?.addEventListener("click", (event) => {
     const projected = projectRows(rows, { filters: [...ui.filters], sortKey: ui.sortKey, direction: ui.direction, groupByFamily: ui.groupByFamily });
     const blob = new Blob([exportSchoolCsv(projected)], { type: "text/csv;charset=utf-8" });
