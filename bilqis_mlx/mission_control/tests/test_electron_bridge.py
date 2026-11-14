@@ -17,10 +17,50 @@ from bilqis_mlx.mission_control.envelopes import EventEnvelope
 from bilqis_mlx.mission_control.query_catalog import MissionControlQueryCatalog
 from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryRequest
 from bilqis_mlx.mission_control.tests.samples import SAMPLES
+from bilqis_mlx.mission_control.codec import encode_record
+from bilqis_mlx.control_plane.tests.command_support import request
 from bilqis_mlx.paths import active_run_dir
 
 
 class ElectronBridgeTests(unittest.TestCase):
+    def test_command_bridge_decodes_v2_and_never_exposes_private_session_identity(self):
+        action = request(action="resume", dry_run=False, human_authorized=False)
+        client = Mock()
+        client.preview_command.return_value = {
+            "schema": "bilqis.bamf.control-plane.command-preview/v1",
+            "operation_id": "operation:" + "1" * 64,
+        }
+        client.inspect_command.return_value = {
+            "schema": "bilqis.bamf.control-plane.command-inspection/v1",
+            "operation_id": "operation:" + "1" * 64,
+        }
+        receipt = next(
+            item for item in SAMPLES
+            if item.schema_version == "bilqis.bamf.mission-control.operator-action-receipt/v2"
+        )
+        client.submit_command.return_value = receipt
+        bridge = ElectronBridge()
+        bridge.client = client
+
+        preview = bridge.command_preview(encode_record(action))
+        submitted = bridge.command_submit({
+            "request": encode_record(action),
+            "expected_target_ref": "command-target:" + "2" * 64,
+        })
+        inspection = bridge.command_inspect("operation:" + "1" * 64)
+
+        self.assertEqual(preview["schema"], "bilqis.bamf.control-plane.command-preview/v1")
+        self.assertEqual(
+            submitted["schema_version"],
+            "bilqis.bamf.mission-control.operator-action-receipt/v2",
+        )
+        self.assertEqual(
+            inspection["schema"], "bilqis.bamf.control-plane.command-inspection/v1")
+        client.preview_command.assert_called_once()
+        client.submit_command.assert_called_once()
+        client.inspect_command.assert_called_once_with("operation:" + "1" * 64)
+        self.assertNotIn("session_id", repr((preview, submitted, inspection)))
+
     def test_event_stream_serializes_cp04_envelopes_without_private_session_state(self):
         event = next(item for item in SAMPLES if type(item) is EventEnvelope)
         client = Mock()

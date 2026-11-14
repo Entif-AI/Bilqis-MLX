@@ -33,6 +33,21 @@ class Cp01PythonBroker {
     return this.#request("query", request);
   }
 
+  previewCommand(request) {
+    return this.#request("command-preview", request);
+  }
+
+  submitCommand(request, expectedTargetRef) {
+    return this.#request("command-submit", {
+      request,
+      expected_target_ref: expectedTargetRef,
+    });
+  }
+
+  inspectCommand(operationId) {
+    return this.#request("command-inspect", operationId);
+  }
+
   disconnect() {
     return this.#request("disconnect");
   }

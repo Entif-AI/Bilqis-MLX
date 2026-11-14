@@ -133,8 +133,9 @@ class C11CommandExecutor:
         ]
         return report, target, CommandMode.MUTATING, actual, "admission-lease"
 
-    def preflight(
-        self, request: OperatorActionRequestV2, operation_id: str,
+    def _preflight(
+        self, request: OperatorActionRequestV2, operation_id: str, *,
+        require_authorization: bool,
     ) -> tuple[CommandPlan, dict]:
         action = self._action(request)
         parameters = parameter_map(request.parameters)
@@ -144,7 +145,7 @@ class C11CommandExecutor:
         else:
             parts = self._existing_parts(request, action, parameters)
         report, target, mode, actual, postcondition = parts
-        if mode is CommandMode.MUTATING and not request.human_authorized:
+        if require_authorization and mode is CommandMode.MUTATING and not request.human_authorized:
             _invalid("CONTROL_PLANE_COMMAND_HUMAN_AUTHORIZATION_REQUIRED")
         plan = CommandPlan(
             operation_id=operation_id,
@@ -163,6 +164,19 @@ class C11CommandExecutor:
             "target": target.to_record(),
             "c11_report": report,
         }
+
+    def preview(
+        self, request: OperatorActionRequestV2, operation_id: str,
+    ) -> tuple[CommandPlan, dict]:
+        """Resolve an exact plan without treating preview as human authorization."""
+        return self._preflight(
+            request, operation_id, require_authorization=False)
+
+    def preflight(
+        self, request: OperatorActionRequestV2, operation_id: str,
+    ) -> tuple[CommandPlan, dict]:
+        return self._preflight(
+            request, operation_id, require_authorization=True)
 
     def inert_postcondition(
         self, plan: CommandPlan, preflight: dict,

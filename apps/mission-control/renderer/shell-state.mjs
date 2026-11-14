@@ -27,6 +27,7 @@ export const INSPECTOR_OWNERS = Object.freeze({
   resource: "resources",
   neural: "model",
   strategy: "teacher",
+  operation: "operate",
   "salience-observation": "salience",
 });
 

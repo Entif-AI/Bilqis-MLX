@@ -8,7 +8,10 @@ import sys
 
 from bilqis_mlx.control_plane import ControlPlaneClient
 from bilqis_mlx.control_plane.contracts import ControlPlaneState, PROTOCOL_VERSION
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.mission_control.codec import encode_record
+from bilqis_mlx.mission_control.codec import decode_record
+from bilqis_mlx.mission_control.operator import OperatorActionRequestV2
 from bilqis_mlx.mission_control.query_contracts import QUERY_PAGE_SCHEMA, QueryRequest
 from bilqis_mlx.paths import active_run_dir
 
@@ -16,6 +19,10 @@ from bilqis_mlx.paths import active_run_dir
 _CLIENT_ID = "mission-control-electron"
 MAX_BROKER_REQUEST_BYTES = 64 * 1024
 QUERY_ERROR_SCHEMA = "bamf.gui07.query-error/v1"
+
+
+def _invalid(reason: str):
+    ErrorBus.raise_(SCHOOL.BAMF_CONTROL_PLANE.INVALID, reason=reason)
 
 
 def _socket_path() -> Path:
@@ -79,6 +86,33 @@ class ElectronBridge:
         return {key: value for key, value in response.items()
                 if key not in {"service", "session"}}
 
+    def command_preview(self, payload: dict) -> dict:
+        if self.client is None:
+            _invalid("CONTROL_PLANE_NOT_CONNECTED")
+        request = decode_record(payload)
+        if type(request) is not OperatorActionRequestV2:
+            _invalid("CONTROL_PLANE_COMMAND_REQUEST_VERSION_REQUIRED")
+        return self.client.preview_command(request)
+
+    def command_submit(self, payload: dict) -> dict:
+        if self.client is None:
+            _invalid("CONTROL_PLANE_NOT_CONNECTED")
+        if not isinstance(payload, dict):
+            _invalid("CONTROL_PLANE_COMMAND_REQUEST_INVALID")
+        request = decode_record(payload.get("request", {}))
+        if type(request) is not OperatorActionRequestV2:
+            _invalid("CONTROL_PLANE_COMMAND_REQUEST_VERSION_REQUIRED")
+        expected = payload.get("expected_target_ref")
+        if not isinstance(expected, str) or not expected:
+            _invalid("CONTROL_PLANE_COMMAND_EXPECTED_TARGET_REQUIRED")
+        return encode_record(self.client.submit_command(
+            request, expected_target_ref=expected))
+
+    def command_inspect(self, operation_id: str) -> dict:
+        if self.client is None:
+            _invalid("CONTROL_PLANE_NOT_CONNECTED")
+        return self.client.inspect_command(operation_id)
+
     def disconnect(self) -> dict:
         if self.client is not None:
             self.client.close()
@@ -126,10 +160,19 @@ def main() -> int:
             identifier = request["id"]
             operation = request["op"]
             if type(identifier) is not int or operation not in {
-                    "connect", "status", "disconnect", "query"}:
+                    "connect", "status", "disconnect", "query",
+                    "command-preview", "command-submit", "command-inspect"}:
                 raise ValueError
-            result = (bridge.query(request.get("query")) if operation == "query"
-                      else getattr(bridge, operation)())
+            if operation == "query":
+                result = bridge.query(request.get("query"))
+            elif operation == "command-preview":
+                result = bridge.command_preview(request.get("query"))
+            elif operation == "command-submit":
+                result = bridge.command_submit(request.get("query"))
+            elif operation == "command-inspect":
+                result = bridge.command_inspect(request.get("query"))
+            else:
+                result = getattr(bridge, operation)()
         except Exception:
             _reply(request.get("id") if isinstance(request, dict) else None,
                    error="BAMF_GUI20_CP01_UNAVAILABLE")

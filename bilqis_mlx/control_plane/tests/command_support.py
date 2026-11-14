@@ -103,6 +103,9 @@ class FakeExecutor:
             "target": plan.target.to_record(),
         }
 
+    def preview(self, action_request, operation_id):
+        return self.preflight(action_request, operation_id)
+
     def inert_postcondition(self, plan, preflight):
         return {"kind": "fixture-inert", "target": plan.target.to_record()}
 

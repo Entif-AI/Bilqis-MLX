@@ -5,7 +5,8 @@ import {
 } from "../atlas/atlas-controller.mjs";
 
 export function activateDomainViews({
-  state, getState, defense, api, homeController, resourceController, onInspect,
+  state, getState, defense, api, homeController, resourceController, operateController,
+  onInspect, onAnnounce,
 }) {
   if (state?.view === "atlas") {
     const context = state.context;
@@ -31,5 +32,15 @@ export function activateDomainViews({
     });
   } else {
     void resourceController?.deactivate();
+  }
+  if (state?.view === "operate") {
+    void operateController?.activate(state.context, {
+      target: document.querySelector("#domain-view"),
+      onInspect,
+      onAnnounce,
+      defense,
+    });
+  } else {
+    void operateController?.deactivate();
   }
 }

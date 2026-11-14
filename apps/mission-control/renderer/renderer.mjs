@@ -38,6 +38,7 @@ import {
 } from "./foundation/accessibility.mjs";
 import { createHomeController } from "./home/home-controller.mjs";
 import { createResourceController } from "./resources/resource-controller.mjs";
+import { createOperateController } from "./operate/operate-controller.mjs";
 import { activateDomainViews } from "./foundation/domain-controller.mjs";
 
 const SNAPSHOT_REQUEST = Object.freeze({
@@ -51,6 +52,7 @@ let focusReturnToken = null;
 let paletteReturnToken = null;
 const homeController = createHomeController(window.bamfMissionControl);
 const resourceController = createResourceController(window.bamfMissionControl);
+const operateController = createOperateController(window.bamfMissionControl);
 
 const frameShell = createFrameShell({
   getState: () => state, setState: next => { state = next; }, getDefense: () => defense,
@@ -83,7 +85,8 @@ function render() {
   setHash();
   activateDomainViews({
     state, getState: () => state, defense, api: window.bamfMissionControl,
-    homeController, resourceController, onInspect: openInspector,
+    homeController, resourceController, operateController,
+    onInspect: openInspector, onAnnounce: announce,
   });
 }
 
