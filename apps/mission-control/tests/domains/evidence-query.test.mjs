@@ -76,6 +76,15 @@ test("owning selections map directly into evidence criteria", () => {
   assert.deepEqual(criteriaForSelection({ kind: "evidence", id: "receipt:one" }), {
     kind: "record", value: "receipt:one",
   });
+  assert.deepEqual(criteriaForSelection({ kind: "generation", id: "generation:44239" }), {
+    kind: "record", value: "generation:44239",
+  });
+  assert.equal(
+    buildEvidenceRequest(context, criteriaForSelection({
+      kind: "generation", id: "generation:44239",
+    })).record_id,
+    "generation:44239",
+  );
 });
 
 test("accepted-false query responses fail closed", async () => {
