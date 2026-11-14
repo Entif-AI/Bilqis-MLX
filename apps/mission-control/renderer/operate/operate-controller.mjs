@@ -177,6 +177,11 @@ export function createOperateController(api) {
     onInspect = options.onInspect;
     onAnnounce = options.onAnnounce;
     active = true;
+    if (typeof document !== "undefined") {
+      document.querySelector(".fixture-card").hidden = true;
+      document.querySelector("#visual-catalog").hidden = true;
+      document.querySelector("#view-summary").textContent = "Preflighted CP05 commands with explicit consequence, human authorization, target binding, idempotency, and receipt readback.";
+    }
     if (changed) state = initialOperateState();
     render();
     if (!unsubscribe && defense?.mutationAllowed) await subscribe();

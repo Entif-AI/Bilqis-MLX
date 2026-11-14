@@ -319,13 +319,6 @@ export function renderCurrentView(state, defense, onInspect, api, onEvidenceSele
     summary.textContent = "Measured resource budgets, decomposed where instrumented, with exact historical comparison and spike correlation.";
     return;
   }
-  if (state.view === "operate") {
-    domain.hidden = false;
-    fixture.hidden = true;
-    catalog.hidden = true;
-    summary.textContent = "Preflighted CP05 commands with explicit consequence, human authorization, target binding, idempotency, and receipt readback.";
-    return;
-  }
   fixture.hidden = false;
   catalog.hidden = false;
   domain.hidden = true;
