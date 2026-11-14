@@ -3,23 +3,23 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from ..envelopes import (
+from .envelopes import (
     PartialEnvelope, StaleEnvelope, UnavailableEnvelope,
 )
-from ..events import LearningEpisode
-from ..model import WireRecord, require
-from ..observability import GenerationManifest
-from .contracts import (
+from .events import LearningEpisode
+from .model import WireRecord, require
+from .observability import GenerationManifest
+from .query_contracts import (
     QueryFamily, QueryLink, QueryMode, QueryPage, QueryRequest,
 )
-from ..snapshots import (
+from .snapshots import (
     CapabilitySnapshot, OperatorView,
 )
-from ..semantic import (
+from .semantic import (
     SemanticConceptSnapshot, SemanticGenerationState, SemanticHeldMappingSnapshot,
     SemanticSimilaritySnapshot,
 )
-from .support import (
+from .query_support import (
     FAMILY_TYPES, build_page, encode_query_page, matches_identity,
     record_sort_key, select_current,
 )

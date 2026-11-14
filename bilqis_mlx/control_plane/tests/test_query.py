@@ -7,10 +7,10 @@ from unittest.mock import patch
 
 from bilqis_mlx.control_plane import ControlPlaneClient, ControlPlaneService
 from bilqis_mlx.control_plane.contracts import ERROR_SCHEMA
-from bilqis_mlx.mission_control.query.contracts import (
+from bilqis_mlx.mission_control.query_contracts import (
     QUERY_PAGE_SCHEMA, QueryFamily, QueryRequest, QueryState,
 )
-from bilqis_mlx.mission_control.query.catalog import MissionControlQueryCatalog
+from bilqis_mlx.mission_control.query_catalog import MissionControlQueryCatalog
 from bilqis_mlx.mission_control.tests.samples import SAMPLES
 
 from .support import start_service

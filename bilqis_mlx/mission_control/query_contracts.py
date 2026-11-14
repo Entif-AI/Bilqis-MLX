@@ -7,7 +7,7 @@ import hashlib
 import json
 from typing import Mapping
 
-from ..model import CoverageState, WireRecord, is_name, is_wire_integer, require
+from .model import CoverageState, WireRecord, is_name, is_wire_integer, require
 
 
 QUERY_REQUEST_SCHEMA = "bilqis.bamf.control-plane.query/v1"

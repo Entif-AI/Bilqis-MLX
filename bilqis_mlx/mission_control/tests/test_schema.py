@@ -4,8 +4,8 @@ from pathlib import Path
 import unittest
 
 from bilqis_mlx.mission_control.codec import encode_record
-from bilqis_mlx.mission_control.registry import ALL_RECORD_TYPES
-from bilqis_mlx.mission_control.schema import JSON_SCHEMA_DIALECT, schema_bundle
+from bilqis_mlx.mission_control.contracts.registry import ALL_RECORD_TYPES
+from bilqis_mlx.mission_control.contracts.schema import JSON_SCHEMA_DIALECT, schema_bundle
 from bilqis_mlx.mission_control.tests.samples import SAMPLES
 
 

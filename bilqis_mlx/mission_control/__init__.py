@@ -20,13 +20,13 @@ from .operator import (
     ActionParameter, ActionReceiptState, OperatorActionReceipt,
     OperatorActionReceiptV2, OperatorActionRequest, OperatorActionRequestV2,
 )
-from .query import (
+from .query_contracts import (
     DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, QUERY_PAGE_SCHEMA, QUERY_REQUEST_SCHEMA,
-    MissionControlQueryCatalog, QueryFamily, QueryLink, QueryMode, QueryPage,
-    QueryRequest, QueryState,
+    QueryFamily, QueryLink, QueryMode, QueryPage, QueryRequest, QueryState,
 )
-from .registry import ALL_RECORD_TYPES, RECORD_BY_SCHEMA
-from .schema import record_schema, schema_bundle
+from .query_catalog import MissionControlQueryCatalog
+from .contracts.registry import ALL_RECORD_TYPES, RECORD_BY_SCHEMA
+from .contracts.schema import record_schema, schema_bundle
 from .semantic import (
     SemanticAdmissionState, SemanticBankSnapshot, SemanticConceptSnapshot,
     SemanticGenerationState, SemanticHeldMappingSnapshot, SemanticLabel,

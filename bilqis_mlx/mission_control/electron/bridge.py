@@ -8,7 +8,7 @@ import sys
 
 from bilqis_mlx.control_plane import ControlPlaneClient
 from bilqis_mlx.control_plane.contracts import ControlPlaneState, PROTOCOL_VERSION
-from bilqis_mlx.mission_control.query.contracts import QUERY_PAGE_SCHEMA, QueryRequest
+from bilqis_mlx.mission_control.query_contracts import QUERY_PAGE_SCHEMA, QueryRequest
 from bilqis_mlx.paths import active_run_dir
 
 
