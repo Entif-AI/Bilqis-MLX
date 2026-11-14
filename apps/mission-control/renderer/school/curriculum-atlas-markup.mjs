@@ -129,6 +129,7 @@ export function tableMarkup(graph, visibility, semanticBindings = null) {
 
 function actionsMarkup(node, semanticBinding, ui) {
   const school = route("school", "capability", node.id);
+  const capability = route("capability", "capability", node.id);
   const evidence = route("evidence", "capability", node.id);
   let atlas = '<button type="button" data-resolve-semantic="' + esc(node.id) + '" data-focus-key="curriculum:resolve-semantic"' +
     (ui.semanticLoading === node.id ? ' disabled' : '') + '>' +
@@ -141,8 +142,7 @@ function actionsMarkup(node, semanticBinding, ui) {
   }
   return '<div class="curriculum-actions">' +
     '<button type="button" data-school-mode="matrix" data-focus-key="school-mode:matrix">Open in School</button>' +
-    '<button type="button" disabled title="Capability Explorer is not landed yet (#1060).">' +
-      'Open in Capability · unavailable</button>' + atlas +
+    '<a href="' + capability + '">Open in Capability</a>' + atlas +
     '<button type="button" disabled title="Lineage is available, but GUI14 does not expose a capability-specific generation route.">' +
       'Open in Lineage · capability route unavailable</button>' +
     '<a href="' + evidence + '">Open in Evidence</a>' +
