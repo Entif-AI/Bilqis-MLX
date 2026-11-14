@@ -3,6 +3,11 @@ import { renderComponentCatalog } from "../component-catalog.mjs";
 import { renderSchoolView } from "../school/school-view.mjs";
 import { renderNeuralView } from "../neural/neural-view.mjs";
 import { renderEpisodesView } from "../episodes/episode-view.mjs";
+import { renderMemoryView } from "../memory/memory-view.mjs";
+import {
+  currentMemoryGeneration,
+  stableMemoryIdentity,
+} from "../memory/memory-model.mjs";
 import { renderTeacherView } from "../teacher/teacher-view.mjs";
 import { defensiveBannerMarkup } from "./defensive-state.mjs";
 import { bindRovingNavigation } from "./accessibility.mjs";
@@ -12,7 +17,7 @@ const demoObjects = [
   ["capability", "B.AND"],
   ["episode", "episode-record:fixture:retained-44239"],
   ["semantic", "sem:logic.and"],
-  ["memory", "motif:bool-composition"],
+  ["memory", stableMemoryIdentity(currentMemoryGeneration().slots[0])],
   ["checkpoint", "generation:44238"],
   ["evidence", "receipt:fixture-001"],
   ["correction", "correction:fixture-1"],
@@ -180,6 +185,26 @@ export function renderCurrentView(state, defense, onInspect) {
       id,
       details: { "Evidence type": kind, "Interpretation boundary": "Durable episode evidence only" },
     }), state.selected?.kind === "episode" ? state.selected.id : null);
+    return;
+  }
+  if (state.view === "memory") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Retained Engram allocation, retrieval telemetry, correction state, and generation deltas without promoting memory hits into semantic or capability authority.";
+    renderMemoryView(domain, (id, slot) => onInspect({
+      kind: "memory",
+      id,
+      details: {
+        "Slot address": `motif.page.${slot.pageIndex}[${slot.rowIndex}]`,
+        "Creation generation": slot.createdGeneration,
+        "Source eligibility": slot.sourceEligibility,
+        "Correction state": slot.correctionState,
+        "Parameter bank": slot.parameterBank,
+        "Related capabilities": slot.capabilities,
+        "Related episodes": slot.episodes,
+      },
+    }), state.selected?.kind === "memory" ? state.selected.id : null);
     return;
   }
   if (state.view === "teacher") {

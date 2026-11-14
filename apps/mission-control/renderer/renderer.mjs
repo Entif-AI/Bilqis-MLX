@@ -37,21 +37,10 @@ import {
   renderAtlasDomain,
 } from "./atlas/atlas-controller.mjs";
 
-const labels = new Map(DESTINATIONS);
 const SNAPSHOT_REQUEST = Object.freeze({
   schemaVersion: "bamf.gui20.operator-view-query/v1",
   schema: "bilqis.bamf.mission-control.operator-view/v1",
 });
-const demoObjects = [
-  ["capability", "B.AND"],
-  ["episode", "candidate-44238-7"],
-  ["semantic", "sem:logic.and"],
-  ["memory", "motif:bool-composition"],
-  ["checkpoint", "generation:44238"],
-  ["evidence", "receipt:fixture-001"],
-  ["correction", "correction:fixture-1"],
-  ["warning", "resource:disk-reserve"],
-];
 
 let state = null;
 let displaySettings;
