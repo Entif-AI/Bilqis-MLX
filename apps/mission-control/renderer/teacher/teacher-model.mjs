@@ -1,5 +1,5 @@
-import { EPISODE_FIXTURES } from "./episode-fixture.mjs";
-import { episodeDeepLink } from "./episode-model.mjs";
+import { EPISODE_FIXTURES } from "../episodes/episode-fixture.mjs";
+import { episodeDeepLink } from "../episodes/episode-model.mjs";
 import {
   FIDELITY_FIXTURES,
   STRATEGY_FIXTURES,

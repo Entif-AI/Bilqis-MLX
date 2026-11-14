@@ -8,7 +8,7 @@ import {
   STRATEGY_FIXTURES,
   TEACHER_CHECKPOINT,
   TEACHER_PROJECTION,
-} from "../renderer/domains/teacher-fixture.mjs";
+} from "../renderer/teacher/teacher-fixture.mjs";
 import {
   aggregateContext,
   comparisonScopes,
@@ -18,7 +18,7 @@ import {
   strategyComparison,
   strategyEpisodes,
   teacherProjectionBoundary,
-} from "../renderer/domains/teacher-model.mjs";
+} from "../renderer/teacher/teacher-model.mjs";
 import { INSPECTOR_OWNERS } from "../renderer/shell-state.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -46,7 +46,7 @@ test("strategy metrics keep no-gain and interference numerically distinct", () =
   }
   const challenger = strategyById("strategy:fixture:challenger-balanced");
   assert.notEqual(challenger.noGain, challenger.interference);
-  const css = fs.readFileSync(path.join(rendererRoot, "teacher.css"), "utf8");
+  const css = fs.readFileSync(path.join(rendererRoot, "teacher/teacher.css"), "utf8");
   assert.match(css, /\.comparison-table \.no-gain/);
   assert.match(css, /\.comparison-table \.harmful/);
 });
@@ -210,7 +210,7 @@ test("grade labels cannot create teacher strategy priority quota or synthetic re
     ]) assert.equal(forbidden in strategy, false, forbidden);
   }
   assert.equal(INSPECTOR_OWNERS.strategy, "teacher");
-  const source = fs.readFileSync(path.join(rendererRoot, "domains/teacher-view.mjs"), "utf8").toLowerCase();
+  const source = fs.readFileSync(path.join(rendererRoot, "teacher/teacher-view.mjs"), "utf8").toLowerCase();
   for (const forbidden of ["best strategy", "recommended strategy", "winner badge"]) {
     assert.equal(source.includes(forbidden), false, forbidden);
   }
