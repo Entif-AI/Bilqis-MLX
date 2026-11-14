@@ -1,14 +1,7 @@
 """Authenticated BAMF history is the CP07 production-source acceptance witness."""
-from dataclasses import replace
-import json
-from pathlib import Path
 import unittest
-from unittest.mock import patch
 
-import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
-from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
-from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.control_plane import ControlPlaneClient, ControlPlaneService, EventFamily
 from bilqis_mlx.control_plane.native_source import (
     authenticated_history, materialize_native_projection, refresh_native_events,
@@ -16,50 +9,20 @@ from bilqis_mlx.control_plane.native_source import (
 from bilqis_mlx.mission_control import CandidateDecision, CapabilitySnapshot, LearningEpisode
 from bilqis_mlx.mission_control.projection import MissionControlProjection
 from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryMode, QueryRequest
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.acceptance._generation_acceptance_support import (
-    GenerationAcceptanceFixture,
-)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-    retention_decision, shape_patch,
+    retention_decision,
 )
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
 
 from ..support import start_service
+from .native_source_support import NativeSourceFixture
 
 
-class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
-    def _successor(self):
-        parent = self.parent()
-        source = self.source()
-        step = source.retained_state.optimizer_step
-        visit = TeacherVisitIdentity(
-            parent.run_identity.digest, parent.run_identity.run_seed,
-            parent.generation, self._parent_pointer["manifest_sha256"],
-            parent.teacher_state["teacher_identity"],
-            parent.teacher_state["teacher_epoch"],
-            candidate_identity_digest(parent.retained_state),
-            parent.teacher_state["next_seed"], parent.teacher_state["cursor"],
-            "A.NATIVE", "policy:native",
-        )
-        return replace(
-            source,
-            teacher_state={**source.teacher_state, "last_visit": visit.to_record()},
-            outbox=({
-                "event": "BAMF_C16_3_ACCEPTED",
-                "optimizer_step": step,
-                "capability": "A.NATIVE",
-            },),
-        )
-
-    def _publish_successor(self):
-        source = self._successor()
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            pointer = self.publish(source, acceptance=self.binding(source))
-        return source, pointer
+class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
 
     def test_authenticated_history_materializes_native_cp02_and_rebuilds_cp06(self):
         self.parent()
-        source, pointer = self._publish_successor()
+        source, pointer = self.publish_successor()
         before = (self.run / "bamf-state.json").read_bytes()
 
         history = authenticated_history(self.run)
@@ -111,7 +74,7 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
 
     def test_historical_acceptance_tamper_fails_closed(self):
         self.parent()
-        source, _pointer = self._publish_successor()
+        source, _pointer = self.publish_successor()
         index = self.root / "tampered.sqlite3"
         projection = MissionControlProjection.rebuild_from_bamf(index, self.run)
         before = projection.catalog().query(QueryRequest(
@@ -144,7 +107,7 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
         try:
             with ControlPlaneClient(socket) as client:
                 subscription = client.subscribe_events()
-                self._publish_successor()
+                self.publish_successor()
                 observed = []
                 while len(observed) < 5:
                     event = next(subscription)
@@ -169,14 +132,7 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
     def test_authenticated_rejection_is_projected_without_advancing_learner(self):
         parent = self.parent()
         before = (self.run / "bamf-state.json").read_bytes()
-        state = parent.teacher_state
-        visit = TeacherVisitIdentity(
-            parent.run_identity.digest, parent.run_identity.run_seed,
-            parent.generation, self._parent_pointer["manifest_sha256"],
-            state["teacher_identity"], state["teacher_epoch"],
-            candidate_identity_digest(parent.retained_state),
-            state["next_seed"], state["cursor"], "A.REJECT", "policy:native",
-        )
+        visit = self.native_visit(parent)
         decision = retention_decision(
             accepted=False, parent=parent.retained_state, retained=parent.retained_state)
         receipt = record_bamf_rejection(self.run, parent, {
@@ -201,137 +157,6 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
         self.assertEqual(rejected[0].candidate_id, decision.candidate_generation)
         self.assertIn(f"bamf-rejection:{receipt}", rejected[0].meta.receipt_refs)
         self.assertEqual((self.run / "bamf-state.json").read_bytes(), before)
-
-    def test_forged_c03_visit_is_rejected(self):
-        source = self._successor()
-        forged = dict(source.teacher_state["last_visit"])
-        forged["student_sha256"] = "f" * 64
-        forged_identity = TeacherVisitIdentity.from_record({
-            **forged,
-            "visit_id": TeacherVisitIdentity(
-                forged["run_identity_sha256"], forged["run_seed"],
-                forged["generation"], forged["accepted_manifest_sha256"],
-                forged["teacher_identity"], forged["teacher_epoch"],
-                forged["student_sha256"], forged["selection_seed"], forged["cursor"],
-                forged["capability_id"], forged["policy_key"],
-            ).visit_id,
-        })
-        source = replace(
-            source,
-            teacher_state={**source.teacher_state, "last_visit": forged_identity.to_record()},
-        )
-        self.publish(source, acceptance=self.binding(source))
-        with self.assertRaises(BilqisError) as caught:
-            materialize_native_projection(self.run)
-        self.assertEqual(
-            caught.exception.context.get("reason"),
-            "CONTROL_PLANE_NATIVE_C16_ACCEPTED_INVALID",
-        )
-
-    def test_accepted_event_optimizer_step_must_match_generation(self):
-        source = self._successor()
-        source = replace(
-            source,
-            outbox=({
-                **source.outbox[0],
-                "optimizer_step": source.retained_state.optimizer_step + 999,
-            },),
-        )
-        self.publish(source, acceptance=self.binding(source))
-        with self.assertRaises(BilqisError) as caught:
-            materialize_native_projection(self.run)
-        self.assertEqual(
-            caught.exception.context.get("reason"),
-            "CONTROL_PLANE_NATIVE_C16_ACCEPTED_INVALID",
-        )
-
-    def test_divergent_duplicate_rejection_event_is_rejected(self):
-        parent = self.parent()
-        state = parent.teacher_state
-        visit = TeacherVisitIdentity(
-            parent.run_identity.digest, parent.run_identity.run_seed,
-            parent.generation, self._parent_pointer["manifest_sha256"],
-            state["teacher_identity"], state["teacher_epoch"],
-            candidate_identity_digest(parent.retained_state),
-            state["next_seed"], state["cursor"], "A.REJECT", "policy:native",
-        )
-        decision = retention_decision(
-            accepted=False, parent=parent.retained_state, retained=parent.retained_state)
-        record_bamf_rejection(self.run, parent, {
-            "schema": "bilqis.bamf.c16.3-rejection/v2",
-            "visit_id": visit.visit_id,
-            "selected_option_id": "option:native",
-            "selected_policy_key": "policy:native",
-            "candidate_optimizer_step": parent.retained_state.optimizer_step + 1,
-            "retained_optimizer_step": parent.retained_state.optimizer_step,
-            "retention_reason": decision.reason,
-            "capability": "A.REJECT",
-            "decision": decision.to_record(),
-        })
-        ledger = self.run / "events.jsonl"
-        row = json.loads(ledger.read_text(encoding="utf-8").splitlines()[-1])
-        divergent = {**row, "evidence": {**row["evidence"], "capability": "A.DRIFT"}}
-        with ledger.open("a", encoding="utf-8") as stream:
-            stream.write(json.dumps(divergent, sort_keys=True) + "\n")
-        with self.assertRaises(BilqisError) as caught:
-            materialize_native_projection(self.run)
-        self.assertEqual(
-            caught.exception.context.get("reason"),
-            "CONTROL_PLANE_NATIVE_REJECTION_EVENT_ID_DRIFT",
-        )
-
-    def test_non_c16_rejection_receipt_is_authenticated_but_not_projected(self):
-        parent = self.parent()
-        record_bamf_rejection(self.run, parent, {"reason": "retention_gate"})
-        material = materialize_native_projection(self.run)
-        rejected = [
-            record for record in material.records
-            if isinstance(record, CandidateDecision)
-            and record.outcome.value == "REJECTED"
-        ]
-        self.assertEqual(rejected, [])
-
-    def test_c16_rejection_requires_source_retention_decision(self):
-        parent = self.parent()
-        state = parent.teacher_state
-        visit = TeacherVisitIdentity(
-            parent.run_identity.digest, parent.run_identity.run_seed,
-            parent.generation, self._parent_pointer["manifest_sha256"],
-            state["teacher_identity"], state["teacher_epoch"],
-            candidate_identity_digest(parent.retained_state),
-            state["next_seed"], state["cursor"], "A.REJECT", "policy:native",
-        )
-        record_bamf_rejection(self.run, parent, {
-            "schema": "bilqis.bamf.c16.3-rejection/v2",
-            "visit_id": visit.visit_id,
-            "selected_option_id": "option:native",
-            "selected_policy_key": "policy:native",
-            "candidate_optimizer_step": parent.retained_state.optimizer_step + 1,
-            "retained_optimizer_step": parent.retained_state.optimizer_step,
-            "retention_reason": "CLAIMED_REJECT",
-            "capability": "A.REJECT",
-            "decision": {"decision": "ACCEPT"},
-        })
-        with self.assertRaises(BilqisError):
-            materialize_native_projection(self.run)
-
-    def test_whole_history_pointer_race_is_retried(self):
-        self.parent()
-        socket = self.root / "race.sock"
-        service = ControlPlaneService(self.run, socket)
-
-        def race(_run_dir):
-            ErrorBus.raise_(
-                SCHOOL.BAMF_CONTROL_PLANE.INVALID,
-                reason="CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED",
-            )
-
-        with patch(
-            "bilqis_mlx.control_plane.native_source.materialize_native_projection",
-            side_effect=race,
-        ):
-            self.assertEqual(refresh_native_events(service), ())
-
 
 if __name__ == "__main__":
     unittest.main()

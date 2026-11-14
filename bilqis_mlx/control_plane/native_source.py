@@ -38,6 +38,14 @@ def materialize_native_projection(run_dir: Path) -> NativeProjectionMaterial:
         manifests.append(generation.manifest_sha256)
         parent = generation
     rejected_records, rejected_events = rejection_material(Path(run_dir), history)
+    from bilqis_mlx.runtime.bamf_bundle import inspect_accepted_generation
+
+    after = inspect_accepted_generation(Path(run_dir) / "bamf-state.json")
+    if (not history
+            or after.generation_manifest_sha256 != history[-1].manifest_sha256
+            or after.acceptance_sha256 != history[-1].acceptance_sha256):
+        from .native_contracts import invalid
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED")
     records.extend(rejected_records)
     events.extend(rejected_events)
     return NativeProjectionMaterial(tuple(records), tuple(events), tuple(manifests))

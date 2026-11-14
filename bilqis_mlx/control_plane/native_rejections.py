@@ -66,6 +66,7 @@ def _project_verified_rejection(verified, generation):
     capability = evidence.get("capability")
     visit_id = evidence.get("visit_id")
     policy_key = evidence.get("selected_policy_key")
+    option_id = evidence.get("selected_option_id")
     candidate_step = evidence.get("candidate_optimizer_step")
     retained_step = evidence.get("retained_optimizer_step")
     from bilqis_mlx.learning.atlas_retention_decision import CandidateRetentionDecision
@@ -75,6 +76,7 @@ def _project_verified_rejection(verified, generation):
     if (not isinstance(capability, str) or not capability
             or not isinstance(visit_id, str) or not visit_id
             or not isinstance(policy_key, str) or not policy_key
+            or not isinstance(option_id, str) or not option_id
             or type(candidate_step) is not int
             or candidate_step <= generation.manifest["optimizer"].get("step")
             or retained_step != generation.manifest["optimizer"].get("step")
@@ -83,7 +85,9 @@ def _project_verified_rejection(verified, generation):
             != accepted_student_sha256(generation)
             or evidence.get("retention_reason") != decision.reason):
         invalid("CONTROL_PLANE_NATIVE_REJECTION_INVALID")
-    from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity
+    from bilqis_mlx.learning.teacher_visit_identity import (
+        TeacherVisitIdentity, require_teacher_visit_receipt,
+    )
 
     state = generation.teacher_state
     expected_visit = TeacherVisitIdentity(
@@ -96,6 +100,7 @@ def _project_verified_rejection(verified, generation):
     )
     if visit_id != expected_visit.visit_id:
         invalid("CONTROL_PLANE_NATIVE_REJECTION_VISIT_DRIFT")
+    require_teacher_visit_receipt(expected_visit)
     run = run_ref(generation)
     refs = (f"rejection-authority:{authority_sha}",)
     receipts = (f"bamf-rejection:{receipt_sha}",)

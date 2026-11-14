@@ -7,6 +7,7 @@ derives and records this identity.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import hashlib
 from collections.abc import Mapping
 
 from .teacher_lineage_records import (
@@ -108,7 +109,42 @@ def record_teacher_visit_identity(
         state, state["teacher_identity"], state["teacher_epoch"])
 
 
+def teacher_visit_receipt_sha256(identity: TeacherVisitIdentity) -> str:
+    """Content identity of one source-issued C03 visit receipt."""
+    if type(identity) is not TeacherVisitIdentity:
+        invalid("TEACHER_VISIT_IDENTITY_REQUIRED")
+    raw = canonical(identity.to_record()).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
+
+
+def record_teacher_visit_receipt(identity: TeacherVisitIdentity) -> str:
+    """Persist immutable proof that C03 actually issued this exact visit."""
+    digest_value = teacher_visit_receipt_sha256(identity)
+    from bilqis_mlx.data_plane import data_plane
+
+    raw = canonical(identity.to_record()).encode("utf-8")
+    data_plane().put_object(digest_value, raw)
+    return digest_value
+
+
+def require_teacher_visit_receipt(identity: TeacherVisitIdentity) -> str:
+    """Require the source-side C03 receipt for an exact visit identity."""
+    digest_value = teacher_visit_receipt_sha256(identity)
+    from bilqis_mlx.data_plane import data_plane
+
+    expected = canonical(identity.to_record()).encode("utf-8")
+    try:
+        actual = data_plane().get_object(digest_value)
+    except ValueError:
+        invalid("TEACHER_VISIT_RECEIPT_MISSING")
+    if actual != expected:
+        invalid("TEACHER_VISIT_RECEIPT_DRIFT")
+    return digest_value
+
+
 __all__ = (
     "TeacherVisitIdentity", "VISIT_IDENTITY_SCHEMA",
     "derive_teacher_visit_identity", "record_teacher_visit_identity",
+    "record_teacher_visit_receipt", "require_teacher_visit_receipt",
+    "teacher_visit_receipt_sha256",
 )

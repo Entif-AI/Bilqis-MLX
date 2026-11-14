@@ -31,7 +31,9 @@ def _append_c16_accepted(generation, parent, run, native, records, events):
         invalid("CONTROL_PLANE_NATIVE_C16_ACCEPTED_INVALID")
     if native.get("optimizer_step") != generation.manifest["optimizer"].get("step"):
         invalid("CONTROL_PLANE_NATIVE_C16_ACCEPTED_INVALID")
-    from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity
+    from bilqis_mlx.learning.teacher_visit_identity import (
+        TeacherVisitIdentity, require_teacher_visit_receipt,
+    )
 
     identity = TeacherVisitIdentity.from_record(visit)
     if parent is None:
@@ -46,6 +48,7 @@ def _append_c16_accepted(generation, parent, run, native, records, events):
     )
     if identity != expected:
         invalid("CONTROL_PLANE_NATIVE_C16_ACCEPTED_INVALID")
+    require_teacher_visit_receipt(identity)
     event_id = native["event_id"]
     logical_time = materialized_at(native, run.generation)
     episode = LearningEpisode(

@@ -33,13 +33,16 @@ starts from the accepted BAMF pointer, authenticates the exact content-addressed
 manifest, acceptance binding, run identity, teacher state and native outbox for
 each generation, then walks the v3 parent-manifest plus parent-acceptance chain
 without scanning for convenient files. Current `BAMF_C16_3_ACCEPTED` events are
-validated against the persisted C03 teacher-visit identity before they become
-CP02 episode, candidate and capability records. Rejection-only
-`BAMF_CANDIDATE_REJECTED` journal rows are accepted only when their deterministic
-event identity, content-addressed rejection authority and content-addressed
-rejection receipt all verify against the already authenticated accepted
-generation. Rejections therefore remain visible without pretending they advanced
-the learner generation.
+validated against the persisted C03 teacher-visit identity and its independent
+source-issued content-addressed visit receipt before they become CP02 episode,
+candidate and capability records. Generic `BAMF_CANDIDATE_REJECTED` journal rows
+are first authenticated against their deterministic event identity,
+content-addressed rejection authority and content-addressed rejection receipt.
+Only the supported `bilqis.bamf.c16.3-rejection/v2` contract is then projected
+into CP02; other valid B13 rejection schemas are authenticated and ignored by
+this adapter rather than poisoning historical reconstruction. Supported C16.3
+rejections therefore remain visible without pretending they advanced the learner
+generation.
 
 CP04 now refreshes that authenticated native source before subscription and on
 the heartbeat path. The first successful read establishes the service-local
@@ -87,10 +90,11 @@ python3 -m bilqis_mlx.control_plane \
 ## Remaining production acceptance boundaries
 
 The production-source adapter now demonstrates automatic CP04 publication for
-the current accepted C16.3 visit/candidate/capability path and for authenticated
-rejection-only events, plus CP06 reconstruction from the accepted BAMF artifact
-chain. Two source-contract debts remain explicit rather than being filled with
-synthetic values:
+the current accepted C16.3 visit/candidate/capability path and for authenticated,
+supported C16.3 rejection events, plus CP06 reconstruction from the accepted BAMF
+artifact chain. Generic B13 rejection receipts outside that supported C16.3
+schema are authenticated but not projected. Two source-contract debts remain
+explicit rather than being filled with synthetic values:
 
 1. Native C16.3 accepted/rejection artifacts do not carry an authenticated
    wall-clock visit interval. CP02 therefore uses the accepted generation as a
