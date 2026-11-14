@@ -26,13 +26,15 @@ import {
 import { renderSchoolView } from "./school-view.mjs";
 import { renderNeuralView } from "./neural-view.mjs";
 import { renderEpisodesView } from "./episode-view.mjs";
+import { renderMemoryView } from "./memory-view.mjs";
+import { stableMemoryIdentity, currentMemoryGeneration } from "./memory-model.mjs";
 
 const labels = new Map(DESTINATIONS);
 const demoObjects = [
   ["capability", "B.AND"],
   ["episode", "episode-record:fixture:retained-44239"],
   ["semantic", "sem:logic.and"],
-  ["memory", "motif:bool-composition"],
+  ["memory", stableMemoryIdentity(currentMemoryGeneration().slots[0])],
   ["checkpoint", "generation:44238"],
   ["evidence", "receipt:fixture-001"],
   ["correction", "correction:fixture-1"],
@@ -271,6 +273,30 @@ function renderCurrentView() {
       renderInspector();
       setHash();
     }, state.selected?.kind === "episode" ? state.selected.id : null);
+    return;
+  }
+  if (state.view === "memory") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Retained Engram allocation, retrieval telemetry, correction state, and generation deltas without promoting memory hits into semantic or capability authority.";
+    renderMemoryView(domain, (id, slot) => {
+      state = inspect(state, {
+        kind: "memory",
+        id,
+        details: {
+          "Slot address": `motif.page.${slot.pageIndex}[${slot.rowIndex}]`,
+          "Creation generation": slot.createdGeneration,
+          "Source eligibility": slot.sourceEligibility,
+          "Correction state": slot.correctionState,
+          "Parameter bank": slot.parameterBank,
+          "Related capabilities": slot.capabilities,
+          "Related episodes": slot.episodes,
+        },
+      });
+      renderInspector();
+      setHash();
+    }, state.selected?.kind === "memory" ? state.selected.id : null);
     return;
   }
   domain.hidden = true;
