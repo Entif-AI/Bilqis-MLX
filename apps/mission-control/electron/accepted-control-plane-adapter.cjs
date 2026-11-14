@@ -2,6 +2,7 @@
 
 const OPERATOR_VIEW = require("../fixtures/operator-view-v1.json");
 const { Cp01PythonBroker } = require("./cp01-python-broker.cjs");
+const { frameFixturePage } = require("./frame-fixtures.cjs");
 
 function disconnectedStatus() {
   return {
@@ -49,8 +50,9 @@ class AcceptedControlPlaneAdapter {
     }
   }
 
-  async snapshot(session) {
+  async snapshot(session, request) {
     this.#requireSession(session);
+    if (request?.schemaVersion === "bamf.gui08.frame-query/v1") return frameFixturePage(request);
     return structuredClone(OPERATOR_VIEW);
   }
 

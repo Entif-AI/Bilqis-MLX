@@ -7,9 +7,9 @@ import {
   projectionFromPages,
   queryRequest,
   referenceHomeProjection,
-} from "../renderer/home/home-model.mjs";
-import { createHomeController } from "../renderer/home/home-controller.mjs";
-import { renderHomeMarkup } from "../renderer/home/home-view.mjs";
+} from "../../renderer/home/home-model.mjs";
+import { createHomeController } from "../../renderer/home/home-controller.mjs";
+import { renderHomeMarkup } from "../../renderer/home/home-view.mjs";
 
 const context = Object.freeze({ runId: "fixture-run", generation: 7, mode: "LIVE" });
 

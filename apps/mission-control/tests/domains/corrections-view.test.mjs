@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { CORRECTION_FIXTURE } from "../renderer/corrections/corrections-fixture.mjs";
+import { CORRECTION_FIXTURE } from "../../renderer/corrections/corrections-fixture.mjs";
 import {
   assertReceiptBackedTerminalStates,
   evidencedDescendants,
@@ -12,10 +12,10 @@ import {
   impactRows,
   requalificationQueue,
   unknownInfluenceRows,
-} from "../renderer/corrections/corrections-model.mjs";
+} from "../../renderer/corrections/corrections-model.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(here, "../../..");
+const repoRoot = path.resolve(here, "../../../..");
 
 test("impact closure includes only explicit evidenced descendants", () => {
   const ids = new Set(evidencedDescendants().map((node) => node.id));

@@ -6,6 +6,7 @@ export const DESTINATIONS = Object.freeze([
   ["model", "Model"],
   ["memory", "Memory"],
   ["teacher", "Teacher"],
+  ["salience", "SÍ SÉ SON"],
   ["corrections", "Corrections"],
   ["lineage", "Lineage"],
   ["resources", "Resources"],
@@ -17,6 +18,7 @@ export const INSPECTOR_OWNERS = Object.freeze({
   capability: "school",
   episode: "learning",
   semantic: "atlas",
+  frame: "model",
   memory: "memory",
   checkpoint: "lineage",
   evidence: "evidence",
@@ -24,6 +26,7 @@ export const INSPECTOR_OWNERS = Object.freeze({
   warning: "resources",
   neural: "model",
   strategy: "teacher",
+  "salience-observation": "salience",
 });
 
 export const OPERATOR_VIEW_SCHEMA = "bilqis.bamf.mission-control.operator-view/v1";
