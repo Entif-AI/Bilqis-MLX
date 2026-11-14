@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="./visual-tokens.css" />
     <link rel="stylesheet" href="./shell.css" />
     <link rel="stylesheet" href="./components.css" />
+    <link rel="stylesheet" href="./frame-explorer.css" />
     <link rel="stylesheet" href="./home/home.css" />
     <link rel="stylesheet" href="./atlas/semantic-atlas.css" />
     <link rel="stylesheet" href="./school/school.css" />
@@ -15,6 +16,7 @@
     <link rel="stylesheet" href="./episodes/episodes.css" />
     <link rel="stylesheet" href="./memory/memory.css" />
     <link rel="stylesheet" href="./teacher/teacher.css" />
+    <link rel="stylesheet" href="./salience/salience.css" />
     <link rel="stylesheet" href="./evidence/evidence.css" />
     <link rel="stylesheet" href="./resources/resources.css" />
   </head>
@@ -55,6 +57,12 @@
           <div class="eyebrow">Current destination</div>
           <h1 id="view-title">Mission Control</h1>
           <p id="view-summary">Shell foundation ready for provider-neutral BAMF views.</p>
+          <nav id="model-nav" class="model-nav" hidden aria-label="Model sections">
+            <button type="button" data-model-section="neural">Neural Runtime</button>
+            <button type="button" data-model-section="frames">Frame Compiler Explorer</button>
+          </nav>
+          <section id="frame-explorer" hidden aria-label="Frame Compiler Explorer"></section>
+          <p id="domain-context-note" hidden>Independent illustrative fixture: this view uses its own declared provenance and is not bound to the shell run/generation.</p>
           <div class="fixture-card">
             <div><span class="status-dot" aria-hidden="true"></span><strong>Fixture-backed shell</strong></div>
             <p>GUI01 proves navigation, context custody, deep links, inspection, and global stale/historical posture. Domain telemetry remains owned by later GUI issues.</p>

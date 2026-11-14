@@ -143,13 +143,16 @@ function validateEvent(value) {
   return value;
 }
 
-function createAcceptedValidators(assertOperatorView) {
+function createAcceptedValidators(assertOperatorView, frameContracts) {
   if (typeof assertOperatorView !== "function") {
     throw new TypeError("BAMF_GUI20_OPERATOR_VIEW_VALIDATOR_REQUIRED");
   }
   return Object.freeze({
     publicStatus: validateStatus,
     snapshotRequest(value) {
+      if (frameContracts && value?.schemaVersion === frameContracts.FRAME_QUERY) {
+        return frameContracts.assertFrameRequest(value);
+      }
       if (!exactKeys(value, ["schemaVersion", "schema"]) ||
           value.schemaVersion !== SNAPSHOT_QUERY_SCHEMA || value.schema !== OPERATOR_VIEW_SCHEMA) {
         invalid("SNAPSHOT_REQUEST");
@@ -160,9 +163,16 @@ function createAcceptedValidators(assertOperatorView) {
     dryRunRequest: unavailable,
     commandRequest: unavailable,
     receiptRef: unavailable,
-    response(method, value) {
+    response(method, value, request) {
       if (method === "status") return validateStatus(value);
-      if (method === "snapshot") return assertOperatorView(value);
+      if (method === "snapshot") {
+        if (frameContracts && request?.schemaVersion === frameContracts.FRAME_QUERY) {
+          const page = frameContracts.assertFramePage(value);
+          if (!frameContracts.sameFrameRequest(request, page.request)) invalid("FRAME_REQUEST_MISMATCH");
+          return page;
+        }
+        return assertOperatorView(value);
+      }
       if (method === "query") return validateQueryResponse(value);
       unavailable();
     },
