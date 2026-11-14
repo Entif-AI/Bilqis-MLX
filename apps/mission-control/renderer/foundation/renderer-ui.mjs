@@ -8,6 +8,7 @@ import {
   currentMemoryGeneration,
   stableMemoryIdentity,
 } from "../memory/memory-model.mjs";
+import { renderTeacherView } from "../teacher/teacher-view.mjs";
 import { defensiveBannerMarkup } from "./defensive-state.mjs";
 import { bindRovingNavigation } from "./accessibility.mjs";
 
@@ -204,6 +205,21 @@ export function renderCurrentView(state, defense, onInspect) {
         "Related episodes": slot.episodes,
       },
     }), state.selected?.kind === "memory" ? state.selected.id : null);
+    return;
+  }
+  if (state.view === "teacher") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Teacher strategy population, measured outcomes, cost and fidelity observations without unsupported ranking.";
+    renderTeacherView(domain, (id) => onInspect({
+      kind: "strategy",
+      id,
+      details: {
+        "Comparison posture": "Descriptive evidence only",
+        "Policy mutation": "None",
+      },
+    }));
     return;
   }
   fixture.hidden = false;
