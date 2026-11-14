@@ -8,7 +8,7 @@ import {
   MEMORY_FIXTURE_CONTRACT,
   MEMORY_GENERATIONS,
   REJECTED_MEMORY_CANDIDATE,
-} from "../renderer/memory/memory-fixture.mjs";
+} from "../../renderer/memory/memory-fixture.mjs";
 import {
   capabilityInterpretation,
   currentMemoryGeneration,
@@ -21,13 +21,13 @@ import {
   slotAddress,
   slotHitRate,
   stableMemoryIdentity,
-} from "../renderer/memory/memory-model.mjs";
-import { parseDeepLink } from "../renderer/deep-link.mjs";
-import { INSPECTOR_OWNERS } from "../renderer/shell-state.mjs";
+} from "../../renderer/memory/memory-model.mjs";
+import { parseDeepLink } from "../../renderer/deep-link.mjs";
+import { INSPECTOR_OWNERS } from "../../renderer/shell-state.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(here, "../../..");
-const rendererRoot = path.resolve(here, "../renderer");
+const repoRoot = path.resolve(here, "../../../..");
+const rendererRoot = path.resolve(here, "../../renderer");
 
 test("summary reconciles literal hit miss and gate counts from fixture receipts", () => {
   const current = currentMemoryGeneration();
