@@ -9,8 +9,8 @@ from bilqis_mlx.control_plane import ControlPlaneClient, ControlPlaneService
 from bilqis_mlx.mission_control.model import (
     AuthorityClass, CoverageState, RecordMeta, RunRef,
 )
-from bilqis_mlx.mission_control.query_catalog import MissionControlQueryCatalog
-from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryRequest, QueryState
+from bilqis_mlx.mission_control.query.catalog import MissionControlQueryCatalog
+from bilqis_mlx.mission_control.query.contracts import QueryFamily, QueryRequest, QueryState
 from bilqis_mlx.mission_control.snapshots import OperatorView, RunContext
 from bilqis_mlx.presentation.operator_cli.inspection import _inspect
 

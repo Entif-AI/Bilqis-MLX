@@ -3,10 +3,10 @@ from dataclasses import replace
 import unittest
 
 from bilqis_mlx.mission_control.codec import canonical_json, encode_record
-from bilqis_mlx.mission_control.query_contracts import (
+from bilqis_mlx.mission_control.query.contracts import (
     QueryFamily, QueryRequest, QueryState,
 )
-from bilqis_mlx.mission_control.query_catalog import MissionControlQueryCatalog
+from bilqis_mlx.mission_control.query.catalog import MissionControlQueryCatalog
 from bilqis_mlx.mission_control.tests.samples import SAMPLES
 from bilqis_mlx.presentation.atlas_metrics import bamf_status
 

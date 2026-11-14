@@ -11,7 +11,7 @@ from bilqis_mlx.mission_control.envelopes import EventEnvelope
 from bilqis_mlx.mission_control.operator import (
     OperatorActionReceiptV2, OperatorActionRequestV2,
 )
-from bilqis_mlx.mission_control.query_contracts import (
+from bilqis_mlx.mission_control.query.contracts import (
     QUERY_PAGE_SCHEMA, QueryRequest,
 )
 

@@ -52,7 +52,7 @@ class Cp01PythonBroker {
     }
     const child = spawn(
       this.pythonExecutable,
-      ["-B", "-m", "bilqis_mlx.mission_control.electron_bridge"],
+      ["-B", "-m", "bilqis_mlx.mission_control.electron.bridge"],
       {
         cwd: this.cwd,
         env: { ...this.env, PYTHONUNBUFFERED: "1" },

@@ -9,15 +9,15 @@ import unittest
 from bilqis_mlx.mission_control.model import (
     AuthorityClass, RunRef, ValueOrigin,
 )
-from bilqis_mlx.mission_control.query_catalog import MissionControlQueryCatalog
-from bilqis_mlx.mission_control.query_contracts import (
+from bilqis_mlx.mission_control.query.catalog import MissionControlQueryCatalog
+from bilqis_mlx.mission_control.query.contracts import (
     QueryFamily, QueryMode, QueryRequest, QueryState,
 )
 from bilqis_mlx.mission_control.semantic import (
     SemanticAdmissionState, SemanticConceptSnapshot, SemanticGenerationState,
     SemanticHeldMappingSnapshot, SemanticSimilaritySnapshot,
 )
-from bilqis_mlx.mission_control.semantic_projection import (
+from bilqis_mlx.mission_control.semantic.projection import (
     SimilarityInput, concept_record_id, project_semantic_atlas_records,
     state_record_id,
 )

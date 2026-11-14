@@ -5,28 +5,28 @@ import hashlib
 import json
 from types import MappingProxyType
 
-from .codec import encode_record
-from .envelopes import (
+from ..codec import encode_record
+from ..envelopes import (
     PartialEnvelope, StaleEnvelope, UnavailableEnvelope, UnavailableReason,
 )
-from .events import (
+from ..events import (
     CandidateDecision, CorrectionEvent, FrameCompileReceipt, LearningEpisode,
     SalienceEvent,
 )
-from .model import CoverageState, WireRecord, is_wire_integer, require
-from .observability import (
+from ..model import CoverageState, WireRecord, is_wire_integer, require
+from ..observability import (
     GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, TeacherSnapshot,
 )
-from .query_contracts import (
+from .contracts import (
     MAX_PAGE_ROWS_BYTES, QUERY_PAGE_SCHEMA, QueryFamily, QueryMode, QueryPage,
     QueryRequest, QueryState,
 )
-from .snapshots import (
+from ..snapshots import (
     CapabilitySnapshot, CurriculumFrontier, OperatorView, RunContext,
     SchoolSnapshot,
 )
-from .semantic import (
+from ..semantic import (
     SemanticBankSnapshot, SemanticConceptSnapshot, SemanticGenerationState,
     SemanticHeldMappingSnapshot, SemanticSimilaritySnapshot,
 )

@@ -7,10 +7,10 @@ from bilqis_mlx.mission_control.envelopes import (
 )
 from bilqis_mlx.mission_control.model import AuthorityClass, CoverageState, RecordMeta
 from bilqis_mlx.mission_control.observability import GenerationManifest
-from bilqis_mlx.mission_control.query_contracts import (
+from bilqis_mlx.mission_control.query.contracts import (
     DEFAULT_PAGE_SIZE, QueryFamily, QueryMode, QueryRequest, QueryState,
 )
-from bilqis_mlx.mission_control.query_catalog import MissionControlQueryCatalog
+from bilqis_mlx.mission_control.query.catalog import MissionControlQueryCatalog
 from bilqis_mlx.mission_control.snapshots import CapabilitySnapshot, OperatorView
 from bilqis_mlx.mission_control.tests.samples import RUN, SAMPLES, value
 

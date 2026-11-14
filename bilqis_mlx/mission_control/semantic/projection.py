@@ -4,15 +4,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 
-from .model import (
+from ..model import (
     AuthorityClass, CoverageState, DataValue, RecordMeta, RunRef,
     ValueOrigin, ValueState, require,
 )
 
 
 DEFAULT_BANK_ROW_CAPACITY = 8192
-from .observability import SemanticAtlasSnapshot
-from .semantic import (
+from ..observability import SemanticAtlasSnapshot
+from .records import (
     SemanticAdmissionState, SemanticBankSnapshot, SemanticConceptSnapshot,
     SemanticGenerationState, SemanticHeldMappingSnapshot, SemanticLabel,
     SemanticRealization, SemanticRelation, SemanticSimilaritySnapshot,
@@ -67,22 +67,10 @@ def _generation_meta(record_id: str, run: RunRef, materialized_at: int,
     )
 
 
-def project_semantic_atlas_records(
-    snapshot,
-    run: RunRef,
-    active_indices: tuple[int, ...],
-    *,
-    materialized_at: int,
-    observed_at: int | None = None,
-    as_of: int | None = None,
-    newly_admitted_indices: tuple[int, ...] = (),
-    recently_exercised_indices: tuple[int, ...] = (),
-    requalification_affected_indices: tuple[int, ...] = (),
-    similarities: tuple[SimilarityInput, ...] = (),
-    frame_schema_refs: dict[str, tuple[str, ...]] | None = None,
-    bank_row_capacity: int = DEFAULT_BANK_ROW_CAPACITY,
-) -> tuple:
-    """Return read-only GUI07 records; callers must supply generation-local activation."""
+def _validate_projection_inputs(
+        snapshot, run, active_indices, newly_admitted_indices,
+        recently_exercised_indices, requalification_affected_indices,
+        similarities, frame_schema_refs, bank_row_capacity):
     required_snapshot_fields = (
         "bundle_id", "release_sha256", "source_bundle_id", "counts",
         "formal_domain_bindings", "concepts", "abi_entries", "withheld_rows",
@@ -116,12 +104,19 @@ def project_semantic_atlas_records(
             and len(exercised) == len(recently_exercised_indices)
             and len(requal) == len(requalification_affected_indices),
             "SEMANTIC_PROJECTION_INDEX_DUPLICATE")
+    return frame_schema_refs, active, newly, exercised, requal
 
+
+def _capability_ids(snapshot) -> dict[str, set[str]]:
     capability_ids: dict[str, set[str]] = {}
     for binding in snapshot.formal_domain_bindings:
         for semantic_id in binding.semantic_ids:
             capability_ids.setdefault(semantic_id, set()).update(binding.capability_ids)
+    return capability_ids
 
+
+def _project_concepts(snapshot, materialized_at, observed_at, as_of,
+                      frame_schema_refs, capability_ids):
     concept_records = []
     concept_ids = {}
     for frozen in snapshot.concepts:
@@ -150,7 +145,11 @@ def project_semantic_atlas_records(
             frame_schema_refs=tuple(sorted(frame_schema_refs.get(concept.semantic_id, ()))),
             capability_ids=tuple(sorted(capability_ids.get(concept.semantic_id, ()))),
         ))
+    return tuple(concept_records), concept_ids
 
+
+def _project_states(snapshot, run, concept_ids, active, newly, exercised, requal,
+                    materialized_at, observed_at, as_of):
     states = []
     for entry in snapshot.abi_entries:
         states.append(SemanticGenerationState(
@@ -166,7 +165,11 @@ def project_semantic_atlas_records(
             recently_exercised=entry.index in exercised,
             requalification_affected=entry.index in requal,
         ))
+    return tuple(states)
 
+
+def _project_banks(snapshot, run, active, newly, exercised, requal,
+                   materialized_at, observed_at, as_of, bank_row_capacity):
     banks = []
     for bank in sorted({entry.bank for entry in snapshot.abi_entries}):
         rows = [entry for entry in snapshot.abi_entries if entry.bank == bank]
@@ -181,7 +184,10 @@ def project_semantic_atlas_records(
             recently_exercised_rows=len(indices & exercised),
             requalification_affected_rows=len(indices & requal),
         ))
+    return tuple(banks)
 
+
+def _project_held(snapshot, materialized_at, observed_at, as_of):
     held = []
     for row in snapshot.withheld_rows:
         record_id = "semantic-held:" + snapshot.release_sha256 + ":" + _digest(
@@ -194,7 +200,11 @@ def project_semantic_atlas_records(
             implementation_status=row.implementation_status,
             reason_code=row.reason_code, teaching_reason=row.teaching_reason, owner=row.owner,
         ))
+    return tuple(held)
 
+
+def _project_similarities(snapshot, run, similarities, materialized_at,
+                          observed_at, as_of):
     similarities_out = []
     semantic_ids = {entry.semantic_id for entry in snapshot.abi_entries}
     for item in similarities:
@@ -212,7 +222,10 @@ def project_semantic_atlas_records(
             basis_ref=item.basis_ref,
             similarity=DataValue(ValueState.PRESENT, item.origin, item.value, "similarity"),
         ))
+    return tuple(similarities_out)
 
+
+def _project_summary(snapshot, run, active, materialized_at, observed_at, as_of):
     summary = SemanticAtlasSnapshot(
         meta=_generation_meta(
             f"semantic-atlas:{run.run_id}:{run.generation}", run,
@@ -227,4 +240,41 @@ def project_semantic_atlas_records(
         source_held=DataValue(ValueState.PRESENT, ValueOrigin.SOURCE_AUTHORITATIVE,
                               snapshot.counts.source_held, "count"),
     )
+    return summary
+
+
+def project_semantic_atlas_records(
+    snapshot,
+    run: RunRef,
+    active_indices: tuple[int, ...],
+    *,
+    materialized_at: int,
+    observed_at: int | None = None,
+    as_of: int | None = None,
+    newly_admitted_indices: tuple[int, ...] = (),
+    recently_exercised_indices: tuple[int, ...] = (),
+    requalification_affected_indices: tuple[int, ...] = (),
+    similarities: tuple[SimilarityInput, ...] = (),
+    frame_schema_refs: dict[str, tuple[str, ...]] | None = None,
+    bank_row_capacity: int = DEFAULT_BANK_ROW_CAPACITY,
+) -> tuple:
+    """Return read-only GUI07 records; callers supply generation-local activation."""
+    frame_schema_refs, active, newly, exercised, requal = _validate_projection_inputs(
+        snapshot, run, active_indices, newly_admitted_indices,
+        recently_exercised_indices, requalification_affected_indices,
+        similarities, frame_schema_refs, bank_row_capacity)
+    concept_records, concept_ids = _project_concepts(
+        snapshot, materialized_at, observed_at, as_of,
+        frame_schema_refs, _capability_ids(snapshot))
+    states = _project_states(
+        snapshot, run, concept_ids, active, newly, exercised, requal,
+        materialized_at, observed_at, as_of)
+    banks = _project_banks(
+        snapshot, run, active, newly, exercised, requal,
+        materialized_at, observed_at, as_of, bank_row_capacity)
+    held = _project_held(snapshot, materialized_at, observed_at, as_of)
+    similarities_out = _project_similarities(
+        snapshot, run, similarities, materialized_at, observed_at, as_of)
+    summary = _project_summary(
+        snapshot, run, active, materialized_at, observed_at, as_of)
     return tuple((*concept_records, *held, summary, *banks, *states, *similarities_out))

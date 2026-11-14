@@ -11,9 +11,9 @@ from bilqis_mlx.control_plane import ControlPlaneService
 from bilqis_mlx.control_plane.__main__ import _default_socket
 from bilqis_mlx.control_plane.contracts import ControlPlaneState
 from bilqis_mlx.control_plane.tests.support import start_service
-from bilqis_mlx.mission_control.electron_bridge import ElectronBridge, _socket_path
-from bilqis_mlx.mission_control.query_catalog import MissionControlQueryCatalog
-from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryRequest
+from bilqis_mlx.mission_control.electron.bridge import ElectronBridge, _socket_path
+from bilqis_mlx.mission_control.query.catalog import MissionControlQueryCatalog
+from bilqis_mlx.mission_control.query.contracts import QueryFamily, QueryRequest
 from bilqis_mlx.mission_control.tests.samples import SAMPLES
 from bilqis_mlx.paths import active_run_dir
 
@@ -84,7 +84,7 @@ class ElectronBridgeTests(unittest.TestCase):
         client.connect.side_effect = PermissionError("private socket")
         bridge = ElectronBridge()
         with patch(
-            "bilqis_mlx.mission_control.electron_bridge.ControlPlaneClient",
+            "bilqis_mlx.mission_control.electron.bridge.ControlPlaneClient",
             return_value=client,
         ):
             status = bridge.connect()

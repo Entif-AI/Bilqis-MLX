@@ -20,11 +20,11 @@ from .operator import (
     ActionParameter, ActionReceiptState, OperatorActionReceipt,
     OperatorActionReceiptV2, OperatorActionRequest, OperatorActionRequestV2,
 )
-from .query_contracts import (
+from .query import (
     DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, QUERY_PAGE_SCHEMA, QUERY_REQUEST_SCHEMA,
-    QueryFamily, QueryLink, QueryMode, QueryPage, QueryRequest, QueryState,
+    MissionControlQueryCatalog, QueryFamily, QueryLink, QueryMode, QueryPage,
+    QueryRequest, QueryState,
 )
-from .query_catalog import MissionControlQueryCatalog
 from .registry import ALL_RECORD_TYPES, RECORD_BY_SCHEMA
 from .schema import record_schema, schema_bundle
 from .semantic import (
