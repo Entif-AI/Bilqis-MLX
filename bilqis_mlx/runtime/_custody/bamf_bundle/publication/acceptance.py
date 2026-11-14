@@ -148,8 +148,11 @@ def _require_non_genesis_acceptance_identity(acceptance, pointer, student) -> No
             and acceptance.schema_version in (
                 EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA)):
         from ..genesis.records import successor_candidate_identity_digest
+        from ..records import canonical, sha
         if (acceptance.generation_authority_sha256
-                != successor_candidate_identity_digest(student)):
+                != successor_candidate_identity_digest(student)
+                or acceptance.teacher_state_sha256
+                != sha(canonical(dict(student.teacher_state)))):
             invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
 
     if not isinstance(acceptance, (

@@ -119,6 +119,11 @@ def acceptance(bundle, *, parent=None) -> object:
     from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
         successor_candidate_identity_digest,
     )
+    from bilqis_mlx.runtime.bamf_bundle.motif.transition import (
+        is_motif_allocation_transition,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
+    motif_transition = is_motif_allocation_transition(bundle.transition)
     return mint_acceptance_binding(
         retention_decision(parent=parent, retained=bundle.retained_state),
         bundle.retained_state, run_id=bundle.run_id,
@@ -126,6 +131,8 @@ def acceptance(bundle, *, parent=None) -> object:
         feature_sha256=bundle.extents.factor_map_digest,
         source_authority_registry_sha256=bundle.correction_frontier.get(
             "source_authority_registry_sha256"),
+        teacher_state_sha256=(
+            None if motif_transition else sha(canonical(dict(bundle.teacher_state)))),
         generation_authority_sha256=successor_candidate_identity_digest(bundle))
 
 

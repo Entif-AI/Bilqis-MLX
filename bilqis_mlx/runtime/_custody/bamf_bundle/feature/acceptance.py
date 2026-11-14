@@ -73,6 +73,10 @@ def _require_retention_binding(student, binding) -> None:
         from ..genesis.records import successor_candidate_identity_digest
         if binding.generation_authority_sha256 != successor_candidate_identity_digest(student):
             invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    if binding.schema_version in (EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA):
+        from ..records import canonical
+        if binding.teacher_state_sha256 != sha(canonical(dict(student.teacher_state))):
+            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     require_closure_proofs(binding, student.retained_state.step_proofs)
 
 

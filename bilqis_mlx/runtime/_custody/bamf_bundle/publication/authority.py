@@ -25,7 +25,10 @@ from ..package_import_transition import (
 from ..motif.transition import (
     is_motif_allocation_transition, require_issued_motif_allocation_transition,
 )
-from ..records import ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BamfBundleCandidate, CompleteStudent, invalid
+from ..records import (
+    ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BamfBundleCandidate, CompleteStudent,
+    canonical, invalid, sha,
+)
 from .acceptance import (
     load_generation_locked, require_accepted_parent, require_published_acceptance,
 )
@@ -84,6 +87,10 @@ def require_acceptance(
     from ..genesis.records import successor_candidate_identity_digest
     if (acceptance.generation_authority_sha256
             != successor_candidate_identity_digest(candidate)):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    if (not motif_transition
+            and acceptance.teacher_state_sha256
+            != sha(canonical(dict(candidate.teacher_state)))):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     from bilqis_mlx.learning._retention._atlas_acceptance_records import require_closure_proofs
     require_closure_proofs(acceptance, candidate.retained_state.step_proofs)

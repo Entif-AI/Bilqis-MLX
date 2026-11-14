@@ -1,6 +1,7 @@
 """Fail-closed adversarial cases for the native CP07 source bridge."""
 from dataclasses import replace
 import json
+import shutil
 import unittest
 from unittest.mock import patch
 
@@ -104,6 +105,47 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
         self.assertEqual(
             caught.exception.context.get("reason"),
             "TEACHER_VISIT_RECEIPT_MISSING",
+        )
+
+    def test_portable_history_requires_exact_accepted_teacher_custody(self):
+        _source, pointer = self.publish_successor()
+        old_manifest_sha = pointer["manifest_sha256"]
+        old_root = self.run / "bamf-bundles" / old_manifest_sha
+        manifest = json.loads((old_root / "manifest.json").read_bytes())
+        teacher_binding = manifest["sidecars"]["teacher_state"]
+        teacher = json.loads(
+            (old_root / teacher_binding["filename"]).read_bytes())
+        teacher["next_seed"] += 100
+        teacher_raw = canonical(teacher)
+        teacher_sha = sha(teacher_raw)
+        manifest["sidecars"]["teacher_state"] = {
+            **teacher_binding,
+            "sha256": teacher_sha,
+            "object_sha256": teacher_sha,
+        }
+        manifest_raw = canonical(manifest)
+        new_manifest_sha = sha(manifest_raw)
+        new_root = self.run / "bamf-bundles" / new_manifest_sha
+        shutil.copytree(old_root, new_root)
+        (new_root / teacher_binding["filename"]).write_bytes(teacher_raw)
+        (new_root / "manifest.json").write_bytes(manifest_raw)
+        acceptance_dir = self.run / "bamf-acceptance"
+        shutil.copyfile(
+            acceptance_dir / f"{old_manifest_sha}.json",
+            acceptance_dir / f"{new_manifest_sha}.json",
+        )
+        pointer = {
+            **pointer,
+            "bundle": f"bamf-bundles/{new_manifest_sha}",
+            "manifest_sha256": new_manifest_sha,
+        }
+        (self.run / "bamf-state.json").write_bytes(canonical(pointer))
+
+        with self.assertRaises(BilqisError) as caught:
+            materialize_native_projection(self.run)
+        self.assertEqual(
+            caught.exception.context.get("reason"),
+            "CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_DRIFT",
         )
 
     def test_accepted_event_optimizer_step_must_match_generation(self):

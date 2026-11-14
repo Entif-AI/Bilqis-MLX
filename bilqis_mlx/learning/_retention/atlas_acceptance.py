@@ -139,6 +139,7 @@ class AcceptedCandidateBinding:
     step_proof_sha256: tuple = ()
     source_anchors: tuple = ()
     source_authority_registry_sha256: str | None = None
+    teacher_state_sha256: str | None = None
     generation_authority_sha256: str | None = None
     artifact_closures: tuple = ()
     schema_version: str = ACCEPTANCE_SCHEMA
@@ -166,9 +167,16 @@ class AcceptedCandidateBinding:
                 or (self.schema_version in (ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA)
                     and self.generation_authority_sha256 is not None)
                 or (self.schema_version in (
+                        ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA,
+                        CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
+                    and self.teacher_state_sha256 is not None)
+                or (self.schema_version in (
                         MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
                         EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA)
                     and not _is_digest(self.generation_authority_sha256))
+                or (self.schema_version in (
+                        EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA)
+                    and not _is_digest(self.teacher_state_sha256))
                 or (self.schema_version in (
                         ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA, EXACT_ACCEPTANCE_SCHEMA)
                     and self.artifact_closures)
@@ -256,6 +264,7 @@ def _make_acceptance_minter(raw_issue):
             run_id: str, generation: int, feature_sha256: str,
             training_authorities=None,
             source_authority_registry_sha256: str | None = None,
+            teacher_state_sha256: str | None = None,
             generation_authority_sha256: str | None = None,
     ) -> AcceptedCandidateBinding:
         """Bind a C05-approved decision to the exact B12 optimizer state."""
@@ -295,6 +304,7 @@ def _make_acceptance_minter(raw_issue):
              source_authority_registry_sha256),
         ]
         values.append(("artifact_closures", closures))
+        values.append(("teacher_state_sha256", teacher_state_sha256))
         if schema in (
                 MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
                 EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA):

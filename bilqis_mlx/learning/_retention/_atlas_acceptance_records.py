@@ -38,7 +38,7 @@ MOTIF_BINDING_FIELDS = BINDING_FIELDS[:-1] + (
 CLOSURE_BINDING_FIELDS = BINDING_FIELDS[:-1] + ("artifact_closures", "schema_version")
 MOTIF_CLOSURE_BINDING_FIELDS = MOTIF_BINDING_FIELDS[:-1] + ("artifact_closures", "schema_version")
 EXACT_BINDING_FIELDS = BINDING_FIELDS[:-1] + (
-    "generation_authority_sha256", "schema_version")
+    "teacher_state_sha256", "generation_authority_sha256", "schema_version")
 EXACT_CLOSURE_BINDING_FIELDS = EXACT_BINDING_FIELDS[:-1] + (
     "artifact_closures", "schema_version")
 V3_SOURCE_ANCHOR_WIDTH = 9
@@ -195,6 +195,9 @@ def parse_accepted_candidate_binding(record) -> ParsedAcceptedCandidateBinding:
     if (names in (MOTIF_BINDING_FIELDS, MOTIF_CLOSURE_BINDING_FIELDS,
                   EXACT_BINDING_FIELDS, EXACT_CLOSURE_BINDING_FIELDS)
             and not is_digest(record["generation_authority_sha256"])):
+        invalid()
+    if (names in (EXACT_BINDING_FIELDS, EXACT_CLOSURE_BINDING_FIELDS)
+            and not is_digest(record["teacher_state_sha256"])):
         invalid()
     payload = {name: record[name] for name in names}
     if anchors is not None:

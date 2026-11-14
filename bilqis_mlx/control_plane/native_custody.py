@@ -11,6 +11,11 @@ from .native_contracts import (
 
 
 _BUNDLE_V3 = "bilqis.mlx.bamf-generation-bundle/v3"
+_POINTER_V2 = "bilqis.mlx.bamf-generation-pointer/v2"
+_EXACT_ACCEPTANCE_SCHEMAS = (
+    "bilqis.mlx.accepted-candidate-binding/v9",
+    "bilqis.mlx.accepted-candidate-binding/v10",
+)
 _POINTER = "bamf-state.json"
 
 
@@ -43,6 +48,30 @@ def _read_bound_json(root: Path, binding: dict, *, reason: str):
         return json.loads(raw)
     except (UnicodeDecodeError, json.JSONDecodeError):
         invalid(reason)
+
+
+def accepted_pointer(run_dir: Path) -> dict:
+    """Read the current accepted pointer without consulting shared data-plane state."""
+    pointer = _read_json(
+        Path(run_dir) / _POINTER,
+        reason="CONTROL_PLANE_NATIVE_HISTORY_ANCHOR_INVALID",
+    )
+    expected = {
+        "schema", "run_id", "generation", "parent_manifest_sha256", "bundle",
+        "manifest_sha256", "acceptance_sha256",
+    }
+    if (not isinstance(pointer, dict) or set(pointer) != expected
+            or pointer.get("schema") != _POINTER_V2
+            or not isinstance(pointer.get("run_id"), str) or not pointer["run_id"]
+            or type(pointer.get("generation")) is not int or pointer["generation"] < 0
+            or not is_digest(pointer.get("manifest_sha256"))
+            or not is_digest(pointer.get("acceptance_sha256"))
+            or pointer.get("bundle") != f"bamf-bundles/{pointer['manifest_sha256']}"):
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_ANCHOR_INVALID")
+    parent = pointer.get("parent_manifest_sha256")
+    if parent is not None and not is_digest(parent):
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_ANCHOR_INVALID")
+    return pointer
 
 
 def _accepted_generation(
@@ -113,6 +142,15 @@ def _accepted_generation(
         reason="CONTROL_PLANE_NATIVE_HISTORY_TEACHER_STATE_INVALID")
     if not isinstance(teacher_state, dict):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_TEACHER_STATE_INVALID")
+    schema = acceptance.get("schema_version")
+    teacher_anchor = acceptance.get("teacher_state_sha256")
+    if schema in _EXACT_ACCEPTANCE_SCHEMAS:
+        teacher_binding = manifest["sidecars"].get("teacher_state")
+        if (not is_digest(teacher_anchor) or not isinstance(teacher_binding, dict)
+                or teacher_anchor != teacher_binding.get("sha256")):
+            invalid("CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_DRIFT")
+    elif teacher_anchor is not None or "last_visit_receipt" in teacher_state:
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_DRIFT")
     return AuthenticatedGeneration(
         manifest_sha256, acceptance_sha256, manifest, acceptance, identity,
         teacher_state, tuple(outbox))
@@ -121,20 +159,21 @@ def _accepted_generation(
 def authenticated_history(run_dir: Path) -> tuple[AuthenticatedGeneration, ...]:
     """Return oldest->newest history anchored by the accepted BAMF pointer."""
     run_dir = Path(run_dir).expanduser().resolve()
-    from bilqis_mlx.runtime.bamf_bundle import inspect_accepted_generation
-
-    before = inspect_accepted_generation(run_dir / _POINTER)
-    manifest_sha = before.generation_manifest_sha256
-    acceptance_sha = before.acceptance_sha256
+    before = accepted_pointer(run_dir)
+    manifest_sha = before["manifest_sha256"]
+    acceptance_sha = before["acceptance_sha256"]
     reverse = []
-    expected_generation = before.generation
+    expected_generation = before["generation"]
+    run_identity_sha = None
     while True:
         generation = _accepted_generation(run_dir, manifest_sha, acceptance_sha)
         manifest = generation.manifest
-        if (manifest["run_id"] != before.run_id
+        if run_identity_sha is None:
+            run_identity_sha = generation.run_identity["run_identity_sha256"]
+        if (manifest["run_id"] != before["run_id"]
                 or manifest["generation"] != expected_generation
                 or generation.run_identity["run_identity_sha256"]
-                != before.run_identity_sha256):
+                != run_identity_sha):
             invalid("CONTROL_PLANE_NATIVE_HISTORY_LINEAGE_DRIFT")
         reverse.append(generation)
         parent_sha = manifest.get("parent_manifest_sha256")
@@ -151,10 +190,10 @@ def authenticated_history(run_dir: Path) -> tuple[AuthenticatedGeneration, ...]:
         if expected_generation < 0:
             invalid("CONTROL_PLANE_NATIVE_HISTORY_LINEAGE_DRIFT")
         manifest_sha, acceptance_sha = parent_sha, parent_acceptance
-    after = inspect_accepted_generation(run_dir / _POINTER)
+    after = accepted_pointer(run_dir)
     if after != before:
         invalid("CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED")
     return tuple(reversed(reverse))
 
 
-__all__ = ("AuthenticatedGeneration", "authenticated_history")
+__all__ = ("AuthenticatedGeneration", "accepted_pointer", "authenticated_history")
