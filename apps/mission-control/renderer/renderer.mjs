@@ -4,6 +4,7 @@ import {
   inspect,
   navigate,
   openSelectionOwner,
+  selectObject,
   withDefensiveState,
   withRoute,
 } from "./shell-state.mjs";
@@ -32,21 +33,19 @@ import {
   focusToken,
   restoreFocus,
 } from "./foundation/accessibility.mjs";
-import {
-  ensureAtlasOverview,
-  renderAtlasDomain,
-} from "./atlas/atlas-controller.mjs";
+import { createHomeController } from "./home/home-controller.mjs";
+import { activateDomainViews } from "./foundation/domain-controller.mjs";
 
 const SNAPSHOT_REQUEST = Object.freeze({
   schemaVersion: "bamf.gui20.operator-view-query/v1",
   schema: "bilqis.bamf.mission-control.operator-view/v1",
 });
-
 let state = null;
 let displaySettings;
 let defense = defensiveState("loading");
 let focusReturnToken = null;
 let paletteReturnToken = null;
+const homeController = createHomeController(window.bamfMissionControl);
 
 function setHash() {
   if (!state) return;
@@ -62,19 +61,21 @@ function announce(message) {
 
 function render() {
   renderChrome(state, defense, displaySettings, {
+    api: window.bamfMissionControl,
+    onEvidenceSelect: selectEvidenceRecord,
     onReconnect: () => establishSnapshot({ preserveRoute: true }),
     onNavigate: navigateTo,
     onInspect: openInspector,
   });
   setHash();
-  if (state?.view === "atlas") {
-    renderAtlasDomain(window.bamfMissionControl, state.context);
-    void ensureAtlasOverview(
-      window.bamfMissionControl,
-      state.context,
-      () => state?.view === "atlas",
-    );
-  }
+  activateDomainViews({ state, defense, api: window.bamfMissionControl, homeController, onInspect: openInspector });
+}
+
+function selectEvidenceRecord(selected) {
+  if (!state) return;
+  state = selectObject(state, selected);
+  renderInspector(state, defense);
+  setHash();
 }
 
 function navigateTo(view) {
@@ -188,6 +189,11 @@ function bindStaticInteractions() {
   document.querySelector("#open-owner").addEventListener("click", () => {
     if (!state) return;
     state = openSelectionOwner(state);
+    render();
+  });
+  document.querySelector("#open-evidence").addEventListener("click", () => {
+    if (!state?.selected) return;
+    state = navigate(state, "evidence", state.selected);
     render();
   });
   document.querySelector("#theme-trigger").addEventListener("click", () => {

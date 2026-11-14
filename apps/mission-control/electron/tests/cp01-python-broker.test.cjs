@@ -68,6 +68,62 @@ test("Node broker reaches accepted CP01 through the private Python bridge", asyn
   }
 });
 
+test("Node broker receives a real CP04 EventEnvelope through the private event bridge", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "bilqis-gui03-events-"));
+  const socketPath = path.join(root, "cp.sock");
+  const runDir = path.join(root, "missing-run");
+  const python = process.env.BILQIS_PYTHON || "python3";
+  const script = `
+from pathlib import Path
+import time
+from bilqis_mlx.control_plane import ControlPlaneService
+from bilqis_mlx.control_plane.event_stream import EventFamily
+from bilqis_mlx.control_plane.tests.support import start_service
+from bilqis_mlx.mission_control.events import LearningEpisode
+from bilqis_mlx.mission_control.tests.samples import SAMPLES
+service = ControlPlaneService(Path(${JSON.stringify(runDir)}), Path(${JSON.stringify(socketPath)}), event_heartbeat_seconds=0.02)
+thread = start_service(service)
+try:
+    time.sleep(0.35)
+    episode = next(item for item in SAMPLES if type(item) is LearningEpisode)
+    service.publish_event(EventFamily.LESSON_VISIT_COMPLETED, episode)
+    time.sleep(1.0)
+finally:
+    service.shutdown()
+    thread.join(2)
+`;
+  const service = spawn(python, ["-B", "-c", script], {
+    cwd: REPO_ROOT, shell: false, stdio: ["ignore", "ignore", "ignore"],
+  });
+  const broker = new Cp01PythonBroker({
+    pythonExecutable: python,
+    cwd: REPO_ROOT,
+    env: { ...process.env, BILQIS_CONTROL_PLANE_SOCKET: socketPath },
+  });
+  try {
+    await waitForPath(socketPath, service);
+    const observed = await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("GUI03_EVENT_TIMEOUT")), 2500);
+      const unsubscribe = broker.subscribe((event) => {
+        clearTimeout(timeout);
+        unsubscribe();
+        resolve(event);
+      });
+    });
+    assert.equal(observed.schema_version, "bilqis.bamf.mission-control.event-envelope/v1");
+    assert.equal(observed.event_family, "lesson.visit.completed");
+    assert.equal(observed.payload_record_id, "episode");
+    assert.equal(JSON.stringify(observed).includes(socketPath), false);
+  } finally {
+    broker.close();
+    if (service.exitCode === null) {
+      service.kill("SIGINT");
+      await once(service, "exit");
+    }
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("broker requests fail closed within a bounded timeout when Python wedges", async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "bilqis-gui20-hung-"));
   const executable = path.join(root, "hung-python");

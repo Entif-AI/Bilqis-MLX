@@ -1,0 +1,163 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { buildEvidenceRequest } from "../renderer/evidence/evidence-query.mjs";
+import { renderEvidenceMarkup } from "../renderer/evidence/evidence-markup.mjs";
+import { renderEvidenceView } from "../renderer/evidence/evidence-view.mjs";
+
+const context = Object.freeze({ mode: "LIVE", runId: "run-7", generation: 7 });
+
+function meta(recordId) {
+  return {
+    record_id: recordId,
+    run: {
+      run_id: "run-7", generation: 7,
+      run_identity_sha256: "1".repeat(64), generation_manifest_sha256: "2".repeat(64),
+      candidate_identity_sha256: "3".repeat(64), factory_release_sha256: "4".repeat(64),
+      semantic_release_sha256: "5".repeat(64), topology_sha256: "6".repeat(64),
+    },
+    materialized_at: 120, observed_at: 118, as_of: 118,
+    coverage: "COMPLETE", authority: "MEASURED",
+    source_refs: ["source:lesson:1"], evidence_refs: ["evidence:grader:1"],
+    receipt_refs: ["receipt:source:1"],
+  };
+}
+
+function page(request, {
+  records = [], links = [], markers = [], state = "PRESENT", coverage = "COMPLETE",
+} = {}) {
+  return {
+    schema: "bilqis.bamf.control-plane.query-page/v1", query_id: "a".repeat(64),
+    request, family: request.family, mode: request.mode, state, coverage,
+    total_matches: records.length + links.length, returned: records.length + links.length,
+    truncated: false, next_cursor: null, records, markers, links, accepted: true,
+  };
+}
+
+const capability = {
+  schema_version: "bilqis.bamf.mission-control.capability-snapshot/v1",
+  meta: meta("capability:and"), capability_id: "B.AND",
+};
+const receipt = {
+  schema_version: "bilqis.bamf.mission-control.operator-action-receipt/v2",
+  meta: meta("cp05:operation-1:completed"), request_id: "req-1",
+  operation_id: "operation-1", state: "COMPLETED", acknowledged_at: 120,
+  target_ref: "run:run-7", postcondition_ref: "postcondition:1", error_ref: null,
+};
+
+function container() {
+  return { innerHTML: "", querySelector() { return null; }, querySelectorAll() { return []; } };
+}
+
+test("selected-object bootstrap issues one query and does not race context", async () => {
+  const seen = [];
+  const api = { async query(request) { seen.push(request); return page(request, { records: [capability] }); } };
+  const host = container();
+  renderEvidenceView(host, api, { ...context, generation: 71 }, { kind: "capability", id: "B.AND" });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].reference, "B.AND");
+  assert.equal(seen[0].generation, 71);
+});
+
+test("rejected bootstrap clears evidence and announces query error", async () => {
+  const api = { async query() { return { accepted: false, reason: "QUERY_DENIED" }; } };
+  const host = container();
+  renderEvidenceView(host, api, { ...context, generation: 72 }, { kind: "capability", id: "B.AND" });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.ok(host.innerHTML.includes("QUERY ERROR"));
+  assert.ok(host.innerHTML.includes("QUERY_DENIED"));
+  assert.ok(host.innerHTML.includes('role="alert"'));
+  assert.equal(host.innerHTML.includes("capability:and"), false);
+});
+
+test("deep-linked exact evidence restores detail after hydration", async () => {
+  const api = { async query(request) {
+    if (request.family === "record") return page(request, { records: [receipt] });
+    if (request.family === "links") return page(request);
+    throw new Error("unexpected query");
+  } };
+  const host = container();
+  renderEvidenceView(host, api, { ...context, generation: 73 }, { kind: "evidence", id: receipt.meta.record_id });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.ok(host.innerHTML.includes("Exact evidence item"));
+  assert.ok(host.innerHTML.includes(receipt.meta.record_id));
+  assert.ok(host.innerHTML.includes("Raw structured payload"));
+});
+
+test("readable and raw views expose the same literal receipt values", () => {
+  const request = buildEvidenceRequest(context, { kind: "record", value: receipt.meta.record_id });
+  const base = {
+    status: "ready", criteria: { kind: "record", value: receipt.meta.record_id },
+    page: page(request, { records: [receipt] }), records: [receipt], links: [],
+    selected: receipt, selectedLinks: null, error: null,
+  };
+  const readable = renderEvidenceMarkup({ ...base, raw: false });
+  const raw = renderEvidenceMarkup({ ...base, raw: true });
+  for (const literal of [
+    receipt.meta.record_id, receipt.operation_id, receipt.postcondition_ref,
+    receipt.meta.run.run_id, receipt.meta.run.generation_manifest_sha256,
+    receipt.meta.source_refs[0],
+  ]) {
+    assert.ok(readable.includes(literal));
+    assert.ok(raw.includes(literal));
+  }
+  assert.ok(readable.includes("NOT SEPARATELY REPORTED"));
+});
+
+test("missing denied conflicting and partial evidence remain distinct", () => {
+  const request = buildEvidenceRequest(context, { kind: "reference", value: "receipt:x" });
+  const missing = renderEvidenceMarkup({
+    status: "ready", criteria: { kind: "reference", value: "receipt:x" },
+    page: page(request, { state: "MISSING", coverage: "UNKNOWN" }),
+    records: [], links: [], selected: null, selectedLinks: null, raw: false, error: null,
+  });
+  assert.ok(missing.includes("MISSING · UNKNOWN"));
+  assert.ok(missing.replaceAll("MISSING", "DENIED").includes("DENIED · UNKNOWN"));
+
+  const partial = {
+    schema_version: "bilqis.bamf.mission-control.partial/v1", meta: meta("partial:capability"),
+    partial_record_id: "capability:and", missing_fields: ["grader_receipt", "source_revision"],
+  };
+  const degraded = renderEvidenceMarkup({
+    status: "ready", criteria: { kind: "context", value: "" },
+    page: page(request, { records: [capability], markers: [partial], state: "PARTIAL", coverage: "PARTIAL" }),
+    records: [capability, { ...capability, meta: meta("capability:conflict") }],
+    links: [], selected: null, selectedLinks: null, raw: false, error: null,
+  });
+  assert.ok(degraded.includes("grader_receipt"));
+  assert.ok(degraded.includes("capability:conflict"));
+  assert.ok(degraded.includes("PARTIAL · PARTIAL"));
+});
+
+test("query state is aria-live and memory producer absence is explicit", () => {
+  const request = buildEvidenceRequest(context, { kind: "memory", value: "motif:bool-composition" });
+  const markup = renderEvidenceMarkup({
+    status: "ready", criteria: { kind: "memory", value: "motif:bool-composition" },
+    page: page(request, { state: "EMPTY" }), records: [], links: [],
+    selected: null, selectedLinks: null, raw: false, error: null,
+  });
+  assert.ok(markup.includes('role="status"'));
+  assert.ok(markup.includes('aria-live="polite"'));
+  assert.ok(markup.includes("No accepted CP03 record exposes this memory motif/slot identity"));
+  assert.ok(markup.includes("GUI10 display fixtures are not durable evidence"));
+});
+
+test("forensic renderer has no direct provider filesystem process or network escape", () => {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const source = ["evidence-view.mjs", "evidence-query.mjs", "evidence-markup.mjs"]
+    .map((name) => fs.readFileSync(path.join(here, "../renderer/evidence", name), "utf8")).join("\n");
+  for (const forbidden of ["require(", "node:fs", "process.", "electron", "fetch(", "XMLHttpRequest"]) {
+    assert.equal(source.includes(forbidden), false, forbidden);
+  }
+});
+
+test("shell inspector exposes evidence navigation beside owning-view navigation", () => {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const html = fs.readFileSync(path.join(here, "../renderer/index.html"), "utf8");
+  assert.ok(html.includes('id="open-evidence"'));
+  assert.ok(html.includes('id="open-owner"'));
+});

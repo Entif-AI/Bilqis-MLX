@@ -58,6 +58,7 @@ class MissionControlQueryCatalog:
         resources = {
             request.family.value,
             request.record_id,
+            request.reference,
             None if request.run_id is None else f"{request.family.value}:{request.run_id}",
         }
         markers = [
@@ -193,7 +194,13 @@ class MissionControlQueryCatalog:
             link for record in source_records for link in self._links_for(record)
             if link.target_ref == request.reference
         )
-        return self._page(request, (), (), links, exact_missing=not links)
+        marker_records = list(source_records)
+        target = self._by_id.get(request.reference)
+        if target is not None:
+            marker_records.append(target)
+        markers = self._markers(marker_records, request)
+        return self._page(
+            request, (), markers, links, exact_missing=not links and not markers)
 
     def _page(self, request, records, markers, links=(), *, exact_missing=False):
         return build_page(
