@@ -81,10 +81,32 @@ def _row_rank(row: sqlite3.Row) -> tuple:
     )
 
 
+def _assert_revision_identity(
+    db: sqlite3.Connection, record: WireRecord, digest: str,
+) -> None:
+    run = record.meta.run
+    generation = None if run is None else run.generation
+    existing = db.execute(
+        """SELECT payload_sha256 FROM record_revisions
+        WHERE record_id = ?
+          AND generation IS ?
+          AND materialized_at = ?
+          AND observed_at IS ?
+          AND as_of IS ?""",
+        (
+            record.meta.record_id, generation, record.meta.materialized_at,
+            record.meta.observed_at, record.meta.as_of,
+        ),
+    ).fetchall()
+    if any(row["payload_sha256"] != digest for row in existing):
+        projection_invalid("PROJECTION_RECORD_IDENTITY_CONFLICT")
+
+
 def ingest_record(db: sqlite3.Connection, record: WireRecord) -> None:
     payload = canonical_json(record)
     digest = hashlib.sha256(payload).hexdigest()
     run = record.meta.run
+    _assert_revision_identity(db, record, digest)
     if type(record) is EventEnvelope:
         existing = db.execute(
             "SELECT payload_sha256 FROM record_revisions WHERE event_id = ?",
@@ -177,6 +199,26 @@ def record_frontier(
             latest_cursor_sha256 = excluded.latest_cursor_sha256""",
         (stream_id, epoch_id, next_ordinal, latest_cursor_sha256),
     )
+
+
+def initialize_frontier(
+    db: sqlite3.Connection, stream_id: str, epoch_id: str,
+    next_ordinal: int, latest_cursor_sha256: str | None,
+) -> None:
+    """Set a rebuild/snapshot baseline once; event ingestion owns advancement."""
+    current = db.execute(
+        "SELECT * FROM event_frontiers WHERE stream_id = ?", (stream_id,),
+    ).fetchone()
+    if current is not None:
+        if (
+            current["epoch_id"] == epoch_id
+            and current["next_ordinal"] == next_ordinal
+            and current["latest_cursor_sha256"] == latest_cursor_sha256
+        ):
+            return
+        projection_invalid("PROJECTION_FRONTIER_BASELINE_CONFLICT")
+    record_frontier(
+        db, stream_id, epoch_id, next_ordinal, latest_cursor_sha256)
 
 
 def advance_frontier(db: sqlite3.Connection, position: StreamPosition) -> None:

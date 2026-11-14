@@ -123,7 +123,7 @@ class MissionControlProjection:
             projection_invalid("PROJECTION_FRONTIER_INVALID")
         try:
             with store.connect(self.path) as db:
-                store.record_frontier(
+                store.initialize_frontier(
                     db, stream_id, epoch_id, next_ordinal, latest_cursor_sha256)
                 db.commit()
         except sqlite3.Error:
