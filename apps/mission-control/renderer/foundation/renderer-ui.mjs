@@ -10,6 +10,7 @@ import {
   stableMemoryIdentity,
 } from "../memory/memory-model.mjs";
 import { renderTeacherView } from "../teacher/teacher-view.mjs";
+import { renderSalienceView } from "../salience/salience-view.mjs";
 import { renderEvidenceView } from "../evidence/evidence-view.mjs";
 import { defensiveBannerMarkup } from "./defensive-state.mjs";
 import { bindRovingNavigation } from "./accessibility.mjs";
@@ -249,6 +250,18 @@ export function renderCurrentView(state, defense, onInspect, api, onEvidenceSele
         "Comparison posture": "Descriptive evidence only",
         "Policy mutation": "None",
       },
+    }));
+    return;
+  }
+  if (state.view === "salience") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Independent Impact, Exigency and Osmotic Novelty evidence with reversible aggregation and admitted routing rationale.";
+    renderSalienceView(domain, (id, details) => onInspect({
+      kind: "salience-observation",
+      id,
+      details,
     }));
     return;
   }
