@@ -113,7 +113,7 @@ class CommandManager:
         self.store = CommandStore(store_root)
         if executor is None:
             from .executor import C11CommandExecutor
-            executor = C11CommandExecutor(self.run_dir)
+            executor = C11CommandExecutor(self.run_dir, store=self.store)
         self.executor = executor
         self.launcher = launcher or (
             lambda operation_id: launch_command_worker(

@@ -254,7 +254,17 @@ async function establishSnapshot({ preserveRoute = false } = {}) {
   if (snapshotSource === "cache" && defense.id === "live") {
     defense = defensiveState("stale", options);
   }
-  state = { ...withDefensiveState(createShellState(operatorView, route), defense), modelSection };
+  const shell = createShellState(operatorView, route);
+  const connectedShell = {
+    ...shell,
+    context: Object.freeze({
+      ...shell.context,
+      operatorActive: typeof connection?.learnerActive === "boolean"
+        ? connection.learnerActive
+        : null,
+    }),
+  };
+  state = { ...withDefensiveState(connectedShell, defense), modelSection };
   render();
   announce(`${defense.label}. ${defense.historical ? "Inspection-only evidence is shown." : "Live context established."}`);
 }

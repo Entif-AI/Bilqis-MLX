@@ -92,6 +92,12 @@ def _readback_after_execution(executor, plan, returncode, execution_error):
             postcondition = executor.postcondition_after_success(plan)
         except (BilqisError, MissionControlContractError, OSError) as error:
             execution_error = error_ref_from_exception(error)
+    elif returncode == 130:
+        try:
+            postcondition = executor.postcondition_after_interrupt(plan)
+        except (BilqisError, MissionControlContractError, OSError) as error:
+            if execution_error is None:
+                execution_error = error_ref_from_exception(error)
     else:
         try:
             postcondition = executor.reconcile(plan)
@@ -137,7 +143,7 @@ def run_worker(
     executor=None,
 ) -> int:
     store = CommandStore(store_root)
-    executor = executor or C11CommandExecutor(run_dir)
+    executor = executor or C11CommandExecutor(run_dir, store=store)
     with store.execution_lock(operation_id):
         prepared = _prepare_worker(store, executor, operation_id)
         if isinstance(prepared, int):

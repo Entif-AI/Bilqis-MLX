@@ -75,14 +75,17 @@ test("known generation or release drift blocks authorization while fixture conte
   assert.deepEqual(contextConflicts({ ...context, runId: "fixture-run", recordId: "operator-view:fixture-run:7" }, changed), []);
 });
 
-test("Operate markup is a visibly separate mutation zone with unsupported pause and stop disabled", () => {
+test("Operate markup keeps pause unavailable while exposing stop through the mutation zone", () => {
   const markup = renderOperateMarkup({
     action: "status", dryRun: false, parametersText: "{}", phase: "IDLE",
     preview: null, inspection: null, conflicts: [], error: null, authorization: "",
   }, { mutationAllowed: true });
   assert.match(markup, /MUTATION ZONE/);
   assert.match(markup, /data-operate-action="pause"[\s\S]*?disabled/);
-  assert.match(markup, /data-operate-action="stop"[\s\S]*?disabled/);
+  assert.doesNotMatch(markup, /data-operate-action="stop"[\s\S]*?disabled/);
+  assert.deepEqual(parseParameters('{"operation_id":"operation:' + "a".repeat(64) + '"}'), [
+    { key: "operation_id", value: "operation:" + "a".repeat(64) },
+  ]);
   assert.match(markup, /Observation views cannot dispatch commands/);
 });
 

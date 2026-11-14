@@ -21,6 +21,28 @@ export function createHomeController(api) {
   let inspectTarget = null;
   let context = null;
   let historical = false;
+  let operatorActive = null;
+
+  function projectionContext() {
+    return { ...context, operatorActive };
+  }
+
+  async function refreshStatus() {
+    if (historical || typeof api.status !== "function") {
+      operatorActive = typeof context?.operatorActive === "boolean"
+        ? context.operatorActive
+        : null;
+      return;
+    }
+    try {
+      const status = await api.status();
+      operatorActive = typeof status?.learnerActive === "boolean"
+        ? status.learnerActive
+        : null;
+    } catch (_error) {
+      operatorActive = null;
+    }
+  }
 
   function render() {
     if (!renderTarget || !model) return;
@@ -32,8 +54,9 @@ export function createHomeController(api) {
   async function loadFamily(family) {
     const request = queryRequest(family, context);
     const page = await api.query(request);
+    await refreshStatus();
     pages = { ...pages, [family]: page };
-    model = projectionFromPages(pages, context);
+    model = projectionFromPages(pages, projectionContext());
     render();
   }
 
@@ -45,8 +68,9 @@ export function createHomeController(api) {
         return [family, { accepted: false, state: "UNAVAILABLE", records: [] }];
       }
     }));
+    await refreshStatus();
     pages = Object.fromEntries(entries);
-    model = projectionFromPages(pages, context);
+    model = projectionFromPages(pages, projectionContext());
     if (context?.runId === "fixture-run" &&
         HOME_FAMILIES.every((family) => pages[family]?.accepted !== true || pages[family]?.state === "EMPTY")) {
       model = referenceHomeProjection();
@@ -64,7 +88,7 @@ export function createHomeController(api) {
           await loadFamily(family);
         } catch (_error) {
           pages = { ...pages, [family]: { accepted: false, state: "UNAVAILABLE", records: [] } };
-          model = projectionFromPages(pages, context);
+          model = projectionFromPages(pages, projectionContext());
           render();
         }
       });
@@ -78,6 +102,9 @@ export function createHomeController(api) {
     inspectTarget = onInspect;
     context = nextContext;
     historical = Boolean(defense?.historical || nextContext?.mode === "HISTORICAL");
+    operatorActive = typeof nextContext?.operatorActive === "boolean"
+      ? nextContext.operatorActive
+      : null;
     const nextKey = contextKey(nextContext) + `:${historical}`;
     if (key === nextKey) {
       render();

@@ -46,6 +46,17 @@ test("GUI17 submit binds one exact CP05 request to its reviewed target", () => {
   }), /SUBMIT_REQUEST/);
 });
 
+test("GUI17 admits an exact operation identity only as a typed action parameter", () => {
+  const request = actionRequest({
+    action: "stop",
+    parameters: [{ key: "operation_id", value: OPERATION_ID }],
+  });
+  assert.equal(validatePreviewRequest({
+    schemaVersion: PREVIEW_REQUEST_SCHEMA,
+    request,
+  }).request.parameters[0].value, OPERATION_ID);
+});
+
 test("GUI17 public preview and inspection reject path-shaped or malformed projections", () => {
   assert.equal(validatePreview(preview()).target_ref, TARGET_REF);
   assert.equal(validateInspection(inspection()).receipt.operation_id, OPERATION_ID);

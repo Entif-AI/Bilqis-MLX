@@ -35,6 +35,7 @@ export function familyForEvent(event) {
   if (family.startsWith("teacher.")) return "teacher";
   if (family.startsWith("correction.")) return "correction";
   if (family.startsWith("resource.")) return "resource";
+  if (family.startsWith("operator.action.")) return "run";
   if (family.startsWith("run.") || family.startsWith("checkpoint.")) return "run";
   return null;
 }
@@ -119,6 +120,7 @@ export function projectionFromPages(pages, context) {
       uncovered: null,
     }),
     runtime: Object.freeze({
+      running: typeof context?.operatorActive === "boolean" ? context.operatorActive : null,
       elapsed: null,
       visits: episodeRows.length || null,
       visitRate: null,
@@ -192,7 +194,7 @@ export function referenceHomeProjection() {
       held: rows.filter((row) => row.sourceState === "SOURCE_HELD").length,
       uncovered: rows.filter((row) => row.implementationState === "IMPLEMENTATION_UNCOVERED").length,
     }),
-    runtime: Object.freeze({ elapsed: "42 m fixture window", visits: rows.reduce((sum, row) => sum + row.visits, 0),
+    runtime: Object.freeze({ running: true, elapsed: "42 m fixture window", visits: rows.reduce((sum, row) => sum + row.visits, 0),
       visitRate: null, retainedCandidates: 1, rejectedCandidates: rejected.length, acceptedStepsHour: null }),
     system: Object.freeze({ memoryPressure: null, peakMemory: null, diskReserve: null, correctionDebt: 1, hardWarnings: 0 }),
     currentWork: Object.freeze({

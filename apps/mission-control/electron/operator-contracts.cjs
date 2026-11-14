@@ -24,7 +24,7 @@ const PARAMETER_KEYS = new Set([
   "atlas_admission_scope", "admission_policy", "minutes", "steps_per_visit",
   "max_visits", "source_prefetch_workers", "batch_size", "reserve_gib",
   "autonomous_curriculum", "verify_source", "timing_trace", "flash_mode",
-  "source_teaching_enrichment", "admit_next_grade_with_debt",
+  "source_teaching_enrichment", "admit_next_grade_with_debt", "operation_id",
 ]);
 const PYTHON_WHITESPACE_ONLY = /^[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/u;
 

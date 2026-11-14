@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from dataclasses import asdict
 import hashlib
+import os
 from pathlib import Path
+import signal
 import subprocess
 import sys
 
@@ -16,15 +18,16 @@ from .c11 import (
 )
 from .model import (
     CommandAction, CommandMode, CommandPlan, ResolvedCommandTarget,
-    intent_sha256, request_sha256,
+    intent_sha256, operation_directory_name, request_sha256,
 )
 from ..transport import _invalid
 
 class C11CommandExecutor:
     """Preflight and execute only through the existing human operator boundary."""
 
-    def __init__(self, run_dir: Path):
+    def __init__(self, run_dir: Path, *, store=None):
         self.run_dir = Path(run_dir).expanduser().resolve()
+        self.store = store
 
     def _resume_preflight(self, request: OperatorActionRequestV2) -> tuple[dict, tuple[str, ...]]:
         omit = frozenset({"atlas_admission_scope", "admission_policy"})
@@ -64,13 +67,21 @@ class C11CommandExecutor:
             action = CommandAction(request.action)
         except ValueError:
             _invalid("CONTROL_PLANE_COMMAND_ACTION_UNSUPPORTED")
-        if action in {CommandAction.PAUSE, CommandAction.STOP}:
+        if action is CommandAction.PAUSE:
             _invalid("CONTROL_PLANE_COMMAND_ACTION_UNAVAILABLE")
         return action
 
     @staticmethod
     def _validate_parameters(action: CommandAction, parameters: dict) -> None:
         admission_keys = {"atlas_admission_scope", "admission_policy"}
+        if action is CommandAction.STOP:
+            if set(parameters) != {"operation_id"}:
+                _invalid("CONTROL_PLANE_COMMAND_STOP_OPERATION_REQUIRED")
+            operation_id = parameters["operation_id"]
+            if not isinstance(operation_id, str):
+                _invalid("CONTROL_PLANE_COMMAND_STOP_OPERATION_REQUIRED")
+            operation_directory_name(operation_id)
+            return
         if action is CommandAction.ADMISSION_LEASE:
             if set(parameters) - admission_keys:
                 _invalid("CONTROL_PLANE_COMMAND_PARAMETER_UNSUPPORTED")
@@ -107,6 +118,8 @@ class C11CommandExecutor:
         self, request: OperatorActionRequestV2, action: CommandAction,
         parameters: dict,
     ):
+        if action is CommandAction.STOP:
+            return self._stop_parts(parameters)
         report, dry_argv = self._resume_preflight(request)
         target = report_target(self.run_dir, report, existing=True)
         if action is CommandAction.STATUS:
@@ -120,6 +133,53 @@ class C11CommandExecutor:
             "resume-preview" if request.dry_run else "operator-run-completed")
         return report, target, mode, self._runtime_argv(
             dry_argv, request.dry_run), postcondition
+
+    @staticmethod
+    def _pid_live(pid: int) -> bool:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+        return True
+
+    def _active_trainer_process(self, operation_id: str):
+        if self.store is None:
+            _invalid("CONTROL_PLANE_COMMAND_STOP_UNAVAILABLE")
+        target_plan = self.store.read_plan(operation_id)
+        if target_plan is None or target_plan.action not in {
+            CommandAction.CREATE, CommandAction.RESUME, CommandAction.OWNER_LAUNCH,
+        }:
+            _invalid("CONTROL_PLANE_COMMAND_STOP_TARGET_INVALID")
+        if (
+            self.store.read_terminal(operation_id) is not None
+            or self.store.read_worker_result(operation_id) is not None
+        ):
+            _invalid("CONTROL_PLANE_COMMAND_STOP_TARGET_NOT_ACTIVE")
+        process = self.store.read_trainer_process(operation_id)
+        if process is None or not self._pid_live(process["pid"]):
+            _invalid("CONTROL_PLANE_COMMAND_STOP_TARGET_NOT_ACTIVE")
+        return target_plan, process
+
+    def _stop_parts(self, parameters):
+        operation_id = parameters["operation_id"]
+        target_plan, _process = self._active_trainer_process(operation_id)
+        current = self._current_target()
+        if current is None or not same_lineage(target_plan.target, current):
+            _invalid("CONTROL_PLANE_COMMAND_STOP_TARGET_CONFLICT")
+        report = {
+            "result": "STOP_READY",
+            "ready_for_training": False,
+            "neural_updates": False,
+        }
+        return (
+            report,
+            current,
+            CommandMode.MUTATING,
+            [operation_id],
+            "operator-stop-requested",
+        )
 
     def _admission_parts(self, request, report, target, parameters):
         if request.dry_run:
@@ -206,20 +266,32 @@ class C11CommandExecutor:
     ) -> tuple[int | None, str | None]:
         if not plan.requires_worker:
             _invalid("CONTROL_PLANE_COMMAND_WORKER_NOT_REQUIRED")
+        if plan.action is CommandAction.STOP:
+            try:
+                _target_plan, process = self._active_trainer_process(plan.argv[0])
+                os.kill(process["pid"], signal.SIGINT)
+            except (OSError, BilqisError) as error:
+                digest = hashlib.sha256(
+                    f"{type(error).__name__}:{error}".encode("utf-8")).hexdigest()
+                return None, f"command-error:stop:{digest}"
+            return 0, None
         try:
             with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
-                completed = subprocess.run(
+                process = subprocess.Popen(
                     [sys.executable, "-m", "bilqis_mlx.cli", *plan.argv],
-                    stdout=stdout, stderr=stderr, check=False,
+                    stdout=stdout, stderr=stderr,
                 )
+                if self.store is not None:
+                    self.store.write_trainer_process(
+                        plan.operation_id, pid=process.pid)
+                returncode = process.wait()
         except OSError as error:
             digest = hashlib.sha256(
                 f"{type(error).__name__}:{error}".encode("utf-8")).hexdigest()
             return None, f"command-error:spawn:{digest}"
-        if completed.returncode != 0:
+        if returncode != 0:
             digest = hashlib.sha256(stderr_path.read_bytes()).hexdigest()
-            return completed.returncode, (
-                f"command-error:{completed.returncode}:{digest}")
+            return returncode, f"command-error:{returncode}:{digest}"
         return 0, None
 
     def _current_target(self) -> ResolvedCommandTarget | None:
@@ -232,6 +304,16 @@ class C11CommandExecutor:
 
     def verify_target_before_execute(self, plan: CommandPlan) -> None:
         """Fail closed if authority changed after durable ACCEPTED."""
+        if plan.action is CommandAction.STOP:
+            target_plan, _process = self._active_trainer_process(plan.argv[0])
+            current = self._current_target()
+            if (
+                current is None
+                or current != plan.target
+                or not same_lineage(target_plan.target, current)
+            ):
+                _invalid("CONTROL_PLANE_COMMAND_TARGET_DRIFT")
+            return
         if plan.action is CommandAction.CREATE:
             if (self.run_dir / "bamf-state.json").exists():
                 _invalid("CONTROL_PLANE_COMMAND_TARGET_DRIFT")
@@ -262,6 +344,21 @@ class C11CommandExecutor:
             if result["admission_epoch"] == "staged":
                 _invalid("CONTROL_PLANE_COMMAND_POSTCONDITION_UNVERIFIED")
         return result
+
+    def postcondition_after_interrupt(self, plan: CommandPlan) -> dict:
+        if plan.action not in {
+            CommandAction.CREATE, CommandAction.RESUME, CommandAction.OWNER_LAUNCH,
+        }:
+            _invalid("CONTROL_PLANE_COMMAND_POSTCONDITION_UNVERIFIED")
+        current = self._current_target()
+        if current is None or not same_lineage(plan.target, current):
+            _invalid("CONTROL_PLANE_COMMAND_POSTCONDITION_UNVERIFIED")
+        return {
+            "kind": "operator-run-interrupted",
+            "before": plan.target.to_record(),
+            "after": current.to_record(),
+            "cli_exit": 130,
+        }
 
     def reconcile(self, plan: CommandPlan) -> dict | None:
         """Read authoritative state only; never relaunch an admitted operation."""

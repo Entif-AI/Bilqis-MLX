@@ -72,6 +72,14 @@ test("stale and partial query states remain explicit instead of becoming healthy
   assert.match(markup, /UNAVAILABLE/);
 });
 
+test("RUNNING reflects the live learner-active handshake instead of mere run-record presence", () => {
+  const pages = Object.fromEntries(HOME_FAMILIES.map((family) => [family, emptyPage(family)]));
+  const stopped = projectionFromPages(pages, { ...context, operatorActive: false });
+  const running = projectionFromPages(pages, { ...context, operatorActive: true });
+  assert.match(renderHomeMarkup(stopped), /RUNNING <strong>NO<\/strong>/);
+  assert.match(renderHomeMarkup(running), /RUNNING <strong>YES<\/strong>/);
+});
+
 test("historical home queries bind the explicit prior generation", () => {
   const request = queryRequest("capability", { runId: "run-7", generation: 6, mode: "HISTORICAL" });
   assert.equal(request.mode, "historical");
@@ -83,7 +91,27 @@ test("CP04 event families refresh only their owning CP03 family", () => {
   assert.equal(familyForEvent({ event_family: "candidate.retained" }), "episode");
   assert.equal(familyForEvent({ event_family: "capability.changed" }), "capability");
   assert.equal(familyForEvent({ event_family: "resource.health.sample" }), "resource");
+  assert.equal(familyForEvent({ event_family: "operator.action.state" }), "run");
   assert.equal(familyForEvent({ event_family: "warning.failure" }), null);
+});
+
+test("live command events refresh learner-active status without reconnecting Mission Control", async () => {
+  let active = false;
+  let listener = null;
+  const api = {
+    async query(request) { return emptyPage(request.family); },
+    async status() { return { learnerActive: active }; },
+    subscribeEvents(next) { listener = next; return async () => { listener = null; }; },
+  };
+  const controller = createHomeController(api);
+  await controller.activate({ runId: "live-run", generation: 7, mode: "LIVE" }, {
+    host: fakeHost(), onInspect: () => {}, defense: { historical: false },
+  });
+  assert.equal(controller.currentModel().runtime.running, false);
+  active = true;
+  await listener({ event_family: "operator.action.state" });
+  assert.equal(controller.currentModel().runtime.running, true);
+  await controller.deactivate();
 });
 
 test("live home uses one family query per CP04 event rather than polling the full view", async () => {
