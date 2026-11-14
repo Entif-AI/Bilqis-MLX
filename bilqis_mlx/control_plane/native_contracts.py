@@ -42,6 +42,19 @@ def missing_value() -> DataValue:
     return DataValue(ValueState.MISSING, None, None)
 
 
+def accepted_student_sha256(generation: "AuthenticatedGeneration") -> str:
+    """Recover C03's accepted student identity without loading numerical state."""
+    if generation.manifest["generation"] == 0:
+        digest = generation.run_identity.get("initial_candidate_identity_sha256")
+    else:
+        from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
+
+        digest = restore_teacher_lineage(generation.teacher_state).student_sha256
+    if not is_digest(digest):
+        invalid("CONTROL_PLANE_NATIVE_STUDENT_IDENTITY_INVALID")
+    return digest
+
+
 @dataclass(frozen=True)
 class AuthenticatedGeneration:
     manifest_sha256: str
@@ -131,6 +144,7 @@ def native_outbox_event_id(
 
 __all__ = (
     "AuthenticatedGeneration", "NativeProjectionMaterial", "canonical",
-    "data_value", "derived_event_id", "invalid", "is_digest", "materialized_at",
+    "accepted_student_sha256", "data_value", "derived_event_id", "invalid",
+    "is_digest", "materialized_at",
     "missing_value", "native_outbox_event_id", "record_meta", "run_ref", "sha",
 )

@@ -8,7 +8,7 @@ from bilqis_mlx.mission_control import (
 
 from .event_stream import EventFamily
 from .native_contracts import (
-    AuthenticatedGeneration, data_value, derived_event_id, invalid,
+    AuthenticatedGeneration, accepted_student_sha256, data_value, derived_event_id, invalid,
     materialized_at, missing_value, record_meta, run_ref,
 )
 
@@ -24,7 +24,7 @@ def _candidate_outcome(retention: dict) -> CandidateOutcome:
     return CandidateOutcome.ACTION_REQUIRED
 
 
-def _append_c16_accepted(generation, run, native, records, events):
+def _append_c16_accepted(generation, parent, run, native, records, events):
     capability = native.get("capability")
     visit = generation.teacher_state.get("last_visit")
     if not isinstance(capability, str) or not isinstance(visit, dict):
@@ -32,11 +32,17 @@ def _append_c16_accepted(generation, run, native, records, events):
     from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity
 
     identity = TeacherVisitIdentity.from_record(visit)
-    if (identity.capability_id != capability
-            or identity.run_identity_sha256 != run.run_identity_sha256
-            or identity.generation != run.generation - 1
-            or identity.accepted_manifest_sha256
-            != generation.manifest.get("parent_manifest_sha256")):
+    if parent is None:
+        invalid("CONTROL_PLANE_NATIVE_C16_ACCEPTED_PARENT_REQUIRED")
+    state = parent.teacher_state
+    expected = TeacherVisitIdentity(
+        parent.run_identity["run_identity_sha256"], parent.run_identity["run_seed"],
+        parent.manifest["generation"], parent.manifest_sha256,
+        state["teacher_identity"], state["teacher_epoch"],
+        accepted_student_sha256(parent),
+        state["next_seed"], state["cursor"], capability, identity.policy_key,
+    )
+    if identity != expected:
         invalid("CONTROL_PLANE_NATIVE_C16_ACCEPTED_INVALID")
     event_id = native["event_id"]
     logical_time = materialized_at(native, run.generation)
@@ -133,7 +139,10 @@ def _append_capability_best(generation, run, native, records, events):
             derived_event_id(native["event_id"], "capability:" + capability_id)))
 
 
-def accepted_records(generation: AuthenticatedGeneration):
+def accepted_records(
+    generation: AuthenticatedGeneration,
+    parent: AuthenticatedGeneration | None = None,
+):
     run = run_ref(generation)
     manifest = generation.manifest
     optimizer_step = manifest["optimizer"].get("step")
@@ -163,7 +172,7 @@ def accepted_records(generation: AuthenticatedGeneration):
     for native in generation.outbox:
         kind = native.get("event")
         if kind == "BAMF_C16_3_ACCEPTED":
-            _append_c16_accepted(generation, run, native, records, events)
+            _append_c16_accepted(generation, parent, run, native, records, events)
         elif kind == "SCHOOL_TEACHER_VISIT_COMMITTED":
             _append_teacher_visit(generation, run, native, records, events)
         elif kind == "SCHOOL_CAPABILITY_BEST_COMMITTED":

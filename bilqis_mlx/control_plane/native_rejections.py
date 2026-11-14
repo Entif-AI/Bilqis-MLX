@@ -10,8 +10,8 @@ from bilqis_mlx.mission_control import (
 
 from .event_stream import EventFamily
 from .native_contracts import (
-    AuthenticatedGeneration, canonical, derived_event_id, invalid, is_digest,
-    native_outbox_event_id, record_meta, run_ref, sha,
+    AuthenticatedGeneration, accepted_student_sha256, canonical, derived_event_id,
+    invalid, is_digest, native_outbox_event_id, record_meta, run_ref, sha,
 )
 
 
@@ -64,8 +64,30 @@ def _project_rejection(native, generation, data_plane):
         native, generation, data_plane)
     capability = evidence.get("capability")
     visit_id = evidence.get("visit_id")
-    if not isinstance(capability, str) or not isinstance(visit_id, str):
+    policy_key = evidence.get("selected_policy_key")
+    candidate_step = evidence.get("candidate_optimizer_step")
+    retained_step = evidence.get("retained_optimizer_step")
+    if (evidence.get("schema") != "bilqis.bamf.c16.3-rejection/v2"
+            or not isinstance(capability, str) or not capability
+            or not isinstance(visit_id, str) or not visit_id
+            or not isinstance(policy_key, str) or not policy_key
+            or type(candidate_step) is not int
+            or candidate_step <= generation.manifest["optimizer"].get("step")
+            or retained_step != generation.manifest["optimizer"].get("step")):
         invalid("CONTROL_PLANE_NATIVE_REJECTION_INVALID")
+    from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity
+
+    state = generation.teacher_state
+    expected_visit = TeacherVisitIdentity(
+        generation.run_identity["run_identity_sha256"],
+        generation.run_identity["run_seed"], generation.manifest["generation"],
+        generation.manifest_sha256,
+        state["teacher_identity"], state["teacher_epoch"],
+        accepted_student_sha256(generation),
+        state["next_seed"], state["cursor"], capability, policy_key,
+    )
+    if visit_id != expected_visit.visit_id:
+        invalid("CONTROL_PLANE_NATIVE_REJECTION_VISIT_DRIFT")
     run = run_ref(generation)
     refs = (f"rejection-authority:{authority_sha}",)
     receipts = (f"bamf-rejection:{receipt_sha}",)
@@ -94,7 +116,7 @@ def rejection_material(run_dir: Path, history: tuple[AuthenticatedGeneration, ..
     if ledger.is_symlink() or not ledger.is_file():
         invalid("CONTROL_PLANE_NATIVE_EVENT_LEDGER_INVALID")
     by_manifest = {item.manifest_sha256: item for item in history}
-    records, events, seen = [], [], set()
+    records, events, seen = [], [], {}
     from bilqis_mlx.data_plane import data_plane
 
     with ledger.open("rb") as stream:
@@ -112,8 +134,10 @@ def rejection_material(run_dir: Path, history: tuple[AuthenticatedGeneration, ..
             if generation is None or not is_digest(event_id):
                 invalid("CONTROL_PLANE_NATIVE_REJECTION_INVALID")
             if event_id in seen:
+                if native != seen[event_id]:
+                    invalid("CONTROL_PLANE_NATIVE_REJECTION_DUPLICATE_DRIFT")
                 continue
-            seen.add(event_id)
+            seen[event_id] = native
             projected_records, projected_events = _project_rejection(
                 native, generation, data_plane())
             records.extend(projected_records)

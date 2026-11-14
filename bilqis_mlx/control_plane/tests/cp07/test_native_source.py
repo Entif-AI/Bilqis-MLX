@@ -1,11 +1,12 @@
 """Authenticated BAMF history is the CP07 production-source acceptance witness."""
 from dataclasses import replace
+import json
 from pathlib import Path
 import unittest
 from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
-from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity
 from bilqis_mlx.control_plane import ControlPlaneClient, ControlPlaneService, EventFamily
@@ -166,9 +167,17 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
     def test_authenticated_rejection_is_projected_without_advancing_learner(self):
         parent = self.parent()
         before = (self.run / "bamf-state.json").read_bytes()
+        state = parent.teacher_state
+        visit = TeacherVisitIdentity(
+            parent.run_identity.digest, parent.run_identity.run_seed,
+            parent.generation, self._parent_pointer["manifest_sha256"],
+            state["teacher_identity"], state["teacher_epoch"],
+            candidate_identity_digest(parent.retained_state),
+            state["next_seed"], state["cursor"], "A.REJECT", "policy:native",
+        )
         receipt = record_bamf_rejection(self.run, parent, {
             "schema": "bilqis.bamf.c16.3-rejection/v2",
-            "visit_id": "visit:native-rejection",
+            "visit_id": visit.visit_id,
             "selected_option_id": "option:native",
             "selected_policy_key": "policy:native",
             "candidate_optimizer_step": parent.retained_state.optimizer_step + 1,
@@ -187,6 +196,82 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
         self.assertEqual(rejected[0].reason_code, "NATIVE_REJECTED")
         self.assertIn(f"bamf-rejection:{receipt}", rejected[0].meta.receipt_refs)
         self.assertEqual((self.run / "bamf-state.json").read_bytes(), before)
+
+    def test_forged_c03_visit_is_rejected(self):
+        source = self._successor()
+        forged = dict(source.teacher_state["last_visit"])
+        forged["student_sha256"] = "f" * 64
+        forged_identity = TeacherVisitIdentity.from_record({
+            **forged,
+            "visit_id": TeacherVisitIdentity(
+                forged["run_identity_sha256"], forged["run_seed"],
+                forged["generation"], forged["accepted_manifest_sha256"],
+                forged["teacher_identity"], forged["teacher_epoch"],
+                forged["student_sha256"], forged["selection_seed"], forged["cursor"],
+                forged["capability_id"], forged["policy_key"],
+            ).visit_id,
+        })
+        source = replace(
+            source,
+            teacher_state={**source.teacher_state, "last_visit": forged_identity.to_record()},
+        )
+        self.publish(source, acceptance=self.binding(source))
+        with self.assertRaises(BilqisError) as caught:
+            materialize_native_projection(self.run)
+        self.assertEqual(
+            caught.exception.context.get("reason"),
+            "CONTROL_PLANE_NATIVE_C16_ACCEPTED_INVALID",
+        )
+
+    def test_divergent_duplicate_rejection_event_is_rejected(self):
+        parent = self.parent()
+        state = parent.teacher_state
+        visit = TeacherVisitIdentity(
+            parent.run_identity.digest, parent.run_identity.run_seed,
+            parent.generation, self._parent_pointer["manifest_sha256"],
+            state["teacher_identity"], state["teacher_epoch"],
+            candidate_identity_digest(parent.retained_state),
+            state["next_seed"], state["cursor"], "A.REJECT", "policy:native",
+        )
+        record_bamf_rejection(self.run, parent, {
+            "schema": "bilqis.bamf.c16.3-rejection/v2",
+            "visit_id": visit.visit_id,
+            "selected_option_id": "option:native",
+            "selected_policy_key": "policy:native",
+            "candidate_optimizer_step": parent.retained_state.optimizer_step + 1,
+            "retained_optimizer_step": parent.retained_state.optimizer_step,
+            "retention_reason": "NATIVE_REJECTED",
+            "capability": "A.REJECT",
+            "decision": {"decision": "REJECT"},
+        })
+        ledger = self.run / "events.jsonl"
+        row = json.loads(ledger.read_text(encoding="utf-8").splitlines()[-1])
+        divergent = {**row, "evidence": {**row["evidence"], "capability": "A.DRIFT"}}
+        with ledger.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(divergent, sort_keys=True) + "\n")
+        with self.assertRaises(BilqisError) as caught:
+            materialize_native_projection(self.run)
+        self.assertEqual(
+            caught.exception.context.get("reason"),
+            "CONTROL_PLANE_NATIVE_REJECTION_DUPLICATE_DRIFT",
+        )
+
+    def test_whole_history_pointer_race_is_retried(self):
+        self.parent()
+        socket = self.root / "race.sock"
+        service = ControlPlaneService(self.run, socket)
+
+        def race(_run_dir):
+            ErrorBus.raise_(
+                SCHOOL.BAMF_CONTROL_PLANE.INVALID,
+                reason="CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED",
+            )
+
+        with patch(
+            "bilqis_mlx.control_plane.native_source.materialize_native_projection",
+            side_effect=race,
+        ):
+            self.assertEqual(refresh_native_events(service), ())
 
 
 if __name__ == "__main__":

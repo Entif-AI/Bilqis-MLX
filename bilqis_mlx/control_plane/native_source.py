@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import threading
+import weakref
 
 from bilqis_mlx.errors import BilqisError
 
@@ -12,16 +14,29 @@ from .native_rejections import rejection_material
 
 
 _SEEN_ATTR = "_cp07_native_event_ids"
+_SERVICE_LOCKS = weakref.WeakKeyDictionary()
+_SERVICE_LOCKS_GUARD = threading.Lock()
+
+
+def _service_lock(service):
+    with _SERVICE_LOCKS_GUARD:
+        lock = _SERVICE_LOCKS.get(service)
+        if lock is None:
+            lock = threading.Lock()
+            _SERVICE_LOCKS[service] = lock
+        return lock
 
 
 def materialize_native_projection(run_dir: Path) -> NativeProjectionMaterial:
     history = authenticated_history(run_dir)
     records, events, manifests = [], [], []
+    parent = None
     for generation in history:
-        generated, emitted = accepted_records(generation)
+        generated, emitted = accepted_records(generation, parent)
         records.extend(generated)
         events.extend(emitted)
         manifests.append(generation.manifest_sha256)
+        parent = generation
     rejected_records, rejected_events = rejection_material(Path(run_dir), history)
     records.extend(rejected_records)
     events.extend(rejected_events)
@@ -48,19 +63,23 @@ def refresh_native_events(service):
     pointer = service.run_dir / "bamf-state.json"
     if not pointer.exists() and not pointer.is_symlink():
         return ()
-    try:
-        seen = getattr(service, _SEEN_ATTR, None)
-        if seen is None:
-            material = materialize_native_projection(service.run_dir)
-            setattr(service, _SEEN_ATTR, {
-                event_id for _family, _record, event_id in material.events})
-            return ()
-        _material, published = publish_native_events(service, seen_event_ids=seen)
-        return published
-    except BilqisError as error:
-        if error.context.get("reason") == "BAMF_GENERATION_POINTER_CHANGED_DURING_READ":
-            return ()
-        raise
+    with _service_lock(service):
+        try:
+            seen = getattr(service, _SEEN_ATTR, None)
+            if seen is None:
+                material = materialize_native_projection(service.run_dir)
+                setattr(service, _SEEN_ATTR, {
+                    event_id for _family, _record, event_id in material.events})
+                return ()
+            _material, published = publish_native_events(service, seen_event_ids=seen)
+            return published
+        except BilqisError as error:
+            if error.context.get("reason") in {
+                "BAMF_GENERATION_POINTER_CHANGED_DURING_READ",
+                "CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED",
+            }:
+                return ()
+            raise
 
 
 __all__ = (
