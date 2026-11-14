@@ -8,11 +8,76 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.runtime.bamf_operator.session import (
-    _execution_context, _visit, operate_bamf,
+    _execution_context, _visit, operate_bamf, prepare_bamf_visit,
 )
 
 
 class BamfOperatorRoutingTests(unittest.TestCase):
+    def test_accepted_visit_persists_native_resource_observation(self):
+        with TemporaryDirectory() as temporary:
+            parent = SimpleNamespace(
+                retained_state=SimpleNamespace(optimizer_step=11),
+                optimizer_hyperparameters="hparams",
+            )
+            context = SimpleNamespace(release=object())
+            identity = SimpleNamespace(visit_id="visit:resource", policy_key="policy:resource")
+            selection = SimpleNamespace(
+                status="TEACHER_SELECTED",
+                visit=SimpleNamespace(identity=identity),
+                offer=SimpleNamespace(
+                    capability_id="capability:resource", source_seed=17,
+                    rows=lambda: ({"id": "row:resource"},),
+                ),
+            )
+            transaction = SimpleNamespace(
+                parent=SimpleNamespace(optimizer_step=11), update_steps=1,
+                training_authorities=("authority",),
+            )
+            step = SimpleNamespace(
+                transaction=transaction,
+                realized_cost={
+                    "wall_seconds": 30.0,
+                    "optimizer_steps": 1,
+                    "c08_memory_budget_bytes": 64 * 1024 ** 3,
+                },
+            )
+            decision = SimpleNamespace(accepted=True)
+            retained = SimpleNamespace(optimizer_step=12)
+            successor = object()
+            with patch(
+                    "bilqis_mlx.runtime.bamf_operator.session._execution_context",
+                    return_value=(parent, context, "atlas", "feature")), patch(
+                    "bilqis_mlx.runtime.bamf_operator.session.schedule_program_from_executable_release",
+                    return_value="program"), patch(
+                    "bilqis_mlx.runtime.bamf_operator.session.accepted_priority_school",
+                    return_value="school"), patch(
+                    "bilqis_mlx.runtime.bamf_operator.session.select_foundation_priority_visit",
+                    return_value=selection), patch(
+                    "bilqis_mlx.runtime.bamf_operator.session._Capture",
+                    return_value="capture"), patch(
+                    "bilqis_mlx.runtime.bamf_operator.session.FactoryDeliveryObservation",
+                    return_value="observation"), patch(
+                    "bilqis_mlx.runtime.bamf_operator.session.execute_accepted_priority_candidate",
+                    return_value=step), patch(
+                    "bilqis_mlx.runtime.bamf_operator.session.evaluate_factory_retention_candidate",
+                    return_value="evaluation"), patch(
+                    "bilqis_mlx.runtime.bamf_operator.session.issue_factory_retention_decision",
+                    return_value=decision), patch(
+                    "bilqis_mlx.runtime.bamf_operator.session.resolve_candidate",
+                    return_value=retained), patch(
+                    "bilqis_mlx.runtime.bamf_operator.session.derive_accepted_teacher_successor",
+                    return_value=successor) as derive:
+                prepared = prepare_bamf_visit(Path(temporary))
+        self.assertIs(prepared.successor, successor)
+        event = derive.call_args.kwargs["delivery_events"][0]
+        self.assertEqual(event["event"], "BAMF_C16_3_ACCEPTED")
+        resource = event["resource"]
+        self.assertEqual(resource["schema"], "bilqis.bamf.c16.3-resource-observation/v1")
+        self.assertEqual(resource["memory_budget_bytes"], 64 * 1024 ** 3)
+        self.assertGreater(resource["disk_used_bytes"], 0)
+        self.assertEqual(resource["optimizer_steps"], 1)
+        self.assertEqual(resource["wall_seconds"], 30.0)
+
     def test_execution_context_uses_accepted_release_without_requiring_c07_lease(self):
         parent = object()
         context = object()
@@ -35,7 +100,7 @@ class BamfOperatorRoutingTests(unittest.TestCase):
                 return_value=accepted), patch(
                 "bilqis_mlx.runtime.bamf_operator.session.AtlasArtifactIdentity",
                 return_value="identity"), patch(
-                "bilqis_mlx.runtime.bamf_operator.session.resolve_atlas_artifact_selection",
+                "bilqis_mlx.runtime.bamf_operator.session._atlas_snapshot.resolve_atlas_artifact_selection",
                 return_value=selection), patch(
                 "bilqis_mlx.runtime.bamf_operator.session.authenticate_bamf_execution_feature_context",
                 return_value=authenticated), patch(
@@ -85,11 +150,16 @@ class BamfOperatorRoutingTests(unittest.TestCase):
             optimizer_hyperparameters="hparams",
         )
         context = SimpleNamespace(release=object())
-        identity = SimpleNamespace(visit_id="visit:beta", policy_key="policy:beta")
+        identity = SimpleNamespace(
+            visit_id="visit:beta", policy_key="policy:beta",
+            to_record=lambda: {"visit_id": "visit:beta"})
         selection = SimpleNamespace(
             status="TEACHER_SELECTED",
             option_id="capability:beta",
-            visit=SimpleNamespace(identity=identity),
+            visit=SimpleNamespace(
+                identity=identity,
+                projection=SimpleNamespace(teacher_state={
+                    "last_visit_receipt": {"schema": "fixture-receipt"}})),
             offer=SimpleNamespace(
                 capability_id="capability:beta", source_seed=17,
                 rows=lambda: ({"id": "row:1"},),
@@ -151,10 +221,15 @@ class BamfOperatorRoutingTests(unittest.TestCase):
             optimizer_hyperparameters="hparams",
         )
         context = SimpleNamespace(release=SimpleNamespace(execution_plan=OrderTrap()))
-        identity = SimpleNamespace(visit_id="visit:beta", policy_key="policy:beta")
+        identity = SimpleNamespace(
+            visit_id="visit:beta", policy_key="policy:beta",
+            to_record=lambda: {"visit_id": "visit:beta"})
         selection = SimpleNamespace(
             status="TEACHER_SELECTED", option_id="capability:beta",
-            visit=SimpleNamespace(identity=identity),
+            visit=SimpleNamespace(
+                identity=identity,
+                projection=SimpleNamespace(teacher_state={
+                    "last_visit_receipt": {"schema": "fixture-receipt"}})),
             offer=SimpleNamespace(
                 capability_id="capability:beta", source_seed=17,
                 rows=lambda: ({"id": "row:beta"},),

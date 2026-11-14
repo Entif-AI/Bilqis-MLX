@@ -15,7 +15,10 @@ from bilqis_mlx.learning.salience_teacher import _teacher
 from bilqis_mlx.learning.salience_teacher import PrioritySchoolContext, PriorityStudentIdentity
 from bilqis_mlx.learning.learning_experiment import Settings
 from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
-from bilqis_mlx.learning.teacher_visit_identity import derive_teacher_visit_identity, record_teacher_visit_identity
+from bilqis_mlx.learning.teacher_visit_identity import (
+    derive_teacher_visit_identity, record_teacher_visit_authority,
+    record_teacher_visit_identity,
+)
 from bilqis_mlx.runtime.atlas_optimizer import AdamWHyperparameters
 from bilqis_mlx.runtime.atlas_training_contracts import BamfVisitProvenance
 from bilqis_mlx.runtime.factory_candidate_training import execute_factory_candidate_step
@@ -152,6 +155,7 @@ def select_accepted_priority_visit(
             generation=parent.generation, accepted_manifest_sha256=cache.accepted_manifest_sha256,
             capability_id=capability, policy_key=key)
         recorded = record_teacher_visit_identity(selected.teacher_state, identity)
+        recorded = record_teacher_visit_authority(recorded, identity)
         visit = _issue_bound_visit(recorded, identity)
         return _issue_result('TEACHER_SELECTED', option.stable_id, offer, visit, policy,
                              metadata, grade, sorted(holds), run_dir)

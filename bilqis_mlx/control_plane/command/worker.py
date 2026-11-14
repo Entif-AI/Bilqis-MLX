@@ -11,8 +11,11 @@ from bilqis_mlx.mission_control.operator import ActionReceiptState
 
 from .executor import C11CommandExecutor
 from .store import CommandStore
-from .manager import build_receipt, error_ref_from_exception
+from .receipts import build_receipt, error_ref_from_exception
 from ..transport import _invalid
+
+
+INTERRUPTED_RETURN_CODE = 130
 
 
 def _now() -> int:
@@ -72,7 +75,7 @@ def _prepare_worker(store, executor, operation_id):
                 request_sha256=request_digest,
                 state=ActionReceiptState.FAILED,
                 target_ref=plan.target.ref,
-                error_ref=error_ref_from_exception(error),
+                error_ref_value=error_ref_from_exception(error),
             )
             store.write_terminal(operation_id, failure)
             store.write_worker_result(
@@ -92,6 +95,12 @@ def _readback_after_execution(executor, plan, returncode, execution_error):
             postcondition = executor.postcondition_after_success(plan)
         except (BilqisError, MissionControlContractError, OSError) as error:
             execution_error = error_ref_from_exception(error)
+    elif returncode == INTERRUPTED_RETURN_CODE:
+        try:
+            postcondition = executor.postcondition_after_interrupt(plan)
+        except (BilqisError, MissionControlContractError, OSError) as error:
+            if execution_error is None:
+                execution_error = error_ref_from_exception(error)
     else:
         try:
             postcondition = executor.reconcile(plan)
@@ -118,7 +127,7 @@ def _finalize_worker(
                 request_sha256=request_digest,
                 state=ActionReceiptState.FAILED,
                 target_ref=plan.target.ref,
-                error_ref=execution_error
+                error_ref_value=execution_error
                 or error_ref_from_exception(
                     RuntimeError("COMMAND_WORKER_SPAWN_FAILED")),
             )
@@ -137,7 +146,7 @@ def run_worker(
     executor=None,
 ) -> int:
     store = CommandStore(store_root)
-    executor = executor or C11CommandExecutor(run_dir)
+    executor = executor or C11CommandExecutor(run_dir, store=store)
     with store.execution_lock(operation_id):
         prepared = _prepare_worker(store, executor, operation_id)
         if isinstance(prepared, int):

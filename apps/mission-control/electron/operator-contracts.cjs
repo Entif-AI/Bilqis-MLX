@@ -24,7 +24,7 @@ const PARAMETER_KEYS = new Set([
   "atlas_admission_scope", "admission_policy", "minutes", "steps_per_visit",
   "max_visits", "source_prefetch_workers", "batch_size", "reserve_gib",
   "autonomous_curriculum", "verify_source", "timing_trace", "flash_mode",
-  "source_teaching_enrichment", "admit_next_grade_with_debt",
+  "source_teaching_enrichment", "admit_next_grade_with_debt", "operation_id",
 ]);
 const PYTHON_WHITESPACE_ONLY = /^[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/u;
 
@@ -215,7 +215,7 @@ function validatePostcondition(value) {
 function validateProjection(value, schema, receiptRequired) {
   const keys = [
     "schema", "operation_id", "request", "action", "mode", "target", "target_ref",
-    "expected_postcondition", "consequence", "preflight", "receipt", "postcondition",
+    "expected_postcondition", "consequence", "preflight", "receipt", "postcondition", "logs",
   ];
   if (!exactKeys(value, keys) || value.schema !== schema ||
       !/^operation:[0-9a-f]{64}$/.test(value.operation_id) || !ACTIONS.has(value.action) ||
@@ -234,6 +234,13 @@ function validateProjection(value, schema, receiptRequired) {
   if (receiptRequired) validateReceipt(value.receipt);
   else if (value.receipt !== null) invalid("PREVIEW_RECEIPT");
   validatePostcondition(value.postcondition);
+  if (value.logs !== null) {
+    if (!exactKeys(value.logs, ["stdout_tail", "stderr_tail"])) invalid("LOGS");
+    for (const key of ["stdout_tail", "stderr_tail"]) {
+      const tail = value.logs[key];
+      if (tail !== null && (typeof tail !== "string" || tail.length > 4096)) invalid("LOG_TAIL");
+    }
+  }
   return value;
 }
 

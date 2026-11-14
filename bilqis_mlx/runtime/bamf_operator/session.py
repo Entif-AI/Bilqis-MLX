@@ -8,6 +8,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
+import math
+import shutil
 import time
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -32,9 +34,8 @@ from bilqis_mlx.runtime.foundation_teacher_owner import (
     derive_accepted_teacher_successor, select_foundation_priority_visit,
 )
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
-from bilqis_mlx.semantics.atlas.snapshot import (
-    AtlasArtifactIdentity, resolve_atlas_artifact_selection,
-)
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactIdentity
+import bilqis_mlx.semantics.atlas.snapshot as _atlas_snapshot
 from .locking import bamf_operator_lock
 
 
@@ -72,7 +73,7 @@ def _execution_context(run_dir: Path):
     context = host.source_context(source_root=LEGACY_SOURCE.resolve())
     accepted = read_accepted_generation_feature_context(run_dir / "bamf-state.json")
     identity = accepted.receipt
-    selection = resolve_atlas_artifact_selection(AtlasArtifactIdentity(
+    selection = _atlas_snapshot.resolve_atlas_artifact_selection(AtlasArtifactIdentity(
         identity.source_atlas_bundle_id,
         identity.source_release_sha256,
         identity.source_source_bundle_id,
@@ -120,6 +121,29 @@ def _step_seed(visit_id: str) -> int:
         f"bilqis.bamf.c16.3-step-seed/v1|{visit_id}".encode()).digest()[:8], "big")
 
 
+def _resource_observation(run_dir: Path, step) -> dict:
+    """Capture only resource facts the accepted visit can truthfully support."""
+    cost = getattr(step, "realized_cost", None)
+    if not isinstance(cost, dict):
+        _invalid("BAMF_C16_3_RESOURCE_OBSERVATION_INVALID")
+    budget = cost.get("c08_memory_budget_bytes")
+    wall_seconds = cost.get("wall_seconds")
+    optimizer_steps = cost.get("optimizer_steps")
+    if (type(budget) is not int or budget <= 0
+            or type(wall_seconds) not in (int, float) or type(wall_seconds) is bool
+            or not math.isfinite(wall_seconds) or wall_seconds <= 0
+            or type(optimizer_steps) is not int or optimizer_steps < 1):
+        _invalid("BAMF_C16_3_RESOURCE_OBSERVATION_INVALID")
+    disk_used = shutil.disk_usage(Path(run_dir)).used
+    return {
+        "schema": "bilqis.bamf.c16.3-resource-observation/v1",
+        "memory_budget_bytes": budget,
+        "disk_used_bytes": disk_used,
+        "optimizer_steps": optimizer_steps,
+        "wall_seconds": float(wall_seconds),
+    }
+
+
 def prepare_bamf_visit(run_dir: Path) -> BamfPreparedVisit:
     """Compose the production visit through retention without publishing it."""
     parent, context, atlas_path, feature_path = _execution_context(run_dir)
@@ -153,6 +177,7 @@ def prepare_bamf_visit(run_dir: Path) -> BamfPreparedVisit:
                 "event": "BAMF_C16_3_ACCEPTED",
                 "optimizer_step": retained.optimizer_step,
                 "capability": capability,
+                "resource": _resource_observation(run_dir, step),
             },))
     return BamfPreparedVisit(
         "ACCEPTED" if decision.accepted else "REJECTED",
@@ -173,6 +198,7 @@ def _visit(run_dir: Path, reserve_gib: float):
         record_bamf_rejection(run_dir, parent, {
             "schema": "bilqis.bamf.c16.3-rejection/v2",
             "visit_id": selection.visit.identity.visit_id,
+            "teacher_visit": selection.visit.identity.to_record(),
             "selected_option_id": selection.option_id,
             "selected_policy_key": selection.visit.identity.policy_key,
             "candidate_optimizer_step": (

@@ -260,6 +260,7 @@ def _execute_prepared_candidate(
         "wall_seconds": time.perf_counter() - start,
         "loss_total": float(loss_total.item()),
         "c08_estimated_peak_bytes": resource_plan.estimated_peak_bytes,
+        "c08_memory_budget_bytes": memory_budget.allocation_bytes,
         "optimizer_steps": transaction.update_steps,
     }
     capture_realized_delivery(

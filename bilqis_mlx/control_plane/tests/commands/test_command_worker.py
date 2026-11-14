@@ -9,7 +9,7 @@ from bilqis_mlx.control_plane.command.model import CommandMode
 from bilqis_mlx.control_plane.command.worker import run_worker
 from bilqis_mlx.control_plane.command.manager import CommandManager
 
-from .command_support import DIGESTS, FakeExecutor, Launcher, request
+from ..command_support import DIGESTS, FakeExecutor, Launcher, request
 
 
 class CommandWorkerTests(unittest.TestCase):
