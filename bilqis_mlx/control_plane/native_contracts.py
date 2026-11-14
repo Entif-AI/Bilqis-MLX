@@ -115,7 +115,7 @@ def record_meta(
     return RecordMeta(
         record_id=record_id, run=run, materialized_at=materialized,
         observed_at=observed, as_of=as_of, coverage=coverage,
-        authority=AuthorityClass.SOURCE_AUTHORITATIVE,
+        authority=AuthorityClass.DERIVED,
         source_refs=(f"bamf-manifest:{generation.manifest_sha256}",),
         evidence_refs=tuple(evidence_refs),
         receipt_refs=(f"bamf-acceptance:{generation.acceptance_sha256}",

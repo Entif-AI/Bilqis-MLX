@@ -253,8 +253,19 @@ class NativeBamfProjectionTests(GenerationAcceptanceFixture, unittest.TestCase):
             materialize_native_projection(self.run)
         self.assertEqual(
             caught.exception.context.get("reason"),
-            "CONTROL_PLANE_NATIVE_REJECTION_DUPLICATE_DRIFT",
+            "CONTROL_PLANE_NATIVE_REJECTION_EVENT_ID_DRIFT",
         )
+
+    def test_non_c16_rejection_receipt_is_authenticated_but_not_projected(self):
+        parent = self.parent()
+        record_bamf_rejection(self.run, parent, {"reason": "retention_gate"})
+        material = materialize_native_projection(self.run)
+        rejected = [
+            record for record in material.records
+            if isinstance(record, CandidateDecision)
+            and record.outcome.value == "REJECTED"
+        ]
+        self.assertEqual(rejected, [])
 
     def test_whole_history_pointer_race_is_retried(self):
         self.parent()

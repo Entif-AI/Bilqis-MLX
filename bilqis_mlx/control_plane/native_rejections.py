@@ -59,16 +59,16 @@ def _verified_rejection(native, generation, data_plane):
     return event_id, authority_sha, receipt_sha, evidence
 
 
-def _project_rejection(native, generation, data_plane):
-    event_id, authority_sha, receipt_sha, evidence = _verified_rejection(
-        native, generation, data_plane)
+def _project_verified_rejection(verified, generation):
+    event_id, authority_sha, receipt_sha, evidence = verified
+    if evidence.get("schema") != "bilqis.bamf.c16.3-rejection/v2":
+        return (), ()
     capability = evidence.get("capability")
     visit_id = evidence.get("visit_id")
     policy_key = evidence.get("selected_policy_key")
     candidate_step = evidence.get("candidate_optimizer_step")
     retained_step = evidence.get("retained_optimizer_step")
-    if (evidence.get("schema") != "bilqis.bamf.c16.3-rejection/v2"
-            or not isinstance(capability, str) or not capability
+    if (not isinstance(capability, str) or not capability
             or not isinstance(visit_id, str) or not visit_id
             or not isinstance(policy_key, str) or not policy_key
             or type(candidate_step) is not int
@@ -116,7 +116,7 @@ def rejection_material(run_dir: Path, history: tuple[AuthenticatedGeneration, ..
     if ledger.is_symlink() or not ledger.is_file():
         invalid("CONTROL_PLANE_NATIVE_EVENT_LEDGER_INVALID")
     by_manifest = {item.manifest_sha256: item for item in history}
-    records, events, seen = [], [], {}
+    records, events, seen_receipts = [], [], set()
     from bilqis_mlx.data_plane import data_plane
 
     with ledger.open("rb") as stream:
@@ -129,17 +129,16 @@ def rejection_material(run_dir: Path, history: tuple[AuthenticatedGeneration, ..
                 invalid("CONTROL_PLANE_NATIVE_EVENT_LEDGER_INVALID")
             if not isinstance(native, dict) or native.get("event") != "BAMF_CANDIDATE_REJECTED":
                 continue
-            event_id = native.get("event_id")
             generation = by_manifest.get(native.get("student_manifest_sha256"))
-            if generation is None or not is_digest(event_id):
+            if generation is None:
                 invalid("CONTROL_PLANE_NATIVE_REJECTION_INVALID")
-            if event_id in seen:
-                if native != seen[event_id]:
-                    invalid("CONTROL_PLANE_NATIVE_REJECTION_DUPLICATE_DRIFT")
+            verified = _verified_rejection(native, generation, data_plane())
+            receipt_sha = verified[2]
+            if receipt_sha in seen_receipts:
                 continue
-            seen[event_id] = native
-            projected_records, projected_events = _project_rejection(
-                native, generation, data_plane())
+            seen_receipts.add(receipt_sha)
+            projected_records, projected_events = _project_verified_rejection(
+                verified, generation)
             records.extend(projected_records)
             events.extend(projected_events)
     return tuple(records), tuple(events)
