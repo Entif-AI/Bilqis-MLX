@@ -15,7 +15,6 @@ from bilqis_mlx.mission_control.operator import (
     ActionReceiptState, OperatorActionReceiptV2, OperatorActionRequestV2,
 )
 
-from .executor import C11CommandExecutor
 from .launch import launch_command_worker
 from .model import (
     CommandMode, ResolvedCommandTarget, intent_sha256, operation_id_for,
@@ -112,7 +111,10 @@ class CommandManager:
     ):
         self.run_dir = Path(run_dir).expanduser().resolve()
         self.store = CommandStore(store_root)
-        self.executor = executor or C11CommandExecutor(self.run_dir)
+        if executor is None:
+            from .executor import C11CommandExecutor
+            executor = C11CommandExecutor(self.run_dir)
+        self.executor = executor
         self.launcher = launcher or (
             lambda operation_id: launch_command_worker(
                 store_root=self.store.root,
@@ -146,7 +148,8 @@ class CommandManager:
         return request_sha256(request)
 
     def submit(
-        self, request: OperatorActionRequestV2,
+        self, request: OperatorActionRequestV2, *,
+        expected_target_ref: str | None = None,
     ) -> OperatorActionReceiptV2:
         if type(request) is not OperatorActionRequestV2:
             _invalid("CONTROL_PLANE_COMMAND_REQUEST_INVALID")
@@ -164,7 +167,7 @@ class CommandManager:
                 return self._retry_locked(
                     request, operation_id, semantic, existing)
             return self._admit_new_locked(
-                request, operation_id, semantic)
+                request, operation_id, semantic, expected_target_ref)
 
     def _retry_locked(
         self, request, operation_id: str, semantic: str, existing,
@@ -181,6 +184,7 @@ class CommandManager:
 
     def _admit_new_locked(
         self, request: OperatorActionRequestV2, operation_id: str, semantic: str,
+        expected_target_ref: str | None,
     ) -> OperatorActionReceiptV2:
         self.store.write_submission(operation_id, request)
         try:
@@ -188,6 +192,12 @@ class CommandManager:
         except (BilqisError, MissionControlContractError, OSError) as error:
             return self._persist_preflight_rejection(
                 request, operation_id, error)
+        if expected_target_ref is not None and plan.target.ref != expected_target_ref:
+            return self._persist_preflight_rejection(
+                request, operation_id,
+                "CONTROL_PLANE_COMMAND_EXPECTED_TARGET_STALE",
+                target=plan.target,
+            )
         if plan.intent_sha256 != semantic:
             _invalid("CONTROL_PLANE_COMMAND_PLAN_IDENTITY_DRIFT")
         self.store.write_plan(plan)
@@ -207,13 +217,17 @@ class CommandManager:
             request, operation_id, plan, accepted)
 
     def _persist_preflight_rejection(
-        self, request, operation_id: str, error: Exception,
+        self, request, operation_id: str, error: Exception | str, *,
+        target: ResolvedCommandTarget | None = None,
     ) -> OperatorActionReceiptV2:
-        target = _minimal_target(self.run_dir)
+        target = target or _minimal_target(self.run_dir)
         self.store.write_preflight(operation_id, {
             "kind": "rejected-preflight",
             "target": target.to_record(),
-            "error_ref": error_ref_from_exception(error),
+            "error_ref": (
+                _error_ref(error) if isinstance(error, str)
+                else error_ref_from_exception(error)
+            ),
         })
         terminal = self._rejection(
             request, operation_id, error, target=target)

@@ -41,6 +41,7 @@ import {
 } from "./foundation/accessibility.mjs";
 import { createHomeController } from "./home/home-controller.mjs";
 import { createResourceController } from "./resources/resource-controller.mjs";
+import { createOperateController } from "./operate/operate-controller.mjs";
 import { createCapabilityExplorer } from "./capability/app.mjs";
 import { activateDomainViews } from "./foundation/domain-controller.mjs";
 import { createInteractionController } from "./interactions/controller.mjs";
@@ -76,6 +77,7 @@ const interactionController = createInteractionController({
   onOpenRef: (ref) => { state = withRoute(state, routeForObjectRef(ref)); render(); },
   announce,
 });
+const operateController = createOperateController(window.bamfMissionControl);
 
 const frameShell = createFrameShell({
   getState: () => state, setState: next => { state = next; }, getDefense: () => defense,
@@ -151,7 +153,8 @@ function render() {
   setHash();
   activateDomainViews({
     state, getState: () => state, defense, api: window.bamfMissionControl,
-    homeController, resourceController, capabilityExplorer, onInspect: openInspector,
+    homeController, resourceController, operateController,
+    capabilityExplorer, onInspect: openInspector, onAnnounce: announce,
   });
   window.queueMicrotask(() => interactionController.render());
 }

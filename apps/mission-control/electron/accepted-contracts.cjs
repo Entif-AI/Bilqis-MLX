@@ -10,6 +10,14 @@ const QUERY_REQUEST_SCHEMA = "bilqis.bamf.control-plane.query/v1";
 const QUERY_PAGE_SCHEMA = "bilqis.bamf.control-plane.query-page/v1";
 const QUERY_ERROR_SCHEMA = "bamf.gui07.query-error/v1";
 const EVENT_ENVELOPE_SCHEMA = "bilqis.bamf.mission-control.event-envelope/v1";
+const {
+  validateInspection,
+  validateOperationRef,
+  validatePreview,
+  validatePreviewRequest,
+  validateReceipt,
+  validateSubmitRequest,
+} = require("./operator-contracts.cjs");
 const QUERY_FAMILIES = new Set([
   "record", "run", "school", "capability", "episode", "generation", "semantic", "frame",
   "neural", "memory", "teacher", "salience", "correction", "resource",
@@ -163,9 +171,9 @@ function createAcceptedValidators(assertOperatorView, frameContracts) {
       return value;
     },
     queryRequest: validateQueryRequest,
-    dryRunRequest: unavailable,
-    commandRequest: unavailable,
-    receiptRef: unavailable,
+    dryRunRequest: validatePreviewRequest,
+    commandRequest: validateSubmitRequest,
+    receiptRef: validateOperationRef,
     response(method, value, request) {
       if (method === "status") return validateStatus(value);
       if (method === "snapshot") {
@@ -179,6 +187,9 @@ function createAcceptedValidators(assertOperatorView, frameContracts) {
         return assertOperatorView(value);
       }
       if (method === "query") return validateQueryResponse(value);
+      if (method === "dryRun") return validatePreview(value);
+      if (method === "command") return validateReceipt(value);
+      if (method === "receipt") return validateInspection(value);
       unavailable();
     },
     event: validateEvent,

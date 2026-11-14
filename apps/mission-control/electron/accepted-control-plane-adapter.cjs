@@ -66,6 +66,21 @@ class AcceptedControlPlaneAdapter {
     return this.broker.query(request);
   }
 
+  async dryRun(session, request) {
+    this.#requireSession(session);
+    return this.broker.previewCommand(request.request);
+  }
+
+  async command(session, request) {
+    this.#requireSession(session);
+    return this.broker.submitCommand(request.request, request.expectedTargetRef);
+  }
+
+  async receipt(session, operationId) {
+    this.#requireSession(session);
+    return this.broker.inspectCommand(operationId);
+  }
+
   async subscribe(session, next) {
     this.#requireSession(session);
     if (typeof next !== "function") {

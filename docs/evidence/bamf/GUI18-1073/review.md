@@ -3,7 +3,7 @@
 Issue: #1073. Branch:
 `codex/1073-gui18-global-interactions-20261113`.
 
-Status: `LOCAL_ACCEPTANCE_PASSED_PENDING_FINAL_UNIFIED_SYNC`.
+Status: `LOCAL_ACCEPTANCE_PASSED_PENDING_HOSTED_VERIFICATION`.
 
 ## Scope reviewed
 
@@ -154,26 +154,41 @@ The checked-in replay is
 returns `GUI18_BROWSER_JOURNEY_PASS` when executed by the repository browser
 harness.
 
-## Local verification before final unified sync
+## Final local verification
 
-Completed during implementation:
+The feature commit `c6070b4a0e0ba961c08b90569c5bd705a0b48ebd` was composed
+with unified `cde4bf7e7b1aa605d901149bbc6e619dbf8f4ada`, which added
+GUI17 Operate and the current GUI22 School/Curriculum Atlas surfaces. The only
+merge conflicts were the shared stylesheet list and renderer controller
+initialization; both features were retained. The composed `renderer.mjs` is 357
+lines, below the 360-line structural interruption threshold.
 
-- focused GUI18 and neighboring domain suites: PASS;
-- full Mission Control renderer before the last small browser-driven fixes:
-  221/221 PASS;
-- Mission Control Electron security after locked `npm ci --ignore-scripts`:
-  47/47 PASS;
-- Python Electron bridge: 5/5 PASS;
-- development structure/governance: 0 violations;
-- repeated `git diff --check`: PASS.
+Exact composed-tree receipts:
 
-Final exact-tree counts are intentionally deferred until after the browser-driven
-fixes and current unified have been composed. Those final receipts must replace
-this provisional section before turn-in.
+- GUI18 + GUI17 + GUI22 focused seam: 60/60 PASS;
+- full Mission Control renderer: 259/259 PASS;
+- Electron security: 51/51 PASS;
+- Python Electron bridge: 6/6 PASS;
+- Mission Control Python: 80/80 PASS;
+- development structure: 0 violations;
+- governance integrity: 0 violations;
+- BAMF flow control: PASS, tests 15/15;
+- legacy trainer authority: PASS, tests 7/7;
+- `git diff --check`: PASS;
+- `git diff --cached --check`: PASS.
+
+The repository `verify:leaf` wrapper was also exercised before the unified
+merge commit. Its differential selector compares against the pre-merge ancestor,
+so it included the 15 newly consumed unified commits and selected GUI17
+control-plane learner/projection tests. In the fresh worktree those imports
+require MLX. GUI18 does not change that runtime surface and requires no learner
+execution. The exact GUI18 product/security/owner gates above are green. The
+leaf wrapper must be rerun on the clean committed head, where the merge has
+become part of the branch history rather than an uncommitted changed surface.
 
 ## Review decision
 
 The interaction architecture remains aligned with #1073 and the existing
 Mission Control authority model. No control-plane schema or learner mutation is
-required. The implementation is ready for final unified intake and exact-head
-qualification.
+required. Local acceptance is complete; only clean-head leaf-wrapper readback,
+remote fencing, and hosted verification remain before human merge review.
