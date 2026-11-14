@@ -25,6 +25,10 @@ from .query_contracts import (
     QueryFamily, QueryLink, QueryMode, QueryPage, QueryRequest, QueryState,
 )
 from .query_catalog import MissionControlQueryCatalog
+from .projection import (
+    PROJECTION_SCHEMA, PROJECTION_SCHEMA_VERSION, MissionControlProjection,
+    ProjectionFrontierState, ProjectionFrontierStatus, ProjectionStats,
+)
 from .registry import ALL_RECORD_TYPES, RECORD_BY_SCHEMA
 from .schema import record_schema, schema_bundle
 from .snapshots import (
@@ -40,6 +44,8 @@ __all__ = (
     "EventEnvelope", "FrameCompileReceipt", "GenerationManifest",
     "LearningEpisode", "MemorySnapshot", "MissionControlContractError",
     "MissionControlQueryCatalog",
+    "MissionControlProjection", "PROJECTION_SCHEMA", "PROJECTION_SCHEMA_VERSION",
+    "ProjectionFrontierState", "ProjectionFrontierStatus", "ProjectionStats",
     "NeuralRuntimeSample", "OperatorActionReceipt", "OperatorActionRequest",
     "OperatorView", "PartialEnvelope", "RECORD_BY_SCHEMA", "RecordMeta",
     "ResourceSample", "RunContext", "RunRef", "SalienceEvent",
