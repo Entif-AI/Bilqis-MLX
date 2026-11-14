@@ -49,7 +49,8 @@ class MissionControlQueryCatalog:
             item for item in self._records
             if type(item) in record_types and matches_identity(item, request)
         ]
-        if request.mode is QueryMode.CURRENT and request.record_id is None:
+        if (request.mode is QueryMode.CURRENT and request.record_id is None
+                and request.family is not QueryFamily.RECORD):
             rows = select_current(rows)
         return tuple(sorted(rows, key=record_sort_key))
 

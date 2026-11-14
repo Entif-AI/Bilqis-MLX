@@ -28,6 +28,8 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     "/domains/episode-model.mjs",
     "/domains/episode-view.mjs",
     "/domains/episodes.css",
+    "/domains/evidence-view.mjs",
+    "/domains/evidence.css",
     "/domains/neural-fixture.mjs",
     "/domains/neural-model.mjs",
     "/domains/neural-view.mjs",

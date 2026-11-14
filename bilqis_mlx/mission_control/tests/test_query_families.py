@@ -7,11 +7,13 @@ from bilqis_mlx.mission_control.query_contracts import (
     QueryFamily, QueryRequest, QueryState,
 )
 from bilqis_mlx.mission_control.query_catalog import MissionControlQueryCatalog
+from bilqis_mlx.mission_control.operator import OperatorActionReceipt
 from bilqis_mlx.mission_control.tests.samples import SAMPLES
 from bilqis_mlx.presentation.atlas_metrics import bamf_status
 
 
 _FAMILIES = (
+    QueryFamily.RECORD,
     QueryFamily.RUN,
     QueryFamily.SCHOOL,
     QueryFamily.CAPABILITY,
@@ -106,6 +108,27 @@ class MissionControlQueryFamilyTests(unittest.TestCase):
         self.assertEqual(receipt_page.state, QueryState.PRESENT)
         self.assertTrue(all(
             link.target_ref == "receipt:a" for link in receipt_page.links))
+
+    def test_forensic_record_family_finds_command_receipt_by_operation_identity(self):
+        receipt = next(item for item in SAMPLES if type(item) is OperatorActionReceipt)
+        page = MissionControlQueryCatalog(SAMPLES).query(QueryRequest(
+            QueryFamily.RECORD, reference=receipt.operation_id, limit=32))
+        self.assertEqual(page.state, QueryState.PRESENT)
+        self.assertEqual(page.records, (receipt,))
+
+    def test_forensic_record_family_preserves_conflicting_evidence_rows(self):
+        candidate = SAMPLES[6]
+        conflicting = replace(
+            candidate,
+            meta=replace(candidate.meta, record_id="decision:conflicting"),
+            candidate_id="candidate-conflicting",
+        )
+        page = MissionControlQueryCatalog((*SAMPLES, conflicting)).query(QueryRequest(
+            QueryFamily.RECORD, reference=candidate.capability_id, limit=32))
+        candidate_ids = {
+            item.candidate_id for item in page.records if hasattr(item, "candidate_id")
+        }
+        self.assertEqual(candidate_ids, {candidate.candidate_id, "candidate-conflicting"})
 
     def test_index_rejects_duplicate_record_identity(self):
         with self.assertRaises(ValueError):

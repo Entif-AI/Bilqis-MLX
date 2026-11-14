@@ -26,6 +26,7 @@ import {
 import { renderSchoolView } from "./domains/school-view.mjs";
 import { renderNeuralView } from "./domains/neural-view.mjs";
 import { renderEpisodesView } from "./domains/episode-view.mjs";
+import { renderEvidenceView } from "./domains/evidence-view.mjs";
 
 const labels = new Map(DESTINATIONS);
 const demoObjects = [
@@ -271,6 +272,15 @@ function renderCurrentView() {
       renderInspector();
       setHash();
     }, state.selected?.kind === "episode" ? state.selected.id : null);
+    return;
+  }
+  if (state.view === "evidence") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Exact Mission Control records, provenance links, bounded pagination and literal raw payloads.";
+    renderEvidenceView(domain, window.bamfMissionControl, state.context,
+      state.selected?.kind === "evidence" ? state.selected.id : null);
     return;
   }
   domain.hidden = true;

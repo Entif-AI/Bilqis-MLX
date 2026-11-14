@@ -13,6 +13,8 @@ const RENDERER_ASSETS = Object.freeze(new Map([
   ["/domains/episode-model.mjs", "domains/episode-model.mjs"],
   ["/domains/episode-view.mjs", "domains/episode-view.mjs"],
   ["/domains/episodes.css", "domains/episodes.css"],
+  ["/domains/evidence-view.mjs", "domains/evidence-view.mjs"],
+  ["/domains/evidence.css", "domains/evidence.css"],
   ["/index.html", "index.html"],
   ["/domains/neural-fixture.mjs", "domains/neural-fixture.mjs"],
   ["/domains/neural-model.mjs", "domains/neural-model.mjs"],

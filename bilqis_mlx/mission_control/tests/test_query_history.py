@@ -7,6 +7,7 @@ from bilqis_mlx.mission_control.envelopes import (
 )
 from bilqis_mlx.mission_control.model import AuthorityClass, CoverageState, RecordMeta
 from bilqis_mlx.mission_control.observability import GenerationManifest
+from bilqis_mlx.mission_control.operator import ActionReceiptState, OperatorActionReceipt
 from bilqis_mlx.mission_control.query_contracts import (
     DEFAULT_PAGE_SIZE, QueryFamily, QueryMode, QueryRequest, QueryState,
 )
@@ -65,6 +66,32 @@ class MissionControlQueryHistoryTests(unittest.TestCase):
             QueryRequest(QueryFamily.RUN, run_id="run-7"))
         self.assertEqual(
             [item.meta.record_id for item in page.records], ["operator:7:new"])
+
+    def test_historical_receipt_remains_exact_after_newer_generation(self):
+        run6 = replace(
+            RUN, generation=6, generation_manifest_sha256="6" * 64)
+        old = OperatorActionReceipt(
+            _meta("receipt:operation:6", run6, as_of=106),
+            "request-shared", "operation-shared", ActionReceiptState.COMPLETED,
+            108, "postcondition:6", None,
+        )
+        current = OperatorActionReceipt(
+            _meta("receipt:operation:7", RUN, as_of=118),
+            "request-shared", "operation-shared", ActionReceiptState.COMPLETED,
+            120, "postcondition:7", None,
+        )
+        catalog = MissionControlQueryCatalog((old, current))
+        historical = catalog.query(QueryRequest(
+            QueryFamily.RECORD, mode=QueryMode.HISTORICAL,
+            run_id="run-7", generation=6, reference="operation-shared",
+        ))
+        newer = catalog.query(QueryRequest(
+            QueryFamily.RECORD, mode=QueryMode.HISTORICAL,
+            run_id="run-7", generation=7, reference="operation-shared",
+        ))
+        self.assertEqual(historical.records, (old,))
+        self.assertEqual(newer.records, (current,))
+        self.assertEqual(historical.records[0].postcondition_ref, "postcondition:6")
 
     def test_historical_link_and_reference_queries_bind_exact_identity(self):
         current = OperatorView(
