@@ -1,3 +1,4 @@
+import { escapeText as esc } from "../frames/frame-model.mjs";
 import { DESTINATIONS, shellPosture } from "../shell-state.mjs";
 import { renderComponentCatalog } from "../component-catalog.mjs";
 import { renderSchoolView } from "../school/school-view.mjs";
@@ -18,6 +19,7 @@ const demoObjects = [
   ["capability", "B.AND"],
   ["episode", "episode-record:fixture:retained-44239"],
   ["semantic", "sem:logic.and"],
+  ["frame", "frame:quad-fast"],
   ["memory", stableMemoryIdentity(currentMemoryGeneration().slots[0])],
   ["checkpoint", "generation:44238"],
   ["evidence", "receipt:fixture-001"],
@@ -55,6 +57,8 @@ export function renderContext(state, defense) {
     `Generation ${context.generation}; manifest ${context.generationManifest}`,
   );
   document.querySelector("#freshness").textContent = context.freshness;
+  document.querySelector("#run-selector").replaceChildren(new Option(context.runId, context.runId));
+  document.querySelector("#generation-selector").replaceChildren(new Option(`${context.generation} · ${context.mode}`, String(context.generation)));
   const facts = [
     ["Topology", context.topologyId], ["Factory", context.factoryRelease],
     ["Semantic", context.semanticRelease], ["Optimizer", context.optimizerStep],
@@ -62,7 +66,7 @@ export function renderContext(state, defense) {
     ["Resources", context.resourceHealth], ["Coverage", context.coverage],
   ];
   document.querySelector("#context-facts").innerHTML = facts
-    .map(([label, value]) => `<span><small>${label}</small><strong title="${value}" aria-label="${label}: ${value}">${compactIdentity(value)}</strong></span>`)
+    .map(([label, value]) => `<span><small>${esc(label)}</small><strong title="${esc(value)}" aria-label="${esc(label)}: ${esc(value)}">${esc(compactIdentity(value))}</strong></span>`)
     .join("");
 }
 
@@ -101,12 +105,12 @@ export function renderInspector(state, defense) {
   document.querySelector("#inspector-title").textContent = selected ? selected.id : "No selection";
   const exact = selected?.details
     ? Object.entries(selected.details).map(([label, value]) =>
-      `<dt>${label}</dt><dd>${Array.isArray(value) ? value.join(", ") : value}</dd>`,
+      `<dt>${esc(label)}</dt><dd>${esc(Array.isArray(value) ? value.join(", ") : value)}</dd>`,
     ).join("")
     : "";
   document.querySelector("#inspector-details").innerHTML = selected
-    ? `<dt>Object class</dt><dd>${selected.kind}</dd>
-       <dt>Identity</dt><dd>${selected.id}</dd>
+    ? `<dt>Object class</dt><dd>${esc(selected.kind)}</dd>
+       <dt>Identity</dt><dd>${esc(selected.id)}</dd>
        <dt>Posture</dt><dd>${state.context.mode}</dd>
        <dt>Generation</dt><dd>${state.context.generation}</dd>
        <dt>Evidence</dt><dd>${defense.historical ? "Verified prior evidence · inspection only" : "Current verified fixture/reference"}</dd>${exact}`
@@ -182,7 +186,12 @@ export function renderCurrentView(state, defense, onInspect, api, onEvidenceSele
     return;
   }
   if (state.view === "model") {
-    domain.hidden = false;
+    domain.hidden = state.modelSection === "frames";
+    if (state.modelSection === "frames") {
+      fixture.hidden = true; catalog.hidden = true;
+      summary.textContent = "Frame Compiler Explorer · inspect exact packing receipts and causal visibility.";
+      return;
+    }
     fixture.hidden = true;
     catalog.hidden = true;
     summary.textContent = "Topology, attention health, depth routing and local refinement as measured telemetry only.";

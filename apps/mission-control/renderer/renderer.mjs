@@ -1,3 +1,4 @@
+import { createFrameShell } from "./frames/frame-shell.mjs";
 import {
   assertOperatorView,
   createShellState,
@@ -26,6 +27,8 @@ import {
 } from "./foundation/defensive-state.mjs";
 import {
   renderChrome,
+  renderContext,
+  renderNavigation,
   renderInspector,
   renderPaletteOptions,
 } from "./foundation/renderer-ui.mjs";
@@ -47,6 +50,12 @@ let focusReturnToken = null;
 let paletteReturnToken = null;
 const homeController = createHomeController(window.bamfMissionControl);
 
+const frameShell = createFrameShell({
+  getState: () => state, setState: next => { state = next; }, getDefense: () => defense,
+  render, onInspect: openInspector,
+  refresh: () => { renderContext(state, defense); renderNavigation(state, navigateTo); renderInspector(state, defense); setHash(); },
+});
+
 function setHash() {
   if (!state) return;
   const next = buildDeepLink(state);
@@ -60,6 +69,7 @@ function announce(message) {
 }
 
 function render() {
+  frameShell.beforeRender();
   renderChrome(state, defense, displaySettings, {
     api: window.bamfMissionControl,
     onEvidenceSelect: selectEvidenceRecord,
@@ -67,8 +77,9 @@ function render() {
     onNavigate: navigateTo,
     onInspect: openInspector,
   });
+  frameShell.afterRender();
   setHash();
-  activateDomainViews({ state, defense, api: window.bamfMissionControl, homeController, onInspect: openInspector });
+  activateDomainViews({ state, getState: () => state, defense, api: window.bamfMissionControl, homeController, onInspect: openInspector });
 }
 
 function selectEvidenceRecord(selected) {
@@ -116,6 +127,9 @@ function openPalette() {
 }
 
 async function establishSnapshot({ preserveRoute = false } = {}) {
+  const modelSection = state?.modelSection;
+  frameShell.reset();
+  if (state) state = { ...state, mutationAvailable: false };
   const route = preserveRoute && state
     ? { view: state.view, selected: state.selected }
     : parseDeepLink(window.location.hash);
@@ -179,7 +193,7 @@ async function establishSnapshot({ preserveRoute = false } = {}) {
   if (snapshotSource === "cache" && defense.id === "live") {
     defense = defensiveState("stale", options);
   }
-  state = withDefensiveState(createShellState(operatorView, route), defense);
+  state = { ...withDefensiveState(createShellState(operatorView, route), defense), modelSection };
   render();
   announce(`${defense.label}. ${defense.historical ? "Inspection-only evidence is shown." : "Live context established."}`);
 }

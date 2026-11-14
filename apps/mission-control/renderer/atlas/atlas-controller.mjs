@@ -14,15 +14,22 @@ let atlasState = {
   selectedBank: null,
 };
 let contextIdentity = null;
+let epoch = 0;
 
-function identityFor(context) {
-  if (!context) return "none";
-  return [context.runId, context.generation, context.mode, context.semanticRelease].join(":");
+export function invalidateAtlasRequests() {
+  epoch += 1;
+  if (atlasState.status === "loading") atlasState = { ...atlasState, status: "idle" };
+}
+
+function beginRequest(context, isActive) {
+  const token = ++epoch;
+  return () => token === epoch && contextIdentity === context && isActive();
 }
 
 function bindContext(context) {
-  const next = identityFor(context);
+  const next = context;
   if (contextIdentity === next) return;
+  invalidateAtlasRequests();
   contextIdentity = next;
   atlasState = {
     status: "idle",
@@ -34,7 +41,7 @@ function bindContext(context) {
   };
 }
 
-export function renderAtlasDomain(api, context) {
+export function renderAtlasDomain(api, context, isActive = () => true) {
   bindContext(context);
   const host = document.querySelector("#domain-view");
   host.hidden = false;
@@ -42,32 +49,35 @@ export function renderAtlasDomain(api, context) {
   host.querySelectorAll("[data-atlas-lens]").forEach((button) => {
     button.addEventListener("click", () => {
       atlasState = { ...atlasState, lens: button.dataset.atlasLens };
-      renderAtlasDomain(api, context);
+      renderAtlasDomain(api, context, isActive);
     });
   });
   host.querySelectorAll("[data-atlas-bank]").forEach((button) => {
     button.addEventListener("click", () => {
       atlasState = { ...atlasState, selectedBank: Number(button.dataset.atlasBank) };
-      renderAtlasDomain(api, context);
+      renderAtlasDomain(api, context, isActive);
     });
   });
   host.querySelector("#atlas-search-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const semanticId = new FormData(event.currentTarget).get("semanticId")?.toString().trim();
     if (!semanticId) return;
+    const isCurrent = beginRequest(context, isActive);
     atlasState = { ...atlasState, status: "loading", error: null };
-    renderAtlasDomain(api, context);
+    renderAtlasDomain(api, context, isActive);
     try {
       const selection = await loadSemanticIdentity(api, context, semanticId);
+      if (!isCurrent()) return;
       atlasState = { ...atlasState, status: "ready", selection };
     } catch (error) {
+      if (!isCurrent()) return;
       atlasState = {
         ...atlasState,
         status: "error",
         error: error?.code ?? error?.message ?? "Semantic query failed",
       };
     }
-    renderAtlasDomain(api, context);
+    renderAtlasDomain(api, context, isActive);
   });
   host.querySelector("#atlas-abi-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -75,36 +85,42 @@ export function renderAtlasDomain(api, context) {
     const bank = Number(form.get("bank"));
     const row = Number(form.get("row"));
     if (!Number.isSafeInteger(bank) || bank < 0 || !Number.isSafeInteger(row) || row < 0) return;
+    const isCurrent = beginRequest(context, isActive);
     atlasState = { ...atlasState, status: "loading", error: null, selectedBank: bank };
-    renderAtlasDomain(api, context);
+    renderAtlasDomain(api, context, isActive);
     try {
       const selection = await loadAbiRow(api, context, bank, row);
+      if (!isCurrent()) return;
       atlasState = { ...atlasState, status: "ready", selection };
     } catch (error) {
+      if (!isCurrent()) return;
       atlasState = {
         ...atlasState,
         status: "error",
         error: error?.code ?? error?.message ?? "ABI query failed",
       };
     }
-    renderAtlasDomain(api, context);
+    renderAtlasDomain(api, context, isActive);
   });
 }
 
 export async function ensureAtlasOverview(api, context, isActive = () => true) {
   bindContext(context);
   if (atlasState.status !== "idle") return;
+  const isCurrent = beginRequest(context, isActive);
   atlasState = { ...atlasState, status: "loading", error: null };
-  renderAtlasDomain(api, context);
+  renderAtlasDomain(api, context, isActive);
   try {
     const overview = await loadAtlasOverview(api, context);
+    if (!isCurrent()) return;
     atlasState = { ...atlasState, status: "ready", overview };
   } catch (error) {
+    if (!isCurrent()) return;
     atlasState = {
       ...atlasState,
       status: "error",
       error: error?.code ?? error?.message ?? "Semantic Atlas unavailable",
     };
   }
-  if (isActive()) renderAtlasDomain(api, context);
+  if (isActive()) renderAtlasDomain(api, context, isActive);
 }

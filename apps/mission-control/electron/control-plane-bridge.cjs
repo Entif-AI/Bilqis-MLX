@@ -141,7 +141,7 @@ class ControlPlaneBridge {
     const result = argument === undefined
       ? await this.adapter[method](session)
       : await this.adapter[method](session, argument);
-    return this.validators.response(method, assertRendererSafePayload(result));
+    return this.validators.response(method, assertRendererSafePayload(result), argument);
   }
 
   async #invalidateSession() {
