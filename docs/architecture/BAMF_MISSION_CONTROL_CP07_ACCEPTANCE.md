@@ -33,11 +33,14 @@ starts from the accepted BAMF pointer, authenticates the exact content-addressed
 manifest, acceptance binding, run identity, teacher state and native outbox for
 each generation, then walks the v3 parent-manifest plus parent-acceptance chain
 without scanning for convenient files. Current `BAMF_C16_3_ACCEPTED` events are
-validated against the persisted C03 teacher-visit identity and its independent
-source-issued content-addressed visit receipt before they become CP02 episode,
-candidate and capability records. Generic `BAMF_CANDIDATE_REJECTED` journal rows
-are first authenticated against their deterministic event identity,
-content-addressed rejection authority and content-addressed rejection receipt.
+validated against the persisted C03 teacher-visit identity and the portable copy
+of its independently source-issued content-addressed visit receipt before they
+become CP02 episode, candidate, capability and resource records. C03 still issues
+the original receipt at selection time; accepted B13 custody carries the exact
+receipt forward so historical reconstruction does not depend on the workstation
+shared data plane. Generic `BAMF_CANDIDATE_REJECTED` journal rows are first
+authenticated against their deterministic event identity, recomputed rejection
+authority and immutable run-local rejection receipt.
 Only the supported `bilqis.bamf.c16.3-rejection/v2` contract is then projected
 into CP02; other valid B13 rejection schemas are authenticated and ignored by
 this adapter rather than poisoning historical reconstruction. Supported C16.3
@@ -50,15 +53,21 @@ snapshot frontier; only later accepted/rejected native facts become live deltas.
 The custody layer's deliberate pointer-change rejection is treated as a transient
 read race and retried on the next heartbeat, while every other authentication
 failure remains fail-closed. Native event identity is retained for the owning
-candidate event and deterministic child identities are derived for its episode
-and capability projections.
+candidate event and deterministic child identities are derived for its episode,
+capability and resource projections. The accepted visit's native resource
+observation carries the actual configured C08 memory budget, measured filesystem
+usage and optimizer-step/wall-time inputs for a derived step rate. It deliberately
+does not relabel C08's peak estimate as measured memory use; that field remains
+`UNKNOWN`, making the CP02 resource record `PARTIAL` rather than synthetic.
 
 CP06 also exposes `rebuild_from_bamf()`. The full CP02 tuple is materialized from
 authenticated native artifacts before the existing atomic temporary-index swap,
 so a failed ancestor/acceptance validation cannot destroy an already usable
 projection. The acceptance witness deletes and rebuilds the disposable database,
 compares the resulting historical/current records, and proves that tampering an
-ancestor acceptance fails while the prior CP06 index remains readable.
+ancestor acceptance fails while the prior CP06 index remains readable. A dedicated
+regression makes any shared-data-plane access raise during rebuild; accepted and
+supported rejected C16.3 history still reconstructs from copied run custody alone.
 
 `test_cp07_commands.py` invokes C11's accepted dry-run and human-gated genesis
 code within the existing disposable test context. It admits one generation-zero
@@ -90,11 +99,14 @@ python3 -m bilqis_mlx.control_plane \
 ## Remaining production acceptance boundaries
 
 The production-source adapter now demonstrates automatic CP04 publication for
-the current accepted C16.3 visit/candidate/capability path and for authenticated,
-supported C16.3 rejection events, plus CP06 reconstruction from the accepted BAMF
-artifact chain. Generic B13 rejection receipts outside that supported C16.3
-schema are authenticated but not projected. Two source-contract debts remain
-explicit rather than being filled with synthetic values:
+the current accepted C16.3 visit/candidate/capability/resource path and for
+authenticated, supported C16.3 rejection events, plus CP06 reconstruction from
+portable authenticated BAMF run custody. The CP07 fixture obtains its visit through
+the production C03 selection owner and derives the successor through the production
+C03 successor owner; it no longer seeds a teacher-visit receipt by hand. Generic
+B13 rejection receipts outside the supported C16.3 schema remain outside this CP02
+projection. Two narrower data-contract limitations remain explicit rather than
+being filled with synthetic values:
 
 1. Native C16.3 accepted/rejection artifacts do not carry an authenticated
    wall-clock visit interval. CP02 therefore uses the accepted generation as a
@@ -102,13 +114,14 @@ explicit rather than being filled with synthetic values:
    candidate and capability projections `PARTIAL`; it does not claim a measured
    wall-clock timestamp.
 2. The accepted BAMF bundle does not presently expose a semantically unambiguous
-   one-to-one source for all three CP02 `GenerationManifest/v1` digest fields, and
-   no authenticated producer currently supplies the CP02 resource sample's
-   memory/budget/disk/rate facts. Historical generation-manifest and resource
-   queries therefore carry explicit `UNKNOWN` markers instead of aliasing a
-   convenient digest or treating bundle size as machine disk usage.
+   one-to-one source for all three CP02 `GenerationManifest/v1` digest fields, so
+   that family still carries an explicit `UNKNOWN` marker. Native resource records
+   now expose only facts the accepted visit actually owns: configured memory budget,
+   measured disk usage and derived step rate. Unified memory use remains `UNKNOWN`
+   until an authenticated allocator measurement exists.
 
-Those gaps are now visible data-contract debt rather than hidden fixture
-coverage. Keep #1055 open until the owning source contracts exist or CP02 is
-versioned to represent them without semantic distortion, and until the remaining
-native event families required by CP04 have authoritative producers.
+Those limitations remain visible data-contract debt rather than hidden fixture
+coverage. They do not substitute for or weaken the two CP07 production-source
+acceptance claims above. #1055 remains open until the exact candidate is
+independently reviewed and the accepted PR is merged into the reviewed unified
+target under the normal human-merge closeout policy.

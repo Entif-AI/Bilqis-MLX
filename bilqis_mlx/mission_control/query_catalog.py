@@ -65,7 +65,9 @@ class MissionControlQueryCatalog:
             item for item in self._records
             if ((type(item) is PartialEnvelope and item.partial_record_id in record_ids)
                 or (type(item) is StaleEnvelope and item.stale_record_id in record_ids))
-                or (type(item) is UnavailableEnvelope and item.resource in resources)
+                or (type(item) is UnavailableEnvelope and item.resource in resources
+                    and (item.meta.run is None
+                         or matches_identity(item, request, match_record_id=False)))
         ]
         if not records and request.as_of is not None:
             markers.extend(

@@ -15,7 +15,7 @@ from .native_contracts import (
 )
 
 
-def _verified_rejection(native, generation, data_plane):
+def _verified_rejection(run_dir: Path, native, generation):
     event_id = native.get("event_id")
     authority_sha = native.get("rejection_authority_sha256")
     evidence = native.get("evidence")
@@ -37,11 +37,7 @@ def _verified_rejection(native, generation, data_plane):
         "evidence": evidence,
     }
     authority_raw = canonical(authority)
-    try:
-        stored_authority = data_plane.get_object(authority_sha)
-    except ValueError:
-        invalid("CONTROL_PLANE_NATIVE_REJECTION_AUTHORITY_DRIFT")
-    if sha(authority_raw) != authority_sha or stored_authority != authority_raw:
+    if sha(authority_raw) != authority_sha:
         invalid("CONTROL_PLANE_NATIVE_REJECTION_AUTHORITY_DRIFT")
     receipt = {
         "schema": "bilqis.mlx.bamf-rejection-receipt/v1",
@@ -50,11 +46,10 @@ def _verified_rejection(native, generation, data_plane):
     }
     receipt_raw = canonical(receipt)
     receipt_sha = sha(receipt_raw)
-    try:
-        stored_receipt = data_plane.get_object(receipt_sha)
-    except ValueError:
+    receipt_path = Path(run_dir) / "bamf-rejections" / f"{receipt_sha}.json"
+    if receipt_path.is_symlink() or not receipt_path.is_file():
         invalid("CONTROL_PLANE_NATIVE_REJECTION_RECEIPT_DRIFT")
-    if stored_receipt != receipt_raw:
+    if receipt_path.read_bytes() != receipt_raw:
         invalid("CONTROL_PLANE_NATIVE_REJECTION_RECEIPT_DRIFT")
     return event_id, authority_sha, receipt_sha, evidence
 
@@ -86,21 +81,28 @@ def _project_verified_rejection(verified, generation):
             or evidence.get("retention_reason") != decision.reason):
         invalid("CONTROL_PLANE_NATIVE_REJECTION_INVALID")
     from bilqis_mlx.learning.teacher_visit_identity import (
-        TeacherVisitIdentity, require_teacher_visit_receipt,
+        TeacherVisitIdentity, validate_teacher_visit_receipt_record,
     )
 
     state = generation.teacher_state
-    expected_visit = TeacherVisitIdentity(
-        generation.run_identity["run_identity_sha256"],
-        generation.run_identity["run_seed"], generation.manifest["generation"],
-        generation.manifest_sha256,
-        state["teacher_identity"], state["teacher_epoch"],
-        accepted_student_sha256(generation),
-        state["next_seed"], state["cursor"], capability, policy_key,
-    )
-    if visit_id != expected_visit.visit_id:
+    expected_visit = TeacherVisitIdentity.from_record(evidence.get("teacher_visit"))
+    if (visit_id != expected_visit.visit_id
+            or expected_visit.run_identity_sha256
+            != generation.run_identity["run_identity_sha256"]
+            or expected_visit.run_seed != generation.run_identity["run_seed"]
+            or expected_visit.generation != generation.manifest["generation"]
+            or expected_visit.accepted_manifest_sha256 != generation.manifest_sha256
+            or expected_visit.student_sha256 != accepted_student_sha256(generation)
+            or expected_visit.selection_seed != state["next_seed"]
+            or expected_visit.cursor != state["cursor"]
+            or expected_visit.capability_id != capability
+            or expected_visit.policy_key != policy_key
+            or ("c03_lineage" in state
+                and (expected_visit.teacher_identity != state["teacher_identity"]
+                     or expected_visit.teacher_epoch != state["teacher_epoch"]))):
         invalid("CONTROL_PLANE_NATIVE_REJECTION_VISIT_DRIFT")
-    require_teacher_visit_receipt(expected_visit)
+    validate_teacher_visit_receipt_record(
+        expected_visit, evidence.get("teacher_visit_receipt"))
     run = run_ref(generation)
     refs = (f"rejection-authority:{authority_sha}",)
     receipts = (f"bamf-rejection:{receipt_sha}",)
@@ -130,8 +132,6 @@ def rejection_material(run_dir: Path, history: tuple[AuthenticatedGeneration, ..
         invalid("CONTROL_PLANE_NATIVE_EVENT_LEDGER_INVALID")
     by_manifest = {item.manifest_sha256: item for item in history}
     records, events, seen_receipts = [], [], set()
-    from bilqis_mlx.data_plane import data_plane
-
     with ledger.open("rb") as stream:
         for raw in stream:
             if not raw.endswith(b"\n"):
@@ -145,7 +145,7 @@ def rejection_material(run_dir: Path, history: tuple[AuthenticatedGeneration, ..
             generation = by_manifest.get(native.get("student_manifest_sha256"))
             if generation is None:
                 invalid("CONTROL_PLANE_NATIVE_REJECTION_INVALID")
-            verified = _verified_rejection(native, generation, data_plane())
+            verified = _verified_rejection(Path(run_dir), native, generation)
             receipt_sha = verified[2]
             if receipt_sha in seen_receipts:
                 continue

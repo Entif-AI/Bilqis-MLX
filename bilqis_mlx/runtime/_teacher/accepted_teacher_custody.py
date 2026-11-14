@@ -16,7 +16,7 @@ from bilqis_mlx.learning.teacher_lineage import (
 )
 from bilqis_mlx.learning.teacher_visit_identity import (
     TeacherVisitIdentity, derive_teacher_visit_identity,
-    record_teacher_visit_identity, record_teacher_visit_receipt,
+    record_teacher_visit_authority, record_teacher_visit_identity,
 )
 from bilqis_mlx.learning._teaching.teacher_lineage_records import digest, invalid
 from bilqis_mlx.runtime.bamf_bundle import CompleteStudent
@@ -230,7 +230,7 @@ def select_accepted_teacher_visit(
         accepted_manifest_sha256=cache.accepted_manifest_sha256,
         capability_id=capability_id, policy_key=key)
     recorded = record_teacher_visit_identity(selected.teacher_state, identity)
-    record_teacher_visit_receipt(identity)
+    recorded = record_teacher_visit_authority(recorded, identity)
     return _issue_bound_visit(recorded, identity), policy, metadata
 
 

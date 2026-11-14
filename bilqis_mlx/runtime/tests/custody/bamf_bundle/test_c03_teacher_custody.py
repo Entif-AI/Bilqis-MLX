@@ -73,6 +73,9 @@ class C03AcceptedTeacherCustodyTests(unittest.TestCase):
         self.assertEqual(bound.identity.cursor, "GENESIS")
         self.assertEqual(bound.projection.teacher_state["last_visit"],
                          bound.identity.to_record())
+        self.assertEqual(
+            bound.projection.teacher_state["last_visit_receipt"]["visit_id"],
+            bound.identity.visit_id)
 
         retained = accepted_state(parent.retained_state, parent.extents)
         with shape_patch():
@@ -96,6 +99,9 @@ class C03AcceptedTeacherCustodyTests(unittest.TestCase):
             cold = load_accepted_generation(self.run)
         restored = restore_teacher_lineage(cold.teacher_state)
         self.assertEqual(cold.teacher_state["last_visit"], bound.identity.to_record())
+        self.assertEqual(
+            cold.teacher_state["last_visit_receipt"],
+            bound.projection.teacher_state["last_visit_receipt"])
         self.assertEqual(cold.teacher_state["next_seed"], 72)
         self.assertEqual(cold.teacher_state["cursor"], "lesson:1")
         self.assertEqual(cold.teacher_state["teacher_epoch"], 1)

@@ -9,7 +9,9 @@ from bilqis_mlx.control_plane.native_source import (
     materialize_native_projection, refresh_native_events,
 )
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
-from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity
+from bilqis_mlx.learning.teacher_visit_identity import (
+    TeacherVisitIdentity, teacher_visit_receipt_record,
+)
 from bilqis_mlx.mission_control import CandidateDecision
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import retention_decision
@@ -25,6 +27,8 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
         evidence = {
             "schema": "bilqis.bamf.c16.3-rejection/v2",
             "visit_id": visit.visit_id,
+            "teacher_visit": visit.to_record(),
+            "teacher_visit_receipt": teacher_visit_receipt_record(visit),
             "selected_option_id": "option:native",
             "selected_policy_key": visit.policy_key,
             "candidate_optimizer_step": parent.retained_state.optimizer_step + 1,
@@ -61,7 +65,7 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
         with self.assertRaises(BilqisError) as caught:
             materialize_native_projection(self.run)
         self.assertEqual(caught.exception.context.get("reason"),
-                         "TEACHER_VISIT_RECEIPT_MISSING")
+                         "TEACHER_VISIT_RECEIPT_DRIFT")
 
     def test_accepted_event_optimizer_step_must_match_generation(self):
         source = self.successor()

@@ -59,7 +59,11 @@ def priority():
         ),
         'bilqis_mlx.learning.learning_experiment': module(Settings=type(None)),
         'bilqis_mlx.learning.teacher_lineage': module(restore_teacher_lineage=None),
-        'bilqis_mlx.learning.teacher_visit_identity': module(derive_teacher_visit_identity=None, record_teacher_visit_identity=None),
+        'bilqis_mlx.learning.teacher_visit_identity': module(
+            derive_teacher_visit_identity=None,
+            record_teacher_visit_authority=lambda projection, identity: projection,
+            record_teacher_visit_identity=None,
+        ),
         'bilqis_mlx.runtime.atlas_optimizer': module(AdamWHyperparameters=HParams),
         'bilqis_mlx.runtime.atlas_training_contracts': module(BamfVisitProvenance=SimpleNamespace(from_c03_record=None)),
         'bilqis_mlx.runtime.factory_candidate_training': module(execute_factory_candidate_step=None),

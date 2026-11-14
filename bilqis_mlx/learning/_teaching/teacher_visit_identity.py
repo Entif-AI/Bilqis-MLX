@@ -16,6 +16,7 @@ from .teacher_lineage_records import (
 )
 
 VISIT_IDENTITY_SCHEMA = "bilqis.bamf.c03-teacher-visit-identity/v1"
+VISIT_RECEIPT_SCHEMA = "bilqis.bamf.c03-teacher-visit-receipt/v1"
 
 
 def _name(value: object) -> bool:
@@ -142,9 +143,42 @@ def require_teacher_visit_receipt(identity: TeacherVisitIdentity) -> str:
     return digest_value
 
 
+def teacher_visit_receipt_record(identity: TeacherVisitIdentity) -> dict:
+    """Portable C03 issuance receipt copied into accepted B13 custody."""
+    return {
+        "schema": VISIT_RECEIPT_SCHEMA,
+        "visit_id": identity.visit_id,
+        "identity_sha256": teacher_visit_receipt_sha256(identity),
+    }
+
+
+def validate_teacher_visit_receipt_record(
+        identity: TeacherVisitIdentity, receipt: Mapping) -> str:
+    """Verify one artifact-carried receipt against the exact C03 visit identity."""
+    expected = teacher_visit_receipt_record(identity)
+    if not isinstance(receipt, Mapping) or dict(receipt) != expected:
+        invalid("TEACHER_VISIT_RECEIPT_DRIFT")
+    return expected["identity_sha256"]
+
+
+def record_teacher_visit_authority(
+        projection: TeacherCustodyProjection,
+        identity: TeacherVisitIdentity) -> TeacherCustodyProjection:
+    """Issue the source receipt and bind its portable copy into C03 teacher state."""
+    if (type(projection) is not TeacherCustodyProjection
+            or projection.teacher_state.get("last_visit") != identity.to_record()):
+        invalid("TEACHER_VISIT_CUSTODY_INVALID")
+    record_teacher_visit_receipt(identity)
+    state = dict(projection.teacher_state)
+    state["last_visit_receipt"] = teacher_visit_receipt_record(identity)
+    return TeacherCustodyProjection(
+        state, projection.teacher_identity, projection.teacher_epoch)
+
+
 __all__ = (
-    "TeacherVisitIdentity", "VISIT_IDENTITY_SCHEMA",
+    "TeacherVisitIdentity", "VISIT_IDENTITY_SCHEMA", "VISIT_RECEIPT_SCHEMA",
     "derive_teacher_visit_identity", "record_teacher_visit_identity",
-    "record_teacher_visit_receipt", "require_teacher_visit_receipt",
-    "teacher_visit_receipt_sha256",
+    "record_teacher_visit_authority", "record_teacher_visit_receipt",
+    "require_teacher_visit_receipt", "teacher_visit_receipt_record",
+    "teacher_visit_receipt_sha256", "validate_teacher_visit_receipt_record",
 )

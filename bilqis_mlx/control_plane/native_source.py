@@ -56,13 +56,20 @@ def publish_native_events(service, *, seen_event_ids: set[str] | None = None):
     seen = set() if seen_event_ids is None else seen_event_ids
     material = materialize_native_projection(service.run_dir)
     published = []
+    resource_pending = False
     for family, record, event_id in material.events:
         if event_id in seen:
             continue
         emitted = service.publish_event(family, record, event_id=event_id)
         if emitted is not None:
             published.append(emitted)
+        elif family.value == "resource.health.sample":
+            resource_pending = True
         seen.add(event_id)
+    if resource_pending:
+        emitted = service.flush_event_telemetry()
+        if emitted is not None:
+            published.append(emitted)
     return material, tuple(published)
 
 

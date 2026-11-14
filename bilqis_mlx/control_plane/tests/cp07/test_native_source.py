@@ -1,12 +1,16 @@
 """Authenticated BAMF history is the CP07 production-source acceptance witness."""
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.teacher_visit_identity import teacher_visit_receipt_record
 from bilqis_mlx.control_plane import ControlPlaneClient, ControlPlaneService, EventFamily
 from bilqis_mlx.control_plane.native_source import (
     authenticated_history, materialize_native_projection, refresh_native_events,
 )
-from bilqis_mlx.mission_control import CandidateDecision, CapabilitySnapshot, LearningEpisode
+from bilqis_mlx.mission_control import (
+    CandidateDecision, CapabilitySnapshot, LearningEpisode, ResourceSample,
+)
 from bilqis_mlx.mission_control.projection import MissionControlProjection
 from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryMode, QueryRequest
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
@@ -33,6 +37,7 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
         episodes = [record for record in material.records if isinstance(record, LearningEpisode)]
         candidates = [record for record in material.records if isinstance(record, CandidateDecision)]
         capabilities = [record for record in material.records if isinstance(record, CapabilitySnapshot)]
+        resources = [record for record in material.records if isinstance(record, ResourceSample)]
         self.assertEqual(len(episodes), 1)
         self.assertEqual(episodes[0].capability_id, "A.NATIVE")
         self.assertEqual(episodes[0].meta.coverage.value, "PARTIAL")
@@ -40,6 +45,11 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
         self.assertEqual(candidates[0].outcome.value, "ACCEPTED")
         self.assertEqual(len(capabilities), 1)
         self.assertEqual(capabilities[0].score_correct.state.value, "MISSING")
+        self.assertEqual(len(resources), 1)
+        self.assertEqual(resources[0].memory_used_bytes.state.value, "UNKNOWN")
+        self.assertEqual(resources[0].memory_budget_bytes.value, 64 * 1024 ** 3)
+        self.assertGreater(resources[0].disk_used_bytes.value, 0)
+        self.assertEqual(resources[0].step_rate_per_minute.value, 2.0)
 
         index = self.root / "native-projection.sqlite3"
         projection = MissionControlProjection.rebuild_from_bamf(index, self.run)
@@ -55,12 +65,13 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             QueryFamily.GENERATION, mode=QueryMode.HISTORICAL,
             run_id=source.run_id, generation=1,
         ))
-        resource_gap = projection.catalog().query(QueryRequest(
+        resource_page = projection.catalog().query(QueryRequest(
             QueryFamily.RESOURCE, mode=QueryMode.HISTORICAL,
             run_id=source.run_id, generation=1,
         ))
         self.assertEqual(generation_gap.state.value, "UNKNOWN")
-        self.assertEqual(resource_gap.state.value, "UNKNOWN")
+        self.assertEqual(resource_page.state.value, "PARTIAL")
+        self.assertIsInstance(resource_page.records[0], ResourceSample)
         projected_episode = next(
             record for record in historical.records if isinstance(record, LearningEpisode))
         self.assertEqual(projected_episode.episode_id, episodes[0].episode_id)
@@ -96,6 +107,19 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             before,
         )
 
+    def test_cp06_rebuild_uses_only_portable_authenticated_run_artifacts(self):
+        self.parent()
+        source, _pointer = self.publish_successor()
+        index = self.root / "artifact-only.sqlite3"
+        with patch(
+                "bilqis_mlx.data_plane.data_plane",
+                side_effect=AssertionError("CP06 reconstruction accessed shared data plane")):
+            projection = MissionControlProjection.rebuild_from_bamf(index, self.run)
+        current = projection.catalog().query(QueryRequest(
+            QueryFamily.CAPABILITY, run_id=source.run_id,
+        ))
+        self.assertEqual(current.records[0].capability_id, "A.NATIVE")
+
     def test_subscription_automatically_publishes_new_authenticated_native_events(self):
         self.parent()
         socket = self.root / "native.sock"
@@ -113,14 +137,13 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
                     event = next(subscription)
                     if event.schema_version.endswith("event-envelope/v1"):
                         observed.append(event)
-                    if len(observed) == 4:
-                        break
                 families = {event.event_family for event in observed}
                 self.assertTrue({
                     EventFamily.RUN_STATE_CHANGED.value,
                     EventFamily.LESSON_VISIT_COMPLETED.value,
                     EventFamily.CANDIDATE_RETAINED.value,
                     EventFamily.CAPABILITY_CHANGED.value,
+                    EventFamily.RESOURCE_HEALTH_SAMPLE.value,
                 } <= families)
                 ids = [event.event_id for event in observed]
                 self.assertEqual(len(ids), len(set(ids)))
@@ -138,15 +161,20 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
         receipt = record_bamf_rejection(self.run, parent, {
             "schema": "bilqis.bamf.c16.3-rejection/v2",
             "visit_id": visit.visit_id,
+            "teacher_visit": visit.to_record(),
+            "teacher_visit_receipt": teacher_visit_receipt_record(visit),
             "selected_option_id": "option:native",
-            "selected_policy_key": "policy:native",
+            "selected_policy_key": visit.policy_key,
             "candidate_optimizer_step": parent.retained_state.optimizer_step + 1,
             "retained_optimizer_step": parent.retained_state.optimizer_step,
             "retention_reason": decision.reason,
             "capability": "A.REJECT",
             "decision": decision.to_record(),
         })
-        material = materialize_native_projection(self.run)
+        with patch(
+                "bilqis_mlx.data_plane.data_plane",
+                side_effect=AssertionError("rejection reconstruction accessed shared data plane")):
+            material = materialize_native_projection(self.run)
         rejected = [
             record for record in material.records
             if isinstance(record, CandidateDecision) and record.outcome.value == "REJECTED"
