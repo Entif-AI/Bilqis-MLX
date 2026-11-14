@@ -10,9 +10,11 @@ import {
   SALIENCE_SNAPSHOTS,
 } from "../renderer/salience/salience-fixture.mjs";
 import {
+  aggregationForSnapshot,
   aggregationPathForEvent,
   axisPosture,
   constituentObservationIds,
+  routingForSnapshot,
   salienceEventById,
   snapshotById,
 } from "../renderer/salience/salience-model.mjs";
@@ -74,6 +76,15 @@ test("historical fixture preserves policy identity active at that time and histo
   assert.equal(historical.policy.sourceOwner, "fixture:salience-owner");
   assert.equal(historical.events[0].axes.impact.ordinal, "MODERATE");
   assert.equal(current.events[0].axes.impact.ordinal, "HIGH");
+});
+
+test("historical as-of cannot inherit current aggregation or routing evidence", () => {
+  const historical = snapshotById("historical");
+  const current = snapshotById("current");
+  assert.equal(aggregationForSnapshot(historical), null);
+  assert.deepEqual(routingForSnapshot(historical), []);
+  assert.equal(aggregationForSnapshot(current), SALIENCE_AGGREGATION);
+  assert.equal(routingForSnapshot(current), ROUTING_FIXTURES);
 });
 
 test("aggregation path is reversible from observation through trend", () => {

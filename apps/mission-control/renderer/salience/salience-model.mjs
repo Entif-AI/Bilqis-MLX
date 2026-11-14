@@ -49,6 +49,14 @@ export function routingById(id) {
   return ROUTING_FIXTURES.find((route) => route.id === id) ?? null;
 }
 
+export function aggregationForSnapshot(snapshot) {
+  return snapshot?.aggregationState === "PRESENT" ? SALIENCE_AGGREGATION : null;
+}
+
+export function routingForSnapshot(snapshot) {
+  return snapshot?.routingState === "PRESENT" ? ROUTING_FIXTURES : Object.freeze([]);
+}
+
 export function projectionBoundary() {
   return SALIENCE_PROJECTION;
 }

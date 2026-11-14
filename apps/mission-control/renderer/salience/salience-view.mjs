@@ -1,14 +1,14 @@
 import {
-  ROUTING_FIXTURES,
-  SALIENCE_AGGREGATION,
   SALIENCE_AXES,
   SALIENCE_PROJECTION,
   SALIENCE_SNAPSHOTS,
 } from "./salience-fixture.mjs";
 import {
+  aggregationForSnapshot,
   aggregationPathForEvent,
   axisPosture,
   constituentObservationIds,
+  routingForSnapshot,
   salienceDeepLink,
   snapshotById,
 } from "./salience-model.mjs";
@@ -80,7 +80,14 @@ function provenancePanel(snapshot) {
 }
 
 function recursivePanel(snapshot) {
-  const { windows, clusters, pattern, trend } = SALIENCE_AGGREGATION;
+  const aggregation = aggregationForSnapshot(snapshot);
+  if (!aggregation) {
+    return `<section class="salience-panel">
+      <header><div><span class="eyebrow">Recursive aggregation</span><h3>Selected as-of evidence</h3></div>${badge("UNAVAILABLE")}</header>
+      <p class="salience-doctrine">No retained aggregation fixture is available inside this historical as-of boundary. Current clusters, patterns, and trends are not backfilled into the past.</p>
+    </section>`;
+  }
+  const { windows, clusters, pattern, trend } = aggregation;
   return `<section class="salience-panel">
     <header><div><span class="eyebrow">Recursive aggregation</span><h3>Observation → cluster → pattern → trend</h3></div>${badge("CONJECTURE")}</header>
     <p class="salience-doctrine">Aggregation is inspectable and reversible. It does not convert conjecture into source truth or teaching qualification.</p>
@@ -114,9 +121,16 @@ function recursivePanel(snapshot) {
 }
 
 function routingPanel(snapshot) {
+  const routes = routingForSnapshot(snapshot);
+  if (!routes.length) {
+    return `<section class="salience-panel">
+      <header><div><span class="eyebrow">Routing visibility</span><h3>Selected as-of evidence</h3></div>${badge("UNAVAILABLE")}</header>
+      <p class="salience-doctrine">No retained routing-rationale fixture is available inside this historical as-of boundary. Current dispatch evidence is not projected backward.</p>
+    </section>`;
+  }
   return `<section class="salience-panel">
     <header><div><span class="eyebrow">Routing visibility</span><h3>Admitted rationale only</h3></div>${badge("NO_SCALAR")}</header>
-    ${ROUTING_FIXTURES.map((route) => `<article class="routing-record">
+    ${routes.map((route) => `<article class="routing-record">
       <h4>${route.id}</h4>
       <p><strong>${route.tier}</strong> because <code>${route.rule}</code>.</p>
       <p>Ordering keys: ${route.ordering.join(" → ")}. Hidden weighting: ${route.hiddenWeighting}.</p>

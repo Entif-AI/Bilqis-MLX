@@ -16,6 +16,8 @@ export const SALIENCE_SNAPSHOTS = Object.freeze([
     asOf: 44239130,
     policy: FOUNDATION_POLICY,
     events: CURRENT_SALIENCE_EVENTS,
+    aggregationState: "PRESENT",
+    routingState: "PRESENT",
   }),
   Object.freeze({
     id: "historical",
@@ -25,6 +27,8 @@ export const SALIENCE_SNAPSHOTS = Object.freeze([
     asOf: 44237050,
     policy: FOUNDATION_POLICY,
     events: HISTORICAL_SALIENCE_EVENTS,
+    aggregationState: "UNAVAILABLE",
+    routingState: "UNAVAILABLE",
   }),
 ]);
 
