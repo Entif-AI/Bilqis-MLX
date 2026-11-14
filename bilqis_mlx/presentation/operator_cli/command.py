@@ -107,9 +107,12 @@ def _bamf_or_topology(args):
                 and admission_status is not False):
             from dataclasses import asdict
             from bilqis_mlx.runtime.bamf_operator import operate_bamf
+            def progress(message):
+                print("BAMF TRAINER: " + message, file=sys.stderr, flush=True)
             result = operate_bamf(
                 run_dir, minutes=args.minutes,
-                max_visits=args.max_visits, reserve_gib=args.reserve_gib)
+                max_visits=args.max_visits, reserve_gib=args.reserve_gib,
+                progress=progress)
             operator_report = asdict(result)
             if admission_status is not None:
                 operator_report["admission_status"] = admission_status

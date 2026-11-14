@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import os
 from pathlib import Path
+import subprocess
+import sys
 
 from ..factory import candidate_realizations
 from ..factory.atlas_frontier import (
@@ -62,11 +65,16 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
-def _candidate_frontier():
+def _candidate_frontier(run_dir: Path):
     root = _repo_root()
     builder = root / "lib/ithkuil/src/build_curriculum_frontier.py"
+    output = Path(run_dir) / "candidate-frontier"
+    subprocess.run(
+        [sys.executable, str(builder)], check=True, capture_output=True, text=True,
+        env={**os.environ, "BILQIS_CURRICULUM_FRONTIER_OUT": str(output)},
+    )
     return load_candidate_frontier(
-        root / "lib/ithkuil/_private/curriculum_frontier",
+        output,
         root / "lib/ithkuil/_data/csv",
         expected_builder_sha256=hashlib.sha256(builder.read_bytes()).hexdigest(),
     )
@@ -173,7 +181,7 @@ class AcceptedAtlasFlywheelSupervisor:
             selection, SOURCE_FAMILY_ADAPTERS,
             LearnedFrontier(selection.release_sha256))
         source = issue_source_context_transition_authority(selection)
-        frontier = _candidate_frontier()
+        frontier = _candidate_frontier(self.run_dir)
         graph = _replay_current_graph(current, self.parent_graph)
         staged = _persist_ready_realizations(
             self.run_dir, current, candidate, frontier, graph)
@@ -218,7 +226,7 @@ class AcceptedAtlasFlywheelSupervisor:
         checkpoint = _accepted_checkpoint(self.run_dir)
         plan = build_live_autonomy_plan(current, LEGACY_SOURCE)
         ledger = reconcile_live_autonomy_state(self.run_dir, current, plan)
-        frontier = _candidate_frontier()
+        frontier = _candidate_frontier(self.run_dir)
         source_authority, lease, registry = self._authority()
         runtime = AcceptedAtlasAdmissionRuntime(
             self.run_dir, checkpoint, graph, self.reserve_gib)

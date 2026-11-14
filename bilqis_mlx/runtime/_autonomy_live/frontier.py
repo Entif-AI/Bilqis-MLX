@@ -4,7 +4,10 @@ from __future__ import annotations
 from dataclasses import asdict
 import hashlib
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 
 from ..state import _durable_json
 
@@ -18,11 +21,15 @@ def propose_source_frontier_work(session, checkpoint, graph, source_registry):
         return None
     repo_root = Path(__file__).resolve().parents[3]
     builder = repo_root / "lib/ithkuil/src/build_curriculum_frontier.py"
-    artifact_dir = repo_root / "lib/ithkuil/_private/curriculum_frontier"
+    artifact_dir = Path(session.run_dir) / "candidate-frontier"
     source_dir = repo_root / "lib/ithkuil/_data/csv"
     if not builder.is_file():
         raise ValueError("AUTONOMY_FRONTIER_BUILDER_MISSING")
     builder_sha256 = hashlib.sha256(builder.read_bytes()).hexdigest()
+    subprocess.run(
+        [sys.executable, str(builder)], check=True, capture_output=True, text=True,
+        env={**os.environ, "BILQIS_CURRICULUM_FRONTIER_OUT": str(artifact_dir)},
+    )
     frontier = load_candidate_frontier(
         artifact_dir, source_dir, expected_builder_sha256=builder_sha256)
     from ..candidate_staging import load_staged_candidates, persist_staged_candidate
@@ -78,12 +85,16 @@ def resolve_ready_proposal(session, checkpoint, proposal, source_registry):
     from ..jit_adoption import resolve_ready_candidate
 
     root = Path(__file__).resolve().parents[3]
+    builder = root / "lib/ithkuil/src/build_curriculum_frontier.py"
+    artifact_dir = Path(session.run_dir) / "candidate-frontier"
+    subprocess.run(
+        [sys.executable, str(builder)], check=True, capture_output=True, text=True,
+        env={**os.environ, "BILQIS_CURRICULUM_FRONTIER_OUT": str(artifact_dir)},
+    )
     frontier = load_candidate_frontier(
-        root / "lib/ithkuil/_private/curriculum_frontier",
+        artifact_dir,
         root / "lib/ithkuil/_data/csv",
-        expected_builder_sha256=hashlib.sha256(
-            (root / "lib/ithkuil/src/build_curriculum_frontier.py").read_bytes()
-        ).hexdigest())
+        expected_builder_sha256=hashlib.sha256(builder.read_bytes()).hexdigest())
     return resolve_ready_candidate(
         frontier, session.release, session.ledger, session.plan,
         checkpoint, proposal,
