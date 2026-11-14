@@ -1,6 +1,10 @@
 "use strict";
 
-const { RENDERER_ENTRY_URL, normalizedRendererDocument } = require("./renderer-location.cjs");
+const {
+  RENDERER_ENTRY_URL,
+  normalizedRendererDocument,
+  rendererEntryUrl,
+} = require("./renderer-location.cjs");
 
 const SECURITY_PREFERENCES = Object.freeze({
   contextIsolation: true,
@@ -77,7 +81,7 @@ function createMissionControlWindow({
   }
   const window = new BrowserWindow(options);
   hardenWebContents(window.webContents);
-  const loadRenderer = () => window.loadURL(RENDERER_ENTRY_URL);
+  const loadRenderer = (hash = "") => window.loadURL(rendererEntryUrl(hash));
   return Object.freeze({ window, diagnostic, loadRenderer });
 }
 

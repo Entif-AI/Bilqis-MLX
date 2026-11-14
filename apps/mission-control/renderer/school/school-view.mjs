@@ -8,6 +8,7 @@ import {
 } from "./school-model.mjs";
 import { schoolFixtureRows } from "./school-fixture.mjs";
 import { isActivationKey, nextRovingIndex } from "../foundation/accessibility.mjs";
+import { objectDomAttributes } from "../interactions/dom-ref.mjs";
 
 const rows = schoolFixtureRows();
 const ui = {
@@ -20,6 +21,18 @@ const ui = {
   graphEnabled: true,
   groupByFamily: true,
 };
+
+function capabilityRelations(id) {
+  const neighborhood = selectionNeighborhood(rows, id);
+  return [
+    ...neighborhood.prerequisites.map((relatedId) => ({
+      kind: "capability", id: relatedId, relation: "prerequisite",
+    })),
+    ...neighborhood.dependents.map((relatedId) => ({
+      kind: "capability", id: relatedId, relation: "dependent",
+    })),
+  ];
+}
 
 function stateCue(row) {
   if (row.sourceState === "SOURCE_HELD") return "source-held";
@@ -45,7 +58,9 @@ function tableRows(projectedRows) {
       : "";
     family = row.family;
     const selected = row.id === ui.selectedId ? "true" : "false";
-    return group + `<tr data-capability-id="${row.id}" data-selected="${selected}">
+    return group + `<tr data-capability-id="${row.id}" data-selected="${selected}" ${objectDomAttributes({
+      kind: "capability", id: row.id, relations: capabilityRelations(row.id),
+    })}>
       <th class="capability-cell" scope="row"><button type="button" data-select-capability="${row.id}" data-focus-key="school:${row.id}" title="Inspect exact capability ${row.id}">${row.id}</button></th>
       <td>${row.grade}</td>
       <td title="${row.prerequisites.join(", ") || "none"}">${row.prerequisites.join(", ") || "—"}</td>
@@ -106,7 +121,9 @@ function graphNode(row, neighborhood, index) {
     ? "blocked"
     : row.lifecycleState === "READY" ? "eligible" : "other";
   const mastery = row.qualificationState === "QUALIFIED" ? "mastered" : "learning";
-  return `<g class="dependency-node" data-capability-id="${row.id}" data-focus-key="graph:${row.id}" data-relation="${relation}" data-state="${stateCue(row)}" data-lifecycle="${row.lifecycleState}" data-eligibility="${eligibility}" data-mastery="${mastery}" data-observed-debt="${row.observedDebt}" tabindex="0" role="button" aria-pressed="${isSelected}" aria-label="${row.id}; ${row.lifecycleState}; ${unlocks} direct downstream unlocks" transform="translate(${x} ${y})">
+  return `<g class="dependency-node" data-capability-id="${row.id}" ${objectDomAttributes({
+    kind: "capability", id: row.id, relations: capabilityRelations(row.id),
+  })} data-focus-key="graph:${row.id}" data-relation="${relation}" data-state="${stateCue(row)}" data-lifecycle="${row.lifecycleState}" data-eligibility="${eligibility}" data-mastery="${mastery}" data-observed-debt="${row.observedDebt}" tabindex="0" role="button" aria-pressed="${isSelected}" aria-label="${row.id}; ${row.lifecycleState}; ${unlocks} direct downstream unlocks" transform="translate(${x} ${y})">
     <title>${row.id}: ${row.lifecycleState}; direct downstream unlocks ${unlocks}</title>
     <rect width="190" height="62" rx="8"></rect>
     <text x="12" y="24">${row.id}</text>
@@ -196,7 +213,11 @@ function bind(container, inspectCapability) {
   container.querySelectorAll("[data-select-capability], .dependency-node").forEach((node) => {
     const activate = () => {
       ui.selectedId = node.dataset.selectCapability ?? node.dataset.capabilityId;
-      inspectCapability(ui.selectedId, rows.find((row) => row.id === ui.selectedId));
+      inspectCapability(
+        ui.selectedId,
+        rows.find((row) => row.id === ui.selectedId),
+        selectionNeighborhood(rows, ui.selectedId),
+      );
       renderSchoolView(container, inspectCapability);
     };
     node.addEventListener("click", activate);

@@ -107,6 +107,7 @@ export function renderInspector(state, defense) {
   const panel = document.querySelector("#inspector");
   const selected = state?.selected ?? null;
   const open = Boolean(state?.inspectorOpen);
+  document.querySelector("#shell").dataset.inspector = open ? "open" : "closed";
   panel.setAttribute("aria-hidden", String(!open));
   panel.inert = !open;
   document.querySelector("#inspector-title").textContent = selected ? selected.id : "No selection";

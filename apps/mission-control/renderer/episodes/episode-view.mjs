@@ -10,6 +10,7 @@ import {
   rollbackInvariant,
   scoreText,
 } from "./episode-model.mjs";
+import { objectDomAttributes } from "../interactions/dom-ref.mjs";
 
 const ui = {
   selectedId: EPISODE_FIXTURES[0].recordId,
@@ -20,9 +21,28 @@ function stateBadge(state) {
   return `<span class="episode-state" data-state="${String(state).toLowerCase()}">${state}</span>`;
 }
 
+function episodeRelations(episode) {
+  const sourceRefs = episode.stages.flatMap((stage) =>
+    stage.evidence.filter((item) => item.type === "source-revision")
+      .map((item) => ({ kind: "source", id: item.id, relation: "source-revision" })));
+  return [
+    { kind: "capability", id: episode.capabilityId, relation: "target-capability" },
+    ...(episode.resultingGeneration !== null
+      ? [{ kind: "generation", id: `generation:${episode.resultingGeneration}`, relation: "resulting-generation" }]
+      : []),
+    ...(episode.checkpointId
+      ? [{ kind: "checkpoint", id: episode.checkpointId, relation: "checkpoint" }]
+      : []),
+    ...sourceRefs,
+  ];
+}
+
 function headerPanel(episode) {
   return `<section class="episode-panel">
     <header><div><span class="eyebrow">Episode header</span><h3>${episode.episodeId}</h3></div>${stateBadge(episode.terminalState)}</header>
+    <button type="button" data-candidate-inspect="${episode.candidateId}" ${objectDomAttributes({
+      kind: "candidate", id: episode.candidateId, relations: episodeRelations(episode),
+    })}>Inspect candidate · ${episode.candidateId}</button>
     <div class="episode-header-grid">
       <div><small>Candidate ID</small><strong>${episode.candidateId}</strong></div>
       <div><small>CP03 record ID</small><strong>${episode.recordId}</strong></div>
@@ -121,32 +141,42 @@ function replayPanel(episode) {
 
 function picker() {
   return `<div class="episode-picker" aria-label="Episode fixture selector">
-    ${EPISODE_FIXTURES.map((episode) => `<button type="button" data-episode-id="${episode.recordId}" aria-pressed="${episode.recordId === ui.selectedId}">
+    ${EPISODE_FIXTURES.map((episode) => `<button type="button" data-episode-id="${episode.recordId}" ${objectDomAttributes({
+      kind: "episode",
+      id: episode.recordId,
+      relations: [
+        { kind: "candidate", id: episode.candidateId, relation: "candidate" },
+        { kind: "capability", id: episode.capabilityId, relation: "target-capability" },
+      ],
+    })} aria-pressed="${episode.recordId === ui.selectedId}">
       ${episode.capabilityId} · ${episode.terminalState} · ${episode.retentionReason}
     </button>`).join("")}
   </div>`;
 }
 
-function bind(container, inspectEvidence) {
+function bind(container, inspectEvidence, inspectCandidate, episode) {
   container.querySelectorAll("[data-episode-id]").forEach((button) => button.addEventListener("click", () => {
     ui.selectedId = button.dataset.episodeId;
     ui.stageIndex = EPISODE_STAGES.length - 1;
-    renderEpisodesView(container, inspectEvidence, ui.selectedId);
+    renderEpisodesView(container, inspectEvidence, ui.selectedId, inspectCandidate);
   }));
   container.querySelectorAll("[data-stage-index]").forEach((button) => button.addEventListener("click", () => {
     ui.stageIndex = Number(button.dataset.stageIndex);
-    renderEpisodesView(container, inspectEvidence, ui.selectedId);
+    renderEpisodesView(container, inspectEvidence, ui.selectedId, inspectCandidate);
   }));
   container.querySelector("[data-stage-range]")?.addEventListener("input", (event) => {
     ui.stageIndex = Number(event.currentTarget.value);
-    renderEpisodesView(container, inspectEvidence, ui.selectedId);
+    renderEpisodesView(container, inspectEvidence, ui.selectedId, inspectCandidate);
   });
   container.querySelectorAll("[data-episode-evidence]").forEach((button) => button.addEventListener("click", () => {
     inspectEvidence(button.dataset.episodeEvidence, button.dataset.evidenceType);
   }));
+  container.querySelector("[data-candidate-inspect]")?.addEventListener("click", () => {
+    inspectCandidate?.(episode.candidateId, episode, episodeRelations(episode));
+  });
 }
 
-export function renderEpisodesView(container, inspectEvidence, selectedId = null) {
+export function renderEpisodesView(container, inspectEvidence, selectedId = null, inspectCandidate = null) {
   if (selectedId) {
     const selected = episodeById(selectedId);
     if (selected.recordId === selectedId || selected.episodeId === selectedId || selected.candidateId === selectedId) {
@@ -164,7 +194,7 @@ export function renderEpisodesView(container, inspectEvidence, selectedId = null
     ${diffPanel(episode)}
     ${replayPanel(episode)}
   </div>`;
-  bind(container, inspectEvidence);
+  bind(container, inspectEvidence, inspectCandidate, episode);
 }
 
 export function currentEpisodeForTest() {

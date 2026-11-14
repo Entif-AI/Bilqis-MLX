@@ -9,6 +9,7 @@ import {
   strategyEpisodes,
   teacherProjectionBoundary,
 } from "./teacher-model.mjs";
+import { objectDomAttributes } from "../interactions/dom-ref.mjs";
 
 const ui = {
   selectedStrategyIds: Object.freeze([
@@ -22,6 +23,20 @@ function badge(value) {
   return `<span class="teacher-state" data-state="${String(value).toLowerCase()}">${value}</span>`;
 }
 
+function strategyRelations(strategy) {
+  return [
+    ...strategy.activeCapabilityScope.map((id) => ({
+      kind: "capability", id, relation: "active-capability",
+    })),
+    ...strategy.sourceFamilies.map((id) => ({
+      kind: "source", id, relation: "source-family",
+    })),
+    ...strategy.episodeRecordIds.map((id) => ({
+      kind: "episode", id, relation: "episode",
+    })),
+  ];
+}
+
 function rosterCard(strategy, inspectStrategy) {
   const episodes = strategyEpisodes(strategy);
   const average = strategy.wallSeconds.length
@@ -33,7 +48,9 @@ function rosterCard(strategy, inspectStrategy) {
       ? ordered[Math.floor(ordered.length / 2)]
       : (ordered[ordered.length / 2 - 1] + ordered[ordered.length / 2]) / 2
     : null;
-  return `<article class="strategy-card" data-role="${strategy.role}">
+  return `<article class="strategy-card" data-role="${strategy.role}" ${objectDomAttributes({
+    kind: "strategy", id: strategy.id, relations: strategyRelations(strategy),
+  })}>
     <header>
       <div><span class="eyebrow">${strategy.role}</span><h4>${strategy.label}</h4></div>
       ${badge(strategy.status)}
@@ -56,7 +73,9 @@ function rosterCard(strategy, inspectStrategy) {
     </div>
     <div class="strategy-episode-links">
       ${episodes.length
-        ? episodes.map((episode) => `<a href="${episode.href}">${episode.capabilityId} · ${episode.terminalState} · ${episode.retentionReason}</a>`).join("")
+        ? episodes.map((episode) => `<a href="${episode.href}" ${objectDomAttributes({
+          kind: "episode", id: episode.recordId,
+        })}>${episode.capabilityId} · ${episode.terminalState} · ${episode.retentionReason}</a>`).join("")
         : '<span class="episode-evidence-empty">No literal Learning Episode fixture linked.</span>'}
     </div>
     <div class="strategy-history">
@@ -163,7 +182,8 @@ function projectionPanel() {
 
 function bind(container, inspectStrategy) {
   container.querySelectorAll("[data-strategy-inspect]").forEach((button) => button.addEventListener("click", () => {
-    inspectStrategy(button.dataset.strategyInspect);
+    const strategy = STRATEGY_FIXTURES.find((item) => item.id === button.dataset.strategyInspect);
+    inspectStrategy(button.dataset.strategyInspect, strategy, strategy ? strategyRelations(strategy) : []);
   }));
   container.querySelectorAll("[data-compare-strategy]").forEach((button) => button.addEventListener("click", () => {
     const id = button.dataset.compareStrategy;

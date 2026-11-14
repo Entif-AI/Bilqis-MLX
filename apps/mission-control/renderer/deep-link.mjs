@@ -40,7 +40,7 @@ export function buildDeepLink(state) {
   if (state.context) {
     params.set("run", state.context.runId);
     params.set("generation", state.context.generation);
-    params.set("mode", state.context.mode);
+    params.set("mode", state.context.historicalPinned ? "HISTORICAL" : "LIVE");
     if (state.context.fixture) params.set("fixture", "true");
   }
   if (state.view === "evidence" && state.evidenceOrigin?.view) {

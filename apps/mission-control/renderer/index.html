@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="./lineage/lineage.css" />
     <link rel="stylesheet" href="./evidence/evidence.css" />
     <link rel="stylesheet" href="./resources/resources.css" />
+    <link rel="stylesheet" href="./interactions/interactions.css" />
     <link rel="stylesheet" href="./operate/operate.css" />
   </head>
   <body>
@@ -54,10 +55,11 @@
           </div>
         </header>
 
+        <section id="investigation-strip" class="investigation-strip" aria-label="Global investigation tools"></section>
         <section id="defensive-banner" class="defensive-banner" aria-live="polite" aria-atomic="true"></section>
         <div id="announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
-        <section class="view-host" aria-labelledby="view-title">
+        <section id="view-host" class="view-host" aria-labelledby="view-title">
           <div class="eyebrow">Current destination</div>
           <h1 id="view-title">Mission Control</h1>
           <p id="view-summary">Shell foundation ready for provider-neutral BAMF views.</p>
@@ -86,6 +88,10 @@
         <div class="inspector-actions">
           <button id="open-owner" type="button">Open in owning view</button>
           <button id="open-evidence" type="button">Open evidence</button>
+          <button id="pin-selection" type="button">Pin exact object</button>
+          <button id="compare-left" type="button">Set compare left</button>
+          <button id="compare-right" type="button">Set compare right</button>
+          <button id="annotate-selection" type="button">Add operator note</button>
         </div>
       </aside>
 
