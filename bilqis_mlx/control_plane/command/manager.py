@@ -15,7 +15,6 @@ from bilqis_mlx.mission_control.operator import (
     ActionReceiptState, OperatorActionReceiptV2, OperatorActionRequestV2,
 )
 
-from .executor import C11CommandExecutor
 from .launch import launch_command_worker
 from .model import (
     CommandMode, ResolvedCommandTarget, intent_sha256, operation_id_for,
@@ -112,7 +111,10 @@ class CommandManager:
     ):
         self.run_dir = Path(run_dir).expanduser().resolve()
         self.store = CommandStore(store_root)
-        self.executor = executor or C11CommandExecutor(self.run_dir)
+        if executor is None:
+            from .executor import C11CommandExecutor
+            executor = C11CommandExecutor(self.run_dir)
+        self.executor = executor
         self.launcher = launcher or (
             lambda operation_id: launch_command_worker(
                 store_root=self.store.root,
