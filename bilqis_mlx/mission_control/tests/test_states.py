@@ -17,7 +17,7 @@ from bilqis_mlx.mission_control.model import (
 )
 from bilqis_mlx.mission_control.operator import (
     ActionParameter, ActionReceiptState, OperatorActionReceipt,
-    OperatorActionRequest,
+    OperatorActionReceiptV2, OperatorActionRequest, OperatorActionRequestV2,
 )
 from bilqis_mlx.mission_control.snapshots import SchoolSnapshot
 from bilqis_mlx.mission_control.snapshots import RunContext
@@ -162,6 +162,26 @@ class MissionControlStateTests(unittest.TestCase):
                 complete.meta, "request-3", "operation-3", ActionReceiptState.ACCEPTED,
                 120, "postcondition:forbidden", None,
             )
+
+    def test_cp05_action_v2_is_pre_run_without_changing_v1_run_binding(self):
+        v1 = next(
+            sample for sample in SAMPLES if type(sample) is OperatorActionRequest)
+        with self.assertRaises(MissionControlContractError):
+            replace(v1, meta=replace(v1.meta, run=None))
+
+        v2 = next(
+            sample for sample in SAMPLES if type(sample) is OperatorActionRequestV2)
+        self.assertIsNone(v2.meta.run)
+        self.assertFalse(v2.human_authorized)
+        decoded = decode_json(canonical_json(v2))
+        self.assertEqual(decoded, v2)
+        self.assertIsNone(decoded.meta.run)
+
+        receipt = next(
+            sample for sample in SAMPLES if type(sample) is OperatorActionReceiptV2)
+        self.assertIsNone(receipt.meta.run)
+        self.assertEqual(receipt.request_sha256, "1" * 64)
+        self.assertTrue(receipt.target_ref.startswith("command-target:"))
 
     def test_event_cursor_is_order_metadata_not_event_identity(self):
         event = next(sample for sample in SAMPLES if type(sample) is EventEnvelope)

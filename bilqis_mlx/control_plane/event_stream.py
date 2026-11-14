@@ -55,6 +55,7 @@ class EventFamily(StrEnum):
     CORRECTION_REQUALIFICATION_CHANGED = "correction.requalification.changed"
     RESOURCE_HEALTH_SAMPLE = "resource.health.sample"
     WARNING_FAILURE = "warning.failure"
+    OPERATOR_ACTION_STATE = "operator.action.state"
 
 
 class ReplayGapReason(StrEnum):
