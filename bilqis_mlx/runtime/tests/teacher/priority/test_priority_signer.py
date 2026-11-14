@@ -98,7 +98,8 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
         authority, "_priority_planning", return_value=planning,
     ):
         issued = authority.issue_foundation_priority_authority(
-            "/run", source_context, parent, {"epoch": 1}, "/atlas")
+            "/run", source_context, parent, {"epoch": 1}, "/atlas",
+            teacher_state=parent.teacher_state)
 
     evidence = dict(issued.frontier.evidence)
     assert issued.now == 1
@@ -199,9 +200,11 @@ def test_rejected_candidate_is_durably_deprioritized_without_advancing_c03_rotat
             return_value=(1, {"capability:alpha": 1}),
         ), patch.object(authority, "_priority_planning", return_value=planning):
             first = authority.issue_foundation_priority_authority(
-                run_dir, source_context, parent, {"epoch": 1}, "/atlas")
+                run_dir, source_context, parent, {"epoch": 1}, "/atlas",
+                teacher_state=parent.teacher_state)
             cold = authority.issue_foundation_priority_authority(
-                run_dir, source_context, parent, {"epoch": 1}, "/atlas")
+                run_dir, source_context, parent, {"epoch": 1}, "/atlas",
+                teacher_state=parent.teacher_state)
 
     assert first == cold
     assert first.now == 2
