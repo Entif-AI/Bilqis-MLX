@@ -8,6 +8,7 @@ import {
   openSelectionOwner,
   returnFromEvidence,
   selectObject,
+  normalizeContext,
   withDefensiveState,
   withRoute,
 } from "./shell-state.mjs";
@@ -43,18 +44,39 @@ import { createResourceController } from "./resources/resource-controller.mjs";
 import { createOperateController } from "./operate/operate-controller.mjs";
 import { createCapabilityExplorer } from "./capability/app.mjs";
 import { activateDomainViews } from "./foundation/domain-controller.mjs";
+import { createInteractionController } from "./interactions/controller.mjs";
+import { routeForObjectRef } from "./interactions/app-uri.mjs";
+import { withHistoricalLens } from "./interactions/model.mjs";
 
 const SNAPSHOT_REQUEST = Object.freeze({
   schemaVersion: "bamf.gui20.operator-view-query/v1",
   schema: "bilqis.bamf.mission-control.operator-view/v1",
 });
 let state = null;
+let verifiedLiveContext = null;
 let displaySettings;
 let defense = defensiveState("loading");
 let focusReturnToken = null;
 let paletteReturnToken = null;
 const homeController = createHomeController(window.bamfMissionControl);
 const resourceController = createResourceController(window.bamfMissionControl);
+const interactionController = createInteractionController({
+  document,
+  storage: window.localStorage,
+  getState: () => state,
+  onTimeLens: (generation) => { state = withHistoricalLens(state, generation); render(); },
+  onCurrentLens: () => {
+    if (!state || !verifiedLiveContext) {
+      announce("No verified current context is available.");
+      return;
+    }
+    state = withDefensiveState({ ...state, context: verifiedLiveContext }, defense);
+    render();
+  },
+  canUseCurrent: () => Boolean(verifiedLiveContext),
+  onOpenRef: (ref) => { state = withRoute(state, routeForObjectRef(ref)); render(); },
+  announce,
+});
 const operateController = createOperateController(window.bamfMissionControl);
 
 const frameShell = createFrameShell({
@@ -134,12 +156,14 @@ function render() {
     homeController, resourceController, operateController,
     capabilityExplorer, onInspect: openInspector, onAnnounce: announce,
   });
+  window.queueMicrotask(() => interactionController.render());
 }
 
 function selectEvidenceRecord(selected) {
   if (!state) return;
   state = selectObject(state, selected);
   renderInspector(state, defense);
+  interactionController.render();
   setHash();
 }
 
@@ -162,6 +186,7 @@ function openInspector(selected) {
   focusReturnToken = focusToken(document.activeElement);
   state = inspect(state, selected);
   renderInspector(state, defense);
+  interactionController.render();
   setHash();
   window.queueMicrotask(() => document.querySelector("#inspector-close")?.focus());
   announce(`Inspector opened for ${selected.id}`);
@@ -171,6 +196,7 @@ function closeInspector() {
   if (!state?.inspectorOpen) return;
   state = inspect(state, null);
   renderInspector(state, defense);
+  interactionController.render();
   setHash();
   window.queueMicrotask(() => restoreFocus(document, focusReturnToken));
   announce("Inspector closed");
@@ -254,6 +280,9 @@ async function establishSnapshot({ preserveRoute = false } = {}) {
   if (snapshotSource === "cache" && defense.id === "live") {
     defense = defensiveState("stale", options);
   }
+  verifiedLiveContext = snapshotSource === "service" && defense.id === "live"
+    ? normalizeContext(operatorView)
+    : null;
   state = { ...withDefensiveState(createShellState(operatorView, route), defense), modelSection };
   render();
   announce(`${defense.label}. ${defense.historical ? "Inspection-only evidence is shown." : "Live context established."}`);
@@ -294,17 +323,7 @@ function bindStaticInteractions() {
     if (!state) return;
     const generation = Number(event.currentTarget.value);
     if (!Number.isSafeInteger(generation) || generation < 0) return;
-    state = {
-      ...state,
-      context: Object.freeze({
-        ...state.context, generation, mode: "HISTORICAL",
-        historicalPinned: true,
-        generationManifest: "UNKNOWN", topologyId: "UNKNOWN",
-        factoryRelease: "UNKNOWN", semanticRelease: "UNKNOWN",
-        coverage: "UNKNOWN", freshness: "UNKNOWN",
-      }),
-      mutationAvailable: false,
-    };
+    state = withHistoricalLens(state, generation);
     render();
   });
   window.addEventListener("hashchange", () => {
@@ -324,6 +343,7 @@ function bindStaticInteractions() {
       closeInspector();
     }
   });
+  interactionController.bindStatic();
 }
 
 async function bootstrap() {

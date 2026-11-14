@@ -50,6 +50,15 @@ function requireTrustedRendererUrl(raw) {
   return normalized;
 }
 
+function rendererEntryUrl(hash = "") {
+  if (hash === "") return RENDERER_ENTRY_URL;
+  if (typeof hash !== "string" || hash.length > 8192 ||
+      !hash.startsWith("#/view/") || hash.includes("\n")) {
+    throw new TypeError("BAMF_GUI18_RENDERER_HASH_INVALID");
+  }
+  return RENDERER_ENTRY_URL + hash;
+}
+
 module.exports = {
   RENDERER_ENTRY_URL,
   RENDERER_HOST,
@@ -58,5 +67,6 @@ module.exports = {
   RENDERER_SCHEME_PRIVILEGES,
   normalizedRendererDocument,
   registerRendererSchemePrivileges,
+  rendererEntryUrl,
   requireTrustedRendererUrl,
 };

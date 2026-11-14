@@ -12,8 +12,26 @@ const { registerMissionControlIpc } = require("./electron/main-ipc.cjs");
 const { registerRendererSchemePrivileges } = require("./electron/renderer-location.cjs");
 const { registerMissionControlProtocol } = require("./electron/renderer-protocol.cjs");
 const { createMissionControlWindow } = require("./electron/window-security.cjs");
+const { appUriArgument, rendererHashForAppUri } = require("./electron/app-routing.cjs");
+const { rendererEntryUrl } = require("./electron/renderer-location.cjs");
 
 registerRendererSchemePrivileges(protocol);
+
+let missionControlWindow = null;
+let pendingAppUri = appUriArgument(process.argv);
+
+async function openAppUri(raw) {
+  const hash = await rendererHashForAppUri(raw);
+  if (hash === null) return false;
+  if (!missionControlWindow || missionControlWindow.isDestroyed?.()) {
+    pendingAppUri = raw;
+    return true;
+  }
+  await missionControlWindow.loadURL(rendererEntryUrl(hash));
+  missionControlWindow.restore?.();
+  missionControlWindow.show?.();
+  return true;
+}
 
 async function createWindow() {
   const { assertOperatorView } = await import("./renderer/shell-state.mjs");
@@ -38,13 +56,28 @@ async function createWindow() {
     bridge,
     trustedWebContents: window.webContents,
   });
-  await loadRenderer();
+  const initialHash = pendingAppUri ? await rendererHashForAppUri(pendingAppUri) : "";
+  pendingAppUri = null;
+  await loadRenderer(initialHash ?? "");
+  missionControlWindow = window;
   window.once("closed", () => {
+    if (missionControlWindow === window) missionControlWindow = null;
     disposeIpc();
     void bridge.disconnect().finally(() => adapter.close());
   });
   return window;
 }
+
+app.setAsDefaultProtocolClient?.("bilqis");
+app.on("open-url", (event, raw) => {
+  event.preventDefault();
+  if (missionControlWindow) void openAppUri(raw);
+  else pendingAppUri = raw;
+});
+app.on("second-instance", (_event, argv) => {
+  const raw = appUriArgument(argv);
+  if (raw) void openAppUri(raw);
+});
 
 app.whenReady().then(async () => {
   registerMissionControlProtocol({

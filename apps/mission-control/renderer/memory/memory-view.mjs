@@ -5,6 +5,7 @@ import {
 import {
   capabilityInterpretation,
   currentMemoryGeneration,
+  memoryGeneration,
   memoryCompare,
   pageSummaries,
   priorMemoryGeneration,
@@ -17,6 +18,7 @@ import {
   slotsForPage,
   stableMemoryIdentity,
 } from "./memory-model.mjs";
+import { objectDomAttributes } from "../interactions/dom-ref.mjs";
 
 const ui = {
   generation: currentMemoryGeneration().generation,
@@ -57,6 +59,13 @@ function summaryPanel(snapshot) {
   </section>`;
 }
 
+function memoryRelations(slot) {
+  return [
+    ...slot.capabilities.map((id) => ({ kind: "capability", id, relation: "capability" })),
+    ...slot.episodes.map((id) => ({ kind: "episode", id, relation: "episode" })),
+  ];
+}
+
 function atlasPanel(snapshot) {
   const pages = pageSummaries(snapshot);
   const pageSlots = slotsForPage(snapshot, ui.selectedPage);
@@ -67,7 +76,9 @@ function atlasPanel(snapshot) {
     </button>`).join("")}</div>
     <div class="memory-slot-list">${pageSlots.length ? pageSlots.map((slot) => {
       const identity = stableMemoryIdentity(slot);
-      return `<button type="button" data-memory-slot="${identity}" aria-pressed="${identity === ui.selectedIdentity}">
+      return `<button type="button" data-memory-slot="${identity}" ${objectDomAttributes({
+        kind: "memory", id: identity, relations: memoryRelations(slot),
+      })} aria-pressed="${identity === ui.selectedIdentity}">
         <span class="slot-address">${slotAddress(slot)}</span><strong>${identity}</strong><span>${slot.frameSchemaId}</span>${stateBadge(slot.allocationState)}
       </button>`;
     }).join("") : `<p class="memory-muted">No allocated slots on this page.</p>`}</div>
@@ -142,28 +153,38 @@ function rejectedCandidatePanel(snapshot) {
   </section>`;
 }
 
-function bind(container, inspectMemory) {
+function bind(container, inspectMemory, snapshot, context) {
   container.querySelectorAll("[data-memory-page]").forEach((button) => button.addEventListener("click", () => {
     ui.selectedPage = Number(button.dataset.memoryPage);
-    const snapshot = currentMemoryGeneration();
     const first = slotsForPage(snapshot, ui.selectedPage)[0];
     if (first) ui.selectedIdentity = stableMemoryIdentity(first);
-    renderMemoryView(container, inspectMemory, ui.selectedIdentity);
+    renderMemoryView(container, inspectMemory, ui.selectedIdentity, context);
   }));
   container.querySelectorAll("[data-memory-slot]").forEach((button) => button.addEventListener("click", () => {
     ui.selectedIdentity = button.dataset.memorySlot;
-    renderMemoryView(container, inspectMemory, ui.selectedIdentity);
-    const slot = slotByIdentity(currentMemoryGeneration(), ui.selectedIdentity);
+    renderMemoryView(container, inspectMemory, ui.selectedIdentity, context);
+    const slot = slotByIdentity(snapshot, ui.selectedIdentity);
     if (slot) inspectMemory(ui.selectedIdentity, slot);
   }));
   container.querySelector("[data-memory-compare]")?.addEventListener("change", (event) => {
     ui.compareGeneration = Number(event.currentTarget.value);
-    renderMemoryView(container, inspectMemory, ui.selectedIdentity);
+    renderMemoryView(container, inspectMemory, ui.selectedIdentity, context);
   });
 }
 
-export function renderMemoryView(container, inspectMemory, selectedIdentity = null) {
-  const snapshot = currentMemoryGeneration();
+export function renderMemoryView(container, inspectMemory, selectedIdentity = null, context = null) {
+  let snapshot = currentMemoryGeneration();
+  if (context?.mode === "HISTORICAL") {
+    try {
+      snapshot = memoryGeneration(context.generation);
+    } catch (_error) {
+      container.innerHTML = `<div class="memory-view"><section class="memory-panel">
+        <header><div><span class="eyebrow">Historical memory</span><h2>UNAVAILABLE</h2></div>${stateBadge("MISSING")}</header>
+        <p class="memory-doctrine">No exact Engram fixture exists for generation ${context.generation}. The global historical lens remains unchanged.</p>
+      </section></div>`;
+      return;
+    }
+  }
   if (selectedIdentity && slotByIdentity(snapshot, selectedIdentity)) {
     ui.selectedIdentity = selectedIdentity;
   }
@@ -178,5 +199,5 @@ export function renderMemoryView(container, inspectMemory, selectedIdentity = nu
     ${comparePanel(snapshot)}
     ${rejectedCandidatePanel(snapshot)}
   </div>`;
-  bind(container, inspectMemory);
+  bind(container, inspectMemory, snapshot, context);
 }

@@ -47,7 +47,7 @@ export function createHomeController(api) {
     }));
     pages = Object.fromEntries(entries);
     model = projectionFromPages(pages, context);
-    if (context?.runId === "fixture-run" &&
+    if (context?.runId === "fixture-run" && context?.mode !== "HISTORICAL" &&
         HOME_FAMILIES.every((family) => pages[family]?.accepted !== true || pages[family]?.state === "EMPTY")) {
       model = referenceHomeProjection();
     }
@@ -85,7 +85,8 @@ export function createHomeController(api) {
     }
     key = nextKey;
     pages = {};
-    model = nextContext?.runId === "fixture-run" ? referenceHomeProjection() : null;
+    model = nextContext?.runId === "fixture-run" && nextContext?.mode !== "HISTORICAL"
+      ? referenceHomeProjection() : null;
     if (typeof unsubscribe === "function") {
       await unsubscribe();
       unsubscribe = null;

@@ -43,6 +43,13 @@ test("static shell exposes named landmarks, skip navigation, dedicated announcem
   assert.match(html, /aria-keyshortcuts="Control\+K"/);
 });
 
+test("global investigation surface reserves inspector space while the inspector is open", () => {
+  const ui = source("foundation/renderer-ui.mjs");
+  const css = source("interactions/interactions.css");
+  assert.match(ui, /dataset\.inspector = open \? "open" : "closed"/);
+  assert.match(css, /\.shell\[data-inspector="open"\] \.investigation-strip/);
+});
+
 test("focus is visibly retained and reduced-motion plus forced-colors modes are explicit", () => {
   const css = `${source("visual-tokens.css")}\n${source("shell.css")}\n${source("components.css")}`;
   assert.match(css, /:focus-visible\s*\{[^}]*outline:/s);
