@@ -18,6 +18,7 @@ const { ControlPlaneBridge } = require("../control-plane-bridge.cjs");
 
 function brokerFixture({ fail = false } = {}) {
   const calls = [];
+  let eventListener = null;
   return {
     calls,
     async connect() {
@@ -66,6 +67,12 @@ function brokerFixture({ fail = false } = {}) {
         accepted: true,
       };
     },
+    subscribe(listener) {
+      calls.push("subscribe");
+      eventListener = listener;
+      return () => { calls.push("unsubscribe"); eventListener = null; };
+    },
+    emit(value) { eventListener?.(value); },
     async disconnect() { calls.push("disconnect"); },
     close() { calls.push("close"); },
   };
@@ -148,7 +155,7 @@ test("missing CP01 service becomes disconnected state without leaking broker err
   adapter.close();
 });
 
-test("accepted CP01 boundary refuses CP02 operations the service does not support", async () => {
+test("accepted CP01 boundary exposes CP04 events but still refuses unsupported mutation operations", async () => {
   const broker = brokerFixture();
   const { adapter, bridge } = await acceptedBridge(broker);
   await bridge.connect();
@@ -165,10 +172,28 @@ test("accepted CP01 boundary refuses CP02 operations the service does not suppor
     bridge.receipt("receipt:fixture"),
     /BAMF_GUI20_CP01_OPERATION_UNSUPPORTED/,
   );
-  await assert.rejects(
-    bridge.subscribe(() => {}),
-    /BAMF_GUI20_CONTROL_PLANE_METHOD_UNAVAILABLE:subscribe/,
-  );
+  const observed = [];
+  const unsubscribe = await bridge.subscribe((event) => observed.push(event));
+  broker.emit({
+    schema_version: "bilqis.bamf.mission-control.event-envelope/v1",
+    meta: { record_id: "event:1" },
+    event_id: "event:1",
+    position: {
+      stream_id: "run-7:candidate",
+      epoch_id: "epoch-1",
+      ordinal: 1,
+      cursor_sha256: "a".repeat(64),
+      previous_cursor_sha256: "b".repeat(64),
+    },
+    event_family: "candidate.retained",
+    payload_schema_version: "bilqis.bamf.mission-control.candidate-decision/v1",
+    payload_record_id: "decision:1",
+    payload_sha256: "c".repeat(64),
+    payload_ref: "evidence:event:1",
+  });
+  assert.equal(observed.length, 1);
+  assert.equal(observed[0].payload_record_id, "decision:1");
+  unsubscribe();
   adapter.close();
 });
 

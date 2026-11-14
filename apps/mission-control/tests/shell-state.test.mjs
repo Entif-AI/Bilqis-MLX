@@ -8,6 +8,7 @@ import {
   inspect,
   navigate,
   openSelectionOwner,
+  selectObject,
   shellPosture,
   withRoute,
 } from "../renderer/shell-state.mjs";
@@ -44,6 +45,18 @@ test("deep links restore view and selected object without encoding run context",
   const restored = createShellState(context, parseDeepLink(hash));
   assert.equal(restored.context.runId, "fixture-run");
   assert.deepEqual(restored.selected, { kind: "evidence", id: "receipt:123" });
+});
+
+test("evidence selection can update URL identity without forcing inspector state", () => {
+  const initial = navigate(createShellState(context), "evidence");
+  const selected = selectObject(initial, { kind: "evidence", id: "receipt:exact" });
+  assert.equal(selected.inspectorOpen, false);
+  assert.equal(
+    buildDeepLink(selected),
+    "#/view/evidence?kind=evidence&id=receipt%3Aexact",
+  );
+  const restored = createShellState(context, parseDeepLink(buildDeepLink(selected)));
+  assert.deepEqual(restored.selected, { kind: "evidence", id: "receipt:exact" });
 });
 
 test("hash-route updates reuse normalized state without re-decoding it as CP02", () => {
