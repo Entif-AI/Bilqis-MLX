@@ -15,7 +15,7 @@ import {
   loadSemanticIdentity,
   renderAtlasMarkup,
   stateRecordId,
-} from "../renderer/domains/semantic/semantic-atlas.mjs";
+} from "../renderer/semantic-atlas.mjs";
 
 const RELEASE = "1".repeat(64);
 const ROOT_ID = "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-007a2c39cfe74c";

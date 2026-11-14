@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseDeepLink } from "../renderer/deep-link.mjs";
-import { EPISODE_FIXTURES, EPISODE_STAGES } from "../renderer/domains/episodes/episode-fixture.mjs";
+import { EPISODE_FIXTURES, EPISODE_STAGES } from "../renderer/episode-fixture.mjs";
 import {
   diffRows,
   episodeById,
@@ -15,7 +15,7 @@ import {
   replaySlice,
   retainedTransition,
   rollbackInvariant,
-} from "../renderer/domains/episodes/episode-model.mjs";
+} from "../renderer/episode-model.mjs";
 import { INSPECTOR_OWNERS } from "../renderer/shell-state.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -82,7 +82,7 @@ test("no-gain rejection is semantically and visually distinct from interference 
   assert.equal(noGain.protected.candidateAfter, null);
   assert.equal(noGain.protected.reason, "TARGET_DID_NOT_GAIN");
   assert.equal(noGain.stages.find((stage) => stage.id === "protected").state, "MISSING");
-  const css = fs.readFileSync(path.join(rendererRoot, "domains/episodes/episodes.css"), "utf8");
+  const css = fs.readFileSync(path.join(rendererRoot, "episodes.css"), "utf8");
   assert.match(css, /data-class="INTERFERENCE"/);
   assert.match(css, /data-class="NO_GAIN"/);
 });
@@ -187,9 +187,7 @@ test("fixture reason codes and rollback claims match executable retention contra
 test("learning episode UI is read-only evidence replay and contains no hidden-activation narrative labels", () => {
   const source = [
     "episode-view.mjs", "episode-model.mjs", "episode-fixture.mjs",
-  ].map((name) => fs.readFileSync(
-    path.join(rendererRoot, "domains/episodes", name), "utf8",
-  )).join("\n").toLowerCase();
+  ].map((name) => fs.readFileSync(path.join(rendererRoot, name), "utf8")).join("\n").toLowerCase();
   for (const forbidden of [
     "thought replay", "hidden reasoning", "natural-language reasoning", "operatoractionrequest",
   ]) assert.equal(source.includes(forbidden), false, forbidden);

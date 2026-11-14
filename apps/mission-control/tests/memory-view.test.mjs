@@ -8,7 +8,7 @@ import {
   MEMORY_FIXTURE_CONTRACT,
   MEMORY_GENERATIONS,
   REJECTED_MEMORY_CANDIDATE,
-} from "../renderer/domains/memory/memory-fixture.mjs";
+} from "../renderer/memory-fixture.mjs";
 import {
   capabilityInterpretation,
   currentMemoryGeneration,
@@ -21,7 +21,7 @@ import {
   slotAddress,
   slotHitRate,
   stableMemoryIdentity,
-} from "../renderer/domains/memory/memory-model.mjs";
+} from "../renderer/memory-model.mjs";
 import { parseDeepLink } from "../renderer/deep-link.mjs";
 import { INSPECTOR_OWNERS } from "../renderer/shell-state.mjs";
 
@@ -159,9 +159,7 @@ test("memory deep link uses stable BAMF memory identity and owning view", () => 
 test("GUI10 source avoids memory-policy mutation and unsupported success language", () => {
   const source = [
     "memory-fixture.mjs", "memory-model.mjs", "memory-view.mjs",
-  ].map((name) => fs.readFileSync(
-    path.join(rendererRoot, "domains/memory", name), "utf8",
-  )).join("\n").toLowerCase();
+  ].map((name) => fs.readFileSync(path.join(rendererRoot, name), "utf8")).join("\n").toLowerCase();
   for (const forbidden of [
     "allocate memory now", "edit memory", "promote slot", "learned success", "semantic authority from memory",
     "providerrowid", "database row id",
@@ -171,7 +169,7 @@ test("GUI10 source avoids memory-policy mutation and unsupported success languag
 });
 
 test("CSS gives held rejected and requalified states non-color structural cues", () => {
-  const css = fs.readFileSync(path.join(rendererRoot, "domains/memory/memory.css"), "utf8");
+  const css = fs.readFileSync(path.join(rendererRoot, "memory.css"), "utf8");
   assert.match(css, /data-memory-state="held"/);
   assert.match(css, /border-style:\s*dashed/);
   assert.match(css, /data-memory-state="rejected"/);
