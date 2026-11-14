@@ -17,6 +17,7 @@ export const INSPECTOR_OWNERS = Object.freeze({
   capability: "school",
   episode: "learning",
   semantic: "atlas",
+  frame: "model",
   memory: "memory",
   checkpoint: "lineage",
   evidence: "evidence",

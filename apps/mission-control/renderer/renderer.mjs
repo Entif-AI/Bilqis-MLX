@@ -3,12 +3,15 @@ import {
   createShellState,
   inspect,
   navigate,
+  normalizeContext,
   openSelectionOwner,
   shellPosture,
   withRoute,
 } from "./shell-state.mjs";
 import { buildDeepLink, parseDeepLink } from "./deep-link.mjs";
 import { renderComponentCatalog } from "./component-catalog.mjs";
+import { mountFrameExplorer } from "./frame-explorer.mjs";
+import { escapeText as esc } from "./frame-model.mjs";
 import {
   DENSITIES,
   THEMES,
@@ -23,6 +26,7 @@ const demoObjects = [
   ["capability", "B.AND"],
   ["episode", "candidate-44238-7"],
   ["semantic", "sem:logic.and"],
+  ["frame", "frame:quad-fast"],
   ["memory", "motif:bool-composition"],
   ["checkpoint", "generation:44238"],
   ["evidence", "receipt:fixture-001"],
@@ -32,6 +36,8 @@ const demoObjects = [
 
 let state;
 let displaySettings;
+let frameMount;
+let frameRouteId;
 
 function connectionFreshness(connectionState) {
   if (connectionState === "healthy") return "FRESH";
@@ -55,6 +61,8 @@ function renderContext() {
   document.querySelector("#generation-id").textContent =
     `Generation ${context.generation} · manifest ${context.generationManifest}`;
   document.querySelector("#freshness").textContent = context.freshness;
+  document.querySelector("#run-selector").replaceChildren(new Option(context.runId, context.runId));
+  document.querySelector("#generation-selector").replaceChildren(new Option(`${context.generation} · ${context.mode}`, String(context.generation)));
   const facts = [
     ["Topology", context.topologyId],
     ["Factory", context.factoryRelease],
@@ -66,7 +74,7 @@ function renderContext() {
     ["Coverage", context.coverage],
   ];
   document.querySelector("#context-facts").innerHTML = facts
-    .map(([label, value]) => `<span><small>${label}</small><strong>${value}</strong></span>`)
+    .map(([label, value]) => `<span><small>${esc(label)}</small><strong>${esc(value)}</strong></span>`)
     .join("");
 }
 
@@ -89,9 +97,9 @@ function renderInspector() {
   panel.setAttribute("aria-hidden", String(!state.inspectorOpen));
   document.querySelector("#inspector-title").textContent = selected ? selected.id : "No selection";
   document.querySelector("#inspector-details").innerHTML = selected
-    ? `<dt>Object class</dt><dd>${selected.kind}</dd>
-       <dt>Identity</dt><dd>${selected.id}</dd>
-       <dt>Posture</dt><dd>${state.context.mode}</dd>
+    ? `<dt>Object class</dt><dd>${esc(selected.kind)}</dd>
+       <dt>Identity</dt><dd>${esc(selected.id)}</dd>
+       <dt>Posture</dt><dd>${esc(state.context.mode)}</dd>
        <dt>Generation</dt><dd>${state.context.generation}</dd>
        <dt>Evidence</dt><dd>Fixture reference only</dd>`
     : "";
@@ -116,11 +124,45 @@ function render() {
   renderNavigation();
   renderInspector();
   renderDemoActions();
-  document.querySelector("#visual-catalog").innerHTML = renderComponentCatalog();
+  if (state.view !== "model") document.querySelector("#visual-catalog").innerHTML = renderComponentCatalog();
   document.querySelector("#view-title").textContent = labels.get(state.view);
   document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;
   document.querySelector("#density-trigger").textContent = "Density · " + displaySettings.density;
+  renderFrameView();
   setHash();
+}
+
+function renderFrameView() {
+  const host = document.querySelector("#frame-explorer");
+  const isFrameView = state.view === "model";
+  host.hidden = !isFrameView;
+  document.querySelector(".fixture-card").hidden = isFrameView;
+  document.querySelector("#visual-catalog").hidden = isFrameView;
+  document.querySelector("#view-summary").textContent = isFrameView
+    ? "Frame Compiler Explorer · inspect exact packing receipts and causal visibility."
+    : "Shell foundation ready for provider-neutral BAMF views.";
+  if (!isFrameView) {
+    frameMount?.dispose(); frameMount = null; frameRouteId = null;
+    return;
+  }
+  const selectedId = state.selected?.kind === "frame" ? state.selected.id : null;
+  if (frameMount && (!selectedId || frameRouteId === selectedId)) return;
+  frameMount?.dispose();
+  frameRouteId = selectedId;
+  frameMount = mountFrameExplorer(host, {
+    querySnapshot: request => window.bamfMissionControl.querySnapshot(request),
+    context: state.context, selectedId,
+    onContext: (operatorView, mode) => {
+      state = { ...state, context: Object.freeze({ ...normalizeContext(operatorView),
+        mode: mode === "historical" ? "HISTORICAL" : "LIVE", freshness: state.context.freshness }) };
+      renderContext(); renderInspector();
+    },
+    onSelection: id => {
+      frameRouteId = id || null;
+      state = inspect(state, id ? { kind: "frame", id } : null);
+      renderInspector(); setHash();
+    },
+  });
 }
 
 async function bootstrap() {
