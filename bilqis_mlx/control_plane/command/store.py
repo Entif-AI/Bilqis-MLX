@@ -8,11 +8,11 @@ from bilqis_mlx.mission_control.operator import (
     OperatorActionReceiptV2, OperatorActionRequestV2,
 )
 
-from .command_model import (
+from .model import (
     CommandPlan, intent_sha256, request_sha256,
 )
-from .command_storage import CommandStorage, canonical_fact
-from .transport import _invalid
+from .storage import CommandStorage, canonical_fact
+from ..transport import _invalid
 
 
 SUBMISSION_SCHEMA = "bilqis.bamf.control-plane.command-submission/v1"

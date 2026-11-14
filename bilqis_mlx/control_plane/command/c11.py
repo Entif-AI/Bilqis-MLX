@@ -10,8 +10,8 @@ from types import MappingProxyType
 from bilqis_mlx.mission_control.operator import ActionParameter
 from bilqis_mlx.runtime.bamf_bundle import inspect_accepted_generation
 
-from .command_model import ResolvedCommandTarget
-from .transport import _invalid
+from .model import ResolvedCommandTarget
+from ..transport import _invalid
 
 
 VALUE_FLAGS = MappingProxyType({

@@ -41,6 +41,39 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _validate_service_options(
+    query_source, event_retention_limit: int, event_queue_limit: int,
+    resource_bucket_span: int, event_heartbeat_seconds: float,
+) -> None:
+    if query_source is not None and not callable(query_source):
+        _invalid("CONTROL_PLANE_QUERY_SOURCE_INVALID")
+    if (
+        type(event_retention_limit) is not int
+        or type(event_queue_limit) is not int
+        or type(resource_bucket_span) is not int
+        or min(event_retention_limit, event_queue_limit, resource_bucket_span) <= 0
+        or type(event_heartbeat_seconds) not in (int, float)
+        or not math.isfinite(event_heartbeat_seconds)
+        or event_heartbeat_seconds <= 0
+    ):
+        _invalid("CONTROL_PLANE_EVENT_CONFIG_INVALID")
+
+
+def _resolve_command_store_path(
+    run_dir: Path, configured: Path | None,
+) -> Path:
+    path = (
+        Path(configured).expanduser().resolve()
+        if configured is not None
+        else run_dir.parent / f".{run_dir.name}.control-plane-commands"
+    )
+    try:
+        path.relative_to(run_dir)
+    except ValueError:
+        return path
+    _invalid("CONTROL_PLANE_COMMAND_STORE_INSIDE_RUN")
+
+
 class ControlPlaneService:
     def __init__(
         self, run_dir: Path, socket_path: Path, *,
@@ -49,36 +82,14 @@ class ControlPlaneService:
         resource_bucket_span: int = 5, event_heartbeat_seconds: float = 0.25,
         command_store_path: Path | None = None, command_manager=None,
     ):
-        if query_source is not None and not callable(query_source):
-            _invalid("CONTROL_PLANE_QUERY_SOURCE_INVALID")
-        if (
-            type(event_retention_limit) is not int
-            or type(event_queue_limit) is not int
-            or type(resource_bucket_span) is not int
-            or min(
-                event_retention_limit,
-                event_queue_limit,
-                resource_bucket_span,
-            ) <= 0
-            or type(event_heartbeat_seconds) not in (int, float)
-            or not math.isfinite(event_heartbeat_seconds)
-            or event_heartbeat_seconds <= 0
-        ):
-            _invalid("CONTROL_PLANE_EVENT_CONFIG_INVALID")
+        _validate_service_options(
+            query_source, event_retention_limit, event_queue_limit,
+            resource_bucket_span, event_heartbeat_seconds,
+        )
         self.run_dir = Path(run_dir).expanduser().resolve()
         self.socket_path = Path(socket_path).expanduser().resolve()
-        self.command_store_path = (
-            Path(command_store_path).expanduser().resolve()
-            if command_store_path is not None
-            else self.run_dir.parent
-            / f".{self.run_dir.name}.control-plane-commands"
-        )
-        try:
-            self.command_store_path.relative_to(self.run_dir)
-        except ValueError:
-            pass
-        else:
-            _invalid("CONTROL_PLANE_COMMAND_STORE_INSIDE_RUN")
+        self.command_store_path = _resolve_command_store_path(
+            self.run_dir, command_store_path)
         self._service_lock_fd = _acquire_service_lock(self.socket_path)
         try:
             _prepare_socket_path(self.socket_path)
@@ -140,7 +151,7 @@ class ControlPlaneService:
 
     def _command_manager(self):
         if self._commands is None:
-            from .commands import CommandManager
+            from .command import CommandManager
             self._commands = CommandManager(
                 self.run_dir, self.command_store_path)
         return self._commands
@@ -279,7 +290,7 @@ class ControlPlaneService:
             postcondition = manager.store.read_postcondition(receipt.operation_id)
             after = postcondition.get("after") if isinstance(postcondition, dict) else None
             if isinstance(after, dict):
-                from .command_model import ResolvedCommandTarget
+                from .command.model import ResolvedCommandTarget
                 run_ref = ResolvedCommandTarget.from_record(after).run_ref()
         if run_ref is None:
             return

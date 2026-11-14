@@ -7,11 +7,11 @@ from unittest.mock import patch
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.mission_control.operator import ActionReceiptState
 from bilqis_mlx.control_plane import ControlPlaneClient, ControlPlaneService
-from bilqis_mlx.control_plane.command_executor import C11CommandExecutor
-from bilqis_mlx.control_plane.command_model import (
+from bilqis_mlx.control_plane.command.executor import C11CommandExecutor
+from bilqis_mlx.control_plane.command.model import (
     CommandMode, operation_id_for,
 )
-from bilqis_mlx.control_plane.commands import CommandManager
+from bilqis_mlx.control_plane.command.manager import CommandManager
 
 from .command_support import DIGESTS, FakeExecutor, Launcher, request
 from .support import start_service

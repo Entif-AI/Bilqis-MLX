@@ -11,14 +11,14 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.mission_control.operator import OperatorActionRequestV2
 from bilqis_mlx.runtime.bamf_bundle import inspect_accepted_generation
 
-from .command_c11 import (
+from .c11 import (
     parameter_flags, parameter_map, report_target, run_cli_json, same_lineage,
 )
-from .command_model import (
+from .model import (
     CommandAction, CommandMode, CommandPlan, ResolvedCommandTarget,
     intent_sha256, request_sha256,
 )
-from .transport import _invalid
+from ..transport import _invalid
 
 class C11CommandExecutor:
     """Preflight and execute only through the existing human operator boundary."""

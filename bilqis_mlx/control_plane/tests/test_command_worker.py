@@ -5,9 +5,9 @@ import unittest
 
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.mission_control.operator import ActionReceiptState
-from bilqis_mlx.control_plane.command_model import CommandMode
-from bilqis_mlx.control_plane.command_worker import run_worker
-from bilqis_mlx.control_plane.commands import CommandManager
+from bilqis_mlx.control_plane.command.model import CommandMode
+from bilqis_mlx.control_plane.command.worker import run_worker
+from bilqis_mlx.control_plane.command.manager import CommandManager
 
 from .command_support import DIGESTS, FakeExecutor, Launcher, request
 

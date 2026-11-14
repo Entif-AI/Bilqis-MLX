@@ -15,13 +15,13 @@ from bilqis_mlx.mission_control.operator import (
     ActionReceiptState, OperatorActionReceiptV2, OperatorActionRequestV2,
 )
 
-from .command_executor import C11CommandExecutor
-from .command_launch import launch_command_worker
-from .command_model import (
+from .executor import C11CommandExecutor
+from .launch import launch_command_worker
+from .model import (
     CommandMode, ResolvedCommandTarget, intent_sha256, operation_id_for,
 )
-from .command_store import CommandStore
-from .transport import _invalid
+from .store import CommandStore
+from ..transport import _invalid
 
 
 def _now() -> int:
@@ -142,7 +142,7 @@ class CommandManager:
 
     @staticmethod
     def _request_digest(request: OperatorActionRequestV2) -> str:
-        from .command_model import request_sha256
+        from .model import request_sha256
         return request_sha256(request)
 
     def submit(

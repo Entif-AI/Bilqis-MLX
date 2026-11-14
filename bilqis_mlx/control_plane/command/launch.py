@@ -15,7 +15,7 @@ def launch_command_worker(
         [
             sys.executable,
             "-m",
-            "bilqis_mlx.control_plane.command_worker",
+            "bilqis_mlx.control_plane.command.worker",
             "--store-root",
             str(Path(store_root).expanduser().resolve()),
             "--run-dir",

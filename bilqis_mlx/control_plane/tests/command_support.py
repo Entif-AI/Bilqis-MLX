@@ -10,7 +10,7 @@ from bilqis_mlx.mission_control.operator import (
     ActionParameter, OperatorActionRequestV2,
 )
 
-from bilqis_mlx.control_plane.command_model import (
+from bilqis_mlx.control_plane.command.model import (
     CommandAction, CommandMode, CommandPlan, ResolvedCommandTarget,
     intent_sha256, request_sha256,
 )

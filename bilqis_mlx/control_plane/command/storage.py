@@ -10,8 +10,8 @@ from pathlib import Path
 import stat
 from uuid import uuid4
 
-from .command_model import operation_directory_name
-from .transport import _invalid
+from .model import operation_directory_name
+from ..transport import _invalid
 
 
 REQUEST_BINDING_SCHEMA = "bilqis.bamf.control-plane.command-request-binding/v1"
