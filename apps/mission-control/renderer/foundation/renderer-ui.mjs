@@ -24,6 +24,12 @@ const demoObjects = [
   ["warning", "resource:disk-reserve"],
 ];
 
+function compactIdentity(value) {
+  return typeof value === "string" && /^[0-9a-f]{64}$/.test(value)
+    ? `${value.slice(0, 8)}…${value.slice(-8)}`
+    : value;
+}
+
 export function renderContext(state, defense) {
   const shell = document.querySelector("#shell");
   if (!state) {
@@ -40,8 +46,13 @@ export function renderContext(state, defense) {
   document.querySelector("#mode-badge").textContent = context.mode;
   document.querySelector("#run-id").textContent = context.runId;
   document.querySelector("#run-id").title = context.runId;
-  document.querySelector("#generation-id").textContent =
-    `Generation ${context.generation} · manifest ${context.generationManifest}`;
+  const generationIdentity = document.querySelector("#generation-id");
+  generationIdentity.textContent =
+    `Generation ${context.generation} · manifest ${compactIdentity(context.generationManifest)}`;
+  generationIdentity.setAttribute(
+    "aria-label",
+    `Generation ${context.generation}; manifest ${context.generationManifest}`,
+  );
   document.querySelector("#freshness").textContent = context.freshness;
   const facts = [
     ["Topology", context.topologyId], ["Factory", context.factoryRelease],
@@ -50,7 +61,7 @@ export function renderContext(state, defense) {
     ["Resources", context.resourceHealth], ["Coverage", context.coverage],
   ];
   document.querySelector("#context-facts").innerHTML = facts
-    .map(([label, value]) => `<span><small>${label}</small><strong title="${value}">${value}</strong></span>`)
+    .map(([label, value]) => `<span><small>${label}</small><strong title="${value}" aria-label="${label}: ${value}">${compactIdentity(value)}</strong></span>`)
     .join("");
 }
 
@@ -124,6 +135,7 @@ export function renderCurrentView(state, defense, onInspect) {
   const fixture = document.querySelector(".fixture-card");
   const catalog = document.querySelector("#visual-catalog");
   const summary = document.querySelector("#view-summary");
+  document.querySelector("#shell").dataset.view = state?.view ?? "mission-control";
   if (!state) {
     fixture.hidden = true;
     catalog.hidden = false;
@@ -151,6 +163,13 @@ export function renderCurrentView(state, defense, onInspect) {
         "Qualification state": row.qualificationState,
       },
     }), state.selected?.kind === "capability" ? state.selected.id : null);
+    return;
+  }
+  if (state.view === "mission-control") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Outcome-first learner health, current work, learning pulse and actionable attention.";
     return;
   }
   if (state.view === "atlas") {
