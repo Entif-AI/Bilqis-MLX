@@ -122,7 +122,7 @@ class ProductionAuthorityTests(unittest.TestCase):
             accepted = admission.load_accepted_generation(self.run)
             cache = bind_accepted_execution_cache(self.run)
             rebound = bind_accepted_execution_cache(self.run)
-        self.assertIs(require_accepted_execution_cache(cache), cache)
+            self.assertIs(require_accepted_execution_cache(cache), cache)
         self.assertIs(rebound, cache)
         self.assertEqual(cache.run_id, "fixture-run")
         self.assertEqual(

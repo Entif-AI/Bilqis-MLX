@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from contextlib import ExitStack, contextmanager
+from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import replace
 import os
@@ -20,15 +21,22 @@ from bilqis_mlx.runtime.bamf_bundle.records import canonical, sha
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents, ParameterCensus
 from bilqis_mlx.semantics.tests.core.test_atlas_export_clearance import REGISTRY
 
+_host_registry = ContextVar("bamf_test_host_source_authority", default=REGISTRY)
+
 
 @contextmanager
-def host_source_authority_patch(registry=REGISTRY):
+def host_source_authority_patch(registry=None):
     """Substitute the fixed host reader for one complete test scenario."""
-    with patch(
-            "bilqis_mlx.runtime.bamf_bundle.source_authority_custody."
-            "read_host_system_source_authority_registry",
-            return_value=registry):
-        yield
+    selected = _host_registry.get() if registry is None else registry
+    token = _host_registry.set(selected)
+    try:
+        with patch(
+                "bilqis_mlx.runtime.bamf_bundle.source_authority_custody."
+                "read_host_system_source_authority_registry",
+                return_value=selected):
+            yield
+    finally:
+        _host_registry.reset(token)
 
 
 def rewrite_motif_bundle_fixture(
@@ -74,12 +82,12 @@ def rewrite_motif_bundle_fixture(
     return {**record, "manifest_sha256": manifest_sha}
 
 
-def shape_patch():
+def shape_patch(registry=None):
     from ..helpers import DECLARED
     from ..genesis_authority_fixtures import genesis_feature_source_patch
 
     stack = ExitStack()
-    stack.enter_context(host_source_authority_patch())
+    stack.enter_context(host_source_authority_patch(registry))
     stack.enter_context(genesis_feature_source_patch())
     for target in ("bilqis_mlx.runtime.model_topology_v2.expected_bamf_shapes",
                    "bilqis_mlx.runtime.topology_v2.ledger.expected_bamf_shapes",
