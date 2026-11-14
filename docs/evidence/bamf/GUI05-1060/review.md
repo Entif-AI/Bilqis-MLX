@@ -34,3 +34,16 @@ links omitted from published packages. The focused red/green regression preserve
 checking authored broken links while excluding only installed third-party modules.
 This is required to run the existing gate after a normal npm install, not a waiver
 for any project-authored documentation.
+
+## Unified intake
+
+Consumed reviewed unified 55e7ae28 during turn-in. The CP05 v2 records merge into
+the same contracts owner and regenerated schema. GUI04 School, GUI06 Episodes and
+GUI09 Neural Runtime remain reachable. Their domain assets were grouped without
+behavior changes to keep the encountered renderer directory within its <=12-file
+limit. Exact asset allowlists and tests follow those moves.
+
+After intake: 110 CP01/CP02/CP03/bridge Python tests PASS in 2.213 seconds;
+95 Node tests PASS; the keyboard/evidence/history/related-capability/offline browser
+journey PASS. Python owner verification used one worker, a 1 GiB MLX allocation
+limit and disabled cache; no durable learner was touched.

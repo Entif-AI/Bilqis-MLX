@@ -19,11 +19,14 @@ import {
   loadDisplaySettings,
   saveDisplaySettings,
 } from "./settings.mjs";
+import { renderSchoolView } from "./school/school-view.mjs";
+import { renderNeuralView } from "./neural/neural-view.mjs";
+import { renderEpisodesView } from "./episodes/episode-view.mjs";
 
 const labels = new Map(DESTINATIONS);
 const demoObjects = [
   ["capability", "B.AND"],
-  ["episode", "candidate-44238-7"],
+  ["episode", "episode-record:fixture:retained-44239"],
   ["semantic", "sem:logic.and"],
   ["memory", "motif:bool-composition"],
   ["checkpoint", "generation:44238"],
@@ -98,14 +101,21 @@ function renderNavigation() {
 function renderInspector() {
   const panel = document.querySelector("#inspector");
   const selected = state.selected;
+  panel.hidden = !state.inspectorOpen;
   panel.setAttribute("aria-hidden", String(!state.inspectorOpen));
   document.querySelector("#inspector-title").textContent = selected ? selected.id : "No selection";
+  const exact = selected?.details
+    ? Object.entries(selected.details).map(([label, value]) =>
+      `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(Array.isArray(value) ? value.join(", ") : value)}</dd>`,
+    ).join("")
+    : "";
   document.querySelector("#inspector-details").innerHTML = selected
     ? `<dt>Object class</dt><dd>${escapeHtml(selected.kind)}</dd>
        <dt>Identity</dt><dd>${escapeHtml(selected.id)}</dd>
        <dt>Posture</dt><dd>${state.context.mode}</dd>
        <dt>Generation</dt><dd>${state.context.generation}</dd>
-       <dt>Evidence</dt><dd>Open owning view for exact records</dd>`
+       <dt>Evidence</dt><dd>Open owning view for exact records</dd>${exact}`
+
     : "";
   document.querySelector("#open-owner").disabled = !selected;
 }
@@ -123,6 +133,77 @@ function renderDemoActions() {
   });
 }
 
+function renderCurrentView() {
+  const domain = document.querySelector("#domain-view");
+  const fixture = document.querySelector(".fixture-card");
+  const catalog = document.querySelector("#visual-catalog");
+  const summary = document.querySelector("#view-summary");
+  if (state.view === "school") {
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Exact capability comparison and declared prerequisite topology. Grade labels organize only.";
+    renderSchoolView(domain, (id, row) => {
+      state = inspect(state, {
+        kind: "capability",
+        id,
+        details: {
+          "WAS/TOP/NOW/ALL": row.was + "/" + row.top + "/" + row.now + "/" + row.total,
+          Debt: row.debt,
+          "P(RET)": row.pRet ?? "NOT MEASURED",
+          Prerequisites: row.prerequisites.length ? row.prerequisites : ["none"],
+          "Source state": row.sourceState,
+          "Implementation state": row.implementationState,
+          "Qualification state": row.qualificationState,
+        },
+      });
+      renderInspector();
+      setHash();
+    }, state.selected?.kind === "capability" ? state.selected.id : null);
+    return;
+  }
+  if (state.view === "model") {
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Topology, attention health, depth routing and local refinement as measured telemetry only.";
+    renderNeuralView(domain, (id, kind) => {
+      state = inspect(state, {
+        kind: "neural",
+        id,
+        details: {
+          "Diagnostic class": kind,
+          "Interpretation boundary": "Measured routing/runtime telemetry only",
+        },
+      });
+      renderInspector();
+      setHash();
+    });
+    return;
+  }
+  if (state.view === "learning") {
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Candidate proposal, work, assessment, retention and finalization reconstructed from bounded evidence.";
+    renderEpisodesView(domain, (id, evidenceType) => {
+      state = inspect(state, {
+        kind: "evidence",
+        id,
+        details: {
+          "Evidence type": evidenceType,
+          "Episode replay": "Read-only durable evidence reference",
+        },
+      });
+      renderInspector();
+      setHash();
+    }, state.selected?.kind === "episode" ? state.selected.id : null);
+    return;
+  }
+  fixture.hidden = false;
+  catalog.hidden = false;
+  domain.innerHTML = "";
+  summary.textContent = "Shell foundation ready for provider-neutral BAMF views.";
+  catalog.innerHTML = renderComponentCatalog();
+}
+
 function render() {
   renderContext();
   renderNavigation();
@@ -131,13 +212,17 @@ function render() {
   renderDemoActions();
   const dossierView = state.view === "capability";
   document.querySelector("#capability-explorer").hidden = !dossierView;
-  document.querySelector(".fixture-card").hidden = dossierView;
-  document.querySelector("#visual-catalog").hidden = dossierView;
-  document.querySelector("#view-summary").textContent = dossierView
-    ? "Measured chronology, source support, and literal evidence. No inferred causes."
-    : "Shell foundation ready for provider-neutral BAMF views.";
-  if (dossierView) explorer?.update(state); else explorer?.hide();
-  if (!dossierView) document.querySelector("#visual-catalog").innerHTML = renderComponentCatalog();
+  document.querySelector("#domain-view").hidden = dossierView;
+  if (dossierView) {
+    document.querySelector(".fixture-card").hidden = true;
+    document.querySelector("#visual-catalog").hidden = true;
+    document.querySelector("#view-summary").textContent = "Measured chronology, source support, and literal evidence. No inferred causes.";
+    explorer?.update(state);
+  } else {
+    explorer?.hide();
+    renderCurrentView();
+  }
+
   document.querySelector("#view-title").textContent = labels.get(state.view);
   document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;
   document.querySelector("#density-trigger").textContent = "Density · " + displaySettings.density;

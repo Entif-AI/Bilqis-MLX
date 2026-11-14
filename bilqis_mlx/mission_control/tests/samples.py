@@ -19,7 +19,7 @@ from bilqis_mlx.mission_control.observability import (
 )
 from bilqis_mlx.mission_control.operator import (
     ActionParameter, ActionReceiptState, OperatorActionReceipt,
-    OperatorActionRequest,
+    OperatorActionReceiptV2, OperatorActionRequest, OperatorActionRequestV2,
 )
 from bilqis_mlx.mission_control.snapshots import (
     CapabilitySnapshot, CurriculumFrontier, OperatorView, RunContext,
@@ -79,6 +79,17 @@ SAMPLES = (
                           (ActionParameter("mode", "bounded"),), True, 119),
     OperatorActionReceipt(meta("action-receipt"), "request-1", "operation-1",
                           ActionReceiptState.COMPLETED, 120, "postcondition:a", None),
+    OperatorActionRequestV2(
+        meta("action-request-v2", run=None),
+        "request-v2", "idem-v2", "create",
+        (ActionParameter("run_id", "run-v2"),),
+        True, False, 119,
+    ),
+    OperatorActionReceiptV2(
+        meta("action-receipt-v2", run=None),
+        "request-v2", D1, "operation-v2", ActionReceiptState.ACCEPTED,
+        120, f"command-target:{D2}", None, None,
+    ),
     ErrorEnvelope(meta("error", run=None), "RUN_NOT_FOUND", "run unavailable", None),
     UnavailableEnvelope(meta("unavailable", run=None, coverage=CoverageState.UNKNOWN),
                         "run:missing", UnavailableReason.MISSING, None),

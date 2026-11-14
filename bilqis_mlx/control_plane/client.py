@@ -8,6 +8,9 @@ import socket
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.mission_control.codec import decode_record
 from bilqis_mlx.mission_control.envelopes import EventEnvelope
+from bilqis_mlx.mission_control.operator import (
+    OperatorActionReceiptV2, OperatorActionRequestV2,
+)
 from bilqis_mlx.mission_control.query_contracts import (
     QUERY_PAGE_SCHEMA, QueryRequest,
 )
@@ -155,6 +158,37 @@ class ControlPlaneClient:
         })
         acknowledgement = self._read_response()
         return ControlPlaneEventSubscription(self, acknowledgement)
+
+    def submit_command(
+        self, request: OperatorActionRequestV2,
+    ) -> OperatorActionReceiptV2:
+        from bilqis_mlx.mission_control.codec import encode_record
+        if type(request) is not OperatorActionRequestV2:
+            _invalid("CONTROL_PLANE_COMMAND_REQUEST_INVALID")
+        return self._decode_command_receipt(self._send({
+            "type": "command-submit",
+            "request": encode_record(request),
+        }))
+
+    def command_status(self, operation_id: str) -> OperatorActionReceiptV2:
+        if not isinstance(operation_id, str) or not operation_id:
+            _invalid("CONTROL_PLANE_COMMAND_OPERATION_REQUIRED")
+        return self._decode_command_receipt(self._send({
+            "type": "command-status",
+            "operation_id": operation_id,
+        }))
+
+    @staticmethod
+    def _decode_command_receipt(response: dict) -> OperatorActionReceiptV2:
+        if response.get("schema") == ERROR_SCHEMA and response.get("accepted") is False:
+            reason = response.get("reason")
+            _invalid(
+                reason if isinstance(reason, str) and reason
+                else "CONTROL_PLANE_COMMAND_RESPONSE_INVALID")
+        decoded = decode_record(response)
+        if type(decoded) is not OperatorActionReceiptV2:
+            _invalid("CONTROL_PLANE_COMMAND_RESPONSE_INVALID")
+        return decoded
 
     def close(self, *, preserve_state: bool = False) -> None:
         if self._stream is not None:
