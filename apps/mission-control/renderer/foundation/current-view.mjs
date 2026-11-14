@@ -31,9 +31,23 @@ export function renderCurrentView(
     fixture.hidden = true;
     catalog.hidden = true;
     summary.textContent = "Exact capability comparison and declared prerequisite topology. Grade labels organize only.";
-    renderSchoolView(domain, (id, row) => onInspect({
+    if (state.context.mode === "HISTORICAL") {
+      domain.innerHTML = `<section class="fixture-card"><span class="eyebrow">Historical School lens</span><h2>UNAVAILABLE</h2>
+        <p>The checked-in School matrix has no exact snapshot for generation ${state.context.generation}. The global historical lens remains unchanged.</p></section>`;
+      return;
+    }
+    renderSchoolView(domain, (id, row, neighborhood) => onInspect({
       kind: "capability",
       id,
+      label: id,
+      relations: [
+        ...neighborhood.prerequisites.map((relatedId) => ({
+          kind: "capability", id: relatedId, relation: "prerequisite",
+        })),
+        ...neighborhood.dependents.map((relatedId) => ({
+          kind: "capability", id: relatedId, relation: "dependent",
+        })),
+      ],
       details: {
         "WAS/TOP/NOW/ALL": row.was + "/" + row.top + "/" + row.now + "/" + row.total,
         Debt: row.debt,
@@ -96,7 +110,19 @@ export function renderCurrentView(
       kind: "evidence",
       id,
       details: { "Evidence type": kind, "Interpretation boundary": "Durable episode evidence only" },
-    }), state.selected?.kind === "episode" ? state.selected.id : null);
+    }), ["episode", "candidate"].includes(state.selected?.kind) ? state.selected.id : null,
+    (id, episode, relations) => onInspect({
+      kind: "candidate",
+      id,
+      label: id,
+      relations,
+      details: {
+        "Target capability": episode.capabilityId,
+        "Parent generation": episode.parentGeneration,
+        "Terminal state": episode.terminalState,
+        "Retention reason": episode.retentionReason,
+      },
+    }));
     return;
   }
   if (state.view === "memory") {
@@ -107,6 +133,15 @@ export function renderCurrentView(
     renderMemoryView(domain, (id, slot) => onInspect({
       kind: "memory",
       id,
+      label: id,
+      relations: [
+        ...slot.capabilities.map((relatedId) => ({
+          kind: "capability", id: relatedId, relation: "capability",
+        })),
+        ...slot.episodes.map((relatedId) => ({
+          kind: "episode", id: relatedId, relation: "episode",
+        })),
+      ],
       details: {
         "Slot address": `motif.page.${slot.pageIndex}[${slot.rowIndex}]`,
         "Creation generation": slot.createdGeneration,
@@ -116,7 +151,7 @@ export function renderCurrentView(
         "Related capabilities": slot.capabilities,
         "Related episodes": slot.episodes,
       },
-    }), state.selected?.kind === "memory" ? state.selected.id : null);
+    }), state.selected?.kind === "memory" ? state.selected.id : null, state.context);
     return;
   }
   if (state.view === "teacher") {
@@ -124,10 +159,17 @@ export function renderCurrentView(
     fixture.hidden = true;
     catalog.hidden = true;
     summary.textContent = "Teacher strategy population, measured outcomes, cost and fidelity observations without unsupported ranking.";
-    renderTeacherView(domain, (id) => onInspect({
+    renderTeacherView(domain, (id, strategy, relations) => onInspect({
       kind: "strategy",
       id,
+      label: strategy?.label ?? id,
+      relations,
       details: {
+        Role: strategy?.role ?? "UNKNOWN",
+        Attempts: strategy?.attempts ?? "UNKNOWN",
+        Retained: strategy?.retained ?? "UNKNOWN",
+        "No gain": strategy?.noGain ?? "UNKNOWN",
+        Interference: strategy?.interference ?? "UNKNOWN",
         "Comparison posture": "Descriptive evidence only",
         "Policy mutation": "None",
       },
@@ -171,6 +213,10 @@ export function renderCurrentView(
     renderLineageView(domain, (id, node) => onInspect({
       kind: "generation",
       id,
+      label: `Generation ${node.generation}`,
+      relations: [
+        { kind: "checkpoint", id: `checkpoint:${node.checkpointSha256}`, relation: "checkpoint" },
+      ],
       details: {
         Generation: node.generation,
         "Manifest SHA-256": node.manifestSha256,
@@ -178,7 +224,7 @@ export function renderCurrentView(
         Transition: node.transitionClass,
         "Checkpoint SHA-256": node.checkpointSha256,
       },
-    }), ["generation", "checkpoint"].includes(state.selected?.kind) ? state.selected.id : null);
+    }), ["generation", "checkpoint"].includes(state.selected?.kind) ? state.selected.id : null, state.context);
     return;
   }
   if (state.view === "evidence") {

@@ -111,6 +111,24 @@ test("historical route context stays historical and cannot expose mutation", () 
   assert.equal(guarded.mutationAvailable, false);
 });
 
+test("defensive historical posture does not become explicit historical deep-link intent", () => {
+  const offline = withDefensiveState(createShellState(context), {
+    id: "offline",
+    historical: true,
+    snapshotAvailable: true,
+    mutationAllowed: false,
+    freshness: "DISCONNECTED",
+  });
+  assert.equal(offline.context.mode, "HISTORICAL");
+  assert.equal(offline.context.historicalPinned, false);
+  const hash = buildDeepLink(offline);
+  assert.match(hash, /mode=LIVE/);
+  assert.doesNotMatch(hash, /mode=HISTORICAL/);
+  const routed = parseDeepLink(hash);
+  assert.equal(routed.context.mode, "LIVE");
+  assert.equal(routed.context.historicalPinned, false);
+});
+
 test("historical and stale states are shell-global postures", () => {
   const normalized = createShellState(context).context;
   assert.equal(shellPosture({ ...normalized, mode: "HISTORICAL" }), "historical");

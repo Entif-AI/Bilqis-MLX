@@ -275,7 +275,7 @@ export function renderCurriculumAtlasView(
         'Learned similarity is not rendered as a prerequisite edge.</p>' +
         '<div class="curriculum-scroll" tabindex="0" role="region" aria-label="Curriculum dependency graph; ' +
         'use the table below for an equivalent non-visual representation"><div class="curriculum-canvas" ' +
-        'style="height:' + layout.height + 'px">' +
+        'data-height="' + layout.height + '">' +
           '<div class="curriculum-stratum foundation"><strong>GRADUATED FOUNDATION</strong><span>' +
             strata.foundation.length + ' qualified prior semantics</span></div>' +
           '<div class="curriculum-stratum current"><strong>CURRENT GRADE · G' + esc(snapshot.currentGrade) +
