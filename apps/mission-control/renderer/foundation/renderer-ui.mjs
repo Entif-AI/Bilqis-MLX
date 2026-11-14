@@ -9,6 +9,7 @@ import {
   stableMemoryIdentity,
 } from "../memory/memory-model.mjs";
 import { renderTeacherView } from "../teacher/teacher-view.mjs";
+import { renderCorrectionsView } from "../corrections/corrections-view.mjs";
 import { defensiveBannerMarkup } from "./defensive-state.mjs";
 import { bindRovingNavigation } from "./accessibility.mjs";
 
@@ -218,6 +219,23 @@ export function renderCurrentView(state, defense, onInspect) {
       details: {
         "Comparison posture": "Descriptive evidence only",
         "Policy mutation": "None",
+      },
+    }));
+    return;
+  }
+  if (state.view === "corrections") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Evidenced correction blast radius, append-only correction history, and receipt-backed requalification state without implying perfect neural unlearning.";
+    renderCorrectionsView(domain, (id, node) => onInspect({
+      kind: "correction",
+      id,
+      details: {
+        "Artifact class": node.kind,
+        "Impact state": node.state,
+        "Evidence refs": node.evidenceRefs.length ? node.evidenceRefs : ["UNTRACKED / UNKNOWN"],
+        "Interpretation boundary": "Known exposure and requalification evidence only",
       },
     }));
     return;
