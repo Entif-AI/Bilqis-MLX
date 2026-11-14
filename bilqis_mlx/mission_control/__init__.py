@@ -18,7 +18,7 @@ from .observability import (
 )
 from .operator import (
     ActionParameter, ActionReceiptState, OperatorActionReceipt,
-    OperatorActionRequest,
+    OperatorActionReceiptV2, OperatorActionRequest, OperatorActionRequestV2,
 )
 from .registry import ALL_RECORD_TYPES, RECORD_BY_SCHEMA
 from .schema import record_schema, schema_bundle
@@ -34,7 +34,8 @@ __all__ = (
     "CoverageState", "CurriculumFrontier", "DataValue", "ErrorEnvelope",
     "EventEnvelope", "FrameCompileReceipt", "GenerationManifest",
     "LearningEpisode", "MemorySnapshot", "MissionControlContractError",
-    "NeuralRuntimeSample", "OperatorActionReceipt", "OperatorActionRequest",
+    "NeuralRuntimeSample", "OperatorActionReceipt", "OperatorActionReceiptV2",
+    "OperatorActionRequest", "OperatorActionRequestV2",
     "OperatorView", "PartialEnvelope", "RECORD_BY_SCHEMA", "RecordMeta",
     "ResourceSample", "RunContext", "RunRef", "SalienceEvent",
     "SchoolSnapshot", "SemanticAtlasSnapshot", "StaleEnvelope",

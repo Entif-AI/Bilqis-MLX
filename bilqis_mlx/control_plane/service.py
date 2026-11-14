@@ -3,9 +3,18 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import math
+from dataclasses import replace
 from pathlib import Path
+import hashlib
 import os
 from uuid import uuid4
+
+from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.mission_control.codec import canonical_json, decode_record, encode_record
+from bilqis_mlx.mission_control.model import MissionControlContractError
+from bilqis_mlx.mission_control.operator import (
+    OperatorActionReceiptV2, OperatorActionRequestV2,
+)
 
 from .contracts import (
     ControlPlaneState, ERROR_SCHEMA,
@@ -34,6 +43,7 @@ class ControlPlaneService:
         self, run_dir: Path, socket_path: Path, *,
         event_retention_limit: int = 256, event_queue_limit: int = 64,
         resource_bucket_span: int = 5, event_heartbeat_seconds: float = 0.25,
+        command_store_path: Path | None = None, command_manager=None,
     ):
         if (
             type(event_retention_limit) is not int
@@ -72,6 +82,19 @@ class ControlPlaneService:
             resource_bucket_span=resource_bucket_span,
         )
         self.event_heartbeat_seconds = event_heartbeat_seconds
+        self.command_store_path = (
+            Path(command_store_path).expanduser().resolve()
+            if command_store_path is not None
+            else self.run_dir.parent
+            / f".{self.run_dir.name}.control-plane-commands"
+        )
+        try:
+            self.command_store_path.relative_to(self.run_dir)
+        except ValueError:
+            pass
+        else:
+            _invalid("CONTROL_PLANE_COMMAND_STORE_INSIDE_RUN")
+        self._commands = command_manager
         self._service_state = ControlPlaneState.HEALTHY
         self._socket_identity: tuple[int, int] | None = None
         server = _ThreadedUnixServer(
@@ -105,6 +128,13 @@ class ControlPlaneService:
 
     def _learner(self):
         return discover_learner(self.run_dir)
+
+    def _command_manager(self):
+        if self._commands is None:
+            from .commands import CommandManager
+            self._commands = CommandManager(
+                self.run_dir, self.command_store_path)
+        return self._commands
 
     def rejected_handshake(self, reason: str) -> dict:
         return {
@@ -181,8 +211,76 @@ class ControlPlaneService:
                 "accepted": True,
                 "session": session.to_record(),
             }
+        if surface == "command-submit":
+            return self._dispatch_command_submit(session, request)
+        if surface == "command-status":
+            return self._dispatch_command_status(session, request)
         return self.rejected_request(
             session, "CONTROL_PLANE_CP01_OPERATION_UNSUPPORTED")
+
+    def _command_error(self, session: SessionIdentity, error: Exception) -> dict:
+        if isinstance(error, BilqisError):
+            reason = error.context.get("reason") or error.code
+        else:
+            reason = "CONTROL_PLANE_COMMAND_CONTRACT_INVALID"
+        return self.rejected_request(session, str(reason))
+
+    def _dispatch_command_submit(
+        self, session: SessionIdentity, request: dict,
+    ) -> dict:
+        payload = request.get("request")
+        if not isinstance(payload, dict):
+            return self.rejected_request(
+                session, "CONTROL_PLANE_COMMAND_REQUEST_INVALID")
+        try:
+            action = decode_record(payload)
+            if type(action) is not OperatorActionRequestV2:
+                return self.rejected_request(
+                    session, "CONTROL_PLANE_COMMAND_REQUEST_VERSION_REQUIRED")
+            receipt = self._command_manager().submit(action)
+            self._publish_command_receipt(receipt)
+            return encode_record(receipt)
+        except (BilqisError, MissionControlContractError) as error:
+            return self._command_error(session, error)
+
+    def _dispatch_command_status(
+        self, session: SessionIdentity, request: dict,
+    ) -> dict:
+        operation_id = request.get("operation_id")
+        if not isinstance(operation_id, str) or not operation_id:
+            return self.rejected_request(
+                session, "CONTROL_PLANE_COMMAND_OPERATION_REQUIRED")
+        try:
+            receipt = self._command_manager().status(operation_id)
+            self._publish_command_receipt(receipt)
+            return encode_record(receipt)
+        except (BilqisError, MissionControlContractError) as error:
+            return self._command_error(session, error)
+
+    def _publish_command_receipt(self, receipt: OperatorActionReceiptV2) -> None:
+        """Expose command progress through CP04 without making events authoritative."""
+        manager = self._command_manager()
+        plan = manager.store.read_plan(receipt.operation_id)
+        if plan is None:
+            return
+        run_ref = plan.target.run_ref()
+        if run_ref is None:
+            postcondition = manager.store.read_postcondition(receipt.operation_id)
+            after = postcondition.get("after") if isinstance(postcondition, dict) else None
+            if isinstance(after, dict):
+                from .command_model import ResolvedCommandTarget
+                run_ref = ResolvedCommandTarget.from_record(after).run_ref()
+        if run_ref is None:
+            return
+        digest = hashlib.sha256(canonical_json(receipt)).hexdigest()
+        self.events.publish_reference(
+            EventFamily.OPERATOR_ACTION_STATE,
+            meta=replace(receipt.meta, run=run_ref),
+            payload_schema_version=receipt.schema_version,
+            payload_record_id=receipt.meta.record_id,
+            payload_sha256=digest,
+            payload_ref=f"record:{receipt.meta.record_id}",
+        )
 
     def publish_event(self, family: EventFamily, payload, *, event_id: str | None = None):
         """Publish one CP02-backed delta without making the stream authoritative."""
