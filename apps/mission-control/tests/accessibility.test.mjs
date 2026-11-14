@@ -64,7 +64,7 @@ test("School graph remains keyboard interactive while exposing an equivalent rel
 });
 
 test("renderer blocks Operate unless verified live context is re-established and preserves offline inspection", () => {
-  const renderer = source("renderer.mjs");
+  const renderer = `${source("renderer.mjs")}\n${source("renderer-ui.mjs")}`;
   assert.match(renderer, /id === "operate" && !state\.mutationAvailable/);
   assert.match(renderer, /loadCachedOperatorView/);
   assert.match(renderer, /cacheOperatorView/);

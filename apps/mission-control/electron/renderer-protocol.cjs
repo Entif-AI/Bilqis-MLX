@@ -13,6 +13,7 @@ const RENDERER_ASSETS = Object.freeze(new Map([
   ["/deep-link.mjs", "deep-link.mjs"],
   ["/index.html", "index.html"],
   ["/renderer.mjs", "renderer.mjs"],
+  ["/renderer-ui.mjs", "renderer-ui.mjs"],
   ["/school-fixture.mjs", "school-fixture.mjs"],
   ["/school-model.mjs", "school-model.mjs"],
   ["/school-view.mjs", "school-view.mjs"],

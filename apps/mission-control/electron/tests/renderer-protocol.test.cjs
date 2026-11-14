@@ -27,6 +27,7 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     "/deep-link.mjs",
     "/defensive-state.mjs",
     "/index.html",
+    "/renderer-ui.mjs",
     "/renderer.mjs",
     "/school-fixture.mjs",
     "/school-model.mjs",
