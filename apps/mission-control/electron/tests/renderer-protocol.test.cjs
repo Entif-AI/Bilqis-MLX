@@ -2,6 +2,8 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const { RENDERER_ENTRY_URL } = require("../renderer-location.cjs");
 const {
@@ -34,6 +36,11 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     "/episodes/episode-model.mjs",
     "/episodes/episode-view.mjs",
     "/episodes/episodes.css",
+    "/frame-explorer.css",
+    "/frames/frame-contract.mjs",
+    "/frames/frame-explorer.mjs",
+    "/frames/frame-model.mjs",
+    "/frames/frame-shell.mjs",
     "/evidence/evidence-view.mjs",
     "/evidence/evidence-query.mjs",
     "/evidence/evidence-markup.mjs",
@@ -57,6 +64,11 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     "/school/school-model.mjs",
     "/school/school-view.mjs",
     "/school/school.css",
+    "/salience/salience-fixture.mjs",
+    "/salience/salience-events-fixture.mjs",
+    "/salience/salience-model.mjs",
+    "/salience/salience-view.mjs",
+    "/salience/salience.css",
     "/settings.mjs",
     "/shell-state.mjs",
     "/shell.css",
@@ -114,4 +126,19 @@ test("protocol handler never asks net.fetch for a non-allowlisted local file", a
   const denied = await handler({ url: "bamf-mc://app/../main.cjs" });
   assert.equal(denied.status, 404);
   assert.equal(fetched.length, 1);
+});
+
+test("packaged renderer assets include every local HTML and JavaScript dependency", () => {
+  const root = path.resolve(__dirname, "../../renderer");
+  for (const asset of RENDERER_ASSETS.values()) {
+    const source = fs.readFileSync(path.join(root, asset), "utf8");
+    const dependencies = asset.endsWith(".html")
+      ? [...source.matchAll(/(?:src|href)="\.\/([^"#]+)"/g)].map(match => match[1])
+      : asset.endsWith(".mjs") ? [...source.matchAll(/(?:from\s+|import\s*)["'](\.\.?\/[^"']+)["']/g)].map(match => match[1]) : [];
+    for (const dependency of dependencies) {
+      const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(asset), dependency));
+      assert.ok(RENDERER_ASSETS.has(`/${resolved}`), `${asset} requires ${dependency}`);
+    }
+  }
+  assert.equal(assetPathForRendererRequest("bamf-mc://app/fixtures/frame-inspections-v1.json", root), null);
 });
