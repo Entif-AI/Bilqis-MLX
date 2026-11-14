@@ -46,7 +46,9 @@ kbd { color: var(--text-muted); }
 .inspector { position: fixed; top: 0; right: 0; width: min(390px, 92vw); height: 100vh; padding: 22px; border-left: 1px solid var(--border-strong); background: var(--surface-1); box-shadow: -24px 0 70px var(--shadow); transform: translateX(100%); transition: transform 160ms ease; z-index: 3; }
 .inspector[aria-hidden="false"] { transform: translateX(0); }
 .inspector-heading { display: flex; justify-content: space-between; gap: 16px; align-items: start; }
-.inspector h2 { margin: 5px 0 0; font-size: 21px; }
+.inspector-heading > div { min-width: 0; }
+.inspector h2 { margin: 5px 0 0; font-size: 21px; overflow-wrap: anywhere; }
+.inspector-heading > button { flex: 0 0 auto; }
 #inspector-close { border: 0; background: transparent; font-size: 28px; cursor: pointer; }
 .inspector dl { display: grid; grid-template-columns: 110px 1fr; gap: 12px; margin: 30px 0; }
 .inspector dt { color: var(--text-muted); }

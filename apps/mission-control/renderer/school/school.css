@@ -1,3 +1,4 @@
+@import "./curriculum-atlas.css";
 .domain-view:empty { display: none; }
 .school-view { display: grid; gap: var(--content-gap); margin-top: 34px; }
 .school-heading { display: flex; justify-content: space-between; align-items: end; gap: var(--space-5); }

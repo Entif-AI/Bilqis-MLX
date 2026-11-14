@@ -42,6 +42,44 @@ class CommandTransportTests(unittest.TestCase):
                 service.shutdown()
                 thread.join(2)
 
+    def test_preview_and_inspection_expose_bounded_command_facts_without_run_path(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            run_dir = root / "private-run"
+            manager = CommandManager(
+                run_dir,
+                root / "commands",
+                executor=FakeExecutor(run_dir, CommandMode.DRY_RUN),
+                launcher=Launcher(),
+            )
+            service = ControlPlaneService(
+                run_dir, root / "cp.sock", command_manager=manager)
+            thread = start_service(service)
+            try:
+                action = request()
+                with ControlPlaneClient(root / "cp.sock") as client:
+                    preview = client.preview_command(action)
+                    receipt = client.submit_command(
+                        action, expected_target_ref=preview["target_ref"])
+                    inspection = client.inspect_command(receipt.operation_id)
+                self.assertEqual(
+                    preview["schema"],
+                    "bilqis.bamf.control-plane.command-preview/v1",
+                )
+                self.assertEqual(preview["target_ref"], receipt.target_ref)
+                self.assertEqual(
+                    inspection["schema"],
+                    "bilqis.bamf.control-plane.command-inspection/v1",
+                )
+                self.assertEqual(inspection["receipt"]["state"], "COMPLETED")
+                serialized = repr((preview, inspection))
+                self.assertNotIn(str(run_dir), serialized)
+                self.assertNotIn("run_dir", serialized)
+                self.assertNotIn("argv", serialized)
+            finally:
+                service.shutdown()
+                thread.join(2)
+
     def test_returned_command_state_is_projected_into_cp04_events(self):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)

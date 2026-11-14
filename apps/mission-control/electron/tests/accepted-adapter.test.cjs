@@ -15,6 +15,9 @@ const {
   createAcceptedValidators,
 } = require("../accepted-contracts.cjs");
 const { ControlPlaneBridge } = require("../control-plane-bridge.cjs");
+const {
+  OPERATION_ID, TARGET_REF, actionRequest, inspection, preview, receipt,
+} = require("./_operator-fixture.cjs");
 
 function brokerFixture({ fail = false } = {}) {
   const calls = [];
@@ -66,6 +69,18 @@ function brokerFixture({ fail = false } = {}) {
         links: [],
         accepted: true,
       };
+    },
+    async previewCommand(request) {
+      calls.push(["previewCommand", request]);
+      return preview(request);
+    },
+    async submitCommand(request, expectedTargetRef) {
+      calls.push(["submitCommand", request, expectedTargetRef]);
+      return receipt(request);
+    },
+    async inspectCommand(operationId) {
+      calls.push(["inspectCommand", operationId]);
+      return inspection(actionRequest({ humanAuthorized: true }));
     },
     subscribe(listener) {
       calls.push("subscribe");
@@ -155,23 +170,26 @@ test("missing CP01 service becomes disconnected state without leaking broker err
   adapter.close();
 });
 
-test("accepted CP01 boundary exposes CP04 events but still refuses unsupported mutation operations", async () => {
+test("accepted CP01 boundary exposes only validated CP05 preview submit and readback", async () => {
   const broker = brokerFixture();
   const { adapter, bridge } = await acceptedBridge(broker);
   await bridge.connect();
-
-  await assert.rejects(
-    bridge.command({ schemaVersion: "bilqis.bamf.mission-control.operator-action-request/v1" }),
-    /BAMF_GUI20_CP01_OPERATION_UNSUPPORTED/,
-  );
-  await assert.rejects(
-    bridge.dryRun({ schemaVersion: "bilqis.bamf.mission-control.operator-action-request/v1" }),
-    /BAMF_GUI20_CP01_OPERATION_UNSUPPORTED/,
-  );
-  await assert.rejects(
-    bridge.receipt("receipt:fixture"),
-    /BAMF_GUI20_CP01_OPERATION_UNSUPPORTED/,
-  );
+  const staged = actionRequest();
+  const reviewed = await bridge.dryRun({
+    schemaVersion: "bamf.gui17.command-preview-request/v1",
+    request: staged,
+  });
+  assert.equal(reviewed.target_ref, TARGET_REF);
+  const authorized = actionRequest({ humanAuthorized: true });
+  const submitted = await bridge.command({
+    schemaVersion: "bamf.gui17.command-submit-request/v1",
+    expectedTargetRef: TARGET_REF,
+    request: authorized,
+  });
+  assert.equal(submitted.state, "ACCEPTED");
+  const readback = await bridge.receipt(OPERATION_ID);
+  assert.equal(readback.operation_id, OPERATION_ID);
+  assert.equal(readback.target_ref, TARGET_REF);
   const observed = [];
   const unsubscribe = await bridge.subscribe((event) => observed.push(event));
   broker.emit({
@@ -193,6 +211,9 @@ test("accepted CP01 boundary exposes CP04 events but still refuses unsupported m
   });
   assert.equal(observed.length, 1);
   assert.equal(observed[0].payload_record_id, "decision:1");
+  assert.deepEqual(broker.calls.slice(1, 4).map((item) => item[0]), [
+    "previewCommand", "submitCommand", "inspectCommand",
+  ]);
   unsubscribe();
   adapter.close();
 });

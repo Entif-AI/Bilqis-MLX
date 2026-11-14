@@ -40,6 +40,7 @@ import {
 } from "./foundation/accessibility.mjs";
 import { createHomeController } from "./home/home-controller.mjs";
 import { createResourceController } from "./resources/resource-controller.mjs";
+import { createOperateController } from "./operate/operate-controller.mjs";
 import { createCapabilityExplorer } from "./capability/app.mjs";
 import { activateDomainViews } from "./foundation/domain-controller.mjs";
 
@@ -54,6 +55,7 @@ let focusReturnToken = null;
 let paletteReturnToken = null;
 const homeController = createHomeController(window.bamfMissionControl);
 const resourceController = createResourceController(window.bamfMissionControl);
+const operateController = createOperateController(window.bamfMissionControl);
 
 const frameShell = createFrameShell({
   getState: () => state, setState: next => { state = next; }, getDefense: () => defense,
@@ -129,7 +131,8 @@ function render() {
   setHash();
   activateDomainViews({
     state, getState: () => state, defense, api: window.bamfMissionControl,
-    homeController, resourceController, capabilityExplorer, onInspect: openInspector,
+    homeController, resourceController, operateController,
+    capabilityExplorer, onInspect: openInspector, onAnnounce: announce,
   });
 }
 

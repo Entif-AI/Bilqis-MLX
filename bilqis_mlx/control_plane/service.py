@@ -29,6 +29,7 @@ from .contracts import (
 from .discovery import discover_learner
 from .event_stream import EventFamily, EventStreamBroker
 from .query_transport import serve_query
+from .command.transport import serve_command_inspection, serve_command_preview
 from .stream_transport import serve_event_subscription
 from .transport import (
     _RequestHandler, _ThreadedUnixServer, _acquire_service_lock, _invalid,
@@ -237,6 +238,10 @@ class ControlPlaneService:
             return self._dispatch_command_submit(session, request)
         if surface == "command-status":
             return self._dispatch_command_status(session, request)
+        if surface == "command-preview":
+            return serve_command_preview(self, session, request)
+        if surface == "command-inspect":
+            return serve_command_inspection(self, session, request)
         return self.rejected_request(
             session, "CONTROL_PLANE_CP01_OPERATION_UNSUPPORTED")
 
@@ -259,7 +264,12 @@ class ControlPlaneService:
             if type(action) is not OperatorActionRequestV2:
                 return self.rejected_request(
                     session, "CONTROL_PLANE_COMMAND_REQUEST_VERSION_REQUIRED")
-            receipt = self._command_manager().submit(action)
+            expected_target_ref = request.get("expected_target_ref")
+            if expected_target_ref is not None and not isinstance(expected_target_ref, str):
+                return self.rejected_request(
+                    session, "CONTROL_PLANE_COMMAND_EXPECTED_TARGET_INVALID")
+            receipt = self._command_manager().submit(
+                action, expected_target_ref=expected_target_ref)
             self._publish_command_receipt(receipt)
             return encode_record(receipt)
         except (BilqisError, MissionControlContractError) as error:
