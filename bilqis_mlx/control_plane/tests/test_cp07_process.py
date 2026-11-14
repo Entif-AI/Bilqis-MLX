@@ -99,6 +99,49 @@ class CP07StandaloneRecoveryTests(BamfCreateResumeCase):
                          receipt_refs=("fixture:receipt:lesson",)))
         return (context, view, capability, episode)
 
+    def _assert_queries_and_index_rebuild(self, socket, index, records, requests, learner):
+        with ControlPlaneClient(socket, client_id="cp07-non-electron") as client:
+            health = client.request("health")
+            self.assertEqual(health["learner"], learner.to_record())
+            first = tuple(client.query(request) for request in requests)
+            self.assertTrue(all(page["accepted"] for page in first))
+            self.assertEqual([page["state"] for page in first],
+                             ["PARTIAL", "PRESENT", "PRESENT",
+                              "PRESENT", "PRESENT", "PRESENT"])
+            run_context = next(row for row in first[0]["records"]
+                               if row["schema_version"].endswith("run-context/v1"))
+            self.assertEqual(run_context["optimizer_step"], 0)
+            self.assertEqual(run_context["stage"], "UNKNOWN")
+            self.assertEqual(first[3]["records"][0]["meta"]["record_id"],
+                             "fixture:capability")
+            self.assertIn("fixture:episode", [
+                link["target_record_id"] for link in first[4]["links"]])
+            self.assertIn("fixture:receipt:lesson", [
+                link["target_ref"] for link in first[5]["links"]])
+
+            malformed = client._send({"type": "query", "query": {"schema": "old"}})
+            self.assertEqual(malformed["reason"], "CONTROL_PLANE_QUERY_INVALID")
+            index.unlink()
+            unavailable = client.query(requests[0])
+            self.assertFalse(unavailable["accepted"])
+            self.assertEqual(unavailable["reason"],
+                             "CONTROL_PLANE_QUERY_SOURCE_UNAVAILABLE")
+            self.assertEqual(client.request("health")["learner"],
+                             learner.to_record())
+            MissionControlProjection.rebuild(index, records)
+            rebuilt = tuple(client.query(request) for request in requests)
+            for earlier, later in zip(first, rebuilt):
+                self.assertEqual(earlier["records"], later["records"])
+                self.assertEqual(earlier["links"], later["links"])
+                self.assertEqual(earlier["state"], later["state"])
+
+            index.write_bytes(b"cp07-corrupt-projection")
+            corrupted = client.query(requests[0])
+            self.assertFalse(corrupted["accepted"])
+            MissionControlProjection.rebuild(index, records)
+            self.assertEqual(client.query(requests[0])["records"], first[0]["records"])
+        return first
+
     def test_independent_attach_recovery_and_projection_rebuild(self):
         run_dir = self.create_accepted_run()
         pointer = run_dir / "bamf-state.json"
@@ -120,46 +163,8 @@ class CP07StandaloneRecoveryTests(BamfCreateResumeCase):
             QueryRequest(QueryFamily.LINKS, record_id="fixture:episode"),
         )
         with standalone(run_dir, socket, index) as first_process:
-            with ControlPlaneClient(socket, client_id="cp07-non-electron") as client:
-                health = client.request("health")
-                self.assertEqual(health["learner"], learner.to_record())
-                first = tuple(client.query(request) for request in requests)
-                self.assertTrue(all(page["accepted"] for page in first))
-                self.assertEqual([page["state"] for page in first],
-                                 ["PARTIAL", "PRESENT", "PRESENT",
-                                  "PRESENT", "PRESENT", "PRESENT"])
-                run_context = next(row for row in first[0]["records"]
-                                   if row["schema_version"].endswith("run-context/v1"))
-                self.assertEqual(run_context["optimizer_step"], 0)
-                self.assertEqual(run_context["stage"], "UNKNOWN")
-                self.assertEqual(first[3]["records"][0]["meta"]["record_id"],
-                                 "fixture:capability")
-                self.assertIn("fixture:episode", [
-                    link["target_record_id"] for link in first[4]["links"]])
-                self.assertIn("fixture:receipt:lesson", [
-                    link["target_ref"] for link in first[5]["links"]])
-
-                malformed = client._send({"type": "query", "query": {"schema": "old"}})
-                self.assertEqual(malformed["reason"], "CONTROL_PLANE_QUERY_INVALID")
-                index.unlink()
-                unavailable = client.query(requests[0])
-                self.assertEqual(unavailable["accepted"], False)
-                self.assertEqual(unavailable["reason"],
-                                 "CONTROL_PLANE_QUERY_SOURCE_UNAVAILABLE")
-                self.assertEqual(client.request("health")["learner"],
-                                 learner.to_record())
-                MissionControlProjection.rebuild(index, records)
-                rebuilt = tuple(client.query(request) for request in requests)
-                for earlier, later in zip(first, rebuilt):
-                    self.assertEqual(earlier["records"], later["records"])
-                    self.assertEqual(earlier["links"], later["links"])
-                    self.assertEqual(earlier["state"], later["state"])
-
-                index.write_bytes(b"cp07-corrupt-projection")
-                corrupted = client.query(requests[0])
-                self.assertFalse(corrupted["accepted"])
-                MissionControlProjection.rebuild(index, records)
-                self.assertEqual(client.query(requests[0])["records"], first[0]["records"])
+            first = self._assert_queries_and_index_rebuild(
+                socket, index, records, requests, learner)
 
             # An abruptly lost external client cannot own the learner or CP01.
             crashed_client = subprocess.run([

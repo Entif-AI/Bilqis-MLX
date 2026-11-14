@@ -48,7 +48,7 @@ class DisposableC11Executor(C11CommandExecutor):
 
 
 class CP07CommandRecoveryTests(BamfCreateResumeCase):
-    def test_c11_genesis_dry_run_mutation_and_lost_ack_recovery(self):
+    def _fixture_command_parameters(self):
         run_dir = self.root / "cp07-command-run"
         manifest = self.root / "manifest.json"
         manifest.write_text("{}", encoding="utf-8")
@@ -59,7 +59,10 @@ class CP07CommandRecoveryTests(BamfCreateResumeCase):
         parameters.extend(ActionParameter(
             flag.removeprefix("--").replace("-", "_"), value,
         ) for flag, value in zip(self.FOUNDATION_ARGS[::2], self.FOUNDATION_ARGS[1::2]))
-        parameters = tuple(parameters)
+        return run_dir, tuple(parameters)
+
+    def test_c11_genesis_dry_run_mutation_and_lost_ack_recovery(self):
+        run_dir, parameters = self._fixture_command_parameters()
         executor = DisposableC11Executor(run_dir, self)
         store = self.root / "operations"
         socket = self.root / "cp.sock"
