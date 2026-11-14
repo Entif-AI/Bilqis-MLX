@@ -12,7 +12,11 @@
 .comparison-card strong { font-size: 28px; font-variant-numeric: tabular-nums; }
 .comparison-card small { color: var(--text-muted); }
 .trend { height: 32px; display: flex; gap: 3px; align-items: end; margin-top: var(--space-4); border-bottom: 1px solid var(--border); }
-.trend span { width: 20%; height: var(--h); min-height: 2px; background: var(--accent); border-top: 2px solid currentColor; }
+.trend span { width: 20%; min-height: 2px; background: var(--accent); border-top: 2px solid currentColor; }
+.trend span[data-height="35"] { height: 35%; }
+.trend span[data-height="48"] { height: 48%; }
+.trend span[data-height="62"] { height: 62%; }
+.trend span[data-height="79"] { height: 79%; }
 .status-badge { min-height: var(--control-height); display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface-2); font-size: 12px; white-space: nowrap; }
 .status-badge > span:first-child { min-width: 13px; font-weight: 850; text-align: center; }
 .status-badge small { color: var(--text-muted); }

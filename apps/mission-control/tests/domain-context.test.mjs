@@ -1,8 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { renderAtlasDomain, ensureAtlasOverview, invalidateAtlasRequests } from "../renderer/atlas/atlas-controller.mjs";
 import { renderCurrentView } from "../renderer/foundation/renderer-ui.mjs";
 import { activateDomainViews } from "../renderer/foundation/domain-controller.mjs";
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const rendererRoot = path.resolve(here, "../renderer");
 
 function mountOwner(t) {
   const previous = { document: globalThis.document, window: globalThis.window, FormData: globalThis.FormData };
@@ -97,4 +103,41 @@ test("the domain activation owner binds Atlas completion to the current shell st
   const markup = fixture.host.innerHTML;
   fixture.finish(); await new Promise(resolve => setImmediate(resolve));
   assert.equal(fixture.host.innerHTML, markup);
+});
+
+test("production shell routes completed GUI domains into the real view host", () => {
+  const index = fs.readFileSync(path.join(rendererRoot, "index.html"), "utf8");
+  const renderer = fs.readFileSync(path.join(rendererRoot, "renderer.mjs"), "utf8");
+  const current = fs.readFileSync(path.join(rendererRoot, "foundation/current-view.mjs"), "utf8");
+  const activation = fs.readFileSync(path.join(rendererRoot, "foundation/domain-controller.mjs"), "utf8");
+  const capability = fs.readFileSync(path.join(rendererRoot, "capability/app.mjs"), "utf8");
+
+  assert.match(
+    index,
+    /<section id="view-host" class="view-host"[\s\S]*<section id="domain-view" class="domain-view"/,
+  );
+
+  assert.match(renderer, /createHomeController\(window\.bamfMissionControl\)/);
+  assert.match(renderer, /createCapabilityExplorer\(/);
+  assert.match(renderer, /activateDomainViews\(\{/);
+  assert.match(renderer, /homeController, resourceController, operateController/);
+  assert.match(renderer, /capabilityExplorer/);
+
+  assert.match(activation, /state\?\.view === "mission-control"/);
+  assert.match(activation, /homeController\.activate/);
+  assert.match(activation, /state\?\.view === "atlas"/);
+  assert.match(activation, /renderAtlasDomain/);
+  assert.match(activation, /state\?\.view === "capability"/);
+  assert.match(activation, /capabilityExplorer\?\.update/);
+  assert.match(capability, /new DossierController/);
+
+  for (const [view, owner] of [
+    ["model", "renderNeuralView"],
+    ["memory", "renderMemoryView"],
+    ["lineage", "renderLineageView"],
+    ["evidence", "renderEvidenceView"],
+  ]) {
+    assert.match(current, new RegExp('state\\.view === "' + view + '"'));
+    assert.match(current, new RegExp(owner + '\\('));
+  }
 });
