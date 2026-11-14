@@ -92,9 +92,10 @@ export async function loadEvidencePage(api, context, criteria, cursor = null) {
 }
 
 export async function loadRecordById(api, context, recordId) {
-  const page = await api.query(buildEvidenceRequest(
-    context, { kind: "record", value: recordId }, null,
-  ));
+  // A stable record ID is globally unique inside the admitted CP03 catalog.
+  // Provenance traversal must therefore hydrate that exact identity without
+  // inheriting the shell's current/historical generation filter.
+  const page = await api.query(request({ record_id: recordId }));
   return { page, record: page.records?.[0] ?? null };
 }
 
@@ -176,7 +177,8 @@ function readable(record, linksPage) {
     <dl><dt>Record ID</dt><dd>${esc(meta.record_id)}</dd><dt>Schema / version</dt><dd>${esc(record.schema_version)}</dd>
     <dt>Authority</dt><dd>${esc(meta.authority)}</dd><dt>Coverage</dt><dd>${esc(meta.coverage)}</dd>
     <dt>Verification</dt><dd>${esc(verification)}</dd><dt>Materialized</dt><dd>${esc(meta.materialized_at ?? "UNKNOWN")}</dd>
-    <dt>Observed</dt><dd>${esc(meta.observed_at ?? "UNKNOWN")}</dd><dt>As of</dt><dd>${esc(meta.as_of ?? "UNKNOWN")}</dd>${body}</dl>
+    <dt>Observed</dt><dd>${esc(meta.observed_at ?? "UNKNOWN")}</dd><dt>As of</dt><dd>${esc(meta.as_of ?? "UNKNOWN")}</dd>
+    <dt>Record metadata</dt><dd><code>${esc(JSON.stringify(meta))}</code></dd>${body}</dl>
     <section><h4>Provenance chain</h4><div class="evidence-refs">${refs(meta)}</div></section>
     <section><h4>Exact links</h4><div class="evidence-links">${(linksPage?.links ?? []).map((link, index) => linkSummary(link, index, "selected")).join("") || '<span class="evidence-unresolved">No resolvable links reported.</span>'}</div></section>
   </div>`;
@@ -195,6 +197,9 @@ export function renderEvidenceMarkup(state = ui) {
       <button type="button" data-evidence-raw>${state.raw ? "Readable view" : "Raw structured payload"}</button></header>
     ${state.raw ? `<pre>${esc(JSON.stringify(selected, null, 2))}</pre>` : readable(selected, state.selectedLinks)}
   </section>`;
+  const emptyText = state.criteria.kind === "memory"
+    ? "No accepted CP03 record exposes this memory motif/slot identity. GUI10 display fixtures are not durable evidence."
+    : "No evidence rows returned for this exact query.";
   return `<div class="evidence-view"><header class="evidence-heading"><div><span class="eyebrow">GUI16 · Evidence &amp; Receipts</span>
     <h2>Forensic provenance browser</h2></div><p>Literal CP03 records only. External payloads remain external unless the control plane exposes an exact record identity.</p></header>
     <form id="evidence-search-form" class="evidence-search"><label>Search by<select name="kind">${SEARCH_KINDS.map(([value, label]) =>
@@ -203,30 +208,67 @@ export function renderEvidenceMarkup(state = ui) {
     <div class="evidence-query-state" data-state="${esc(page?.state ?? state.status)}"><strong>${esc(pageState(page))}</strong>
       <span>${page ? `${esc(page.returned)} returned / ${esc(page.total_matches)} exact matches` : esc(state.error ?? "Ready")}</span></div>
     ${markers ? `<section class="evidence-markers" aria-label="Omissions and degraded evidence">${markers}</section>` : ""}
-    <div class="evidence-results">${results || '<div class="evidence-empty">No evidence rows returned for this exact query.</div>'}</div>
+    <div class="evidence-results">${results || `<div class="evidence-empty">${emptyText}</div>`}</div>
     ${page?.next_cursor ? '<button type="button" data-evidence-more>Load next bounded page</button>' : ""}${selectedMarkup}</div>`;
+}
+
+const QUERY_STATE_RANK = Object.freeze({
+  EMPTY: 0, PRESENT: 1, PARTIAL: 2, STALE: 3,
+  MISSING: 4, UNKNOWN: 5, UNAVAILABLE: 6, DENIED: 7,
+});
+
+function worseState(left, right) {
+  return (QUERY_STATE_RANK[right] ?? -1) > (QUERY_STATE_RANK[left] ?? -1)
+    ? right : left;
+}
+
+function mergeMarkers(left = [], right = []) {
+  const seen = new Map();
+  for (const marker of [...left, ...right]) {
+    const key = marker?.meta?.record_id ?? JSON.stringify(marker);
+    seen.set(key, marker);
+  }
+  return [...seen.values()];
+}
+
+export function mergeEvidencePages(previous, next) {
+  if (!previous) return next;
+  const state = worseState(previous.state, next.state);
+  const markers = mergeMarkers(previous.markers, next.markers);
+  const coverage = ["MISSING", "UNKNOWN", "UNAVAILABLE", "DENIED"].includes(state)
+    ? "UNKNOWN"
+    : markers.length || ["PARTIAL", "STALE"].includes(state) || next.next_cursor
+      ? "PARTIAL"
+      : next.coverage;
+  return {
+    ...next,
+    state,
+    coverage,
+    markers,
+    returned: (previous.returned ?? 0) + (next.returned ?? 0),
+  };
 }
 
 async function search(container, api, context, criteria, cursor = null, append = false) {
   ui.status = "loading"; ui.error = null; ui.criteria = criteria;
-  renderEvidenceView(container, api, context);
+  paintEvidenceView(container, api, context);
   try {
     const page = await loadEvidencePage(api, context, criteria, cursor);
-    ui.page = page; ui.status = "ready";
+    ui.page = append ? mergeEvidencePages(ui.page, page) : page; ui.status = "ready";
     ui.records = append ? [...ui.records, ...(page.records ?? [])] : [...(page.records ?? [])];
     ui.links = append ? [...ui.links, ...(page.links ?? [])] : [...(page.links ?? [])];
     if (!append) { ui.selected = null; ui.selectedLinks = null; ui.raw = false; }
   } catch (error) {
     ui.status = "error"; ui.error = error?.code ?? error?.message ?? "Evidence query failed";
   }
-  renderEvidenceView(container, api, context);
+  paintEvidenceView(container, api, context);
 }
 
 async function select(container, api, context, record) {
   ui.selected = record; ui.raw = false; ui.selectedLinks = null;
-  renderEvidenceView(container, api, context);
+  paintEvidenceView(container, api, context);
   try { ui.selectedLinks = await loadRecordLinks(api, record); } catch (_error) { ui.selectedLinks = null; }
-  renderEvidenceView(container, api, context);
+  paintEvidenceView(container, api, context);
 }
 
 function bind(container, api, context) {
@@ -255,7 +297,7 @@ function bind(container, api, context) {
   container.querySelectorAll("[data-evidence-ref]").forEach((button) => button.addEventListener("click", () =>
     void search(container, api, context, { kind: "reference", value: button.dataset.evidenceRef })));
   container.querySelector("[data-evidence-raw]")?.addEventListener("click", () => {
-    ui.raw = !ui.raw; renderEvidenceView(container, api, context);
+    ui.raw = !ui.raw; paintEvidenceView(container, api, context);
   });
   container.querySelector("[data-evidence-more]")?.addEventListener("click", () =>
     void search(container, api, context, ui.criteria, ui.page?.next_cursor ?? null, true));
@@ -272,6 +314,11 @@ export function criteriaForSelection(selection) {
   return { kind: kinds[selection.kind] ?? "record", value: selection.id };
 }
 
+function paintEvidenceView(container, api, context) {
+  container.innerHTML = renderEvidenceMarkup(ui);
+  bind(container, api, context);
+}
+
 export function renderEvidenceView(container, api, context, initialSelection = null) {
   const criteria = criteriaForSelection(initialSelection);
   const key = `${context.mode}:${context.runId}:${context.generation}:${criteria.kind}:${criteria.value}`;
@@ -279,7 +326,6 @@ export function renderEvidenceView(container, api, context, initialSelection = n
     contextKey: key, status: "idle", criteria,
     page: null, records: [], links: [], selected: null, selectedLinks: null, raw: false, error: null,
   });
-  container.innerHTML = renderEvidenceMarkup(ui);
-  bind(container, api, context);
+  paintEvidenceView(container, api, context);
   if (ui.status === "idle") void search(container, api, context, ui.criteria);
 }

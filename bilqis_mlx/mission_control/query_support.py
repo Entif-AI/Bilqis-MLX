@@ -259,12 +259,17 @@ def build_page(*, available: bool, request: QueryRequest, records, markers,
     page_records = tuple(page_rows) if rows is records else ()
     page_links = tuple(page_rows) if rows is links else ()
     page_ids = {item.meta.record_id for item in page_records}
+    page_refs = {item.target_ref for item in page_links}
     page_markers = tuple(
         item for item in markers
-        if ((type(item) is PartialEnvelope and item.partial_record_id in page_ids)
+        if ((type(item) is PartialEnvelope
+             and item.partial_record_id in page_ids | page_refs)
             or (type(item) is StaleEnvelope
-                and (item.stale_record_id in page_ids or not records))
-            or type(item) is UnavailableEnvelope)
+                and (item.stale_record_id in page_ids | page_refs or not records))
+            or (type(item) is UnavailableEnvelope
+                and (not page_links
+                     or item.resource in page_refs
+                     or item.resource == request.reference)))
     )
     state = (
         QueryState.UNAVAILABLE if not available
@@ -273,7 +278,7 @@ def build_page(*, available: bool, request: QueryRequest, records, markers,
             historical_missing=(exact_missing or request.mode is QueryMode.HISTORICAL),
         )
     )
-    if page_links:
+    if page_links and not page_markers:
         state = QueryState.PRESENT
     coverage = (
         CoverageState.UNKNOWN if state in {

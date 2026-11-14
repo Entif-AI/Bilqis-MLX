@@ -10,7 +10,9 @@ import {
   loadEvidencePage,
   loadRecordById,
   loadRecordLinks,
+  mergeEvidencePages,
   renderEvidenceMarkup,
+  renderEvidenceView,
 } from "../renderer/evidence/evidence-view.mjs";
 
 const context = Object.freeze({ mode: "LIVE", runId: "run-7", generation: 7 });
@@ -19,7 +21,15 @@ const historical = Object.freeze({ mode: "HISTORICAL", runId: "run-7", generatio
 function meta(recordId, generation = 7) {
   return {
     record_id: recordId,
-    run: { run_id: "run-7", generation },
+    run: {
+      run_id: "run-7", generation,
+      run_identity_sha256: "1".repeat(64),
+      generation_manifest_sha256: "2".repeat(64),
+      candidate_identity_sha256: "3".repeat(64),
+      factory_release_sha256: "4".repeat(64),
+      semantic_release_sha256: "5".repeat(64),
+      topology_sha256: "6".repeat(64),
+    },
     materialized_at: 120,
     observed_at: 118,
     as_of: 118,
@@ -31,13 +41,16 @@ function meta(recordId, generation = 7) {
   };
 }
 
-function page(request, { records = [], links = [], state = "PRESENT", coverage = "COMPLETE", next = null } = {}) {
+function page(request, {
+  records = [], links = [], markers = [], state = "PRESENT",
+  coverage = "COMPLETE", next = null,
+} = {}) {
   return {
     schema: "bilqis.bamf.control-plane.query-page/v1",
     query_id: "a".repeat(64), request, family: request.family, mode: request.mode,
     state, coverage, total_matches: records.length + links.length,
     returned: records.length + links.length, truncated: next !== null,
-    next_cursor: next, records, markers: [], links, accepted: true,
+    next_cursor: next, records, markers, links, accepted: true,
   };
 }
 
@@ -94,6 +107,28 @@ test("owning-view selections map directly into evidence searches without losing 
   });
 });
 
+test("selected-object bootstrap issues one query and does not race a context query", async () => {
+  const seen = [];
+  const api = {
+    async query(request) {
+      seen.push(request);
+      return page(request, { records: [capability] });
+    },
+  };
+  const container = {
+    innerHTML: "",
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+  };
+  const selectedContext = { ...context, generation: 71 };
+  renderEvidenceView(container, api, selectedContext, { kind: "capability", id: "B.AND" });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].reference, "B.AND");
+  assert.equal(seen[0].run_id, "run-7");
+  assert.equal(seen[0].generation, 71);
+});
+
 test("capability to episode to evidence chain follows CP03 links without manual ID copying", async () => {
   const seen = [];
   const api = {
@@ -129,6 +164,22 @@ test("capability to episode to evidence chain follows CP03 links without manual 
   assert.deepEqual(seen.map((item) => item.family), ["record", "links", "record", "links"]);
 });
 
+test("exact linked record hydration ignores shell generation and uses stable record identity", async () => {
+  const seen = [];
+  const api = {
+    async query(request) {
+      seen.push(request);
+      return page(request, { records: [receipt] });
+    },
+  };
+  const result = await loadRecordById(api, historical, receipt.meta.record_id);
+  assert.equal(result.record, receipt);
+  assert.equal(seen[0].record_id, receipt.meta.record_id);
+  assert.equal(seen[0].run_id, null);
+  assert.equal(seen[0].generation, null);
+  assert.equal(seen[0].mode, "current");
+});
+
 test("readable and raw views expose the same literal receipt values", () => {
   const base = {
     status: "ready", criteria: { kind: "record", value: receipt.meta.record_id },
@@ -137,7 +188,14 @@ test("readable and raw views expose the same literal receipt values", () => {
   };
   const readable = renderEvidenceMarkup({ ...base, raw: false });
   const raw = renderEvidenceMarkup({ ...base, raw: true });
-  for (const literal of [receipt.meta.record_id, receipt.operation_id, receipt.postcondition_ref]) {
+  for (const literal of [
+    receipt.meta.record_id,
+    receipt.operation_id,
+    receipt.postcondition_ref,
+    receipt.meta.run.run_id,
+    receipt.meta.run.generation_manifest_sha256,
+    receipt.meta.source_refs[0],
+  ]) {
     assert.ok(readable.includes(literal));
     assert.ok(raw.includes(literal));
   }
@@ -186,6 +244,54 @@ test("partial and stale marker detail exposes omissions instead of hiding them",
   assert.ok(markup.includes("grader_receipt"));
   assert.ok(markup.includes("source_revision"));
   assert.ok(markup.includes("PARTIAL · PARTIAL"));
+});
+
+test("bounded pagination preserves earlier degraded markers and state", () => {
+  const request = buildEvidenceRequest(context, { kind: "context", value: "" });
+  const marker = {
+    schema_version: "bilqis.bamf.mission-control.partial/v1",
+    meta: meta("partial:first-page"),
+    partial_record_id: "episode:and",
+    missing_fields: ["grader_receipt"],
+  };
+  const first = page(request, {
+    records: [episode], markers: [marker], state: "PARTIAL",
+    coverage: "PARTIAL", next: "cursor:next",
+  });
+  const second = page({ ...request, cursor: "cursor:next" }, {
+    records: [capability], state: "PRESENT", coverage: "COMPLETE",
+  });
+  const merged = mergeEvidencePages(first, second);
+  assert.equal(merged.state, "PARTIAL");
+  assert.equal(merged.coverage, "PARTIAL");
+  assert.deepEqual(merged.markers, [marker]);
+  assert.equal(merged.returned, 2);
+  assert.equal(merged.next_cursor, null);
+});
+
+test("pagination-only partial coverage clears after the final page is accumulated", () => {
+  const request = buildEvidenceRequest(context, { kind: "context", value: "" });
+  const first = page(request, {
+    records: [episode], state: "PRESENT", coverage: "PARTIAL", next: "cursor:next",
+  });
+  const second = page({ ...request, cursor: "cursor:next" }, {
+    records: [capability], state: "PRESENT", coverage: "COMPLETE",
+  });
+  const merged = mergeEvidencePages(first, second);
+  assert.equal(merged.state, "PRESENT");
+  assert.equal(merged.coverage, "COMPLETE");
+  assert.equal(merged.returned, 2);
+});
+
+test("memory identity misses disclose absent CP03 evidence rather than treating GUI10 fixtures as truth", () => {
+  const request = buildEvidenceRequest(context, { kind: "memory", value: "motif:bool-composition" });
+  const markup = renderEvidenceMarkup({
+    status: "ready", criteria: { kind: "memory", value: "motif:bool-composition" },
+    page: page(request, { state: "EMPTY" }), records: [], links: [],
+    selected: null, selectedLinks: null, raw: false, error: null,
+  });
+  assert.ok(markup.includes("No accepted CP03 record exposes this memory motif/slot identity"));
+  assert.ok(markup.includes("GUI10 display fixtures are not durable evidence"));
 });
 
 test("cursor pagination is passed back to CP03 unchanged", () => {

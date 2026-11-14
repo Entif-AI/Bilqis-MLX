@@ -8,6 +8,7 @@ from bilqis_mlx.mission_control.query_contracts import (
 )
 from bilqis_mlx.mission_control.query_catalog import MissionControlQueryCatalog
 from bilqis_mlx.mission_control.operator import OperatorActionReceipt
+from bilqis_mlx.mission_control.observability import MemorySnapshot
 from bilqis_mlx.mission_control.tests.samples import SAMPLES
 from bilqis_mlx.presentation.atlas_metrics import bamf_status
 
@@ -129,6 +130,23 @@ class MissionControlQueryFamilyTests(unittest.TestCase):
             item.candidate_id for item in page.records if hasattr(item, "candidate_id")
         }
         self.assertEqual(candidate_ids, {candidate.candidate_id, "candidate-conflicting"})
+
+    def test_forensic_memory_identity_search_uses_admitted_provenance_refs(self):
+        memory = next(item for item in SAMPLES if type(item) is MemorySnapshot)
+        bound = replace(
+            memory,
+            meta=replace(
+                memory.meta,
+                evidence_refs=("motif:bool-composition", "allocation-slot:42"),
+            ),
+        )
+        catalog = MissionControlQueryCatalog((bound,))
+        motif = catalog.query(QueryRequest(
+            QueryFamily.RECORD, reference="motif:bool-composition"))
+        slot = catalog.query(QueryRequest(
+            QueryFamily.RECORD, reference="allocation-slot:42"))
+        self.assertEqual(motif.records, (bound,))
+        self.assertEqual(slot.records, (bound,))
 
     def test_index_rejects_duplicate_record_identity(self):
         with self.assertRaises(ValueError):

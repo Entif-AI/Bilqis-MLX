@@ -89,8 +89,12 @@ class MissionControlQueryHistoryTests(unittest.TestCase):
             QueryFamily.RECORD, mode=QueryMode.HISTORICAL,
             run_id="run-7", generation=7, reference="operation-shared",
         ))
+        live = catalog.query(QueryRequest(
+            QueryFamily.RECORD, run_id="run-7", reference="operation-shared",
+        ))
         self.assertEqual(historical.records, (old,))
         self.assertEqual(newer.records, (current,))
+        self.assertEqual(live.records, (current,))
         self.assertEqual(historical.records[0].postcondition_ref, "postcondition:6")
 
     def test_historical_link_and_reference_queries_bind_exact_identity(self):
@@ -267,6 +271,47 @@ class MissionControlQueryHistoryTests(unittest.TestCase):
                 QueryRequest(QueryFamily.CAPABILITY)).state,
             QueryState.UNAVAILABLE,
         )
+
+    def test_reference_query_surfaces_target_payload_degradation(self):
+        source = replace(
+            SAMPLES[1],
+            meta=replace(
+                SAMPLES[1].meta,
+                record_id="operator:reference-source",
+                receipt_refs=("receipt:target",),
+            ),
+        )
+        target = OperatorActionReceipt(
+            _meta("receipt:target", RUN, as_of=118),
+            "request-target", "operation-target", ActionReceiptState.COMPLETED,
+            120, "postcondition:target", None,
+        )
+        partial = PartialEnvelope(
+            replace(
+                target.meta, record_id="partial:receipt-target",
+                coverage=CoverageState.PARTIAL,
+            ),
+            target.meta.record_id,
+            ("verification_bundle",),
+        )
+        page = MissionControlQueryCatalog((source, target, partial)).query(
+            QueryRequest(QueryFamily.REFERENCE, reference="receipt:target"))
+        self.assertEqual(page.state, QueryState.PARTIAL)
+        self.assertEqual(page.markers, (partial,))
+        self.assertEqual(
+            [link.target_ref for link in page.links], ["receipt:target"])
+
+        denied = UnavailableEnvelope(
+            RecordMeta(
+                "unavailable:receipt-secret", None, 120, None, None,
+                CoverageState.UNKNOWN, AuthorityClass.DERIVED,
+            ),
+            "receipt:secret", UnavailableReason.DENIED, None,
+        )
+        denied_page = MissionControlQueryCatalog((denied,)).query(
+            QueryRequest(QueryFamily.REFERENCE, reference="receipt:secret"))
+        self.assertEqual(denied_page.state, QueryState.DENIED)
+        self.assertEqual(denied_page.markers, (denied,))
 
 
 if __name__ == "__main__":
