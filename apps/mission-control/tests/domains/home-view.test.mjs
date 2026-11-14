@@ -96,8 +96,10 @@ test("CP04 event families refresh only their owning CP03 family", () => {
 
 test("live home uses one family query per CP04 event rather than polling the full view", async () => {
   const calls = [];
+  let active = true;
   let listener = null;
   const api = {
+    async status() { return { learnerActive: active }; },
     async query(request) {
       calls.push(request.family);
       return emptyPage(request.family);
@@ -110,7 +112,12 @@ test("live home uses one family query per CP04 event rather than polling the ful
   const controller = createHomeController(api);
   await controller.activate(context, { host: fakeHost(), onInspect: () => {}, defense: { historical: false } });
   assert.deepEqual(new Set(calls), new Set(HOME_FAMILIES));
+  assert.equal(controller.currentModel().runtime.running, true);
   const baseline = calls.length;
+  active = false;
+  await listener({ event_family: "operator.action.state" });
+  assert.equal(controller.currentModel().runtime.running, false);
+  assert.equal(calls.length, baseline);
   await listener({ event_family: "capability.changed" });
   assert.equal(calls.length, baseline + 1);
   assert.equal(calls.at(-1), "capability");

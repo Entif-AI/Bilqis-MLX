@@ -8,6 +8,7 @@ import {
   openSelectionOwner,
   returnFromEvidence,
   selectObject,
+  normalizeContext,
   withDefensiveState,
   withRoute,
 } from "./shell-state.mjs";
@@ -279,20 +280,10 @@ async function establishSnapshot({ preserveRoute = false } = {}) {
   if (snapshotSource === "cache" && defense.id === "live") {
     defense = defensiveState("stale", options);
   }
-  const shell = createShellState(operatorView, route);
-  const connectedShell = {
-    ...shell,
-    context: Object.freeze({
-      ...shell.context,
-      operatorActive: typeof connection?.learnerActive === "boolean"
-        ? connection.learnerActive
-        : null,
-    }),
-  };
   verifiedLiveContext = snapshotSource === "service" && defense.id === "live"
-    ? connectedShell.context
+    ? normalizeContext(operatorView)
     : null;
-  state = { ...withDefensiveState(connectedShell, defense), modelSection };
+  state = { ...withDefensiveState(createShellState(operatorView, route), defense), modelSection };
   render();
   announce(`${defense.label}. ${defense.historical ? "Inspection-only evidence is shown." : "Live context established."}`);
 }
