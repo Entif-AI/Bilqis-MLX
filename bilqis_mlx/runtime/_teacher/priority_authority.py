@@ -118,7 +118,8 @@ def _planning_unlocks(capability_id, planning):
 
 
 def issue_foundation_priority_authority(
-        run_dir, source_context, parent, teacher_epoch, atlas_artifact_path):
+        run_dir, source_context, parent, teacher_epoch, atlas_artifact_path, *,
+        teacher_state):
     """Issue only signed UNKNOWN salience; C06 ranking owns the resulting order."""
     from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _accepted_correction_registry
     from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import (
@@ -126,10 +127,10 @@ def issue_foundation_priority_authority(
     )
     cache, registry = _accepted_correction_registry(run_dir)
     signer = read_host_system_source_authority_signer(registry)
-    next_seed = parent.teacher_state.get("next_seed")
+    next_seed = teacher_state.get("next_seed")
     if type(next_seed) is not int or next_seed < 0:
         _invalid("BAMF_PRIORITY_TEACHER_SEED_INVALID")
-    counter, last_selected = priority_rotation_state(parent.teacher_state)
+    counter, last_selected = priority_rotation_state(teacher_state)
     planning = _priority_planning(run_dir, source_context, atlas_artifact_path)
     offers = tuple((capability.id, prepare_priority_source_offer(
         source_context, parent, atlas_artifact_path,

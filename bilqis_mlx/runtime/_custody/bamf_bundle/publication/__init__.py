@@ -30,6 +30,7 @@ from .authority import (
 from .events import reconcile_bamf_outbox, record_bamf_rejection
 from .factory_release import persist_prepared_initial_factory_release
 from .genesis_trust import publish_initial_generation_trust_root
+from .inspection import AcceptedGenerationInspection, inspect_accepted_generation
 from .retry import (
     _existing_initial_generation_retry, recover_prepared_initial_generation,
     recover_sealed_initial_generation,
