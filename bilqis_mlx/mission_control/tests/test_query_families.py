@@ -3,6 +3,8 @@ from dataclasses import replace
 import unittest
 
 from bilqis_mlx.mission_control.codec import canonical_json, encode_record
+from bilqis_mlx.mission_control.envelopes import PartialEnvelope
+from bilqis_mlx.mission_control.model import CoverageState
 from bilqis_mlx.mission_control.query_contracts import (
     QueryFamily, QueryRequest, QueryState,
 )
@@ -147,6 +149,28 @@ class MissionControlQueryFamilyTests(unittest.TestCase):
             QueryFamily.RECORD, reference="allocation-slot:42"))
         self.assertEqual(motif.records, (bound,))
         self.assertEqual(slot.records, (bound,))
+
+    def test_reference_query_keeps_degradation_on_its_actual_source_chain(self):
+        source = replace(
+            SAMPLES[1],
+            meta=replace(
+                SAMPLES[1].meta,
+                record_id="operator:reference-partial",
+                receipt_refs=("receipt:wanted",),
+            ),
+        )
+        partial = PartialEnvelope(
+            replace(
+                source.meta, record_id="partial:reference-source",
+                coverage=CoverageState.PARTIAL,
+            ),
+            source.meta.record_id,
+            ("stage",),
+        )
+        page = MissionControlQueryCatalog((source, partial)).query(QueryRequest(
+            QueryFamily.REFERENCE, reference="receipt:wanted"))
+        self.assertEqual(page.state, QueryState.PARTIAL)
+        self.assertEqual(page.markers, (partial,))
 
     def test_index_rejects_duplicate_record_identity(self):
         with self.assertRaises(ValueError):

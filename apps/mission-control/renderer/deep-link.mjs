@@ -15,11 +15,22 @@ export function parseDeepLink(hash = "") {
       fixture: params.get("fixture") === "true",
       historicalPinned: params.get("mode") === "HISTORICAL",
     } : null;
-  return {
+  const originView = params.get("originView");
+  const originKind = params.get("originKind");
+  const originId = params.get("originId");
+  const route = {
     ...(context ? { context } : {}),
     view,
     selected: kind && id ? { kind, id } : null,
   };
+  if (originView) {
+    route.evidenceOrigin = {
+      view: originView,
+      selected: originKind && originId ? { kind: originKind, id: originId } : null,
+      inspectorOpen: params.get("originInspector") === "1",
+    };
+  }
+  return route;
 }
 
 export function buildDeepLink(state) {
@@ -32,6 +43,20 @@ export function buildDeepLink(state) {
     params.set("mode", state.context.mode);
     if (state.context.fixture) params.set("fixture", "true");
   }
+  if (state.view === "evidence" && state.evidenceOrigin?.view) {
+    params.set("originView", state.evidenceOrigin.view);
+    if (state.evidenceOrigin.selected?.kind) {
+      params.set("originKind", state.evidenceOrigin.selected.kind);
+    }
+    if (state.evidenceOrigin.selected?.id) {
+      params.set("originId", state.evidenceOrigin.selected.id);
+    }
+    if (state.evidenceOrigin.inspectorOpen) params.set("originInspector", "1");
+  }
   const query = params.toString();
   return `#/view/${state.view}${query ? `?${query}` : ""}`;
+}
+
+export function routeFromState(state) {
+  return parseDeepLink(buildDeepLink(state));
 }

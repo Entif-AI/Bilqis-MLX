@@ -313,6 +313,37 @@ class MissionControlQueryHistoryTests(unittest.TestCase):
         self.assertEqual(denied_page.state, QueryState.DENIED)
         self.assertEqual(denied_page.markers, (denied,))
 
+    def test_reference_query_ignores_unrelated_stale_markers(self):
+        source = replace(
+            SAMPLES[1],
+            meta=replace(
+                SAMPLES[1].meta,
+                record_id="operator:healthy-reference",
+                receipt_refs=("receipt:wanted",),
+            ),
+        )
+        unrelated = replace(
+            SAMPLES[2],
+            meta=replace(SAMPLES[2].meta, record_id="school:unrelated", as_of=100),
+        )
+        stale = StaleEnvelope(
+            replace(
+                unrelated.meta, record_id="stale:unrelated",
+                coverage=CoverageState.PARTIAL,
+            ),
+            unrelated.meta.record_id, 100, 118,
+        )
+        catalog = MissionControlQueryCatalog((source, unrelated, stale))
+        wanted = catalog.query(QueryRequest(
+            QueryFamily.REFERENCE, reference="receipt:wanted"))
+        self.assertEqual(wanted.state, QueryState.PRESENT)
+        self.assertEqual(wanted.coverage, CoverageState.COMPLETE)
+        self.assertEqual(wanted.markers, ())
+        missing = catalog.query(QueryRequest(
+            QueryFamily.REFERENCE, reference="receipt:not-there"))
+        self.assertEqual(missing.state, QueryState.MISSING)
+        self.assertEqual(missing.markers, ())
+
 
 if __name__ == "__main__":
     unittest.main()

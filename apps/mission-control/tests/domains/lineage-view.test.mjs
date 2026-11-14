@@ -104,11 +104,11 @@ test("historical node is recursively immutable while current lineage advances", 
   assert.ok(currentLineageNode().generation > historical.generation);
 });
 
-test("generation deep link selects exact manifest and CP03 query binds historical generation", () => {
+test("generation deep link selects the durable CP03 record and resolves the exact manifest", () => {
   const node = LINEAGE_FIXTURE.nodes[2];
   const route = parseDeepLink(lineageDeepLink(node));
   assert.equal(route.view, "lineage");
-  assert.deepEqual(route.selected, { kind: "generation", id: node.manifestSha256 });
+  assert.deepEqual(route.selected, { kind: "generation", id: node.recordId });
   assert.equal(nodeByIdentity(route.selected.id), node);
   assert.deepEqual(historicalGenerationQuery(node), {
     family: "generation", mode: "historical", run_id: node.runId,

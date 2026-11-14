@@ -23,6 +23,7 @@ const RENDERER_ASSETS = Object.freeze(new Map([
   ["/corrections/corrections-view.mjs", "corrections/corrections-view.mjs"],
   ["/corrections/corrections.css", "corrections/corrections.css"],
   ["/foundation/accessibility.mjs", "foundation/accessibility.mjs"],
+  ["/foundation/current-view.mjs", "foundation/current-view.mjs"],
   ["/foundation/defensive-state.mjs", "foundation/defensive-state.mjs"],
   ["/foundation/domain-controller.mjs", "foundation/domain-controller.mjs"],
   ["/deep-link.mjs", "deep-link.mjs"],

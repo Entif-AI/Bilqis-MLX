@@ -126,7 +126,7 @@ export function criteriaForSelection(selection) {
   if (!selection?.id) return { kind: "context", value: "" };
   const kinds = {
     evidence: "record", capability: "capability", episode: "episode",
-    semantic: "semantic", memory: "memory", checkpoint: "checkpoint",
+    semantic: "semantic", memory: "memory", checkpoint: "checkpoint", generation: "record",
     correction: "correction", strategy: "reference", neural: "reference",
     warning: "reference",
   };
