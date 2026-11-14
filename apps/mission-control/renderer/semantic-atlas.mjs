@@ -162,14 +162,19 @@ export async function loadAbiRow(api, context, bank, row) {
 export function lensEdges(selection, lens) {
   if (!selection) return [];
   if (lens === "learned") {
-    return (selection.similarities ?? []).map((record) => Object.freeze({
-      kind: "learned",
-      source: record.source_semantic_id,
-      target: record.target_semantic_id,
-      relation: `similarity · ${record.similarity?.value ?? "unknown"}`,
-      canonicalEquivalence: record.canonical_equivalence,
-      basis: record.basis_ref,
-    }));
+    return (selection.similarities ?? []).map((record) => {
+      if (record.canonical_equivalence !== false) {
+        invalid("SIMILARITY_CANONICAL_EQUIVALENCE");
+      }
+      return Object.freeze({
+        kind: "learned",
+        source: record.source_semantic_id,
+        target: record.target_semantic_id,
+        relation: `similarity · ${record.similarity?.value ?? "unknown"}`,
+        canonicalEquivalence: record.canonical_equivalence,
+        basis: record.basis_ref,
+      });
+    });
   }
   return (selection.concept?.relations ?? []).map((relation) => Object.freeze({
     kind: "canonical",
@@ -264,7 +269,7 @@ export function renderAtlasMarkup({ status, error, overview, selection, lens = "
         <dt>Frames</dt><dd>${concept.frame_schema_refs.map(esc).join("<br>") || "none declared"}</dd>
       </dl>` : !held ? `<p class="atlas-muted">Search an exact semantic identity or resolve a bank/row.</p>` : ""}
       <div class="atlas-edges"><strong>${lens === "canonical" ? "Canonical relationships" : "Learned similarity neighborhood"}</strong>
-        ${edges.length ? `<ul>${edges.map((edge) => `<li data-edge-kind="${edge.kind}"><code>${esc(edge.relation)}</code> → ${esc(edge.target)}${edge.kind === "learned" ? ` <small>${esc(edge.basis)} · canonical equivalence: false</small>` : ""}</li>`).join("")}</ul>` : `<p class="atlas-muted">No ${lens === "canonical" ? "canonical relationships" : "learned similarity edges"} returned.</p>`}
+        ${edges.length ? `<ul>${edges.map((edge) => `<li data-edge-kind="${edge.kind}"><code>${esc(edge.relation)}</code> → ${esc(edge.target)}${edge.kind === "learned" ? ` <small>${esc(edge.basis)} · canonical equivalence: ${esc(edge.canonicalEquivalence)}</small>` : ""}</li>`).join("")}</ul>` : `<p class="atlas-muted">No ${lens === "canonical" ? "canonical relationships" : "learned similarity edges"} returned.</p>`}
       </div>
     </section>`;
 }

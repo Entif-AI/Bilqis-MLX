@@ -141,6 +141,10 @@ test("canonical lens never imports learned similarity as a graph edge", () => {
   assert.equal(canonicalMarkup.includes("0.97"), false);
   assert.ok(learnedMarkup.includes("0.97"));
   assert.ok(learnedMarkup.includes("canonical equivalence: false"));
+  assert.throws(
+    () => lensEdges({ ...selection, similarities: [{ ...similarity(), canonical_equivalence: true }] }, "learned"),
+    /MISSION_CONTROL_SEMANTIC_QUERY_INVALID:SIMILARITY_CANONICAL_EQUIVALENCE/,
+  );
 });
 
 test("identity inspector renders source revision and non-color generation-state cues", () => {
