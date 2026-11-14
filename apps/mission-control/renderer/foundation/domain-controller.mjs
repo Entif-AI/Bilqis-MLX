@@ -5,7 +5,9 @@ import {
 } from "../atlas/atlas-controller.mjs";
 import { deactivateEvidenceView } from "../evidence/evidence-view.mjs";
 
-export function activateDomainViews({ state, getState, defense, api, homeController, onInspect }) {
+export function activateDomainViews({
+  state, getState, defense, api, homeController, resourceController, onInspect,
+}) {
   if (state?.view === "atlas") {
     const context = state.context;
     const isActive = () => getState()?.view === "atlas" && getState().context === context;
@@ -22,5 +24,14 @@ export function activateDomainViews({ state, getState, defense, api, homeControl
     });
   } else {
     void homeController.deactivate();
+  }
+  if (state?.view === "resources") {
+    void resourceController?.activate(state.context, {
+      target: document.querySelector("#domain-view"),
+      onInspect,
+      defense,
+    });
+  } else {
+    void resourceController?.deactivate();
   }
 }
