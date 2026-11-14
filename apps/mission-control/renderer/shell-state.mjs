@@ -23,6 +23,7 @@ export const INSPECTOR_OWNERS = Object.freeze({
   checkpoint: "lineage",
   evidence: "evidence",
   correction: "corrections",
+  generation: "lineage",
   warning: "resources",
   resource: "resources",
   neural: "model",
