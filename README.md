@@ -75,9 +75,19 @@ npm run mission-control:security:test
 
 For the complete setup matrix, including what a bare clone can and cannot provision, see [Setup and operation](docs/operations/OPERATOR_GUIDE.md).
 
-## Quick start: inspect an existing BAMF run
+## Quick start
 
-Use the exact run directory. A dry-run resume is neural-inert:
+First determine whether the target is new or already contains an accepted BAMF lineage.
+
+For a **new** target, use an absolute path such as:
+
+~~~bash
+export RUN_DIR="$HOME/Code/bilqis-mlx-runs/aspirant"
+~~~
+
+Do not use `--resume`, start CP01, or launch Mission Control yet. A fresh-lineage `--dry-run` is only a neural-inert preflight and intentionally does not create `RUN_DIR`. Follow [Creating a new BAMF lineage](docs/operations/OPERATOR_GUIDE.md#creating-a-new-bamf-lineage), then continue here only after `RUN_DIR/bamf-state.json` exists.
+
+For an **existing accepted** BAMF run, use the exact run directory. A dry-run resume is neural-inert:
 
 ~~~bash
 export RUN_DIR=/absolute/path/to/bamf-run
@@ -91,7 +101,9 @@ Do not hand-edit checkpoint state to bypass a failed preflight. The accepted gen
 
 ## Launch Mission Control
 
-Mission Control talks to the local Python control plane over a Unix socket. Start the control plane for the run first:
+Mission Control talks to the local Python control plane over a Unix socket. These commands assume `RUN_DIR/bamf-state.json` already exists. A pointerless fresh target reports `learner-unavailable`; create generation zero first.
+
+Start the control plane for the accepted run:
 
 ~~~bash
 export RUN_DIR=/absolute/path/to/bamf-run
@@ -124,7 +136,7 @@ npm run train -- --human-run --resume --run-dir "$RUN_DIR" \
   --minutes 90 --reserve-gib 100 --max-visits 1
 ~~~
 
---human-run is the mutation boundary. --max-visits 1 is a useful first-session bound, not a permanent training policy. Do not lower the 100 GiB reserve simply to keep a run alive.
+The current CLI requires `--human-run` as an explicit operator confirmation before mutating training. It is not authentication or a security boundary. `--max-visits 1` is a useful first-session bound, not a permanent training policy. Do not lower the 100 GiB reserve simply to keep a run alive.
 
 A terminal-launched run stops through its normal interrupt path with Ctrl-C. A run launched through Mission Control should use **Stop** in Operate so the control plane can bind the interrupt to the exact accepted operation.
 

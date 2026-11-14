@@ -92,7 +92,7 @@ Use that exact run directory for inspection, Mission Control, resume, and recove
 
 A fresh BAMF generation-zero lineage is not a blank-slate installer flow. It additionally requires:
 
-- a readable accepted source run at the canonical active-run location, normally the school-mlx-v1 run under the configured storage root;
+- a readable accepted source run. Pass it explicitly with `--source-run-dir` for a fresh lineage;
 - configs/models/bamf-0.2.json;
 - an admitted Atlas release manifest whose bundle and release identities match the checked-in source-pin registry;
 - the corresponding immutable Atlas artifact available to the runtime;
@@ -114,13 +114,13 @@ The default storage root is:
 <repository>/runs
 ~~~
 
-The historical default active/source run is:
+The historical default active/source run fallback is:
 
 ~~~text
 <repository>/runs/school-mlx-v1
 ~~~
 
-BILQIS_STORAGE_ROOT deliberately relocates that default root. Fresh BAMF creation currently reads its source foundation from that active/source run, so changing BILQIS_STORAGE_ROOT also changes which source run fresh creation consumes.
+`BILQIS_STORAGE_ROOT` deliberately relocates that default root. Fresh BAMF creation accepts `--source-run-dir`; use that explicit source path instead of relying on the historical `school-mlx-v1` fallback when the accepted source lives elsewhere.
 
 For ordinary BAMF operation, use an explicit target directory:
 
@@ -165,6 +165,8 @@ If preflight reports a blocker, preserve the run and follow the [Operator Field 
 ## Start the local control plane
 
 Mission Control does not start CP01 for you. Run the control plane as a separate local process.
+
+Do this only after the target contains an accepted `bamf-state.json`. Starting CP01 against a fresh pointerless directory is safe, but its learner state is `learner-unavailable` and Mission Control has no accepted learner to operate.
 
 Choose an explicit socket so the GUI and service cannot disagree about which run they are using:
 
@@ -238,7 +240,7 @@ npm run train -- --human-run --resume --run-dir "$RUN_DIR" \
 
 Important controls:
 
-- --human-run authorizes mutation.
+- `--human-run` is the current CLI's explicit operator confirmation for mutation. It is not authentication or a security boundary.
 - --minutes 90 bounds the session by wall clock.
 - --reserve-gib 100 preserves the production disk floor. Do not reduce it simply to make a run continue.
 - --max-visits 1 gives a bounded first session. Later sessions may use another finite choice or rely on time plus disk reserve.
@@ -287,18 +289,19 @@ Only use this section on a host whose accepted source run, production source aut
 Choose the new run identity and exact optimizer parameters:
 
 ~~~bash
-export BILQIS_STORAGE_ROOT=/absolute/path/to/storage-root
-export RUN_DIR=/absolute/path/to/new-bamf-run
+export SOURCE_RUN=/absolute/path/to/accepted-source-run
+export RUN_DIR="$HOME/Code/bilqis-mlx-runs/aspirant"
 export ATLAS_MANIFEST=/absolute/path/to/admitted-atlas-release-manifest.json
 export BILQIS_ATLAS_ARTIFACT_ROOT=/absolute/path/to/atlas-artifact-root
 ~~~
 
-BILQIS_STORAGE_ROOT must contain the already accepted school-mlx-v1 source run, while RUN_DIR must name a different target. BILQIS_ATLAS_ARTIFACT_ROOT must contain the immutable content-addressed Atlas bundle named by the admitted manifest and checked-in source pin.
+`SOURCE_RUN` must be an accepted source learner and `RUN_DIR` must name a different target. Use absolute paths or `$HOME`-anchored paths; do not derive the run path from the current worktree with `../...`. `BILQIS_ATLAS_ARTIFACT_ROOT` must contain the immutable content-addressed Atlas bundle named by the admitted manifest and checked-in source pin.
 
 First run the neural-inert creation preflight:
 
 ~~~bash
 npm run train -- --dry-run \
+  --source-run-dir "$SOURCE_RUN" \
   --model-topology configs/models/bamf-0.2.json \
   --atlas-release-manifest "$ATLAS_MANIFEST" \
   --run-dir "$RUN_DIR" \
@@ -312,12 +315,13 @@ npm run train -- --dry-run \
   --source-prefetch-workers 0
 ~~~
 
-Expected disposition: READY_TO_CREATE, zero neural updates, and no created target directory.
+Expected disposition: `READY_TO_CREATE`, zero neural updates, and no created target directory. This is preflight only. Do not run `status`, `dashboard`, CP01, Mission Control, or `--resume` against the new target yet because no accepted lineage exists.
 
 After reviewing that identity, create generation zero with the same inputs and the explicit human boundary:
 
 ~~~bash
 npm run train -- --human-run \
+  --source-run-dir "$SOURCE_RUN" \
   --model-topology configs/models/bamf-0.2.json \
   --atlas-release-manifest "$ATLAS_MANIFEST" \
   --run-dir "$RUN_DIR" \
@@ -331,7 +335,14 @@ npm run train -- --human-run \
   --source-prefetch-workers 0
 ~~~
 
-Creation publishes accepted generation zero at optimizer step 0. It does not by itself perform a learner optimizer update.
+Creation publishes accepted generation zero at optimizer step 0. It does not by itself perform a learner optimizer update. Confirm the accepted pointer before continuing:
+
+~~~bash
+test -f "$RUN_DIR/bamf-state.json"
+npm run train -- --dry-run --resume --run-dir "$RUN_DIR"
+~~~
+
+Only after those commands succeed should you start CP01, Mission Control, or the persistent `--resume` training command.
 
 The default admission policy is staged. If the lineage must enroll in an atlas-release policy, use the versioned enrollment request described in the [BAMF-0.2 runbook](BAMF_0_2_RUNBOOK.md#preflight-launch-and-resume-boundary). The request file is not source authority by itself.
 
