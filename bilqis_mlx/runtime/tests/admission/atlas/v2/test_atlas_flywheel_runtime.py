@@ -223,8 +223,6 @@ class AcceptedAtlasFlywheelRuntimeTests(MixedWitnessSupport, unittest.TestCase):
         patches = (
             ("bilqis_mlx.runtime.atlas_flywheel_runtime.resolve_atlas_artifact_selection",
              fixture.selection),
-            ("bilqis_mlx.runtime.bamf_operator.session.resolve_atlas_artifact_selection",
-             fixture.selection),
             ("bilqis_mlx.runtime.atlas_flywheel_runtime.compile_semantic_curriculum",
              fixture.event_candidate),
             ("bilqis_mlx.runtime.atlas_flywheel_runtime.issue_source_context_transition_authority",

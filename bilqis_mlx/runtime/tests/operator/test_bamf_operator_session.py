@@ -100,7 +100,7 @@ class BamfOperatorRoutingTests(unittest.TestCase):
                 return_value=accepted), patch(
                 "bilqis_mlx.runtime.bamf_operator.session.AtlasArtifactIdentity",
                 return_value="identity"), patch(
-                "bilqis_mlx.runtime.bamf_operator.session.resolve_atlas_artifact_selection",
+                "bilqis_mlx.runtime.bamf_operator.session._atlas_snapshot.resolve_atlas_artifact_selection",
                 return_value=selection), patch(
                 "bilqis_mlx.runtime.bamf_operator.session.authenticate_bamf_execution_feature_context",
                 return_value=authenticated), patch(

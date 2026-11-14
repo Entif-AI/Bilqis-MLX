@@ -34,9 +34,8 @@ from bilqis_mlx.runtime.foundation_teacher_owner import (
     derive_accepted_teacher_successor, select_foundation_priority_visit,
 )
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
-from bilqis_mlx.semantics.atlas.snapshot import (
-    AtlasArtifactIdentity, resolve_atlas_artifact_selection,
-)
+from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactIdentity
+import bilqis_mlx.semantics.atlas.snapshot as _atlas_snapshot
 from .locking import bamf_operator_lock
 
 
@@ -74,7 +73,7 @@ def _execution_context(run_dir: Path):
     context = host.source_context(source_root=LEGACY_SOURCE.resolve())
     accepted = read_accepted_generation_feature_context(run_dir / "bamf-state.json")
     identity = accepted.receipt
-    selection = resolve_atlas_artifact_selection(AtlasArtifactIdentity(
+    selection = _atlas_snapshot.resolve_atlas_artifact_selection(AtlasArtifactIdentity(
         identity.source_atlas_bundle_id,
         identity.source_release_sha256,
         identity.source_source_bundle_id,
