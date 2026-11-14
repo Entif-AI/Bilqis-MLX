@@ -15,6 +15,18 @@ const {
 const { RENDERER_ENTRY_URL } = require("../electron/renderer-location.cjs");
 const { assertRendererSourceSafe } = require("../electron/renderer-boundary.cjs");
 
+function rendererMarkupSources(root) {
+  const sources = [];
+  for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+    const target = path.join(root, entry.name);
+    if (entry.isDirectory()) sources.push(...rendererMarkupSources(target));
+    else if (entry.name.endsWith(".mjs") || entry.name.endsWith(".html")) {
+      sources.push([target, fs.readFileSync(target, "utf8")]);
+    }
+  }
+  return sources;
+}
+
 test("GUI01 startup uses the GUI20 window, IPC and custom-protocol boundary", () => {
   const main = fs.readFileSync(path.join(appRoot, "main.cjs"), "utf8");
   assert.match(main, /registerRendererSchemePrivileges\(protocol\)/);
@@ -50,6 +62,17 @@ test("GUI01 renderer is locked to a strict self-only content security policy", (
   assert.match(source, /object-src 'none'/);
   assert.match(source, /frame-src 'none'/);
   assert.doesNotMatch(source, /unsafe-eval|unsafe-inline/);
+});
+
+test("strict renderer CSP has no inline style attributes to block at runtime", () => {
+  const rendererRoot = path.join(appRoot, "renderer");
+  for (const [file, source] of rendererMarkupSources(rendererRoot)) {
+    assert.doesNotMatch(
+      source,
+      /\bstyle\s*=/i,
+      path.relative(rendererRoot, file) + " contains inline style markup",
+    );
+  }
 });
 
 test("GUI01 renderer bootstraps through bamfMissionControl, not a raw shell IPC", () => {

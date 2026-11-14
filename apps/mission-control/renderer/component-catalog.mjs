@@ -6,7 +6,7 @@ function metricTile() {
   return `<article class="metric-tile">
     <header><span>Retained accuracy</span><span class="provenance-chip" data-authority="source">S · source</span></header>
     ${evidenceValue("91.7", "measured", "source", "%")}
-    <div class="trend" aria-label="Trend rose from 86 to 92 percent"><span style="--h:35%"></span><span style="--h:48%"></span><span style="--h:62%"></span><span style="--h:79%"></span></div>
+    <div class="trend" aria-label="Trend rose from 86 to 92 percent"><span data-height="35"></span><span data-height="48"></span><span data-height="62"></span><span data-height="79"></span></div>
   </article>`;
 }
 

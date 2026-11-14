@@ -15,7 +15,7 @@
 .curriculum-graph-panel > p { margin: 0; padding: 0 var(--space-4) var(--space-3); color: var(--text-muted); }
 .curriculum-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 11px; color: var(--text-muted); }
 .curriculum-scroll { overflow: auto; border-top: 1px solid var(--border); background: var(--surface-0); }
-.curriculum-canvas { position: relative; min-width: 1010px; }
+.curriculum-canvas { position: relative; min-width: 1010px; height: attr(data-height px, 420px); }
 .curriculum-stratum { position: absolute; top: 0; bottom: 0; width: 316px; padding: 14px; border-right: 1px dashed var(--border-strong); pointer-events: none; }
 .curriculum-stratum strong, .curriculum-stratum span { display: block; }
 .curriculum-stratum span { margin-top: 3px; color: var(--text-muted); font-size: 10px; }
@@ -26,7 +26,7 @@
 .curriculum-edges path { fill: none; stroke: var(--border-strong); stroke-width: 1.6; marker-end: url(#curriculum-arrow); }
 .curriculum-edges path[data-trace="active"] { stroke: var(--accent); stroke-width: 3; }
 .curriculum-edges path[data-authority="SCHOOL_DECLARED"] { stroke-dasharray: none; }
-.curriculum-node { position: absolute; z-index: 2; width: 244px; height: 160px; display: grid; align-content: start; gap: 3px; text-align: left; padding: 10px 11px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); box-shadow: 0 8px 16px color-mix(in srgb, var(--surface-0) 65%, transparent); }
+.curriculum-node { position: absolute; left: attr(data-x px, 0px); top: attr(data-y px, 0px); z-index: 2; width: 244px; height: 160px; display: grid; align-content: start; gap: 3px; text-align: left; padding: 10px 11px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); box-shadow: 0 8px 16px color-mix(in srgb, var(--surface-0) 65%, transparent); }
 .curriculum-node strong { font-size: 13px; }
 .curriculum-node small { color: var(--text-muted); font-size: 10px; }
 .curriculum-node[data-relation="selected"] { border: 3px double var(--accent); outline: 1px solid var(--accent); outline-offset: 3px; }

@@ -63,8 +63,9 @@ export function nodeCard(node, position, trace, visible, binding = null) {
     ' data-visible="' + visible + '"' +
     ' data-state="' + nodeState(node) + '"' +
     ' data-stratum="' + position.stratum + '"' +
+    ' data-x="' + position.x + '" data-y="' + position.y + '"' +
     ' aria-pressed="' + (trace.selectedId === node.id) + '"' +
-    ' style="left:' + position.x + 'px;top:' + position.y + 'px">' +
+    '>' +
     newLabel + carryover +
     '<strong>' + esc(node.id) + '</strong>' +
     '<span>' + esc(display.label) + '</span>' +
