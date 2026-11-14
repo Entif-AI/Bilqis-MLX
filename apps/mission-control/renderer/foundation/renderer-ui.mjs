@@ -12,6 +12,7 @@ import {
 import { renderTeacherView } from "../teacher/teacher-view.mjs";
 import { renderCorrectionsView } from "../corrections/corrections-view.mjs";
 import { renderSalienceView } from "../salience/salience-view.mjs";
+import { renderLineageView } from "../lineage/lineage-view.mjs";
 import { renderEvidenceView } from "../evidence/evidence-view.mjs";
 import { defensiveBannerMarkup } from "./defensive-state.mjs";
 import { bindRovingNavigation } from "./accessibility.mjs";
@@ -281,6 +282,24 @@ export function renderCurrentView(state, defense, onInspect, api, onEvidenceSele
       id,
       details,
     }));
+    return;
+  }
+  if (state.view === "lineage") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Immutable accepted-generation lineage, exact manifest provenance, and literal structured generation differences without winner synthesis.";
+    renderLineageView(domain, (id, node) => onInspect({
+      kind: "generation",
+      id,
+      details: {
+        Generation: node.generation,
+        "Manifest SHA-256": node.manifestSha256,
+        "Parent manifest": node.parentManifestSha256 ?? "GENESIS",
+        Transition: node.transitionClass,
+        "Checkpoint SHA-256": node.checkpointSha256,
+      },
+    }), ["generation", "checkpoint"].includes(state.selected?.kind) ? state.selected.id : null);
     return;
   }
   if (state.view === "evidence") {
