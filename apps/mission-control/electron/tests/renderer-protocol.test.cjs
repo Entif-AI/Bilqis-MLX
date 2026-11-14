@@ -47,6 +47,7 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     "/shell-state.mjs",
     "/shell.css",
     "/teacher.css",
+    "/view-controller.mjs",
     "/visual-fixtures.mjs",
     "/visual-language.mjs",
     "/visual-tokens.css",

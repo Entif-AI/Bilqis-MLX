@@ -35,6 +35,7 @@ const RENDERER_ASSETS = Object.freeze(new Map([
   ["/visual-fixtures.mjs", "visual-fixtures.mjs"],
   ["/visual-language.mjs", "visual-language.mjs"],
   ["/visual-tokens.css", "visual-tokens.css"],
+  ["/view-controller.mjs", "view-controller.mjs"],
 ]));
 
 function assetPathForRendererRequest(requestUrl, assetRoot) {
