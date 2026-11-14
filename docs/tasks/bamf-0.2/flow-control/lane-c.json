@@ -396,10 +396,11 @@
       "issue": 1060,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "bd181b3b7cae23e7e94af1a7784e2deb4b02944f",
+      "head_sha": "b893e680",
       "preserved_branch": "codex/1060-gui05-capability-explorer-20261113",
-      "summary": "GUI05 capability dossier; user-directed implementation from reviewed unified bd181b3b.",
-      "resume_trigger": null
+      "summary": "GUI05 dossier implementation consumes reviewed unified 7d681427. Pinned design readiness and final shared-seam drift recheck PASS. 117 Python owner tests, 104 Node tests, namespace/memory-policy regressions and browser journey PASS. Qualification collection is green; snapshot-isolated leaf plus premerge qualification remains pending. No PR until the full receipt is reconciled.",
+      "resume_trigger": null,
+      "head_sha_role": "GUI07-reconciled semantic implementation head; following flow-control receipt is metadata only"
     }
   ]
 }
