@@ -3,6 +3,7 @@ import { renderComponentCatalog } from "../component-catalog.mjs";
 import { renderSchoolView } from "../school/school-view.mjs";
 import { renderNeuralView } from "../neural/neural-view.mjs";
 import { renderEpisodesView } from "../episodes/episode-view.mjs";
+import { renderTeacherView } from "../teacher/teacher-view.mjs";
 import { defensiveBannerMarkup } from "./defensive-state.mjs";
 import { bindRovingNavigation } from "./accessibility.mjs";
 
@@ -179,6 +180,21 @@ export function renderCurrentView(state, defense, onInspect) {
       id,
       details: { "Evidence type": kind, "Interpretation boundary": "Durable episode evidence only" },
     }), state.selected?.kind === "episode" ? state.selected.id : null);
+    return;
+  }
+  if (state.view === "teacher") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Teacher strategy population, measured outcomes, cost and fidelity observations without unsupported ranking.";
+    renderTeacherView(domain, (id) => onInspect({
+      kind: "strategy",
+      id,
+      details: {
+        "Comparison posture": "Descriptive evidence only",
+        "Policy mutation": "None",
+      },
+    }));
     return;
   }
   fixture.hidden = false;
