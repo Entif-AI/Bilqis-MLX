@@ -5,10 +5,21 @@ export function parseDeepLink(hash = "") {
   const params = new URLSearchParams(query);
   const kind = params.get("kind");
   const id = params.get("id");
+  const generation = Number(params.get("generation"));
+  const context = params.has("run") && params.has("generation") &&
+    Number.isSafeInteger(generation) && generation >= 0 && ["LIVE", "HISTORICAL"].includes(params.get("mode"))
+    ? {
+      runId: params.get("run"),
+      generation,
+      mode: params.get("mode"),
+      fixture: params.get("fixture") === "true",
+      historicalPinned: params.get("mode") === "HISTORICAL",
+    } : null;
   const originView = params.get("originView");
   const originKind = params.get("originKind");
   const originId = params.get("originId");
   const route = {
+    ...(context ? { context } : {}),
     view,
     selected: kind && id ? { kind, id } : null,
   };
@@ -26,6 +37,12 @@ export function buildDeepLink(state) {
   const params = new URLSearchParams();
   if (state.selected?.kind) params.set("kind", state.selected.kind);
   if (state.selected?.id) params.set("id", state.selected.id);
+  if (state.context) {
+    params.set("run", state.context.runId);
+    params.set("generation", state.context.generation);
+    params.set("mode", state.context.mode);
+    if (state.context.fixture) params.set("fixture", "true");
+  }
   if (state.view === "evidence" && state.evidenceOrigin?.view) {
     params.set("originView", state.evidenceOrigin.view);
     if (state.evidenceOrigin.selected?.kind) {

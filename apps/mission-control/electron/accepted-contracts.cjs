@@ -1,5 +1,7 @@
 "use strict";
 
+const { QUERY_SCHEMA, PAGE_SCHEMA, validateQuery, validatePage } = require("./query-contract.cjs");
+
 const CP01_STATUS_SCHEMA = "bamf.gui20.cp01-status/v1";
 const CP01_PROTOCOL_VERSION = "bilqis.bamf.control-plane/v1";
 const OPERATOR_VIEW_SCHEMA = "bilqis.bamf.mission-control.operator-view/v1";
@@ -150,6 +152,7 @@ function createAcceptedValidators(assertOperatorView, frameContracts) {
   return Object.freeze({
     publicStatus: validateStatus,
     snapshotRequest(value) {
+      if (value?.schema === QUERY_SCHEMA) return validateQuery(value);
       if (frameContracts && value?.schemaVersion === frameContracts.FRAME_QUERY) {
         return frameContracts.assertFrameRequest(value);
       }
@@ -166,6 +169,8 @@ function createAcceptedValidators(assertOperatorView, frameContracts) {
     response(method, value, request) {
       if (method === "status") return validateStatus(value);
       if (method === "snapshot") {
+        if (request?.schema === QUERY_SCHEMA) return value?.schema === PAGE_SCHEMA
+          ? validatePage(value) : invalid("QUERY_SNAPSHOT_RESPONSE");
         if (frameContracts && request?.schemaVersion === frameContracts.FRAME_QUERY) {
           const page = frameContracts.assertFramePage(value);
           if (!frameContracts.sameFrameRequest(request, page.request)) invalid("FRAME_REQUEST_MISMATCH");

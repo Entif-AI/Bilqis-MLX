@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from .codec import decode_record
-from .model import ContractErrorCode, MissionControlContractError
-from .snapshots import OperatorView
+from .contracts.codec import decode_record
+from .contracts.model import ContractErrorCode, MissionControlContractError
+from .contracts.snapshots import OperatorView
 
 
 def decode_operator_view(payload: Mapping) -> OperatorView:

@@ -190,7 +190,7 @@ test("CP02 TeacherSnapshot boundary is explicit and rich strategy lab remains fi
   assert.equal(teacherProjectionBoundary(), TEACHER_PROJECTION);
   assert.equal(TEACHER_PROJECTION.richStrategyProjection, false);
   const source = fs.readFileSync(
-    path.join(repoRoot, "bilqis_mlx/mission_control/observability.py"),
+    path.join(repoRoot, "bilqis_mlx/mission_control/contracts/observability.py"),
     "utf8",
   );
   for (const field of [

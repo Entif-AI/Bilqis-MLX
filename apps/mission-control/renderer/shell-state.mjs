@@ -1,6 +1,7 @@
 export const DESTINATIONS = Object.freeze([
   ["mission-control", "Mission Control"],
   ["school", "School"],
+  ["capability", "Capability Explorer"],
   ["learning", "Learning"],
   ["atlas", "Atlas"],
   ["model", "Model"],
@@ -15,13 +16,14 @@ export const DESTINATIONS = Object.freeze([
 ]);
 
 export const INSPECTOR_OWNERS = Object.freeze({
-  capability: "school",
+  capability: "capability",
   episode: "learning",
   semantic: "atlas",
   frame: "model",
   memory: "memory",
   checkpoint: "lineage",
   evidence: "evidence",
+  source: "evidence",
   correction: "corrections",
   generation: "lineage",
   warning: "resources",
@@ -157,6 +159,7 @@ export function normalizeContext(raw = {}) {
     resourceHealth: "UNKNOWN",
     schemaVersion: raw.schema_version,
     recordId: raw.meta.record_id,
+    historicalPinned: false,
   });
 }
 
@@ -175,6 +178,8 @@ export function createShellState(context, route = {}) {
 export function withRoute(state, route = {}) {
   const destinations = new Set(DESTINATIONS.map(([id]) => id));
   const view = destinations.has(route.view) ? route.view : "mission-control";
+  const changedLens = route.context && ["runId", "generation", "mode"].some((key) =>
+    route.context[key] !== state.context[key]);
   const origin = route.evidenceOrigin;
   const evidenceOrigin = (
     view === "evidence" && origin && destinations.has(origin.view)
@@ -182,9 +187,12 @@ export function withRoute(state, route = {}) {
   return {
     ...state,
     view,
+    context: changedLens ? Object.freeze({ ...state.context, ...route.context,
+      generationManifest: "UNKNOWN", topologyId: "UNKNOWN", factoryRelease: "UNKNOWN",
+      semanticRelease: "UNKNOWN", coverage: "UNKNOWN", freshness: "UNKNOWN" }) : state.context,
     selected: route.selected ?? null,
     evidenceOrigin,
-    inspectorOpen: Boolean(route.selected),
+    inspectorOpen: Boolean(route.selected) && view !== "capability",
   };
 }
 
@@ -251,14 +259,15 @@ export function withDefensiveState(state, profile) {
   }
   const context = Object.freeze({
     ...state.context,
-    mode: profile.historical && profile.snapshotAvailable ? "HISTORICAL" : "LIVE",
+    mode: state.context.historicalPinned ||
+      (profile.historical && profile.snapshotAvailable) ? "HISTORICAL" : "LIVE",
     freshness: profile.freshness,
   });
   return {
     ...state,
     context,
     defensiveState: profile.id,
-    mutationAvailable: profile.mutationAllowed === true,
+    mutationAvailable: profile.mutationAllowed === true && context.mode === "LIVE",
   };
 }
 

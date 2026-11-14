@@ -11,6 +11,12 @@ import { renderCurrentView } from "./current-view.mjs";
 export { renderCurrentView } from "./current-view.mjs";
 
 const labels = new Map(DESTINATIONS);
+const controllerSummaries = new Map([
+  ["mission-control", "Outcome-first learner health, current work, learning pulse and actionable attention."],
+  ["atlas", "Source-authoritative semantic identity and generation-scoped ABI state, with learned similarity isolated behind a separate lens."],
+  ["capability", "Measured chronology, source support, and literal evidence. No inferred causes."],
+  ["resources", "Measured resource budgets, decomposed where instrumented, with exact historical comparison and spike correlation."],
+]);
 const demoObjects = [
   ["capability", "B.AND"],
   ["episode", "episode-record:fixture:retained-44239"],
@@ -54,7 +60,12 @@ export function renderContext(state, defense) {
   );
   document.querySelector("#freshness").textContent = context.freshness;
   document.querySelector("#run-selector").replaceChildren(new Option(context.runId, context.runId));
-  document.querySelector("#generation-selector").replaceChildren(new Option(`${context.generation} · ${context.mode}`, String(context.generation)));
+  const generations = context.fixture ? [1, 2, 3] : [context.generation];
+  const generationSelector = document.querySelector("#generation-selector");
+  generationSelector.replaceChildren(...generations.map((generation) =>
+    new Option(`${generation} · ${generation === context.generation ? context.mode : "HISTORICAL"}`,
+      String(generation), false, generation === context.generation)));
+  generationSelector.disabled = !context.fixture;
   const facts = [
     ["Topology", context.topologyId], ["Factory", context.factoryRelease],
     ["Semantic", context.semanticRelease], ["Optimizer", context.optimizerStep],

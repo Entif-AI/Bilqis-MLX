@@ -175,7 +175,7 @@ test("CP02 SalienceEvent projection boundary stays explicit and narrow", () => {
   assert.equal(SALIENCE_PROJECTION.aggregationProjected, false);
   assert.equal(SALIENCE_PROJECTION.routingRationaleProjected, false);
   const source = fs.readFileSync(
-    path.join(repoRoot, "bilqis_mlx/mission_control/events.py"),
+    path.join(repoRoot, "bilqis_mlx/mission_control/contracts/events.py"),
     "utf8",
   );
   for (const field of [

@@ -231,6 +231,1388 @@
       "type": "object",
       "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record"
     },
+    "bilqis.bamf.mission-control.capability-dossier/v1": {
+      "$id": "bilqis.bamf.mission-control.capability-dossier/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "capability_id": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "debt": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "else": {
+                "properties": {
+                  "origin": {
+                    "type": "null"
+                  },
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              },
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "PRESENT"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "origin": {
+                    "not": {
+                      "type": "null"
+                    }
+                  },
+                  "value": {
+                    "not": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "eligibility": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "else": {
+                "properties": {
+                  "origin": {
+                    "type": "null"
+                  },
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              },
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "PRESENT"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "origin": {
+                    "not": {
+                      "type": "null"
+                    }
+                  },
+                  "value": {
+                    "not": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "entries": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "entry_id": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "generation": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "kind": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "label": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "observed_at": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "refs": {
+                "items": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "type": "array",
+                "uniqueItems": true
+              },
+              "related_id": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "not": {
+                      "pattern": "\\n"
+                    },
+                    "pattern": "\\S",
+                    "type": "string",
+                    "x-bilqis-unicode-domain": "scalar-values"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "related_kind": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "not": {
+                      "pattern": "\\n"
+                    },
+                    "pattern": "\\S",
+                    "type": "string",
+                    "x-bilqis-unicode-domain": "scalar-values"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "section": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "values": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "minLength": 1,
+                      "not": {
+                        "pattern": "\\n"
+                      },
+                      "pattern": "\\S",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "value": {
+                      "additionalProperties": false,
+                      "allOf": [
+                        {
+                          "else": {
+                            "properties": {
+                              "origin": {
+                                "type": "null"
+                              },
+                              "value": {
+                                "type": "null"
+                              }
+                            }
+                          },
+                          "if": {
+                            "properties": {
+                              "state": {
+                                "const": "PRESENT"
+                              }
+                            },
+                            "required": [
+                              "state"
+                            ]
+                          },
+                          "then": {
+                            "properties": {
+                              "origin": {
+                                "not": {
+                                  "type": "null"
+                                }
+                              },
+                              "value": {
+                                "not": {
+                                  "type": "null"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "properties": {
+                        "origin": {
+                          "anyOf": [
+                            {
+                              "enum": [
+                                "SOURCE_AUTHORITATIVE",
+                                "MEASURED",
+                                "DERIVED",
+                                "INFERRED"
+                              ],
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "state": {
+                          "enum": [
+                            "PRESENT",
+                            "MISSING",
+                            "UNKNOWN",
+                            "DENIED",
+                            "UNAVAILABLE"
+                          ],
+                          "type": "string"
+                        },
+                        "units": {
+                          "anyOf": [
+                            {
+                              "minLength": 1,
+                              "not": {
+                                "pattern": "\\n"
+                              },
+                              "pattern": "\\S",
+                              "type": "string",
+                              "x-bilqis-unicode-domain": "scalar-values"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "value": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "x-bilqis-unicode-domain": "scalar-values"
+                            },
+                            {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            },
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "state",
+                        "origin",
+                        "value",
+                        "units"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value"
+                  ],
+                  "type": "object"
+                },
+                "type": "array",
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "entry_id",
+              "section",
+              "kind",
+              "label",
+              "generation",
+              "observed_at",
+              "values",
+              "refs",
+              "related_kind",
+              "related_id"
+            ],
+            "type": "object"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "materialized_at": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "record_id": {
+              "minLength": 1,
+              "not": {
+                "pattern": "\\n"
+              },
+              "pattern": "\\S",
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
+            },
+            "run": {
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                }
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
+            },
+            "source_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "name": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "now": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "else": {
+                "properties": {
+                  "origin": {
+                    "type": "null"
+                  },
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              },
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "PRESENT"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "origin": {
+                    "not": {
+                      "type": "null"
+                    }
+                  },
+                  "value": {
+                    "not": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "qualification": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "else": {
+                "properties": {
+                  "origin": {
+                    "type": "null"
+                  },
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              },
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "PRESENT"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "origin": {
+                    "not": {
+                      "type": "null"
+                    }
+                  },
+                  "value": {
+                    "not": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "retention": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "else": {
+                "properties": {
+                  "origin": {
+                    "type": "null"
+                  },
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              },
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "PRESENT"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "origin": {
+                    "not": {
+                      "type": "null"
+                    }
+                  },
+                  "value": {
+                    "not": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.capability-dossier/v1",
+          "type": "string"
+        },
+        "source_state": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "else": {
+                "properties": {
+                  "origin": {
+                    "type": "null"
+                  },
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              },
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "PRESENT"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "origin": {
+                    "not": {
+                      "type": "null"
+                    }
+                  },
+                  "value": {
+                    "not": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "top": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "else": {
+                "properties": {
+                  "origin": {
+                    "type": "null"
+                  },
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              },
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "PRESENT"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "origin": {
+                    "not": {
+                      "type": "null"
+                    }
+                  },
+                  "value": {
+                    "not": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "total": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "else": {
+                "properties": {
+                  "origin": {
+                    "type": "null"
+                  },
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              },
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "PRESENT"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "origin": {
+                    "not": {
+                      "type": "null"
+                    }
+                  },
+                  "value": {
+                    "not": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "capability_id",
+        "name",
+        "now",
+        "top",
+        "total",
+        "debt",
+        "retention",
+        "eligibility",
+        "qualification",
+        "source_state",
+        "entries"
+      ],
+      "title": "CapabilityDossier",
+      "type": "object",
+      "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record"
+    },
     "bilqis.bamf.mission-control.capability-snapshot/v1": {
       "$id": "bilqis.bamf.mission-control.capability-snapshot/v1",
       "$schema": "https://json-schema.org/draft/2020-12/schema",

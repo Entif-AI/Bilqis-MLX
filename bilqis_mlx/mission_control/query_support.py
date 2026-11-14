@@ -5,17 +5,18 @@ import hashlib
 import json
 from types import MappingProxyType
 
-from .codec import encode_record
-from .envelopes import (
+from .contracts.codec import encode_record
+from .contracts.dossier import CapabilityDossier
+from .contracts.envelopes import (
     PartialEnvelope, StaleEnvelope, UnavailableEnvelope, UnavailableReason,
 )
-from .events import (
+from .contracts.events import (
     CandidateDecision, CorrectionEvent, FrameCompileReceipt, LearningEpisode,
     SalienceEvent,
 )
-from .model import CoverageState, WireRecord, is_wire_integer, require
+from .contracts.model import CoverageState, WireRecord, is_wire_integer, require
 from .contracts.registry import ALL_RECORD_TYPES
-from .observability import (
+from .contracts.observability import (
     GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, TeacherSnapshot,
 )
@@ -23,7 +24,7 @@ from .query_contracts import (
     MAX_PAGE_ROWS_BYTES, QUERY_PAGE_SCHEMA, QueryFamily, QueryMode, QueryPage,
     QueryRequest, QueryState,
 )
-from .snapshots import (
+from .contracts.snapshots import (
     CapabilitySnapshot, CurriculumFrontier, OperatorView, RunContext,
     SchoolSnapshot,
 )
@@ -37,7 +38,7 @@ FAMILY_TYPES = MappingProxyType({
     QueryFamily.RECORD: ALL_RECORD_TYPES,
     QueryFamily.RUN: (RunContext, OperatorView),
     QueryFamily.SCHOOL: (SchoolSnapshot, CurriculumFrontier),
-    QueryFamily.CAPABILITY: (CapabilitySnapshot,),
+    QueryFamily.CAPABILITY: (CapabilitySnapshot, CapabilityDossier),
     QueryFamily.EPISODE: (LearningEpisode, CandidateDecision),
     QueryFamily.GENERATION: (GenerationManifest,),
     QueryFamily.SEMANTIC: (
