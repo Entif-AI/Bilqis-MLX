@@ -299,3 +299,10 @@ across the reconnect. Old frame responses cannot replace new snapshot state.
 Test pending, denied/cached and successful reconnects, exit posture and late frame
 response disposal. A reconnect without any valid snapshot leaves no restorable
 frame context and keeps mutation unavailable.
+
+Publication-sync note: unified `5df83f69a4fb07b6c39dea47868934bc0d8e0e62`
+adds Home/Evidence activation via foundation/domain-controller.mjs. Preserve those
+owners and pass its Atlas activation a getState callback so the existing reviewed
+view/context guard reads current shell state rather than a captured state value.
+The snapshot variant and new event/query validators coexist unchanged; retain
+compacted identity labels with escaping and accessible full-identity attributes.

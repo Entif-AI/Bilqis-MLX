@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "eabc6758074296e5e767adbb9a43423b175cb2f3",
-  "updated_at": "2026-11-14T01:21:13.691966+00:00",
+  "observed_unified": "5df83f69a4fb07b6c39dea47868934bc0d8e0e62",
+  "updated_at": "2026-11-14T01:27:27.278177+00:00",
   "exception": null,
   "items": [
     {
@@ -394,10 +394,10 @@
     },
     {
       "issue": 1063,
-      "pr": null,
-      "state": "READY",
-      "head_sha": "9e8f66c704bc95db899729808023bd9208eda28c",
-      "summary": "GUI08 fixture-backed Frame Compiler Explorer ready for human review: synchronized unified eabc6758, pinned design/amendment PASS and final NO_DRIFT, 161 Node + 4 Python bridge tests, quality/ABI and browser journey green. Source/runtime unchanged; no learner mutation. PM-2026-11-13-002 and PM-2026-11-07-002 native readbacks verified.",
+      "pr": 1101,
+      "state": "TURNED_IN",
+      "head_sha": "8eadde3cc5bcaf518592352038a61e3bf5cc913a",
+      "summary": "GUI08 turned in as ready PR #1101 after current-unified 5df83f69 synchronization. Fixture inspection, exact historical/causal identity and reconnect isolation are verified; 190 Node + 5 Python bridge tests, quality/ABI and browser proof pass. Pinned design/amendments PASS and scoped NO_DRIFT. PM-2026-11-13-002 and PM-2026-11-07-002 native receipts verified; no actual learner mutation. Human review/merge pending.",
       "resume_trigger": null,
       "preserved_branch": "codex/1063-frame-compiler-explorer-20261113"
     }

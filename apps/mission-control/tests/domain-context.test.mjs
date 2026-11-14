@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { renderAtlasDomain, ensureAtlasOverview, invalidateAtlasRequests } from "../renderer/atlas/atlas-controller.mjs";
 import { renderCurrentView } from "../renderer/foundation/renderer-ui.mjs";
+import { activateDomainViews } from "../renderer/foundation/domain-controller.mjs";
 
 function mountOwner(t) {
   const previous = { document: globalThis.document, window: globalThis.window, FormData: globalThis.FormData };
@@ -10,9 +11,9 @@ function mountOwner(t) {
     handlers: {}, values: { semanticId: "fixture:semantic", bank: "0", row: "1" },
     addEventListener(event, callback) { this.handlers[event] = callback; },
   }]));
-  const element = () => ({ innerHTML: "", hidden: false, textContent: "",
+  const element = () => ({ innerHTML: "", hidden: false, textContent: "", dataset: {},
     querySelectorAll: () => [], querySelector: key => forms[key] ?? null });
-  const nodes = new Map(["#domain-view", ".fixture-card", "#visual-catalog", "#view-summary", "#model-nav", "#domain-context-note"].map(key => [key, element()]));
+  const nodes = new Map(["#shell", "#domain-view", ".fixture-card", "#visual-catalog", "#view-summary", "#model-nav", "#domain-context-note"].map(key => [key, element()]));
   globalThis.document = { querySelector: key => nodes.get(key), querySelectorAll: () => [] };
   globalThis.FormData = class { constructor(form) { this.form = form; } get(key) { return this.form.values[key]; } };
   let resolve; let calls = 0;
@@ -82,5 +83,18 @@ test("real Atlas completion cannot publish a result from the prior context", asy
   fixture.changeContext();
   const markup = fixture.host.innerHTML;
   fixture.finish(); await completion;
+  assert.equal(fixture.host.innerHTML, markup);
+});
+
+test("the domain activation owner binds Atlas completion to the current shell state", async t => {
+  const fixture = mountOwner(t);
+  let state = { view: "atlas", context: { runId: "fixture-run", generation: 7, mode: "LIVE", semanticRelease: "1".repeat(64) } };
+  activateDomainViews({ state, getState: () => state, defense: { id: "live" }, api: window.bamfMissionControl,
+    homeController: { async activate() {}, async deactivate() {} }, onInspect() {} });
+  assert.match(fixture.host.innerHTML, /Loading semantic/);
+  state = { ...state, view: "school" };
+  renderCurrentView(state, { id: "live" }, () => {});
+  const markup = fixture.host.innerHTML;
+  fixture.finish(); await new Promise(resolve => setImmediate(resolve));
   assert.equal(fixture.host.innerHTML, markup);
 });
