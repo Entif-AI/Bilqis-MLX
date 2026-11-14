@@ -47,3 +47,16 @@ After intake: 110 CP01/CP02/CP03/bridge Python tests PASS in 2.213 seconds;
 95 Node tests PASS; the keyboard/evidence/history/related-capability/offline browser
 journey PASS. Python owner verification used one worker, a 1 GiB MLX allocation
 limit and disabled cache; no durable learner was touched.
+
+## Differential qualification plan
+
+The explicit current-unified comparison selects 212 files / 1,045 test functions.
+The default selector would compare committed HEAD to itself and skip Python tests;
+qualification therefore pins BILQIS_TEST_BASE_REF to the consumed unified SHA.
+The expected stage duration is 5–20 minutes from the selected bounded owner/fixture
+set; the already-executed 110 owner tests completed in 2.213 seconds. This remains
+an estimate, not a passing result. The terminal two-hour boundary stops the owned
+process group and produces a nonzero incomplete result if the estimate is wrong.
+Snapshot isolation, one test worker, 1 GiB per-process MLX allocation and disabled
+cache apply to every inheriting Python process. This stage answers differential
+compatibility only. The separate premerge/integration obligation remains pending.
