@@ -1,14 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createResourceController } from "../renderer/resources/resource-controller.mjs";
+import { createResourceController } from "../../renderer/resources/resource-controller.mjs";
 import {
   decomposition,
   historicalResourceQuery,
   referenceResourceState,
   resourceProfileFromPage,
   resourceQuery,
-} from "../renderer/resources/resource-model.mjs";
-import { renderResourceMarkup } from "../renderer/resources/resource-view.mjs";
+} from "../../renderer/resources/resource-model.mjs";
+import { renderResourceMarkup } from "../../renderer/resources/resource-view.mjs";
+import { createShellState, inspect, openSelectionOwner } from "../../renderer/shell-state.mjs";
 
 const context = Object.freeze({ runId: "fixture-run", generation: 44239, mode: "LIVE" });
 
@@ -191,4 +192,24 @@ test("resource query stays read-only and requests no mutation surface", () => {
   ].sort());
   const markup = renderResourceMarkup(referenceResourceState());
   assert.doesNotMatch(markup, /start training|change batch|apply budget|scale hardware/i);
+});
+
+test("resource identities route back to the Resources owner surface", () => {
+  const operatorView = {
+    active_capability_id: "B.EXAMPLE", learner_state: "READY", stage: "ASSESS_MAIN",
+    related_record_ids: [], schema_version: "bilqis.bamf.mission-control.operator-view/v1",
+    meta: {
+      as_of: 1, authority: "DERIVED", coverage: "COMPLETE", evidence_refs: [],
+      materialized_at: 1, observed_at: 1, receipt_refs: [], record_id: "operator-view:test",
+      source_refs: [],
+      run: {
+        candidate_identity_sha256: "2".repeat(64), factory_release_sha256: "2".repeat(64),
+        generation: 1, generation_manifest_sha256: "1".repeat(64), run_id: "run-test",
+        run_identity_sha256: "4".repeat(64), semantic_release_sha256: "3".repeat(64),
+        topology_sha256: "4".repeat(64),
+      },
+    },
+  };
+  const selected = inspect(createShellState(operatorView), { kind: "resource", id: "resource:1" });
+  assert.equal(openSelectionOwner(selected).view, "resources");
 });

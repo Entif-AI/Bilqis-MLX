@@ -147,7 +147,6 @@ test("inspector routes at least five stable object classes to owning views", () 
     ["evidence", "evidence"],
     ["correction", "corrections"],
     ["warning", "resources"],
-    ["resource", "resources"],
   ];
   for (const [kind, owner] of samples) {
     const selected = inspect(createShellState(context), { kind, id: `${kind}:1` });
