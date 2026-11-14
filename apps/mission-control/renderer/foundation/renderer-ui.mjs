@@ -96,6 +96,7 @@ export function renderInspector(state, defense) {
        <dt>Evidence</dt><dd>${defense.historical ? "Verified prior evidence · inspection only" : "Current verified fixture/reference"}</dd>${exact}`
     : "";
   document.querySelector("#open-owner").disabled = !selected;
+  document.querySelector("#open-evidence").disabled = !selected;
 }
 
 export function renderDemoActions(state, onInspect) {
@@ -204,8 +205,7 @@ export function renderCurrentView(state, defense, onInspect, api) {
     catalog.hidden = true;
     summary.textContent = "Exact Mission Control records, provenance links, bounded pagination and literal raw payloads.";
     renderEvidenceView(
-      domain, api, state.context,
-      state.selected?.kind === "evidence" ? state.selected.id : null,
+      domain, api, state.context, state.selected,
     );
     return;
   }

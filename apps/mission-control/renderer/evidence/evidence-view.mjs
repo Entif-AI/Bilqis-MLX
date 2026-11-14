@@ -143,9 +143,12 @@ function recordSummary(record, index) {
   </button>`;
 }
 
-function linkSummary(link, index) {
+function linkSummary(link, index, scope = "page") {
+  const targetAttribute = scope === "selected"
+    ? `data-evidence-selected-target="${index}"`
+    : `data-evidence-target="${index}"`;
   const target = link.target_record_id
-    ? `<button type="button" data-evidence-target="${index}">Open exact record</button>`
+    ? `<button type="button" ${targetAttribute}>Open exact record</button>`
     : `<span class="evidence-unresolved">EXTERNAL / NOT HYDRATED</span>`;
   return `<article class="evidence-link"><strong>${esc(link.relation)}</strong>
     <code>${esc(link.source_record_id)}</code><span>→</span><code>${esc(link.target_ref)}</code>${target}</article>`;
@@ -175,7 +178,7 @@ function readable(record, linksPage) {
     <dt>Verification</dt><dd>${esc(verification)}</dd><dt>Materialized</dt><dd>${esc(meta.materialized_at ?? "UNKNOWN")}</dd>
     <dt>Observed</dt><dd>${esc(meta.observed_at ?? "UNKNOWN")}</dd><dt>As of</dt><dd>${esc(meta.as_of ?? "UNKNOWN")}</dd>${body}</dl>
     <section><h4>Provenance chain</h4><div class="evidence-refs">${refs(meta)}</div></section>
-    <section><h4>Exact links</h4><div class="evidence-links">${(linksPage?.links ?? []).map(linkSummary).join("") || '<span class="evidence-unresolved">No resolvable links reported.</span>'}</div></section>
+    <section><h4>Exact links</h4><div class="evidence-links">${(linksPage?.links ?? []).map((link, index) => linkSummary(link, index, "selected")).join("") || '<span class="evidence-unresolved">No resolvable links reported.</span>'}</div></section>
   </div>`;
 }
 
@@ -238,7 +241,13 @@ function bind(container, api, context) {
   container.querySelectorAll("[data-evidence-record]").forEach((button) => button.addEventListener("click", () =>
     void select(container, api, context, ui.records[Number(button.dataset.evidenceRecord)])));
   container.querySelectorAll("[data-evidence-target]").forEach((button) => button.addEventListener("click", async () => {
-    const link = ui.links[Number(button.dataset.evidenceTarget)] ?? ui.selectedLinks?.links?.[Number(button.dataset.evidenceTarget)];
+    const link = ui.links[Number(button.dataset.evidenceTarget)];
+    if (!link?.target_record_id) return;
+    const found = await loadRecordById(api, context, link.target_record_id);
+    if (found.record) void select(container, api, context, found.record);
+  }));
+  container.querySelectorAll("[data-evidence-selected-target]").forEach((button) => button.addEventListener("click", async () => {
+    const link = ui.selectedLinks?.links?.[Number(button.dataset.evidenceSelectedTarget)];
     if (!link?.target_record_id) return;
     const found = await loadRecordById(api, context, link.target_record_id);
     if (found.record) void select(container, api, context, found.record);
@@ -252,10 +261,22 @@ function bind(container, api, context) {
     void search(container, api, context, ui.criteria, ui.page?.next_cursor ?? null, true));
 }
 
-export function renderEvidenceView(container, api, context, initialId = null) {
-  const key = `${context.mode}:${context.runId}:${context.generation}`;
+export function criteriaForSelection(selection) {
+  if (!selection?.id) return { kind: "context", value: "" };
+  const kinds = {
+    evidence: "record", capability: "capability", episode: "episode",
+    semantic: "semantic", memory: "memory", checkpoint: "checkpoint",
+    correction: "correction", strategy: "reference", neural: "reference",
+    warning: "reference",
+  };
+  return { kind: kinds[selection.kind] ?? "record", value: selection.id };
+}
+
+export function renderEvidenceView(container, api, context, initialSelection = null) {
+  const criteria = criteriaForSelection(initialSelection);
+  const key = `${context.mode}:${context.runId}:${context.generation}:${criteria.kind}:${criteria.value}`;
   if (ui.contextKey !== key) Object.assign(ui, {
-    contextKey: key, status: "idle", criteria: { kind: initialId ? "record" : "context", value: initialId ?? "" },
+    contextKey: key, status: "idle", criteria,
     page: null, records: [], links: [], selected: null, selectedLinks: null, raw: false, error: null,
   });
   container.innerHTML = renderEvidenceMarkup(ui);

@@ -202,6 +202,11 @@ function bindStaticInteractions() {
     state = openSelectionOwner(state);
     render();
   });
+  document.querySelector("#open-evidence").addEventListener("click", () => {
+    if (!state?.selected) return;
+    state = navigate(state, "evidence", state.selected);
+    render();
+  });
   document.querySelector("#theme-trigger").addEventListener("click", () => {
     displaySettings = { ...displaySettings, theme: cycleSetting(displaySettings.theme, THEMES) };
     saveDisplaySettings(window.localStorage, displaySettings);

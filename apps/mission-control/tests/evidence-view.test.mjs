@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   buildEvidenceRequest,
+  criteriaForSelection,
   loadEvidencePage,
   loadRecordById,
   loadRecordLinks,
@@ -79,6 +80,18 @@ test("domain identity and command searches reuse the generic forensic record fam
   assert.equal(capabilityRequest.reference, "B.AND");
   assert.equal(commandRequest.family, "record");
   assert.equal(commandRequest.reference, "operation-1");
+});
+
+test("owning-view selections map directly into evidence searches without losing identity", () => {
+  assert.deepEqual(criteriaForSelection({ kind: "capability", id: "B.AND" }), {
+    kind: "capability", value: "B.AND",
+  });
+  assert.deepEqual(criteriaForSelection({ kind: "episode", id: "episode:and" }), {
+    kind: "episode", value: "episode:and",
+  });
+  assert.deepEqual(criteriaForSelection({ kind: "evidence", id: "receipt:one" }), {
+    kind: "record", value: "receipt:one",
+  });
 });
 
 test("capability to episode to evidence chain follows CP03 links without manual ID copying", async () => {
@@ -188,4 +201,11 @@ test("forensic renderer has no direct provider, filesystem, process, or network 
   for (const forbidden of ["require(", "node:fs", "process.", "electron", "fetch(", "XMLHttpRequest"]) {
     assert.equal(source.includes(forbidden), false, forbidden);
   }
+});
+
+test("shell inspector exposes evidence navigation beside owning-view navigation", () => {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const html = fs.readFileSync(path.join(here, "../renderer/index.html"), "utf8");
+  assert.ok(html.includes('id="open-evidence"'));
+  assert.ok(html.includes('id="open-owner"'));
 });
