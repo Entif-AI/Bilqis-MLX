@@ -14,7 +14,7 @@ import {
   loadAtlasOverview,
   loadSemanticIdentity,
   renderAtlasMarkup,
-} from "./semantic-atlas.mjs";
+} from "./domains/semantic-atlas.mjs";
 import {
   DENSITIES,
   THEMES,
@@ -23,9 +23,10 @@ import {
   loadDisplaySettings,
   saveDisplaySettings,
 } from "./settings.mjs";
-import { renderSchoolView } from "./school-view.mjs";
-import { renderNeuralView } from "./neural-view.mjs";
-import { renderEpisodesView } from "./episode-view.mjs";
+import { renderSchoolView } from "./domains/school-view.mjs";
+import { renderNeuralView } from "./domains/neural-view.mjs";
+import { renderEpisodesView } from "./domains/episode-view.mjs";
+import { renderTeacherView } from "./domains/teacher-view.mjs";
 
 const labels = new Map(DESTINATIONS);
 const demoObjects = [
@@ -271,6 +272,25 @@ function renderCurrentView() {
       renderInspector();
       setHash();
     }, state.selected?.kind === "episode" ? state.selected.id : null);
+    return;
+  }
+  if (state.view === "teacher") {
+    domain.hidden = false;
+    fixture.hidden = true;
+    catalog.hidden = true;
+    summary.textContent = "Teacher strategy population, measured outcomes, cost and fidelity observations without unsupported ranking.";
+    renderTeacherView(domain, (id) => {
+      state = inspect(state, {
+        kind: "strategy",
+        id,
+        details: {
+          "Comparison posture": "Descriptive evidence only",
+          "Policy mutation": "None",
+        },
+      });
+      renderInspector();
+      setHash();
+    });
     return;
   }
   domain.hidden = true;

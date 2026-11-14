@@ -10,7 +10,7 @@ import {
   HISTORICAL_TOPOLOGY,
   INSTRUMENTATION_STATES,
   REFINEMENT_RECEIPTS,
-} from "../renderer/neural-fixture.mjs";
+} from "../renderer/domains/neural-fixture.mjs";
 import {
   ccgqaEvidenceState,
   depthWeightRows,
@@ -18,7 +18,7 @@ import {
   refinementCostSummary,
   refinementHistogram,
   topologyPath,
-} from "../renderer/neural-model.mjs";
+} from "../renderer/domains/neural-model.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "../../..");
@@ -114,7 +114,7 @@ test("mask-invalid violation is invalid evidence, not a normal warning", () => {
   const invalid = CCGQA_FIXTURE.find((sample) => sample.maskInvalidViolations > 0);
   assert.ok(invalid);
   assert.equal(ccgqaEvidenceState(invalid), "INVALID");
-  const viewSource = fs.readFileSync(path.join(rendererRoot, "neural-view.mjs"), "utf8");
+  const viewSource = fs.readFileSync(path.join(rendererRoot, "domains/neural-view.mjs"), "utf8");
   assert.equal(viewSource.includes("INVALID EVIDENCE"), true);
   assert.equal(viewSource.includes("invalid-evidence-banner"), true);
 });
@@ -164,7 +164,7 @@ test("missing instrumentation is explicit unavailable or partial, never a synthe
 
 test("neural UI avoids anthropomorphic activation labels", () => {
   const source = ["neural-view.mjs", "neural-model.mjs", "neural-fixture.mjs"]
-    .map((name) => fs.readFileSync(path.join(rendererRoot, name), "utf8"))
+    .map((name) => fs.readFileSync(path.join(rendererRoot, "domains", name), "utf8"))
     .join("\n")
     .toLowerCase();
   for (const forbidden of ["thought", "rationale", "natural-language reasoning"]) {
