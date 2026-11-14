@@ -194,9 +194,22 @@ class MissionControlQueryCatalog:
             link for record in source_records for link in self._links_for(record)
             if link.target_ref == request.reference
         )
-        marker_records = list(source_records)
+        linked_source_ids = {link.source_record_id for link in links}
+        relevant_record_ids = linked_source_ids | {request.reference}
+        marker_records = [
+            item for item in source_records
+            if (
+                item.meta.record_id in linked_source_ids
+                or (type(item) is PartialEnvelope
+                    and item.partial_record_id in relevant_record_ids)
+                or (type(item) is StaleEnvelope
+                    and item.stale_record_id in relevant_record_ids)
+                or (type(item) is UnavailableEnvelope
+                    and item.resource in relevant_record_ids)
+            )
+        ]
         target = self._by_id.get(request.reference)
-        if target is not None:
+        if target is not None and target not in marker_records:
             marker_records.append(target)
         markers = self._markers(marker_records, request)
         return self._page(

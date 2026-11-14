@@ -38,7 +38,7 @@ export function manifestFieldRows(node) {
 }
 
 export function lineageDeepLink(node) {
-  const params = new URLSearchParams({ kind: "generation", id: node.manifestSha256 });
+  const params = new URLSearchParams({ kind: "generation", id: node.recordId });
   return "#/view/lineage?" + params.toString();
 }
 

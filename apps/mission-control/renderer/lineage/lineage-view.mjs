@@ -99,7 +99,7 @@ function bind(container, inspectGeneration) {
     ui.selected = button.dataset.lineageNode;
     const node = nodeByIdentity(ui.selected);
     renderLineageView(container, inspectGeneration, node.manifestSha256);
-    inspectGeneration(node.manifestSha256, node);
+    inspectGeneration(node.recordId, node);
   }));
   const before = container.querySelector("[data-lineage-before]");
   const after = container.querySelector("[data-lineage-after]");
