@@ -7,7 +7,7 @@ import { deactivateEvidenceView } from "../evidence/evidence-view.mjs";
 
 export function activateDomainViews({
   state, getState, defense, api, homeController, resourceController, operateController,
-  onInspect, onAnnounce,
+  capabilityExplorer, onInspect, onAnnounce,
 }) {
   if (state?.view === "atlas") {
     const context = state.context;
@@ -45,4 +45,6 @@ export function activateDomainViews({
   } else {
     void operateController?.deactivate();
   }
+  if (state?.view === "capability") capabilityExplorer?.update(state);
+  else capabilityExplorer?.hide();
 }

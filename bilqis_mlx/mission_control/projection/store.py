@@ -6,9 +6,9 @@ import os
 from pathlib import Path
 import sqlite3
 
-from ..codec import canonical_json, decode_json
-from ..envelopes import EventEnvelope, StreamPosition
-from ..model import MissionControlContractError, WireRecord
+from ..contracts.codec import canonical_json, decode_json
+from ..contracts.envelopes import EventEnvelope, StreamPosition
+from ..contracts.model import MissionControlContractError, WireRecord
 from .contracts import (
     PROJECTION_SCHEMA, PROJECTION_SCHEMA_VERSION, ProjectionStats,
     projection_invalid,

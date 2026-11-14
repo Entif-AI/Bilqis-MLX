@@ -12,6 +12,7 @@ import {
   returnFromEvidence,
   selectObject,
   shellPosture,
+  withDefensiveState,
   withRoute,
 } from "../renderer/shell-state.mjs";
 import { buildDeepLink, parseDeepLink, routeFromState } from "../renderer/deep-link.mjs";
@@ -23,7 +24,7 @@ const context = JSON.parse(
 test("all required GUI01 destinations remain stable and reachable", () => {
   assert.deepEqual(
     DESTINATIONS.map(([id]) => id),
-    ["mission-control", "school", "learning", "atlas", "model", "memory", "teacher", "salience", "corrections", "lineage", "resources", "evidence", "operate"],
+    ["mission-control", "school", "capability", "learning", "atlas", "model", "memory", "teacher", "salience", "corrections", "lineage", "resources", "evidence", "operate"],
   );
 });
 
@@ -37,13 +38,13 @@ test("switching views preserves exact inspected context", () => {
   assert.equal(next.context.schemaVersion, "bilqis.bamf.mission-control.operator-view/v1");
 });
 
-test("deep links restore view and selected object without encoding run context", () => {
+test("deep links restore view and selected object with exact run and generation context", () => {
   const initial = inspect(navigate(createShellState(context), "evidence"), {
     kind: "evidence",
     id: "receipt:123",
   });
   const hash = buildDeepLink(initial);
-  assert.equal(hash, "#/view/evidence?kind=evidence&id=receipt%3A123");
+  assert.equal(hash, "#/view/evidence?kind=evidence&id=receipt%3A123&run=fixture-run&generation=7&mode=LIVE");
   const restored = createShellState(context, parseDeepLink(hash));
   assert.equal(restored.context.runId, "fixture-run");
   assert.deepEqual(restored.selected, { kind: "evidence", id: "receipt:123" });
@@ -55,7 +56,7 @@ test("evidence selection can update URL identity without forcing inspector state
   assert.equal(selected.inspectorOpen, false);
   assert.equal(
     buildDeepLink(selected),
-    "#/view/evidence?kind=evidence&id=receipt%3Aexact",
+    "#/view/evidence?kind=evidence&id=receipt%3Aexact&run=fixture-run&generation=7&mode=LIVE",
   );
   const restored = createShellState(context, parseDeepLink(buildDeepLink(selected)));
   assert.deepEqual(restored.selected, { kind: "evidence", id: "receipt:exact" });
@@ -90,6 +91,24 @@ test("hash-route updates reuse normalized state without re-decoding it as CP02",
   assert.equal(restored.context, initial.context);
   assert.equal(restored.view, "evidence");
   assert.deepEqual(restored.selected, { kind: "evidence", id: "receipt:123" });
+});
+
+test("historical route context stays historical and cannot expose mutation", () => {
+  const routed = withRoute(createShellState(context), {
+    view: "capability",
+    context: {
+      runId: "fixture:gui05", generation: 1, mode: "HISTORICAL",
+      fixture: true, historicalPinned: true,
+    },
+  });
+  const guarded = withDefensiveState(routed, {
+    id: "live", historical: false, snapshotAvailable: true,
+    freshness: "FRESH", mutationAllowed: true,
+  });
+  assert.equal(guarded.context.runId, "fixture:gui05");
+  assert.equal(guarded.context.generation, 1);
+  assert.equal(guarded.context.mode, "HISTORICAL");
+  assert.equal(guarded.mutationAvailable, false);
 });
 
 test("historical and stale states are shell-global postures", () => {
@@ -163,7 +182,7 @@ test("malformed versioned operator views fail closed at the Electron boundary", 
 
 test("inspector routes at least five stable object classes to owning views", () => {
   const samples = [
-    ["capability", "school"],
+    ["capability", "capability"],
     ["episode", "learning"],
     ["semantic", "atlas"],
     ["memory", "memory"],

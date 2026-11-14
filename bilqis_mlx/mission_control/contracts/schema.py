@@ -6,7 +6,7 @@ from enum import Enum
 import types
 from typing import get_args, get_origin, get_type_hints, Union
 
-from ..model import MAX_WIRE_INTEGER, RunRef, WireRecord
+from .model import MAX_WIRE_INTEGER, RunRef, WireRecord
 
 
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"

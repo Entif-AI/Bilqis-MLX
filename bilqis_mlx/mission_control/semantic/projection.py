@@ -4,14 +4,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 
-from ..model import (
+from ..contracts.model import (
     AuthorityClass, CoverageState, DataValue, RecordMeta, RunRef,
     ValueOrigin, ValueState, require,
 )
 
 
 DEFAULT_BANK_ROW_CAPACITY = 8192
-from ..observability import SemanticAtlasSnapshot
+from ..contracts.observability import SemanticAtlasSnapshot
 from .records import (
     SemanticAdmissionState, SemanticBankSnapshot, SemanticConceptSnapshot,
     SemanticGenerationState, SemanticHeldMappingSnapshot, SemanticLabel,
