@@ -24,12 +24,12 @@ class Cp01PythonBroker {
     return this.#request("connect");
   }
 
-  query(query) {
-    return this.#request("query", query);
-  }
-
   status() {
     return this.#request("status");
+  }
+
+  query(request) {
+    return this.#request("query", request);
   }
 
   disconnect() {
@@ -52,7 +52,7 @@ class Cp01PythonBroker {
     }
     const child = spawn(
       this.pythonExecutable,
-      ["-B", "-m", "bilqis_mlx.mission_control.electron_bridge"],
+      ["-B", "-m", "bilqis_mlx.mission_control.electron.bridge"],
       {
         cwd: this.cwd,
         env: { ...this.env, PYTHONUNBUFFERED: "1" },
@@ -93,7 +93,8 @@ class Cp01PythonBroker {
           reject(error);
         },
       });
-      child.stdin.write(`${JSON.stringify({ id, op, ...(query ? { query } : {}) })}\n`, (error) => {
+      const payload = query === undefined ? { id, op } : { id, op, query };
+      child.stdin.write(`${JSON.stringify(payload)}\n`, (error) => {
         if (!error) return;
         this.pending.delete(id);
         reject(this.#unavailable());

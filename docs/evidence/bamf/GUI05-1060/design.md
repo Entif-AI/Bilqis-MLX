@@ -185,3 +185,18 @@ Main validates CP02 record/marker shapes using Ajv's Draft 2020-12 validator and
 the checked-in generated schema bundle, rather than a handwritten shape copy.
 Python retains semantic invariant validation and exact query/record identity checks.
 These preserve the approved read-only interfaces and existing renderer policy.
+
+## GUI07 intake compatibility
+
+The canonical Python broker owner is now mission_control/electron/bridge.py;
+electron_bridge.py preserves its accepted import/CLI path. One typed query method
+serves GUI07's accepted-page operation and GUI05's snapshot-query compatibility
+operation. The latter strips the transport acceptance flag before its existing
+public page validation. Both paths retain the same record validation and private
+session filtering. Registry/schema convenience exports are lazy to avoid import
+cycles after the independently reviewed directory moves converge.
+
+Sibling School/Episodes/Neural/Atlas rendering moved to domain-views.mjs when
+unified intake made renderer.mjs oversized. The shell still owns navigation,
+context and selection; the extracted views report selection through onState.
+These are compatibility and ownership repairs, not new dossier semantics.

@@ -60,3 +60,43 @@ process group and produces a nonzero incomplete result if the estimate is wrong.
 Snapshot isolation, one test worker, 1 GiB per-process MLX allocation and disabled
 cache apply to every inheriting Python process. This stage answers differential
 compatibility only. The separate premerge/integration obligation remains pending.
+
+## Qualification failure repair and second unified intake
+
+The first snapshot failed during collection in 33 seconds; no source mutation
+occurred. Seven errors shared a namespace collision: pytest resolved repository
+`tests` as `scripts/tests`. A literal two-package regression reproduces it; enabling
+pytest's namespace-package resolution repairs it (13 gate-owner tests PASS).
+Two existing neural participation tests also imported helpers from their previous
+owner. Their imports now name `atlas_model_participation`; the three affected cases
+pass without changing numerical/runtime logic.
+
+Consumed reviewed unified 7d681427 (GUI07). Its accepted CP03 query operation,
+semantic records and bridge error projection coexist with GUI05's snapshot-query
+compatibility surface. Both use one typed Python query implementation. The original
+renderer reached 400 lines during intake; its sibling domain rendering now lives
+in domain-views.mjs, leaving renderer.mjs at 235 lines. Both retain the same views,
+callback behavior and exact asset allowlist.
+
+Post-intake evidence: 62 Mission Control and 55 control-plane Python tests PASS;
+103 Node tests PASS; the GUI05 browser journey PASS. Full premerge collection
+preflight imports 908 test files / 4,512 cases with zero import failures after
+installing the historical Torch test dependency. This is collection evidence only.
+
+The resource guard now installs MLX limits lazily when mlx.core is imported,
+preserving tests of neural-inert imports. A subprocess regression proves both
+that MLX stays unloaded until requested and that its 1 GiB/cache-zero policy applies.
+All qualification repairs inherit the existing verification obligation
+(`new_acceptance=false`); none adds learner, source or admission requirements.
+
+Final shared-seam review found one navigation defect: delayed Atlas callbacks could
+replace a different destination in the shared view host. The repair guards active
+view rendering and binds asynchronous selection/overview results to their context.
+A red/green interaction test covers semantic and ABI responses after destination
+and generation changes. Fresh focused recheck reports NO_DRIFT.
+
+Qualification v2 chains static gates, collection preflight, verify:leaf and
+verify:premerge in one snapshot. Estimated completion is 15–60 minutes for the
+measured 1,161 selected leaf cases and 4,512 aggregate cases; this estimate is not
+acceptance evidence. The whole pipeline retains one terminal two-hour ceiling.
+The notification/receipt must be reconciled before PR creation.

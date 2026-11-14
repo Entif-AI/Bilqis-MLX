@@ -214,7 +214,8 @@ def _plugin_available(module: str) -> bool:
 
 def _pytest_command(mode: str, tests: tuple[str, ...] = ()) -> list[str]:
     workers = os.environ.get("BILQIS_TEST_WORKERS", "4")
-    command = [sys.executable, "-m", "pytest", "-q", "--import-mode=importlib"]
+    command = [sys.executable, "-m", "pytest", "-q", "--import-mode=importlib",
+               "-o", "consider_namespace_packages=true"]
     if _plugin_available("xdist"):
         command += ["-n", workers, "--dist=loadscope"]
     if _plugin_available("testmon"):

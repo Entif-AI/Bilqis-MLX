@@ -15,6 +15,10 @@ from .query_contracts import (
 from .contracts.snapshots import (
     CapabilitySnapshot, OperatorView,
 )
+from .semantic import (
+    SemanticConceptSnapshot, SemanticGenerationState, SemanticHeldMappingSnapshot,
+    SemanticSimilaritySnapshot,
+)
 from .query_support import (
     FAMILY_TYPES, build_page, encode_query_page, matches_identity,
     record_sort_key, select_current,
@@ -90,6 +94,43 @@ class MissionControlQueryCatalog:
                 "RELATED_RECORD", meta.record_id, ref,
                 ref if ref in self._by_id else None,
             ) for ref in record.related_record_ids)
+        if type(record) is SemanticConceptSnapshot:
+            links.append(QueryLink(
+                "SEMANTIC_IDENTITY", meta.record_id, record.semantic_id,
+                meta.record_id,
+            ))
+            links.extend(QueryLink(
+                "CANONICAL_RELATION", meta.record_id, relation.target_semantic_id,
+                None,
+            ) for relation in record.relations)
+            links.extend(QueryLink(
+                "FRAME_SCHEMA", meta.record_id, ref, None,
+            ) for ref in record.frame_schema_refs)
+            links.extend(QueryLink(
+                "CAPABILITY", meta.record_id, ref, None,
+            ) for ref in record.capability_ids)
+        if type(record) is SemanticGenerationState:
+            links.append(QueryLink(
+                "SEMANTIC_IDENTITY", meta.record_id, record.semantic_id,
+                record.concept_record_id,
+            ))
+            if record.concept_record_id is not None:
+                links.append(QueryLink(
+                    "CANONICAL_CONCEPT", meta.record_id, record.concept_record_id,
+                    record.concept_record_id if record.concept_record_id in self._by_id else None,
+                ))
+        if type(record) is SemanticHeldMappingSnapshot and record.semantic_id is not None:
+            links.append(QueryLink(
+                "HELD_SEMANTIC_IDENTITY", meta.record_id, record.semantic_id,
+                meta.record_id,
+            ))
+        if type(record) is SemanticSimilaritySnapshot:
+            links.extend((
+                QueryLink("LEARNED_SIMILARITY_SOURCE", meta.record_id,
+                          record.source_semantic_id, meta.record_id),
+                QueryLink("LEARNED_SIMILARITY_TARGET", meta.record_id,
+                          record.target_semantic_id, meta.record_id),
+            ))
         if type(record) is CapabilitySnapshot and meta.run is not None:
             for item in self._records:
                 if (type(item) is LearningEpisode and item.meta.run == meta.run

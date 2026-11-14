@@ -17,6 +17,10 @@ from .operator import (
     OperatorActionReceipt, OperatorActionReceiptV2,
     OperatorActionRequest, OperatorActionRequestV2,
 )
+from ..semantic import (
+    SemanticBankSnapshot, SemanticConceptSnapshot, SemanticGenerationState,
+    SemanticHeldMappingSnapshot, SemanticSimilaritySnapshot,
+)
 from .snapshots import (
     CapabilitySnapshot, CurriculumFrontier, OperatorView, RunContext,
     SchoolSnapshot,
@@ -36,6 +40,11 @@ ALL_RECORD_TYPES = (
     LearningEpisode,
     CandidateDecision,
     SemanticAtlasSnapshot,
+    SemanticConceptSnapshot,
+    SemanticGenerationState,
+    SemanticBankSnapshot,
+    SemanticHeldMappingSnapshot,
+    SemanticSimilaritySnapshot,
     FrameCompileReceipt,
     NeuralRuntimeSample,
     MemorySnapshot,

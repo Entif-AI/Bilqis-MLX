@@ -52,9 +52,16 @@ class AcceptedControlPlaneAdapter {
   async snapshot(session, request) {
     this.#requireSession(session);
     if (request?.schema === "bilqis.bamf.control-plane.query/v1") {
-      return this.broker.query(request);
+      const { accepted, ...page } = await this.broker.query(request);
+      if (accepted !== true) throw new Error("BAMF_GUI05_QUERY_UNAVAILABLE");
+      return page;
     }
     return structuredClone(OPERATOR_VIEW);
+  }
+
+  async query(session, request) {
+    this.#requireSession(session);
+    return this.broker.query(request);
   }
 
   close() {

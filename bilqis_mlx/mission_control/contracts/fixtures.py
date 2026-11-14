@@ -1,8 +1,8 @@
 """Representative CP02 fixture materialized for cross-language consumers."""
 from __future__ import annotations
 
-from .contracts.model import AuthorityClass, CoverageState, RecordMeta, RunRef
-from .contracts.snapshots import OperatorView
+from .model import AuthorityClass, CoverageState, RecordMeta, RunRef
+from .snapshots import OperatorView
 
 
 _D1 = "1" * 64

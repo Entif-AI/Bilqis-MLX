@@ -9271,6 +9271,1637 @@
       "type": "object",
       "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record"
     },
+    "bilqis.bamf.mission-control.semantic-bank-snapshot/v1": {
+      "$id": "bilqis.bamf.mission-control.semantic-bank-snapshot/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "active_rows": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "allocated_rows": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "bank": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "masked_rows": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "materialized_at": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "record_id": {
+              "minLength": 1,
+              "not": {
+                "pattern": "\\n"
+              },
+              "pattern": "\\S",
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
+            },
+            "run": {
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                }
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
+            },
+            "source_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "newly_admitted_rows": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "recently_exercised_rows": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "requalification_affected_rows": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "row_capacity": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.semantic-bank-snapshot/v1",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "bank",
+        "row_capacity",
+        "allocated_rows",
+        "active_rows",
+        "masked_rows",
+        "newly_admitted_rows",
+        "recently_exercised_rows",
+        "requalification_affected_rows"
+      ],
+      "title": "SemanticBankSnapshot",
+      "type": "object",
+      "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record"
+    },
+    "bilqis.bamf.mission-control.semantic-concept-snapshot/v1": {
+      "$id": "bilqis.bamf.mission-control.semantic-concept-snapshot/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "abi_bank": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "abi_index": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "abi_row": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "atlas_release_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "capability_ids": {
+          "items": {
+            "minLength": 1,
+            "not": {
+              "pattern": "\\n"
+            },
+            "pattern": "\\S",
+            "type": "string",
+            "x-bilqis-unicode-domain": "scalar-values"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "frame_schema_refs": {
+          "items": {
+            "minLength": 1,
+            "not": {
+              "pattern": "\\n"
+            },
+            "pattern": "\\S",
+            "type": "string",
+            "x-bilqis-unicode-domain": "scalar-values"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "implementation_status": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "kind": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "labels": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "language": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "not": {
+                      "pattern": "\\n"
+                    },
+                    "pattern": "\\S",
+                    "type": "string",
+                    "x-bilqis-unicode-domain": "scalar-values"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "role": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "value": {
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              }
+            },
+            "required": [
+              "role",
+              "value",
+              "language"
+            ],
+            "type": "object"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "materialized_at": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "record_id": {
+              "minLength": 1,
+              "not": {
+                "pattern": "\\n"
+              },
+              "pattern": "\\S",
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "factory_release_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "generation": {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "run_id": {
+                      "minLength": 1,
+                      "not": {
+                        "pattern": "\\n"
+                      },
+                      "pattern": "\\S",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "run_identity_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "semantic_release_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "topology_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "realizations": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "datatype": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "not": {
+                      "pattern": "\\n"
+                    },
+                    "pattern": "\\S",
+                    "type": "string",
+                    "x-bilqis-unicode-domain": "scalar-values"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "language": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "not": {
+                      "pattern": "\\n"
+                    },
+                    "pattern": "\\S",
+                    "type": "string",
+                    "x-bilqis-unicode-domain": "scalar-values"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "value": {
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              }
+            },
+            "required": [
+              "value",
+              "datatype",
+              "language"
+            ],
+            "type": "object"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "relations": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "predicate": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "target_semantic_id": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              }
+            },
+            "required": [
+              "predicate",
+              "target_semantic_id"
+            ],
+            "type": "object"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.semantic-concept-snapshot/v1",
+          "type": "string"
+        },
+        "semantic_id": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "source_loci": {
+          "items": {
+            "minLength": 1,
+            "not": {
+              "pattern": "\\n"
+            },
+            "pattern": "\\S",
+            "type": "string",
+            "x-bilqis-unicode-domain": "scalar-values"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "source_rows": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "domain": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "key": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "table": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              }
+            },
+            "required": [
+              "domain",
+              "table",
+              "key"
+            ],
+            "type": "object"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "teaching_candidate": {
+          "type": "boolean"
+        },
+        "teaching_reason": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "types": {
+          "items": {
+            "minLength": 1,
+            "not": {
+              "pattern": "\\n"
+            },
+            "pattern": "\\S",
+            "type": "string",
+            "x-bilqis-unicode-domain": "scalar-values"
+          },
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "atlas_release_sha256",
+        "semantic_id",
+        "kind",
+        "types",
+        "labels",
+        "realizations",
+        "source_loci",
+        "source_rows",
+        "relations",
+        "abi_index",
+        "abi_bank",
+        "abi_row",
+        "implementation_status",
+        "teaching_candidate",
+        "teaching_reason",
+        "frame_schema_refs",
+        "capability_ids"
+      ],
+      "title": "SemanticConceptSnapshot",
+      "type": "object",
+      "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record"
+    },
+    "bilqis.bamf.mission-control.semantic-generation-state/v1": {
+      "$id": "bilqis.bamf.mission-control.semantic-generation-state/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "abi_bank": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "abi_index": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "abi_row": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "admission_state": {
+          "enum": [
+            "ACTIVE",
+            "RESERVED_MASKED"
+          ],
+          "type": "string"
+        },
+        "concept_record_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "not": {
+                "pattern": "\\n"
+              },
+              "pattern": "\\S",
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "materialized_at": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "record_id": {
+              "minLength": 1,
+              "not": {
+                "pattern": "\\n"
+              },
+              "pattern": "\\S",
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
+            },
+            "run": {
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                }
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
+            },
+            "source_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "newly_admitted": {
+          "type": "boolean"
+        },
+        "recently_exercised": {
+          "type": "boolean"
+        },
+        "requalification_affected": {
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.semantic-generation-state/v1",
+          "type": "string"
+        },
+        "semantic_id": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "semantic_id",
+        "concept_record_id",
+        "abi_index",
+        "abi_bank",
+        "abi_row",
+        "admission_state",
+        "newly_admitted",
+        "recently_exercised",
+        "requalification_affected"
+      ],
+      "title": "SemanticGenerationState",
+      "type": "object",
+      "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record"
+    },
+    "bilqis.bamf.mission-control.semantic-held-mapping/v1": {
+      "$id": "bilqis.bamf.mission-control.semantic-held-mapping/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "atlas_release_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "domain": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "implementation_status": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "key": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "materialized_at": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "record_id": {
+              "minLength": 1,
+              "not": {
+                "pattern": "\\n"
+              },
+              "pattern": "\\S",
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
+            },
+            "run": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidate_identity_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "factory_release_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "generation": {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "generation_manifest_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "run_id": {
+                      "minLength": 1,
+                      "not": {
+                        "pattern": "\\n"
+                      },
+                      "pattern": "\\S",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "run_identity_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "semantic_release_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "topology_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    }
+                  },
+                  "required": [
+                    "run_id",
+                    "run_identity_sha256",
+                    "generation",
+                    "generation_manifest_sha256",
+                    "candidate_identity_sha256",
+                    "factory_release_sha256",
+                    "semantic_release_sha256",
+                    "topology_sha256"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "owner": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "reason_code": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.semantic-held-mapping/v1",
+          "type": "string"
+        },
+        "semantic_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "not": {
+                "pattern": "\\n"
+              },
+              "pattern": "\\S",
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_disposition": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "table": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "teaching_reason": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "atlas_release_sha256",
+        "domain",
+        "table",
+        "key",
+        "semantic_id",
+        "source_disposition",
+        "implementation_status",
+        "reason_code",
+        "teaching_reason",
+        "owner"
+      ],
+      "title": "SemanticHeldMappingSnapshot",
+      "type": "object",
+      "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record"
+    },
+    "bilqis.bamf.mission-control.semantic-similarity-snapshot/v1": {
+      "$id": "bilqis.bamf.mission-control.semantic-similarity-snapshot/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "basis_ref": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "canonical_equivalence": {
+          "type": "boolean"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "materialized_at": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "record_id": {
+              "minLength": 1,
+              "not": {
+                "pattern": "\\n"
+              },
+              "pattern": "\\S",
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
+            },
+            "run": {
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                }
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
+            },
+            "source_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.semantic-similarity-snapshot/v1",
+          "type": "string"
+        },
+        "similarity": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "else": {
+                "properties": {
+                  "origin": {
+                    "type": "null"
+                  },
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              },
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "PRESENT"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "origin": {
+                    "not": {
+                      "type": "null"
+                    }
+                  },
+                  "value": {
+                    "not": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "source_semantic_id": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "target_semantic_id": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "source_semantic_id",
+        "target_semantic_id",
+        "basis_ref",
+        "similarity",
+        "canonical_equivalence"
+      ],
+      "title": "SemanticSimilaritySnapshot",
+      "type": "object",
+      "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record"
+    },
     "bilqis.bamf.mission-control.stale-envelope/v1": {
       "$id": "bilqis.bamf.mission-control.stale-envelope/v1",
       "$schema": "https://json-schema.org/draft/2020-12/schema",
