@@ -7,6 +7,7 @@ import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.mission_control.observability import GenerationManifest
+from bilqis_mlx.mission_control.operator import OperatorActionReceipt
 from bilqis_mlx.mission_control.projection import (
     MissionControlProjection, ProjectionFrontierState,
 )
@@ -59,7 +60,9 @@ class MissionControlProjectionHistoryTests(unittest.TestCase):
             self.assertEqual(
                 [item.meta.record_id for item in new_page.records], ["generation:8"])
 
-            receipt = SAMPLES[17]
+            receipt = next(
+                item for item in SAMPLES if type(item) is OperatorActionReceipt
+            )
             pending = replace(
                 receipt,
                 meta=replace(

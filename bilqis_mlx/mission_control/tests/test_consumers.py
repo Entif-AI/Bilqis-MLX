@@ -5,7 +5,7 @@ import unittest
 
 from bilqis_mlx.mission_control.codec import canonical_json, decode_record
 from bilqis_mlx.mission_control.consumers import decode_operator_view
-from bilqis_mlx.mission_control.fixtures import representative_operator_view
+from bilqis_mlx.mission_control.contracts.fixtures import representative_operator_view
 from bilqis_mlx.mission_control.model import (
     ContractErrorCode, MissionControlContractError,
 )

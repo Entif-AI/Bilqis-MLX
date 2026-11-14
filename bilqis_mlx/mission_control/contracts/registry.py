@@ -1,23 +1,27 @@
 """Closed CP02 record registry; later versions add new schema identities."""
 from __future__ import annotations
 
-from .envelopes import (
+from ..envelopes import (
     ErrorEnvelope, EventEnvelope, PartialEnvelope, StaleEnvelope,
     UnavailableEnvelope,
 )
-from .events import (
+from ..events import (
     CandidateDecision, CorrectionEvent, FrameCompileReceipt, LearningEpisode,
     SalienceEvent,
 )
-from .observability import (
+from ..observability import (
     GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, TeacherSnapshot,
 )
-from .operator import (
+from ..operator import (
     OperatorActionReceipt, OperatorActionReceiptV2,
     OperatorActionRequest, OperatorActionRequestV2,
 )
-from .snapshots import (
+from ..semantic import (
+    SemanticBankSnapshot, SemanticConceptSnapshot, SemanticGenerationState,
+    SemanticHeldMappingSnapshot, SemanticSimilaritySnapshot,
+)
+from ..snapshots import (
     CapabilitySnapshot, CurriculumFrontier, OperatorView, RunContext,
     SchoolSnapshot,
 )
@@ -32,6 +36,11 @@ ALL_RECORD_TYPES = (
     LearningEpisode,
     CandidateDecision,
     SemanticAtlasSnapshot,
+    SemanticConceptSnapshot,
+    SemanticGenerationState,
+    SemanticBankSnapshot,
+    SemanticHeldMappingSnapshot,
+    SemanticSimilaritySnapshot,
     FrameCompileReceipt,
     NeuralRuntimeSample,
     MemorySnapshot,

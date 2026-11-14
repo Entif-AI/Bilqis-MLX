@@ -5,7 +5,7 @@ import unittest
 from bilqis_mlx.mission_control.codec import (
     canonical_json, decode_json, decode_record, encode_record,
 )
-from bilqis_mlx.mission_control.registry import ALL_RECORD_TYPES
+from bilqis_mlx.mission_control.contracts.registry import ALL_RECORD_TYPES
 from bilqis_mlx.mission_control.tests.samples import SAMPLES
 
 

@@ -8,11 +8,13 @@ import sys
 
 from bilqis_mlx.control_plane import ControlPlaneClient
 from bilqis_mlx.control_plane.contracts import ControlPlaneState, PROTOCOL_VERSION
+from bilqis_mlx.mission_control.query_contracts import QUERY_PAGE_SCHEMA, QueryRequest
 from bilqis_mlx.paths import active_run_dir
 
 
 _CLIENT_ID = "mission-control-electron"
 MAX_BROKER_REQUEST_BYTES = 64 * 1024
+QUERY_ERROR_SCHEMA = "bamf.gui07.query-error/v1"
 
 
 def _socket_path() -> Path:
@@ -62,6 +64,20 @@ class ElectronBridge:
             return _public_status({}, connected=False)
         return _public_status(self.client.request("health"), connected=True)
 
+    def query(self, payload: dict) -> dict:
+        if self.client is None:
+            return {"schema": QUERY_ERROR_SCHEMA, "accepted": False,
+                    "reason": "CONTROL_PLANE_NOT_CONNECTED"}
+        request = QueryRequest.from_mapping(payload)
+        response = self.client.query(request)
+        if response.get("schema") != QUERY_PAGE_SCHEMA or not response.get("accepted"):
+            reason = response.get("reason")
+            return {"schema": QUERY_ERROR_SCHEMA, "accepted": False,
+                    "reason": reason if isinstance(reason, str) and reason else
+                    "CONTROL_PLANE_QUERY_UNAVAILABLE"}
+        return {key: value for key, value in response.items()
+                if key not in {"service", "session"}}
+
     def disconnect(self) -> dict:
         if self.client is not None:
             self.client.close()
@@ -90,9 +106,11 @@ def main() -> int:
             request = json.loads(raw)
             identifier = request["id"]
             operation = request["op"]
-            if type(identifier) is not int or operation not in {"connect", "status", "disconnect"}:
+            if type(identifier) is not int or operation not in {
+                    "connect", "status", "disconnect", "query"}:
                 raise ValueError
-            result = getattr(bridge, operation)()
+            result = (bridge.query(request.get("query")) if operation == "query"
+                      else getattr(bridge, operation)())
         except Exception:
             _reply(request.get("id") if isinstance(request, dict) else None,
                    error="BAMF_GUI20_CP01_UNAVAILABLE")

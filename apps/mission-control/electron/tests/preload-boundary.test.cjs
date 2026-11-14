@@ -38,6 +38,7 @@ test("preload exposes only the enumerated Mission Control capability surface", (
   assert.deepEqual(Object.keys(api).sort(), [
     "connect",
     "fetchReceipt",
+    "query",
     "querySnapshot",
     "requestCommand",
     "requestDryRun",
@@ -85,6 +86,7 @@ test("preload invokes only fixed channels and unsubscribes its fixed event liste
     schemaVersion: "cp02.snapshot.fixture/v1",
     objectRef: "run:one",
   });
+  await api.query({ schema: "cp03.query.fixture/v1", family: "semantic" });
   await api.requestDryRun({
     schemaVersion: "cp02.dry-run.fixture/v1",
     requestId: "dry-1",
@@ -109,6 +111,7 @@ test("preload invokes only fixed channels and unsubscribes its fixed event liste
     CHANNELS.connect,
     CHANNELS.status,
     CHANNELS.snapshot,
+    CHANNELS.query,
     CHANNELS.dryRun,
     CHANNELS.command,
     CHANNELS.receipt,

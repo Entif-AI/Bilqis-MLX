@@ -19,6 +19,8 @@ const RENDERER_ASSETS = Object.freeze(new Map([
   ["/neural-view.mjs", "neural-view.mjs"],
   ["/neural.css", "neural.css"],
   ["/renderer.mjs", "renderer.mjs"],
+  ["/semantic-atlas.css", "semantic-atlas.css"],
+  ["/semantic-atlas.mjs", "semantic-atlas.mjs"],
   ["/school-fixture.mjs", "school-fixture.mjs"],
   ["/school-model.mjs", "school-model.mjs"],
   ["/school-view.mjs", "school-view.mjs"],
