@@ -6,8 +6,6 @@ import hashlib
 import os
 from pathlib import Path
 import signal
-import subprocess
-import sys
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import inspect_accepted_generation
@@ -16,6 +14,7 @@ from .c11 import report_target, same_lineage
 from .model import (
     CommandAction, CommandMode, CommandPlan, ResolvedCommandTarget,
 )
+from .process import process_identity_sha256, run_trainer
 from ..transport import _invalid
 class C11ExecutionRuntime:
     """Execute admitted C11 plans and verify their authoritative postconditions."""
@@ -38,18 +37,7 @@ class C11ExecutionRuntime:
 
     @staticmethod
     def _process_identity_sha256(pid: int) -> str | None:
-        try:
-            completed = subprocess.run(
-                ["ps", "-p", str(pid), "-o", "lstart=,command="],
-                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                check=False, text=False,
-            )
-        except OSError:
-            return None
-        identity = completed.stdout.strip()
-        if completed.returncode != 0 or not identity:
-            return None
-        return hashlib.sha256(identity).hexdigest()
+        return process_identity_sha256(pid)
 
     def _active_trainer_process(self, operation_id: str):
         if self.store is None:
@@ -108,30 +96,14 @@ class C11ExecutionRuntime:
                     f"{type(error).__name__}:{error}".encode("utf-8")).hexdigest()
                 return None, f"command-error:stop:{digest}"
             return 0, None
-        try:
-            with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
-                process = subprocess.Popen(
-                    [sys.executable, "-m", "bilqis_mlx.cli", *plan.argv],
-                    stdout=stdout, stderr=stderr,
-                )
-                if self.store is not None:
-                    identity_sha256 = self._process_identity_sha256(process.pid)
-                    if identity_sha256 is None:
-                        process.send_signal(signal.SIGINT)
-                        process.wait()
-                        return None, "command-error:process-identity-unavailable"
-                    self.store.write_trainer_process(
-                        plan.operation_id, pid=process.pid,
-                        identity_sha256=identity_sha256)
-                returncode = process.wait()
-        except OSError as error:
-            digest = hashlib.sha256(
-                f"{type(error).__name__}:{error}".encode("utf-8")).hexdigest()
-            return None, f"command-error:spawn:{digest}"
-        if returncode != 0:
-            digest = hashlib.sha256(stderr_path.read_bytes()).hexdigest()
-            return returncode, f"command-error:{returncode}:{digest}"
-        return 0, None
+        return run_trainer(
+            argv=plan.argv,
+            stdout_path=stdout_path,
+            stderr_path=stderr_path,
+            store=self.store,
+            operation_id=plan.operation_id,
+            identity_resolver=self._process_identity_sha256,
+        )
 
     def _current_target(self) -> ResolvedCommandTarget | None:
         try:

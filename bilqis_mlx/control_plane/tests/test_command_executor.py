@@ -11,12 +11,51 @@ from bilqis_mlx.control_plane.command.executor import C11CommandExecutor
 from bilqis_mlx.control_plane.command.model import (
     CommandAction, CommandMode, CommandPlan, operation_id_for,
 )
+from bilqis_mlx.control_plane.command.process import run_trainer
 from bilqis_mlx.control_plane.command.store import CommandStore
 
 from .command_support import DIGESTS, request, target
 
 
 class C11CommandAdapterTests(unittest.TestCase):
+    def test_trainer_is_interrupted_if_durable_process_custody_fails(self):
+        class Process:
+            pid = 43210
+
+            def __init__(self):
+                self.signals = []
+                self.waits = 0
+
+            def send_signal(self, value):
+                self.signals.append(value)
+
+            def wait(self):
+                self.waits += 1
+                return 130
+
+        class FailingStore:
+            def write_trainer_process(self, *_args, **_kwargs):
+                raise OSError("custody unavailable")
+
+        process = Process()
+        with TemporaryDirectory() as temporary, patch(
+            "bilqis_mlx.control_plane.command.process.subprocess.Popen",
+            return_value=process,
+        ):
+            root = Path(temporary)
+            returncode, error = run_trainer(
+                argv=("train", "--human-run"),
+                stdout_path=root / "trainer.stdout",
+                stderr_path=root / "trainer.stderr",
+                store=FailingStore(),
+                operation_id=operation_id_for("custody-failure"),
+                identity_resolver=lambda _pid: "9" * 64,
+            )
+        self.assertIsNone(returncode)
+        self.assertTrue(error.startswith("command-error:custody:"))
+        self.assertEqual(process.signals, [signal.SIGINT])
+        self.assertEqual(process.waits, 1)
+
     def test_stop_targets_exact_active_trainer_operation_and_sends_sigint(self):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)

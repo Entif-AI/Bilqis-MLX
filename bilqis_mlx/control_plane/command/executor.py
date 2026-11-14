@@ -10,7 +10,7 @@ from .c11 import (
 )
 from .execution import C11ExecutionRuntime
 from .model import (
-    CommandAction, CommandMode, CommandPlan,
+    CommandAction, CommandMode, CommandPlan, ResolvedCommandTarget,
     intent_sha256, operation_directory_name, request_sha256,
 )
 from ..transport import _invalid

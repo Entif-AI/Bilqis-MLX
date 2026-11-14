@@ -206,4 +206,6 @@ test("accepted owner launch seeds Stop with the exact active operation identity"
     controller.currentState().parametersText,
     JSON.stringify({ operation_id: `operation:${"b".repeat(64)}` }, null, 2),
   );
+  host.clickAction("resume");
+  assert.equal(controller.currentState().parametersText, "{}");
 });
