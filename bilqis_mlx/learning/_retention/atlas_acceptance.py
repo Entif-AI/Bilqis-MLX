@@ -13,7 +13,9 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from .atlas_retention_decision import CandidateRetentionDecision
 from ._atlas_acceptance_records import (
     ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-    CLOSURE_BINDING_FIELDS, MOTIF_CLOSURE_BINDING_FIELDS, normalize_artifact_closures,
+    EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+    CLOSURE_BINDING_FIELDS, MOTIF_CLOSURE_BINDING_FIELDS,
+    EXACT_BINDING_FIELDS, EXACT_CLOSURE_BINDING_FIELDS, normalize_artifact_closures,
     BINDING_FIELDS as _BINDING_FIELDS,
     LEGACY_ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA,
     MOTIF_BINDING_FIELDS as _MOTIF_BINDING_FIELDS,
@@ -159,19 +161,30 @@ class AcceptedCandidateBinding:
                     and not _is_digest(self.source_authority_registry_sha256))
                 or self.schema_version not in {
                     ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA,
-                    CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA}
+                    CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
+                    EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA}
                 or (self.schema_version in (ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA)
                     and self.generation_authority_sha256 is not None)
-                or (self.schema_version in (MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
+                or (self.schema_version in (
+                        MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
+                        EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA)
                     and not _is_digest(self.generation_authority_sha256))
-                or (self.schema_version in (ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA) and self.artifact_closures)
-                or (self.schema_version in (CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA) and not self.artifact_closures)):
+                or (self.schema_version in (
+                        ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA, EXACT_ACCEPTANCE_SCHEMA)
+                    and self.artifact_closures)
+                or (self.schema_version in (
+                        CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
+                        EXACT_CLOSURE_ACCEPTANCE_SCHEMA)
+                    and not self.artifact_closures)):
             _invalid()
         if self.artifact_closures:
             normalize_artifact_closures(self.artifact_closures)
 
     def _public_record(self) -> dict:
-        names = (CLOSURE_BINDING_FIELDS if self.schema_version == CLOSURE_ACCEPTANCE_SCHEMA
+        names = (EXACT_CLOSURE_BINDING_FIELDS
+                 if self.schema_version == EXACT_CLOSURE_ACCEPTANCE_SCHEMA
+                 else EXACT_BINDING_FIELDS if self.schema_version == EXACT_ACCEPTANCE_SCHEMA
+                 else CLOSURE_BINDING_FIELDS if self.schema_version == CLOSURE_ACCEPTANCE_SCHEMA
                  else MOTIF_CLOSURE_BINDING_FIELDS if self.schema_version == MOTIF_CLOSURE_ACCEPTANCE_SCHEMA
                  else _MOTIF_BINDING_FIELDS if self.schema_version == MOTIF_ACCEPTANCE_SCHEMA
                  else _BINDING_FIELDS)
@@ -225,7 +238,9 @@ def _make_acceptance_minter(raw_issue):
                 decision, generation_authority_sha256)
             schema = MOTIF_ACCEPTANCE_SCHEMA
         elif generation_authority_sha256 is not None:
-            _invalid()
+            if not _is_digest(generation_authority_sha256):
+                _invalid()
+            schema = EXACT_ACCEPTANCE_SCHEMA
         source_anchors = _source_anchors(training_authorities, state)
         from bilqis_mlx.semantics.dependencies.closure import closure_digest, encode_closure_nodes
         closures = []
@@ -247,7 +262,11 @@ def _make_acceptance_minter(raw_issue):
                 _invalid()
         closures = tuple(closures)
         if closures:
-            schema = MOTIF_CLOSURE_ACCEPTANCE_SCHEMA if schema == MOTIF_ACCEPTANCE_SCHEMA else CLOSURE_ACCEPTANCE_SCHEMA
+            schema = (MOTIF_CLOSURE_ACCEPTANCE_SCHEMA
+                      if schema == MOTIF_ACCEPTANCE_SCHEMA
+                      else EXACT_CLOSURE_ACCEPTANCE_SCHEMA
+                      if schema == EXACT_ACCEPTANCE_SCHEMA
+                      else CLOSURE_ACCEPTANCE_SCHEMA)
         values = [
             ("run_id", run_id), ("generation", generation),
             ("candidate_identity_sha256", state_digest),
@@ -264,7 +283,9 @@ def _make_acceptance_minter(raw_issue):
              source_authority_registry_sha256),
         ]
         values.append(("artifact_closures", closures))
-        if schema in (MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA):
+        if schema in (
+                MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
+                EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA):
             values.append(("generation_authority_sha256", generation_authority_sha256))
         else:
             values.append(("generation_authority_sha256", None))

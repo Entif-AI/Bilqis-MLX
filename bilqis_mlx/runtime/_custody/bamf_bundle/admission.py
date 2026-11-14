@@ -286,15 +286,12 @@ def accept_and_publish(run_dir: Path, bundle: BamfBundleCandidate,
     if _issued_decision_generation_authority(decision) is not None:
         _require_issued_decision_generation_authority(
             decision, exact_generation_authority)
-    generation_authority_sha256 = (
-        exact_generation_authority
-        if is_motif_allocation_transition(bundle.transition) else None)
     binding = mint_acceptance_binding(
         decision, retained_state, run_id=bundle.run_id,
         generation=bundle.generation, feature_sha256=feature_sha256,
         training_authorities=training_authorities,
         source_authority_registry_sha256=(
             trusted_registry.digest if trusted_registry is not None else None),
-        generation_authority_sha256=generation_authority_sha256)
+        generation_authority_sha256=exact_generation_authority)
     return publish_bamf_generation(
         run_dir, bundle, acceptance=binding, reserve_gib=reserve_gib)

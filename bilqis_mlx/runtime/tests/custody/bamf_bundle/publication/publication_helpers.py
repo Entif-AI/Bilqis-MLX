@@ -116,13 +116,17 @@ def retention_decision(*, accepted=True, parent=None, retained=None) -> object:
 
 
 def acceptance(bundle, *, parent=None) -> object:
+    from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
+        successor_candidate_identity_digest,
+    )
     return mint_acceptance_binding(
         retention_decision(parent=parent, retained=bundle.retained_state),
         bundle.retained_state, run_id=bundle.run_id,
         generation=bundle.generation,
         feature_sha256=bundle.extents.factor_map_digest,
         source_authority_registry_sha256=bundle.correction_frontier.get(
-            "source_authority_registry_sha256"))
+            "source_authority_registry_sha256"),
+        generation_authority_sha256=successor_candidate_identity_digest(bundle))
 
 
 def _publish_initial_candidate(run_dir, bundle, foundation_features):

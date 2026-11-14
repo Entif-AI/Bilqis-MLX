@@ -36,9 +36,13 @@ without scanning for convenient files. Current `BAMF_C16_3_ACCEPTED` events are
 validated against the persisted C03 teacher-visit identity and the portable copy
 of its independently source-issued content-addressed visit receipt before they
 become CP02 episode, candidate, capability and resource records. C03 still issues
-the original receipt at selection time; accepted B13 custody carries the exact
-receipt forward so historical reconstruction does not depend on the workstation
-shared data plane. Generic `BAMF_CANDIDATE_REJECTED` journal rows remain a live
+the original receipt at selection time. Before B13 publishes a successor carrying
+that portable receipt, B13 requires the original C03 receipt from the live source
+authority and then seals the exact successor custody with a generation-authority
+digest that includes the teacher state. Historical CP06 can therefore validate
+the copied receipt inside that exact accepted custody without treating the
+deterministic receipt marker itself as proof of issuance and without reaching the
+workstation shared data plane. Generic `BAMF_CANDIDATE_REJECTED` journal rows remain a live
 projection only: they are authenticated against their deterministic event identity,
 the independent data-plane rejection authority/receipt, and the C03-issued visit
 receipt before CP04 delivery. Only the supported

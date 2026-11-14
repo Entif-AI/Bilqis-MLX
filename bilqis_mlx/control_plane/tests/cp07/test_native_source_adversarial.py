@@ -11,7 +11,8 @@ from bilqis_mlx.control_plane.native_source import (
 )
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.learning.teacher_visit_identity import (
-    TeacherVisitIdentity,
+    TeacherVisitIdentity, require_teacher_visit_receipt,
+    teacher_visit_receipt_record,
 )
 from bilqis_mlx.mission_control import CandidateDecision
 from bilqis_mlx.runtime import checkpoint_outbox
@@ -50,9 +51,12 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
             stored["cursor"], stored["capability_id"], stored["policy_key"])
         source = replace(source, teacher_state={**source.teacher_state,
                                                 "last_visit": forged.to_record()})
-        self.publish(source, acceptance=self.binding(source))
-        with self.assertRaises(BilqisError):
-            materialize_native_projection(self.run, include_live_rejections=True)
+        with self.assertRaises(BilqisError) as caught:
+            self.publish(source, acceptance=self.binding(source))
+        self.assertEqual(
+            caught.exception.context.get("reason"),
+            "TEACHER_VISIT_RECEIPT_DRIFT",
+        )
 
     def test_unissued_c03_capability_policy_pair_is_rejected(self):
         source = self.successor()
@@ -62,11 +66,45 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
             source,
             teacher_state={**source.teacher_state, "last_visit": forged.to_record()},
             outbox=({**source.outbox[0], "capability": "A.FORGED"},))
-        self.publish(source, acceptance=self.binding(source))
         with self.assertRaises(BilqisError) as caught:
-            materialize_native_projection(self.run)
+            self.publish(source, acceptance=self.binding(source))
         self.assertEqual(caught.exception.context.get("reason"),
                          "TEACHER_VISIT_RECEIPT_DRIFT")
+
+    def test_recomputed_portable_receipt_cannot_replace_c03_issuance(self):
+        source = self.successor()
+        stored = TeacherVisitIdentity.from_record(source.teacher_state["last_visit"])
+        forged = TeacherVisitIdentity(
+            stored.run_identity_sha256, stored.run_seed, stored.generation,
+            stored.accepted_manifest_sha256, stored.teacher_identity,
+            stored.teacher_epoch, stored.student_sha256, stored.selection_seed,
+            stored.cursor, "A.FORGED", stored.policy_key,
+        )
+        with self.assertRaises(BilqisError) as missing:
+            require_teacher_visit_receipt(forged)
+        self.assertEqual(
+            missing.exception.context.get("reason"),
+            "TEACHER_VISIT_RECEIPT_MISSING",
+        )
+        source = replace(
+            source,
+            teacher_state={
+                **source.teacher_state,
+                "last_visit": forged.to_record(),
+                "last_visit_receipt": teacher_visit_receipt_record(forged),
+            },
+            outbox=tuple(
+                {**event, "capability": "A.FORGED"}
+                if event.get("event") == "BAMF_C16_3_ACCEPTED" else event
+                for event in source.outbox
+            ),
+        )
+        with self.assertRaises(BilqisError) as caught:
+            self.publish(source, acceptance=self.binding(source))
+        self.assertEqual(
+            caught.exception.context.get("reason"),
+            "TEACHER_VISIT_RECEIPT_MISSING",
+        )
 
     def test_accepted_event_optimizer_step_must_match_generation(self):
         source = self.successor()

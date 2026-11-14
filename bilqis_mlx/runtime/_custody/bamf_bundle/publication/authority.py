@@ -6,7 +6,8 @@ from pathlib import Path
 from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.learning.atlas_acceptance import (
     ACCEPTANCE_SCHEMA, MOTIF_ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA,
-    MOTIF_CLOSURE_ACCEPTANCE_SCHEMA, AcceptedCandidateBinding,
+    MOTIF_CLOSURE_ACCEPTANCE_SCHEMA, EXACT_ACCEPTANCE_SCHEMA,
+    EXACT_CLOSURE_ACCEPTANCE_SCHEMA, AcceptedCandidateBinding,
     _require_issued_binding,
     candidate_identity_digest,
 )
@@ -33,6 +34,25 @@ from .acceptance import (
 _UNBOUND_RETRY = object()
 
 
+def _require_c03_visit_authority(candidate: BamfBundleCandidate) -> None:
+    """Authenticate any portable C03 visit marker before B13 seals custody."""
+    state = candidate.teacher_state
+    receipt = state.get("last_visit_receipt")
+    visit = state.get("last_visit")
+    if receipt is None and visit is None:
+        return
+    if receipt is None or visit is None:
+        invalid("TEACHER_VISIT_CUSTODY_INVALID")
+    from bilqis_mlx.learning.teacher_visit_identity import (
+        TeacherVisitIdentity, require_teacher_visit_receipt,
+        validate_teacher_visit_receipt_record,
+    )
+
+    identity = TeacherVisitIdentity.from_record(visit)
+    validate_teacher_visit_receipt_record(identity, receipt)
+    require_teacher_visit_receipt(identity)
+
+
 def require_acceptance(
         candidate: BamfBundleCandidate,
         acceptance: AcceptedCandidateBinding | None) -> AcceptedCandidateBinding:
@@ -41,11 +61,13 @@ def require_acceptance(
         invalid("BAMF_INITIAL_GENERATION_BOOTSTRAP_REQUIRED")
     if type(acceptance) is not AcceptedCandidateBinding:
         invalid("BAMF_GENERATION_ACCEPTANCE_REQUIRED")
+    _require_c03_visit_authority(candidate)
     _require_issued_binding(acceptance)
     acceptance.__post_init__()
     motif_transition = is_motif_allocation_transition(candidate.transition)
-    expected_schema = ((MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA) if motif_transition
-                       else (ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA))
+    expected_schema = ((MOTIF_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA)
+                       if motif_transition
+                       else (EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA))
     if (acceptance.schema_version not in expected_schema
             or acceptance.run_id != candidate.run_id
             or acceptance.generation != candidate.generation
@@ -59,11 +81,10 @@ def require_acceptance(
             != candidate.correction_frontier.get(
                 "source_authority_registry_sha256")):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-    if motif_transition:
-        from ..genesis.records import successor_candidate_identity_digest
-        if (acceptance.generation_authority_sha256
-                != successor_candidate_identity_digest(candidate)):
-            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    from ..genesis.records import successor_candidate_identity_digest
+    if (acceptance.generation_authority_sha256
+            != successor_candidate_identity_digest(candidate)):
+        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     from bilqis_mlx.learning._retention._atlas_acceptance_records import require_closure_proofs
     require_closure_proofs(acceptance, candidate.retained_state.step_proofs)
     return acceptance
