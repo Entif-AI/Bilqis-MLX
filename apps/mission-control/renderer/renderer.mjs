@@ -1,3 +1,4 @@
+import { createDomainViews } from "./views/domain-views.mjs";
 import {
   DESTINATIONS,
   createShellState,
@@ -9,9 +10,9 @@ import {
   withRoute,
 } from "./shell-state.mjs";
 import { buildDeepLink, parseDeepLink } from "./deep-link.mjs";
-import { renderComponentCatalog } from "./component-catalog.mjs";
 import { mountFrameExplorer } from "./frames/frame-explorer.mjs";
 import { escapeText as esc } from "./frames/frame-model.mjs";
+
 import {
   DENSITIES,
   THEMES,
@@ -20,9 +21,6 @@ import {
   loadDisplaySettings,
   saveDisplaySettings,
 } from "./settings.mjs";
-import { renderSchoolView } from "./school-view.mjs";
-import { renderNeuralView } from "./neural-view.mjs";
-import { renderEpisodesView } from "./episode-view.mjs";
 
 const labels = new Map(DESTINATIONS);
 const demoObjects = [
@@ -43,6 +41,12 @@ let frameMount;
 let frameRouteId;
 let modelSection = "neural";
 let frameReturnContext;
+
+
+const domainViews = createDomainViews({
+  getState: () => state, getModelSection: () => modelSection,
+  onInspect: selected => { state = inspect(state, selected); renderInspector(); setHash(); },
+});
 
 function connectionFreshness(connectionState) {
   if (connectionState === "healthy") return "FRESH";
@@ -129,100 +133,20 @@ function renderDemoActions() {
   });
 }
 
-function renderCurrentView() {
-  const domain = document.querySelector("#domain-view");
-  const fixture = document.querySelector(".fixture-card");
-  const catalog = document.querySelector("#visual-catalog");
-  const summary = document.querySelector("#view-summary");
+function render() {
   if (state.selected?.kind === "frame") modelSection = "frames";
   if (state.selected?.kind === "neural") modelSection = "neural";
-  document.querySelector("#model-nav").hidden = state.view !== "model";
-  document.querySelectorAll("[data-model-section]").forEach(button => {
-    button.setAttribute("aria-pressed", String(button.dataset.modelSection === modelSection));
-  });
-  domain.hidden = state.view === "model" && modelSection === "frames";
-  document.querySelector("#domain-context-note").hidden = !["school", "learning", "model"].includes(state.view) || domain.hidden;
-  if (state.view === "school") {
-    fixture.hidden = true;
-    catalog.hidden = true;
-    summary.textContent = "Exact capability comparison and declared prerequisite topology. Grade labels organize only.";
-    renderSchoolView(domain, (id, row) => {
-      state = inspect(state, {
-        kind: "capability",
-        id,
-        details: {
-          "WAS/TOP/NOW/ALL": row.was + "/" + row.top + "/" + row.now + "/" + row.total,
-          Debt: row.debt,
-          "P(RET)": row.pRet ?? "NOT MEASURED",
-          Prerequisites: row.prerequisites.length ? row.prerequisites : ["none"],
-          "Source state": row.sourceState,
-          "Implementation state": row.implementationState,
-          "Qualification state": row.qualificationState,
-        },
-      });
-      renderInspector();
-      setHash();
-    }, state.selected?.kind === "capability" ? state.selected.id : null);
-    return;
-  }
-  if (state.view === "model") {
-    fixture.hidden = true;
-    catalog.hidden = true;
-    if (modelSection === "frames") {
-      summary.textContent = "Frame Compiler Explorer · inspect exact packing receipts and causal visibility.";
-      return;
-    }
-    summary.textContent = "Topology, attention health, depth routing and local refinement as measured telemetry only.";
-    renderNeuralView(domain, (id, kind) => {
-      state = inspect(state, {
-        kind: "neural",
-        id,
-        details: {
-          "Diagnostic class": kind,
-          "Interpretation boundary": "Measured routing/runtime telemetry only",
-        },
-      });
-      renderInspector();
-      setHash();
-    });
-    return;
-  }
-  if (state.view === "learning") {
-    fixture.hidden = true;
-    catalog.hidden = true;
-    summary.textContent = "Candidate proposal, work, assessment, retention and finalization reconstructed from bounded evidence.";
-    renderEpisodesView(domain, (id, evidenceType) => {
-      state = inspect(state, {
-        kind: "evidence",
-        id,
-        details: {
-          "Evidence type": evidenceType,
-          "Episode replay": "Read-only durable evidence reference",
-        },
-      });
-      renderInspector();
-      setHash();
-    }, state.selected?.kind === "episode" ? state.selected.id : null);
-    return;
-  }
-  fixture.hidden = false;
-  catalog.hidden = false;
-  domain.innerHTML = "";
-  summary.textContent = "Shell foundation ready for provider-neutral BAMF views.";
-  catalog.innerHTML = renderComponentCatalog();
-}
-
-function render() {
+  renderFrameView();
   renderContext();
   renderNavigation();
   renderInspector();
   renderDemoActions();
-  renderCurrentView();
+  domainViews.render();
   document.querySelector("#view-title").textContent = labels.get(state.view);
   document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;
   document.querySelector("#density-trigger").textContent = "Density · " + displaySettings.density;
-  renderFrameView();
   setHash();
+  if (state.view === "atlas") void domainViews.ensureAtlasOverview();
 }
 
 function renderFrameView() {

@@ -25,8 +25,14 @@ from .query_contracts import (
     QueryFamily, QueryLink, QueryMode, QueryPage, QueryRequest, QueryState,
 )
 from .query_catalog import MissionControlQueryCatalog
-from .registry import ALL_RECORD_TYPES, RECORD_BY_SCHEMA
-from .schema import record_schema, schema_bundle
+from .contracts.registry import ALL_RECORD_TYPES, RECORD_BY_SCHEMA
+from .contracts.schema import record_schema, schema_bundle
+from .semantic import (
+    SemanticAdmissionState, SemanticBankSnapshot, SemanticConceptSnapshot,
+    SemanticGenerationState, SemanticHeldMappingSnapshot, SemanticLabel,
+    SemanticRealization, SemanticRelation, SemanticSimilaritySnapshot,
+    SemanticSourceRow,
+)
 from .snapshots import (
     CapabilitySnapshot, CurriculumFrontier, OperatorView, RunContext,
     SchoolSnapshot,
@@ -48,6 +54,10 @@ __all__ = (
     "QUERY_REQUEST_SCHEMA", "QueryFamily", "QueryLink", "QueryMode",
     "QueryPage", "QueryRequest", "QueryState",
     "SchoolSnapshot", "SemanticAtlasSnapshot", "StaleEnvelope",
+    "SemanticAdmissionState", "SemanticBankSnapshot", "SemanticConceptSnapshot",
+    "SemanticGenerationState", "SemanticHeldMappingSnapshot", "SemanticLabel",
+    "SemanticRealization", "SemanticRelation", "SemanticSimilaritySnapshot",
+    "SemanticSourceRow",
     "StreamPosition", "TeacherSnapshot", "UnavailableEnvelope",
     "UnavailableReason", "ValueOrigin", "ValueState", "canonical_json",
     "decode_json", "decode_record", "encode_record", "record_schema",

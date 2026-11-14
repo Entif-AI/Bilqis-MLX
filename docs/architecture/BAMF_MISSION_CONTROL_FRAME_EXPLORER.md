@@ -225,3 +225,39 @@ Structure-gate integration: group the three GUI08 JavaScript modules in
 `renderer/frames/`, retaining their single owners and updating imports and exact
 protocol paths. This keeps the renderer root below its code-file trigger without
 moving unrelated domain modules. CSS remains in the shared stylesheet directory.
+
+Latest-unified integration (`7d681427c8a3cb95352cf8179ba0b85dceea180e`)
+adds Semantic Atlas and its separate CP03 query bridge. Preserve that query method
+and its validators alongside the GUI08 snapshot variant; do not redirect Atlas
+queries into fixture snapshots. Preserve both stylesheets and Atlas renderer.
+The combined shell crosses the file-size trigger. Extract the existing Atlas
+controller state/functions and School/Atlas/Neural/Episodes dispatch unchanged
+into `renderer/views/domain-views.mjs`. Its constructor receives getState,
+onInspect and getModelSection callbacks; it returns render and
+ensureAtlasOverview. Inspector updates remain shell-owned. This module owns domain
+dispatch, while renderer.mjs retains context/navigation/inspection and the frame
+mount lifecycle. Add its exact protocol asset and dependency-closure coverage.
+Before dispatching any destination, determine the Model section from selection
+and run the frame mount/dispose transition, restoring any prior context before
+another view constructs markup or requests data. Model's frame section keeps the
+upstream domain host hidden; other sections retain their existing behavior.
+Validate preserved query behavior with existing adapter/Atlas tests, and repeat
+the scoped Frames -> Neural -> School transition proof. No source or learner
+semantics change; this refactor satisfies the repository's size gate.
+
+Shared-host async control: the extracted domain owner gives every Atlas overview,
+search and ABI request a monotonically increasing epoch plus the exact normalized
+context reference captured before loading. A result may update state/markup only
+when its epoch is current, the destination is still Atlas and the context is the
+same. Starting a newer request supersedes the older one. Rendering any other
+destination invalidates outstanding epochs and resets an unfinished Atlas load to
+idle for a later visit. This prevents pending Atlas work from repainting Frames,
+School or Neural Runtime. A context change resets Atlas-derived state before a
+fresh query. Test delayed completion after navigation, context change and a newer
+request; these controls prevent shared-host corruption introduced at composition.
+
+Scope audit: delivery is the composed GUI08 on current unified; required_by is
+exact context/async custody and mandatory structure gates; defer_failure is stale
+Atlas completion replacing a newly selected domain; cheapest_next is a shared
+epoch/context guard at the extracted domain owner with focused negative tests.
+PROCEED within required integration scope; retain other Atlas query semantics.

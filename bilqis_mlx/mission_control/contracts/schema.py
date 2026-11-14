@@ -6,7 +6,7 @@ from enum import Enum
 import types
 from typing import get_args, get_origin, get_type_hints, Union
 
-from .model import MAX_WIRE_INTEGER, RunRef, WireRecord
+from ..model import MAX_WIRE_INTEGER, RunRef, WireRecord
 
 
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
@@ -15,6 +15,7 @@ _VARIADIC_TUPLE_ARITY = 2
 _SHA256_PATTERN = "^[0-9a-f]{64}$"
 _SHA256_FIELDS = (
     "atlas_bundle_id", "source_bundle_id", "old_digest", "new_digest",
+    "atlas_release_sha256",
 )
 _FREE_STRING_FIELDS = ("value",)
 

@@ -23,6 +23,8 @@ const RENDERER_ASSETS = Object.freeze(new Map([
   ["/neural-view.mjs", "neural-view.mjs"],
   ["/neural.css", "neural.css"],
   ["/renderer.mjs", "renderer.mjs"],
+  ["/semantic-atlas.css", "semantic-atlas.css"],
+  ["/semantic-atlas.mjs", "semantic-atlas.mjs"],
   ["/school-fixture.mjs", "school-fixture.mjs"],
   ["/school-model.mjs", "school-model.mjs"],
   ["/school-view.mjs", "school-view.mjs"],
@@ -31,6 +33,7 @@ const RENDERER_ASSETS = Object.freeze(new Map([
   ["/shell-state.mjs", "shell-state.mjs"],
   ["/shell.css", "shell.css"],
   ["/visual-fixtures.mjs", "visual-fixtures.mjs"],
+  ["/views/domain-views.mjs", "views/domain-views.mjs"],
   ["/visual-language.mjs", "visual-language.mjs"],
   ["/visual-tokens.css", "visual-tokens.css"],
 ]));

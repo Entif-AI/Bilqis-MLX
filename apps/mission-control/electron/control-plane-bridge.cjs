@@ -14,6 +14,7 @@ class ControlPlaneBridge {
     for (const name of [
       "publicStatus",
       "snapshotRequest",
+      "queryRequest",
       "dryRunRequest",
       "commandRequest",
       "receiptRef",
@@ -67,6 +68,11 @@ class ControlPlaneBridge {
   async snapshot(request) {
     const safe = assertRendererRequest(request);
     return this.#call("snapshot", this.validators.snapshotRequest(safe));
+  }
+
+  async query(request) {
+    const safe = assertRendererRequest(request);
+    return this.#call("query", this.validators.queryRequest(safe));
   }
 
   async dryRun(request) {
