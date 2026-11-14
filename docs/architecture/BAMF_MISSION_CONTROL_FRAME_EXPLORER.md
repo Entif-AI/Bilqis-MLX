@@ -261,3 +261,41 @@ exact context/async custody and mandatory structure gates; defer_failure is stal
 Atlas completion replacing a newly selected domain; cheapest_next is a shared
 epoch/context guard at the extracted domain owner with focused negative tests.
 PROCEED within required integration scope; retain other Atlas query semantics.
+
+Final integration amendment, superseding the preceding extraction locations:
+unified `eabc6758074296e5e767adbb9a43423b175cb2f3` supplies GUI19's
+foundation/renderer-ui.mjs and atlas/atlas-controller.mjs, plus Memory/Teacher
+domains. Reuse those owners and delete the now-redundant views/domain-views.mjs.
+Keep the incoming shell's reconnect/cache, defensive-state, announcements, focus
+restoration, palette and keyboard behavior. Put GUI08's mount/context lifecycle in
+frames/frame-shell.mjs with getState, setState, render, refresh and onInspect
+callbacks. It supplies beforeRender/afterRender hooks: select the Model section,
+restore/dispose before incoming chrome/domain dispatch, then mount the fixture
+view after dispatch. Store modelSection in shell UI state; frame snapshots disable
+mutation availability and retain the original context/mutation posture for return.
+Section controls remain keyboard-native, and exact frame/neural links choose their
+section. Incoming renderer-ui owns the read-only Model section switch and explicit
+independent-fixture note; frame data still crosses the validated snapshot channel.
+
+Move the already-reviewed Atlas epoch guards onto atlas/atlas-controller.mjs's
+existing overview/search/ABI handlers. Each render/overview call receives an
+isActive callback bound to the exact current context reference and Atlas view.
+Context rebinding invalidates old epochs; leaving Atlas explicitly invalidates
+unfinished requests and resets loading to idle. Reuse its existing query calls.
+Retarget owner-level delayed-response tests to these actual handlers, including
+School/Frames host preservation, context changes, retries and request precedence.
+Keep all upstream asset paths; append only GUI08 assets to the exact allowlist.
+The shell context and inspector continue escaping receipt-derived values.
+
+Reconnect control: frame-shell also receives getDefense and exports reset. At the
+start of every establishSnapshot attempt, reset disposes pending frame queries
+and discards the saved return context without restoring it. The shell disables
+mutation for the pending attempt. Frame hooks do not capture/mount while defense
+is loading. A successful or cached/failed reconnect installs its own validated
+context and defensive profile first; a later frame mount captures that new context.
+On exit, restore only that saved context and derive mutation availability from the
+latest defensive profile, never a saved boolean. Preserve the chosen Model section
+across the reconnect. Old frame responses cannot replace new snapshot state.
+Test pending, denied/cached and successful reconnects, exit posture and late frame
+response disposal. A reconnect without any valid snapshot leaves no restorable
+frame context and keeps mutation unavailable.

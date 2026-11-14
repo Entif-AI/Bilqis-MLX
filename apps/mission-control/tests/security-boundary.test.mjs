@@ -34,7 +34,7 @@ test("GUI01 startup uses the GUI20 window, IPC and custom-protocol boundary", ()
 });
 
 test("GUI01 renderer imports no Electron, Node, filesystem or process privilege", () => {
-  for (const file of ["renderer.mjs", "shell-state.mjs", "deep-link.mjs", "frames/frame-contract.mjs", "frames/frame-model.mjs", "frames/frame-explorer.mjs", "views/domain-views.mjs"]) {
+  for (const file of ["renderer.mjs", "shell-state.mjs", "deep-link.mjs", "frames/frame-contract.mjs", "frames/frame-model.mjs", "frames/frame-explorer.mjs", "frames/frame-shell.mjs", "foundation/renderer-ui.mjs", "atlas/atlas-controller.mjs"]) {
     const source = fs.readFileSync(path.join(appRoot, "renderer", file), "utf8");
     assert.equal(assertRendererSourceSafe(source, file), true);
   }

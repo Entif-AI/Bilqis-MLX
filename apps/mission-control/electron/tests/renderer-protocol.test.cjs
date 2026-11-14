@@ -23,52 +23,49 @@ test("renderer protocol resolves only the checked-in Mission Control asset allow
     `${root}/renderer.mjs`,
   );
   assert.deepEqual([...RENDERER_ASSETS.keys()].sort(), [
+    "/atlas/atlas-controller.mjs",
+    "/atlas/semantic-atlas.css",
+    "/atlas/semantic-atlas.mjs",
+    "/foundation/accessibility.mjs",
     "/component-catalog.mjs",
     "/components.css",
     "/deep-link.mjs",
-    "/episode-fixture.mjs",
-    "/episode-model.mjs",
-    "/episode-view.mjs",
-    "/episodes.css",
+    "/foundation/defensive-state.mjs",
+    "/episodes/episode-fixture.mjs",
+    "/episodes/episode-model.mjs",
+    "/episodes/episode-view.mjs",
+    "/episodes/episodes.css",
     "/frame-explorer.css",
     "/frames/frame-contract.mjs",
     "/frames/frame-explorer.mjs",
     "/frames/frame-model.mjs",
+    "/frames/frame-shell.mjs",
     "/index.html",
-    "/neural-fixture.mjs",
-    "/neural-model.mjs",
-    "/neural-view.mjs",
-    "/neural.css",
+    "/memory/memory-fixture.mjs",
+    "/memory/memory-model.mjs",
+    "/memory/memory-view.mjs",
+    "/memory/memory.css",
+    "/neural/neural-fixture.mjs",
+    "/neural/neural-model.mjs",
+    "/neural/neural-view.mjs",
+    "/neural/neural.css",
+    "/foundation/renderer-ui.mjs",
     "/renderer.mjs",
-    "/school-fixture.mjs",
-    "/school-model.mjs",
-    "/school-view.mjs",
-    "/school.css",
-    "/semantic-atlas.css",
-    "/semantic-atlas.mjs",
+    "/school/school-fixture.mjs",
+    "/school/school-model.mjs",
+    "/school/school-view.mjs",
+    "/school/school.css",
     "/settings.mjs",
     "/shell-state.mjs",
     "/shell.css",
-    "/views/domain-views.mjs",
+    "/teacher/teacher-fixture.mjs",
+    "/teacher/teacher-model.mjs",
+    "/teacher/teacher-view.mjs",
+    "/teacher/teacher.css",
     "/visual-fixtures.mjs",
     "/visual-language.mjs",
     "/visual-tokens.css",
-  ]);
-});
-
-test("packaged renderer assets include every local HTML and JavaScript dependency", () => {
-  const root = path.resolve(__dirname, "../../renderer");
-  for (const asset of RENDERER_ASSETS.values()) {
-    const source = fs.readFileSync(path.join(root, asset), "utf8");
-    const dependencies = asset.endsWith(".html")
-      ? [...source.matchAll(/(?:src|href)="\.\/([^"#]+)"/g)].map(match => match[1])
-      : asset.endsWith(".mjs") ? [...source.matchAll(/(?:from\s+|import\s*)["'](\.\.?\/[^"']+)["']/g)].map(match => match[1]) : [];
-    for (const dependency of dependencies) {
-      const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(asset), dependency));
-      assert.ok(RENDERER_ASSETS.has(`/${resolved}`), `${asset} requires ${dependency}`);
-    }
-  }
-  assert.equal(assetPathForRendererRequest("bamf-mc://app/fixtures/frame-inspections-v1.json", root), null);
+  ].sort());
 });
 
 test("renderer protocol refuses traversal, query aliases and untrusted origins", () => {
@@ -115,4 +112,19 @@ test("protocol handler never asks net.fetch for a non-allowlisted local file", a
   const denied = await handler({ url: "bamf-mc://app/../main.cjs" });
   assert.equal(denied.status, 404);
   assert.equal(fetched.length, 1);
+});
+
+test("packaged renderer assets include every local HTML and JavaScript dependency", () => {
+  const root = path.resolve(__dirname, "../../renderer");
+  for (const asset of RENDERER_ASSETS.values()) {
+    const source = fs.readFileSync(path.join(root, asset), "utf8");
+    const dependencies = asset.endsWith(".html")
+      ? [...source.matchAll(/(?:src|href)="\.\/([^"#]+)"/g)].map(match => match[1])
+      : asset.endsWith(".mjs") ? [...source.matchAll(/(?:from\s+|import\s*)["'](\.\.?\/[^"']+)["']/g)].map(match => match[1]) : [];
+    for (const dependency of dependencies) {
+      const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(asset), dependency));
+      assert.ok(RENDERER_ASSETS.has(`/${resolved}`), `${asset} requires ${dependency}`);
+    }
+  }
+  assert.equal(assetPathForRendererRequest("bamf-mc://app/fixtures/frame-inspections-v1.json", root), null);
 });

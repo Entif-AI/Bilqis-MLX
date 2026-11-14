@@ -1,35 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createAtlasRequestGuard, createDomainViews } from "../renderer/views/domain-views.mjs";
-
-test("late Atlas completion cannot publish after navigation or a context change", async () => {
-  for (const destination of ["model", "school"]) {
-    let state = { view: "atlas", context: {} };
-    const guard = createAtlasRequestGuard(() => state);
-    let resolve; let published = false;
-    const pending = new Promise(done => { resolve = done; });
-    const current = guard.begin();
-    const completion = pending.then(() => { if (current()) published = true; });
-    state = { ...state, view: destination }; guard.invalidate();
-    resolve(); await completion;
-    assert.equal(published, false);
-    state = { ...state, view: "atlas" };
-    assert.equal(current(), false, "returning to Atlas does not revive old work");
-  }
-  let state = { view: "atlas", context: {} };
-  const guard = createAtlasRequestGuard(() => state);
-  const oldContext = guard.begin();
-  state = { ...state, context: {} };
-  assert.equal(oldContext(), false);
-});
-
-test("a newer Atlas request supersedes an older request in the same context", () => {
-  const state = { view: "atlas", context: {} };
-  const guard = createAtlasRequestGuard(() => state);
-  const old = guard.begin(); const current = guard.begin();
-  assert.equal(old(), false);
-  assert.equal(current(), true);
-});
+import { renderAtlasDomain, ensureAtlasOverview, invalidateAtlasRequests } from "../renderer/atlas/atlas-controller.mjs";
+import { renderCurrentView } from "../renderer/foundation/renderer-ui.mjs";
 
 function mountOwner(t) {
   const previous = { document: globalThis.document, window: globalThis.window, FormData: globalThis.FormData };
@@ -47,7 +19,18 @@ function mountOwner(t) {
   const pending = new Promise(done => { resolve = done; });
   globalThis.window = { bamfMissionControl: { query: () => { calls += 1; return pending; } } };
   let state = { view: "atlas", selected: null, context: { runId: "fixture-run", generation: 7, mode: "LIVE", semanticRelease: "1".repeat(64) } };
-  const owner = createDomainViews({ getState: () => state, onInspect() {}, getModelSection: () => "frames" });
+  const owner = {
+    render() {
+      if (state.view !== "atlas") invalidateAtlasRequests();
+      renderCurrentView({ ...state, modelSection: "frames" }, { id: "live", historical: false }, () => {});
+      const context = state.context;
+      if (state.view === "atlas") renderAtlasDomain(window.bamfMissionControl, context, () => state.view === "atlas" && state.context === context);
+    },
+    ensureAtlasOverview() {
+      const context = state.context;
+      return ensureAtlasOverview(window.bamfMissionControl, context, () => state.view === "atlas" && state.context === context);
+    },
+  };
   owner.render();
   return { owner, host: nodes.get("#domain-view"), forms,
     navigate(view) { state = { ...state, view }; owner.render(); },

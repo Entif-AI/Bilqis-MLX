@@ -1,18 +1,14 @@
-import { createDomainViews } from "./views/domain-views.mjs";
+import { createFrameShell } from "./frames/frame-shell.mjs";
 import {
-  DESTINATIONS,
+  assertOperatorView,
   createShellState,
   inspect,
   navigate,
-  normalizeContext,
   openSelectionOwner,
-  shellPosture,
+  withDefensiveState,
   withRoute,
 } from "./shell-state.mjs";
 import { buildDeepLink, parseDeepLink } from "./deep-link.mjs";
-import { mountFrameExplorer } from "./frames/frame-explorer.mjs";
-import { escapeText as esc } from "./frames/frame-model.mjs";
-
 import {
   DENSITIES,
   THEMES,
@@ -21,196 +17,194 @@ import {
   loadDisplaySettings,
   saveDisplaySettings,
 } from "./settings.mjs";
+import {
+  cacheOperatorView,
+  defensiveState,
+  defensiveStateForConnection,
+  defensiveStateForError,
+  loadCachedOperatorView,
+} from "./foundation/defensive-state.mjs";
+import {
+  renderChrome,
+  renderContext,
+  renderNavigation,
+  renderInspector,
+  renderPaletteOptions,
+} from "./foundation/renderer-ui.mjs";
+import {
+  focusToken,
+  restoreFocus,
+} from "./foundation/accessibility.mjs";
+import {
+  ensureAtlasOverview,
+  invalidateAtlasRequests,
+  renderAtlasDomain,
+} from "./atlas/atlas-controller.mjs";
 
-const labels = new Map(DESTINATIONS);
-const demoObjects = [
-  ["capability", "B.AND"],
-  ["episode", "episode-record:fixture:retained-44239"],
-  ["semantic", "sem:logic.and"],
-  ["frame", "frame:quad-fast"],
-  ["memory", "motif:bool-composition"],
-  ["checkpoint", "generation:44238"],
-  ["evidence", "receipt:fixture-001"],
-  ["correction", "correction:fixture-1"],
-  ["warning", "resource:disk-reserve"],
-];
-
-let state;
-let displaySettings;
-let frameMount;
-let frameRouteId;
-let modelSection = "neural";
-let frameReturnContext;
-
-
-const domainViews = createDomainViews({
-  getState: () => state, getModelSection: () => modelSection,
-  onInspect: selected => { state = inspect(state, selected); renderInspector(); setHash(); },
+const SNAPSHOT_REQUEST = Object.freeze({
+  schemaVersion: "bamf.gui20.operator-view-query/v1",
+  schema: "bilqis.bamf.mission-control.operator-view/v1",
 });
 
-function connectionFreshness(connectionState) {
-  if (connectionState === "healthy") return "FRESH";
-  if (connectionState === "stale") return "STALE";
-  if ([
-    "disconnected", "service-restarting", "incompatible-version", "unauthorized",
-  ].includes(connectionState)) return "DISCONNECTED";
-  return "UNKNOWN";
-}
+let state = null;
+let displaySettings;
+let defense = defensiveState("loading");
+let focusReturnToken = null;
+let paletteReturnToken = null;
+
+const frameShell = createFrameShell({
+  getState: () => state, setState: next => { state = next; }, getDefense: () => defense,
+  render, onInspect: openInspector,
+  refresh: () => { renderContext(state, defense); renderNavigation(state, navigateTo); renderInspector(state, defense); setHash(); },
+});
 
 function setHash() {
+  if (!state) return;
   const next = buildDeepLink(state);
   if (window.location.hash !== next) history.replaceState(null, "", next);
 }
 
-function renderContext() {
-  const { context } = state;
-  document.querySelector("#shell").dataset.posture = shellPosture(context);
-  document.querySelector("#mode-badge").textContent = context.mode;
-  document.querySelector("#run-id").textContent = context.runId;
-  document.querySelector("#generation-id").textContent =
-    `Generation ${context.generation} · manifest ${context.generationManifest}`;
-  document.querySelector("#freshness").textContent = context.freshness;
-  document.querySelector("#run-selector").replaceChildren(new Option(context.runId, context.runId));
-  document.querySelector("#generation-selector").replaceChildren(new Option(`${context.generation} · ${context.mode}`, String(context.generation)));
-  const facts = [
-    ["Topology", context.topologyId],
-    ["Factory", context.factoryRelease],
-    ["Semantic", context.semanticRelease],
-    ["Optimizer", context.optimizerStep],
-    ["Lease", context.admissionLease],
-    ["Frontier", context.correctionFrontier],
-    ["Resources", context.resourceHealth],
-    ["Coverage", context.coverage],
-  ];
-  document.querySelector("#context-facts").innerHTML = facts
-    .map(([label, value]) => `<span><small>${esc(label)}</small><strong>${esc(value)}</strong></span>`)
-    .join("");
-}
-
-function renderNavigation() {
-  const nav = document.querySelector("#primary-nav");
-  nav.innerHTML = DESTINATIONS.map(([id, label]) =>
-    `<button type="button" data-view="${id}" aria-current="${state.view === id ? "page" : "false"}">${label}</button>`,
-  ).join("");
-  nav.querySelectorAll("button").forEach((button) => {
-    button.addEventListener("click", () => {
-      state = navigate(state, button.dataset.view);
-      render();
-    });
-  });
-}
-
-function renderInspector() {
-  const panel = document.querySelector("#inspector");
-  const selected = state.selected;
-  panel.setAttribute("aria-hidden", String(!state.inspectorOpen));
-  document.querySelector("#inspector-title").textContent = selected ? selected.id : "No selection";
-  const exact = selected?.details
-    ? Object.entries(selected.details).map(([label, value]) =>
-      `<dt>${esc(label)}</dt><dd>${esc(Array.isArray(value) ? value.join(", ") : value)}</dd>`,
-    ).join("")
-    : "";
-  document.querySelector("#inspector-details").innerHTML = selected
-    ? `<dt>Object class</dt><dd>${esc(selected.kind)}</dd>
-       <dt>Identity</dt><dd>${esc(selected.id)}</dd>
-       <dt>Posture</dt><dd>${esc(state.context.mode)}</dd>
-       <dt>Generation</dt><dd>${state.context.generation}</dd>
-       <dt>Evidence</dt><dd>Fixture reference only</dd>${exact}`
-    : "";
-  document.querySelector("#open-owner").disabled = !selected;
-}
-
-function renderDemoActions() {
-  const host = document.querySelector("#demo-actions");
-  host.innerHTML = demoObjects
-    .map(([kind, id]) => `<button type="button" data-kind="${kind}" data-id="${id}">Inspect ${kind}</button>`)
-    .join("");
-  host.querySelectorAll("button").forEach((button) => {
-    button.addEventListener("click", () => {
-      state = inspect(state, { kind: button.dataset.kind, id: button.dataset.id });
-      render();
-    });
-  });
+function announce(message) {
+  const announcer = document.querySelector("#announcer");
+  announcer.textContent = "";
+  window.queueMicrotask(() => { announcer.textContent = message; });
 }
 
 function render() {
-  if (state.selected?.kind === "frame") modelSection = "frames";
-  if (state.selected?.kind === "neural") modelSection = "neural";
-  renderFrameView();
-  renderContext();
-  renderNavigation();
-  renderInspector();
-  renderDemoActions();
-  domainViews.render();
-  document.querySelector("#view-title").textContent = labels.get(state.view);
-  document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;
-  document.querySelector("#density-trigger").textContent = "Density · " + displaySettings.density;
+  frameShell.beforeRender();
+  if (state?.view !== "atlas") invalidateAtlasRequests();
+  renderChrome(state, defense, displaySettings, {
+    onReconnect: () => establishSnapshot({ preserveRoute: true }),
+    onNavigate: navigateTo,
+    onInspect: openInspector,
+  });
+  frameShell.afterRender();
   setHash();
-  if (state.view === "atlas") void domainViews.ensureAtlasOverview();
+  if (state?.view === "atlas") {
+    const context = state.context;
+    const isActive = () => state?.view === "atlas" && state.context === context;
+    renderAtlasDomain(window.bamfMissionControl, context, isActive);
+    void ensureAtlasOverview(
+      window.bamfMissionControl,
+      state.context,
+      isActive,
+    );
+  }
 }
 
-function renderFrameView() {
-  const host = document.querySelector("#frame-explorer");
-  const isFrameView = state.view === "model" && modelSection === "frames";
-  host.hidden = !isFrameView;
-  if (!isFrameView) {
-    frameMount?.dispose(); frameMount = null; frameRouteId = null;
-    if (frameReturnContext) {
-      state = { ...state, context: frameReturnContext };
-      frameReturnContext = null;
-      renderContext(); renderInspector();
+function navigateTo(view) {
+  state = navigate(state, view);
+  document.querySelector("#command-palette")?.close?.();
+  render();
+  window.queueMicrotask(() => document.querySelector("#view-title")?.focus?.({ preventScroll: true }));
+}
+
+function openInspector(selected) {
+  if (!state) return;
+  focusReturnToken = focusToken(document.activeElement);
+  state = inspect(state, selected);
+  renderInspector(state, defense);
+  setHash();
+  window.queueMicrotask(() => document.querySelector("#inspector-close")?.focus());
+  announce(`Inspector opened for ${selected.id}`);
+}
+
+function closeInspector() {
+  if (!state?.inspectorOpen) return;
+  state = inspect(state, null);
+  renderInspector(state, defense);
+  setHash();
+  window.queueMicrotask(() => restoreFocus(document, focusReturnToken));
+  announce("Inspector closed");
+}
+
+function openPalette() {
+  const dialog = document.querySelector("#command-palette");
+  paletteReturnToken = focusToken(document.activeElement);
+  renderPaletteOptions(state, (view) => {
+    navigateTo(view);
+    window.queueMicrotask(() => document.querySelector("#main-content")?.focus());
+  });
+  if (!dialog.open) dialog.showModal();
+  window.queueMicrotask(() => dialog.querySelector("button:not(:disabled)")?.focus());
+}
+
+async function establishSnapshot({ preserveRoute = false } = {}) {
+  const modelSection = state?.modelSection;
+  frameShell.reset();
+  if (state) state = { ...state, mutationAvailable: false };
+  const route = preserveRoute && state
+    ? { view: state.view, selected: state.selected }
+    : parseDeepLink(window.location.hash);
+  defense = defensiveState("loading", {
+    snapshotAvailable: Boolean(state),
+    snapshotSource: state ? "previous" : "none",
+  });
+  render();
+
+  let connection = null;
+  let connectError = null;
+  try {
+    connection = await window.bamfMissionControl.connect();
+  } catch (error) {
+    connectError = error;
+  }
+
+  let operatorView = null;
+  let snapshotSource = "none";
+  let snapshotError = null;
+  if (connection !== null) {
+    try {
+      operatorView = await window.bamfMissionControl.querySnapshot(SNAPSHOT_REQUEST);
+      assertOperatorView(operatorView);
+      snapshotSource = "service";
+      cacheOperatorView(window.localStorage, operatorView);
+    } catch (error) {
+      snapshotError = error;
+      operatorView = null;
     }
+  }
+
+  if (operatorView === null) {
+    const cached = loadCachedOperatorView(window.localStorage);
+    if (cached !== null) {
+      try {
+        assertOperatorView(cached.operatorView);
+        operatorView = cached.operatorView;
+        snapshotSource = "cache";
+      } catch (error) {
+        snapshotError ??= error;
+      }
+    }
+  }
+
+  if (operatorView === null) {
+    defense = defensiveStateForError(snapshotError ?? connectError, {
+      snapshotAvailable: false,
+      snapshotSource: "none",
+    });
+    state = null;
+    render();
+    announce(`${defense.label}. No verified snapshot is available.`);
     return;
   }
-  const selectedId = state.selected?.kind === "frame" ? state.selected.id : null;
-  if (frameMount && (!selectedId || frameRouteId === selectedId)) return;
-  frameMount?.dispose();
-  frameReturnContext ??= state.context;
-  frameRouteId = selectedId;
-  frameMount = mountFrameExplorer(host, {
-    querySnapshot: request => window.bamfMissionControl.querySnapshot(request),
-    context: state.context, selectedId,
-    onContext: (operatorView, mode) => {
-      state = { ...state, context: Object.freeze({ ...normalizeContext(operatorView),
-        mode: mode === "historical" ? "HISTORICAL" : "LIVE", freshness: state.context.freshness }) };
-      renderContext(); renderInspector();
-    },
-    onSelection: id => {
-      frameRouteId = id || null;
-      state = inspect(state, id ? { kind: "frame", id } : null);
-      renderInspector(); setHash();
-    },
-  });
+
+  const options = { snapshotAvailable: true, snapshotSource };
+  defense = snapshotError || connectError
+    ? defensiveStateForError(snapshotError ?? connectError, options)
+    : defensiveStateForConnection(connection?.state, options);
+  if (snapshotSource === "cache" && defense.id === "live") {
+    defense = defensiveState("stale", options);
+  }
+  state = { ...withDefensiveState(createShellState(operatorView, route), defense), modelSection };
+  render();
+  announce(`${defense.label}. ${defense.historical ? "Inspection-only evidence is shown." : "Live context established."}`);
 }
 
-async function bootstrap() {
-  const connection = await window.bamfMissionControl.connect();
-  const operatorView = await window.bamfMissionControl.querySnapshot({
-    schemaVersion: "bamf.gui20.operator-view-query/v1",
-    schema: "bilqis.bamf.mission-control.operator-view/v1",
-  });
-  displaySettings = loadDisplaySettings(window.localStorage);
-  applyDisplaySettings(document.documentElement, displaySettings);
-  state = createShellState(operatorView, parseDeepLink(window.location.hash));
-  state = {
-    ...state,
-    context: Object.freeze({
-      ...state.context,
-      freshness: connectionFreshness(connection.state),
-    }),
-  };
-  document.querySelector("#inspector-close").addEventListener("click", () => {
-    state = inspect(state, null);
-    render();
-  });
-  document.querySelectorAll("[data-model-section]").forEach(button => {
-    button.addEventListener("click", () => {
-      modelSection = button.dataset.modelSection;
-      state = inspect(state, null);
-      render();
-    });
-  });
+function bindStaticInteractions() {
+  document.querySelector("#inspector-close").addEventListener("click", closeInspector);
   document.querySelector("#open-owner").addEventListener("click", () => {
+    if (!state) return;
     state = openSelectionOwner(state);
     render();
   });
@@ -226,12 +220,38 @@ async function bootstrap() {
     applyDisplaySettings(document.documentElement, displaySettings);
     render();
   });
+  document.querySelector("#palette-trigger").addEventListener("click", openPalette);
+  document.querySelector("#palette-close").addEventListener("click", () => {
+    document.querySelector("#command-palette").close();
+  });
+  document.querySelector("#command-palette").addEventListener("close", () => {
+    window.queueMicrotask(() => restoreFocus(document, paletteReturnToken));
+  });
   window.addEventListener("hashchange", () => {
+    if (!state) return;
     const route = parseDeepLink(window.location.hash);
     state = withRoute(state, route);
     render();
   });
+  document.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      openPalette();
+      return;
+    }
+    if (event.key === "Escape" && state?.inspectorOpen && !document.querySelector("#command-palette").open) {
+      event.preventDefault();
+      closeInspector();
+    }
+  });
+}
+
+async function bootstrap() {
+  displaySettings = loadDisplaySettings(window.localStorage);
+  applyDisplaySettings(document.documentElement, displaySettings);
+  bindStaticInteractions();
   render();
+  await establishSnapshot();
 }
 
 bootstrap();

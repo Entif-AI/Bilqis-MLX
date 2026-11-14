@@ -24,6 +24,7 @@ export const INSPECTOR_OWNERS = Object.freeze({
   correction: "corrections",
   warning: "resources",
   neural: "model",
+  strategy: "teacher",
 });
 
 export const OPERATOR_VIEW_SCHEMA = "bilqis.bamf.mission-control.operator-view/v1";
@@ -161,6 +162,8 @@ export function createShellState(context, route = {}) {
     view: "mission-control",
     selected: null,
     inspectorOpen: false,
+    defensiveState: "unknown",
+    mutationAvailable: false,
   }, route);
 }
 
@@ -198,6 +201,23 @@ export function openSelectionOwner(state) {
 
 export function withContext(state, nextContext) {
   return { ...state, context: normalizeContext(nextContext) };
+}
+
+export function withDefensiveState(state, profile) {
+  if (!profile || typeof profile !== "object" || typeof profile.id !== "string") {
+    throw new TypeError("MISSION_CONTROL_DEFENSIVE_STATE_INVALID");
+  }
+  const context = Object.freeze({
+    ...state.context,
+    mode: profile.historical && profile.snapshotAvailable ? "HISTORICAL" : "LIVE",
+    freshness: profile.freshness,
+  });
+  return {
+    ...state,
+    context,
+    defensiveState: profile.id,
+    mutationAvailable: profile.mutationAllowed === true,
+  };
 }
 
 export function shellPosture(context) {

@@ -69,7 +69,7 @@ export function mountFrameExplorer(host, { querySnapshot, context, selectedId, o
   let selected = selectedId;
   host.innerHTML = `<div class="frame-explorer"><p class="frame-fixture-label">ILLUSTRATIVE FIXTURE · read-only · no live compiler producer</p>
     <p>Inspect recorded packing and causal visibility. Compression does not establish learned semantic competence.</p>
-    <label>Fixture generation <select data-frame-generation aria-label="Frame fixture generation">
+    <label>Fixture generation <select data-frame-generation data-focus-key="frame-generation" aria-label="Frame fixture generation">
       <option value="7">7 · CURRENT FIXTURE</option><option value="6">6 · HISTORICAL FIXTURE</option></select></label>
     <p data-frame-state role="status"></p><div data-frame-results></div></div>`;
   const results = host.querySelector("[data-frame-results]");
@@ -85,7 +85,7 @@ export function mountFrameExplorer(host, { querySnapshot, context, selectedId, o
     const examples = page.examples;
     if (!examples.length) return;
     results.innerHTML = `<p>Coverage ${esc(page.coverage)} · ${examples.length} returned fixture receipts</p>
-      <label>Compiled example <select data-frame-example aria-label="Compiled example"><option value="">Select an exact frame</option>
+      <label>Compiled example <select data-frame-example data-focus-key="frame-example" aria-label="Compiled example"><option value="">Select an exact frame</option>
       ${examples.map(example => `<option value="${esc(example.frameId)}">${esc(example.frameId)}</option>`).join("")}</select></label>
       <div data-frame-detail></div><details class="frame-position"><summary>Aggregate packing · ${examples.length} returned receipts</summary>
       ${renderPackingMetrics(examples, "All returned examples")}</details>`;
@@ -102,7 +102,7 @@ export function mountFrameExplorer(host, { querySnapshot, context, selectedId, o
       const atoms = packingMetrics([example]).atoms;
       detail.innerHTML = `${renderPackingMetrics([example], "Selected example")}
         <p>Receipt provenance below is outside the frontier lens.</p>
-        <label>Prediction frontier <select data-frame-frontier aria-label="Prediction frontier" ${atoms === null ? "disabled" : ""}>
+        <label>Prediction frontier <select data-frame-frontier data-focus-key="frame-frontier" aria-label="Prediction frontier" ${atoms === null ? "disabled" : ""}>
         ${atoms === null ? '<option>Unavailable</option>' : Array.from({ length: atoms + 1 }, (_, p) => `<option value="${p}">${p} source atoms visible</option>`).join("")}</select></label>
         <div data-frame-positions></div>`;
       const frontier = detail.querySelector("[data-frame-frontier]");
