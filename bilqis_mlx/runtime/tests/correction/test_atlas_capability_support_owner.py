@@ -59,33 +59,6 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.authority.correction_runtime.t
 
 
 class CapabilitySupportOwnerTests(CapabilitySupportOwnerFixture):
-    def test_source_qualified_acceptance_schema_family_tracks_exact_rollout(self):
-        from bilqis_mlx.learning.atlas_acceptance import (
-            ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA,
-            EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
-            EXACT_MOTIF_ACCEPTANCE_SCHEMA, EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-            MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-        )
-        from bilqis_mlx.runtime.capability_support_loading import (
-            _SOURCE_QUALIFIED_ACCEPTANCE_SCHEMAS,
-        )
-
-        self.assertEqual(
-            _SOURCE_QUALIFIED_ACCEPTANCE_SCHEMAS,
-            (
-                ACCEPTANCE_SCHEMA,
-                CLOSURE_ACCEPTANCE_SCHEMA,
-                MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-                EXACT_ACCEPTANCE_SCHEMA,
-                EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
-                EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-            ),
-        )
-        self.assertNotIn(
-            EXACT_MOTIF_ACCEPTANCE_SCHEMA,
-            _SOURCE_QUALIFIED_ACCEPTANCE_SCHEMAS,
-        )
-
     def test_b13_acceptance_persists_exact_source_anchor_and_materializes_owner(self):
         published, authority = self.publish_support(authority_registry=AUTHORITY)
         acceptance_path = (

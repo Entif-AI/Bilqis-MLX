@@ -66,6 +66,32 @@ class GenerationAcceptancePublicationTests(GenerationAcceptanceFixture, unittest
             EXACT_MOTIF_ACCEPTANCE_SCHEMA,
         )
 
+    def test_c09_source_qualified_schema_family_tracks_exact_rollout(self):
+        from bilqis_mlx.learning.atlas_acceptance import (
+            ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA,
+            EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+            EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
+        )
+        from bilqis_mlx.runtime.capability_support_loading import (
+            _SOURCE_QUALIFIED_ACCEPTANCE_SCHEMAS,
+        )
+
+        self.assertEqual(
+            _SOURCE_QUALIFIED_ACCEPTANCE_SCHEMAS,
+            (
+                ACCEPTANCE_SCHEMA,
+                CLOSURE_ACCEPTANCE_SCHEMA,
+                MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
+                EXACT_ACCEPTANCE_SCHEMA,
+                EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
+                EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
+            ),
+        )
+        self.assertNotIn(
+            EXACT_MOTIF_ACCEPTANCE_SCHEMA,
+            _SOURCE_QUALIFIED_ACCEPTANCE_SCHEMAS,
+        )
+
     def test_publication_refuses_binding_with_foreign_step_proof(self):
         source = self.source()
         forged = self.binding(source)
