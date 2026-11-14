@@ -7,7 +7,7 @@ const recordValidators = new Map(Object.entries(bundle.records).map(([id, schema
 
 const QUERY_SCHEMA = "bilqis.bamf.control-plane.query/v1";
 const PAGE_SCHEMA = "bilqis.bamf.control-plane.query-page/v1";
-const FAMILIES = ["run", "school", "capability", "episode", "generation", "semantic",
+const FAMILIES = ["record", "run", "school", "capability", "episode", "generation", "semantic",
   "frame", "neural", "memory", "teacher", "salience", "correction", "resource", "reference", "links"];
 const QUERY_KEYS = ["schema", "family", "mode", "run_id", "record_id", "schema_version",
   "generation", "frontier_id", "as_of", "reference", "cursor", "limit"];

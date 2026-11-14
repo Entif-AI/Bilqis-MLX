@@ -2,6 +2,7 @@
 
 const OPERATOR_VIEW = require("../fixtures/operator-view-v1.json");
 const { Cp01PythonBroker } = require("./cp01-python-broker.cjs");
+const { frameFixturePage } = require("./frame-fixtures.cjs");
 
 function disconnectedStatus() {
   return {
@@ -56,12 +57,21 @@ class AcceptedControlPlaneAdapter {
       if (accepted !== true) throw new Error("BAMF_GUI05_QUERY_UNAVAILABLE");
       return page;
     }
+    if (request?.schemaVersion === "bamf.gui08.frame-query/v1") return frameFixturePage(request);
     return structuredClone(OPERATOR_VIEW);
   }
 
   async query(session, request) {
     this.#requireSession(session);
     return this.broker.query(request);
+  }
+
+  async subscribe(session, next) {
+    this.#requireSession(session);
+    if (typeof next !== "function") {
+      throw new TypeError("BAMF_GUI03_EVENT_LISTENER_REQUIRED");
+    }
+    return this.broker.subscribe(next);
   }
 
   close() {

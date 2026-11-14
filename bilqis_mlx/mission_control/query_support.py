@@ -15,6 +15,7 @@ from .contracts.events import (
     SalienceEvent,
 )
 from .contracts.model import CoverageState, WireRecord, is_wire_integer, require
+from .contracts.registry import ALL_RECORD_TYPES
 from .contracts.observability import (
     GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, TeacherSnapshot,
@@ -34,6 +35,7 @@ from .semantic import (
 
 
 FAMILY_TYPES = MappingProxyType({
+    QueryFamily.RECORD: ALL_RECORD_TYPES,
     QueryFamily.RUN: (RunContext, OperatorView),
     QueryFamily.SCHOOL: (SchoolSnapshot, CurriculumFrontier),
     QueryFamily.CAPABILITY: (CapabilitySnapshot, CapabilityDossier),
@@ -51,6 +53,39 @@ FAMILY_TYPES = MappingProxyType({
     QueryFamily.CORRECTION: (CorrectionEvent,),
     QueryFamily.RESOURCE: (ResourceSample,),
 })
+
+
+def _forensic_refs(record: WireRecord) -> set[str]:
+    refs = {
+        record.meta.record_id,
+        *record.meta.source_refs,
+        *record.meta.evidence_refs,
+        *record.meta.receipt_refs,
+    }
+    for name in (
+        "capability_id", "episode_id", "candidate_id", "visit_id", "semantic_id",
+        "frame_id", "correction_id", "target_ref", "salience_id", "teacher_identity",
+        "strategy_id", "operation_id", "request_id", "request_sha256",
+    ):
+        value = getattr(record, name, None)
+        if isinstance(value, str):
+            refs.add(value)
+    for name in ("capability_ids", "frame_schema_refs", "source_loci"):
+        value = getattr(record, name, ())
+        if isinstance(value, tuple):
+            refs.update(item for item in value if isinstance(item, str))
+    checkpoint = getattr(record, "checkpoint_sha256", None)
+    if isinstance(checkpoint, str):
+        refs.add(f"checkpoint:{checkpoint}")
+        refs.add(checkpoint)
+    for name in (
+        "student_sha256", "optimizer_state_sha256", "source_frame_sha256",
+        "compiled_frame_sha256", "old_digest", "new_digest",
+    ):
+        value = getattr(record, name, None)
+        if isinstance(value, str):
+            refs.add(value)
+    return refs
 
 
 def record_sort_key(record: WireRecord):
@@ -79,7 +114,7 @@ def _current_identity(record: WireRecord):
     if run is None:
         return None
     base = (run.run_id, type(record))
-    if type(record) in (CapabilitySnapshot, CapabilityDossier):
+    if type(record) is CapabilitySnapshot:
         return (*base, record.capability_id)
     if type(record) is SemanticGenerationState:
         return (*base, record.semantic_id)
@@ -119,6 +154,9 @@ def matches_identity(
     if request.frontier_id is not None:
         if type(item) is not CurriculumFrontier or item.frontier_id != request.frontier_id:
             return False
+    if (request.family is QueryFamily.RECORD and request.reference is not None
+            and request.reference not in _forensic_refs(item)):
+        return False
     return True
 
 
@@ -222,12 +260,17 @@ def build_page(*, available: bool, request: QueryRequest, records, markers,
     page_records = tuple(page_rows) if rows is records else ()
     page_links = tuple(page_rows) if rows is links else ()
     page_ids = {item.meta.record_id for item in page_records}
+    page_refs = {item.target_ref for item in page_links}
     page_markers = tuple(
         item for item in markers
-        if ((type(item) is PartialEnvelope and item.partial_record_id in page_ids)
+        if ((type(item) is PartialEnvelope
+             and item.partial_record_id in page_ids | page_refs)
             or (type(item) is StaleEnvelope
-                and (item.stale_record_id in page_ids or not records))
-            or type(item) is UnavailableEnvelope)
+                and (item.stale_record_id in page_ids | page_refs or not records))
+            or (type(item) is UnavailableEnvelope
+                and (not page_links
+                     or item.resource in page_refs
+                     or item.resource == request.reference)))
     )
     state = (
         QueryState.UNAVAILABLE if not available
@@ -236,7 +279,7 @@ def build_page(*, available: bool, request: QueryRequest, records, markers,
             historical_missing=(exact_missing or request.mode is QueryMode.HISTORICAL),
         )
     )
-    if page_links:
+    if page_links and not page_markers:
         state = QueryState.PRESENT
     coverage = (
         CoverageState.UNKNOWN if state in {

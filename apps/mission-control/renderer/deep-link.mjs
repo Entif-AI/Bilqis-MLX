@@ -8,7 +8,13 @@ export function parseDeepLink(hash = "") {
   const generation = Number(params.get("generation"));
   const context = params.has("run") && params.has("generation") &&
     Number.isSafeInteger(generation) && generation >= 0 && ["LIVE", "HISTORICAL"].includes(params.get("mode"))
-    ? { runId: params.get("run"), generation, mode: params.get("mode"), fixture: params.get("fixture") === "true" } : null;
+    ? {
+      runId: params.get("run"),
+      generation,
+      mode: params.get("mode"),
+      fixture: params.get("fixture") === "true",
+      historicalPinned: params.get("mode") === "HISTORICAL",
+    } : null;
   return {
     ...(context ? { context } : {}),
     view,

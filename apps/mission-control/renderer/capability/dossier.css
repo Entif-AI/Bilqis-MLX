@@ -35,8 +35,8 @@
 
 #dossier-lens { display: flex; flex-wrap: wrap; align-items: end; gap: .7rem; }
 #dossier-lens input { max-width: 210px; }
-#capability-explorer button { border: 1px solid var(--border-strong); background: var(--surface-2); border-radius: .3rem; padding: .5rem; cursor: pointer; }
-#capability-explorer button:focus-visible, #capability-explorer summary:focus-visible { outline: 2px solid var(--focus); }
+.capability-explorer button { border: 1px solid var(--border-strong); background: var(--surface-2); border-radius: .3rem; padding: .5rem; cursor: pointer; }
+.capability-explorer button:focus-visible, .capability-explorer summary:focus-visible { outline: 2px solid var(--focus); }
 [hidden] { display: none !important; }
 .shell[data-view="capability"] .workspace { background: var(--canvas); }
 .shell[data-view="capability"] .view-host { padding: 30px clamp(20px, 4vw, 60px); max-width: 1400px; }

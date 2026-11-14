@@ -130,10 +130,10 @@ def genesis_preparation(*, run_id="fixture-run", run_seed=17,
                 ({"event": "FIXTURE_GENESIS", "optimizer_step": 0},)
                 if delivery_events is None else delivery_events),
         )
-def publish_genesis(run_dir, *, run_seed=17, registry=None, **overrides):
+def publish_genesis(run_dir, *, run_seed=17, **overrides):
     """Publish a real production generation zero, never a test-minted C05 token."""
     from .publication.publication_helpers import host_source_authority_patch
-    with host_source_authority_patch(registry):
+    with host_source_authority_patch():
         return publish_initial_generation(
             run_dir, genesis_preparation(run_seed=run_seed, **overrides),
             reserve_gib=0.)

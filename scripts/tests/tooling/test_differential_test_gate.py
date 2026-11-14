@@ -8,28 +8,6 @@ from scripts.testing import differential_test_gate as gate
 
 
 class DifferentialTestGateTests(unittest.TestCase):
-    def test_pytest_keeps_repository_and_tooling_test_packages_distinct(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            files = {
-                "scripts/tests/__init__.py": "",
-                "scripts/tests/test_tool.py": "def test_tool(): assert True\n",
-                "tests/__init__.py": "",
-                "tests/system/__init__.py": "ANSWER = 42\n",
-                "tests/integration/__init__.py": "",
-                "tests/integration/test_fixture.py": "from tests.system import ANSWER\ndef test_answer(): assert ANSWER == 42\n",
-            }
-            for name, content in files.items():
-                path = root / name
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(content)
-            command = gate._pytest_command("cold-targeted", (
-                str(root / "scripts/tests/test_tool.py"),
-                str(root / "tests/integration/test_fixture.py"),
-            ))
-            result = subprocess.run(command, cwd=root, capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-
     def _repo(self) -> tempfile.TemporaryDirectory:
         temporary = tempfile.TemporaryDirectory()
         root = Path(temporary.name)

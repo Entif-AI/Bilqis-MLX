@@ -16,12 +16,12 @@ export function createCapabilityExplorer({ host, changeLens, openObject, service
   const controller = new DossierController(query, () => draw());
   function draw() {
     if (!lens) return;
-    host.innerHTML = `<div class="capability-tools"><label>Data source<select id="dossier-source"><option value="service" ${!fixture ? "selected" : ""}>Control-plane service</option>
+    host.innerHTML = `<div class="capability-explorer"><div class="capability-tools"><label>Data source<select id="dossier-source"><option value="service" ${!fixture ? "selected" : ""}>Control-plane service</option>
       <option value="fixture" ${fixture ? "selected" : ""}>FIXTURE · Synthetic demonstration</option></select></label>
       <form id="dossier-lens"><label>Run ID<input name="run" value="${e(lens.runId)}" required></label>
       <label>Generation<input name="generation" type="number" min="0" step="1" value="${lens.generation}" required></label>
       <label>Capability ID<input name="capability" value="${e(capabilityId)}" required></label><button>Inspect as of</button></form></div>
-      <div id="dossier-host">${renderDossier(controller.state)}</div><section id="evidence-detail" aria-live="polite" tabindex="-1"></section>`;
+      <div id="dossier-host">${renderDossier(controller.state)}</div><section id="evidence-detail" aria-live="polite" tabindex="-1"></section></div>`;
     host.querySelector("#dossier-source").onchange = (event) => {
       fixture = event.target.value === "fixture";
       changeLens({ runId: fixture ? FIXTURE_RUN : "", generation: fixture ? 3 : 0,

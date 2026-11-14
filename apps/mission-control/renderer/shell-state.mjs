@@ -7,6 +7,7 @@ export const DESTINATIONS = Object.freeze([
   ["model", "Model"],
   ["memory", "Memory"],
   ["teacher", "Teacher"],
+  ["salience", "SÍ SÉ SON"],
   ["corrections", "Corrections"],
   ["lineage", "Lineage"],
   ["resources", "Resources"],
@@ -18,13 +19,18 @@ export const INSPECTOR_OWNERS = Object.freeze({
   capability: "capability",
   episode: "learning",
   semantic: "atlas",
+  frame: "model",
   memory: "memory",
   checkpoint: "lineage",
   evidence: "evidence",
   source: "evidence",
   correction: "corrections",
+  generation: "lineage",
   warning: "resources",
+  resource: "resources",
   neural: "model",
+  strategy: "teacher",
+  "salience-observation": "salience",
 });
 
 export const OPERATOR_VIEW_SCHEMA = "bilqis.bamf.mission-control.operator-view/v1";
@@ -153,6 +159,7 @@ export function normalizeContext(raw = {}) {
     resourceHealth: "UNKNOWN",
     schemaVersion: raw.schema_version,
     recordId: raw.meta.record_id,
+    historicalPinned: false,
   });
 }
 
@@ -162,6 +169,8 @@ export function createShellState(context, route = {}) {
     view: "mission-control",
     selected: null,
     inspectorOpen: false,
+    defensiveState: "unknown",
+    mutationAvailable: false,
   }, route);
 }
 
@@ -196,6 +205,10 @@ export function inspect(state, selected) {
   return { ...state, selected, inspectorOpen: Boolean(selected) };
 }
 
+export function selectObject(state, selected) {
+  return { ...state, selected, inspectorOpen: false };
+}
+
 export function openSelectionOwner(state) {
   if (!state.selected) return state;
   const owner = INSPECTOR_OWNERS[state.selected.kind];
@@ -204,6 +217,24 @@ export function openSelectionOwner(state) {
 
 export function withContext(state, nextContext) {
   return { ...state, context: normalizeContext(nextContext) };
+}
+
+export function withDefensiveState(state, profile) {
+  if (!profile || typeof profile !== "object" || typeof profile.id !== "string") {
+    throw new TypeError("MISSION_CONTROL_DEFENSIVE_STATE_INVALID");
+  }
+  const context = Object.freeze({
+    ...state.context,
+    mode: state.context.historicalPinned ||
+      (profile.historical && profile.snapshotAvailable) ? "HISTORICAL" : "LIVE",
+    freshness: profile.freshness,
+  });
+  return {
+    ...state,
+    context,
+    defensiveState: profile.id,
+    mutationAvailable: profile.mutationAllowed === true && context.mode === "LIVE",
+  };
 }
 
 export function shellPosture(context) {

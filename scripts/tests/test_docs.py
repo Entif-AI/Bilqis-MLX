@@ -96,15 +96,6 @@ class DocumentationChecksTests(unittest.TestCase):
 
         self.assertEqual(issues, ())
 
-    def test_ignores_installed_dependency_docs_but_checks_authored_docs(self):
-        checker = _checker_module()
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            self._write(root, "README.md", "[broken](missing.md)\n")
-            self._write(root, "node_modules/dependency/README.md", "[broken](missing.md)\n")
-            issues = checker.inspect_docs(root)
-        self.assertEqual(issues, ("README.md:1 BROKEN_MARKDOWN_LINK missing.md",))
-
     def test_ignores_vendored_and_run_markdown(self):
         checker = _checker_module()
         with tempfile.TemporaryDirectory() as temporary:

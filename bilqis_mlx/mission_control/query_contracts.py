@@ -18,6 +18,7 @@ MAX_PAGE_ROWS_BYTES = 48 * 1024
 
 
 class QueryFamily(StrEnum):
+    RECORD = "record"
     RUN = "run"
     SCHOOL = "school"
     CAPABILITY = "capability"

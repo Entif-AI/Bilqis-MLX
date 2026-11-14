@@ -1,13 +1,12 @@
-import { createDomainViews } from "./domain-views.mjs";
-import { createCapabilityExplorer } from "./capability/app.mjs";
-import { escapeHtml } from "./capability/model.mjs";
+import { createFrameShell } from "./frames/frame-shell.mjs";
 import {
-  DESTINATIONS,
+  assertOperatorView,
   createShellState,
   inspect,
   navigate,
   openSelectionOwner,
-  shellPosture,
+  selectObject,
+  withDefensiveState,
   withRoute,
 } from "./shell-state.mjs";
 import { buildDeepLink, parseDeepLink } from "./deep-link.mjs";
@@ -19,173 +18,244 @@ import {
   loadDisplaySettings,
   saveDisplaySettings,
 } from "./settings.mjs";
+import {
+  cacheOperatorView,
+  defensiveState,
+  defensiveStateForConnection,
+  defensiveStateForError,
+  loadCachedOperatorView,
+} from "./foundation/defensive-state.mjs";
+import {
+  renderChrome,
+  renderContext,
+  renderNavigation,
+  renderInspector,
+  renderPaletteOptions,
+} from "./foundation/renderer-ui.mjs";
+import {
+  focusToken,
+  restoreFocus,
+} from "./foundation/accessibility.mjs";
+import { createHomeController } from "./home/home-controller.mjs";
+import { createResourceController } from "./resources/resource-controller.mjs";
+import { createCapabilityExplorer } from "./capability/app.mjs";
+import { activateDomainViews } from "./foundation/domain-controller.mjs";
 
-const labels = new Map(DESTINATIONS);
-const demoObjects = [
-  ["capability", "B.AND"],
-  ["episode", "episode-record:fixture:retained-44239"],
-  ["semantic", "sem:logic.and"],
-  ["memory", "motif:bool-composition"],
-  ["checkpoint", "generation:44238"],
-  ["evidence", "receipt:fixture-001"],
-  ["correction", "correction:fixture-1"],
-  ["warning", "resource:disk-reserve"],
-];
-
-let state;
+const SNAPSHOT_REQUEST = Object.freeze({
+  schemaVersion: "bamf.gui20.operator-view-query/v1",
+  schema: "bilqis.bamf.mission-control.operator-view/v1",
+});
+let state = null;
 let displaySettings;
-let explorer;
-let domains;
+let defense = defensiveState("loading");
+let focusReturnToken = null;
+let paletteReturnToken = null;
+const homeController = createHomeController(window.bamfMissionControl);
+const resourceController = createResourceController(window.bamfMissionControl);
 
-
-function connectionFreshness(connectionState) {
-  if (connectionState === "healthy") return "FRESH";
-  if (connectionState === "stale") return "STALE";
-  if ([
-    "disconnected", "service-restarting", "incompatible-version", "unauthorized",
-  ].includes(connectionState)) return "DISCONNECTED";
-  return "UNKNOWN";
-}
+const frameShell = createFrameShell({
+  getState: () => state, setState: next => { state = next; }, getDefense: () => defense,
+  render, onInspect: openInspector,
+  refresh: () => { renderContext(state, defense); renderNavigation(state, navigateTo); renderInspector(state, defense); setHash(); },
+});
+const capabilityExplorer = createCapabilityExplorer({
+  host: document.querySelector("#domain-view"),
+  serviceQuery: request => window.bamfMissionControl.querySnapshot(request),
+  changeLens: (lens, capabilityId) => {
+    if (!state) return;
+    state = {
+      ...state,
+      context: Object.freeze({
+        ...state.context, ...lens,
+        historicalPinned: lens.mode === "HISTORICAL",
+        generationManifest: "UNKNOWN", topologyId: "UNKNOWN",
+        factoryRelease: "UNKNOWN", semanticRelease: "UNKNOWN",
+        coverage: "UNKNOWN", freshness: "UNKNOWN",
+      }),
+      selected: { kind: "capability", id: capabilityId },
+      inspectorOpen: false,
+      mutationAvailable: false,
+    };
+    render();
+  },
+  openObject: (selected) => {
+    if (!state) return;
+    state = { ...openSelectionOwner(inspect(state, selected)), inspectorOpen: false };
+    render();
+  },
+  resolvePins: (meta) => {
+    if (!state) return;
+    state = {
+      ...state,
+      context: Object.freeze({
+        ...state.context,
+        generationManifest: meta.run.generation_manifest_sha256,
+        topologyId: meta.run.topology_sha256,
+        factoryRelease: meta.run.factory_release_sha256,
+        semanticRelease: meta.run.semantic_release_sha256,
+        coverage: meta.coverage,
+      }),
+    };
+    renderContext(state, defense);
+    setHash();
+  },
+});
 
 function setHash() {
+  if (!state) return;
   const next = buildDeepLink(state);
   if (window.location.hash !== next) history.replaceState(null, "", next);
 }
 
-function renderContext() {
-  const { context } = state;
-  document.querySelector("#shell").dataset.view = state.view;
-  document.querySelector("#shell").dataset.posture = shellPosture(context);
-  document.querySelector("#mode-badge").textContent = context.mode;
-  document.querySelector("#run-id").textContent = context.runId;
-  document.querySelector("#generation-id").textContent =
-    `Generation ${context.generation} · manifest ${context.generationManifest}`;
-  document.querySelector("#freshness").textContent = context.freshness;
-  const runSelector = document.querySelector("#run-selector");
-  runSelector.replaceChildren(new Option(context.runId, context.runId));
-  runSelector.disabled = true;
-  const generationSelector = document.querySelector("#generation-selector");
-  const generations = context.fixture ? [1, 2, 3] : [context.generation];
-  generationSelector.replaceChildren(...generations.map((g) => new Option(
-    `${g} · ${g === context.generation ? context.mode : "HISTORICAL"}`, g, false, g === context.generation)));
-  generationSelector.disabled = !context.fixture;
-  const facts = [
-    ["Topology", context.topologyId],
-    ["Factory", context.factoryRelease],
-    ["Semantic", context.semanticRelease],
-    ["Optimizer", context.optimizerStep],
-    ["Lease", context.admissionLease],
-    ["Frontier", context.correctionFrontier],
-    ["Resources", context.resourceHealth],
-    ["Coverage", context.coverage],
-  ];
-  document.querySelector("#context-facts").innerHTML = facts
-    .map(([label, value]) => `<span><small>${label}</small><strong>${escapeHtml(value)}</strong></span>`)
-    .join("");
+function announce(message) {
+  const announcer = document.querySelector("#announcer");
+  announcer.textContent = "";
+  window.queueMicrotask(() => { announcer.textContent = message; });
 }
-
-function renderNavigation() {
-  const nav = document.querySelector("#primary-nav");
-  nav.innerHTML = DESTINATIONS.map(([id, label]) =>
-    `<button type="button" data-view="${id}" aria-current="${state.view === id ? "page" : "false"}">${label}</button>`,
-  ).join("");
-  nav.querySelectorAll("button").forEach((button) => {
-    button.addEventListener("click", () => {
-      state = navigate(state, button.dataset.view);
-      render();
-    });
-  });
-}
-
-function renderInspector() {
-  const panel = document.querySelector("#inspector");
-  const selected = state.selected;
-  panel.hidden = !state.inspectorOpen;
-  panel.setAttribute("aria-hidden", String(!state.inspectorOpen));
-  document.querySelector("#inspector-title").textContent = selected ? selected.id : "No selection";
-  const exact = selected?.details
-    ? Object.entries(selected.details).map(([label, value]) =>
-      `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(Array.isArray(value) ? value.join(", ") : value)}</dd>`,
-    ).join("")
-    : "";
-  document.querySelector("#inspector-details").innerHTML = selected
-    ? `<dt>Object class</dt><dd>${escapeHtml(selected.kind)}</dd>
-       <dt>Identity</dt><dd>${escapeHtml(selected.id)}</dd>
-       <dt>Posture</dt><dd>${state.context.mode}</dd>
-       <dt>Generation</dt><dd>${state.context.generation}</dd>
-       <dt>Evidence</dt><dd>Open owning view for exact records</dd>${exact}`
-
-    : "";
-  document.querySelector("#open-owner").disabled = !selected;
-}
-
-function renderDemoActions() {
-  const host = document.querySelector("#demo-actions");
-  host.innerHTML = demoObjects
-    .map(([kind, id]) => `<button type="button" data-kind="${kind}" data-id="${id}">Inspect ${kind}</button>`)
-    .join("");
-  host.querySelectorAll("button").forEach((button) => {
-    button.addEventListener("click", () => {
-      state = inspect(state, { kind: button.dataset.kind, id: button.dataset.id });
-      render();
-    });
-  });
-}
-
 
 function render() {
-  renderContext();
-  renderNavigation();
-  renderInspector();
-  document.querySelector("#inspector").hidden = !state.inspectorOpen;
-  renderDemoActions();
-  const dossierView = state.view === "capability";
-  document.querySelector("#capability-explorer").hidden = !dossierView;
-  document.querySelector("#domain-view").hidden = dossierView;
-  if (dossierView) {
-    document.querySelector(".fixture-card").hidden = true;
-    document.querySelector("#visual-catalog").hidden = true;
-    document.querySelector("#view-summary").textContent = "Measured chronology, source support, and literal evidence. No inferred causes.";
-    explorer?.update(state);
-  } else {
-    explorer?.hide();
-    domains?.render(state);
-  }
+  frameShell.beforeRender();
+  renderChrome(state, defense, displaySettings, {
+    api: window.bamfMissionControl,
+    onEvidenceSelect: selectEvidenceRecord,
+    onReconnect: () => establishSnapshot({ preserveRoute: true }),
+    onNavigate: navigateTo,
+    onInspect: openInspector,
+  });
+  frameShell.afterRender();
+  setHash();
+  activateDomainViews({
+    state, getState: () => state, defense, api: window.bamfMissionControl,
+    homeController, resourceController, capabilityExplorer, onInspect: openInspector,
+  });
+}
 
-  document.querySelector("#view-title").textContent = labels.get(state.view);
-  document.querySelector("#theme-trigger").textContent = "Theme · " + displaySettings.theme;
-  document.querySelector("#density-trigger").textContent = "Density · " + displaySettings.density;
+function selectEvidenceRecord(selected) {
+  if (!state) return;
+  state = selectObject(state, selected);
+  renderInspector(state, defense);
   setHash();
 }
 
-async function bootstrap() {
-  const connection = await window.bamfMissionControl.connect();
-  const operatorView = await window.bamfMissionControl.querySnapshot({
-    schemaVersion: "bamf.gui20.operator-view-query/v1",
-    schema: "bilqis.bamf.mission-control.operator-view/v1",
+function navigateTo(view) {
+  state = navigate(state, view);
+  document.querySelector("#command-palette")?.close?.();
+  render();
+  window.queueMicrotask(() => document.querySelector("#view-title")?.focus?.({ preventScroll: true }));
+}
+
+function openInspector(selected) {
+  if (!state) return;
+  focusReturnToken = focusToken(document.activeElement);
+  state = inspect(state, selected);
+  renderInspector(state, defense);
+  setHash();
+  window.queueMicrotask(() => document.querySelector("#inspector-close")?.focus());
+  announce(`Inspector opened for ${selected.id}`);
+}
+
+function closeInspector() {
+  if (!state?.inspectorOpen) return;
+  state = inspect(state, null);
+  renderInspector(state, defense);
+  setHash();
+  window.queueMicrotask(() => restoreFocus(document, focusReturnToken));
+  announce("Inspector closed");
+}
+
+function openPalette() {
+  const dialog = document.querySelector("#command-palette");
+  paletteReturnToken = focusToken(document.activeElement);
+  renderPaletteOptions(state, (view) => {
+    navigateTo(view);
+    window.queueMicrotask(() => document.querySelector("#main-content")?.focus());
   });
-  displaySettings = loadDisplaySettings(window.localStorage);
-  applyDisplaySettings(document.documentElement, displaySettings);
-  state = createShellState(operatorView, parseDeepLink(window.location.hash));
-  state = {
-    ...state,
-    context: Object.freeze({
-      ...state.context,
-      freshness: connectionFreshness(connection.state),
-    }),
-  };
-  document.querySelector("#generation-selector").addEventListener("change", (event) => {
-    state = { ...state, context: Object.freeze({ ...state.context,
-      generation: Number(event.target.value), mode: "HISTORICAL", generationManifest: "UNKNOWN",
-      topologyId: "UNKNOWN", factoryRelease: "UNKNOWN", semanticRelease: "UNKNOWN", coverage: "UNKNOWN" }) };
+  if (!dialog.open) dialog.showModal();
+  window.queueMicrotask(() => dialog.querySelector("button:not(:disabled)")?.focus());
+}
+
+async function establishSnapshot({ preserveRoute = false } = {}) {
+  const modelSection = state?.modelSection;
+  frameShell.reset();
+  if (state) state = { ...state, mutationAvailable: false };
+  const route = preserveRoute && state
+    ? { view: state.view, selected: state.selected }
+    : parseDeepLink(window.location.hash);
+  defense = defensiveState("loading", {
+    snapshotAvailable: Boolean(state),
+    snapshotSource: state ? "previous" : "none",
+  });
+  render();
+
+  let connection = null;
+  let connectError = null;
+  try {
+    connection = await window.bamfMissionControl.connect();
+  } catch (error) {
+    connectError = error;
+  }
+
+  let operatorView = null;
+  let snapshotSource = "none";
+  let snapshotError = null;
+  if (connection !== null) {
+    try {
+      operatorView = await window.bamfMissionControl.querySnapshot(SNAPSHOT_REQUEST);
+      assertOperatorView(operatorView);
+      snapshotSource = "service";
+      cacheOperatorView(window.localStorage, operatorView);
+    } catch (error) {
+      snapshotError = error;
+      operatorView = null;
+    }
+  }
+
+  if (operatorView === null) {
+    const cached = loadCachedOperatorView(window.localStorage);
+    if (cached !== null) {
+      try {
+        assertOperatorView(cached.operatorView);
+        operatorView = cached.operatorView;
+        snapshotSource = "cache";
+      } catch (error) {
+        snapshotError ??= error;
+      }
+    }
+  }
+
+  if (operatorView === null) {
+    defense = defensiveStateForError(snapshotError ?? connectError, {
+      snapshotAvailable: false,
+      snapshotSource: "none",
+    });
+    state = null;
     render();
-  });
-  document.querySelector("#inspector-close").addEventListener("click", () => {
-    state = inspect(state, null);
-    render();
-  });
+    announce(`${defense.label}. No verified snapshot is available.`);
+    return;
+  }
+
+  const options = { snapshotAvailable: true, snapshotSource };
+  defense = snapshotError || connectError
+    ? defensiveStateForError(snapshotError ?? connectError, options)
+    : defensiveStateForConnection(connection?.state, options);
+  if (snapshotSource === "cache" && defense.id === "live") {
+    defense = defensiveState("stale", options);
+  }
+  state = { ...withDefensiveState(createShellState(operatorView, route), defense), modelSection };
+  render();
+  announce(`${defense.label}. ${defense.historical ? "Inspection-only evidence is shown." : "Live context established."}`);
+}
+
+function bindStaticInteractions() {
+  document.querySelector("#inspector-close").addEventListener("click", closeInspector);
   document.querySelector("#open-owner").addEventListener("click", () => {
+    if (!state) return;
     state = openSelectionOwner(state);
+    render();
+  });
+  document.querySelector("#open-evidence").addEventListener("click", () => {
+    if (!state?.selected) return;
+    state = navigate(state, "evidence", state.selected);
     render();
   });
   document.querySelector("#theme-trigger").addEventListener("click", () => {
@@ -200,36 +270,55 @@ async function bootstrap() {
     applyDisplaySettings(document.documentElement, displaySettings);
     render();
   });
+  document.querySelector("#palette-trigger").addEventListener("click", openPalette);
+  document.querySelector("#palette-close").addEventListener("click", () => {
+    document.querySelector("#command-palette").close();
+  });
+  document.querySelector("#command-palette").addEventListener("close", () => {
+    window.queueMicrotask(() => restoreFocus(document, paletteReturnToken));
+  });
+  document.querySelector("#generation-selector").addEventListener("change", (event) => {
+    if (!state) return;
+    const generation = Number(event.currentTarget.value);
+    if (!Number.isSafeInteger(generation) || generation < 0) return;
+    state = {
+      ...state,
+      context: Object.freeze({
+        ...state.context, generation, mode: "HISTORICAL",
+        historicalPinned: true,
+        generationManifest: "UNKNOWN", topologyId: "UNKNOWN",
+        factoryRelease: "UNKNOWN", semanticRelease: "UNKNOWN",
+        coverage: "UNKNOWN", freshness: "UNKNOWN",
+      }),
+      mutationAvailable: false,
+    };
+    render();
+  });
   window.addEventListener("hashchange", () => {
+    if (!state) return;
     const route = parseDeepLink(window.location.hash);
     state = withRoute(state, route);
     render();
   });
-  domains = createDomainViews({ onState: (next) => { state = next; }, renderInspector, setHash });
-  explorer = createCapabilityExplorer({
-    host: document.querySelector("#capability-explorer"),
-    serviceQuery: (query) => window.bamfMissionControl.querySnapshot(query),
-    changeLens: (lens, capabilityId) => {
-      state = { ...state, context: Object.freeze({ ...state.context, ...lens,
-        generationManifest: "UNKNOWN", topologyId: "UNKNOWN", factoryRelease: "UNKNOWN",
-        semanticRelease: "UNKNOWN", freshness: "UNKNOWN", coverage: "UNKNOWN" }),
-        selected: { kind: "capability", id: capabilityId }, inspectorOpen: false };
-      render();
-    },
-    openObject: (selected) => {
-      state = openSelectionOwner(inspect(state, selected));
-      state.inspectorOpen = false;
-      render();
-    },
-    resolvePins: (meta) => {
-      state = { ...state, context: Object.freeze({ ...state.context,
-        generationManifest: meta.run.generation_manifest_sha256, topologyId: meta.run.topology_sha256,
-        factoryRelease: meta.run.factory_release_sha256, semanticRelease: meta.run.semantic_release_sha256,
-        coverage: meta.coverage }) };
-      renderContext();
-    },
+  document.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      openPalette();
+      return;
+    }
+    if (event.key === "Escape" && state?.inspectorOpen && !document.querySelector("#command-palette").open) {
+      event.preventDefault();
+      closeInspector();
+    }
   });
+}
+
+async function bootstrap() {
+  displaySettings = loadDisplaySettings(window.localStorage);
+  applyDisplaySettings(document.documentElement, displaySettings);
+  bindStaticInteractions();
   render();
+  await establishSnapshot();
 }
 
 bootstrap();
