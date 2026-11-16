@@ -2,6 +2,14 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.1.1](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.1.0...v1.1.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **bamf:** retention authority and reset championship epochs ([#1275](https://github.com/Entif-AI/Bilqis-MLX/issues/1275)) ([c39a33b](https://github.com/Entif-AI/Bilqis-MLX/commit/c39a33b99128dfcb846fbba18a6ebad9f724eb4e))
+* reset championship epochs and harden retention ([d3bbb71](https://github.com/Entif-AI/Bilqis-MLX/commit/d3bbb71ba497aa93aa8cf922af821bcb60515717))
+
 ## [1.1.0](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.0.0...v1.1.0) (2026-11-13)
 
 ### BAMF-0.2 unified-history cutover
