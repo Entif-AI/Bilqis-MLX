@@ -47,6 +47,50 @@ def _runtime_context(case, *, group):
 
 
 class NativeChampionshipMentorAdviceTests(NativeChampionshipCase):
+    def test_zero_distill_skips_adviser_inference_entirely(self):
+        with patch(
+                "bilqis_mlx.runtime.championship_advisers."
+                "factory_evaluation_instruments",
+                side_effect=AssertionError("zero influence must not evaluate advisers")):
+            supervision = championship_mentor_supervision(
+                object(), ({"id": "row:zero"},), source_seed=17,
+                teacher_strategy={"distill": 0.0})
+
+        self.assertIsNone(supervision)
+
+    def test_zero_distill_native_horizon_preserves_unmentored_observation(self):
+        from bilqis_mlx.runtime.bamf_operator.session import _execute_horizon
+
+        transaction = SimpleNamespace(update_steps=1, motif_transition=None)
+        step = SimpleNamespace(transaction=transaction, realized_cost={})
+        selection = SimpleNamespace(
+            policy={"distill": 0.0},
+            offer=SimpleNamespace(source_seed=17, capability_id="future:cap"),
+            visit=SimpleNamespace(identity=SimpleNamespace(visit_id="visit:r05-zero")),
+        )
+        parent = SimpleNamespace(
+            retained_state=SimpleNamespace(optimizer_step=7),
+            optimizer_hyperparameters="hparams",
+        )
+        cache = SimpleNamespace(
+            generation=1, accepted_manifest_sha256="a" * 64)
+        prefix = "bilqis_mlx.runtime.bamf_operator.session."
+        with patch(prefix + "prepare_candidate_evidence_root"), patch(
+                prefix + "_Capture"), patch(
+                prefix + "FactoryDeliveryObservation", return_value="observation") as observation, patch(
+                prefix + "execute_accepted_priority_candidate",
+                return_value=step), patch(
+                "bilqis_mlx.runtime.championship_advisers."
+                "championship_mentor_supervision", return_value=None):
+            _execute_horizon(
+                Path("/tmp"), selection, SimpleNamespace(), parent,
+                "atlas", "feature", ({"id": "row:r05-zero"},), 1, cache, 1,
+                None, 0, None, None, None, object())
+
+        self.assertNotIn("mentors", observation.call_args.kwargs)
+        self.assertNotIn("guidance", observation.call_args.kwargs)
+        self.assertNotIn("_mentor_supervision", observation.call_args.kwargs)
+
     def test_native_horizon_materializes_mentor_supervision_before_candidate_step(self):
         from bilqis_mlx.runtime.bamf_operator.session import _execute_horizon
 

@@ -2,6 +2,7 @@
 from dataclasses import replace
 
 from bilqis_mlx.learning.capability_championship_state import active_checkpoint_references
+from bilqis_mlx.runtime.capability_retention import EvidenceStage
 
 from bilqis_mlx.runtime.tests.operator.observed.capability_championship_support import (
     ADJUDICATION, CAPABILITY, GROUP, OTHER_GROUP, SIBLING,
@@ -11,6 +12,36 @@ from bilqis_mlx.runtime.tests.operator.observed.capability_championship_support 
 
 
 class NativeCapabilityChampionshipTests(NativeChampionshipCase):
+    def test_explicit_accepted_boundary_computes_target_evidence_when_c05_did_not(self):
+        successor = self.successor()
+        assessment, binding = measurement(
+            successor, self.cohort, self.contexts, 19, "8" * 64)
+        c05 = evaluation(None, None, evaluated_capability_ids=(CAPABILITY,))
+        observed = []
+
+        with patch(
+                "bilqis_mlx.runtime.bamf_operator.championship."
+                "_require_factory_evaluation", side_effect=lambda value: value), patch(
+                ADJUDICATION + "_current_binding", return_value=binding), patch(
+                ADJUDICATION + "_incumbent_binding",
+                side_effect=AssertionError("empty titles must not replay incumbents")), patch(
+                "bilqis_mlx.runtime.bamf_operator.championship."
+                "capability_championship_evidence",
+                return_value=(self.cohort, assessment)) as championship:
+            result = bind_accepted_championship_successor(
+                Path("unused"), self.parent, self.cache, successor,
+                self.context, "artifact", CAPABILITY, c05,
+                training=(("family:train",), ("episode:train",)),
+                evidence_stage=EvidenceStage.FOUNDATION_ACQUISITION,
+                checkpoint_origin_group=GROUP,
+                observer=observed.append)
+
+        championship.assert_called_once_with(
+            self.context, successor, "artifact", self.cache, CAPABILITY,
+            (("family:train",), ("episode:train",)),
+            EvidenceStage.FOUNDATION_ACQUISITION, observer=observed.append)
+        self.assertIn(CAPABILITY, result.championship_state["active_roles"])
+
     def test_exact_ninety_percent_keeps_no_active_title_or_checkpoint_custody(self):
         successor = self.successor()
         assessment, binding = measurement(

@@ -149,8 +149,8 @@ def _evaluate_foundation_owner(source, candidate, target, fixed, fresh,
                 AssessmentPair=Mock(return_value=object()),
                 evaluate_target_gate=Mock(return_value=target_gate_decision),
                 finalize_target_first_local_candidate=Mock(return_value=decision),
-                capability_championship_evidence=Mock(return_value=(
-                    championship_cohort, championship_assessment)),
+                capability_championship_evidence=Mock(side_effect=AssertionError(
+                    "ordinary C05 must not execute championship evidence")),
             ), patch.multiple(
                 owner_screen,
                 candidate_identity_for_canonical_consumer=Mock(return_value="d" * 64),
