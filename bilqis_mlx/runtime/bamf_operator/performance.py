@@ -45,6 +45,9 @@ VISIT_PERFORMANCE_FIELDS = (
     "retention_protected_candidate_wall_seconds",
     "retention_decision_finalize_wall_seconds",
     "retention_championship_wall_seconds",
+    "retention_championship_prepare_wall_seconds",
+    "retention_championship_solver_wall_seconds",
+    "retention_championship_candidate_wall_seconds",
     "evidence_finalization_wall_seconds",
     "publishing_wall_seconds",
 )
