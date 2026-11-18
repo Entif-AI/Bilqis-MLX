@@ -1,4 +1,4 @@
-"""Accepted C16.3 operator path carries C05 championship evidence into B13 state."""
+"""Accepted C16.3 operator path runs championship at the B13 successor boundary."""
 from contextlib import ExitStack
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -61,7 +61,7 @@ def _accepted_championship_successor(evaluation, solver, assessment, group):
 
 
 class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
-    def test_operate_bamf_publishes_first_title_from_issued_c05_evidence(self):
+    def test_operate_bamf_publishes_first_title_from_accepted_boundary_evidence(self):
         fixture, target, group, solver, assessment, evaluation = (
             _championship_evaluation_fixture())
         parent, retained, successor, binding = _accepted_championship_successor(
@@ -84,34 +84,40 @@ class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
         published = []
 
         def prepare(run_dir, *, observer=None, **_kwargs):
-            from bilqis_mlx.runtime.bamf_operator.session import _retention_result
+            from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import (
+                retention_result,
+            )
             if observer is not None:
                 observer.bind_parent(parent)
-            return _retention_result(
+            return retention_result(
                 run_dir, parent, fixture[0], "artifact", selection, target,
-                cache, (step,), capture, 1, 1, {}, None, observer)
+                cache, (step,), capture, 1, 1, {}, None, observer,
+                emit_progress=lambda *_args: None)
 
         def publish(_run_dir, bound_successor, *_args, **_kwargs):
             published.append(bound_successor)
 
         prefix = "bilqis_mlx.runtime.bamf_operator.session."
+        native = "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
         with TemporaryDirectory() as tmp, ExitStack() as stack:
             for target_name, kwargs in (
                 (prefix + "prepare_bamf_visit", {"side_effect": prepare}),
-                (prefix + "evaluate_factory_retention_candidate",
+                (native + "evaluate_factory_retention_candidate",
                  {"return_value": evaluation}),
-                (prefix + "derive_accepted_teacher_successor",
+                (native + "derive_accepted_teacher_successor",
                  {"return_value": successor}),
-                (prefix + "bind_factory_baseline_successor",
+                (native + "bind_factory_baseline_successor",
                  {"side_effect": lambda _evaluation, value: value}),
+                (native + "derive_current_plasticity_escape_state",
+                 {"return_value": None}),
                 ("bilqis_mlx.runtime.outcomes.issuance.build_outcome",
                  {"return_value": {"schema": "fixture-outcome"}}),
                 ("bilqis_mlx.runtime.outcomes.issuance.credited_visit",
                  {"side_effect": lambda visit, _outcome: visit}),
                 ("bilqis_mlx.runtime.outcomes.issuance.carry_credit_to_successor",
                  {"side_effect": lambda _visit, value, _parent: value}),
-                (prefix + "_resource_observation", {"return_value": {}}),
-                (prefix + "candidate_identity_metrics_delta", {"return_value": {}}),
+                (native + "_resource_observation", {"return_value": {}}),
+                (native + "candidate_identity_metrics_delta", {"return_value": {}}),
                 (prefix + "accept_and_publish", {"side_effect": publish}),
                 (prefix + "load_accepted_generation", {"return_value": successor}),
                 (prefix + "record_normal_stop_receipt", {"return_value": None}),
@@ -119,6 +125,11 @@ class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
                  {"return_value": Path(tmp).parent}),
                 ("bilqis_mlx.runtime.bamf_operator._championship_adjudication._current_binding",
                  {"return_value": binding}),
+                ("bilqis_mlx.runtime.bamf_operator.championship."
+                 "capability_championship_evidence",
+                 {"return_value": (assessment.cohort, assessment)}),
+                ("bilqis_mlx.runtime._factory_retention_support._training_exclusions",
+                 {"return_value": ((), ())}),
             ):
                 stack.enter_context(patch(target_name, **kwargs))
             from bilqis_mlx.runtime.bamf_operator.session import operate_bamf
