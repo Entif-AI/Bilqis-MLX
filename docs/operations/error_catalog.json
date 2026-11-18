@@ -1,6 +1,6 @@
 {
   "legacy_raw_file_count": 294,
-  "legacy_raw_raise_count": 2079,
+  "legacy_raw_raise_count": 2080,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -11606,6 +11606,13 @@
       "count": 1,
       "exception": "AssertionError",
       "expression": "'snapshot must not mutate MLX telemetry'",
+      "path": "bilqis_mlx/runtime/tests/model/resources/test_memory_retry.py"
+    },
+    {
+      "code_hint": "[malloc] Unable to allocate 4096 bytes.",
+      "count": 1,
+      "exception": "RuntimeError",
+      "expression": "'[malloc] Unable to allocate 4096 bytes.'",
       "path": "bilqis_mlx/runtime/tests/model/resources/test_memory_retry.py"
     },
     {
