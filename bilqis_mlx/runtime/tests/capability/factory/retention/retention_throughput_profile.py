@@ -14,7 +14,6 @@ from pathlib import Path
 import resource
 import tempfile
 import time
-from unittest.mock import patch
 
 import mlx.core as mx
 
@@ -38,9 +37,6 @@ from bilqis_mlx.runtime.bamf_operator.performance import (
     PERFORMANCE_FIELDS, RETENTION_PROFILE_FIELDS,
 )
 from bilqis_mlx.runtime.bamf_operator.telemetry import TrainerObservation
-from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import (
-    HostSourceAuthoritySigner,
-)
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
     C05_TRAINING_LEARNING_RATE, HP, live_factory_context,
 )
@@ -49,9 +45,6 @@ from bilqis_mlx.runtime.tests.capability.factory.owner.bamf_c16_2c_witness_suppo
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
     host_source_authority_patch,
-)
-from bilqis_mlx.runtime.tests.teacher.priority.authority.test_priority_signer import (
-    _registry as priority_source_authority_registry,
 )
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 from bilqis_mlx.semantics.atlas.snapshot import (
@@ -71,34 +64,89 @@ def _memory() -> dict[str, int]:
     }
 
 
+def _operator_profile(run_dir: Path, horizon: int) -> int:
+    parent_before = load_accepted_generation(run_dir)
+    pointer_before = (run_dir / "bamf-state.json").read_bytes()
+    observer = TrainerObservation(run_dir, 1, heartbeat_seconds=60.0)
+    started = time.perf_counter()
+    prepared = prepare_bamf_visit(
+        run_dir, steps_per_visit=horizon, reserve_gib=0.0,
+        source_prefetch_workers=0, observer=observer)
+    mx.synchronize()
+    wall = max(0.0, time.perf_counter() - started)
+    parent_after = load_accepted_generation(run_dir)
+    pointer_after = (run_dir / "bamf-state.json").read_bytes()
+    decision = prepared.decision
+    receipt = {
+        "schema": "bilqis.mlx.c05-operator-throughput-profile/v1",
+        "authorizing": False,
+        "published": False,
+        "requested_horizon": horizon,
+        "status": prepared.status,
+        "capability": prepared.capability,
+        "candidate_update_steps": (
+            prepared.step.transaction.update_steps
+            if prepared.step is not None else None),
+        "wall_seconds": wall,
+        "retention_wall_seconds": observer.record.get("retention_wall_seconds"),
+        "retained_steps_per_hour": (
+            3600.0 * prepared.step.transaction.update_steps / wall
+            if prepared.step is not None and wall > 0 else 0.0),
+        "decision": decision.to_record() if decision is not None else None,
+        "profile": {
+            key: observer.record.get(key)
+            for key in (*PERFORMANCE_FIELDS, *RETENTION_PROFILE_FIELDS)
+            if observer.record.get(key) is not None
+        },
+        "accepted_pointer_unchanged": pointer_before == pointer_after,
+        "accepted_generation_unchanged": (
+            parent_before.generation == parent_after.generation),
+        "accepted_optimizer_step_unchanged": (
+            parent_before.retained_state.optimizer_step
+            == parent_after.retained_state.optimizer_step),
+        "accepted_student_unchanged": (
+            candidate_identity_digest(parent_before.retained_state)
+            == candidate_identity_digest(parent_after.retained_state)),
+        "memory": _memory(),
+    }
+    print("C05_OPERATOR_THROUGHPUT_PROFILE " + json.dumps(
+        receipt, sort_keys=True), flush=True)
+    return 0
+
+
 def main() -> int:
+    if not mx.metal.is_available():
+        raise SystemExit("Apple Metal is required")
+    previous_device = mx.default_device()
+    mx.set_default_device(mx.gpu)
+    existing_run_raw = os.environ.get("BILQIS_C05_PROFILE_EXISTING_RUN")
+    operator_horizon_raw = os.environ.get("BILQIS_C05_PROFILE_OPERATOR_HORIZON")
+    if existing_run_raw is not None:
+        if operator_horizon_raw is None:
+            raise SystemExit("BILQIS_C05_PROFILE_OPERATOR_HORIZON is required")
+        run_dir = Path(existing_run_raw).resolve()
+        if not (run_dir / "bamf-state.json").is_file():
+            raise SystemExit(f"BAMF run is missing bamf-state.json: {run_dir}")
+        try:
+            return _operator_profile(run_dir, int(operator_horizon_raw))
+        finally:
+            mx.set_default_device(previous_device)
+
     artifact_raw = os.environ.get("BILQIS_A01_ATLAS_BUNDLE")
     if not artifact_raw:
         raise SystemExit("BILQIS_A01_ATLAS_BUNDLE is required")
     artifact = Path(artifact_raw).resolve()
     if not artifact.is_dir():
         raise SystemExit(f"BILQIS_A01_ATLAS_BUNDLE is not a directory: {artifact}")
-    if not mx.metal.is_available():
-        raise SystemExit("Apple Metal is required")
-
     capability = os.environ.get("BILQIS_C05_PROFILE_CAPABILITY", "B.AND")
     source_each = 4 if capability == "B.AND" else 1
-    previous_device = mx.default_device()
-    mx.set_default_device(mx.gpu)
     root = Path.cwd()
     source = (root / "vendor/legacy-v16").resolve()
     if not source.is_dir():
         raise SystemExit("pinned vendor/legacy-v16 source fixture is required")
     memory_policy = training_memory_policy(mx)
-    operator_horizon_raw = os.environ.get("BILQIS_C05_PROFILE_OPERATOR_HORIZON")
-    authority_registry = (
-        priority_source_authority_registry()
-        if operator_horizon_raw is not None else None)
-    authority_context = (
-        host_source_authority_patch(authority_registry)
-        if authority_registry is not None else host_source_authority_patch())
     with memory_policy:
-        with tempfile.TemporaryDirectory() as directory, authority_context:
+        with tempfile.TemporaryDirectory() as directory, host_source_authority_patch():
             stage_root = Path(directory)
             run_dir = stage_root / "target"
             source_run = stage_root / "source"
@@ -124,59 +172,6 @@ def main() -> int:
                 run_seed=993, semantic_graph=source_context.graph,
                 atlas_artifact=identity, optimizer_hyperparameters=HP)
             preflight_bamf_foundation(config, source_context.release, run_dir)
-            if operator_horizon_raw is not None:
-                operator_horizon = int(operator_horizon_raw)
-                parent_before = load_accepted_generation(run_dir)
-                observer = TrainerObservation(run_dir, 1, heartbeat_seconds=60.0)
-                started = time.perf_counter()
-                with patch(
-                        "bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer."
-                        "read_host_system_source_authority_signer",
-                        side_effect=lambda registry: HostSourceAuthoritySigner(
-                            "owner:c06", "44" * 32, registry)):
-                    prepared = prepare_bamf_visit(
-                        run_dir, steps_per_visit=operator_horizon, reserve_gib=0.0,
-                        source_prefetch_workers=0, observer=observer)
-                mx.synchronize()
-                wall = max(0.0, time.perf_counter() - started)
-                parent_after = load_accepted_generation(run_dir)
-                decision = prepared.decision
-                operator_receipt = {
-                    "schema": "bilqis.mlx.c05-operator-throughput-profile/v1",
-                    "authorizing": False,
-                    "published": False,
-                    "requested_horizon": operator_horizon,
-                    "status": prepared.status,
-                    "capability": prepared.capability,
-                    "candidate_update_steps": (
-                        prepared.step.transaction.update_steps
-                        if prepared.step is not None else None),
-                    "wall_seconds": wall,
-                    "retention_wall_seconds": observer.record.get(
-                        "retention_wall_seconds"),
-                    "retained_steps_per_hour": (
-                        3600.0 * prepared.step.transaction.update_steps / wall
-                        if prepared.step is not None and wall > 0 else 0.0),
-                    "decision": decision.to_record() if decision is not None else None,
-                    "profile": {
-                        key: observer.record.get(key)
-                        for key in (*PERFORMANCE_FIELDS, *RETENTION_PROFILE_FIELDS)
-                        if observer.record.get(key) is not None
-                    },
-                    "accepted_generation_unchanged": (
-                        parent_before.generation == parent_after.generation),
-                    "accepted_optimizer_step_unchanged": (
-                        parent_before.retained_state.optimizer_step
-                        == parent_after.retained_state.optimizer_step),
-                    "accepted_student_unchanged": (
-                        candidate_identity_digest(parent_before.retained_state)
-                        == candidate_identity_digest(parent_after.retained_state)),
-                    "memory": _memory(),
-                }
-                print("C05_OPERATOR_THROUGHPUT_PROFILE " + json.dumps(
-                    operator_receipt, sort_keys=True), flush=True)
-                mx.set_default_device(previous_device)
-                return 0
             parent = load_accepted_generation(run_dir)
             source_context = AcceptedRuntimeHost(run_dir).source_context(
                 graph=source_context.graph, source_root=source)
