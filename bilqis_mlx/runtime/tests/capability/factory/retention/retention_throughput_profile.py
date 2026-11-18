@@ -14,6 +14,7 @@ from pathlib import Path
 import resource
 import tempfile
 import time
+from unittest.mock import patch
 
 import mlx.core as mx
 
@@ -37,6 +38,9 @@ from bilqis_mlx.runtime.bamf_operator.performance import (
     PERFORMANCE_FIELDS, RETENTION_PROFILE_FIELDS,
 )
 from bilqis_mlx.runtime.bamf_operator.telemetry import TrainerObservation
+from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import (
+    HostSourceAuthoritySigner,
+)
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
     C05_TRAINING_LEARNING_RATE, HP, live_factory_context,
 )
@@ -116,9 +120,14 @@ def main() -> int:
                 parent_before = load_accepted_generation(run_dir)
                 observer = TrainerObservation(run_dir, 1, heartbeat_seconds=60.0)
                 started = time.perf_counter()
-                prepared = prepare_bamf_visit(
-                    run_dir, steps_per_visit=operator_horizon, reserve_gib=0.0,
-                    source_prefetch_workers=0, observer=observer)
+                with patch(
+                        "bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer."
+                        "read_host_system_source_authority_signer",
+                        side_effect=lambda registry: HostSourceAuthoritySigner(
+                            "owner:c06", "44" * 32, registry)):
+                    prepared = prepare_bamf_visit(
+                        run_dir, steps_per_visit=operator_horizon, reserve_gib=0.0,
+                        source_prefetch_workers=0, observer=observer)
                 mx.synchronize()
                 wall = max(0.0, time.perf_counter() - started)
                 parent_after = load_accepted_generation(run_dir)
