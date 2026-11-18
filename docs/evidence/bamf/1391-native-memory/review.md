@@ -57,3 +57,10 @@ Combined repair checks total 41 passing cases. Production memory implementation
 has not changed. Differential selection now includes 72 files because shared
 fixture repair invalidates its direct test consumers. Leaf v2 is a fresh snapshot;
 v1 evidence remains preserved and its 143 passing cases are historical evidence.
+
+Leaf v2: 388 passed, 1 failed, 58 subtests passed; snapshot unmutated.
+Remaining failure was the cold-resume double call expectation omitting the
+existing `run_authority=None` argument. Corrected the literal expected call;
+production behavior remains unchanged. Static gates passed again. No third
+unchanged broad diagnostic run: first prove this exact assertion locally on
+m3-ultra, then consume current unified before the integration boundary.

@@ -201,5 +201,6 @@ class AcceptedAtlasFlywheelHumanResumeSupport(MixedWitnessSupport, unittest.Test
         self.assertEqual((code, errors.getvalue()), (0, ""))
         operate.assert_called_once_with(
             self.run, minutes=90, max_visits=1, steps_per_visit=16, reserve_gib=100.0,
-            source_prefetch_workers=2, parent_graph=self.parent_graph, progress=ANY)
+            source_prefetch_workers=2, parent_graph=self.parent_graph, progress=ANY,
+            run_authority=None)
         return self._json_records(output.getvalue())[-1]
