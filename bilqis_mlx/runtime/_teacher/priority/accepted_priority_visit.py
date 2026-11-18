@@ -34,6 +34,12 @@ from .accepted_priority_visit_contracts import (
 def _invalid(reason):
     ErrorBus.Raise(SCHOOL.BAMF_CURRICULUM.INVALID, reason=reason)
 
+
+def _action_required_hold_reason(action_kind):
+    return ('CORRECTION_ACTION_REQUIRED'
+            if action_kind == ActionKind.CORRECTION
+            else 'PROCEDURE_REPAIR_ACTION_REQUIRED')
+
 def _selected_priority_result(
         run_dir, source_context, parent, cache, projection, epoch, teacher,
         qualified, option, offer, school, engine, rng, learning_settings,
@@ -150,7 +156,7 @@ def select_accepted_priority_visit(
         accepted_parent, planning_generation)
     cadence_ids, cadence_metadata = _cadence_context(
         cadence_authorization, lawful_frontier)
-    if not offers:
+    if not offers and frontier is None:
         return _empty_priority_result(
             run_dir, source_context, parent, frontier, history, lawful_frontier,
             cadence_authorization, cadence_ids, cadence_metadata)
@@ -172,15 +178,16 @@ def select_accepted_priority_visit(
         for item in lawful_frontier.exclusions
     ]
     holds.extend(qualified.holds)
+    action_required_option_id = None
     for option in qualified.ranked.ordered:
         priority_features = salience_priority_features(
             evidence[option.stable_id], option.context.capability_id,
             option.context.scope, contract_digest(epoch))
         if option.action_kind in (ActionKind.CORRECTION, ActionKind.PROCEDURE_REPAIR):
-            return _issue_result(
-                'ACTION_REQUIRED', option.stable_id, None, None, None,
-                cadence_metadata, None, sorted(holds), run_dir, lawful_frontier,
-                cadence_authorization=cadence_authorization)
+            holds.append((option.stable_id, _action_required_hold_reason(option.action_kind)))
+            if action_required_option_id is None:
+                action_required_option_id = option.stable_id
+            continue
         offer = by_id[option.stable_id]
         materialization_started = time.perf_counter()
         try:
@@ -199,6 +206,11 @@ def select_accepted_priority_visit(
             program, grade, evidence, holds, lawful_frontier, total_capabilities,
             plasticity_escape, priority_features, cadence_authorization,
             source_materialization_wall_seconds)
+    if action_required_option_id is not None:
+        return _issue_result(
+            'ACTION_REQUIRED', action_required_option_id, None, None, None,
+            cadence_metadata, None, sorted(holds), run_dir, lawful_frontier,
+            cadence_authorization=cadence_authorization)
     return _issue_result(
         'NO_ADMISSIBLE_TEACHING', None, None, None, None, cadence_metadata,
         None, sorted(holds), run_dir, lawful_frontier,
