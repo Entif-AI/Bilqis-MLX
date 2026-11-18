@@ -97,6 +97,41 @@ class C03AcceptedTeacherCustodyTests(unittest.TestCase):
         self.assertIsInstance(metadata, dict)
         self._assert_bound_visit(bound, parent, pointer, current_student)
 
+        cache = SimpleNamespace(
+            accepted_manifest_sha256=pointer["manifest_sha256"])
+        with patch(
+            "bilqis_mlx.runtime.bamf_bundle.currentness_transaction."
+            "require_accepted_currentness_step",
+            return_value=object(),
+        ), patch.object(
+            teacher_custody, "restore_teacher_lineage",
+            side_effect=AssertionError("hot visit revalidated full C03 lineage"),
+        ):
+            teacher_custody._require_current_visit(
+                parent, cache, bound,
+                candidate_identity_sha256=current_student,
+                currentness_step=object(), currentness_transaction=object(),
+            )
+
+        current_teacher = bound.projection.teacher_state["c03_lineage"]["current_teacher"]
+        current_teacher["__hot_path_mutation_probe__"] = True
+        try:
+            with patch(
+                "bilqis_mlx.runtime.bamf_bundle.currentness_transaction."
+                "require_accepted_currentness_step",
+                return_value=object(),
+            ), self.assertRaises(BilqisError) as mutation_failure:
+                teacher_custody._require_current_visit(
+                    parent, cache, bound,
+                    candidate_identity_sha256=current_student,
+                    currentness_step=object(), currentness_transaction=object(),
+                )
+            self.assertEqual(
+                mutation_failure.exception.context["reason"],
+                "TEACHER_VISIT_CUSTODY_INVALID")
+        finally:
+            current_teacher.pop("__hot_path_mutation_probe__")
+
         retained = accepted_state(parent.retained_state, parent.extents)
         with shape_patch():
             successor = derive_c03_successor_bundle(

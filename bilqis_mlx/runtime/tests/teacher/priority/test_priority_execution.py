@@ -69,10 +69,13 @@ def priority():
         'bilqis_mlx.runtime.atlas_optimizer': module(AdamWHyperparameters=HParams),
         'bilqis_mlx.runtime.atlas_training_contracts': module(BamfVisitProvenance=SimpleNamespace(from_c03_record=None)),
         'bilqis_mlx.runtime.bamf_bundle.currentness_transaction': module(
-            refresh_accepted_currentness=lambda transaction, parent: transaction),
+            refresh_accepted_currentness=lambda transaction, parent: transaction,
+            require_live_accepted_currentness_step=(
+                lambda step, transaction, parent: step)),
         'bilqis_mlx.runtime.factory_candidate_training': module(execute_factory_candidate_step=None),
         'bilqis_mlx.runtime.lawful_teaching_frontier': module(
-            require_bound_lawful_teaching_frontier=lambda frontier, context, parent: frontier,
+            require_bound_lawful_teaching_frontier=(
+                lambda frontier, context, parent, **_kwargs: frontier),
             require_current_lawful_teaching_frontier=lambda frontier, context, parent: frontier),
         'bilqis_mlx.runtime.teacher_policy_selection': module(select_visit_policy=None),
         'bilqis_mlx.runtime.outcomes.replay': module(
@@ -180,7 +183,9 @@ def test_execution_reuses_authenticated_planning_parent(priority):
             source_prepare_wall_seconds=0.75) == 'step'
     require_visit.assert_called_once_with(
         'planned-parent', 'planned-cache', selected.visit,
-        candidate_identity_sha256='planned-id')
+        candidate_identity_sha256='planned-id',
+        currentness_step='currentness',
+        currentness_transaction='currentness')
     assert execute.call_args.args[2] == 'planned-parent'
     assert execute.call_args.kwargs['semantic_context'] == 'semantic-context'
     assert execute.call_args.kwargs['currentness_transaction'] == 'currentness'

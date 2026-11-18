@@ -66,13 +66,18 @@ def execute_accepted_priority_candidate(selection, source_context,
     planning_generation = selection.offer._planning_generation
     from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
         refresh_accepted_currentness,
+        require_live_accepted_currentness_step,
     )
     if candidate_step_started_at is None:
         candidate_step_started_at = time.perf_counter()
     currentness_started = time.perf_counter()
-    refresh_accepted_currentness(
+    stage_started = time.perf_counter()
+    currentness_step = refresh_accepted_currentness(
         planning_generation._accepted_currentness, planning_generation._parent)
+    accepted_refresh_wall_seconds = time.perf_counter() - stage_started
+    stage_started = time.perf_counter()
     parent, cache = selection.offer.require_current_parent(source_context)
+    parent_currentness_wall_seconds = time.perf_counter() - stage_started
     lawful_frontier = selection._lawful_frontier
     if (lawful_frontier is None
             or getattr(lawful_frontier, '_planning_generation', None)
@@ -81,18 +86,31 @@ def execute_accepted_priority_candidate(selection, source_context,
     from bilqis_mlx.runtime.lawful_teaching_frontier import (
         require_bound_lawful_teaching_frontier,
     )
-    require_bound_lawful_teaching_frontier(lawful_frontier, source_context, parent)
+    stage_started = time.perf_counter()
+    require_bound_lawful_teaching_frontier(
+        lawful_frontier, source_context, parent, currentness_step=currentness_step)
+    lawful_frontier_wall_seconds = time.perf_counter() - stage_started
     if selection.offer.capability_id not in set(lawful_frontier.ready_capability_ids):
         _invalid('BAMF_PRIORITY_SELECTION_OUTSIDE_LAWFUL_FRONTIER')
     semantic_context = planning_generation._authenticated_features
+    stage_started = time.perf_counter()
     _require_current_visit(
         parent, cache, selection.visit,
-        candidate_identity_sha256=planning_generation.parent_candidate_identity_sha256)
+        candidate_identity_sha256=planning_generation.parent_candidate_identity_sha256,
+        currentness_step=currentness_step,
+        currentness_transaction=planning_generation._accepted_currentness)
+    teacher_visit_wall_seconds = time.perf_counter() - stage_started
+    stage_started = time.perf_counter()
     prepared_source = (
         selection.offer.require_current(source_context, parent)
         if prepared_source_rows is None else
         selection.offer.require_current(
             source_context, parent, prepared_rows=prepared_source_rows))
+    source_currentness_wall_seconds = time.perf_counter() - stage_started
+    stage_started = time.perf_counter()
+    require_live_accepted_currentness_step(
+        currentness_step, planning_generation._accepted_currentness, parent)
+    accepted_live_fence_wall_seconds = time.perf_counter() - stage_started
     currentness_wall_seconds = time.perf_counter() - currentness_started
     caller_pre_neural_started = time.perf_counter()
     policy = selection.policy
@@ -111,7 +129,7 @@ def execute_accepted_priority_candidate(selection, source_context,
     caller_pre_neural_wall_seconds = (
         float(source_prepare_wall_seconds)
         + time.perf_counter() - caller_pre_neural_started)
-    return execute_factory_candidate_step(
+    result = execute_factory_candidate_step(
         Path(selection._run_dir), source_context, parent,
         atlas_artifact_path, feature_artifact_path, delivered_rows,
         capability=capability, delivery=delivery, requested_count=len(delivered_rows),
@@ -130,6 +148,21 @@ def execute_accepted_priority_candidate(selection, source_context,
         upstream_pre_neural_source_compile_wall_seconds=caller_pre_neural_wall_seconds,
         semantic_context=semantic_context,
         prepared_source=(prepared_source if not enrichment and not rehearsal else None))
+    if not hasattr(result, "realized_cost"):
+        return result
+    cost = dict(result.realized_cost)
+    cost.update({
+        "accepted_currentness_refresh_wall_seconds": accepted_refresh_wall_seconds,
+        "accepted_currentness_live_fence_wall_seconds": accepted_live_fence_wall_seconds,
+        "accepted_parent_currentness_wall_seconds": parent_currentness_wall_seconds,
+        "lawful_frontier_currentness_wall_seconds": lawful_frontier_wall_seconds,
+        "teacher_visit_currentness_wall_seconds": teacher_visit_wall_seconds,
+        "source_currentness_wall_seconds": source_currentness_wall_seconds,
+        "candidate_binding_wall_seconds": max(
+            0.0, float(cost.get("currentness_binding_wall_seconds", 0.0))
+            - currentness_wall_seconds),
+    })
+    return replace(result, realized_cost=cost)
 
 
 __all__ = ("execute_accepted_priority_candidate",)

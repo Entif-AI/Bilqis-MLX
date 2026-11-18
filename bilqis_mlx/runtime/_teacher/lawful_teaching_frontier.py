@@ -86,6 +86,17 @@ def _issue_lawful_teaching_frontier_from_epoch(
         (member.capability_id, member.semantic_id)
         for member in active_grade.definition.members
     )
+    from bilqis_mlx.runtime.frontier_autonomy_currentness import (
+        _bind_autonomy_currentness,
+    )
+    autonomy_currentness = _bind_autonomy_currentness(
+        root, epoch.current_release, plan=epoch.autonomy_plan,
+        ledger=epoch.evidence_ledger)
+    from bilqis_mlx.runtime.active_generated_grade import (
+        _bind_active_generated_grade_currentness,
+    )
+    active_grade_currentness = _bind_active_generated_grade_currentness(
+        root, active_grade)
     active_members = _active_member_projection(
         epoch.current_release, active_grade)
     mastered = evidence_complete_capabilities(
@@ -141,6 +152,8 @@ def _issue_lawful_teaching_frontier_from_epoch(
         _source_context=source_context,
         _parent=parent,
         _planning_generation=planning_generation,
+        _autonomy_currentness=autonomy_currentness,
+        _active_grade_currentness=active_grade_currentness,
     )
 
 
@@ -166,7 +179,8 @@ def issue_lawful_teaching_frontier(
 
 
 def _require_lawful_teaching_frontier(
-        frontier, source_context, parent, *, refresh_accepted):
+        frontier, source_context, parent, *, refresh_accepted,
+        currentness_step=None):
     """Validate frontier derivation; optionally refresh mutable B13 custody."""
     if (
         not _is_issued(frontier)
@@ -179,23 +193,60 @@ def _require_lawful_teaching_frontier(
         from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
             refresh_accepted_currentness,
         )
-        refresh_accepted_currentness(
+        currentness_step = refresh_accepted_currentness(
             planning_generation._accepted_currentness, parent)
+    if currentness_step is not None:
+        from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
+            require_accepted_currentness_step,
+        )
+        require_accepted_currentness_step(
+            currentness_step, planning_generation._accepted_currentness, parent)
     from bilqis_mlx.runtime.priority_source_offer import (
         _require_planning_generation,
     )
     _require_planning_generation(planning_generation, source_context, parent)
-    from bilqis_mlx.runtime.atlas_flywheel_runtime import _accepted_checkpoint
-    checkpoint = _accepted_checkpoint(Path(source_context.run_dir))
-    from bilqis_mlx.runtime.autonomy_state import read_autonomy_state
-    plan, ledger = read_autonomy_state(
-        Path(source_context.run_dir), source_context.release)
+    if currentness_step is None:
+        from bilqis_mlx.runtime.atlas_flywheel_runtime import _accepted_checkpoint
+        checkpoint = _accepted_checkpoint(Path(source_context.run_dir))
+        checkpoint_sha256 = checkpoint.sha256
+        optimizer_step = checkpoint.optimizer_step
+    else:
+        checkpoint_sha256 = planning_generation.parent_candidate_identity_sha256
+        optimizer_step = parent.retained_state.optimizer_step
+    if currentness_step is None:
+        from bilqis_mlx.runtime.autonomy_state import read_autonomy_state
+        plan, ledger = read_autonomy_state(
+            Path(source_context.run_dir), source_context.release)
+        autonomy_plan_sha256 = plan.digest()
+        autonomy_evidence_sha256 = _evidence_digest(plan, ledger)
+    else:
+        from bilqis_mlx.runtime.frontier_autonomy_currentness import (
+            _require_autonomy_currentness,
+        )
+        _require_autonomy_currentness(
+            frontier._autonomy_currentness, source_context.release)
+        autonomy_plan_sha256 = frontier.autonomy_plan_sha256
+        autonomy_evidence_sha256 = frontier.autonomy_evidence_sha256
     source = _source_authority(planning_generation)
-    from bilqis_mlx.runtime.active_generated_grade import (
-        read_active_generated_grade,
-    )
-    active_grade = read_active_generated_grade(
-        Path(source_context.run_dir))
+    if currentness_step is None:
+        from bilqis_mlx.runtime.active_generated_grade import (
+            read_active_generated_grade,
+        )
+        active_grade = read_active_generated_grade(
+            Path(source_context.run_dir))
+    else:
+        from bilqis_mlx.runtime.active_generated_grade import (
+            _read_bound_active_generated_grade,
+        )
+        active_grade = _read_bound_active_generated_grade(
+            Path(source_context.run_dir),
+            expected_activation_sha256=frontier.active_grade_activation_sha256,
+            expected_definition_sha256=frontier.active_grade_definition_sha256,
+            currentness_step=currentness_step,
+            currentness_transaction=planning_generation._accepted_currentness,
+            parent=parent,
+            active_currentness=frontier._active_grade_currentness,
+        )
     if (
         frontier.run_id != parent.run_id
         or frontier.accepted_generation != parent.generation
@@ -207,10 +258,10 @@ def _require_lawful_teaching_frontier(
            != planning_generation.parent_candidate_identity_sha256
         or frontier.admitted_release_sha256
            != source_context.release.release_sha256
-        or frontier.accepted_checkpoint_sha256 != checkpoint.sha256
-        or frontier.accepted_optimizer_step != checkpoint.optimizer_step
-        or frontier.autonomy_plan_sha256 != plan.digest()
-        or frontier.autonomy_evidence_sha256 != _evidence_digest(plan, ledger)
+        or frontier.accepted_checkpoint_sha256 != checkpoint_sha256
+        or frontier.accepted_optimizer_step != optimizer_step
+        or frontier.autonomy_plan_sha256 != autonomy_plan_sha256
+        or frontier.autonomy_evidence_sha256 != autonomy_evidence_sha256
         or frontier.policy_epoch != source.policy.policy_epoch
         or frontier.rights_epoch != source.frontier.rights_epoch
         or frontier.correction_generation
@@ -230,10 +281,11 @@ def _require_lawful_teaching_frontier(
 
 
 def require_bound_lawful_teaching_frontier(
-        frontier, source_context, parent):
+        frontier, source_context, parent, *, currentness_step=None):
     """Revalidate non-neural frontier owners without a full B13 refresh."""
     return _require_lawful_teaching_frontier(
-        frontier, source_context, parent, refresh_accepted=False)
+        frontier, source_context, parent, refresh_accepted=False,
+        currentness_step=currentness_step)
 
 
 def require_current_lawful_teaching_frontier(
