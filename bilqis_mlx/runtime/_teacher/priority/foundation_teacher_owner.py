@@ -112,7 +112,7 @@ def current_foundation_teacher_projection(run_dir):
 
 def select_foundation_priority_visit(
         run_dir, source_context, atlas_artifact_path, *, program, school,
-        progress=None):
+        progress=None, resource_holds=frozenset()):
     """Compose C16.3 bootstrap with the production C03.4 priority owner."""
     from bilqis_mlx.learning.learning_experiment import Settings
     from bilqis_mlx.runtime.accepted_priority_visit import select_accepted_priority_visit
@@ -147,7 +147,7 @@ def select_foundation_priority_visit(
         cadence_authorization=authority.cadence,
         total_capabilities=len(source_context.release.execution_plan.capabilities),
         accepted_parent=parent, planning_generation=authority.planning_generation,
-        **bootstrap)
+        resource_holds=resource_holds, **bootstrap)
     if progress is not None:
         progress(f"teacher: priority selection complete ({result.status})")
     return result

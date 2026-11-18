@@ -29,7 +29,7 @@ def _option(stable_id, action_kind, capability):
     )
 
 
-def _select(priority, options, offers):
+def _select(priority, options, offers, **kwargs):
     frontier = SimpleNamespace(
         evidence=tuple((option.stable_id, "evidence") for option in options))
     parent = SimpleNamespace(
@@ -67,7 +67,7 @@ def _select(priority, options, offers):
         return priority.select_accepted_priority_visit(
             "/run", SimpleNamespace(release=None), frontier, None, None,
             tuple(offers), None, school, None, None,
-            program=None, now=1, lawful_frontier=ready)
+            program=None, now=1, lawful_frontier=ready, **kwargs)
 
 
 @pytest.mark.parametrize(
@@ -101,3 +101,21 @@ def test_source_hold_still_skips_to_later_teaching(priority):
     assert result.status == "TEACHER_SELECTED"
     assert result.option_id == "teach"
     assert result.holds == (("stale", "SOURCE_OFFER_HELD"),)
+
+
+@pytest.mark.parametrize("has_peer", (True, False))
+def test_resource_hold_skips_only_exhausted_target(priority, has_peer):
+    failed = _option("failed", 3, "failed-cap")
+    options = (failed,)
+    offers = (("failed", Offer()),)
+    if has_peer:
+        options += (_option("peer", 3, "peer-cap"),)
+        offers += (("peer", Offer()),)
+    result = _select(
+        priority, options, offers, resource_holds=frozenset({"failed-cap"}))
+    assert result.holds == (("failed", "BAMF_C08_OOM_EXHAUSTED"),)
+    if has_peer:
+        assert result.status == "TEACHER_SELECTED"
+        assert result.option_id == "peer"
+    else:
+        assert result.status == "NO_ADMISSIBLE_TEACHING"

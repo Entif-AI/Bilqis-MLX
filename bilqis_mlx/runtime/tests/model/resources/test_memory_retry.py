@@ -152,3 +152,33 @@ class AtlasResourcesTests(AtlasResourcesFixture):
         self.assertIsNone(exhausted.current_plan)
         self.assertEqual(restored, ["a" * 64])
         self.assertEqual(exhausted.retained_candidate_digest, "a" * 64)
+
+
+class FactoryRetryRestorationTests(AtlasResourcesFixture):
+    def test_factory_retry_rejects_optimizer_mutation_during_failed_attempt(self):
+        import mlx.core as mx
+
+        from bilqis_mlx.runtime.candidate import retry
+
+        weights = mx.array([1.0])
+        optimizer = SimpleNamespace(
+            parameters={"weight": weights}, m={}, v={}, update_counts={})
+        parent = SimpleNamespace(
+            topology=self.topology,
+            retained_state=SimpleNamespace(optimizer=optimizer, optimizer_step=3))
+        cache = SimpleNamespace(
+            _candidate_identity_sha256="a" * 64, accepted_manifest_sha256="b" * 64)
+        rows = _rows(2)
+        plan = plan_microbatches(rows, self.topology, self.budget, max_microbatch_size=2)
+
+        def corrupt_then_fail(_plan):
+            weights[0] = 2.0
+            raise RuntimeError("[malloc] Unable to allocate 4096 bytes.")
+
+        with patch.object(retry, "_resource_rows", return_value=rows), self.assertRaises(
+                BilqisError) as caught:
+            retry.execute_with_oom_retry(
+                corrupt_then_fail, plan, parent=parent, candidate=None,
+                prepared=None, budget=self.budget, cache=cache,
+                require_current=lambda: (cache, GENERATION))
+        self.assertEqual(caught.exception.context["reason"], "BAMF_C08_RESTORATION_FAILED")
