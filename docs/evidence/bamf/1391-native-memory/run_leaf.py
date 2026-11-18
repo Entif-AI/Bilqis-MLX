@@ -9,9 +9,9 @@ import time
 root = Path.cwd()
 bootstrap = root / "docs/evidence/bamf/1391-native-memory/resource_bootstrap"
 environment = dict(os.environ)
-test_paths = [str(bootstrap), str(root)]
+test_paths = (str(bootstrap), str(root))
 if dependency_path := environment.get("BILQIS_1391_TEST_DEPS"):
-    test_paths.append(dependency_path)
+    test_paths += (dependency_path,)
 environment.update({
     "BILQIS_TEST_WORKERS": "1",
     "BILQIS_TEST_BASE_REF": "204a5f4769189b1dd9d334f1b7a85b4133a48110",

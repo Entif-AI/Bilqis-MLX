@@ -94,3 +94,8 @@ loader. The real loader also exposed four PyTorch import errors in the shared
 test interpreter. Installing PyTorch 2.15.0 in a separate test dependency directory
 resolved them. On the v2 source snapshot the corrected preflight loaded 5,076
 unittest cases with zero import errors and verified the unchanged SKOS bundle.
+
+Integration v3 passed the governance, architecture, documentation and error
+catalog checks but stopped at the code smell check. The harness used a mutable
+module-level list for its import paths. Replacing it with a tuple passed the
+staged smell and structure checks. No test ran and the snapshot stayed intact.
