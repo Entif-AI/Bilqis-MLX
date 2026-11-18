@@ -9,11 +9,14 @@ import time
 root = Path.cwd()
 bootstrap = root / "docs/evidence/bamf/1391-native-memory/resource_bootstrap"
 environment = dict(os.environ)
+test_paths = [str(bootstrap), str(root)]
+if dependency_path := environment.get("BILQIS_1391_TEST_DEPS"):
+    test_paths.append(dependency_path)
 environment.update({
     "BILQIS_TEST_WORKERS": "1",
     "BILQIS_TEST_BASE_REF": "204a5f4769189b1dd9d334f1b7a85b4133a48110",
     "BILQIS_QUALITY_BASE_REF": "204a5f4769189b1dd9d334f1b7a85b4133a48110",
-    "PYTHONPATH": str(bootstrap) + os.pathsep + str(root),
+    "PYTHONPATH": os.pathsep.join(test_paths),
     "PATH": str(Path(sys.executable).parent) + os.pathsep + "/opt/homebrew/bin:" + os.environ["PATH"],
 })
 print("STAGE Node test dependencies", flush=True)
@@ -24,12 +27,25 @@ started = time.monotonic()
 # contains 1,186 files / approximately 5,500 unittest methods. Expected complete
 # pipeline: 45–90 minutes; terminal failure boundary below the two-hour ceiling.
 deadline = started + 115 * 60
-preflight = (
-    "from pathlib import Path; import pytest; "
-    "from scripts.run_tests import discover_test_files; "
-    "raise SystemExit(pytest.main(['--collect-only', '-q', "
-    "'--import-mode=importlib', *map(str, discover_test_files(Path.cwd()))]))"
-)
+# Use the aggregate runner's source shim, SKOS policy and import context.
+# Stop after loading so import errors surface before any test executes.
+preflight = """
+from scripts import run_tests
+
+load = run_tests.load_test_files
+
+def check_imports(paths, root):
+    suite = load(paths, root)
+    failures = [case for case in suite if isinstance(case, run_tests._LoadFailure)]
+    for case in failures:
+        print(f"{case}: {type(case._error).__name__}: {case._error}", flush=True)
+    count = suite.countTestCases()
+    print(f"AGGREGATE_PREFLIGHT cases={count} load_errors={len(failures)}", flush=True)
+    raise SystemExit(1 if failures or not count else 0)
+
+run_tests.load_test_files = check_imports
+run_tests.main([])
+"""
 stages = (
     ("static integration quality", ["npm", "run", "quality:check"]),
     ("aggregate import/collection preflight", [sys.executable, "-B", "-c", preflight]),

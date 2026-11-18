@@ -85,3 +85,12 @@ The native test's inline synthetic exception was counted as a raw error site.
 The test now creates the exception once and verifies that the operator
 propagates the same instance. Regenerating the catalog produces no diff.
 The v1 snapshot mutation guard passed.
+
+Integration v2 passed static quality. Its collection preflight incorrectly used
+pytest discovery for the unittest aggregate, which bypassed verified SKOS bundle
+reuse and attempted to import the optional PDF extractor. The source snapshot
+passed its mutation check. Preflight now uses the aggregate's own selection and
+loader. The real loader also exposed four PyTorch import errors in the shared
+test interpreter. Installing PyTorch 2.15.0 in a separate test dependency directory
+resolved them. On the v2 source snapshot the corrected preflight loaded 5,076
+unittest cases with zero import errors and verified the unchanged SKOS bundle.
