@@ -6,7 +6,7 @@ import math
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.model_topology_v2 import (
@@ -171,9 +171,12 @@ class FactoryRetryRestorationTests(AtlasResourcesFixture):
         rows = _rows(2)
         plan = plan_microbatches(rows, self.topology, self.budget, max_microbatch_size=2)
 
+        fail_allocation = Mock(
+            side_effect=RuntimeError("[malloc] Unable to allocate 4096 bytes."))
+
         def corrupt_then_fail(_plan):
             weights[0] = 2.0
-            raise RuntimeError("[malloc] Unable to allocate 4096 bytes.")
+            fail_allocation()
 
         with patch.object(retry, "_resource_rows", return_value=rows), self.assertRaises(
                 BilqisError) as caught:

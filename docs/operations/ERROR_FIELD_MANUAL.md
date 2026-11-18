@@ -2090,7 +2090,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2080** raw raises across **294** files. The baseline gate permits only reduction.
+Current production scan: **2079** raw raises across **294** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -3962,7 +3962,6 @@ Current production scan: **2080** raw raises across **294** files. The baseline 
 | `WHOLE_STUDENT_PEAK_INVALID_SCORE` | 1 | `bilqis_mlx/learning/_retention/whole_student_retention/__init__.py` |
 | `WHOLE_STUDENT_PEAK_SCHEMA_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/checkpoint_retention.py` |
 | `WHOLE_STUDENT_PEAK_SEED_ADAMW_DRIFT` | 1 | `bilqis_mlx/runtime/_custody/reconciliation.py` |
-| `[malloc] Unable to allocate 4096 bytes.` | 1 | `bilqis_mlx/runtime/tests/model/resources/test_memory_retry.py` |
 | `_BINDING_DRIFT` | 1 | `bilqis_mlx/factory/_model/release.py` |
 | `_DIGEST_INVALID` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
 | `_INVALID` | 1 | `bilqis_mlx/factory/curriculum/candidate_frontier_io.py` |
