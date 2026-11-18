@@ -41,7 +41,7 @@ from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_liv
     C05_TRAINING_LEARNING_RATE, HP, live_factory_context,
 )
 from bilqis_mlx.runtime.tests.capability.factory.owner.bamf_c16_2c_witness_support import (
-    real_candidate_training_step,
+    real_candidate_training_horizon, real_candidate_training_step,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
     host_source_authority_patch,
@@ -192,10 +192,20 @@ def main() -> int:
             mx.reset_peak_memory()
             attempt_started = time.perf_counter()
             training_started = time.perf_counter()
-            bound, rows, step = real_candidate_training_step(
-                run_dir, parent, source_context, feature_path, artifact,
-                learning_rate=C05_TRAINING_LEARNING_RATE, capability=capability,
-                source_each=source_each)
+            candidate_horizon = int(os.environ.get(
+                "BILQIS_C05_PROFILE_CANDIDATE_HORIZON", "1"))
+            if candidate_horizon == 1:
+                bound, rows, step = real_candidate_training_step(
+                    run_dir, parent, source_context, feature_path, artifact,
+                    learning_rate=C05_TRAINING_LEARNING_RATE, capability=capability,
+                    source_each=source_each)
+            else:
+                bound, rows, steps = real_candidate_training_horizon(
+                    run_dir, parent, source_context, feature_path, artifact,
+                    learning_rate=C05_TRAINING_LEARNING_RATE,
+                    horizon=candidate_horizon, capability=capability,
+                    source_each=source_each)
+                step = steps[-1]
             mx.synchronize()
             training_wall = max(0.0, time.perf_counter() - training_started)
 

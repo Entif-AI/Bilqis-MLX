@@ -87,6 +87,46 @@ def real_candidate_training_step(
     return bound, rows, step
 
 
+def real_candidate_training_horizon(
+        target, parent, context, feature_path, artifact, *, learning_rate,
+        horizon, capability=CAPABILITY, source_each=1):
+    if type(horizon) is not int or horizon < 1:
+        raise ValueError("horizon must be a positive integer")
+    execution = context.release.execution_plan.capability_map[capability]
+    bound, provenance, _policy = bound_visit(
+        parent, target, capability, execution.grade_id)
+    rows = tuple(context.draw_rows(
+        seed=SOURCE_SEED, capability=capability, each=source_each))
+    delivery = describe_delivered_teaching(
+        context.release, capability, execution.teaching_option_ids[0], rows)
+    capture = ObservationCapture(target, {})
+    capture.attempt_id = "c16-2c-disposable-horizon"
+    capture.proposal_id = store_sidecar(
+        target, {"attempt_id": capture.attempt_id})["sha256"]
+    capture.select_option(capability, None)
+    teacher_hp = type(HP)(learning_rate, HP.betas, HP.eps, HP.weight_decay)
+    candidate = None
+    steps = []
+    for ordinal in range(1, horizon + 1):
+        observation = FactoryDeliveryObservation(
+            capture, parent.retained_state.optimizer_step + ordinal,
+            rows, SOURCE_SEED)
+        step = train_bamf_factory_step(
+            target, context, parent, str(artifact), feature_path, rows,
+            capability=capability, delivery=delivery,
+            requested_count=max(2, len(rows)),
+            source_seed=SOURCE_SEED, source_each=source_each,
+            optimizer_step_seed=16 + ordinal, visit_provenance=provenance,
+            teacher_strategy={"policy": "c16.2c-disposable-horizon"},
+            teacher_hparams=teacher_hp, max_norm=1.0, observation=observation,
+            candidate=candidate, finalize_candidate=(ordinal == horizon))
+        candidate = step.transaction
+        if candidate.update_steps != ordinal:
+            raise AssertionError("candidate horizon drift")
+        steps.append(step)
+    return bound, rows, tuple(steps)
+
+
 def real_candidate_step(
         target, parent, context, feature_path, artifact, *, learning_rate,
         capability=CAPABILITY, source_each=1, observer=None):
@@ -182,5 +222,6 @@ def finalize_witness_receipt(accepted, cold):
 __all__ = (
     "C03_FIXTURE_SEED_OFFSET", "CAPABILITY", "accepted_witness_receipt",
     "cold_probe", "finalize_witness_receipt",
-    "next_update_receipt", "real_candidate_step", "real_candidate_training_step",
+    "next_update_receipt", "real_candidate_step", "real_candidate_training_horizon",
+    "real_candidate_training_step",
 )
