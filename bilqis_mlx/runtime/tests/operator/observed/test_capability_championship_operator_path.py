@@ -156,6 +156,8 @@ class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
                 (prefix + "accept_and_publish", {"side_effect": publish}),
                 (prefix + "load_accepted_generation", {"return_value": successor}),
                 (prefix + "record_normal_stop_receipt", {"return_value": None}),
+                (prefix + "record_active_grade_cadence_attempt",
+                 {"return_value": None}),
                 ("bilqis_mlx.runtime.bamf_operator._championship_adjudication._current_binding",
                  {"return_value": binding}),
                 ("bilqis_mlx.runtime.bamf_operator.championship."
