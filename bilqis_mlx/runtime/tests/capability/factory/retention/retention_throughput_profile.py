@@ -66,6 +66,7 @@ def main() -> int:
         raise SystemExit("Apple Metal is required")
 
     capability = os.environ.get("BILQIS_C05_PROFILE_CAPABILITY", "B.AND")
+    source_each = 2 if capability == "B.AND" else 1
     previous_device = mx.default_device()
     mx.set_default_device(mx.gpu)
     root = Path.cwd()
@@ -114,7 +115,8 @@ def main() -> int:
             training_started = time.perf_counter()
             bound, rows, step = real_candidate_training_step(
                 run_dir, parent, source_context, feature_path, artifact,
-                learning_rate=C05_TRAINING_LEARNING_RATE, capability=capability)
+                learning_rate=C05_TRAINING_LEARNING_RATE, capability=capability,
+                source_each=source_each)
             mx.synchronize()
             training_wall = max(0.0, time.perf_counter() - training_started)
 
@@ -128,6 +130,7 @@ def main() -> int:
                 print("C05_RETENTION_THROUGHPUT_PREFLIGHT " + json.dumps({
                     "schema": "bilqis.mlx.c05-retention-throughput-preflight/v1",
                     "target_capability": capability,
+                    "training_source_each": source_each,
                     "training_source_families": list(training[0]),
                     "training_episode_ids": list(training[1]),
                     "fresh_seed": fresh.seed,

@@ -61,12 +61,12 @@ def bound_visit(parent, target, capability=CAPABILITY, lesson_grade="B"):
 
 def real_candidate_training_step(
         target, parent, context, feature_path, artifact, *, learning_rate,
-        capability=CAPABILITY):
+        capability=CAPABILITY, source_each=1):
     execution = context.release.execution_plan.capability_map[capability]
     bound, provenance, _policy = bound_visit(
         parent, target, capability, execution.grade_id)
     rows = tuple(context.draw_rows(
-        seed=SOURCE_SEED, capability=capability, each=1))
+        seed=SOURCE_SEED, capability=capability, each=source_each))
     delivery = describe_delivered_teaching(
         context.release, capability, execution.teaching_option_ids[0], rows)
     capture = ObservationCapture(target, {})
@@ -79,7 +79,7 @@ def real_candidate_training_step(
     step = train_bamf_factory_step(
         target, context, parent, str(artifact), feature_path, rows,
         capability=capability, delivery=delivery, requested_count=2,
-        source_seed=SOURCE_SEED, source_each=1, optimizer_step_seed=17,
+        source_seed=SOURCE_SEED, source_each=source_each, optimizer_step_seed=17,
         visit_provenance=provenance,
         teacher_strategy={"policy": "c16.2c-disposable"},
         teacher_hparams=teacher_hp, max_norm=1.0, observation=observation)
@@ -88,10 +88,10 @@ def real_candidate_training_step(
 
 def real_candidate_step(
         target, parent, context, feature_path, artifact, *, learning_rate,
-        capability=CAPABILITY, observer=None):
+        capability=CAPABILITY, source_each=1, observer=None):
     bound, rows, step = real_candidate_training_step(
         target, parent, context, feature_path, artifact,
-        learning_rate=learning_rate, capability=capability)
+        learning_rate=learning_rate, capability=capability, source_each=source_each)
     evaluation = evaluate_factory_retention_candidate(
         context, step.transaction, str(artifact), capability, run_dir=target,
         **({"observer": observer} if observer is not None else {}))
