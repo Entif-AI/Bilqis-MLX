@@ -21,9 +21,12 @@ from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.admission import _executable_factory_admission
 from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_execution_feature_context
-from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+from bilqis_mlx.runtime.bamf_bundle.admission import (
+    bind_accepted_execution_cache, load_accepted_generation,
+)
 from bilqis_mlx.runtime.bamf_first_student import BamfFoundationConfig, preflight_bamf_foundation
 from bilqis_mlx.runtime.factory_retention_owner import (
+    bind_current_retention_protection_plan, bind_current_retention_source_rows,
     evaluate_factory_retention_candidate,
 )
 from bilqis_mlx.runtime.mlx_memory import training_memory_policy
@@ -104,6 +107,14 @@ def main() -> int:
             parent = load_accepted_generation(run_dir)
             source_context = AcceptedRuntimeHost(run_dir).source_context(
                 graph=source_context.graph, source_root=source)
+            retention_setup_started = time.perf_counter()
+            accepted_cache = bind_accepted_execution_cache(run_dir)
+            protection = bind_current_retention_protection_plan(
+                source_context, parent, accepted_cache)
+            cached_rows = bind_current_retention_source_rows(
+                source_context, accepted_cache, capability)
+            retention_setup_wall = max(
+                0.0, time.perf_counter() - retention_setup_started)
             feature = authenticate_bamf_execution_feature_context(
                 parent, str(artifact), run_dir)
             feature_path = persist_feature_manifest(
@@ -132,6 +143,10 @@ def main() -> int:
                     "schema": "bilqis.mlx.c05-retention-throughput-preflight/v1",
                     "target_capability": capability,
                     "training_source_each": source_each,
+                    "retention_setup_wall_seconds": retention_setup_wall,
+                    "retention_protection_plan_sha256": protection.digest,
+                    "retention_cached_capability_ids": [
+                        item[0] for item in cached_rows],
                     "training_source_families": list(training[0]),
                     "training_episode_ids": list(training[1]),
                     "fresh_seed": fresh.seed,
@@ -169,6 +184,8 @@ def main() -> int:
                 "selected_visit": bound.identity.to_record(),
                 "training_row_ids": [row["id"] for row in rows],
                 "training_wall_seconds": training_wall,
+                "retention_setup_wall_seconds": retention_setup_wall,
+                "retention_cached_capability_ids": [item[0] for item in cached_rows],
                 "retention_wall_seconds": retention_wall,
                 "attempt_wall_seconds": attempt_wall,
                 "attempted_steps_per_hour": steps_per_hour,
