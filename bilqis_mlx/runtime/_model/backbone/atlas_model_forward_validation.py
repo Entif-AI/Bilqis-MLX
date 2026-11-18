@@ -14,6 +14,9 @@ from .atlas_model_contracts import (
 from bilqis_mlx.runtime.model_topology_v2 import validate_bamf_parameters
 
 
+_ROUTE_TRAJECTORY_NDIM = 2
+
+
 _FORWARD_HIDDEN_RANK = 3
 
 
@@ -154,7 +157,7 @@ def _route_output_from_materialized_logits(plan, row_index, trajectory_indices, 
     ordered = tuple(
         {item.decision_id: item for item in plan.decisions}[key]
         for key in plan.execution_order)
-    if (trajectory_indices.ndim != 2
+    if (trajectory_indices.ndim != _ROUTE_TRAJECTORY_NDIM
             or trajectory_indices.shape[0] != len(route_logits)
             or trajectory_indices.shape[0] < len(ordered)
             or row_index >= trajectory_indices.shape[1]):
