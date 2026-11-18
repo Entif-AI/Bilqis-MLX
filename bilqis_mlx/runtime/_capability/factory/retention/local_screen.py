@@ -19,14 +19,13 @@ from bilqis_mlx.runtime.baseline.currentness import (
 from bilqis_mlx.runtime.baseline.lifecycle import BaselineLedger
 from bilqis_mlx.runtime.capability_evaluation import _invalid
 from bilqis_mlx.runtime.capability_retention import (
-    AssessmentPair, DecisionStatus, EvidenceKind, EvidenceStage,
+    AssessmentPair, EvidenceKind,
     case_census_digest, evaluate_capabilities,
 )
 from bilqis_mlx.runtime.capability_retention_foundation import FoundationRetentionPolicy
 from bilqis_mlx.runtime.factory_complete_solver import factory_complete_solver
 from bilqis_mlx.semantics.domains import contract_digest
 
-from .championship_evidence import capability_championship_evidence
 from .local_evaluation import (
     evaluate_target_gate, finalize_target_first_local_candidate,
 )
@@ -319,17 +318,9 @@ def foundation_local_retention_screen(
         evaluated_capability_ids=target_plan.evaluated_capability_ids,
         **({"observer": observer} if observer is not None else {}))
     _elapsed(observer, "retention_decision_finalize_wall_seconds", started)
-    championship_cohort = championship_assessment = None
-    if decision.status is DecisionStatus.ELIGIBLE:
-        started = time.perf_counter()
-        championship_cohort, championship_assessment = capability_championship_evidence(
-            source_context, candidate_bundle, artifact_path, cache,
-            target_plan.target_capability_id, training,
-            EvidenceStage(plan.evidence_stage), observer=observer)
-        _elapsed(observer, "retention_championship_wall_seconds", started)
     return (
         decision, parent, candidate_bundle, parent_cache, comparison,
-        championship_cohort, championship_assessment,
+        None, None,
     )
 
 

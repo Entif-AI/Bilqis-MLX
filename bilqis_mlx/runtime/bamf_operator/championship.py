@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, replace
+import time
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.capability_championship import (
@@ -28,6 +29,15 @@ from ._championship_adjudication import adjudicate_measured_capability
 
 def _invalid(reason):
     ErrorBus.raise_(SCHOOL.BAMF_CAPABILITY_EVIDENCE.INVALID, reason=reason)
+
+
+def _observe(observer, **fields):
+    if observer is None:
+        return
+    try:
+        observer(fields)
+    except Exception:
+        pass
 
 
 def _group_map(cohort: EvaluationCohort) -> dict[str, tuple[str, ...]]:
@@ -80,13 +90,22 @@ def _epoch_identity(source_context, successor, cohort):
 
 def bind_accepted_championship_successor(
         run_dir, parent, cache, successor, source_context, artifact_path,
-        target_capability, evaluation, *, checkpoint_origin_group):
-    """Attach championship projections for every capability measured by C05."""
+        target_capability, evaluation, *, checkpoint_origin_group,
+        training=None, evidence_stage=None, observer=None):
+    """Run the explicit accepted-candidate championship boundary outside C05."""
     _require_factory_evaluation(evaluation)
+    started = time.perf_counter()
     cohort = evaluation.championship_cohort
     assessment = evaluation.championship_assessment
-    if cohort is None or assessment is None:
-        return successor
+    if (cohort is None) != (assessment is None):
+        _invalid("BAMF_CHAMPIONSHIP_ACCEPTED_EVIDENCE_INVALID")
+    if cohort is None:
+        if (not isinstance(training, tuple) or len(training) != 2
+                or evidence_stage is None):
+            _invalid("BAMF_CHAMPIONSHIP_BOUNDARY_CONTEXT_REQUIRED")
+        cohort, assessment = capability_championship_evidence(
+            source_context, successor, artifact_path, cache, target_capability,
+            training, evidence_stage, observer=observer)
     if type(cohort) is not EvaluationCohort or type(assessment) is not Assessment:
         _invalid("BAMF_CHAMPIONSHIP_ACCEPTED_EVIDENCE_INVALID")
     groups_by_capability = dict(cohort.capability_groups)
@@ -118,13 +137,14 @@ def bind_accepted_championship_successor(
     if target_capability not in measured_capabilities:
         _invalid("BAMF_CHAMPIONSHIP_TARGET_EVIDENCE_MISSING")
     evidence = [(target_capability, cohort, assessment)]
-    training = (cohort.training_family_ids, cohort.training_episode_ids)
+    championship_training = (
+        cohort.training_family_ids, cohort.training_episode_ids)
     for capability in measured_capabilities:
         if capability == target_capability:
             continue
         measured_cohort, measured_assessment = capability_championship_evidence(
             source_context, successor, artifact_path, cache, capability,
-            training, cohort.evidence_stage)
+            championship_training, cohort.evidence_stage, observer=observer)
         evidence.append((capability, measured_cohort, measured_assessment))
 
     for capability, measured_cohort, measured_assessment in evidence:
@@ -132,7 +152,11 @@ def bind_accepted_championship_successor(
             run_dir, parent, cache, successor, source_context, artifact_path,
             epoch, capability_groups, capability, measured_cohort,
             measured_assessment, checkpoint_origin_group)
-    return replace(
+    result = replace(
         successor,
         championship_state=compact_championship_state(epoch, identity),
     )
+    _observe(
+        observer,
+        championship_wall_seconds=max(0.0, time.perf_counter() - started))
+    return result

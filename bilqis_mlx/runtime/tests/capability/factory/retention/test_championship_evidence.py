@@ -39,9 +39,9 @@ class ChampionshipEvidenceTests(unittest.TestCase):
         for event in observed:
             profile.update(event)
         for field in (
-                "retention_championship_prepare_wall_seconds",
-                "retention_championship_solver_wall_seconds",
-                "retention_championship_candidate_wall_seconds"):
+                "championship_prepare_wall_seconds",
+                "championship_solver_wall_seconds",
+                "championship_candidate_wall_seconds"):
             self.assertIsInstance(profile[field], float)
             self.assertGreaterEqual(profile[field], 0.0)
 
