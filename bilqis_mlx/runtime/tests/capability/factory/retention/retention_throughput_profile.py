@@ -66,7 +66,7 @@ def main() -> int:
         raise SystemExit("Apple Metal is required")
 
     capability = os.environ.get("BILQIS_C05_PROFILE_CAPABILITY", "B.AND")
-    source_each = 2 if capability == "B.AND" else 1
+    source_each = 4 if capability == "B.AND" else 1
     previous_device = mx.default_device()
     mx.set_default_device(mx.gpu)
     root = Path.cwd()
