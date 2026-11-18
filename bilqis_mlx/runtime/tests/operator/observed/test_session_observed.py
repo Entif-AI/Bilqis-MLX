@@ -136,7 +136,8 @@ class SessionObservationTests(unittest.TestCase):
             }) for i in (1, 2, 3)]
         def assess(*args, observer, **kwargs):
             observer({'retention_completed': 1, 'retention_total': 2,
-                      'retention_subject': 'cap', 'retention_role': 'parent'})
+                      'retention_subject': 'cap', 'retention_role': 'parent',
+                      'retention_target_case_count': 3})
             return NS(candidate_state=object(), parent_state=parent.retained_state)
         prefix = 'bilqis_mlx.runtime.bamf_operator.session.'
         patches = {
@@ -186,7 +187,8 @@ class SessionObservationTests(unittest.TestCase):
         for i in (1, 2, 3):
             self.assertIn({'candidate_step': i, 'candidate_optimizer_step': 4 + i}, events)
         self.assertIn({'retention_completed': 1, 'retention_total': 2,
-                       'retention_subject': 'cap', 'retention_role': 'parent'}, events)
+                       'retention_subject': 'cap', 'retention_role': 'parent',
+                       'retention_target_case_count': 3}, events)
         self.assertIn({
             'retention_evaluated_capability_count': 2,
             'retention_protection_plan_sha256': 'f' * 64,

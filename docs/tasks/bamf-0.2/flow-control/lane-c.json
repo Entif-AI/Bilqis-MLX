@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "20f5836e17cdbc2c1f50b29590d8abcd9f0f615d",
-  "updated_at": "2026-11-16T05:47:33+00:00",
+  "observed_unified": "7c074d05c042855e6064312d582155e3e14c6430",
+  "updated_at": "2026-11-18T18:42:00+00:00",
   "exception": null,
   "items": [
     {
@@ -490,6 +490,16 @@
       "resume_trigger": null,
       "preserved_branch": "codex/1337-truth-pattern-enrichment-20261116",
       "head_sha_role": "Exact executable integration head consuming reviewed unified 749f1f37; subsequent flow-control and issue/PR receipt changes are metadata only."
+    },
+    {
+      "issue": 1389,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "71a00bb90bfc261746a5e613e68f791b8ba9ad70",
+      "head_sha_role": "issue-start head after owner-directed merge of current main into reviewed unified baseline 7c074d05c",
+      "summary": "Issue #1389 is active on isolated branch codex/1389-retention-throughput-20261118. It owns C05 production retention-screen throughput and subphase observability only: profile the real target/protected/solver/source/inference path, preserve exact retention decisions and custody, and deliver a measured native-path speedup without weakening C05/B13 or mutating the persistent learner.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1389-retention-throughput-20261118"
     }
   ]
 }

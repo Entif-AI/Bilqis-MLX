@@ -61,7 +61,7 @@ def capability_championship_instruments(
 
 def capability_championship_evidence(
         source_context, candidate_bundle, artifact_path, cache, capability_id,
-        training, evidence_stage):
+        training, evidence_stage, *, observer=None):
     instruments, contract = capability_championship_instruments(
         source_context, candidate_bundle, artifact_path, cache, capability_id)
     cases = tuple(item.case for item in instruments)
@@ -87,7 +87,21 @@ def capability_championship_evidence(
         evidence_stage=evidence_stage)
     solver, generation = factory_complete_solver(
         source_context, candidate_bundle, artifact_path, instruments)
-    return cohort, evaluate_capabilities(solver, cohort, generation)
+    assessment = evaluate_capabilities(solver, cohort, generation)
+    if observer is not None:
+        try:
+            telemetry_for = getattr(solver, "telemetry_for", None)
+            telemetry = telemetry_for() if callable(telemetry_for) else {}
+            observer({
+                "retention_championship_case_count": len(cases),
+                "retention_championship_shared_backbone_launches": int(
+                    telemetry.get("shared_backbone_launches", 0) or 0),
+                "retention_championship_scalar_neural_launches": int(
+                    telemetry.get("scalar_neural_launches", 0) or 0),
+            })
+        except Exception:
+            pass
+    return cohort, assessment
 
 
 __all__ = (
