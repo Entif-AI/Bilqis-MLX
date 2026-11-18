@@ -15,6 +15,9 @@ environment.update({
     "PYTHONPATH": str(bootstrap) + os.pathsep + str(root),
     "PATH": str(Path(sys.executable).parent) + os.pathsep + "/opt/homebrew/bin:" + os.environ["PATH"],
 })
+print("STAGE Node test dependencies", flush=True)
+subprocess.run(["npm", "ci", "--ignore-scripts", "--omit=dev"],
+               env=environment, timeout=180, check=True)
 started = time.monotonic()
 # 36 selected files; expected 20–45 minutes including static Git-history checks.
 # A single complete leaf claim; the timeout is a failure boundary, never PASS.

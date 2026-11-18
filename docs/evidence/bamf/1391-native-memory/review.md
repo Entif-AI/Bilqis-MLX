@@ -32,3 +32,10 @@ Next qualification: 36 differential test files, static gates first, single MLX
 worker, test-only 8 GiB allocator bound and existing no-free-cache policy in every
 Python child. Expected 20–45 minutes; hard failure after 80 minutes. This does
 not claim the production trainer has an 8 GiB allocator cap.
+
+Requested main intake exposed a 391-line rejection projection test. The
+mandatory structure interruption split unchanged test assertions into projection
+(232 lines), genesis (57 lines), and shared fixtures (115 lines). Twelve focused
+cases passed before import-only cleanup. Local Work Stack interruption completed;
+full leaf qualification includes the changed test files. This is inherited
+structure compliance for the requested main merge, not a trainer semantic change.
