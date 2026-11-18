@@ -490,6 +490,15 @@
       "resume_trigger": null,
       "preserved_branch": "codex/1337-truth-pattern-enrichment-20261116",
       "head_sha_role": "Exact executable integration head consuming reviewed unified 749f1f37; subsequent flow-control and issue/PR receipt changes are metadata only."
+    },
+    {
+      "issue": 1391,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "71a00bb90bfc261746a5e613e68f791b8ba9ad70",
+      "summary": "Apply existing MLX long-run memory policy to native operator; focused normal/exception restoration and state preservation proof.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1391-native-training-memory-20261118"
     }
   ]
 }

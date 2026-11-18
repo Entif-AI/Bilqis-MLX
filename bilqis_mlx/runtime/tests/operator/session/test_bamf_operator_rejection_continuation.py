@@ -24,6 +24,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 )
 
 
+@patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
 class BamfOperatorRejectionContinuationTests(unittest.TestCase):
     def setUp(self):
         self.run_storage = patch("bilqis_mlx.runtime.run_authority.binding.storage_root", return_value=Path(gettempdir()))

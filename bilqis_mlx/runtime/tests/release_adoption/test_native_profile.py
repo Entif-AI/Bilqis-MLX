@@ -1,9 +1,11 @@
 """Native R19 dispatch preserves explicit compiled-profile authority."""
+from contextlib import nullcontext
 from pathlib import Path
 import unittest
 from unittest.mock import patch
 
 
+@patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
 class NativeProfileOperatorTests(unittest.TestCase):
     def test_operator_adopts_explicit_profile_inside_lock_before_first_visit(self):
         from bilqis_mlx.runtime.bamf_operator import session

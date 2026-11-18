@@ -1,4 +1,5 @@
 """Accepted C16.3 operator path carries C05 championship evidence into B13 state."""
+from contextlib import nullcontext
 from contextlib import ExitStack
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -60,6 +61,7 @@ def _accepted_championship_successor(evaluation, solver, assessment, group):
     return parent, retained, successor, binding
 
 
+@patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
 class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
     def test_operate_bamf_publishes_first_title_from_issued_c05_evidence(self):
         fixture, target, group, solver, assessment, evaluation = (

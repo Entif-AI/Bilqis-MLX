@@ -1,4 +1,5 @@
 from pathlib import Path
+from contextlib import nullcontext
 from types import SimpleNamespace as NS
 import unittest
 from unittest.mock import patch
@@ -98,6 +99,7 @@ def _operate_first_baseline_case(case):
     return result, published
 
 
+@patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
 class SessionObservationTests(unittest.TestCase):
     def setUp(self):
         patched = patch('bilqis_mlx.runtime.outcomes.issuance.build_outcome', return_value={})

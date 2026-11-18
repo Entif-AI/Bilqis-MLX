@@ -1,4 +1,5 @@
 """Additional C16.3 operator routing and rejection contracts."""
+from contextlib import nullcontext
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
@@ -29,6 +30,7 @@ def _assert_rejected_resource(case, resource):
     case.assertEqual(resource["evidence_persistence_seconds"], 0.005)
 
 
+@patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
 class BamfOperatorRoutingContinuationTests(unittest.TestCase):
     def setUp(self):
         for name, behavior in (
