@@ -186,7 +186,7 @@ def _target_stage(
         release.release_sha256, cache, target, candidate_sha256)
     target_draw = _fresh_rows(
         source_context, (target,), seed=fresh_seed + C05_FRESH_TARGET_SEED_OFFSET,
-        training=training)
+        training=training, require_independent=False)
     target_instruments = tuple(_instruments(
         source_context, candidate_bundle, artifact_path, target_draw.rows,
         seed=target_draw.seed, each=C05_PROBE_EACH))

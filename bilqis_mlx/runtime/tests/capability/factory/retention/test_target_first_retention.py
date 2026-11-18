@@ -207,7 +207,8 @@ def test_live_screen_short_circuits_before_protected_compilation():
     fresh_rows.assert_called_once_with(
         ANY,
         (target,), seed=11 + local_screen.C05_FRESH_TARGET_SEED_OFFSET,
-        training=(("trained-family",), ("trained-episode",)))
+        training=(("trained-family",), ("trained-episode",)),
+        require_independent=False)
     assert assessments.call_args_list[0].args[1] is target_cohort
     assert assessments.call_args_list[1].args[1] is target_cohort
     profile = {}
