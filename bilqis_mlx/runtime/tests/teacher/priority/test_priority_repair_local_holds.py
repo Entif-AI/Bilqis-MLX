@@ -87,7 +87,7 @@ def test_repair_option_holds_locally_when_later_teaching_is_available(
 
 def test_repair_only_frontier_remains_action_required(priority):
     repair = _option("repair", priority.ActionKind.CORRECTION, "repair-cap")
-    result = _select(priority, (repair,), (("repair", Offer()),))
+    result = _select(priority, (repair,), ())
     assert result.status == "ACTION_REQUIRED"
     assert result.option_id == "repair"
     assert result.holds == (("repair", "CORRECTION_ACTION_REQUIRED"),)
