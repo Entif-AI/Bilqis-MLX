@@ -503,10 +503,11 @@
     },
     {
       "issue": 1392,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "204a5f4769189b1dd9d334f1b7a85b4133a48110",
-      "summary": "Wire bounded C08 memory retry into native candidate execution and preserve accepted custody when a target is resource-held.",
+      "pr": 1412,
+      "state": "TURNED_IN",
+      "head_sha": "53d16c2dc2671830f00853204f6067915729d94f",
+      "head_sha_role": "Verified executable candidate before this turn-in receipt.",
+      "summary": "Native C08 recovery retries the exact delivery at a smaller microbatch. Exhaustion records a B13 resource rejection and holds the capability for the current command. Scoped proof passed with 47 tests and 12 subtests, including source-backed native retry, exact parent cold readback, and operator continuation. PR #1412 is open for human review.",
       "resume_trigger": null,
       "preserved_branch": "codex/1392-native-oom-retry-20261118"
     }
