@@ -24,8 +24,6 @@ class SessionPublicationObservationTests(unittest.TestCase):
                 kwargs['publication_observer'](PublicationMetrics(1, 2, 3, 4, 5))
             prefix = 'bilqis_mlx.runtime.bamf_operator.session.'
             with patch(
-                    'bilqis_mlx.runtime.run_authority.binding.storage_root',
-                    return_value=path.parent), patch(
                     prefix + 'prepare_bamf_visit', return_value=prepared), patch(
                     prefix + 'accept_and_publish', side_effect=publish), patch(
                     prefix + 'load_accepted_generation', return_value=NS(generation=1, retained_state=NS(optimizer_step=1))):

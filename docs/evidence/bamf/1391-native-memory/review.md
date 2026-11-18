@@ -39,3 +39,21 @@ mandatory structure interruption split unchanged test assertions into projection
 cases passed before import-only cleanup. Local Work Stack interruption completed;
 full leaf qualification includes the changed test files. This is inherited
 structure compliance for the requested main merge, not a trainer semantic change.
+
+Leaf v1 receipt: FAIL, 143 passed / 61 failed / 1 collection error; source
+snapshot unmutated. Static structure, governance, smell, trainer-authority,
+invariant-transfer and flow-control stages passed. Failure census: 52 stale
+`run_authority.binding.storage_root` patches, moved session helper imports/patches,
+and a cold-resume double missing `run_authority`. These boundaries were removed or
+moved in the consumed baseline, independently of the memory-context change.
+Repair scope: migrate affected test doubles to current owners and remove obsolete
+storage-root substitutions. Preserve all runtime behavior and assertions. This
+implements inherited #1391 acceptance requiring existing resume/publication tests
+green; no new acceptance obligation. First focused repair checks: 18 + 7 passed.
+
+Additional focused verification after fixture migration: 16/16 operator observed,
+mentor, championship, publication, metrics and throughput cases passed in 5.04s.
+Combined repair checks total 41 passing cases. Production memory implementation
+has not changed. Differential selection now includes 72 files because shared
+fixture repair invalidates its direct test consumers. Leaf v2 is a fresh snapshot;
+v1 evidence remains preserved and its 143 passing cases are historical evidence.

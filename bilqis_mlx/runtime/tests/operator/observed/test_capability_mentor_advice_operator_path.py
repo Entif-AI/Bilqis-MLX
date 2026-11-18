@@ -48,7 +48,8 @@ def _runtime_context(case, *, group):
 
 class NativeChampionshipMentorAdviceTests(NativeChampionshipCase):
     def test_native_horizon_materializes_mentor_supervision_before_candidate_step(self):
-        from bilqis_mlx.runtime.bamf_operator.session import _execute_horizon
+        from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import execute_horizon
+        from bilqis_mlx.runtime.bamf_operator.session import _emit_progress, _invalid
 
         mentor_record = {
             "schema": "bilqis.mlx.championship-mentor-supervision/v1",
@@ -75,7 +76,7 @@ class NativeChampionshipMentorAdviceTests(NativeChampionshipCase):
         )
         cache = SimpleNamespace(
             generation=1, accepted_manifest_sha256="a" * 64)
-        prefix = "bilqis_mlx.runtime.bamf_operator.session."
+        prefix = "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
         with patch(prefix + "prepare_candidate_evidence_root"), patch(
                 prefix + "_Capture") as capture, patch(
                 prefix + "FactoryDeliveryObservation", return_value="observation") as observation, patch(
@@ -84,10 +85,11 @@ class NativeChampionshipMentorAdviceTests(NativeChampionshipCase):
                 "bilqis_mlx.runtime.championship_advisers."
                 "championship_mentor_supervision",
                 return_value=mentor) as supervise:
-            steps, returned_capture = _execute_horizon(
+            steps, returned_capture = execute_horizon(
                 Path("/tmp"), selection, SimpleNamespace(), parent,
                 "atlas", "feature", ({"id": "row:r05"},), 1, cache, 1,
-                None, 0, None, None, None, adviser_pool)
+                None, 0, None, None, None, adviser_pool,
+                emit_progress=_emit_progress, invalid=_invalid)
 
         self.assertEqual(steps, [step])
         self.assertIs(returned_capture, capture.return_value)

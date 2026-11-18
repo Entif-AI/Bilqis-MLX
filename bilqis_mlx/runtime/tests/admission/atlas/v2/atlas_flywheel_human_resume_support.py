@@ -172,7 +172,8 @@ class AcceptedAtlasFlywheelHumanResumeSupport(MixedWitnessSupport, unittest.Test
 
         def cold_operator_probe(
                 run_dir, *, minutes, max_visits, steps_per_visit, reserve_gib,
-                source_prefetch_workers, parent_graph=None, progress=None):
+                source_prefetch_workers, parent_graph=None, progress=None,
+                run_authority=None):
             from bilqis_mlx.runtime.bamf_operator import BamfOperatorResult
             from bilqis_mlx.runtime.bamf_operator.session import _execution_context
 

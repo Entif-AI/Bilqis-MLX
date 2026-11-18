@@ -86,25 +86,27 @@ class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
         published = []
 
         def prepare(run_dir, *, observer=None, **_kwargs):
-            from bilqis_mlx.runtime.bamf_operator.session import _retention_result
+            from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import retention_result
+            from bilqis_mlx.runtime.bamf_operator.session import _emit_progress
             if observer is not None:
                 observer.bind_parent(parent)
-            return _retention_result(
+            return retention_result(
                 run_dir, parent, fixture[0], "artifact", selection, target,
-                cache, (step,), capture, 1, 1, {}, None, observer)
+                cache, (step,), capture, 1, 1, {}, None, observer, emit_progress=_emit_progress)
 
         def publish(_run_dir, bound_successor, *_args, **_kwargs):
             published.append(bound_successor)
 
         prefix = "bilqis_mlx.runtime.bamf_operator.session."
+        native_prefix = "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
         with TemporaryDirectory() as tmp, ExitStack() as stack:
             for target_name, kwargs in (
                 (prefix + "prepare_bamf_visit", {"side_effect": prepare}),
-                (prefix + "evaluate_factory_retention_candidate",
+                (native_prefix + "evaluate_factory_retention_candidate",
                  {"return_value": evaluation}),
-                (prefix + "derive_accepted_teacher_successor",
+                (native_prefix + "derive_accepted_teacher_successor",
                  {"return_value": successor}),
-                (prefix + "bind_factory_baseline_successor",
+                (native_prefix + "bind_factory_baseline_successor",
                  {"side_effect": lambda _evaluation, value: value}),
                 ("bilqis_mlx.runtime.outcomes.issuance.build_outcome",
                  {"return_value": {"schema": "fixture-outcome"}}),
@@ -112,13 +114,11 @@ class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
                  {"side_effect": lambda visit, _outcome: visit}),
                 ("bilqis_mlx.runtime.outcomes.issuance.carry_credit_to_successor",
                  {"side_effect": lambda _visit, value, _parent: value}),
-                (prefix + "_resource_observation", {"return_value": {}}),
-                (prefix + "candidate_identity_metrics_delta", {"return_value": {}}),
+                (native_prefix + "_resource_observation", {"return_value": {}}),
+                (native_prefix + "candidate_identity_metrics_delta", {"return_value": {}}),
                 (prefix + "accept_and_publish", {"side_effect": publish}),
                 (prefix + "load_accepted_generation", {"return_value": successor}),
                 (prefix + "record_normal_stop_receipt", {"return_value": None}),
-                ("bilqis_mlx.runtime.run_authority.binding.storage_root",
-                 {"return_value": Path(tmp).parent}),
                 ("bilqis_mlx.runtime.bamf_operator._championship_adjudication._current_binding",
                  {"return_value": binding}),
             ):

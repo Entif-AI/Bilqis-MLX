@@ -19,7 +19,7 @@ print("STAGE Node test dependencies", flush=True)
 subprocess.run(["npm", "ci", "--ignore-scripts", "--omit=dev"],
                env=environment, timeout=180, check=True)
 started = time.monotonic()
-# 36 selected files; expected 20–45 minutes including static Git-history checks.
+# 72 selected files after fixture repair; expected 25–55 minutes including static checks.
 # A single complete leaf claim; the timeout is a failure boundary, never PASS.
 print("STAGE leaf: static quality, affected tests, Node and security", flush=True)
 result = subprocess.run(
