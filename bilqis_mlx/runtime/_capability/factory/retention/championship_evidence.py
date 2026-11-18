@@ -66,7 +66,7 @@ def capability_championship_instruments(
         rubric_version=contract.rubric_sha256)
     instruments = _instruments(
         source_context, candidate_bundle, artifact_path, raw.rows,
-        seed=seed, release_prevalidated=True)
+        seed=seed, each=len(raw.rows), release_prevalidated=True)
     return instruments, contract
 
 

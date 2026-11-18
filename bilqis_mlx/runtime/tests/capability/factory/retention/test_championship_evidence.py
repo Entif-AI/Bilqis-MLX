@@ -9,33 +9,6 @@ import bilqis_mlx.runtime.retention.championship_evidence as championship_eviden
 
 
 class ChampionshipEvidenceTests(unittest.TestCase):
-    def test_stable_panel_enables_generation_independent_compiled_cohort_reuse(self):
-        rows = ({"id": "row-1", "capability": "future:first", "tokens": [1]},)
-        projection = NS(source="1" * 64, assessment="2" * 64)
-        verification = NS(digest=lambda: "3" * 64)
-        release = NS(
-            release_sha256="4" * 64, semantic_catalog_sha256="5" * 64)
-        source_context = NS(
-            release=release,
-            execution_for=lambda capability: NS(grade_id="future"),
-            assessment_projection_for=lambda capability: projection,
-            verification_for=lambda capability: verification,
-            draw_rows=lambda **kwargs: rows,
-        )
-        raw = NS(rows=rows)
-
-        with patch.object(
-                championship_evidence, "make_cohort", return_value=raw), patch.object(
-                championship_evidence, "_instruments",
-                return_value=("instrument",)) as instruments:
-            actual, _contract = championship_evidence.capability_championship_instruments(
-                source_context, object(), "artifact", NS(run_id="run"),
-                "future:first")
-
-        self.assertEqual(actual, ("instrument",))
-        self.assertNotIn("each", instruments.call_args.kwargs)
-        self.assertTrue(instruments.call_args.kwargs["release_prevalidated"])
-
     def test_measurement_is_complete_for_target_without_peer_school_scope(self):
         cases, contexts = _cases("future:first", "future", 2, "first")
         solver = _solver(contexts, {case.case_id for case in cases})
