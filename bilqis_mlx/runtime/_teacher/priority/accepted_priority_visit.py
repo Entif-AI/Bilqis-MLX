@@ -31,14 +31,14 @@ from .accepted_priority_visit_contracts import (
     accepted_priority_school,
 )
 
-_ACTION_REQUIRED_HOLD_REASONS = {
-    ActionKind.CORRECTION: 'CORRECTION_ACTION_REQUIRED',
-    ActionKind.PROCEDURE_REPAIR: 'PROCEDURE_REPAIR_ACTION_REQUIRED',
-}
-
-
 def _invalid(reason):
     ErrorBus.Raise(SCHOOL.BAMF_CURRICULUM.INVALID, reason=reason)
+
+
+def _action_required_hold_reason(action_kind):
+    return ('CORRECTION_ACTION_REQUIRED'
+            if action_kind == ActionKind.CORRECTION
+            else 'PROCEDURE_REPAIR_ACTION_REQUIRED')
 
 def _selected_priority_result(
         run_dir, source_context, parent, cache, projection, epoch, teacher,
@@ -184,7 +184,7 @@ def select_accepted_priority_visit(
             evidence[option.stable_id], option.context.capability_id,
             option.context.scope, contract_digest(epoch))
         if option.action_kind in (ActionKind.CORRECTION, ActionKind.PROCEDURE_REPAIR):
-            holds.append((option.stable_id, _ACTION_REQUIRED_HOLD_REASONS[option.action_kind]))
+            holds.append((option.stable_id, _action_required_hold_reason(option.action_kind)))
             if action_required_option_id is None:
                 action_required_option_id = option.stable_id
             continue
