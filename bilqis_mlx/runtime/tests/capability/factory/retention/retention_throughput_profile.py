@@ -121,7 +121,7 @@ def main() -> int:
             training_wall = max(0.0, time.perf_counter() - training_started)
 
             if os.environ.get("BILQIS_C05_PROFILE_PREFLIGHT_ONLY") == "1":
-                from bilqis_mlx.runtime._capability.factory._factory_retention_support import (
+                from bilqis_mlx.runtime.factory_retention_owner import (
                     _fresh_rows, _training_exclusions,
                 )
                 training = _training_exclusions(step.transaction)
