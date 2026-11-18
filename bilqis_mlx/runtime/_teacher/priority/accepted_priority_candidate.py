@@ -70,7 +70,6 @@ def execute_accepted_priority_candidate(selection, source_context,
     )
     if candidate_step_started_at is None:
         candidate_step_started_at = time.perf_counter()
-    currentness_started = time.perf_counter()
     stage_started = time.perf_counter()
     currentness_step = refresh_accepted_currentness(
         planning_generation._accepted_currentness, planning_generation._parent)
@@ -107,11 +106,6 @@ def execute_accepted_priority_candidate(selection, source_context,
         selection.offer.require_current(
             source_context, parent, prepared_rows=prepared_source_rows))
     source_currentness_wall_seconds = time.perf_counter() - stage_started
-    stage_started = time.perf_counter()
-    require_live_accepted_currentness_step(
-        currentness_step, planning_generation._accepted_currentness, parent)
-    accepted_live_fence_wall_seconds = time.perf_counter() - stage_started
-    currentness_wall_seconds = time.perf_counter() - currentness_started
     caller_pre_neural_started = time.perf_counter()
     policy = selection.policy
     lr = policy.get('lr') if isinstance(policy, dict) else None
@@ -129,6 +123,18 @@ def execute_accepted_priority_candidate(selection, source_context,
     caller_pre_neural_wall_seconds = (
         float(source_prepare_wall_seconds)
         + time.perf_counter() - caller_pre_neural_started)
+    stage_started = time.perf_counter()
+    require_live_accepted_currentness_step(
+        currentness_step, planning_generation._accepted_currentness, parent)
+    accepted_live_fence_wall_seconds = time.perf_counter() - stage_started
+    currentness_wall_seconds = sum((
+        accepted_refresh_wall_seconds,
+        parent_currentness_wall_seconds,
+        lawful_frontier_wall_seconds,
+        teacher_visit_wall_seconds,
+        source_currentness_wall_seconds,
+        accepted_live_fence_wall_seconds,
+    ))
     result = execute_factory_candidate_step(
         Path(selection._run_dir), source_context, parent,
         atlas_artifact_path, feature_artifact_path, delivered_rows,
