@@ -29,7 +29,8 @@ from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_liv
     live_factory_context,
 )
 from bilqis_mlx.runtime.tests.capability.factory.retention.owner_live_support import (
-    TARGET, _initialize_generation, _source_owned_candidate_step,
+    TARGET, _initialize_generation,
+    _teacher_selected_source_owned_candidate_step_evidence,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
     host_source_authority_patch,
@@ -77,8 +78,9 @@ def main() -> int:
             mx.reset_peak_memory()
             attempt_started = time.perf_counter()
             training_started = time.perf_counter()
-            transaction = _source_owned_candidate_step(
-                run_dir, source_context, parent, cache, artifact)
+            transaction, _gradient, _row, _targets, teacher = (
+                _teacher_selected_source_owned_candidate_step_evidence(
+                    run_dir, source_context, parent, cache, artifact))
             mx.synchronize()
             training_wall = max(0.0, time.perf_counter() - training_started)
 
@@ -104,6 +106,7 @@ def main() -> int:
                 "published": False,
                 "target_capability": TARGET,
                 "candidate_update_steps": transaction.update_steps,
+                "teacher_policy_key": teacher["policy_key"],
                 "training_wall_seconds": training_wall,
                 "retention_wall_seconds": retention_wall,
                 "attempt_wall_seconds": attempt_wall,
