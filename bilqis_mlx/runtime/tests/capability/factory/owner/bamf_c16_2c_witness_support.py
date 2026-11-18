@@ -78,7 +78,8 @@ def real_candidate_training_step(
     teacher_hp = type(HP)(learning_rate, HP.betas, HP.eps, HP.weight_decay)
     step = train_bamf_factory_step(
         target, context, parent, str(artifact), feature_path, rows,
-        capability=capability, delivery=delivery, requested_count=2,
+        capability=capability, delivery=delivery,
+        requested_count=max(2, len(rows)),
         source_seed=SOURCE_SEED, source_each=source_each, optimizer_step_seed=17,
         visit_provenance=provenance,
         teacher_strategy={"policy": "c16.2c-disposable"},
