@@ -126,7 +126,8 @@ def main() -> int:
                 )
                 training = _training_exclusions(step.transaction)
                 fresh = _fresh_rows(
-                    source_context, (capability,), seed=17, training=training)
+                    source_context, (capability,), seed=17, training=training,
+                    require_independent=False)
                 print("C05_RETENTION_THROUGHPUT_PREFLIGHT " + json.dumps({
                     "schema": "bilqis.mlx.c05-retention-throughput-preflight/v1",
                     "target_capability": capability,
