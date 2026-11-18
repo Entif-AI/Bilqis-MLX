@@ -17,6 +17,7 @@ import time
 
 import mlx.core as mx
 
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
 from bilqis_mlx.runtime.admission import _executable_factory_admission
@@ -31,6 +32,11 @@ from bilqis_mlx.runtime.factory_retention_owner import (
 )
 from bilqis_mlx.runtime.mlx_memory import training_memory_policy
 from bilqis_mlx.runtime.state import _fingerprint
+from bilqis_mlx.runtime.bamf_operator.session import prepare_bamf_visit
+from bilqis_mlx.runtime.bamf_operator.performance import (
+    PERFORMANCE_FIELDS, RETENTION_PROFILE_FIELDS,
+)
+from bilqis_mlx.runtime.bamf_operator.telemetry import TrainerObservation
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
     C05_TRAINING_LEARNING_RATE, HP, live_factory_context,
 )
@@ -104,6 +110,55 @@ def main() -> int:
                 run_seed=993, semantic_graph=source_context.graph,
                 atlas_artifact=identity, optimizer_hyperparameters=HP)
             preflight_bamf_foundation(config, source_context.release, run_dir)
+            operator_horizon_raw = os.environ.get("BILQIS_C05_PROFILE_OPERATOR_HORIZON")
+            if operator_horizon_raw is not None:
+                operator_horizon = int(operator_horizon_raw)
+                parent_before = load_accepted_generation(run_dir)
+                observer = TrainerObservation(run_dir, 1, heartbeat_seconds=60.0)
+                started = time.perf_counter()
+                prepared = prepare_bamf_visit(
+                    run_dir, steps_per_visit=operator_horizon, reserve_gib=0.0,
+                    source_prefetch_workers=0, observer=observer)
+                mx.synchronize()
+                wall = max(0.0, time.perf_counter() - started)
+                parent_after = load_accepted_generation(run_dir)
+                decision = prepared.decision
+                operator_receipt = {
+                    "schema": "bilqis.mlx.c05-operator-throughput-profile/v1",
+                    "authorizing": False,
+                    "published": False,
+                    "requested_horizon": operator_horizon,
+                    "status": prepared.status,
+                    "capability": prepared.capability,
+                    "candidate_update_steps": (
+                        prepared.step.transaction.update_steps
+                        if prepared.step is not None else None),
+                    "wall_seconds": wall,
+                    "retention_wall_seconds": observer.record.get(
+                        "retention_wall_seconds"),
+                    "retained_steps_per_hour": (
+                        3600.0 * prepared.step.transaction.update_steps / wall
+                        if prepared.step is not None and wall > 0 else 0.0),
+                    "decision": decision.to_record() if decision is not None else None,
+                    "profile": {
+                        key: observer.record.get(key)
+                        for key in (*PERFORMANCE_FIELDS, *RETENTION_PROFILE_FIELDS)
+                        if observer.record.get(key) is not None
+                    },
+                    "accepted_generation_unchanged": (
+                        parent_before.generation == parent_after.generation),
+                    "accepted_optimizer_step_unchanged": (
+                        parent_before.retained_state.optimizer_step
+                        == parent_after.retained_state.optimizer_step),
+                    "accepted_student_unchanged": (
+                        candidate_identity_digest(parent_before.retained_state)
+                        == candidate_identity_digest(parent_after.retained_state)),
+                    "memory": _memory(),
+                }
+                print("C05_OPERATOR_THROUGHPUT_PROFILE " + json.dumps(
+                    operator_receipt, sort_keys=True), flush=True)
+                mx.set_default_device(previous_device)
+                return 0
             parent = load_accepted_generation(run_dir)
             source_context = AcceptedRuntimeHost(run_dir).source_context(
                 graph=source_context.graph, source_root=source)
