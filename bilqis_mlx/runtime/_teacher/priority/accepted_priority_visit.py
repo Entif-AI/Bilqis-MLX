@@ -156,7 +156,7 @@ def select_accepted_priority_visit(
         accepted_parent, planning_generation)
     cadence_ids, cadence_metadata = _cadence_context(
         cadence_authorization, lawful_frontier)
-    if not offers:
+    if not offers and frontier is None:
         return _empty_priority_result(
             run_dir, source_context, parent, frontier, history, lawful_frontier,
             cadence_authorization, cadence_ids, cadence_metadata)
