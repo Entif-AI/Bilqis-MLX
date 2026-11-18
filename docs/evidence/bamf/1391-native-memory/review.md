@@ -64,3 +64,18 @@ existing `run_authority=None` argument. Corrected the literal expected call;
 production behavior remains unchanged. Static gates passed again. No third
 unchanged broad diagnostic run: first prove this exact assertion locally on
 m3-ultra, then consume current unified before the integration boundary.
+
+Resume assertion repair: 2 passed in 26.26s on m3-ultra. Current unified
+`204a5f4769189b1dd9d334f1b7a85b4133a48110` consumed at merge head
+`249d541d066aa708917cd22da98e4dffa0194e0e`; only ledger conflict, preserving
+both issue entries. Native memory coordinator files unchanged by intake. Intake
+changes readout, retention, priority and model validation assumptions, so affected
+integration proof must run again. Production design review/NO_DRIFT remains valid.
+
+Integration qualification chains static quality, aggregate collection preflight,
+affected tests, Node/security and the existing premerge aggregate. Existing runner
+excludes DETACHED_ONLY witnesses. Discovery: 1,186 files / ~5,500 unittest methods.
+Expected 45–90 minutes using the measured 18-minute leaf and repository qualification
+estimates as inputs; entire composed run fails after 115 minutes. Test-only 8 GiB
+allocator bound remains applied to every Python child. No whole-system PASS is
+claimed until terminal receipts are reconciled.
