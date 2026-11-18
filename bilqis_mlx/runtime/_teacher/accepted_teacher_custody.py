@@ -18,7 +18,11 @@ from bilqis_mlx.learning.teacher_visit_identity import (
     TeacherVisitIdentity, derive_teacher_visit_identity,
     record_teacher_visit_authority, record_teacher_visit_identity,
 )
-from bilqis_mlx.learning._teaching.teacher_lineage_records import digest, invalid
+from bilqis_mlx.learning._teaching.teacher_lineage_records import (
+    SHA256_HEX_LENGTH,
+    digest,
+    invalid,
+)
 from bilqis_mlx.runtime.bamf_bundle import CompleteStudent
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache, derive_successor_bundle,
@@ -58,7 +62,7 @@ class BoundTeacherVisit:
                 or type(self.projection) is not TeacherCustodyProjection
                 or type(self.identity) is not TeacherVisitIdentity
                 or not isinstance(getattr(self, "_teacher_state_sha256", None), str)
-                or len(self._teacher_state_sha256) != hashlib.sha256().digest_size * 2
+                or len(self._teacher_state_sha256) != SHA256_HEX_LENGTH
                 or self.projection.teacher_state.get("last_visit")
                 != self.identity.to_record()):
             invalid("TEACHER_VISIT_CUSTODY_INVALID")

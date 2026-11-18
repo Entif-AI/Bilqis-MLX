@@ -54,9 +54,11 @@ class FrontierAutonomyCurrentnessTests(unittest.TestCase):
                 self.release, restored, self._receipt(work.obligation), plan=plan)
             persist_autonomy_state(
                 root, self.release, plan=plan, ledger=updated)
-            with self.assertRaisesRegex(
-                    ValueError, "AUTONOMY_STATE_CURRENTNESS_DRIFT"):
+            with self.assertRaises(ValueError) as raised:
                 _require_autonomy_currentness(witness, self.release)
+            self.assertEqual(
+                raised.exception.context["reason"],
+                "AUTONOMY_STATE_CURRENTNESS_DRIFT")
 
     def test_witness_rejects_bound_state_file_tamper(self):
         with TemporaryDirectory() as temp:
@@ -69,6 +71,8 @@ class FrontierAutonomyCurrentnessTests(unittest.TestCase):
 
             state = root / pointer["state_file"]
             state.write_text(state.read_text(encoding="utf-8") + " ")
-            with self.assertRaisesRegex(
-                    ValueError, "AUTONOMY_STATE_CURRENTNESS_DRIFT"):
+            with self.assertRaises(ValueError) as raised:
                 _require_autonomy_currentness(witness, self.release)
+            self.assertEqual(
+                raised.exception.context["reason"],
+                "AUTONOMY_STATE_CURRENTNESS_DRIFT")
