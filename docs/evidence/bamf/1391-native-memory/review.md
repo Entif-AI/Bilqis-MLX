@@ -79,3 +79,9 @@ Expected 45–90 minutes using the measured 18-minute leaf and repository qualif
 estimates as inputs; entire composed run fails after 115 minutes. Test-only 8 GiB
 allocator bound remains applied to every Python child. No whole-system PASS is
 claimed until terminal receipts are reconciled.
+
+Integration v1 stopped at the error field manual check before test collection.
+The native test's inline synthetic exception was counted as a raw error site.
+The test now creates the exception once and verifies that the operator
+propagates the same instance. Regenerating the catalog produces no diff.
+The v1 snapshot mutation guard passed.

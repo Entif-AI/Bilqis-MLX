@@ -37,6 +37,8 @@ def test_native_arrays_and_adamw_survive_session_policy(tmp_path, visit_error):
     current = SimpleNamespace(
         generation=1, retained_state=SimpleNamespace(optimizer_step=1))
 
+    failure = RuntimeError("native visit failure")
+
     def visit(*_args, **_kwargs):
         assert mx.set_cache_limit(0) == 0
         assert all(left is right for left, right in zip(before, arrays(), strict=True))
@@ -50,7 +52,7 @@ def test_native_arrays_and_adamw_survive_session_policy(tmp_path, visit_error):
         assert float(candidate_adamw.step) == 1
         assert float(accepted_adamw.step) == 0
         if visit_error:
-            raise RuntimeError("native visit failure")
+            raise failure
         return "ACCEPTED"
 
     try:
@@ -61,9 +63,10 @@ def test_native_arrays_and_adamw_survive_session_policy(tmp_path, visit_error):
                 session, "record_normal_stop_receipt", return_value="a" * 64), patch.object(
                 session, "load_accepted_generation", return_value=current):
             if visit_error:
-                with pytest.raises(RuntimeError, match="native visit failure"):
+                with pytest.raises(RuntimeError) as raised:
                     session.operate_bamf(tmp_path, minutes=1, max_visits=1,
                                          steps_per_visit=1, source_prefetch_workers=0)
+                assert raised.value is failure
             else:
                 result = session.operate_bamf(
                     tmp_path, minutes=1, max_visits=1,
