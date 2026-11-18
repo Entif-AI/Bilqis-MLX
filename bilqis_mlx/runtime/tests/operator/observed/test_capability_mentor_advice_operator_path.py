@@ -59,34 +59,27 @@ class NativeChampionshipMentorAdviceTests(NativeChampionshipCase):
         self.assertIsNone(supervision)
 
     def test_zero_distill_native_horizon_preserves_unmentored_observation(self):
-        from bilqis_mlx.runtime.bamf_operator.session import _execute_horizon
+        from bilqis_mlx.runtime.bamf_operator.session_parts.candidate_execution import (
+            _mentor_observation,
+        )
 
-        transaction = SimpleNamespace(update_steps=1, motif_transition=None)
-        step = SimpleNamespace(transaction=transaction, realized_cost={})
         selection = SimpleNamespace(
             policy={"distill": 0.0},
             offer=SimpleNamespace(source_seed=17, capability_id="future:cap"),
             visit=SimpleNamespace(identity=SimpleNamespace(visit_id="visit:r05-zero")),
         )
-        parent = SimpleNamespace(
-            retained_state=SimpleNamespace(optimizer_step=7),
-            optimizer_hyperparameters="hparams",
-        )
-        cache = SimpleNamespace(
-            generation=1, accepted_manifest_sha256="a" * 64)
-        prefix = "bilqis_mlx.runtime.bamf_operator.session."
-        with patch(prefix + "prepare_candidate_evidence_root"), patch(
-                prefix + "_Capture"), patch(
-                prefix + "FactoryDeliveryObservation", return_value="observation") as observation, patch(
-                prefix + "execute_accepted_priority_candidate",
-                return_value=step), patch(
+        lesson = SimpleNamespace(
+            enrichment=(), prior=(), preservation=(), retention_support=())
+        observation = unittest.mock.Mock(return_value="observation")
+        with patch(
                 "bilqis_mlx.runtime.championship_advisers."
                 "championship_mentor_supervision", return_value=None):
-            _execute_horizon(
-                Path("/tmp"), selection, SimpleNamespace(), parent,
-                "atlas", "feature", ({"id": "row:r05-zero"},), 1, cache, 1,
-                None, 0, None, None, None, object())
+            result, supervision = _mentor_observation(
+                object(), ({"id": "row:r05-zero"},), lesson, selection,
+                object(), 8, observation)
 
+        self.assertEqual(result, "observation")
+        self.assertIsNone(supervision)
         self.assertNotIn("mentors", observation.call_args.kwargs)
         self.assertNotIn("guidance", observation.call_args.kwargs)
         self.assertNotIn("_mentor_supervision", observation.call_args.kwargs)
