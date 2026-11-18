@@ -175,6 +175,39 @@ def main() -> int:
             decision = evaluation.decision
             accepted = bool(issued.accepted)
             steps_per_hour = 3600.0 / attempt_wall if attempt_wall > 0 else None
+            repeat = None
+            if os.environ.get("BILQIS_C05_PROFILE_REPEAT_RETENTION") == "1":
+                repeat_observed: list[dict] = []
+                repeat_started = time.perf_counter()
+                repeat_evaluation = evaluate_factory_retention_candidate(
+                    source_context, step.transaction, str(artifact), capability,
+                    run_dir=run_dir, observer=repeat_observed.append)
+                mx.synchronize()
+                repeat_wall = max(0.0, time.perf_counter() - repeat_started)
+                repeat_issued = issue_factory_retention_decision(repeat_evaluation)
+                repeat_profile = {}
+                for event in repeat_observed:
+                    repeat_profile.update(event)
+                repeat = {
+                    "retention_wall_seconds": repeat_wall,
+                    "speedup_vs_cold": (
+                        retention_wall / repeat_wall if repeat_wall > 0 else None),
+                    "accepted": bool(repeat_issued.accepted),
+                    "evidence_sha256": repeat_evaluation.decision.evidence_sha256,
+                    "outcome_scores": [
+                        list(item) for item in repeat_evaluation.decision.outcome_scores],
+                    "profile": repeat_profile,
+                    "semantic_equivalent": (
+                        repeat_evaluation.decision == evaluation.decision
+                        and repeat_evaluation.parent_candidate_sha256
+                        == evaluation.parent_candidate_sha256
+                        and repeat_evaluation.candidate_candidate_sha256
+                        == evaluation.candidate_candidate_sha256
+                        and repeat_evaluation.championship_cohort
+                        == evaluation.championship_cohort
+                        and repeat_evaluation.championship_assessment
+                        == evaluation.championship_assessment),
+                }
             receipt = {
                 "schema": "bilqis.mlx.c05-retention-throughput-profile/v1",
                 "authorizing": False,
@@ -209,6 +242,7 @@ def main() -> int:
                 "profile": profile,
                 "memory": _memory(),
                 "mlx_default_device": str(mx.default_device()),
+                "repeat_retention": repeat,
             }
             print("C05_RETENTION_THROUGHPUT_PROFILE " + json.dumps(
                 receipt, sort_keys=True), flush=True)
