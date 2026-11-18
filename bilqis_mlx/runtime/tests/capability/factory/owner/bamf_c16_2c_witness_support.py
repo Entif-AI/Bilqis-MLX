@@ -59,7 +59,7 @@ def bound_visit(parent, target, capability=CAPABILITY, lesson_grade="B"):
     return bound, provenance, policy
 
 
-def real_candidate_step(
+def real_candidate_training_step(
         target, parent, context, feature_path, artifact, *, learning_rate,
         capability=CAPABILITY):
     execution = context.release.execution_plan.capability_map[capability]
@@ -83,8 +83,18 @@ def real_candidate_step(
         visit_provenance=provenance,
         teacher_strategy={"policy": "c16.2c-disposable"},
         teacher_hparams=teacher_hp, max_norm=1.0, observation=observation)
+    return bound, rows, step
+
+
+def real_candidate_step(
+        target, parent, context, feature_path, artifact, *, learning_rate,
+        capability=CAPABILITY, observer=None):
+    bound, rows, step = real_candidate_training_step(
+        target, parent, context, feature_path, artifact,
+        learning_rate=learning_rate, capability=capability)
     evaluation = evaluate_factory_retention_candidate(
-        context, step.transaction, str(artifact), capability, run_dir=target)
+        context, step.transaction, str(artifact), capability, run_dir=target,
+        **({"observer": observer} if observer is not None else {}))
     decision = issue_factory_retention_decision(evaluation)
     return bound, rows, step, evaluation, decision
 
@@ -171,5 +181,5 @@ def finalize_witness_receipt(accepted, cold):
 __all__ = (
     "C03_FIXTURE_SEED_OFFSET", "CAPABILITY", "accepted_witness_receipt",
     "cold_probe", "finalize_witness_receipt",
-    "next_update_receipt", "real_candidate_step",
+    "next_update_receipt", "real_candidate_step", "real_candidate_training_step",
 )

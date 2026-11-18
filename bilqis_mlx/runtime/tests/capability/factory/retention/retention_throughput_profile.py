@@ -7,6 +7,7 @@ before/after runs.
 """
 from __future__ import annotations
 
+from dataclasses import asdict
 import json
 import os
 from pathlib import Path
@@ -16,26 +17,31 @@ import time
 
 import mlx.core as mx
 
-from bilqis_mlx.learning._retention.atlas_retention_decision import (
-    issue_factory_retention_decision,
-)
-from bilqis_mlx.learning.source_atoms.tests.backbone_test_support import (
-    SourceBackboneTestBase,
-)
+from bilqis_mlx.learning.champions import Checkpoint
+from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+from bilqis_mlx.runtime.admission import _executable_factory_admission
+from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_execution_feature_context
+from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+from bilqis_mlx.runtime.bamf_first_student import BamfFoundationConfig, preflight_bamf_foundation
 from bilqis_mlx.runtime.factory_retention_owner import (
     evaluate_factory_retention_candidate,
 )
+from bilqis_mlx.runtime.mlx_memory import training_memory_policy
+from bilqis_mlx.runtime.state import _fingerprint
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
-    live_factory_context,
+    C05_TRAINING_LEARNING_RATE, HP, live_factory_context,
 )
-from bilqis_mlx.runtime.tests.capability.factory.retention.owner_live_support import (
-    TARGET, _initialize_generation,
-    _teacher_selected_source_owned_candidate_step_evidence,
+from bilqis_mlx.runtime.tests.capability.factory.owner.bamf_c16_2c_witness_support import (
+    real_candidate_training_step,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
     host_source_authority_patch,
 )
-from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY
+from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
+from bilqis_mlx.semantics.atlas.snapshot import (
+    AtlasArtifactIdentity,
+)
+from bilqis_mlx.state_dag import persist
 
 
 def _memory() -> dict[str, int]:
@@ -59,38 +65,88 @@ def main() -> int:
     if not mx.metal.is_available():
         raise SystemExit("Apple Metal is required")
 
+    capability = os.environ.get("BILQIS_C05_PROFILE_CAPABILITY", "B.AND")
     previous_device = mx.default_device()
     mx.set_default_device(mx.gpu)
-    fixture = SourceBackboneTestBase()
-    try:
-        fixture.setUp()
-        root = Path.cwd()
-        source = (root / "vendor/legacy-v16").resolve()
-        if not source.is_dir():
-            raise SystemExit("pinned vendor/legacy-v16 source fixture is required")
-        with host_source_authority_patch(AUTHORITY), tempfile.TemporaryDirectory() as directory:
-            run_dir = Path(directory)
+    root = Path.cwd()
+    source = (root / "vendor/legacy-v16").resolve()
+    if not source.is_dir():
+        raise SystemExit("pinned vendor/legacy-v16 source fixture is required")
+    memory_policy = training_memory_policy(mx)
+    with memory_policy:
+        with tempfile.TemporaryDirectory() as directory, host_source_authority_patch():
+            stage_root = Path(directory)
+            run_dir = stage_root / "target"
+            source_run = stage_root / "source"
             source_context, _manifest = live_factory_context(root, source)
-            parent, cache, source_context = _initialize_generation(
-                run_dir, source_context, fixture.snapshot, artifact)
+            atlas = json.loads((artifact / "atlas.json").read_text())
+            identity = AtlasArtifactIdentity(
+                artifact.name, atlas["release_sha256"], atlas["source_bundle_id"])
+            origin = Checkpoint("7" * 64, "bundles/foundation-origin", 0, True)
+            _, release_file, admission = _executable_factory_admission(
+                source_run, source_context.release, origin,
+                _fingerprint(source_context.graph), source_context.graph)
+            persist(source_run, {
+                "generation": 0,
+                "factory_release_sha256": source_context.release.release_sha256,
+                "factory_release_file": release_file,
+                "factory_admission_v2": asdict(admission),
+                "semantic_graph_sha256": _fingerprint(source_context.graph),
+                "school": {"current_student": asdict(origin)},
+                "result": "READY_FOR_HUMAN_START",
+            })
+            config = BamfFoundationConfig(
+                source_run_dir=str(source_run), run_id="c05-throughput-profile",
+                run_seed=993, semantic_graph=source_context.graph,
+                atlas_artifact=identity, optimizer_hyperparameters=HP)
+            preflight_bamf_foundation(config, source_context.release, run_dir)
+            parent = load_accepted_generation(run_dir)
+            source_context = AcceptedRuntimeHost(run_dir).source_context(
+                graph=source_context.graph, source_root=source)
+            feature = authenticate_bamf_execution_feature_context(
+                parent, str(artifact), run_dir)
+            feature_path = persist_feature_manifest(
+                feature.features, stage_root / "features").path
 
             mx.clear_cache()
             mx.reset_peak_memory()
             attempt_started = time.perf_counter()
             training_started = time.perf_counter()
-            transaction, _gradient, _row, _targets, teacher = (
-                _teacher_selected_source_owned_candidate_step_evidence(
-                    run_dir, source_context, parent, cache, artifact))
+            bound, rows, step = real_candidate_training_step(
+                run_dir, parent, source_context, feature_path, artifact,
+                learning_rate=C05_TRAINING_LEARNING_RATE, capability=capability)
             mx.synchronize()
             training_wall = max(0.0, time.perf_counter() - training_started)
+
+            if os.environ.get("BILQIS_C05_PROFILE_PREFLIGHT_ONLY") == "1":
+                from bilqis_mlx.runtime._capability.factory._factory_retention_support import (
+                    _fresh_rows, _training_exclusions,
+                )
+                training = _training_exclusions(step.transaction)
+                fresh = _fresh_rows(
+                    source_context, (capability,), seed=17, training=training)
+                print("C05_RETENTION_THROUGHPUT_PREFLIGHT " + json.dumps({
+                    "schema": "bilqis.mlx.c05-retention-throughput-preflight/v1",
+                    "target_capability": capability,
+                    "training_source_families": list(training[0]),
+                    "training_episode_ids": list(training[1]),
+                    "fresh_seed": fresh.seed,
+                    "fresh_row_ids": [row["id"] for row in fresh.rows],
+                    "training_wall_seconds": training_wall,
+                }, sort_keys=True), flush=True)
+                mx.set_default_device(previous_device)
+                return 0
 
             observed: list[dict] = []
             retention_started = time.perf_counter()
             evaluation = evaluate_factory_retention_candidate(
-                source_context, transaction, str(artifact), TARGET,
+                source_context, step.transaction, str(artifact), capability,
                 run_dir=run_dir, observer=observed.append)
             mx.synchronize()
             retention_wall = max(0.0, time.perf_counter() - retention_started)
+            from bilqis_mlx.learning.atlas_retention_decision import (
+                issue_factory_retention_decision,
+            )
             issued = issue_factory_retention_decision(evaluation)
             attempt_wall = max(0.0, time.perf_counter() - attempt_started)
 
@@ -104,9 +160,10 @@ def main() -> int:
                 "schema": "bilqis.mlx.c05-retention-throughput-profile/v1",
                 "authorizing": False,
                 "published": False,
-                "target_capability": TARGET,
-                "candidate_update_steps": transaction.update_steps,
-                "teacher_policy_key": teacher["policy_key"],
+                "target_capability": capability,
+                "candidate_update_steps": step.transaction.update_steps,
+                "selected_visit": bound.identity.to_record(),
+                "training_row_ids": [row["id"] for row in rows],
                 "training_wall_seconds": training_wall,
                 "retention_wall_seconds": retention_wall,
                 "attempt_wall_seconds": attempt_wall,
@@ -134,9 +191,7 @@ def main() -> int:
             }
             print("C05_RETENTION_THROUGHPUT_PROFILE " + json.dumps(
                 receipt, sort_keys=True), flush=True)
-    finally:
-        fixture.doCleanups()
-        mx.set_default_device(previous_device)
+    mx.set_default_device(previous_device)
     return 0
 
 
