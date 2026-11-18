@@ -1,5 +1,6 @@
 """Snapshot-local, fail-fast integration qualification for issue #1391."""
 import os
+import signal
 from pathlib import Path
 import subprocess
 import sys
@@ -42,9 +43,19 @@ for label, command in stages:
     remaining = deadline - time.monotonic()
     if remaining <= 0:
         raise TimeoutError("integration qualification exceeded its wall-clock bound")
-    result = subprocess.run(command, env=environment, timeout=remaining)
-    print(f"STAGE {label} exit={result.returncode} "
+    process = subprocess.Popen(command, env=environment, start_new_session=True)
+    try:
+        process.wait(timeout=remaining)
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGTERM)
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            os.killpg(process.pid, signal.SIGKILL)
+            process.wait()
+        raise
+    print(f"STAGE {label} exit={process.returncode} "
           f"elapsed_seconds={time.monotonic() - started:.3f}", flush=True)
-    if result.returncode:
-        raise SystemExit(result.returncode)
+    if process.returncode:
+        raise SystemExit(process.returncode)
 print("INTEGRATION_QUALIFICATION_PASS", flush=True)
