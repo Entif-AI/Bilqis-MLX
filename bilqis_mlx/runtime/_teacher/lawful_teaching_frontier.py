@@ -223,12 +223,21 @@ def _require_lawful_teaching_frontier(
         from bilqis_mlx.runtime.frontier_autonomy_currentness import (
             _require_autonomy_currentness,
         )
-        _require_autonomy_currentness(
-            frontier._autonomy_currentness, source_context.release)
+        try:
+            _require_autonomy_currentness(
+                frontier._autonomy_currentness, source_context.release)
+        except ValueError:
+            _invalid("BAMF_LEARNER_FRONTIER_STALE")
         autonomy_plan_sha256 = frontier.autonomy_plan_sha256
         autonomy_evidence_sha256 = frontier.autonomy_evidence_sha256
     source = _source_authority(planning_generation)
     if currentness_step is None:
+        from bilqis_mlx.runtime.active_generated_grade import (
+            read_active_generated_grade,
+        )
+        active_grade = read_active_generated_grade(
+            Path(source_context.run_dir))
+    elif frontier._active_grade_currentness is None:
         from bilqis_mlx.runtime.active_generated_grade import (
             read_active_generated_grade,
         )
