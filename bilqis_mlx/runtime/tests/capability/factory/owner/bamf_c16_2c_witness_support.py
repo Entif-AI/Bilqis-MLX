@@ -6,6 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from bilqis_mlx.compatibility import historical_teacher_policy
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import resolve_candidate
@@ -91,7 +92,9 @@ def real_candidate_training_horizon(
         target, parent, context, feature_path, artifact, *, learning_rate,
         horizon, capability=CAPABILITY, source_each=1):
     if type(horizon) is not int or horizon < 1:
-        raise ValueError("horizon must be a positive integer")
+        ErrorBus.raise_(
+            SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
+            reason="C16_2C_WITNESS_HORIZON_INVALID")
     execution = context.release.execution_plan.capability_map[capability]
     bound, provenance, _policy = bound_visit(
         parent, target, capability, execution.grade_id)
@@ -122,7 +125,9 @@ def real_candidate_training_horizon(
             candidate=candidate, finalize_candidate=(ordinal == horizon))
         candidate = step.transaction
         if candidate.update_steps != ordinal:
-            raise AssertionError("candidate horizon drift")
+            ErrorBus.raise_(
+                SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
+                reason="C16_2C_WITNESS_HORIZON_DRIFT")
         steps.append(step)
     return bound, rows, tuple(steps)
 
