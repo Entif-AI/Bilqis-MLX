@@ -50,6 +50,9 @@ from bilqis_mlx.runtime.tests.capability.factory.owner.bamf_c16_2c_witness_suppo
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
     host_source_authority_patch,
 )
+from bilqis_mlx.runtime.tests.teacher.priority.authority.test_priority_signer import (
+    _registry as priority_source_authority_registry,
+)
 from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactIdentity,
@@ -87,8 +90,15 @@ def main() -> int:
     if not source.is_dir():
         raise SystemExit("pinned vendor/legacy-v16 source fixture is required")
     memory_policy = training_memory_policy(mx)
+    operator_horizon_raw = os.environ.get("BILQIS_C05_PROFILE_OPERATOR_HORIZON")
+    authority_registry = (
+        priority_source_authority_registry()
+        if operator_horizon_raw is not None else None)
+    authority_context = (
+        host_source_authority_patch(authority_registry)
+        if authority_registry is not None else host_source_authority_patch())
     with memory_policy:
-        with tempfile.TemporaryDirectory() as directory, host_source_authority_patch():
+        with tempfile.TemporaryDirectory() as directory, authority_context:
             stage_root = Path(directory)
             run_dir = stage_root / "target"
             source_run = stage_root / "source"
@@ -114,7 +124,6 @@ def main() -> int:
                 run_seed=993, semantic_graph=source_context.graph,
                 atlas_artifact=identity, optimizer_hyperparameters=HP)
             preflight_bamf_foundation(config, source_context.release, run_dir)
-            operator_horizon_raw = os.environ.get("BILQIS_C05_PROFILE_OPERATOR_HORIZON")
             if operator_horizon_raw is not None:
                 operator_horizon = int(operator_horizon_raw)
                 parent_before = load_accepted_generation(run_dir)
