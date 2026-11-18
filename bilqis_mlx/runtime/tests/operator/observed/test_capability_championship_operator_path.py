@@ -61,6 +61,35 @@ def _accepted_championship_successor(evaluation, solver, assessment, group):
 
 
 class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
+    def test_ordinary_candidate_with_remaining_cadence_work_skips_championship_boundary(self):
+        from bilqis_mlx.runtime.bamf_operator.championship import (
+            championship_boundary_capabilities,
+        )
+        selection = NS(metadata={"cadence": {
+            "schema": "bilqis.bamf.active-grade-cadence-authorization/v1",
+            "disposition": "TEACHING",
+            "phase_capability_ids": ["cap:a", "cap:b"],
+            "authorized_capability_ids": ["cap:a", "cap:b"],
+        }})
+
+        self.assertEqual(
+            championship_boundary_capabilities(selection, "cap:a"), ())
+
+    def test_last_authorized_candidate_opens_existing_cadence_phase_boundary(self):
+        from bilqis_mlx.runtime.bamf_operator.championship import (
+            championship_boundary_capabilities,
+        )
+        selection = NS(metadata={"cadence": {
+            "schema": "bilqis.bamf.active-grade-cadence-authorization/v1",
+            "disposition": "TEACHING",
+            "phase_capability_ids": ["cap:a", "cap:b"],
+            "authorized_capability_ids": ["cap:b"],
+        }})
+
+        self.assertEqual(
+            championship_boundary_capabilities(selection, "cap:b"),
+            ("cap:a", "cap:b"))
+
     def test_operate_bamf_publishes_first_title_from_accepted_boundary_evidence(self):
         fixture, target, group, solver, assessment, evaluation = (
             _championship_evaluation_fixture())
@@ -121,8 +150,6 @@ class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
                 (prefix + "accept_and_publish", {"side_effect": publish}),
                 (prefix + "load_accepted_generation", {"return_value": successor}),
                 (prefix + "record_normal_stop_receipt", {"return_value": None}),
-                ("bilqis_mlx.runtime.run_authority.binding.storage_root",
-                 {"return_value": Path(tmp).parent}),
                 ("bilqis_mlx.runtime.bamf_operator._championship_adjudication._current_binding",
                  {"return_value": binding}),
                 ("bilqis_mlx.runtime.bamf_operator.championship."
