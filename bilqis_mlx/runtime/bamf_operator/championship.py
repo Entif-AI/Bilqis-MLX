@@ -40,6 +40,30 @@ def _observe(observer, **fields):
         pass
 
 
+def championship_boundary_capabilities(selection, target_capability: str) -> tuple[str, ...]:
+    """Return the current cadence phase only at its final accepted teaching attempt.
+
+    Championship observation follows the already-authoritative active-grade cadence;
+    it does not create an independent tournament cadence. Ordinary candidates with
+    remaining phase work therefore carry no championship tail.
+    """
+    metadata = getattr(selection, "metadata", None)
+    cadence = metadata.get("cadence") if isinstance(metadata, dict) else None
+    if (not isinstance(cadence, dict)
+            or cadence.get("schema")
+            != "bilqis.bamf.active-grade-cadence-authorization/v1"
+            or cadence.get("disposition") != "TEACHING"):
+        return ()
+    authorized = cadence.get("authorized_capability_ids")
+    phase = cadence.get("phase_capability_ids")
+    if (not isinstance(authorized, list) or authorized != [target_capability]
+            or not isinstance(phase, list) or target_capability not in phase
+            or not phase or len(set(phase)) != len(phase)
+            or any(not isinstance(item, str) or not item for item in phase)):
+        return ()
+    return tuple(phase)
+
+
 def _group_map(cohort: EvaluationCohort) -> dict[str, tuple[str, ...]]:
     groups = {}
     for capability, group in cohort.capability_groups:
@@ -91,7 +115,8 @@ def _epoch_identity(source_context, successor, cohort):
 def bind_accepted_championship_successor(
         run_dir, parent, cache, successor, source_context, artifact_path,
         target_capability, evaluation, *, checkpoint_origin_group,
-        training=None, evidence_stage=None, observer=None):
+        training=None, evidence_stage=None, observer=None,
+        boundary_capabilities=None):
     """Run the explicit accepted-candidate championship boundary outside C05."""
     _require_factory_evaluation(evaluation)
     started = time.perf_counter()
@@ -132,8 +157,11 @@ def bind_accepted_championship_successor(
         )
     capability_groups = _release_group_map(source_context)
     decision = getattr(evaluation, "decision", None)
-    measured_capabilities = tuple(
+    measured_capabilities = tuple(boundary_capabilities or
         getattr(decision, "evaluated_capability_ids", ()) or (target_capability,))
+    if (not measured_capabilities or len(set(measured_capabilities)) != len(
+            measured_capabilities)):
+        _invalid("BAMF_CHAMPIONSHIP_BOUNDARY_SCOPE_INVALID")
     if target_capability not in measured_capabilities:
         _invalid("BAMF_CHAMPIONSHIP_TARGET_EVIDENCE_MISSING")
     evidence = [(target_capability, cohort, assessment)]

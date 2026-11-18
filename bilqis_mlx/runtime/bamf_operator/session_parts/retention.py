@@ -179,16 +179,22 @@ def _accepted_successor(
         successor = replace(successor, learning_health_state=health_state)
     successor = carry_credit_to_successor(learned_visit, successor, parent)
     successor = bind_baseline_successor(evaluation, successor)
-    from bilqis_mlx.runtime._factory_retention_support import _training_exclusions
-    from bilqis_mlx.runtime.factory_retention_owner import CURRENT_EVIDENCE_STAGE
-    from ..championship import bind_accepted_championship_successor
-    successor = bind_accepted_championship_successor(
-        run_dir, parent, cache, successor, context, atlas_path,
-        capability, evaluation,
-        checkpoint_origin_group=getattr(selection, "lesson_grade", None),
-        training=_training_exclusions(candidate_transaction),
-        evidence_stage=CURRENT_EVIDENCE_STAGE,
-        observer=(lambda fields: observer.update(**fields)) if observer is not None else None)
+    from ..championship import (
+        bind_accepted_championship_successor,
+        championship_boundary_capabilities,
+    )
+    championship_scope = championship_boundary_capabilities(selection, capability)
+    if championship_scope:
+        from bilqis_mlx.runtime._factory_retention_support import _training_exclusions
+        from bilqis_mlx.runtime.factory_retention_owner import CURRENT_EVIDENCE_STAGE
+        successor = bind_accepted_championship_successor(
+            run_dir, parent, cache, successor, context, atlas_path,
+            capability, evaluation,
+            checkpoint_origin_group=getattr(selection, "lesson_grade", None),
+            training=_training_exclusions(candidate_transaction),
+            evidence_stage=CURRENT_EVIDENCE_STAGE,
+            observer=(lambda fields: observer.update(**fields)) if observer is not None else None,
+            boundary_capabilities=championship_scope)
     return successor, learning_health
 
 

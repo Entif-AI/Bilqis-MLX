@@ -98,6 +98,12 @@ class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
         selection = NS(
             option_id="fixture-option",
             lesson_grade=group,
+            metadata={"cadence": {
+                "schema": "bilqis.bamf.active-grade-cadence-authorization/v1",
+                "disposition": "TEACHING",
+                "phase_capability_ids": [target],
+                "authorized_capability_ids": [target],
+            }},
             visit=NS(identity=NS(
                 visit_id="fixture-visit", policy_key="fixture-policy")))
         step = NS(transaction=NS(training_authorities=()))
