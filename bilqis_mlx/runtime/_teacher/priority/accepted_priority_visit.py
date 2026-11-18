@@ -31,6 +31,12 @@ from .accepted_priority_visit_contracts import (
     accepted_priority_school,
 )
 
+_ACTION_REQUIRED_HOLD_REASONS = {
+    ActionKind.CORRECTION: 'CORRECTION_ACTION_REQUIRED',
+    ActionKind.PROCEDURE_REPAIR: 'PROCEDURE_REPAIR_ACTION_REQUIRED',
+}
+
+
 def _invalid(reason):
     ErrorBus.Raise(SCHOOL.BAMF_CURRICULUM.INVALID, reason=reason)
 
@@ -172,15 +178,16 @@ def select_accepted_priority_visit(
         for item in lawful_frontier.exclusions
     ]
     holds.extend(qualified.holds)
+    action_required_option_id = None
     for option in qualified.ranked.ordered:
         priority_features = salience_priority_features(
             evidence[option.stable_id], option.context.capability_id,
             option.context.scope, contract_digest(epoch))
         if option.action_kind in (ActionKind.CORRECTION, ActionKind.PROCEDURE_REPAIR):
-            return _issue_result(
-                'ACTION_REQUIRED', option.stable_id, None, None, None,
-                cadence_metadata, None, sorted(holds), run_dir, lawful_frontier,
-                cadence_authorization=cadence_authorization)
+            holds.append((option.stable_id, _ACTION_REQUIRED_HOLD_REASONS[option.action_kind]))
+            if action_required_option_id is None:
+                action_required_option_id = option.stable_id
+            continue
         offer = by_id[option.stable_id]
         materialization_started = time.perf_counter()
         try:
@@ -199,6 +206,11 @@ def select_accepted_priority_visit(
             program, grade, evidence, holds, lawful_frontier, total_capabilities,
             plasticity_escape, priority_features, cadence_authorization,
             source_materialization_wall_seconds)
+    if action_required_option_id is not None:
+        return _issue_result(
+            'ACTION_REQUIRED', action_required_option_id, None, None, None,
+            cadence_metadata, None, sorted(holds), run_dir, lawful_frontier,
+            cadence_authorization=cadence_authorization)
     return _issue_result(
         'NO_ADMISSIBLE_TEACHING', None, None, None, None, cadence_metadata,
         None, sorted(holds), run_dir, lawful_frontier,
