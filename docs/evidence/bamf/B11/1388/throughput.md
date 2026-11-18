@@ -76,10 +76,16 @@ After this repair, the focused B11 median is about 2.29 seconds. Graph construct
 
 ## Verification classification
 
-The affected numerical/evidence suite passed 26 tests, 248 subtests, with one unrelated skip. Three broader Factory tests failed before reaching the changed #1388 path. Each failure was rerun against the untouched unified baseline `7c074d05c042855e6064312d582155e3e14c6430` and reproduced identically:
+Post-checkpoint verification on `m3-ultra` at feature SHA
+`83c9e03b0254a45c401729aacb8ff5a2a748d81c` produced these current results:
 
-- `test_student_ops_executes_one_real_factory_candidate_step_and_records_cost`: `UPSTREAM_SEMANTIC_AUTHORITY_MISMATCH`
-- `test_candidate_continuation_executes_second_step_from_speculative_weights`: `UPSTREAM_SEMANTIC_AUTHORITY_MISMATCH`
-- `test_production_step_accumulates_split_real_rows_into_one_optimizer_step`: `B11_SOURCE_EXECUTION_OWNER_UNAVAILABLE` for `original+independent+grade_a_oracle`
+- changed-path decoder/microbatch/trajectory suite: **15 passed**, one unrelated skip;
+- broader Factory execution + Factory microbatch suite: **16 passed**, 11 environment-dependent skips;
+- participation, motif-gradient, source-adapter, candidate-custody and execution-binder integrity suite: **39 passed**, six environment-dependent skips;
+- the same broader Factory suite also passes on untouched unified baseline
+  `7c074d05c042855e6064312d582155e3e14c6430` with the same 11 skips.
 
-The existing `test_four_distinct_factory_rows_use_one_vectorized_gradient_launch` also reproduces the same source-owner failure on the untouched baseline. These are baseline/environment failures, not candidate regressions. The #1388 B11 path was separately exercised with the real four-row `B.COMPOSITE` fixture used for the before/after measurements.
+One additional refinement-kernel test fails before reaching #1388 on both candidate and untouched baseline because the installed MLX 0.32.4 runtime exposes no `mx.flip`. Candidate and baseline both report the same `AttributeError` in
+`test_batched_refinement_matches_scalar_zero_one_two_pass_rows`; the remaining 39 integrity tests pass on the candidate. This is pre-existing environment/test compatibility debt, not a candidate regression.
+
+The scalar-vs-vector B11 parity test proves one `mx.value_and_grad` launch for four rows, identical committed typed outputs, FP32-equivalent mean loss, and FP32-equivalent gradients for every returned parameter. The production-path witness used the real four-row `B.COMPOSITE` workload described above.
