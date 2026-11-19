@@ -109,6 +109,8 @@ class MissionControlRecoveryHistoryTests(NativeSourceFixture, unittest.TestCase)
             teacher_state=dict(parent.teacher_state),
             evaluation_contract=dict(parent.evaluation_contract),
         )
+        successor_state = next_accepted_step(
+            generation_one.retained_state, generation_one.extents)
         stage = self.run / "historical-parent-stage"
         with shape_patch(), patch.object(
                 mlx_checkpoint, "assert_headroom"), patch(
@@ -147,8 +149,7 @@ class MissionControlRecoveryHistoryTests(NativeSourceFixture, unittest.TestCase)
             historical_parent = load_bamf_generation(self.run / "bamf-state.json")
         generation_two = replace(
             candidate(
-                next_accepted_step(historical_parent.retained_state, historical_parent.extents),
-                2, manifest["manifest_sha256"]),
+                successor_state, 2, manifest["manifest_sha256"]),
             run_identity=historical_parent.run_identity,
             implementation_sha256=historical_parent.implementation_sha256,
             topology=historical_parent.topology,
