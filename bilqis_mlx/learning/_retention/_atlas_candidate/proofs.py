@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+from types import MappingProxyType
 from .common import (
     CLOSURE_STEP_PROOF_SCHEMA,
     LEGACY_STEP_PROOF_SCHEMA, LOGICAL_BATCH_STEP_PROOF_SCHEMA,
@@ -35,7 +36,7 @@ _V9_FIELDS = _V5_FIELDS[:-1] + (
     "training_objective_digest", "schema_version")
 _V10_FIELDS = _V6_FIELDS[:-1] + (
     "training_objective_digest", "schema_version")
-_FIELDS_BY_SCHEMA = {
+_FIELDS_BY_SCHEMA = MappingProxyType({
     LEGACY_STEP_PROOF_SCHEMA: _LEGACY_FIELDS,
     PREVIOUS_STEP_PROOF_SCHEMA: _V2_FIELDS,
     STEP_PROOF_SCHEMA: _V3_FIELDS,
@@ -46,7 +47,7 @@ _FIELDS_BY_SCHEMA = {
     OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA: _V8_FIELDS,
     OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA: _V9_FIELDS,
     OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA: _V10_FIELDS,
-}
+})
 _LOGICAL_BATCH_MIN_MEMBERS = 2
 _LOGICAL_BATCH_MEMBER_WIDTH = 3
 
