@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 
+from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.control_plane.native_source import (
     authenticated_history, materialize_native_projection,
 )
@@ -120,8 +121,12 @@ class MissionControlRecoveryHistoryTests(NativeSourceFixture, unittest.TestCase)
             record.pop("training_objective_ref")
             record.pop("training_objective_digest")
             raw = canonical(record)
+            manifest_sha256 = sha(raw)
             (stage / "manifest.json").write_bytes(raw)
-            manifest = {**record, "manifest_sha256": sha(raw)}
+            data_plane().put_node(
+                manifest_sha256, raw, generation_one.generation,
+                generation_one.parent_manifest_sha256)
+            manifest = {**record, "manifest_sha256": manifest_sha256}
         target = self.run / "bamf-bundles" / manifest["manifest_sha256"]
         stage.rename(target)
         accepted_one = acceptance(generation_one, parent=parent.retained_state)
