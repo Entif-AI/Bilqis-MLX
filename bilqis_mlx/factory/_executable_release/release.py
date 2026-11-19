@@ -94,7 +94,7 @@ class ExecutableFactoryRelease:
         if (not self._foundation_capability_wire
                 or self.foundation_capability_ids is None):
             raise ValueError(
-                "FACTORY_EXECUTABLE_RELEASE_FOUNDATION_CAPABILITY_IDS_REQUIRED")
+                _api._ReleaseError.FOUNDATION_CAPABILITY_IDS_REQUIRED)
         self.verify()
         return self.foundation_capability_ids
 

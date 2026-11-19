@@ -35,7 +35,7 @@ def _verify_release_structure(release: ExecutableFactoryRelease) -> tuple[str, .
             all(isinstance(item, str) and item for item in foundation) and
             len(set(foundation)) == len(foundation) and
             foundation == inventory,
-            "FACTORY_EXECUTABLE_RELEASE_FOUNDATION_CAPABILITY_DRIFT",
+            _api._ReleaseError.FOUNDATION_CAPABILITY_DRIFT,
         )
     return answer_kinds
 
