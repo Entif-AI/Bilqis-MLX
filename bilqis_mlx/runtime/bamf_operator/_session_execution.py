@@ -131,7 +131,7 @@ def operate(
         operator_lock, visit_fn, observer_type, emit_progress,
         monotonic, load_generation, result_type, accepted_reentry=None,
         bind_run_authority=None, before_visits=None, resource_snapshot=None,
-        record_stop=None, elapsed_clock=None):
+        record_stop=None, elapsed_clock=None, training_memory_context=None):
     _validate_bounds(
         minutes=minutes, max_visits=max_visits, steps_per_visit=steps_per_visit,
         reserve_gib=reserve_gib, source_prefetch_workers=source_prefetch_workers,
@@ -142,7 +142,8 @@ def operate(
     deadline = monotonic() + minutes * 60
     metrics = metrics_type()
     source_pool = _source_pool(source_prefetch_workers, source_pool_factory, null_context)
-    with source_pool as source_prefetch_executor, operator_lock(run_dir):
+    with (source_pool as source_prefetch_executor, operator_lock(run_dir),
+          training_memory_context() if training_memory_context else null_context()):
         _assert_current(run_authority_binding)
         if before_visits is not None:
             before_visits(run_dir)
