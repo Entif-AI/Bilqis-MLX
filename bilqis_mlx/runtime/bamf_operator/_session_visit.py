@@ -27,6 +27,7 @@ def visit(
     if prepared.status in {
         "HELD", "RESOURCE_HOLD", "ACTION_REQUIRED", "GRADE_TRANSITIONED",
         "CERTIFICATION_FAILED", "CERTIFICATION_SUPERSEDED",
+        "CERTIFICATION_POLICY_REQUIRED",
     }:
         return prepared.status
     parent, selection = prepared.parent, prepared.selection
