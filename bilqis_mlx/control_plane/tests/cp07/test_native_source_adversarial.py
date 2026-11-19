@@ -16,6 +16,7 @@ from bilqis_mlx.learning.teacher_visit_identity import (
     teacher_visit_receipt_record,
 )
 from bilqis_mlx.mission_control import CandidateDecision, QueryFamily, QueryRequest
+from bilqis_mlx.mission_control import LearningEpisode
 from bilqis_mlx.runtime import checkpoint_outbox
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import retention_decision
@@ -212,6 +213,34 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
         self.assertFalse(any(isinstance(record, CandidateDecision)
                              and record.outcome.value == "REJECTED"
                              for record in material.records))
+
+    def test_legacy_rejection_identity_does_not_collide_with_later_accepted_visit(self):
+        parent = self.parent()
+        visit = self.native_visit(parent, capability="A.NATIVE")
+        decision = retention_decision(
+            accepted=False, parent=parent.retained_state, retained=parent.retained_state)
+        record_bamf_rejection(self.run, parent, {
+            "schema": "bilqis.bamf.c16.3-rejection/v2",
+            "visit_id": visit.visit_id,
+            "teacher_visit": visit.to_record(),
+            "selected_option_id": "option:native",
+            "selected_policy_key": visit.policy_key,
+            "candidate_optimizer_step": parent.retained_state.optimizer_step + 1,
+            "retained_optimizer_step": parent.retained_state.optimizer_step,
+            "retention_reason": decision.reason,
+            "capability": visit.capability_id,
+            "decision": decision.to_record(),
+        })
+        self.publish_successor()
+
+        material = materialize_native_projection(
+            self.run, include_live_rejections=True)
+        episodes = [record for record in material.records if isinstance(record, LearningEpisode)]
+        self.assertEqual(len(episodes), 2)
+        self.assertEqual({record.visit_id for record in episodes}, {visit.visit_id})
+        self.assertEqual(len({record.meta.record_id for record in episodes}), 2)
+        page = native_query_catalog(self.run).query(QueryRequest(QueryFamily.RUN))
+        self.assertEqual(page.state.value, "PRESENT")
 
     def test_c16_rejection_requires_source_retention_decision(self):
         parent = self.parent()

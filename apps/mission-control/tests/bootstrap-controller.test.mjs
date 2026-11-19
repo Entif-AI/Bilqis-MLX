@@ -3,16 +3,18 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { createBootstrapController } from "../renderer/foundation/bootstrap-controller.mjs";
+import { cacheOperatorView } from "../renderer/foundation/defensive-state.mjs";
 
 const OPERATOR_VIEW = JSON.parse(readFileSync(
   new URL("../fixtures/operator-view-v1.json", import.meta.url), "utf8",
 ));
 
 function storageFixture() {
+  const values = new Map();
   return {
-    getItem() { return null; },
-    setItem() {},
-    removeItem() {},
+    getItem(key) { return values.get(key) ?? null; },
+    setItem(key, value) { values.set(key, value); },
+    removeItem(key) { values.delete(key); },
   };
 }
 
@@ -144,4 +146,111 @@ test("transient live operator-view gaps preserve the last good shell state", asy
   assert.equal(defenses.at(-1).id, "live");
   assert.equal(verifiedLiveContext.runId, "fixture-run");
   assert.equal(resetCalls, 2);
+});
+
+test("live snapshot RPC failure restores cached data without resetting the requested route", async () => {
+  const scheduled = [];
+  const defenses = [];
+  const storage = storageFixture();
+  cacheOperatorView(storage, structuredClone(OPERATOR_VIEW), 1);
+  let state = null;
+  const error = Object.assign(new Error("BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED"), {
+    code: "BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED",
+  });
+  const api = {
+    async connect() {
+      return {
+        state: "healthy",
+        serviceLive: true,
+        serviceReady: true,
+        learnerReady: true,
+      };
+    },
+    async querySnapshot() { throw error; },
+  };
+  const controller = createBootstrapController({
+    api,
+    storage,
+    getState: () => state,
+    setState: (next) => { state = next; },
+    setDefense: (next) => { defenses.push(next); },
+    setBootstrap() {},
+    setVerifiedLiveContext() {},
+    resetFrameShell() {},
+    render() {},
+    announce() {},
+    currentHash: () => "#/view/resources",
+    scheduleReconnect: (callback, _delay) => {
+      scheduled.push(callback);
+      return scheduled.length;
+    },
+    cancelReconnect() {},
+    reconnectDelayMs: 25,
+  });
+
+  await controller.establishSnapshot();
+
+  assert.notEqual(state, null);
+  assert.equal(state.view, "resources");
+  assert.equal(state.context.runId, OPERATOR_VIEW.meta.run.run_id);
+  assert.equal(state.context.generation, OPERATOR_VIEW.meta.run.generation);
+  assert.equal(state.mutationAvailable, false);
+  assert.equal(defenses.at(-1).id, "stale");
+  assert.equal(defenses.at(-1).snapshotAvailable, true);
+  assert.equal(defenses.at(-1).snapshotSource, "cache");
+  assert.equal(scheduled.length, 1);
+});
+
+test("transport loss never discards an already-rendered route or last-good snapshot", async () => {
+  const scheduled = [];
+  const defenses = [];
+  let state = {
+    view: "resources",
+    context: { runId: "aspirant", generation: 5, mode: "LIVE", freshness: "FRESH" },
+    selected: null,
+    mutationAvailable: true,
+  };
+  const api = {
+    async connect() {
+      return {
+        state: "disconnected",
+        serviceLive: false,
+        serviceReady: false,
+        learnerReady: false,
+      };
+    },
+    async querySnapshot() {
+      throw new Error("BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED");
+    },
+  };
+  const controller = createBootstrapController({
+    api,
+    storage: storageFixture(),
+    getState: () => state,
+    setState: (next) => { state = next; },
+    setDefense: (next) => { defenses.push(next); },
+    setBootstrap() {},
+    setVerifiedLiveContext() {},
+    resetFrameShell() {},
+    render() {},
+    announce() {},
+    currentHash: () => "#/view/resources",
+    scheduleReconnect: (callback, _delay) => {
+      scheduled.push(callback);
+      return scheduled.length;
+    },
+    cancelReconnect() {},
+    reconnectDelayMs: 25,
+  });
+
+  await controller.establishSnapshot({ preserveRoute: true });
+
+  assert.notEqual(state, null);
+  assert.equal(state.view, "resources");
+  assert.equal(state.context.runId, "aspirant");
+  assert.equal(state.context.generation, 5);
+  assert.equal(state.mutationAvailable, false);
+  assert.equal(defenses.at(-1).snapshotAvailable, true);
+  assert.equal(defenses.at(-1).snapshotSource, "previous");
+  assert.equal(scheduled.length, 1);
 });
