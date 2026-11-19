@@ -48,6 +48,7 @@ _BOUNDARY_CUMULATIVE_FIELDS = frozenset({
     "championship_shared_backbone_launches",
     "championship_scalar_neural_launches",
 })
+_TRAINING_EXCLUSION_ARITY = 2
 
 
 def _boundary_observer(observer):
@@ -155,7 +156,8 @@ def bind_accepted_championship_successor(
     if (cohort is None) != (assessment is None):
         _invalid("BAMF_CHAMPIONSHIP_ACCEPTED_EVIDENCE_INVALID")
     if cohort is None:
-        if (not isinstance(training, tuple) or len(training) != 2
+        if (not isinstance(training, tuple)
+                or len(training) != _TRAINING_EXCLUSION_ARITY
                 or evidence_stage is None):
             _invalid("BAMF_CHAMPIONSHIP_BOUNDARY_CONTEXT_REQUIRED")
         cohort, assessment = capability_championship_evidence(
