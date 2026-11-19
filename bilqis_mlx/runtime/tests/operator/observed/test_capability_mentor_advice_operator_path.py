@@ -71,18 +71,21 @@ class NativeChampionshipMentorAdviceTests(NativeChampionshipCase):
         lesson = SimpleNamespace(
             enrichment=(), prior=(), preservation=(), retention_support=())
         observation = unittest.mock.Mock(return_value="observation")
+        observer = SimpleNamespace(record={})
+        observer.update = lambda **fields: observer.record.update(fields)
         with patch(
                 "bilqis_mlx.runtime.championship_advisers."
                 "championship_mentor_supervision", return_value=None):
             result, supervision = _mentor_observation(
                 object(), ({"id": "row:r05-zero"},), lesson, selection,
-                object(), 8, observation)
+                object(), 8, observation, observer)
 
         self.assertEqual(result, "observation")
         self.assertIsNone(supervision)
         self.assertNotIn("mentors", observation.call_args.kwargs)
         self.assertNotIn("guidance", observation.call_args.kwargs)
         self.assertNotIn("_mentor_supervision", observation.call_args.kwargs)
+        self.assertGreaterEqual(observer.record["adviser_wall_seconds"], 0.0)
 
     def test_native_horizon_materializes_mentor_supervision_before_candidate_step(self):
         from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import (
