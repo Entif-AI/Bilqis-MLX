@@ -46,6 +46,7 @@ class DistributedExecutorBinding:
     hosts: tuple[str, ...]
     python_executable: str
     working_directory: str
+    worker_timeout_seconds: float
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
@@ -62,7 +63,10 @@ class DistributedExecutorBinding:
                 or not isinstance(self.python_executable, str)
                 or not self.python_executable
                 or not isinstance(self.working_directory, str)
-                or not self.working_directory):
+                or not self.working_directory
+                or not isinstance(self.worker_timeout_seconds, (int, float))
+                or isinstance(self.worker_timeout_seconds, bool)
+                or self.worker_timeout_seconds <= 0):
             _invalid("C08_DISTRIBUTED_EXECUTOR_BINDING_INVALID")
         self.profile.__post_init__()
 
@@ -96,10 +100,14 @@ class DistributedExecutorBinding:
             response = root / "response.pkl"
             response_digest = root / "response.sha256"
             _write_bytes(request, payload)
-            completed = subprocess.run(
-                self._command(request, response, digest),
-                cwd=self.working_directory, check=False,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            try:
+                completed = subprocess.run(
+                    self._command(request, response, digest),
+                    cwd=self.working_directory, check=False,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                    timeout=self.worker_timeout_seconds)
+            except subprocess.TimeoutExpired:
+                _invalid("C08_DISTRIBUTED_WORKER_COHORT_TIMEOUT")
             if completed.returncode != 0:
                 oom = mlx_oom_message(
                     "\n".join((completed.stderr or "", completed.stdout or "")))
@@ -143,7 +151,8 @@ class DistributedExecutorBinding:
 def configure_mlx_distributed_execution(
         workers: tuple[DistributedRank, ...], *, hosts: tuple[str, ...],
         partition_seed: int, backend: str, python_executable: str | None = None,
-        working_directory: str | Path | None = None) -> DistributedExecutorBinding:
+        working_directory: str | Path | None = None,
+        worker_timeout_seconds: float = 900.0) -> DistributedExecutorBinding:
     """Bind a cohort with coordinator-local rank 0 and identical remote code paths."""
     normalized = require_distributed_backend(backend)
     profile = DistributedExecutionProfile(
@@ -156,6 +165,7 @@ def configure_mlx_distributed_execution(
             ("python_executable", python_executable or sys.executable),
             ("working_directory", str(
                 Path(working_directory or Path.cwd()).resolve())),
+            ("worker_timeout_seconds", float(worker_timeout_seconds)),
             ("_issuance", _ISSUER)):
         object.__setattr__(binding, name, value)
     binding.__post_init__()

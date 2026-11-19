@@ -90,6 +90,15 @@ class DistributedResourceModeTests(unittest.TestCase):
             binding._run_capsule({"kind": "collective-probe"})
         self.assertNotIsInstance(caught.exception, RuntimeError)
 
+    def test_worker_cohort_timeout_fails_closed(self):
+        binding = self._binding()
+        with patch(
+                "bilqis_mlx.runtime.c08_distributed_executor.subprocess.run",
+                side_effect=subprocess.TimeoutExpired(("mlx.launch",), 1.0)), \
+                self.assertRaises(Exception) as caught:
+            binding._run_capsule({"kind": "collective-probe"})
+        self.assertNotIsInstance(caught.exception, RuntimeError)
+
     def test_factory_capsule_strips_process_live_owner_state_before_pickle(self):
         compiled_value = SimpleNamespace(
             compiled="rows", compiler_configs=("config",), features="features",
