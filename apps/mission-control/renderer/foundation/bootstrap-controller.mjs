@@ -131,7 +131,7 @@ export function createBootstrapController({
       }
     }
 
-    if (!fixtureMode && operatorView === null && (connection === null || connection.serviceLive !== true)) {
+    if (!fixtureMode && operatorView === null && current === null) {
       const cached = loadCachedOperatorView(storage);
       if (cached !== null) {
         try {
@@ -169,12 +169,16 @@ export function createBootstrapController({
     }
 
     if (operatorView === null) {
-      const nextDefense = defensiveStateForError(snapshotError ?? connectError, {
-        snapshotAvailable: false,
-        snapshotSource: "none",
-      });
+      const options = {
+        snapshotAvailable: Boolean(current),
+        snapshotSource: current ? "previous" : "none",
+      };
+      let nextDefense = defensiveStateForError(snapshotError ?? connectError, options);
+      if (current && ["unavailable", "unknown"].includes(nextDefense.id)) {
+        nextDefense = defensiveState("stale", options);
+      }
       setDefense(nextDefense);
-      setState(null);
+      setState(current ? { ...current, mutationAvailable: false } : null);
       setVerifiedLiveContext(null);
       setBootstrap(Object.freeze({ phase: "failed", connection, error: snapshotError ?? connectError }));
       render();
@@ -188,7 +192,7 @@ export function createBootstrapController({
     let nextDefense = snapshotError || connectError
       ? defensiveStateForError(snapshotError ?? connectError, options)
       : defensiveStateForConnection(connection?.state, options);
-    if (snapshotSource === "cache" && nextDefense.id === "live") {
+    if (snapshotSource === "cache" && ["live", "unavailable", "unknown"].includes(nextDefense.id)) {
       nextDefense = defensiveState("stale", options);
     }
     setDefense(nextDefense);
