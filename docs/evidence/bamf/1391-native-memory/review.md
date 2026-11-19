@@ -130,3 +130,20 @@ at the accepted successor boundary. The merge preserves those checks and
 keeps the isolated visit double independent of MLX startup. The combined
 route, native cache, allocator continuation, and championship tests passed
 25 cases on m3-ultra against the merged candidate.
+
+V7 at b8c482b3 passed static quality, import preflight (5,082 cases and zero
+load errors), 395 affected tests with 58 subtests, 465 Node tests, 67 Node
+security tests and nine Python security tests. Snapshot integrity passed.
+The premerge aggregate reported 4,705 passes, 36 failures/errors and 277
+skips. All 36 failure/error records match the unchanged 204a5f47 control
+by test identity, result type and normalized terminal error. The control
+reported 260 failures/errors. The two runs used different unified revisions
+and resource conditions, so this comparison describes observed matches on
+the tested branch, independent of any assumption about a current green aggregate.
+
+Consumed unified 92299b7c at 371f07c5. On that merge head, 59 focused cases
+and 15 subtests covering factory release identity, admission, cold resume,
+championship, allocator continuation and native cache ownership passed on
+m3-ultra. The subsequent receipt and runner edits are administrative.
+The aggregate remains red on the last full run. The #1391 PR is prepared
+locally and remains unopened under the repository pre-PR gate.
