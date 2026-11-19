@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from bilqis_mlx.factory.live_answers import live_answer_registry
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.runtime.atlas_model_contracts import (
     _issue_bamf_active_semantic_rows, bind_candidate_active_semantic_rows,
@@ -30,6 +31,10 @@ from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.salience_training import portable_salience_supervision
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.source_adapters.school import live_source_registry
+
+
+def _invalid(reason: str) -> None:
+    ErrorBus.raise_(SCHOOL.BAMF_RESOURCES.INVALID, reason=reason)
 
 
 @dataclass(frozen=True)
@@ -166,7 +171,7 @@ class DistributedFactoryStepCapsule:
         )
         require_training_objective_digest(self.training_objective_digest)
         if self.manifest.training_objective_digest != self.training_objective_digest:
-            raise ValueError("C08_DISTRIBUTED_OBJECTIVE_DRIFT")
+            _invalid("C08_DISTRIBUTED_OBJECTIVE_DRIFT")
 
     def materialize(self):
         self.__post_init__()
