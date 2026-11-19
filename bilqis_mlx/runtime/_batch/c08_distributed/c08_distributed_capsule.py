@@ -15,6 +15,7 @@ from bilqis_mlx.runtime.atlas_training_contracts import (
     BamfDeliveryProvenance, BamfTrainingRow,
 )
 from bilqis_mlx.runtime.atlas_visit_provenance import BamfVisitProvenance
+from bilqis_mlx.runtime.jit_adoption import verify_current_implementations
 from bilqis_mlx.runtime.b11_source_execution_authority import (
     bind_b11_source_execution_authority,
 )
@@ -38,9 +39,13 @@ class PortableSourceContext:
     source_root: str
 
     def materialize(self) -> SourceExecutionContext:
+        source_registry = live_source_registry()
+        answer_registry = live_answer_registry()
+        verify_current_implementations(
+            self.release, source_registry, answer_registry)
         context = SourceExecutionContext(
             release=self.release, graph=self.graph, source_root=Path(self.source_root),
-            source_registry=live_source_registry(), answer_registry=live_answer_registry())
+            source_registry=source_registry, answer_registry=answer_registry)
         context.__post_init__()
         return context
 

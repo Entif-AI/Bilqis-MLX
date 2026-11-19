@@ -79,11 +79,13 @@ def _execute_training_and_admission(
                 generation, cache, resource_plan,
                 salience_supervision=salience_supervision,
                 mentor_supervision=mentor_supervision)
+            logical_batch_wall_seconds = gradient.wall_seconds
         else:
             if (type(distributed_profile) is not DistributedExecutionProfile
                     or type(distributed_executor) is not DistributedExecutorBinding
                     or distributed_executor.profile != distributed_profile):
                 _invalid("FACTORY_DISTRIBUTED_CONFIGURATION_INVALID")
+            distributed_started = time.perf_counter()
             manifest = issue_distributed_step_manifest(
                 parent, prepared.training_batch, resource_plan,
                 distributed_profile)
@@ -100,6 +102,7 @@ def _execute_training_and_admission(
             gradient, authorities, target_rows = bind_factory_distributed_outcome(
                 prepared, source_context, feature_context.snapshot, generation,
                 resource_plan, manifest, outcome)
+            logical_batch_wall_seconds = time.perf_counter() - distributed_started
         optimizer_started = time.perf_counter()
         transaction = admit_uninterrupted_candidate_step(
             Path(run_dir), parent, loss_bearing_target=True,
@@ -113,7 +116,7 @@ def _execute_training_and_admission(
         c08_metrics = (
             gradient.gradient_launches, gradient.vectorized_microbatches,
             gradient.materialization_barriers, gradient.scalar_fallback_rows,
-            gradient.wall_seconds)
+            logical_batch_wall_seconds)
     return (
         gradient, authorities, target_rows, transaction, loss_total, c08_metrics,
         time.perf_counter() - optimizer_started,

@@ -4,9 +4,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import hashlib
 from importlib.metadata import version
+import math
 import os
 from pathlib import Path
 import pickle
+import signal
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
@@ -39,6 +41,22 @@ def _write_bytes(path: Path, payload: bytes) -> None:
         os.fsync(stream.fileno())
 
 
+def _terminate_cohort(process: subprocess.Popen) -> None:
+    """Terminate the launcher and every rank/ssh child in its owned session."""
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+    try:
+        process.communicate(timeout=5.0)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        process.communicate()
+
+
 @dataclass(frozen=True, init=False)
 class DistributedExecutorBinding:
     """One coordinator-launched worker cohort; never an optimizer/publication owner."""
@@ -66,6 +84,7 @@ class DistributedExecutorBinding:
                 or not self.working_directory
                 or not isinstance(self.worker_timeout_seconds, (int, float))
                 or isinstance(self.worker_timeout_seconds, bool)
+                or not math.isfinite(self.worker_timeout_seconds)
                 or self.worker_timeout_seconds <= 0):
             _invalid("C08_DISTRIBUTED_EXECUTOR_BINDING_INVALID")
         self.profile.__post_init__()
@@ -100,17 +119,20 @@ class DistributedExecutorBinding:
             response = root / "response.pkl"
             response_digest = root / "response.sha256"
             _write_bytes(request, payload)
+            process = subprocess.Popen(
+                self._command(request, response, digest),
+                cwd=self.working_directory,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                start_new_session=True)
             try:
-                completed = subprocess.run(
-                    self._command(request, response, digest),
-                    cwd=self.working_directory, check=False,
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                stdout, stderr = process.communicate(
                     timeout=self.worker_timeout_seconds)
             except subprocess.TimeoutExpired:
+                _terminate_cohort(process)
                 _invalid("C08_DISTRIBUTED_WORKER_COHORT_TIMEOUT")
-            if completed.returncode != 0:
+            if process.returncode != 0:
                 oom = mlx_oom_message(
-                    "\n".join((completed.stderr or "", completed.stdout or "")))
+                    "\n".join((stderr or "", stdout or "")))
                 if oom is not None:
                     raise RuntimeError(oom)
                 _invalid("C08_DISTRIBUTED_WORKER_COHORT_FAILED")

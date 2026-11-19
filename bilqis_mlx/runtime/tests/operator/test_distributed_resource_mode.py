@@ -2,9 +2,12 @@
 from pathlib import Path
 import pickle
 import subprocess
+import sys
+from tempfile import TemporaryDirectory
+import time
 from types import MappingProxyType, SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from bilqis_mlx.runtime.bamf_operator import session
 from bilqis_mlx.runtime.atlas_resources import DistributedRank
@@ -12,11 +15,18 @@ from bilqis_mlx.runtime.c08_distributed_executor import (
     DistributedExecutorBinding, configure_mlx_distributed_execution,
 )
 from bilqis_mlx.runtime.c08_distributed_capsule import (
-    issue_distributed_factory_step_capsule,
+    PortableSourceContext, issue_distributed_factory_step_capsule,
 )
 
 
 class DistributedResourceModeTests(unittest.TestCase):
+    @staticmethod
+    def _process(returncode=0, stdout="", stderr=""):
+        process = Mock()
+        process.returncode = returncode
+        process.communicate.return_value = (stdout, stderr)
+        return process
+
     def _binding(self):
         workers = (
             DistributedRank(0, "rank-0", "Apple M3 Ultra"),
@@ -71,33 +81,79 @@ class DistributedResourceModeTests(unittest.TestCase):
 
     def test_worker_oom_preserves_native_runtime_error_retry_signal(self):
         binding = self._binding()
-        failure = subprocess.CompletedProcess(
-            args=("mlx.launch",), returncode=1, stdout="",
-            stderr="[malloc] Unable to allocate 4096 bytes.\n")
+        failure = self._process(
+            returncode=1, stderr="[malloc] Unable to allocate 4096 bytes.\n")
         with patch(
-                "bilqis_mlx.runtime.c08_distributed_executor.subprocess.run",
+                "bilqis_mlx.runtime.c08_distributed_executor.subprocess.Popen",
                 return_value=failure), self.assertRaisesRegex(
                     RuntimeError, "Unable to allocate 4096 bytes"):
             binding._run_capsule({"kind": "collective-probe"})
 
     def test_non_oom_worker_failure_remains_fail_closed(self):
         binding = self._binding()
-        failure = subprocess.CompletedProcess(
-            args=("mlx.launch",), returncode=1, stdout="", stderr="rank crashed")
+        failure = self._process(returncode=1, stderr="rank crashed")
         with patch(
-                "bilqis_mlx.runtime.c08_distributed_executor.subprocess.run",
+                "bilqis_mlx.runtime.c08_distributed_executor.subprocess.Popen",
                 return_value=failure), self.assertRaises(Exception) as caught:
             binding._run_capsule({"kind": "collective-probe"})
         self.assertNotIsInstance(caught.exception, RuntimeError)
 
     def test_worker_cohort_timeout_fails_closed(self):
         binding = self._binding()
+        failure = self._process()
+        failure.pid = 999999
+        failure.communicate.side_effect = subprocess.TimeoutExpired(
+            ("mlx.launch",), 1.0)
         with patch(
-                "bilqis_mlx.runtime.c08_distributed_executor.subprocess.run",
-                side_effect=subprocess.TimeoutExpired(("mlx.launch",), 1.0)), \
+                "bilqis_mlx.runtime.c08_distributed_executor.subprocess.Popen",
+                return_value=failure), patch(
+                    "bilqis_mlx.runtime.c08_distributed_executor._terminate_cohort"), \
                 self.assertRaises(Exception) as caught:
             binding._run_capsule({"kind": "collective-probe"})
         self.assertNotIsInstance(caught.exception, RuntimeError)
+
+    def test_worker_cohort_timeout_must_be_finite(self):
+        workers = (
+            DistributedRank(0, "rank-0", "Apple M3 Ultra"),
+            DistributedRank(1, "rank-1", "Apple M3 Ultra"))
+        with patch(
+                "bilqis_mlx.runtime.c08_distributed_executor."
+                "require_distributed_backend", return_value="ring"), patch(
+                    "bilqis_mlx.runtime.c08_distributed_executor.version",
+                    return_value="0.test"):
+            for invalid in (float("inf"), float("nan")):
+                with self.subTest(invalid=invalid), self.assertRaises(Exception):
+                    configure_mlx_distributed_execution(
+                        workers, hosts=("127.0.0.1",), partition_seed=17,
+                        backend="ring", worker_timeout_seconds=invalid)
+
+    def test_timeout_terminates_launcher_process_group_children(self):
+        with TemporaryDirectory() as root:
+            pid_file = Path(root) / "child.pid"
+            binding = self._binding()
+            object.__setattr__(binding, "working_directory", str(Path.cwd()))
+            object.__setattr__(binding, "worker_timeout_seconds", 1.0)
+            code = (
+                "import pathlib,subprocess,sys,time;"
+                "p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)']);"
+                f"pathlib.Path({str(pid_file)!r}).write_text(str(p.pid));"
+                "time.sleep(60)"
+            )
+            with patch.object(
+                    DistributedExecutorBinding, "_command",
+                    return_value=[sys.executable, "-c", code]), \
+                    self.assertRaises(Exception):
+                binding._run_capsule({"kind": "collective-probe"})
+            child_pid = int(pid_file.read_text())
+            deadline = time.monotonic() + 2.0
+            while time.monotonic() < deadline:
+                probe = subprocess.run(
+                    ["ps", "-p", str(child_pid), "-o", "pid="],
+                    capture_output=True, text=True)
+                if not probe.stdout.strip():
+                    break
+                time.sleep(0.02)
+            self.assertFalse(probe.stdout.strip(), "orphaned rank child survived timeout")
 
     def test_factory_capsule_strips_process_live_owner_state_before_pickle(self):
         compiled_value = SimpleNamespace(
@@ -142,6 +198,39 @@ class DistributedResourceModeTests(unittest.TestCase):
         restored = pickle.loads(payload)
         self.assertEqual(restored.cache_witness, "portable-witness")
         self.assertFalse(hasattr(restored.source_context, "_execution_by_capability"))
+
+    def test_portable_source_context_revalidates_remote_implementations(self):
+        source_registry = object()
+        answer_registry = object()
+        context = Mock()
+        context.__post_init__ = Mock()
+        with patch(
+                "bilqis_mlx.runtime.c08_distributed_capsule.live_source_registry",
+                return_value=source_registry), patch(
+                    "bilqis_mlx.runtime.c08_distributed_capsule.live_answer_registry",
+                    return_value=answer_registry), patch(
+                        "bilqis_mlx.runtime.c08_distributed_capsule."
+                        "verify_current_implementations") as verify, patch(
+                            "bilqis_mlx.runtime.c08_distributed_capsule."
+                            "SourceExecutionContext", return_value=context):
+            result = PortableSourceContext(
+                "release", {"graph": 1}, "/source").materialize()
+        verify.assert_called_once_with("release", source_registry, answer_registry)
+        self.assertIs(result, context)
+        context.__post_init__.assert_called_once_with()
+
+    def test_portable_source_context_rejects_remote_implementation_drift(self):
+        with patch(
+                "bilqis_mlx.runtime.c08_distributed_capsule.live_source_registry",
+                return_value=object()), patch(
+                    "bilqis_mlx.runtime.c08_distributed_capsule.live_answer_registry",
+                    return_value=object()), patch(
+                        "bilqis_mlx.runtime.c08_distributed_capsule."
+                        "verify_current_implementations",
+                        side_effect=RuntimeError("implementation drift")), \
+                self.assertRaisesRegex(RuntimeError, "implementation drift"):
+            PortableSourceContext(
+                "release", {"graph": 1}, "/source").materialize()
 
     def test_operator_can_derive_profile_from_bound_executor(self):
         workers = (
