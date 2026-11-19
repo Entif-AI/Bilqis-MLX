@@ -26,6 +26,8 @@ from .sidecar_contracts import validate_identity_sidecars
 
 BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v2"
 ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v3"
+OBJECTIVE_BOUND_BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v4"
+OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v5"
 LEGACY_BAMF_POINTER_SCHEMA = "bilqis.mlx.bamf-generation-pointer/v1"
 BAMF_POINTER_SCHEMA = "bilqis.mlx.bamf-generation-pointer/v2"
 TRANSITION_SCHEMA = "bilqis.mlx.bamf-generation-transition/v1"
@@ -94,21 +96,49 @@ class BamfGenerationManifest:
     optimizer: Mapping
     transition: Mapping
     sidecars: Mapping
+    training_objective_ref: str | None = None
+    training_objective_digest: str | None = None
     parent_acceptance_sha256: str | None = None
     schema: str = BAMF_BUNDLE_SCHEMA
 
     def __post_init__(self) -> None:
         validate_generation_identity(self.run_id, self.generation,
                                      self.parent_manifest_sha256, self.implementation_sha256)
-        if (self.schema not in {BAMF_BUNDLE_SCHEMA, ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA}
+        schemas = {
+            BAMF_BUNDLE_SCHEMA, ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
+            OBJECTIVE_BOUND_BAMF_BUNDLE_SCHEMA,
+            OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
+        }
+        objective_bound = self.schema in {
+            OBJECTIVE_BOUND_BAMF_BUNDLE_SCHEMA,
+            OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
+        }
+        acceptance_bound = self.schema in {
+            ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
+            OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
+        }
+        if (self.schema not in schemas
                 or any(not isinstance(value, Mapping) for value in (
                     self.topology, self.extents, self.provenance, self.tensors,
-                    self.optimizer, self.transition, self.sidecars))
-                or (self.schema == BAMF_BUNDLE_SCHEMA
-                    and self.parent_acceptance_sha256 is not None)
-                or (self.schema == ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA
-                    and ((self.generation == 0 and self.parent_acceptance_sha256 is not None)
-                         or (self.generation > 0 and not _hex(self.parent_acceptance_sha256))))):
+                    self.optimizer, self.transition, self.sidecars))):
+            invalid()
+        if objective_bound:
+            from bilqis_mlx.runtime._model.training_objective import (
+                current_training_objective,
+            )
+            objective = current_training_objective()
+            if (self.training_objective_ref != objective.ref
+                    or self.training_objective_digest != objective.digest):
+                invalid("TRAINING_OBJECTIVE_CONTRACT_DRIFT")
+        elif (self.training_objective_ref is not None
+                or self.training_objective_digest is not None):
+            invalid("TRAINING_OBJECTIVE_CONTRACT_UNBOUND")
+        if ((not acceptance_bound and self.parent_acceptance_sha256 is not None)
+                or (acceptance_bound
+                    and ((self.generation == 0
+                          and self.parent_acceptance_sha256 is not None)
+                         or (self.generation > 0
+                             and not _hex(self.parent_acceptance_sha256))))):
             invalid()
         validate_transition(self.generation, self.transition)
 
@@ -123,7 +153,14 @@ class BamfGenerationManifest:
             "optimizer": dict(self.optimizer), "transition": dict(self.transition),
             "sidecars": dict(self.sidecars),
         }
-        if self.schema == ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA:
+        if self.schema in {
+                OBJECTIVE_BOUND_BAMF_BUNDLE_SCHEMA,
+                OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA}:
+            record["training_objective_ref"] = self.training_objective_ref
+            record["training_objective_digest"] = self.training_objective_digest
+        if self.schema in {
+                ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
+                OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA}:
             record["parent_acceptance_sha256"] = self.parent_acceptance_sha256
         return record
 
@@ -133,17 +170,34 @@ class BamfGenerationManifest:
                 "implementation_sha256", "topology", "extents", "provenance",
                 "tensors", "optimizer", "transition", "sidecars"}
         schema = record.get("schema") if isinstance(record, Mapping) else None
-        expected = base | ({"parent_acceptance_sha256"}
-                           if schema == ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA else set())
+        objective_bound = schema in {
+            OBJECTIVE_BOUND_BAMF_BUNDLE_SCHEMA,
+            OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
+        }
+        acceptance_bound = schema in {
+            ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
+            OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
+        }
+        expected = base
+        if objective_bound:
+            expected |= {"training_objective_ref", "training_objective_digest"}
+        if acceptance_bound:
+            expected |= {"parent_acceptance_sha256"}
         if (not isinstance(record, Mapping) or set(record) != expected
-                or schema not in {BAMF_BUNDLE_SCHEMA, ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA}):
+                or schema not in {
+                    BAMF_BUNDLE_SCHEMA, ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
+                    OBJECTIVE_BOUND_BAMF_BUNDLE_SCHEMA,
+                    OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA}):
             invalid()
         return cls(
             record["run_id"], record["generation"], record["parent_manifest_sha256"],
             record["implementation_sha256"], record["topology"], record["extents"],
             record["provenance"], record["tensors"], record["optimizer"],
             record["transition"], record["sidecars"],
-            record.get("parent_acceptance_sha256"), schema)
+            training_objective_ref=record.get("training_objective_ref"),
+            training_objective_digest=record.get("training_objective_digest"),
+            parent_acceptance_sha256=record.get("parent_acceptance_sha256"),
+            schema=schema)
 
 
 def canonical(value) -> bytes:
