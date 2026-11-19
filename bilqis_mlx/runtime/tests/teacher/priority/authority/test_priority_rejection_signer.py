@@ -76,8 +76,23 @@ def _rejection_custody():
     receipt_raw = canonical(receipt)
     receipt_sha256 = hashlib.sha256(receipt_raw).hexdigest()
     objects = {authority_sha256: authority_raw, receipt_sha256: receipt_raw}
+    def indexed_event_tail(run_dir, offset):
+        journal = Path(run_dir) / "events.jsonl"
+        raw = journal.read_text() if journal.exists() else ""
+        events = tuple(json.loads(line) for line in raw.splitlines() if line.strip())
+        return {
+            "events": events,
+            "indexed_bytes": len(raw.encode()),
+            "ledger_identity": (1, len(raw.encode())),
+            "rebuilt": False,
+        }
     return evidence, event, receipt_sha256, SimpleNamespace(
-        get_object=lambda digest: objects[digest])
+        get_object=lambda digest: objects[digest],
+        event_projection_state=lambda *_args: None,
+        indexed_event_tail=indexed_event_tail,
+        remember_event_projection=lambda *_args: None,
+        sync_event_ledger=lambda *_args: None,
+    )
 
 
 def test_rejected_candidate_is_durably_deprioritized_without_advancing_c03_rotation():
