@@ -25,6 +25,7 @@ MAX_BYTES = 64 * 1024
 MAX_VISITS = 8
 MAX_HEARTBEAT_AGE_MS = 10_000
 MAX_FUTURE_SKEW_MS = 5_000
+_AUTO_ACCEPTED_HEALTH = object()
 _SCHEMAS = frozenset({
     'bilqis.bamf.trainer-observed/v1',
     'bilqis.bamf.trainer-observed/v2',
@@ -270,7 +271,9 @@ def _record(row, runs, now_ms, accepted_health=None, *, raw_schema=None):
         meta=meta, posture='OBSERVED', connection_state=state, **values)
 
 
-def observed_records(run_dir: Path, runs, *, now_ms=None) -> tuple[TrainerObservation, ...]:
+def observed_records(
+        run_dir: Path, runs, *, now_ms=None,
+        accepted_health_by_manifest=_AUTO_ACCEPTED_HEALTH) -> tuple[TrainerObservation, ...]:
     """Bound input bytes and rows; malformed observations cannot hide accepted state."""
     now_ms = int(time.time() * 1000) if now_ms is None else now_ms
     try:
@@ -290,8 +293,16 @@ def observed_records(run_dir: Path, runs, *, now_ms=None) -> tuple[TrainerObserv
     # reader budget.  Currentness is in the tail, so bound the projection rather
     # than discarding every observation from an otherwise valid snapshot.
     bounded_visits = payload['visits'][-MAX_VISITS:]
+    provided_health = accepted_health_by_manifest is not _AUTO_ACCEPTED_HEALTH
+    health_by_manifest = (
+        accepted_health_by_manifest
+        if isinstance(accepted_health_by_manifest, dict) else {})
     accepted_health = None
-    if bounded_visits:
+    if bounded_visits and provided_health:
+        latest_parent = bounded_visits[-1].get('parent_manifest_sha256')
+        candidate = health_by_manifest.get(latest_parent)
+        accepted_health = candidate if isinstance(candidate, dict) else None
+    if bounded_visits and not provided_health:
         latest = bounded_visits[-1]
         try:
             pointer = json.loads((Path(run_dir) / 'bamf-state.json').read_text())

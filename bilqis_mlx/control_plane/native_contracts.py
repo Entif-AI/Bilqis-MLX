@@ -64,6 +64,7 @@ class AuthenticatedGeneration:
     run_identity: dict
     teacher_state: dict
     outbox: tuple[dict, ...]
+    learning_health_state: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -71,6 +72,7 @@ class NativeProjectionMaterial:
     records: tuple
     events: tuple[tuple[EventFamily, object, str], ...]
     generation_manifests: tuple[str, ...]
+    accepted_learning_health_by_manifest: dict | None = None
 
 
 def run_ref(generation: AuthenticatedGeneration) -> RunRef:

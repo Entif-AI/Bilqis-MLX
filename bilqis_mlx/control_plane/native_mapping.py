@@ -4,7 +4,8 @@ import math
 
 from bilqis_mlx.mission_control import (
     CandidateDecision, CandidateOutcome, CapabilitySnapshot, CoverageState, DataValue,
-    LearningEpisode, OperatorView, ResourceSample, RunContext, UnavailableEnvelope,
+    LearningEpisode, OperatorView, ResourceSample, RunContext, TeacherSnapshot,
+    UnavailableEnvelope,
     UnavailableReason, ValueOrigin, ValueState,
 )
 
@@ -220,6 +221,27 @@ def _append_resource_sample(generation, run, native, records, events) -> bool:
     return True
 
 
+def _append_teacher_snapshot(generation, run, records) -> None:
+    """Project only teacher fields proven by accepted teacher custody."""
+    state = generation.teacher_state
+    visit = state.get("last_visit")
+    identity = state.get("teacher_identity")
+    epoch = state.get("teacher_epoch")
+    strategy = visit.get("policy_key") if isinstance(visit, dict) else None
+    if (not isinstance(identity, str) or not identity
+            or type(epoch) is not int or epoch < 0
+            or not isinstance(strategy, str) or not strategy):
+        return
+    records.append(TeacherSnapshot(
+        record_meta(
+            f"teacher:{run.run_id}:{run.generation}:{identity}",
+            run, generation, coverage=CoverageState.PARTIAL,
+        ),
+        identity, epoch, strategy,
+        missing_value(), missing_value(), missing_value(),
+    ))
+
+
 def accepted_records(
     generation: AuthenticatedGeneration,
     parent: AuthenticatedGeneration | None = None,
@@ -245,6 +267,7 @@ def accepted_records(
         f"generation:{run.run_id}", UnavailableReason.UNKNOWN,
         f"bamf-manifest:{generation.manifest_sha256}")
     records = [context, operator_view, generation_unavailable]
+    _append_teacher_snapshot(generation, run, records)
     events = [(EventFamily.RUN_STATE_CHANGED, context,
                f"native-run:{generation.manifest_sha256}")]
     resource_present = False

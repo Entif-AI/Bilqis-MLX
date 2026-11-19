@@ -4,6 +4,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from bilqis_mlx.errors import BilqisError
+
 from .native_contracts import (
     AuthenticatedGeneration, canonical, invalid, is_digest, native_outbox_event_id,
     sha,
@@ -144,6 +146,19 @@ def _accepted_generation(
         reason="CONTROL_PLANE_NATIVE_HISTORY_TEACHER_STATE_INVALID")
     if not isinstance(teacher_state, dict):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_TEACHER_STATE_INVALID")
+    learning_health_state = None
+    health_binding = manifest["sidecars"].get("learning_health_state")
+    if health_binding is not None:
+        learning_health_state = _read_bound_json(
+            root, health_binding,
+            reason="CONTROL_PLANE_NATIVE_HISTORY_LEARNING_HEALTH_INVALID")
+        if not isinstance(learning_health_state, dict):
+            invalid("CONTROL_PLANE_NATIVE_HISTORY_LEARNING_HEALTH_INVALID")
+        from bilqis_mlx.diagnostics.learning_health import validate_learning_health_state
+        try:
+            validate_learning_health_state(learning_health_state)
+        except (BilqisError, ValueError, TypeError, KeyError, AttributeError):
+            invalid("CONTROL_PLANE_NATIVE_HISTORY_LEARNING_HEALTH_INVALID")
     schema = acceptance.get("schema_version")
     teacher_anchor = acceptance.get("teacher_state_sha256")
     if schema in _EXACT_ACCEPTANCE_SCHEMAS:
@@ -155,7 +170,7 @@ def _accepted_generation(
         invalid("CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_DRIFT")
     return AuthenticatedGeneration(
         manifest_sha256, acceptance_sha256, manifest, acceptance, identity,
-        teacher_state, tuple(outbox))
+        teacher_state, tuple(outbox), learning_health_state)
 
 
 def authenticated_history(run_dir: Path) -> tuple[AuthenticatedGeneration, ...]:
