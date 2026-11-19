@@ -1,5 +1,6 @@
 """CP05 admission and idempotency behavior."""
 from dataclasses import replace
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -114,7 +115,183 @@ class CommandLifecycleTests(unittest.TestCase):
         self.assertEqual(restarted_launcher.calls, [])
         self.assertEqual(len(launcher.calls), 1)
 
-    def test_live_worker_or_recorded_trainer_never_reconciles_to_terminal(self):
+    def test_late_authoritative_no_effect_proof_terminalizes_without_relaunch(self):
+        manager, executor, launcher = self.manager(CommandMode.MUTATING)
+        accepted = manager.submit(request(
+            action="create", dry_run=False, human_authorized=True))
+        manager.store.write_worker_result(
+            accepted.operation_id,
+            returncode=None,
+            error_ref="command-error:custody:" + "1" * 64,
+            finished_at=102,
+        )
+        executor.reconcile_no_effect_value = {
+            "kind": "reconciled-no-effect",
+            "before": executor.preflight(request(), accepted.operation_id)[0].target.to_record(),
+        }
+
+        terminal = manager.status(accepted.operation_id)
+
+        self.assertEqual(terminal.state, ActionReceiptState.FAILED_BEFORE_EFFECT)
+        self.assertEqual(len(launcher.calls), 1)
+        self.assertIsNotNone(manager.store.read_reconciliation(accepted.operation_id))
+
+    def test_permanently_unresolvable_operation_remains_unknown_and_never_relaunches(self):
+        manager, _executor, launcher = self.manager(CommandMode.MUTATING)
+        accepted = manager.submit(request(
+            action="create", dry_run=False, human_authorized=True))
+        manager.store.write_worker_result(
+            accepted.operation_id,
+            returncode=7,
+            error_ref="command-error:7:" + "1" * 64,
+            finished_at=102,
+        )
+
+        first = manager.status(accepted.operation_id)
+        second = manager.status(accepted.operation_id)
+
+        self.assertEqual(first.state, ActionReceiptState.OUTCOME_UNKNOWN)
+        self.assertEqual(second.state, ActionReceiptState.OUTCOME_UNKNOWN)
+        self.assertIsNone(manager.store.read_terminal(accepted.operation_id))
+        self.assertEqual(len(launcher.calls), 1)
+
+    def test_stale_trainer_identity_does_not_block_late_completion_proof(self):
+        manager, executor, _launcher = self.manager(CommandMode.MUTATING)
+        accepted = manager.submit(request(
+            action="create", dry_run=False, human_authorized=True))
+        manager.store.write_trainer_process(
+            accepted.operation_id, pid=43210, identity_sha256="9" * 64)
+        executor.trainer_process_state_value = "inactive"
+        executor.reconcile_value = {"kind": "authoritative-readback"}
+
+        completed = manager.status(accepted.operation_id)
+
+        self.assertEqual(completed.state, ActionReceiptState.COMPLETED)
+
+    def test_unknown_outcome_quarantines_new_same_learner_mutation(self):
+        manager, _executor, launcher = self.manager(CommandMode.MUTATING)
+        accepted = manager.submit(request(
+            action="create", dry_run=False, human_authorized=True))
+        manager.store.write_worker_result(
+            accepted.operation_id,
+            returncode=7,
+            error_ref="command-error:7:" + "1" * 64,
+            finished_at=102,
+        )
+
+        blocked = manager.submit(request(
+            request_id="request-2",
+            idempotency_key="idem-2",
+            action="create",
+            dry_run=False,
+            human_authorized=True,
+            requested_at=103,
+        ))
+
+        self.assertEqual(blocked.state, ActionReceiptState.REJECTED)
+        self.assertEqual(len(launcher.calls), 1)
+        self.assertIsNone(manager.store.read_dispatch(blocked.operation_id))
+
+    def test_pending_same_learner_mutation_is_quarantined_before_ambiguity(self):
+        executor = FakeExecutor(self.run_dir, CommandMode.MUTATING)
+        launcher = Launcher(pid=os.getpid())
+        manager = CommandManager(
+            self.run_dir, self.store_root, executor=executor, launcher=launcher)
+        accepted = manager.submit(request(
+            action="create", dry_run=False, human_authorized=True))
+        self.assertEqual(
+            manager.status(accepted.operation_id).state,
+            ActionReceiptState.PENDING,
+        )
+
+        blocked = manager.submit(request(
+            request_id="request-2",
+            idempotency_key="idem-2",
+            action="create",
+            dry_run=False,
+            human_authorized=True,
+            requested_at=103,
+        ))
+
+        self.assertEqual(blocked.state, ActionReceiptState.REJECTED)
+        self.assertEqual(len(launcher.calls), 1)
+        self.assertIsNone(manager.store.read_dispatch(blocked.operation_id))
+
+    def test_unknown_outcome_still_allows_read_only_reconciliation_surfaces(self):
+        manager, executor, launcher = self.manager(CommandMode.MUTATING)
+        accepted = manager.submit(request(
+            action="create", dry_run=False, human_authorized=True))
+        manager.store.write_worker_result(
+            accepted.operation_id,
+            returncode=7,
+            error_ref="command-error:7:" + "1" * 64,
+            finished_at=102,
+        )
+        self.assertEqual(
+            manager.status(accepted.operation_id).state,
+            ActionReceiptState.OUTCOME_UNKNOWN,
+        )
+
+        executor.mode = CommandMode.DRY_RUN
+        read_only = manager.submit(request(
+            request_id="request-status",
+            idempotency_key="idem-status",
+            action="status",
+            dry_run=True,
+            requested_at=103,
+        ))
+
+        self.assertEqual(read_only.state, ActionReceiptState.COMPLETED)
+        self.assertEqual(len(launcher.calls), 1)
+
+    def test_unknown_outcome_does_not_blanket_block_stop_boundary(self):
+        manager, executor, launcher = self.manager(CommandMode.MUTATING)
+        accepted = manager.submit(request(
+            action="create", dry_run=False, human_authorized=True))
+        manager.store.write_trainer_process(
+            accepted.operation_id, pid=43210, identity_sha256="9" * 64)
+        executor.trainer_process_state_value = "current"
+        self.assertEqual(
+            manager.status(accepted.operation_id).state,
+            ActionReceiptState.OUTCOME_UNKNOWN,
+        )
+
+        stop = manager.submit(request(
+            request_id="request-stop",
+            idempotency_key="idem-stop",
+            action="stop",
+            parameters=(ActionParameter("operation_id", accepted.operation_id),),
+            dry_run=False,
+            human_authorized=True,
+            requested_at=103,
+        ))
+
+        self.assertEqual(stop.state, ActionReceiptState.ACCEPTED)
+        self.assertEqual(len(launcher.calls), 2)
+
+    def test_unknown_outcome_stop_must_name_the_blocking_operation(self):
+        manager, executor, launcher = self.manager(CommandMode.MUTATING)
+        accepted = manager.submit(request(
+            action="create", dry_run=False, human_authorized=True))
+        manager.store.write_trainer_process(
+            accepted.operation_id, pid=43210, identity_sha256="9" * 64)
+        executor.trainer_process_state_value = "current"
+
+        blocked = manager.submit(request(
+            request_id="request-stop-wrong",
+            idempotency_key="idem-stop-wrong",
+            action="stop",
+            parameters=(ActionParameter(
+                "operation_id", "operation:" + "a" * 64),),
+            dry_run=False,
+            human_authorized=True,
+            requested_at=103,
+        ))
+
+        self.assertEqual(blocked.state, ActionReceiptState.REJECTED)
+        self.assertEqual(len(launcher.calls), 1)
+
+    def test_live_worker_or_current_trainer_never_reconciles_to_terminal(self):
         manager, executor, _launcher = self.manager(CommandMode.MUTATING)
         accepted = manager.submit(request(
             action="create", dry_run=False, human_authorized=True))
@@ -134,6 +311,21 @@ class CommandLifecycleTests(unittest.TestCase):
 
         manager.store.write_trainer_process(
             accepted.operation_id, pid=43210, identity_sha256="9" * 64)
+        executor.trainer_process_state_value = "current"
+
+    def test_unknown_process_identity_keeps_operation_unresolved(self):
+        manager, executor, _launcher = self.manager(CommandMode.MUTATING)
+        accepted = manager.submit(request(
+            action="create", dry_run=False, human_authorized=True))
+        manager.store.write_trainer_process(
+            accepted.operation_id, pid=43210, identity_sha256="9" * 64)
+        executor.trainer_process_state_value = "unknown"
+        executor.reconcile_value = {"kind": "authoritative-readback"}
+
+        receipt = manager.status(accepted.operation_id)
+
+        self.assertEqual(receipt.state, ActionReceiptState.OUTCOME_UNKNOWN)
+        self.assertIsNone(manager.store.read_terminal(accepted.operation_id))
         with (
             patch(
                 "bilqis_mlx.control_plane.command.status.pid_live",

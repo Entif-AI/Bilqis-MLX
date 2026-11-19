@@ -76,6 +76,7 @@ def _accepted_admission_reentry(
 
 def _accepted_learning_reentry(
         run_dir: Path, parent_graph: dict, reserve_gib: float, progress=None):
+    """Compose evidence refresh and C07 only for an explicit admission boundary."""
     from .accepted_learning_evidence import refresh_accepted_learning_evidence
     evidence = refresh_accepted_learning_evidence(Path(run_dir), progress=progress)
     _emit_progress(progress, "accepted learner evidence refresh: "
@@ -159,6 +160,12 @@ def _visit(run_dir: Path, reserve_gib: float, *, steps_per_visit=16,
         record_cadence_attempt=record_active_grade_cadence_attempt)
 
 
+def _training_memory_context():
+    import mlx.core as mx
+    from bilqis_mlx.runtime.mlx_memory import training_memory_policy
+    return training_memory_policy(mx)
+
+
 def operate_bamf(
     run_dir: Path, *, minutes: int = 90,
     max_visits: int = 0, steps_per_visit: int = 16,
@@ -190,11 +197,7 @@ def operate_bamf(
         resource_snapshot=stop_resource_witness,
         record_stop=record_normal_stop_receipt, elapsed_clock=time.perf_counter,
         before_visits=before_visits,
+        training_memory_context=_training_memory_context,
         bind_run_authority=(
             lambda current_run_dir:
-            bind_native_run_authority(current_run_dir, run_authority)),
-        accepted_reentry=(
-            None if parent_graph is None else
-            lambda current_run_dir, current_reserve_gib, current_progress:
-            _accepted_learning_reentry(
-                current_run_dir, parent_graph, current_reserve_gib, current_progress)))
+            bind_native_run_authority(current_run_dir, run_authority)))

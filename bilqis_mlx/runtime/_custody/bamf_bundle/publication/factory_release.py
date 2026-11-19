@@ -57,6 +57,25 @@ def persist_prepared_initial_factory_release(run_dir: Path, prepared) -> dict:
     return receipt
 
 
+def _require_initial_foundation_capability_ids(release) -> tuple[str, ...]:
+    """Resolve foundation identity without rewriting historical release bytes.
+
+    Current releases sign the inventory explicitly. Pre-upgrade v2 releases did
+    not carry that wire field, but their execution plan was already part of the
+    content-addressed release manifest. For an accepted generation-zero release,
+    that sealed plan is the only lawful compatibility source.
+    """
+    if getattr(release, "_foundation_capability_wire", True):
+        return release.require_foundation_capability_ids()
+    release.verify()
+    foundation = release.execution_plan.active_capability_inventory
+    if (type(foundation) is not tuple or not foundation
+            or len(set(foundation)) != len(foundation)
+            or any(not isinstance(item, str) or not item for item in foundation)):
+        invalid("BAMF_INITIAL_FACTORY_RELEASE_CUSTODY_INVALID")
+    return foundation
+
+
 def require_initial_factory_release(run_dir: Path, student):
     """Cold-verify release custody from accepted/sealed student identity only."""
     expected = student.run_identity.factory_release_sha256
@@ -66,7 +85,7 @@ def require_initial_factory_release(run_dir: Path, student):
 
     release = _read_executable_factory_release_artifact(Path(run_dir), receipt)
     if (release.release_sha256 != expected
-            or not release.require_foundation_capability_ids()):
+            or not _require_initial_foundation_capability_ids(release)):
         invalid("BAMF_INITIAL_FACTORY_RELEASE_CUSTODY_INVALID")
     _require_release_root_shape(run_dir, expected, allow_other_releases=True)
     return release

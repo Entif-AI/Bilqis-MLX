@@ -5,7 +5,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.mission_control.model import MissionControlContractError
 from bilqis_mlx.mission_control.operator import ActionReceiptState, OperatorActionReceiptV2
 
-from .receipts import build_receipt, minimal_target, pid_live
+from .receipts import build_receipt, error_ref, minimal_target, pid_live
 from ..transport import _invalid
 
 
@@ -40,14 +40,17 @@ class CommandStatusMixin:
             and spawned is not None
             and pid_live(spawned["pid"])
         )
-        trainer_recorded = (
+        trainer_state = "inactive"
+        if (
             worker_result is None
             and self.store.read_trainer_process(operation_id) is not None
-        )
-        if worker_live or trainer_recorded:
+        ):
+            trainer_state = self.executor.trainer_process_state(operation_id)
+        if worker_live or trainer_state != "inactive":
             state = (
                 ActionReceiptState.PENDING
-                if worker_live else ActionReceiptState.OUTCOME_UNKNOWN
+                if worker_live and trainer_state != "unknown"
+                else ActionReceiptState.OUTCOME_UNKNOWN
             )
             return build_receipt(
                 request,
@@ -61,24 +64,45 @@ class CommandStatusMixin:
             reconciled = self.executor.reconcile(plan)
         except (BilqisError, MissionControlContractError, OSError):
             reconciled = None
-        if reconciled is None:
-            return build_receipt(
+        if reconciled is not None:
+            postcondition_ref = self.store.write_postcondition(
+                operation_id, reconciled)
+            terminal = build_receipt(
                 request,
                 operation_id=operation_id,
                 request_sha256=request_digest,
-                state=ActionReceiptState.OUTCOME_UNKNOWN,
+                state=ActionReceiptState.COMPLETED,
                 target_ref=plan.target.ref,
+                postcondition_ref=postcondition_ref,
+                receipt_refs=(f"command-plan:{plan.digest}", postcondition_ref),
             )
+            self.store.write_terminal(operation_id, terminal)
+            return terminal
 
-        postcondition_ref = self.store.write_postcondition(operation_id, reconciled)
-        terminal = build_receipt(
+        try:
+            no_effect = self.executor.reconcile_no_effect(plan, worker_result)
+        except (BilqisError, MissionControlContractError, OSError):
+            no_effect = None
+        if no_effect is not None:
+            reconciliation_ref = self.store.write_reconciliation(
+                operation_id, no_effect)
+            terminal = build_receipt(
+                request,
+                operation_id=operation_id,
+                request_sha256=request_digest,
+                state=ActionReceiptState.FAILED_BEFORE_EFFECT,
+                target_ref=plan.target.ref,
+                error_ref_value=error_ref(
+                    "CONTROL_PLANE_COMMAND_FAILED_BEFORE_EFFECT"),
+                receipt_refs=(f"command-plan:{plan.digest}", reconciliation_ref),
+            )
+            self.store.write_terminal(operation_id, terminal)
+            return terminal
+
+        return build_receipt(
             request,
             operation_id=operation_id,
             request_sha256=request_digest,
-            state=ActionReceiptState.COMPLETED,
+            state=ActionReceiptState.OUTCOME_UNKNOWN,
             target_ref=plan.target.ref,
-            postcondition_ref=postcondition_ref,
-            receipt_refs=(f"command-plan:{plan.digest}", postcondition_ref),
         )
-        self.store.write_terminal(operation_id, terminal)
-        return terminal
