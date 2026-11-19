@@ -13,7 +13,7 @@ from .common import (
     OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA,
     OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
     OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA,
-    OBJECTIVE_STEP_PROOF_SCHEMA,
+    OBJECTIVE_MINIMAL_STEP_PROOF_SCHEMA, OBJECTIVE_STEP_PROOF_SCHEMA,
     invalid,
 )
 from .proofs import CandidateStepProof
@@ -58,7 +58,9 @@ def _candidate_step_proof(candidate, execution, update_mask, loss_bearing,
         loss_bearing=bool(loss_bearing))
     if training_authority is None:
         return CandidateStepProof(
-            **proof_args, schema_version=LEGACY_STEP_PROOF_SCHEMA)
+            **proof_args,
+            training_objective_digest=candidate.training_objective_digest,
+            schema_version=OBJECTIVE_MINIMAL_STEP_PROOF_SCHEMA)
     from bilqis_mlx.runtime.atlas_training_authority import (
         BamfLogicalBatchTrainingAuthority, BamfTrainingAuthority,
     )

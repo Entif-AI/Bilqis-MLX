@@ -10,7 +10,8 @@ from .common import (
     LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
     OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA,
     OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
-    OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA, OBJECTIVE_STEP_PROOF_SCHEMA,
+    OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA,
+    OBJECTIVE_MINIMAL_STEP_PROOF_SCHEMA, OBJECTIVE_STEP_PROOF_SCHEMA,
     PREVIOUS_STEP_PROOF_SCHEMA, STEP_PROOF_SCHEMA,
     invalid, is_digest,
 )
@@ -36,6 +37,8 @@ _V9_FIELDS = _V5_FIELDS[:-1] + (
     "training_objective_digest", "schema_version")
 _V10_FIELDS = _V6_FIELDS[:-1] + (
     "training_objective_digest", "schema_version")
+_V11_FIELDS = _LEGACY_FIELDS[:-1] + (
+    "training_objective_digest", "schema_version")
 _FIELDS_BY_SCHEMA = MappingProxyType({
     LEGACY_STEP_PROOF_SCHEMA: _LEGACY_FIELDS,
     PREVIOUS_STEP_PROOF_SCHEMA: _V2_FIELDS,
@@ -47,6 +50,7 @@ _FIELDS_BY_SCHEMA = MappingProxyType({
     OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA: _V8_FIELDS,
     OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA: _V9_FIELDS,
     OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA: _V10_FIELDS,
+    OBJECTIVE_MINIMAL_STEP_PROOF_SCHEMA: _V11_FIELDS,
 })
 _LOGICAL_BATCH_MIN_MEMBERS = 2
 _LOGICAL_BATCH_MEMBER_WIDTH = 3
@@ -103,7 +107,8 @@ class CandidateStepProof:
                     OBJECTIVE_STEP_PROOF_SCHEMA,
                     OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA,
                     OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA,
-                    OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA)):
+                    OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+                    OBJECTIVE_MINIMAL_STEP_PROOF_SCHEMA)):
             invalid()
         closure_schemas = (
             CLOSURE_STEP_PROOF_SCHEMA,
@@ -116,6 +121,7 @@ class CandidateStepProof:
             OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA,
             OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA,
             OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+            OBJECTIVE_MINIMAL_STEP_PROOF_SCHEMA,
         )
         if ((self.schema_version in objective_schemas
              and not is_digest(self.training_objective_digest))
@@ -130,7 +136,8 @@ class CandidateStepProof:
         authority = (
             self.source_release_sha256, self.training_batch_sha256,
             self.target_capability_id, self.training_authority_sha256)
-        if self.schema_version == LEGACY_STEP_PROOF_SCHEMA:
+        if self.schema_version in (
+                LEGACY_STEP_PROOF_SCHEMA, OBJECTIVE_MINIMAL_STEP_PROOF_SCHEMA):
             if (authority != (None, None, None, None)
                     or self.source_family_id is not None
                     or self.episode_id is not None

@@ -13,6 +13,7 @@ OBJECTIVE_STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v7"
 OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v8"
 OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v9"
 OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v10"
+OBJECTIVE_MINIMAL_STEP_PROOF_SCHEMA = "bilqis.mlx.candidate-step-proof/v11"
 DIGEST_HEX_LENGTH = 64
 TRANSACTION_ISSUER = object()
 RETAINED_STATE_ISSUER = object()
