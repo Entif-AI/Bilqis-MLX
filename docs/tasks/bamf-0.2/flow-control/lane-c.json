@@ -493,10 +493,11 @@
     },
     {
       "issue": 1391,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "71a00bb90bfc261746a5e613e68f791b8ba9ad70",
-      "summary": "Apply existing MLX long-run memory policy to native operator; focused normal/exception restoration and state preservation proof.",
+      "pr": 1415,
+      "state": "TURNED_IN",
+      "head_sha": "a6544fab8e12bd6d2a1528c146f8f592692f4225",
+      "head_sha_role": "Candidate submitted for review before this ledger update.",
+      "summary": "Native BAMF uses the existing MLX training memory policy under the writer lock. Scoped verification passed. The owner authorized review with 36 matched aggregate failures disclosed in PR #1415.",
       "resume_trigger": null,
       "preserved_branch": "codex/1391-native-training-memory-20261118"
     },
