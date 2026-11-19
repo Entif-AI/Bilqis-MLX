@@ -28,7 +28,10 @@ from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import (
     HostSourceAuthoritySigner,
 )
 from bilqis_mlx.runtime.bamf_bundle.codec import save_bamf_bundle
-from bilqis_mlx.runtime.bamf_bundle.records import BAMF_POINTER_SCHEMA, canonical
+from bilqis_mlx.runtime.bamf_bundle.records import (
+    BAMF_POINTER_SCHEMA, OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
+    OBJECTIVE_BOUND_BAMF_BUNDLE_SCHEMA, canonical,
+)
 from bilqis_mlx.runtime.bamf_bundle.rejection_authority import portable_rejection_receipt
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, accepted_state, candidate, next_accepted_step, publish_genesis,
@@ -88,7 +91,7 @@ class MissionControlRecoveryHistoryTests(NativeSourceFixture, unittest.TestCase)
             })
         return registry, parent, visit
 
-    def test_migrated_v2_parent_reconstructs_complete_history(self):
+    def _migrated_parent_history(self, *, downgrade_to_v2: bool):
         parent = self.parent()
         generation_one = replace(
             candidate(
@@ -105,11 +108,20 @@ class MissionControlRecoveryHistoryTests(NativeSourceFixture, unittest.TestCase)
             teacher_state=dict(parent.teacher_state),
             evaluation_contract=dict(parent.evaluation_contract),
         )
-        stage = self.run / "legacy-v2-stage"
+        stage = self.run / "historical-parent-stage"
         with shape_patch(), patch.object(
                 mlx_checkpoint, "assert_headroom"), patch(
                 "bilqis_mlx.runtime.bamf_bundle.codec.assert_headroom"):
             manifest = save_bamf_bundle(generation_one, stage)
+        self.assertEqual(manifest["schema"], OBJECTIVE_BOUND_BAMF_BUNDLE_SCHEMA)
+        if downgrade_to_v2:
+            record = json.loads((stage / "manifest.json").read_text())
+            record["schema"] = "bilqis.mlx.bamf-generation-bundle/v2"
+            record.pop("training_objective_ref")
+            record.pop("training_objective_digest")
+            raw = canonical(record)
+            (stage / "manifest.json").write_bytes(raw)
+            manifest = {**record, "manifest_sha256": sha(raw)}
         target = self.run / "bamf-bundles" / manifest["manifest_sha256"]
         stage.rename(target)
         accepted_one = acceptance(generation_one, parent=parent.retained_state)
@@ -144,13 +156,26 @@ class MissionControlRecoveryHistoryTests(NativeSourceFixture, unittest.TestCase)
             evaluation_contract=dict(historical_parent.evaluation_contract),
         )
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            publish_bamf_generation(
+            child = publish_bamf_generation(
                 self.run, generation_two,
-                acceptance=acceptance(generation_two, parent=historical_parent.retained_state),
+                acceptance=acceptance(
+                    generation_two, parent=historical_parent.retained_state),
                 reserve_gib=0.)
+        child_manifest = json.loads(
+            (self.run / child["bundle"] / "manifest.json").read_text())
+        self.assertEqual(
+            child_manifest["schema"], OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA)
+        return authenticated_history(self.run)
 
-        history = authenticated_history(self.run)
+    def test_migrated_v2_parent_reconstructs_complete_history(self):
+        history = self._migrated_parent_history(downgrade_to_v2=True)
         self.assertEqual([item.manifest["generation"] for item in history], [0, 1, 2])
+        self.assertEqual(history[1].manifest["schema"], "bilqis.mlx.bamf-generation-bundle/v2")
+
+    def test_migrated_v4_parent_reconstructs_complete_history(self):
+        history = self._migrated_parent_history(downgrade_to_v2=False)
+        self.assertEqual([item.manifest["generation"] for item in history], [0, 1, 2])
+        self.assertEqual(history[1].manifest["schema"], OBJECTIVE_BOUND_BAMF_BUNDLE_SCHEMA)
 
     def test_signed_rejection_survives_relocation_without_shared_data_plane(self):
         _registry_value, _parent, visit = self._publish_signed_rejection()
@@ -187,6 +212,8 @@ class MissionControlRecoveryHistoryTests(NativeSourceFixture, unittest.TestCase)
             parent = load_bamf_generation(self.run / "bamf-state.json")
         self.assertEqual(pointer["generation"], 1)
         history = authenticated_history(self.run)
+        self.assertEqual(
+            history[-1].manifest["schema"], OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA)
         self.assertEqual(history[-1].acceptance["source_authority_registry_sha256"], registry.digest)
         with patch(
                 "bilqis_mlx.runtime.bamf_bundle.accepted_execution_cache."

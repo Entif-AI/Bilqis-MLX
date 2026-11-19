@@ -12,6 +12,10 @@ from .native_contracts import (
 
 _BUNDLE_V2 = "bilqis.mlx.bamf-generation-bundle/v2"
 _BUNDLE_V3 = "bilqis.mlx.bamf-generation-bundle/v3"
+_BUNDLE_V4 = "bilqis.mlx.bamf-generation-bundle/v4"
+_BUNDLE_V5 = "bilqis.mlx.bamf-generation-bundle/v5"
+_ACCEPTANCE_BOUND_BUNDLES = frozenset({_BUNDLE_V3, _BUNDLE_V5})
+_HISTORICAL_ACCEPTANCE_BUNDLES = frozenset({_BUNDLE_V2, _BUNDLE_V4})
 _POINTER_V2 = "bilqis.mlx.bamf-generation-pointer/v2"
 _INITIAL_ACCEPTANCE_SCHEMA = "bilqis.mlx.bamf-initial-generation-binding/v1"
 _EXACT_ACCEPTANCE_SCHEMAS = (
@@ -89,16 +93,10 @@ def _read_generation_manifest(run_dir: Path, manifest_sha256: str):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_MANIFEST_DRIFT")
     try:
         manifest = json.loads(raw_manifest)
-    except (UnicodeDecodeError, json.JSONDecodeError):
-        invalid("CONTROL_PLANE_NATIVE_HISTORY_MANIFEST_INVALID")
-    if (not isinstance(manifest, dict)
-            or manifest.get("schema") not in {_BUNDLE_V2, _BUNDLE_V3}
-            or manifest.get("run_id") is None
-            or type(manifest.get("generation")) is not int
-            or not isinstance(manifest.get("sidecars"), dict)
-            or not isinstance(manifest.get("optimizer"), dict)
-            or not isinstance(manifest.get("provenance"), dict)
-            or not isinstance(manifest.get("topology"), dict)):
+        from bilqis_mlx.errors import BilqisError
+        from bilqis_mlx.runtime.bamf_bundle.records import BamfGenerationManifest
+        manifest = BamfGenerationManifest.from_record(manifest).to_record()
+    except (UnicodeDecodeError, json.JSONDecodeError, BilqisError, KeyError, TypeError):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_MANIFEST_INVALID")
     return root, manifest
 
@@ -308,11 +306,11 @@ def authenticated_history(run_dir: Path) -> tuple[AuthenticatedGeneration, ...]:
             "parent_candidate_identity_sha256")
         if not is_digest(parent_sha) or not is_digest(parent_candidate_identity):
             invalid("CONTROL_PLANE_NATIVE_HISTORY_PARENT_UNAUTHENTICATED")
-        if manifest.get("schema") == _BUNDLE_V3:
+        if manifest.get("schema") in _ACCEPTANCE_BOUND_BUNDLES:
             parent_acceptance = manifest.get("parent_acceptance_sha256")
             if not is_digest(parent_acceptance):
                 invalid("CONTROL_PLANE_NATIVE_HISTORY_PARENT_UNAUTHENTICATED")
-        elif manifest.get("schema") == _BUNDLE_V2:
+        elif manifest.get("schema") in _HISTORICAL_ACCEPTANCE_BUNDLES:
             parent_acceptance = _historical_parent_acceptance(
                 run_dir, parent_sha, parent_candidate_identity)
         else:
