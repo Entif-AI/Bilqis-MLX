@@ -73,6 +73,7 @@ def execute_distributed_rank(
     manifest: DistributedStepManifest,
     partition: DistributedPartition,
     execute_row: Callable[[int], BamfGradientExecution],
+    base_authority_for_row: Callable[[int], object] | None = None,
 ) -> DistributedRankGradientExecution:
     """Execute exactly one rank's assigned rows with existing B11 row kernels."""
     if not callable(execute_row):
@@ -97,10 +98,16 @@ def execute_distributed_rank(
             _invalid("C08_DISTRIBUTED_GENERATION_DRIFT")
         total = _sum_tree(total, _fp32_tree(execution.gradients))
         loss = loss + execution.loss_total.astype(mx.float32)
+        evidence_kwargs = {
+            "manifest_digest": manifest.digest,
+            "rank": partition.rank,
+            "row_index": index,
+            "row_id": plan.logical_row_ids[index],
+        }
+        if base_authority_for_row is not None:
+            evidence_kwargs["base_training_authority"] = base_authority_for_row(index)
         evidence.append(issue_distributed_b11_evidence(
-            execution.execution, manifest_digest=manifest.digest,
-            rank=partition.rank, row_index=index,
-            row_id=plan.logical_row_ids[index]))
+            execution.execution, **evidence_kwargs))
     gradients = _scale_tree(total, 1.0 / len(partition.row_indices))
     loss = loss / len(partition.row_indices)
     mx.eval(gradients, loss)

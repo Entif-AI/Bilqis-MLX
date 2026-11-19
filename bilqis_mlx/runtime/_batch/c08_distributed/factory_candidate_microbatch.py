@@ -139,7 +139,8 @@ def execute_factory_distributed_rank(
             source_loss_multiplier=multiplier)
 
     return execute_distributed_rank(
-        resource_plan, manifest, partition, execute_row)
+        resource_plan, manifest, partition, execute_row,
+        base_authority_for_row=lambda index: rows[index][1])
 
 
 def execute_factory_distributed_rank_collective(

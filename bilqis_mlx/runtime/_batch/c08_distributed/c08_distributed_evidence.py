@@ -9,6 +9,9 @@ from typing import Mapping
 import mlx.core as mx
 
 from bilqis_mlx.runtime.atlas_model import require_bamf_loss_execution
+from bilqis_mlx.runtime.atlas_training_authority import (
+    BamfTrainingAuthority, extend_training_dependencies,
+)
 from bilqis_mlx.runtime._atlas_resources.distributed_contracts import _sha
 from bilqis_mlx.semantics.cognitive_dependencies import (
     ArtifactKind, ArtifactNode, DependencyKind, DependencyRef,
@@ -81,12 +84,31 @@ class DistributedB11Evidence:
 
 def issue_distributed_b11_evidence(
         execution, *, manifest_digest: str, rank: int, row_index: int,
-        row_id: str) -> DistributedB11Evidence:
+        row_id: str, base_training_authority=None) -> DistributedB11Evidence:
     """Project only participation/custody facts from a genuine local B11 witness."""
     execution = require_bamf_loss_execution(execution)
     authority = execution.training_authority
     if authority is None:
         _invalid("C08_DISTRIBUTED_TRAINING_AUTHORITY_REQUIRED")
+    dependencies = authority.immediate_dependencies
+    artifact_nodes = authority.artifact_nodes
+    if base_training_authority is not None:
+        if type(base_training_authority) is not BamfTrainingAuthority:
+            _invalid("C08_DISTRIBUTED_B11_BASE_AUTHORITY_INVALID")
+        base_training_authority.__post_init__()
+        base_dependencies = set(base_training_authority.immediate_dependencies)
+        dependencies = tuple(
+            ref for ref in authority.immediate_dependencies
+            if ref not in base_dependencies)
+        base_nodes = {
+            node.artifact_id: node for node in base_training_authority.artifact_nodes}
+        artifact_nodes = tuple(
+            node for node in authority.artifact_nodes
+            if node.artifact_id not in base_nodes)
+        reconstructed = extend_training_dependencies(
+            base_training_authority, dependencies, artifact_nodes=artifact_nodes)
+        if reconstructed.digest != authority.digest:
+            _invalid("C08_DISTRIBUTED_B11_BASE_AUTHORITY_DRIFT")
     return DistributedB11Evidence(
         manifest_digest, rank, row_index, row_id,
         execution.output.generation_binding, execution.custody_run_id,
@@ -99,8 +121,8 @@ def issue_distributed_b11_evidence(
         tuple(sorted({slot for read in execution.motif_reads
                       for slot in read.participating_slots})),
         authority.digest,
-        tuple((ref.kind.value, ref.key) for ref in authority.immediate_dependencies),
-        _training_artifact_json(authority.artifact_nodes))
+        tuple((ref.kind.value, ref.key) for ref in dependencies),
+        _training_artifact_json(artifact_nodes))
 
 
 def _training_artifact_json(nodes: tuple[ArtifactNode, ...]) -> str:
