@@ -69,7 +69,7 @@ SEMANTIC_HELD_META = RecordMeta(
 
 from bilqis_mlx.mission_control.contracts.trainer import (
     CandidateStepPerformance, TrainerObservation, TrainerObservationV2,
-    TrainerObservationV3, TrainerObservationV4, TrainerObservationV5,
+    TrainerObservationV3, TrainerObservationV4, TrainerObservationV5, TrainerObservationV6, TrainerObservationV7,
 )
 from bilqis_mlx.mission_control.contracts.trainer_evidence import (
     LearningHealthCheckpoint, LearningHealthEvidence, LearningHealthScore,
@@ -319,5 +319,62 @@ SAMPLES += (
                     'LACK_OF_DURABLE_GAIN', 'DISCONNECTED_PREREQUISITES',
                     'EXCESSIVE_INTRODUCTORY_COMPLEXITY')),
         ),
+    ),
+)
+
+
+SAMPLES += (
+    TrainerObservationV6(
+        meta=RecordMeta('observed:sample-v6', RUN, 120, 118, None,
+                        CoverageState.PARTIAL, AuthorityClass.MEASURED),
+        **{field.name: getattr(SAMPLES[-1], field.name)
+           for field in __import__('dataclasses').fields(TrainerObservationV5)
+           if field.name not in {'meta', 'candidate_steps'}},
+        accepted_currentness_refresh_wall_seconds=0.01,
+        accepted_currentness_live_fence_wall_seconds=0.01,
+        accepted_parent_currentness_wall_seconds=0.01,
+        lawful_frontier_currentness_wall_seconds=0.02,
+        teacher_visit_currentness_wall_seconds=0.01,
+        source_currentness_wall_seconds=0.01,
+        candidate_binding_wall_seconds=0.01,
+        retention_target_prepare_wall_seconds=None,
+        retention_target_solver_wall_seconds=None,
+        retention_target_parent_wall_seconds=None,
+        retention_target_candidate_wall_seconds=None,
+        retention_protected_prepare_wall_seconds=None,
+        retention_protected_parent_solver_wall_seconds=None,
+        retention_protected_parent_wall_seconds=None,
+        retention_protected_candidate_solver_wall_seconds=None,
+        retention_protected_candidate_wall_seconds=None,
+        retention_decision_finalize_wall_seconds=None,
+        championship_wall_seconds=None,
+        championship_prepare_wall_seconds=None,
+        championship_solver_wall_seconds=None,
+        championship_candidate_wall_seconds=None,
+        adviser_wall_seconds=None,
+        retention_target_case_count=None,
+        retention_protected_case_count=None,
+        retention_parent_cache_reused=None,
+        retention_target_shared_backbone_launches=None,
+        retention_target_scalar_neural_launches=None,
+        retention_protected_shared_backbone_launches=None,
+        retention_protected_scalar_neural_launches=None,
+        championship_case_count=None,
+        championship_shared_backbone_launches=None,
+        championship_scalar_neural_launches=None,
+        candidate_steps=(),
+    ),
+)
+
+
+SAMPLES += (
+    TrainerObservationV7(
+        meta=RecordMeta('observed:sample-v7', RUN, 120, 118, None,
+                        CoverageState.PARTIAL, AuthorityClass.MEASURED),
+        **{field.name: getattr(SAMPLES[-1], field.name)
+           for field in __import__('dataclasses').fields(TrainerObservationV6)
+           if field.name != 'meta'},
+        activity='planner: compiling semantic curriculum',
+        activity_elapsed_ms=4200,
     ),
 )
