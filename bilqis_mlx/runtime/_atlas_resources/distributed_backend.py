@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import mlx.core as mx
-
 from .contracts import _invalid
 from .distributed_contracts import (
     DISTRIBUTED_BACKENDS, DistributedPartition, DistributedStepManifest,
@@ -12,6 +10,17 @@ from .distributed_contracts import (
 
 
 BACKENDS = tuple(sorted(DISTRIBUTED_BACKENDS))
+
+
+def _mlx_core():
+    """Return MLX when present without making the portable facade MLX-dependent."""
+    try:
+        import mlx.core as mx
+    except ModuleNotFoundError as exc:
+        if exc.name != "mlx" and not str(exc.name).startswith("mlx."):
+            raise
+        return None
+    return mx
 
 
 @dataclass(frozen=True)
@@ -36,16 +45,20 @@ def core_backend_name(backend: str) -> str:
 
 def inspect_distributed_backends() -> tuple[DistributedBackendCapability, ...]:
     """Return host capabilities using MLX's side-effect-free availability API."""
+    mx = _mlx_core()
     return tuple(
         DistributedBackendCapability(
-            backend, bool(mx.distributed.is_available(backend)))
+            backend,
+            bool(mx is not None and mx.distributed.is_available(backend)),
+        )
         for backend in BACKENDS
     )
 
 
 def require_distributed_backend(backend: str) -> str:
     normalized = core_backend_name(backend)
-    if not bool(mx.distributed.is_available(normalized)):
+    mx = _mlx_core()
+    if mx is None or not bool(mx.distributed.is_available(normalized)):
         _invalid("BAMF_C08_DISTRIBUTED_BACKEND_UNAVAILABLE")
     return normalized
 
