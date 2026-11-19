@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
-from bilqis_mlx.learning.atlas_candidate import CandidateState
+from bilqis_mlx.learning.atlas_candidate import CandidateState, CandidateTransaction
 from bilqis_mlx.learning.teacher_lineage import (
     TeacherCustodyProjection, advance_teacher_lineage, bind_next_teacher_epoch,
     restore_teacher_lineage,
@@ -24,7 +24,7 @@ from bilqis_mlx.learning._teaching.teacher_lineage_records import (
 )
 from bilqis_mlx.runtime.bamf_bundle import CompleteStudent
 from bilqis_mlx.runtime.bamf_bundle.admission import (
-    bind_accepted_execution_cache, derive_successor_bundle,
+    bind_accepted_execution_cache, derive_motif_successor_bundle, derive_successor_bundle,
     load_accepted_generation,
 )
 from bilqis_mlx.runtime.bamf_bundle.records import (
@@ -219,7 +219,8 @@ def _require_current_visit(
 
 def derive_c03_successor_bundle(
         run_dir: Path, retained_state: CandidateState, visit: BoundTeacherVisit, *,
-        next_seed: int, cursor: str, delivery_events: tuple) -> BamfBundleCandidate:
+        next_seed: int, cursor: str, delivery_events: tuple,
+        candidate_transaction: CandidateTransaction | None = None) -> BamfBundleCandidate:
     """Build one B13 successor whose C03 teacher state advances atomically.
 
     C03 owns only the teacher projection. B13 remains the bundle/state-machine
@@ -232,10 +233,19 @@ def derive_c03_successor_bundle(
         invalid("TEACHER_SUCCESSOR_SELECTION_STATE_INVALID")
     parent, cache = _accepted_parent(Path(run_dir))
     _require_current_visit(parent, cache, visit)
-    successor = derive_successor_bundle(
-        parent, retained_state,
-        parent_manifest_sha256=cache.accepted_manifest_sha256,
-        delivery_events=delivery_events)
+    if candidate_transaction is not None and type(candidate_transaction) is not CandidateTransaction:
+        invalid("TEACHER_SUCCESSOR_SELECTION_STATE_INVALID")
+    if (candidate_transaction is not None
+            and candidate_transaction.motif_transition is not None):
+        successor = derive_motif_successor_bundle(
+            parent, candidate_transaction, retained_state=retained_state,
+            parent_manifest_sha256=cache.accepted_manifest_sha256,
+            delivery_events=delivery_events)
+    else:
+        successor = derive_successor_bundle(
+            parent, retained_state,
+            parent_manifest_sha256=cache.accepted_manifest_sha256,
+            delivery_events=delivery_events)
     bank_identity = _bank_identity(successor)
     plasticity_identity = _plasticity_identity(retained_state)
     student_sha = candidate_identity_digest(retained_state)
