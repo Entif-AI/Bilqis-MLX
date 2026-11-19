@@ -14,8 +14,8 @@ if dependency_path := environment.get("BILQIS_1391_TEST_DEPS"):
     test_paths += (dependency_path,)
 environment.update({
     "BILQIS_TEST_WORKERS": "1",
-    "BILQIS_TEST_BASE_REF": "204a5f4769189b1dd9d334f1b7a85b4133a48110",
-    "BILQIS_QUALITY_BASE_REF": "204a5f4769189b1dd9d334f1b7a85b4133a48110",
+    "BILQIS_TEST_BASE_REF": "df0e73942cf65c63c59d48c52642b466a1f0c5ab",
+    "BILQIS_QUALITY_BASE_REF": "df0e73942cf65c63c59d48c52642b466a1f0c5ab",
     "PYTHONPATH": os.pathsep.join(test_paths),
     "PATH": str(Path(sys.executable).parent) + os.pathsep + "/opt/homebrew/bin:" + os.environ["PATH"],
 })

@@ -108,3 +108,15 @@ before visiting for the same reason. Three test files now pass an explicit
 fixture reserve. The production default and reserve enforcement are unchanged.
 The exact 21 failed case IDs passed on the same host in 17.23 seconds,
 including eight subtests. The v4 snapshot mutation guard passed.
+
+V5 passed 389 affected tests, 465 Node tests, 67 Node security tests and
+the Python security stage. The full aggregate reported 103 failures/errors.
+The unchanged 204a5f47 control reported 260 failures/errors with 37 matching
+test identities and outcomes. Disk availability differed near the 100 GiB
+reserve, so this comparison does not establish zero regressions. Both runs
+passed their snapshot mutation guards.
+
+Unified df0e73942 adds native allocator retry and visit holds. The merge
+preserves that scheduler behavior inside the cache policy scope. The harness
+now applies its test-only allocator bound on first MLX core import, which
+addresses the unrelated import-isolation failure exposed by v5.
