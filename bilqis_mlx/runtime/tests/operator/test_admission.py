@@ -55,6 +55,37 @@ def _executable_fixture(seed=17):
 
 
 class ExecutableMigrationTests(unittest.TestCase):
+    def test_live_reader_rejects_historical_release_without_foundation_identity(self):
+        from bilqis_mlx.factory.executable_release import (
+            ExecutableFactoryRelease, _digest,
+        )
+        from bilqis_mlx.runtime.admission import _read_executable_factory_release
+
+        release, _graph = _executable_fixture()
+        manifest = json.loads(json.dumps(release.manifest()))
+        manifest.pop("foundation_capability_ids")
+        historical_sha = _digest(manifest)
+        historical = ExecutableFactoryRelease.from_manifest(manifest, historical_sha)
+        self.assertIsNone(historical.foundation_capability_ids)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            release_root = root / "factory-releases"
+            release_root.mkdir()
+            path = release_root / f"{historical_sha}.json"
+            path.write_text(json.dumps({
+                "factory_release_sha256": historical_sha,
+                **manifest,
+            }, sort_keys=True))
+            receipt = {
+                "factory_release_sha256": historical_sha,
+                "factory_release_file": f"factory-releases/{historical_sha}.json",
+            }
+            with self.assertRaisesRegex(
+                    ValueError,
+                    "FACTORY_EXECUTABLE_RELEASE_FOUNDATION_CAPABILITY_IDS_REQUIRED"):
+                _read_executable_factory_release(root, receipt, _graph)
+
     def test_legacy_live_rubric_rebinds_without_changing_parent_evidence(self):
         from bilqis_mlx.runtime.release_adoption import _migrate_executable_release
         from bilqis_mlx.runtime.state import _fingerprint
