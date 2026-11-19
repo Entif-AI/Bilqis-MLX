@@ -31,12 +31,28 @@ def _rejected_structural_weaknesses(
         outcome_sha256=how_outcome["outcome_sha256"])
 
 
+def _retention_resource(
+        run_dir, steps, context, identity_metrics, candidate_evidence,
+        resource_observation):
+    resource = resource_observation(
+        run_dir, tuple(steps), getattr(context, "_source_preparation_metrics", None),
+        identity_metrics=identity_metrics)
+    resource.update({
+        "evidence_bytes_written": candidate_evidence["persistence"]["bytes_written"],
+        "evidence_file_fsyncs": candidate_evidence["persistence"]["file_fsyncs"],
+        "evidence_directory_fsyncs": candidate_evidence["persistence"]["directory_fsyncs"],
+        "evidence_objects": candidate_evidence["persistence"]["evidence_objects"],
+        "evidence_persistence_seconds": candidate_evidence["persistence"]["persistence_seconds"],
+    })
+    return resource
+
+
 def retention_result(
         run_dir, parent, context, atlas_path, selection, capability, cache, steps,
         capture, rejection_journal_ordinal, rejection_attempt_ordinal,
         identity_before, progress, observer, *, evaluate_candidate,
         issue_decision, identity_delta, resource_observation,
-        derive_successor, bind_baseline_successor,
+        derive_successor, bind_baseline_successor, finalize_generation_authority,
         prepared_visit_type, emit_progress,
         measure_observed_phase_fn, derive_plasticity_escape=None):
     step = steps[-1]
@@ -84,16 +100,9 @@ def retention_result(
         except Exception:
             # Projection is observation-only and must not gate C05/B13 completion.
             pass
-    resource = resource_observation(
-        run_dir, tuple(steps), getattr(context, "_source_preparation_metrics", None),
-        identity_metrics=identity_metrics)
-    resource.update({
-        "evidence_bytes_written": candidate_evidence["persistence"]["bytes_written"],
-        "evidence_file_fsyncs": candidate_evidence["persistence"]["file_fsyncs"],
-        "evidence_directory_fsyncs": candidate_evidence["persistence"]["directory_fsyncs"],
-        "evidence_objects": candidate_evidence["persistence"]["evidence_objects"],
-        "evidence_persistence_seconds": candidate_evidence["persistence"]["persistence_seconds"],
-    })
+    resource = _retention_resource(
+        run_dir, steps, context, identity_metrics, candidate_evidence,
+        resource_observation)
     from bilqis_mlx.runtime.outcomes.issuance import (
         build_outcome, carry_credit_to_successor, credited_visit,
     )
@@ -105,7 +114,8 @@ def retention_result(
         cache, retained, step.transaction, observer,
         rejection_journal_ordinal, resource, candidate_evidence, capture, how_outcome,
         derive_successor, bind_baseline_successor, evaluation,
-        credited_visit, carry_credit_to_successor, plasticity_escape)
+        credited_visit, carry_credit_to_successor, plasticity_escape,
+        finalize_generation_authority)
     return prepared_visit_type(
         "ACCEPTED" if decision.accepted else "REJECTED", parent,
         selection=selection, step=step, steps=tuple(steps), decision=decision,
@@ -143,7 +153,8 @@ def _accepted_successor(
         cache, retained, candidate_transaction, observer,
         rejection_journal_ordinal, resource, candidate_evidence, capture, how_outcome,
         derive_successor, bind_baseline_successor, evaluation,
-        credited_visit, carry_credit_to_successor, plasticity_escape):
+        credited_visit, carry_credit_to_successor, plasticity_escape,
+        finalize_generation_authority):
     if not decision.accepted:
         return None, None
     learned_visit = credited_visit(selection.visit, how_outcome)
@@ -173,7 +184,8 @@ def _accepted_successor(
            and selection.metadata.get("cadence") is not None else {}),
     }, instruction_event)
     successor = derive_successor(
-        run_dir, retained, learned_visit, delivery_events=events)
+        run_dir, retained, learned_visit, delivery_events=events,
+        candidate_transaction=candidate_transaction)
     if health_state is not None:
         from dataclasses import replace
         successor = replace(successor, learning_health_state=health_state)
@@ -195,6 +207,10 @@ def _accepted_successor(
             evidence_stage=CURRENT_EVIDENCE_STAGE,
             observer=(lambda fields: observer.update(**fields)) if observer is not None else None,
             boundary_capabilities=championship_scope)
+    if (getattr(evaluation, "candidate_generation_authority_sha256", None) is not None
+            and getattr(candidate_transaction, "motif_transition", None) is not None):
+        finalize_generation_authority(
+            evaluation, decision, parent, candidate_transaction, successor)
     return successor, learning_health
 
 
