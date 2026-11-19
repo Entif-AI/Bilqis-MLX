@@ -5,7 +5,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
-from .records import canonical, invalid, sha
+from ..records import canonical, invalid, sha
 
 
 PORTABLE_REJECTION_AUTHORITY_SCHEMA = "bilqis.mlx.bamf-rejection-authority/v2"
@@ -56,7 +56,7 @@ def issue_portable_rejection_authority(
     """Sign rejection identity with the fixed C06 owner key already trusted by C09."""
     if not isinstance(registry, SourceAuthorityRegistry):
         invalid("BAMF_REJECTION_PORTABLE_AUTHORITY_INVALID")
-    from ._darwin_salience_signer import read_host_system_source_authority_signer
+    from .._darwin_salience_signer import read_host_system_source_authority_signer
 
     signer = read_host_system_source_authority_signer(registry)
     claim = _claim(
