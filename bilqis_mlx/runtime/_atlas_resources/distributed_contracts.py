@@ -1,7 +1,7 @@
 """C08.4 immutable execution-topology and rank-result contracts."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import re
 
 from .contracts import _digest, _invalid
@@ -58,6 +58,13 @@ class DistributedExecutionProfile:
             _invalid("BAMF_C08_DISTRIBUTED_PROFILE_INVALID")
 
 
+def _current_objective_digest() -> str:
+    from bilqis_mlx.runtime._model.training_objective import (
+        current_training_objective,
+    )
+    return current_training_objective().digest
+
+
 @dataclass(frozen=True)
 class DistributedStepManifest:
     retained_generation: int
@@ -72,7 +79,8 @@ class DistributedStepManifest:
     backend: str
     numeric_precision: str
     reduction_policy: str = "fp32_weighted_mean"
-    training_objective_digest: str | None = None
+    training_objective_digest: str | None = field(
+        default_factory=_current_objective_digest)
     schema_version: str = DISTRIBUTED_STEP_MANIFEST_SCHEMA
 
     def __post_init__(self) -> None:
