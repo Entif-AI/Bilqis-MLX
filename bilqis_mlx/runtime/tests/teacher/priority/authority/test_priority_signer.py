@@ -115,7 +115,7 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
 
     (registry, signer, source_context, planning, parent,
      planning_generation, offer, cache, lawful) = _foundation_case()
-    with patch(
+    with TemporaryDirectory() as run_dir, patch(
         "bilqis_mlx.runtime.bamf_bundle.accepted_runtime._accepted_correction_registry",
         return_value=(cache, registry),
     ), patch(
@@ -142,7 +142,7 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
         return_value=_cadence("capability:alpha", "capability:beta"),
     ):
         issued = authority.issue_foundation_priority_authority(
-            "/run", source_context, parent, {"epoch": 1}, "/atlas",
+            run_dir, source_context, parent, {"epoch": 1}, "/atlas",
             teacher_state=parent.teacher_state)
 
     evidence = dict(issued.frontier.evidence)

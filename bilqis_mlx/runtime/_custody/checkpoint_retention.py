@@ -10,9 +10,13 @@ import bilqis_mlx.learning.grade_soup as _learning_grade_soup
 
 
 def mentor_epoch_references(receipt):
+    from bilqis_mlx.learning.mentor_epoch import reference_checkpoints
+    for historical_epoch in receipt.get("championship_epoch_history", ()):
+        # Historical epochs are metadata rather than live retention roots, but
+        # their typed schema must still validate so unknown history fails closed.
+        reference_checkpoints(historical_epoch)
     if receipt.get("mentor_epoch") is None:
         return ()
-    from bilqis_mlx.learning.mentor_epoch import reference_checkpoints
     epoch = receipt["mentor_epoch"]
     return (
         *reference_checkpoints(epoch),

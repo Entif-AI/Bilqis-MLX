@@ -1,4 +1,5 @@
 """Teacher integration contracts; original evidence and boundaries preserved."""
+BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"
 from contextlib import redirect_stdout
 import io
 from pathlib import Path
