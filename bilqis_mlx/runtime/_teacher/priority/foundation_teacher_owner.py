@@ -92,10 +92,11 @@ def foundation_teacher_bootstrap() -> FoundationTeacherBootstrap:
 
 def current_foundation_teacher_projection(run_dir):
     """Project the current accepted C03 teacher without selecting a capability."""
-    from bilqis_mlx.runtime.accepted_teacher_custody import _c03_projection
-    from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+    from bilqis_mlx.runtime.accepted_teacher_custody import (
+        _accepted_parent, _c03_projection, current_teacher_projection,
+    )
 
-    parent = load_accepted_generation(run_dir)
+    parent, cache = _accepted_parent(run_dir)
     state = parent.teacher_state
     bootstrap = {"legacy_receipt": None, "adaptation": None, "prior_region": None}
     if "c03_lineage" not in state:
@@ -106,6 +107,7 @@ def current_foundation_teacher_projection(run_dir):
             "prior_region": owned.prior_region,
         }
     projection = _c03_projection(parent, **bootstrap)
+    projection = current_teacher_projection(run_dir, parent, cache, projection)
     restore_teacher_lineage(projection.teacher_state)
     return projection
 
