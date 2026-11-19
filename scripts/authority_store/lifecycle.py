@@ -93,8 +93,10 @@ class AuthorityStoreOperator(AuthorityStoreTransactionMixin):
         ))
         signer_path = self.root / _SIGNER_FILE
         signer_present = signer_path.exists()
+        signer_owner_id = None
+        signer_public_key_hex = None
         if signer_present:
-            _validate_signer(_read_file(
+            signer_owner_id, signer_public_key_hex = _validate_signer(_read_file(
                 signer_path,
                 max_bytes=16 * 1024,
                 expected_uid=self.euid,
@@ -114,12 +116,16 @@ class AuthorityStoreOperator(AuthorityStoreTransactionMixin):
                     or state.get("registry_sha256") != registry.digest
                     or state.get("role") not in _ROLES
                     or bool(state.get("signer_present")) != signer_present
-                    or (state.get("role") == ROLE_AUTHORITY_HOST) != signer_present):
+                    or (state.get("role") == ROLE_AUTHORITY_HOST) != signer_present
+                    or state.get("signer_owner_id") != signer_owner_id
+                    or state.get("signer_public_key_hex") != signer_public_key_hex):
                 _fail()
             role = state["role"]
         else:
             role = ROLE_AUTHORITY_HOST if signer_present else ROLE_WORKER
-        return AuthorityStoreStatus(role, registry.digest, signer_present, managed)
+        return AuthorityStoreStatus(
+            role, registry.digest, signer_present, managed,
+            signer_owner_id, signer_public_key_hex)
 
     def verify(self) -> AuthorityStoreStatus:
         fd = self._locked()
@@ -142,7 +148,9 @@ class AuthorityStoreOperator(AuthorityStoreTransactionMixin):
             role=approval.role,
             signer_bytes=signer_bytes,
             signer_provider=signer_provider,
-            operation="restore",
+            operation="install",
+            expected_signer_owner_id=approval.signer_owner_id,
+            expected_signer_public_key_hex=approval.signer_public_key_hex,
         )
 
     @staticmethod
@@ -194,7 +202,10 @@ class AuthorityStoreOperator(AuthorityStoreTransactionMixin):
             _fail()
         if (manifest.get("schema") != SCHEMA
                 or manifest.get("registry_sha256") != approval.registry_sha256
-                or manifest.get("role") != approval.role):
+                or manifest.get("role") != approval.role
+                or manifest.get("signer_owner_id") != approval.signer_owner_id
+                or manifest.get("signer_public_key_hex")
+                    != approval.signer_public_key_hex):
             _fail()
         signer_path = snapshot / _SIGNER_FILE
         return self._install(
@@ -209,7 +220,9 @@ class AuthorityStoreOperator(AuthorityStoreTransactionMixin):
                 _read_file(signer_path, max_bytes=16 * 1024, require_private=True)
                 if signer_path.exists() else None
             ),
-            operation="install",
+            operation="restore",
+            expected_signer_owner_id=approval.signer_owner_id,
+            expected_signer_public_key_hex=approval.signer_public_key_hex,
         )
 
     def rotate(self, registry_bytes: bytes, *, signer_bytes: bytes) -> AuthorityStoreStatus:
@@ -221,6 +234,8 @@ class AuthorityStoreOperator(AuthorityStoreTransactionMixin):
             signer_bytes=signer_bytes,
             operation="rotate",
             expected_current_registry_sha256=approval.current_registry_sha256,
+            expected_signer_owner_id=approval.signer_owner_id,
+            expected_signer_public_key_hex=approval.signer_public_key_hex,
         )
 
     def migrate(self, registry_bytes: bytes, *, signer_bytes: bytes) -> AuthorityStoreStatus:
@@ -233,6 +248,8 @@ class AuthorityStoreOperator(AuthorityStoreTransactionMixin):
             signer_bytes=signer_bytes,
             operation="migrate",
             expected_current_registry_sha256=approval.current_registry_sha256,
+            expected_signer_owner_id=approval.signer_owner_id,
+            expected_signer_public_key_hex=approval.signer_public_key_hex,
         )
 
 

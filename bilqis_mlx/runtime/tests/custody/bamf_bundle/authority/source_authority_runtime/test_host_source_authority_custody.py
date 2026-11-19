@@ -47,14 +47,14 @@ class DarwinUserCustodyTests(unittest.TestCase):
 
     def test_wrong_owner_type_and_size_fail_closed(self):
         candidates = (
-            _info(uid=777),
-            _info(directory=True),
-            _info(size=0),
-            _info(size=129),
+            ("wrong-owner", _info(uid=777)),
+            ("directory", _info(directory=True)),
+            ("empty", _info(size=0)),
+            ("oversized", _info(size=129)),
         )
-        for info in candidates:
+        for label, info in candidates:
             fstats = iter((_info(), info))
-            with self.subTest(info=info), \
+            with self.subTest(case=label), \
                     patch.object(darwin.os, "geteuid", return_value=501), \
                     patch.object(darwin.pwd, "getpwuid", return_value=SimpleNamespace(
                         pw_dir="/Users/operator")), \

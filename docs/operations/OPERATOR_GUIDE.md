@@ -108,9 +108,12 @@ operator or fleet-provisioning system must place a private approval record at th
 caller-nonselectable location
 `<account-home>/.entif-ai/bilqis-authority-approval.json`. Bilqis has no command that
 creates this record. The record fixes the approved operation, host role, registry
-digest, and, for rotation/migration, the exact current digest. The lifecycle command
-then verifies supplied registry/signer bytes against that independent approval. Do not
-copy a registry into a new run directory or manufacture one from test fixtures.
+digest, and, for rotation/migration, the exact current digest. For an authority host it
+also fixes the exact signer owner and public-key identity inside that registry. The
+lifecycle command then verifies supplied registry/signer bytes against that independent
+approval. A secret provider may supply private bytes for the pinned public identity but
+cannot choose another registry-valid principal. Do not copy a registry into a new run
+directory or manufacture one from test fixtures.
 
 For an authority-owning host, the external approval uses role `authority-host` and the
 install supplies the already approved registry plus its matching signer. For a
@@ -129,14 +132,35 @@ The approval record has this exact public shape; its contents contain no signer 
   "operation": "install",
   "role": "worker",
   "registry_sha256": "<approved-c09-registry-digest>",
-  "current_registry_sha256": null
+  "current_registry_sha256": null,
+  "signer_owner_id": null,
+  "signer_public_key_hex": null
 }
 ~~~
 
 `rotate` and `migrate` approvals use role `authority-host` and must set
 `current_registry_sha256` to the exact currently accepted registry digest. A `restore`
-approval identifies the exact digest and role to recover. The operator tool refuses an
-operation whose fixed approval names a different operation.
+approval identifies the exact digest and role to recover. Authority-host approvals also
+set `signer_owner_id` and `signer_public_key_hex` to the exact approved C09 principal;
+worker approvals require both fields to remain `null`. The operator tool refuses an
+operation whose fixed approval names a different operation or whose signer material
+does not derive to the pinned owner/key identity.
+
+This lifecycle inherits #1031's **ordinary-user account trust boundary**. It protects
+against supported caller/API/path selection, symlink/path substitution, stale or wrong
+approval material, signer substitution, and interrupted publication. It does not claim
+to defend the authority store from arbitrary hostile code or processes that already
+have unrestricted filesystem control as the same effective OS account. Such control
+can replace the #1031 store itself and is host/account compromise under the inherited
+threat model, not a worker capability granted by this tool. Operators who require
+hostile same-account isolation must provide a stronger OS-account, keychain, managed
+device, or separate-process custody boundary outside this user-space lifecycle.
+
+This distinction does not make a #559 public worker authoritative. A remote worker is
+still untrusted at the canonical-school boundary: worker-role provisioning carries no
+signer, and returned work remains a proposal/evidence artifact subject to the existing
+canonical source, retention, optimizer, and admission checks. Compromise of a worker's
+local account therefore does not transfer canonical-school authority.
 
 The lifecycle commands are deliberately explicit:
 

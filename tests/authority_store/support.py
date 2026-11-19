@@ -75,7 +75,20 @@ class AuthorityStoreTestCase(unittest.TestCase):
     def approve(
         self, operation: str, role: str, registry_sha256: str,
         current_registry_sha256: str | None = None,
+        *, signer_owner_id: str | None = None,
+        signer_public_key_hex: str | None = None,
     ) -> None:
+        if role == lifecycle_io.ROLE_AUTHORITY_HOST:
+            registry = next(
+                (candidate for candidate in (self.registry, self.next_registry)
+                 if candidate.digest == registry_sha256), None)
+            if registry is not None:
+                signer_owner_id = signer_owner_id or registry.keys[0].owner_id
+                signer_public_key_hex = (
+                    signer_public_key_hex or registry.keys[0].public_key_hex)
+        else:
+            signer_owner_id = None
+            signer_public_key_hex = None
         approval_path = self.home / ".entif-ai" / lifecycle_io.APPROVAL_FILE
         approval_path.parent.mkdir(mode=0o700, exist_ok=True)
         if approval_path.exists():
@@ -87,6 +100,8 @@ class AuthorityStoreTestCase(unittest.TestCase):
                 "role": role,
                 "registry_sha256": registry_sha256,
                 "current_registry_sha256": current_registry_sha256,
+                "signer_owner_id": signer_owner_id,
+                "signer_public_key_hex": signer_public_key_hex,
             }, sort_keys=True, separators=(",", ":")) + "\n"
         ).encode())
 

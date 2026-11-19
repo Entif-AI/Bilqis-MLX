@@ -4,6 +4,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import shutil
+import subprocess
+import sys
 from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
@@ -11,7 +13,7 @@ from bilqis_mlx.runtime.bamf_bundle import _darwin_source_authority as darwin
 from scripts.authority_store import io as lifecycle_io
 from scripts.authority_store import lifecycle
 from scripts.authority_store import transaction
-from scripts.tests.authority_store.support import AuthorityStoreTestCase
+from tests.authority_store.support import AuthorityStoreTestCase
 
 
 class AuthorityStoreTests(AuthorityStoreTestCase):
@@ -26,6 +28,8 @@ class AuthorityStoreTests(AuthorityStoreTestCase):
             "operation": "install",
             "role": lifecycle.ROLE_AUTHORITY_HOST,
             "registry_sha256": self.registry.digest,
+            "signer_owner_id": self.registry.keys[0].owner_id,
+            "signer_public_key_hex": self.registry.keys[0].public_key_hex,
         })
 
         with self.assertRaises(BilqisError) as caught:
@@ -50,6 +54,8 @@ class AuthorityStoreTests(AuthorityStoreTestCase):
             "operation": "install",
             "role": lifecycle.ROLE_AUTHORITY_HOST,
             "registry_sha256": self.registry.digest,
+            "signer_owner_id": self.registry.keys[0].owner_id,
+            "signer_public_key_hex": self.registry.keys[0].public_key_hex,
         })
         operator._publish_file_unlocked(
             stage / "source-authority-registry.json",
@@ -67,9 +73,8 @@ class AuthorityStoreTests(AuthorityStoreTestCase):
     def test_real_install_interruptions_fail_closed_and_recover(self):
         publish_original = transaction.AuthorityStoreTransactionMixin._publish_file_unlocked
         replace_original = transaction.replace_json
-        fsync_original = transaction.fsync_dir
 
-        failpoints = ("before_registry", "after_registry", "after_signer")
+        failpoints = ("before_registry", "after_registry", "after_state")
         for failpoint in failpoints:
             with self.subTest(failpoint=failpoint):
                 if self.root.exists():
@@ -80,7 +85,6 @@ class AuthorityStoreTests(AuthorityStoreTestCase):
 
                 publish_calls = 0
                 replace_calls = 0
-                fsync_calls = 0
 
                 def publish(source, destination):
                     nonlocal publish_calls
@@ -95,19 +99,13 @@ class AuthorityStoreTests(AuthorityStoreTestCase):
                     nonlocal replace_calls
                     replace_calls += 1
                     replace_original(path, record)
-                    if failpoint == "after_signer" and replace_calls == 2:
+                    if failpoint == "after_state" and replace_calls == 2:
                         raise OSError("injected publication interruption")
-
-                def fsync(path):
-                    nonlocal fsync_calls
-                    fsync_calls += 1
-                    fsync_original(path)
 
                 with patch.object(
                         transaction.AuthorityStoreTransactionMixin,
                         "_publish_file_unlocked", side_effect=publish), \
                         patch.object(transaction, "replace_json", side_effect=replace), \
-                        patch.object(transaction, "fsync_dir", side_effect=fsync), \
                         self.assertRaises(OSError):
                     operator.install(self.registry_bytes, signer_bytes=self.signer_bytes)
 
@@ -115,6 +113,72 @@ class AuthorityStoreTests(AuthorityStoreTestCase):
                 recovered = lifecycle.AuthorityStoreOperator().recover()
                 self.assertEqual(recovered.registry_sha256, self.registry.digest)
                 self.assertTrue(recovered.signer_present)
+                self.assertFalse((self.root / darwin._TRANSACTION_FILE).exists())
+
+    def test_process_death_after_registry_or_signer_publish_recovers_fresh(self):
+        self.approve(
+            "install", lifecycle.ROLE_AUTHORITY_HOST, self.registry.digest)
+        input_root = Path(self.temporary.name) / "inputs"
+        input_root.mkdir()
+        registry_path = input_root / "registry.json"
+        signer_path = input_root / "signer.json"
+        registry_path.write_bytes(self.registry_bytes)
+        signer_path.write_bytes(self.signer_bytes)
+        repository = Path(__file__).resolve().parents[2]
+        child = r'''
+import os
+import sys
+from pathlib import Path
+from bilqis_mlx.runtime.bamf_bundle import _darwin_source_authority as darwin
+from scripts.authority_store import lifecycle, transaction
+
+home = Path(sys.argv[1])
+registry = Path(sys.argv[2])
+signer = Path(sys.argv[3])
+die_after = int(sys.argv[4])
+darwin._effective_account_home = lambda: (os.geteuid(), str(home))
+original = transaction.AuthorityStoreTransactionMixin._publish_file_unlocked
+calls = 0
+
+def publish(source, destination):
+    global calls
+    calls += 1
+    original(source, destination)
+    if calls == die_after:
+        os._exit(91)
+
+transaction.AuthorityStoreTransactionMixin._publish_file_unlocked = staticmethod(publish)
+lifecycle.AuthorityStoreOperator().install(
+    registry.read_bytes(), signer_bytes=signer.read_bytes())
+raise SystemExit(92)
+'''
+        for die_after, label in ((1, "registry"), (2, "signer")):
+            with self.subTest(after=label):
+                if self.root.exists():
+                    shutil.rmtree(self.root)
+                completed = subprocess.run(
+                    [
+                        sys.executable, "-c", child, str(self.home),
+                        str(registry_path), str(signer_path), str(die_after),
+                    ],
+                    cwd=repository,
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(completed.returncode, 91, completed.stderr)
+                marker = json.loads(
+                    (self.root / darwin._TRANSACTION_FILE).read_text())
+                self.assertEqual(marker["operation"], "install")
+                self.assertEqual(
+                    marker["signer_owner_id"], self.registry.keys[0].owner_id)
+                self.assert_runtime_fails_closed()
+                recovered = lifecycle.AuthorityStoreOperator().recover()
+                self.assertEqual(recovered.registry_sha256, self.registry.digest)
+                self.assertEqual(
+                    recovered.signer_owner_id, self.registry.keys[0].owner_id)
                 self.assertFalse((self.root / darwin._TRANSACTION_FILE).exists())
 
     def test_real_rotate_interruption_cannot_expose_new_registry_with_old_signer(self):

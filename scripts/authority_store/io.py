@@ -32,6 +32,8 @@ class AuthorityStoreStatus:
     registry_sha256: str
     signer_present: bool
     lifecycle_managed: bool
+    signer_owner_id: str | None = None
+    signer_public_key_hex: str | None = None
 
     def to_record(self) -> dict[str, object]:
         return {
@@ -40,6 +42,8 @@ class AuthorityStoreStatus:
             "registry_sha256": self.registry_sha256,
             "signer_present": self.signer_present,
             "lifecycle_managed": self.lifecycle_managed,
+            "signer_owner_id": self.signer_owner_id,
+            "signer_public_key_hex": self.signer_public_key_hex,
         }
 
 
@@ -49,6 +53,8 @@ class AuthorityStoreApproval:
     role: str
     registry_sha256: str
     current_registry_sha256: str | None = None
+    signer_owner_id: str | None = None
+    signer_public_key_hex: str | None = None
 
     def __post_init__(self) -> None:
         if (self.operation not in _OPERATIONS
@@ -58,7 +64,15 @@ class AuthorityStoreApproval:
                     and _DIGEST.fullmatch(self.current_registry_sha256) is None)
                 or (self.operation in {"rotate", "migrate"})
                     != (self.current_registry_sha256 is not None)
-                or (self.role == ROLE_WORKER and self.operation in {"rotate", "migrate"})):
+                or (self.role == ROLE_WORKER and self.operation in {"rotate", "migrate"})
+                or (self.role == ROLE_AUTHORITY_HOST)
+                    != (isinstance(self.signer_owner_id, str)
+                        and bool(self.signer_owner_id)
+                        and isinstance(self.signer_public_key_hex, str)
+                        and _DIGEST.fullmatch(self.signer_public_key_hex) is not None)
+                or (self.role == ROLE_WORKER
+                    and (self.signer_owner_id is not None
+                         or self.signer_public_key_hex is not None))):
             fail(APPROVAL_INVALID)
 
 
@@ -136,7 +150,8 @@ def read_fixed_approval() -> AuthorityStoreApproval:
     if (not isinstance(record, dict)
             or set(record) != {
                 "schema", "operation", "role", "registry_sha256",
-                "current_registry_sha256",
+                "current_registry_sha256", "signer_owner_id",
+                "signer_public_key_hex",
             }
             or record.get("schema") != APPROVAL_SCHEMA):
         fail(APPROVAL_INVALID)
@@ -145,6 +160,8 @@ def read_fixed_approval() -> AuthorityStoreApproval:
         record["role"],
         record["registry_sha256"],
         record["current_registry_sha256"],
+        record["signer_owner_id"],
+        record["signer_public_key_hex"],
     )
 
 
@@ -192,7 +209,13 @@ def parse_registry(raw: bytes):
         fail()
 
 
-def validate_signer(raw: bytes, registry) -> None:
+def validate_signer(
+    raw: bytes,
+    registry,
+    *,
+    expected_owner_id: str | None = None,
+    expected_public_key_hex: str | None = None,
+) -> tuple[str, str]:
     try:
         record = json.loads(raw.decode("utf-8"))
         if (not isinstance(record, dict)
@@ -212,6 +235,11 @@ def validate_signer(raw: bytes, registry) -> None:
             fail()
     except Exception:
         fail()
+    if (expected_owner_id is not None and signer.owner_id != expected_owner_id
+            or expected_public_key_hex is not None
+            and signer.public_key_hex != expected_public_key_hex):
+        fail(APPROVAL_INVALID)
+    return signer.owner_id, signer.public_key_hex
 
 
 def read_file(
