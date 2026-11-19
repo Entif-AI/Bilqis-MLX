@@ -19,6 +19,11 @@ from bilqis_mlx.runtime.c08_distributed_capsule import DistributedFactoryStepCap
 from bilqis_mlx.runtime.factory_candidate_microbatch import (
     execute_factory_distributed_rows_group,
 )
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+
+
+def _invalid(reason: str) -> None:
+    ErrorBus.raise_(SCHOOL.BAMF_RESOURCES.INVALID, reason=reason)
 
 
 def _sha256(payload: bytes) -> str:
@@ -41,7 +46,7 @@ def _broadcast_rank0_payload(group, payload: bytes) -> bytes:
     mx.eval(sizes_array)
     sizes = tuple(int(value) for value in sizes_array.tolist())
     if sizes[0] <= 0 or any(size != 0 for size in sizes[1:]):
-        raise RuntimeError("C08_DISTRIBUTED_REQUEST_SOURCE_INVALID")
+        _invalid("C08_DISTRIBUTED_REQUEST_SOURCE_INVALID")
     width = sizes[0]
     local = payload if rank == 0 else b"\0" * width
     gathered = mx.distributed.all_gather(
@@ -69,15 +74,15 @@ def main() -> int:
     args = _parser().parse_args()
     backend = os.environ.get("BILQIS_C08_BACKEND")
     if not backend:
-        raise RuntimeError("C08_DISTRIBUTED_BACKEND_ENV_REQUIRED")
+        _invalid("C08_DISTRIBUTED_BACKEND_ENV_REQUIRED")
     group = mx.distributed.init(strict=True, backend=backend)
     payload = args.request.read_bytes() if group.rank() == 0 else b""
     payload = _broadcast_rank0_payload(group, payload)
     if _sha256(payload) != args.request_sha256:
-        raise RuntimeError("C08_DISTRIBUTED_REQUEST_DIGEST_DRIFT")
+        _invalid("C08_DISTRIBUTED_REQUEST_DIGEST_DRIFT")
     capsule = pickle.loads(payload)
     if not isinstance(capsule, dict):
-        raise RuntimeError("C08_DISTRIBUTED_CAPSULE_INVALID")
+        _invalid("C08_DISTRIBUTED_CAPSULE_INVALID")
     if capsule.get("kind") == "collective-probe":
         local = mx.array([float(group.rank() + 1)], dtype=mx.float32)
         summed = mx.distributed.all_sum(local, group=group)
@@ -93,7 +98,7 @@ def main() -> int:
     elif capsule.get("kind") == "factory-step":
         request = capsule.get("request")
         if type(request) is not DistributedFactoryStepCapsule:
-            raise RuntimeError("C08_DISTRIBUTED_CAPSULE_INVALID")
+            _invalid("C08_DISTRIBUTED_CAPSULE_INVALID")
         (
             parameters, compiled_rows, source_context, feature_snapshot, generation,
             cache, resource_plan, manifest, source_loss_multipliers,
@@ -108,7 +113,7 @@ def main() -> int:
             mlx_version=version("mlx"),
             numeric_precision="fp32")
     else:
-        raise RuntimeError("C08_DISTRIBUTED_CAPSULE_KIND_INVALID")
+        _invalid("C08_DISTRIBUTED_CAPSULE_KIND_INVALID")
     if group.rank() == 0:
         _write_response(args.response, outcome)
     return 0

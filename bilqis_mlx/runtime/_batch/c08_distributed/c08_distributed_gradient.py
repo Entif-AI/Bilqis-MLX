@@ -7,6 +7,7 @@ from typing import Callable, Mapping
 
 import mlx.core as mx
 
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.runtime.atlas_model import BamfGradientExecution
 from bilqis_mlx.runtime.atlas_resources import (
     BatchPlan, DistributedPartition, DistributedStepManifest,
@@ -44,7 +45,7 @@ class DistributedRankGradientExecution:
     def __post_init__(self) -> None:
         if (getattr(self, "_issuance", None) is not _RANK_ISSUER
                 or not isinstance(self.manifest_digest, str)
-                or len(self.manifest_digest) != 64
+                or len(self.manifest_digest) != SHA256_HEX_LENGTH
                 or type(self.rank) is not int or self.rank < 0
                 or type(self.row_indices) is not tuple or not self.row_indices
                 or len(self.row_indices) != len(self.evidence)

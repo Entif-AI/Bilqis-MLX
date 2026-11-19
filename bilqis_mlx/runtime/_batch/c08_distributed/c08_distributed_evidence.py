@@ -20,6 +20,9 @@ from bilqis_mlx.semantics.cognitive_dependencies import (
 from .c08_gradient_accumulation import _invalid
 
 
+_TRAINING_DEPENDENCY_RECORD_WIDTH = 2
+
+
 @dataclass(frozen=True)
 class DistributedB11Evidence:
     manifest_digest: str
@@ -64,7 +67,7 @@ class DistributedB11Evidence:
                 or self.custody_generation < 0
                 or any(type(value) is not tuple for value in ordered)
                 or any(value != tuple(sorted(set(value))) for value in ordered)
-                or any(len(item) != 2
+                or any(len(item) != _TRAINING_DEPENDENCY_RECORD_WIDTH
                        or item[0] not in {kind.value for kind in DependencyKind}
                        or not item[1]
                        for item in self.training_dependency_rows)

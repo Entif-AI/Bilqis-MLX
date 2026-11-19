@@ -11,6 +11,7 @@ from bilqis_mlx.runtime.source_execution import SourceExecutionContext, source_c
 from bilqis_mlx.runtime.atlas_training_contracts import _canonical_digest
 
 SALIENCE_REQUEST_RECORD_WIDTH = 2
+PORTABLE_SALIENCE_ROW_WIDTH = 3
 
 
 @dataclass(frozen=True)
@@ -124,7 +125,10 @@ class PortableSalienceSupervision:
 
     def __post_init__(self) -> None:
         if (type(self.rows) is not tuple
-                or any(type(item) is not tuple or len(item) != 3 for item in self.rows)
+                or any(
+                    type(item) is not tuple
+                    or len(item) != PORTABLE_SALIENCE_ROW_WIDTH
+                    for item in self.rows)
                 or type(self.dependencies) is not tuple
                 or type(self.artifact_nodes) is not tuple):
             _invalid('BAMF_SALIENCE_PORTABLE_SUPERVISION_INVALID')
