@@ -1,5 +1,5 @@
 """Accepted C16.3 operator path runs championship at the B13 successor boundary."""
-from contextlib import ExitStack
+from contextlib import ExitStack, nullcontext
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace as NS
@@ -151,6 +151,7 @@ def _run_first_title_operator():
     return fixture, group, result, published
 
 
+@patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
 class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
     def test_ordinary_candidate_with_remaining_cadence_work_skips_championship_boundary(self):
         from bilqis_mlx.runtime.bamf_operator.championship import (

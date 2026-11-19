@@ -159,6 +159,12 @@ def _visit(run_dir: Path, reserve_gib: float, *, steps_per_visit=16,
         record_cadence_attempt=record_active_grade_cadence_attempt)
 
 
+def _training_memory_context():
+    import mlx.core as mx
+    from bilqis_mlx.runtime.mlx_memory import training_memory_policy
+    return training_memory_policy(mx)
+
+
 def operate_bamf(
     run_dir: Path, *, minutes: int = 90,
     max_visits: int = 0, steps_per_visit: int = 16,
@@ -190,6 +196,7 @@ def operate_bamf(
         resource_snapshot=stop_resource_witness,
         record_stop=record_normal_stop_receipt, elapsed_clock=time.perf_counter,
         before_visits=before_visits,
+        training_memory_context=_training_memory_context,
         bind_run_authority=(
             lambda current_run_dir:
             bind_native_run_authority(current_run_dir, run_authority)),
