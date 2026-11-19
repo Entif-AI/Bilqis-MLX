@@ -5,9 +5,13 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from bilqis_mlx.data_plane import data_plane
-from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.runtime import checkpoint_outbox
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
+from bilqis_mlx.runtime.bamf_bundle.rejection_authority import (
+    portable_rejection_receipt, rejection_registry,
+    verify_portable_rejection_authority,
+)
 from .priority_rejection_projection import RejectionProjection
 
 
@@ -42,35 +46,57 @@ def _validated_rejection(event, parent, cache):
             or len(authority_sha256) != SHA256_HEX_LENGTH
             or any(char not in "0123456789abcdef" for char in authority_sha256)):
         _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
-    authority = {
-        "schema": "bilqis.mlx.bamf-rejection-authority/v1",
-        "run_id": cache.run_id,
-        "generation": cache.generation,
-        "student_manifest_sha256": cache.accepted_manifest_sha256,
-        "optimizer_step": parent.retained_state.optimizer_step,
-        "evidence": evidence,
-    }
-    try:
-        authority_raw = data_plane().get_object(authority_sha256)
-    except ValueError:
-        _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
-    if authority_raw != canonical(authority):
-        _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_DRIFT")
-    receipt = {
-        "schema": "bilqis.mlx.bamf-rejection-receipt/v1",
-        "run_id": cache.run_id,
-        "generation": cache.generation,
-        "student_manifest_sha256": cache.accepted_manifest_sha256,
-        "event": event,
-    }
-    receipt_raw = canonical(receipt)
-    receipt_sha256 = hashlib.sha256(receipt_raw).hexdigest()
-    try:
-        stored_receipt = data_plane().get_object(receipt_sha256)
-    except ValueError:
-        _invalid("BAMF_PRIORITY_REJECTION_RECEIPT_INVALID")
-    if stored_receipt != receipt_raw:
-        _invalid("BAMF_PRIORITY_REJECTION_RECEIPT_DRIFT")
+    portable_authority = event.get("rejection_authority")
+    if portable_authority is not None:
+        try:
+            verify_portable_rejection_authority(
+                portable_authority, cache._correction_registry,
+                run_id=cache.run_id, generation=cache.generation,
+                student_manifest_sha256=cache.accepted_manifest_sha256,
+                optimizer_step=parent.retained_state.optimizer_step,
+                evidence=evidence)
+        except BilqisError:
+            _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
+        if hashlib.sha256(canonical(portable_authority)).hexdigest() != authority_sha256:
+            _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_DRIFT")
+        receipt = portable_rejection_receipt(
+            run_id=cache.run_id, generation=cache.generation,
+            student_manifest_sha256=cache.accepted_manifest_sha256,
+            optimizer_step=parent.retained_state.optimizer_step,
+            authority_sha256=authority_sha256)
+        receipt_sha256 = hashlib.sha256(canonical(receipt)).hexdigest()
+        if event.get("rejection_receipt_sha256") != receipt_sha256:
+            _invalid("BAMF_PRIORITY_REJECTION_RECEIPT_DRIFT")
+    else:
+        authority = {
+            "schema": "bilqis.mlx.bamf-rejection-authority/v1",
+            "run_id": cache.run_id,
+            "generation": cache.generation,
+            "student_manifest_sha256": cache.accepted_manifest_sha256,
+            "optimizer_step": parent.retained_state.optimizer_step,
+            "evidence": evidence,
+        }
+        try:
+            authority_raw = data_plane().get_object(authority_sha256)
+        except ValueError:
+            _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
+        if authority_raw != canonical(authority):
+            _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_DRIFT")
+        receipt = {
+            "schema": "bilqis.mlx.bamf-rejection-receipt/v1",
+            "run_id": cache.run_id,
+            "generation": cache.generation,
+            "student_manifest_sha256": cache.accepted_manifest_sha256,
+            "event": event,
+        }
+        receipt_raw = canonical(receipt)
+        receipt_sha256 = hashlib.sha256(receipt_raw).hexdigest()
+        try:
+            stored_receipt = data_plane().get_object(receipt_sha256)
+        except ValueError:
+            _invalid("BAMF_PRIORITY_REJECTION_RECEIPT_INVALID")
+        if stored_receipt != receipt_raw:
+            _invalid("BAMF_PRIORITY_REJECTION_RECEIPT_DRIFT")
     selected = evidence.get("capability")
     visit_id = evidence.get("visit_id")
     candidate_step = evidence.get("candidate_optimizer_step")
@@ -135,6 +161,7 @@ def authenticated_rejection_event(event, parent, manifest_sha256):
         run_id=parent.run_id,
         generation=parent.generation,
         accepted_manifest_sha256=manifest_sha256,
+        _correction_registry=rejection_registry(parent.correction_frontier),
     )
     return _validated_rejection(event, parent, cache) is not None
 

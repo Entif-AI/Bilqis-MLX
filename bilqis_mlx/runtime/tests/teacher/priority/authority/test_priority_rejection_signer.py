@@ -19,6 +19,10 @@ from bilqis_mlx.runtime.atlas_source_authority import (
 )
 from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import HostSourceAuthoritySigner
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
+from bilqis_mlx.runtime.bamf_bundle.rejection_authority import (
+    issue_portable_rejection_authority, portable_rejection_receipt,
+)
+from bilqis_mlx.runtime.tests.teacher.priority.rejection_projection_support import CountingPlane
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 
 
@@ -46,7 +50,7 @@ def _cadence(*ready):
         phase=SimpleNamespace(value="MAIN"))
 
 
-def _rejection_custody():
+def _rejection_custody(root):
     evidence = {
         "schema": "bilqis.bamf.c16.3-rejection/v2",
         "visit_id": "visit:beta", "capability": "capability:beta",
@@ -75,9 +79,9 @@ def _rejection_custody():
     }
     receipt_raw = canonical(receipt)
     receipt_sha256 = hashlib.sha256(receipt_raw).hexdigest()
-    objects = {authority_sha256: authority_raw, receipt_sha256: receipt_raw}
-    return evidence, event, receipt_sha256, SimpleNamespace(
-        get_object=lambda digest: objects[digest])
+    plane = CountingPlane(Path(root))
+    plane.objects.update({authority_sha256: authority_raw, receipt_sha256: receipt_raw})
+    return evidence, event, receipt_sha256, plane
 
 
 def test_rejected_candidate_is_durably_deprioritized_without_advancing_c03_rotation():
@@ -113,7 +117,7 @@ def test_rejected_candidate_is_durably_deprioritized_without_advancing_c03_rotat
 
     with TemporaryDirectory() as temporary:
         run_dir = Path(temporary)
-        _evidence, event, _receipt_sha256, plane = _rejection_custody()
+        _evidence, event, _receipt_sha256, plane = _rejection_custody(run_dir)
         (run_dir / "events.jsonl").write_text(json.dumps(event) + "\n")
         with patch(
             "bilqis_mlx.runtime.bamf_bundle.accepted_runtime._accepted_correction_registry",
@@ -165,12 +169,53 @@ def test_raw_rejection_journal_cannot_change_priority_without_b13_authority():
         assert failure.value.context["reason"] == "BAMF_PRIORITY_REJECTION_OUTBOX_INVALID"
 
 
+def test_portable_rejection_replay_uses_signed_authority_without_shared_objects():
+    registry = _registry()
+    signer = HostSourceAuthoritySigner("owner:c06", "44" * 32, registry)
+    parent = SimpleNamespace(retained_state=SimpleNamespace(optimizer_step=11))
+    cache = SimpleNamespace(
+        generation=2, accepted_manifest_sha256="f" * 64, run_id="run",
+        _correction_registry=registry)
+    evidence = {
+        "schema": "bilqis.bamf.c16.3-rejection/v2",
+        "visit_id": "visit:portable", "capability": "capability:beta",
+        "selected_option_id": "capability:beta", "selected_policy_key": "policy",
+        "candidate_optimizer_step": 12, "retained_optimizer_step": 11,
+        "retention_reason": "retention_gate",
+    }
+    with patch(
+            "bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer."
+            "read_host_system_source_authority_signer", return_value=signer):
+        authority = issue_portable_rejection_authority(
+            registry, run_id="run", generation=2,
+            student_manifest_sha256="f" * 64, optimizer_step=11,
+            evidence=evidence)
+    authority_sha = hashlib.sha256(canonical(authority)).hexdigest()
+    receipt = portable_rejection_receipt(
+        run_id="run", generation=2, student_manifest_sha256="f" * 64,
+        optimizer_step=11, authority_sha256=authority_sha)
+    event = checkpoint_outbox.with_delivery_outbox(
+        {"run_id": "run", "generation": 2}, ({
+            "event": "BAMF_CANDIDATE_REJECTED", "generation": 2,
+            "student_manifest_sha256": "f" * 64, "optimizer_step": 11,
+            "evidence": evidence, "rejection_authority_sha256": authority_sha,
+            "rejection_authority": authority,
+            "rejection_receipt_sha256": hashlib.sha256(canonical(receipt)).hexdigest(),
+        },))["delivery_outbox"][0]
+    with patch.object(
+            rejection_replay, "data_plane",
+            side_effect=AssertionError("portable replay used shared data plane")):
+        projected = rejection_replay._validated_rejection(event, parent, cache)
+    assert projected[0] == hashlib.sha256(canonical(receipt)).hexdigest()
+    assert projected[1][:3] == ("capability:beta", "visit:portable", "retention_gate")
+
+
 def test_duplicate_raw_journal_rows_cannot_amplify_one_b13_rejection():
     parent = SimpleNamespace(retained_state=SimpleNamespace(optimizer_step=11))
     cache = SimpleNamespace(generation=2, accepted_manifest_sha256="f" * 64, run_id="run")
-    _evidence, event, receipt_sha256, plane = _rejection_custody()
     with TemporaryDirectory() as temporary:
         run_dir = Path(temporary)
+        _evidence, event, receipt_sha256, plane = _rejection_custody(run_dir)
         raw = json.dumps(event) + "\n"
         (run_dir / "events.jsonl").write_text(raw + raw)
         with patch.object(rejection_replay, "data_plane", return_value=plane):
