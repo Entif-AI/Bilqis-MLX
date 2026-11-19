@@ -89,6 +89,16 @@ class CandidateTransaction:
                 or _parent_object_guard(self.parent) != self._parent_guard
                 or self.schema_version != TRANSACTION_SCHEMA):
             invalid()
+        from bilqis_mlx.runtime._model.training_objective import (
+            require_training_objective_digest,
+        )
+        require_training_objective_digest(self.training_objective_digest)
+        custody = self.parent.custody
+        if (custody is not None
+                and (custody.training_objective_ref != self.training_objective_ref
+                     or custody.training_objective_digest
+                     != self.training_objective_digest)):
+            invalid()
         self.parent.__post_init__()
         self.optimizer.validate_structure()
         self.allocations.__post_init__()
