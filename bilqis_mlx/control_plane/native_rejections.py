@@ -8,7 +8,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.mission_control import (
     CandidateDecision, CandidateOutcome, CoverageState, LearningEpisode,
 )
-from bilqis_mlx.runtime.bamf_bundle.rejection_authority import (
+from bilqis_mlx.runtime.bamf_bundle.rejection import (
     portable_rejection_receipt, rejection_registry,
     verify_portable_rejection_authority,
 )

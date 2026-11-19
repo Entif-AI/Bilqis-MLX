@@ -8,7 +8,7 @@ from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.runtime import checkpoint_outbox
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
-from bilqis_mlx.runtime.bamf_bundle.rejection_authority import (
+from bilqis_mlx.runtime.bamf_bundle.rejection import (
     portable_rejection_receipt, rejection_registry,
     verify_portable_rejection_authority,
 )

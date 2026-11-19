@@ -33,7 +33,7 @@ from bilqis_mlx.runtime.bamf_bundle.records import (
     BAMF_POINTER_SCHEMA, OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
     OBJECTIVE_BOUND_BAMF_BUNDLE_SCHEMA, canonical,
 )
-from bilqis_mlx.runtime.bamf_bundle.rejection_authority import portable_rejection_receipt
+from bilqis_mlx.runtime.bamf_bundle.rejection import portable_rejection_receipt
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, accepted_state, candidate, next_accepted_step, publish_genesis,
     retention_decision, shape_patch,

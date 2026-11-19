@@ -7,7 +7,7 @@ from bilqis_mlx.data_plane import DataPlaneError, data_plane
 from bilqis_mlx.runtime.atlas_memory_retry import RESOURCE_REJECTION_SCHEMA
 
 from ..records import CompleteStudent, canonical, invalid, sha
-from ..rejection_authority import (
+from ..rejection import (
     portable_rejection_receipt, rejection_registry,
     try_issue_portable_rejection_authority,
 )
