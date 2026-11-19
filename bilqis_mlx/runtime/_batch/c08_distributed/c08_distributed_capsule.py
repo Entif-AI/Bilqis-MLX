@@ -157,9 +157,19 @@ class DistributedFactoryStepCapsule:
     resource_plan: object
     manifest: object
     source_loss_multipliers: tuple[float, ...]
+    training_objective_digest: str
     salience_supervision: object | None
 
+    def __post_init__(self):
+        from bilqis_mlx.runtime._model.training_objective import (
+            require_training_objective_digest,
+        )
+        require_training_objective_digest(self.training_objective_digest)
+        if self.manifest.training_objective_digest != self.training_objective_digest:
+            raise ValueError("C08_DISTRIBUTED_OBJECTIVE_DRIFT")
+
     def materialize(self):
+        self.__post_init__()
         source_context = self.source_context.materialize()
         training = self.training_batch.materialize()
         compiled = tuple(
@@ -204,7 +214,9 @@ def issue_distributed_factory_step_capsule(
             for index, compiled in enumerate(compiled_rows)),
         feature_snapshot=feature_snapshot, generation=generation,
         cache_witness=witness, resource_plan=resource_plan, manifest=manifest,
-        source_loss_multipliers=multipliers, salience_supervision=salience)
+        source_loss_multipliers=multipliers,
+        training_objective_digest=manifest.training_objective_digest,
+        salience_supervision=salience)
 
 
 __all__ = (
