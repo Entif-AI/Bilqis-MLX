@@ -51,10 +51,11 @@ VISIT_PERFORMANCE_FIELDS = (
     "retention_protected_candidate_solver_wall_seconds",
     "retention_protected_candidate_wall_seconds",
     "retention_decision_finalize_wall_seconds",
-    "retention_championship_wall_seconds",
-    "retention_championship_prepare_wall_seconds",
-    "retention_championship_solver_wall_seconds",
-    "retention_championship_candidate_wall_seconds",
+    "championship_wall_seconds",
+    "championship_prepare_wall_seconds",
+    "championship_solver_wall_seconds",
+    "championship_candidate_wall_seconds",
+    "adviser_wall_seconds",
     "evidence_finalization_wall_seconds",
     "publishing_wall_seconds",
 )
@@ -67,9 +68,9 @@ RETENTION_PROFILE_FIELDS = (
     "retention_target_scalar_neural_launches",
     "retention_protected_shared_backbone_launches",
     "retention_protected_scalar_neural_launches",
-    "retention_championship_case_count",
-    "retention_championship_shared_backbone_launches",
-    "retention_championship_scalar_neural_launches",
+    "championship_case_count",
+    "championship_shared_backbone_launches",
+    "championship_scalar_neural_launches",
 )
 
 PERFORMANCE_FIELDS = STEP_COST_FIELDS + VISIT_PERFORMANCE_FIELDS
