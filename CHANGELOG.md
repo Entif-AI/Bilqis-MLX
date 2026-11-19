@@ -2,6 +2,14 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.2.9](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.8...v1.2.9) (2026-11-19)
+
+
+### Bug Fixes
+
+* **bamf:** continue training across recovery-exhausted grades ([#1469](https://github.com/Entif-AI/Bilqis-MLX/issues/1469)) ([dcfc951](https://github.com/Entif-AI/Bilqis-MLX/commit/dcfc9510e0245fd43dc58f848f706f3e84b99b57))
+* **bamf:** various fixes for the trainer ([#1471](https://github.com/Entif-AI/Bilqis-MLX/issues/1471)) ([c89fe33](https://github.com/Entif-AI/Bilqis-MLX/commit/c89fe3343ef4dab34992b4ff8dfb729986f1f8a1))
+
 ## [1.2.8](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.7...v1.2.8) (2026-11-19)
 
 
