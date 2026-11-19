@@ -146,6 +146,10 @@ class DifferentialTestGateTests(unittest.TestCase):
             command = gate._pytest_command("cold-targeted", ("pkg/tests/test_thing.py",))
 
         self.assertNotIn("-n", command)
+        self.assertEqual(
+            command[:3],
+            [gate.sys.executable, "-m", "scripts.testing.pytest_gate_runner"],
+        )
 
     def test_pytest_parallelism_is_explicit_opt_in(self):
         with unittest.mock.patch.dict(

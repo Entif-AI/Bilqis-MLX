@@ -214,7 +214,10 @@ def _plugin_available(module: str) -> bool:
 
 def _pytest_command(mode: str, tests: tuple[str, ...] = ()) -> list[str]:
     workers = os.environ.get("BILQIS_TEST_WORKERS", "1")
-    command = [sys.executable, "-m", "pytest", "-q", "--import-mode=importlib"]
+    command = [
+        sys.executable, "-m", "scripts.testing.pytest_gate_runner",
+        "-q", "--import-mode=importlib",
+    ]
     if _plugin_available("xdist") and workers not in {"0", "1"}:
         command += ["-n", workers, "--dist=loadscope"]
     if _plugin_available("testmon"):
