@@ -27,8 +27,7 @@ def _require_initial_foundation_authority(
     if student.run_identity is None:
         return
     from .publication.factory_release import require_initial_factory_release
-    release = require_initial_factory_release(run_dir, student)
-    release.require_foundation_capability_ids()
+    require_initial_factory_release(run_dir, student)
 
 
 @dataclass(frozen=True)
