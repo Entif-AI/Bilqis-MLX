@@ -78,8 +78,9 @@ def try_issue_portable_rejection_authority(
         student_manifest_sha256: str, optimizer_step: int, evidence: dict) -> dict | None:
     """Issue portable authority when the fixed host signer is provisioned.
 
-    Missing signer custody preserves the historical live-only rejection path.  A
-    malformed signer, registry mismatch, or invalid claim remains a hard failure.
+    Missing signer custody or a signer not authorized by this accepted registry
+    preserves the historical live-only rejection path.  Malformed signer custody
+    and invalid claims remain hard failures.
     """
     try:
         return issue_portable_rejection_authority(
@@ -87,7 +88,12 @@ def try_issue_portable_rejection_authority(
             student_manifest_sha256=student_manifest_sha256,
             optimizer_step=optimizer_step, evidence=evidence)
     except BilqisError as error:
-        if error.context.get("reason") == "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED":
+        if error.context.get("reason") in {
+            "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED",
+            "BAMF_C09_SOURCE_AUTHORITY_UNREGISTERED",
+            "BAMF_C09_SOURCE_AUTHORITY_KEY_MISMATCH",
+            "BAMF_C09_SOURCE_AUTHORITY_SCOPE_MISMATCH",
+        }:
             return None
         raise
 

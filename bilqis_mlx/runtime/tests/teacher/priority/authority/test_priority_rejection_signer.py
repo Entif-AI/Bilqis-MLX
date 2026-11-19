@@ -21,6 +21,7 @@ from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import HostSourceAut
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
 from bilqis_mlx.runtime.bamf_bundle.rejection_authority import (
     issue_portable_rejection_authority, portable_rejection_receipt,
+    try_issue_portable_rejection_authority,
 )
 from bilqis_mlx.runtime.tests.teacher.priority.rejection_projection_support import CountingPlane
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
@@ -208,6 +209,19 @@ def test_portable_rejection_replay_uses_signed_authority_without_shared_objects(
         projected = rejection_replay._validated_rejection(event, parent, cache)
     assert projected[0] == hashlib.sha256(canonical(receipt)).hexdigest()
     assert projected[1][:3] == ("capability:beta", "visit:portable", "retention_gate")
+
+
+def test_portable_rejection_issuer_falls_back_when_host_signer_not_in_run_registry():
+    registry = _registry()
+    foreign_signer = HostSourceAuthoritySigner("owner:foreign", "55" * 32, registry)
+    with patch(
+            "bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer."
+            "read_host_system_source_authority_signer", return_value=foreign_signer):
+        authority = try_issue_portable_rejection_authority(
+            registry, run_id="run", generation=2,
+            student_manifest_sha256="f" * 64, optimizer_step=11,
+            evidence={"schema": "bilqis.bamf.c16.3-rejection/v2"})
+    assert authority is None
 
 
 def test_duplicate_raw_journal_rows_cannot_amplify_one_b13_rejection():
