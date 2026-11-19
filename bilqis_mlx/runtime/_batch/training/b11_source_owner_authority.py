@@ -10,6 +10,13 @@ _OWNER_CALLABLES = (
     "draw", "check", "enrich", "witness", "dependencies", "semantic_footprint",
 )
 
+_LEGACY_ROW_ORACLE_ALIASES = {
+    (
+        "bilqis.mlx.grade-a-live-constructor/v1",
+        "original+independent+grade_a_oracle",
+    ): "bilqis.mlx.grade-a-record-oracle/v2",
+}
+
 
 def invalid_source_execution_authority(reason: str) -> None:
     ErrorBus.Raise(SCHOOL.BAMF_TRAINING_ADAPTER.INVALID, reason=reason)
@@ -49,9 +56,17 @@ def _current_row_owner(
         invalid_source_execution_authority(
             "B11_SOURCE_EXECUTION_OWNER_REGISTRY_INVALID")
     row = source.source_row
+    generator = row.get("generator")
+    oracle = row.get("oracle")
     try:
-        return registry.resolve_owner(row.get("generator"), row.get("oracle"))
+        return registry.resolve_owner(generator, oracle)
     except (KeyError, TypeError, ValueError):
+        canonical_oracle = _LEGACY_ROW_ORACLE_ALIASES.get((generator, oracle))
+        if canonical_oracle is not None:
+            try:
+                return registry.resolve_owner(generator, canonical_oracle)
+            except (KeyError, TypeError, ValueError):
+                pass
         invalid_source_execution_authority(
             "B11_SOURCE_EXECUTION_OWNER_UNAVAILABLE")
 
