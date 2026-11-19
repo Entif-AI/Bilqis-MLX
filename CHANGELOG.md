@@ -9,6 +9,20 @@ All new releases use [Semantic Versioning](https://semver.org/) and Conventional
 
 * **bamf:** continue training across recovery-exhausted grades ([#1469](https://github.com/Entif-AI/Bilqis-MLX/issues/1469)) ([dcfc951](https://github.com/Entif-AI/Bilqis-MLX/commit/dcfc9510e0245fd43dc58f848f706f3e84b99b57))
 
+<!-- release-history:pr:1469:start -->
+### PR #1469 constituent commit inventory
+
+Release Please summarized PR #1469 as [`dcfc951`](https://github.com/Entif-AI/Bilqis-MLX/commit/dcfc9510e0245fd43dc58f848f706f3e84b99b57). This generated inventory preserves **2 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **2 source commits**.
+
+<details>
+<summary>2 source commits (newest-first PR order)</summary>
+
+- [`bf2187d982`](https://github.com/Entif-AI/Bilqis-MLX/commit/bf2187d9820873934472db938318357a9dfa62bc) refactor(runtime): group teacher frontier owners
+- [`7f22b0a5d9`](https://github.com/Entif-AI/Bilqis-MLX/commit/7f22b0a5d9241c5214bf4093642a90be20f122ca) fix(bamf): yield across recovery-exhausted grades
+
+</details>
+
+<!-- release-history:pr:1469:end -->
 ## [1.2.8](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.7...v1.2.8) (2026-11-19)
 
 
