@@ -13,6 +13,7 @@ _REQUIRED = "BAMF_C09_SOURCE_AUTHORITY_TRUST_ROOT_REQUIRED"
 _AUTHORITY_DIR = (".entif-ai", "bilqis")
 _REGISTRY_FILE = "source-authority-registry.json"
 _SIGNER_FILE = "source-authority-signer.json"
+_TRANSACTION_FILE = ".authority-store-transaction.json"
 
 HOST_SOURCE_AUTHORITY_LOGICAL_PATH = (
     "<account-home>/.entif-ai/bilqis/source-authority-registry.json"
@@ -42,7 +43,15 @@ def _open_account_file(filename: str, *, max_bytes: int) -> int:
     if type(max_bytes) is not int or max_bytes <= 0:
         _fail()
     euid, home = _effective_account_home()
-    path = os.path.join(home, *_AUTHORITY_DIR, filename)
+    authority_dir = os.path.join(home, *_AUTHORITY_DIR)
+    transaction_path = os.path.join(authority_dir, _TRANSACTION_FILE)
+    # Lifecycle-managed writes publish a transaction marker before replacing any
+    # authority file.  A crash may therefore leave individually valid files in a
+    # partially published set.  The runtime must never accept that intermediate
+    # state; the operator recovery path owns convergence.
+    if os.path.lexists(transaction_path):
+        _fail()
+    path = os.path.join(authority_dir, filename)
     try:
         fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
     except FileNotFoundError:
