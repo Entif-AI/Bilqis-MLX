@@ -12,6 +12,8 @@ import {
 import {
   addAnnotation,
   loadOperatorMetadata,
+  removeSavedInvestigation,
+  saveInvestigation,
   saveOperatorMetadata,
   togglePin,
 } from "./operator-metadata.mjs";
@@ -38,6 +40,7 @@ export function createInteractionController({
   onCurrentLens,
   canUseCurrent,
   onOpenRef,
+  onOpenInvestigation = () => {},
   compareRefs = compareProductionRefs,
   copyText = async () => false,
   announce = () => {},
@@ -105,6 +108,51 @@ export function createInteractionController({
         const pin = metadata.pins[Number(button.dataset.openPin)];
         if (pin) onOpenRef(pin);
       });
+    });
+    host.querySelectorAll("[data-open-saved]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const saved = metadata.savedInvestigations.find(
+          (item) => item.investigationId === button.dataset.openSaved,
+        );
+        if (!saved) return;
+        let restored = createInteractionState();
+        if (saved.compareLeft) restored = setCompareSide(restored, "left", saved.compareLeft);
+        if (saved.compareRight) restored = setCompareSide(restored, "right", saved.compareRight);
+        interaction = setInteractionPanel(restored, "closed");
+        onOpenInvestigation(saved);
+      });
+    });
+    host.querySelectorAll("[data-remove-saved]").forEach((button) => {
+      button.addEventListener("click", () => {
+        save(removeSavedInvestigation(metadata, button.dataset.removeSaved));
+        render();
+      });
+    });
+    host.querySelector("[data-saved-investigation-form]")?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const state = getState();
+      if (!state) return;
+      const name = new FormData(event.currentTarget).get("name")?.toString() ?? "";
+      const next = saveInvestigation(metadata, {
+        name,
+        view: state.view,
+        context: {
+          runId: state.context.runId,
+          generation: state.context.generation,
+          mode: state.context.mode,
+          fixture: state.context.fixture === true,
+        },
+        selected: currentRef(),
+        compareLeft: interaction.compare.left,
+        compareRight: interaction.compare.right,
+      });
+      if (next === metadata) {
+        announce(t("investigation.announce.invalidSavedInvestigation"));
+        return;
+      }
+      save(next);
+      announce(t("investigation.announce.investigationSaved"));
+      render();
     });
     host.querySelectorAll("[data-remove-pin]").forEach((button) => {
       button.addEventListener("click", () => {

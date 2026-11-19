@@ -15,7 +15,9 @@ import {
   addAnnotation,
   emptyOperatorMetadata,
   loadOperatorMetadata,
+  removeSavedInvestigation,
   saveOperatorMetadata,
+  saveInvestigation,
   togglePin,
 } from "../../renderer/interactions/operator-metadata.mjs";
 import {
@@ -26,6 +28,10 @@ import {
 import { compareStableRefs } from "../../renderer/interactions/compare.mjs";
 import { renderInvestigationMarkup } from "../../renderer/interactions/view.mjs";
 import { inspectorEvidenceLabelKey } from "../../renderer/foundation/renderer-ui.mjs";
+import {
+  authorizationPresentation,
+  evidencePosture,
+} from "../../renderer/interactions/model.mjs";
 
 const context = Object.freeze({
   runId: "fixture:prometheus-disposable",
@@ -71,6 +77,114 @@ test("operator pins and annotations round-trip without becoming authority", () =
   });
   memory.set(OPERATOR_METADATA_KEY, '{"schema":"wrong"}');
   assert.equal(loadOperatorMetadata(storage).pins.length, 0);
+});
+
+test("saved investigations round-trip exact context and remain local non-authoritative metadata", () => {
+  const memory = new Map();
+  const storage = {
+    getItem(key) { return memory.get(key) ?? null; },
+    setItem(key, value) { memory.set(key, value); },
+  };
+  const selected = stableObjectRef({ kind: "capability", id: "B.AND" }, context);
+  const left = stableObjectRef({ kind: "capability", id: "B.NOT" }, context);
+  let metadata = saveInvestigation(emptyOperatorMetadata(), {
+    name: "Boolean regression triage",
+    view: "school",
+    context,
+    selected,
+    compareLeft: left,
+  }, { now: 1700000000001 });
+  assert.equal(metadata.savedInvestigations.length, 1);
+  assert.equal(saveOperatorMetadata(storage, metadata), true);
+  const loaded = loadOperatorMetadata(storage);
+  assert.deepEqual(loaded.savedInvestigations[0], {
+    investigationId: "investigation:1700000000001:1",
+    name: "Boolean regression triage",
+    createdAt: 1700000000001,
+    view: "school",
+    context: {
+      runId: "fixture:prometheus-disposable",
+      generation: 44239,
+      mode: "LIVE",
+      fixture: true,
+    },
+    selected: {
+      kind: "capability", id: "B.AND", label: "B.AND",
+      runId: "fixture:prometheus-disposable", generation: 44239, fixture: true,
+    },
+    compareLeft: {
+      kind: "capability", id: "B.NOT", label: "B.NOT",
+      runId: "fixture:prometheus-disposable", generation: 44239, fixture: true,
+    },
+    compareRight: null,
+    authority: "OPERATOR_WORKSPACE_NON_AUTHORITATIVE",
+  });
+  metadata = removeSavedInvestigation(loaded, loaded.savedInvestigations[0].investigationId);
+  assert.equal(metadata.savedInvestigations.length, 0);
+});
+
+test("legacy operator metadata migrates without inventing saved investigations", () => {
+  const legacy = JSON.stringify({
+    schema: "bilqis.bamf.mission-control.operator-metadata/v1",
+    pins: [],
+    annotations: [],
+  });
+  const storage = { getItem: () => legacy };
+  const loaded = loadOperatorMetadata(storage);
+  assert.equal(loaded.schema, "bilqis.bamf.mission-control.operator-metadata/v2");
+  assert.deepEqual(loaded.savedInvestigations, []);
+});
+
+test("observability posture keeps custody authority and coverage separate", () => {
+  assert.deepEqual(evidencePosture({ context: {
+    ...context,
+    authority: "INFERRED",
+    coverage: "PARTIAL",
+    freshness: "STALE",
+  } }), {
+    mode: "LIVE",
+    custody: "FIXTURE_BACKED",
+    authority: "INFERRED",
+    coverage: "PARTIAL",
+    freshness: "STALE",
+  });
+  const historical = evidencePosture({ context: {
+    ...context,
+    fixture: false,
+    mode: "HISTORICAL",
+    authority: "UNKNOWN",
+    coverage: "UNKNOWN",
+  } });
+  assert.equal(historical.mode, "HISTORICAL");
+  assert.equal(historical.custody, "PRODUCTION");
+});
+
+test("generalized authorization is presentation-only and defaults to the owner subset", () => {
+  assert.deepEqual(authorizationPresentation({ mutationAvailable: true }), {
+    generalized: false,
+    state: "OWNER_ONLY",
+    principal: "UNSPECIFIED_LOCAL_OWNER",
+    roles: ["OWNER"],
+    inspectionScopes: ["MISSION_CONTROL"],
+    actionScopes: [],
+    sourceRef: "BAMF-0.2 owner-only boundary",
+  });
+  const projected = authorizationPresentation({
+    mutationAvailable: false,
+    authorization: {
+      schema: "bilqis.bamf.mission-control.authorization-presentation/v1",
+      principal_id: "operator:alice",
+      role_ids: ["REVIEWER"],
+      inspection_scopes: ["SCHOOL", "EVIDENCE"],
+      action_scopes: ["RUN_STOP"],
+      lifecycle_state: "READ_ONLY",
+      authority_store_ref: "authority-store:fixture:v3",
+    },
+  });
+  assert.equal(projected.generalized, true);
+  assert.equal(projected.state, "READ_ONLY");
+  assert.deepEqual(projected.roles, ["REVIEWER"]);
+  assert.deepEqual(projected.actionScopes, ["RUN_STOP"]);
 });
 
 test("app URI round-trips exact run generation object and trusted internal route", () => {

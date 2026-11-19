@@ -1,4 +1,4 @@
-async (page) => {
+export default async function globalInteractionsJourney(page) {
   const check = (condition, message) => {
     if (!condition) throw new Error(message);
   };
@@ -42,6 +42,23 @@ async (page) => {
   await page.locator('[data-test-id="investigation-note-save"]').click();
   await page.locator('[data-test-id="investigation-note-0"]').waitFor();
 
+  check((await page.locator('[data-test-id="investigation-posture-custody"]').innerText()).includes("FIXTURE_BACKED"),
+    "global investigation posture identifies fixture-backed custody");
+  check((await page.locator('[data-test-id="investigation-posture-mode"]').innerText()).includes("LIVE"),
+    "global investigation posture identifies live mode separately from custody");
+  check((await page.locator('[data-test-id="investigation-posture-authority"]').innerText()).includes("DERIVED"),
+    "global investigation posture identifies derived authority");
+  await page.locator('[data-test-id="investigation-open-authority"]').click();
+  check((await page.locator('[data-test-id="investigation-authority-state"]').innerText()).includes("OWNER_ONLY"),
+    "owner-only BAMF-0.2 remains the default authorization presentation");
+
+  await page.locator('[data-test-id="investigation-open-saved"]').click();
+  await page.locator('[data-test-id="investigation-saved-name"]').fill("Boolean capability triage");
+  await page.locator('[data-test-id="investigation-saved-save"]').click();
+  await page.locator('[data-test-id="investigation-saved-0"]').waitFor();
+  check((await page.locator('[data-test-id="investigation-saved-0"]').innerText()).includes("non-authoritative"),
+    "saved investigation is explicitly local and non-authoritative");
+
   await page.locator('[data-test-id="investigation-time-toggle"]').click();
   const generation = page.locator('[data-test-id="investigation-time-generation"]');
   await generation.evaluate((input) => {
@@ -73,6 +90,19 @@ async (page) => {
     "verified current restores generation 7 in shell context");
   check(page.url().includes("generation=7") && page.url().includes("mode=LIVE"),
     "verified current restores exact current route");
+
+  await page.locator('[data-test-id="investigation-time-toggle"]').click();
+  const savedFallbackGeneration = page.locator('[data-test-id="investigation-time-generation"]');
+  await savedFallbackGeneration.fill("44238");
+  await savedFallbackGeneration.press("Enter");
+  await page.locator('[data-test-id="investigation-open-saved"]').click();
+  await page.locator('[data-test-id="investigation-saved-open-0"]').click();
+  check(page.url().includes("generation=7") && page.url().includes("mode=HISTORICAL"),
+    "saved live capture reopens as exact historical evidence after the lens changes");
+  await page.locator('[data-test-id="investigation-time-toggle"]').click();
+  await page.locator('[data-test-id="investigation-time-current"]').click();
+  check(page.url().includes("generation=7") && page.url().includes("mode=LIVE"),
+    "saved historical fallback can return to the verified current context");
 
   await page.locator('[data-test-id="nav-destination-learning"]').click();
   await page.locator('[data-test-id="learning-candidate-inspect"]').click();
