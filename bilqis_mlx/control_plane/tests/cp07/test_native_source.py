@@ -4,9 +4,10 @@ from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.control_plane import ControlPlaneClient, ControlPlaneService, EventFamily
+from bilqis_mlx.control_plane.native_contracts import materialized_at
 from bilqis_mlx.control_plane.native_source import (
     authenticated_history, materialize_native_projection, native_query_catalog,
-    refresh_native_events,
+    native_query_source, refresh_native_events,
 )
 from bilqis_mlx.mission_control import (
     CandidateDecision, CapabilitySnapshot, LearningEpisode, OperatorView, ResourceSample,
@@ -48,7 +49,10 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
         self.assertEqual(len(candidates), 1)
         self.assertEqual(candidates[0].outcome.value, "ACCEPTED")
         self.assertEqual(len(capabilities), 1)
+        self.assertEqual(capabilities[0].grade_id, "UNKNOWN")
         self.assertEqual(capabilities[0].score_correct.state.value, "MISSING")
+        self.assertEqual(capabilities[0].score_total.state.value, "MISSING")
+        self.assertEqual(capabilities[0].debt.state.value, "MISSING")
         self.assertEqual(len(resources), 1)
         self.assertEqual(resources[0].memory_used_bytes.state.value, "UNKNOWN")
         self.assertEqual(resources[0].memory_budget_bytes.value, 64 * 1024 ** 3)
@@ -73,9 +77,15 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             QueryFamily.RESOURCE, mode=QueryMode.HISTORICAL,
             run_id=source.run_id, generation=1,
         ))
+        current_resource_page = projection.catalog().query(QueryRequest(
+            QueryFamily.RESOURCE, run_id=source.run_id,
+        ))
         self.assertEqual(generation_gap.state.value, "UNKNOWN")
         self.assertEqual(resource_page.state.value, "PARTIAL")
         self.assertIsInstance(resource_page.records[0], ResourceSample)
+        self.assertEqual(current_resource_page.state.value, "PARTIAL")
+        self.assertEqual(current_resource_page.markers, ())
+        self.assertIsInstance(current_resource_page.records[0], ResourceSample)
         projected_episode = next(
             record for record in historical.records if isinstance(record, LearningEpisode))
         self.assertEqual(projected_episode.episode_id, episodes[0].episode_id)
@@ -86,6 +96,45 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             QueryFamily.CAPABILITY, run_id=source.run_id,
         )), current)
         self.assertEqual((self.run / "bamf-state.json").read_bytes(), before)
+
+
+    def test_generation_coordinate_is_never_reinterpreted_as_unix_materialization_time(self):
+        self.assertEqual(materialized_at({}, 7), 0)
+        self.assertEqual(materialized_at({"recorded_at": 1_800_000_000}, 7), 1_800_000_000)
+
+    def test_event_refresh_skips_full_projection_when_mutable_sources_are_unchanged(self):
+        self.parent()
+        class FakeService:
+            pass
+
+        service = FakeService()
+        service.run_dir = self.run
+        service._cp07_native_event_ids = set()
+        with patch(
+                "bilqis_mlx.control_plane.native_source.publish_native_events",
+                return_value=(None, ())) as publish:
+            self.assertEqual(refresh_native_events(service), ())
+            self.assertEqual(publish.call_count, 1)
+            self.assertEqual(refresh_native_events(service), ())
+            self.assertEqual(publish.call_count, 1)
+            (self.run / "trainer-observed.json").write_text("{}")
+            self.assertEqual(refresh_native_events(service), ())
+            self.assertEqual(publish.call_count, 2)
+
+    def test_query_source_reuses_catalog_until_mutable_source_changes(self):
+        self.parent()
+        self.publish_successor()
+        with patch(
+                "bilqis_mlx.control_plane.native_source.native_query_catalog",
+                wraps=native_query_catalog) as build_catalog:
+            source = native_query_source(self.run)
+            first = source()
+            self.assertIs(source(), first)
+            self.assertEqual(build_catalog.call_count, 1)
+            (self.run / "bamf-state.json").touch()
+            second = source()
+            self.assertIsNot(second, first)
+            self.assertEqual(build_catalog.call_count, 2)
 
     def test_native_query_catalog_exposes_current_operator_view_without_cp06_database(self):
         self.parent()

@@ -94,9 +94,10 @@ def run_ref(generation: AuthenticatedGeneration) -> RunRef:
 
 
 def materialized_at(native: dict, generation: int) -> int:
-    """Use authenticated source time or the source generation logical coordinate."""
+    """Use authenticated source time; never reinterpret a generation as Unix time."""
+    del generation
     value = native.get("recorded_at")
-    return value if type(value) is int and value >= 0 else generation
+    return value if type(value) is int and value > 0 else 0
 
 
 def record_meta(

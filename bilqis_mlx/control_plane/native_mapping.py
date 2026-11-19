@@ -26,6 +26,23 @@ def _candidate_outcome(retention: dict) -> CandidateOutcome:
     return CandidateOutcome.ACTION_REQUIRED
 
 
+
+def _accepted_target_score(native: dict, capability: str):
+    outcome = native.get("how_outcome")
+    scores = outcome.get("scores") if isinstance(outcome, dict) else None
+    context = outcome.get("context") if isinstance(outcome, dict) else None
+    grade = context.get("grade") if isinstance(context, dict) else None
+    if not isinstance(scores, list):
+        return None, None, grade if isinstance(grade, str) and grade else None
+    for row in scores:
+        if (isinstance(row, (list, tuple)) and len(row) == 4
+                and row[0] == capability
+                and type(row[2]) is int and row[2] >= 0
+                and type(row[3]) is int and row[3] > 0
+                and row[2] <= row[3]):
+            return row[2], row[3], grade if isinstance(grade, str) and grade else None
+    return None, None, grade if isinstance(grade, str) and grade else None
+
 def _append_c16_accepted(generation, parent, run, native, records, events):
     capability = native.get("capability")
     visit = generation.teacher_state.get("last_visit")
@@ -82,14 +99,17 @@ def _append_c16_accepted(generation, parent, run, native, records, events):
         generation.acceptance["candidate_identity_sha256"], capability,
         CandidateOutcome.ACCEPTED,
         str(generation.acceptance.get("retention_reason") or "ACCEPTED"))
+    score_correct, score_total, grade = _accepted_target_score(native, capability)
     capability_record = CapabilitySnapshot(
         record_meta(
             f"capability:{run.run_id}:{run.generation}:{capability}",
             run, generation, native=native,
             evidence_refs=(f"native-event:{event_id}",),
             coverage=CoverageState.PARTIAL),
-        capability, "UNKNOWN", "VISIT_ACCEPTED",
-        missing_value(), missing_value(), missing_value())
+        capability, grade or "UNKNOWN", "VISIT_ACCEPTED",
+        data_value(score_correct) if score_correct is not None else missing_value(),
+        data_value(score_total) if score_total is not None else missing_value(),
+        missing_value())
     records.extend((episode, candidate, capability_record))
     events.extend((
         (EventFamily.LESSON_VISIT_COMPLETED, episode,
