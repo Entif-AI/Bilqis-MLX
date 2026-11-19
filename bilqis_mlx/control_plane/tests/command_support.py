@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
+import unittest
 
 from bilqis_mlx.mission_control.model import (
     AuthorityClass, CoverageState, RecordMeta,
@@ -14,6 +16,7 @@ from bilqis_mlx.control_plane.command.model import (
     CommandAction, CommandMode, CommandPlan, ResolvedCommandTarget,
     intent_sha256, request_sha256,
 )
+from bilqis_mlx.control_plane.command.manager import CommandManager
 
 
 DIGESTS = tuple(char * 64 for char in "1234567")
@@ -154,3 +157,30 @@ class Launcher:
         if self.error is not None:
             raise self.error
         return self.pid
+
+
+class CommandManagerTestCase(unittest.TestCase):
+    """Shared filesystem-backed CP05 command-manager fixture."""
+
+    def setUp(self):
+        self.temporary = TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        self.run_dir = self.root / "run"
+        self.store_root = self.root / "commands"
+
+    def tearDown(self):
+        self.temporary.cleanup()
+
+    def manager(self, mode=CommandMode.DRY_RUN):
+        executor = FakeExecutor(self.run_dir, mode)
+        launcher = Launcher()
+        return (
+            CommandManager(
+                self.run_dir,
+                self.store_root,
+                executor=executor,
+                launcher=launcher,
+            ),
+            executor,
+            launcher,
+        )
