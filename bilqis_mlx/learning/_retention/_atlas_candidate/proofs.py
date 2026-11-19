@@ -64,6 +64,104 @@ def _valid_logical_batch_member(item) -> bool:
             and isinstance(family, str) and bool(family)
             and isinstance(episode, str) and bool(episode))
 
+_CLOSURE_SCHEMAS = frozenset({
+    CLOSURE_STEP_PROOF_SCHEMA,
+    LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+    OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA,
+    OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+})
+_OBJECTIVE_SCHEMAS = frozenset({
+    OBJECTIVE_STEP_PROOF_SCHEMA,
+    OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA,
+    OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA,
+    OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+    OBJECTIVE_MINIMAL_STEP_PROOF_SCHEMA,
+})
+_MINIMAL_SCHEMAS = frozenset({
+    LEGACY_STEP_PROOF_SCHEMA, OBJECTIVE_MINIMAL_STEP_PROOF_SCHEMA,
+})
+_SINGLE_AUTHORITY_SCHEMAS = frozenset({
+    STEP_PROOF_SCHEMA, CLOSURE_STEP_PROOF_SCHEMA,
+    OBJECTIVE_STEP_PROOF_SCHEMA, OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA,
+})
+_LOGICAL_AUTHORITY_SCHEMAS = frozenset({
+    LOGICAL_BATCH_STEP_PROOF_SCHEMA,
+    LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+    OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA,
+    OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+})
+
+
+def _validate_core(proof) -> None:
+    if (type(proof.step_index) is not int or proof.step_index < 1
+            or not is_digest(proof.provenance_sha256)
+            or not is_digest(proof.participation_sha256)
+            or not is_digest(proof.mask_sha256)
+            or type(proof.parameter_names) is not tuple
+            or proof.parameter_names != tuple(sorted(set(proof.parameter_names)))
+            or any(not isinstance(name, str) or not name
+                   for name in proof.parameter_names)
+            or type(proof.loss_bearing) is not bool
+            or proof.schema_version not in _FIELDS_BY_SCHEMA):
+        invalid()
+
+
+def _validate_optional_bindings(proof) -> None:
+    if ((proof.schema_version in _OBJECTIVE_SCHEMAS
+         and not is_digest(proof.training_objective_digest))
+            or (proof.schema_version not in _OBJECTIVE_SCHEMAS
+                and proof.training_objective_digest is not None)):
+        invalid()
+    if ((proof.schema_version in _CLOSURE_SCHEMAS
+         and not is_digest(proof.artifact_closure_sha256))
+            or (proof.schema_version not in _CLOSURE_SCHEMAS
+                and proof.artifact_closure_sha256 is not None)):
+        invalid()
+
+
+def _validate_authority_identity(proof) -> None:
+    authority = (
+        proof.source_release_sha256, proof.training_batch_sha256,
+        proof.target_capability_id, proof.training_authority_sha256)
+    if proof.schema_version in _MINIMAL_SCHEMAS:
+        if (authority != (None, None, None, None)
+                or proof.source_family_id is not None
+                or proof.episode_id is not None
+                or proof.training_authority_members):
+            invalid()
+        return
+    if (not is_digest(proof.source_release_sha256)
+            or not is_digest(proof.training_batch_sha256)
+            or not isinstance(proof.target_capability_id, str)
+            or not proof.target_capability_id
+            or not is_digest(proof.training_authority_sha256)):
+        invalid()
+
+
+def _validate_authority_shape(proof) -> None:
+    if proof.schema_version == PREVIOUS_STEP_PROOF_SCHEMA:
+        if (proof.source_family_id is not None or proof.episode_id is not None
+                or proof.training_authority_members):
+            invalid()
+        return
+    if proof.schema_version in _SINGLE_AUTHORITY_SCHEMAS:
+        if (not isinstance(proof.source_family_id, str) or not proof.source_family_id
+                or not isinstance(proof.episode_id, str) or not proof.episode_id
+                or proof.training_authority_members):
+            invalid()
+        return
+    if proof.schema_version not in _LOGICAL_AUTHORITY_SCHEMAS:
+        return
+    members = proof.training_authority_members
+    if (proof.source_family_id is not None or proof.episode_id is not None
+            or type(members) is not tuple
+            or len(members) < _LOGICAL_BATCH_MIN_MEMBERS
+            or any(not _valid_logical_batch_member(item) for item in members)
+            or len({item[0] for item in members}) != len(members)
+            or len({item[1] for item in members}) != 1):
+        invalid()
+
+
 @dataclass(frozen=True)
 class CandidateStepProof:
     """Owner-bound proof of one executed optimizer step.
@@ -90,91 +188,10 @@ class CandidateStepProof:
     training_objective_digest: str | None = None
 
     def __post_init__(self) -> None:
-        if (type(self.step_index) is not int or self.step_index < 1
-                or not is_digest(self.provenance_sha256)
-                or not is_digest(self.participation_sha256)
-                or not is_digest(self.mask_sha256)
-                or type(self.parameter_names) is not tuple
-                or self.parameter_names != tuple(sorted(set(self.parameter_names)))
-                or any(not isinstance(name, str) or not name
-                       for name in self.parameter_names)
-                or type(self.loss_bearing) is not bool
-                or self.schema_version not in (
-                    LEGACY_STEP_PROOF_SCHEMA, PREVIOUS_STEP_PROOF_SCHEMA,
-                    STEP_PROOF_SCHEMA, LOGICAL_BATCH_STEP_PROOF_SCHEMA,
-                    CLOSURE_STEP_PROOF_SCHEMA,
-                    LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
-                    OBJECTIVE_STEP_PROOF_SCHEMA,
-                    OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA,
-                    OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA,
-                    OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
-                    OBJECTIVE_MINIMAL_STEP_PROOF_SCHEMA)):
-            invalid()
-        closure_schemas = (
-            CLOSURE_STEP_PROOF_SCHEMA,
-            LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
-            OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA,
-            OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
-        )
-        objective_schemas = (
-            OBJECTIVE_STEP_PROOF_SCHEMA,
-            OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA,
-            OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA,
-            OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
-            OBJECTIVE_MINIMAL_STEP_PROOF_SCHEMA,
-        )
-        if ((self.schema_version in objective_schemas
-             and not is_digest(self.training_objective_digest))
-                or (self.schema_version not in objective_schemas
-                    and self.training_objective_digest is not None)):
-            invalid()
-        if ((self.schema_version in closure_schemas
-             and not is_digest(self.artifact_closure_sha256))
-                or (self.schema_version not in closure_schemas
-                    and self.artifact_closure_sha256 is not None)):
-            invalid()
-        authority = (
-            self.source_release_sha256, self.training_batch_sha256,
-            self.target_capability_id, self.training_authority_sha256)
-        if self.schema_version in (
-                LEGACY_STEP_PROOF_SCHEMA, OBJECTIVE_MINIMAL_STEP_PROOF_SCHEMA):
-            if (authority != (None, None, None, None)
-                    or self.source_family_id is not None
-                    or self.episode_id is not None
-                    or self.training_authority_members):
-                invalid()
-        elif (not is_digest(self.source_release_sha256)
-                or not is_digest(self.training_batch_sha256)
-                or not isinstance(self.target_capability_id, str)
-                or not self.target_capability_id
-                or not is_digest(self.training_authority_sha256)):
-            invalid()
-        if self.schema_version == PREVIOUS_STEP_PROOF_SCHEMA:
-            if (self.source_family_id is not None or self.episode_id is not None
-                    or self.training_authority_members):
-                invalid()
-        elif self.schema_version in (
-                STEP_PROOF_SCHEMA, CLOSURE_STEP_PROOF_SCHEMA,
-                OBJECTIVE_STEP_PROOF_SCHEMA,
-                OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA) and (
-                not isinstance(self.source_family_id, str) or not self.source_family_id
-                or not isinstance(self.episode_id, str) or not self.episode_id
-                or self.training_authority_members):
-            invalid()
-        elif self.schema_version in (
-                LOGICAL_BATCH_STEP_PROOF_SCHEMA,
-                LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
-                OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA,
-                OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA):
-            if (self.source_family_id is not None or self.episode_id is not None
-                    or type(self.training_authority_members) is not tuple
-                    or len(self.training_authority_members) < _LOGICAL_BATCH_MIN_MEMBERS
-                    or any(not _valid_logical_batch_member(item)
-                           for item in self.training_authority_members)
-                    or len({item[0] for item in self.training_authority_members})
-                    != len(self.training_authority_members)
-                    or len({item[1] for item in self.training_authority_members}) != 1):
-                invalid()
+        _validate_core(self)
+        _validate_optional_bindings(self)
+        _validate_authority_identity(self)
+        _validate_authority_shape(self)
 
     @property
     def digest(self) -> str:
