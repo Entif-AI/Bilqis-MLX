@@ -59,12 +59,15 @@ def _emit_progress(progress, message: str) -> None:
 def _execute_selected_visit(
         run_dir, parent, context, atlas_path, feature_path, selection, host_cache,
         steps_per_visit, reserve_gib, progress, source_prefetch_workers,
-        source_prefetch_executor, source_prefetch_metrics, observer):
+        source_prefetch_executor, source_prefetch_metrics, observer,
+        distributed_profile=None, distributed_executor=None):
     return _execute_selected_visit_impl(
         run_dir, parent, context, atlas_path, feature_path, selection, host_cache,
         steps_per_visit, reserve_gib, progress, source_prefetch_workers,
         source_prefetch_executor, source_prefetch_metrics, observer,
-        emit_progress=_emit_progress, invalid=_invalid)
+        emit_progress=_emit_progress, invalid=_invalid,
+        distributed_profile=distributed_profile,
+        distributed_executor=distributed_executor)
 
 
 def _accepted_admission_reentry(
@@ -91,7 +94,8 @@ def prepare_bamf_visit(
         progress=None, source_prefetch_workers: int = 0,
         source_prefetch_executor=None,
         source_prefetch_metrics: SourcePrefetchMetrics | None = None, observer=None,
-        resource_holds=frozenset()) -> BamfPreparedVisit:
+        resource_holds=frozenset(), distributed_profile=None,
+        distributed_executor=None) -> BamfPreparedVisit:
     """Compose the production visit through retention without publishing it."""
     if (type(steps_per_visit) is not int
             or not 1 <= steps_per_visit <= _MAX_CANDIDATE_HORIZON):
@@ -137,7 +141,8 @@ def prepare_bamf_visit(
         return _execute_selected_visit(
             run_dir, parent, context, atlas_path, feature_path, selection, host_cache,
             steps_per_visit, reserve_gib, progress, source_prefetch_workers,
-            source_prefetch_executor, source_prefetch_metrics, observer)
+            source_prefetch_executor, source_prefetch_metrics, observer,
+            distributed_profile, distributed_executor)
     except CandidateMemoryExhausted as error:
         return BamfPreparedVisit(
             "RESOURCE_REJECTED", parent, selection=selection,
@@ -147,14 +152,19 @@ def prepare_bamf_visit(
 def _visit(run_dir: Path, reserve_gib: float, *, steps_per_visit=16,
            progress=None, source_prefetch_workers=0,
            source_prefetch_executor=None, source_prefetch_metrics=None, observer=None,
-           run_authority_binding=None, resource_holds=frozenset()):
+           run_authority_binding=None, resource_holds=frozenset(),
+           distributed_profile=None, distributed_executor=None):
+    def prepare_visit(*args, **kwargs):
+        return prepare_bamf_visit(
+            *args, **kwargs, distributed_profile=distributed_profile,
+            distributed_executor=distributed_executor)
     return _visit_impl(
         run_dir, reserve_gib, steps_per_visit=steps_per_visit, progress=progress,
         source_prefetch_workers=source_prefetch_workers,
         source_prefetch_executor=source_prefetch_executor,
         source_prefetch_metrics=source_prefetch_metrics, observer=observer,
         run_authority_binding=run_authority_binding, resource_holds=resource_holds,
-        prepare_visit=prepare_bamf_visit, record_rejection=record_bamf_rejection,
+        prepare_visit=prepare_visit, record_rejection=record_bamf_rejection,
         accept_publish=accept_and_publish, load_generation=load_accepted_generation,
         measure_phase=measure_observed_phase, emit_progress=_emit_progress,
         record_cadence_attempt=record_active_grade_cadence_attempt)
@@ -174,15 +184,27 @@ def operate_bamf(
     parent_graph: dict | None = None,
     profile_release=None,
     run_authority=None,
+    distributed_profile=None,
+    distributed_executor=None,
     progress=None,
 ) -> BamfOperatorResult:
     """Run the human-authorized BAMF lineage until a bounded stop condition."""
+    from bilqis_mlx.runtime.c08_distributed_executor import DistributedExecutorBinding
     from bilqis_mlx.runtime.run_authority import bind_native_run_authority
     from bilqis_mlx.runtime.source_prefetch import source_prefetch_pool
+    if (distributed_profile is None
+            and type(distributed_executor) is DistributedExecutorBinding):
+        distributed_profile = distributed_executor.profile
     def before_visits(root):
         if profile_release is not None:
             from bilqis_mlx.runtime._release_adoption.native_profile import adopt_profile_release
             adopt_profile_release(root, profile_release, reserve_gib=reserve_gib)
+    def visit_fn(*args, **kwargs):
+        if distributed_profile is None and distributed_executor is None:
+            return _visit(*args, **kwargs)
+        return _visit(
+            *args, **kwargs, distributed_profile=distributed_profile,
+            distributed_executor=distributed_executor)
     return _operate_impl(
         Path(run_dir), minutes=minutes, max_visits=max_visits,
         steps_per_visit=steps_per_visit, reserve_gib=reserve_gib,
@@ -191,7 +213,7 @@ def operate_bamf(
         worker_counts=NATIVE_SOURCE_WORKER_COUNTS, invalid=_invalid,
         metrics_type=SourcePrefetchMetrics, source_pool_factory=source_prefetch_pool,
         null_context=nullcontext, operator_lock=bamf_operator_lock,
-        visit_fn=_visit, observer_type=TrainerObservation,
+        visit_fn=visit_fn, observer_type=TrainerObservation,
         emit_progress=_emit_progress, monotonic=time.monotonic,
         load_generation=load_accepted_generation, result_type=BamfOperatorResult,
         resource_snapshot=stop_resource_witness,

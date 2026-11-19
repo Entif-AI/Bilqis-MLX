@@ -1,6 +1,14 @@
 """Retention and accepted-successor helpers for the BAMF operator session."""
 from __future__ import annotations
 
+import hashlib
+import json
+
+
+def _contract_digest(payload) -> str:
+    wire = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(wire.encode()).hexdigest()
+
 
 def _observe_retention_scope(observer, decision):
     if observer is None:
@@ -29,6 +37,82 @@ def _rejected_structural_weaknesses(
         run_dir, context, selection, candidate_evidence,
         rejection_reason=decision.reason,
         outcome_sha256=how_outcome["outcome_sha256"])
+
+
+def _distributed_retention_metrics(steps, evaluation, decision, observer, resource):
+    """Bind post-C05 retained-learning facts to distributed execution receipts."""
+    costs = tuple(
+        step.realized_cost for step in steps
+        if isinstance(getattr(step, "realized_cost", None), dict)
+        and "c08_distributed_manifest_digest" in step.realized_cost)
+    if not costs:
+        return
+    record = getattr(observer, "record", {}) if observer is not None else {}
+    evaluation_seconds = (
+        record.get("retention_wall_seconds") if isinstance(record, dict) else None)
+    if (type(evaluation_seconds) not in (int, float)
+            or type(evaluation_seconds) is bool or evaluation_seconds < 0):
+        return
+    scores = getattr(getattr(evaluation, "decision", None), "outcome_scores", ())
+    gains = tuple(
+        (after - before) / total
+        for _capability, before, after, total in scores
+        if type(total) is int and total > 0)
+    retained_gain = (
+        sum(gains) / len(gains) if decision.accepted and gains else 0.0)
+    candidate_wall_seconds = sum(float(
+        cost.get("candidate_step_wall_seconds", cost.get("wall_seconds", 0.0)))
+        for cost in costs)
+    elapsed = candidate_wall_seconds + float(evaluation_seconds)
+    source_contract_digest = _contract_digest([{
+        "retained_generation": cost["c08_distributed_retained_generation"],
+        "retained_manifest_sha256":
+            cost["c08_distributed_retained_manifest_sha256"],
+        "logical_batch_digest": cost["c08_distributed_logical_batch_digest"],
+        "source_release": cost["c08_distributed_source_release"],
+        "curriculum_release": cost["c08_distributed_curriculum_release"],
+    } for cost in costs])
+    evaluation_contract_digest = _contract_digest({
+        "policy_sha256": evaluation.decision.policy_sha256,
+        "retention_protection_plan_sha256": getattr(
+            decision, "retention_protection_plan_sha256", None),
+        "evaluated_capability_ids": tuple(
+            getattr(decision, "evaluated_capability_ids", ())),
+        "broad_certification_trigger": getattr(
+            decision, "broad_certification_trigger", None),
+    })
+    resource.update({
+        "c08_distributed_manifest_digests": tuple(
+            cost["c08_distributed_manifest_digest"] for cost in costs),
+        "c08_distributed_evaluation_seconds": float(evaluation_seconds),
+        "c08_distributed_accepted_steps_per_hour": (
+            resource["optimizer_steps"] * 3600.0 / elapsed
+            if decision.accepted and elapsed > 0 else 0.0),
+        "c08_distributed_retained_capability_gain": retained_gain,
+        "c08_distributed_source_contract_digest": source_contract_digest,
+        "c08_distributed_evaluation_contract_digest":
+            evaluation_contract_digest,
+    })
+
+
+def _complete_observer_evidence(
+        observer, capture, run_dir, candidate_evidence, decision):
+    if observer is None:
+        return
+    try:
+        methodology = getattr(capture, "learning_methodology", None)
+        if callable(methodology):
+            observer.update(learning_methodology=methodology())
+        from ..evidence_projection import complete_visit_evidence
+        record = getattr(observer, "record", {})
+        current_visit = (
+            record.get("visit_evidence") if isinstance(record, dict) else None
+        ) or {"schema": "bilqis.bamf.visit-evidence/v1", "state": "PARTIAL"}
+        observer.update(visit_evidence=complete_visit_evidence(
+            run_dir, current_visit, candidate_evidence, decision))
+    except Exception:
+        # Projection is observation-only and must not gate C05/B13 completion.
+        pass
 
 
 def _retention_resource(
@@ -85,24 +169,12 @@ def retention_result(
     with measure_observed_phase_fn(observer, "evidence_finalization_wall_seconds"):
         candidate_evidence = capture.finalize(
             accepted=decision.accepted, decision=decision.to_record())
-    if observer is not None:
-        try:
-            methodology = getattr(capture, "learning_methodology", None)
-            if callable(methodology):
-                observer.update(learning_methodology=methodology())
-            from ..evidence_projection import complete_visit_evidence
-            record = getattr(observer, "record", {})
-            current_visit = (record.get("visit_evidence")
-                             if isinstance(record, dict) else None) or {
-                "schema": "bilqis.bamf.visit-evidence/v1", "state": "PARTIAL"}
-            observer.update(visit_evidence=complete_visit_evidence(
-                run_dir, current_visit, candidate_evidence, decision))
-        except Exception:
-            # Projection is observation-only and must not gate C05/B13 completion.
-            pass
+    _complete_observer_evidence(
+        observer, capture, run_dir, candidate_evidence, decision)
     resource = _retention_resource(
         run_dir, steps, context, identity_metrics, candidate_evidence,
         resource_observation)
+    _distributed_retention_metrics(steps, evaluation, decision, observer, resource)
     from bilqis_mlx.runtime.outcomes.issuance import (
         build_outcome, carry_credit_to_successor, credited_visit,
     )

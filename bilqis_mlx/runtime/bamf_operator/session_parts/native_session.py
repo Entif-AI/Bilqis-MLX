@@ -1,6 +1,7 @@
 """Native BAMF session bindings kept outside the top-level coordinator."""
 from __future__ import annotations
 
+from functools import partial
 from pathlib import Path
 import json
 
@@ -97,7 +98,8 @@ def execute_horizon(
         run_dir, selection, context, parent, atlas_path, feature_path, rows, horizon,
         cache, candidate_attempt_ordinal, progress, source_prefetch_workers,
         source_prefetch_executor, source_prefetch_metrics, observer, adviser_pool,
-        *, emit_progress, invalid, rehearsal_plan=None):
+        *, emit_progress, invalid, rehearsal_plan=None,
+        distributed_profile=None, distributed_executor=None):
     return _execute_horizon_impl(
         run_dir, selection, context, parent, atlas_path, feature_path,
         rows, horizon, cache, candidate_attempt_ordinal, progress,
@@ -106,7 +108,11 @@ def execute_horizon(
         source_lane_cls=CandidateSourceLane, source_metrics_cls=SourcePrefetchMetrics,
         prepare_evidence_root=prepare_candidate_evidence_root, capture_cls=_Capture,
         delivery_observation_cls=FactoryDeliveryObservation,
-        execute_candidate=execute_accepted_priority_candidate, step_seed=_step_seed,
+        execute_candidate=partial(
+            execute_accepted_priority_candidate,
+            distributed_profile=distributed_profile,
+            distributed_executor=distributed_executor),
+        step_seed=_step_seed,
         emit_progress=emit_progress, invalid=invalid,
         observe_completed_step_fn=observe_completed_step,
         rehearsal_plan=rehearsal_plan)
@@ -116,7 +122,8 @@ def candidate_horizon_execution(
         run_dir, parent, context, atlas_path, feature_path, selection, rows,
         capability, host_cache, steps_per_visit, progress, source_prefetch_workers,
         source_prefetch_executor, source_prefetch_metrics, observer, adviser_pool,
-        *, emit_progress, invalid):
+        *, emit_progress, invalid,
+        distributed_profile=None, distributed_executor=None):
     cache = host_cache if host_cache is not None else bind_accepted_execution_cache(run_dir)
     from bilqis_mlx.runtime.bamf_bundle.execution_cache import AcceptedExecutionCache
     rehearsal_plan = (
@@ -130,7 +137,8 @@ def candidate_horizon_execution(
         rejection_ordinals=rejection_attempt_ordinals,
         execute_horizon_fn=lambda *args, **kwargs: execute_horizon(
             *args, **kwargs, emit_progress=emit_progress, invalid=invalid,
-            rehearsal_plan=rehearsal_plan),
+            rehearsal_plan=rehearsal_plan, distributed_profile=distributed_profile,
+            distributed_executor=distributed_executor),
         currentness_metrics_fn=currentness_metrics, emit_progress=emit_progress,
         identity_snapshot=candidate_identity_metrics_snapshot)
 
@@ -160,7 +168,8 @@ def execute_selected_visit(
         run_dir, parent, context, atlas_path, feature_path, selection, host_cache,
         steps_per_visit, reserve_gib, progress, source_prefetch_workers,
         source_prefetch_executor, source_prefetch_metrics, observer,
-        *, emit_progress, invalid):
+        *, emit_progress, invalid,
+        distributed_profile=None, distributed_executor=None):
     rows = selection.offer.rows()
     if observer is not None:
         from ..evidence_projection import selected_visit_evidence, unknown_generated_grade_evidence
@@ -182,7 +191,9 @@ def execute_selected_visit(
         run_dir, parent, context, atlas_path, feature_path, selection, rows,
         capability, adviser_cache, steps_per_visit, progress, source_prefetch_workers,
         source_prefetch_executor, source_prefetch_metrics, observer, adviser_pool,
-        emit_progress=emit_progress, invalid=invalid)
+        emit_progress=emit_progress, invalid=invalid,
+        distributed_profile=distributed_profile,
+        distributed_executor=distributed_executor)
     cache, steps, capture, journal_ordinal, attempt_ordinal, identity_before = horizon_state
     return retention_result(
         run_dir, parent, context, atlas_path, selection, capability, cache, steps,
