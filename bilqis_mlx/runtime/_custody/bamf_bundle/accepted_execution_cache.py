@@ -21,6 +21,16 @@ from .publication import _pointer_lock, _read_pointer
 from .records import CompleteStudent, canonical, invalid, sha
 
 
+def _require_initial_foundation_authority(
+        run_dir: Path, student: CompleteStudent) -> None:
+    """Cold-bind a current BAMF lineage to its signed generation-zero release."""
+    if student.run_identity is None:
+        return
+    from .publication.factory_release import require_initial_factory_release
+    release = require_initial_factory_release(run_dir, student)
+    release.require_foundation_capability_ids()
+
+
 @dataclass(frozen=True)
 class _AcceptedHydration:
     manifest_sha256: str
@@ -85,6 +95,7 @@ def _require_current_hydration(run_dir: Path, pointer: dict | None, hydration):
     validate_bamf_bundle_custody(
         Path(run_dir) / "bamf-bundles" / hydration.manifest_sha256,
         expected_manifest_sha256=hydration.manifest_sha256)
+    _require_initial_foundation_authority(run_dir, student)
     return hydration
 
 
@@ -200,6 +211,7 @@ def _current_hydration_locked(
         if retained is not None else None)
     pointer, student = _read_accepted_locked(
         run_dir, accepted_parent=accepted_parent)
+    _require_initial_foundation_authority(run_dir, student)
     identity = _published_in_memory_identity_locked(
         run_dir, student, pointer, accepted_parent=accepted_parent,
         acceptance_verified=True)
