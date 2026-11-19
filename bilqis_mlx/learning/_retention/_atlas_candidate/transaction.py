@@ -15,6 +15,9 @@ from ..atlas_execution_provenance import StepExecutionProvenance, mask_digest, p
 from ..atlas_participation import optimizer_participation_mask
 from .common import (CLOSURE_STEP_PROOF_SCHEMA, LEGACY_STEP_PROOF_SCHEMA,
     LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA, LOGICAL_BATCH_STEP_PROOF_SCHEMA,
+    OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA,
+    OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA,
+    OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA, OBJECTIVE_STEP_PROOF_SCHEMA,
     STEP_PROOF_SCHEMA, RETAINED_STATE_ISSUER, STATE_SCHEMA, TRANSACTION_ISSUER,
     TRANSACTION_SCHEMA, invalid)
 from .proofs import CandidateStepProof
@@ -56,6 +59,8 @@ class CandidateTransaction:
     step_proofs: tuple = ()
     training_authorities: tuple = ()
     motif_transition: CandidateMotifAllocationTransition | None = None
+    training_objective_ref: str = field(init=False)
+    training_objective_digest: str = field(init=False)
     schema_version: str = TRANSACTION_SCHEMA
     _parent_identity_sha256: str = field(init=False, repr=False, compare=False)
     _parent_guard: tuple = field(init=False, repr=False, compare=False)
@@ -82,6 +87,10 @@ class CandidateTransaction:
                        for index, proof in enumerate(self.step_proofs))
                 or (self.motif_transition is not None
                     and type(self.motif_transition) is not CandidateMotifAllocationTransition)
+                or not isinstance(self.training_objective_ref, str)
+                or not self.training_objective_ref
+                or not isinstance(self.training_objective_digest, str)
+                or len(self.training_objective_digest) != SHA256_HEX_LENGTH
                 or not isinstance(self._parent_identity_sha256, str)
                 or len(self._parent_identity_sha256) != SHA256_HEX_LENGTH
                 or _parent_object_guard(self.parent) != self._parent_guard
@@ -142,12 +151,31 @@ def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0,
         from ..atlas_acceptance import candidate_identity_digest
         parent_identity_sha256 = candidate_identity_digest(parent)
     parent_guard = _parent_object_guard(parent) if parent_guard is None else parent_guard
+    custody = parent.custody
+    if custody is None:
+        from bilqis_mlx.runtime._model.training_objective import (
+            current_training_objective,
+        )
+        objective = current_training_objective()
+        objective_ref, objective_digest = objective.ref, objective.digest
+    elif (custody.training_objective_ref is None
+            or custody.training_objective_digest is None):
+        invalid()
+    else:
+        from bilqis_mlx.runtime._model.training_objective import (
+            require_training_objective_digest,
+        )
+        require_training_objective_digest(custody.training_objective_digest)
+        objective_ref = custody.training_objective_ref
+        objective_digest = custody.training_objective_digest
     for name, value in (
             ('parent', parent), ('optimizer', optimizer), ('allocations', allocations),
             ('teacher_requests_full', teacher_requests_full), ('update_steps', update_steps),
             ('step_proofs', tuple(step_proofs)),
             ('training_authorities', tuple(training_authorities)),
             ('motif_transition', motif_transition),
+            ('training_objective_ref', objective_ref),
+            ('training_objective_digest', objective_digest),
             ('_parent_identity_sha256', parent_identity_sha256),
             ('_parent_guard', parent_guard),
             ('schema_version', TRANSACTION_SCHEMA), ('_issuance', TRANSACTION_ISSUER)):
@@ -233,6 +261,7 @@ def _candidate_step_proof(candidate, execution, update_mask, loss_bearing,
         training_batch_sha256=training_authority.training_batch_sha256,
         target_capability_id=training_authority.delivery_capability,
         training_authority_sha256=training_authority.digest,
+        training_objective_digest=candidate.training_objective_digest,
     )
     if type(training_authority) is BamfTrainingAuthority:
         closure = getattr(training_authority, "artifact_closure_sha256", None)
@@ -246,7 +275,8 @@ def _candidate_step_proof(candidate, execution, update_mask, loss_bearing,
             episode_id=training_authority.episode_id,
             artifact_closure_sha256=closure,
             schema_version=(
-                CLOSURE_STEP_PROOF_SCHEMA if closure else STEP_PROOF_SCHEMA))
+                OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA
+                if closure else OBJECTIVE_STEP_PROOF_SCHEMA))
     if type(training_authority) is BamfLogicalBatchTrainingAuthority:
         closure = training_authority.artifact_closure_sha256
         if closure is not None:
@@ -260,8 +290,8 @@ def _candidate_step_proof(candidate, execution, update_mask, loss_bearing,
                 for member in training_authority.members),
             artifact_closure_sha256=closure,
             schema_version=(
-                LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA
-                if closure else LOGICAL_BATCH_STEP_PROOF_SCHEMA))
+                OBJECTIVE_LOGICAL_BATCH_CLOSURE_STEP_PROOF_SCHEMA
+                if closure else OBJECTIVE_LOGICAL_BATCH_STEP_PROOF_SCHEMA))
     invalid()
 
 
