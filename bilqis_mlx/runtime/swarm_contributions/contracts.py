@@ -65,13 +65,20 @@ class ContributionDisposition(str, Enum):
     REJECTED = "REJECTED"
 
 
-_EXPECTED_ARTIFACT = {
-    ContributionClass.EVALUATION: "evaluation_receipt",
-    ContributionClass.CURRICULUM: "curriculum_candidate",
-    ContributionClass.ADAPTER_DELTA: "c12_cognitive_package",
-    ContributionClass.MOTIF_CANDIDATE: "motif_candidate",
-    ContributionClass.REGRESSION: "regression_evidence",
-}
+def expected_artifact_type(contribution_class: ContributionClass) -> str | None:
+    match contribution_class:
+        case ContributionClass.EVALUATION:
+            return "evaluation_receipt"
+        case ContributionClass.CURRICULUM:
+            return "curriculum_candidate"
+        case ContributionClass.ADAPTER_DELTA:
+            return "c12_cognitive_package"
+        case ContributionClass.MOTIF_CANDIDATE:
+            return "motif_candidate"
+        case ContributionClass.REGRESSION:
+            return "regression_evidence"
+        case _:
+            return None
 
 
 @dataclass(frozen=True)
@@ -133,7 +140,7 @@ class RemoteWorkManifest:
     ) -> "RemoteWorkManifest":
         if contribution_class is ContributionClass.DENSE_UPDATE:
             invalid("BAMF_C14_DENSE_UPDATE_AGGREGATION_UNSPECIFIED")
-        expected = _EXPECTED_ARTIFACT.get(contribution_class)
+        expected = expected_artifact_type(contribution_class)
         if expected is None:
             invalid("BAMF_C14_CONTRIBUTION_CLASS_UNSUPPORTED")
         return cls(
@@ -156,7 +163,7 @@ class RemoteWorkManifest:
                 or type(self.contribution_class) is not ContributionClass
                 or self.contribution_class is ContributionClass.DENSE_UPDATE
                 or self.expected_artifact_type
-                    != _EXPECTED_ARTIFACT.get(self.contribution_class)
+                    != expected_artifact_type(self.contribution_class)
                 or type(self.acceptance) is not AcceptanceContract
                 or type(self.expires_at) is not int or self.expires_at < 1
                 or (self.contribution_class is ContributionClass.ADAPTER_DELTA
