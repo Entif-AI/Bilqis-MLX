@@ -70,7 +70,7 @@ def _service_lock(service):
 
 def materialize_native_projection(
         run_dir: Path, *, include_live_rejections: bool = False) -> NativeProjectionMaterial:
-    """Materialize portable accepted history; optionally add live rejection facts."""
+    """Materialize portable history; optionally add legacy live-only rejection facts."""
     history = authenticated_history(run_dir)
     records, events, manifests = [], [], []
     parent = None
@@ -82,7 +82,8 @@ def materialize_native_projection(
         parent = generation
     rejected_records, rejected_events = (
         rejection_material(Path(run_dir), history)
-        if include_live_rejections else ((), ()))
+        if include_live_rejections
+        else rejection_material(Path(run_dir), history, portable_only=True))
     after = accepted_pointer(Path(run_dir))
     if (not history
             or after["manifest_sha256"] != history[-1].manifest_sha256

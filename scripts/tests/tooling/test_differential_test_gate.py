@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+import unittest.mock
 
 from scripts.testing import differential_test_gate as gate
 
@@ -138,6 +139,26 @@ class DifferentialTestGateTests(unittest.TestCase):
             [gate.sys.executable, "-B", "-m", "scripts.run_tests",
              "pkg/tests/test_thing.py"],
         )
+
+    def test_pytest_leaf_gate_is_serial_by_default(self):
+        with unittest.mock.patch.dict(gate.os.environ, {}, clear=True), \
+                unittest.mock.patch.object(gate, "_plugin_available", return_value=True):
+            command = gate._pytest_command("cold-targeted", ("pkg/tests/test_thing.py",))
+
+        self.assertNotIn("-n", command)
+        self.assertEqual(
+            command[:3],
+            [gate.sys.executable, "-m", "scripts.testing.pytest_gate_runner"],
+        )
+
+    def test_pytest_parallelism_is_explicit_opt_in(self):
+        with unittest.mock.patch.dict(
+                gate.os.environ, {"BILQIS_TEST_WORKERS": "4"}, clear=True), \
+                unittest.mock.patch.object(gate, "_plugin_available", return_value=True):
+            command = gate._pytest_command("cold-targeted", ("pkg/tests/test_thing.py",))
+
+        self.assertIn("-n", command)
+        self.assertEqual(command[command.index("-n") + 1], "4")
 
     def test_matching_success_receipt_reuses_without_rerun(self):
         temporary = self._repo()

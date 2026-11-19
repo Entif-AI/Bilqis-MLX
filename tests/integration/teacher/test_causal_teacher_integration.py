@@ -1,4 +1,5 @@
 """Teacher integration contracts; original evidence and boundaries preserved."""
+BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"
 import unittest
 from unittest.mock import patch
 from tests.integration.teacher.fixtures import TeacherFixture

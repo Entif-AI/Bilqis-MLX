@@ -5,9 +5,13 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from bilqis_mlx.data_plane import data_plane
-from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.runtime import checkpoint_outbox
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
+from bilqis_mlx.runtime.bamf_rejection import (
+    portable_rejection_receipt, rejection_registry,
+    verify_portable_rejection_authority,
+)
 from .priority_rejection_projection import RejectionProjection
 
 
@@ -23,25 +27,31 @@ def _projection(_identity):
     return RejectionProjection()
 
 
-def _validated_rejection(event, parent, cache):
-    if event.get("event") != "BAMF_CANDIDATE_REJECTED":
-        return None
-    if event.get("generation") != cache.generation:
-        return None
-    if (event.get("student_manifest_sha256") != cache.accepted_manifest_sha256
-            or event.get("optimizer_step") != parent.retained_state.optimizer_step):
-        _invalid("BAMF_PRIORITY_REJECTION_IDENTITY_DRIFT")
-    lineage = {"run_id": cache.run_id, "generation": cache.generation}
-    if not checkpoint_outbox.ordinary_outbox_lineage(lineage, [event]):
-        _invalid("BAMF_PRIORITY_REJECTION_OUTBOX_INVALID")
-    evidence = event.get("evidence")
-    if not isinstance(evidence, dict) or evidence.get("schema") != "bilqis.bamf.c16.3-rejection/v2":
-        return None
-    authority_sha256 = event.get("rejection_authority_sha256")
-    if (not isinstance(authority_sha256, str)
-            or len(authority_sha256) != SHA256_HEX_LENGTH
-            or any(char not in "0123456789abcdef" for char in authority_sha256)):
+def _portable_rejection_receipt_sha(
+        event, parent, cache, evidence, authority, authority_sha256):
+    try:
+        verify_portable_rejection_authority(
+            authority, cache._correction_registry,
+            run_id=cache.run_id, generation=cache.generation,
+            student_manifest_sha256=cache.accepted_manifest_sha256,
+            optimizer_step=parent.retained_state.optimizer_step,
+            evidence=evidence)
+    except BilqisError:
         _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
+    if hashlib.sha256(canonical(authority)).hexdigest() != authority_sha256:
+        _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_DRIFT")
+    receipt = portable_rejection_receipt(
+        run_id=cache.run_id, generation=cache.generation,
+        student_manifest_sha256=cache.accepted_manifest_sha256,
+        optimizer_step=parent.retained_state.optimizer_step,
+        authority_sha256=authority_sha256)
+    receipt_sha256 = hashlib.sha256(canonical(receipt)).hexdigest()
+    if event.get("rejection_receipt_sha256") != receipt_sha256:
+        _invalid("BAMF_PRIORITY_REJECTION_RECEIPT_DRIFT")
+    return receipt_sha256
+
+
+def _legacy_rejection_receipt_sha(event, parent, cache, evidence, authority_sha256):
     authority = {
         "schema": "bilqis.mlx.bamf-rejection-authority/v1",
         "run_id": cache.run_id,
@@ -71,6 +81,19 @@ def _validated_rejection(event, parent, cache):
         _invalid("BAMF_PRIORITY_REJECTION_RECEIPT_INVALID")
     if stored_receipt != receipt_raw:
         _invalid("BAMF_PRIORITY_REJECTION_RECEIPT_DRIFT")
+    return receipt_sha256
+
+
+def _rejection_receipt_sha(event, parent, cache, evidence, authority_sha256):
+    authority = event.get("rejection_authority")
+    if authority is not None:
+        return _portable_rejection_receipt_sha(
+            event, parent, cache, evidence, authority, authority_sha256)
+    return _legacy_rejection_receipt_sha(
+        event, parent, cache, evidence, authority_sha256)
+
+
+def _rejection_evidence_fields(evidence, parent):
     selected = evidence.get("capability")
     visit_id = evidence.get("visit_id")
     candidate_step = evidence.get("candidate_optimizer_step")
@@ -91,6 +114,32 @@ def _validated_rejection(event, parent, cache):
                 and (type(rejection_journal_ordinal) is not int
                      or rejection_journal_ordinal < 1))):
         _invalid("BAMF_PRIORITY_REJECTION_EVIDENCE_INVALID")
+    return selected, visit_id, reason, rejection_attempt_ordinal, rejection_journal_ordinal
+
+
+def _validated_rejection(event, parent, cache):
+    if event.get("event") != "BAMF_CANDIDATE_REJECTED":
+        return None
+    if event.get("generation") != cache.generation:
+        return None
+    if (event.get("student_manifest_sha256") != cache.accepted_manifest_sha256
+            or event.get("optimizer_step") != parent.retained_state.optimizer_step):
+        _invalid("BAMF_PRIORITY_REJECTION_IDENTITY_DRIFT")
+    lineage = {"run_id": cache.run_id, "generation": cache.generation}
+    if not checkpoint_outbox.ordinary_outbox_lineage(lineage, [event]):
+        _invalid("BAMF_PRIORITY_REJECTION_OUTBOX_INVALID")
+    evidence = event.get("evidence")
+    if not isinstance(evidence, dict) or evidence.get("schema") != "bilqis.bamf.c16.3-rejection/v2":
+        return None
+    authority_sha256 = event.get("rejection_authority_sha256")
+    if (not isinstance(authority_sha256, str)
+            or len(authority_sha256) != SHA256_HEX_LENGTH
+            or any(char not in "0123456789abcdef" for char in authority_sha256)):
+        _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
+    receipt_sha256 = _rejection_receipt_sha(
+        event, parent, cache, evidence, authority_sha256)
+    selected, visit_id, reason, rejection_attempt_ordinal, rejection_journal_ordinal = (
+        _rejection_evidence_fields(evidence, parent))
     from bilqis_mlx.runtime.structural_weakness_replay import (
         validate_rejection_weaknesses,
     )
@@ -102,7 +151,6 @@ def _validated_rejection(event, parent, cache):
         rejection_journal_ordinal,
         weaknesses,
     )
-
 
 def _current_projection(run_dir, parent, cache):
     path_key = str(Path(run_dir).absolute())
@@ -135,6 +183,7 @@ def authenticated_rejection_event(event, parent, manifest_sha256):
         run_id=parent.run_id,
         generation=parent.generation,
         accepted_manifest_sha256=manifest_sha256,
+        _correction_registry=rejection_registry(parent.correction_frontier),
     )
     return _validated_rejection(event, parent, cache) is not None
 
