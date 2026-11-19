@@ -13,6 +13,6 @@ _OWNER_GROUPS = (
     "_admission/generated_grade_runtime",
     "_capability/factory",
     "_model/cache", "_model/backbone", "_correction/owners",
-    "_correction/accepted",
+    "_correction/accepted", "_correction/weakness",
 )
 __path__.extend(str(Path(__file__).parent / name) for name in _OWNER_GROUPS)
