@@ -13,6 +13,8 @@ from .native_contracts import (
 
 
 _BUNDLE_V3 = "bilqis.mlx.bamf-generation-bundle/v3"
+_BUNDLE_V5 = "bilqis.mlx.bamf-generation-bundle/v5"
+_PARENT_ACCEPTANCE_SCHEMAS = frozenset({_BUNDLE_V3, _BUNDLE_V5})
 _POINTER_V2 = "bilqis.mlx.bamf-generation-pointer/v2"
 _EXACT_ACCEPTANCE_SCHEMAS = (
     "bilqis.mlx.accepted-candidate-binding/v9",
@@ -101,6 +103,14 @@ def _accepted_generation(
             or not isinstance(manifest.get("optimizer"), dict)
             or not isinstance(manifest.get("provenance"), dict)
             or not isinstance(manifest.get("topology"), dict)):
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_MANIFEST_INVALID")
+    schema = manifest.get("schema")
+    if schema not in _PARENT_ACCEPTANCE_SCHEMAS:
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_MANIFEST_INVALID")
+    if schema == _BUNDLE_V5 and (
+            not isinstance(manifest.get("training_objective_ref"), str)
+            or not manifest["training_objective_ref"]
+            or not is_digest(manifest.get("training_objective_digest"))):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_MANIFEST_INVALID")
     acceptance = _read_json(
         run_dir / "bamf-acceptance" / f"{manifest_sha256}.json",
@@ -198,7 +208,7 @@ def authenticated_history(run_dir: Path) -> tuple[AuthenticatedGeneration, ...]:
             if manifest["generation"] != 0:
                 invalid("CONTROL_PLANE_NATIVE_HISTORY_LINEAGE_DRIFT")
             break
-        if manifest.get("schema") != _BUNDLE_V3:
+        if manifest.get("schema") not in _PARENT_ACCEPTANCE_SCHEMAS:
             invalid("CONTROL_PLANE_NATIVE_HISTORY_PARENT_UNAUTHENTICATED")
         parent_acceptance = manifest.get("parent_acceptance_sha256")
         if not is_digest(parent_sha) or not is_digest(parent_acceptance):
