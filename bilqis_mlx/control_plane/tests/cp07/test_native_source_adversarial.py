@@ -8,14 +8,14 @@ from unittest.mock import patch
 from bilqis_mlx.control_plane import ControlPlaneService
 from bilqis_mlx.control_plane.native_contracts import canonical, sha
 from bilqis_mlx.control_plane.native_source import (
-    materialize_native_projection, refresh_native_events,
+    materialize_native_projection, native_query_catalog, refresh_native_events,
 )
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.learning.teacher_visit_identity import (
     TeacherVisitIdentity, require_teacher_visit_receipt,
     teacher_visit_receipt_record,
 )
-from bilqis_mlx.mission_control import CandidateDecision
+from bilqis_mlx.mission_control import CandidateDecision, QueryFamily, QueryRequest
 from bilqis_mlx.runtime import checkpoint_outbox
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import retention_decision
@@ -237,6 +237,17 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
         with patch("bilqis_mlx.control_plane.native_source.materialize_native_projection",
                    side_effect=race):
             self.assertEqual(refresh_native_events(service), ())
+
+    def test_native_query_pointer_race_is_reported_as_transient_unavailability(self):
+        self.parent()
+        def race(_run_dir, **_kwargs):
+            ErrorBus.raise_(SCHOOL.BAMF_CONTROL_PLANE.INVALID,
+                            reason="CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED")
+        with patch("bilqis_mlx.control_plane.native_source.materialize_native_projection",
+                   side_effect=race):
+            page = native_query_catalog(self.run).query(QueryRequest(QueryFamily.RUN))
+        self.assertEqual(page.state.value, "UNAVAILABLE")
+        self.assertEqual(page.records, ())
 
     def test_history_to_rejection_scan_pointer_advance_fails_transiently(self):
         self.parent()
