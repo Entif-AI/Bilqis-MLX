@@ -4,6 +4,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from bilqis_mlx.errors import BilqisError
+
 from .native_contracts import (
     AuthenticatedGeneration, canonical, invalid, is_digest, native_outbox_event_id,
     sha,
@@ -140,6 +142,22 @@ def _read_generation_outbox(root: Path, manifest: dict) -> tuple[dict, ...]:
     return tuple(outbox)
 
 
+def _learning_health(root: Path, manifest: dict):
+    binding = manifest["sidecars"].get("learning_health_state")
+    if binding is None:
+        return None
+    state = _read_bound_json(
+        root, binding, reason="CONTROL_PLANE_NATIVE_HISTORY_LEARNING_HEALTH_INVALID")
+    if not isinstance(state, dict):
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_LEARNING_HEALTH_INVALID")
+    from bilqis_mlx.diagnostics.learning_health import validate_learning_health_state
+    try:
+        validate_learning_health_state(state)
+    except (BilqisError, ValueError, TypeError, KeyError, AttributeError):
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_LEARNING_HEALTH_INVALID")
+    return state
+
+
 def _read_generation_identity(
         root: Path, manifest: dict, acceptance: dict,
         expected_candidate_identity_sha256: str | None) -> dict:
@@ -227,9 +245,10 @@ def _accepted_generation(
     correction_frontier = _read_generation_correction_frontier(
         root, manifest, acceptance)
     teacher_state = _read_generation_teacher_state(root, manifest, acceptance)
+    learning_health_state = _learning_health(root, manifest)
     return AuthenticatedGeneration(
         manifest_sha256, acceptance_sha256, manifest, acceptance, identity,
-        correction_frontier, teacher_state, outbox)
+        correction_frontier, teacher_state, outbox, learning_health_state)
 
 def _historical_parent_acceptance(
         run_dir: Path, manifest_sha256: str,

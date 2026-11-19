@@ -24,6 +24,9 @@ from bilqis_mlx.runtime.bamf_bundle.records import (
     BAMF_POINTER_SCHEMA, OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
     canonical, validate_sidecars,
 )
+from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
+    parent_acceptance_anchor_from_manifest,
+)
 from bilqis_mlx.runtime.tests.custody.data_plane.base import DataPlaneCase, historical_module
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     acceptance, accepted_state, candidate, next_accepted_step, parent_state,
@@ -277,3 +280,11 @@ class PreCasCompatibilityTests(DataPlaneCase):
             OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA)
         self.assertEqual(
             child_manifest["parent_acceptance_sha256"], accepted_one.digest)
+        self.assertEqual(
+            parent_acceptance_anchor_from_manifest(
+                run, successor["manifest_sha256"]),
+            accepted_one.digest,
+        )
+        with shape_patch():
+            reloaded = load_bamf_generation(run / "bamf-state.json")
+        self.assertEqual(reloaded.generation, 2)
