@@ -100,6 +100,25 @@ def _operate_first_baseline_case(case):
     return result, published
 
 
+def _complete_observed_step(observer):
+    observer.complete_step(
+        candidate_step=1, candidate_optimizer_step=8, candidate_step_wall_seconds=0.5,
+        pre_neural_source_compile_wall_seconds=0.1, currentness_binding_wall_seconds=0.01,
+        accepted_currentness_refresh_wall_seconds=0.001,
+        accepted_parent_currentness_wall_seconds=0.001,
+        lawful_frontier_currentness_wall_seconds=0.002,
+        teacher_visit_currentness_wall_seconds=0.002, source_currentness_wall_seconds=0.001,
+        candidate_binding_wall_seconds=0.003, b11_preflight_wall_seconds=0.1,
+        b11_autodiff_wall_seconds=0.2, optimizer_admission_wall_seconds=0.05,
+        motif_staging_wall_seconds=0.0, evidence_capture_wall_seconds=0.01,
+        candidate_terminal_step=True, c08_gradient_launches=1,
+        c08_vectorized_microbatches=1, c08_materialization_barriers=1,
+        c08_scalar_fallback_rows=0, c08_logical_batch_wall_seconds=0.3,
+        c08_rows_per_gradient_launch=4.0, b11_provider_draw_count=4,
+        b11_atlas_reload_count=1, logical_rows=4, compiled_positions=32,
+    )
+
+
 @patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
 class SessionObservationTests(unittest.TestCase):
     def setUp(self):
@@ -234,12 +253,10 @@ class SessionObservationTests(unittest.TestCase):
         from bilqis_mlx.runtime.bamf_operator.session import operate_bamf
 
         parent = NS(generation=0, retained_state=NS(optimizer_step=7))
-        prepared = NS(
-            status='ACCEPTED', parent=parent, selection=object(),
-            step=NS(transaction=NS(training_authorities=())),
-            decision=NS(accepted=True), retained=object(), capability='A.IDENTITY',
-            successor=NS(extents=NS(factor_map_digest='x')),
-        )
+        prepared = NS(status='ACCEPTED', parent=parent, selection=object(),
+                      step=NS(transaction=NS(training_authorities=())),
+                      decision=NS(accepted=True), retained=object(), capability='A.IDENTITY',
+                      successor=NS(extents=NS(factor_map_digest='x')))
         snapshots = []
 
         def capture(run_dir):
@@ -257,34 +274,7 @@ class SessionObservationTests(unittest.TestCase):
                 candidate_step=0, candidate_horizon=1,
                 candidate_optimizer_step=7)
             observer.begin_step(1, 8)
-            observer.complete_step(
-                candidate_step=1, candidate_optimizer_step=8,
-                candidate_step_wall_seconds=0.5,
-                pre_neural_source_compile_wall_seconds=0.1,
-                currentness_binding_wall_seconds=0.01,
-                accepted_currentness_refresh_wall_seconds=0.001,
-                accepted_parent_currentness_wall_seconds=0.001,
-                lawful_frontier_currentness_wall_seconds=0.002,
-                teacher_visit_currentness_wall_seconds=0.002,
-                source_currentness_wall_seconds=0.001,
-                candidate_binding_wall_seconds=0.003,
-                b11_preflight_wall_seconds=0.1,
-                b11_autodiff_wall_seconds=0.2,
-                optimizer_admission_wall_seconds=0.05,
-                motif_staging_wall_seconds=0.0,
-                evidence_capture_wall_seconds=0.01,
-                candidate_terminal_step=True,
-                c08_gradient_launches=1,
-                c08_vectorized_microbatches=1,
-                c08_materialization_barriers=1,
-                c08_scalar_fallback_rows=0,
-                c08_logical_batch_wall_seconds=0.3,
-                c08_rows_per_gradient_launch=4.0,
-                b11_provider_draw_count=4,
-                b11_atlas_reload_count=1,
-                logical_rows=4,
-                compiled_positions=32,
-            )
+            _complete_observed_step(observer)
             capture(_run_dir)
             observer.update(
                 phase='RETENTION', retention_completed=0, retention_total=2,
@@ -316,16 +306,12 @@ class SessionObservationTests(unittest.TestCase):
                 (run_dir / 'trainer-observed.json').read_text())['visits'][-1]
 
         self.assertEqual((result.accepted, result.rejected), (1, 0))
-        self.assertEqual(
-            (snapshots[0]['phase'], snapshots[0]['activity']),
-            ('SELECTING', 'planner: compiling semantic curriculum'))
-        self.assertEqual(
-            (snapshots[1]['phase'], snapshots[1]['candidate_step']),
-            ('TRAINING', 1))
-        self.assertEqual(
-            (snapshots[2]['phase'], snapshots[2]['retention_completed'],
-             snapshots[2]['retention_total']),
-            ('RETENTION', 1, 2))
+        self.assertEqual((snapshots[0]['phase'], snapshots[0]['activity']),
+                         ('SELECTING', 'planner: compiling semantic curriculum'))
+        self.assertEqual((snapshots[1]['phase'], snapshots[1]['candidate_step']),
+                         ('TRAINING', 1))
+        self.assertEqual((snapshots[2]['phase'], snapshots[2]['retention_completed'],
+                          snapshots[2]['retention_total']), ('RETENTION', 1, 2))
         self.assertEqual((snapshots[3]['phase'], snapshots[3]['outcome']),
                          ('PUBLISHING', 'RUNNING'))
         self.assertEqual((final['phase'], final['outcome']),

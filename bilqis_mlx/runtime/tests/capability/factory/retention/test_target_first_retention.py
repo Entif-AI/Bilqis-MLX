@@ -164,8 +164,7 @@ def test_live_screen_short_circuits_before_protected_compilation():
              source_sha256="5" * 64)
     release = N(release_sha256="6" * 64)
     parent = N(baseline_evidence=None)
-    cache = N()
-    target_instrument = N(case=N(capability_id=target))
+    cache, target_instrument = N(), N(case=N(capability_id=target))
     rejection = object()
     protected_compile = Mock(side_effect=AssertionError(
         "protected compilation ran before target rejection"))

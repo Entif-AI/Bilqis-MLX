@@ -80,21 +80,16 @@ def accepted_pointer(run_dir: Path) -> dict:
     return pointer
 
 
-def _accepted_generation(
-    run_dir: Path, manifest_sha256: str, acceptance_sha256: str,
-) -> AuthenticatedGeneration:
-    if not is_digest(manifest_sha256) or not is_digest(acceptance_sha256):
-        invalid("CONTROL_PLANE_NATIVE_HISTORY_ANCHOR_INVALID")
-    root = run_dir / "bamf-bundles" / manifest_sha256
+def _manifest(root: Path, manifest_sha256: str) -> dict:
     manifest_path = root / "manifest.json"
     if (root.is_symlink() or not root.is_dir() or manifest_path.is_symlink()
             or not manifest_path.is_file()):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_BUNDLE_INVALID")
-    raw_manifest = manifest_path.read_bytes()
-    if sha(raw_manifest) != manifest_sha256:
+    raw = manifest_path.read_bytes()
+    if sha(raw) != manifest_sha256:
         invalid("CONTROL_PLANE_NATIVE_HISTORY_MANIFEST_DRIFT")
     try:
-        manifest = json.loads(raw_manifest)
+        manifest = json.loads(raw)
     except (UnicodeDecodeError, json.JSONDecodeError):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_MANIFEST_INVALID")
     if (not isinstance(manifest, dict) or manifest.get("run_id") is None
@@ -112,20 +107,10 @@ def _accepted_generation(
             or not manifest["training_objective_ref"]
             or not is_digest(manifest.get("training_objective_digest"))):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_MANIFEST_INVALID")
-    acceptance = _read_json(
-        run_dir / "bamf-acceptance" / f"{manifest_sha256}.json",
-        reason="CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_INVALID")
-    if not isinstance(acceptance, dict):
-        invalid("CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_INVALID")
-    public = {key: value for key, value in acceptance.items() if key != "binding_sha256"}
-    if (acceptance.get("binding_sha256") != acceptance_sha256
-            or sha(canonical(public)) != acceptance_sha256
-            or acceptance.get("run_id") != manifest["run_id"]
-            or acceptance.get("generation") != manifest["generation"]
-            or ("optimizer_step" in acceptance
-                and acceptance["optimizer_step"] != manifest["optimizer"].get("step"))
-            or not is_digest(acceptance.get("candidate_identity_sha256"))):
-        invalid("CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_DRIFT")
+    return manifest
+
+
+def _validated_outbox(root: Path, manifest: dict) -> tuple[dict, ...]:
     outbox = _read_bound_json(
         root, manifest["sidecars"].get("outbox"),
         reason="CONTROL_PLANE_NATIVE_HISTORY_OUTBOX_INVALID")
@@ -141,6 +126,47 @@ def _accepted_generation(
                 manifest["run_id"], manifest["generation"], index, payload):
             invalid("CONTROL_PLANE_NATIVE_HISTORY_OUTBOX_INVALID")
         seen.add(event["event_id"])
+    return tuple(outbox)
+
+
+def _learning_health(root: Path, manifest: dict):
+    binding = manifest["sidecars"].get("learning_health_state")
+    if binding is None:
+        return None
+    state = _read_bound_json(
+        root, binding, reason="CONTROL_PLANE_NATIVE_HISTORY_LEARNING_HEALTH_INVALID")
+    if not isinstance(state, dict):
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_LEARNING_HEALTH_INVALID")
+    from bilqis_mlx.diagnostics.learning_health import validate_learning_health_state
+    try:
+        validate_learning_health_state(state)
+    except (BilqisError, ValueError, TypeError, KeyError, AttributeError):
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_LEARNING_HEALTH_INVALID")
+    return state
+
+
+def _accepted_generation(
+    run_dir: Path, manifest_sha256: str, acceptance_sha256: str,
+) -> AuthenticatedGeneration:
+    if not is_digest(manifest_sha256) or not is_digest(acceptance_sha256):
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_ANCHOR_INVALID")
+    root = run_dir / "bamf-bundles" / manifest_sha256
+    manifest = _manifest(root, manifest_sha256)
+    acceptance = _read_json(
+        run_dir / "bamf-acceptance" / f"{manifest_sha256}.json",
+        reason="CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_INVALID")
+    if not isinstance(acceptance, dict):
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_INVALID")
+    public = {key: value for key, value in acceptance.items() if key != "binding_sha256"}
+    if (acceptance.get("binding_sha256") != acceptance_sha256
+            or sha(canonical(public)) != acceptance_sha256
+            or acceptance.get("run_id") != manifest["run_id"]
+            or acceptance.get("generation") != manifest["generation"]
+            or ("optimizer_step" in acceptance
+                and acceptance["optimizer_step"] != manifest["optimizer"].get("step"))
+            or not is_digest(acceptance.get("candidate_identity_sha256"))):
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_DRIFT")
+    outbox = _validated_outbox(root, manifest)
     identity = _read_bound_json(
         root, manifest["sidecars"].get("run_identity"),
         reason="CONTROL_PLANE_NATIVE_HISTORY_RUN_IDENTITY_INVALID")
@@ -156,19 +182,7 @@ def _accepted_generation(
         reason="CONTROL_PLANE_NATIVE_HISTORY_TEACHER_STATE_INVALID")
     if not isinstance(teacher_state, dict):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_TEACHER_STATE_INVALID")
-    learning_health_state = None
-    health_binding = manifest["sidecars"].get("learning_health_state")
-    if health_binding is not None:
-        learning_health_state = _read_bound_json(
-            root, health_binding,
-            reason="CONTROL_PLANE_NATIVE_HISTORY_LEARNING_HEALTH_INVALID")
-        if not isinstance(learning_health_state, dict):
-            invalid("CONTROL_PLANE_NATIVE_HISTORY_LEARNING_HEALTH_INVALID")
-        from bilqis_mlx.diagnostics.learning_health import validate_learning_health_state
-        try:
-            validate_learning_health_state(learning_health_state)
-        except (BilqisError, ValueError, TypeError, KeyError, AttributeError):
-            invalid("CONTROL_PLANE_NATIVE_HISTORY_LEARNING_HEALTH_INVALID")
+    learning_health_state = _learning_health(root, manifest)
     schema = acceptance.get("schema_version")
     teacher_anchor = acceptance.get("teacher_state_sha256")
     if schema in _EXACT_ACCEPTANCE_SCHEMAS:
@@ -180,7 +194,7 @@ def _accepted_generation(
         invalid("CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_DRIFT")
     return AuthenticatedGeneration(
         manifest_sha256, acceptance_sha256, manifest, acceptance, identity,
-        teacher_state, tuple(outbox), learning_health_state)
+        teacher_state, outbox, learning_health_state)
 
 
 def authenticated_history(run_dir: Path) -> tuple[AuthenticatedGeneration, ...]:
