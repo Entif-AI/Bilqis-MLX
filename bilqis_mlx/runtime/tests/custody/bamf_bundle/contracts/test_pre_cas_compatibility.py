@@ -21,8 +21,8 @@ from bilqis_mlx.runtime.bamf_bundle import (
 )
 from bilqis_mlx.runtime.bamf_bundle.codec import save_bamf_bundle
 from bilqis_mlx.runtime.bamf_bundle.records import (
-    ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BAMF_POINTER_SCHEMA, canonical,
-    validate_sidecars,
+    BAMF_POINTER_SCHEMA, OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA,
+    canonical, validate_sidecars,
 )
 from bilqis_mlx.runtime.tests.custody.data_plane.base import DataPlaneCase, historical_module
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
@@ -222,7 +222,7 @@ class PreCasCompatibilityTests(DataPlaneCase):
             publish_candidate(run, successor)
         self.assertEqual(json.loads((run / "bamf-state.json").read_text())["generation"], 0)
 
-    def test_live_v2_non_genesis_parent_migrates_to_acceptance_bound_successor(self):
+    def test_live_parent_migrates_to_objective_acceptance_bound_successor(self):
         run = self.root / "v2-upgrade-run"
         genesis = candidate(parent_state())
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
@@ -273,6 +273,7 @@ class PreCasCompatibilityTests(DataPlaneCase):
         child_manifest = json.loads(
             (run / successor["bundle"] / "manifest.json").read_text())
         self.assertEqual(
-            child_manifest["schema"], ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA)
+            child_manifest["schema"],
+            OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA)
         self.assertEqual(
             child_manifest["parent_acceptance_sha256"], accepted_one.digest)
