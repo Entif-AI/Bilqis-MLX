@@ -160,6 +160,7 @@ class FactoryRetryRestorationTests(AtlasResourcesFixture):
         import mlx.core as mx
 
         from bilqis_mlx.runtime.candidate import retry
+        from bilqis_mlx.runtime.training_objective import current_training_objective
 
         weights = mx.array([1.0])
         optimizer = SimpleNamespace(
