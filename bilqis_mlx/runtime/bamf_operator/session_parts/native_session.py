@@ -17,6 +17,9 @@ from bilqis_mlx.runtime.factory_retention_owner import (
     bind_current_retention_source_rows, bind_factory_baseline_successor,
     derive_current_plasticity_escape_state, evaluate_factory_retention_candidate,
 )
+from bilqis_mlx.runtime._factory_identity_evaluation import (
+    _finalize_factory_generation_authority,
+)
 from bilqis_mlx.runtime.foundation_teacher_owner import derive_accepted_teacher_successor
 from bilqis_mlx.runtime.priority_rejection_replay import (
     candidate_step_horizon, rejection_attempt_ordinals,
@@ -155,6 +158,7 @@ def retention_result(
         resource_observation=_resource_observation,
         derive_successor=derive_accepted_teacher_successor,
         bind_baseline_successor=bind_factory_baseline_successor,
+        finalize_generation_authority=_finalize_factory_generation_authority,
         derive_plasticity_escape=derive_current_plasticity_escape_state,
         prepared_visit_type=BamfPreparedVisit, emit_progress=emit_progress,
         measure_observed_phase_fn=measure_observed_phase)
