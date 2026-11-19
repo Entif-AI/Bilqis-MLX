@@ -40,6 +40,35 @@ def _observe(observer, **fields):
         pass
 
 
+_BOUNDARY_CUMULATIVE_FIELDS = frozenset({
+    "championship_prepare_wall_seconds",
+    "championship_solver_wall_seconds",
+    "championship_candidate_wall_seconds",
+    "championship_case_count",
+    "championship_shared_backbone_launches",
+    "championship_scalar_neural_launches",
+})
+
+
+def _boundary_observer(observer):
+    if observer is None:
+        return None
+    totals = {}
+
+    def observe(fields):
+        if not isinstance(fields, dict):
+            return
+        projected = {}
+        for field, value in fields.items():
+            if field in _BOUNDARY_CUMULATIVE_FIELDS and type(value) in (int, float):
+                value = totals.get(field, 0) + value
+                totals[field] = value
+            projected[field] = value
+        observer(projected)
+
+    return observe
+
+
 def championship_boundary_capabilities(selection, target_capability: str) -> tuple[str, ...]:
     """Return the current cadence phase only at its final accepted teaching attempt.
 
@@ -120,6 +149,7 @@ def bind_accepted_championship_successor(
     """Run the explicit accepted-candidate championship boundary outside C05."""
     _require_factory_evaluation(evaluation)
     started = time.perf_counter()
+    evidence_observer = _boundary_observer(observer)
     cohort = evaluation.championship_cohort
     assessment = evaluation.championship_assessment
     if (cohort is None) != (assessment is None):
@@ -130,7 +160,7 @@ def bind_accepted_championship_successor(
             _invalid("BAMF_CHAMPIONSHIP_BOUNDARY_CONTEXT_REQUIRED")
         cohort, assessment = capability_championship_evidence(
             source_context, successor, artifact_path, cache, target_capability,
-            training, evidence_stage, observer=observer)
+            training, evidence_stage, observer=evidence_observer)
     if type(cohort) is not EvaluationCohort or type(assessment) is not Assessment:
         _invalid("BAMF_CHAMPIONSHIP_ACCEPTED_EVIDENCE_INVALID")
     groups_by_capability = dict(cohort.capability_groups)
@@ -172,7 +202,7 @@ def bind_accepted_championship_successor(
             continue
         measured_cohort, measured_assessment = capability_championship_evidence(
             source_context, successor, artifact_path, cache, capability,
-            championship_training, cohort.evidence_stage, observer=observer)
+            championship_training, cohort.evidence_stage, observer=evidence_observer)
         evidence.append((capability, measured_cohort, measured_assessment))
 
     for capability, measured_cohort, measured_assessment in evidence:

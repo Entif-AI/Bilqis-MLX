@@ -36,10 +36,13 @@ class NativeCapabilityChampionshipTests(NativeChampionshipCase):
                 checkpoint_origin_group=GROUP,
                 observer=observed.append)
 
-        championship.assert_called_once_with(
-            self.context, successor, "artifact", self.cache, CAPABILITY,
-            (("family:train",), ("episode:train",)),
-            EvidenceStage.FOUNDATION_ACQUISITION, observer=observed.append)
+        championship.assert_called_once()
+        self.assertEqual(
+            championship.call_args.args,
+            (self.context, successor, "artifact", self.cache, CAPABILITY,
+             (("family:train",), ("episode:train",)),
+             EvidenceStage.FOUNDATION_ACQUISITION))
+        self.assertTrue(callable(championship.call_args.kwargs["observer"]))
         self.assertIn(CAPABILITY, result.championship_state["active_roles"])
 
     def test_exact_ninety_percent_keeps_no_active_title_or_checkpoint_custody(self):
@@ -84,10 +87,28 @@ class NativeCapabilityChampionshipTests(NativeChampionshipCase):
             successor, other_cohort, other_contexts, 19, "9" * 64)
         target_binding = replace(target_binding, checkpoint_origin_group=GROUP)
         other_binding = replace(other_binding, checkpoint_origin_group=GROUP)
+        observed = []
 
         def current_binding(*args, **_kwargs):
             measured = args[7]
             return other_binding if measured.capability_groups[0][0] == SIBLING else target_binding
+
+        def championship_evidence(
+                _context, _successor, _artifact, _cache, capability,
+                _training, _stage, *, observer=None):
+            if observer is not None:
+                observer({
+                    "championship_prepare_wall_seconds": (
+                        1.0 if capability == CAPABILITY else 2.0),
+                    "championship_case_count": 20,
+                    "championship_shared_backbone_launches": 1,
+                    "championship_scalar_neural_launches": 0,
+                })
+            return (
+                (self.cohort, target_assessment)
+                if capability == CAPABILITY
+                else (other_cohort, other_assessment)
+            )
 
         with patch(
                 "bilqis_mlx.runtime.bamf_operator.championship."
@@ -97,14 +118,24 @@ class NativeCapabilityChampionshipTests(NativeChampionshipCase):
                 side_effect=AssertionError("empty titles must not replay incumbents")), patch(
                 "bilqis_mlx.runtime.bamf_operator.championship."
                 "capability_championship_evidence",
-                return_value=(other_cohort, other_assessment)):
+                side_effect=championship_evidence):
             result = bind_accepted_championship_successor(
                 Path("unused"), self.parent, self.cache, successor,
                 self.context, "artifact", CAPABILITY,
-                evaluation(self.cohort, target_assessment,
-                           evaluated_capability_ids=(CAPABILITY, SIBLING)),
-                checkpoint_origin_group=GROUP)
+                evaluation(None, None, evaluated_capability_ids=(CAPABILITY, SIBLING)),
+                checkpoint_origin_group=GROUP,
+                training=((), ()),
+                evidence_stage=EvidenceStage.FOUNDATION_ACQUISITION,
+                observer=observed.append,
+                boundary_capabilities=(CAPABILITY, SIBLING))
         role = result.championship_state["active_roles"][SIBLING]
         self.assertEqual(role["capability_group"], OTHER_GROUP)
         self.assertEqual(role["checkpoint_origin_group"], GROUP)
         self.assertEqual(role["checkpoint"]["sha256"], other_binding.checkpoint.sha256)
+        profile = {}
+        for event in observed:
+            profile.update(event)
+        self.assertEqual(profile["championship_prepare_wall_seconds"], 3.0)
+        self.assertEqual(profile["championship_case_count"], 40)
+        self.assertEqual(profile["championship_shared_backbone_launches"], 2)
+        self.assertEqual(profile["championship_scalar_neural_launches"], 0)
