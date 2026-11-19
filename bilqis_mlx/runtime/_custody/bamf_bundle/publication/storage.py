@@ -61,7 +61,8 @@ def _require_bundle_root(run_dir: Path, *, create: bool) -> Path:
 
 
 @contextlib.contextmanager
-def _pointer_lock(run_dir: Path, *, create: bool = False):
+def _pointer_file_lock(
+        run_dir: Path, *, create: bool, operation: int, synchronize: bool):
     run_dir = Path(run_dir)
     if create:
         _require_run_root(run_dir)
@@ -99,12 +100,13 @@ def _pointer_lock(run_dir: Path, *, create: bool = False):
                 or (opened.st_dev, opened.st_ino) != (named.st_dev, named.st_ino)):
             invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
         try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(fd, operation | fcntl.LOCK_NB)
         except BlockingIOError:
             invalid("BAMF_POINTER_WRITER_ACTIVE")
         locked = True
-        os.fsync(fd)
-        _fsync_directory(run_dir)
+        if synchronize:
+            os.fsync(fd)
+            _fsync_directory(run_dir)
         try:
             yield
         except BaseException as error:
@@ -132,6 +134,18 @@ def _pointer_lock(run_dir: Path, *, create: bool = False):
                     "BAMF_POINTER_LOCK_RELEASE_FAILED:" + cleanup_error.__class__.__name__)
             else:
                 raise cleanup_error
+
+
+def _pointer_lock(run_dir: Path, *, create: bool = False):
+    """Exclusive nonblocking lock for pointer mutation and mutation-bound work."""
+    return _pointer_file_lock(
+        run_dir, create=create, operation=fcntl.LOCK_EX, synchronize=True)
+
+
+def _pointer_read_lock(run_dir: Path):
+    """Shared nonblocking lock for read-only accepted-state custody."""
+    return _pointer_file_lock(
+        run_dir, create=False, operation=fcntl.LOCK_SH, synchronize=False)
 
 
 def _initial_generation_pointer_lock(run_dir: Path):

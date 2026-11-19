@@ -31,9 +31,9 @@ def _checkpoint_identity(student) -> str:
 
 def _accepted_pointer(run_dir: Path) -> dict:
     from bilqis_mlx.runtime.bamf_bundle.publication.pointer_storage import _read_pointer
-    from bilqis_mlx.runtime.bamf_bundle.publication.storage import _pointer_lock
+    from bilqis_mlx.runtime.bamf_bundle.publication.storage import _pointer_read_lock
     pointer_path = Path(run_dir) / "bamf-state.json"
-    with _pointer_lock(pointer_path.parent):
+    with _pointer_read_lock(pointer_path.parent):
         pointer = _read_pointer(pointer_path)
     if not isinstance(pointer, dict):
         _invalid("BAMF_RUN_STOP_ACCEPTED_POINTER_MISSING")

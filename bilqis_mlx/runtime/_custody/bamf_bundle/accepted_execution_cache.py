@@ -17,7 +17,7 @@ from .bundle_currentness import (
     bind_bamf_bundle_currentness, require_bamf_bundle_currentness,
 )
 from .execution_cache import _new_execution_cache
-from .publication import _pointer_lock, _read_pointer
+from .publication import _pointer_read_lock, _read_pointer
 from .records import CompleteStudent, canonical, invalid, sha
 
 
@@ -231,7 +231,7 @@ def _make_execution_cache_runtime():
     def current_hydration(run_dir: Path, *, metrics=None):
         run_dir = Path(run_dir).resolve()
         key = str(run_dir)
-        with _pointer_lock(run_dir):
+        with _pointer_read_lock(run_dir):
             pointer = _read_pointer(run_dir / "bamf-state.json")
             return _current_hydration_locked(
                 lock, hydrations, executions, run_dir, key, pointer,
@@ -240,7 +240,7 @@ def _make_execution_cache_runtime():
     def bind(run_dir: Path, *, metrics=None):
         run_dir = Path(run_dir).resolve()
         key = str(run_dir)
-        with _pointer_lock(run_dir):
+        with _pointer_read_lock(run_dir):
             pointer = _read_pointer(run_dir / "bamf-state.json")
             hydration = _current_hydration_locked(
                 lock, hydrations, executions, run_dir, key, pointer,
@@ -290,7 +290,7 @@ def _make_execution_cache_runtime():
 
     def bind_publication_parent(run_dir: Path):
         run_dir = Path(run_dir).resolve()
-        with _pointer_lock(run_dir):
+        with _pointer_read_lock(run_dir):
             pointer = _read_pointer(run_dir / "bamf-state.json")
             return bind_publication_parent_locked(run_dir, pointer)
 
