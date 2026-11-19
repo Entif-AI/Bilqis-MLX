@@ -213,6 +213,23 @@ def _selection_projection(
     return selected
 
 
+def current_teacher_projection(
+        run_dir: Path, parent: CompleteStudent, cache,
+        projection: TeacherCustodyProjection) -> TeacherCustodyProjection:
+    """Reduce durable current-generation observations over the immutable teacher base."""
+    if type(projection) is not TeacherCustodyProjection:
+        invalid("TEACHER_CUSTODY_PROJECTION_INVALID")
+    epoch = restore_teacher_lineage(projection.teacher_state)
+    from bilqis_mlx.runtime.outcomes.replay import replay_rejected_outcomes
+    teacher = replay_rejected_outcomes(
+        Path(run_dir), parent, cache, epoch.teacher())
+    if teacher == epoch.teacher():
+        return projection
+    return _selection_projection(
+        projection,
+        replace(epoch, current_json=json.dumps(teacher, sort_keys=True, allow_nan=False)))
+
+
 def select_accepted_teacher_visit(
         run_dir: Path, engine, school, rng, learning_settings,
         teacher_curriculum_scope, previsit_diagnostics, lesson_grade, *,
@@ -225,6 +242,7 @@ def select_accepted_teacher_visit(
     projection = _c03_projection(
         parent, legacy_receipt=legacy_receipt,
         adaptation=adaptation, prior_region=prior_region)
+    projection = current_teacher_projection(run_dir, parent, cache, projection)
     epoch = restore_teacher_lineage(projection.teacher_state)
     school_student = getattr(getattr(school, "current_student", None), "sha256", None)
     if school_student != candidate_identity_digest(parent.retained_state):
@@ -316,5 +334,6 @@ def derive_c03_successor_bundle(
 
 __all__ = (
     "BoundTeacherVisit",
-    "derive_c03_successor_bundle", "rebind_package_import_teacher_custody",
+    "current_teacher_projection", "derive_c03_successor_bundle",
+    "rebind_package_import_teacher_custody",
 )

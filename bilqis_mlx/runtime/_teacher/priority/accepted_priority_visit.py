@@ -20,10 +20,9 @@ from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
 from bilqis_mlx.semantics.domains import contract_digest
 from .accepted_teacher_custody import (
     _accepted_parent, _c03_projection, _issue_bound_visit, _require_current_visit,
-    _selection_projection,
+    _selection_projection, current_teacher_projection,
 )
 from .priority_qualification import _grade, requalify_priority
-from bilqis_mlx.runtime.outcomes.replay import replay_rejected_outcomes
 from bilqis_mlx.runtime.outcomes.issuance import context_for_selection
 from .accepted_priority_candidate import execute_accepted_priority_candidate
 from .accepted_priority_visit_contracts import (
@@ -48,7 +47,6 @@ def _selected_priority_result(
         plasticity_escape, priority_features, cadence_authorization,
         source_materialization_wall_seconds):
     capability = option.context.capability_id
-    teacher = replay_rejected_outcomes(run_dir, parent, cache, teacher)
     key, policy, metadata = select_visit_policy(
         engine, teacher, capability, school, rng, learning_settings,
         option.context.scope,
@@ -163,6 +161,7 @@ def select_accepted_priority_visit(
             cadence_authorization, cadence_ids, cadence_metadata)
     projection = _c03_projection(parent, legacy_receipt=legacy_receipt,
                                  adaptation=adaptation, prior_region=prior_region)
+    projection = current_teacher_projection(run_dir, parent, cache, projection)
     epoch = restore_teacher_lineage(projection.teacher_state)
     teacher = _teacher(epoch, school)
     if not isinstance(learning_settings, Settings):
