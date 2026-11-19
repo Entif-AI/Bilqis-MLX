@@ -7,37 +7,17 @@ fresh/generalization cohorts remain non-authorizing measurements under ADR-134.
 """
 from __future__ import annotations
 
-import hashlib
-import json
 from dataclasses import dataclass
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-
-LEGACY_DECISION_SCHEMA = "bilqis.mlx.candidate-retention-decision/v1"
-PREVIOUS_DECISION_SCHEMA = "bilqis.mlx.candidate-retention-decision/v2"
-PREVIOUS_BASELINE_DECISION_SCHEMA = "bilqis.mlx.candidate-retention-decision/v3"
-PREVIOUS_SCOPE_DECISION_SCHEMA = "bilqis.mlx.candidate-retention-decision/v4"
-DECISION_SCHEMA = "bilqis.mlx.candidate-retention-decision/v5"
-BLOCKING_SCORE_BUDGET_WIDTH = 5
-ACCEPTED_DECISION = "PROVISIONAL"
-REJECTED_DECISION = "REJECT"
-ACCEPTING_REASON = "PAIRED_SCREEN_WITHIN_BUDGET"
-_V2_DECISION_FIELDS = (
-    "decision", "reason", "parent_generation", "candidate_generation",
-    "evidence_sha256", "policy_sha256", "schema_version",
-)
-_V3_DECISION_FIELDS = (
-    "decision", "reason", "parent_generation", "candidate_generation",
-    "evidence_sha256", "policy_sha256", "blocking_capability",
-    "blocking_scope", "baseline_coverage", "schema_version",
-)
-_V4_DECISION_FIELDS = (
-    *_V3_DECISION_FIELDS[:-1],
-    "evaluated_capability_ids", "retention_protection_plan_sha256",
-    "broad_certification_trigger", "schema_version",
-)
-_DECISION_FIELDS = (
-    *_V4_DECISION_FIELDS[:-1], "blocking_score_budget", "schema_version",
+from .atlas_retention_decision_codec import (
+    ACCEPTED_DECISION, ACCEPTING_REASON, DECISION_FIELDS, DECISION_SCHEMA,
+    LEGACY_DECISION_SCHEMA, PREVIOUS_BASELINE_DECISION_SCHEMA,
+    PREVIOUS_DECISION_SCHEMA, PREVIOUS_SCOPE_DECISION_SCHEMA, REJECTED_DECISION,
+    ParsedCandidateRetentionDecision, canonical as _canonical,
+    invalid as _invalid, parse_record, valid_baseline_coverage,
+    valid_blocking_score_budget as _valid_blocking_score_budget,
+    valid_digest as _digest,
 )
 
 
@@ -76,40 +56,17 @@ def _new_decision_owner():
     def issued_baseline_ledger_sha256(value):
         return baseline_ledger_sha256.get(id(value))
 
+    def rebind_generation_authority(value, previous, expected):
+        """Advance one live decision from its screened candidate to final B13 custody."""
+        require(value)
+        if (not _digest(previous) or not _digest(expected)
+                or generation_authority.get(id(value)) != previous):
+            _invalid()
+        generation_authority[id(value)] = expected
+        return value
+
     return (require, require_generation_authority, issued_generation_authority,
-            issued_baseline_ledger_sha256, issue)
-_LEGACY_FIELDS = (
-    "decision", "reason", "target_gain", "protected_net_gain", "schema_version",
-)
-
-
-def _invalid() -> None:
-    ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.INVALID)
-
-
-def _canonical(value) -> bytes:
-    return (json.dumps(value, sort_keys=True, separators=(",", ":"),
-                       ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
-
-
-def _digest(value: object) -> bool:
-    return (isinstance(value, str) and len(value) == 64
-            and all(c in "0123456789abcdef" for c in value))
-
-
-def _valid_blocking_score_budget(value) -> bool:
-    if value is None:
-        return True
-    if (not isinstance(value, (list, tuple))
-            or len(value) != BLOCKING_SCORE_BUDGET_WIDTH):
-        return False
-    capability, before, after, total, allowed = value
-    return (isinstance(capability, str) and bool(capability)
-            and all(type(number) is int for number in (before, after, total, allowed))
-            and 0 <= before <= total and 0 <= after <= total
-            and 0 <= allowed <= total)
-
-
+            issued_baseline_ledger_sha256, rebind_generation_authority, issue)
 @dataclass(frozen=True)
 class CandidateRetentionDecision:
     """Live token issued only after C05 runs its stage-authoritative evaluation."""
@@ -145,7 +102,7 @@ class CandidateRetentionDecision:
                     and (not isinstance(self.blocking_scope, str)
                          or not self.blocking_scope))
                 or (self.baseline_coverage is not None
-                    and not _valid_baseline_coverage(self.baseline_coverage))
+                    and not valid_baseline_coverage(self.baseline_coverage))
                 or not isinstance(self.evaluated_capability_ids, tuple)
                 or any(not isinstance(item, str) or not item
                        for item in self.evaluated_capability_ids)
@@ -167,10 +124,11 @@ class CandidateRetentionDecision:
         return self.decision == ACCEPTED_DECISION
 
     def _public_record(self) -> dict:
-        return {name: getattr(self, name) for name in _DECISION_FIELDS}
+        return {name: getattr(self, name) for name in DECISION_FIELDS}
 
     @property
     def digest(self) -> str:
+        import hashlib
         return hashlib.sha256(_canonical(self._public_record())).hexdigest()
 
     def to_record(self) -> dict:
@@ -178,98 +136,8 @@ class CandidateRetentionDecision:
 
     @classmethod
     def from_record(cls, record) -> "ParsedCandidateRetentionDecision":
-        """Parse v1/v2 evidence for inspection without granting issuer authority."""
-        if not isinstance(record, dict):
-            _invalid()
-        schema = record.get("schema_version")
-        names = (_LEGACY_FIELDS if schema == LEGACY_DECISION_SCHEMA
-                 else _V2_DECISION_FIELDS if schema == PREVIOUS_DECISION_SCHEMA
-                 else _V3_DECISION_FIELDS
-                 if schema == PREVIOUS_BASELINE_DECISION_SCHEMA
-                 else _V4_DECISION_FIELDS
-                 if schema == PREVIOUS_SCOPE_DECISION_SCHEMA
-                 else _DECISION_FIELDS if schema == DECISION_SCHEMA else ())
-        if not names or set(record) != set(names) | {"decision_sha256"}:
-            _invalid()
-        if (record["decision"] not in {ACCEPTED_DECISION, REJECTED_DECISION}
-                or not isinstance(record["reason"], str) or not record["reason"]
-                or (record["decision"] == ACCEPTED_DECISION)
-                != (record["reason"] == ACCEPTING_REASON)):
-            _invalid()
-        if names == _LEGACY_FIELDS:
-            if (type(record["target_gain"]) is not bool
-                    or type(record["protected_net_gain"]) is not int):
-                _invalid()
-        elif any(not _digest(record[name]) for name in (
-                "parent_generation", "candidate_generation",
-                "evidence_sha256", "policy_sha256")):
-            _invalid()
-        if (names in {_V3_DECISION_FIELDS, _DECISION_FIELDS}
-                and ((record["blocking_capability"] is not None
-                      and (not isinstance(record["blocking_capability"], str)
-                           or not record["blocking_capability"]))
-                     or (record["blocking_scope"] is not None
-                         and (not isinstance(record["blocking_scope"], str)
-                              or not record["blocking_scope"]))
-                     or (record["baseline_coverage"] is not None
-                         and not _valid_baseline_coverage(record["baseline_coverage"])))):
-            _invalid()
-        if names in {_V4_DECISION_FIELDS, _DECISION_FIELDS}:
-            evaluated = record["evaluated_capability_ids"]
-            if (not isinstance(evaluated, (list, tuple))
-                    or any(not isinstance(item, str) or not item for item in evaluated)
-                    or len(set(evaluated)) != len(evaluated)
-                    or (record["retention_protection_plan_sha256"] is not None
-                        and not _digest(record["retention_protection_plan_sha256"]))
-                    or (record["broad_certification_trigger"] is not None
-                        and (not isinstance(record["broad_certification_trigger"], str)
-                             or not record["broad_certification_trigger"]))
-                    or (record["retention_protection_plan_sha256"] is not None
-                        and record["broad_certification_trigger"] is not None)):
-                _invalid()
-        if names == _DECISION_FIELDS and not _valid_blocking_score_budget(
-                record["blocking_score_budget"]):
-            _invalid()
-        payload = {name: record[name] for name in names}
-        if record["decision_sha256"] != hashlib.sha256(_canonical(payload)).hexdigest():
-            _invalid()
-        return ParsedCandidateRetentionDecision(payload)
-
-
-@dataclass(frozen=True)
-class ParsedCandidateRetentionDecision:
-    """Historical evidence is not a live acceptance capability."""
-    fields: dict
-
-    @property
-    def decision(self) -> str:
-        return self.fields["decision"]
-
-    @property
-    def reason(self) -> str:
-        return self.fields["reason"]
-
-    @property
-    def accepted(self) -> bool:
-        return self.decision == ACCEPTED_DECISION
-
-    @property
-    def digest(self) -> str:
-        return hashlib.sha256(_canonical(self.fields)).hexdigest()
-
-    def to_record(self) -> dict:
-        return {**self.fields, "decision_sha256": self.digest}
-
-
-def _valid_baseline_coverage(record) -> bool:
-    if record is None:
-        return True
-    try:
-        from bilqis_mlx.runtime.baseline.currentness import BaselineCoverage
-        BaselineCoverage.from_record(record)
-    except Exception:
-        return False
-    return True
+        """Parse historical evidence without granting live issuer authority."""
+        return parse_record(record)
 
 
 def decide_candidate_retention(
@@ -290,49 +158,10 @@ def decide_candidate_retention(
 
 (_require_issued_decision, _require_issued_decision_generation_authority,
  _issued_decision_generation_authority, _issued_decision_baseline_ledger_sha256,
+ _rebind_issued_decision_generation_authority,
  _raw_issue_decision) = _new_decision_owner()
 
 
-def _make_factory_retention_issuer(raw_issue):
-    def issue_factory_retention_decision(owner_evaluation) -> CandidateRetentionDecision:
-        """Issue live acceptance authority only from the Factory C05 owner."""
-        from bilqis_mlx.runtime.factory_retention_owner import (
-            FactoryRetentionEvaluation, _require_factory_evaluation,
-        )
-        from bilqis_mlx.runtime.capability_retention import DecisionStatus
-
-        if type(owner_evaluation) is not FactoryRetentionEvaluation:
-            _invalid()
-        _require_factory_evaluation(owner_evaluation)
-        owner_evaluation.__post_init__()
-        result = owner_evaluation.decision
-        status = (ACCEPTED_DECISION if result.status is DecisionStatus.ELIGIBLE
-                  else REJECTED_DECISION)
-        return raw_issue((
-            ("decision", status),
-            ("reason", result.reason),
-            ("parent_generation", owner_evaluation.parent_candidate_sha256),
-            ("candidate_generation", owner_evaluation.candidate_candidate_sha256),
-            ("evidence_sha256", result.evidence_sha256),
-            ("policy_sha256", result.policy_sha256),
-            ("blocking_capability", result.blocking_capability),
-            ("blocking_scope", result.blocking_scope),
-            ("baseline_coverage", (
-                result.baseline_coverage.to_record()
-                if result.baseline_coverage is not None else None)),
-            ("evaluated_capability_ids", result.evaluated_capability_ids),
-            ("retention_protection_plan_sha256",
-             result.retention_protection_plan_sha256),
-            ("broad_certification_trigger", result.broad_certification_trigger),
-            ("blocking_score_budget", result.blocking_score_budget),
-            ("schema_version", DECISION_SCHEMA),
-        ), generation_authority_sha256=(
-            owner_evaluation.candidate_generation_authority_sha256),
-            expected_baseline_ledger_sha256=owner_evaluation.baseline_ledger.digest)
-
-    return issue_factory_retention_decision
-
-
-issue_factory_retention_decision = _make_factory_retention_issuer(
-    _raw_issue_decision)
+from .atlas_retention_decision_factory import make_factory_retention_issuer
+issue_factory_retention_decision = make_factory_retention_issuer(_raw_issue_decision)
 del _raw_issue_decision

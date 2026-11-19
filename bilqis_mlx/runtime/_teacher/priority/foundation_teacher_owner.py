@@ -178,7 +178,7 @@ def accepted_teacher_trajectory(visit: BoundTeacherVisit) -> TeacherTrajectoryAd
 
 def derive_accepted_teacher_successor(
         run_dir, retained_state, visit: BoundTeacherVisit, *,
-        delivery_events: tuple):
+        delivery_events: tuple, transaction=None):
     """Build an accepted B13 successor with C16.3-owned trajectory state."""
     from bilqis_mlx.runtime.accepted_teacher_custody import (
         derive_c03_successor_bundle,
@@ -187,7 +187,7 @@ def derive_accepted_teacher_successor(
     candidate = derive_c03_successor_bundle(
         run_dir, retained_state, visit,
         next_seed=trajectory.next_seed, cursor=trajectory.cursor,
-        delivery_events=delivery_events)
+        delivery_events=delivery_events, transaction=transaction)
     from dataclasses import replace
     teacher_state = advance_priority_rotation(
         candidate.teacher_state, visit.identity.capability_id)

@@ -29,6 +29,7 @@ from ..live_grade_a import (GENERATOR as A_COHORT_GENERATOR, RELEASE as A_RELEAS
 from .grade_a_presentation import (
     IRRELEVANT_CONTEXT_VARIATION as A_IRRELEVANT_CONTEXT_VARIATION,
     MEMBER_CONTEXT_VARIATION as A_MEMBER_CONTEXT_VARIATION,
+    check_a_presentation,
     constructor_digest as a_provider_digest,
     draw_a,
 )
@@ -195,7 +196,7 @@ def live_source_registry() -> SourceAdapterRegistry:
             cohort_generator_id=A_COHORT_GENERATOR,
             variation_axes=("source-valid", "balanced-gold", "fresh-seed",
                             A_MEMBER_CONTEXT_VARIATION, A_IRRELEVANT_CONTEXT_VARIATION),
-            cohort_releases=((A_RELEASE, a_provider_digest()),)), draw_a, check_predicate,
+            cohort_releases=((A_RELEASE, a_provider_digest()),)), draw_a, check_a_presentation,
             semantic_footprint=semantic_footprint),
         RegisteredSourceAdapter(SourceAdapter(
             "source.micro.boolean-connectives/v1", "bilqis_mlx.live_grade_b.draw_connectives",

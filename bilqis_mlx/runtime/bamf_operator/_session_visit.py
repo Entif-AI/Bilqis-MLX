@@ -17,7 +17,8 @@ def visit(
         **({"observer": observer} if observer is not None else {}))
     if prepared.status in {
         "HELD", "ACTION_REQUIRED", "GRADE_TRANSITIONED",
-        "CERTIFICATION_FAILED", "CERTIFICATION_SUPERSEDED",
+        "ACQUISITION_REARMED", "CERTIFICATION_FAILED",
+        "CERTIFICATION_SUPERSEDED",
     }:
         return prepared.status
     parent, selection = prepared.parent, prepared.selection

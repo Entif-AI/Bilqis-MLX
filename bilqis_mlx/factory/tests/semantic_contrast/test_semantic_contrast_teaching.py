@@ -32,6 +32,7 @@ from bilqis_mlx.factory.semantic_contrasts import (
 from bilqis_mlx.factory.teaching import (
     describe_delivered_teaching,
     draw_teaching_option_rows,
+    optional_teaching_rows,
 )
 from bilqis_mlx.factory.tests.semantic_contrast.test_semantic_contrasts import source_frame
 from bilqis_mlx.live_grade_c import registry_graph
@@ -123,6 +124,20 @@ class SemanticContrastTeacherBridgeTests(unittest.TestCase):
         self.assertIn(OPTION_ID, execution.teaching_option_ids)
         adapter = self.registry.require(event_frames.GENERATOR, event_frames.ORACLE)
         self.assertIs(adapter.enrich, enrich_contrasts)
+
+    def test_absent_runtime_choice_means_no_optional_enrichment(self):
+        self.assertEqual(
+            optional_teaching_rows(
+                None, self.graph, self.release, self.registry,
+                capability=CAPABILITY, seed=7, enabled=True,
+            ),
+            (),
+        )
+        with self.assertRaisesRegex(ValueError, "FACTORY_TEACHING_OPTION_EMPTY"):
+            draw_teaching_option_rows(
+                None, self.graph, self.release, self.registry,
+                capability=CAPABILITY, option_id=OPTION_ID, seed=7, each=1,
+            )
 
     def test_provider_identity_binds_semantic_contrast_teaching_implementation(self):
         baseline = event_frames.provider_implementation_digest()

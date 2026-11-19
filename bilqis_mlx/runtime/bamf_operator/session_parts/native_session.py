@@ -71,6 +71,15 @@ def priority_hold_result(
     if certification is None:
         return BamfPreparedVisit(status, parent, selection=selection)
     if certification.status == "SUCCEEDED":
+        from ..accepted_learning_evidence import refresh_accepted_learning_evidence
+        evidence = refresh_accepted_learning_evidence(
+            Path(run_dir), progress=progress)
+        emit_progress(
+            progress,
+            "grade boundary learner evidence refresh: "
+            f"{evidence.measured} measured, {evidence.passed} passed; "
+            f"next {evidence.final_action}",
+        )
         if not adopt_and_activate_certified_successor(
                 Path(run_dir), context,
                 certification_receipt_sha256=certification.receipt.receipt_sha256,
@@ -85,6 +94,24 @@ def priority_hold_result(
         return BamfPreparedVisit("GRADE_TRANSITIONED", parent, selection=selection)
     if certification.status == "SUPERSEDED":
         return BamfPreparedVisit("CERTIFICATION_SUPERSEDED", parent, selection=selection)
+    if certification.status == "NOT_ELIGIBLE":
+        from bilqis_mlx.runtime.accepted_priority_visit_contracts import (
+            require_priority_cadence_authorization,
+            require_priority_lawful_frontier,
+        )
+        from bilqis_mlx.runtime.active_grade_cadence import (
+            rearm_active_grade_acquisition,
+        )
+        rearm_active_grade_acquisition(
+            Path(run_dir),
+            require_priority_cadence_authorization(selection),
+            require_priority_lawful_frontier(selection),
+        )
+        emit_progress(
+            progress,
+            "grade certification entry not yet eligible; resumed ordinary MAIN acquisition",
+        )
+        return BamfPreparedVisit("ACQUISITION_REARMED", parent, selection=selection)
     if certification.status == "FAILED":
         return BamfPreparedVisit("CERTIFICATION_FAILED", parent, selection=selection)
     return BamfPreparedVisit(status, parent, selection=selection)
@@ -217,6 +244,7 @@ def accepted_admission_reentry(
     stop_status = {
         AdmissionFlywheelStatus.FIXED_POINT: "FIXED_POINT",
         AdmissionFlywheelStatus.HELD: "ADMISSION_HOLD",
+        AdmissionFlywheelStatus.IMPLEMENTATION_UNCOVERED: "IMPLEMENTATION_UNCOVERED",
         AdmissionFlywheelStatus.LEASE_REQUIRED: "ADMISSION_LEASE_REQUIRED",
     }.get(result.status)
     return result.status.value, result.advances, stop_status

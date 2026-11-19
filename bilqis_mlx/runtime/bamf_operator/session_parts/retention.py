@@ -102,7 +102,7 @@ def retention_result(
         run_dir, context, selection, candidate_evidence, decision, how_outcome))
     successor, learning_health = _accepted_successor(
         decision, run_dir, parent, context, atlas_path, selection, capability,
-        cache, retained,
+        cache, retained, step.transaction,
         rejection_journal_ordinal, resource, candidate_evidence, capture, how_outcome,
         derive_successor, bind_baseline_successor, evaluation,
         credited_visit, carry_credit_to_successor, plasticity_escape)
@@ -140,7 +140,7 @@ def _instruction_event(run_dir, parent, cache, capability):
 
 def _accepted_successor(
         decision, run_dir, parent, context, atlas_path, selection, capability,
-        cache, retained,
+        cache, retained, transaction,
         rejection_journal_ordinal, resource, candidate_evidence, capture, how_outcome,
         derive_successor, bind_baseline_successor, evaluation,
         credited_visit, carry_credit_to_successor, plasticity_escape):
@@ -173,7 +173,8 @@ def _accepted_successor(
            and selection.metadata.get("cadence") is not None else {}),
     }, instruction_event)
     successor = derive_successor(
-        run_dir, retained, learned_visit, delivery_events=events)
+        run_dir, retained, learned_visit, delivery_events=events,
+        transaction=transaction)
     if health_state is not None:
         from dataclasses import replace
         successor = replace(successor, learning_health_state=health_state)
@@ -184,6 +185,11 @@ def _accepted_successor(
         run_dir, parent, cache, successor, context, atlas_path,
         capability, evaluation,
         checkpoint_origin_group=getattr(selection, "lesson_grade", None))
+    from bilqis_mlx.learning.atlas_retention_generation_authority import (
+        bind_factory_retention_generation_authority,
+    )
+    bind_factory_retention_generation_authority(
+        decision, evaluation, successor)
     return successor, learning_health
 
 

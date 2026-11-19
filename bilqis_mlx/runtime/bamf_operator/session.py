@@ -181,9 +181,4 @@ def operate_bamf(
         before_visits=before_visits,
         bind_run_authority=(
             lambda current_run_dir:
-            bind_native_run_authority(current_run_dir, run_authority)),
-        accepted_reentry=(
-            None if parent_graph is None else
-            lambda current_run_dir, current_reserve_gib, current_progress:
-            _accepted_learning_reentry(
-                current_run_dir, parent_graph, current_reserve_gib, current_progress)))
+            bind_native_run_authority(current_run_dir, run_authority)))

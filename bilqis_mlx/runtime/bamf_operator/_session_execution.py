@@ -38,7 +38,7 @@ def _run_visits(
         run_dir, *, deadline, max_visits, steps_per_visit, reserve_gib,
         source_prefetch_workers, progress, source_prefetch_executor, metrics,
         run_authority_binding, resource_snapshot, monotonic, visit_fn,
-        observer_type, emit_progress, accepted_reentry):
+        observer_type, emit_progress):
     visits = accepted = rejected = 0
     admission_status, admission_advances = None, 0
     status = "TIME_LIMIT"
@@ -65,21 +65,12 @@ def _run_visits(
             status = stop_status
             break
         visits += 1
-        if outcome == "GRADE_TRANSITIONED":
+        if outcome in {"GRADE_TRANSITIONED", "ACQUISITION_REARMED"}:
             continue
         if outcome == "REJECTED":
             rejected += 1
             continue
         accepted += 1
-        if accepted_reentry is None:
-            continue
-        _assert_current(run_authority_binding)
-        admission_status, advances, stop_status = accepted_reentry(
-            run_dir, reserve_gib, progress)
-        admission_advances += advances
-        if stop_status is not None:
-            status = stop_status
-            break
     else:
         status = "VISIT_LIMIT" if max_visits and visits >= max_visits else "TIME_LIMIT"
     return (
@@ -118,7 +109,7 @@ def operate(
         source_prefetch_workers, progress, max_horizon, worker_counts,
         invalid, metrics_type, source_pool_factory, null_context,
         operator_lock, visit_fn, observer_type, emit_progress,
-        monotonic, load_generation, result_type, accepted_reentry=None,
+        monotonic, load_generation, result_type,
         bind_run_authority=None, before_visits=None, resource_snapshot=None,
         record_stop=None, elapsed_clock=None):
     _validate_bounds(
@@ -146,7 +137,7 @@ def operate(
             run_authority_binding=run_authority_binding,
             resource_snapshot=resource_snapshot, monotonic=monotonic,
             visit_fn=visit_fn, observer_type=observer_type,
-            emit_progress=emit_progress, accepted_reentry=accepted_reentry)
+            emit_progress=emit_progress)
         current, elapsed_seconds, stop_receipt_sha256 = _finalize_stop(
             run_dir, status=status, minutes=minutes, max_visits=max_visits,
             steps_per_visit=steps_per_visit, reserve_gib=reserve_gib,

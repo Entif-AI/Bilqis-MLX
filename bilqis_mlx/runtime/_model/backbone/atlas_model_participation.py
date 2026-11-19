@@ -7,6 +7,7 @@ from bilqis_mlx.runtime.atlas_training_authority import extend_training_dependen
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_motif_artifact_owner
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2, expected_bamf_shapes
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
+from bilqis_mlx.semantics.atlas_features import generation_feature_row
 
 from .atlas_model_contracts import BamfCompiledBatch, _ForwardRecord, _invalid
 
@@ -113,9 +114,13 @@ def _forward_participation(
     for abi_index in tuple(source.source_row.get("tokens", ()))[:row.visible_end]:
         entry = snapshot.abi(abi_index)
         visible.append((entry.bank, entry.row))
-        factors = batch.compiled.features.features_for(
-            entry.semantic_id, "NONE", "NONE",
+        factors = generation_feature_row(
+            snapshot,
+            batch.compiled.features,
+            entry.semantic_id,
+            abi_index,
             batch.compiled.compiler_configs[0].task.scope,
+            active_indices=batch.active_semantic_rows.active_indices,
         )
         feature_rows.update(("type", item) for item in factors.type_rows)
         feature_rows.add(("role", factors.role_row))

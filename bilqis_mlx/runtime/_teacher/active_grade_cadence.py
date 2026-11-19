@@ -6,6 +6,7 @@ from pathlib import Path
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 from .active_grade_cadence_contracts import (
+    ActiveGradeCadenceAuthorization,
     ActiveGradeCadenceDisposition,
     ActiveGradeCadencePhase,
     MAX_RECOVERY_ROUNDS,
@@ -225,6 +226,40 @@ def record_active_grade_cadence_attempt(
     consume_attempt(run_dir, state, cadence_record, capability_id)
 
 
+def rearm_active_grade_acquisition(
+        run_dir: Path, authorization: ActiveGradeCadenceAuthorization,
+        lawful_frontier):
+    """Return a sub-entry certification boundary to ordinary MAIN learning."""
+    if type(authorization) is not ActiveGradeCadenceAuthorization:
+        _invalid("BAMF_ACTIVE_GRADE_CADENCE_REARM_AUTHORITY_REQUIRED")
+    authorization.verify()
+    state = authorization.state
+    if (
+        authorization.disposition is not ActiveGradeCadenceDisposition.RECOVERY_EXHAUSTED
+        or state.phase is not ActiveGradeCadencePhase.BOUNDARY
+        or authorization.authorized_capability_ids
+    ):
+        _invalid("BAMF_ACTIVE_GRADE_CADENCE_REARM_AUTHORITY_REQUIRED")
+    current = read_current_cadence(Path(run_dir))
+    if current is None or current.cadence_sha256 != state.cadence_sha256:
+        _invalid("BAMF_ACTIVE_GRADE_CADENCE_REARM_STALE")
+    members = member_capabilities(lawful_frontier)
+    census = member_census_digest(lawful_frontier)
+    if not context_matches(current, lawful_frontier, census):
+        _invalid("BAMF_ACTIVE_GRADE_CADENCE_REARM_STALE")
+    return new_state(
+        Path(run_dir), current, lawful_frontier,
+        phase=ActiveGradeCadencePhase.MAIN,
+        phase_round=0,
+        phase_capability_ids=members,
+        deficit_evidence_sha256=current.deficit_evidence_sha256,
+        member_census_sha256=census,
+        recovery_attempt_counts=dict(current.recovery_attempt_counts),
+        cadence_epoch=current.cadence_epoch + 1,
+    )
+
+
 __all__ = (
-    "issue_active_grade_cadence", "record_active_grade_cadence_attempt",
+    "issue_active_grade_cadence", "rearm_active_grade_acquisition",
+    "record_active_grade_cadence_attempt",
 )

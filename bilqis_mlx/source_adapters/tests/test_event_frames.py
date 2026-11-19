@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.source_adapters import event_frames as frames
+from bilqis_mlx.source_adapters.task_goal_registry import require_task_goal_lowerer
 from bilqis_mlx.verification.event_frames import independent_answer
 from bilqis_mlx.live_grade_c import registry_graph
 
@@ -75,10 +76,35 @@ class EventFrameTests(unittest.TestCase):
             self.assertEqual(sum(r['gold'] == 'TRUE' for r in rows), 16)
             self.assertTrue(all(frames.check(row, graph=graph) for row in rows))
             self.assertEqual(len({r['id'] for r in rows}), 32)
+            self.assertEqual(len({r['source_family_id'] for r in rows}), 1)
             changed = {**rows[0], 'gold': 'FALSE' if rows[0]['gold']=='TRUE' else 'TRUE'}
             self.assertFalse(frames.check(changed, graph=graph))
             fresh = frames.draw(None, graph, seed=350, each=32, capability=capability)
             self.assertNotEqual([r['id'] for r in rows], [r['id'] for r in fresh])
+            self.assertNotEqual(
+                rows[0]['source_family_id'], fresh[0]['source_family_id'])
+
+    def test_event_provider_has_current_gold_blind_c04_lowerer(self):
+        graph = frames.expanded_graph(registry_graph())
+        lowerer = require_task_goal_lowerer(
+            frames.ADAPTER_ID, frames.provider_implementation_digest())
+        for capability in frames.SPECS:
+            with self.subTest(capability=capability):
+                row = frames.draw(
+                    None, graph, seed=1300, each=1, capability=capability)[0]
+                source = dict(row)
+                source.pop('gold')
+                definition = frames.capability_definition(capability)
+                goal, binding = lowerer.lower(
+                    source, semantic_release='a' * 64, capability=definition)
+                resolved = lowerer.resolve(
+                    row, semantic_release='a' * 64, capability=definition)
+                self.assertEqual(goal.allowed_operator_ids, ('SELECT_BOOLEAN',))
+                selected = resolved.expression_or_holes.nodes[0].operands[0]
+                value = next(
+                    operand.typed.value for operand in binding.operands
+                    if operand.typed.source_handle == selected.source_handle)
+                self.assertIs(value, row['gold'] == 'TRUE')
 
     def test_start_and_end_require_opposite_transition_directions(self):
         expected = {'D.EVENT_OCCURRENCE': (False, True, False, True),

@@ -18,10 +18,14 @@ from .executable_release import ExecutableFactoryRelease
 from .jit_curriculum import CurriculumDeltaProposal, ProposalDisposition, propose_curriculum_delta
 from .atlas_frontier_closure import ClosureStatus, FrontierClosure
 from .atlas_frontier_contracts import CurriculumSnapshot, _fail
-from .atlas_frontier_progress import plan_frontier_progress
+from .atlas_frontier_progress import (
+    _counts, _direct_uncovered_count, _progress_result,
+    _status_without_new_proposal, plan_frontier_progress,
+)
 from .atlas_frontier_progress_validation import (
     credited_obligation_keys,
     current_obligations,
+    has_unrequested_ready,
 )
 from .atlas_frontier_progress_contracts import (
     FrontierProgress, FrontierStatus, StagedSelectionReceipt,
@@ -85,6 +89,31 @@ def _issue_accepted_obligation_credit(
         object.__setattr__(credit, name, value)
     credit.__post_init__()
     return credit
+
+
+def plan_frontier_progress_with_accepted_credit(
+    snapshot: CurriculumSnapshot, closure: FrontierClosure,
+    accepted_credit: AcceptedObligationCredit, *,
+    prior: FrontierProgress | None = None,
+) -> FrontierProgress:
+    """Project no-new-proposal status using authenticated accepted B13 credit."""
+    accepted_credit.__post_init__()
+    if accepted_credit.factory_release_sha256 != snapshot.admitted_factory_release_sha256:
+        _fail("BAMF_PLANNER_ACCEPTED_CREDIT_RELEASE_DRIFT")
+    current = current_obligations(closure)
+    credited = (set() if prior is None else credited_obligation_keys(
+        snapshot, closure, prior, current))
+    credited.update(
+        key for key in accepted_credit.obligation_keys
+        if current.get(key[0]) == key[1])
+    if has_unrequested_ready(closure, credited, current):
+        _fail("BAMF_PLANNER_PROGRESS_SELECTION_REQUIRED")
+    direct_uncovered = _direct_uncovered_count(snapshot)
+    status = _status_without_new_proposal(
+        snapshot, _counts(closure), credited, current,
+        len(closure.source_holds), direct_uncovered)
+    return _progress_result(
+        snapshot, snapshot, closure, status, None, None, direct_uncovered, prior)
 
 
 def bind_realized_snapshot(
@@ -286,6 +315,10 @@ def next_atlas_delta(
             coverage_epoch.snapshot, coverage_epoch.closure, requested)
     except BilqisError as error:
         if error.context.get("reason") == "BAMF_PLANNER_NO_BOUNDED_READY_DELTA":
+            if coverage_epoch.accepted_credit is not None:
+                return plan_frontier_progress_with_accepted_credit(
+                    coverage_epoch.snapshot, coverage_epoch.closure,
+                    coverage_epoch.accepted_credit, prior=coverage_epoch.prior).status
             return plan_frontier_progress(
                 coverage_epoch.snapshot, coverage_epoch.closure,
                 prior=coverage_epoch.prior).status

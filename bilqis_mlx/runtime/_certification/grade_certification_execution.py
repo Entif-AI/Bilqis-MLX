@@ -196,15 +196,19 @@ def _supersede_stale_running_attempts(root, request) -> None:
 
 
 def _start_or_resume(
-        root, request, policy, trigger_measure, require_current):
+        root, request, policy, trigger_measure, require_current, *,
+        trigger=None):
     if _attempt_path(root, request).is_file():
         return load_certification_attempt(root, request)
-    require_current()
-    _supersede_stale_running_attempts(root, request)
-    trigger = trigger_measure()
-    if not _trigger_matches_request(request, trigger):
-        _invalid("BAMF_GRADE_CERTIFICATION_TRIGGER_SCOPE_INVALID")
-    require_current()
+    if trigger is None:
+        require_current()
+        _supersede_stale_running_attempts(root, request)
+        trigger = trigger_measure()
+        if not _trigger_matches_request(request, trigger):
+            _invalid("BAMF_GRADE_CERTIFICATION_TRIGGER_SCOPE_INVALID")
+        require_current()
+    else:
+        _supersede_stale_running_attempts(root, request)
     return start_certification_attempt(
         root, request, policy,
         trigger_cohort_sha256=trigger.cohort_sha256,
@@ -330,8 +334,27 @@ def execute_grade_certification(
     ):
         _invalid("BAMF_GRADE_CERTIFICATION_POLICY_DRIFT")
 
+    trigger = None
+    if not _attempt_path(root, request).is_file():
+        require_current()
+        trigger = trigger_measure()
+        if not _trigger_matches_request(request, trigger):
+            _invalid("BAMF_GRADE_CERTIFICATION_TRIGGER_SCOPE_INVALID")
+        require_current()
+        _supersede_stale_running_attempts(root, request)
+        protected_ok = protected_regression_eligible(
+            trigger.scores, request.protected_baselines)
+        if protected_ok and not policy_entry_eligible(
+                policy, trigger.scores, request.protected_baselines):
+            return CertificationExecutionResult(
+                "NOT_ELIGIBLE",
+                request.request_sha256,
+                blockers=_blockers(request, trigger.scores),
+            )
+
     view = _start_or_resume(
-        root, request, policy, trigger_measure, require_current)
+        root, request, policy, trigger_measure, require_current,
+        trigger=trigger)
     if view.status != "RUNNING":
         return _terminal_result(root, view)
     gated = _initial_gate_result(root, request, policy, view, require_current)

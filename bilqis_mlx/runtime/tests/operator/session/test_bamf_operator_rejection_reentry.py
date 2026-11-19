@@ -3,7 +3,7 @@ from contextlib import nullcontext
 from dataclasses import replace
 import json
 from pathlib import Path
-from tempfile import TemporaryDirectory, gettempdir
+from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -25,13 +25,6 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 
 
 class BamfOperatorAdmissionReentryTests(unittest.TestCase):
-    def setUp(self):
-        self.run_storage = patch(
-            "bilqis_mlx.runtime.run_authority.binding.storage_root",
-            return_value=Path(gettempdir()))
-        self.run_storage.start()
-        self.addCleanup(self.run_storage.stop)
-
     @staticmethod
     def _current():
         return SimpleNamespace(
@@ -127,6 +120,30 @@ class BamfOperatorAdmissionReentryTests(unittest.TestCase):
                 Path("/run"), {"tokens": []}, 100.0)
 
         self.assertEqual(actual, ("FIXED_POINT", 0, "FIXED_POINT"))
+
+    def test_implementation_uncovered_is_a_typed_operator_stop(self):
+        from bilqis_mlx.runtime.atlas_flywheel import AdmissionFlywheelStatus
+
+        current = SimpleNamespace(release_sha256="b" * 64)
+        result = SimpleNamespace(
+            status=AdmissionFlywheelStatus.IMPLEMENTATION_UNCOVERED,
+            advances=0,
+            final_state=SimpleNamespace(
+                epoch=SimpleNamespace(current_release=current)))
+        with patch(
+                "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_factory_release",
+                side_effect=(current, current)), patch(
+                "bilqis_mlx.runtime.atlas_flywheel_runtime.run_accepted_atlas_flywheel",
+                return_value=result), patch(
+                "bilqis_mlx.runtime.bamf_operator.session._execution_context",
+                side_effect=AssertionError("uncovered work must not start a visit")):
+            actual = _accepted_admission_reentry(
+                Path("/run"), {"tokens": []}, 100.0)
+
+        self.assertEqual(
+            actual,
+            ("IMPLEMENTATION_UNCOVERED", 0, "IMPLEMENTATION_UNCOVERED"),
+        )
 
 
 def _rejected_resource_fixture():

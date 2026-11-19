@@ -272,7 +272,8 @@ def _require_current_visit(
 
 def derive_c03_successor_bundle(
         run_dir: Path, retained_state: CandidateState, visit: BoundTeacherVisit, *,
-        next_seed: int, cursor: str, delivery_events: tuple) -> BamfBundleCandidate:
+        next_seed: int, cursor: str, delivery_events: tuple,
+        transaction=None) -> BamfBundleCandidate:
     """Build one B13 successor whose C03 teacher state advances atomically.
 
     C03 owns only the teacher projection. B13 remains the bundle/state-machine
@@ -285,10 +286,17 @@ def derive_c03_successor_bundle(
         invalid("TEACHER_SUCCESSOR_SELECTION_STATE_INVALID")
     parent, cache = _accepted_parent(Path(run_dir))
     _require_current_visit(parent, cache, visit)
-    successor = derive_successor_bundle(
-        parent, retained_state,
-        parent_manifest_sha256=cache.accepted_manifest_sha256,
-        delivery_events=delivery_events)
+    if transaction is not None and getattr(transaction, "motif_transition", None) is not None:
+        from bilqis_mlx.runtime.bamf_bundle.admission import derive_motif_successor_bundle
+        successor = derive_motif_successor_bundle(
+            parent, transaction, retained_state=retained_state,
+            parent_manifest_sha256=cache.accepted_manifest_sha256,
+            delivery_events=delivery_events)
+    else:
+        successor = derive_successor_bundle(
+            parent, retained_state,
+            parent_manifest_sha256=cache.accepted_manifest_sha256,
+            delivery_events=delivery_events)
     bank_identity = _bank_identity(successor)
     plasticity_identity = _plasticity_identity(retained_state)
     student_sha = candidate_identity_digest(retained_state)
