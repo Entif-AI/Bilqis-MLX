@@ -17,6 +17,7 @@ _SIGNER_FILE = "source-authority-signer.json"
 _TRANSACTION_FILE = ".authority-store-transaction.json"
 _LIFECYCLE_LOCK_FILE = ".authority-store-lifecycle.lock"
 _LIFECYCLE_STATE_FILE = ".authority-store-state.json"
+_NON_OWNER_PERMISSION_MASK = stat.S_IRWXG | stat.S_IRWXO
 
 HOST_SOURCE_AUTHORITY_LOGICAL_PATH = (
     "<account-home>/.entif-ai/bilqis/source-authority-registry.json"
@@ -63,7 +64,7 @@ def _open_account_file(filename: str, *, max_bytes: int) -> int:
         # any ability to create/replace the registry or signer themselves.
         lock_info = os.fstat(lock_fd)
         if (not stat.S_ISREG(lock_info.st_mode) or lock_info.st_uid != euid
-                or lock_info.st_mode & 0o077):
+                or lock_info.st_mode & _NON_OWNER_PERMISSION_MASK):
             _fail()
         fcntl.flock(lock_fd, fcntl.LOCK_SH)
         transaction_path = os.path.join(authority_dir, _TRANSACTION_FILE)
@@ -83,7 +84,7 @@ def _open_account_file(filename: str, *, max_bytes: int) -> int:
             info = os.fstat(fd)
             managed = os.path.lexists(os.path.join(authority_dir, _LIFECYCLE_STATE_FILE))
             if (not stat.S_ISREG(info.st_mode) or info.st_uid != euid
-                    or managed and info.st_mode & 0o077
+                    or managed and info.st_mode & _NON_OWNER_PERMISSION_MASK
                     or not 1 <= info.st_size <= max_bytes):
                 _fail()
             return fd
