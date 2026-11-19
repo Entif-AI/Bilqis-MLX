@@ -36,12 +36,17 @@ def _accepted_target_score(native: dict, capability: str):
     if not isinstance(scores, list):
         return None, None, grade if isinstance(grade, str) and grade else None
     for row in scores:
-        if (isinstance(row, (list, tuple)) and len(row) == 4
-                and row[0] == capability
-                and type(row[2]) is int and row[2] >= 0
-                and type(row[3]) is int and row[3] > 0
-                and row[2] <= row[3]):
-            return row[2], row[3], grade if isinstance(grade, str) and grade else None
+        if not isinstance(row, (list, tuple)):
+            continue
+        try:
+            row_capability, _before, correct, total = row
+        except ValueError:
+            continue
+        if (row_capability == capability
+                and type(correct) is int and correct >= 0
+                and type(total) is int and total > 0
+                and correct <= total):
+            return correct, total, grade if isinstance(grade, str) and grade else None
     return None, None, grade if isinstance(grade, str) and grade else None
 
 def _append_c16_accepted(generation, parent, run, native, records, events):
