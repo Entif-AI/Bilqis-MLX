@@ -26,21 +26,6 @@ ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v3"
 OBJECTIVE_BOUND_BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v4"
 OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA = "bilqis.mlx.bamf-generation-bundle/v5"
 TRANSITION_SCHEMA = "bilqis.mlx.bamf-generation-transition/v1"
-SIDECARS = MappingProxyType({
-    "semantic_abi": "semantic-abi.json",
-    "motif_allocation": "motif-allocation.json",
-    "plasticity_policy": "plasticity-policy.json",
-    "compiler_features": "compiler-features.json",
-    "correction_frontier": "correction-frontier.json",
-    "teacher_state": "teacher-state.json",
-    "evaluation_contract": "evaluation-contract.json",
-    "baseline_evidence": "baseline-evidence.json",
-    "learning_health_state": "learning-health-state.json",
-    "championship_state": "championship-state.json",
-    "step_proofs": "step-proofs.json",
-    "run_identity": "run-identity.json",
-    "outbox": "outbox.json",
-})
 _TRANSITIONS = frozenset({"INITIAL", "RETAINED_CANDIDATE", "PARAMETER_EXTENSION", "MODEL_SWAP"})
 
 
