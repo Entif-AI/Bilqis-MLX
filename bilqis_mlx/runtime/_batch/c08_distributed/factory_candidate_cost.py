@@ -23,6 +23,9 @@ def _distributed_cost(prepared, gradient, logical_batch_wall_seconds) -> dict:
         compute, communication, step_seconds, 1, peaks, manifest.world_size)
     return {
         "c08_distributed_manifest_digest": manifest.digest,
+        "c08_distributed_retained_generation": manifest.retained_generation,
+        "c08_distributed_retained_manifest_sha256":
+            manifest.retained_manifest_sha256,
         "c08_distributed_logical_batch_digest": manifest.logical_batch_digest,
         "c08_distributed_source_release": manifest.source_release,
         "c08_distributed_curriculum_release": manifest.curriculum_release,

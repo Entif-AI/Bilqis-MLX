@@ -1,6 +1,14 @@
 """Retention and accepted-successor helpers for the BAMF operator session."""
 from __future__ import annotations
 
+import hashlib
+import json
+
+
+def _contract_digest(payload) -> str:
+    wire = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(wire.encode()).hexdigest()
+
 
 def _observe_retention_scope(observer, decision):
     if observer is None:
@@ -52,7 +60,27 @@ def _distributed_retention_metrics(steps, evaluation, decision, observer, resour
         if type(total) is int and total > 0)
     retained_gain = (
         sum(gains) / len(gains) if decision.accepted and gains else 0.0)
-    elapsed = resource["wall_seconds"] + float(evaluation_seconds)
+    candidate_wall_seconds = sum(float(
+        cost.get("candidate_step_wall_seconds", cost.get("wall_seconds", 0.0)))
+        for cost in costs)
+    elapsed = candidate_wall_seconds + float(evaluation_seconds)
+    source_contract_digest = _contract_digest([{
+        "retained_generation": cost["c08_distributed_retained_generation"],
+        "retained_manifest_sha256":
+            cost["c08_distributed_retained_manifest_sha256"],
+        "logical_batch_digest": cost["c08_distributed_logical_batch_digest"],
+        "source_release": cost["c08_distributed_source_release"],
+        "curriculum_release": cost["c08_distributed_curriculum_release"],
+    } for cost in costs])
+    evaluation_contract_digest = _contract_digest({
+        "policy_sha256": evaluation.decision.policy_sha256,
+        "retention_protection_plan_sha256": getattr(
+            decision, "retention_protection_plan_sha256", None),
+        "evaluated_capability_ids": tuple(
+            getattr(decision, "evaluated_capability_ids", ())),
+        "broad_certification_trigger": getattr(
+            decision, "broad_certification_trigger", None),
+    })
     resource.update({
         "c08_distributed_manifest_digests": tuple(
             cost["c08_distributed_manifest_digest"] for cost in costs),
@@ -61,10 +89,9 @@ def _distributed_retention_metrics(steps, evaluation, decision, observer, resour
             resource["optimizer_steps"] * 3600.0 / elapsed
             if decision.accepted and elapsed > 0 else 0.0),
         "c08_distributed_retained_capability_gain": retained_gain,
-        "c08_distributed_source_contract_digest":
-            costs[-1]["c08_distributed_source_release"],
+        "c08_distributed_source_contract_digest": source_contract_digest,
         "c08_distributed_evaluation_contract_digest":
-            evaluation.decision.policy_sha256,
+            evaluation_contract_digest,
     })
 
 
