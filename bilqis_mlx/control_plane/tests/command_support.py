@@ -76,6 +76,8 @@ class FakeExecutor:
         self.execute_calls = 0
         self.verify_calls = 0
         self.reconcile_value = None
+        self.reconcile_no_effect_value = None
+        self.trainer_process_state_value = "inactive"
         self.preflight_error = None
         self.verify_error = None
         self.execute_result = (0, None)
@@ -84,18 +86,23 @@ class FakeExecutor:
         self.preflight_calls += 1
         if self.preflight_error is not None:
             raise self.preflight_error
+        action = CommandAction(action_request.action)
+        parameter_values = {
+            parameter.key: parameter.value for parameter in action_request.parameters
+        }
+        argv = (
+            (str(parameter_values["operation_id"]),)
+            if action is CommandAction.STOP
+            else (("train", "--human-run") if self.mode is CommandMode.MUTATING else ())
+        )
         plan = CommandPlan(
             operation_id=operation_id,
             request_sha256=request_sha256(action_request),
             intent_sha256=intent_sha256(action_request),
-            action=CommandAction(action_request.action),
+            action=action,
             mode=self.mode,
             target=target(self.run_dir),
-            argv=(
-                ("train", "--human-run")
-                if self.mode is CommandMode.MUTATING
-                else ()
-            ),
+            argv=argv,
             postcondition_kind="fixture-postcondition",
         )
         return plan, {
@@ -125,6 +132,15 @@ class FakeExecutor:
 
     def reconcile(self, plan):
         return self.reconcile_value
+
+    def reconcile_no_effect(self, plan, worker_result):
+        return self.reconcile_no_effect_value
+
+    def trainer_process_current(self, operation_id):
+        return self.trainer_process_state_value == "current"
+
+    def trainer_process_state(self, operation_id):
+        return self.trainer_process_state_value
 
 
 class Launcher:
