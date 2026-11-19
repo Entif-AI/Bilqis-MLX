@@ -1,5 +1,5 @@
 """Human-resume production-parameter coverage for the accepted Atlas flywheel."""
-from contextlib import ExitStack, redirect_stderr, redirect_stdout
+from contextlib import ExitStack, nullcontext, redirect_stderr, redirect_stdout
 import io
 import hashlib
 import json
@@ -31,6 +31,7 @@ from bilqis_mlx.factory.tests.curriculum.frontier.test_atlas_frontier import _ri
 
 from bilqis_mlx.runtime.tests.admission.atlas.v2.atlas_flywheel_human_resume_support import AcceptedAtlasFlywheelHumanResumeSupport
 
+@patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
 class AcceptedAtlasFlywheelHumanResumeTests(AcceptedAtlasFlywheelHumanResumeSupport):
     def test_human_resume_runs_real_parameter_flywheel_from_accepted_custody(self):
         with patch(

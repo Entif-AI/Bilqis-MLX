@@ -39,7 +39,7 @@ def test_fixed_release_accept_reject_accept_skips_admission_reentry(tmp_path):
             return_value=None), patch(
             "bilqis_mlx.runtime.bamf_operator.session._visit",
             side_effect=("ACCEPTED", "REJECTED", "ACCEPTED", "HELD")) as visit, \
-            reentry, patch(
+            reentry as admission_reentry, patch(
             "bilqis_mlx.runtime.bamf_operator.session.load_accepted_generation",
             return_value=current), patch(
             "bilqis_mlx.runtime.bamf_operator.session.stop_resource_witness",
@@ -57,8 +57,10 @@ def test_fixed_release_accept_reject_accept_skips_admission_reentry(tmp_path):
     assert result.admission_status is None
     assert result.admission_advances == 0
     assert visit.call_count == 4
+    admission_reentry.assert_not_called()
 
 
+@patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
 class BamfOperatorRejectionContinuationTests(unittest.TestCase):
     @staticmethod
     def _current():

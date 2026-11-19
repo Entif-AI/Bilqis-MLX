@@ -24,6 +24,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 )
 
 
+@patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
 class BamfOperatorAdmissionReentryTests(unittest.TestCase):
     def test_missing_accepted_lease_returns_typed_admission_stop(self):
         before = SimpleNamespace(release_sha256="a" * 64)
