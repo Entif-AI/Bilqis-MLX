@@ -3969,7 +3969,7 @@ Current production scan: **2079** raw raises across **294** files. The baseline 
 | `bamf_operator must not inspect Factory capability order` | 1 | `bilqis_mlx/runtime/tests/operator/test_bamf_operator_routing.py` |
 | `boom` | 1 | `bilqis_mlx/runtime/tests/model/parity/test_mlx_memory.py` |
 | `disposable interruption before pointer publication` | 1 | `bilqis_mlx/runtime/tests/admission/atlas/lease/test_renewal.py` |
-| `durability failure` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py` |
+| `durability failure` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_pointer_locking.py` |
 | `evaluator-owned cache reached by solver` | 1 | `bilqis_mlx/semantics/tests/operators/test_cognitive_operator_native.py` |
 | `exact cached route must preempt neural` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver_retention.py` |
 | `fixture capability is not in one active admitted grade` | 1 | `bilqis_mlx/runtime/tests/model/salience/priority_witness_support.py` |
@@ -3992,7 +3992,7 @@ Current production scan: **2079** raw raises across **294** files. The baseline 
 | `test synchronization timed out` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication_recovery.py` |
 | `undefined` | 1 | `bilqis_mlx/semantics/tests/foundation/test_source_memo.py` |
 | `unlock failed` | 4 | `bilqis_mlx/runtime/_coordination/tests/test_run_root_claim.py`, `bilqis_mlx/runtime/tests/admission/atlas/lease/test_storage.py` |
-| `unlock failure` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py` |
+| `unlock failure` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_pointer_locking.py` |
 | `unreachable` | 2 | `bilqis_mlx/factory/curriculum/formal_lesson_types.py`, `bilqis_mlx/learning/_championship_runtime/orchestration.py` |
 | `unsupported fixture operator` | 1 | `bilqis_mlx/verification/tests/test_verification_laws.py` |
 
