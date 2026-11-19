@@ -16,7 +16,9 @@ from bilqis_mlx.runtime.atlas_resources import (
 )
 
 from .c08_distributed_outcome import DistributedStepOutcome
+from .c08_distributed_capsule import issue_distributed_factory_step_capsule
 from .c08_gradient_accumulation import _invalid
+from .c08_oom import mlx_oom_message
 
 
 _ISSUER = object()
@@ -55,6 +57,7 @@ class DistributedExecutorBinding:
                 or type(self.profile) is not DistributedExecutionProfile
                 or type(self.hosts) is not tuple or not self.hosts
                 or len(self.hosts) not in (1, world_size)
+                or self.hosts[0] != "127.0.0.1"
                 or any(not isinstance(host, str) or not host for host in self.hosts)
                 or not isinstance(self.python_executable, str)
                 or not self.python_executable
@@ -98,6 +101,10 @@ class DistributedExecutorBinding:
                 cwd=self.working_directory, check=False,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             if completed.returncode != 0:
+                oom = mlx_oom_message(
+                    "\n".join((completed.stderr or "", completed.stdout or "")))
+                if oom is not None:
+                    raise RuntimeError(oom)
                 _invalid("C08_DISTRIBUTED_WORKER_COHORT_FAILED")
             if not response.is_file() or not response_digest.is_file():
                 _invalid("C08_DISTRIBUTED_WORKER_RESPONSE_MISSING")
@@ -112,7 +119,8 @@ class DistributedExecutorBinding:
 
     def execute(self, **kwargs) -> DistributedStepOutcome:
         """Launch C08-only ranks; return rank-0 outcome to the sovereign coordinator."""
-        outcome = self._run_capsule({"kind": "factory-step", "kwargs": kwargs})
+        request = issue_distributed_factory_step_capsule(**kwargs)
+        outcome = self._run_capsule({"kind": "factory-step", "request": request})
         if type(outcome) is not DistributedStepOutcome:
             _invalid("C08_DISTRIBUTED_WORKER_RESPONSE_INVALID")
         outcome.__post_init__()
@@ -136,7 +144,7 @@ def configure_mlx_distributed_execution(
         workers: tuple[DistributedRank, ...], *, hosts: tuple[str, ...],
         partition_seed: int, backend: str, python_executable: str | None = None,
         working_directory: str | Path | None = None) -> DistributedExecutorBinding:
-    """Bind declared hosts/backend to a coordinator-owned C08 worker cohort."""
+    """Bind a cohort with coordinator-local rank 0 and identical remote code paths."""
     normalized = require_distributed_backend(backend)
     profile = DistributedExecutionProfile(
         partition_seed=partition_seed, workers=workers,

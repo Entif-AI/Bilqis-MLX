@@ -140,7 +140,33 @@ def execute_factory_distributed_rank(
 
     return execute_distributed_rank(
         resource_plan, manifest, partition, execute_row,
-        base_authority_for_row=lambda index: rows[index][1])
+        base_authority_for_row=lambda index: rows[index][0].training_authority)
+
+
+def execute_factory_distributed_rows_rank(
+        parameters, compiled_rows, source_context, feature_snapshot, generation, cache,
+        resource_plan, manifest, partition, *, source_loss_multipliers,
+        salience_supervision=None):
+    """Execute rank rows reconstructed from a portable coordinator capsule."""
+    rows = tuple(_row_execution_inputs(
+        source_context, compiled, feature_snapshot, generation)
+        for compiled in compiled_rows)
+    if (type(source_loss_multipliers) is not tuple
+            or len(source_loss_multipliers) != len(compiled_rows)):
+        ErrorBus.raise_(
+            SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
+            reason="FACTORY_DISTRIBUTED_MULTIPLIER_DRIFT")
+
+    def execute_row(index):
+        bound, _authority, targets, mask, plan = rows[index]
+        return bamf_value_and_grad(
+            parameters, bound, plan, targets, mask, cache,
+            salience_supervision=salience_supervision,
+            source_loss_multiplier=source_loss_multipliers[index])
+
+    return execute_distributed_rank(
+        resource_plan, manifest, partition, execute_row,
+        base_authority_for_row=lambda index: rows[index][0].training_authority)
 
 
 def execute_factory_distributed_rank_collective(
@@ -209,6 +235,53 @@ def execute_factory_distributed_group(
         mentor_supervision=mentor_supervision)
 
 
+def execute_factory_distributed_rows_group(
+        parameters, compiled_rows, source_context, feature_snapshot, generation, cache,
+        resource_plan, manifest, *, source_loss_multipliers, group, backend,
+        device_family, mlx_version, numeric_precision="fp32",
+        salience_supervision=None):
+    """Worker entrypoint for a portable capsule with rank-local authorities."""
+    partitions = partition_logical_batch(resource_plan, manifest)
+    rank = group.rank()
+    if rank < 0 or rank >= len(partitions):
+        ErrorBus.raise_(
+            SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
+            reason="FACTORY_DISTRIBUTED_GROUP_RANK_DRIFT")
+    partition = partitions[rank]
+    validate_runtime_rank(
+        manifest, partition, group, backend=backend,
+        device_family=device_family, mlx_version=mlx_version,
+        numeric_precision=numeric_precision)
+    local_attestation = DistributedRuntimeAttestation(
+        manifest.digest, partition.rank, manifest.workers[partition.rank].worker_id,
+        device_family, mlx_version, manifest.backend, numeric_precision)
+    rank_result = execute_factory_distributed_rows_rank(
+        parameters, compiled_rows, source_context, feature_snapshot, generation, cache,
+        resource_plan, manifest, partition,
+        source_loss_multipliers=source_loss_multipliers,
+        salience_supervision=salience_supervision)
+    communication_started = time.perf_counter()
+    gradients, loss, _all_reduce_seconds = all_reduce_fp32_rank_mean(
+        rank_result.gradients, rank_result.mean_loss,
+        local_rows=len(rank_result.row_indices),
+        total_rows=len(resource_plan.logical_row_ids), group=group)
+    evidence = all_gather_b11_evidence(rank_result.evidence, group)
+    attestations = all_gather_runtime_attestation(local_attestation, group)
+    compute = mx.distributed.all_gather(
+        mx.array([rank_result.compute_seconds], dtype=mx.float32), group=group)
+    local_peak = max(
+        rank_result.peak_memory_bytes, int(mx.get_active_memory()),
+        int(mx.get_peak_memory()))
+    peak = mx.distributed.all_gather(
+        mx.array([local_peak], dtype=mx.int64), group=group)
+    mx.eval(compute, peak)
+    return DistributedStepOutcome(
+        manifest.digest, evidence, attestations, gradients, loss,
+        tuple(float(value) for value in compute.tolist()),
+        time.perf_counter() - communication_started,
+        tuple(int(value) for value in peak.tolist()))
+
+
 def bind_factory_distributed_outcome(
         prepared, source_context, feature_snapshot, generation, resource_plan,
         manifest, outcome: DistributedStepOutcome):
@@ -249,6 +322,7 @@ def bind_factory_distributed_outcome(
 __all__ = (
     "bind_factory_distributed_outcome", "execute_factory_distributed_rank",
     "execute_factory_distributed_group", "execute_factory_distributed_rank_collective",
+    "execute_factory_distributed_rows_group",
     "execute_factory_logical_batch",
     "execute_factory_training_row",
 )

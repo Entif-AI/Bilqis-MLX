@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from copy import copy
-import re
 import time
 from types import SimpleNamespace
 from uuid import uuid4
@@ -16,19 +15,11 @@ from ..atlas_memory_retry import (
     handle_oom, snapshot_mlx_memory,
 )
 from ..factory_candidate_components import _invalid, _resource_rows
-
-
-_ALLOCATOR_OOM = re.compile(r"\[malloc\] Unable to allocate [0-9]+ bytes\.")
-_METAL_PREFIX = "[METAL] Command buffer execution failed: "
-_METAL_OOM_CODE = "kIOGPUCommandBufferCallbackErrorOutOfMemory"
+from ..c08_distributed.c08_oom import is_mlx_oom
 
 
 def _is_mlx_oom(error):
-    message = str(error)
-    return (
-        _ALLOCATOR_OOM.fullmatch(message) is not None
-        or (message.startswith(_METAL_PREFIX) and _METAL_OOM_CODE in message)
-    )
+    return is_mlx_oom(error)
 
 
 def execute_with_oom_retry(

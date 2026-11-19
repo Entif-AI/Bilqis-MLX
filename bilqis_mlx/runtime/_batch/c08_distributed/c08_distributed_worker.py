@@ -15,8 +15,9 @@ ROOT = Path(__file__).resolve().parents[4]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from bilqis_mlx.runtime.c08_distributed_capsule import DistributedFactoryStepCapsule
 from bilqis_mlx.runtime.factory_candidate_microbatch import (
-    execute_factory_distributed_group,
+    execute_factory_distributed_rows_group,
 )
 
 
@@ -90,11 +91,19 @@ def main() -> int:
             "sum": float(summed.item()),
         }
     elif capsule.get("kind") == "factory-step":
-        request = capsule.get("kwargs")
-        if not isinstance(request, dict):
+        request = capsule.get("request")
+        if type(request) is not DistributedFactoryStepCapsule:
             raise RuntimeError("C08_DISTRIBUTED_CAPSULE_INVALID")
-        outcome = execute_factory_distributed_group(
-            **request, group=group, backend=backend,
+        (
+            parameters, compiled_rows, source_context, feature_snapshot, generation,
+            cache, resource_plan, manifest, source_loss_multipliers,
+            salience_supervision,
+        ) = request.materialize()
+        outcome = execute_factory_distributed_rows_group(
+            parameters, compiled_rows, source_context, feature_snapshot, generation,
+            cache, resource_plan, manifest,
+            source_loss_multipliers=source_loss_multipliers,
+            salience_supervision=salience_supervision, group=group, backend=backend,
             device_family=str(mx.device_info()["device_name"]),
             mlx_version=version("mlx"),
             numeric_precision="fp32")
