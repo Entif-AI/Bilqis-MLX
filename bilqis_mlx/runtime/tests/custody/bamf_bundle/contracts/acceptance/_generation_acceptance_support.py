@@ -63,9 +63,10 @@ class GenerationAcceptanceFixture:
         self.environment.stop()
         self.temporary.cleanup()
 
-    def publish(self, source, **kwargs):
+    def publish(self, source, *, reserve_gib=0.0, **kwargs):
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            return publish_bamf_generation(self.run, source, **kwargs)
+            return publish_bamf_generation(
+                self.run, source, reserve_gib=reserve_gib, **kwargs)
 
     def parent(self):
         if not hasattr(self, "_parent"):

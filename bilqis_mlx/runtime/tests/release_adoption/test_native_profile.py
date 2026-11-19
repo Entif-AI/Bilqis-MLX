@@ -30,7 +30,7 @@ class NativeProfileOperatorTests(unittest.TestCase):
                 'bilqis_mlx.runtime._release_adoption.native_profile.adopt_profile_release',
                 side_effect=lambda *a, **kw: events.append('adopt')):
             result = session.operate_bamf(Path('/disposable'), max_visits=1,
-                                          source_prefetch_workers=0,
+                                          reserve_gib=0.0, source_prefetch_workers=0,
                                           profile_release=Path('/successor.json'))
         self.assertEqual(events, ['lock', 'adopt', 'visit', 'unlock'])
         self.assertEqual(result.status, 'PRIORITY_HOLD')

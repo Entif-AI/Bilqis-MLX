@@ -99,3 +99,12 @@ Integration v3 passed the governance, architecture, documentation and error
 catalog checks but stopped at the code smell check. The harness used a mutable
 module-level list for its import paths. Replacing it with a tuple passed the
 staged smell and structure checks. No test ran and the snapshot stayed intact.
+
+Integration v4 passed static quality and aggregate import preflight (5,076
+cases, zero import errors). Affected tests reported 368 passed and 21 failed.
+Twenty failures hit the default 100 GiB reserve during disposable custody
+writes on a host with 97 GiB available. The profile ordering test stopped
+before visiting for the same reason. Three test files now pass an explicit
+fixture reserve. The production default and reserve enforcement are unchanged.
+The exact 21 failed case IDs passed on the same host in 17.23 seconds,
+including eight subtests. The v4 snapshot mutation guard passed.
