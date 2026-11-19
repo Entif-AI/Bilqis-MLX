@@ -225,6 +225,7 @@ def accepted_admission_reentry(
 def accepted_learning_reentry(
         run_dir: Path, parent_graph: dict, reserve_gib: float, progress=None,
         *, emit_progress, invalid):
+    """Compose evidence refresh and C07 only for an explicit admission boundary."""
     from ..accepted_learning_evidence import refresh_accepted_learning_evidence
     evidence = refresh_accepted_learning_evidence(Path(run_dir), progress=progress)
     emit_progress(

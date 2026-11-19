@@ -40,7 +40,7 @@ def test_resource_rejection_returns_to_scheduler_without_learner_feedback(tmp_pa
         source_prefetch_workers=0, progress=None, source_prefetch_executor=None,
         metrics=None, run_authority_binding=authority, resource_snapshot=disk,
         monotonic=lambda: 0, observer_type=lambda *_: nullcontext(observer),
-        emit_progress=lambda *_: None, accepted_reentry=None,
+        emit_progress=lambda *_: None,
         visit_fn=partial(
             visit, prepare_visit=prepare, record_rejection=journal, accept_publish=publish,
             load_generation=None, measure_phase=lambda *_: nullcontext(),

@@ -76,6 +76,7 @@ def _accepted_admission_reentry(
 
 def _accepted_learning_reentry(
         run_dir: Path, parent_graph: dict, reserve_gib: float, progress=None):
+    """Compose evidence refresh and C07 only for an explicit admission boundary."""
     from .accepted_learning_evidence import refresh_accepted_learning_evidence
     evidence = refresh_accepted_learning_evidence(Path(run_dir), progress=progress)
     _emit_progress(progress, "accepted learner evidence refresh: "
@@ -192,9 +193,4 @@ def operate_bamf(
         before_visits=before_visits,
         bind_run_authority=(
             lambda current_run_dir:
-            bind_native_run_authority(current_run_dir, run_authority)),
-        accepted_reentry=(
-            None if parent_graph is None else
-            lambda current_run_dir, current_reserve_gib, current_progress:
-            _accepted_learning_reentry(
-                current_run_dir, parent_graph, current_reserve_gib, current_progress)))
+            bind_native_run_authority(current_run_dir, run_authority)))
