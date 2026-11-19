@@ -67,7 +67,8 @@ def priority():
         "bilqis_mlx.semantics.domains": _module(contract_digest=None),
         "bilqis_mlx.runtime.accepted_teacher_custody": _module(
             _accepted_parent=None, _c03_projection=None, _issue_bound_visit=None,
-            _require_current_visit=None, _selection_projection=None),
+                _require_current_visit=None, _selection_projection=None,
+                current_teacher_projection=lambda run, parent, cache, projection: projection),
         "bilqis_mlx.runtime.priority_qualification": _module(
             _grade=None, requalify_priority=None),
     }
