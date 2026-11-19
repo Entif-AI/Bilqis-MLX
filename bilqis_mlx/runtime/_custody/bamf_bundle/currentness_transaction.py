@@ -72,10 +72,10 @@ def _stat_identity(path: Path) -> tuple[int, int, int, int, int]:
 def _pointer_snapshot(
         run_dir: Path, expected_manifest_sha256: str, *,
         expected_run_id: str, expected_generation: int):
-    from .publication import _pointer_lock, _read_pointer
+    from .publication import _pointer_read_lock, _read_pointer
 
     run_dir = Path(run_dir).resolve()
-    with _pointer_lock(run_dir):
+    with _pointer_read_lock(run_dir):
         pointer = _read_pointer(run_dir / "bamf-state.json")
         if (not isinstance(pointer, dict)
                 or pointer.get("manifest_sha256") != expected_manifest_sha256

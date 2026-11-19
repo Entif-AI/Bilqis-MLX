@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
 import bilqis_mlx.runtime.bamf_bundle.publication.storage as publication_storage
+import bilqis_mlx.runtime.bamf_bundle.currentness_transaction as currentness_transaction
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.errors import BilqisError
@@ -306,6 +307,68 @@ class BamfPublicationTests(unittest.TestCase):
             with self.assertRaises(BilqisError):
                 self.publish(candidate(parent_state()))
             self.assertFalse((self.run / "bamf-state.json").exists())
+        finally:
+            process.stdin.write("\n")
+            process.stdin.flush()
+            process.wait(timeout=5)
+
+    def test_concurrent_readers_do_not_block_accepted_state_currentness(self):
+        published = self.publish(candidate(parent_state()))
+        pointer = json.loads((self.run / "bamf-state.json").read_text())
+        script = (
+            "import fcntl,os,sys,pathlib; "
+            "root=pathlib.Path(sys.argv[1]); "
+            "fd=os.open(root/'.bamf-pointer.lock',os.O_RDWR); "
+            "fcntl.flock(fd,fcntl.LOCK_SH); print('locked',flush=True); "
+            "sys.stdin.readline(); fcntl.flock(fd,fcntl.LOCK_UN); os.close(fd)"
+        )
+        process = subprocess.Popen(
+            [sys.executable, "-c", script, str(self.run)], stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE, text=True)
+        try:
+            self.assertEqual(process.stdout.readline().strip(), "locked")
+            from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+                load_accepted_generation,
+            )
+            with shape_patch():
+                loaded = load_accepted_generation(self.run)
+            self.assertEqual(loaded.generation, 0)
+            snapshot = currentness_transaction._pointer_snapshot(
+                self.run,
+                published["manifest_sha256"],
+                expected_run_id=pointer["run_id"],
+                expected_generation=pointer["generation"],
+            )
+            self.assertEqual(snapshot[1], pointer["acceptance_sha256"])
+        finally:
+            process.stdin.write("\n")
+            process.stdin.flush()
+            process.wait(timeout=5)
+
+    def test_currentness_reader_still_rejects_active_pointer_writer(self):
+        published = self.publish(candidate(parent_state()))
+        pointer = json.loads((self.run / "bamf-state.json").read_text())
+        script = (
+            "import fcntl,os,sys,pathlib; "
+            "root=pathlib.Path(sys.argv[1]); "
+            "fd=os.open(root/'.bamf-pointer.lock',os.O_RDWR); "
+            "fcntl.flock(fd,fcntl.LOCK_EX); print('locked',flush=True); "
+            "sys.stdin.readline(); fcntl.flock(fd,fcntl.LOCK_UN); os.close(fd)"
+        )
+        process = subprocess.Popen(
+            [sys.executable, "-c", script, str(self.run)], stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE, text=True)
+        try:
+            self.assertEqual(process.stdout.readline().strip(), "locked")
+            with self.assertRaises(BilqisError) as caught:
+                currentness_transaction._pointer_snapshot(
+                    self.run,
+                    published["manifest_sha256"],
+                    expected_run_id=pointer["run_id"],
+                    expected_generation=pointer["generation"],
+                )
+            self.assertEqual(
+                caught.exception.context["reason"], "BAMF_POINTER_WRITER_ACTIVE")
         finally:
             process.stdin.write("\n")
             process.stdin.flush()
