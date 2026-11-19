@@ -78,7 +78,7 @@ def capability_championship_evidence(
         source_context, candidate_bundle, artifact_path, cache, capability_id)
     _observe(
         observer,
-        retention_championship_prepare_wall_seconds=max(
+        championship_prepare_wall_seconds=max(
             0.0, time.perf_counter() - started))
     cases = tuple(item.case for item in instruments)
     execution = source_context.execution_for(capability_id)
@@ -106,23 +106,23 @@ def capability_championship_evidence(
         source_context, candidate_bundle, artifact_path, instruments)
     _observe(
         observer,
-        retention_championship_solver_wall_seconds=max(
+        championship_solver_wall_seconds=max(
             0.0, time.perf_counter() - started))
     started = time.perf_counter()
     assessment = evaluate_capabilities(solver, cohort, generation)
     _observe(
         observer,
-        retention_championship_candidate_wall_seconds=max(
+        championship_candidate_wall_seconds=max(
             0.0, time.perf_counter() - started))
     if observer is not None:
         try:
             telemetry_for = getattr(solver, "telemetry_for", None)
             telemetry = telemetry_for() if callable(telemetry_for) else {}
             observer({
-                "retention_championship_case_count": len(cases),
-                "retention_championship_shared_backbone_launches": int(
+                "championship_case_count": len(cases),
+                "championship_shared_backbone_launches": int(
                     telemetry.get("shared_backbone_launches", 0) or 0),
-                "retention_championship_scalar_neural_launches": int(
+                "championship_scalar_neural_launches": int(
                     telemetry.get("scalar_neural_launches", 0) or 0),
             })
         except Exception:
