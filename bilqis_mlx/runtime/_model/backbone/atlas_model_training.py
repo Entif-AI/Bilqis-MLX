@@ -22,7 +22,7 @@ from bilqis_mlx.runtime.model_topology_v2 import (
 from bilqis_mlx.runtime.atlas_refinement import masked_routing_loss
 
 from .atlas_model_backend import Backend, model_backend
-from ..training_objective import REFINEMENT_ROUTING_WEIGHT
+from bilqis_mlx.runtime.training_objective import REFINEMENT_ROUTING_WEIGHT
 from .atlas_model_contracts import (
     BamfCompiledBatch, BamfGradientExecution, BamfLossExecution,
     _FORWARD_ISSUANCE, _LOSS_EXECUTION_ISSUER, _invalid,

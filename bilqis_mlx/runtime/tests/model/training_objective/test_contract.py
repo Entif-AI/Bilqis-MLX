@@ -4,7 +4,7 @@ from __future__ import annotations
 import math
 import unittest
 
-from bilqis_mlx.runtime._model.training_objective import (
+from bilqis_mlx.runtime.training_objective import (
     FAMILY_WEIGHTS, FP32_ATOL, FP32_RTOL, INACTIVE_FAMILIES,
     TRAINING_OBJECTIVE_ID, TRAINING_OBJECTIVE_SCHEMA,
     current_training_objective,

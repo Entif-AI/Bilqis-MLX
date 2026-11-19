@@ -29,7 +29,7 @@ def issue_distributed_step_manifest(
                != plan.logical_row_ids):
         _invalid("C08_DISTRIBUTED_MANIFEST_BATCH_DRIFT")
     objective_digest = getattr(custody, "training_objective_digest", None)
-    from bilqis_mlx.runtime._model.training_objective import (
+    from bilqis_mlx.runtime.training_objective import (
         require_training_objective_digest,
     )
     require_training_objective_digest(objective_digest)

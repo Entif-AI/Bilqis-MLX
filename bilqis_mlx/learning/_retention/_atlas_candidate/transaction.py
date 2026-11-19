@@ -89,7 +89,7 @@ class CandidateTransaction:
                 or _parent_object_guard(self.parent) != self._parent_guard
                 or self.schema_version != TRANSACTION_SCHEMA):
             invalid()
-        from bilqis_mlx.runtime._model.training_objective import (
+        from bilqis_mlx.runtime.training_objective import (
             require_training_objective_digest,
         )
         require_training_objective_digest(self.training_objective_digest)
@@ -156,7 +156,7 @@ def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0,
     parent_guard = _parent_object_guard(parent) if parent_guard is None else parent_guard
     custody = parent.custody
     if custody is None:
-        from bilqis_mlx.runtime._model.training_objective import (
+        from bilqis_mlx.runtime.training_objective import (
             current_training_objective,
         )
         objective = current_training_objective()
@@ -165,7 +165,7 @@ def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0,
             or custody.training_objective_digest is None):
         invalid()
     else:
-        from bilqis_mlx.runtime._model.training_objective import (
+        from bilqis_mlx.runtime.training_objective import (
             require_training_objective_digest,
         )
         require_training_objective_digest(custody.training_objective_digest)

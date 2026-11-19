@@ -98,7 +98,7 @@ def save_bamf_bundle(candidate: BamfBundleCandidate, destination: Path, *,
             "object_sha256": digest,
         }
     hp = candidate.optimizer_hyperparameters
-    from bilqis_mlx.runtime._model.training_objective import (
+    from bilqis_mlx.runtime.training_objective import (
         current_training_objective,
     )
     objective = current_training_objective()

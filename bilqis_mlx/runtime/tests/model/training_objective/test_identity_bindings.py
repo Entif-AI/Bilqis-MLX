@@ -17,11 +17,11 @@ from bilqis_mlx.runtime._atlas_resources.distributed_contracts import (
     LEGACY_DISTRIBUTED_STEP_MANIFEST_SCHEMA,
     DistributedRank, DistributedStepManifest,
 )
-from bilqis_mlx.runtime._custody.bamf_bundle.generation_manifest import (
+from bilqis_mlx.runtime.bamf_bundle.generation_manifest import (
     BAMF_BUNDLE_SCHEMA, OBJECTIVE_BOUND_BAMF_BUNDLE_SCHEMA,
     BamfGenerationManifest,
 )
-from bilqis_mlx.runtime._model.training_objective import (
+from bilqis_mlx.runtime.training_objective import (
     current_training_objective, require_training_objective_digest,
 )
 

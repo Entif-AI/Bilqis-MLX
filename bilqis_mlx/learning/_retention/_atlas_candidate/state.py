@@ -26,14 +26,14 @@ def _is_genesis_allocations(snapshot: MotifAllocationSnapshot) -> bool:
             and not snapshot.aliases)
 
 def _current_objective_ref() -> str:
-    from bilqis_mlx.runtime._model.training_objective import (
+    from bilqis_mlx.runtime.training_objective import (
         current_training_objective,
     )
     return current_training_objective().ref
 
 
 def _current_objective_digest() -> str:
-    from bilqis_mlx.runtime._model.training_objective import (
+    from bilqis_mlx.runtime.training_objective import (
         current_training_objective,
     )
     return current_training_objective().digest

@@ -70,7 +70,7 @@ class BamfGenerationManifest:
                     self.optimizer, self.transition, self.sidecars))):
             invalid()
         if objective_bound:
-            from bilqis_mlx.runtime._model.training_objective import (
+            from bilqis_mlx.runtime.training_objective import (
                 current_training_objective,
             )
             objective = current_training_objective()

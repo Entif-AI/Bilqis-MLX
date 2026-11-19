@@ -166,7 +166,7 @@ class DistributedFactoryStepCapsule:
     salience_supervision: object | None
 
     def __post_init__(self):
-        from bilqis_mlx.runtime._model.training_objective import (
+        from bilqis_mlx.runtime.training_objective import (
             require_training_objective_digest,
         )
         require_training_objective_digest(self.training_objective_digest)

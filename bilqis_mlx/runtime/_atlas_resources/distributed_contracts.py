@@ -59,7 +59,7 @@ class DistributedExecutionProfile:
 
 
 def _current_objective_digest() -> str:
-    from bilqis_mlx.runtime._model.training_objective import (
+    from bilqis_mlx.runtime.training_objective import (
         current_training_objective,
     )
     return current_training_objective().digest
@@ -116,7 +116,7 @@ class DistributedStepManifest:
             if self.training_objective_digest is not None:
                 _invalid("BAMF_C08_DISTRIBUTED_OBJECTIVE_UNBOUND")
         else:
-            from bilqis_mlx.runtime._model.training_objective import (
+            from bilqis_mlx.runtime.training_objective import (
                 require_training_objective_digest,
             )
             if not _sha(self.training_objective_digest):
