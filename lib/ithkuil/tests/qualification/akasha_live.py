@@ -17,7 +17,13 @@ from bilqis_mlx.runtime.akasha_qualification import (
     QualificationMeasurements, QualificationOutcomes,
 )
 from bilqis_mlx.runtime.akasha_security import AkashaNamespaceScope, DOMAIN_SECURITY_POLICIES
-from .akasha_support import canonical_bytes, fault_phase, materialization_phase, sha256
+from .akasha_support import (
+    canonical_bytes,
+    equivalent_projection_receipt,
+    fault_phase,
+    materialization_phase,
+    sha256,
+)
 
 
 SOURCE_HEADS = (
@@ -71,7 +77,8 @@ def _receipt(candidate, command, environment, dataset, material, faults, canonic
                                        == material["first_receipt"]["canonical_rdf_sha256"]),
         backup_restore_census_match=material["restored_matches"],
         backup_restore_query_match=bool(material["restored_query"]),
-        clean_rebuild_match=(material["rebuilt_import"] == first
+        clean_rebuild_match=(material["rebuilt_matches"]
+                             and equivalent_projection_receipt(material["rebuilt_import"], first)
                              and material["rebuilt_receipt"]["canonical_rdf_sha256"]
                              == material["first_receipt"]["canonical_rdf_sha256"]),
         stale_detected=faults["stale_detected"], corruption_detected=faults["corruption_detected"],

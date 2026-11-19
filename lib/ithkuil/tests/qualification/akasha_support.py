@@ -14,6 +14,12 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def equivalent_projection_receipt(left, right) -> bool:
+    """Compare materialization outcomes, excluding per-run custody identity."""
+    fields = ("status", "projection_version", "canonical_sha256", "nodes", "edges")
+    return all(left.get(field) == right.get(field) for field in fields)
+
+
 def elapsed(call):
     started = time.perf_counter()
     result = call()
@@ -103,6 +109,7 @@ def materialization_phase(db, bundle, suite_path, suite, names, owner, host, por
     rebuilt = Importer(db, names["rebuild"], owner + "b")
     rebuilt_import, _ = elapsed(lambda: rebuilt.materialize(bundle))
     ensure_indexes(rebuilt); rebuilt_receipt = build_receipt(rebuilt, bundle, suite_path)
+    rebuilt_matches = rebuilt.read_projection() == snapshot
     return {"first": first, "first_import": first_import, "first_receipt": first_receipt,
             "snapshot": snapshot, "backup": backup, "second_import": second_import,
             "rebuild_seconds": rebuild_seconds, "idempotent_seconds": idempotent_seconds,
@@ -110,7 +117,7 @@ def materialization_phase(db, bundle, suite_path, suite, names, owner, host, por
             "restored": restored, "restored_receipt": restored_receipt,
             "restored_query": restored_query, "restored_matches": restored_matches,
             "restore_seconds": restore_seconds, "rebuilt_import": rebuilt_import,
-            "rebuilt_receipt": rebuilt_receipt}
+            "rebuilt_receipt": rebuilt_receipt, "rebuilt_matches": rebuilt_matches}
 
 
 def fault_phase(db, bundle, suite_path, names, owner, host, port, material):
@@ -144,7 +151,8 @@ def fault_phase(db, bundle, suite_path, names, owner, host, port, material):
     plan = plan_reset(first); reset_owned(first, plan)
     foreign_after = first._read("MATCH(n:QualificationForeign) RETURN n.key ORDER BY n.key")
     return {"stale_detected": stale_detected, "corruption_detected": corruption_detected,
-            "partial_recovery": partial_failed and resumed_import == material["first_import"]
+            "partial_recovery": partial_failed
+                and equivalent_projection_receipt(resumed_import, material["first_import"])
                 and resumed_receipt["status"] == "complete",
             "restart_reconnect": resumed.status()["state"] == "complete",
             "foreign_isolation": foreign_before == foreign_after == [["a"], ["b"]],
