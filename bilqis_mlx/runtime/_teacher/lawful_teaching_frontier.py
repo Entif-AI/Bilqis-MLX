@@ -62,6 +62,21 @@ def _validate_epoch(epoch, planning_generation, source_context, parent):
     return source
 
 
+def _bind_frontier_currentness(root, epoch, active_grade):
+    from bilqis_mlx.runtime.frontier_autonomy_currentness import (
+        _bind_autonomy_currentness,
+    )
+    from bilqis_mlx.runtime.active_generated_grade import (
+        _bind_active_generated_grade_currentness,
+    )
+    autonomy = _bind_autonomy_currentness(
+        root, epoch.current_release, plan=epoch.autonomy_plan,
+        ledger=epoch.evidence_ledger)
+    active_grade_witness = _bind_active_generated_grade_currentness(
+        root, active_grade)
+    return autonomy, active_grade_witness
+
+
 def _issue_lawful_teaching_frontier_from_epoch(
         epoch, source_context, parent, planning_generation):
     """Seal one already-derived accepted A09 epoch for an internal consumer."""
@@ -86,17 +101,8 @@ def _issue_lawful_teaching_frontier_from_epoch(
         (member.capability_id, member.semantic_id)
         for member in active_grade.definition.members
     )
-    from bilqis_mlx.runtime.frontier_autonomy_currentness import (
-        _bind_autonomy_currentness,
-    )
-    autonomy_currentness = _bind_autonomy_currentness(
-        root, epoch.current_release, plan=epoch.autonomy_plan,
-        ledger=epoch.evidence_ledger)
-    from bilqis_mlx.runtime.active_generated_grade import (
-        _bind_active_generated_grade_currentness,
-    )
-    active_grade_currentness = _bind_active_generated_grade_currentness(
-        root, active_grade)
+    autonomy_currentness, active_grade_currentness = _bind_frontier_currentness(
+        root, epoch, active_grade)
     active_members = _active_member_projection(
         epoch.current_release, active_grade)
     mastered = evidence_complete_capabilities(
@@ -178,6 +184,57 @@ def issue_lawful_teaching_frontier(
         epoch, source_context, parent, planning_generation)
 
 
+def _frontier_checkpoint_identity(
+        source_context, parent, planning_generation, currentness_step):
+    if currentness_step is not None:
+        return (
+            planning_generation.parent_candidate_identity_sha256,
+            parent.retained_state.optimizer_step,
+        )
+    from bilqis_mlx.runtime.atlas_flywheel_runtime import _accepted_checkpoint
+    checkpoint = _accepted_checkpoint(Path(source_context.run_dir))
+    return checkpoint.sha256, checkpoint.optimizer_step
+
+
+def _frontier_autonomy_identity(frontier, source_context, currentness_step):
+    if currentness_step is None:
+        from bilqis_mlx.runtime.autonomy_state import read_autonomy_state
+        plan, ledger = read_autonomy_state(
+            Path(source_context.run_dir), source_context.release)
+        return plan.digest(), _evidence_digest(plan, ledger)
+    from bilqis_mlx.runtime.frontier_autonomy_currentness import (
+        _require_autonomy_currentness,
+    )
+    try:
+        _require_autonomy_currentness(
+            frontier._autonomy_currentness, source_context.release)
+    except ValueError:
+        _invalid("BAMF_LEARNER_FRONTIER_STALE")
+    return frontier.autonomy_plan_sha256, frontier.autonomy_evidence_sha256
+
+
+def _frontier_active_grade(
+        frontier, source_context, parent, planning_generation, currentness_step):
+    root = Path(source_context.run_dir)
+    if currentness_step is None or frontier._active_grade_currentness is None:
+        from bilqis_mlx.runtime.active_generated_grade import (
+            read_active_generated_grade,
+        )
+        return read_active_generated_grade(root)
+    from bilqis_mlx.runtime.active_generated_grade import (
+        _read_bound_active_generated_grade,
+    )
+    return _read_bound_active_generated_grade(
+        root,
+        expected_activation_sha256=frontier.active_grade_activation_sha256,
+        expected_definition_sha256=frontier.active_grade_definition_sha256,
+        currentness_step=currentness_step,
+        currentness_transaction=planning_generation._accepted_currentness,
+        parent=parent,
+        active_currentness=frontier._active_grade_currentness,
+    )
+
+
 def _require_lawful_teaching_frontier(
         frontier, source_context, parent, *, refresh_accepted,
         currentness_step=None):
@@ -205,57 +262,13 @@ def _require_lawful_teaching_frontier(
         _require_planning_generation,
     )
     _require_planning_generation(planning_generation, source_context, parent)
-    if currentness_step is None:
-        from bilqis_mlx.runtime.atlas_flywheel_runtime import _accepted_checkpoint
-        checkpoint = _accepted_checkpoint(Path(source_context.run_dir))
-        checkpoint_sha256 = checkpoint.sha256
-        optimizer_step = checkpoint.optimizer_step
-    else:
-        checkpoint_sha256 = planning_generation.parent_candidate_identity_sha256
-        optimizer_step = parent.retained_state.optimizer_step
-    if currentness_step is None:
-        from bilqis_mlx.runtime.autonomy_state import read_autonomy_state
-        plan, ledger = read_autonomy_state(
-            Path(source_context.run_dir), source_context.release)
-        autonomy_plan_sha256 = plan.digest()
-        autonomy_evidence_sha256 = _evidence_digest(plan, ledger)
-    else:
-        from bilqis_mlx.runtime.frontier_autonomy_currentness import (
-            _require_autonomy_currentness,
-        )
-        try:
-            _require_autonomy_currentness(
-                frontier._autonomy_currentness, source_context.release)
-        except ValueError:
-            _invalid("BAMF_LEARNER_FRONTIER_STALE")
-        autonomy_plan_sha256 = frontier.autonomy_plan_sha256
-        autonomy_evidence_sha256 = frontier.autonomy_evidence_sha256
+    checkpoint_sha256, optimizer_step = _frontier_checkpoint_identity(
+        source_context, parent, planning_generation, currentness_step)
+    autonomy_plan_sha256, autonomy_evidence_sha256 = _frontier_autonomy_identity(
+        frontier, source_context, currentness_step)
     source = _source_authority(planning_generation)
-    if currentness_step is None:
-        from bilqis_mlx.runtime.active_generated_grade import (
-            read_active_generated_grade,
-        )
-        active_grade = read_active_generated_grade(
-            Path(source_context.run_dir))
-    elif frontier._active_grade_currentness is None:
-        from bilqis_mlx.runtime.active_generated_grade import (
-            read_active_generated_grade,
-        )
-        active_grade = read_active_generated_grade(
-            Path(source_context.run_dir))
-    else:
-        from bilqis_mlx.runtime.active_generated_grade import (
-            _read_bound_active_generated_grade,
-        )
-        active_grade = _read_bound_active_generated_grade(
-            Path(source_context.run_dir),
-            expected_activation_sha256=frontier.active_grade_activation_sha256,
-            expected_definition_sha256=frontier.active_grade_definition_sha256,
-            currentness_step=currentness_step,
-            currentness_transaction=planning_generation._accepted_currentness,
-            parent=parent,
-            active_currentness=frontier._active_grade_currentness,
-        )
+    active_grade = _frontier_active_grade(
+        frontier, source_context, parent, planning_generation, currentness_step)
     if (
         frontier.run_id != parent.run_id
         or frontier.accepted_generation != parent.generation

@@ -44,6 +44,28 @@ class ActiveGeneratedGradeTests(unittest.TestCase):
         )
         return replace(draft, definition_sha256=draft.expected_digest())
 
+    def _bootstrap_active_grade(self, proposal, definition):
+        from bilqis_mlx.runtime.active_generated_grade_contracts import (
+            issue_active_generated_grade,
+        )
+        return issue_active_generated_grade(
+            run_id="fixture-run",
+            activation_generation=0,
+            activation_manifest_sha256="1" * 64,
+            activation_acceptance_sha256="2" * 64,
+            generated_grade_id=definition.definition_sha256,
+            definition=definition,
+            proposal_sha256=proposal.proposal_sha256,
+            a09_snapshot_sha256="3" * 64,
+            a09_closure_sha256="4" * 64,
+            a09_proposal_sha256=None,
+            predecessor_activation_sha256=None,
+            predecessor_definition_sha256=None,
+            transition_kind="BOOTSTRAP",
+            transition_receipt_sha256=proposal.proposal_sha256,
+            transition_reason="DATA_DEFINED_INITIAL_GRADE_BOOTSTRAP",
+        )
+
     def test_initial_activation_round_trips_exact_definition_from_durable_custody(self):
         from bilqis_mlx.runtime.active_generated_grade import (
             _read_bound_active_generated_grade,
@@ -116,28 +138,8 @@ class ActiveGeneratedGradeTests(unittest.TestCase):
             _bind_active_generated_grade_currentness,
             _read_bound_active_generated_grade,
         )
-        from bilqis_mlx.runtime.active_generated_grade_contracts import (
-            issue_active_generated_grade,
-        )
-
         proposal, definition = self._fixture()
-        active = issue_active_generated_grade(
-            run_id="fixture-run",
-            activation_generation=0,
-            activation_manifest_sha256="1" * 64,
-            activation_acceptance_sha256="2" * 64,
-            generated_grade_id=definition.definition_sha256,
-            definition=definition,
-            proposal_sha256=proposal.proposal_sha256,
-            a09_snapshot_sha256="3" * 64,
-            a09_closure_sha256="4" * 64,
-            a09_proposal_sha256=None,
-            predecessor_activation_sha256=None,
-            predecessor_definition_sha256=None,
-            transition_kind="BOOTSTRAP",
-            transition_receipt_sha256=proposal.proposal_sha256,
-            transition_reason="DATA_DEFINED_INITIAL_GRADE_BOOTSTRAP",
-        )
+        active = self._bootstrap_active_grade(proposal, definition)
         with TemporaryDirectory() as directory:
             root = Path(directory)
             paths = (
