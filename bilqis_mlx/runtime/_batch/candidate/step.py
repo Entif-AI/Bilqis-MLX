@@ -15,16 +15,23 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     bind_candidate_execution_cache, bind_execution_generation,
 )
+from bilqis_mlx.runtime.atlas_resources import (
+    DistributedExecutionProfile, persist_distributed_manifest,
+)
 
 from ..atlas_training_delivery import capture_realized_delivery
 from ..factory_candidate_components import (
     FactoryCandidateStep, _invalid, _reporting_diagnostics, _resource_plan,
     _stage_retained_motifs,
 )
-from ..factory_candidate_cost import realized_candidate_cost
-from ..factory_candidate_microbatch import (
-    execute_factory_logical_batch, execute_factory_training_row,
+from bilqis_mlx.runtime.factory_candidate_cost import realized_candidate_cost
+from bilqis_mlx.runtime.factory_candidate_microbatch import (
+    bind_factory_distributed_outcome, execute_factory_logical_batch,
+    execute_factory_training_row,
 )
+from bilqis_mlx.runtime.c08_distributed_manifest import issue_distributed_step_manifest
+from bilqis_mlx.runtime.c08_distributed_outcome import DistributedStepOutcome
+from bilqis_mlx.runtime.c08_distributed_executor import DistributedExecutorBinding
 from .retry import execute_with_oom_retry
 
 
@@ -44,7 +51,8 @@ def _prepared_feature_context(prepared, semantic_context):
 def _execute_training_and_admission(
         run_dir, source_context, parent, prepared, feature_context, generation, cache,
         resource_plan, teacher_hparams, max_norm, candidate, currentness_transaction,
-        salience_supervision, mentor_supervision):
+        salience_supervision, mentor_supervision, distributed_profile,
+        distributed_executor):
     parameters = dict((parent.retained_state.optimizer if candidate is None
                        else candidate.optimizer).parameters)
     if len(prepared.compiled_rows) == 1:
@@ -63,11 +71,35 @@ def _execute_training_and_admission(
         loss_total = gradient.loss_total
         c08_metrics = (1, 0, 1, 0, None)
     else:
-        gradient, authorities, target_rows = execute_factory_logical_batch(
-            parameters, prepared, source_context, feature_context.snapshot,
-            generation, cache, resource_plan,
-            salience_supervision=salience_supervision,
-            mentor_supervision=mentor_supervision)
+        if (distributed_profile is None) != (distributed_executor is None):
+            _invalid("FACTORY_DISTRIBUTED_CONFIGURATION_INCOMPLETE")
+        if distributed_profile is None:
+            gradient, authorities, target_rows = execute_factory_logical_batch(
+                parameters, prepared, source_context, feature_context.snapshot,
+                generation, cache, resource_plan,
+                salience_supervision=salience_supervision,
+                mentor_supervision=mentor_supervision)
+        else:
+            if (type(distributed_profile) is not DistributedExecutionProfile
+                    or type(distributed_executor) is not DistributedExecutorBinding
+                    or distributed_executor.profile != distributed_profile):
+                _invalid("FACTORY_DISTRIBUTED_CONFIGURATION_INVALID")
+            manifest = issue_distributed_step_manifest(
+                parent, prepared.training_batch, resource_plan,
+                distributed_profile)
+            persist_distributed_manifest(Path(run_dir), manifest)
+            outcome = distributed_executor.execute(
+                parameters=parameters, prepared=prepared,
+                source_context=source_context,
+                feature_snapshot=feature_context.snapshot,
+                generation=generation, cache=cache, resource_plan=resource_plan,
+                manifest=manifest, salience_supervision=salience_supervision,
+                mentor_supervision=mentor_supervision)
+            if type(outcome) is not DistributedStepOutcome:
+                _invalid("FACTORY_DISTRIBUTED_OUTCOME_REQUIRED")
+            gradient, authorities, target_rows = bind_factory_distributed_outcome(
+                prepared, source_context, feature_context.snapshot, generation,
+                resource_plan, manifest, outcome)
         optimizer_started = time.perf_counter()
         transaction = admit_uninterrupted_candidate_step(
             Path(run_dir), parent, loss_bearing_target=True,
@@ -96,7 +128,7 @@ def _execute_prepared_candidate(
         mentor_supervision=None,
         semantic_context=None,
         semantic_context_materialized_in_step=False,
-        stage_metrics=None,
+        stage_metrics=None, distributed_profile=None, distributed_executor=None,
         finalize_candidate=True) -> FactoryCandidateStep:
     stage_metrics = dict(stage_metrics or {})
     if mentor_supervision is not None:
@@ -113,7 +145,8 @@ def _execute_prepared_candidate(
          optimizer_seconds) = _execute_training_and_admission(
             run_dir, source_context, parent, prepared, feature_context, generation,
             cache, plan, teacher_hparams, max_norm, candidate, currentness_transaction,
-            salience_supervision, mentor_supervision)
+            salience_supervision, mentor_supervision, distributed_profile,
+            distributed_executor)
         motif_started = time.perf_counter()
         if finalize_candidate:
             transaction = _stage_retained_motifs(

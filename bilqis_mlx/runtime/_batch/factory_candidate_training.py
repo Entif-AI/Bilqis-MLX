@@ -139,6 +139,8 @@ def execute_factory_candidate_step(
     upstream_pre_neural_source_compile_wall_seconds: float = 0.0,
     semantic_context=None,
     prepared_source=None,
+    distributed_profile=None,
+    distributed_executor=None,
 ) -> FactoryCandidateStep:
     """Compose C02→C08→B10/B11→candidate custody without publishing state.
 
@@ -183,7 +185,8 @@ def execute_factory_candidate_step(
         currentness_transaction=currentness_transaction,
         finalize_candidate=finalize_candidate, semantic_context=semantic_context,
         semantic_context_materialized_in_step=semantic_context_materialized_in_step,
-        stage_metrics=stage_metrics)
+        stage_metrics=stage_metrics, distributed_profile=distributed_profile,
+        distributed_executor=distributed_executor)
 
 
 __all__ = (

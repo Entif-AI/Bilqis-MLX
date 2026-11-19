@@ -112,7 +112,8 @@ def execute_accepted_priority_candidate(selection, source_context,
         prepared_rehearsal_rows=(), rehearsal_by_id=None,
         rehearsal_bindings=None, rehearsal_authorities=None,
         candidate_step_started_at=None,
-        source_prepare_wall_seconds=0.0):
+        source_prepare_wall_seconds=0.0,
+        distributed_profile=None, distributed_executor=None):
     _require_issued(selection)
     if selection.status != 'TEACHER_SELECTED':
         return selection
@@ -165,7 +166,9 @@ def execute_accepted_priority_candidate(selection, source_context,
         currentness_binding_wall_seconds=currentness_wall_seconds,
         upstream_pre_neural_source_compile_wall_seconds=caller_pre_neural_wall_seconds,
         semantic_context=semantic_context,
-        prepared_source=(prepared_source if not enrichment and not rehearsal else None))
+        prepared_source=(prepared_source if not enrichment and not rehearsal else None),
+        distributed_profile=distributed_profile,
+        distributed_executor=distributed_executor)
     if not hasattr(result, "realized_cost"):
         return result
     cost = dict(result.realized_cost)
