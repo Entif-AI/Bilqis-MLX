@@ -44,7 +44,8 @@ def _operate(state, **kwargs):
         source_prefetch_workers=0, **kwargs)
 
 
-def test_normal_session_covers_adoption_visits_reentry_and_stop(native_session):
+def test_normal_session_covers_adoption_visits_and_stop_without_admission_reentry(
+        native_session):
     state = native_session
     candidate_model, candidate_adamw = object(), object()
     accepted_model, accepted_adamw = object(), object()
@@ -62,23 +63,20 @@ def test_normal_session_covers_adoption_visits_reentry_and_stop(native_session):
         check("visit")
         return "ACCEPTED"
 
-    def reentry(*_args):
-        check("reentry")
-        return None, 0, None
-
     def stop(*_args, **_kwargs):
         check("stop")
         return "a" * 64
 
     state.stop.side_effect = stop
     with patch.object(session, "_visit", side_effect=visit), patch.object(
-            session, "_accepted_learning_reentry", side_effect=reentry), patch(
+            session, "_accepted_learning_reentry") as reentry, patch(
             "bilqis_mlx.runtime._release_adoption.native_profile.adopt_profile_release",
             side_effect=lambda *_args, **_kwargs: check("adopt")):
         result = _operate(state, parent_graph={}, profile_release=object())
 
     assert (result.status, result.visits, result.accepted) == ("VISIT_LIMIT", 1, 1)
-    assert observed == ["adopt", "visit", "reentry", "stop"]
+    assert observed == ["adopt", "visit", "stop"]
+    reentry.assert_not_called()
     assert state.mx.cache_limit == 987654
     assert state.mx.calls == [
         ("set_cache_limit", 0), ("clear_cache",),

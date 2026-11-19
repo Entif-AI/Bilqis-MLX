@@ -182,6 +182,7 @@ class AcceptedAtlasFlywheelHumanResumeSupport(MixedWitnessSupport, unittest.Test
             accepted_release = read_accepted_atlas_factory_release(Path(run_dir).resolve())
             self.assertEqual(context.release.release_sha256, accepted_release.release_sha256)
             self.assertIs(parent_graph, self.parent_graph)
+            self.assertIsNone(run_authority)
             return BamfOperatorResult(
                 "VISIT_LIMIT", 0, 0, 0,
                 parent.generation, parent.retained_state.optimizer_step)
