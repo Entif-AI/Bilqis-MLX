@@ -1,11 +1,28 @@
 """Portable owner-authenticated authority for rejected BAMF candidates."""
 from __future__ import annotations
 
-from bilqis_mlx.errors import BilqisError
+import hashlib
+import json
+
+from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.runtime.atlas_source_authority import SourceAuthorityRegistry
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 
-from ..records import canonical, invalid, sha
+
+
+def canonical(value) -> bytes:
+    return (json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+        allow_nan=False,
+    ) + "\n").encode("utf-8")
+
+
+def sha(raw: bytes) -> str:
+    return hashlib.sha256(raw).hexdigest()
+
+
+def invalid(reason: str):
+    ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason=reason)
 
 
 PORTABLE_REJECTION_AUTHORITY_SCHEMA = "bilqis.mlx.bamf-rejection-authority/v2"
@@ -56,7 +73,9 @@ def issue_portable_rejection_authority(
     """Sign rejection identity with the fixed C06 owner key already trusted by C09."""
     if not isinstance(registry, SourceAuthorityRegistry):
         invalid("BAMF_REJECTION_PORTABLE_AUTHORITY_INVALID")
-    from .._darwin_salience_signer import read_host_system_source_authority_signer
+    from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import (
+        read_host_system_source_authority_signer,
+    )
 
     signer = read_host_system_source_authority_signer(registry)
     claim = _claim(

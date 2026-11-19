@@ -19,7 +19,7 @@ from bilqis_mlx.runtime.atlas_source_authority import (
 )
 from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import HostSourceAuthoritySigner
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
-from bilqis_mlx.runtime.bamf_bundle.rejection import (
+from bilqis_mlx.runtime.bamf_rejection import (
     issue_portable_rejection_authority, portable_rejection_receipt,
     try_issue_portable_rejection_authority,
 )
