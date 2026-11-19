@@ -9,7 +9,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import NAME, shape_pat
 from bilqis_mlx.runtime.swarm_contributions import (
     AcceptanceContract, CanonicalPackageAdmissionContext,
     ContributionArtifact, ContributionClass, ContributionDisposition,
-    DurableReplayStore, EnvironmentIdentity, RemoteWorkManifest, ResourceBudget,
+    EnvironmentIdentity, RemoteWorkManifest, ResourceBudget,
     ResourceUsage, WorkerIdentity, WorkerReceipt, admit_remote_cognitive_package,
     package_binding_digest,
 )
@@ -68,12 +68,11 @@ class SwarmC12BridgeTests(AdoptionHarness):
             side_effect=AssertionError("rejected remote contribution reached publication"),
         ):
             decision = admit_remote_cognitive_package(
-                work, remote, now=1_600,
-                replay_store=DurableReplayStore(self.root / "replay"),
-                context=self._context(clearance))
+                work, remote, now=1_600, context=self._context(clearance))
         self.assertIs(decision.disposition, ContributionDisposition.REJECTED)
         pointer = json.loads((self.run / "bamf-state.json").read_text())
         self.assertEqual(pointer["manifest_sha256"], before)
+        self.assertTrue((self.run / "swarm-contribution-replay").is_dir())
 
     def test_c05_accepted_remote_package_publishes_only_through_b13(self):
         screened, clearance = self.screened(accepted=True)
@@ -86,9 +85,7 @@ class SwarmC12BridgeTests(AdoptionHarness):
         ), patch.object(mlx_checkpoint, "assert_headroom"):
             context = self._context(clearance)
             decision = admit_remote_cognitive_package(
-                work, remote, now=1_600,
-                replay_store=DurableReplayStore(self.root / "replay"),
-                context=context)
+                work, remote, now=1_600, context=context)
         self.assertIs(decision.disposition, ContributionDisposition.ADMITTED)
         pointer = json.loads((self.run / "bamf-state.json").read_text())
         self.assertEqual(decision.canonical_generation, pointer["manifest_sha256"])
@@ -110,9 +107,7 @@ class SwarmC12BridgeTests(AdoptionHarness):
         ):
             with self.assertRaises(BilqisError):
                 admit_remote_cognitive_package(
-                    work, forged, now=1_600,
-                    replay_store=DurableReplayStore(self.root / "replay"),
-                    context=self._context(clearance))
+                    work, forged, now=1_600, context=self._context(clearance))
 
     def test_stale_manifest_generation_rejects_before_c05_screen(self):
         screened, clearance = self.screened(accepted=True)
@@ -130,9 +125,25 @@ class SwarmC12BridgeTests(AdoptionHarness):
         ):
             with self.assertRaises(BilqisError):
                 admit_remote_cognitive_package(
-                    stale, remote, now=1_600,
-                    replay_store=DurableReplayStore(self.root / "replay"),
-                    context=self._context(clearance))
+                    stale, remote, now=1_600, context=self._context(clearance))
+
+    def test_manifest_capability_must_match_canonical_target(self):
+        screened, clearance = self.screened(accepted=True)
+        package = screened.candidate.package
+        work, remote = self._remote(
+            package, policy_sha256=screened.decision.policy_sha256)
+        from dataclasses import replace
+        wrong = replace(work, capability_id="capability:wrong-target")
+        unsigned = replace(
+            remote, manifest_digest=wrong.digest, signature_hex="0" * 128)
+        remote = unsigned.with_signature(KEY.sign(unsigned.signing_bytes()).hex())
+        with shape_patch(), patch(
+            "bilqis_mlx.runtime.swarm_contributions.c12_bridge.screen_received_package",
+            side_effect=AssertionError("wrong capability reached C05"),
+        ):
+            with self.assertRaises(BilqisError):
+                admit_remote_cognitive_package(
+                    wrong, remote, now=1_600, context=self._context(clearance))
 
     def test_wrong_c05_policy_digest_rejects_before_publication(self):
         screened, clearance = self.screened(accepted=True)
@@ -147,9 +158,7 @@ class SwarmC12BridgeTests(AdoptionHarness):
         ):
             with self.assertRaises(BilqisError):
                 admit_remote_cognitive_package(
-                    work, remote, now=1_600,
-                replay_store=DurableReplayStore(self.root / "replay"),
-                    context=self._context(clearance))
+                    work, remote, now=1_600, context=self._context(clearance))
 
 
 if __name__ == "__main__":

@@ -218,6 +218,8 @@ def verify_remote_receipt(
         invalid("BAMF_C14_REMOTE_WORK_EXPIRED")
     if receipt.manifest_digest != manifest.digest:
         invalid("BAMF_C14_REMOTE_MANIFEST_MISMATCH")
+    if manifest.mlx_identity != f"mlx:{receipt.worker.environment.mlx_version}":
+        invalid("BAMF_C14_WORKER_MLX_IDENTITY_MISMATCH")
     if receipt.artifact.artifact_type != manifest.expected_artifact_type:
         invalid("BAMF_C14_REMOTE_ARTIFACT_TYPE_MISMATCH")
     budget, usage = manifest.resource_budget, receipt.usage

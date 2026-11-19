@@ -8,14 +8,14 @@ from bilqis_mlx.runtime.swarm_contributions import (
     ResourceUsage, verify_remote_receipt,
 )
 from bilqis_mlx.runtime.tests.swarm_contributions.fixtures import (
-    GENERATION, SOURCE, digest, manifest, receipt,
+    GENERATION, SOURCE, digest, manifest, receipt, remote_worker_receipt,
 )
 
 
 class SwarmReceiptTests(unittest.TestCase):
     def test_signed_content_addressed_receipt_roundtrips(self):
         work = manifest()
-        result = receipt(work)
+        result = remote_worker_receipt(work.canonical_json)
         self.assertEqual(result.manifest_digest, work.digest)
         self.assertEqual(result.artifact.digest, digest(b"public synthetic result"))
         verified = verify_remote_receipt(
@@ -61,6 +61,14 @@ class SwarmReceiptTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             verify_remote_receipt(
                 work, tampered, now=1_600, replay_ledger=ReplayLedger())
+
+
+    def test_manifest_mlx_identity_must_match_signed_worker_environment(self):
+        work = replace(manifest(), mlx_identity="mlx:wrong-runtime")
+        result = receipt(work)
+        with self.assertRaises(BilqisError):
+            verify_remote_receipt(
+                work, result, now=1_600, replay_ledger=ReplayLedger())
 
     def test_environment_and_usage_are_signed_and_budget_bounded(self):
         work = manifest()

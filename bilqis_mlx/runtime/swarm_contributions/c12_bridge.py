@@ -10,7 +10,6 @@ from bilqis_mlx.runtime.cognitive_package import CognitivePackage, PackageBindin
 from bilqis_mlx.runtime.cognitive_package.adoption import publish_screened_delta_import
 from bilqis_mlx.runtime.cognitive_package.delta import _all_delta_slices
 from bilqis_mlx.runtime.cognitive_package import screen_received_package
-from bilqis_mlx.runtime.cognitive_package.receiver import _load_current_generation
 
 from .admission import ContributionDecision
 from .contracts import (
@@ -18,7 +17,8 @@ from .contracts import (
     canonical_bytes, digest, invalid,
 )
 from .receipts import ReplayLedger, WorkerReceipt, verify_remote_receipt
-from .replay import DurableReplayStore
+from .replay import replay_store_for_run
+from .school import require_current_school_identity
 
 
 @dataclass(frozen=True)
@@ -77,17 +77,6 @@ def _package_from_receipt(
     return package
 
 
-def _require_current_school_identity(
-        manifest: RemoteWorkManifest, run_dir: Path) -> None:
-    """Revalidate every manifest identity that canonical B13 can prove locally."""
-    pointer, student = _load_current_generation(run_dir)
-    if (manifest.retained_generation != pointer.get("manifest_sha256")
-            or manifest.source_release != student.provenance.release_digest
-            or manifest.model_identity != student.implementation_sha256
-            or manifest.topology_identity != student.topology.digest):
-        invalid("BAMF_C14_CANONICAL_SCHOOL_IDENTITY_MISMATCH")
-
-
 def _require_c05_contract(manifest: RemoteWorkManifest, screened) -> None:
     """A learned manifest binds C05's live policy rather than inventing a score gate."""
     decision = getattr(screened, "decision", None)
@@ -128,19 +117,19 @@ def _materialize_ingress(package: CognitivePackage, directory: Path) -> Path:
 
 def admit_remote_cognitive_package(
         manifest: RemoteWorkManifest, receipt: WorkerReceipt, *,
-        now: int, replay_store: DurableReplayStore,
-        context: CanonicalPackageAdmissionContext) -> ContributionDecision:
+        now: int, context: CanonicalPackageAdmissionContext) -> ContributionDecision:
     """Screen and, only when C05 accepts, publish through the canonical C12 path."""
-    if (type(context) is not CanonicalPackageAdmissionContext
-            or type(replay_store) is not DurableReplayStore):
+    if type(context) is not CanonicalPackageAdmissionContext:
         invalid("BAMF_C14_CANONICAL_ADMISSION_CONTEXT_INVALID")
     context.__post_init__()
     verified = verify_remote_receipt(
         manifest, receipt, now=now, replay_ledger=ReplayLedger())
-    ledger = replay_store.claim(
-        manifest.replay_id, manifest.digest, verified.receipt_digest)
-    _require_current_school_identity(manifest, context.run_dir)
+    require_current_school_identity(manifest, context.run_dir)
+    if manifest.capability_id != context.target_capability:
+        invalid("BAMF_C14_CANONICAL_CAPABILITY_MISMATCH")
     package = _package_from_receipt(manifest, receipt)
+    ledger = replay_store_for_run(context.run_dir).claim(
+        manifest.replay_id, manifest.digest, verified.receipt_digest)
     _materialize_ingress(package, context.sender_dir)
     screened = screen_received_package(
         context.sender_dir, context.staging_dir, package.digest, context.run_dir,

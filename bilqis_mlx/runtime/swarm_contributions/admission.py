@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Callable
 
 from .contracts import (
@@ -9,7 +10,8 @@ from .contracts import (
     ContributionDisposition, RemoteWorkManifest, digest, finite, invalid, text,
 )
 from .receipts import ReplayLedger, WorkerReceipt, verify_remote_receipt
-from .replay import DurableReplayStore
+from .replay import replay_store_for_run
+from .school import require_current_school_identity
 
 
 @dataclass(frozen=True)
@@ -56,24 +58,26 @@ class ContributionDecision:
 
 def admit_remote_observation(
         manifest: RemoteWorkManifest, receipt: WorkerReceipt, *,
-        now: int, replay_store: DurableReplayStore,
+        now: int, run_dir: Path, target_capability: str,
         independent_evaluator: Callable[
             [RemoteWorkManifest, WorkerReceipt], IndependentEvaluation],
 ) -> ContributionDecision:
     """Admit or reject non-neural evidence without canonical-school mutation."""
     if (manifest.contribution_class in {
             ContributionClass.ADAPTER_DELTA, ContributionClass.DENSE_UPDATE}
-            or type(replay_store) is not DurableReplayStore
             or not callable(independent_evaluator)):
         invalid("BAMF_C14_OBSERVATIONAL_ADMISSION_INVALID")
     verified = verify_remote_receipt(
         manifest, receipt, now=now, replay_ledger=ReplayLedger())
-    ledger = replay_store.claim(
-        manifest.replay_id, manifest.digest, verified.receipt_digest)
+    require_current_school_identity(manifest, run_dir)
+    if manifest.capability_id != target_capability:
+        invalid("BAMF_C14_CANONICAL_CAPABILITY_MISMATCH")
     evaluation = independent_evaluator(manifest, receipt)
     if type(evaluation) is not IndependentEvaluation:
         invalid("BAMF_C14_INDEPENDENT_EVALUATION_REQUIRED")
     evaluation.__post_init__()
+    ledger = replay_store_for_run(run_dir).claim(
+        manifest.replay_id, manifest.digest, verified.receipt_digest)
     passes = (
         evaluation.passed
         and evaluation.score >= manifest.acceptance.minimum_score

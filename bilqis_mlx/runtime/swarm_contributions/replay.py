@@ -69,7 +69,8 @@ class DurableReplayStore:
             claim = ReplayClaim(
                 payload["replay_id"], payload["manifest_digest"],
                 payload["receipt_digest"], payload["schema"])
-            if canonical_bytes(claim.record()) != raw:
+            if (canonical_bytes(claim.record()) != raw
+                    or path.name != f"{self._key(claim.replay_id)}.json"):
                 invalid("BAMF_C14_REPLAY_CLAIM_INVALID")
             return claim
         except (OSError, UnicodeError, json.JSONDecodeError, KeyError, TypeError):
@@ -79,10 +80,10 @@ class DurableReplayStore:
         self._require_root()
         if not self.root.exists():
             return ReplayLedger()
-        claims = tuple(
-            self._read_claim(path)
-            for path in sorted(self.root.iterdir())
-            if path.name.endswith(".json"))
+        paths = tuple(sorted(self.root.iterdir()))
+        if any(not path.name.endswith(".json") for path in paths):
+            invalid("BAMF_C14_REPLAY_STORE_INVALID")
+        claims = tuple(self._read_claim(path) for path in paths)
         if len({claim.replay_id for claim in claims}) != len(claims):
             invalid("BAMF_C14_REPLAY_STORE_DUPLICATE")
         return ReplayLedger(tuple(sorted(claim.replay_id for claim in claims)))
@@ -118,3 +119,10 @@ class DurableReplayStore:
             path.unlink(missing_ok=True)
             raise
         return self.snapshot()
+
+
+def replay_store_for_run(run_dir: Path) -> "DurableReplayStore":
+    run_dir = Path(run_dir)
+    if run_dir.is_symlink() or not run_dir.is_dir():
+        invalid("BAMF_C14_CANONICAL_RUN_DIR_INVALID")
+    return DurableReplayStore(run_dir / "swarm-contribution-replay")

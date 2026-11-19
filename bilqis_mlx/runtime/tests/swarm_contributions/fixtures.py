@@ -78,3 +78,12 @@ def receipt(
             payload_bytes=len(artifact.payload)),
         completed_at=1_500)
     return unsigned.with_signature(KEY.sign(unsigned.signing_bytes()).hex())
+
+
+def remote_worker_receipt(
+        manifest_wire: str, *, score: float = 1.0,
+        artifact: ContributionArtifact | None = None) -> WorkerReceipt:
+    """Synthetic remote worker: receives only frozen manifest bytes, never run custody."""
+    return receipt(
+        RemoteWorkManifest.from_canonical_json(manifest_wire),
+        score=score, artifact=artifact)

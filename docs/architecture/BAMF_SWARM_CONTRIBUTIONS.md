@@ -21,13 +21,13 @@ The worker receipt signs:
 - claimed examples, steps, elapsed seconds and payload bytes;
 - completion time.
 
-The resource counters are authenticated worker claims, not independent metering. Payload bytes are locally checkable. Canonical acceptance never relies on the worker's claimed score.
+The resource counters are authenticated worker claims, not independent metering. Payload bytes are locally checkable. The manifest's MLX identity must match the signed worker environment's MLX version. Canonical acceptance never relies on the worker's claimed score.
 
-After cryptographic verification, the canonical coordinator atomically consumes the manifest replay identity in a durable create-once replay store. A fresh coordinator process reconstructs consumed replay identities from that store; replay does not become legal after restart.
+After cryptographic verification and current-school identity checks, the canonical coordinator atomically consumes the manifest replay identity in a durable create-once replay store owned directly by the canonical run directory. The caller cannot substitute ephemeral replay custody. A fresh coordinator process reconstructs consumed replay identities from that store; replay does not become legal after restart.
 
 ## Non-neural contributions
 
-Evaluation, curriculum/counterexample, motif-candidate and regression evidence may be independently evaluated without changing canonical neural state. The independent canonical evaluator supplies the evidence digest and pass/fail result. A worker score cannot override that result or a required retention outcome.
+Evaluation, curriculum/counterexample, motif-candidate and regression evidence may be independently evaluated without changing canonical neural state. Before evaluation, the manifest must still match the current B13 generation, source release, implementation identity and topology, and its capability assignment must equal the canonical evaluation target. The independent canonical evaluator supplies the evidence digest and pass/fail result. A worker score cannot override that result or a required retention outcome.
 
 ## Learned contributions
 
@@ -37,9 +37,11 @@ The learned path is:
 
 ```text
 signed remote receipt
-  -> durable replay claim
+  -> exact worker MLX identity check
   -> exact current B13 generation / source / implementation / topology check
+  -> exact manifest capability / canonical target match
   -> canonical C12 package decode and exact binding check
+  -> durable run-owned replay claim
   -> current A12/C09 source-rights clearance
   -> disposable C12 delta application
   -> current Factory-owned C05 retention/admission screen
@@ -55,7 +57,7 @@ If C05 rejects the candidate, no B13 publication is attempted. Rejection may lea
 
 ## Opportunistic dispatch
 
-`dispatch_eligible_work` is deterministic and optional. With no available remote workers it returns no assignments and local school operation continues unchanged. Swarm availability therefore cannot become a prerequisite for ordinary local learning.
+`dispatch_eligible_work` is deterministic and optional. With no available remote workers it returns no assignments and local school operation continues unchanged. Swarm availability therefore cannot become a prerequisite for ordinary local learning. The public synthetic worker fixture receives only canonical manifest bytes plus its bounded artifact/signing inputs; it has no canonical run-directory argument or writable school handle.
 
 ## Scope and non-goals
 
