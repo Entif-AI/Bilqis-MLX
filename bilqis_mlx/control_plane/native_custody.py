@@ -78,12 +78,7 @@ def accepted_pointer(run_dir: Path) -> dict:
     return pointer
 
 
-def _accepted_generation(
-    run_dir: Path, manifest_sha256: str, acceptance_sha256: str,
-    *, expected_candidate_identity_sha256: str | None = None,
-) -> AuthenticatedGeneration:
-    if not is_digest(manifest_sha256) or not is_digest(acceptance_sha256):
-        invalid("CONTROL_PLANE_NATIVE_HISTORY_ANCHOR_INVALID")
+def _read_generation_manifest(run_dir: Path, manifest_sha256: str):
     root = run_dir / "bamf-bundles" / manifest_sha256
     manifest_path = root / "manifest.json"
     if (root.is_symlink() or not root.is_dir() or manifest_path.is_symlink()
@@ -105,6 +100,12 @@ def _accepted_generation(
             or not isinstance(manifest.get("provenance"), dict)
             or not isinstance(manifest.get("topology"), dict)):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_MANIFEST_INVALID")
+    return root, manifest
+
+
+def _read_generation_acceptance(
+        run_dir: Path, manifest_sha256: str, acceptance_sha256: str,
+        manifest: dict) -> dict:
     acceptance = _read_json(
         run_dir / "bamf-acceptance" / f"{manifest_sha256}.json",
         reason="CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_INVALID")
@@ -119,6 +120,10 @@ def _accepted_generation(
                 and acceptance["optimizer_step"] != manifest["optimizer"].get("step"))
             or not is_digest(acceptance.get("candidate_identity_sha256"))):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_DRIFT")
+    return acceptance
+
+
+def _read_generation_outbox(root: Path, manifest: dict) -> tuple[dict, ...]:
     outbox = _read_bound_json(
         root, manifest["sidecars"].get("outbox"),
         reason="CONTROL_PLANE_NATIVE_HISTORY_OUTBOX_INVALID")
@@ -134,6 +139,12 @@ def _accepted_generation(
                 manifest["run_id"], manifest["generation"], index, payload):
             invalid("CONTROL_PLANE_NATIVE_HISTORY_OUTBOX_INVALID")
         seen.add(event["event_id"])
+    return tuple(outbox)
+
+
+def _read_generation_identity(
+        root: Path, manifest: dict, acceptance: dict,
+        expected_candidate_identity_sha256: str | None) -> dict:
     identity = _read_bound_json(
         root, manifest["sidecars"].get("run_identity"),
         reason="CONTROL_PLANE_NATIVE_HISTORY_RUN_IDENTITY_INVALID")
@@ -157,6 +168,11 @@ def _accepted_generation(
             else acceptance.get("candidate_identity_sha256"))
         if observed_parent_identity != expected_candidate_identity_sha256:
             invalid("CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_DRIFT")
+    return identity
+
+
+def _read_generation_correction_frontier(
+        root: Path, manifest: dict, acceptance: dict) -> dict:
     correction_frontier = _read_bound_json(
         root, manifest["sidecars"].get("correction_frontier"),
         reason="CONTROL_PLANE_NATIVE_HISTORY_CORRECTION_FRONTIER_INVALID")
@@ -175,28 +191,47 @@ def _accepted_generation(
             invalid("CONTROL_PLANE_NATIVE_HISTORY_CORRECTION_FRONTIER_INVALID")
         if registry.digest != registry_sha256:
             invalid("CONTROL_PLANE_NATIVE_HISTORY_CORRECTION_FRONTIER_INVALID")
-    accepted_registry = acceptance.get("source_authority_registry_sha256")
     if ("source_authority_registry_sha256" in acceptance
-            and accepted_registry != registry_sha256):
+            and acceptance.get("source_authority_registry_sha256") != registry_sha256):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_DRIFT")
+    return correction_frontier
+
+
+def _read_generation_teacher_state(root: Path, manifest: dict, acceptance: dict) -> dict:
     teacher_state = _read_bound_json(
         root, manifest["sidecars"].get("teacher_state"),
         reason="CONTROL_PLANE_NATIVE_HISTORY_TEACHER_STATE_INVALID")
     if not isinstance(teacher_state, dict):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_TEACHER_STATE_INVALID")
-    schema = acceptance.get("schema_version")
     teacher_anchor = acceptance.get("teacher_state_sha256")
-    if schema in _EXACT_ACCEPTANCE_SCHEMAS:
+    if acceptance.get("schema_version") in _EXACT_ACCEPTANCE_SCHEMAS:
         teacher_binding = manifest["sidecars"].get("teacher_state")
         if (not is_digest(teacher_anchor) or not isinstance(teacher_binding, dict)
                 or teacher_anchor != teacher_binding.get("sha256")):
             invalid("CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_DRIFT")
     elif teacher_anchor is not None or "last_visit_receipt" in teacher_state:
         invalid("CONTROL_PLANE_NATIVE_HISTORY_ACCEPTANCE_DRIFT")
+    return teacher_state
+
+
+def _accepted_generation(
+    run_dir: Path, manifest_sha256: str, acceptance_sha256: str,
+    *, expected_candidate_identity_sha256: str | None = None,
+) -> AuthenticatedGeneration:
+    if not is_digest(manifest_sha256) or not is_digest(acceptance_sha256):
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_ANCHOR_INVALID")
+    root, manifest = _read_generation_manifest(run_dir, manifest_sha256)
+    acceptance = _read_generation_acceptance(
+        run_dir, manifest_sha256, acceptance_sha256, manifest)
+    outbox = _read_generation_outbox(root, manifest)
+    identity = _read_generation_identity(
+        root, manifest, acceptance, expected_candidate_identity_sha256)
+    correction_frontier = _read_generation_correction_frontier(
+        root, manifest, acceptance)
+    teacher_state = _read_generation_teacher_state(root, manifest, acceptance)
     return AuthenticatedGeneration(
         manifest_sha256, acceptance_sha256, manifest, acceptance, identity,
-        correction_frontier, teacher_state, tuple(outbox))
-
+        correction_frontier, teacher_state, outbox)
 
 def _historical_parent_acceptance(
         run_dir: Path, manifest_sha256: str,
