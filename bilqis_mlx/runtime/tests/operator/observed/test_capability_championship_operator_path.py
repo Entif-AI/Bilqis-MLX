@@ -153,6 +153,27 @@ def _run_first_title_operator():
 
 @patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
 class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
+    def test_current_binding_canonicalizes_per_case_solver_contracts_for_replay(self):
+        from bilqis_mlx.runtime.bamf_operator._championship_replay import _current_binding
+
+        fixture, target, group, _solver_instance, assessment, _evaluation = (
+            _championship_evaluation_fixture())
+        self.assertGreater(len(assessment.solver_contracts), 1)
+        self.assertEqual(len(set(assessment.solver_contracts)), 1)
+
+        with patch(
+                "bilqis_mlx.runtime.bamf_operator._championship_replay._solver_binding",
+                return_value="binding") as solver_binding:
+            result = _current_binding(
+                fixture[0], "artifact", "run", "release", "parent", "cache",
+                "successor", assessment.cohort, assessment, group)
+
+        self.assertEqual(result, "binding")
+        self.assertEqual(
+            solver_binding.call_args.kwargs["solver_contracts"],
+            tuple(sorted(set(assessment.solver_contracts))),
+        )
+
     def test_ordinary_candidate_with_remaining_cadence_work_skips_championship_boundary(self):
         from bilqis_mlx.runtime.bamf_operator.championship import (
             championship_boundary_capabilities,
