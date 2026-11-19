@@ -74,6 +74,8 @@ def _run_fixed_optimizer_steps(horizon: int, *, total_steps: int = 16):
             )
 
         with patch(
+                "bilqis_mlx.runtime.championship_advisers.prepare_championship_adviser_pool",
+                return_value=None), patch(
                 "bilqis_mlx.runtime.bamf_operator.session._execution_context",
                 return_value=(parent, context, "atlas", "feature")), patch(
                 "bilqis_mlx.runtime.bamf_operator.session.schedule_program_from_executable_release",

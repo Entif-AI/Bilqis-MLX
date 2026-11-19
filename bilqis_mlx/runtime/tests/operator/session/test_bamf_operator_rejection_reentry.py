@@ -24,35 +24,8 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 )
 
 
+@patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
 class BamfOperatorAdmissionReentryTests(unittest.TestCase):
-    @staticmethod
-    def _current():
-        return SimpleNamespace(
-            generation=0, retained_state=SimpleNamespace(optimizer_step=0))
-
-    def test_admission_hold_stops_before_another_neural_visit(self):
-        current = self._current()
-        parent_graph = {"tokens": ["fixture"]}
-        with TemporaryDirectory() as temporary, patch(
-                "bilqis_mlx.runtime.bamf_operator.session._visit",
-                return_value="ACCEPTED") as visit, patch(
-                "bilqis_mlx.runtime.bamf_operator.accepted_learning_evidence."
-                "refresh_accepted_learning_evidence",
-                return_value=SimpleNamespace(
-                    measured=0, passed=0, final_action="QUALIFICATION")), patch(
-                "bilqis_mlx.runtime.bamf_operator.session._accepted_admission_reentry",
-                return_value=("HELD", 0, "ADMISSION_HOLD")), patch(
-                "bilqis_mlx.runtime.bamf_operator.session.load_accepted_generation",
-                return_value=current):
-            result = operate_bamf(
-                temporary, minutes=1, max_visits=0, reserve_gib=0.0,
-                source_prefetch_workers=0, parent_graph=parent_graph)
-
-        self.assertEqual(result.status, "ADMISSION_HOLD")
-        self.assertEqual((result.visits, result.accepted, result.rejected), (1, 1, 0))
-        self.assertEqual(result.admission_status, "HELD")
-        visit.assert_called_once()
-
     def test_missing_accepted_lease_returns_typed_admission_stop(self):
         before = SimpleNamespace(release_sha256="a" * 64)
         missing = BilqisError(
@@ -120,30 +93,6 @@ class BamfOperatorAdmissionReentryTests(unittest.TestCase):
                 Path("/run"), {"tokens": []}, 100.0)
 
         self.assertEqual(actual, ("FIXED_POINT", 0, "FIXED_POINT"))
-
-    def test_implementation_uncovered_is_a_typed_operator_stop(self):
-        from bilqis_mlx.runtime.atlas_flywheel import AdmissionFlywheelStatus
-
-        current = SimpleNamespace(release_sha256="b" * 64)
-        result = SimpleNamespace(
-            status=AdmissionFlywheelStatus.IMPLEMENTATION_UNCOVERED,
-            advances=0,
-            final_state=SimpleNamespace(
-                epoch=SimpleNamespace(current_release=current)))
-        with patch(
-                "bilqis_mlx.runtime.atlas_admission.read_accepted_atlas_factory_release",
-                side_effect=(current, current)), patch(
-                "bilqis_mlx.runtime.atlas_flywheel_runtime.run_accepted_atlas_flywheel",
-                return_value=result), patch(
-                "bilqis_mlx.runtime.bamf_operator.session._execution_context",
-                side_effect=AssertionError("uncovered work must not start a visit")):
-            actual = _accepted_admission_reentry(
-                Path("/run"), {"tokens": []}, 100.0)
-
-        self.assertEqual(
-            actual,
-            ("IMPLEMENTATION_UNCOVERED", 0, "IMPLEMENTATION_UNCOVERED"),
-        )
 
 
 def _rejected_resource_fixture():

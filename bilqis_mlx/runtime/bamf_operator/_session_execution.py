@@ -1,6 +1,7 @@
 """Compatibility exports and session loop for the BAMF operator coordinator."""
 from __future__ import annotations
 
+from ._session_visit import ResourceRejectedVisit
 from .session_parts.candidate_execution import candidate_horizon_execution, execute_horizon
 from .session_parts.retention import retention_result
 
@@ -28,6 +29,7 @@ def _source_pool(workers, source_pool_factory, null_context):
 def _terminal_visit_status(outcome):
     return {
         "HELD": "PRIORITY_HOLD",
+        "RESOURCE_HOLD": "RESOURCE_HOLD",
         "ACTION_REQUIRED": "ACTION_REQUIRED",
         "CERTIFICATION_FAILED": "CERTIFICATION_FAILED",
         "CERTIFICATION_SUPERSEDED": "CERTIFICATION_SUPERSEDED",
@@ -40,6 +42,8 @@ def _run_visits(
         run_authority_binding, resource_snapshot, monotonic, visit_fn,
         observer_type, emit_progress):
     visits = accepted = rejected = 0
+    attempts = 0
+    resource_holds = set()
     admission_status, admission_advances = None, 0
     status = "TIME_LIMIT"
     resource_witness = None
@@ -50,16 +54,23 @@ def _run_visits(
             if not resource_witness["sufficient"]:
                 status = "DISK_RESERVE_REACHED"
                 break
-        emit_progress(progress, f"starting visit {visits + 1}")
-        with observer_type(run_dir, visits + 1) as observer:
+        attempts += 1
+        emit_progress(progress, f"starting visit {attempts}")
+        with observer_type(run_dir, attempts) as observer:
             outcome = visit_fn(
                 run_dir, reserve_gib, steps_per_visit=steps_per_visit,
                 progress=progress, source_prefetch_workers=source_prefetch_workers,
                 source_prefetch_executor=source_prefetch_executor,
                 source_prefetch_metrics=metrics, observer=observer,
-                run_authority_binding=run_authority_binding)
-            observer.finish(outcome)
-        emit_progress(progress, f"visit {visits + 1} outcome: {outcome}")
+                run_authority_binding=run_authority_binding,
+                **({"resource_holds": frozenset(resource_holds)} if resource_holds else {}))
+            resource_rejected = isinstance(outcome, ResourceRejectedVisit)
+            observer.finish("RESOURCE_REJECTED" if resource_rejected else outcome)
+        if resource_rejected:
+            resource_holds.add(outcome.capability)
+            emit_progress(progress, f"visit {attempts} resource-held {outcome.capability}")
+            continue
+        emit_progress(progress, f"visit {attempts} outcome: {outcome}")
         stop_status = _terminal_visit_status(outcome)
         if stop_status is not None:
             status = stop_status
@@ -111,7 +122,7 @@ def operate(
         operator_lock, visit_fn, observer_type, emit_progress,
         monotonic, load_generation, result_type,
         bind_run_authority=None, before_visits=None, resource_snapshot=None,
-        record_stop=None, elapsed_clock=None):
+        record_stop=None, elapsed_clock=None, training_memory_context=None):
     _validate_bounds(
         minutes=minutes, max_visits=max_visits, steps_per_visit=steps_per_visit,
         reserve_gib=reserve_gib, source_prefetch_workers=source_prefetch_workers,
@@ -122,7 +133,8 @@ def operate(
     deadline = monotonic() + minutes * 60
     metrics = metrics_type()
     source_pool = _source_pool(source_prefetch_workers, source_pool_factory, null_context)
-    with source_pool as source_prefetch_executor, operator_lock(run_dir):
+    with (source_pool as source_prefetch_executor, operator_lock(run_dir),
+          training_memory_context() if training_memory_context else null_context()):
         _assert_current(run_authority_binding)
         if before_visits is not None:
             before_visits(run_dir)

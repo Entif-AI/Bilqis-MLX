@@ -25,6 +25,7 @@ def _new_decision_owner():
     """Track live C05 decisions by owner-issued object identity, not a token."""
     issued = {}
     generation_authority = {}
+    finalized_generation_authority = set()
     baseline_ledger_sha256 = {}
 
     def require(value):
@@ -53,20 +54,22 @@ def _new_decision_owner():
     def issued_generation_authority(value):
         return generation_authority.get(id(value))
 
+    def finalize_generation_authority(value, expected, final):
+        require(value)
+        key = id(value)
+        if (key in finalized_generation_authority
+                or not _digest(expected) or not _digest(final)
+                or generation_authority.get(key) != expected):
+            _invalid()
+        generation_authority[key] = final
+        finalized_generation_authority.add(key)
+        return value
+
     def issued_baseline_ledger_sha256(value):
         return baseline_ledger_sha256.get(id(value))
 
-    def rebind_generation_authority(value, previous, expected):
-        """Advance one live decision from its screened candidate to final B13 custody."""
-        require(value)
-        if (not _digest(previous) or not _digest(expected)
-                or generation_authority.get(id(value)) != previous):
-            _invalid()
-        generation_authority[id(value)] = expected
-        return value
-
     return (require, require_generation_authority, issued_generation_authority,
-            issued_baseline_ledger_sha256, rebind_generation_authority, issue)
+            finalize_generation_authority, issued_baseline_ledger_sha256, issue)
 @dataclass(frozen=True)
 class CandidateRetentionDecision:
     """Live token issued only after C05 runs its stage-authoritative evaluation."""
@@ -157,9 +160,8 @@ def decide_candidate_retention(
 
 
 (_require_issued_decision, _require_issued_decision_generation_authority,
- _issued_decision_generation_authority, _issued_decision_baseline_ledger_sha256,
- _rebind_issued_decision_generation_authority,
- _raw_issue_decision) = _new_decision_owner()
+ _issued_decision_generation_authority, _finalize_issued_decision_generation_authority,
+ _issued_decision_baseline_ledger_sha256, _raw_issue_decision) = _new_decision_owner()
 
 
 from .atlas_retention_decision_factory import make_factory_retention_issuer

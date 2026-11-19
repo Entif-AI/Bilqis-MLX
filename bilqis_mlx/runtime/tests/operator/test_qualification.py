@@ -3,6 +3,8 @@ from copy import deepcopy
 from dataclasses import asdict
 import json
 from pathlib import Path
+import subprocess
+import sys
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch, Mock
@@ -63,6 +65,31 @@ class QualificationTests(unittest.TestCase):
         self.assertEqual(prepared.arm['topology'], self.manifest['arms'][0]['topology'])
         self.assertEqual({str(p): p.read_bytes() for p in self.root.iterdir()}, before)
         self.assertFalse((self.root/'base').exists())
+
+    def test_portable_runtime_import_does_not_require_mlx(self):
+        code = r'''
+import importlib.abc
+import sys
+
+class BlockMlx(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == "mlx" or fullname.startswith("mlx."):
+            raise ModuleNotFoundError("blocked portable MLX import", name=fullname)
+        return None
+
+sys.meta_path.insert(0, BlockMlx())
+from bilqis_mlx.runtime import checkpoints
+from bilqis_mlx.runtime.atlas_resources import inspect_distributed_backends
+assert checkpoints is not None
+assert all(not item.available for item in inspect_distributed_backends())
+'''
+        result = subprocess.run(
+            [sys.executable, '-c', code],
+            cwd=Path(__file__).resolve().parents[4],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_each_identity_mutation_fails_before_initialization(self):
         for name, change in (
