@@ -4,7 +4,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import dataclass, field, replace
-import hashlib
 import json
 from pathlib import Path
 
@@ -12,7 +11,7 @@ from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 from bilqis_mlx.learning.atlas_candidate import CandidateState
 from bilqis_mlx.learning.teacher_lineage import (
     TeacherCustodyProjection, advance_teacher_lineage, bind_next_teacher_epoch,
-    initialize_teacher_lineage, restore_teacher_lineage,
+    restore_teacher_lineage,
 )
 from bilqis_mlx.learning.teacher_visit_identity import (
     TeacherVisitIdentity, derive_teacher_visit_identity,
@@ -28,18 +27,15 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache, derive_successor_bundle,
     load_accepted_generation,
 )
-from bilqis_mlx.runtime.bamf_bundle.factory_release_adoption import (
-    is_factory_release_adoption_transition,
-    validate_factory_release_adoption_transition,
-)
 from bilqis_mlx.runtime.bamf_bundle.records import (
-    BamfBundleCandidate, sidecar_records, validate_transition,
-)
-from bilqis_mlx.runtime.bamf_bundle.package_import_transition import (
-    is_package_import_transition, validate_package_import_transition,
+    BamfBundleCandidate, sidecar_records,
 )
 from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
-from bilqis_mlx.semantics.domains import contract_digest
+
+from .accepted_teacher_state import (
+    _bank_identity, _c03_projection, _plasticity_identity,
+    _student_region, rebind_package_import_teacher_custody,
+)
 
 _BOUND_VISIT_ISSUER = object()
 _STUDENT_SCHEMA = "bilqis.bamf.student-reference/v1"
@@ -92,115 +88,6 @@ def _accepted_parent(run_dir: Path):
     return parent, cache
 
 
-def _bank_identity(student: CompleteStudent) -> str:
-    banks = student.semantic_abi.get("bank_identities")
-    if not isinstance(banks, (tuple, list)) or not banks:
-        invalid("TEACHER_STUDENT_BANK_IDENTITY_INVALID")
-    return contract_digest(("bilqis.bamf.c03-bank-identity/v1", tuple(banks)))
-
-
-def _plasticity_identity(state: CandidateState) -> str:
-    if type(state) is not CandidateState:
-        invalid("TEACHER_STUDENT_PLASTICITY_IDENTITY_INVALID")
-    return contract_digest(("bilqis.bamf.c03-plasticity-identity/v1",
-                            state.policy.to_record()))
-
-
-def _student_region(student_sha256: str, bank_identity: str,
-                    plasticity_identity: str) -> str:
-    binding = {
-        "student_sha256": student_sha256,
-        "bank_identity": bank_identity,
-        "plasticity_identity": plasticity_identity,
-    }
-    return hashlib.sha256(json.dumps(binding, sort_keys=True).encode()).hexdigest()
-
-
-def _student_reference(student: CompleteStudent, state: CandidateState | None = None) -> dict:
-    retained = student.retained_state if state is None else state
-    student_sha = candidate_identity_digest(retained)
-    bank_identity = _bank_identity(student)
-    plasticity_identity = _plasticity_identity(retained)
-    return {
-        "schema": _STUDENT_SCHEMA,
-        "student_sha256": student_sha,
-        "region": _student_region(student_sha, bank_identity, plasticity_identity),
-    }
-
-
-def _prebootstrap_transition_eligible(parent: CompleteStudent, state: Mapping) -> bool:
-    if (parent.generation <= 0
-            or parent.retained_state.optimizer_step != 0
-            or state.get("teacher_identity") != parent.provenance.teacher_identity
-            or state.get("teacher_epoch") != parent.provenance.teacher_epoch):
-        return False
-    transition = parent.transition
-    if is_package_import_transition(transition):
-        validate_package_import_transition(transition)
-        return True
-    if is_factory_release_adoption_transition(transition):
-        validate_factory_release_adoption_transition(transition)
-        return True
-    if (isinstance(transition, Mapping)
-            and transition.get("kind") == "PARAMETER_EXTENSION"):
-        validate_transition(parent.generation, transition)
-        return True
-    return False
-
-
-def _require_current_c03_lineage(parent: CompleteStudent, state: Mapping):
-    epoch = restore_teacher_lineage(state)
-    student = _student_reference(parent)
-    if (epoch.student_sha256 != student["student_sha256"]
-            or state.get("teacher_identity") != parent.provenance.teacher_identity
-            or state.get("teacher_epoch") != parent.provenance.teacher_epoch):
-        invalid("TEACHER_ACCEPTED_GENERATION_DRIFT")
-    return epoch
-
-
-def _c03_projection(parent: CompleteStudent, *, legacy_receipt, adaptation,
-                    prior_region) -> TeacherCustodyProjection:
-    state = dict(parent.teacher_state)
-    student = _student_reference(parent)
-    if "c03_lineage" in state:
-        if any(value is not None for value in (legacy_receipt, adaptation, prior_region)):
-            invalid("TEACHER_BOOTSTRAP_ALREADY_COMPLETE")
-        _require_current_c03_lineage(parent, state)
-        return TeacherCustodyProjection(
-            state, state["teacher_identity"], state["teacher_epoch"])
-    can_bootstrap = (
-        parent.generation == 0 or _prebootstrap_transition_eligible(parent, state))
-    if (not can_bootstrap or not isinstance(legacy_receipt, Mapping)
-            or not isinstance(adaptation, Mapping)
-            or not isinstance(prior_region, str) or not prior_region):
-        invalid("TEACHER_BOOTSTRAP_REQUIRED")
-    return initialize_teacher_lineage(
-        legacy_receipt, student, adaptation, prior_region=prior_region,
-        next_seed=state["next_seed"], cursor=state["cursor"])
-
-
-def rebind_package_import_teacher_custody(
-        parent: CompleteStudent, retained_state: CandidateState,
-) -> TeacherCustodyProjection | None:
-    """Rebind mature recipient teacher custody after an accepted package import.
-
-    A pre-bootstrap recipient keeps its existing sidecar; _c03_projection
-    performs the narrowly authenticated PACKAGE_IMPORT bootstrap later.
-    """
-    if type(parent) is not CompleteStudent or type(retained_state) is not CandidateState:
-        invalid("TEACHER_STUDENT_BINDING_INVALID")
-    state = dict(parent.teacher_state)
-    if "c03_lineage" not in state:
-        return None
-    _require_current_c03_lineage(parent, state)
-    student = _student_reference(parent, retained_state)
-    next_epoch = bind_next_teacher_epoch(
-        state, student, bank_identity=_bank_identity(parent),
-        plasticity_identity=_plasticity_identity(retained_state))
-    return advance_teacher_lineage(
-        state, next_epoch, next_seed=state["next_seed"], cursor=state["cursor"])
-
-
 def _selection_projection(
         projection: TeacherCustodyProjection, selected_epoch) -> TeacherCustodyProjection:
     before = restore_teacher_lineage(projection.teacher_state)
@@ -221,6 +108,23 @@ def _selection_projection(
     return selected
 
 
+def current_teacher_projection(
+        run_dir: Path, parent: CompleteStudent, cache,
+        projection: TeacherCustodyProjection) -> TeacherCustodyProjection:
+    """Reduce durable current-generation observations over the immutable teacher base."""
+    if type(projection) is not TeacherCustodyProjection:
+        invalid("TEACHER_CUSTODY_PROJECTION_INVALID")
+    epoch = restore_teacher_lineage(projection.teacher_state)
+    from bilqis_mlx.runtime.outcomes.replay import replay_rejected_outcomes
+    teacher = replay_rejected_outcomes(
+        Path(run_dir), parent, cache, epoch.teacher())
+    if teacher == epoch.teacher():
+        return projection
+    return _selection_projection(
+        projection,
+        replace(epoch, current_json=json.dumps(teacher, sort_keys=True, allow_nan=False)))
+
+
 def select_accepted_teacher_visit(
         run_dir: Path, engine, school, rng, learning_settings,
         teacher_curriculum_scope, previsit_diagnostics, lesson_grade, *,
@@ -233,6 +137,7 @@ def select_accepted_teacher_visit(
     projection = _c03_projection(
         parent, legacy_receipt=legacy_receipt,
         adaptation=adaptation, prior_region=prior_region)
+    projection = current_teacher_projection(run_dir, parent, cache, projection)
     epoch = restore_teacher_lineage(projection.teacher_state)
     school_student = getattr(getattr(school, "current_student", None), "sha256", None)
     if school_student != candidate_identity_digest(parent.retained_state):
@@ -358,5 +263,6 @@ def derive_c03_successor_bundle(
 
 __all__ = (
     "BoundTeacherVisit",
-    "derive_c03_successor_bundle", "rebind_package_import_teacher_custody",
+    "current_teacher_projection", "derive_c03_successor_bundle",
+    "rebind_package_import_teacher_custody",
 )
