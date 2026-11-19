@@ -502,6 +502,16 @@
       "preserved_branch": "codex/1389-retention-throughput-20261118"
     },
     {
+      "issue": 1392,
+      "pr": 1412,
+      "state": "TURNED_IN",
+      "head_sha": "53d16c2dc2671830f00853204f6067915729d94f",
+      "head_sha_role": "Verified executable candidate before this turn-in receipt.",
+      "summary": "Native C08 recovery retries the exact delivery at a smaller microbatch. Exhaustion records a B13 resource rejection and holds the capability for the current command. Scoped proof passed with 47 tests and 12 subtests, including source-backed native retry, exact parent cold readback, and operator continuation. PR #1412 is open for human review.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1392-native-oom-retry-20261118"
+    },
+    {
       "issue": 1395,
       "pr": 1414,
       "state": "TURNED_IN",

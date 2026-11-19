@@ -15,6 +15,7 @@ from bilqis_mlx.learning.teacher_visit_identity import (
     derive_teacher_visit_identity, record_teacher_visit_authority,
     record_teacher_visit_identity,
 )
+from bilqis_mlx.runtime.atlas_memory_retry import OOM_EXHAUSTED
 from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
 from bilqis_mlx.semantics.domains import contract_digest
 from .accepted_teacher_custody import (
@@ -150,7 +151,7 @@ def select_accepted_priority_visit(
         cadence_authorization=None,
         total_capabilities=None, plasticity_escape=None,
         legacy_receipt=None, adaptation=None, prior_region=None,
-        accepted_parent=None, planning_generation=None):
+        accepted_parent=None, planning_generation=None, resource_holds=frozenset()):
     parent, cache = _accepted_context(
         run_dir, source_context, school, lawful_frontier,
         accepted_parent, planning_generation)
@@ -187,6 +188,9 @@ def select_accepted_priority_visit(
             holds.append((option.stable_id, _action_required_hold_reason(option.action_kind)))
             if action_required_option_id is None:
                 action_required_option_id = option.stable_id
+            continue
+        if option.context.capability_id in resource_holds:
+            holds.append((option.stable_id, OOM_EXHAUSTED))
             continue
         offer = by_id[option.stable_id]
         materialization_started = time.perf_counter()
