@@ -1,5 +1,7 @@
 import { renderSchoolView } from "./school-view.mjs";
 import { loadSchoolRows } from "./school-live.mjs";
+import { loadFactoryRows } from "./factory-live.mjs";
+import { renderFactoryCockpitView } from "./factory-cockpit-view.mjs";
 import { t } from "../foundation/i18n.mjs";
 import { contextHelpMarkup } from "../foundation/primitives.mjs";
 import { testIdAttribute } from "../foundation/test-hooks.mjs";
@@ -27,6 +29,10 @@ function subnav(container, mode, onModeChange) {
     '<button type="button" class="ui-control ui-control--peer-tab" data-school-mode="atlas" data-focus-key="school-mode:atlas" ' +
       testIdAttribute("shell", "school-mode", "atlas") + ' aria-current="' +
       (mode === "atlas" ? "page" : "false") + '">' + t("shell.school.atlas") + "</button>";
+  nav.innerHTML +=
+    '<button type="button" class="ui-control ui-control--peer-tab" data-school-mode="factory" data-focus-key="school-mode:factory" ' +
+      testIdAttribute("shell", "school-mode", "factory") + ' aria-current="' +
+      (mode === "factory" ? "page" : "false") + '">' + t("shell.school.factory") + "</button>";
   nav.querySelectorAll("[data-school-mode]").forEach((button) => {
     button.addEventListener("click", () => {
       void onModeChange(button.dataset.schoolMode, null, true);
@@ -128,8 +134,22 @@ export async function activateSchoolDomain({
 
   async function renderMode(mode, requestedSelectedId = null, restoreModeFocus = false) {
     if (token !== schoolEpoch || !isActive()) return;
-    schoolMode = mode === "atlas" ? "atlas" : "matrix";
+    schoolMode = ["atlas", "factory"].includes(mode) ? mode : "matrix";
     if (requestedSelectedId) schoolSelectedId = requestedSelectedId;
+    if (schoolMode === "factory") {
+      summary.textContent = t("shell.destination.school.factoryPurpose");
+      let factoryState;
+      try {
+        factoryState = await loadFactoryRows(api);
+      } catch (_error) {
+        factoryState = Object.freeze({ state: "UNAVAILABLE", coverage: "UNKNOWN", rows: Object.freeze([]) });
+      }
+      if (token !== schoolEpoch || !isActive()) return;
+      renderFactoryCockpitView(container, { ...factoryState, onInspect });
+      subnav(container, schoolMode, renderMode);
+      if (restoreModeFocus) container.querySelector('[data-school-mode="factory"]')?.focus();
+      return;
+    }
     if (schoolMode === "atlas") {
       summary.textContent = t("shell.destination.school.atlasPurpose");
       if (launchMode === "fixtures") {

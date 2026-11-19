@@ -28,6 +28,12 @@ from bilqis_mlx.mission_control.semantic import (
     SemanticSourceRow,
 )
 from bilqis_mlx.mission_control.contracts.dossier import CapabilityDossier
+from bilqis_mlx.mission_control.contracts.factory import (
+    FactoryAdmissionAuthority, FactoryCockpitSnapshot, FactoryCurrencyState,
+    FactoryDeliveryStatus, FactoryGradeFrontier, FactoryLifecycleStatus,
+    FactoryRunLineage, FactorySubjectKind, FactoryTopologyEvidence,
+    FactoryTopologyKnowledge,
+)
 from bilqis_mlx.mission_control.snapshots import (
     CapabilitySnapshot, CurriculumFrontier, OperatorView, RunContext,
     SchoolSnapshot,
@@ -174,3 +180,22 @@ BASE_SAMPLES = (
 BASE_SAMPLES += (CapabilityDossier(meta("dossier-sample"), "B.EXAMPLE", "Example",
     value(7), value(8), value(12), value(5), value("WATCH"), value("ELIGIBLE"),
     value("QUALIFIED"), value("HELD"), ()),)
+
+BASE_SAMPLES += (FactoryCockpitSnapshot(
+    meta("factory-release:" + D1, run=None),
+    FactorySubjectKind.FACTORY_RELEASE, D1, D1, None, D2,
+    FactoryLifecycleStatus.ADMITTED, FactoryDeliveryStatus.LAUNCH_QUALIFIED,
+    FactoryCurrencyState.CURRENT, FactoryAdmissionAuthority.HUMAN_ONLY,
+    (FactoryGradeFrontier("B", ("B.AND", "B.OR")),),
+    ("B.AND", "B.OR"), (("B.OR", "B.AND"),), (), ("B.AND",), ("B.OR",),
+    (D3,), D3, D4,
+    (FactoryRunLineage(
+        "run-7", "lineage-7", 7, D1, D2, D3,
+        FactoryTopologyEvidence(
+            FactoryTopologyKnowledge.EXACT,
+            "bilqis.akasha.factory-topology-view/v1",
+            "bilqis.mlx.model-topology/v2", D4, "bamf-atlas-v2",
+            12, 16, 8, 768, 3072, 1024, None,
+        ),
+    ),),
+),)

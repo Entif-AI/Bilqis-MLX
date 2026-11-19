@@ -8,6 +8,12 @@ from .contracts.events import (
     CandidateDecision, CandidateOutcome, CorrectionEvent, FrameCompileReceipt,
     LearningEpisode, SalienceEvent,
 )
+from .contracts.factory import (
+    FactoryAdmissionAuthority, FactoryBlocker, FactoryCockpitSnapshot,
+    FactoryCurrencyState, FactoryDeliveryStatus, FactoryGradeFrontier,
+    FactoryLifecycleStatus, FactoryRunLineage, FactorySubjectKind,
+    FactoryTopologyEvidence, FactoryTopologyKnowledge,
+)
 from .contracts.model import (
     AuthorityClass, ContractErrorCode, CoverageState, DataValue,
     MissionControlContractError, RecordMeta, RunRef, ValueOrigin, ValueState,
@@ -48,6 +54,10 @@ __all__ = (
     "CapabilitySnapshot", "ContractErrorCode", "CorrectionEvent",
     "CoverageState", "CurriculumFrontier", "DataValue", "ErrorEnvelope",
     "EventEnvelope", "FrameCompileReceipt", "GenerationManifest",
+    "FactoryAdmissionAuthority", "FactoryBlocker", "FactoryCockpitSnapshot",
+    "FactoryCurrencyState", "FactoryDeliveryStatus", "FactoryGradeFrontier",
+    "FactoryLifecycleStatus", "FactoryRunLineage", "FactorySubjectKind",
+    "FactoryTopologyEvidence", "FactoryTopologyKnowledge",
     "LearningEpisode", "MemorySnapshot", "MissionControlContractError",
     "MissionControlQueryCatalog",
     "MissionControlProjection", "PROJECTION_SCHEMA", "PROJECTION_SCHEMA_VERSION",
@@ -74,7 +84,7 @@ __all__ = (
 import sys as _sys
 from importlib import import_module as _import_module
 
-for _name in ('codec', 'model', 'envelopes', 'events', 'snapshots', 'observability', 'operator', 'registry', 'schema', 'fixtures'):
+for _name in ('codec', 'model', 'envelopes', 'events', 'factory', 'snapshots', 'observability', 'operator', 'registry', 'schema', 'fixtures'):
     _module = _import_module(f".contracts.{_name}", __name__)
     _sys.modules[f"{__name__}.{_name}"] = _module
     globals()[_name] = _module
