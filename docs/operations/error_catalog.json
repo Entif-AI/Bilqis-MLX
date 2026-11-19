@@ -11571,14 +11571,14 @@
       "count": 1,
       "exception": "OSError",
       "expression": "'durability failure'",
-      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py"
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_pointer_locking.py"
     },
     {
       "code_hint": "unlock failure",
       "count": 1,
       "exception": "OSError",
       "expression": "'unlock failure'",
-      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_publication.py"
+      "path": "bilqis_mlx/runtime/tests/custody/bamf_bundle/publication/test_pointer_locking.py"
     },
     {
       "code_hint": "test synchronization timed out",
