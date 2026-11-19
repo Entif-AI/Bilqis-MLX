@@ -6,9 +6,11 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.akasha_domains import AkashaDomain, DOMAIN_CONTRACTS
 from bilqis_mlx.runtime.akasha_security import (
     AkashaAuthorityTarget,
+    AuthenticatedAkashaPrincipal,
     AkashaNamespaceScope,
     AkashaWriteRequest,
     DOMAIN_SECURITY_POLICIES,
+    VerifiedAuthorityEvidence,
     authorize_akasha_write,
 )
 
@@ -16,6 +18,26 @@ from bilqis_mlx.runtime.akasha_security import (
 CURRENT = "a" * 64
 AUTHORITY_RECEIPT = "b" * 64
 SCOPE = AkashaNamespaceScope("entif", "bilqis")
+
+
+def _trusted_context(request):
+    policy = DOMAIN_SECURITY_POLICIES[request.domain]
+    return (
+        AuthenticatedAkashaPrincipal(request.writer_id, request.writer_role),
+        VerifiedAuthorityEvidence(
+            request.domain, policy.authority_owner,
+            request.authority_receipt_sha256),
+    )
+
+
+def _authorize(request, *, current=CURRENT, scope=SCOPE, principal=None, evidence=None):
+    trusted_principal, trusted_evidence = _trusted_context(request)
+    return authorize_akasha_write(
+        scope,
+        principal or trusted_principal,
+        evidence or trusted_evidence,
+        request,
+        current_version_sha256=current)
 
 
 def _request(domain=AkashaDomain.RECEIPT_PROVENANCE, *, current=CURRENT, **overrides):
@@ -61,10 +83,8 @@ class AkashaSecurityPolicyTests(unittest.TestCase):
 
     def test_valid_request_returns_deterministic_policy_bound_authorization(self):
         request = _request()
-        first = authorize_akasha_write(
-            SCOPE, request, current_version_sha256=CURRENT)
-        second = authorize_akasha_write(
-            SCOPE, request, current_version_sha256=CURRENT)
+        first = _authorize(request)
+        second = _authorize(request)
         self.assertEqual(first, second)
         self.assertEqual(first.request_sha256, request.request_sha256)
         self.assertEqual(
@@ -77,23 +97,45 @@ class AkashaSecurityPolicyTests(unittest.TestCase):
         second = _request(writer_id="writer-2")
         self.assertNotEqual(first.request_sha256, second.request_sha256)
         self.assertNotEqual(
-            authorize_akasha_write(
-                SCOPE, first, current_version_sha256=CURRENT).authorization_sha256,
-            authorize_akasha_write(
-                SCOPE, second, current_version_sha256=CURRENT).authorization_sha256)
+            _authorize(first).authorization_sha256,
+            _authorize(second).authorization_sha256)
+
+    def test_self_asserted_writer_identity_or_role_cannot_replace_authenticated_principal(self):
+        request = _request()
+        cases = (
+            AuthenticatedAkashaPrincipal("other-writer", request.writer_role),
+            AuthenticatedAkashaPrincipal(request.writer_id, "other-role"),
+        )
+        for principal in cases:
+            with self.subTest(principal=principal):
+                with self.assertRaises(BilqisError) as caught:
+                    _authorize(request, principal=principal)
+                self.assertEqual(
+                    caught.exception.context["reason"],
+                    "AKASHA_WRITE_IDENTITY_MISMATCH")
+
+    def test_authority_receipt_must_match_verified_domain_owner_evidence(self):
+        request = _request()
+        evidence = VerifiedAuthorityEvidence(
+            request.domain,
+            DOMAIN_SECURITY_POLICIES[request.domain].authority_owner,
+            "c" * 64)
+        with self.assertRaises(BilqisError) as caught:
+            _authorize(request, evidence=evidence)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "AKASHA_WRITE_AUTHORITY_EVIDENCE_MISMATCH")
 
     def test_empty_projection_requires_an_explicit_empty_precondition(self):
         request = _request(current=None)
-        authorization = authorize_akasha_write(
-            SCOPE, request, current_version_sha256=None)
+        authorization = _authorize(request, current=None)
         self.assertIsNone(authorization.current_version_sha256)
 
     def test_semantic_projection_cannot_redefine_canonical_source_meaning(self):
-        request = _request(
-            AkashaDomain.SEMANTIC_GRAPH,
-            target=AkashaAuthorityTarget.CANONICAL_SEMANTIC_SOURCE)
         with self.assertRaises(BilqisError) as caught:
-            authorize_akasha_write(SCOPE, request, current_version_sha256=CURRENT)
+            _request(
+                AkashaDomain.SEMANTIC_GRAPH,
+                target=AkashaAuthorityTarget.CANONICAL_SEMANTIC_SOURCE)
         self.assertEqual(
             caught.exception.context["reason"],
             "AKASHA_WRITE_CANONICAL_MUTATION_FORBIDDEN")
@@ -105,12 +147,10 @@ class AkashaSecurityPolicyTests(unittest.TestCase):
             AkashaDomain.RECEIPT_PROVENANCE,
         ):
             with self.subTest(domain=domain.value):
-                request = _request(
-                    domain,
-                    target=AkashaAuthorityTarget.HISTORICAL_EVIDENCE_SOURCE)
                 with self.assertRaises(BilqisError) as caught:
-                    authorize_akasha_write(
-                        SCOPE, request, current_version_sha256=CURRENT)
+                    _request(
+                        domain,
+                        target=AkashaAuthorityTarget.HISTORICAL_EVIDENCE_SOURCE)
                 self.assertEqual(
                     caught.exception.context["reason"],
                     "AKASHA_WRITE_CANONICAL_MUTATION_FORBIDDEN")
@@ -124,8 +164,7 @@ class AkashaSecurityPolicyTests(unittest.TestCase):
         ):
             with self.subTest(request=changed):
                 with self.assertRaises(BilqisError) as caught:
-                    authorize_akasha_write(
-                        SCOPE, changed, current_version_sha256=CURRENT)
+                    _authorize(changed)
                 self.assertEqual(
                     caught.exception.context["reason"],
                     "AKASHA_WRITE_NAMESPACE_FORBIDDEN")
@@ -133,7 +172,7 @@ class AkashaSecurityPolicyTests(unittest.TestCase):
     def test_stale_expected_version_fails_instead_of_rebasing(self):
         request = _request(current="c" * 64)
         with self.assertRaises(BilqisError) as caught:
-            authorize_akasha_write(SCOPE, request, current_version_sha256=CURRENT)
+            _authorize(request)
         self.assertEqual(
             caught.exception.context["reason"],
             "AKASHA_WRITE_EXPECTED_VERSION_STALE")
@@ -149,8 +188,7 @@ class AkashaSecurityPolicyTests(unittest.TestCase):
         for changed, reason in cases:
             with self.subTest(reason=reason):
                 with self.assertRaises(BilqisError) as caught:
-                    authorize_akasha_write(
-                        SCOPE, changed, current_version_sha256=CURRENT)
+                    _authorize(changed)
                 self.assertEqual(caught.exception.context["reason"], reason)
 
     def test_policy_is_transport_neutral_and_contains_no_broker_identity(self):
@@ -160,8 +198,7 @@ class AkashaSecurityPolicyTests(unittest.TestCase):
         self.assertNotIn("transport", record)
         self.assertNotIn("mission_control", record)
         self.assertEqual(
-            authorize_akasha_write(
-                SCOPE, request, current_version_sha256=CURRENT).domain,
+            _authorize(request).domain,
             request.domain)
 
 

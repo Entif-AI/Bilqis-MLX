@@ -5,26 +5,40 @@ from .common import invalid, is_digest
 from .contracts import (
     AkashaAuthorityTarget,
     AkashaNamespaceScope,
-    AkashaWriteAuthorization,
     AkashaWriteRequest,
     DOMAIN_SECURITY_POLICIES,
 )
+from .context import AuthenticatedAkashaPrincipal, VerifiedAuthorityEvidence
+from .receipt import AkashaWriteAuthorization
 
 
 def authorize_akasha_write(
     scope: AkashaNamespaceScope,
+    principal: AuthenticatedAkashaPrincipal,
+    authority_evidence: VerifiedAuthorityEvidence,
     request: AkashaWriteRequest,
     *, current_version_sha256: str | None,
 ) -> AkashaWriteAuthorization:
     """Authorize one derived-projection mutation without choosing its transport."""
     if (not isinstance(scope, AkashaNamespaceScope)
+            or not isinstance(principal, AuthenticatedAkashaPrincipal)
+            or not isinstance(authority_evidence, VerifiedAuthorityEvidence)
             or not isinstance(request, AkashaWriteRequest)
             or (current_version_sha256 is not None
                 and not is_digest(current_version_sha256))):
         invalid("AKASHA_WRITE_AUTHORIZATION_ARGUMENT_INVALID")
     policy = DOMAIN_SECURITY_POLICIES[request.domain]
+    if (principal.principal_id != request.writer_id
+            or principal.role != request.writer_role
+            or principal.identity_class != policy.writer_identity_class):
+        invalid("AKASHA_WRITE_IDENTITY_MISMATCH")
     if request.writer_role != policy.writer_role:
         invalid("AKASHA_WRITE_ROLE_FORBIDDEN")
+    if (authority_evidence.domain is not request.domain
+            or authority_evidence.authority_owner != policy.authority_owner
+            or authority_evidence.receipt_sha256
+            != request.authority_receipt_sha256):
+        invalid("AKASHA_WRITE_AUTHORITY_EVIDENCE_MISMATCH")
     if (request.tenant_id != scope.tenant_id
             or request.project_id != scope.project_id
             or request.namespace != scope.namespace_for(request.domain)):
