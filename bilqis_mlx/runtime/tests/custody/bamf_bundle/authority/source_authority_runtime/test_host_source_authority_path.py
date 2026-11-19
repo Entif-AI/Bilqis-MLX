@@ -15,10 +15,11 @@ def _file_info(*, uid=501, size=64):
 class DarwinUserPathTests(unittest.TestCase):
     def test_registry_path_comes_from_effective_account_not_home_env_or_cwd(self):
         calls = []
+        locks = []
 
-        def open_fd(path, flags):
+        def open_fd(path, flags, mode=0o777):
             calls.append((path, flags))
-            return 7
+            return 7 + len(calls)
 
         with patch.dict(os.environ, {"HOME": "/tmp/attacker-home"}), \
                 patch.object(darwin.os, "geteuid", return_value=501), \
@@ -27,21 +28,28 @@ class DarwinUserPathTests(unittest.TestCase):
                 patch.object(darwin.os, "getcwd", return_value="/tmp/attacker-cwd"), \
                 patch.object(darwin.os, "open", side_effect=open_fd), \
                 patch.object(darwin.os, "fstat", return_value=_file_info()), \
+                patch.object(darwin.fcntl, "flock", side_effect=lambda fd, op: locks.append((fd, op))), \
                 patch.object(darwin.os, "close"):
             fd = darwin.open_host_source_authority_registry_fd(max_bytes=128)
 
-        self.assertEqual(fd, 7)
+        self.assertEqual(fd, 9)
         self.assertEqual(
-            calls[0][0],
+            calls[1][0],
             "/Users/operator/.entif-ai/bilqis/source-authority-registry.json",
         )
-        self.assertTrue(calls[0][1] & os.O_NOFOLLOW)
-        self.assertNotIn("attacker", calls[0][0])
+        self.assertEqual(
+            calls[0][0],
+            "/Users/operator/.entif-ai/bilqis/.authority-store-lifecycle.lock",
+        )
+        self.assertTrue(calls[1][1] & os.O_NOFOLLOW)
+        self.assertNotIn("attacker", calls[1][0])
+        self.assertEqual(locks[0][1], darwin.fcntl.LOCK_SH)
+        self.assertEqual(locks[-1][1], darwin.fcntl.LOCK_UN)
 
     def test_registry_and_signer_share_fixed_account_directory(self):
         calls = []
 
-        def open_fd(path, flags):
+        def open_fd(path, flags, mode=0o777):
             calls.append(path)
             return len(calls) + 10
 
@@ -50,13 +58,16 @@ class DarwinUserPathTests(unittest.TestCase):
                     pw_dir="/Users/operator")), \
                 patch.object(darwin.os, "open", side_effect=open_fd), \
                 patch.object(darwin.os, "fstat", return_value=_file_info()), \
+                patch.object(darwin.fcntl, "flock"), \
                 patch.object(darwin.os, "close"):
             registry_fd = darwin.open_host_source_authority_registry_fd(max_bytes=128)
             signer_fd = darwin.open_host_source_authority_signer_fd(max_bytes=128)
 
-        self.assertEqual((registry_fd, signer_fd), (11, 12))
+        self.assertEqual((registry_fd, signer_fd), (12, 14))
         self.assertEqual(calls, [
+            "/Users/operator/.entif-ai/bilqis/.authority-store-lifecycle.lock",
             "/Users/operator/.entif-ai/bilqis/source-authority-registry.json",
+            "/Users/operator/.entif-ai/bilqis/.authority-store-lifecycle.lock",
             "/Users/operator/.entif-ai/bilqis/source-authority-signer.json",
         ])
 

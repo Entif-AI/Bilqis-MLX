@@ -26,12 +26,18 @@ class DarwinUserCustodyTests(unittest.TestCase):
         )
 
     def test_missing_file_reports_required(self):
+        def open_fd(path, flags, mode=0o777):
+            if path.endswith(darwin._LIFECYCLE_LOCK_FILE):
+                return 7
+            raise FileNotFoundError(errno.ENOENT, "missing")
+
         with patch.object(darwin.os, "geteuid", return_value=501), \
                 patch.object(darwin.pwd, "getpwuid", return_value=SimpleNamespace(
                     pw_dir="/Users/operator")), \
-                patch.object(
-                    darwin.os, "open",
-                    side_effect=FileNotFoundError(errno.ENOENT, "missing")), \
+                patch.object(darwin.os, "open", side_effect=open_fd), \
+                patch.object(darwin.os, "fstat", return_value=_info()), \
+                patch.object(darwin.fcntl, "flock"), \
+                patch.object(darwin.os, "close"), \
                 self.assertRaises(BilqisError) as caught:
             darwin.open_host_source_authority_registry_fd(max_bytes=128)
         self.assertEqual(
@@ -47,22 +53,31 @@ class DarwinUserCustodyTests(unittest.TestCase):
             _info(size=129),
         )
         for info in candidates:
+            fstats = iter((_info(), info))
             with self.subTest(info=info), \
                     patch.object(darwin.os, "geteuid", return_value=501), \
                     patch.object(darwin.pwd, "getpwuid", return_value=SimpleNamespace(
                         pw_dir="/Users/operator")), \
                     patch.object(darwin.os, "open", return_value=7), \
-                    patch.object(darwin.os, "fstat", return_value=info), \
+                    patch.object(darwin.os, "fstat", side_effect=lambda _fd: next(fstats)), \
+                    patch.object(darwin.fcntl, "flock"), \
                     patch.object(darwin.os, "close"), \
                     self.assertRaises(BilqisError):
                 darwin.open_host_source_authority_registry_fd(max_bytes=128)
 
     def test_symlink_final_component_fails_closed(self):
+        def open_fd(path, flags, mode=0o777):
+            if path.endswith(darwin._LIFECYCLE_LOCK_FILE):
+                return 7
+            raise OSError(errno.ELOOP, "symlink")
+
         with patch.object(darwin.os, "geteuid", return_value=501), \
                 patch.object(darwin.pwd, "getpwuid", return_value=SimpleNamespace(
                     pw_dir="/Users/operator")), \
-                patch.object(
-                    darwin.os, "open", side_effect=OSError(errno.ELOOP, "symlink")), \
+                patch.object(darwin.os, "open", side_effect=open_fd), \
+                patch.object(darwin.os, "fstat", return_value=_info()), \
+                patch.object(darwin.fcntl, "flock"), \
+                patch.object(darwin.os, "close"), \
                 self.assertRaises(BilqisError):
             darwin.open_host_source_authority_registry_fd(max_bytes=128)
 
