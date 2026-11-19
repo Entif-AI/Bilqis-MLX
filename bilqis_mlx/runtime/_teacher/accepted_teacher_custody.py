@@ -17,7 +17,11 @@ from bilqis_mlx.learning.teacher_visit_identity import (
     TeacherVisitIdentity, derive_teacher_visit_identity,
     record_teacher_visit_authority, record_teacher_visit_identity,
 )
-from bilqis_mlx.learning._teaching.teacher_lineage_records import digest, invalid
+from bilqis_mlx.learning._teaching.teacher_lineage_records import (
+    SHA256_HEX_LENGTH,
+    digest,
+    invalid,
+)
 from bilqis_mlx.runtime.bamf_bundle import CompleteStudent
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache, derive_successor_bundle,
@@ -43,6 +47,7 @@ class BoundTeacherVisit:
 
     projection: TeacherCustodyProjection
     identity: TeacherVisitIdentity
+    _teacher_state_sha256: str = field(init=False, repr=False, compare=False)
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
@@ -52,6 +57,8 @@ class BoundTeacherVisit:
         if (getattr(self, "_issuance", None) is not _BOUND_VISIT_ISSUER
                 or type(self.projection) is not TeacherCustodyProjection
                 or type(self.identity) is not TeacherVisitIdentity
+                or not isinstance(getattr(self, "_teacher_state_sha256", None), str)
+                or len(self._teacher_state_sha256) != SHA256_HEX_LENGTH
                 or self.projection.teacher_state.get("last_visit")
                 != self.identity.to_record()):
             invalid("TEACHER_VISIT_CUSTODY_INVALID")
@@ -62,6 +69,7 @@ def _issue_bound_visit(projection, identity) -> BoundTeacherVisit:
     value = object.__new__(BoundTeacherVisit)
     for name, item in (
             ("projection", projection), ("identity", identity),
+            ("_teacher_state_sha256", digest(projection.teacher_state)),
             ("_issuance", _BOUND_VISIT_ISSUER)):
         object.__setattr__(value, name, item)
     value.__post_init__()
@@ -156,9 +164,43 @@ def select_accepted_teacher_visit(
 
 def _require_current_visit(
         parent, cache, visit: BoundTeacherVisit, *,
-        candidate_identity_sha256: str | None = None) -> None:
+        candidate_identity_sha256: str | None = None,
+        currentness_step=None, currentness_transaction=None) -> None:
     if type(visit) is not BoundTeacherVisit:
         invalid("TEACHER_VISIT_CUSTODY_REQUIRED")
+    if currentness_step is not None:
+        from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
+            require_accepted_currentness_step,
+        )
+        require_accepted_currentness_step(
+            currentness_step, currentness_transaction, parent)
+        identity = visit.identity
+        projection = visit.projection
+        state = projection.teacher_state
+        if (getattr(visit, "_issuance", None) is not _BOUND_VISIT_ISSUER
+                or type(projection) is not TeacherCustodyProjection
+                or type(identity) is not TeacherVisitIdentity
+                or digest(state) != visit._teacher_state_sha256
+                or state.get("last_visit") != identity.to_record()):
+            invalid("TEACHER_VISIT_CUSTODY_INVALID")
+        projection.__post_init__()
+        identity.__post_init__()
+        if candidate_identity_sha256 is None:
+            candidate_identity_sha256 = candidate_identity_digest(
+                parent.retained_state)
+        if (parent.run_identity is None
+                or identity.run_identity_sha256 != parent.run_identity.digest
+                or identity.run_seed != parent.run_identity.run_seed
+                or identity.generation != parent.generation
+                or identity.accepted_manifest_sha256
+                   != cache.accepted_manifest_sha256
+                or identity.teacher_identity != projection.teacher_identity
+                or identity.teacher_epoch != projection.teacher_epoch
+                or identity.student_sha256 != candidate_identity_sha256
+                or identity.selection_seed != state.get("next_seed")
+                or identity.cursor != state.get("cursor")):
+            invalid("TEACHER_VISIT_ACCEPTED_GENERATION_DRIFT")
+        return
     visit.__post_init__()
     identity = visit.identity
     expected = derive_teacher_visit_identity(

@@ -16,7 +16,8 @@ from .performance import (
     PERFORMANCE_FIELDS, RETENTION_PROFILE_FIELDS, VISIT_PERFORMANCE_FIELDS,
 )
 
-SCHEMA = 'bilqis.bamf.trainer-observed/v5'
+SCHEMA = 'bilqis.bamf.trainer-observed/v6'
+LEGACY_SCHEMA_V5 = 'bilqis.bamf.trainer-observed/v5'
 LEGACY_SCHEMA_V4 = 'bilqis.bamf.trainer-observed/v4'
 LEGACY_SCHEMA = 'bilqis.bamf.trainer-observed/v1'
 LEGACY_SCHEMA_V2 = 'bilqis.bamf.trainer-observed/v2'
@@ -83,7 +84,8 @@ class TrainerObservation:
                 raw = stream.read(MAX_SNAPSHOT_BYTES + 1)
             data = json.loads(raw) if len(raw) <= MAX_SNAPSHOT_BYTES else {}
             if (data.get('schema') in {LEGACY_SCHEMA, LEGACY_SCHEMA_V2,
-                                       LEGACY_SCHEMA_V3, LEGACY_SCHEMA_V4, SCHEMA}
+                                       LEGACY_SCHEMA_V3, LEGACY_SCHEMA_V4,
+                                       LEGACY_SCHEMA_V5, SCHEMA}
                     and isinstance(data.get('visits'), list)
                     and all(isinstance(item, dict) for item in data['visits'])):
                 self.visits = data['visits'][-7:]
