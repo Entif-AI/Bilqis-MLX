@@ -41,8 +41,35 @@ VISIT_PERFORMANCE_FIELDS = (
     "protected_retention_wall_seconds",
     "broad_certification_wall_seconds",
     "retention_wall_seconds",
+    "retention_target_prepare_wall_seconds",
+    "retention_target_solver_wall_seconds",
+    "retention_target_parent_wall_seconds",
+    "retention_target_candidate_wall_seconds",
+    "retention_protected_prepare_wall_seconds",
+    "retention_protected_parent_solver_wall_seconds",
+    "retention_protected_parent_wall_seconds",
+    "retention_protected_candidate_solver_wall_seconds",
+    "retention_protected_candidate_wall_seconds",
+    "retention_decision_finalize_wall_seconds",
+    "retention_championship_wall_seconds",
+    "retention_championship_prepare_wall_seconds",
+    "retention_championship_solver_wall_seconds",
+    "retention_championship_candidate_wall_seconds",
     "evidence_finalization_wall_seconds",
     "publishing_wall_seconds",
+)
+
+RETENTION_PROFILE_FIELDS = (
+    "retention_target_case_count",
+    "retention_protected_case_count",
+    "retention_parent_cache_reused",
+    "retention_target_shared_backbone_launches",
+    "retention_target_scalar_neural_launches",
+    "retention_protected_shared_backbone_launches",
+    "retention_protected_scalar_neural_launches",
+    "retention_championship_case_count",
+    "retention_championship_shared_backbone_launches",
+    "retention_championship_scalar_neural_launches",
 )
 
 PERFORMANCE_FIELDS = STEP_COST_FIELDS + VISIT_PERFORMANCE_FIELDS
@@ -91,6 +118,7 @@ def measure_observed_phase(observer, field: str):
 
 
 __all__ = (
-    "PERFORMANCE_FIELDS", "STEP_COST_FIELDS", "VISIT_PERFORMANCE_FIELDS",
+    "PERFORMANCE_FIELDS", "RETENTION_PROFILE_FIELDS", "STEP_COST_FIELDS",
+    "VISIT_PERFORMANCE_FIELDS",
     "measure_observed_phase", "observe_completed_step",
 )

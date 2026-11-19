@@ -12,7 +12,9 @@ import threading
 import time
 import uuid
 
-from .performance import PERFORMANCE_FIELDS, VISIT_PERFORMANCE_FIELDS
+from .performance import (
+    PERFORMANCE_FIELDS, RETENTION_PROFILE_FIELDS, VISIT_PERFORMANCE_FIELDS,
+)
 
 SCHEMA = 'bilqis.bamf.trainer-observed/v6'
 LEGACY_SCHEMA_V5 = 'bilqis.bamf.trainer-observed/v5'
@@ -73,7 +75,8 @@ class TrainerObservation:
             error_detail=None, candidate_steps=[], visit_evidence=None,
             generated_grade_evidence=None, retention_stage_timings=[],
             learning_health=None,
-            **{name: None for name in PERFORMANCE_FIELDS})
+            **{name: None for name in PERFORMANCE_FIELDS},
+            **{name: None for name in RETENTION_PROFILE_FIELDS})
         self.visits = []
         self.learning_health_by_capability = {}
         try:
