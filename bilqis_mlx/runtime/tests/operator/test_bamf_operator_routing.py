@@ -86,7 +86,7 @@ class BamfOperatorRoutingContinuationTests(unittest.TestCase):
     def test_no_admissible_priority_selection_never_executes_candidate(self):
         parent = SimpleNamespace()
         context = SimpleNamespace(release=object())
-        held = SimpleNamespace(status="NO_ADMISSIBLE_TEACHING")
+        held = SimpleNamespace(status="NO_ADMISSIBLE_TEACHING", holds=())
         with patch(
                 "bilqis_mlx.runtime.bamf_operator.session._execution_context",
                 return_value=(parent, context, "atlas", "feature")), patch(

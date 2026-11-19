@@ -120,3 +120,13 @@ Unified df0e73942 adds native allocator retry and visit holds. The merge
 preserves that scheduler behavior inside the cache policy scope. The harness
 now applies its test-only allocator bound on first MLX core import, which
 addresses the unrelated import-isolation failure exposed by v5.
+
+V6 passed static quality and loaded 5,077 aggregate cases without import
+errors. Affected tests reported 390 passes and one failure. The routing double
+for an empty selection lacked the holds field now consumed by allocator retry.
+The fixture now supplies an empty holds tuple. The v6 mutation guard passed.
+Unified 418dd5ad replaced the old championship fixture with evidence checks
+at the accepted successor boundary. The merge preserves those checks and
+keeps the isolated visit double independent of MLX startup. The combined
+route, native cache, allocator continuation, and championship tests passed
+25 cases on m3-ultra against the merged candidate.
