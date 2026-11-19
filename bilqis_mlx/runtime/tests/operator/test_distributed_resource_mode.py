@@ -99,11 +99,22 @@ class DistributedResourceModeTests(unittest.TestCase):
         compiled = SimpleNamespace(
             compiled=compiled_value, sources=("source",), feature_schema="schema",
             active_semantic_rows=active)
+        provenance = SimpleNamespace(
+            row_id="row", source_row_content_sha256="d" * 64, source_id=None,
+            capability_id="A.TEST", operation_id=None, teacher_strategy=(),
+            requested_count=1, delivered_count=1, rehearsal=None,
+            optimizer_step_seed=7, source_family_id=None, episode_id=None,
+            immediate_dependencies=(),
+            visit=SimpleNamespace(
+                to_c03_record=lambda: {"schema": "portable-test"}))
+        training_row = SimpleNamespace(
+            model_input="input", target="target", native_target=None,
+            provenance=provenance, auxiliaries=(), rule_policy=())
         prepared = SimpleNamespace(
             training_batch=SimpleNamespace(
                 release_sha256="a" * 64, generation_binding="b" * 64,
                 delivered_content_sha256="c" * 64, delivery_capability="A.TEST",
-                rows=("row",)),
+                rows=(training_row,)),
             compiled_rows=(compiled,))
         source_context = SimpleNamespace(
             release="release", graph={"x": 1}, source_root=Path("/source"),

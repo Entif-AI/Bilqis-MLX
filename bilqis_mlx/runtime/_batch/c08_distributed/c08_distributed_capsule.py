@@ -11,6 +11,10 @@ from bilqis_mlx.runtime.atlas_model_contracts import (
 )
 from bilqis_mlx.runtime.atlas_training_authority import bind_compiled_training_batch
 from bilqis_mlx.runtime.atlas_training_contracts import _issue_training_batch
+from bilqis_mlx.runtime.atlas_training_contracts import (
+    BamfDeliveryProvenance, BamfTrainingRow,
+)
+from bilqis_mlx.runtime.atlas_visit_provenance import BamfVisitProvenance
 from bilqis_mlx.runtime.b11_source_execution_authority import (
     bind_b11_source_execution_authority,
 )
@@ -42,6 +46,40 @@ class PortableSourceContext:
 
 
 @dataclass(frozen=True)
+class PortableTrainingRow:
+    model_input: object
+    target: object
+    native_target: object
+    provenance: tuple
+    visit_record: dict
+    auxiliaries: tuple
+    rule_policy: tuple
+
+    @classmethod
+    def from_row(cls, row):
+        provenance = row.provenance
+        names = (
+            "row_id", "source_row_content_sha256", "source_id", "capability_id",
+            "operation_id", "teacher_strategy", "requested_count", "delivered_count",
+            "rehearsal", "optimizer_step_seed", "source_family_id", "episode_id",
+            "immediate_dependencies",
+        )
+        return cls(
+            row.model_input, row.target, row.native_target,
+            tuple((name, getattr(provenance, name)) for name in names),
+            provenance.visit.to_c03_record(), row.auxiliaries, row.rule_policy)
+
+    def materialize(self) -> BamfTrainingRow:
+        provenance = BamfDeliveryProvenance(
+            **dict(self.provenance),
+            visit=BamfVisitProvenance.from_c03_record(self.visit_record))
+        provenance.__post_init__()
+        return BamfTrainingRow(
+            self.model_input, self.target, self.native_target, provenance,
+            self.auxiliaries, self.rule_policy)
+
+
+@dataclass(frozen=True)
 class PortableTrainingBatch:
     release_sha256: str
     generation_binding: str
@@ -52,7 +90,8 @@ class PortableTrainingBatch:
     def materialize(self):
         return _issue_training_batch(
             self.release_sha256, self.generation_binding,
-            self.delivered_content_sha256, self.delivery_capability, self.rows)
+            self.delivered_content_sha256, self.delivery_capability,
+            tuple(row.materialize() for row in self.rows))
 
 
 @dataclass(frozen=True)
@@ -153,7 +192,8 @@ def issue_distributed_factory_step_capsule(
             prepared.training_batch.generation_binding,
             prepared.training_batch.delivered_content_sha256,
             prepared.training_batch.delivery_capability,
-            prepared.training_batch.rows),
+            tuple(PortableTrainingRow.from_row(row)
+                  for row in prepared.training_batch.rows)),
         compiled_rows=tuple(
             PortableCompiledRow.from_compiled(compiled, index)
             for index, compiled in enumerate(compiled_rows)),
