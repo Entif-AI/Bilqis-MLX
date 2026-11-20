@@ -2,6 +2,14 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.2.11](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.10...v1.2.11) (2026-11-20)
+
+
+### Bug Fixes
+
+* **ci:** give manual verification a comparison base ([bc15c12](https://github.com/Entif-AI/Bilqis-MLX/commit/bc15c12bf8db9fb42cebd1451ff23aa3337e71da))
+* **ci:** give manual verification a comparison base ([#1480](https://github.com/Entif-AI/Bilqis-MLX/issues/1480)) ([ec680a6](https://github.com/Entif-AI/Bilqis-MLX/commit/ec680a69c10b2c38b021c302748a24cee1924500))
+
 ## [1.2.10](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.9...v1.2.10) (2026-11-19)
 
 
