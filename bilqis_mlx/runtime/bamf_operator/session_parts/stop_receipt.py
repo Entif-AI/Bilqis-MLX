@@ -47,7 +47,9 @@ def _resume_state(status: str) -> tuple[bool, str]:
         return False, "RESUME_AFTER_RESOURCE_RECOVERY"
     if status == "RESOURCE_HOLD":
         return True, "RESUME_AFTER_RESOURCE_RECOVERY"
-    if status in {"PRIORITY_HOLD", "ADMISSION_HOLD", "FIXED_POINT"}:
+    if status in {
+            "PRIORITY_HOLD", "ADMISSION_HOLD", "IMPLEMENTATION_UNCOVERED",
+            "FIXED_POINT"}:
         return True, "RESUME_WHEN_WORK_AVAILABLE"
     return True, "RESUME_ALLOWED"
 

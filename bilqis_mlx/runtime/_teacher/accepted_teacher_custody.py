@@ -34,7 +34,8 @@ from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
 
 from .accepted_teacher_state import (
     _bank_identity, _c03_projection, _plasticity_identity,
-    _student_region, rebind_package_import_teacher_custody,
+    _student_region, rebind_accepted_teacher_custody,
+    rebind_package_import_teacher_custody,
 )
 
 _BOUND_VISIT_ISSUER = object()
@@ -274,5 +275,6 @@ def derive_c03_successor_bundle(
 __all__ = (
     "BoundTeacherVisit",
     "current_teacher_projection", "derive_c03_successor_bundle",
+    "rebind_accepted_teacher_custody",
     "rebind_package_import_teacher_custody",
 )

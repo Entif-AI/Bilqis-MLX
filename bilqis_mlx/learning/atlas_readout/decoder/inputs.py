@@ -117,7 +117,9 @@ def validate_decoder_inputs(memory, context, plan, semantics, parameters):
             or (context is None) != (memory.compiled.context_digest is None)
             or (context is not None and context.digest != memory.compiled.context_digest)
             or plan.source_span.end > memory.compiled.visible_end
-            or semantics.extents.active_semantic_digest != plan.snapshot.active_set_sha256
+            or (not plan.route_only
+                and semantics.extents.active_semantic_digest
+                != plan.snapshot.active_set_sha256)
             or not {key for key, _ in memory.anchors} <= {d.decision_id for d in plan.decisions}
             or any(parameters.get(f'identity.bank.{b.bank_index}') is not b.weights
                    for b in semantics.banks)):

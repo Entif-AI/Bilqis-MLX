@@ -67,7 +67,32 @@ def _binding(parent, staged):
         parent_feature_receipt_sha256="4" * 64)
 
 
+def _empty_parent_and_candidate():
+    """An initialized epoch with no live title/match authority has nothing to archive."""
+    parent, staged, live = _parent_and_candidate()
+    empty = compact_championship_state(
+        {"active_roles": {}, "settled_matchups": {}}, live["identity"])
+    parent = replace(parent, championship_state=empty)
+    staged = replace(
+        staged,
+        championship_state=clear_championship_epoch(
+            empty,
+            source_manifest_sha256=staged.parent_manifest_sha256,
+            source_generation=parent.generation,
+        ),
+    )
+    return parent, staged
+
+
 class AtlasChampionshipAdmissionTests(unittest.TestCase):
+    def test_v4_empty_initialized_parent_needs_no_fabricated_archive_record(self):
+        parent, staged = _empty_parent_and_candidate()
+        self.assertEqual(staged.championship_state["epoch_history"], [])
+
+        binding = _binding(parent, staged)
+
+        self.assertEqual(binding.schema_version, ATLAS_ADMISSION_SCHEMA_V4)
+
     def test_v4_roundtrip_seals_championship_reset_digest(self):
         parent, staged, _live = _parent_and_candidate()
         binding = _binding(parent, staged)

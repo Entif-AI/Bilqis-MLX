@@ -76,7 +76,7 @@ def test_same_engine_obeys_distinct_versioned_policy_thresholds(tmp_path):
         obligation_measure=_clean_score,
         require_current=lambda: permissive_request,
     )
-    rejected = execute_grade_certification(
+    not_eligible = execute_grade_certification(
         tmp_path / "strict", strict_request, strict,
         trigger_measure=trigger,
         obligation_measure=lambda key: (_ for _ in ()).throw(
@@ -84,7 +84,29 @@ def test_same_engine_obeys_distinct_versioned_policy_thresholds(tmp_path):
         require_current=lambda: strict_request,
     )
     assert accepted.status == "SUCCEEDED"
-    assert rejected.status == "FAILED"
+    assert not_eligible.status == "NOT_ELIGIBLE"
+
+
+def test_below_entry_trigger_is_not_a_started_or_failed_certification(tmp_path):
+    policy = _policy()
+    request = _request(policy)
+
+    result = execute_grade_certification(
+        tmp_path,
+        request,
+        policy,
+        trigger_measure=lambda: _trigger(
+            zeta=(5, 10), alpha=(5, 10), prior=(10, 10)),
+        obligation_measure=lambda key: (_ for _ in ()).throw(
+            AssertionError(f"sub-entry grade must not sweep {key}")),
+        require_current=lambda: request,
+    )
+
+    assert result.status == "NOT_ELIGIBLE"
+    assert not (
+        tmp_path / "grade-certification" / "attempts"
+        / request.attempt_sha256 / "attempt.json"
+    ).exists()
 
 
 def test_crash_resume_never_rescores_committed_obligation(tmp_path):

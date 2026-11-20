@@ -40,3 +40,26 @@ class HistoricalTeacherPolicyTests(unittest.TestCase):
                 projected.observe(right, "A", projected_choice[0], 0.125)
                 self.legacy.observe(left, "A", legacy_choice[0], 0.125)
                 self.assertEqual(right, left)
+
+class HistoricalTeacherCompatibilityMigrationTests(unittest.TestCase):
+    def test_observe_upgrades_pre_latest_compatibility_stats(self):
+        teacher = {
+            "global_stats": {
+                "policy": {"trials": 2, "reward_sum": 0.5, "reward_ema": 0.25}
+            },
+            "grade_stats": {
+                "D": {
+                    "policy": {
+                        "trials": 1,
+                        "reward_sum": 0.2,
+                        "reward_ema": 0.2,
+                    }
+                }
+            },
+            "events": 3,
+        }
+        projected.observe(teacher, "D", "policy", 0.4)
+        self.assertEqual(teacher["global_stats"]["policy"]["latest"], 0.4)
+        self.assertEqual(teacher["grade_stats"]["D"]["policy"]["latest"], 0.4)
+        self.assertEqual(teacher["global_stats"]["policy"]["trials"], 3)
+        self.assertEqual(teacher["grade_stats"]["D"]["policy"]["trials"], 2)

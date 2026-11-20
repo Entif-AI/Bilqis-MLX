@@ -70,6 +70,22 @@ def test_unmeasured_zero_delta_target_continues_and_grade_identity_is_opaque():
     assert decision is None
 
 
+def test_unmeasured_target_still_rejects_fresh_paired_regression():
+    target, policy, improving = _target_pair(measured=False, gain=True)
+    regressing = AssessmentPair(improving.candidate, improving.parent)
+
+    decision = evaluate_target_gate(
+        target, policy, regressing,
+        retention_protection_plan_sha256="9" * 64)
+
+    assert decision is not None
+    assert decision.reason == "TARGET_BASELINE_REGRESSION"
+    assert decision.blocking_capability == target
+    before, after, total = decision.outcome_scores[0][1:]
+    assert after < before
+    assert total > 0
+
+
 def test_comparable_positive_target_continues():
     target, policy, pair = _target_pair(measured=True, gain=True)
 

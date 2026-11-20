@@ -165,6 +165,7 @@ def _accepted_atlas_obligation_state(run_dir):
     """Recover cumulative accepted obligation identity through B13 ancestry."""
     from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
         ATLAS_ADMISSION_SCHEMA_V2, ATLAS_ADMISSION_SCHEMA_V3,
+        ATLAS_ADMISSION_SCHEMA_V4,
         ParsedAtlasAdmissionBinding,
     )
     from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
@@ -195,7 +196,8 @@ def _accepted_atlas_obligation_state(run_dir):
             expected_acceptance_sha256=acceptance_sha256)
         if (isinstance(binding, ParsedAtlasAdmissionBinding)
                 and binding.schema_version in {
-                    ATLAS_ADMISSION_SCHEMA_V2, ATLAS_ADMISSION_SCHEMA_V3}):
+                    ATLAS_ADMISSION_SCHEMA_V2, ATLAS_ADMISSION_SCHEMA_V3,
+                    ATLAS_ADMISSION_SCHEMA_V4}):
             return (
                 current_release.release_sha256,
                 current_acceptance,

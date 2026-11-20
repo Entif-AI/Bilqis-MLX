@@ -1,7 +1,9 @@
 """#1314 active generated-grade membership is the outer teaching surface."""
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
+import bilqis_mlx.runtime.lawful_teaching_frontier_projection as frontier_projection
 from bilqis_mlx.runtime.lawful_teaching_frontier import (
     ActiveGeneratedGradeState,
     _active_grade_state,
@@ -23,6 +25,37 @@ from bilqis_mlx.runtime.tests.teacher.priority.authority.test_lawful_teaching_fr
 
 
 class ActiveGeneratedGradeFrontierTests(unittest.TestCase):
+    def test_realized_capability_uses_atlas_identity_as_grade_scope_not_runtime_root(self):
+        release = _release()
+        release.curriculum.capability_map["P"].taught_roots = ("runtime.p",)
+        release.curriculum.capability_map["P"].examined_roots = ("runtime.p",)
+
+        def realized(capability_id):
+            if capability_id == "P":
+                return "sem.p"
+            raise ValueError
+
+        with patch.object(
+            frontier_projection.candidate_realizations,
+            "realized_atlas_semantic_id",
+            side_effect=realized,
+        ):
+            capabilities = _capabilities(
+                release,
+                _snapshot(),
+                _closure(),
+                _plan(),
+                (),
+                active_members=(("P", ("sem.p",)),),
+            )
+
+        self.assertEqual(capabilities[0].semantic_ids, ("sem.p",))
+        self.assertEqual(capabilities[0].disposition.value, "READY")
+        self.assertNotIn(
+            "ACTIVE_GRADE_SEMANTIC_SCOPE_UNCOVERED",
+            {item.code for item in capabilities[0].holds},
+        )
+
     def test_release_listed_future_capability_is_not_teachable_outside_active_membership(self):
         capabilities = _capabilities(
             _release(), _snapshot(), _closure(), _plan(), (),

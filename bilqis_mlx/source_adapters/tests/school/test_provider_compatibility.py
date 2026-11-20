@@ -23,11 +23,18 @@ class ProviderCompatibilityTests(unittest.TestCase):
             (
                 "grade-a-1324082-to-current",
                 "grade-a-accepted-to-current",
+                "grade-a-accepted-to-provenance",
+                "grade-a-current-to-provenance",
+                "grade-a-1324082-to-provenance",
                 "boolean-identification-accepted-to-current",
                 "boolean-identification-pre-r15-to-current",
                 "numeric-accepted-to-current",
                 "numeric-modular-to-current",
                 "numeric-pre-r20-to-current",
+                "numeric-accepted-to-provenance",
+                "numeric-modular-to-provenance",
+                "numeric-pre-r20-to-provenance",
+                "numeric-current-to-provenance",
             ),
         )
         self.assertEqual(
@@ -36,13 +43,23 @@ class ProviderCompatibilityTests(unittest.TestCase):
                  for edge in SUPPORTED_SOURCE_PROVIDER_RESUME_EDGES}),
             len(SUPPORTED_SOURCE_PROVIDER_RESUME_EDGES),
         )
+        edges_by_adapter = {}
+        for edge in SUPPORTED_SOURCE_PROVIDER_RESUME_EDGES:
+            edges_by_adapter.setdefault(edge.adapter_id, []).append(edge)
         for edge in SUPPORTED_SOURCE_PROVIDER_RESUME_EDGES:
             with self.subTest(edge=edge.edge_id):
                 current = current_by_adapter[edge.adapter_id]
-                self.assertEqual(
-                    edge.current_implementation_sha256,
-                    current.implementation_sha256,
-                )
+                cursor = edge.current_implementation_sha256
+                seen = set()
+                while cursor != current.implementation_sha256:
+                    self.assertNotIn(cursor, seen)
+                    seen.add(cursor)
+                    successors = tuple(
+                        candidate for candidate in edges_by_adapter[edge.adapter_id]
+                        if candidate.admitted_implementation_sha256 == cursor
+                    )
+                    self.assertEqual(len(successors), 1)
+                    cursor = successors[0].current_implementation_sha256
 
     def test_exact_accepted_provider_lineage_resumes_on_current_implementations(self):
         registry = live_source_registry()

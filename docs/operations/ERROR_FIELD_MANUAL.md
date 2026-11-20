@@ -2090,10 +2090,11 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2080** raw raises across **295** files. The baseline gate permits only reduction.
+Current production scan: **2086** raw raises across **298** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
+| `1300_SOURCE_OFFER_VALUE_ERROR` | 1 | `bilqis_mlx/runtime/tests/operator/conformance_1300_support/runtime.py` |
 | `<dynamic/raw prose>` | 8 | `bilqis_mlx/_semantic_tools/next_grade_review.py`, `bilqis_mlx/_semantic_tools/semantic_transformations.py`, `bilqis_mlx/_source_evidence/grade_a_probe.py`, `bilqis_mlx/factory/_model/contracts.py`, plus 3 more |
 | `ANSWER_CASTE_EMPTY_LESSON` | 1 | `bilqis_mlx/_semantic_tools/typed_answer_training.py` |
 | `ANSWER_CASTE_FULL_101_ABI_DRIFT` | 1 | `bilqis_mlx/_semantic_tools/typed_answer_training.py` |
@@ -2283,6 +2284,8 @@ Current production scan: **2080** raw raises across **295** files. The baseline 
 | `BACKUP_UNSAFE_MANIFEST_PATH` | 1 | `bilqis_mlx/_operations/backup.py` |
 | `BACKUP_UNSUPPORTED_ENTRY` | 1 | `bilqis_mlx/_operations/backup.py` |
 | `BACKUP_UNSUPPORTED_SPECIAL_FILE` | 1 | `bilqis_mlx/_operations/backup.py` |
+| `BILQIS_1300_ACCEPTED_V2_LEASE_REQUIRED` | 1 | `bilqis_mlx/runtime/tests/operator/conformance_1300_support/evidence_export.py` |
+| `BILQIS_1300_EVIDENCE_PATH_MUST_OUTLIVE_DISPOSABLE_RUN` | 1 | `bilqis_mlx/runtime/tests/operator/conformance_1300_support/evidence_export.py` |
 | `BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_RESUME` | 2 | `bilqis_mlx/presentation/operator_cli/preflight.py`, `bilqis_mlx/runtime/operator_session/operator_preflight.py` |
 | `BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT` | 1 | `bilqis_mlx/_boolean_sources/boolean_association.py` |
 | `BOOLEAN_ASSOCIATION_CHILD_NOT_BOOLEAN` | 1 | `bilqis_mlx/_boolean_sources/boolean_association.py` |
@@ -2520,6 +2523,9 @@ Current production scan: **2080** raw raises across **295** files. The baseline 
 | `COMPOSITION_UNKNOWN_CATALOG_ID` | 2 | `bilqis_mlx/semantics/foundation/catalog.py` |
 | `COMPOSITION_UNKNOWN_EXTERNAL_ALIAS` | 2 | `bilqis_mlx/semantics/foundation/catalog.py` |
 | `COMPOSITION_UNRESOLVED_SEMANTIC_ID` | 1 | `bilqis_mlx/source_adapters/catalog/__init__.py` |
+| `CONFORMANCE_1300_COLLAPSE_BANK_MISSING` | 1 | `bilqis_mlx/runtime/tests/operator/conformance_1300_support/rollback.py` |
+| `CONFORMANCE_1300_COLLAPSE_INDEX_INVALID` | 1 | `bilqis_mlx/runtime/tests/operator/conformance_1300_support/rollback.py` |
+| `CONFORMANCE_1300_FIXTURE_EVIDENCE_ID_COLLISION` | 1 | `bilqis_mlx/runtime/tests/operator/conformance_1300_support/runtime.py` |
 | `CONSTRUCTION_ANSWER_EXPRESSION_TYPE_MISMATCH` | 1 | `bilqis_mlx/verification/construction_contracts.py` |
 | `CONSTRUCTION_BACKEND_RESULT_NOT_CANONICAL_WIRE_VALUE` | 1 | `bilqis_mlx/verification/construction_contracts.py` |
 | `CONSTRUCTION_CAPABILITY_BINDING_MISMATCH` | 1 | `bilqis_mlx/_release_views/curriculum_contracts.py` |

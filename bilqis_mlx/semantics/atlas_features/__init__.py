@@ -5,8 +5,8 @@ from .common import (
 from .records import FeatureSchema, ConceptFeature, ProspectiveIdentityFeature, ProspectiveIdentityFeatureSet, FeatureRow, AtlasFeatures
 from .sources import _source_rule_categories, _graph_vector
 from .manifest import FEATURE_MANIFEST_OPERATOR_ID, build_feature_manifest
-from .prospective import plan_prospective_identity_features
+from .prospective import generation_feature_row, plan_prospective_identity_features
 
-for _export in (_invalid, _utf8, _sorted_ids, _factor_overflow, _category_map, _normalized_count, _source_rule_categories, _graph_vector, FeatureSchema, ConceptFeature, ProspectiveIdentityFeature, ProspectiveIdentityFeatureSet, FeatureRow, AtlasFeatures, build_feature_manifest, plan_prospective_identity_features):
+for _export in (_invalid, _utf8, _sorted_ids, _factor_overflow, _category_map, _normalized_count, _source_rule_categories, _graph_vector, FeatureSchema, ConceptFeature, ProspectiveIdentityFeature, ProspectiveIdentityFeatureSet, FeatureRow, AtlasFeatures, build_feature_manifest, generation_feature_row, plan_prospective_identity_features):
     _export.__module__ = __name__
 del _export

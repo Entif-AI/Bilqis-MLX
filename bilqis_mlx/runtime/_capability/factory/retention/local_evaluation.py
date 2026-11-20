@@ -46,10 +46,13 @@ def evaluate_target_gate(
     after, candidate_total = pair.candidate.score(target_capability)
     if candidate_total != total:
         _invalid("BAMF_C05_TARGET_FIRST_SCORE_TOTAL_DRIFT")
-    if target_capability not in set(coverage.measured_capabilities) or after > before:
+    measured = target_capability in set(coverage.measured_capabilities)
+    if after < before:
+        reason = "TARGET_BASELINE_REGRESSION"
+    elif not measured or after > before:
         return None
-    reason = ("TARGET_BASELINE_REGRESSION"
-              if after < before else "NO_MEASURABLE_TARGET_GAIN")
+    else:
+        reason = "NO_MEASURABLE_TARGET_GAIN"
     return Decision(
         DecisionStatus.REJECT, reason,
         pair.parent.generation_digest, pair.candidate.generation_digest,

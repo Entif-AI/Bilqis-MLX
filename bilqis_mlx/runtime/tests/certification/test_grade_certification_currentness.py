@@ -128,6 +128,43 @@ def test_new_current_attempt_supersedes_stale_running_attempt_after_crash(tmp_pa
         "BAMF_GRADE_CERTIFICATION_CURRENTNESS_DRIFT")
 
 
+def test_below_entry_current_request_still_supersedes_stale_running_attempt(tmp_path):
+    stale = _request(checkpoint="c" * 64)
+    current = _request(checkpoint="e" * 64)
+
+    def crash_after_first_commit(key):
+        if key == "C.ALPHA":
+            return (_ for _ in ()).throw(
+                RuntimeError("simulated authority-change crash"))
+        return _clean_score(key)
+
+    with pytest.raises(RuntimeError, match="authority-change crash"):
+        execute_grade_certification(
+            tmp_path, stale, _policy(), trigger_measure=lambda: _trigger(),
+            obligation_measure=crash_after_first_commit,
+            require_current=lambda: stale)
+    assert load_certification_attempt(tmp_path, stale).status == "RUNNING"
+
+    result = execute_grade_certification(
+        tmp_path, current, _policy(),
+        trigger_measure=lambda: _trigger(
+            zeta=(8, 10), alpha=(8, 10), prior=(10, 10)),
+        obligation_measure=lambda key: (_ for _ in ()).throw(
+            AssertionError(f"below-entry request must not sweep {key}")),
+        require_current=lambda: current,
+    )
+
+    assert result.status == "NOT_ELIGIBLE"
+    assert not (
+        tmp_path / "grade-certification" / "attempts"
+        / current.attempt_sha256 / "attempt.json"
+    ).exists()
+    stale_view = load_certification_attempt(tmp_path, stale)
+    assert stale_view.status == "SUPERSEDED"
+    assert stale_view.supersession_reason == (
+        "BAMF_GRADE_CERTIFICATION_CURRENTNESS_DRIFT")
+
+
 def test_non_currentness_error_does_not_terminally_supersede_attempt(tmp_path):
     request = _request()
     checks = 0
@@ -179,7 +216,7 @@ def test_unbaselined_protected_obligation_never_becomes_regression_blocker(tmp_p
             AssertionError(f"entry failure must stop before {key}")),
         require_current=lambda: request,
     )
-    assert result.status == "FAILED"
+    assert result.status == "NOT_ELIGIBLE"
     assert tuple(
         (item.owner, item.obligation_key) for item in result.blockers
     ) == (("ACTIVE", "C.ZETA"), ("ACTIVE", "C.ALPHA"))

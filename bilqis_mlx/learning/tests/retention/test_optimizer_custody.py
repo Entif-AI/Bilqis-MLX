@@ -43,7 +43,8 @@ class OptimizerCustodyTests(CausalTeacherExperimentTests):
         branch["embedding.weight"][0, 0] = -999.
         branch_opt.state["embedding.weight"]["m"][0, 0] = -888.
         branch_opt.state["embedding.weight"]["v"][0, 0] = -777.
-        branch_opt.state["step"][...] = parent_step + 50
+        branch_opt.state["step"] = mx.array(
+            parent_step + 50, dtype=branch_opt.state["step"].dtype)
         mx.eval(branch, branch_opt.state)
 
         np.testing.assert_array_equal(

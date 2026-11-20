@@ -11,6 +11,7 @@ from bilqis_mlx.learning.salience_teacher import (
 )
 from bilqis_mlx.runtime.active_grade_cadence import (
     issue_active_grade_cadence,
+    rearm_active_grade_acquisition,
     record_active_grade_cadence_attempt,
 )
 from bilqis_mlx.runtime.active_grade_cadence_custody import read_current_cadence
@@ -119,6 +120,30 @@ def test_main_pass_then_two_bounded_recovery_rounds(tmp_path):
         repeated = issue_active_grade_cadence(tmp_path, epoch, frontier)
         assert repeated.state.cadence_sha256 == boundary.state.cadence_sha256
         assert repeated.state.revision == boundary.state.revision
+
+
+def test_ineligible_boundary_rearms_a_fresh_main_acquisition_epoch(tmp_path):
+    frontier = _frontier((_capability("A"),))
+    epoch = _epoch({"A": 1})
+    with patch(
+            "bilqis_mlx.runtime.active_grade_cadence_policy.obligations_for_capability",
+            side_effect=_obligations(epoch)):
+        for _round in range(3):
+            issued = issue_active_grade_cadence(tmp_path, epoch, frontier)
+            _record_attempt(tmp_path, issued, "A")
+        boundary = issue_active_grade_cadence(tmp_path, epoch, frontier)
+        assert boundary.disposition is ActiveGradeCadenceDisposition.RECOVERY_EXHAUSTED
+
+        rearmed = rearm_active_grade_acquisition(
+            tmp_path, boundary, frontier)
+        next_visit = issue_active_grade_cadence(tmp_path, epoch, frontier)
+
+    assert rearmed.phase is ActiveGradeCadencePhase.MAIN
+    assert rearmed.cadence_epoch == boundary.state.cadence_epoch + 1
+    assert rearmed.phase_capability_ids == ("A",)
+    assert next_visit.phase is ActiveGradeCadencePhase.MAIN
+    assert next_visit.disposition is ActiveGradeCadenceDisposition.TEACHING
+    assert next_visit.authorized_capability_ids == ("A",)
 
 
 def test_unattempted_held_member_preserves_main_phase(tmp_path):
