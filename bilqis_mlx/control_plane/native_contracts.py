@@ -62,6 +62,7 @@ class AuthenticatedGeneration:
     manifest: dict
     acceptance: dict
     run_identity: dict
+    correction_frontier: dict
     teacher_state: dict
     outbox: tuple[dict, ...]
     learning_health_state: dict | None = None

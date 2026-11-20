@@ -4,6 +4,8 @@ const { spawn } = require("node:child_process");
 const path = require("node:path");
 const readline = require("node:readline");
 
+const EVENT_BRIDGE_READY_SCHEMA = "bilqis.bamf.mission-control.event-bridge-ready/v1";
+
 const SAFE_CAUSE_CODES = new Set([
   "BAMF_GUI20_BROKER_REQUEST_INVALID",
   "BAMF_GUI20_CP01_CONTRACT_INVALID",
@@ -63,7 +65,7 @@ class Cp01PythonBroker {
     return this.#request("disconnect");
   }
 
-  subscribe(listener) {
+  async subscribe(listener) {
     if (typeof listener !== "function") {
       throw new TypeError("BAMF_GUI03_EVENT_LISTENER_REQUIRED");
     }
@@ -78,9 +80,37 @@ class Cp01PythonBroker {
       },
     );
     const lines = readline.createInterface({ input: child.stdout });
+    let ready = false;
+    let cleaned = false;
+    let resolveReady;
+    let rejectReady;
+    const readyPromise = new Promise((resolve, reject) => {
+      resolveReady = resolve;
+      rejectReady = reject;
+    });
+    const timeout = setTimeout(() => {
+      if (ready) return;
+      rejectReady(this.#cause("BAMF_GUI20_CP01_TIMEOUT"));
+    }, this.requestTimeoutMs);
+    timeout.unref?.();
+    const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
+      clearTimeout(timeout);
+      lines.close();
+      this.eventProcesses.delete(child);
+    };
     lines.on("line", (line) => {
       try {
         const payload = JSON.parse(line);
+        if (payload?.schema === EVENT_BRIDGE_READY_SCHEMA) {
+          if (!ready) {
+            ready = true;
+            clearTimeout(timeout);
+            resolveReady();
+          }
+          return;
+        }
         if (payload && typeof payload === "object" && !Array.isArray(payload)) {
           listener(payload);
         }
@@ -90,12 +120,21 @@ class Cp01PythonBroker {
     });
     child.stderr.resume();
     this.eventProcesses.add(child);
-    const cleanup = () => {
-      lines.close();
-      this.eventProcesses.delete(child);
-    };
-    child.once("exit", cleanup);
-    child.once("error", cleanup);
+    child.once("exit", () => {
+      if (!ready) rejectReady(this.#cause("BAMF_GUI20_CP01_PROCESS_UNAVAILABLE"));
+      cleanup();
+    });
+    child.once("error", () => {
+      if (!ready) rejectReady(this.#cause("BAMF_GUI20_CP01_PROCESS_UNAVAILABLE"));
+      cleanup();
+    });
+    try {
+      await readyPromise;
+    } catch (error) {
+      cleanup();
+      if (child.exitCode === null) child.kill();
+      throw error;
+    }
     let active = true;
     return () => {
       if (!active) return;

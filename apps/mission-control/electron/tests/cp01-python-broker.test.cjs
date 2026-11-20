@@ -73,6 +73,7 @@ test("Node broker receives a real CP04 EventEnvelope through the private event b
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "bilqis-gui03-events-"));
   const socketPath = path.join(root, "cp.sock");
   const runDir = path.join(root, "missing-run");
+  const publishTrigger = path.join(root, "publish-event");
   const python = process.env.BILQIS_PYTHON || "python3";
   const script = `
 from pathlib import Path
@@ -85,7 +86,13 @@ from bilqis_mlx.mission_control.tests.samples import SAMPLES
 service = ControlPlaneService(Path(${JSON.stringify(runDir)}), Path(${JSON.stringify(socketPath)}), event_heartbeat_seconds=0.02)
 thread = start_service(service)
 try:
-    time.sleep(0.35)
+    trigger = Path(${JSON.stringify(publishTrigger)})
+    for _ in range(500):
+        if trigger.exists():
+            break
+        time.sleep(0.01)
+    else:
+        raise TimeoutError("EVENT_PUBLISH_TRIGGER_TIMEOUT")
     episode = next(item for item in SAMPLES if type(item) is LearningEpisode)
     service.publish_event(EventFamily.LESSON_VISIT_COMPLETED, episode)
     time.sleep(1.0)
@@ -103,14 +110,21 @@ finally:
   });
   try {
     await waitForPath(socketPath, service);
-    const observed = await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error("GUI03_EVENT_TIMEOUT")), 2500);
-      const unsubscribe = broker.subscribe((event) => {
-        clearTimeout(timeout);
-        unsubscribe();
-        resolve(event);
-      });
+    let unsubscribe = () => {};
+    let resolveEvent;
+    let rejectEvent;
+    const eventPromise = new Promise((resolve, reject) => {
+      resolveEvent = resolve;
+      rejectEvent = reject;
     });
+    const timeout = setTimeout(() => rejectEvent(new Error("GUI03_EVENT_TIMEOUT")), 2500);
+    unsubscribe = await broker.subscribe((event) => {
+      clearTimeout(timeout);
+      unsubscribe();
+      resolveEvent(event);
+    });
+    fs.writeFileSync(publishTrigger, "publish\n");
+    const observed = await eventPromise;
     assert.equal(observed.schema_version, "bilqis.bamf.mission-control.event-envelope/v1");
     assert.equal(observed.event_family, "lesson.visit.completed");
     assert.equal(observed.payload_record_id, "episode");
