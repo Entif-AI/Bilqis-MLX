@@ -100,6 +100,11 @@ def _read_generation_manifest(run_dir: Path, manifest_sha256: str):
         manifest = BamfGenerationManifest.from_record(manifest).to_record()
     except (UnicodeDecodeError, json.JSONDecodeError, BilqisError, KeyError, TypeError):
         invalid("CONTROL_PLANE_NATIVE_HISTORY_MANIFEST_INVALID")
+    if manifest.get("schema") == _BUNDLE_V5 and (
+            not isinstance(manifest.get("training_objective_ref"), str)
+            or not manifest["training_objective_ref"]
+            or not is_digest(manifest.get("training_objective_digest"))):
+        invalid("CONTROL_PLANE_NATIVE_HISTORY_MANIFEST_INVALID")
     return root, manifest
 
 

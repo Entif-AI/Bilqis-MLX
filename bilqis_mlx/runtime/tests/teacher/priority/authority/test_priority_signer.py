@@ -49,6 +49,7 @@ def _cadence(*ready):
     return SimpleNamespace(
         authorized_capability_ids=tuple(ready),
         phase=SimpleNamespace(value="MAIN"),
+        disposition=SimpleNamespace(value="TEACHING"),
     )
 
 
@@ -142,6 +143,10 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
     ), patch(
         "bilqis_mlx.runtime.active_grade_cadence.issue_active_grade_cadence",
         return_value=_cadence("capability:alpha", "capability:beta"),
+    ), patch.object(
+        authority, "_ordered_rejections", return_value=(),
+    ), patch.object(
+        authority, "_rejection_recency", return_value=(0, {}),
     ):
         issued = authority.issue_foundation_priority_authority(
             run_dir, source_context, parent, {"epoch": 1}, "/atlas",

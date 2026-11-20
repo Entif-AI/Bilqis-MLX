@@ -14,6 +14,9 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_salience import rank_attention_options
 from bilqis_mlx.runtime import checkpoint_outbox
 from bilqis_mlx.runtime import priority_rejection_replay as rejection_replay
+from bilqis_mlx.runtime.tests.teacher.priority.rejection_projection_support import (
+    CountingPlane,
+)
 from bilqis_mlx.runtime.atlas_source_authority import (
     SourceAuthorityKey, SourceAuthorityRegistry, SourceAuthorityScope,
 )
@@ -48,7 +51,8 @@ def _lawful_frontier(planning_generation, *ready):
 def _cadence(*ready):
     return SimpleNamespace(
         authorized_capability_ids=tuple(ready),
-        phase=SimpleNamespace(value="MAIN"))
+        phase=SimpleNamespace(value="MAIN"),
+        disposition=SimpleNamespace(value="TEACHING"))
 
 
 def _rejection_custody(root):
