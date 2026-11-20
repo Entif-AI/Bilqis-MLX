@@ -10,6 +10,19 @@ All new releases use [Semantic Versioning](https://semver.org/) and Conventional
 * **bamf:** say what again, I dare you... I double-dare you ([#1487](https://github.com/Entif-AI/Bilqis-MLX/issues/1487)) ([47c082d](https://github.com/Entif-AI/Bilqis-MLX/commit/47c082da1cb68d4971ac5c1b494727878aba8cfc))
 * stabilize [#1300](https://github.com/Entif-AI/Bilqis-MLX/issues/1300) conformance rollback and cold resume ([#1486](https://github.com/Entif-AI/Bilqis-MLX/issues/1486)) ([7a74477](https://github.com/Entif-AI/Bilqis-MLX/commit/7a744776c4335ebdce5568b30e66fc22bd3ce6f7))
 
+<!-- release-history:pr:1487:start -->
+### PR #1487 constituent commit inventory
+
+Release Please summarized PR #1487 as [`47c082d`](https://github.com/Entif-AI/Bilqis-MLX/commit/47c082da1cb68d4971ac5c1b494727878aba8cfc). This generated inventory preserves **1 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **1 source commit**.
+
+<details>
+<summary>1 source commit (newest-first PR order)</summary>
+
+- [`cd650c6eed`](https://github.com/Entif-AI/Bilqis-MLX/commit/cd650c6eed52b6dd6f35c0cbe0cdfd3525929e66) chore(unified): merge main into BAMF integration trunk
+
+</details>
+
+<!-- release-history:pr:1487:end -->
 ## [1.2.12](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.11...v1.2.12) (2026-11-20)
 
 
