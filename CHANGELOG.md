@@ -2,6 +2,14 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.2.14](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.13...v1.2.14) (2026-11-20)
+
+
+### Bug Fixes
+
+* **bamf:** recycle active grade after recovery exhaustion ([c0c0441](https://github.com/Entif-AI/Bilqis-MLX/commit/c0c0441bcc56201c6470890a6ce60fc9b1551fce))
+* **bamf:** recycle active grade after recovery exhaustion ([#1490](https://github.com/Entif-AI/Bilqis-MLX/issues/1490)) ([c915a19](https://github.com/Entif-AI/Bilqis-MLX/commit/c915a195d133ebb6879fafa362a4a86122805009))
+
 ## [1.2.13](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.12...v1.2.13) (2026-11-20)
 
 

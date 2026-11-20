@@ -80,8 +80,10 @@ def _run_visits(
         if stop_status is not None:
             status = stop_status
             break
+        if outcome == "ACQUISITION_REARMED":
+            continue
         visits += 1
-        if outcome in {"GRADE_TRANSITIONED", "ACQUISITION_REARMED"}:
+        if outcome == "GRADE_TRANSITIONED":
             continue
         if outcome == "REJECTED":
             rejected += 1
