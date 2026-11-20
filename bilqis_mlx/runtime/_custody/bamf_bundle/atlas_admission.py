@@ -7,6 +7,10 @@ from typing import Mapping
 from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
 
 from .records import BamfBundleCandidate, CompleteStudent, canonical, invalid, sha
+from .atlas_admission_championship import (
+    cleared_championship_state_valid,
+    semantic_admission_championship_reset_valid,
+)
 
 
 ATLAS_ADMISSION_SCHEMA_V1 = "bilqis.mlx.bamf-atlas-admission-binding/v1"
@@ -248,26 +252,12 @@ def _issue_atlas_admission_binding(
 ) -> AtlasAdmissionBinding:
     """Mint C07 authority only after its caller has replayed lease and staging proof."""
     transition = dict(candidate.transition)
-    championship_reset_valid = True
-    if parent.championship_state is None:
-        championship_reset_valid = candidate.championship_state is None
-    else:
-        if candidate.championship_state is None:
-            championship_reset_valid = False
-        else:
-            from bilqis_mlx.learning.capability_championship_state import (
-                validate_championship_state,
-            )
-            state = dict(candidate.championship_state)
-            validate_championship_state(state)
-            history = state.get("epoch_history", ())
-            championship_reset_valid = (
-                state.get("active_roles") == {}
-                and state.get("settled_matchups") == {}
-                and bool(history)
-                and history[-1].get("source_generation") == parent.generation
-                and history[-1].get("reason") == "NEW_SEMANTIC_ADMISSION"
-            )
+    championship_reset_valid = semantic_admission_championship_reset_valid(
+        parent.championship_state,
+        candidate.championship_state,
+        parent_manifest_sha256=candidate.parent_manifest_sha256,
+        parent_generation=parent.generation,
+    )
     if (type(candidate) is not BamfBundleCandidate or type(parent) is not CompleteStudent
             or candidate.run_identity is None or candidate.run_identity != parent.run_identity
             or candidate.run_id != parent.run_id
@@ -346,15 +336,6 @@ def require_atlas_admission_binding(
                      != sha(canonical(dict(candidate.championship_state)))))):
         invalid("BAMF_ATLAS_ADMISSION_BINDING_DRIFT")
     if candidate.championship_state is not None:
-        from bilqis_mlx.learning.capability_championship_state import (
-            validate_championship_state,
-        )
-        state = dict(candidate.championship_state)
-        validate_championship_state(state)
-        history = state.get("epoch_history", ())
-        if (state.get("active_roles") != {}
-                or state.get("settled_matchups") != {}
-                or not history
-                or history[-1].get("reason") != "NEW_SEMANTIC_ADMISSION"):
+        if not cleared_championship_state_valid(candidate.championship_state):
             invalid("BAMF_ATLAS_ADMISSION_BINDING_DRIFT")
     return binding

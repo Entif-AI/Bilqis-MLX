@@ -21,7 +21,7 @@ from bilqis_mlx.runtime.bamf_operator.session import _execution_context
 from bilqis_mlx.runtime.foundation_teacher_owner import (
     current_foundation_teacher_projection,
 )
-from bilqis_mlx.runtime.tests.operator.pre_neural_journey_support import (
+from bilqis_mlx.runtime.tests.operator.pre_neural.pre_neural_journey_support import (
     PreNeuralJourneySupport,
     historical_school_release,
     journey_source,

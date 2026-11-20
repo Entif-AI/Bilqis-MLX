@@ -21,6 +21,7 @@ class PriorityPlanningEpoch:
     snapshot: object
     closure: object
     requested_keys: tuple
+    accepted_credit: object | None
     autonomy_plan: object
     evidence_ledger: object
     checkpoint: object
@@ -94,13 +95,14 @@ def build_priority_planning_epoch(
         checkpoint_sha256=checkpoint.sha256,
         optimizer_step=checkpoint.optimizer_step,
     )
+    accepted_credit = read_accepted_atlas_obligation_credit(run_dir)
     epoch = AtlasCoverageEpoch(
         snapshot, closure, frontier, current, staged,
-        accepted_credit=read_accepted_atlas_obligation_credit(run_dir))
+        accepted_credit=accepted_credit)
     epoch.verify()
     return PriorityPlanningEpoch(
         current, candidate, snapshot, closure, _accepted_requested_keys(epoch),
-        plan, ledger, checkpoint, source)
+        accepted_credit, plan, ledger, checkpoint, source)
 
 
 def priority_planning_from_epoch(epoch, *, progress=None):
@@ -134,10 +136,17 @@ def priority_planning_from_epoch(epoch, *, progress=None):
             _invalid("BAMF_PRIORITY_A09_REALIZATION_MISSING")
         selected = select_frontier_delta_for_projection(
             snapshot, closure, current, projection, requested)
-    planning_progress = plan_frontier_progress(
-        snapshot, closure, selected,
-        current_release=current if selected is not None else None,
-        selected_projection=projection)
+    if selected is None and epoch.accepted_credit is not None:
+        from bilqis_mlx.factory.atlas_delta_adapter import (
+            plan_frontier_progress_with_accepted_credit,
+        )
+        planning_progress = plan_frontier_progress_with_accepted_credit(
+            snapshot, closure, epoch.accepted_credit)
+    else:
+        planning_progress = plan_frontier_progress(
+            snapshot, closure, selected,
+            current_release=current if selected is not None else None,
+            selected_projection=projection)
     _emit_progress(progress, "planner: candidate frontier ready")
     return PriorityPlanningInput(planning_progress, closure, selected, projection)
 

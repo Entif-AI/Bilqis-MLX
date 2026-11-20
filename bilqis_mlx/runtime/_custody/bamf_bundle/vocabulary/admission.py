@@ -1,7 +1,7 @@
 """A02 production-quality vocabulary staging through accepted B13 custody."""
 from __future__ import annotations
 
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 import shutil
 
@@ -13,6 +13,7 @@ from bilqis_mlx.learning.atlas_candidate import issue_parameter_extension_state
 from bilqis_mlx.learning.atlas_plasticity import IdentityRowAge, PlasticityPolicy
 from bilqis_mlx.learning.capability_championship_state import clear_championship_epoch
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
+from bilqis_mlx.runtime.accepted_teacher_custody import rebind_accepted_teacher_custody
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
@@ -283,6 +284,17 @@ def _stage_vocabulary_extension_from_accepted(
          "kind": "PARAMETER_EXTENSION", "invalidate_derived_caches": True},
         (event,), parent.run_identity, parent.baseline_evidence,
         parent.learning_health_state, championship_state)
+    teacher = rebind_accepted_teacher_custody(
+        parent, successor_state, successor=candidate)
+    if teacher is not None:
+        candidate = replace(
+            candidate,
+            provenance=replace(
+                candidate.provenance,
+                teacher_identity=teacher.teacher_identity,
+                teacher_epoch=teacher.teacher_epoch),
+            teacher_state=dict(teacher.teacher_state),
+        )
     return _issue_a02_staged_vocabulary_extension(candidate, receipt)
 
 

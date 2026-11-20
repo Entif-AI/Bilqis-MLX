@@ -70,7 +70,7 @@ from bilqis_mlx.source_adapters.copular_curriculum import SENSE_ID, atlas_semant
 from bilqis_mlx.source_adapters.school import live_source_registry
 
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[5]
 LEGACY = ROOT / "vendor" / "legacy-v16"
 MANIFEST = ROOT / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 COPULAR_REGISTRY = ROOT / "bilqis_mlx/semantics/copular_registry_v1.json"

@@ -8,11 +8,16 @@ from .atlas_lease_contracts import _invalid, _sha
 
 def _authenticate_native_staged_candidate(run_dir: Path, staged):
     """Bind one owner-issued A02 handoff to the live accepted B13 parent."""
+    from dataclasses import replace
+
     from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
     from bilqis_mlx.runtime.bamf_bundle import (
         BamfBundleCandidate, load_bamf_generation_authority,
         read_accepted_generation_feature_receipt,
         require_issued_a02_staged_vocabulary_extension,
+    )
+    from bilqis_mlx.runtime.accepted_teacher_custody import (
+        rebind_accepted_teacher_custody,
     )
 
     if not isinstance(run_dir, Path):
@@ -33,6 +38,17 @@ def _authenticate_native_staged_candidate(run_dir: Path, staged):
     parent_state = parent.retained_state
     state = candidate.retained_state
     transition = dict(candidate.transition)
+    teacher = rebind_accepted_teacher_custody(
+        parent, state, successor=candidate)
+    expected_provenance = parent.provenance
+    expected_teacher_state = dict(parent.teacher_state)
+    if teacher is not None:
+        expected_provenance = replace(
+            expected_provenance,
+            teacher_identity=teacher.teacher_identity,
+            teacher_epoch=teacher.teacher_epoch,
+        )
+        expected_teacher_state = dict(teacher.teacher_state)
 
     if (parent_feature.generation_manifest_sha256 != parent_manifest_sha256
             or parent_feature.digest != expected_parent_feature_receipt_sha256):
@@ -45,10 +61,10 @@ def _authenticate_native_staged_candidate(run_dir: Path, staged):
             or candidate.implementation_sha256 != parent.implementation_sha256
             or candidate.topology != parent.topology
             or candidate.optimizer_hyperparameters != parent.optimizer_hyperparameters
-            or candidate.provenance != parent.provenance
+            or candidate.provenance != expected_provenance
             or dict(candidate.compiler_features) != dict(parent.compiler_features)
             or dict(candidate.correction_frontier) != dict(parent.correction_frontier)
-            or dict(candidate.teacher_state) != dict(parent.teacher_state)
+            or dict(candidate.teacher_state) != expected_teacher_state
             or dict(candidate.evaluation_contract) != dict(parent.evaluation_contract)):
         _invalid("BAMF_ATLAS_ACCEPTED_PARENT_DRIFT")
     if (transition != {

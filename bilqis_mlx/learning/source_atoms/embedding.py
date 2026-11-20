@@ -2,7 +2,7 @@
 import mlx.core as mx
 
 from ...runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
-from ...semantics.atlas_features import build_feature_manifest
+from ...semantics.atlas_features import build_feature_manifest, generation_feature_row
 from ...semantics.atlas.snapshot import load_pinned_atlas_snapshot
 from ...semantics.source_atom_binding.common import invalid
 from ...source_adapters.atom_binding import (
@@ -100,18 +100,46 @@ def _source_embedding_parameters(
     return spec, owned
 
 
+def _source_binding_feature_row(
+    binding, config, features, snapshot, banks, spec,
+):
+    """Bind source factors only after the accepted generation activates the ABI row.
+
+    A02/C07 may activate an append-only identity while B13 deliberately keeps the
+    predecessor feature-factor manifest immutable.  In that case the immutable
+    Atlas source still owns the prospective type/graph factors, while the
+    generation-active bank owns admission.
+    """
+    abi_index = binding.candidate_abi_index
+    bank_index, bank_row = divmod(abi_index, spec.semantic_bank_rows)
+    if bank_index >= len(banks) or bank_row not in banks[bank_index].active_rows:
+        invalid("BAMF_SOURCE_ATOM_INACTIVE_IDENTITY")
+
+    active_indices = tuple(
+        bank.bank_index * spec.semantic_bank_rows + row
+        for bank in banks
+        for row in bank.active_rows
+    )
+    row = generation_feature_row(
+        snapshot,
+        features,
+        binding.candidate_semantic_id,
+        abi_index,
+        config.task.scope,
+        active_indices=active_indices,
+    )
+    if row.abi_index != abi_index:
+        invalid("BAMF_SOURCE_ATOM_FEATURE_ABI_DRIFT")
+    return row, bank_index, bank_row
+
+
 def _source_binding_vectors(
-    handoff, config, features, banks, spec, owned,
+    handoff, config, features, banks, spec, owned, snapshot,
 ):
     vectors = []
     for binding in handoff.bindings:
-        row = features.features_for(
-            binding.candidate_semantic_id, "NONE", "NONE", config.task.scope)
-        if row.abi_index != binding.candidate_abi_index:
-            invalid("BAMF_SOURCE_ATOM_FEATURE_ABI_DRIFT")
-        bank_index, bank_row = divmod(row.abi_index, spec.semantic_bank_rows)
-        if bank_row not in banks[bank_index].active_rows:
-            invalid("BAMF_SOURCE_ATOM_INACTIVE_IDENTITY")
+        row, bank_index, bank_row = _source_binding_feature_row(
+            binding, config, features, snapshot, banks, spec)
         factors = _released_factor_terms(owned, row)
         value = banks[bank_index].weights[bank_row]
         for term in factors:
@@ -145,6 +173,6 @@ def source_atom_vectors(
     spec, owned = _source_embedding_parameters(
         parameters, source, features, extents, banks, snapshot)
     vectors = _source_binding_vectors(
-        handoff, config, features, banks, spec, owned)
+        handoff, config, features, banks, spec, owned, snapshot)
     return vectors, banks, handoff
 

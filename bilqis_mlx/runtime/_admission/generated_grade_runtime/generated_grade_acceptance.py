@@ -116,7 +116,8 @@ def _accepted_release_lineage(
 
 def _binding_accepts_proposal(binding, proposal: GeneratedGradeProposal) -> bool:
     from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
-        ATLAS_ADMISSION_SCHEMA_V3, ParsedAtlasAdmissionBinding,
+        ATLAS_ADMISSION_SCHEMA_V3, ATLAS_ADMISSION_SCHEMA_V4,
+        ParsedAtlasAdmissionBinding,
     )
     from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
         FACTORY_RELEASE_ADMISSION_SCHEMA_V3, ParsedFactoryReleaseAdmissionBinding,
@@ -125,7 +126,10 @@ def _binding_accepts_proposal(binding, proposal: GeneratedGradeProposal) -> bool
         if binding.schema_version != FACTORY_RELEASE_ADMISSION_SCHEMA_V3:
             return False
     elif isinstance(binding, ParsedAtlasAdmissionBinding):
-        if binding.schema_version != ATLAS_ADMISSION_SCHEMA_V3:
+        if binding.schema_version not in {
+                ATLAS_ADMISSION_SCHEMA_V3,
+                ATLAS_ADMISSION_SCHEMA_V4,
+        }:
             return False
     else:
         return False

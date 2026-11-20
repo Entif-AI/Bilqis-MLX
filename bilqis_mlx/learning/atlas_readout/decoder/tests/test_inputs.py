@@ -5,6 +5,10 @@ import mlx.core as mx
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_readout.decoder.inputs import validate_decoder_inputs
 from bilqis_mlx.learning.atlas_readout.decoder.tests.helpers import case
+from bilqis_mlx.learning.atlas_readout.plan import (
+    AnswerPlan, DecisionKind, DecisionSpec, ROUTE_MODALITY,
+)
+from bilqis_mlx.semantics.frame_schema import SourceSpan
 
 
 class DecoderInputTests(unittest.TestCase):
@@ -30,3 +34,27 @@ class DecoderInputTests(unittest.TestCase):
         changed = {**params, "identity.bank.0": mx.array(params["identity.bank.0"])}
         with self.assertRaises(BilqisError):
             validate_decoder_inputs(memory, context, plan, semantics, changed)
+
+    def test_route_only_plan_keeps_source_snapshot_immutable_after_generation_growth(self):
+        memory, context, plan, semantics, params = case()
+        source_snapshot = replace(
+            plan.snapshot, active_set_sha256="0" * 64)
+        route = AnswerPlan(
+            ROUTE_MODALITY,
+            len(memory.compiled.positions),
+            (DecisionSpec(
+                "route.operator", None, 0, DecisionKind.OPERATOR,
+                ("SELECT_BOOLEAN",),
+            ),),
+            None,
+            source_snapshot,
+            SourceSpan(0, 0),
+            plan.generation_binding,
+        )
+        validate_decoder_inputs(memory, context, route, semantics, params)
+
+        with self.assertRaises(BilqisError):
+            validate_decoder_inputs(
+                memory, context,
+                replace(plan, snapshot=source_snapshot),
+                semantics, params)

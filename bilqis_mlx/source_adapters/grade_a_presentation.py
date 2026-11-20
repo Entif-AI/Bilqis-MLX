@@ -15,9 +15,9 @@ import random
 
 from bilqis_mlx.errors import ErrorBus, SOURCE
 
-from ..grade_a_oracle import evaluate as independent_oracle
+from ..grade_a_oracle import VERSION as CURRENT_ORACLE, evaluate as independent_oracle
 from ..grade_a_probe import read_sources
-from ..live_grade_a import draw_predicates, generator_source_digest
+from ..live_grade_a import GENERATOR, draw_predicates, generator_source_digest
 
 
 VERSION = "bilqis.mlx.grade-a-development-presentation/v3"
@@ -31,6 +31,19 @@ def _digest(value) -> str:
     return hashlib.sha256(json.dumps(
         value, sort_keys=True, separators=(",", ":"), allow_nan=False,
     ).encode()).hexdigest()
+
+
+def _source_family(capability: str, seed: int) -> str:
+    return _digest([GENERATOR, "source-family", capability, seed])
+
+
+def _current_row(row: dict, *, capability: str, seed: int) -> dict:
+    return {
+        **row,
+        "oracle": CURRENT_ORACLE,
+        "source_family_id": _source_family(capability, seed),
+        "source_family_seed": seed,
+    }
 
 
 def constructor_digest() -> str:
@@ -108,8 +121,28 @@ def _development_context_row(row: dict, *, seed: int, source_root) -> dict:
 def draw_a(*, source_root, graph, course, capability, seed, each):
     """Draw ordinary developmental Grade-A without contextual invariance noise."""
     del course
-    return tuple(draw_predicates(
-        source_root, graph, seed=seed, capability=capability, each=each))
+    return tuple(_current_row(row, capability=capability, seed=seed)
+                 for row in draw_predicates(
+                     source_root, graph, seed=seed,
+                     capability=capability, each=each))
+
+
+def check_a_presentation(row, *, source_root, **_):
+    """Verify current Grade-A ownership metadata plus immutable source semantics."""
+    seed = row.get("source_family_seed")
+    capability = row.get("capability")
+    if (type(seed) is not int or seed < 0 or not isinstance(capability, str)
+            or row.get("oracle") != CURRENT_ORACLE
+            or row.get("source_family_id") != _source_family(capability, seed)):
+        return False
+    try:
+        library = _library_for(row["record"], source_root)
+        return (
+            independent_oracle(row["record"], capability) == row["gold"]
+            and list(library.encode(row["record"])) == row["tokens"]
+        )
+    except (KeyError, TypeError, ValueError, IndexError):
+        return False
 
 
 def draw_a_contextual(*, source_root, graph, course, capability, seed, each):
@@ -117,11 +150,11 @@ def draw_a_contextual(*, source_root, graph, course, capability, seed, each):
     del course
     rows = draw_predicates(
         source_root, graph, seed=seed, capability=capability, each=each)
-    result = tuple(
+    result = tuple(_current_row(row, capability=capability, seed=seed) for row in (
         (_micro_context_row(row, seed=seed, source_root=source_root)
          if row["record"]["task"] == "micro" else
          _development_context_row(row, seed=seed, source_root=source_root))
-        for row in rows)
+        for row in rows))
     if len({row["id"] for row in result}) != len(result):
         raise ErrorBus.legacy_error(SOURCE.GRADE_A.CONTEXT_IDENTITY_COLLISION)
     return result
