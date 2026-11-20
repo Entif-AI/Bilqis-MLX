@@ -10,6 +10,30 @@ All new releases use [Semantic Versioning](https://semver.org/) and Conventional
 * **bamf:** keep recovery exhaustion inside active grade ([#1483](https://github.com/Entif-AI/Bilqis-MLX/issues/1483)) ([4bc6a69](https://github.com/Entif-AI/Bilqis-MLX/commit/4bc6a696f939fce46ab6dc9108c97aec7110f57f))
 * **bamf:** unified base 20261119 ([#1484](https://github.com/Entif-AI/Bilqis-MLX/issues/1484)) ([12c01c2](https://github.com/Entif-AI/Bilqis-MLX/commit/12c01c295e325991332bb972f996d5c5fbb6eb68))
 
+<!-- release-history:pr:1484:start -->
+### PR #1484 constituent commit inventory
+
+Release Please summarized PR #1484 as [`12c01c2`](https://github.com/Entif-AI/Bilqis-MLX/commit/12c01c295e325991332bb972f996d5c5fbb6eb68). This generated inventory preserves **6 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **5 source commits and 1 internal merge commit**.
+
+<details>
+<summary>5 source commits (newest-first PR order)</summary>
+
+- [`be5d2616fd`](https://github.com/Entif-AI/Bilqis-MLX/commit/be5d2616fd0dd36d85034997e8118e366f513010) fix(bamf): keep recovery exhaustion inside active grade
+- [`6698b9e8b3`](https://github.com/Entif-AI/Bilqis-MLX/commit/6698b9e8b3f996d9b15153066fe418fa178e94ad) feat(mission-control): add read-only Mission Control Factory cockpit (#1478)
+- [`aa212cb76c`](https://github.com/Entif-AI/Bilqis-MLX/commit/aa212cb76cc5a14e4957987e860cfd55a43af647) refactor(mission-control): split factory cockpit projection
+- [`d0235f7b4e`](https://github.com/Entif-AI/Bilqis-MLX/commit/d0235f7b4eb6d0a9609983d354dea717e26e8e57) fix(mission-control): package factory cockpit assets
+- [`5634882627`](https://github.com/Entif-AI/Bilqis-MLX/commit/56348826276e2f425ae9114e599107fe8d372b60) feat(mission-control): add read-only factory cockpit
+
+</details>
+
+<details>
+<summary>1 internal merge commit (newest-first PR order)</summary>
+
+- [`9a7e9ea2f2`](https://github.com/Entif-AI/Bilqis-MLX/commit/9a7e9ea2f23e0eb110aeedf6cda6d8369bdc49b3) Merge remote-tracking branch 'origin/codex/bamf-unified-base-20261028' into codex/305-mission-control-factory-cockpit-20261119
+
+</details>
+
+<!-- release-history:pr:1484:end -->
 ## [1.2.11](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.10...v1.2.11) (2026-11-20)
 
 
