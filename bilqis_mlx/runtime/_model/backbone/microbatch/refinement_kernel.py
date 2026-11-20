@@ -113,25 +113,54 @@ def _batched_refine_slot(
 
 def batched_refine_hidden(params, row_batches, producer, hidden, selections):
     """Apply selected local refinement with one batched kernel per selection slot."""
+    refined, _routing = batched_refine_hidden_with_routing(
+        params, row_batches, producer, hidden, selections)
+    return refined
+
+
+def batched_refine_hidden_with_routing(
+        params, row_batches, producer, hidden, selections):
+    """Apply refinement and preserve exact pre-pass route-head supervision."""
     slots = max((0 if item is None else len(item[1]) for item in selections), default=0)
     if slots == 0:
-        return hidden
+        return hidden, ()
     width = hidden.shape[-1]
     batch_size = hidden.shape[0]
     rows = mx.arange(batch_size)
     role = _role_batch(params, row_batches, selections)
     refined = hidden
+    routing = []
     for slot in range(slots):
         positions, passes, member_counts, members, seeds = _slot_inputs(
             producer, row_batches, selections, slot, width)
         state = refined[rows, positions]
+        route_logits = state @ params["refine.route"].T + params["refine.route_bias"]
+        selected = mx.array(tuple(
+            selection is not None and slot < len(selection[1])
+            for selection in selections), dtype=mx.bool_)
+        routing.append((route_logits, passes, selected))
         state = _batched_refine_slot(
             params, state, seeds, role, members, member_counts, passes)
         position_mask = (
             mx.arange(refined.shape[1])[None, :] == positions[:, None])
         position_mask = position_mask & (passes[:, None] > 0)
         refined = mx.where(position_mask[..., None], state[:, None, :], refined)
-    return refined
+    return refined, tuple(routing)
 
 
-__all__ = ("batched_refine_hidden", "prepare_refinement_selections")
+def batched_refinement_routing_loss(routing, row_count):
+    """Match scalar per-row mean routing CE without a duplicate forward trace."""
+    total = mx.zeros((row_count,), dtype=mx.float32)
+    count = mx.zeros((row_count,), dtype=mx.float32)
+    for logits, labels, selected in routing:
+        target = mx.take_along_axis(logits, labels[:, None], axis=-1)[:, 0]
+        loss = mx.logsumexp(logits, axis=-1) - target
+        total = total + mx.where(selected, loss, mx.zeros_like(loss))
+        count = count + selected.astype(mx.float32)
+    return mx.where(count > 0, total / mx.maximum(count, 1), mx.zeros_like(total))
+
+
+__all__ = (
+    "batched_refine_hidden", "batched_refine_hidden_with_routing",
+    "batched_refinement_routing_loss", "prepare_refinement_selections",
+)

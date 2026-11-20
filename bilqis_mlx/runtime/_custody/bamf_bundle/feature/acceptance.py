@@ -9,7 +9,10 @@ from bilqis_mlx.learning.atlas_acceptance import (
     ACCEPTANCE_SCHEMA, CLOSURE_ACCEPTANCE_SCHEMA, MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
     EXACT_ACCEPTANCE_SCHEMA, EXACT_CLOSURE_ACCEPTANCE_SCHEMA,
     EXACT_MOTIF_ACCEPTANCE_SCHEMA, EXACT_MOTIF_CLOSURE_ACCEPTANCE_SCHEMA,
-    AcceptedCandidateBinding, candidate_identity_digest,
+    AcceptedCandidateBinding,
+)
+from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+    candidate_identity_for_canonical_consumer,
 )
 
 from ..atlas_admission import (
@@ -134,7 +137,7 @@ def accepted_binding_for_manifest(
             or binding.feature_sha256 != student.extents.factor_map_digest
             or binding.optimizer_step != student.retained_state.optimizer_step
             or binding.candidate_identity_sha256
-            != candidate_identity_digest(student.retained_state)):
+            != candidate_identity_for_canonical_consumer(student.retained_state)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     _require_retention_binding(student, binding)
     parent_anchor = parent_acceptance_anchor_from_manifest(
@@ -150,7 +153,7 @@ def accepted_binding_for_manifest(
             or (parent_anchor is not None
                 and parent.run_identity != student.run_identity)
             or binding.parent_candidate_identity_sha256
-            != candidate_identity_digest(parent.retained_state)):
+            != candidate_identity_for_canonical_consumer(parent.retained_state)):
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     return binding
 

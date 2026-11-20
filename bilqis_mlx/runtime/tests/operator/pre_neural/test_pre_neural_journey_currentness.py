@@ -15,6 +15,71 @@ from .pre_neural_journey_support import (
 
 
 class PreNeuralJourneyCurrentnessTests(PreNeuralJourneySupport, unittest.TestCase):
+    def test_bound_accepted_parent_identity_is_reused_across_priority_hot_path(self):
+        from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+            _reset_candidate_identity_metrics_for_tests,
+            candidate_identity_metrics_snapshot,
+        )
+
+        self.current, self.parent_graph = historical_school_release()
+        snapshot = portable_atlas_snapshot()
+        schema, features, atlas_selection = journey_source(snapshot)
+        with wide_shape_patch(len(snapshot.abi_entries)):
+            self.publish_matching_genesis(snapshot, schema, features)
+            with self.journey_mounts(snapshot, schema, features, atlas_selection):
+                parent, context, atlas_path, _feature_path = _execution_context(self.run)
+                program = schedule_program_from_executable_release(context.release)
+                _reset_candidate_identity_metrics_for_tests()
+                school = accepted_priority_school(parent, program)
+                selected = select_foundation_priority_visit(
+                    self.run, context, atlas_path, program=program, school=school)
+                from bilqis_mlx.runtime.accepted_priority_candidate import (
+                    _candidate_currentness,
+                )
+                _candidate_currentness(selected, context, None)
+                from bilqis_mlx.runtime.accepted_teacher_custody import (
+                    derive_c03_successor_bundle,
+                )
+                from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+                    bind_candidate_identity_or_fallback,
+                )
+                from dataclasses import replace
+                parent_metrics = candidate_identity_metrics_snapshot()
+                retained = replace(
+                    parent.retained_state,
+                    optimizer_step=parent.retained_state.optimizer_step + 1)
+                bind_candidate_identity_or_fallback(
+                    retained, parent.topology.digest, parent.extents.digest)
+                candidate_bound_metrics = candidate_identity_metrics_snapshot()
+                successor = derive_c03_successor_bundle(
+                    self.run, retained, selected.visit,
+                    next_seed=selected.visit.identity.selection_seed + 1,
+                    cursor="identity-reuse-regression",
+                    delivery_events=({
+                        "event": "BAMF_IDENTITY_REUSE_REGRESSION",
+                        "optimizer_step": retained.optimizer_step,
+                    },),
+                )
+                metrics = candidate_identity_metrics_snapshot()
+
+        self.assertEqual(selected.status, "TEACHER_SELECTED")
+        self.assertEqual(successor.generation, parent.generation + 1)
+        self.assertEqual(parent_metrics["candidate_identity_full_computations"], 0)
+        self.assertEqual(parent_metrics["candidate_identity_numerical_bytes_hashed"], 0)
+        self.assertEqual(
+            candidate_bound_metrics["candidate_identity_full_computations"], 1)
+        self.assertGreater(
+            candidate_bound_metrics["candidate_identity_numerical_bytes_hashed"], 0)
+        self.assertEqual(
+            metrics["candidate_identity_full_computations"],
+            candidate_bound_metrics["candidate_identity_full_computations"])
+        self.assertEqual(
+            metrics["candidate_identity_numerical_bytes_hashed"],
+            candidate_bound_metrics["candidate_identity_numerical_bytes_hashed"])
+        self.assertGreater(
+            metrics["candidate_identity_require_calls"],
+            candidate_bound_metrics["candidate_identity_require_calls"])
+
     def test_priority_planning_authenticates_generation_once_for_all_capabilities(self):
         from bilqis_mlx.runtime import priority_planning_generation
 

@@ -279,6 +279,19 @@ def _make_execution_cache_runtime():
     def load(run_dir: Path):
         return current_hydration(run_dir).student
 
+    def load_with_pointer_if_cached(run_dir: Path):
+        """Reuse current accepted hydration only when this process already owns one."""
+        run_dir = Path(run_dir).resolve()
+        key = str(run_dir)
+        with lock:
+            retained = hydrations.get(key)
+        if retained is None:
+            return None
+        with _pointer_read_lock(run_dir):
+            pointer = _read_pointer(run_dir / "bamf-state.json")
+            hydration = _require_current_hydration(run_dir, pointer, retained)
+            return pointer, hydration.student
+
     def bind_publication_parent_locked(run_dir: Path, pointer):
         run_dir = Path(run_dir).resolve()
         key = str(run_dir)
@@ -304,7 +317,7 @@ def _make_execution_cache_runtime():
             executions.clear()
 
     return (
-        bind, require, load, reset_for_tests,
+        bind, require, load, load_with_pointer_if_cached, reset_for_tests,
         bind_publication_parent, bind_publication_parent_locked,
         require_publication_parent_locked,
     )
@@ -314,6 +327,7 @@ def _make_execution_cache_runtime():
     bind_accepted_execution_cache,
     _require_owned_execution_cache,
     load_accepted_generation,
+    load_accepted_generation_with_pointer_if_cached,
     _reset_execution_cache_owner_for_tests,
     bind_accepted_publication_parent,
     _bind_accepted_publication_parent_locked,
@@ -324,4 +338,5 @@ def _make_execution_cache_runtime():
 __all__ = (
     "AcceptedPublicationParent", "bind_accepted_execution_cache",
     "bind_accepted_publication_parent", "load_accepted_generation",
+    "load_accepted_generation_with_pointer_if_cached",
 )

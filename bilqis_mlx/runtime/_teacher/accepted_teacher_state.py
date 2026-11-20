@@ -5,7 +5,9 @@ from collections.abc import Mapping
 import hashlib
 import json
 
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+    candidate_identity_for_canonical_consumer,
+)
 from bilqis_mlx.learning.atlas_candidate import CandidateState
 from bilqis_mlx.learning.teacher_lineage import (
     TeacherCustodyProjection, advance_teacher_lineage, bind_next_teacher_epoch,
@@ -53,7 +55,7 @@ def _student_region(student_sha256: str, bank_identity: str,
 def _student_reference(
         student: BamfBundleCandidate, state: CandidateState | None = None) -> dict:
     retained = student.retained_state if state is None else state
-    student_sha = candidate_identity_digest(retained)
+    student_sha = candidate_identity_for_canonical_consumer(retained)
     bank_identity = _bank_identity(student)
     plasticity_identity = _plasticity_identity(retained)
     return {

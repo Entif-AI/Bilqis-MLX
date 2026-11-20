@@ -77,6 +77,20 @@ def realized_candidate_cost(
         "currentness_binding_wall_seconds": stage_metrics[
             "currentness_binding_wall_seconds"],
         "b11_preflight_wall_seconds": float(b11.get("b11_preflight_wall_seconds", 0.0)),
+        "b11_finite_validation_wall_seconds": float(
+            b11.get("b11_finite_validation_wall_seconds", 0.0)),
+        "b11_execution_rebinding_wall_seconds": float(
+            b11.get("b11_execution_rebinding_wall_seconds", 0.0)),
+        "b11_refinement_selection_wall_seconds": float(
+            b11.get("b11_refinement_selection_wall_seconds", 0.0)),
+        "b11_route_compatibility_wall_seconds": float(
+            b11.get("b11_route_compatibility_wall_seconds", 0.0)),
+        "b11_route_kernel_prepare_wall_seconds": float(
+            b11.get("b11_route_kernel_prepare_wall_seconds", 0.0)),
+        "b11_fallback_trace_preflight_wall_seconds": float(
+            b11.get("b11_fallback_trace_preflight_wall_seconds", 0.0)),
+        "b11_preflight_other_wall_seconds": float(
+            b11.get("b11_preflight_other_wall_seconds", 0.0)),
         "b11_autodiff_wall_seconds": float(b11.get("b11_autodiff_wall_seconds", 0.0)),
         "optimizer_admission_wall_seconds": stage_metrics[
             "optimizer_admission_wall_seconds"],

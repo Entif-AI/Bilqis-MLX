@@ -239,7 +239,9 @@ def test_accepted_priority_school_derives_all_admitted_grades_and_student(priori
     program = ScheduleProgramStub(
         (SimpleNamespace(id='violet'), SimpleNamespace(id='amber')))
     parent = SimpleNamespace(retained_state='student')
-    with patch.object(contracts, 'candidate_identity_digest', return_value='student-id'), \
+    with patch.object(
+            contracts, 'candidate_identity_for_canonical_consumer',
+            return_value='student-id'), \
          patch.object(contracts, 'PrioritySchoolContext', PrioritySchoolContextStub), \
          patch.object(contracts, 'PriorityStudentIdentity', PriorityStudentIdentityStub):
         school = priority.accepted_priority_school(parent, program)

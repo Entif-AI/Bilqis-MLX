@@ -25,8 +25,10 @@ def _canonical(value: dict) -> str:
 
 
 def _checkpoint_identity(student) -> str:
-    from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
-    return candidate_identity_digest(student.retained_state)
+    from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+        candidate_identity_for_canonical_consumer,
+    )
+    return candidate_identity_for_canonical_consumer(student.retained_state)
 
 
 def _accepted_pointer(run_dir: Path) -> dict:

@@ -174,7 +174,11 @@ def _support_census(retained):
     if cached is not None:
         return cached
     from bilqis_mlx.runtime.capability_support_loading import accepted_support_census
-    cached = accepted_support_census(retained.run_dir, retained.manifest_sha256)
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import load_accepted_generation
+    current_student = load_accepted_generation(retained.run_dir)
+    cached = accepted_support_census(
+        retained.run_dir, retained.manifest_sha256,
+        current_student=current_student)
     retained._accepted_support_census = cached
     return cached
 

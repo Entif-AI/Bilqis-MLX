@@ -42,6 +42,18 @@ from .atlas_admission_requests import (
 )
 
 
+def _accepted_current_generation(run_dir):
+    """Reuse warm B13 hydration, otherwise preserve the canonical cold proof."""
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        load_accepted_generation_with_pointer_if_cached,
+    )
+    cached = load_accepted_generation_with_pointer_if_cached(Path(run_dir))
+    if cached is not None:
+        return cached
+    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import accepted_generation
+    return accepted_generation(Path(run_dir) / "bamf-state.json")
+
+
 def _accepted_run_lease_identity(run_dir):
     """Re-derive the lease comparison identity from live accepted B13 custody."""
     from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
@@ -112,8 +124,7 @@ def read_accepted_atlas_factory_release(run_dir):
     )
     from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
-        accepted_binding_for_manifest, accepted_generation,
-        parent_acceptance_anchor_from_manifest,
+        accepted_binding_for_manifest, parent_acceptance_anchor_from_manifest,
     )
     from bilqis_mlx.runtime.bamf_bundle.genesis import (
         BamfRunIdentity, ParsedInitialGenerationBinding,
@@ -121,7 +132,7 @@ def read_accepted_atlas_factory_release(run_dir):
     from . import admission as factory_admission
 
     root = Path(run_dir)
-    pointer, student = accepted_generation(root / "bamf-state.json")
+    pointer, student = _accepted_current_generation(root)
     manifest_sha256 = pointer["manifest_sha256"]
     acceptance_sha256 = pointer["acceptance_sha256"]
     visited = set()
@@ -176,12 +187,11 @@ def _accepted_atlas_obligation_state(run_dir):
         ParsedFactoryReleaseAdmissionBinding,
     )
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
-        accepted_binding_for_manifest, accepted_generation,
-        parent_acceptance_anchor_from_manifest,
+        accepted_binding_for_manifest, parent_acceptance_anchor_from_manifest,
     )
 
     root = Path(run_dir)
-    pointer, student = accepted_generation(root / "bamf-state.json")
+    pointer, student = _accepted_current_generation(root)
     current_acceptance = pointer["acceptance_sha256"]
     current_release = read_accepted_atlas_factory_release(root)
     manifest_sha256 = pointer["manifest_sha256"]

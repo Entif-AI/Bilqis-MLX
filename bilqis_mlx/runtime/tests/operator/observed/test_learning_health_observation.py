@@ -78,7 +78,8 @@ class AcceptedLearningObservationTests(unittest.TestCase):
                 return_value={}), patch(
                 "bilqis_mlx.runtime.bamf_operator.learning_health_runtime.complete_visit_evidence",
                 return_value=visit), patch(
-                "bilqis_mlx.runtime.bamf_operator.learning_health_runtime.candidate_identity_digest",
+                "bilqis_mlx.runtime.bamf_operator.learning_health_runtime."
+                "candidate_identity_for_canonical_consumer",
                 return_value="9" * 64):
             state, health = accepted_learning_health_state(
                 Path("."), parent, object(), {}, object(), retained, capture)
