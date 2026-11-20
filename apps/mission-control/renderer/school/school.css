@@ -2,6 +2,11 @@
 
 .domain-view:empty { display: none; }
 .school-view { min-width: 0; display: grid; gap: var(--content-gap); }
+.factory-authority { padding: var(--space-3); border-inline-start: 4px double var(--attention); background: var(--surface-1); }
+.factory-table th, .factory-table td { vertical-align: top; }
+.factory-table tbody th button { border: 0; background: transparent; color: var(--accent); font: inherit; font-weight: 750; text-align: start; cursor: pointer; }
+.factory-state, .factory-grade, .factory-blocker, .factory-lineage { display: block; margin-block-end: 4px; }
+.factory-table tr[data-currency="STALE"] > * { border-bottom-style: dashed; }
 .school-heading { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, .8fr); align-items: center; gap: var(--space-5); }
 .school-heading h2 { margin: 5px 0 0; font-size: var(--type-title); line-height: var(--line-title); }
 .school-heading p { max-width: 62ch; margin: 0; color: var(--text-muted); line-height: var(--line-body); }

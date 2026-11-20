@@ -11,6 +11,7 @@ from bilqis_mlx.mission_control import MissionControlQueryCatalog
 from .native_contracts import AuthenticatedGeneration, NativeProjectionMaterial
 from .native_custody import accepted_pointer, authenticated_history
 from .native_mapping import accepted_records
+from .native_factory import accepted_factory_records
 from .native_rejections import rejection_material
 from .native_contracts import run_ref
 from .observed import observed_records, publish_observed_events
@@ -80,6 +81,7 @@ def materialize_native_projection(
         events.extend(emitted)
         manifests.append(generation.manifest_sha256)
         parent = generation
+    records.extend(accepted_factory_records(history))
     rejected_records, rejected_events = (
         rejection_material(Path(run_dir), history)
         if include_live_rejections

@@ -32,6 +32,7 @@ class QueryFamily(StrEnum):
     SALIENCE = "salience"
     CORRECTION = "correction"
     RESOURCE = "resource"
+    FACTORY = "factory"
     REFERENCE = "reference"
     LINKS = "links"
 

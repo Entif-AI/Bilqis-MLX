@@ -4,6 +4,7 @@ import unittest
 
 from bilqis_mlx.mission_control.codec import canonical_json, encode_record
 from bilqis_mlx.mission_control.envelopes import PartialEnvelope
+from bilqis_mlx.mission_control.contracts.factory import FactoryCockpitSnapshot
 from bilqis_mlx.mission_control.model import CoverageState
 from bilqis_mlx.mission_control.query_contracts import (
     QueryFamily, QueryRequest, QueryState,
@@ -30,12 +31,14 @@ _FAMILIES = (
     QueryFamily.SALIENCE,
     QueryFamily.CORRECTION,
     QueryFamily.RESOURCE,
+    QueryFamily.FACTORY,
 )
 
 
 class MissionControlQueryFamilyTests(unittest.TestCase):
     def setUp(self):
-        self.domain_records = SAMPLES[:16]
+        factory = next(item for item in SAMPLES if type(item) is FactoryCockpitSnapshot)
+        self.domain_records = (*SAMPLES[:16], factory)
         self.index = MissionControlQueryCatalog(self.domain_records)
 
     def test_literal_fixture_queries_cover_every_required_family(self):
@@ -111,6 +114,16 @@ class MissionControlQueryFamilyTests(unittest.TestCase):
         self.assertEqual(receipt_page.state, QueryState.PRESENT)
         self.assertTrue(all(
             link.target_ref == "receipt:a" for link in receipt_page.links))
+
+    def test_factory_family_is_global_and_receipt_identity_is_searchable(self):
+        factory = next(item for item in self.domain_records
+                       if type(item) is FactoryCockpitSnapshot)
+        page = self.index.query(QueryRequest(QueryFamily.FACTORY))
+        self.assertEqual(page.records, (factory,))
+        self.assertIsNone(factory.meta.run)
+        found = self.index.query(QueryRequest(
+            QueryFamily.RECORD, reference=factory.admission_receipt_sha256))
+        self.assertEqual(found.records, (factory,))
 
     def test_forensic_record_family_finds_command_receipt_by_operation_identity(self):
         receipt = next(item for item in SAMPLES if type(item) is OperatorActionReceipt)
