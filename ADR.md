@@ -3863,3 +3863,45 @@ graduation, cannot mint certification/mastery/successor authority, and may reope
 after lawful accepted learner evidence changes. The continuity invariant means
 continue while useful **lawful** work exists; when none exists, a truthful hold is
 preferable to manufacturing progression authority.
+
+## ADR-151 | 2026-11-20 | Recovery exhaustion recycles the active grade until completion
+
+**Status:** Accepted by direct owner instruction on 2026-11-20 through issue #1489.
+
+**Problem:** ADR-148 correctly rejected recovery exhaustion as graduation, and
+ADR-150 correctly rejected teaching a future grade merely because it is packaged in
+the accepted FactoryRelease. Their composition nevertheless left the persistent
+trainer with a product regression: an incomplete active grade could exhaust one
+bounded MAIN/recovery cadence, emit `PRIORITY_HOLD`, and terminate the human-started
+session without another neural visit. The internal cadence budget had accidentally
+become a school-level stop condition.
+
+**Decision:** The developmental machine is a strict recursive staircase:
+
+`teach current grade -> certify completed grade -> design next grade -> activate next grade -> teach next grade`.
+
+Exactly one generated grade is the active teaching surface at a time. A bounded
+MAIN/recovery cadence is only an internal scheduling cycle inside that grade.
+`RECOVERY_EXHAUSTED` on an incomplete active grade MUST rearm ordinary MAIN
+acquisition for the same active grade in a fresh cadence epoch. It MUST NOT certify
+the grade, synthesize or activate a successor, borrow future-grade work, or terminate
+the operator merely because the bounded recovery cycle ended.
+
+This recycling rule does not turn genuine blockers into busy loops. If the current
+active grade has no executable teaching work because of an actual source, rights,
+implementation, custody, or other external authority blocker, preserve and surface
+that exact blocker. Ordinary prerequisite ordering remains local: a dependent member
+waits while other READY members of the same active grade remain teachable.
+
+`GRADE_COMPLETE` remains the only grade-certification boundary. Only successful
+certification may authorize next-grade synthesis/activation, with C07 participating
+when that transition genuinely changes accepted executable/source/rights scope.
+Once the successor is activated, the same grade-neutral loop applies again without
+an A/B/C runtime branch.
+
+**Supersession:** This ADR supersedes ADR-148's temporary cross-grade yield and the
+ADR-150 clause that treats incomplete-grade recovery exhaustion itself as a truthful
+terminal hold. It preserves ADR-150's prohibition on FactoryRelease presence as
+future-grade teaching authority, preserves genuine blocker holds, and preserves the
+rule that recovery exhaustion never mints completion, mastery, certification, or
+successor authority.

@@ -170,7 +170,7 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
                 (parent, context, "/atlas", "/feature"))
         self.assertIs(context._accepted_feature_context, authenticated)
 
-    def test_sub_entry_certification_rearms_acquisition_instead_of_failing(self):
+    def test_recovery_exhaustion_rearms_same_grade_without_certification(self):
         parent = object()
         context = object()
         authorization = object()
@@ -185,7 +185,7 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
 
         with patch(
                 "bilqis_mlx.runtime.grade_certification.run_grade_boundary_certification",
-                return_value=SimpleNamespace(status="NOT_ELIGIBLE")), patch(
+                return_value=SimpleNamespace(status="SUCCEEDED")) as certify, patch(
                 "bilqis_mlx.runtime.accepted_priority_visit_contracts."
                 "require_priority_cadence_authorization",
                 return_value=authorization), patch(
@@ -204,17 +204,41 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
         self.assertIs(prepared.parent, parent)
         rearm.assert_called_once_with(
             Path("/run"), authorization, lawful_frontier)
+        certify.assert_not_called()
         self.assertIn(
-            "grade certification entry not yet eligible; resumed ordinary MAIN acquisition",
+            "active grade recovery exhausted; rearmed ordinary MAIN acquisition",
             progress,
         )
 
-    def test_successful_certification_refreshes_a09_only_at_boundary_before_c07(self):
+    def test_genuine_current_grade_hold_remains_terminal(self):
+        parent = object()
+        selection = SimpleNamespace(
+            status="HELD",
+            metadata={"cadence": {"disposition": "HELD"}},
+            holds=(("A.BLOCKED", "SOURCE_HELD"),),
+            exclusions=(),
+        )
+
+        with patch(
+                "bilqis_mlx.runtime.grade_certification.run_grade_boundary_certification") as certify, patch(
+                "bilqis_mlx.runtime.active_grade_cadence."
+                "rearm_active_grade_acquisition") as rearm:
+            prepared = priority_hold_result(
+                Path("/run"), selection, object(), parent, Path("/atlas"), 0.0,
+                None, emit_progress=lambda _sink, _message: None,
+            )
+
+        self.assertEqual(prepared.status, "HELD")
+        self.assertIs(prepared.parent, parent)
+        certify.assert_not_called()
+        rearm.assert_not_called()
+
+    def test_successful_grade_completion_refreshes_a09_only_at_boundary_before_c07(self):
         parent = object()
         context = object()
         selection = SimpleNamespace(
             status="HELD",
-            metadata={"cadence": {"disposition": "RECOVERY_EXHAUSTED"}},
+            metadata={"cadence": {"disposition": "GRADE_COMPLETE"}},
             holds=(),
             exclusions=(),
         )
