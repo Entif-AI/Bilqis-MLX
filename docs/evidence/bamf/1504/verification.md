@@ -5,7 +5,8 @@ Date: 2026-11-20
 ## Acceptance target
 
 The matched historical warm production target is the #1388 live B.COMPOSITE
-four-row path observed on 2026-11-17:
+four-row path observed on 2026-11-17 and retained locally in
+`baseline-1388.md`:
 
 - full optimizer step median: approximately 9.78 seconds;
 - B11 autodiff median: approximately 4.09 seconds;
@@ -97,7 +98,9 @@ refinement-routing term present.
 
 ## Warm production-shaped candidate-step witness
 
-The final bounded witness used the real Factory candidate-step owner with:
+The final bounded witness was rerun against frozen implementation commit
+`53a2eaaf685e0ec3bfdb8ecc55b218de7c48c6b8` and is retained machine-readably in
+`warm-step-witness.json`. It used the real Factory candidate-step owner with:
 
 - B.COMPOSITE;
 - four rows;
@@ -110,16 +113,29 @@ The final bounded witness used the real Factory candidate-step owner with:
 - no publication and no mutation of a real learner;
 - one MLX worker.
 
-Observed steps:
+Observed frozen-revision steps:
 
-| step | candidate wall | pre-neural compile | B11 preflight | B11 autodiff | C08 wall | optimizer/admission |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 6.453837 s | 1.008877 s | 0.033477 s | 2.472121 s | 3.596673 s | 0.193223 s |
-| 2 | 6.464944 s | 0.983881 s | 0.038100 s | 2.322056 s | 3.460861 s | 0.246654 s |
-| 3 | 6.587984 s | 0.962022 s | 0.040302 s | 2.353284 s | 3.596933 s | 0.155808 s |
-| 4 | 6.161095 s | 0.944782 s | 0.038389 s | 2.285256 s | 3.392446 s | 0.131178 s |
+| step | candidate wall | pre-neural compile | currentness/binding | B11 preflight | B11 autodiff | C08 wall | optimizer/admission |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 6.305660 s | 0.959023 s | 0.200389 s | 0.037733 s | 2.395130 s | 3.501898 s | 0.223774 s |
+| 2 | 6.583174 s | 0.988252 s | 0.281692 s | 0.036973 s | 2.511783 s | 3.641053 s | 0.152671 s |
+| 3 | 6.340104 s | 0.968955 s | 0.242980 s | 0.035497 s | 2.375528 s | 3.491251 s | 0.138627 s |
+| 4 | 6.558464 s | 0.947267 s | 0.232792 s | 0.037760 s | 2.397388 s | 3.598963 s | 0.130649 s |
 
-Warm median (steps 2-4): **6.464944 seconds**.
+Warm median (steps 2-4): **6.558464 seconds**.
+
+Every step used one C08 gradient launch, one vectorized microbatch, zero scalar
+fallback rows, four source-authority-bound rows, and zero cold source
+requalification rows. `motif_staging_wall_seconds` was 0 because this witness was
+non-terminal; publication was deliberately not executed, so there is no hidden
+publication span inside the candidate wall.
+
+Span accounting is deliberately non-additive: `candidate_step_wall_seconds` is the
+top-level wall. Pre-neural source compile, currentness/binding and
+optimizer/admission are owner spans around the logical batch. B11 preflight and
+B11 autodiff are nested inside `c08_logical_batch_wall_seconds`; they MUST NOT be
+added again to C08 or the candidate wall. The machine-readable receipt records the
+same nesting explicitly.
 
 Every sampled candidate step added:
 

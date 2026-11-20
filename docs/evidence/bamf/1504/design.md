@@ -114,8 +114,9 @@ computations / bytes.
 
 Deterministic regression gates should enforce expensive-work multiplicity rather
 than brittle heterogeneous-CI wall time. Final acceptance also requires one
-production-shaped, disposable four-row timing witness recording exact feature
-HEAD, topology/extents, row and compiled-position counts, MLX/MLX-Metal/Python
+production-shaped, disposable four-row timing witness recording the exact frozen
+implementation commit containing the runtime code under test, topology/extents,
+row and compiled-position counts, MLX/MLX-Metal/Python
 versions, machine class, total candidate-step wall, pre-neural source/compile,
 currentness/binding, B11 subspans, C08 wall, optimizer/admission/publication,
 identity full-hash/reuse/byte counters, gradient launches, vectorized
