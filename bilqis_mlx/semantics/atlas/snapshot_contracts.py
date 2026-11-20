@@ -140,9 +140,22 @@ def resolve_atlas_artifact_selection(
     if not root:
         current = (os.environ.get("BILQIS_A01_ATLAS_BUNDLE")
                    or os.environ.get("BILQIS_ATLAS_REAL_ARTIFACT"))
-        if not current:
-            _fail("ATLAS_ARTIFACT_ROOT_MISSING")
-        root = str(Path(current).parent)
+        if current:
+            root = str(Path(current).parent)
+        else:
+            from bilqis_mlx.bootstrap_assets import (
+                ATLAS_BUNDLE_ID,
+                ATLAS_RELEASE_SHA256,
+                ATLAS_ROOT,
+                ATLAS_SOURCE_BUNDLE_ID,
+            )
+            if (
+                identity.bundle_id,
+                identity.release_sha256,
+                identity.source_bundle_id,
+            ) != (ATLAS_BUNDLE_ID, ATLAS_RELEASE_SHA256, ATLAS_SOURCE_BUNDLE_ID):
+                _fail("ATLAS_ARTIFACT_ROOT_MISSING")
+            root = str(ATLAS_ROOT)
     return AtlasArtifactSelection(
         str(Path(root) / identity.bundle_id),
         identity.bundle_id, identity.release_sha256, identity.source_bundle_id)
