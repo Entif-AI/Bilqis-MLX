@@ -177,8 +177,11 @@ test("live GUI15 refreshes only for resource events and never opens a historical
   await listener({ event_family: "capability.changed" });
   assert.equal(calls.length, baseline);
   await listener({ event_family: "resource.health.sample" });
-  assert.equal(calls.length, baseline + 1);
-  assert.equal(calls.at(-1).family, "resource");
+  assert.equal(calls.length, baseline + 2);
+  assert.deepEqual(
+    new Set(calls.slice(-2).map((request) => request.family)),
+    new Set(["resource", "run"]),
+  );
   await controller.deactivate();
 
   const historicalApi = {
@@ -217,6 +220,7 @@ test("resource query stays read-only and requests no mutation surface", () => {
     "as_of", "cursor", "family", "frontier_id", "generation", "limit", "mode",
     "record_id", "reference", "run_id", "schema", "schema_version",
   ].sort());
+  assert.equal(request.limit, 32);
   const markup = renderFixture();
   assert.doesNotMatch(markup, /start training|change batch|apply budget|scale hardware/i);
 });

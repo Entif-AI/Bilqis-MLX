@@ -207,7 +207,7 @@ export function createOperateController(api) {
   async function subscribe() {
     if (typeof api.subscribeEvents !== "function") return;
     try {
-      unsubscribe = api.subscribeEvents((event) => {
+      unsubscribe = await api.subscribeEvents((event) => {
         const operationId = state.inspection?.operation_id ?? state.preview?.operation_id;
         if (event?.event_family !== "operator.action.state" || !operationId ||
             !String(event.payload_record_id ?? "").includes(operationId)) return;

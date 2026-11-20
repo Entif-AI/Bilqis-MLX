@@ -49,3 +49,34 @@ test('accepted empty historical query keeps identity without inventing a compari
   assert.equal(controller.currentState().comparisonState,'EMPTY');
   assert.equal(controller.currentState().comparisonGeneration,4);
 });
+test('live Resources preserves observed peak RSS and disk free when the resource sample is absent',async()=>{
+  const controller=createResourceController({query:r=>{
+    if(r.family==='resource') return Promise.resolve({accepted:true,state:'EMPTY',records:[]});
+    if(r.family==='run') return Promise.resolve({accepted:true,state:'PRESENT',records:[{
+      schema_version:'bilqis.bamf.mission-control.trainer-observation/v7',
+      posture:'OBSERVED',revision:2,peak_rss_bytes:64*1048576,disk_free_bytes:120*1073741824,
+      meta:{record_id:'trainer-observed:2',observed_at:1790000118,run:{run_id:'run-test',generation:7}},
+    }]});
+    throw Error('unexpected family');
+  }});
+  await controller.activate(context(),{target:host()});
+  const current=controller.currentState().current;
+  assert.equal(current.pageState,'PARTIAL');
+  assert.equal(current.aggregate.peakRss.value,64*1048576);
+  assert.equal(current.aggregate.peakRss.semantic,'OBSERVED');
+  assert.equal(current.aggregate.diskFree.value,120*1073741824);
+  assert.equal(current.aggregate.diskFree.semantic,'OBSERVED');
+});
+test('live Resources survives a missing resource projection when trainer observation is available',async()=>{
+  const controller=createResourceController({query:r=>{
+    if(r.family==='resource') return Promise.reject(Error('resource projection unavailable'));
+    return Promise.resolve({accepted:true,state:'PRESENT',records:[{
+      schema_version:'bilqis.bamf.mission-control.trainer-observation/v7',
+      posture:'OBSERVED',revision:1,peak_rss_bytes:1234,disk_free_bytes:5678,
+      meta:{record_id:'trainer-observed:1',observed_at:1790000117,run:{run_id:'run-test',generation:7}},
+    }]});
+  }});
+  await controller.activate(context(),{target:host()});
+  assert.equal(controller.currentState().current.aggregate.peakRss.value,1234);
+  assert.equal(controller.currentState().current.aggregate.diskFree.value,5678);
+});

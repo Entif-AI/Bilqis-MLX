@@ -232,7 +232,7 @@ test("production Memory builds exact current and historical CP03 queries", () =>
     as_of: null,
     reference: null,
     cursor: null,
-    limit: 64,
+    limit: 32,
   });
   assert.equal(historicalMemoryQuery(context, 8).mode, "historical");
   assert.equal(historicalMemoryQuery(context, 8).generation, 8);

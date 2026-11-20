@@ -68,10 +68,10 @@ export function createProductionMemoryController(api) {
     paint();
   }
 
-  function subscribe(runEpoch) {
+  async function subscribe(runEpoch) {
     if (historical || typeof api.subscribeEvents !== "function") return;
     try {
-      unsubscribe = api.subscribeEvents(event => {
+      unsubscribe = await api.subscribeEvents(event => {
         if (runEpoch !== epoch || !String(event?.event_family ?? "").startsWith("memory.")) return;
         void loadCurrent(runEpoch);
       });
@@ -102,7 +102,7 @@ export function createProductionMemoryController(api) {
     if (typeof stop === "function") await stop();
     if (runEpoch !== epoch) return;
     await loadCurrent(runEpoch);
-    subscribe(runEpoch);
+    await subscribe(runEpoch);
   }
 
   async function deactivate() {
