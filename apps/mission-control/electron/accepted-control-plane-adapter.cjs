@@ -8,6 +8,13 @@ const SNAPSHOT_UNAVAILABLE_SCHEMA = "bamf.gui20.operator-view-unavailable/v1";
 const TRANSIENT_VIEW_STATES = new Set([
   "EMPTY", "MISSING", "PARTIAL", "STALE", "UNAVAILABLE", "UNKNOWN",
 ]);
+const TRANSIENT_BROKER_CODES = new Set([
+  "BAMF_GUI20_CP01_PROCESS_UNAVAILABLE",
+  "BAMF_GUI20_CP01_TIMEOUT",
+  "BAMF_GUI20_CP01_TRANSPORT_UNAVAILABLE",
+  "BAMF_GUI20_CP01_UNAVAILABLE",
+]);
+const DEFAULT_RETRY_DELAYS_MS = Object.freeze([0, 100, 300, 1000]);
 
 function runQuery() {
   return {
@@ -55,15 +62,21 @@ function disconnectedStatus() {
 }
 
 class AcceptedControlPlaneAdapter {
-  constructor({ broker = new Cp01PythonBroker() } = {}) {
+  constructor({
+    broker = new Cp01PythonBroker(),
+    retryDelaysMs = DEFAULT_RETRY_DELAYS_MS,
+    sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay)),
+  } = {}) {
     this.broker = broker;
     this.session = Object.freeze({ session: Symbol("gui20-main-session") });
+    this.retryDelaysMs = Object.freeze([...retryDelaysMs]);
+    this.sleep = sleep;
   }
 
   async connect() {
     let publicStatus;
     try {
-      publicStatus = await this.broker.connect();
+      publicStatus = await this.#retryReadonly(() => this.broker.connect());
     } catch (_error) {
       publicStatus = disconnectedStatus();
     }
@@ -82,7 +95,7 @@ class AcceptedControlPlaneAdapter {
   async status(session) {
     this.#requireSession(session);
     try {
-      return await this.broker.status();
+      return await this.#retryReadonly(() => this.broker.status());
     } catch (_error) {
       return disconnectedStatus();
     }
@@ -91,7 +104,7 @@ class AcceptedControlPlaneAdapter {
   async snapshot(session, request) {
     this.#requireSession(session);
     if (request?.schema === "bilqis.bamf.control-plane.query/v1") {
-      const { accepted, ...page } = await this.broker.query(request);
+      const { accepted, ...page } = await this.#retryReadonly(() => this.broker.query(request));
       if (accepted !== true) throw new Error("BAMF_GUI05_QUERY_UNAVAILABLE");
       return page;
     }
@@ -99,7 +112,7 @@ class AcceptedControlPlaneAdapter {
       throw operatorViewUnavailable("FRAME_INSPECTION_NOT_EXPOSED");
     }
     if (request?.schemaVersion === SNAPSHOT_QUERY_SCHEMA && request?.schema === OPERATOR_VIEW_SCHEMA) {
-      const page = await this.broker.query(runQuery());
+      const page = await this.#retryReadonly(() => this.broker.query(runQuery()));
       if (page?.accepted !== true) {
         throw operatorViewUnavailable(page?.state);
       }
@@ -118,7 +131,7 @@ class AcceptedControlPlaneAdapter {
 
   async query(session, request) {
     this.#requireSession(session);
-    return this.broker.query(request);
+    return this.#retryReadonly(() => this.broker.query(request));
   }
 
   async dryRun(session, request) {
@@ -141,7 +154,7 @@ class AcceptedControlPlaneAdapter {
     if (typeof next !== "function") {
       throw new TypeError("BAMF_GUI03_EVENT_LISTENER_REQUIRED");
     }
-    return this.broker.subscribe(next);
+    return this.#retryReadonly(() => this.broker.subscribe(next));
   }
 
   close() {
@@ -154,6 +167,22 @@ class AcceptedControlPlaneAdapter {
       error.code = "BAMF_GUI20_SESSION_INVALID";
       throw error;
     }
+  }
+
+  async #retryReadonly(operation) {
+    let lastError;
+    for (let attempt = 0; attempt < this.retryDelaysMs.length; attempt += 1) {
+      const delay = this.retryDelaysMs[attempt];
+      if (delay > 0) await this.sleep(delay);
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error;
+        const code = typeof error?.code === "string" ? error.code : error?.message;
+        if (!TRANSIENT_BROKER_CODES.has(code)) throw error;
+      }
+    }
+    throw lastError;
   }
 }
 

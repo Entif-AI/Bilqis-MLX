@@ -105,6 +105,26 @@ test("the domain activation owner binds Atlas completion to the current shell st
   assert.equal(fixture.host.innerHTML, markup);
 });
 
+test("async-owned primary navigation clears the prior domain body before its controller repaints", t => {
+  const fixture = mountOwner(t);
+  const state = {
+    view: "school",
+    context: { runId: "fixture-run", generation: 7, mode: "LIVE" },
+  };
+  renderCurrentView(state, { id: "live" }, () => {});
+  assert.match(fixture.host.innerHTML, /production-projection-required-school/);
+
+  for (const view of ["mission-control", "atlas", "capability", "resources"]) {
+    renderCurrentView(state, { id: "live" }, () => {});
+    renderCurrentView({ ...state, view }, { id: "live" }, () => {});
+    assert.doesNotMatch(
+      fixture.host.innerHTML,
+      /production-projection-required-school/,
+      view,
+    );
+  }
+});
+
 test("production shell routes accepted domains and keeps fixture-only data behind launch support", () => {
   const index = fs.readFileSync(path.join(rendererRoot, "index.html"), "utf8");
   const renderer = fs.readFileSync(path.join(rendererRoot, "renderer.mjs"), "utf8");

@@ -151,6 +151,8 @@ export function createHomeController(api, {
       await refreshStatus(current);
       await loadAll(current);
     } else {
+      if (typeof unsubscribe !== "function") await subscribe(current);
+      if (current !== epoch) return;
       await refreshStatus(current);
       if (current !== epoch) return;
       await refreshRun(current);

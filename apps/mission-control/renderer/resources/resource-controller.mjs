@@ -1,5 +1,5 @@
 import {
-  historicalResourceQuery, resourceProfileFromPage, resourceQuery,
+  historicalResourceQuery, resourceProfileFromPage, resourceQuery, resourceRunQuery,
 } from "./resource-model.mjs";
 import { bindResourceInteractions, renderResourceMarkup } from "./resource-view.mjs";
 
@@ -68,14 +68,25 @@ export function createResourceController(api, { fixtureSupport = null } = {}) {
     const historicalFixture = fixture ? fixtureSupport.historicalProfile() : null;
     const valid = () => runEpoch === epoch && request === currentRequest;
     try {
-      const page = await api.query(resourceQuery(requestContext));
+      const resourcePromise = api.query(resourceQuery(requestContext));
+      const runPromise = historical ? Promise.resolve(null) : api.query(resourceRunQuery(requestContext));
+      const [resourceResult, runResult] = await Promise.allSettled([resourcePromise, runPromise]);
       if (!valid()) return;
+      if (resourceResult.status === "rejected" && runResult.status === "rejected") throw resourceResult.reason;
+      const page = resourceResult.status === "fulfilled"
+        ? resourceResult.value : { accepted: false, state: "UNAVAILABLE", records: [] };
+      const runPage = runResult.status === "fulfilled" ? runResult.value : null;
       if (historicalFixture && historical && requestContext.generation === historicalFixture.generation) {
         state = { current: historicalFixture, ...comparisonFields() };
       } else if (fixture && !historical && (page?.accepted !== true || page?.state === "EMPTY")) {
         state = { ...fixtureSupport.referenceState(), ...comparisonFields() };
       } else {
-        state = { current: resourceProfileFromPage(page, requestContext), ...comparisonFields() };
+        const profile = resourceProfileFromPage(page, requestContext, runPage);
+        state = {
+          current: profile.pageState === "UNAVAILABLE" && profile.timeline.length === 0 ? null : profile,
+          currentState: profile.pageState,
+          ...comparisonFields(),
+        };
       }
     } catch (_error) {
       if (!valid()) return;
@@ -117,10 +128,10 @@ export function createResourceController(api, { fixtureSupport = null } = {}) {
     render();
   }
 
-  function subscribe(runEpoch) {
+  async function subscribe(runEpoch) {
     if (runEpoch !== epoch || historical || typeof api.subscribeEvents !== "function") return;
     try {
-      unsubscribe = api.subscribeEvents(async (event) => {
+      unsubscribe = await api.subscribeEvents(async (event) => {
         if (runEpoch !== epoch || !String(event?.event_family ?? "").startsWith("resource.")) return;
         await loadCurrent();
       });
