@@ -146,6 +146,8 @@ const RENDERER_ASSETS = Object.freeze(new Map([
   ["/school/curriculum-atlas-model.mjs", "school/curriculum-atlas-model.mjs"],
   ["/school/curriculum-atlas-view.mjs", "school/curriculum-atlas-view.mjs"],
   ["/school/curriculum-atlas.css", "school/curriculum-atlas.css"],
+  ["/school/factory-cockpit-view.mjs", "school/factory-cockpit-view.mjs"],
+  ["/school/factory-live.mjs", "school/factory-live.mjs"],
   ["/school/school-domain-controller.mjs", "school/school-domain-controller.mjs"],
   ["/school/school-live.mjs", "school/school-live.mjs"],
   ["/salience/salience-fixture.mjs", "salience/salience-fixture.mjs"],
