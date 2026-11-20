@@ -215,7 +215,7 @@ function healthDetails(model) {
     ], model.state.run ?? "UNKNOWN"),
     healthGroup("system", "home.health.system", [
       ["home.health.memoryPressure", metric(model.system.memoryPressure, { percent: true })], ["home.health.peakMemory", metric(model.system.peakMemory)],
-      ["home.health.diskReserve", metric(model.system.diskReserve)], ["home.health.correctionDebt", metric(model.system.correctionDebt, { integer: true })],
+      ["home.health.diskFree", metric(model.system.diskFree)], ["home.health.diskReserve", metric(model.system.diskReserve)], ["home.health.correctionDebt", metric(model.system.correctionDebt, { integer: true })],
       ["home.health.hardWarnings", metric(model.system.hardWarnings, { integer: true })],
     ], model.state.resource ?? "UNKNOWN"),
   ].join("");

@@ -38,6 +38,33 @@ function capability(id, generation = 7) {
   };
 }
 
+function dossier(id, generation = 7) {
+  return {
+    schema_version: "bilqis.bamf.mission-control.capability-dossier/v1",
+    meta: {
+      record_id: "dossier:" + id,
+      run: { run_id: "run-7", generation },
+      observed_at: 1_799_000_100 + generation,
+      materialized_at: 1_799_000_110 + generation,
+      source_refs: ["source:" + id], evidence_refs: [], receipt_refs: [],
+    },
+    capability_id: id, name: id,
+    now: datum(8), top: datum(10), total: datum(12), debt: { state: "MISSING", origin: null, value: null, units: null },
+    retention: { state: "UNKNOWN", origin: null, value: null, units: null },
+    eligibility: { state: "MISSING", origin: null, value: null, units: null },
+    qualification: { state: "MISSING", origin: null, value: null, units: null },
+    source_state: { state: "MISSING", origin: null, value: null, units: null },
+    entries: [
+      { section: "performance", values: [
+        { name: "was", value: datum(6) },
+        { name: "visits", value: datum(9) },
+        { name: "retained_steps", value: datum(41) },
+      ] },
+      { section: "teaching", values: [{ name: "strategy", value: datum("policy:contrast") }] },
+    ],
+  };
+}
+
 function factoryRecord({ blocked = false, stale = false } = {}) {
   return {
     schema_version: "bilqis.bamf.mission-control.factory-cockpit-snapshot/v1",
@@ -85,15 +112,24 @@ function factoryRecord({ blocked = false, stale = false } = {}) {
   };
 }
 
-test("production capability projection preserves exact evidence and leaves unexposed School fields empty", () => {
-  const row = schoolRowFromRecord(capability("B.AND"));
+test("production capability projection merges accepted dossier evidence and preserves honest gaps", () => {
+  const row = schoolRowFromRecord(capability("B.AND"), dossier("B.AND"));
   assert.equal(row.id, "B.AND");
+  assert.equal(row.was, 6);
+  assert.equal(row.top, 10);
   assert.equal(row.now, 8);
   assert.equal(row.total, 12);
   assert.equal(row.debt, 4);
+  assert.equal(row.visits, 9);
+  assert.equal(row.retainedSteps, 41);
+  assert.equal(row.strategy, "policy:contrast");
+  assert.equal(row.growth, null);
+  assert.equal(row.pRet, null);
+  assert.equal(row.absenceReasons.growth, "GROWTH_NOT_MEASURED");
+  assert.equal(row.absenceReasons.pRet, "PRET_NOT_MEASURED");
   assert.equal(row.observedAt, 1_799_000_107);
   assert.equal(row.materializedAt, 1_799_000_117);
-  for (const field of ["was", "top", "pRet", "visits", "retainedSteps", "lastGain", "lastRegression", "strategy", "sourceState", "implementationState"]) {
+  for (const field of ["pRet", "lastGain", "lastRegression", "sourceState", "implementationState"]) {
     assert.equal(row[field], null, field);
   }
   assert.deepEqual(row.prerequisites, []);
@@ -115,6 +151,12 @@ test("production School query binds exact current or historical context and pagi
     async query(request) {
       requests.push(request);
       const second = request.cursor === "next";
+      if (request.schema_version === "bilqis.bamf.mission-control.capability-dossier/v1") {
+        return {
+          accepted: true, state: "PRESENT", coverage: "PARTIAL",
+          records: second ? [] : [dossier("B.AND")], next_cursor: null,
+        };
+      }
       return {
         accepted: true,
         state: "PRESENT",
@@ -126,8 +168,11 @@ test("production School query binds exact current or historical context and pagi
   };
   const result = await loadSchoolRows(api, { runId: "run-7", generation: 7, mode: "LIVE" });
   assert.deepEqual(result.rows.map((row) => row.id), ["B.AND", "B.OR"]);
-  assert.equal(requests.length, 2);
+  assert.equal(result.rows[0].top, 10);
+  assert.equal(result.rows[0].retainedSteps, 41);
+  assert.equal(requests.length, 3);
   assert.equal(requests[1].cursor, "next");
+  assert.equal(requests[2].schema_version, "bilqis.bamf.mission-control.capability-dossier/v1");
 
   const rejected = await loadSchoolRows({
     async query() {

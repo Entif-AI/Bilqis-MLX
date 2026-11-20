@@ -15,6 +15,9 @@ from .native_factory import accepted_factory_records
 from .native_rejections import rejection_material
 from .native_contracts import run_ref
 from .observed import observed_records, publish_observed_events
+from .projection.capability_dossier import (
+    accepted_capability_dossiers as _accepted_capability_dossiers,
+)
 from bilqis_mlx.mission_control.contracts.trainer import TrainerObservation
 
 
@@ -60,6 +63,7 @@ def _accepted_learning_health(history):
             values[generation.manifest_sha256] = dict(by_capability)
     return values
 
+
 def _service_lock(service):
     with _SERVICE_LOCKS_GUARD:
         lock = _SERVICE_LOCKS.get(service)
@@ -86,6 +90,7 @@ def materialize_native_projection(
         rejection_material(Path(run_dir), history)
         if include_live_rejections
         else rejection_material(Path(run_dir), history, portable_only=True))
+    records.extend(_accepted_capability_dossiers(history, rejected_records))
     after = accepted_pointer(Path(run_dir))
     if (not history
             or after["manifest_sha256"] != history[-1].manifest_sha256

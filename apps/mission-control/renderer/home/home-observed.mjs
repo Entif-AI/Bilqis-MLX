@@ -19,7 +19,9 @@ export function observedHomeState(records, context, run) {
     (b.meta.observed_at - a.meta.observed_at) || (b.revision - a.revision)).slice(0, 8)
     .map((row) => Object.freeze(context?.transportDisconnected && row.connection_state === "LIVE"
       ? { ...row, connection_state: "DISCONNECTED" } : row));
-  return Object.freeze({ current: history[0] ?? null, history: Object.freeze(history),
+  const latestLearningEvidence = history.find((row) => row.learning_health) ?? null;
+  return Object.freeze({ current: history[0] ?? null, latestLearningEvidence,
+    history: Object.freeze(history),
     acceptedGeneration: run?.meta?.run?.generation ?? null,
     acceptedOptimizerStep: run?.optimizer_step ?? null });
 }
@@ -66,6 +68,26 @@ export function renderObservedWork(observed, esc, { nowMs = Date.now(), locale }
     ...(row.error_code ? [["home.observed.errorCode", row.error_code]] : []),
     ...(row.error_detail ? [["home.observed.errorDetail", row.error_detail]] : []),
   ];
+  const visit = row.visit_evidence;
+  const visitScore = (score) => {
+    if (!score || score.state !== "MEASURED") return score?.state ?? null;
+    if (![score.before, score.after, score.total, score.delta].every(Number.isInteger)) return "UNKNOWN";
+    const delta = score.delta > 0 ? `+${score.delta}` : `${score.delta}`;
+    return `${score.before}/${score.total} -> ${score.after}/${score.total} (${delta})`;
+  };
+  const measuredProtected = Array.isArray(visit?.protected)
+    ? visit.protected.filter((item) => item?.state === "MEASURED").length : 0;
+  const visitFields = visit ? [
+    ["home.observed.visitGrade", visit.grade_id],
+    ["home.observed.teacherPolicy", visit.teacher_policy_key],
+    ["home.observed.teachingOption", visit.selected_option_id],
+    ["home.observed.targetAssessment", visitScore(visit.target)],
+    ["home.observed.protectedAssessment", measuredProtected
+      ? `${visit.protected_scope_state ?? "UNKNOWN"} · ${measuredProtected} measured`
+      : visit.protected_scope_state],
+    ["home.observed.decision", visit.decision],
+    ["home.observed.decisionReason", visit.human_reason ?? visit.reason],
+  ] : [];
   const historyLine = (item) => {
     if (item.outcome === "INTERRUPTED") {
       const step = item.candidate_horizon === null ? null : t("home.observed.historyStep", {
@@ -144,7 +166,9 @@ export function renderObservedWork(observed, esc, { nowMs = Date.now(), locale }
     : performance;
   const availableFallbackPerformance = fallbackPerformance.filter(([_key, value]) =>
     value !== null && value !== undefined);
-  const health = row.learning_health;
+  const healthEvidence = row.learning_health ? row : observed.latestLearningEvidence;
+  const health = healthEvidence?.learning_health;
+  const recentHealth = Boolean(health && healthEvidence !== row);
   const score = (item) => item && Number.isInteger(item.correct) &&
     Number.isInteger(item.total) ? `${item.correct} / ${item.total}` : unknown;
   const healthFields = health ? [
@@ -168,7 +192,7 @@ export function renderObservedWork(observed, esc, { nowMs = Date.now(), locale }
         : health.protected_regression_state],
   ] : [];
   const healthMarkup = health ? `<details data-test-id="home-observed-learning-health">
-    <summary>${esc(t("home.observed.learningHealth"))}</summary>
+    <summary>${esc(t(recentHealth ? "home.observed.recentLearningHealth" : "home.observed.learningHealth"))}</summary>
     <p>${esc(health.grade_id ?? unknown)} · ${esc(health.capability_id ?? unknown)}</p>
     <dl>${healthFields.map(([key, value]) => `<div><dt>${esc(t(key))}</dt><dd>${esc(value ?? unknown)}</dd></div>`).join("")}</dl>
     <h5>${esc(t("home.observed.healthWarnings"))}</h5>
@@ -187,7 +211,7 @@ export function renderObservedWork(observed, esc, { nowMs = Date.now(), locale }
   return `<div class="home-observed" data-posture="OBSERVED" data-connection="${esc(row.connection_state)}" data-test-id="home-observed">
     <div class="home-observed-head"><strong class="home-observed-badge">${esc(posture)}</strong>${observedTime}</div>
     <p class="home-observed-accepted">${esc(t("home.observed.acceptedGeneration"))}: ${esc(observed.acceptedGeneration ?? unknown)} · ${esc(t("home.observed.acceptedStep"))}: ${esc(observed.acceptedOptimizerStep ?? unknown)}</p>
-    <dl>${fields.map(([key, value]) => `<div><dt>${esc(t(key))}</dt><dd>${esc(value ?? unknown)}</dd></div>`).join("")}</dl>
+    <dl>${[...fields, ...visitFields].map(([key, value]) => `<div><dt>${esc(t(key))}</dt><dd>${esc(value ?? unknown)}</dd></div>`).join("")}</dl>
     ${healthMarkup}
     ${stepRows.length ? `<section data-test-id="home-observed-steps"><h4>${esc(t("home.observed.steps"))}</h4>${stepsMarkup}</section>` : availableFallbackPerformance.length ? `<details ${testIdAttribute("home", "observed", "performance")}><summary>${esc(t("home.observed.performance"))}${priorCompletedStep ? ` · ${esc(t("home.observed.stepComplete", { step: priorCompletedStep.candidate_step, duration: stageDuration(priorCompletedStep.candidate_step_wall_seconds) ?? unknown }))}` : ""}</summary><table><thead><tr><th scope="col">${esc(t("home.observed.stage"))}</th><th scope="col">${esc(t("home.observed.value"))}</th></tr></thead><tbody>${availableFallbackPerformance.map(([key, value]) => `<tr><th scope="row">${esc(t(key))}</th><td>${esc(value)}</td></tr>`).join("")}</tbody></table></details>` : ""}
 
