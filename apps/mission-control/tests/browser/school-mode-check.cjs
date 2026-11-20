@@ -13,6 +13,9 @@ const chrome = process.env.BILQIS_CHROME_PATH ||
 const operator = JSON.parse(fs.readFileSync(
   path.join(repo, "apps/mission-control/fixtures/operator-view-v1.json"), "utf8",
 ));
+const factoryRows = JSON.parse(fs.readFileSync(
+  path.join(repo, "apps/mission-control/fixtures/factory-cockpit-v1.json"), "utf8",
+));
 const mime = { ".html": "text/html", ".mjs": "text/javascript", ".js": "text/javascript",
   ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml" };
 
@@ -33,7 +36,7 @@ const productionRows = [capability("B.PRODUCTION.AND", 11, 1), capability("B.PRO
 const bridge = 'const mode=new URL(location.href).searchParams.get("launchMode")==="fixtures"?"fixtures":"production";'+
   'window.bamfMissionControl={launchMode:mode,connect:async()=>({state:"healthy"}),'+
   'status:async()=>({learnerActive:false}),querySnapshot:async request=>{if(request&&request.schemaVersion)return '+JSON.stringify(operator)+';throw new Error("BROWSER_SNAPSHOT_UNAVAILABLE")},'+
-  'query:async request=>{if(request&&request.family==="capability")return {accepted:true,family:"capability",mode:request.mode,state:"PRESENT",coverage:"COMPLETE",records:'+JSON.stringify(productionRows)+',next_cursor:null};return {accepted:true,family:request&&request.family,mode:request&&request.mode,state:"EMPTY",coverage:"COMPLETE",records:[],next_cursor:null}},'+
+  'query:async request=>{if(request&&request.family==="capability")return {accepted:true,family:"capability",mode:request.mode,state:"PRESENT",coverage:"COMPLETE",records:'+JSON.stringify(productionRows)+',next_cursor:null};if(request&&request.family==="factory")return {accepted:true,family:"factory",mode:request.mode,state:"PRESENT",coverage:"COMPLETE",records:'+JSON.stringify(factoryRows)+',next_cursor:null};return {accepted:true,family:request&&request.family,mode:request&&request.mode,state:"EMPTY",coverage:"COMPLETE",records:[],next_cursor:null}},'+
   'subscribeEvents:()=>async()=>{},requestDryRun:async()=>{throw new Error("BROWSER_MUTATION_DISABLED")},requestCommand:async()=>{throw new Error("BROWSER_MUTATION_DISABLED")},fetchReceipt:async()=>null};';
 
 function server() {
@@ -94,6 +97,32 @@ async function auditAtlas(page, launchMode) {
   check(await page.locator('[data-test-id="shell-school-subnav"]').count() === 1, "production School mode layer duplicated");
   return { productionPlaceholder: true, text };
 }
+async function auditFactory(page, launchMode) {
+  await page.locator('[data-test-id="shell-school-mode-factory"]').click();
+  const root = page.locator('[data-test-id="school-factory-cockpit"]'); await root.waitFor();
+  const result = await root.evaluate(async node => {
+    const axeResult = await axe.run(node, { runOnly: { type: "tag", values: ["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22aa"] } });
+    return {
+      violations: axeResult.violations.map(item => item.id),
+      text: node.innerText,
+      documentOverflow: document.documentElement.scrollWidth > innerWidth + 1,
+      hasHumanBoundary: Boolean(node.querySelector('[data-factory-authority="human-only"]')),
+      exactTopology: Boolean(node.querySelector('[data-factory-topology="exact"]')),
+      compatibilityTopology: Boolean(node.querySelector('[data-factory-topology="compatibility"]')),
+      mutationControls: node.querySelectorAll('[data-admit],[data-stage],[data-promote],[data-mutate]').length,
+    };
+  });
+  check(result.violations.length === 0, launchMode + " Factory axe: " + JSON.stringify(result.violations));
+  check(!result.documentOverflow, launchMode + " Factory created document overflow");
+  check(result.hasHumanBoundary, launchMode + " Factory omitted human-only authority boundary");
+  check(result.exactTopology, launchMode + " Factory omitted exact topology");
+  check(result.compatibilityTopology, launchMode + " Factory omitted compatibility topology");
+  check(result.text.includes("BLOCKED") && result.text.includes("STALE"), launchMode + " Factory omitted blocked/stale evidence");
+  check(result.text.includes("Dependencies") && result.text.includes("Promoted") && result.text.includes("Debt"), launchMode + " Factory omitted frontier evidence");
+  check(result.text.includes("Qualification") && result.text.includes("Admission"), launchMode + " Factory omitted receipt evidence");
+  check(result.mutationControls === 0, launchMode + " Factory exposed mutation controls");
+  return result;
+}
 async function audit(page, launchMode, viewport, theme, density) {
   await page.setViewportSize(viewport); await setDisplay(page, theme, density); await navigateSchool(page);
   await page.addScriptTag({ url: "/axe.min.js" });
@@ -152,6 +181,7 @@ async function audit(page, launchMode, viewport, theme, density) {
   }
   result.atlas = await auditAtlas(page, launchMode);
   check(await page.locator('[data-test-id="school-help-atlas-trigger"]').count() === 1, launchMode + " missing shared Atlas help");
+  result.factory = await auditFactory(page, launchMode);
   return result;
 }
 (async () => {

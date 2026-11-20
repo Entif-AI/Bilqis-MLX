@@ -267,7 +267,9 @@ export function renderCurriculumAtlasView(
         '<button type="button" class="ui-control ui-control--peer-tab" data-school-mode="matrix" data-focus-key="school-mode:matrix" ' +
           testIdAttribute("shell", "school-mode", "matrix") + '>' + esc(t("shell.school.matrix")) + '</button>' +
         '<button type="button" class="ui-control ui-control--peer-tab" aria-current="page" data-focus-key="school-mode:atlas" ' +
-          testIdAttribute("shell", "school-mode", "atlas") + '>' + esc(t("shell.school.atlas")) + '</button></nav>' +
+          testIdAttribute("shell", "school-mode", "atlas") + '>' + esc(t("shell.school.atlas")) + '</button>' +
+        '<button type="button" class="ui-control ui-control--peer-tab" data-school-mode="factory" data-focus-key="school-mode:factory" ' +
+          testIdAttribute("shell", "school-mode", "factory") + '>' + esc(t("shell.school.factory")) + '</button></nav>' +
       toolbarMarkup(graph, snapshot, ui) +
       (ui.searchStatus
         ? '<p class="curriculum-search-status" role="status" ' + testIdAttribute("curriculum", "search", "status") + '>' + esc(ui.searchStatus) + '</p>'

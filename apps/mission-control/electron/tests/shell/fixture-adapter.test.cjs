@@ -54,3 +54,33 @@ test("fixture adapter serves fixture frames but rejects command surfaces", async
     }),
   );
 });
+
+test("fixture adapter serves blocked and stale Factory cockpit evidence read-only", async () => {
+  const { bridge } = await fixtureBridge();
+  await bridge.connect();
+  const page = await bridge.query({
+    schema: "bilqis.bamf.control-plane.query/v1",
+    family: "factory",
+    mode: "current",
+    run_id: null,
+    record_id: null,
+    schema_version: "bilqis.bamf.mission-control.factory-cockpit-snapshot/v1",
+    generation: null,
+    frontier_id: null,
+    as_of: null,
+    reference: null,
+    limit: 32,
+    cursor: null,
+  });
+  assert.equal(page.state, "PRESENT");
+  assert.equal(page.records.length, 2);
+  assert.equal(page.records.some((row) => row.currency_state === "STALE"), true);
+  assert.equal(page.records.some((row) => row.delivery_status === "BLOCKED"), true);
+  assert.equal(page.records.some((row) => row.lineage[0].topology.knowledge === "EXACT"), true);
+  assert.equal(page.records.some((row) => row.lineage[0].topology.knowledge === "HISTORICAL_COMPATIBILITY_REQUIRED"), true);
+  await assert.rejects(bridge.command({
+    schemaVersion: "bamf.gui17.command-submit-request/v1",
+    expectedTargetRef: "factory-release:fixture",
+    request: {},
+  }));
+});
