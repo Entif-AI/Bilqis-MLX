@@ -2,6 +2,13 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.2.17](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.16...v1.2.17) (2026-11-20)
+
+
+### Bug Fixes
+
+* stabilize Mission Control live Electron lifecycle ([#1507](https://github.com/Entif-AI/Bilqis-MLX/issues/1507)) ([8d7a048](https://github.com/Entif-AI/Bilqis-MLX/commit/8d7a048894d4409fbd98ec61eebd334fb209be5e))
+
 ## [1.2.16](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.15...v1.2.16) (2026-11-20)
 
 
