@@ -2,6 +2,20 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.2.16](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.15...v1.2.16) (2026-11-20)
+
+
+### Bug Fixes
+
+* **bamf:** resume pre-objective accepted lineages ([#1500](https://github.com/Entif-AI/Bilqis-MLX/issues/1500)) ([5ef9a26](https://github.com/Entif-AI/Bilqis-MLX/commit/5ef9a260dbb2ae71ba48abe34f5552c3722901c8))
+* **mission-control:** restore BAMF observability parity ([#1503](https://github.com/Entif-AI/Bilqis-MLX/issues/1503)) ([1787cbb](https://github.com/Entif-AI/Bilqis-MLX/commit/1787cbbbf75e22440e44f1c0dfda54f3aa42cd47))
+* **onboarding:** package BAMF foundation bootstrap ([#1502](https://github.com/Entif-AI/Bilqis-MLX/issues/1502)) ([c2bdb5f](https://github.com/Entif-AI/Bilqis-MLX/commit/c2bdb5f3c0bc4b829594a08a1dac88b92c6ff04a))
+
+
+### Performance Improvements
+
+* **bamf:** restore production step throughput ([#1505](https://github.com/Entif-AI/Bilqis-MLX/issues/1505)) ([844c0d0](https://github.com/Entif-AI/Bilqis-MLX/commit/844c0d0afc369e440935ca9db745669f451cefce))
+
 ## [1.2.15](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.14...v1.2.15) (2026-11-20)
 
 
