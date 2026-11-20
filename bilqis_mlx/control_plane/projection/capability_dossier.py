@@ -7,6 +7,9 @@ from bilqis_mlx.mission_control.contracts.dossier import (
 from ..native_contracts import data_value, missing_value, record_meta, run_ref
 
 
+SCORE_FIELD_COUNT = 4
+
+
 def _row(stats, capability):
     return stats.setdefault(capability, {
         "visits": 0, "retained": 0, "retained_ok": True,
@@ -27,7 +30,7 @@ def _accepted_event(stats, native):
         row["retained_ok"] = False
     scores = outcome.get("scores") if isinstance(outcome, dict) else None
     for score in scores if isinstance(scores, list) else ():
-        if (not isinstance(score, (list, tuple)) or len(score) != 4
+        if (not isinstance(score, (list, tuple)) or len(score) != SCORE_FIELD_COUNT
                 or score[0] != capability or not all(type(item) is int for item in score[1:])):
             continue
         _cap, before, after, total = score
