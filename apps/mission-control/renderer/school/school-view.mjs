@@ -16,10 +16,12 @@ const ui = {
 
 const slug = (value) => String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const present = (value) => value !== null && value !== undefined && value !== "";
-const text = (value) => present(value) ? String(value) : t("school.common.notExposed");
-const score = (value, total) => present(value) && present(total)
+const text = (value, fallback = null) => present(value) ? String(value) : (fallback ?? t("school.common.notExposed"));
+const absence = (row, key) => row.absenceReasons?.[key]
+  ? t(`school.absence.${row.absenceReasons[key]}`) : t("school.common.notExposed");
+const score = (value, total, fallback = null) => present(value) && present(total)
   ? t("school.matrix.score", { value, total })
-  : t("school.common.notExposed");
+  : (fallback ?? t("school.common.notExposed"));
 const empty = (value) => value?.length ? value.join(", ") : t("school.common.none");
 
 function help(labelKey, bodyKey, id) {
@@ -45,8 +47,8 @@ function stateCue(row) {
 
 function statusCell(row, { nowMs, locale } = {}) {
   return `<div class="school-state-cell-body"><div class="school-state-stack">
-    <span data-school-state="${esc(row.sourceState ?? "NOT_EXPOSED")}">${esc(text(row.sourceState))}</span>
-    <span data-school-state="${esc(row.implementationState ?? "NOT_EXPOSED")}">${esc(text(row.implementationState))}</span>
+    <span data-school-state="${esc(row.sourceState ?? "NOT_EXPOSED")}">${esc(text(row.sourceState, absence(row, "sourceState")))}</span>
+    <span data-school-state="${esc(row.implementationState ?? "NOT_EXPOSED")}">${esc(text(row.implementationState, absence(row, "implementationState")))}</span>
     <span data-school-state="${esc(row.qualificationState ?? "NOT_EXPOSED")}">${esc(text(row.qualificationState))}</span>
   </div><div class="school-observed-time"><span>${esc(t("school.matrix.observed"))}</span>${temporalMarkup({ unixSeconds: row.observedAt, nowMs, locale, testId: `school-row-time-${slug(row.id)}` })}</div></div>`;
 }
@@ -71,16 +73,16 @@ function visibleColumns() {
 
 function cell(row, key, kind) {
   if (key === "id") return `<th class="capability-cell" scope="row"><button type="button" data-select-capability="${esc(row.id)}" data-focus-key="school:${esc(row.id)}" ${testIdAttribute("school", "matrix", "capability", slug(row.id))} title="${esc(t("school.matrix.inspect", { id: row.id }))}">${esc(row.id)}</button></th>`;
-  if (key === "prerequisites") return `<td>${esc(row.prerequisites?.length ? row.prerequisites.join(", ") : t("school.common.notExposed"))}</td>`;
-  if (["was", "top", "now"].includes(key)) return `<td class="num">${esc(score(row[key], row.total))}</td>`;
+  if (key === "prerequisites") return `<td>${esc(row.prerequisites?.length ? row.prerequisites.join(", ") : absence(row, "prerequisites"))}</td>`;
+  if (["was", "top", "now"].includes(key)) return `<td class="num">${esc(score(row[key], row.total, absence(row, key)))}</td>`;
   if (key === "total") return `<td class="num">${esc(text(row.total))}</td>`;
   if (key === "growth") {
-    if (!Number.isFinite(row.growth)) return `<td class="num">${esc(t("school.common.notExposed"))}</td>`;
+    if (!Number.isFinite(row.growth)) return `<td class="num">${esc(absence(row, "growth"))}</td>`;
     return `<td class="num" data-delta="${Math.sign(row.growth)}">${row.growth >= 0 ? "+" : ""}${row.growth}</td>`;
   }
-  if (key === "pRet") return `<td class="num">${esc(Number.isFinite(row.pRet) ? row.pRet.toFixed(2) : t("school.common.notExposed"))}</td>`;
-  if (key === "sourceFamilies") return `<td>${esc(row.sourceFamilies?.length ? row.sourceFamilies.join(", ") : t("school.common.notExposed"))}</td>`;
-  return `<td class="${kind === "num" ? "num" : ""}">${esc(text(row[key]))}</td>`;
+  if (key === "pRet") return `<td class="num">${esc(Number.isFinite(row.pRet) ? row.pRet.toFixed(2) : absence(row, "pRet"))}</td>`;
+  if (key === "sourceFamilies") return `<td>${esc(row.sourceFamilies?.length ? row.sourceFamilies.join(", ") : absence(row, "sourceFamilies"))}</td>`;
+  return `<td class="${kind === "num" ? "num" : ""}">${esc(text(row[key], absence(row, key)))}</td>`;
 }
 
 function tableRows(projectedRows, columnCount, allRows, temporal) {

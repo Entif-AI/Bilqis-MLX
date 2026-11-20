@@ -25,6 +25,19 @@ The home may say `IMPROVING` only when the projection has fresh retained-improve
 evidence. Missing best-score history, growth, G/RTN, P(RET), resource, warning, or
 other telemetry remains `UNAVAILABLE`; it is never synthesized as zero or healthy.
 
+ADR-152 adds the complementary information-value rule: an intermediate contract gap
+is not proof that producer-present operator evidence is unavailable. If the trainer or
+authenticated custody already contains an operator-critical fact that is permitted on
+the read-only surface, the owning projection must carry it, give it a precise typed
+absence reason, or record an intentional retirement. Generic `UNAVAILABLE`/null is
+not a permanent substitute for an unfinished projection.
+
+Sparse current activity also must not erase the latest informative visit. While a new
+visit is selecting or planning, Home may show that current provisional activity and,
+separately, preserve the most recent candidate/retention evidence with its own time
+and provenance. The previous visit never becomes current merely because it remains
+visible.
+
 ## Initial projection
 
 For a verified context the renderer issues bounded CP03 queries for:

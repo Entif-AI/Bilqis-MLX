@@ -3905,3 +3905,17 @@ terminal hold. It preserves ADR-150's prohibition on FactoryRelease presence as
 future-grade teaching authority, preserves genuine blocker holds, and preserves the
 rule that recovery exhaustion never mints completion, mastery, certification, or
 successor authority.
+
+## ADR-152 | 2026-11-20 | Provenance boundaries preserve operator information value
+
+**Status:** Accepted by direct owner instruction on 2026-11-20 through issues #1496, #1497, and #1498.
+
+**Problem:** BAMF correctly separated accepted learner state, provisional observation, historical evidence, and unavailable data. Mission Control then treated some incomplete read-model contracts as if the contract boundary itself proved that operator-useful evidence was unavailable. The result preserved provenance but regressed the owner's ability to understand the learner compared with the predecessor terminal cockpit. Several production Home metrics were explicitly hard-coded to null while related trainer or custody evidence already existed elsewhere.
+
+**Decision:** Provenance discipline and operator information value are simultaneous requirements. For every operator-useful fact already produced by the active trainer or authenticated custody, one read-only projection owner must expose the value with its truthful evidence class, expose a precise reasoned absence state, or record an intentional retirement and replacement operator question. An intermediate schema that does not yet carry the fact is an implementation gap, not a permanent `UNAVAILABLE` disposition.
+
+The predecessor School50 cockpit is an information-value baseline, not a visual or authority template. BAMF may reorganize, summarize, and progressively disclose its evidence, but the combined operator surfaces must preserve the ability to answer what the trainer is doing, what changed, what was retained or rejected and why, how the bounded run is progressing, what resource/curriculum condition applies, and what evidence supports or fails to support a learning claim.
+
+Observed/provisional evidence remains non-authoritative for learner state. Throughput remains distinct from learning. Missing evidence is never synthesized as zero, healthy, retained, mastered, or improved. `NOT_MEASURED`, `NOT_APPLICABLE`, `MISSING`, `UNKNOWN`, `PARTIAL`, `STALE`, `DENIED`, and `UNAVAILABLE` remain distinct. Arithmetic summaries require compatible identified inputs and must state their denominator/scope semantics.
+
+The checked-in `docs/architecture/BAMF_OPERATOR_OBSERVABILITY_INVARIANT.md` parity matrix is the implementation map for this decision. Future Mission Control contract changes must treat producer-present/operator-permitted data that collapses to generic null/Unavailable as a conformance regression unless an explicit retirement decision supersedes the operator question.

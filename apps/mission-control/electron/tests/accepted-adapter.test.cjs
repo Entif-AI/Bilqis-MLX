@@ -205,6 +205,76 @@ test("accepted adapter exposes only the bounded CP03 query contract", async () =
   adapter.close();
 });
 
+test("accepted Electron query path preserves rich observability records without field stripping", async () => {
+  const { assertQueryPage } = await import("../../renderer/atlas/atlas-data.mjs");
+  const { projectionFromPages } = await import("../../renderer/home/home-model.mjs");
+  const broker = brokerFixture();
+  const record = {
+    schema_version: "bilqis.bamf.mission-control.trainer-observation/v7",
+    posture: "OBSERVED",
+    connection_state: "LIVE",
+    observation_id: "electron-rich",
+    revision: 4,
+    outcome: "RUNNING",
+    capability_id: "B.AND",
+    activity: "trainer: retention screen",
+    activity_elapsed_ms: 4_200,
+    elapsed_ms: 64_000,
+    peak_rss_bytes: 64 * 1048576,
+    disk_free_bytes: 120 * 1073741824,
+    phase: "RETENTION",
+    candidate_steps: [{ candidate_step: 4, candidate_step_wall_seconds: 26.8 }],
+    visit_evidence: {
+      teacher_policy_key: "policy:contrast",
+      selected_option_id: "source:truth-table",
+      target: { state: "MEASURED", before: 7, after: 9, total: 12, delta: 2 },
+      decision: "RETAIN",
+      reason: "TARGET_GAIN_WITH_PROTECTION",
+    },
+    learning_health: {
+      state: "MEASURED",
+      latest: { correct: 9, total: 12 },
+      best: { correct: 10, total: 12 },
+    },
+    meta: {
+      record_id: "trainer-observed:rich",
+      run: { run_id: "fixture-run", generation: 7 },
+      observed_at: 1_799_000_100,
+      source_refs: ["trainer-observed:rich"],
+    },
+  };
+  broker.query = async (request) => ({
+    schema: QUERY_PAGE_SCHEMA, query_id: "d".repeat(64), request,
+    family: request.family, mode: request.mode, state: "PRESENT", coverage: "PARTIAL",
+    total_matches: 1, returned: 1, truncated: false, next_cursor: null,
+    records: [record], markers: [], links: [], accepted: true,
+  });
+  const { adapter, bridge } = await acceptedBridge(broker);
+  await bridge.connect();
+  const request = {
+    schema: QUERY_REQUEST_SCHEMA, family: "run", mode: "current", run_id: "fixture-run",
+    record_id: null, schema_version: record.schema_version, generation: null,
+    frontier_id: null, as_of: null, reference: null, cursor: null, limit: 32,
+  };
+
+  const page = await bridge.query(request);
+  const rendererPage = assertQueryPage(page);
+  const model = projectionFromPages({ run: rendererPage }, {
+    runId: "fixture-run", generation: 7, mode: "LIVE", operatorActive: true,
+  });
+
+  assert.deepEqual(page.records[0], record);
+  assert.equal(page.records[0].visit_evidence.teacher_policy_key, "policy:contrast");
+  assert.equal(page.records[0].candidate_steps[0].candidate_step_wall_seconds, 26.8);
+  assert.equal(page.records[0].learning_health.best.correct, 10);
+  assert.equal(model.observed.current.activity, "trainer: retention screen");
+  assert.equal(model.currentWork.strategy, "policy:contrast");
+  assert.equal(model.currentWork.targetAssessment, "7/12 -> 9/12 (+2)");
+  assert.equal(model.system.peakMemory, "64.0 MiB");
+  assert.equal(model.system.diskFree, "120.0 GiB");
+  adapter.close();
+});
+
 test("missing CP01 service becomes disconnected state without leaking broker errors", async () => {
   const broker = brokerFixture({ fail: true });
   const { adapter, bridge } = await acceptedBridge(broker);

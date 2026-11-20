@@ -1,12 +1,17 @@
 # Bilqis MLX | Agent operating rules
 
-## BAMF-0.2 unified-base contract — 2026-10-28
+## BAMF integration authority — 2026-11-20
 
-The BAMF workstreams use this branch as their common base. Its executable authority
-is the current Factory branch `codex/337-replay-349-20261026`. Preserve that runtime,
-trainer, scheduler, teacher, retention, admission, and controller logic unless the
-active BAMF issue explicitly owns a change to it. Do not merge or copy newer `main`
-controller code into this branch simply to catch up with `main`.
+`main` is the reviewed BAMF integration trunk and the target for BAMF feature
+integration. This supersedes the 2026-10-28 branch-baseline policy that used
+`codex/bamf-unified-base-20261028`. That remote unified ref is retired; do not
+recreate it or treat a surviving local copy as current integration authority.
+
+The preserved Factory replay branch `codex/337-replay-349-20261026` remains the
+legacy trainer adaptation authority described below. Integration through `main`
+does not transfer learner, trainer, scheduler, teacher, retention, admission, or
+controller authority to unrelated code; an active BAMF issue must still own any
+behavioral change it introduces.
 
 <!-- BAMF02:LEGACY-TRAINER-AUTHORITY:20261107 -->
 ### Legacy trainer adaptation authority — 2026-11-07
@@ -44,28 +49,24 @@ the BAMF successor. BAMF work follows `ADR-BAMF02-004`: a functional recursive
 Factory with source-qualified typed rules and grade-neutral admission and teaching.
 These are implementation requirements, not proof that the new runtime exists.
 
-The unified branch is the reviewed integration trunk and remains live throughout
-BAMF execution. Lane A's historical integration branch is
-`codex/bamf02-a-semantics`, Lane B's is `codex/bamf02-b-neural`, and Lane C's is
-`codex/bamf02-c-runtime`. Independent issue-scoped branches/worktrees may coexist
-within each lane. **One writer means one independently mutating writer per branch
-and shared file at a time, not one agent per lane or one agent for the lifetime
-of an issue.** Coordinate shared integration changes through the relevant owner.
-Before a feature's integration turn-in, consume the current
-`origin/codex/bamf-unified-base-20261028`, record the unified SHA consumed,
-resolve conflicts, and run the smallest affected verification. Do not merge
-`main` or a sibling lane directly. Keep implementation and review state on the
-owning issue and branch until
-the work is truly ready to merge. Do not use a draft pull request as a queue marker
-or review-state surrogate.
+Lane A's historical integration branch is `codex/bamf02-a-semantics`, Lane B's is
+`codex/bamf02-b-neural`, and Lane C's is `codex/bamf02-c-runtime`. Those lane refs
+and the retired unified ref are historical integration evidence, not current
+turn-in targets. Independent issue-scoped branches/worktrees may coexist within
+each lane. **One writer means one independently mutating writer per branch and
+shared file at a time, not one agent per lane or one agent for the lifetime of an
+issue.** Coordinate shared integration changes through the relevant owner.
 
-Main-to-unified reverse integration is a separately authorized trunk-maintenance
-operation. When that synchronization is authorized, preserve Git ancestry with a
-genuine merge commit whose parents are the exact pre-merge unified head and the
-exact main head being integrated. Do not use a squash, cherry-pick, rebase, or
-synthetic single-parent "sync" commit as a substitute for that merge. This rule
-does not authorize feature branches to merge `main`; the issue-scoped rule above
-remains binding.
+Before a feature's integration turn-in, fetch and consume the current `origin/main`,
+record the exact main SHA consumed, resolve conflicts, and run the smallest affected
+verification. Preserve ancestry with a normal merge when the feature branch needs
+newer `main`; do not rebase or force-push merely to manufacture a linear history.
+Do not merge a sibling lane directly. Keep implementation and review state on the
+owning issue and branch until the work is truly ready to merge, and turn the branch
+into `main` through the repository's reviewed pull-request path unless the owner
+explicitly authorizes another integration mechanism. Do not use a draft pull request
+as a queue marker or review-state surrogate, and do not mutate `main` directly from
+an issue worktree.
 
 EGM labels describe **design/specification review state only**. Add `EGM-Pending`
 when a fresh design review is pending, replace it with `EGM-Passed` after a complete
@@ -1080,6 +1081,7 @@ Preserve real-student/own-AdamW recovery, stable token meanings, answer correctn
 - Reuse six-panel School50 and stable npm commands. Protect disk headroom; no recursive cleanup of `~/Code`, no archive deletion, no model binaries in Git. Backup only explicit source paths with external readback evidence.
 - **Forward-compatible School50 metrics (ADR-016):** Keep the six named panels but make their event/measurement schema grade-neutral. Preserve step, model, rubric, partition and teacher-source provenance; display first/latest/best, gains and cross-grade retention without mixing checkpoints. Optional independent sentinels, semantic construction probes and teacher-only soup metrics must be real and source-bound before presenting values; missing dimensions are NOT MEASURED or OFF, not manufactured from source-training rewards. Dashboard code cannot mutate the actively running human student or teacher. See `docs/architecture/SCHOOL50_TELEMETRY_V1_20261015.md`.
 - **Dashboard presentation contract:** Keep the compact BILQIS cockpit as a two-row heading/value instrument and treat display space as a salience budget, not a telemetry dump. Render each fact in one best owner: global run/cumulative coordinates in the cockpit, curriculum-local evidence in CURRICULUM. Preserve underlying telemetry when removing duplicated or dead presentation; do not restore retired panels/footer merely to repeat information available elsewhere.
+- **Operator observability parity (ADR-152 / #1496):** Provenance boundaries MUST NOT become information-loss boundaries. When the active trainer or authenticated custody already produces an operator-critical fact that is permitted on read-only surfaces, exactly one projection owner must expose it with truthful evidence class, expose a precise typed absence reason, or document an intentional retirement and replacement operator question. An intermediate contract lacking the field is an implementation gap, not permanent authority to render generic `Unavailable`, `Not exposed`, or null. Preserve accepted vs observed/provisional authority, never synthesize missing evidence, and preserve the latest informative visit separately when a sparse current planning visit would otherwise blind the operator. See `docs/architecture/BAMF_OPERATOR_OBSERVABILITY_INVARIANT.md`.
 - **Resource stops (ADR-017):** Disk free bytes, protective reserve, and estimated next complete checkpoint are an explicit telemetry contract. Report `DISK_RESERVE_REACHED` normally and durably rather than letting the guard silently abort an otherwise healthy student. Never reduce the 100 GiB default reserve or delete saved complete model/own-AdamW bundles to prolong a run without the user's separately scoped decision.
 - **Capability bests (ADR-018, superseded for championship custody by ADR-143):** Preserve score/provenance evidence for subthreshold capability measurements, but do not keep a whole checkpoint+AdamW solely because it is the current subthreshold best. Championship/capability-best checkpoint custody begins only when that capability is strictly above 90% (`10 * correct > 9 * total`). One whole qualifying checkpoint may own several best/title slots. The causal current student and any checkpoint required by another independent custody surface remain protected. Score before archiving; do not retain every visit.
 - **AST-first curriculum scaling (ADR-014):** Compile the native Registry's typed semantics, prerequisites, sources, states and grade relationships into deterministic construction and probe plans. Fix recurring *classes* of narrow lessons via reusable mathematical/grammar constructors, counterexamples, metamorphic contrasts and out-of-sample tests rather than hand-patching individual questions. Keep historical alias, research seed, draft, source-attested and admitted-release states distinct; a compiled/proposed lesson never alone authorizes neural updates or alters the frozen Grade A exam. `npm run curriculum:plan` is neural-inert and reads a connector-refreshed snapshot.

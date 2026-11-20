@@ -1,4 +1,5 @@
 import { observedHomeState } from "./home-observed.mjs";
+import { formatDurationSeconds } from "../foundation/temporal.mjs";
 
 const QUERY_SCHEMA = "bilqis.bamf.control-plane.query/v1";
 const PRESENT = "PRESENT";
@@ -60,6 +61,25 @@ function pageState(pages, family) {
 function ratio(numerator, denominator) {
   return Number.isFinite(numerator) && Number.isFinite(denominator) && denominator > 0
     ? numerator / denominator : null;
+}
+
+function observedBytes(value, divisor, unit) {
+  return Number.isFinite(value) ? `${(value / divisor).toFixed(1)} ${unit}` : null;
+}
+
+function visitScoreSummary(score) {
+  if (!score || score.state !== "MEASURED") return score?.state ?? null;
+  if (![score.before, score.after, score.total, score.delta].every(Number.isInteger)) return "UNKNOWN";
+  const delta = score.delta > 0 ? `+${score.delta}` : `${score.delta}`;
+  return `${score.before}/${score.total} -> ${score.after}/${score.total} (${delta})`;
+}
+
+function protectedSummary(evidence) {
+  if (!evidence) return null;
+  const state = evidence.protected_scope_state ?? "UNKNOWN";
+  const measured = Array.isArray(evidence.protected)
+    ? evidence.protected.filter((item) => item?.state === "MEASURED").length : 0;
+  return measured ? `${state} · ${measured} measured` : state;
 }
 
 export function classifyLearning({ retained = 0, freshRetainedImprovements = 0, regressions = 0 } = {}) {
@@ -129,16 +149,18 @@ export function projectionFromPages(pages, context) {
       running: typeof context?.operatorActive === "boolean" ? context.operatorActive : null,
     })
     : null;
-  const health = observed.current?.learning_health;
+  const learningEvidence = observed.latestLearningEvidence;
+  const health = learningEvidence?.learning_health;
+  const visitEvidence = observed.current?.visit_evidence;
   const checkpoints = Array.isArray(health?.recent_checkpoints)
     ? health.recent_checkpoints : [];
   const latestCheckpoint = checkpoints.at(-1);
   const previousCheckpoint = checkpoints.at(-2);
-  const acceptedCurrent = observed.current?.outcome === "ACCEPTED";
-  const freshGain = acceptedCurrent && latestCheckpoint && previousCheckpoint &&
+  const acceptedLearningEvidence = learningEvidence?.outcome === "ACCEPTED";
+  const freshGain = acceptedLearningEvidence && latestCheckpoint && previousCheckpoint &&
     latestCheckpoint.total === previousCheckpoint.total &&
     latestCheckpoint.correct > previousCheckpoint.correct ? 1 : 0;
-  const freshRegression = acceptedCurrent && latestCheckpoint && previousCheckpoint &&
+  const freshRegression = acceptedLearningEvidence && latestCheckpoint && previousCheckpoint &&
     latestCheckpoint.total === previousCheckpoint.total &&
     latestCheckpoint.correct < previousCheckpoint.correct ? 1 : 0;
   const healthRegressions = Array.isArray(health?.regressed_protected_capabilities)
@@ -174,7 +196,8 @@ export function projectionFromPages(pages, context) {
     }),
     runtime: Object.freeze({
       running: typeof context?.operatorActive === "boolean" ? context.operatorActive : null,
-      elapsed: null,
+      elapsed: Number.isFinite(observed.current?.elapsed_ms)
+        ? formatDurationSeconds(observed.current.elapsed_ms / 1000) : null,
       visits: episodeRows.length || null,
       visitRate: null,
       retainedCandidates: retained,
@@ -184,18 +207,19 @@ export function projectionFromPages(pages, context) {
     }),
     system: Object.freeze({
       memoryPressure: ratio(value(resource, "memory_used_bytes"), value(resource, "memory_budget_bytes")),
-      peakMemory: null,
+      peakMemory: observedBytes(observed.current?.peak_rss_bytes, 1048576, "MiB"),
+      diskFree: observedBytes(observed.current?.disk_free_bytes, 1073741824, "GiB"),
       diskReserve: null,
       correctionDebt,
       hardWarnings: null,
     }),
     currentWork: Object.freeze({
       capabilityId: observed.current?.capability_id ?? activeEpisode?.capability_id ?? context?.activeCapabilityId ?? null,
-      strategy: teacher?.strategy_id ?? null,
+      strategy: visitEvidence?.teacher_policy_key ?? teacher?.strategy_id ?? null,
       candidateIntent: observed.current?.phase ?? activeEpisode?.state ?? run?.stage ?? null,
       sourceFamily: null,
-      targetAssessment: null,
-      protectedAssessment: null,
+      targetAssessment: visitScoreSummary(visitEvidence?.target),
+      protectedAssessment: protectedSummary(visitEvidence),
       recordId: activeEpisode?.meta?.record_id ?? null,
       observedAt: activeEpisode?.meta?.observed_at ?? null,
       materializedAt: activeEpisode?.meta?.materialized_at ?? null,
