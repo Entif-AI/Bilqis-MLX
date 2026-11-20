@@ -100,7 +100,98 @@ A fresh BAMF generation-zero lineage is not a blank-slate installer flow. It add
   <account-home>/.entif-ai/bilqis/source-authority-registry.json;
 - the matching source-authority signer beside it when the selected authority path requires signing.
 
-The runtime does not provision or repair those authority files. There is currently no supported repository command that turns an arbitrary clone into a new production authority root. Do not copy a registry into a new run directory or manufacture one from test fixtures.
+The runtime does not provision or repair those authority files. BAMF-0.3 #1034 adds
+`python3 scripts/authority_store/cli.py` as a separate operator surface for the fixed
+account-scoped store. It does **not** derive or approve authority from a repository
+clone. Before any install, restore, rotation, or migration, an external trusted host
+operator or fleet-provisioning system must place a private approval record at the fixed
+caller-nonselectable location
+`<account-home>/.entif-ai/bilqis-authority-approval.json`. Bilqis has no command that
+creates this record. The record fixes the approved operation, host role, registry
+digest, and, for rotation/migration, the exact current digest. For an authority host it
+also fixes the exact signer owner and public-key identity inside that registry. The
+lifecycle command then verifies supplied registry/signer bytes against that independent
+approval. A secret provider may supply private bytes for the pinned public identity but
+cannot choose another registry-valid principal. Do not copy a registry into a new run
+directory or manufacture one from test fixtures.
+
+For an authority-owning host, the external approval uses role `authority-host` and the
+install supplies the already approved registry plus its matching signer. For a
+distributed or asynchronous worker, the external approval uses role `worker`; the
+operator lifecycle then rejects any signer bytes or signer provider. The CLI itself
+cannot choose or promote the role. Worker provisioning therefore grants no curriculum,
+optimizer, retained-generation, teacher, or semantic mutation authority. It only gives
+the worker the fixed C09 public trust material needed to verify bounded work under the
+existing #558/#559 execution rules.
+
+The approval record has this exact public shape; its contents contain no signer secret:
+
+~~~json
+{
+  "schema": "bilqis.mlx.authority-store-approval/v1",
+  "operation": "install",
+  "role": "worker",
+  "registry_sha256": "<approved-c09-registry-digest>",
+  "current_registry_sha256": null,
+  "signer_owner_id": null,
+  "signer_public_key_hex": null
+}
+~~~
+
+`rotate` and `migrate` approvals use role `authority-host` and must set
+`current_registry_sha256` to the exact currently accepted registry digest. A `restore`
+approval identifies the exact digest and role to recover. Authority-host approvals also
+set `signer_owner_id` and `signer_public_key_hex` to the exact approved C09 principal;
+worker approvals require both fields to remain `null`. The operator tool refuses an
+operation whose fixed approval names a different operation or whose signer material
+does not derive to the pinned owner/key identity.
+
+This lifecycle inherits #1031's **ordinary-user account trust boundary**. It protects
+against supported caller/API/path selection, symlink/path substitution, stale or wrong
+approval material, signer substitution, and interrupted publication. It does not claim
+to defend the authority store from arbitrary hostile code or processes that already
+have unrestricted filesystem control as the same effective OS account. Such control
+can replace the #1031 store itself and is host/account compromise under the inherited
+threat model, not a worker capability granted by this tool. Operators who require
+hostile same-account isolation must provide a stronger OS-account, keychain, managed
+device, or separate-process custody boundary outside this user-space lifecycle.
+
+This distinction does not make a #559 public worker authoritative. A remote worker is
+still untrusted at the canonical-school boundary: worker-role provisioning carries no
+signer, and returned work remains a proposal/evidence artifact subject to the existing
+canonical source, retention, optimizer, and admission checks. Compromise of a worker's
+local account therefore does not transfer canonical-school authority.
+
+The lifecycle commands are deliberately explicit:
+
+~~~text
+python3 scripts/authority_store/cli.py verify
+python3 scripts/authority_store/cli.py recover
+python3 scripts/authority_store/cli.py install --registry <approved.json>
+python3 scripts/authority_store/cli.py install --registry <approved.json> --signer <private-signer.json>
+python3 scripts/authority_store/cli.py backup
+python3 scripts/authority_store/cli.py restore
+python3 scripts/authority_store/cli.py rotate --registry <approved.json> --signer <private-signer.json>
+python3 scripts/authority_store/cli.py migrate --registry <approved.json> --signer <private-signer.json>
+~~~
+
+Install publication is transaction-marked and fail-closed. If the process is
+interrupted after staging begins, ordinary runtime reads reject the incomplete store;
+`recover` converges the staged transaction before the marker is removed. Runtime reads
+share a fixed flock with the operator writer, so marker inspection plus registry/signer
+open cannot race publication. `restore` never silently rebinds an existing store to a
+different registry. `rotate` and `migrate` are the only rebind operations and their
+fixed approvals require the exact current digest as a fence.
+
+`backup` accepts no destination. It writes an exact private snapshot only under
+`<account-home>/.entif-ai/bilqis-authority-backups/<registry-digest>/`; `restore`
+selects that snapshot from its approved digest and accepts no caller-selected snapshot
+path. Authority-host backups contain private signer material and therefore must never
+be copied into Git, GitHub, logs, receipts, or public artifacts.
+
+Secret-manager or keychain integration may implement the operator-only
+`SignerMaterialProvider` seam. Such a provider supplies private bytes only; it does not
+select the registry, change the fixed location, or become a new authority source.
 
 If the host has not been provisioned, use the developer/inspection path and stop before fresh production creation.
 
@@ -411,7 +502,7 @@ Do not fix an operator failure by weakening source validation, custody identity,
 The current operator surface intentionally has some sharp edges:
 
 - Native learner execution targets a single Apple Silicon training host.
-- Production source-authority provisioning is external to the runtime. A clean clone cannot create that trust root.
+- Production source-authority provisioning is external to the runtime. The #1034 operator tool can install already approved, digest-pinned authority material at the fixed account location, but a clean clone cannot derive or approve a trust root.
 - Fresh BAMF creation consumes an already accepted source lineage; it is not a from-scratch bootstrap wizard.
 - Model Forensics requires the CP01 control-plane process to be started separately.
 - Model Forensics implements Stop, not Pause. Fresh generation-zero Create is currently CLI-only because the GUI mutation posture requires an accepted learner context.

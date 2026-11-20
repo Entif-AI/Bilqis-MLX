@@ -59,6 +59,14 @@ owning issue and branch until
 the work is truly ready to merge. Do not use a draft pull request as a queue marker
 or review-state surrogate.
 
+Main-to-unified reverse integration is a separately authorized trunk-maintenance
+operation. When that synchronization is authorized, preserve Git ancestry with a
+genuine merge commit whose parents are the exact pre-merge unified head and the
+exact main head being integrated. Do not use a squash, cherry-pick, rebase, or
+synthetic single-parent "sync" commit as a substitute for that merge. This rule
+does not authorize feature branches to merge `main`; the issue-scoped rule above
+remains binding.
+
 EGM labels describe **design/specification review state only**. Add `EGM-Pending`
 when a fresh design review is pending, replace it with `EGM-Passed` after a complete
 design PASS, or with `EGM-Failed` while a material design finding remains unresolved.
