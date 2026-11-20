@@ -4,13 +4,13 @@ from __future__ import annotations
 from bilqis_mlx.runtime.atlas_flywheel_runtime import AcceptedAtlasFlywheelSupervisor
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 
-from .conformance_1300_support import Conformance1300RuntimeSupport, TARGET
-from .conformance_1300_support.rollback import (
+from ..conformance_1300_support import Conformance1300RuntimeSupport, TARGET
+from ..conformance_1300_support.rollback import (
     DestructiveCandidateCapture,
     assert_complete_rollback,
     parent_custody,
 )
-from .conformance_1300_support.scenario import one_visit
+from ..conformance_1300_support.scenario import one_visit
 
 
 BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"

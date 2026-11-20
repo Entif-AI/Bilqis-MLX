@@ -132,4 +132,3 @@ class ProductionRouteCapture:
         test.assertEqual(result.route.value, "EXACT")
         test.assertEqual(result.neural_calls, 0)
         test.assertTrue(result.dag_receipts)
-

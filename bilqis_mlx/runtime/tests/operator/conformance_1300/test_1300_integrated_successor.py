@@ -10,16 +10,16 @@ from bilqis_mlx.runtime.atlas_flywheel_runtime import AcceptedAtlasFlywheelSuper
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 from bilqis_mlx.runtime.bamf_operator.session import operate_bamf
 
-from .conformance_1300_support import (
+from ..conformance_1300_support import (
     Conformance1300RuntimeSupport,
     SUCCESSOR,
     TARGET,
 )
-from .conformance_1300_support.lifecycle import (
+from ..conformance_1300_support.lifecycle import (
     bootstrap_staged_generation_zero,
     enroll_prepared_lease,
 )
-from .conformance_1300_support.scenario import (
+from ..conformance_1300_support.scenario import (
     advance_until_admitted,
     assert_structural_admission_transition,
     structural_certification_pass,

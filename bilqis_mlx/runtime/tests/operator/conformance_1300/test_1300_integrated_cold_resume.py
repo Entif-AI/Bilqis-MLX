@@ -6,11 +6,11 @@ from bilqis_mlx.runtime.active_generated_grade import read_active_generated_grad
 from bilqis_mlx.runtime.atlas_flywheel_runtime import AcceptedAtlasFlywheelSupervisor
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 
-from .conformance_1300_support import Conformance1300RuntimeSupport, SUCCESSOR
-from .conformance_1300_support.cold_resume_assertions import (
+from ..conformance_1300_support import Conformance1300RuntimeSupport, SUCCESSOR
+from ..conformance_1300_support.cold_resume_assertions import (
     assert_cold_resume_legality,
 )
-from .conformance_1300_support.scenario import (
+from ..conformance_1300_support.scenario import (
     one_visit,
     structural_certification_pass,
 )

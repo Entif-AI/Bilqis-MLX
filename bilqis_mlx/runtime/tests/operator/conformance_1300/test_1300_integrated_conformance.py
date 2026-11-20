@@ -15,7 +15,7 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe import (
 )
 from bilqis_mlx.runtime.active_grade_cadence import read_current_cadence
 
-from .conformance_1300_support import (
+from ..conformance_1300_support import (
     Conformance1300RuntimeSupport,
     TARGET,
 )

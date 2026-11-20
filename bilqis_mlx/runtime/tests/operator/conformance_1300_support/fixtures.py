@@ -31,7 +31,7 @@ from bilqis_mlx.runtime.tests.admission.atlas.v2 import (
 from bilqis_mlx.runtime.tests.admission.atlas.v2.atlas_flywheel_human_resume_support import (
     AcceptedAtlasFlywheelHumanResumeSupport,
 )
-from bilqis_mlx.runtime.tests.operator.pre_neural_journey_support import (
+from bilqis_mlx.runtime.tests.operator.pre_neural.pre_neural_journey_support import (
     AUTHORIZED_ATLAS,
     COPULAR_REGISTRY,
     journey_source,
@@ -269,4 +269,3 @@ class Conformance1300FixtureSupport(AcceptedAtlasFlywheelHumanResumeSupport):
         )
         schema, features, _selection = journey_source(snapshot)
         return snapshot, candidate, schema, features
-
