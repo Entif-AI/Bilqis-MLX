@@ -5,7 +5,9 @@ import json
 from pathlib import Path
 import time
 
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+    candidate_identity_for_canonical_consumer,
+)
 from bilqis_mlx.learning.atlas_salience import salience_priority_features
 from bilqis_mlx.learning.salience_contracts import ActionKind
 from bilqis_mlx.learning.salience_teacher import _teacher
@@ -91,7 +93,7 @@ def _accepted_context(run_dir, source_context, school, lawful_frontier,
                       accepted_parent, planning_generation):
     if planning_generation is None:
         parent, cache = _accepted_parent(Path(run_dir))
-        expected = candidate_identity_digest(parent.retained_state)
+        expected = candidate_identity_for_canonical_consumer(parent.retained_state)
     else:
         from bilqis_mlx.runtime.priority_source_offer import _require_planning_generation
         parent = accepted_parent

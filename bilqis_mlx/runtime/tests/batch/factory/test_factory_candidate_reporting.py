@@ -44,6 +44,13 @@ class FactoryCandidateReportingTests(unittest.TestCase):
             visit_atlas_reload_count=1, visit_feature_manifest_rebuild_count=1)
         gradient = SimpleNamespace(_performance_observation={
             "b11_preflight_wall_seconds": 0.2,
+            "b11_finite_validation_wall_seconds": 0.01,
+            "b11_execution_rebinding_wall_seconds": 0.02,
+            "b11_refinement_selection_wall_seconds": 0.03,
+            "b11_route_compatibility_wall_seconds": 0.04,
+            "b11_route_kernel_prepare_wall_seconds": 0.05,
+            "b11_fallback_trace_preflight_wall_seconds": 0.0,
+            "b11_preflight_other_wall_seconds": 0.05,
             "b11_autodiff_wall_seconds": 0.4,
             "b11_provider_draw_count": 8,
             "b11_atlas_reload_count": 4,
@@ -65,6 +72,9 @@ class FactoryCandidateReportingTests(unittest.TestCase):
                 feature_context, True, (2, 1, 1, 0, 0.8), stage, gradient)
         self.assertEqual(cost["candidate_step_wall_seconds"], 1.25)
         self.assertEqual(cost["b11_preflight_wall_seconds"], 0.2)
+        self.assertEqual(cost["b11_refinement_selection_wall_seconds"], 0.03)
+        self.assertEqual(cost["b11_route_kernel_prepare_wall_seconds"], 0.05)
+        self.assertEqual(cost["b11_preflight_other_wall_seconds"], 0.05)
         self.assertEqual(cost["b11_autodiff_wall_seconds"], 0.4)
         self.assertEqual(cost["b11_provider_draw_count"], 8)
         self.assertEqual(cost["b11_atlas_reload_count"], 4)

@@ -205,7 +205,7 @@ def _refinement_participation(selection):
 def microbatch_trace_from_route(
     backend, params, row_batches, answer_plans, targets, masks, producer, hidden,
     accepted_cache, execution_binding, salience_supervision, refinement_selections,
-    trajectory, route_logits,
+    trajectory, route_logits, refinement_route_logits=(),
 ):
     """Issue row evidence from the exact materialized vector route execution."""
     from dataclasses import replace
@@ -239,12 +239,18 @@ def microbatch_trace_from_route(
                 plan, index, trajectory_indices, route_logits)
             roles, refined = _refinement_participation(refinement)
             row = row_batch.compiled.compiled.rows[0]
+            route_supervision = tuple(
+                (slot_logits[index], refinement[1][slot].passes)
+                for slot, slot_logits in enumerate(refinement_route_logits)
+                if refinement is not None and slot < len(refinement[1]))
             record = replace(
                 _forward_participation(
                     params, row_batch, plan, output, producer, accepted_cache,
-                    roles, refined, producer_row_index=index),
+                    roles, refined, refinement_routing=bool(route_supervision),
+                    producer_row_index=index),
                 salience_hidden=hidden[index, len(row.positions) - 1],
-                salience_parameters=params, compiled_batch=row_batch)
+                salience_parameters=params, compiled_batch=row_batch,
+                refinement_route_supervision=route_supervision)
             _FORWARD_ISSUANCE.issue(output, record)
             executions.append(loss_bearing_bamf(
                 output, row_targets, mask, salience_supervision=salience_supervision,

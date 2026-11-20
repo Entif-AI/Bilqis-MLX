@@ -19,6 +19,9 @@ def _canonical(value) -> str:
 
 def _accepted_chain(run_dir: Path):
     from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        load_accepted_generation_with_pointer_if_cached,
+    )
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
         accepted_binding_for_manifest,
         accepted_generation,
@@ -26,7 +29,11 @@ def _accepted_chain(run_dir: Path):
     )
 
     root = Path(run_dir)
-    pointer, student = accepted_generation(root / "bamf-state.json")
+    cached = load_accepted_generation_with_pointer_if_cached(root)
+    if cached is None:
+        pointer, student = accepted_generation(root / "bamf-state.json")
+    else:
+        pointer, student = cached
     manifest = pointer["manifest_sha256"]
     acceptance = pointer["acceptance_sha256"]
     result = {}

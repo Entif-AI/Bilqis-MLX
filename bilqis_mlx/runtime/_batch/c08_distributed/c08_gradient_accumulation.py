@@ -134,7 +134,17 @@ def _add_b11_observation(total: dict, execution) -> None:
     observed = getattr(execution, "_performance_observation", None)
     if not isinstance(observed, dict):
         return
-    for name in ("b11_preflight_wall_seconds", "b11_autodiff_wall_seconds"):
+    for name in (
+        "b11_preflight_wall_seconds",
+        "b11_finite_validation_wall_seconds",
+        "b11_execution_rebinding_wall_seconds",
+        "b11_refinement_selection_wall_seconds",
+        "b11_route_compatibility_wall_seconds",
+        "b11_route_kernel_prepare_wall_seconds",
+        "b11_fallback_trace_preflight_wall_seconds",
+        "b11_preflight_other_wall_seconds",
+        "b11_autodiff_wall_seconds",
+    ):
         total[name] += float(observed.get(name, 0.0))
     for name in ("b11_provider_draw_count", "b11_atlas_reload_count"):
         total[name] += int(observed.get(name, 0))
@@ -231,6 +241,13 @@ def accumulate_logical_batch_gradients(
     scalar_fallback_rows = 0
     b11_observation = {
         "b11_preflight_wall_seconds": 0.0,
+        "b11_finite_validation_wall_seconds": 0.0,
+        "b11_execution_rebinding_wall_seconds": 0.0,
+        "b11_refinement_selection_wall_seconds": 0.0,
+        "b11_route_compatibility_wall_seconds": 0.0,
+        "b11_route_kernel_prepare_wall_seconds": 0.0,
+        "b11_fallback_trace_preflight_wall_seconds": 0.0,
+        "b11_preflight_other_wall_seconds": 0.0,
         "b11_autodiff_wall_seconds": 0.0,
         "b11_provider_draw_count": 0,
         "b11_atlas_reload_count": 0,

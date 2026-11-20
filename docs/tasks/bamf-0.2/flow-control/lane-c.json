@@ -522,6 +522,16 @@
       "preserved_branch": "codex/1392-native-oom-retry-20261118"
     },
     {
+      "issue": 1504,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "c2bdb5f3c0bc4b829594a08a1dac88b92c6ff04a",
+      "head_sha_role": "current main baseline after reviewed BAMF unified history was merged into main and the remote unified ref was retired",
+      "summary": "Production BAMF four-row candidate steps regressed from the previously demonstrated ~10-second class to sustained 40+ seconds. Issue #1504 owns restoration of hot-path throughput without weakening correctness, custody, provenance, currentness, fail-closed behavior, or one-launch vectorization. Confirmed first target is lost #1238 candidate-identity reuse: a four-step live visit performed 24 full identity computations, 0 binding reuses, and hashed 22.89 GB. Secondary scope is measured B11 preflight multiplicity and reproducible production-shaped performance qualification. No agent-run live learner updates are authorized.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1504-bamf-performance-regression-20261120"
+    },
+    {
       "issue": 1395,
       "pr": 1414,
       "state": "TURNED_IN",

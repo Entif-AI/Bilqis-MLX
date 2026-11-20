@@ -28,7 +28,6 @@ from ..factory.skos_curriculum import (
     issue_source_context_transition_authority,
 )
 from ..errors import ErrorBus, SCHOOL
-from ..learning.atlas_acceptance import candidate_identity_digest
 from ..learning.champions import Checkpoint
 from ..paths import LEGACY_SOURCE
 from ..semantics.atlas.snapshot import (
@@ -125,10 +124,21 @@ def _accepted_selection(run_dir: Path):
 
 
 def _accepted_checkpoint(run_dir: Path) -> Checkpoint:
-    student, manifest_sha256 = load_bamf_generation_authority(
-        run_dir / "bamf-state.json")
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        load_accepted_generation_with_pointer_if_cached,
+    )
+    cached = load_accepted_generation_with_pointer_if_cached(run_dir)
+    if cached is None:
+        student, manifest_sha256 = load_bamf_generation_authority(
+            run_dir / "bamf-state.json")
+    else:
+        pointer, student = cached
+        manifest_sha256 = pointer["manifest_sha256"]
+    from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+        candidate_identity_for_canonical_consumer,
+    )
     return Checkpoint(
-        candidate_identity_digest(student.retained_state),
+        candidate_identity_for_canonical_consumer(student.retained_state),
         f"bamf-bundles/{manifest_sha256}",
         student.retained_state.optimizer_step,
         True,

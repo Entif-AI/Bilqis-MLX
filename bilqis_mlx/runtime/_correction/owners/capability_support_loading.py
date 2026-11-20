@@ -26,6 +26,7 @@ _SOURCE_QUALIFIED_ACCEPTANCE_SCHEMAS = (
 
 def _accepted_materialization(
     run_dir: Path, manifest_sha256: str, expected_acceptance_sha256: str | None = None,
+    *, current_student=None,
 ):
     """Authenticate every ancestor against the current pointer's acceptance chain."""
     from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
@@ -57,10 +58,18 @@ def _accepted_materialization(
                     _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_MISSING")
         if expected_acceptance_sha256 is not None and expected != expected_acceptance_sha256:
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_DRIFT")
-        student = load_bamf_bundle(
-            run_dir / "bamf-bundles" / manifest_sha256,
-            expected_manifest_sha256=manifest_sha256,
-        )
+        if current == manifest_sha256 and current_student is not None:
+            student = current_student
+            if (student.run_id != pointer.get("run_id")
+                    or student.generation != pointer.get("generation")
+                    or student.parent_manifest_sha256
+                    != pointer.get("parent_manifest_sha256")):
+                _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_DRIFT")
+        else:
+            student = load_bamf_bundle(
+                run_dir / "bamf-bundles" / manifest_sha256,
+                expected_manifest_sha256=manifest_sha256,
+            )
         binding = accepted_binding_for_manifest(
             run_dir, manifest_sha256, student, expected_acceptance_sha256=expected)
     return binding, student
@@ -113,14 +122,15 @@ def load_current_support(run_dir: Path, capability_id: str):
 
 
 def accepted_support_census(
-    run_dir: Path, manifest_sha256: str,
+    run_dir: Path, manifest_sha256: str, *, current_student=None,
 ) -> tuple[RequalificationLedger, tuple[object, ...]]:
     """Materialize current lossless learned support without physical owners."""
     from bilqis_mlx.runtime.accepted_correction_ledger import _manifest_lineage
 
     materializations = {}
     for lineage_manifest in reversed(_manifest_lineage(run_dir, manifest_sha256)):
-        binding, student = _accepted_materialization(run_dir, lineage_manifest)
+        binding, student = _accepted_materialization(
+            run_dir, lineage_manifest, current_student=current_student)
         if (binding.schema_version not in _SOURCE_QUALIFIED_ACCEPTANCE_SCHEMAS
                 or not getattr(binding, "source_anchors", ())):
             continue

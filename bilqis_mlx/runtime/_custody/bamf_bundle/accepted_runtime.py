@@ -5,7 +5,9 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+    candidate_identity_for_canonical_consumer,
+)
 
 from .codec import load_bamf_bundle
 from .publication import (
@@ -79,7 +81,8 @@ def _identity_from_pointer(
         topology_digest=student.topology.digest,
         extents_digest=student.extents.digest,
         optimizer_step=student.retained_state.optimizer_step,
-        candidate_identity_sha256=candidate_identity_digest(student.retained_state))
+        candidate_identity_sha256=candidate_identity_for_canonical_consumer(
+            student.retained_state))
 
 
 def _published_in_memory_identity_locked(
@@ -129,6 +132,7 @@ def _published_in_memory_identity(
 from .accepted_execution_cache import (
     _require_owned_execution_cache, _reset_execution_cache_owner_for_tests,
     bind_accepted_execution_cache, load_accepted_generation,
+    load_accepted_generation_with_pointer_if_cached,
 )
 
 
@@ -154,4 +158,5 @@ __all__ = (
     "_identity_from_pointer", "_published_in_memory_identity", "_read_accepted",
     "bind_accepted_execution_cache",
     "load_accepted_generation",
+    "load_accepted_generation_with_pointer_if_cached",
 )
