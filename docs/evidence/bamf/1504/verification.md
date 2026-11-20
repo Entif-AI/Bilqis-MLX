@@ -98,8 +98,9 @@ refinement-routing term present.
 
 ## Warm production-shaped candidate-step witness
 
-The final bounded witness was rerun against frozen implementation commit
-`53a2eaaf685e0ec3bfdb8ecc55b218de7c48c6b8` and is retained machine-readably in
+The final bounded witness was rerun after the CI-mandated structure and hygiene
+refactors against frozen implementation commit
+`cdb4d6c0dcef4651dc28a88d5339a874e98ed3a6` and is retained machine-readably in
 `warm-step-witness.json`. It used the real Factory candidate-step owner with:
 
 - B.COMPOSITE;
@@ -117,12 +118,12 @@ Observed frozen-revision steps:
 
 | step | candidate wall | pre-neural compile | currentness/binding | B11 preflight | B11 autodiff | C08 wall | optimizer/admission |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 6.305660 s | 0.959023 s | 0.200389 s | 0.037733 s | 2.395130 s | 3.501898 s | 0.223774 s |
-| 2 | 6.583174 s | 0.988252 s | 0.281692 s | 0.036973 s | 2.511783 s | 3.641053 s | 0.152671 s |
-| 3 | 6.340104 s | 0.968955 s | 0.242980 s | 0.035497 s | 2.375528 s | 3.491251 s | 0.138627 s |
-| 4 | 6.558464 s | 0.947267 s | 0.232792 s | 0.037760 s | 2.397388 s | 3.598963 s | 0.130649 s |
+| 1 | 7.011000 s | 1.012415 s | 0.202317 s | 0.039939 s | 2.877528 s | 4.058310 s | 0.178321 s |
+| 2 | 6.731590 s | 1.024446 s | 0.250151 s | 0.037090 s | 2.456570 s | 3.762938 s | 0.143651 s |
+| 3 | 6.566422 s | 1.018080 s | 0.239614 s | 0.040025 s | 2.513083 s | 3.660077 s | 0.142000 s |
+| 4 | 6.954136 s | 1.032737 s | 0.344165 s | 0.039660 s | 2.671310 s | 3.863968 s | 0.142361 s |
 
-Warm median (steps 2-4): **6.558464 seconds**.
+Warm median (steps 2-4): **6.731590 seconds**.
 
 Every step used one C08 gradient launch, one vectorized microbatch, zero scalar
 fallback rows, four source-authority-bound rows, and zero cold source
