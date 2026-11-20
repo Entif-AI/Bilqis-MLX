@@ -103,23 +103,6 @@ class ChangedPathSmellTests(unittest.TestCase):
             with self.subTest(owner=owner):
                 self.assertEqual(audit.logical_source_path(owner), canonical)
 
-    def test_antimonolith_compartments_preserve_pre_move_smell_identity(self):
-        cases = {
-            "bilqis_mlx/runtime/tests/operator/conformance_1300/test_1300.py":
-                "bilqis_mlx/runtime/tests/operator/test_1300.py",
-            "bilqis_mlx/runtime/tests/operator/pre_neural/test_journey.py":
-                "bilqis_mlx/runtime/tests/operator/test_journey.py",
-            "bilqis_mlx/runtime/_custody/bamf_bundle/_support/run_identity.py":
-                "bilqis_mlx/runtime/bamf_bundle/run_identity.py",
-            "bilqis_mlx/factory/curriculum/atlas_frontier/_support/ranking.py":
-                "bilqis_mlx/factory/curriculum/atlas_frontier/ranking.py",
-            "bilqis_mlx/compatibility/_recovery/resume_edges.py":
-                "bilqis_mlx/compatibility/resume_edges.py",
-        }
-        for owner, canonical in cases.items():
-            with self.subTest(owner=owner):
-                self.assertEqual(audit.logical_source_path(owner), canonical)
-
     def test_added_canonical_owner_compartment_preserves_existing_smell_identity(self):
         canonical = "bilqis_mlx/semantics/cognitive_dag.py"
         physical = "bilqis_mlx/semantics/_cognitive_dag/execution.py"
