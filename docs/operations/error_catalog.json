@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 295,
-  "legacy_raw_raise_count": 2080,
+  "legacy_raw_file_count": 298,
+  "legacy_raw_raise_count": 2086,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -11628,6 +11628,48 @@
       "exception": "AssertionError",
       "expression": "f'C06 Factory C05 rejected labeled candidate: reason={decision.reason}; evidence={decision.evidence_sha256}; policy={decision.policy_sha256}; blocking_capability={evaluation.decision.blocking_capability}'",
       "path": "bilqis_mlx/runtime/tests/model/salience/retained_publication_witness.py"
+    },
+    {
+      "code_hint": "BILQIS_1300_ACCEPTED_V2_LEASE_REQUIRED",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'BILQIS_1300_ACCEPTED_V2_LEASE_REQUIRED'",
+      "path": "bilqis_mlx/runtime/tests/operator/conformance_1300_support/evidence_export.py"
+    },
+    {
+      "code_hint": "BILQIS_1300_EVIDENCE_PATH_MUST_OUTLIVE_DISPOSABLE_RUN",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'BILQIS_1300_EVIDENCE_PATH_MUST_OUTLIVE_DISPOSABLE_RUN'",
+      "path": "bilqis_mlx/runtime/tests/operator/conformance_1300_support/evidence_export.py"
+    },
+    {
+      "code_hint": "CONFORMANCE_1300_COLLAPSE_BANK_MISSING",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CONFORMANCE_1300_COLLAPSE_BANK_MISSING'",
+      "path": "bilqis_mlx/runtime/tests/operator/conformance_1300_support/rollback.py"
+    },
+    {
+      "code_hint": "CONFORMANCE_1300_COLLAPSE_INDEX_INVALID",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CONFORMANCE_1300_COLLAPSE_INDEX_INVALID'",
+      "path": "bilqis_mlx/runtime/tests/operator/conformance_1300_support/rollback.py"
+    },
+    {
+      "code_hint": "1300_SOURCE_OFFER_VALUE_ERROR",
+      "count": 1,
+      "exception": "RuntimeError",
+      "expression": "'1300_SOURCE_OFFER_VALUE_ERROR:' + str(error)",
+      "path": "bilqis_mlx/runtime/tests/operator/conformance_1300_support/runtime.py"
+    },
+    {
+      "code_hint": "CONFORMANCE_1300_FIXTURE_EVIDENCE_ID_COLLISION",
+      "count": 1,
+      "exception": "ValueError",
+      "expression": "'CONFORMANCE_1300_FIXTURE_EVIDENCE_ID_COLLISION'",
+      "path": "bilqis_mlx/runtime/tests/operator/conformance_1300_support/runtime.py"
     },
     {
       "code_hint": "bamf_operator must not inspect Factory capability order",

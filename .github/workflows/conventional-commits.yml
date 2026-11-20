@@ -18,9 +18,10 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Check PR title and every commit
+      - name: Check preserved commit subjects
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_REF: ${{ github.base_ref }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           HEAD_REF: ${{ github.head_ref }}
@@ -28,6 +29,10 @@ jobs:
         run: |
           set -euo pipefail
           python3 -B scripts/maintenance/release_version.py --validate-subject "$PR_TITLE"
+          if [[ "$BASE_REF" != "main" ]]; then
+            echo "Squash feature PR: the PR title is the preserved commit subject."
+            exit 0
+          fi
           while IFS=$'\t' read -r commit subject; do
             echo "Validating commit subject $commit"
             python3 -B scripts/maintenance/release_version.py --validate-subject "$subject"

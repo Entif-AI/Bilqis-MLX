@@ -64,6 +64,7 @@ class NativeRunStopReceiptTests(unittest.TestCase):
         cases = (
             ("TIME_LIMIT", True, "RESUME_ALLOWED", True),
             ("PRIORITY_HOLD", True, "RESUME_WHEN_WORK_AVAILABLE", True),
+            ("IMPLEMENTATION_UNCOVERED", True, "RESUME_WHEN_WORK_AVAILABLE", True),
             ("FIXED_POINT", True, "RESUME_WHEN_WORK_AVAILABLE", True),
             ("DISK_RESERVE_REACHED", False, "RESUME_AFTER_RESOURCE_RECOVERY", False),
             ("ADMISSION_LEASE_REQUIRED", False, "ACTION_REQUIRED", True),

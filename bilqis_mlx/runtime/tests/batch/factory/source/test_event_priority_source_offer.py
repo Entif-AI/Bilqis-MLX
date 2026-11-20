@@ -116,7 +116,7 @@ class EventPrioritySourceOfferTests(MixedWitnessSupport, unittest.TestCase):
         persist_autonomy_state(
             self.run, state.epoch.current_release, plan=state.plan, ledger=ledger)
 
-    def test_event_offer_require_current_materializes_generic_atomic_source(self):
+    def test_event_offer_require_current_materializes_exact_operator_atomic_source(self):
         with patch(
                 "bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers.DECLARED",
                 _COMPACT_DECLARED), patch(
@@ -143,7 +143,15 @@ class EventPrioritySourceOfferTests(MixedWitnessSupport, unittest.TestCase):
         self.assertIsNone(materialized.manifest)
         self.assertEqual(materialized.adapter.descriptor.adapter_id, event_frames.ADAPTER_ID)
         self.assertEqual(len(materialized.source_rows), 1)
-        self.assertIsInstance(materialized.source_rows[0].frames[0].root, AtomicFrame)
+        frame = materialized.source_rows[0].frames[0].root
+        self.assertIsInstance(frame, AtomicFrame)
+        self.assertEqual(frame.source_span.end, frame.source_span.start + 1)
+        operator = event_frames.SYMBOLS["D.EVENT_OCCURRENCE"]
+        graph_token = materialized.source_rows[0].source_graph["tokens"].index(operator)
+        self.assertEqual(
+            materialized.source_rows[0].row["tokens"][frame.source_span.start],
+            graph_token,
+        )
         self.assertEqual(materialized.source_rows[0].config.schemas, ())
         self.assertEqual(materialized.source_rows[0].config.schema_map.entries, ())
         event_abi = fixture.snapshot.abi_for_semantic(

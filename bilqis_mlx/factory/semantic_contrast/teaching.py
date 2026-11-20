@@ -46,12 +46,25 @@ class ContrastTeachingChoice:
 
 
 def _choice(graph: dict, capability: str) -> ContrastTeachingChoice:
+    choice = _optional_choice(graph, capability)
+    if choice is None:
+        _fail("BAMF_SEMANTIC_CONTRAST_TEACHING_CHOICE_MISSING")
+    return choice
+
+
+def _optional_choice(
+    graph: dict, capability: str,
+) -> ContrastTeachingChoice | None:
     if not isinstance(graph, dict):
         _fail("BAMF_SEMANTIC_CONTRAST_TEACHING_GRAPH_INVALID")
-    registry = graph.get(CHOICE_REGISTRY_KEY)
+    if CHOICE_REGISTRY_KEY not in graph:
+        return None
+    registry = graph[CHOICE_REGISTRY_KEY]
     if not isinstance(registry, dict):
         _fail("BAMF_SEMANTIC_CONTRAST_TEACHING_REGISTRY_MISSING")
-    choice = registry.get(capability)
+    if capability not in registry:
+        return None
+    choice = registry[capability]
     if type(choice) is not ContrastTeachingChoice:
         _fail("BAMF_SEMANTIC_CONTRAST_TEACHING_CHOICE_MISSING")
     return choice
@@ -61,7 +74,9 @@ def enrich_contrasts(*, graph, capability, seed, option_id, **_) -> tuple[dict, 
     """Existing SourceAdapter.enrich signature; teacher HOW authority stays upstream."""
     if option_id != OPTION_ID:
         _fail("BAMF_SEMANTIC_CONTRAST_TEACHING_OPTION_INVALID")
-    choice = _choice(graph, capability)
+    choice = _optional_choice(graph, capability)
+    if choice is None:
+        return ()
     lessons = generate_contrasts(
         choice.source_frame, choice.family, seed, choice.variations)
     return tuple({

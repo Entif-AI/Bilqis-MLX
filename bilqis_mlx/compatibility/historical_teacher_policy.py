@@ -12,6 +12,8 @@ import json
 import math
 from types import MappingProxyType
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+
 
 KNOBS = MappingProxyType({
     "old": [4, 8, 12, 16, 20],
@@ -37,6 +39,19 @@ def _policy_key(policy):
 
 def _stats():
     return {"trials": 0, "reward_sum": 0.0, "reward_ema": 0.0, "latest": None}
+
+
+def _normalize_stats(entry):
+    """Upgrade historical stat rows without changing their accumulated values."""
+    if not isinstance(entry, dict):
+        ErrorBus.Raise(
+            SCHOOL.BAMF_TEACHER.INVALID,
+            reason="HISTORICAL_TEACHER_STATS_INVALID",
+        )
+    defaults = _stats()
+    for key, value in defaults.items():
+        entry.setdefault(key, value)
+    return entry
 
 
 def mutate(teacher, rng):
@@ -99,6 +114,7 @@ def observe(teacher, grade, policy_key, reward):
         teacher["global_stats"][policy_key],
         teacher["grade_stats"].setdefault(str(grade), {}).setdefault(policy_key, _stats()),
     ):
+        _normalize_stats(entry)
         entry["trials"] += 1
         entry["reward_sum"] += reward
         entry["reward_ema"] = (

@@ -14,6 +14,10 @@ from bilqis_mlx.runtime.generated_grade_acceptance import (
     _proposal_bound_at_or_before_accepted_generation,
     _read_issued_proposal,
 )
+from bilqis_mlx.runtime.bamf_bundle.atlas_admission import (
+    ATLAS_ADMISSION_SCHEMA_V4,
+    ParsedAtlasAdmissionBinding,
+)
 
 
 def _proposal():
@@ -52,6 +56,28 @@ class GeneratedGradeAcceptanceTests(unittest.TestCase):
 
     def test_non_c07_accepted_binding_is_not_proposal_authority(self):
         self.assertFalse(_binding_accepts_proposal(object(), _proposal()))
+
+    def test_v4_atlas_binding_preserves_generated_grade_proposal_authority(self):
+        proposal = _proposal()
+        binding = ParsedAtlasAdmissionBinding({
+            "schema_version": ATLAS_ADMISSION_SCHEMA_V4,
+            "predecessor_factory_release_sha256": proposal.current_release_sha256,
+            "proposal_sha256": proposal.a09_proposal_sha256,
+            "generated_grade_proposal_sha256": proposal.proposal_sha256,
+        })
+
+        self.assertTrue(_binding_accepts_proposal(binding, proposal))
+
+    def test_v4_atlas_binding_without_generated_grade_identity_is_not_authority(self):
+        proposal = _proposal()
+        binding = ParsedAtlasAdmissionBinding({
+            "schema_version": ATLAS_ADMISSION_SCHEMA_V4,
+            "predecessor_factory_release_sha256": proposal.current_release_sha256,
+            "proposal_sha256": proposal.a09_proposal_sha256,
+            "generated_grade_proposal_sha256": None,
+        })
+
+        self.assertFalse(_binding_accepts_proposal(binding, proposal))
 
     def test_historical_binding_search_is_bounded_by_activation_ancestry(self):
         proposal = _proposal()

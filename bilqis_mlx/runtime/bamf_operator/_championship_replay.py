@@ -91,7 +91,7 @@ def _solver_binding(
     if ((expected_checkpoint is not None and checkpoint != expected_checkpoint)
             or (expected_generation is not None and generation != expected_generation)):
         _invalid("BAMF_CHAMPIONSHIP_REPLAY_IDENTITY_DRIFT")
-    contracts = tuple(solver_contracts or ())
+    contracts = tuple(sorted(set(solver_contracts or ())))
     if not contracts:
         _invalid("BAMF_CHAMPIONSHIP_SOLVER_CONTRACTS_REQUIRED")
 

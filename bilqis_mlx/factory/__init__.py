@@ -12,6 +12,7 @@ __path__.extend(
     for compartment in (
         "curriculum",
         "curriculum/atlas_frontier",
+        "curriculum/atlas_frontier/_support",
         "lifecycle",
         "lifecycle/execution_owners",
         "sources",

@@ -1,6 +1,13 @@
 """Versioned BAMF generation bundle custody."""
 from importlib import import_module
+from pathlib import Path
 from types import MappingProxyType
+
+# Keep low-level compatibility helpers out of the package's direct-module
+# surface without changing their established import names. Python resolves
+# modules found on an extended package path under the same package fullname,
+# so existing callers and relative imports retain their identity.
+__path__.append(str(Path(__file__).parent / "_support"))
 
 from .codec import load_bamf_bundle, save_bamf_bundle
 from .feature_authority import (

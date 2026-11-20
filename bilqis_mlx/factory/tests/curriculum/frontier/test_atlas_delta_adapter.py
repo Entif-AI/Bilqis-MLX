@@ -160,6 +160,17 @@ class AtlasDeltaAdapterTests(AtlasDeltaAdapterFixture):
             "BAMF_PLANNER_ACCEPTED_CREDIT_INVALID",
         )
 
+    def test_cold_accepted_credit_can_close_frontier_without_reselecting_admitted_work(self):
+        obligations = current_obligations(self.closure)
+        credit = _issue_accepted_obligation_credit(
+            self.current.release_sha256,
+            "a" * 64,
+            tuple(sorted(obligations.items())),
+        )
+        result = next_atlas_delta(
+            self._epoch(accepted_credit=credit), self.learner, self.plan)
+        self.assertIs(result, FrontierStatus.SOURCE_HELD)
+
     def test_new_qualified_family_reopens_only_affected_accepted_obligation(self):
         before = current_obligations(self.closure)
         credit = _issue_accepted_obligation_credit(

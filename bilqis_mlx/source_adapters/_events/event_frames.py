@@ -20,7 +20,9 @@ from ..semantics.frame_adapters.common import _adapter_fail, _source_id
 from ..semantics.frame_adapters.registry import (
     ReleasedFrameAdapter, register_source_frame_strategy,
 )
-from ..semantics.frame_schema import FrameTree, SourceSpan, atomic_fallback, validate_frame_tree
+from ..semantics.frame_schema import (
+    FrameTree, SourceSpan, atomic_fallback, validate_frame_tree,
+)
 from ..factory.verification import (
     EVENT_FRAME_ORACLE as ORACLE, event_frame_answer as independent_answer,
 )
@@ -90,15 +92,33 @@ def _source_frame_atlas_semantic(row):
 def _bind_source_frame_row(
     row, snapshot, graph, *, adapter_id, span, causal_prefix_end,
 ):
-    del snapshot, graph
+    del snapshot
     record = row.get('record')
     if (not isinstance(record, dict) or record.get('task') != DIALECT
             or record.get('capability') not in SOURCE_SPECS):
         _adapter_fail('FRAME_EVENT_RECORD_INVALID', adapter_id, span, '<source-row>')
+    capability = record['capability']
+    try:
+        operator_token = graph['tokens'].index(SYMBOLS[capability])
+        positions = tuple(
+            index for index, token in enumerate(row['tokens'])
+            if token == operator_token
+        )
+    except (KeyError, TypeError, ValueError):
+        positions = ()
+    if len(positions) != 1:
+        _adapter_fail(
+            'FRAME_EVENT_QUERY_OPERATOR_POSITION_INVALID',
+            adapter_id, span, '<operator>')
+    operator_span = SourceSpan(positions[0], positions[0] + 1)
     atomic = atomic_fallback(
-        record, source_instance_id=_source_id(row, adapter_id, span),
-        structural_path=(), source_span=span, parent_occurrence_id=None,
-        causal_prefix_end=causal_prefix_end)
+        record,
+        source_instance_id=_source_id(row, adapter_id, span),
+        structural_path=(),
+        source_span=operator_span,
+        parent_occurrence_id=None,
+        causal_prefix_end=causal_prefix_end,
+    )
     return validate_frame_tree(FrameTree(atomic))
 
 
@@ -139,6 +159,8 @@ def draw(source_root, graph, *, seed, each=12, capability, **_):
         raise ValueError('EVENT_FRAME_INVALID_DRAW')
     rng = random.Random(digest((GENERATOR, seed, capability)))
     ids = {token:i for i,token in enumerate(graph['tokens'])}
+    source_family_id = digest((
+        GENERATOR, "source-family", capability, seed))
     rows, seen = [], set()
     while len(rows) < each:
         names = rng.sample(['E0','E1','E2','E3'],4)
@@ -156,7 +178,8 @@ def draw(source_root, graph, *, seed, each=12, capability, **_):
         rows.append(dict(id=identity,source_id=identity,capability=capability,
             answer_kind='binary',gold='TRUE' if gold else 'FALSE',record=record,
             tokens=[ids[s] for s in encode(record)],root=SYMBOLS[capability],
-            generator=GENERATOR,oracle=ORACLE,source_sense_id=SPECS[capability][0]))
+            generator=GENERATOR,oracle=ORACLE,source_sense_id=SPECS[capability][0],
+            source_family_id=source_family_id,source_family_seed=seed))
     return tuple(rows)
 
 
@@ -165,11 +188,15 @@ def check(row, *, graph, **_):
         return check_contrast_row(row, graph=graph)
     try:
         record = row['record']; cap = record['capability']
+        seed = row['source_family_seed']
         return (row['gold']==independent_answer(record) and
             row['id']==row['source_id']==digest(record) and
             row['capability']==cap and row['source_sense_id']==SPECS[cap][0] and
             row['root']==SYMBOLS[cap] and row['generator']==GENERATOR and
             row['oracle']==ORACLE and row['answer_kind']=='binary' and
+            type(seed) is int and seed >= 0 and
+            row.get('source_family_id') == digest((
+                GENERATOR, "source-family", cap, seed)) and
             all(type(i) is int and 0 <= i < len(graph['tokens']) for i in row['tokens']) and
             [graph['tokens'][i] for i in row['tokens']]==encode(record))
     except (KeyError,TypeError,ValueError,IndexError):

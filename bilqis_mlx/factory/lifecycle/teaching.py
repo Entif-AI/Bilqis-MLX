@@ -21,10 +21,16 @@ def optional_teaching_rows(source_root, graph, release, registry, *,
     execution = release.execution_plan.capability_map[capability]
     descriptor = next(item for item in release.source_adapters
                       if item.adapter_id == execution.provider_id)
-    return tuple(row for option in descriptor.teaching_option_ids
-                 for row in draw_teaching_option_rows(
-                     source_root, graph, release, registry, capability=capability,
-                     option_id=option, seed=seed, each=execution.exam_item_count))
+    rows = []
+    for option in descriptor.teaching_option_ids:
+        try:
+            rows.extend(draw_teaching_option_rows(
+                source_root, graph, release, registry, capability=capability,
+                option_id=option, seed=seed, each=execution.exam_item_count))
+        except ValueError as error:
+            if str(error) != "FACTORY_TEACHING_OPTION_EMPTY":
+                raise
+    return tuple(rows)
 
 
 def draw_teaching_option_rows(source_root, graph, release, registry, *,
