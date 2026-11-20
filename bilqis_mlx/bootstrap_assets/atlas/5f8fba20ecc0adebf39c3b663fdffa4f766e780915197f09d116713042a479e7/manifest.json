@@ -1,0 +1,24 @@
+{
+  "active_set_sha256": "173287b6e9ea90e4f9d88dc6ddb136772828a0cafcd47bda952d24f9da433790",
+  "files": {
+    "atlas.json": {
+      "bytes": 3219992,
+      "sha256": "2a90023131aafb803df618f263dff639aa1088175e2138593f4314e8ec45023d"
+    },
+    "concepts.jsonl": {
+      "bytes": 8985170,
+      "sha256": "c10d456a31579d4bf2b5a917f9ffc3e4d2e95f275458fb6dc0403938e28395ab"
+    },
+    "held.jsonl": {
+      "bytes": 10252779,
+      "sha256": "f86f3f94f468abc153f84483bb3380a53f284bc19a2efea98a16fbb3b974fb4c"
+    },
+    "relations.jsonl": {
+      "bytes": 2069572,
+      "sha256": "ac70a12785da4cc201e543ec54c5b02530ee6bcdda57dbc05c92c676cf52c938"
+    }
+  },
+  "release_sha256": "58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306",
+  "schema": "bilqis.semantic-atlas-manifest/v1",
+  "shape_policy_sha256": "72eef37c3d6225a50ed4ace7b389c34d6442e9917facd103d30c726aaa05f197"
+}

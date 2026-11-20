@@ -7,8 +7,8 @@ from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactIdentity
 
 from .bamf_lifecycle_inputs import (
-    atlas_manifest_identity, foundation_hyperparameters, invalid, source_foundation,
-    source_run_dir,
+    atlas_manifest_identity, foundation_hyperparameters, fresh_source_run_dir, invalid,
+    source_foundation,
 )
 
 
@@ -71,9 +71,8 @@ def _fresh_request_inputs(args, topology):
         invalid("BAMF_OPERATOR_V2_TOPOLOGY_REQUIRED")
     if topology != ModelTopologySpecV2():
         invalid("BAMF_OPERATOR_CREATE_TOPOLOGY_CONFLICT")
-    if args.atlas_release_manifest is None:
-        invalid("BAMF_OPERATOR_ATLAS_MANIFEST_REQUIRED")
-    atlas = atlas_manifest_identity(args.atlas_release_manifest)
+    from bilqis_mlx.bootstrap_assets import ATLAS_MANIFEST
+    atlas = atlas_manifest_identity(args.atlas_release_manifest or ATLAS_MANIFEST)
     if args.admission_policy == "staged" and args.atlas_admission_scope is not None:
         invalid("BAMF_ATLAS_SCOPE_REQUIRES_EXPLICIT_POLICY")
     if args.admission_policy == "atlas-release" and args.atlas_admission_scope is None:
@@ -261,7 +260,7 @@ def _fresh_target(args):
     from bilqis_mlx.runtime._bamf_first_student_support import (
         _canonical_disjoint_run_paths, _canonical_run_dir_shape,
     )
-    selected_source = source_run_dir(args.source_run_dir)
+    selected_source = fresh_source_run_dir(args.source_run_dir)
     _source, target = _canonical_disjoint_run_paths(
         str(selected_source), args.run_dir)
     target = _canonical_run_dir_shape(target)

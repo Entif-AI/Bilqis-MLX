@@ -90,15 +90,17 @@ Use that exact run directory for inspection, Model Forensics, resume, and recove
 
 ### New production lineage
 
-A fresh BAMF generation-zero lineage is not a blank-slate installer flow. It additionally requires:
+The repository packages the source and Atlas inputs needed for a normal fresh BAMF generation-zero preflight:
 
-- a readable accepted source run. Pass it explicitly with `--source-run-dir` for a fresh lineage;
-- configs/models/bamf-0.2.json;
-- an admitted Atlas release manifest whose bundle and release identities match the checked-in source-pin registry;
-- the corresponding immutable Atlas artifact available to the runtime;
-- the production source-authority registry already provisioned at the fixed ordinary-user Darwin location:
+- `bilqis_mlx/bootstrap_assets/source-run/` provides the read-only current-format A/B/C Factory source seed;
+- `bilqis_mlx/bootstrap_assets/atlas/` provides the pinned A01 Atlas manifest and immutable artifact;
+- `configs/models/bamf-0.2.json` provides the current versioned topology input.
+
+The source seed is bootstrap authority, not a resumable historical learner. It contains no historical model weights or optimizer state. The packaged Factory release includes its signed `foundation_capability_ids` and is compiled through the current Factory owner rather than patched from an old release.
+
+A fresh host still requires the production source-authority registry at the fixed ordinary-user Darwin location:
   <account-home>/.entif-ai/bilqis/source-authority-registry.json;
-- the matching source-authority signer beside it when the selected authority path requires signing.
+The matching source-authority signer must be present beside it when the selected authority path requires signing. These files are host custody and are intentionally not committed to Git.
 
 The runtime does not provision or repair those authority files. BAMF-0.3 #1034 adds
 `python3 scripts/authority_store/cli.py` as a separate operator surface for the fixed
@@ -380,26 +382,27 @@ If a fresh generation-zero create was interrupted before its accepted pointer wa
 
 ## Creating a new BAMF lineage
 
-Only use this section on a host whose accepted source run, production source authority, and admitted Atlas release have already been provisioned.
+Only use this section on a host whose production source-authority store has been provisioned. The normal path uses the source seed and Atlas artifact packaged in the repository.
 
-Choose the new run identity and exact optimizer parameters:
+Choose the new run location:
 
 ~~~bash
-export SOURCE_RUN=/absolute/path/to/accepted-source-run
 export RUN_DIR="$HOME/Code/bilqis-mlx-runs/aspirant"
-export ATLAS_MANIFEST=/absolute/path/to/admitted-atlas-release-manifest.json
-export BILQIS_ATLAS_ARTIFACT_ROOT=/absolute/path/to/atlas-artifact-root
 ~~~
 
-`SOURCE_RUN` must be an accepted source learner and `RUN_DIR` must name a different target. Use absolute paths or `$HOME`-anchored paths; do not derive the run path from the current worktree with `../...`. `BILQIS_ATLAS_ARTIFACT_ROOT` must contain the immutable content-addressed Atlas bundle named by the admitted manifest and checked-in source pin.
+Use an absolute path or `$HOME`-anchored path for `RUN_DIR`. Do not derive the run path from the current worktree with `../...`.
+
+Verify the fixed host authority store before the creation preflight:
+
+~~~bash
+python3 scripts/authority_store/cli.py verify
+~~~
 
 First run the neural-inert creation preflight:
 
 ~~~bash
 npm run train -- --dry-run \
-  --source-run-dir "$SOURCE_RUN" \
   --model-topology configs/models/bamf-0.2.json \
-  --atlas-release-manifest "$ATLAS_MANIFEST" \
   --run-dir "$RUN_DIR" \
   --run-id example-run \
   --run-seed 543 \
@@ -417,9 +420,7 @@ After reviewing that identity, create generation zero with the same inputs and t
 
 ~~~bash
 npm run train -- --human-run \
-  --source-run-dir "$SOURCE_RUN" \
   --model-topology configs/models/bamf-0.2.json \
-  --atlas-release-manifest "$ATLAS_MANIFEST" \
   --run-dir "$RUN_DIR" \
   --run-id example-run \
   --run-seed 543 \
@@ -439,6 +440,32 @@ npm run train -- --dry-run --resume --run-dir "$RUN_DIR"
 ~~~
 
 Only after those commands succeed should you start CP01, Model Forensics, or the persistent `--resume` training command.
+
+### Bootstrap overrides
+
+The packaged source seed and Atlas are defaults, not hidden global authority. A separately provisioned deployment may override them explicitly:
+
+~~~bash
+export SOURCE_RUN=/absolute/path/to/accepted-source-run
+export ATLAS_MANIFEST=/absolute/path/to/admitted-atlas-release-manifest.json
+export BILQIS_ATLAS_ARTIFACT_ROOT=/absolute/path/to/atlas-artifact-root
+
+npm run train -- --dry-run \
+  --source-run-dir "$SOURCE_RUN" \
+  --atlas-release-manifest "$ATLAS_MANIFEST" \
+  --model-topology configs/models/bamf-0.2.json \
+  --run-dir "$RUN_DIR" \
+  --run-id example-run \
+  --run-seed 543 \
+  --learning-rate 0.0007 \
+  --adam-beta1 0.88 \
+  --adam-beta2 0.97 \
+  --adam-eps 1e-7 \
+  --weight-decay 0.03 \
+  --source-prefetch-workers 0
+~~~
+
+Explicit paths take precedence over the packaged defaults. `BILQIS_ATLAS_ARTIFACT_ROOT` must contain the immutable content-addressed bundle named by the selected manifest and checked-in source pin.
 
 The default admission policy is staged. If the lineage must enroll in an atlas-release policy, use the versioned enrollment request described in the [BAMF-0.2 runbook](BAMF_0_2_RUNBOOK.md#preflight-launch-and-resume-boundary). The request file is not source authority by itself.
 

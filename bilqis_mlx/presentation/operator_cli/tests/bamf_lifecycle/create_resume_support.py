@@ -59,7 +59,7 @@ class BamfCreateResumeCase(BamfFirstStudentCase):
         with patch(
                 "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.source_foundation",
                 return_value=(self.source, self.release, self.graph)), patch(
-                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle_inputs.active_run_dir",
+                "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.fresh_source_run_dir",
                 return_value=self.source), patch(
                 "bilqis_mlx.presentation.operator_cli.bamf_lifecycle.atlas_manifest_identity",
                 return_value=self.identity), shape_patch(), genesis_feature_source_patch(), patch(

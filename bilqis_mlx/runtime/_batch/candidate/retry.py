@@ -60,6 +60,11 @@ def execute_with_oom_retry(
             objective_digest = (
                 None if accepted_custody is None
                 else accepted_custody.training_objective_digest)
+            if objective_digest is None:
+                from bilqis_mlx.runtime.training_objective import (
+                    current_training_objective,
+                )
+                objective_digest = current_training_objective().digest
         from bilqis_mlx.runtime.training_objective import (
             require_training_objective_digest,
         )
