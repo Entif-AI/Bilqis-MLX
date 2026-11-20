@@ -2,6 +2,14 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.2.12](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.11...v1.2.12) (2026-11-20)
+
+
+### Bug Fixes
+
+* **bamf:** keep recovery exhaustion inside active grade ([#1483](https://github.com/Entif-AI/Bilqis-MLX/issues/1483)) ([4bc6a69](https://github.com/Entif-AI/Bilqis-MLX/commit/4bc6a696f939fce46ab6dc9108c97aec7110f57f))
+* **bamf:** unified base 20261119 ([#1484](https://github.com/Entif-AI/Bilqis-MLX/issues/1484)) ([12c01c2](https://github.com/Entif-AI/Bilqis-MLX/commit/12c01c295e325991332bb972f996d5c5fbb6eb68))
+
 ## [1.2.11](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.10...v1.2.11) (2026-11-20)
 
 
