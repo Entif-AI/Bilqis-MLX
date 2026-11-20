@@ -3823,3 +3823,43 @@ source authority, or permit the learner/trainer to author a new policy.
 alpha threat model, local authority topology, and security-versus-reliability
 tradeoffs are follow-up architecture work and must not block this compatibility
 repair.
+
+## ADR-150 | 2026-11-19 | FactoryRelease availability is not generated-grade teaching authority
+
+**Status:** Accepted by direct owner correction on 2026-11-19 for issue #1482.
+
+**Problem:** ADR-148 correctly separated `RECOVERY_EXHAUSTED` from genuine grade
+completion, but its cross-grade recovery mechanism used a materially incorrect
+definition of "already admitted." The implementation treated a later grade's
+presence in `FactoryRelease.execution_plan.grades` as sufficient learner-relative
+teaching authority. A live Grade A run then exhausted its bounded recovery cadence,
+selected `B.AND`, and was rejected downstream with
+`BAMF_REHEARSAL_TARGET_OUTSIDE_ACTIVE_GRADE`. The active generated-grade custody
+had never left Grade A: no receipt-bound Grade B successor proposal/activation
+existed.
+
+**Decision:** Packaging a capability or grade in an accepted `FactoryRelease`
+establishes executable/source availability; it does not admit that grade into the
+learner's active generated-grade progression. `RECOVERY_EXHAUSTED` MUST NOT widen
+the lawful teaching frontier beyond the exact current #1314 active generated-grade
+membership merely because later release grades are available. With no authorized
+active-grade work remaining, priority returns a cadence-bound
+`NO_ADMISSIBLE_TEACHING`/hold. If accepted learner/checkpoint evidence later
+changes through another lawful path, the existing #1333 currentness rules may reopen
+that same active grade's MAIN/recovery cadence.
+
+`GRADE_COMPLETE` remains the only grade-certification boundary. Later-grade
+teaching begins only after the receipt-bound successor synthesis/activation path
+authorizes that generated grade; C07/B13 participates when the transition genuinely
+requires new accepted executable/source/rights scope, but release reuse never
+substitutes for generated-grade activation. Rehearsal's active-grade-membership
+check remains fail-closed and is evidence of an upstream authority contradiction,
+not a bypass target.
+
+**Supersession:** This ADR supersedes only ADR-148's clauses authorizing temporary
+teaching from later release-listed grades and its use of "already admitted" for
+that condition. ADR-148 remains authoritative that recovery exhaustion is not
+graduation, cannot mint certification/mastery/successor authority, and may reopen
+after lawful accepted learner evidence changes. The continuity invariant means
+continue while useful **lawful** work exists; when none exists, a truthful hold is
+preferable to manufacturing progression authority.
