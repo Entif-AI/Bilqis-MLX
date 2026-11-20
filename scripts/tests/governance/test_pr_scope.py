@@ -49,6 +49,21 @@ class PullRequestScopeTests(unittest.TestCase):
             current_base,
         )
 
+    def test_workflow_dispatch_uses_first_parent_when_event_has_no_base(self):
+        previous = git(self.root, "rev-parse", "HEAD")
+        self.commit("current.py", "VALUE = 2\n", "fix: current")
+
+        self.assertEqual(
+            pr_scope.comparison_base(
+                self.root,
+                event_name="workflow_dispatch",
+                requested_base="",
+                pr_head_sha=git(self.root, "rev-parse", "HEAD"),
+                push_base="",
+            ),
+            previous,
+        )
+
     def test_unified_commit_scope_begins_at_prospective_enforcement_baseline(self):
         requested_base = git(self.root, "rev-parse", "HEAD")
         historical = self.commit("legacy.py", "VALUE = 1\n", "Fix historical debt")
