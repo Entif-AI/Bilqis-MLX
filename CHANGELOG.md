@@ -2,6 +2,14 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.2.18](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.17...v1.2.18) (2026-11-20)
+
+
+### Bug Fixes
+
+* **bamf:** restore terminal cockpit observability ([3592f8e](https://github.com/Entif-AI/Bilqis-MLX/commit/3592f8e977ec77d1bc092027f6b415e9c7a848f5))
+* restore BAMF terminal cockpit observability ([#1509](https://github.com/Entif-AI/Bilqis-MLX/issues/1509)) ([b491394](https://github.com/Entif-AI/Bilqis-MLX/commit/b4913941dfadc3331926c4031dde0baba4abcc96))
+
 ## [1.2.17](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.16...v1.2.17) (2026-11-20)
 
 
