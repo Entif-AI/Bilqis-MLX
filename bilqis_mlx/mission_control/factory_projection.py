@@ -140,6 +140,117 @@ def _overlay_map(overlays):
     return mapped
 
 
+def _evidence_refs(overlay):
+    return tuple(sorted({
+        ref for blocker in overlay.blockers
+        for ref in (blocker.owner_ref, blocker.evidence_ref)
+    }))
+
+
+def _release_snapshot(
+    release, projection, materialized_at, current_factory_release_sha256, overlay_map,
+):
+    subject = release.factory_release_sha256
+    direct = tuple(item for item in projection.lifecycle
+                   if item.factory_release_sha256 == subject)
+    lifecycle = _latest(direct)
+    overlay = overlay_map.get(subject, FactoryCockpitOverlay(subject))
+    receipts = tuple(sorted({
+        release.artifact_receipt_sha256,
+        *(item.receipt_sha256 for item in direct),
+        *(item.checkpoint_receipt_sha256 for item in projection.checkpoints
+          if item.factory_release_sha256 == subject),
+        *(value for value in (
+            overlay.qualification_receipt_sha256,
+            overlay.admission_receipt_sha256,
+        ) if value is not None),
+    }))
+    promoted = tuple(sorted({item.capability_id for item in direct
+                             if item.state is FactoryLifecycleState.PROMOTED
+                             and item.capability_id is not None}))
+    debt = tuple(sorted({item.capability_id for item in direct
+                         if item.state is FactoryLifecycleState.DEBT
+                         and item.capability_id is not None}))
+    return FactoryCockpitSnapshot(
+        _meta(
+            f"factory-release:{subject}", projection, materialized_at,
+            evidence_refs=_evidence_refs(overlay),
+            receipt_refs=receipts,
+        ),
+        FactorySubjectKind.FACTORY_RELEASE,
+        subject,
+        subject,
+        None,
+        release.semantic_release_sha256,
+        lifecycle,
+        overlay.delivery_status,
+        _currency(subject, lifecycle, current_factory_release_sha256),
+        FactoryAdmissionAuthority.HUMAN_ONLY,
+        _grade_frontier(release),
+        release.capability_ids,
+        release.dependency_edges,
+        overlay.blockers,
+        promoted,
+        debt,
+        receipts,
+        overlay.qualification_receipt_sha256,
+        overlay.admission_receipt_sha256,
+        _lineage(tuple(item for item in projection.checkpoints
+                       if item.factory_release_sha256 == subject)),
+    )
+
+
+def _candidate_snapshot(
+    candidate, projection, materialized_at, current_factory_release_sha256, overlay_map,
+):
+    subject = candidate.candidate_sha256
+    direct = tuple(item for item in projection.lifecycle
+                   if item.candidate_sha256 == subject)
+    lifecycle = _latest(direct)
+    overlay = overlay_map.get(subject, FactoryCockpitOverlay(subject))
+    resulting_release = next((
+        item.factory_release_sha256 for item in reversed(direct)
+        if item.factory_release_sha256 is not None
+    ), None)
+    receipts = tuple(sorted({
+        candidate.artifact_receipt_sha256,
+        *(item.receipt_sha256 for item in direct),
+        *(value for value in (
+            overlay.qualification_receipt_sha256,
+            overlay.admission_receipt_sha256,
+        ) if value is not None),
+    }))
+    return FactoryCockpitSnapshot(
+        _meta(
+            f"factory-candidate:{subject}", projection, materialized_at,
+            evidence_refs=_evidence_refs(overlay),
+            receipt_refs=receipts,
+        ),
+        FactorySubjectKind.CURRICULUM_CANDIDATE,
+        subject,
+        resulting_release,
+        subject,
+        candidate.semantic_release_sha256,
+        lifecycle,
+        overlay.delivery_status,
+        (FactoryCurrencyState.CURRENT
+         if resulting_release == current_factory_release_sha256
+         else FactoryCurrencyState.UNKNOWN),
+        FactoryAdmissionAuthority.HUMAN_ONLY,
+        (),
+        candidate.capability_ids,
+        candidate.dependency_edges,
+        overlay.blockers,
+        (),
+        (),
+        receipts,
+        overlay.qualification_receipt_sha256,
+        overlay.admission_receipt_sha256,
+        _lineage(tuple(item for item in projection.checkpoints
+                       if item.factory_release_sha256 == resulting_release)),
+    )
+
+
 def project_factory_cockpit(
     projection: FactoryLedgerProjection,
     *,
@@ -154,113 +265,16 @@ def project_factory_cockpit(
     require(current_factory_release_sha256 is None
             or is_sha256(current_factory_release_sha256), "FACTORY_CURRENT_RELEASE")
     overlay_map = _overlay_map(overlays)
-    records = []
-
-    for release in projection.releases:
-        subject = release.factory_release_sha256
-        direct = tuple(item for item in projection.lifecycle
-                       if item.factory_release_sha256 == subject)
-        lifecycle = _latest(direct)
-        overlay = overlay_map.get(subject, FactoryCockpitOverlay(subject))
-        receipts = tuple(sorted({
-            release.artifact_receipt_sha256,
-            *(item.receipt_sha256 for item in direct),
-            *(item.checkpoint_receipt_sha256 for item in projection.checkpoints
-              if item.factory_release_sha256 == subject),
-            *(value for value in (
-                overlay.qualification_receipt_sha256,
-                overlay.admission_receipt_sha256,
-            ) if value is not None),
-        }))
-        evidence_refs = tuple(sorted({
-            ref for blocker in overlay.blockers
-            for ref in (blocker.owner_ref, blocker.evidence_ref)
-        }))
-        promoted = tuple(sorted({item.capability_id for item in direct
-                                 if item.state is FactoryLifecycleState.PROMOTED
-                                 and item.capability_id is not None}))
-        debt = tuple(sorted({item.capability_id for item in direct
-                             if item.state is FactoryLifecycleState.DEBT
-                             and item.capability_id is not None}))
-        records.append(FactoryCockpitSnapshot(
-            _meta(
-                f"factory-release:{subject}", projection, materialized_at,
-                evidence_refs=evidence_refs,
-                receipt_refs=receipts,
-            ),
-            FactorySubjectKind.FACTORY_RELEASE,
-            subject,
-            subject,
-            None,
-            release.semantic_release_sha256,
-            lifecycle,
-            overlay.delivery_status,
-            _currency(subject, lifecycle, current_factory_release_sha256),
-            FactoryAdmissionAuthority.HUMAN_ONLY,
-            _grade_frontier(release),
-            release.capability_ids,
-            release.dependency_edges,
-            overlay.blockers,
-            promoted,
-            debt,
-            receipts,
-            overlay.qualification_receipt_sha256,
-            overlay.admission_receipt_sha256,
-            _lineage(tuple(item for item in projection.checkpoints
-                           if item.factory_release_sha256 == subject)),
-        ))
-
-    for candidate in projection.candidates:
-        subject = candidate.candidate_sha256
-        direct = tuple(item for item in projection.lifecycle
-                       if item.candidate_sha256 == subject)
-        lifecycle = _latest(direct)
-        overlay = overlay_map.get(subject, FactoryCockpitOverlay(subject))
-        resulting_release = next((
-            item.factory_release_sha256 for item in reversed(direct)
-            if item.factory_release_sha256 is not None
-        ), None)
-        receipts = tuple(sorted({
-            candidate.artifact_receipt_sha256,
-            *(item.receipt_sha256 for item in direct),
-            *(value for value in (
-                overlay.qualification_receipt_sha256,
-                overlay.admission_receipt_sha256,
-            ) if value is not None),
-        }))
-        evidence_refs = tuple(sorted({
-            ref for blocker in overlay.blockers
-            for ref in (blocker.owner_ref, blocker.evidence_ref)
-        }))
-        records.append(FactoryCockpitSnapshot(
-            _meta(
-                f"factory-candidate:{subject}", projection, materialized_at,
-                evidence_refs=evidence_refs,
-                receipt_refs=receipts,
-            ),
-            FactorySubjectKind.CURRICULUM_CANDIDATE,
-            subject,
-            resulting_release,
-            subject,
-            candidate.semantic_release_sha256,
-            lifecycle,
-            overlay.delivery_status,
-            (FactoryCurrencyState.CURRENT
-             if resulting_release == current_factory_release_sha256
-             else FactoryCurrencyState.UNKNOWN),
-            FactoryAdmissionAuthority.HUMAN_ONLY,
-            (),
-            candidate.capability_ids,
-            candidate.dependency_edges,
-            overlay.blockers,
-            (),
-            (),
-            receipts,
-            overlay.qualification_receipt_sha256,
-            overlay.admission_receipt_sha256,
-            _lineage(tuple(item for item in projection.checkpoints
-                           if item.factory_release_sha256 == resulting_release)),
-        ))
+    records = [
+        *(_release_snapshot(
+            release, projection, materialized_at,
+            current_factory_release_sha256, overlay_map,
+        ) for release in projection.releases),
+        *(_candidate_snapshot(
+            candidate, projection, materialized_at,
+            current_factory_release_sha256, overlay_map,
+        ) for candidate in projection.candidates),
+    ]
 
     return tuple(sorted(records, key=lambda item: (
         item.subject_kind.value, item.subject_sha256)))
