@@ -53,6 +53,21 @@ def adopt_and_activate_certified_successor(
     return True
 
 
+def _rearm_current_grade(run_dir, selection):
+    from bilqis_mlx.runtime.accepted_priority_visit_contracts import (
+        require_priority_cadence_authorization,
+        require_priority_lawful_frontier,
+    )
+    from bilqis_mlx.runtime.active_grade_cadence import (
+        rearm_active_grade_acquisition,
+    )
+    return rearm_active_grade_acquisition(
+        Path(run_dir),
+        require_priority_cadence_authorization(selection),
+        require_priority_lawful_frontier(selection),
+    )
+
+
 def priority_hold_result(
         run_dir, selection, context, parent, atlas_path, reserve_gib, progress,
         *, emit_progress):
@@ -67,6 +82,13 @@ def priority_hold_result(
     emit_progress(progress, "priority holds: " + json.dumps(
         payload, sort_keys=True, ensure_ascii=True))
     boundary_disposition = cadence.get("disposition") if isinstance(cadence, dict) else None
+    if boundary_disposition == "RECOVERY_EXHAUSTED":
+        _rearm_current_grade(run_dir, selection)
+        emit_progress(
+            progress,
+            "active grade recovery exhausted; rearmed ordinary MAIN acquisition",
+        )
+        return BamfPreparedVisit("ACQUISITION_REARMED", parent, selection=selection)
     certification = None
     if boundary_disposition == "GRADE_COMPLETE":
         from bilqis_mlx.runtime.grade_certification import run_grade_boundary_certification
@@ -114,18 +136,7 @@ def priority_hold_result(
     if certification.status == "SUPERSEDED":
         return BamfPreparedVisit("CERTIFICATION_SUPERSEDED", parent, selection=selection)
     if certification.status == "NOT_ELIGIBLE":
-        from bilqis_mlx.runtime.accepted_priority_visit_contracts import (
-            require_priority_cadence_authorization,
-            require_priority_lawful_frontier,
-        )
-        from bilqis_mlx.runtime.active_grade_cadence import (
-            rearm_active_grade_acquisition,
-        )
-        rearm_active_grade_acquisition(
-            Path(run_dir),
-            require_priority_cadence_authorization(selection),
-            require_priority_lawful_frontier(selection),
-        )
+        _rearm_current_grade(run_dir, selection)
         emit_progress(
             progress,
             "grade certification entry not yet eligible; resumed ordinary MAIN acquisition",
