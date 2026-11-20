@@ -83,3 +83,31 @@ def test_visit_progress_is_mirrored_into_observation_activity(tmp_path):
     observer.update.assert_any_call(activity='planner: compiling semantic curriculum')
     assert 'planner: compiling semantic curriculum' in messages
     assert outcome[:4] == ('VISIT_LIMIT', 1, 0, 1)
+
+
+def test_acquisition_rearmed_continues_without_candidate_decision(tmp_path):
+    parent = object()
+    rearmed = BamfPreparedVisit("ACQUISITION_REARMED", parent)
+    peer = BamfPreparedVisit(
+        "READY", parent, selection=SimpleNamespace(metadata={}),
+        decision=SimpleNamespace(accepted=True), successor=SimpleNamespace(
+            extents=SimpleNamespace(factor_map_digest="feature")),
+        step=SimpleNamespace(transaction=SimpleNamespace(training_authorities=())))
+    prepare = Mock(side_effect=(rearmed, peer))
+    publish = Mock()
+    observer = SimpleNamespace(finish=Mock(), update=Mock())
+
+    outcome = _run_visits(
+        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, reserve_gib=100,
+        source_prefetch_workers=0, progress=None, source_prefetch_executor=None,
+        metrics=None, run_authority_binding=None, resource_snapshot=None,
+        monotonic=lambda: 0, observer_type=lambda *_: nullcontext(observer),
+        emit_progress=lambda *_: None,
+        visit_fn=partial(
+            visit, prepare_visit=prepare, record_rejection=Mock(),
+            accept_publish=publish, load_generation=None,
+            measure_phase=lambda *_: nullcontext(), emit_progress=lambda *_: None))
+
+    assert prepare.call_count == 2
+    assert outcome[:4] == ("VISIT_LIMIT", 1, 1, 0)
+    publish.assert_called_once()
