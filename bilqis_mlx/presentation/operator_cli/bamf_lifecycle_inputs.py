@@ -124,10 +124,18 @@ def source_foundation(source_run=None):
 
 
 def source_run_dir(requested=None) -> Path:
-    """Return the current source-run path without reconstructing mutable source state."""
+    """Return an explicit source run or the existing configured active source run."""
     if requested is None:
         return active_run_dir().resolve()
     return Path(requested).expanduser().resolve()
+
+
+def fresh_source_run_dir(requested=None) -> Path:
+    """Return an explicit fresh-create source or the repository bootstrap seed."""
+    if requested is None:
+        from bilqis_mlx.bootstrap_assets import SOURCE_RUN
+        return SOURCE_RUN.resolve()
+    return source_run_dir(requested)
 
 
 def validate_foundation_authority(source, release, graph, atlas) -> None:
@@ -148,6 +156,6 @@ def validate_foundation_authority(source, release, graph, atlas) -> None:
 
 
 __all__ = (
-    "atlas_manifest_identity", "foundation_hyperparameters",
+    "atlas_manifest_identity", "foundation_hyperparameters", "fresh_source_run_dir",
     "invalid", "source_foundation", "source_run_dir", "validate_foundation_authority",
 )

@@ -17,3 +17,11 @@ include = ["bilqis_mlx*", "lib.ithkuil*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.json"]
+"bilqis_mlx.bootstrap_assets" = [
+  "source-run/*.json",
+  "source-run/states/*.json",
+  "source-run/factory-releases/*.json",
+  "source-run/bundles/*/*.json",
+  "atlas/*/*.json",
+  "atlas/*/*.jsonl",
+]
