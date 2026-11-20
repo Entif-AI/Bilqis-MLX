@@ -21,7 +21,7 @@ const {
 } = require("./operator-contracts.cjs");
 const QUERY_FAMILIES = new Set([
   "record", "run", "school", "capability", "episode", "generation", "semantic", "frame",
-  "neural", "memory", "teacher", "salience", "correction", "resource",
+  "neural", "memory", "teacher", "salience", "correction", "resource", "factory",
   "reference", "links",
 ]);
 const QUERY_MODES = new Set(["current", "historical"]);

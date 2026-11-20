@@ -31,9 +31,14 @@ requires exact equality with that prepared binding. Missing, unsafe, malformed, 
 drifted host authority therefore fails before a new run becomes current. A copied
 registry inside the target run directory has no authority for a new lineage.
 
-Trust-root rotation remains unsupported. Operators must not rotate the file
-concurrently with Bilqis operations; later authority boundaries reread the selected
-root and fail closed on drift. Historical pre-#950 lineages retain their recorded
+The BAMF-0.2 runtime still never rotates or migrates the trust root itself. BAMF-0.3
+#1034 adds a separate operator lifecycle that can perform an **explicit**, digest-fenced
+rotation or migration at the same fixed account-scoped location. That operation does
+not rewrite accepted lineage custody: a lineage bound to different authority still
+fails closed until its exact accepted authority is restored through the governed
+operator path. Operators must not mutate authority concurrently with Bilqis runtime
+operations. Later authority boundaries reread the selected root and fail closed on
+drift. Historical pre-#950 lineages retain their recorded
 run-local #917 custody semantics and may use the narrowly defined one-time ordinary
 retained-successor compatibility anchor. That historical path is derived from
 authenticated accepted custody and is never selected by a caller or used by a new
@@ -51,9 +56,9 @@ protocol, or secret manager.
 
 Recovery of an already accepted lineage remains narrow: restore the exact registry
 record previously bound in accepted custody at the same account-scoped location, or
-stop. More elaborate installer/recovery hardening is deferred until after the first
-BAMF trainer is wired and testable unless a concrete current requirement proves it is
-needed sooner.
+stop. BAMF-0.3 #1034 now supplies the deferred installer/verifier, crash-recovery,
+backup/restore, and explicit rotation/migration tooling without changing this BAMF-0.2
+runtime authority rule.
 
 Preflight replays the current Factory admission from the source run, resolves the
 source-owned Atlas artifact, derives the ordinary Factory teacher projection and B01

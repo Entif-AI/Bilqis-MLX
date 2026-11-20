@@ -2,6 +2,7 @@
 
 const crypto = require("node:crypto");
 const OPERATOR_VIEW = require("../fixtures/operator-view-v1.json");
+const FACTORY_COCKPIT = require("../fixtures/factory-cockpit-v1.json");
 const { frameFixturePage } = require("./frame-fixtures.cjs");
 
 const OPERATOR_VIEW_SCHEMA = "bilqis.bamf.mission-control.operator-view/v1";
@@ -27,19 +28,20 @@ function fixtureStatus() {
 
 function fixturePage(request) {
   const canonical = JSON.stringify(request, Object.keys(request).sort());
+  const records = request.family === "factory" ? structuredClone(FACTORY_COCKPIT) : [];
   return Object.freeze({
     schema: "bilqis.bamf.control-plane.query-page/v1",
     query_id: crypto.createHash("sha256").update(canonical).digest("hex"),
     request: structuredClone(request),
     family: request.family,
     mode: request.mode,
-    state: "EMPTY",
+    state: records.length ? "PRESENT" : "EMPTY",
     coverage: "COMPLETE",
-    total_matches: 0,
-    returned: 0,
+    total_matches: records.length,
+    returned: records.length,
     truncated: false,
     next_cursor: null,
-    records: Object.freeze([]),
+    records: Object.freeze(records),
     markers: Object.freeze([]),
     links: Object.freeze([]),
     accepted: true,

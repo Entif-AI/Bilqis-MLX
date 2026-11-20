@@ -3712,3 +3712,154 @@ data-defined; do not restore hard-coded A -> B -> C progression.
 **Durable owner:** GitHub parent #1286 owns the recursive decomposition,
 dependency graph, implementation children, integration proof, and live-trainer
 conformance closure for this decision.
+
+## ADR-147 | 2026-11-19 | Bound the shared data plane with packed archival CAS and reachability retention
+
+**Status:** Accepted by direct owner instruction on 2026-11-19 through issue #1438.
+
+**Problem:** ADR-081 moved immutable School state into a workstation-shared Merkle
+data plane, but its ordinary object and node payloads remained append-only BLOBs in
+SQLite. Repeated training attempts accumulated more than one million immutable
+objects and tens of thousands of nodes without any reachability collector. The
+same workstation store also retained heavyweight tensor CAS objects after their
+runtime custody obligations ended. The result was a control-plane SQLite file tens
+of gigabytes larger than the metadata needed to operate the learner.
+
+**Decision:** SQLite remains the durable index, identity, trust, event, pointer,
+and retention-control surface, but new immutable object and node payload bytes move
+to compressed append-only pack files beside the database. SQLite schema v2 stores
+only each archived digest's pack identity, byte offset, encoded size, raw size,
+generation, and parent linkage as applicable. Reads remain dual-format so legacy
+schema-v1 BLOB rows can migrate incrementally without changing any content digest
+or logical state pointer. Migration verifies every legacy payload before deleting
+its BLOB row and is restart-safe; pack bytes written before an interrupted metadata
+publication are harmless orphans removed by later pack compaction.
+
+Retention is graph-based, not age-based. Roots include durable School current and
+historical generation pointers, the current BAMF generation manifest and its
+accepted manifest ancestry, named data-plane object references, and explicit
+retention pins. Reachability follows node ancestry and content-addressed references
+through state fields, bundle sidecars, tensors, and nested JSON evidence. Explicit
+pins carry a reason and one of the current/recovery/champion/soup/evidence/operator
+tiers. Current learner custody, recovery ancestry, active championship/soup
+references, and pinned witnesses therefore survive cleanup; an unreferenced old
+payload does not survive merely because it was once written.
+
+GC is dry-run-first and reports reachable/unreachable counts plus reclaimable
+bytes. Applied maintenance requires the relevant human-operator locks, deletes only
+proven-unreachable metadata and tensor objects, compacts archive packs after
+deletion, and may VACUUM SQLite only after reachability-safe removal. Exact reads of
+retained historical generations remain valid. This is lifecycle management for
+immutable evidence, not permission to rewrite evidence, synthesize lineage, or run
+optimizer updates.
+
+This refines ADR-081/082 by completing their hot/cold storage boundary. It composes
+with ADR-143: subthreshold or superseded championship custody must not pin a whole
+checkpoint when no independent current, recovery, title, soup, evidence, or
+operator authority still references it.
+
+## ADR-148 | 2026-11-19 | Recovery exhaustion yields; only grade completion certifies
+
+**Status:** Accepted by direct owner confirmation on 2026-11-19 for issue #1459.
+
+**Problem:** The BAMF generated-grade boundary path had conflated two materially
+different conditions: an incomplete active grade that currently has no productive
+MAIN/recovery move, and a grade that has actually completed its governing
+graduation condition. Routing both through certification converted ordinary
+training exhaustion into an operator stop. Replacing a crash with a typed terminal
+status did not restore the pre-BAMF product behavior in which one human Start/Resume
+continued useful training through ordinary internal boundaries.
+
+**Decision:** `RECOVERY_EXHAUSTED` is a scheduler yield condition, not graduation.
+The exhausted grade remains the active, incomplete grade. It may temporarily yield
+to useful teaching work from already-admitted later grades when that work is lawful
+under the accepted executable/source/rights scope. If yielded training changes the
+accepted learner/checkpoint, the exhausted active grade receives a fresh
+MAIN/recovery opportunity. Exhaustion alone MUST NOT mint grade completion,
+certification eligibility, mastery, championship, successor authority, or a
+terminal trainer outcome.
+
+`GRADE_COMPLETE` remains the genuine certification boundary. Only that disposition
+may enter #1334 certification and the receipt-bound #1320/#1314 successor path.
+A failed real certification may still stop that certification boundary under its
+existing authority; this ADR does not weaken certification evidence.
+
+C07/Atlas admission remains an authority boundary for genuine expansion or change
+of accepted executable, source, or rights scope. It MUST NOT be invoked merely
+because the trainer wants to teach capabilities already present in the accepted
+release. If a later grade requires genuinely new scope, that expansion may still
+fail closed without converting already-admitted useful work into an unrelated
+operator stop.
+
+**Product invariant:** After one human-authorized Start/Resume, the persistent
+trainer should continue making useful lawful progress until its requested
+time/visit/resource bound or a genuine external authority/safety boundary is
+reached. Clean termination is not a substitute for continuous training.
+
+## ADR-149 | 2026-11-19 | Pre-selector accepted lineages retain their versioned certification policy
+
+**Status:** Accepted by direct owner instruction on 2026-11-19 to restore the
+existing learner before broader authority/security redesign.
+
+**Problem:** #1334 introduced certification-policy selection through the accepted
+C07 v2 lease. The current accepted learner predates that selector and therefore has
+no accepted v2 lease carrying `progression_policy_sha256`. Treating that historical
+absence as an operator/security failure bricks an otherwise valid retained learner
+at the genuine grade-certification boundary.
+
+**Decision:** If an already accepted lineage has no accepted C07 v2 lease because it
+predates the progression-policy selector, #1334 uses the existing explicitly
+versioned `adr-084-mean-stability/v1` policy: 92% entry, 87% continuation, ADR-111
+retry comparison, ADR-084 debt authority. The selected policy digest remains bound
+into certification requests/receipts. This is a compatibility rule for absence of
+the later selector, not a generic default-selection mechanism.
+
+If an accepted C07 v2 lease exists, its exact signed selector remains authoritative.
+An unknown or unsupported selected digest still fails closed. This ADR does not
+authorize a run-local policy file, change source gold, mint mastery, widen C07/C09
+source authority, or permit the learner/trainer to author a new policy.
+
+**Priority:** Restore stable learning continuity first. The broader single-owner
+alpha threat model, local authority topology, and security-versus-reliability
+tradeoffs are follow-up architecture work and must not block this compatibility
+repair.
+
+## ADR-150 | 2026-11-19 | FactoryRelease availability is not generated-grade teaching authority
+
+**Status:** Accepted by direct owner correction on 2026-11-19 for issue #1482.
+
+**Problem:** ADR-148 correctly separated `RECOVERY_EXHAUSTED` from genuine grade
+completion, but its cross-grade recovery mechanism used a materially incorrect
+definition of "already admitted." The implementation treated a later grade's
+presence in `FactoryRelease.execution_plan.grades` as sufficient learner-relative
+teaching authority. A live Grade A run then exhausted its bounded recovery cadence,
+selected `B.AND`, and was rejected downstream with
+`BAMF_REHEARSAL_TARGET_OUTSIDE_ACTIVE_GRADE`. The active generated-grade custody
+had never left Grade A: no receipt-bound Grade B successor proposal/activation
+existed.
+
+**Decision:** Packaging a capability or grade in an accepted `FactoryRelease`
+establishes executable/source availability; it does not admit that grade into the
+learner's active generated-grade progression. `RECOVERY_EXHAUSTED` MUST NOT widen
+the lawful teaching frontier beyond the exact current #1314 active generated-grade
+membership merely because later release grades are available. With no authorized
+active-grade work remaining, priority returns a cadence-bound
+`NO_ADMISSIBLE_TEACHING`/hold. If accepted learner/checkpoint evidence later
+changes through another lawful path, the existing #1333 currentness rules may reopen
+that same active grade's MAIN/recovery cadence.
+
+`GRADE_COMPLETE` remains the only grade-certification boundary. Later-grade
+teaching begins only after the receipt-bound successor synthesis/activation path
+authorizes that generated grade; C07/B13 participates when the transition genuinely
+requires new accepted executable/source/rights scope, but release reuse never
+substitutes for generated-grade activation. Rehearsal's active-grade-membership
+check remains fail-closed and is evidence of an upstream authority contradiction,
+not a bypass target.
+
+**Supersession:** This ADR supersedes only ADR-148's clauses authorizing temporary
+teaching from later release-listed grades and its use of "already admitted" for
+that condition. ADR-148 remains authoritative that recovery exhaustion is not
+graduation, cannot mint certification/mastery/successor authority, and may reopen
+after lawful accepted learner evidence changes. The continuity invariant means
+continue while useful **lawful** work exists; when none exists, a truthful hold is
+preferable to manufacturing progression authority.

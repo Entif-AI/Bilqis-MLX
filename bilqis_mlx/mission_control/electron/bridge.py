@@ -20,8 +20,10 @@ from bilqis_mlx.paths import active_run_dir
 
 
 _CLIENT_ID = "mission-control-electron"
+_REQUEST_TIMEOUT_SECONDS = 8.0
 MAX_BROKER_REQUEST_BYTES = 64 * 1024
 QUERY_ERROR_SCHEMA = "bamf.gui07.query-error/v1"
+EVENT_BRIDGE_READY_SCHEMA = "bilqis.bamf.mission-control.event-bridge-ready/v1"
 
 
 def _safe_broker_error_code(error: BaseException) -> str:
@@ -114,10 +116,10 @@ class ElectronBridge:
         if self._local_service is not None and self._local_service_target == target:
             return
         self._stop_local_service()
-        from bilqis_mlx.control_plane.native_source import native_query_catalog
+        from bilqis_mlx.control_plane.native_source import native_query_source
         service = ControlPlaneService(
             run_dir, socket_path,
-            query_source=lambda: native_query_catalog(run_dir))
+            query_source=native_query_source(run_dir))
         stack = ExitStack()
         try:
             stack.enter_context(advertise_active_endpoint(
@@ -141,7 +143,9 @@ class ElectronBridge:
         if (self._local_service is not None
                 and self._local_service_target != (run_dir, socket_path)):
             self._stop_local_service()
-        client = ControlPlaneClient(socket_path, client_id=_CLIENT_ID)
+        client = ControlPlaneClient(
+            socket_path, client_id=_CLIENT_ID,
+            timeout=_REQUEST_TIMEOUT_SECONDS)
         try:
             payload = client.connect()
         except PermissionError:
@@ -154,7 +158,9 @@ class ElectronBridge:
             client.close(preserve_state=True)
             try:
                 self._ensure_local_service(run_dir, socket_path)
-                client = ControlPlaneClient(socket_path, client_id=_CLIENT_ID)
+                client = ControlPlaneClient(
+                    socket_path, client_id=_CLIENT_ID,
+                    timeout=_REQUEST_TIMEOUT_SECONDS)
                 payload = client.connect()
             except Exception:
                 state = client.state
@@ -178,7 +184,14 @@ class ElectronBridge:
         if self.client is None:
             return {"schema": QUERY_ERROR_SCHEMA, "accepted": False, "reason": "CONTROL_PLANE_NOT_CONNECTED"}
         request = QueryRequest.from_mapping(payload)
-        response = self.client.query(request)
+        try:
+            response = self.client.query(request)
+        except OSError:
+            # A timed-out socket-backed file object is not safely reusable.
+            # Drop it so the next bootstrap retry starts from a fresh CP01
+            # handshake instead of repeatedly querying a poisoned session.
+            self._close_client()
+            raise
         if response.get("accepted") is not True:
             return {"schema": QUERY_ERROR_SCHEMA, "accepted": False,
                     "reason": response.get("reason") or "CONTROL_PLANE_QUERY_UNAVAILABLE"}
@@ -255,6 +268,10 @@ def stream_events() -> int:
         if not payload.get("accepted"):
             return 1
         subscription = client.subscribe_events()
+        sys.stdout.write(json.dumps(
+            {"schema": EVENT_BRIDGE_READY_SCHEMA},
+            sort_keys=True, separators=(",", ":")) + "\n")
+        sys.stdout.flush()
         for event in subscription:
             sys.stdout.write(json.dumps(
                 encode_record(event), sort_keys=True, separators=(",", ":")) + "\n")

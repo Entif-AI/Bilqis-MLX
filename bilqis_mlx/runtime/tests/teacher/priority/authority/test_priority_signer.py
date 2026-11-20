@@ -49,6 +49,7 @@ def _cadence(*ready):
     return SimpleNamespace(
         authorized_capability_ids=tuple(ready),
         phase=SimpleNamespace(value="MAIN"),
+        disposition=SimpleNamespace(value="TEACHING"),
     )
 
 
@@ -115,7 +116,9 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
 
     (registry, signer, source_context, planning, parent,
      planning_generation, offer, cache, lawful) = _foundation_case()
-    with patch(
+    plane = SimpleNamespace(sync_event_ledger=lambda *_args: None)
+    with TemporaryDirectory() as run_dir, patch.object(
+        rejection_replay, "data_plane", return_value=plane), patch(
         "bilqis_mlx.runtime.bamf_bundle.accepted_runtime._accepted_correction_registry",
         return_value=(cache, registry),
     ), patch(
@@ -140,9 +143,13 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
     ), patch(
         "bilqis_mlx.runtime.active_grade_cadence.issue_active_grade_cadence",
         return_value=_cadence("capability:alpha", "capability:beta"),
+    ), patch.object(
+        authority, "_ordered_rejections", return_value=(),
+    ), patch.object(
+        authority, "_rejection_recency", return_value=(0, {}),
     ):
         issued = authority.issue_foundation_priority_authority(
-            "/run", source_context, parent, {"epoch": 1}, "/atlas",
+            run_dir, source_context, parent, {"epoch": 1}, "/atlas",
             teacher_state=parent.teacher_state)
 
     evidence = dict(issued.frontier.evidence)

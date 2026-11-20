@@ -68,10 +68,25 @@ def priority_hold_result(
         payload, sort_keys=True, ensure_ascii=True))
     boundary_disposition = cadence.get("disposition") if isinstance(cadence, dict) else None
     certification = None
-    if boundary_disposition in {"GRADE_COMPLETE", "RECOVERY_EXHAUSTED"}:
+    if boundary_disposition == "GRADE_COMPLETE":
         from bilqis_mlx.runtime.grade_certification import run_grade_boundary_certification
-        certification = run_grade_boundary_certification(
-            Path(run_dir), selection, context, parent, str(atlas_path))
+        try:
+            certification = run_grade_boundary_certification(
+                Path(run_dir), selection, context, parent, str(atlas_path))
+        except BilqisError as error:
+            if not (
+                error.spec is SCHOOL.BAMF_CURRICULUM.INVALID
+                and error.context.get("reason")
+                == "BAMF_GRADE_CERTIFICATION_POLICY_SELECTION_REQUIRED"
+            ):
+                raise
+            emit_progress(
+                progress,
+                "grade certification requires signed C07 atlas-release "
+                "progression-policy authority; retained learner state is unchanged",
+            )
+            return BamfPreparedVisit(
+                "CERTIFICATION_POLICY_REQUIRED", parent, selection=selection)
     if certification is None:
         return BamfPreparedVisit(status, parent, selection=selection)
     if certification.status == "SUCCEEDED":

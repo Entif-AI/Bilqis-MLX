@@ -10,12 +10,11 @@ _OWNER_CALLABLES = (
     "draw", "check", "enrich", "witness", "dependencies", "semantic_footprint",
 )
 
-_LEGACY_ROW_ORACLE_ALIASES = {
-    (
-        "bilqis.mlx.grade-a-live-constructor/v1",
-        "original+independent+grade_a_oracle",
-    ): "bilqis.mlx.grade-a-record-oracle/v2",
-}
+_LEGACY_ROW_ORACLE_ALIAS = (
+    "bilqis.mlx.grade-a-live-constructor/v1",
+    "original+independent+grade_a_oracle",
+    "bilqis.mlx.grade-a-record-oracle/v2",
+)
 
 
 def invalid_source_execution_authority(reason: str) -> None:
@@ -50,6 +49,13 @@ def row_owner_contract(owner: RegisteredSourceAdapter, source: SourceAtomRow) ->
     )
 
 
+def _legacy_row_oracle_alias(generator, oracle):
+    legacy_generator, legacy_oracle, canonical_oracle = _LEGACY_ROW_ORACLE_ALIAS
+    if (generator, oracle) == (legacy_generator, legacy_oracle):
+        return canonical_oracle
+    return None
+
+
 def _current_row_owner(
         registry: SourceAdapterRegistry, source: SourceAtomRow) -> RegisteredSourceAdapter:
     if not isinstance(registry, SourceAdapterRegistry):
@@ -61,7 +67,7 @@ def _current_row_owner(
     try:
         return registry.resolve_owner(generator, oracle)
     except (KeyError, TypeError, ValueError):
-        canonical_oracle = _LEGACY_ROW_ORACLE_ALIASES.get((generator, oracle))
+        canonical_oracle = _legacy_row_oracle_alias(generator, oracle)
         if canonical_oracle is not None:
             try:
                 return registry.resolve_owner(generator, canonical_oracle)

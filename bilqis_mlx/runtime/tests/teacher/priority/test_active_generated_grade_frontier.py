@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+import bilqis_mlx.runtime.lawful_teaching_frontier_projection as frontier_projection
 from bilqis_mlx.runtime.lawful_teaching_frontier import (
     ActiveGeneratedGradeState,
     _active_grade_state,
@@ -34,9 +35,9 @@ class ActiveGeneratedGradeFrontierTests(unittest.TestCase):
                 return "sem.p"
             raise ValueError
 
-        with patch(
-            "bilqis_mlx.runtime.lawful_teaching_frontier_projection."
-            "candidate_realizations.realized_atlas_semantic_id",
+        with patch.object(
+            frontier_projection.candidate_realizations,
+            "realized_atlas_semantic_id",
             side_effect=realized,
         ):
             capabilities = _capabilities(
@@ -55,7 +56,7 @@ class ActiveGeneratedGradeFrontierTests(unittest.TestCase):
             {item.code for item in capabilities[0].holds},
         )
 
-    def test_later_admitted_capability_is_not_teachable_outside_frozen_membership(self):
+    def test_release_listed_future_capability_is_not_teachable_outside_active_membership(self):
         capabilities = _capabilities(
             _release(), _snapshot(), _closure(), _plan(), (),
             active_members=(("P", ("sem.p",)),),
