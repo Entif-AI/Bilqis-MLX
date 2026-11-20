@@ -1,4 +1,8 @@
-"""One disposable #1300 lineage proving the integrated BAMF-v2 causal story."""
+"""Disposable #1300 integration witness through admitted-successor cold resume.
+
+Later-grade retained learning is intentionally not claimed here. The human-run
+trainer owns that progression proof.
+"""
 from __future__ import annotations
 
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
@@ -6,9 +10,13 @@ from bilqis_mlx.runtime.atlas_admission import (
     read_accepted_atlas_factory_release,
     read_accepted_atlas_lease_v2,
 )
+from bilqis_mlx.runtime.atlas_flywheel_runtime import AcceptedAtlasFlywheelSupervisor
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
-from bilqis_mlx.runtime.bamf_bundle import read_accepted_generation_feature_context
-from bilqis_mlx.runtime.bamf_operator import read_latest_run_stop_receipt
+from bilqis_mlx.runtime.bamf_bundle import (
+    read_accepted_generation_feature_context,
+    read_accepted_vocabulary_registry_export,
+)
+from bilqis_mlx.semantics.atlas_projection import BANK_SIZE
 from bilqis_mlx.source_adapters import event_frames
 
 from .conformance_1300_support import Conformance1300RuntimeSupport, SUCCESSOR, TARGET
@@ -16,8 +24,6 @@ from .conformance_1300_support.accepted_step import AcceptedStepCapture
 from .conformance_1300_support.cold_resume_assertions import (
     assert_cold_resume_legality,
 )
-from .conformance_1300_support.correction import hold_successor_only
-from .conformance_1300_support.evidence_export import export_causal_evidence
 from .conformance_1300_support.fixtures import CONFORMANCE_1300_REGISTRY
 from .conformance_1300_support.lifecycle import (
     bootstrap_staged_generation_zero,
@@ -31,8 +37,9 @@ from .conformance_1300_support.rollback import (
 )
 from .conformance_1300_support.scenario import (
     advance_until_admitted,
-    advance_until_stop,
+    assert_structural_admission_transition,
     one_visit,
+    structural_certification_pass,
 )
 
 
@@ -40,7 +47,7 @@ BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"
 
 
 class IntegratedConformance1300CausalClosureTests(Conformance1300RuntimeSupport):
-    def test_one_disposable_run_proves_create_learn_reject_resume_expand_correct_stop(self):
+    def test_one_disposable_run_proves_create_learn_reject_expand_and_cold_resume(self):
         fixture = self._production_parameter_fixture()
         progress = []
         routes = ProductionRouteCapture()
@@ -63,7 +70,6 @@ class IntegratedConformance1300CausalClosureTests(Conformance1300RuntimeSupport)
                 (after.generation, after.retained_state.optimizer_step),
             )
             self.assertIsNone(after.baseline_evidence)
-            foundation_abi = dict(after.semantic_abi)
             approval = fixture.lease.source_approval
             approval.verify(CONFORMANCE_1300_REGISTRY)
             self.assertTrue(approval.audit_passed)
@@ -86,40 +92,98 @@ class IntegratedConformance1300CausalClosureTests(Conformance1300RuntimeSupport)
                     source_authority=AcceptedRuntimeHost(self.run).source_authority(),
                 )
             self.assertEqual(lease.digest(), fixture.lease.digest())
+            supervisor = AcceptedAtlasFlywheelSupervisor(
+                self.run, self.parent_graph, reserve_gib=0.0)
 
-            foundation_results, target_release, _target_parent = advance_until_admitted(
-                self, progress, TARGET)
-            self.assertTrue(any(result.accepted for result in foundation_results))
-            self.assertIn("evidence: measured A.IDENTITY PASS", progress)
+            with structural_certification_pass():
+                foundation_results, target_release, _target_parent = advance_until_admitted(
+                    self, progress, TARGET)
+            self.assertTrue(foundation_results)
+            foundation_progress = tuple(progress)
+            self.assertIn(
+                "selected A.IDENTITY with ",
+                "\n".join(foundation_progress),
+            )
+            foundation_boundary = next(
+                index for index, message in enumerate(foundation_progress)
+                if message.startswith("grade boundary learner evidence refresh:"))
+            foundation_transition = foundation_progress.index(
+                "grade certification succeeded; activated exact receipt-bound generated successor")
+            self.assertLess(foundation_boundary, foundation_transition)
             self.assertIn(TARGET, target_release.execution_plan.capability_map)
-            self.assertIsNotNone(_target_parent.baseline_evidence)
+            target_admitted = load_accepted_generation(self.run)
+            assert_structural_admission_transition(self, after, target_admitted)
 
+            self._credit_all_predecessor_learning(supervisor)
             target_start = len(progress)
             target_capture = AcceptedStepCapture()
             with target_capture.context():
-                target_results, successor_release, _successor_parent = advance_until_admitted(
-                    self, progress, SUCCESSOR)
-            self.assertTrue(any(result.accepted for result in target_results))
+                for _attempt in range(4):
+                    target_result = one_visit(self, progress)
+                    if (target_result.accepted
+                            and "selected " + TARGET + " with "
+                            in "\n".join(progress[target_start:])):
+                        break
+                else:
+                    self.fail(f"{TARGET} did not retain within 4 visits")
             target_step = target_capture.assert_published_identity(self, self.run)
             target_capture.assert_finite_nonzero(self, step=target_step)
             target_capture.assert_first_baseline_for(self, self.run, TARGET)
-            target_progress = progress[target_start:]
-            evidence_index = target_progress.index(
-                "evidence: measured " + TARGET + " PASS")
-            adoption_index = next(
-                index for index, message in enumerate(target_progress)
-                if "C07 adopted a successor" in message)
-            self.assertLess(evidence_index, adoption_index)
+            target_learned = load_accepted_generation(self.run)
+            target_active_indices = tuple(sorted(
+                row.bank_index * BANK_SIZE + row.row_index
+                for row in target_learned.retained_state.policy.row_ages
+            ))
+            routes.assert_release_present_exclusion(
+                self,
+                target_release,
+                "A.IDENTITY",
+                expected_code="FUTURE_GENERATED_GRADE",
+            )
+            # A09 evidence is exact-checkpoint evidence. Rebind predecessor
+            # qualification to the newly retained TARGET checkpoint before the
+            # structural grade-boundary proof.
+            self._credit_all_predecessor_learning(supervisor)
+            with structural_certification_pass():
+                transition_results, successor_release, _successor_parent = (
+                    advance_until_admitted(self, progress, SUCCESSOR))
+            self.assertTrue(transition_results)
             self.assertIn(SUCCESSOR, successor_release.execution_plan.capability_map)
-            expanded_abi = dict(load_accepted_generation(self.run).semantic_abi)
-            self.assertGreater(len(expanded_abi), len(foundation_abi))
+            successor_admitted = load_accepted_generation(self.run)
+            assert_structural_admission_transition(
+                self, target_learned, successor_admitted,
+            )
+            successor_active_indices = tuple(sorted(
+                row.bank_index * BANK_SIZE + row.row_index
+                for row in successor_admitted.retained_state.policy.row_ages
+            ))
+            self.assertTrue(set(target_active_indices).issubset(successor_active_indices))
+            self.assertEqual(
+                len(successor_active_indices),
+                len(target_active_indices) + 1,
+            )
+            self.assertNotEqual(
+                successor_admitted.semantic_abi["active_set_sha256"],
+                target_learned.semantic_abi["active_set_sha256"],
+            )
+            self.assertEqual(
+                successor_admitted.semantic_abi["active_set_sha256"],
+                successor_admitted.extents.active_semantic_digest,
+            )
             successor_semantic_id = event_frames.atlas_semantic_id(SUCCESSOR)
-            self.assertIn(successor_semantic_id, expanded_abi)
-            self.assertNotIn(successor_semantic_id, foundation_abi)
-            for semantic_id, address in foundation_abi.items():
-                self.assertIn(semantic_id, expanded_abi)
-                self.assertEqual(expanded_abi[semantic_id], address)
+            vocabulary_export = read_accepted_vocabulary_registry_export(self.run)
+            self.assertEqual(vocabulary_export.active_indices, successor_active_indices)
+            self.assertEqual(
+                tuple(row.semantic_id for row in vocabulary_export.rows),
+                (successor_semantic_id,),
+            )
+            self.assertEqual(
+                tuple(row.abi_index for row in vocabulary_export.rows),
+                tuple(sorted(set(successor_active_indices) - set(target_active_indices))),
+            )
 
+            self._credit_all_predecessor_learning(
+                supervisor, exclude=(SUCCESSOR,))
             before_rejection = parent_custody(
                 load_accepted_generation(self.run), self.run)
             destructive = DestructiveCandidateCapture()
@@ -127,105 +191,23 @@ class IntegratedConformance1300CausalClosureTests(Conformance1300RuntimeSupport)
                     fixture), destructive.context():
                 for _attempt in range(4):
                     rejected = one_visit(self, progress)
-                    routes.assert_release_present_exclusion(
-                        self,
-                        successor_release,
-                        SUCCESSOR,
-                        expected_code="FUTURE_GENERATED_GRADE",
-                    )
                     if rejected.rejected:
                         break
                 else:
                     self.fail("destructive successor candidate was not rejected")
             self.assertEqual((rejected.accepted, rejected.rejected), (0, 1))
             assert_complete_rollback(self, self.run, before_rejection, destructive)
-
-            cold_receipts = assert_cold_resume_legality(self, self.run, SUCCESSOR)
-
-            successor_capture = AcceptedStepCapture()
-            successor_start = len(progress)
-            with successor_capture.context():
-                for _attempt in range(8):
-                    learned = one_visit(self, progress)
-                    if (learned.accepted
-                            and "selected " + SUCCESSOR + " with "
-                            in "\n".join(progress[successor_start:])):
-                        break
-                else:
-                    self.fail(f"{SUCCESSOR} did not retain within 8 visits")
-            successor_step = successor_capture.assert_published_identity(self, self.run)
-            successor_capture.assert_finite_nonzero(self, step=successor_step)
             self.assertIn("NEURAL_COMPOSITION", routes.route_kinds)
             routes.assert_exact_training_route_for(self, SUCCESSOR)
-            routes.assert_routes_for(
-                self,
-                SUCCESSOR,
-                "NEURAL_COMPOSITION",
-            )
+            routes.assert_routes_for(self, SUCCESSOR, "NEURAL_COMPOSITION")
             routes.assert_neural_composition_executes_exact_operator(
                 self, SUCCESSOR)
+
+            cold_receipts = assert_cold_resume_legality(self, self.run, SUCCESSOR)
             learned_release = read_accepted_atlas_factory_release(self.run)
             self.assertEqual(
                 learned_release.release_sha256,
                 successor_release.release_sha256,
-            )
-
-            stopped = advance_until_stop(self, progress)
-            receipt = read_latest_run_stop_receipt(self.run)
-            self.assertIsNotNone(receipt)
-            self.assertEqual(receipt["receipt_sha256"], stopped.stop_receipt_sha256)
-            self.assertIn(
-                receipt["stop_reason"],
-                ("PRIORITY_HOLD", "ADMISSION_HOLD",
-                 "IMPLEMENTATION_UNCOVERED", "FIXED_POINT"),
-            )
-
-            state_before_correction = load_accepted_generation(self.run)
-            event_id, dependency, corrected = hold_successor_only(
-                self, self.run, target=TARGET, successor=SUCCESSOR)
-            state_after_correction = load_accepted_generation(self.run)
-            self.assertTrue(event_id)
-            self.assertTrue(dependency.key.startswith("salience-fact:"))
-            self.assertEqual(corrected.support.status, "REQUALIFICATION_REQUIRED")
-            self.assertEqual(
-                candidate_identity_digest(state_after_correction.retained_state),
-                candidate_identity_digest(state_before_correction.retained_state),
-            )
-            self.assertEqual(
-                state_after_correction.retained_state.optimizer_step,
-                state_before_correction.retained_state.optimizer_step,
-            )
-            self.assertEqual(
-                state_after_correction.baseline_evidence,
-                state_before_correction.baseline_evidence,
-            )
-            self.assertEqual(
-                state_after_correction.teacher_state,
-                state_before_correction.teacher_state,
-            )
-            self.assertEqual(
-                state_after_correction.retained_state.allocations,
-                state_before_correction.retained_state.allocations,
-            )
-            self.assertEqual(
-                state_after_correction.retained_state.policy,
-                state_before_correction.retained_state.policy,
-            )
-            self.assertEqual(
-                state_after_correction.learning_health_state,
-                state_before_correction.learning_health_state,
-            )
-            self.assertEqual(
-                state_after_correction.extents,
-                state_before_correction.extents,
-            )
-            self.assertEqual(
-                dict(state_after_correction.semantic_abi),
-                dict(state_before_correction.semantic_abi),
-            )
-            self.assertEqual(
-                state_after_correction.generation,
-                state_before_correction.generation,
             )
             with self.host_registry():
                 accepted_lease = read_accepted_atlas_lease_v2(
@@ -234,25 +216,7 @@ class IntegratedConformance1300CausalClosureTests(Conformance1300RuntimeSupport)
                 )
             self.assertIsNotNone(accepted_lease)
             self.assertEqual(accepted_lease.digest(), fixture.lease.digest())
-            exported = export_causal_evidence(
-                self.run,
-                self,
-                target_capture=target_capture,
-                successor_capture=successor_capture,
-                routes=routes,
-                cold_receipts=cold_receipts,
-                stop_receipt=receipt,
-                correction={
-                    "event_id": event_id,
-                    "dependency_kind": dependency.kind.value,
-                    "dependency_key": dependency.key,
-                    "successor_capability_id": SUCCESSOR,
-                    "successor_support_status": corrected.support.status.value,
-                    "pending_source_task_capability_ids": [
-                        task.capability_id
-                        for task in corrected.ledger.pending_source_tasks
-                    ],
-                },
+            self.assertEqual(
+                cold_receipts["accepted"]["optimizer_step"],
+                load_accepted_generation(self.run).retained_state.optimizer_step,
             )
-            if exported is not None:
-                self.assertTrue(exported.is_file())

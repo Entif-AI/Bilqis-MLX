@@ -27,6 +27,26 @@ from .fixtures import Conformance1300FixtureSupport, TARGET
 from .lifecycle import enroll_prepared_lease
 
 
+def _record_fixture_evidence_once(release, ledger, receipt, *, plan, checkpoint, step):
+    """Make disposable #1300 predecessor credit convergent at one checkpoint."""
+    existing = next(
+        (item for item in ledger.receipts if item.evidence_id == receipt.evidence_id),
+        None,
+    )
+    if existing is not None:
+        if existing != receipt:
+            raise ValueError("CONFORMANCE_1300_FIXTURE_EVIDENCE_ID_COLLISION")
+        return ledger
+    return record_evidence(
+        release,
+        ledger,
+        receipt,
+        plan=plan,
+        current_checkpoint_sha256=checkpoint,
+        current_optimizer_step=step,
+    )
+
+
 class Conformance1300RuntimeSupport(Conformance1300FixtureSupport):
     def _production_parameter_context(self, fixture):
         """Virtualize files/resources while retaining production semantic owners."""
@@ -140,23 +160,32 @@ class Conformance1300RuntimeSupport(Conformance1300FixtureSupport):
                 plan=state.plan,
             ):
                 index += 1
-                ledger = record_evidence(
+                identity = hashlib.sha256(
+                    (
+                        f"1300-predecessor:{checkpoint}:{step}:"
+                        f"{obligation.obligation_id}"
+                    ).encode()
+                ).hexdigest()
+                ledger = _record_fixture_evidence_once(
                     state.epoch.current_release,
                     ledger,
                     EvidenceReceipt(
                         obligation.obligation_id,
-                        f"1300-predecessor-{step}-{index}",
+                        f"1300-predecessor-{identity}",
                         checkpoint,
                         step,
                         hashlib.sha256(
-                            f"1300-predecessor:{index}".encode()
+                            (
+                                f"1300-predecessor-cohort:{checkpoint}:{step}:"
+                                f"{obligation.obligation_id}:{index}"
+                            ).encode()
                         ).hexdigest(),
                         obligation.minimum_specimens,
                         True,
                     ),
                     plan=state.plan,
-                    current_checkpoint_sha256=checkpoint,
-                    current_optimizer_step=step,
+                    checkpoint=checkpoint,
+                    step=step,
                 )
         persist_autonomy_state(
             self.run,

@@ -16,7 +16,9 @@ from bilqis_mlx.runtime.atlas_admission import read_accepted_atlas_factory_relea
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 from bilqis_mlx.runtime.bamf_operator.session import _execution_context
 from bilqis_mlx.runtime.foundation_teacher_owner import select_foundation_priority_visit
-from bilqis_mlx.runtime.accepted_priority_visit import require_priority_lawful_frontier
+from bilqis_mlx.runtime.accepted_priority_visit_contracts import (
+    require_priority_lawful_frontier,
+)
 from bilqis_mlx.runtime.active_grade_cadence import read_current_cadence
 from bilqis_mlx.runtime.autonomy_state import read_autonomy_state
 from bilqis_mlx.factory.tests.curriculum.frontier.atlas_delta_adapter_fixtures import (
@@ -24,6 +26,17 @@ from bilqis_mlx.factory.tests.curriculum.frontier.atlas_delta_adapter_fixtures i
 )
 
 from .runtime import Conformance1300RuntimeSupport
+
+
+def _prepared_case(run_dir: Path):
+    """Initialize the unittest class fixture explicitly in this fresh process."""
+    Conformance1300RuntimeSupport.setUpClass()
+    case = Conformance1300RuntimeSupport(methodName="runTest")
+    case.run = run_dir
+    case.z = AtlasDeltaAdapterFixture()
+    case.z.setUp()
+    case.z.doCleanups()
+    return case
 
 
 def _autonomy_identity(run_dir: Path, release):
@@ -44,38 +57,37 @@ def _autonomy_identity(run_dir: Path, release):
 def probe(run_dir: Path) -> dict:
     run_dir = run_dir.resolve()
     data_plane = run_dir.parent / "plane.sqlite3"
-    case = Conformance1300RuntimeSupport(methodName="runTest")
-    case.run = run_dir
-    case.z = AtlasDeltaAdapterFixture()
-    case.z.setUp()
-    case.z.doCleanups()
-    with patch.dict(os.environ, {"BILQIS_DATA_PLANE": str(data_plane)}):
-        close_data_planes()
-        try:
-            fixture = case._source_fixture()
-            before = load_accepted_generation(run_dir)
-            release_before = read_accepted_atlas_factory_release(run_dir)
-            autonomy_before = _autonomy_identity(run_dir, release_before)
-            cadence_before = read_current_cadence(run_dir)
-            with case._operator_context(fixture):
-                parent, context, atlas_path, _feature_path = _execution_context(run_dir)
-                program = schedule_program_from_executable_release(context.release)
-                school = accepted_priority_school(parent, program)
-                selected = select_foundation_priority_visit(
-                    run_dir,
-                    context,
-                    atlas_path,
-                    program=program,
-                    school=school,
-                )
-                frontier = require_priority_lawful_frontier(selected)
-                active = read_active_generated_grade(run_dir)
-                release = read_accepted_atlas_factory_release(run_dir)
-            cadence_after = read_current_cadence(run_dir)
-            autonomy_after = _autonomy_identity(run_dir, release)
-            after = load_accepted_generation(run_dir)
-        finally:
+    case = _prepared_case(run_dir)
+    try:
+        with patch.dict(os.environ, {"BILQIS_DATA_PLANE": str(data_plane)}):
             close_data_planes()
+            try:
+                fixture = case._source_fixture()
+                before = load_accepted_generation(run_dir)
+                release_before = read_accepted_atlas_factory_release(run_dir)
+                autonomy_before = _autonomy_identity(run_dir, release_before)
+                cadence_before = read_current_cadence(run_dir)
+                with case._operator_context(fixture):
+                    parent, context, atlas_path, _feature_path = _execution_context(run_dir)
+                    program = schedule_program_from_executable_release(context.release)
+                    school = accepted_priority_school(parent, program)
+                    selected = select_foundation_priority_visit(
+                        run_dir,
+                        context,
+                        atlas_path,
+                        program=program,
+                        school=school,
+                    )
+                    frontier = require_priority_lawful_frontier(selected)
+                    active = read_active_generated_grade(run_dir)
+                    release = read_accepted_atlas_factory_release(run_dir)
+                cadence_after = read_current_cadence(run_dir)
+                autonomy_after = _autonomy_identity(run_dir, release)
+                after = load_accepted_generation(run_dir)
+            finally:
+                close_data_planes()
+    finally:
+        Conformance1300RuntimeSupport.doClassCleanups()
     return {
         "generation": after.generation,
         "optimizer_step": after.retained_state.optimizer_step,

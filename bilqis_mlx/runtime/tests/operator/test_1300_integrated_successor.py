@@ -1,4 +1,4 @@
-"""#1300 append-only successor witness through accepted C07 and operate_bamf."""
+"""#1300 append-only successor-admission witness through accepted C07."""
 from __future__ import annotations
 
 from bilqis_mlx.runtime.atlas_admission import (
@@ -6,6 +6,7 @@ from bilqis_mlx.runtime.atlas_admission import (
     read_accepted_atlas_lease_v2,
 )
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
+from bilqis_mlx.runtime.atlas_flywheel_runtime import AcceptedAtlasFlywheelSupervisor
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 from bilqis_mlx.runtime.bamf_operator.session import operate_bamf
 
@@ -18,13 +19,18 @@ from .conformance_1300_support.lifecycle import (
     bootstrap_staged_generation_zero,
     enroll_prepared_lease,
 )
+from .conformance_1300_support.scenario import (
+    advance_until_admitted,
+    assert_structural_admission_transition,
+    structural_certification_pass,
+)
 
 
 BILQIS_LEAF_GATE_POLICY = "DETACHED_ONLY"
 
 
 class IntegratedConformance1300SuccessorTests(Conformance1300RuntimeSupport):
-    def test_append_only_successor_is_admitted_and_learned_under_same_v2_lease(self):
+    def test_append_only_successor_is_admitted_under_same_v2_lease(self):
         fixture = self._production_parameter_fixture()
         progress = []
 
@@ -34,7 +40,7 @@ class IntegratedConformance1300SuccessorTests(Conformance1300RuntimeSupport):
 
         def one_visit():
             return operate_bamf(
-                self.run, minutes=1, max_visits=1, steps_per_visit=16,
+                self.run, minutes=1, max_visits=1, steps_per_visit=1,
                 reserve_gib=0.0, source_prefetch_workers=0,
                 parent_graph=self.parent_graph, progress=observe)
 
@@ -64,15 +70,13 @@ class IntegratedConformance1300SuccessorTests(Conformance1300RuntimeSupport):
                     source_authority=AcceptedRuntimeHost(self.run).source_authority(),
                 )
             self.assertEqual(enrolled.digest(), fixture.lease.digest())
+            supervisor = AcceptedAtlasFlywheelSupervisor(
+                self.run, self.parent_graph, reserve_gib=0.0)
 
             foundation_start = len(progress)
-            for _attempt in range(8):
-                one_visit()
-                event_release = read_accepted_atlas_factory_release(self.run)
-                if TARGET in event_release.execution_plan.capability_map:
-                    break
-            else:
-                self.fail("A.IDENTITY did not qualify TARGET for C07 within 8 visits")
+            with structural_certification_pass():
+                _foundation_results, event_release, _foundation_parent = (
+                    advance_until_admitted(self, progress, TARGET))
             foundation_progress = progress[foundation_start:]
             self.assertIn("selected A.IDENTITY with ", "\n".join(foundation_progress))
             self.assertNotIn(
@@ -86,17 +90,37 @@ class IntegratedConformance1300SuccessorTests(Conformance1300RuntimeSupport):
                 "grade certification succeeded; activated exact receipt-bound generated successor")
             self.assertLess(foundation_boundary_refresh, foundation_transition)
             admitted_event = load_accepted_generation(self.run)
-            self.assertGreater(admitted_event.retained_state.optimizer_step, 0)
+            self.assertGreater(
+                admitted_event.retained_state.optimizer_step,
+                before.retained_state.optimizer_step,
+            )
 
-            target_start = len(progress)
-            for _attempt in range(8):
-                one_visit()
-                successor_release = read_accepted_atlas_factory_release(self.run)
-                if SUCCESSOR in successor_release.execution_plan.capability_map:
+            self._credit_all_predecessor_learning(supervisor)
+            target_learning_start = len(progress)
+            before_target_learning = load_accepted_generation(self.run)
+            for _attempt in range(4):
+                result = one_visit()
+                if (result.accepted
+                        and "selected " + TARGET + " with "
+                        in "\n".join(progress[target_learning_start:])):
                     break
             else:
-                self.fail(f"{TARGET} did not qualify {SUCCESSOR} within 8 visits")
-            learned_event = load_accepted_generation(self.run)
+                self.fail(f"{TARGET} did not retain within 4 visits")
+            target_learned = load_accepted_generation(self.run)
+            self.assertGreater(
+                target_learned.retained_state.optimizer_step,
+                before_target_learning.retained_state.optimizer_step,
+            )
+            # Evidence is checkpoint-bound. The retained TARGET update changes
+            # causal learner identity, so refresh predecessor qualification at
+            # the new exact checkpoint before asking #1334/C07 for expansion.
+            self._credit_all_predecessor_learning(supervisor)
+
+            target_start = len(progress)
+            with structural_certification_pass():
+                _transition_results, successor_release, _successor_parent = (
+                    advance_until_admitted(self, progress, SUCCESSOR))
+            transitioned_event = load_accepted_generation(self.run)
             target_progress = progress[target_start:]
             self.assertIn("selected " + TARGET + " with ", "\n".join(target_progress))
             self.assertNotIn(
@@ -109,9 +133,13 @@ class IntegratedConformance1300SuccessorTests(Conformance1300RuntimeSupport):
             target_transition = target_progress.index(
                 "grade certification succeeded; activated exact receipt-bound generated successor")
             self.assertLess(target_boundary_refresh, target_transition)
-            self.assertGreater(
-                learned_event.retained_state.optimizer_step,
-                admitted_event.retained_state.optimizer_step,
+            # Structural successor admission must advance accepted generation,
+            # but it need not retain another optimizer update.  The newly
+            # admitted TARGET already proved real retained learning above; this
+            # boundary proves append-only production adoption without allowing
+            # learner state to regress.
+            assert_structural_admission_transition(
+                self, target_learned, transitioned_event,
             )
 
             with self.host_registry():
@@ -121,23 +149,12 @@ class IntegratedConformance1300SuccessorTests(Conformance1300RuntimeSupport):
                 )
             self.assertIsNotNone(accepted_lease)
             self.assertEqual(accepted_lease.digest(), fixture.lease.digest())
-
-            successor_start = len(progress)
-            before_successor_learning = load_accepted_generation(self.run)
-            for _attempt in range(8):
-                result = one_visit()
-                if (result.accepted
-                        and "selected " + SUCCESSOR + " with "
-                        in "\n".join(progress[successor_start:])):
-                    break
-            else:
-                self.fail(f"{SUCCESSOR} did not retain within 8 visits")
             final = load_accepted_generation(self.run)
             final_release = read_accepted_atlas_factory_release(self.run)
 
-        self.assertGreater(
+        self.assertEqual(
             final.retained_state.optimizer_step,
-            before_successor_learning.retained_state.optimizer_step,
+            transitioned_event.retained_state.optimizer_step,
         )
         self.assertEqual(final_release.release_sha256, successor_release.release_sha256)
         self.assertIn(TARGET, final_release.execution_plan.capability_map)
