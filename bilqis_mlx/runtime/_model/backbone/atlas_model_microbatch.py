@@ -1,14 +1,9 @@
 """True MLX microbatch execution while preserving row-scoped B11 evidence."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import time
 
 import mlx.core as mx
-
-from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
-from bilqis_mlx.runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
-from bilqis_mlx.semantics.frame_compiler import CompiledFrameRows
 
 from .atlas_model_backend import Backend, model_backend
 from .atlas_model_contracts import (
@@ -29,6 +24,11 @@ from .microbatch.refinement_kernel import (
     batched_refine_hidden_with_routing,
     batched_refinement_routing_loss, prepare_refinement_selections,
 )
+from .microbatch.compiled_batch import (
+    _MIN_ROWS, _compiled_microbatch, _microbatch_salience_labels,
+    microbatch_compatible,
+)
+from .microbatch.gradient_preflight import gradient_path as _gradient_path_impl
 from .microbatch.route_kernel import (
     prepare_route_microbatch_kernel, route_microbatch_compatible,
     route_microbatch_loss_and_trajectory,
@@ -40,154 +40,21 @@ from bilqis_mlx.b11_observation import (
 )
 
 
-_MIN_ROWS = 2
 _ROUTE_CONTEXT_FIELDS = 3
-
-
-@dataclass(frozen=True)
-class _CompiledMicrobatch:
-    compiled: CompiledEncoderInput
-    sources: tuple
-    feature_schema: object
-    active_semantic_rows: object
-    row_batches: tuple[BamfCompiledBatch, ...]
-    atlas_feature_artifact_owner: AtlasFeatureArtifactOwner = field(
-        init=False, compare=False)
-
-    def __post_init__(self):
-        if (type(self.compiled) is not CompiledEncoderInput
-                or type(self.sources) is not tuple
-                or len(self.sources) != len(self.compiled.compiled.rows)
-                or type(self.row_batches) is not tuple
-                or len(self.row_batches) != len(self.sources)
-                or len(self.row_batches) < _MIN_ROWS
-                or any(type(item) is not BamfCompiledBatch
-                       for item in self.row_batches)):
-            _invalid("B11_MICROBATCH_COMPILED_INPUT_INVALID")
-        object.__setattr__(
-            self, "atlas_feature_artifact_owner",
-            AtlasFeatureArtifactOwner(self.compiled.features, self.feature_schema))
-
-
-def _merge_compiled_rows(row_batches):
-    rows = tuple(item.compiled.compiled.rows[0] for item in row_batches)
-    width = max(len(row.positions) for row in rows)
-    compiled_rows = CompiledFrameRows(
-        rows,
-        tuple(row.positions + (None,) * (width - len(row.positions))
-              for row in rows),
-        tuple((True,) * len(row.positions) + (False,) * (width - len(row.positions))
-              for row in rows))
-    first = row_batches[0].compiled
-    source_asts = tuple(
-        None if item.compiled.source_asts is None else item.compiled.source_asts[0]
-        for item in row_batches)
-    receipts = tuple(
-        None if item.compiled.partial_forest_receipts is None
-        else item.compiled.partial_forest_receipts[0]
-        for item in row_batches)
-    if not any(item is not None for item in source_asts):
-        source_asts = receipts = None
-    return CompiledEncoderInput(
-        compiled_rows,
-        tuple(item.compiled.compiler_configs[0] for item in row_batches),
-        first.features, first.extents,
-        source_asts=source_asts, partial_forest_receipts=receipts)
-
-
-def microbatch_compatible(
-        row_batches, answer_plans=None, targets=None, masks=None) -> bool:
-    """Return whether rows can share one B11 source-backbone dispatch safely."""
-    if (type(row_batches) is not tuple or len(row_batches) < _MIN_ROWS
-            or any(type(item) is not BamfCompiledBatch for item in row_batches)):
-        return False
-    first = row_batches[0]
-    for item in row_batches:
-        item.__post_init__()
-        row = item.compiled.compiled.rows[0]
-        item.compiled.packed_frame_artifact_owner.require_row(row)
-        item.atlas_feature_artifact_owner.require(item.compiled.features)
-        if (item.compiled.features != first.compiled.features
-                or item.compiled.extents != first.compiled.extents
-                or item.feature_schema != first.feature_schema
-                or item.active_semantic_rows != first.active_semantic_rows
-                or item.sources[0].selection != first.sources[0].selection):
-            return False
-    source_authorities = tuple(
-        item.source_execution_authority for item in row_batches)
-    bound_source_authorities = tuple(
-        authority is not None for authority in source_authorities)
-    if any(bound_source_authorities):
-        if not all(bound_source_authorities):
-            return False
-        first_owner = source_authorities[0].source_owner_contract
-        if any(authority.source_owner_contract != first_owner
-               for authority in source_authorities[1:]):
-            return False
-    if answer_plans is None and targets is None and masks is None:
-        return True
-    if answer_plans is None or targets is None or masks is None:
-        return False
-    if any(plan.snapshot != answer_plans[0].snapshot for plan in answer_plans):
-        return False
-    return route_microbatch_compatible(
-        row_batches, answer_plans, targets, masks)
-
-
-def _compiled_microbatch(row_batches):
-    if not microbatch_compatible(row_batches):
-        _invalid("B11_MICROBATCH_ROWS_INCOMPATIBLE")
-    merged = _merge_compiled_rows(row_batches)
-    first = row_batches[0]
-    result = _CompiledMicrobatch(
-        merged, tuple(item.sources[0] for item in row_batches),
-        first.feature_schema, first.active_semantic_rows, row_batches)
-    result.__post_init__()
-    return result
-
-
-def _microbatch_salience_labels(row_batches, salience_supervision):
-    if salience_supervision is None:
-        return ()
-    from .salience_training import SalienceSupervision
-    if type(salience_supervision) is not SalienceSupervision:
-        _invalid("BAMF_SALIENCE_SUPERVISION_REQUIRED")
-    return tuple(
-        salience_supervision.labels_for(row_batch) for row_batch in row_batches)
 
 
 def _gradient_path(
         backend, params, batch, row_batches, answer_plans, targets, masks,
         generation, cache, rebind_execution, salience_supervision, snapshot,
         salience_labels):
-    timings = {}
-    started = time.perf_counter()
-    refinement = prepare_refinement_selections(
-        row_batches, answer_plans, generation)
-    timings["b11_refinement_selection_wall_seconds"] = time.perf_counter() - started
-    started = time.perf_counter()
-    route_vectorized = route_microbatch_compatible(
-        row_batches, answer_plans, targets, masks)
-    timings["b11_route_compatibility_wall_seconds"] = time.perf_counter() - started
-    if not route_vectorized:
-        from bilqis_mlx.runtime.b11_source_execution_authority import (
-            b11_source_authority_launch_epoch,
-        )
-        started = time.perf_counter()
-        with b11_source_authority_launch_epoch(row_batches):
-            preflight = microbatch_trace_preflight(
-                backend, params, batch, row_batches, answer_plans, targets, masks,
-                generation, cache, rebind_execution, salience_supervision, snapshot)
-        timings["b11_fallback_trace_preflight_wall_seconds"] = (
-            time.perf_counter() - started)
-        timings["b11_route_kernel_prepare_wall_seconds"] = 0.0
-        return False, preflight, None, None, timings
-    started = time.perf_counter()
-    kernel = prepare_route_microbatch_kernel(
-        row_batches, answer_plans, targets, masks, None, salience_labels)
-    timings["b11_route_kernel_prepare_wall_seconds"] = time.perf_counter() - started
-    timings["b11_fallback_trace_preflight_wall_seconds"] = 0.0
-    return True, None, refinement, kernel, timings
+    return _gradient_path_impl(
+        backend, params, batch, row_batches, answer_plans, targets, masks,
+        generation, cache, rebind_execution, salience_supervision, snapshot,
+        salience_labels,
+        prepare_refinement_selections=prepare_refinement_selections,
+        route_microbatch_compatible=route_microbatch_compatible,
+        microbatch_trace_preflight=microbatch_trace_preflight,
+        prepare_route_microbatch_kernel=prepare_route_microbatch_kernel)
 
 
 def _materialize_gradient(
