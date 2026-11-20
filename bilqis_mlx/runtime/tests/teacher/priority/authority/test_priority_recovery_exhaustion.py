@@ -1,14 +1,13 @@
-"""Priority authority yields from exhausted active grade to admitted later work."""
+"""Recovery exhaustion never invents future generated-grade authority."""
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from bilqis_mlx.runtime.tests.teacher.priority.authority.test_priority_signer import (
     _foundation_case,
-    _lawful_frontier,
 )
 
 
-def test_recovery_exhaustion_yields_priority_to_next_admitted_grade():
+def test_recovery_exhaustion_keeps_priority_inside_active_generated_grade():
     from bilqis_mlx.runtime import priority_authority as authority
 
     (registry, signer, source_context, planning, parent,
@@ -18,7 +17,6 @@ def test_recovery_exhaustion_yields_priority_to_next_admitted_grade():
         phase=SimpleNamespace(value="BOUNDARY"),
         disposition=SimpleNamespace(value="RECOVERY_EXHAUSTED"),
     )
-    yielded = _lawful_frontier(planning_generation, "capability:beta")
     with patch(
         "bilqis_mlx.runtime.bamf_bundle.accepted_runtime._accepted_correction_registry",
         return_value=(cache, registry),
@@ -43,9 +41,6 @@ def test_recovery_exhaustion_yields_priority_to_next_admitted_grade():
     ), patch(
         "bilqis_mlx.runtime.active_grade_cadence.issue_active_grade_cadence",
         return_value=exhausted,
-    ), patch(
-        "bilqis_mlx.runtime.lawful_teaching_frontier."
-        "issue_recovery_yield_teaching_frontier", return_value=yielded,
     ), patch.object(
         authority, "_ordered_rejections", return_value=(),
     ), patch.object(
@@ -56,8 +51,8 @@ def test_recovery_exhaustion_yields_priority_to_next_admitted_grade():
             teacher_state=parent.teacher_state)
 
     assert issued.cadence is exhausted
-    assert issued.selection_cadence is None
-    assert issued.lawful_frontier is yielded
-    assert tuple(capability for capability, _offer in issued.offers) == (
-        "capability:beta",
-    )
+    assert issued.selection_cadence is exhausted
+    assert issued.lawful_frontier is lawful
+    assert issued.frontier is None
+    assert issued.history is None
+    assert issued.offers == ()
