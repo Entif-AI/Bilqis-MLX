@@ -95,6 +95,7 @@ class CandidateTransaction:
         require_training_objective_digest(self.training_objective_digest)
         custody = self.parent.custody
         if (custody is not None
+                and custody.training_objective_digest is not None
                 and (custody.training_objective_ref != self.training_objective_ref
                      or custody.training_objective_digest
                      != self.training_objective_digest)):
@@ -155,15 +156,14 @@ def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0,
         parent_identity_sha256 = candidate_identity_digest(parent)
     parent_guard = _parent_object_guard(parent) if parent_guard is None else parent_guard
     custody = parent.custody
-    if custody is None:
+    if (custody is None
+            or (custody.training_objective_ref is None
+                and custody.training_objective_digest is None)):
         from bilqis_mlx.runtime.training_objective import (
             current_training_objective,
         )
         objective = current_training_objective()
         objective_ref, objective_digest = objective.ref, objective.digest
-    elif (custody.training_objective_ref is None
-            or custody.training_objective_digest is None):
-        invalid()
     else:
         from bilqis_mlx.runtime.training_objective import (
             require_training_objective_digest,
