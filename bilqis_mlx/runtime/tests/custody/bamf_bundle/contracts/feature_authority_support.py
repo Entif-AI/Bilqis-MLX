@@ -37,8 +37,10 @@ def feature_schema() -> dict:
 
 
 def source_features(*, release=RELEASE) -> AtlasFeatures:
+    sentinel_map = (("NONE", 1), ("UNKNOWN", 0))
     return AtlasFeatures(
-        release, ATLAS_BUNDLE, SOURCE_BUNDLE, None, (), (), (), (), ())
+        release, ATLAS_BUNDLE, SOURCE_BUNDLE, None,
+        sentinel_map, sentinel_map, sentinel_map, (), ())
 
 
 def feature_bound(source, features: AtlasFeatures, *, digest=None, release=RELEASE,

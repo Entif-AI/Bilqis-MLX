@@ -6,6 +6,8 @@ from dataclasses import asdict, dataclass, fields
 from ..records import canonical, invalid, sha
 
 RECEIPT_SCHEMA = "bilqis.mlx.bamf-accepted-generation-feature-receipt/v1"
+ARTIFACT_COMMITMENT_SCHEMA = (
+    "bilqis.mlx.bamf-accepted-feature-artifact-commitment/v1")
 
 
 def is_digest(value: object) -> bool:
@@ -68,3 +70,49 @@ class AcceptedGenerationFeatureReceipt:
         if record["receipt_sha256"] != receipt.digest:
             invalid("BAMF_FEATURE_RECEIPT_INVALID")
         return receipt
+
+
+@dataclass(frozen=True)
+class AcceptedFeatureArtifactCommitment:
+    """Feature slice of an owner-authenticated accepted-authority checkpoint.
+
+    The record is data, not checkpoint authority by itself. The checkpoint owner
+    authenticates this commitment before B13 consumes it to verify current feature
+    bytes without replaying feature ancestry.
+    """
+
+    receipt: AcceptedGenerationFeatureReceipt
+    artifact_bundle_id: str
+    artifact_predecessor_digest: str | None
+    schema_version: str = ARTIFACT_COMMITMENT_SCHEMA
+
+    def __post_init__(self) -> None:
+        if (self.schema_version != ARTIFACT_COMMITMENT_SCHEMA
+                or type(self.receipt) is not AcceptedGenerationFeatureReceipt
+                or not is_digest(self.artifact_bundle_id)
+                or (self.artifact_predecessor_digest is not None
+                    and not is_digest(self.artifact_predecessor_digest))):
+            invalid("BAMF_FEATURE_CHECKPOINT_COMMITMENT_INVALID")
+
+    def to_record(self) -> dict:
+        return {
+            "schema_version": self.schema_version,
+            "receipt": self.receipt.to_record(),
+            "artifact_bundle_id": self.artifact_bundle_id,
+            "artifact_predecessor_digest": self.artifact_predecessor_digest,
+        }
+
+    @classmethod
+    def from_record(cls, record) -> "AcceptedFeatureArtifactCommitment":
+        names = {
+            "schema_version", "receipt", "artifact_bundle_id",
+            "artifact_predecessor_digest",
+        }
+        if not isinstance(record, dict) or set(record) != names:
+            invalid("BAMF_FEATURE_CHECKPOINT_COMMITMENT_INVALID")
+        return cls(
+            AcceptedGenerationFeatureReceipt.from_record(record["receipt"]),
+            record["artifact_bundle_id"],
+            record["artifact_predecessor_digest"],
+            record["schema_version"],
+        )

@@ -46,14 +46,15 @@ def _context(run_dir, successor):
         read_accepted_atlas_factory_release, read_accepted_atlas_lease_v2,
     )
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import accepted_generation
-    from bilqis_mlx.runtime.bamf_bundle import (
-        load_bamf_generation_authority, read_accepted_generation_feature_context,
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        load_accepted_generation_with_feature_context,
     )
     from bilqis_mlx.runtime.jit_adoption import verify_current_implementations
     from bilqis_mlx.factory.live_answers import live_answer_registry
     from bilqis_mlx.source_adapters.school import live_source_registry
 
-    parent, manifest = load_bamf_generation_authority(run_dir / 'bamf-state.json')
+    parent, feature = load_accepted_generation_with_feature_context(run_dir)
+    manifest = feature.receipt.generation_manifest_sha256
     pointer, _ = accepted_generation(run_dir / 'bamf-state.json')
     if pointer['manifest_sha256'] != manifest:
         _invalid('BAMF_PROFILE_ACCEPTED_PARENT_CHANGED')
@@ -62,7 +63,6 @@ def _context(run_dir, successor):
     if lease is None:
         _invalid('BAMF_PROFILE_CURRENT_LEASE_REQUIRED')
     approval = lease.source_approval
-    feature = read_accepted_generation_feature_context(run_dir / 'bamf-state.json')
     if (not approval.audit_passed or not approval.rights_compatible
             or approval.atlas_release_sha256 != feature.receipt.source_release_sha256
             or approval.atlas_release_sha256 != feature.features.semantic_release):
@@ -111,15 +111,12 @@ def _verify_exact_retry(run_dir, pointer, parent, successor, lease):
             or binding.parent_manifest_sha256 != parent.parent_manifest_sha256):
         _invalid('BAMF_PROFILE_RETRY_AUTHORITY_DRIFT')
     digest = binding.predecessor_factory_release_sha256
-    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import parent_acceptance_anchor_from_manifest
     from bilqis_mlx.runtime.atlas_capability_adoption_v2 import _historical_factory_release_sha256
     prior_manifest = binding.parent_manifest_sha256
     prior_acceptance = parent_acceptance_anchor_from_manifest(run_dir, pointer['manifest_sha256'])
-    prior_student = load_bamf_bundle(
-        run_dir / 'bamf-bundles' / prior_manifest, expected_manifest_sha256=prior_manifest)
     if _historical_factory_release_sha256(
-            run_dir, prior_manifest, prior_acceptance, prior_student) != digest:
+            run_dir, prior_manifest, prior_acceptance) != digest:
         _invalid('BAMF_PROFILE_RETRY_AUTHORITY_DRIFT')
     previous = _read_executable_factory_release_artifact(run_dir, {
         'factory_release_sha256': digest,

@@ -40,6 +40,17 @@ def _verify_prior_snapshot(
         _invalid("BAMF_VOCABULARY_PRIOR_INVALID")
     if build_feature_manifest(snapshot, prior.feature_schema) != prior.features:
         _invalid("BAMF_VOCABULARY_FEATURE_SOURCE_REPLAY_MISMATCH")
+    return _verify_prior_snapshot_identity(
+        prior, snapshot, require_initial_active_set=require_initial_active_set)
+
+
+def _verify_prior_snapshot_identity(
+        prior: VocabularyPrior,
+        snapshot: FrozenAtlasSnapshot, *,
+        require_initial_active_set: bool = True) -> FrozenAtlasSnapshot:
+    """Verify pinned source identity and active ABI without rebuilding features."""
+    if type(snapshot) is not FrozenAtlasSnapshot:
+        _invalid("BAMF_VOCABULARY_PRIOR_INVALID")
     if (snapshot.shape_policy_sha256 != _atlas_sha256(_atlas_bytes(SHAPE_POLICY))
             or snapshot.bundle_id != prior.features.atlas_bundle_id
             or snapshot.release_sha256 != prior.features.semantic_release
@@ -100,6 +111,20 @@ def _verified_authenticated_prior(
     return _verify_prior_snapshot(
         prior, load_pinned_atlas_snapshot(prior.source_selection),
         require_initial_active_set=False)
+
+
+def _verified_checkpoint_prior(
+        prior: VocabularyPrior,
+        accepted_features: AtlasFeatures,
+        snapshot: FrozenAtlasSnapshot) -> FrozenAtlasSnapshot:
+    """Consume B13-authenticated current feature state without predecessor replay."""
+    _validate_prior_record(prior)
+    if (type(accepted_features) is not AtlasFeatures
+            or prior.features != accepted_features
+            or prior.extents.factor_map_digest != accepted_features.digest):
+        _invalid("BAMF_VOCABULARY_CHECKPOINT_FEATURE_AUTHORITY_REQUIRED")
+    return _verify_prior_snapshot_identity(
+        prior, snapshot, require_initial_active_set=False)
 
 
 def _plan_from_snapshot(
@@ -186,3 +211,15 @@ def _plan_authenticated_vocabulary_extension(
     snapshot = _verified_authenticated_prior(
         prior, accepted_features, predecessor)
     return _plan_from_snapshot(prior, admissions, shape_policy, snapshot)
+
+
+def _plan_checkpoint_vocabulary_extension(
+    prior: VocabularyPrior,
+    admissions: tuple[str, ...],
+    shape_policy: ModelTopologySpecV2,
+    accepted_features: AtlasFeatures,
+    snapshot: FrozenAtlasSnapshot,
+) -> VocabularyExtension:
+    """Plan from checkpoint-authenticated current state without history replay."""
+    verified = _verified_checkpoint_prior(prior, accepted_features, snapshot)
+    return _plan_from_snapshot(prior, admissions, shape_policy, verified)

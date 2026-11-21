@@ -157,7 +157,7 @@ function currentWork(model, { nowMs, locale } = {}) {
     testId: "home-current-time",
   });
   return `<section class="home-surface home-current" ${testIdAttribute("home", "current", "work")}>
-    <header><div><span class="eyebrow">${esc(t("home.current.eyebrow"))}</span><h2>${esc(t("home.current.title"))}</h2></div><div class="home-heading-tools"><span>${esc(current.capabilityId ? t("home.current.observed") : t("home.common.unavailable"))}</span>${help("home.help.current.label", "home.help.current.body", "home-help-current")}</div></header>
+    <header><div><span class="eyebrow">${esc(t("home.current.eyebrow"))}</span><h2>${esc(t("home.current.title"))}</h2></div><div class="home-heading-tools"><span>${esc((current.capabilityId || model.observed?.current) ? t("home.current.observed") : t("home.common.unavailable"))}</span>${help("home.help.current.label", "home.help.current.body", "home-help-current")}</div></header>
     ${model.observed?.current ? renderObservedWork(model.observed, esc, { nowMs, locale }) : `<dl>${rows.map(([labelKey, value]) => `<div><dt>${esc(t(labelKey))}</dt><dd>${esc(value ?? t("home.common.unavailable"))}</dd></div>`).join("")}</dl><div class="home-time-row"><span>${esc(t("home.current.observedTime"))}</span>${observedTime}</div>${inspect}`}
   </section>`;
 }

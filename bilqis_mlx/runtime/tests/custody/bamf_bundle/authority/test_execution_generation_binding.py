@@ -12,6 +12,7 @@ import mlx.core as mx
 
 import bilqis_mlx.runtime.backbone_identity as identity
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
+from bilqis_mlx.runtime.bamf_bundle import currentness_transaction
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_candidate import begin_candidate, candidate_step
 from bilqis_mlx.runtime.bamf_bundle.admission import (
@@ -20,6 +21,9 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     bind_candidate_execution_cache, bind_execution_generation,
     require_candidate_execution_cache,
+)
+from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
+    bind_accepted_currentness_transaction,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
     HP, NAME, candidate, execution_provenance, parent_state, publish_candidate,
@@ -42,7 +46,7 @@ class ExecutionGenerationBindingTests(unittest.TestCase):
             self.parent = load_accepted_generation(self.run)
             self.accepted = bind_accepted_execution_cache(self.run)
 
-    def test_accepted_state_hashes_once_then_reuses_exact_object_binding(self):
+    def test_accepted_state_reuses_binding_issued_during_cache_creation(self):
         parameters = self.parent.retained_state.optimizer.parameters
         original = identity.bamf_parameter_tree_digest
         with shape_patch(), patch.object(
@@ -55,7 +59,18 @@ class ExecutionGenerationBindingTests(unittest.TestCase):
                 spec=self.parent.topology, extents=self.parent.extents)
         self.assertIs(first, second)
         self.assertEqual(first.generation_digest, self.accepted.generation_binding)
-        self.assertEqual(digest.call_count, 1)
+        self.assertEqual(digest.call_count, 0)
+
+    def test_visit_currentness_reuses_bundle_witness_from_accepted_cache(self):
+        with patch.object(
+                currentness_transaction, "require_bamf_bundle_currentness",
+                wraps=currentness_transaction.require_bamf_bundle_currentness) as current, patch.object(
+                    currentness_transaction, "bind_source_authority_currentness",
+                    return_value=object()):
+            transaction = bind_accepted_currentness_transaction(
+                self.run, self.parent, self.accepted)
+        self.assertIs(transaction._bundle_currentness, self.accepted._bundle_currentness)
+        current.assert_called_once_with(self.accepted._bundle_currentness)
 
     def test_candidate_state_hashes_once_and_substitution_cannot_reuse_binding(self):
         transaction = begin_candidate(self.parent.retained_state)

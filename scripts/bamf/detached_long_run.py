@@ -123,12 +123,13 @@ def _prepare_git_snapshot(source: Path, snapshot: Path) -> bool:
 
 
 def _bind_local_runtime(source: Path, snapshot: Path) -> None:
-    """Expose an ignored local venv without copying it into every snapshot."""
-    source_venv = source / ".venv"
-    snapshot_venv = snapshot / ".venv"
-    if not source_venv.exists() or snapshot_venv.exists():
-        return
-    snapshot_venv.symlink_to(source_venv, target_is_directory=True)
+    """Expose ignored local runtimes without copying them into every snapshot."""
+    for name in (".venv", "node_modules"):
+        source_runtime = source / name
+        snapshot_runtime = snapshot / name
+        if not source_runtime.exists() or snapshot_runtime.exists():
+            continue
+        snapshot_runtime.symlink_to(source_runtime, target_is_directory=True)
 
 
 def _discard_snapshot(source: Path, snapshot: Path, *, git_snapshot: bool) -> None:

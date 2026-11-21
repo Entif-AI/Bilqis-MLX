@@ -16,6 +16,7 @@ from .priority_rejection_projection import RejectionProjection
 
 
 SHA256_HEX_LENGTH = 64
+_PORTABLE_TEACHER_AUTHORITY = "_portable_teacher_authority_verified"
 
 
 def _invalid(reason):
@@ -136,6 +137,7 @@ def _validated_rejection(event, parent, cache):
             or len(authority_sha256) != SHA256_HEX_LENGTH
             or any(char not in "0123456789abcdef" for char in authority_sha256)):
         _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
+    portable = event.get("rejection_authority") is not None
     receipt_sha256 = _rejection_receipt_sha(
         event, parent, cache, evidence, authority_sha256)
     selected, visit_id, reason, rejection_attempt_ordinal, rejection_journal_ordinal = (
@@ -144,13 +146,17 @@ def _validated_rejection(event, parent, cache):
         validate_rejection_weaknesses,
     )
     weaknesses = validate_rejection_weaknesses(evidence, receipt_sha256)
+    replay_evidence = {
+        **evidence,
+        _PORTABLE_TEACHER_AUTHORITY: portable,
+    }
     return (
         receipt_sha256,
         (selected, visit_id, reason, receipt_sha256),
         rejection_attempt_ordinal,
         rejection_journal_ordinal,
         weaknesses,
-        evidence,
+        replay_evidence,
     )
 
 def _current_projection(run_dir, parent, cache):

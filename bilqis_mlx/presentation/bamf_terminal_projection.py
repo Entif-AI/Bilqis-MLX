@@ -26,6 +26,28 @@ def _clear_owned(board):
         rows.extend(retained)
 
 
+def _visit_identity(visit):
+    visit_id = visit.get("visit_id")
+    if isinstance(visit_id, str) and visit_id:
+        return ("visit", visit_id)
+    observation_id = visit.get("observation_id")
+    if isinstance(observation_id, str) and observation_id:
+        return ("observation", observation_id)
+    return (
+        "shape", visit.get("capability_id"),
+        visit.get("candidate_optimizer_step"), visit.get("outcome"),
+    )
+
+
+def _attempted_steps(visit) -> int:
+    outcome = visit.get("outcome")
+    value = (
+        visit.get("candidate_step") if outcome == "RUNNING"
+        else visit.get("candidate_horizon")
+    )
+    return value if type(value) is int and value >= 0 else 0
+
+
 def refresh_bamf_terminal_projection(board) -> None:
     """Update display-only rows; malformed input preserves the last good view."""
     hint = getattr(board, "log_hint", "")
@@ -59,6 +81,24 @@ def refresh_bamf_terminal_projection(board) -> None:
     while len(history) > limit:
         history.pop(next(iter(history)))
     projected_visits = tuple(history.values())
+    identities = {_visit_identity(visit) for visit in projected_visits}
+    baseline = getattr(board, "_bamf_session_visit_baseline", None)
+    if baseline is None:
+        baseline = set(identities)
+        board._bamf_session_visit_baseline = baseline
+    session_visits = tuple(
+        visit for visit in projected_visits
+        if _visit_identity(visit) not in baseline)
+    terminal_visits = tuple(
+        visit for visit in session_visits
+        if visit.get("outcome") in {"ACCEPTED", "REJECTED"})
+    board.state.update(
+        visits=len(terminal_visits),
+        retained_visits=sum(
+            visit.get("outcome") == "ACCEPTED" for visit in terminal_visits),
+        attempted_steps=sum(_attempted_steps(visit) for visit in session_visits),
+        _rate_sample_eligible=True,
+    )
     _clear_owned(board)
     board.rows["CANDIDATES"].extend(
         candidate_row(visit) for visit in projected_visits)

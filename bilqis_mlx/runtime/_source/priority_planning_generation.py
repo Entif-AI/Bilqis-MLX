@@ -102,14 +102,14 @@ def bind_priority_planning_generation(source_context, parent, atlas_artifact_pat
     currentness = bind_accepted_currentness_transaction(
         run_dir, parent, cache, metrics=metrics)
     from bilqis_mlx.runtime.bamf_bundle import (
-        AuthenticatedGenerationFeatureContext,
         authenticate_bamf_execution_feature_context,
+        is_authenticated_generation_feature_context,
     )
     authenticated = source_context._accepted_feature_context
     if authenticated is None:
         authenticated = authenticate_bamf_execution_feature_context(
             parent, atlas_artifact_path, source_context.run_dir)
-    elif (type(authenticated) is not AuthenticatedGenerationFeatureContext
+    elif (not is_authenticated_generation_feature_context(authenticated)
             or authenticated.selection.path != str(atlas_artifact_path)):
         _invalid_source_batch('BAMF_PRIORITY_PLANNING_GENERATION_INVALID')
     authenticated.__post_init__()

@@ -21,7 +21,9 @@ from .vocabulary import (
     STAGED_ONLY, VocabularyExtension, VocabularyPrior,
     plan_vocabulary_extension,
 )
-from .vocabulary_planning import _plan_authenticated_vocabulary_extension
+from .vocabulary_planning import (
+    _plan_authenticated_vocabulary_extension, _plan_checkpoint_vocabulary_extension,
+)
 
 RESOURCE_SCHEMA = "bilqis.atlas-vocabulary-resource-estimate/v1"
 REGISTRY_DELTA_SCHEMA = "bilqis.atlas-vocabulary-registry-mirror-delta/v1"
@@ -135,6 +137,7 @@ def _build_registry_mirror_delta(
     source_bundle_path: Path,
     accepted_features=None,
     predecessor=None,
+    checkpoint_snapshot=None,
 ) -> RegistryMirrorDelta:
     """Derive descriptions from verified source SKOS.definition, not labels."""
     if (type(prior) is not VocabularyPrior
@@ -142,15 +145,24 @@ def _build_registry_mirror_delta(
             or not isinstance(source_bundle_path, Path)):
         _invalid("BAMF_VOCABULARY_MIRROR_INPUT_INVALID")
     admissions = tuple(item.semantic_id for item in plan.allocations)
-    replay = (plan_vocabulary_extension(
-        prior, admissions, ModelTopologySpecV2())
-        if accepted_features is None and predecessor is None
-        else _plan_authenticated_vocabulary_extension(
+    if checkpoint_snapshot is not None:
+        if accepted_features is None or predecessor is not None:
+            _invalid("BAMF_VOCABULARY_CHECKPOINT_FEATURE_AUTHORITY_REQUIRED")
+        replay = _plan_checkpoint_vocabulary_extension(
             prior, admissions, ModelTopologySpecV2(),
-            accepted_features, predecessor))
+            accepted_features, checkpoint_snapshot)
+        snapshot = checkpoint_snapshot
+    elif accepted_features is None and predecessor is None:
+        replay = plan_vocabulary_extension(
+            prior, admissions, ModelTopologySpecV2())
+        snapshot = load_pinned_atlas_snapshot(prior.source_selection)
+    else:
+        replay = _plan_authenticated_vocabulary_extension(
+            prior, admissions, ModelTopologySpecV2(),
+            accepted_features, predecessor)
+        snapshot = load_pinned_atlas_snapshot(prior.source_selection)
     if replay != plan:
         _invalid("BAMF_VOCABULARY_MIRROR_SOURCE_REPLAY_MISMATCH")
-    snapshot = load_pinned_atlas_snapshot(prior.source_selection)
     source_bundle_id, payloads = _verify_bundle(source_bundle_path)
     if source_bundle_id != snapshot.source_bundle_id:
         _invalid("BAMF_VOCABULARY_MIRROR_SOURCE_BUNDLE_MISMATCH")
@@ -222,3 +234,18 @@ def _build_authenticated_registry_mirror_delta(
     return _build_registry_mirror_delta(
         prior, plan, source_bundle_path=source_bundle_path,
         accepted_features=accepted_features, predecessor=predecessor)
+
+
+def _build_checkpoint_registry_mirror_delta(
+    prior: VocabularyPrior,
+    plan: VocabularyExtension,
+    *,
+    source_bundle_path: Path,
+    accepted_features,
+    checkpoint_snapshot,
+) -> RegistryMirrorDelta:
+    """A02 path consuming current B13 checkpoint authority without history replay."""
+    return _build_registry_mirror_delta(
+        prior, plan, source_bundle_path=source_bundle_path,
+        accepted_features=accepted_features,
+        checkpoint_snapshot=checkpoint_snapshot)

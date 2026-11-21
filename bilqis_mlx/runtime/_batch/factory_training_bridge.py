@@ -7,7 +7,7 @@ import time
 from bilqis_mlx.factory.teaching import DeliveredTeaching
 from bilqis_mlx.runtime.atlas_model_contracts import BamfCompiledBatch
 from bilqis_mlx.runtime.bamf_bundle import (
-    AuthenticatedCandidateFeatureContext, AuthenticatedGenerationFeatureContext,
+    AuthenticatedCandidateFeatureContext, is_authenticated_generation_feature_context,
     BamfBundleCandidate,
     authenticate_bamf_execution_feature_context,
 )
@@ -41,9 +41,9 @@ class PreparedFactoryTrainingBatch:
                        for item in self.motif_inputs)
                 or any(type(item) is not BamfCompiledBatch
                        for item in self.compiled_rows)
-                or type(self.semantic_context) not in (
-                    AuthenticatedCandidateFeatureContext,
-                    AuthenticatedGenerationFeatureContext)):
+                or (type(self.semantic_context) is not AuthenticatedCandidateFeatureContext
+                    and not is_authenticated_generation_feature_context(
+                        self.semantic_context))):
             _invalid("FACTORY_TRAINING_BRIDGE_INVALID")
         self.semantic_context.__post_init__()
 
@@ -255,7 +255,7 @@ def prepare_factory_training_batch(
     if authenticated is None:
         authenticated = authenticate_bamf_execution_feature_context(
             candidate, atlas_artifact_path, source_context.run_dir)
-    elif type(authenticated) is not AuthenticatedGenerationFeatureContext:
+    elif not is_authenticated_generation_feature_context(authenticated):
         _invalid("FACTORY_TRAINING_SEMANTIC_CONTEXT_INVALID")
     authenticated.__post_init__()
     semantic_context_seconds = time.perf_counter() - stage_started

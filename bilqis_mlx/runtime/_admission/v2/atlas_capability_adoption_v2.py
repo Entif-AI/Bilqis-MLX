@@ -11,16 +11,14 @@ from bilqis_mlx.runtime.jit_adoption import (
     verify_current_implementations,
 )
 def _historical_factory_release_sha256(
-        run_dir: Path, manifest_sha256: str, acceptance_sha256: str, student) -> str:
+        run_dir: Path, manifest_sha256: str, acceptance_sha256: str, student=None) -> str:
     """Resolve Factory authority for an accepted historical manifest."""
     from bilqis_mlx.runtime.bamf_bundle.atlas_admission import ParsedAtlasAdmissionBinding
-    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
         ParsedFactoryReleaseAdmissionBinding,
     )
-    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
-        accepted_binding_for_manifest,
-        parent_acceptance_anchor_from_manifest,
+    from bilqis_mlx.runtime.bamf_bundle.feature.historical_acceptance import (
+        iter_historical_bamf_history,
     )
     from bilqis_mlx.runtime.bamf_bundle.genesis import (
         BamfRunIdentity,
@@ -28,13 +26,16 @@ def _historical_factory_release_sha256(
     )
 
     visited = set()
-    while True:
+    for manifest_sha256, _acceptance_sha256, student, binding in (
+            iter_historical_bamf_history(
+                Path(run_dir),
+                manifest_sha256=manifest_sha256,
+                acceptance_sha256=acceptance_sha256,
+                run_id=getattr(student, "run_id", None),
+                generation=getattr(student, "generation", None))):
         if manifest_sha256 in visited:
             _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
         visited.add(manifest_sha256)
-        binding = accepted_binding_for_manifest(
-            run_dir, manifest_sha256, student,
-            expected_acceptance_sha256=acceptance_sha256)
         if isinstance(binding, (
                 ParsedAtlasAdmissionBinding,
                 ParsedFactoryReleaseAdmissionBinding)):
@@ -44,16 +45,7 @@ def _historical_factory_release_sha256(
                     or type(student.run_identity) is not BamfRunIdentity):
                 _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
             return student.run_identity.factory_release_sha256
-        parent_manifest = student.parent_manifest_sha256
-        parent_acceptance = parent_acceptance_anchor_from_manifest(
-            run_dir, manifest_sha256)
-        if not _sha(parent_manifest) or not _sha(parent_acceptance):
-            _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
-        student = load_bamf_bundle(
-            run_dir / "bamf-bundles" / parent_manifest,
-            expected_manifest_sha256=parent_manifest)
-        manifest_sha256 = parent_manifest
-        acceptance_sha256 = parent_acceptance
+    _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
 
 
 def _generated_grade_digest(authority, handoff):
@@ -90,7 +82,6 @@ def _accepted_predecessor_pointer(
 def _validate_accepted_successor(
         current, handoff, lease, accepted, pointer, predecessor,
         expected_generated_grade):
-    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
         FACTORY_RELEASE_ADMISSION_SCHEMA_V2,
         FACTORY_RELEASE_ADMISSION_SCHEMA_V3,
@@ -136,11 +127,8 @@ def _validate_accepted_successor(
         current.run_dir, pointer["manifest_sha256"])
     if not _sha(parent_manifest) or not _sha(parent_acceptance):
         _invalid("BAMF_FACTORY_RELEASE_ADMISSION_BINDING_DRIFT")
-    parent = load_bamf_bundle(
-        current.run_dir / "bamf-bundles" / parent_manifest,
-        expected_manifest_sha256=parent_manifest)
     if _historical_factory_release_sha256(
-            current.run_dir, parent_manifest, parent_acceptance, parent) != predecessor:
+            current.run_dir, parent_manifest, parent_acceptance) != predecessor:
         _invalid("BAMF_FACTORY_RELEASE_ADMISSION_BINDING_DRIFT")
 def _accepted_capability_only_retry_state_once_v2(
         current, handoff, lease, *, generated_grade_authority=None):

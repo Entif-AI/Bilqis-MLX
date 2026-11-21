@@ -122,9 +122,8 @@ def read_accepted_atlas_factory_release(run_dir):
     from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
         ParsedFactoryReleaseAdmissionBinding,
     )
-    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
-    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
-        accepted_binding_for_manifest, parent_acceptance_anchor_from_manifest,
+    from bilqis_mlx.runtime.bamf_bundle.feature.historical_acceptance import (
+        iter_accepted_bamf_history,
     )
     from bilqis_mlx.runtime.bamf_bundle.genesis import (
         BamfRunIdentity, ParsedInitialGenerationBinding,
@@ -133,16 +132,16 @@ def read_accepted_atlas_factory_release(run_dir):
 
     root = Path(run_dir)
     pointer, student = _accepted_current_generation(root)
-    manifest_sha256 = pointer["manifest_sha256"]
-    acceptance_sha256 = pointer["acceptance_sha256"]
     visited = set()
-    while True:
+    for manifest_sha256, _acceptance_sha256, student, binding in (
+            iter_accepted_bamf_history(
+                root,
+                current_manifest_sha256=pointer["manifest_sha256"],
+                current_acceptance_sha256=pointer["acceptance_sha256"],
+                current=student)):
         if manifest_sha256 in visited:
             _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
         visited.add(manifest_sha256)
-        binding = accepted_binding_for_manifest(
-            root, manifest_sha256, student,
-            expected_acceptance_sha256=acceptance_sha256)
         if isinstance(binding, (
                 ParsedAtlasAdmissionBinding,
                 ParsedFactoryReleaseAdmissionBinding)):
@@ -155,17 +154,8 @@ def read_accepted_atlas_factory_release(run_dir):
                 _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
             digest = identity.factory_release_sha256
             break
-        parent_manifest_sha256 = student.parent_manifest_sha256
-        parent_acceptance_sha256 = parent_acceptance_anchor_from_manifest(
-            root, manifest_sha256)
-        if (not _sha(parent_manifest_sha256)
-                or not _sha(parent_acceptance_sha256)):
-            _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
-        student = load_bamf_bundle(
-            root / "bamf-bundles" / parent_manifest_sha256,
-            expected_manifest_sha256=parent_manifest_sha256)
-        manifest_sha256 = parent_manifest_sha256
-        acceptance_sha256 = parent_acceptance_sha256
+    else:
+        _invalid("BAMF_ATLAS_ACCEPTED_FACTORY_BINDING_REQUIRED")
     return factory_admission._read_executable_factory_release_artifact(root, {
         "factory_release_sha256": digest,
         "factory_release_file": "factory-releases/" + digest + ".json",
@@ -179,31 +169,32 @@ def _accepted_atlas_obligation_state(run_dir):
         ATLAS_ADMISSION_SCHEMA_V4,
         ParsedAtlasAdmissionBinding,
     )
-    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.factory_release.admission import (
         FACTORY_RELEASE_ADMISSION_SCHEMA_V2,
         FACTORY_RELEASE_ADMISSION_SCHEMA_V3,
         FACTORY_RELEASE_ADMISSION_SCHEMA_V4,
         ParsedFactoryReleaseAdmissionBinding,
     )
-    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
-        accepted_binding_for_manifest, parent_acceptance_anchor_from_manifest,
+    from bilqis_mlx.runtime.bamf_bundle.feature.historical_acceptance import (
+        iter_accepted_bamf_history,
     )
 
     root = Path(run_dir)
     pointer, student = _accepted_current_generation(root)
     current_acceptance = pointer["acceptance_sha256"]
     current_release = read_accepted_atlas_factory_release(root)
-    manifest_sha256 = pointer["manifest_sha256"]
-    acceptance_sha256 = current_acceptance
     visited = set()
-    while student.generation > 0:
+    for manifest_sha256, _acceptance_sha256, student, binding in (
+            iter_accepted_bamf_history(
+                root,
+                current_manifest_sha256=pointer["manifest_sha256"],
+                current_acceptance_sha256=current_acceptance,
+                current=student)):
+        if student.generation == 0:
+            break
         if manifest_sha256 in visited:
             _invalid("BAMF_ATLAS_ACCEPTED_OBLIGATION_BINDING_REQUIRED")
         visited.add(manifest_sha256)
-        binding = accepted_binding_for_manifest(
-            root, manifest_sha256, student,
-            expected_acceptance_sha256=acceptance_sha256)
         if (isinstance(binding, ParsedAtlasAdmissionBinding)
                 and binding.schema_version in {
                     ATLAS_ADMISSION_SCHEMA_V2, ATLAS_ADMISSION_SCHEMA_V3,
@@ -223,16 +214,6 @@ def _accepted_atlas_obligation_state(run_dir):
                 current_acceptance,
                 binding.accepted_obligation_keys,
             )
-        parent_manifest = student.parent_manifest_sha256
-        parent_acceptance = parent_acceptance_anchor_from_manifest(
-            root, manifest_sha256)
-        if not _sha(parent_manifest) or not _sha(parent_acceptance):
-            _invalid("BAMF_ATLAS_ACCEPTED_OBLIGATION_BINDING_REQUIRED")
-        student = load_bamf_bundle(
-            root / "bamf-bundles" / parent_manifest,
-            expected_manifest_sha256=parent_manifest)
-        manifest_sha256 = parent_manifest
-        acceptance_sha256 = parent_acceptance
     return current_release.release_sha256, current_acceptance, ()
 
 

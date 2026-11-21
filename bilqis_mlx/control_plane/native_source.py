@@ -11,6 +11,8 @@ from bilqis_mlx.mission_control import MissionControlQueryCatalog
 from .native_contracts import AuthenticatedGeneration, NativeProjectionMaterial
 from .native_custody import accepted_pointer, authenticated_history
 from .native_mapping import accepted_records
+from .current.custody import authenticated_current_generation
+from .current.mapping import accepted_current_records
 from .native_factory import accepted_factory_records
 from .native_rejections import rejection_material
 from .native_contracts import run_ref
@@ -114,6 +116,20 @@ def materialize_native_projection(
         tuple(records), tuple(events), tuple(manifests), accepted_health)
 
 
+def materialize_current_native_projection(run_dir: Path) -> NativeProjectionMaterial:
+    """Materialize the authenticated accepted tip plus bounded live observations."""
+    root = Path(run_dir)
+    current = authenticated_current_generation(root)
+    records = list(accepted_current_records(current))
+    records.extend(accepted_factory_records((current,)))
+    records.extend(_accepted_capability_dossiers((current,), ()))
+    accepted_health = _accepted_learning_health((current,))
+    records.extend(observed_records(
+        root, (run_ref(current),), accepted_health_by_manifest=accepted_health))
+    return NativeProjectionMaterial(
+        tuple(records), (), (current.manifest_sha256,), accepted_health)
+
+
 def native_query_catalog(run_dir: Path) -> MissionControlQueryCatalog:
     """Build the current CP03 catalog directly from authenticated BAMF custody."""
     root = Path(run_dir).expanduser().resolve()
@@ -142,10 +158,16 @@ def native_query_source(run_dir: Path):
     cached_run_refs = ()
     cached_accepted_health = {}
 
-    def source():
+    def source(query=None):
         nonlocal cached_token, cached_catalog, cached_base_records, cached_run_refs
         nonlocal cached_accepted_health
         with lock:
+            from bilqis_mlx.mission_control import QueryMode
+            historical = query is not None and query.mode is not QueryMode.CURRENT
+            if historical:
+                material = materialize_native_projection(
+                    root, include_live_rejections=True)
+                return MissionControlQueryCatalog(material.records)
             before = _source_token(root)
             if cached_catalog is not None and cached_token == before:
                 return cached_catalog
@@ -167,8 +189,7 @@ def native_query_source(run_dir: Path):
                 if not pointer.exists() and not pointer.is_symlink():
                     return MissionControlQueryCatalog.unavailable()
                 try:
-                    material = materialize_native_projection(
-                        root, include_live_rejections=True)
+                    material = materialize_current_native_projection(root)
                 except BilqisError as error:
                     if error.context.get("reason") in {
                         "BAMF_GENERATION_POINTER_CHANGED_DURING_READ",
@@ -196,6 +217,7 @@ def native_query_source(run_dir: Path):
                     else cached_accepted_health)
             return catalog
 
+    source._bilqis_query_aware = True
     return source
 
 
@@ -279,6 +301,7 @@ def refresh_native_events(service):
 
 __all__ = (
     "AuthenticatedGeneration", "NativeProjectionMaterial", "authenticated_history",
-    "materialize_native_projection", "native_query_catalog", "native_query_source",
+    "materialize_current_native_projection", "materialize_native_projection",
+    "native_query_catalog", "native_query_source",
     "publish_native_events", "refresh_native_events",
 )

@@ -8,7 +8,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning._atlas_candidate.identity_binding import (
     candidate_identity_metrics_delta, candidate_identity_metrics_snapshot,
 )
-from bilqis_mlx.runtime.bamf_bundle import AuthenticatedGenerationFeatureContext
+from bilqis_mlx.runtime.bamf_bundle import is_authenticated_generation_feature_context
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_uninterrupted_candidate_step, bind_accepted_execution_cache,
 )
@@ -42,7 +42,7 @@ def _realized_candidate_cost(*args, **kwargs):
 
 def _prepared_feature_context(prepared, semantic_context):
     feature_context = prepared.semantic_context if semantic_context is None else semantic_context
-    if type(feature_context) is not AuthenticatedGenerationFeatureContext:
+    if not is_authenticated_generation_feature_context(feature_context):
         _invalid("FACTORY_CANDIDATE_SEMANTIC_CONTEXT_INVALID")
     feature_context.__post_init__()
     return feature_context

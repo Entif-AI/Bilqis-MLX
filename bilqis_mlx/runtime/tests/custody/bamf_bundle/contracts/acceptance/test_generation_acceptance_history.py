@@ -24,6 +24,12 @@ from bilqis_mlx.runtime.bamf_bundle import (
 )
 from bilqis_mlx.runtime.bamf_bundle.records import LEGACY_BAMF_POINTER_SCHEMA, canonical
 from bilqis_mlx.runtime.bamf_bundle.admission import derive_successor_bundle
+from bilqis_mlx._data_plane.file_retention import file_gc_report
+from bilqis_mlx.data_plane import data_plane
+from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
+    accepted_binding_for_manifest,
+    accepted_generation,
+)
 from ._generation_acceptance_support import GenerationAcceptanceFixture
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.test_feature_authority import (
     feature_bound,
@@ -40,6 +46,37 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
 
 
 class GenerationAcceptanceHistoryTests(GenerationAcceptanceFixture, unittest.TestCase):
+    def test_current_acceptance_authenticates_after_parent_tensor_reclamation(self):
+        source = self.source()
+        pointer = self.publish(source, acceptance=self.binding(source))
+        parent_manifest = source.parent_manifest_sha256
+        self.assertIsNotNone(parent_manifest)
+        parent_record = json.loads((
+            self.run / "bamf-bundles" / parent_manifest / "manifest.json"
+        ).read_text())
+        parent_tensor = parent_record["tensors"]["object_sha256"]
+        current_record = json.loads((
+            self.run / "bamf-bundles" / pointer["manifest_sha256"] / "manifest.json"
+        ).read_text())
+        current_tensor = current_record["tensors"]["object_sha256"]
+        with shape_patch():
+            current_pointer, current = accepted_generation(self.run / "bamf-state.json")
+
+        report = file_gc_report(data_plane(), (self.run,), apply=True)
+
+        self.assertGreaterEqual(report["unreachable_file_objects"], 1)
+        self.assertTrue(data_plane().require_file_object(current_tensor).is_file())
+        with self.assertRaises(ValueError):
+            data_plane().require_file_object(parent_tensor)
+        with shape_patch():
+            binding = accepted_binding_for_manifest(
+                self.run,
+                current_pointer["manifest_sha256"],
+                current,
+                expected_acceptance_sha256=current_pointer["acceptance_sha256"],
+            )
+        self.assertEqual(binding.digest, pointer["acceptance_sha256"])
+
     def test_historical_binding_with_matching_identity_cannot_authorize_publication(self):
         source = self.source()
         parsed = AcceptedCandidateBinding.from_record(self.binding(source).to_record())

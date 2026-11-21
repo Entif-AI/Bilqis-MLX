@@ -36,6 +36,36 @@ def _cold_case(compiled):
 
 
 class CompiledEvaluationReuseTests(unittest.TestCase):
+    def test_accepted_solver_reuses_checkpoint_feature_context(self):
+        class CheckpointContext:
+            pass
+
+        candidate = SimpleNamespace(
+            run_id="run", generation=4, implementation_sha256="i" * 64,
+            extents=SimpleNamespace(
+                factor_map_digest="f" * 64,
+                active_semantic_digest="a" * 64,
+            ),
+        )
+        context = CheckpointContext()
+        context.commitment = SimpleNamespace(receipt=SimpleNamespace(
+            run_id="run", generation=4, feature_sha256="f" * 64,
+            active_set_sha256="a" * 64, implementation_sha256="i" * 64,
+        ))
+        source_context = SimpleNamespace(
+            run_dir=Path("fixture-run"), _accepted_feature_context=context)
+
+        with patch.object(
+                complete_solver, "AuthenticatedCheckpointFeatureContext",
+                CheckpointContext), patch(
+                "bilqis_mlx.runtime.bamf_bundle.accepted_runtime."
+                "bind_accepted_execution_feature_context",
+                side_effect=AssertionError("checkpoint feature authority reloaded")):
+            reused = complete_solver._accepted_solver_feature_context(
+                source_context, candidate)
+
+        self.assertIs(reused, context)
+
     def test_cold_task_contract_has_scalar_result_parity_and_separate_generation_identity(self):
         compiled = compiled_case()
         directory, cold = _cold_case(compiled)

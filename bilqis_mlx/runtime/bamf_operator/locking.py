@@ -2,15 +2,39 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from dataclasses import dataclass
 import fcntl
 import os
 from pathlib import Path
 import stat
+import threading
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 
 LOCKFILE = ".bamf-operator.lock"
+_CUSTODY_ISSUER = object()
+
+
+@dataclass(frozen=True)
+class _BamfOperatorCustody:
+    run_dir: str
+    pid: int
+    thread_id: int
+    issuer: object
+    active: list[bool]
+
+
+def bamf_operator_lock_covers(custody, run_dir: Path) -> bool:
+    """Recognize one live owner-issued lock custody token for this thread/run."""
+    return (
+        type(custody) is _BamfOperatorCustody
+        and custody.issuer is _CUSTODY_ISSUER
+        and custody.active == [True]
+        and custody.pid == os.getpid()
+        and custody.thread_id == threading.get_ident()
+        and custody.run_dir == str(Path(run_dir).resolve())
+    )
 
 
 def bamf_operator_lock_held(run_dir: Path) -> bool | None:
@@ -47,9 +71,10 @@ def bamf_operator_lock_held(run_dir: Path) -> bool | None:
 
 @contextmanager
 def bamf_operator_lock(run_dir: Path):
-    run_dir = Path(run_dir)
+    run_dir = Path(run_dir).resolve()
     run_dir.mkdir(parents=True, exist_ok=True)
     fd = os.open(run_dir / LOCKFILE, os.O_RDWR | os.O_CREAT, 0o600)
+    active = [False]
     try:
         try:
             fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -60,10 +85,16 @@ def bamf_operator_lock(run_dir: Path):
                     reason="BAMF_OPERATOR_ANOTHER_WRITER_ACTIVE")
             except Exception as error:
                 raise error from exc
-        yield
+        active[0] = True
+        yield _BamfOperatorCustody(
+            str(run_dir), os.getpid(), threading.get_ident(), _CUSTODY_ISSUER, active)
     finally:
+        active[0] = False
         fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
 
 
-__all__ = ("LOCKFILE", "bamf_operator_lock", "bamf_operator_lock_held")
+__all__ = (
+    "LOCKFILE", "bamf_operator_lock", "bamf_operator_lock_covers",
+    "bamf_operator_lock_held",
+)

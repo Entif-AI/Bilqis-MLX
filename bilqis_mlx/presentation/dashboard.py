@@ -11,7 +11,9 @@ from collections import deque
 from pathlib import Path
 
 from bilqis_mlx.presentation.school_telemetry import SchoolTelemetry, LETTER_TABLES
+from bilqis_mlx.presentation.school50.tables import EVENT_KINDS
 from bilqis_mlx.presentation.progression_projection import GraduationProjection
+from bilqis_mlx.compatibility.telemetry_events import historical_event_kind
 from bilqis_mlx.profiles.catalog import displayed_numeric_maximum
 from bilqis_mlx.runtime.disk import headroom_snapshot
 from bilqis_mlx.runtime.bamf_first_student import (
@@ -240,6 +242,13 @@ def _rebuild_graduation_projection(board: Dashboard, run_dir: Path) -> None:
     if not events.exists():
         return
     projection = GraduationProjection()
+    shadow = Dashboard(
+        stream=board.stream, max_records=1, redraw=False,
+        title="BILQIS", compact_header=True,
+        show_all_panels=False, tables=LETTER_TABLES)
+    shadow.school_telemetry = SchoolTelemetry(
+        shadow, active_grades=tuple(board.grade_program or ()))
+    longitudinal_kinds = {"init", "curriculum", "start", "exam"}
     with events.open("rb") as log:
         while line := log.readline():
             if not line.endswith(b"\n"):
@@ -253,8 +262,33 @@ def _rebuild_graduation_projection(board: Dashboard, run_dir: Path) -> None:
             if event.get("event") == "SCHOOL_SESSION_STARTED":
                 projection.begin_execution()
             projection.observe(event)
+            kind = (
+                EVENT_KINDS.get(event.get("event"))
+                or historical_event_kind(event.get("event"))
+            )
+            if kind in longitudinal_kinds:
+                try:
+                    shadow.school_telemetry.ingest(event)
+                except (ValueError, TypeError, KeyError, IndexError):
+                    continue
     board.school_telemetry.graduations = projection
     board.state["graduations"] = projection.summary()
+    source = shadow.school_telemetry
+    target = board.school_telemetry
+    for name in (
+            "start", "latest", "best", "last_cap", "start_cap", "growth",
+            "exam_cohorts", "reported_scope_inventory", "scope_variants",
+            "cumulative_best", "cumulative_latest", "score_era", "era_cohorts",
+            "last_exam_grade"):
+        setattr(target, name, getattr(source, name))
+    generations = [
+        report.generation for report in source.latest.values()
+        if type(getattr(report, "generation", None)) is int
+    ]
+    if generations:
+        board.state["_latest_exam_generation"] = max(generations)
+    if type(shadow.state.get("grew")) is int:
+        board.state["grew"] = shadow.state["grew"]
 
 
 def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard:

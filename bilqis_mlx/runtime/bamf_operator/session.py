@@ -102,8 +102,11 @@ def prepare_bamf_visit(
         _invalid("BAMF_OPERATOR_SESSION_BOUNDS_INVALID")
     _emit_progress(progress, "validating accepted generation and source custody")
     visit_currentness_metrics = VisitCurrentnessMetrics()
+    accepted_state_metrics = {}
+    accepted_state_started = time.perf_counter()
     parent, context, atlas_path, feature_path = _execution_context(
-        run_dir, currentness_metrics=visit_currentness_metrics)
+        run_dir, currentness_metrics=visit_currentness_metrics,
+        performance_metrics=accepted_state_metrics)
     if observer is not None:
         observer.bind_parent(parent)
         observer.update(phase="SELECTING")
@@ -116,6 +119,18 @@ def prepare_bamf_visit(
         parent, program,
         candidate_identity_sha256=getattr(
             host_cache, "_candidate_identity_sha256", None))
+    accepted_state_total = max(0.0, time.perf_counter() - accepted_state_started)
+    accepted_state_metrics["accepted_state_setup_wall_seconds"] = accepted_state_total
+    accepted_state_metrics["accepted_state_setup_other_wall_seconds"] = max(
+        0.0,
+        accepted_state_total - sum(float(accepted_state_metrics.get(name, 0.0)) for name in (
+            "accepted_runtime_host_wall_seconds",
+            "accepted_generation_load_wall_seconds",
+            "accepted_source_context_wall_seconds",
+            "accepted_feature_authentication_wall_seconds",
+        )))
+    if observer is not None:
+        observer.update(**accepted_state_metrics)
     _emit_progress(progress, "planning current candidate frontier and teacher priority")
     planning_started = time.perf_counter()
     selection = select_foundation_priority_visit(
@@ -253,6 +268,7 @@ def operate_bamf(
     run_authority=None,
     distributed_profile=None,
     distributed_executor=None,
+    strict_evidence: bool = False,
     progress=None,
 ) -> BamfOperatorResult:
     """Run the human-authorized BAMF lineage until a bounded stop condition."""
@@ -282,25 +298,27 @@ def operate_bamf(
             *args, **kwargs, distributed_profile=distributed_profile,
             distributed_executor=distributed_executor)
     _run_pending_operator_maintenance(Path(run_dir), progress=progress)
+    from .session_parts.evidence_mode import evidence_mode
     try:
-        return _operate_impl(
-            Path(run_dir), minutes=minutes, max_visits=max_visits,
-            steps_per_visit=steps_per_visit, reserve_gib=reserve_gib,
-            source_prefetch_workers=source_prefetch_workers, progress=progress,
-            max_horizon=_MAX_CANDIDATE_HORIZON,
-            worker_counts=NATIVE_SOURCE_WORKER_COUNTS, invalid=_invalid,
-            metrics_type=SourcePrefetchMetrics, source_pool_factory=source_prefetch_pool,
-            null_context=nullcontext, operator_lock=bamf_operator_lock,
-            visit_fn=visit_fn, observer_type=TrainerObservation,
-            emit_progress=_emit_progress, monotonic=time.monotonic,
-            load_generation=load_accepted_generation, result_type=BamfOperatorResult,
-            resource_snapshot=stop_resource_witness,
-            record_stop=record_normal_stop_receipt, elapsed_clock=time.perf_counter,
-            before_visits=before_visits,
-            training_memory_context=_training_memory_context,
-            bind_run_authority=(
-                lambda current_run_dir:
-                bind_native_run_authority(current_run_dir, run_authority)))
+        with evidence_mode(strict=strict_evidence):
+            return _operate_impl(
+                Path(run_dir), minutes=minutes, max_visits=max_visits,
+                steps_per_visit=steps_per_visit, reserve_gib=reserve_gib,
+                source_prefetch_workers=source_prefetch_workers, progress=progress,
+                max_horizon=_MAX_CANDIDATE_HORIZON,
+                worker_counts=NATIVE_SOURCE_WORKER_COUNTS, invalid=_invalid,
+                metrics_type=SourcePrefetchMetrics, source_pool_factory=source_prefetch_pool,
+                null_context=nullcontext, operator_lock=bamf_operator_lock,
+                visit_fn=visit_fn, observer_type=TrainerObservation,
+                emit_progress=_emit_progress, monotonic=time.monotonic,
+                load_generation=load_accepted_generation, result_type=BamfOperatorResult,
+                resource_snapshot=stop_resource_witness,
+                record_stop=record_normal_stop_receipt, elapsed_clock=time.perf_counter,
+                before_visits=before_visits,
+                training_memory_context=_training_memory_context,
+                bind_run_authority=(
+                    lambda current_run_dir:
+                    bind_native_run_authority(current_run_dir, run_authority)))
     finally:
         try:
             _run_post_operator_maintenance(

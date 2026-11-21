@@ -1,11 +1,35 @@
 """Interactive BAMF resume dispatch and terminal event routing."""
 from __future__ import annotations
 
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 import sys
+import threading
 
 from .inspection import _print_status
+
+
+LIVE_DASHBOARD_REFRESH_SECONDS = 0.5
+
+
+@contextmanager
+def _live_bamf_dashboard_refresh(board, *, interval=LIVE_DASHBOARD_REFRESH_SECONDS):
+    if board is None:
+        yield
+        return
+    stop = threading.Event()
+
+    def redraw():
+        while not stop.wait(interval):
+            board.draw()
+
+    thread = threading.Thread(target=redraw, daemon=True)
+    thread.start()
+    try:
+        yield
+    finally:
+        stop.set()
+        thread.join()
 
 
 def _bamf_operator_admission_status(report):
@@ -29,6 +53,10 @@ def _prepare_bamf_resume_board(args, run_dir: Path):
         return None
     from bilqis_mlx.presentation.dashboard import build
     board = build(run_dir, reserve_gib=args.reserve_gib)
+    telemetry = getattr(board, "school_telemetry", None)
+    if telemetry is not None:
+        telemetry.begin_execution(
+            grade=board.state.get("prefix"), step=board.state.get("step"))
     board.mode = "BAMF | RESUMING"
     board.state["stop"] = "RUNNING"
     board.draw()
@@ -39,26 +67,28 @@ def _bamf_dashboard_event(board, event) -> None:
     if board is None:
         return
     from bilqis_mlx.presentation.dashboard import ingest
-    ingest(board, event)
-    runtime_phase = event.get("_runtime_phase")
-    if isinstance(runtime_phase, str) and runtime_phase:
-        board.state["phase"] = runtime_phase
-    if event.get("_dashboard_redraw", True):
-        board.draw()
+    with board._draw_lock:
+        ingest(board, event)
+        runtime_phase = event.get("_runtime_phase")
+        if isinstance(runtime_phase, str) and runtime_phase:
+            board.state["phase"] = runtime_phase
+        if event.get("_dashboard_redraw", True):
+            board.draw()
 
 
 def _bamf_progress(board, message) -> None:
     if board is None:
         print("BAMF TRAINER: " + message, file=sys.stderr, flush=True)
         return
-    rows = board.rows["SYSTEM & QUALIFICATION"]
-    retained = [row for row in rows if row.get("kind") != "TRAINER"]
-    rows.clear()
-    rows.extend(retained)
-    rows.append({"kind": "TRAINER", "detail": str(message)})
-    board.mode = "BAMF | LIVE"
-    board.state["stop"] = "RUNNING"
-    board.draw()
+    with board._draw_lock:
+        rows = board.rows["SYSTEM & QUALIFICATION"]
+        retained = [row for row in rows if row.get("kind") != "TRAINER"]
+        rows.clear()
+        rows.extend(retained)
+        rows.append({"kind": "TRAINER", "detail": str(message)})
+        board.mode = "BAMF | LIVE"
+        board.state["stop"] = "RUNNING"
+        board.draw()
 
 
 def _run_bamf_resume(
@@ -69,12 +99,13 @@ def _run_bamf_resume(
     view = (
         operator_view(lambda event: _bamf_dashboard_event(board, event))
         if board is not None else nullcontext())
-    with advertise_active_endpoint(run_dir), view:
+    with advertise_active_endpoint(run_dir), view, _live_bamf_dashboard_refresh(board):
         return operate_bamf(
             run_dir, minutes=args.minutes,
             max_visits=args.max_visits, steps_per_visit=args.steps_per_visit,
             reserve_gib=args.reserve_gib,
             source_prefetch_workers=args.source_prefetch_workers,
+            strict_evidence=bool(getattr(args, "strict_evidence", False)),
             parent_graph=parent_graph,
             **({"profile_release": profile_release} if profile_release is not None else {}),
             run_authority=run_authority,

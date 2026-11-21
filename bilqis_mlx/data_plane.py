@@ -10,6 +10,7 @@ from ._data_plane.contracts import (
     DataPlaneError, _error, _read_event_tail, default_path, event_payload_digest,
 )
 from ._data_plane.store import DataPlaneStoreMixin
+from ._data_plane.accepted_authority import DataPlaneAcceptedAuthorityMixin
 from ._data_plane.events import DataPlaneEventMixin
 from ._data_plane.file_objects import DataPlaneFileObjectMixin
 from ._data_plane.archive import DataPlaneArchiveMixin
@@ -18,7 +19,8 @@ from ._data_plane.cache import DataPlaneCacheMixin
 _CONNECTIONS: dict[str, "DataPlane"] = dict()
 _CONNECTIONS_LOCK = threading.Lock()
 
-class DataPlane(DataPlaneStoreMixin, DataPlaneEventMixin, DataPlaneFileObjectMixin,
+class DataPlane(DataPlaneStoreMixin, DataPlaneAcceptedAuthorityMixin,
+                DataPlaneEventMixin, DataPlaneFileObjectMixin,
                 DataPlaneArchiveMixin, DataPlaneCacheMixin):
     pass
 

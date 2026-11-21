@@ -11,31 +11,20 @@ def read_capability_only_admission_facts_v2(
         run_dir: Path, handoff) -> AtlasDerivedAdmissionFactsV2:
     """Derive zero-ID resource facts from accepted B13/source authority only."""
     from bilqis_mlx.runtime.bamf_bundle import (
-        load_bamf_generation_authority,
-        read_accepted_generation_feature_context,
-    )
-    from bilqis_mlx.runtime.bamf_bundle.feature.replay_support import (
-        artifact_identity,
-        feature_source,
+        load_accepted_generation_with_feature_context,
     )
     from bilqis_mlx.runtime.bamf_bundle.vocabulary.admission_facts import (
         accepted_active_semantic_ids,
     )
     from bilqis_mlx.runtime.model_topology_v2 import bamf_parameter_census
-    from bilqis_mlx.semantics.atlas.snapshot import (
-        load_pinned_atlas_snapshot,
-        resolve_atlas_artifact_selection,
-    )
     from bilqis_mlx.semantics.atlas.vocabulary_resources import (
         FP32_WEIGHT_AND_ADAMW_BYTES,
     )
 
-    pointer = Path(run_dir) / "bamf-state.json"
-    parent, parent_manifest = load_bamf_generation_authority(pointer)
-    feature_context = read_accepted_generation_feature_context(pointer)
-    source = feature_source(parent.compiler_features)
-    selection = resolve_atlas_artifact_selection(artifact_identity(source))
-    snapshot = load_pinned_atlas_snapshot(selection)
+    parent, feature_context = load_accepted_generation_with_feature_context(run_dir)
+    parent_manifest = feature_context.receipt.generation_manifest_sha256
+    selection = feature_context.selection
+    snapshot = feature_context.snapshot
     active_ids = accepted_active_semantic_ids(parent, snapshot)
     predecessor = handoff.receipt.predecessor_release
     successor = handoff.receipt.staged_successor

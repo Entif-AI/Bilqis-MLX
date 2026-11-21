@@ -8,23 +8,13 @@ from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
 
 from ..records import invalid
+from .context_validation import (
+    validate_materialized_feature_context as _validate_materialized_context,
+)
 from .receipt import AcceptedGenerationFeatureReceipt
 
 
 _FEATURE_CONTEXT_ISSUER = object()
-
-
-def _validate_materialized_context(selection, snapshot, schema, features) -> None:
-    if (type(selection) is not AtlasArtifactSelection
-            or type(snapshot) is not FrozenAtlasSnapshot
-            or type(schema) is not FeatureSchema
-            or features.semantic_release != selection.release_sha256
-            or features.atlas_bundle_id != selection.bundle_id
-            or features.source_bundle_id != selection.source_bundle_id
-            or snapshot.release_sha256 != selection.release_sha256
-            or snapshot.bundle_id != selection.bundle_id
-            or snapshot.source_bundle_id != selection.source_bundle_id):
-        invalid("BAMF_FEATURE_CONTEXT_INVALID")
 
 
 @dataclass(frozen=True, init=False)
@@ -115,3 +105,15 @@ class AcceptedGenerationFeatureContext:
     features: object
     predecessor_features: object | None
     construction_predecessor: object | None
+
+
+# Compatibility import for callers that previously sourced the current context here.
+from .current_authority import AuthenticatedCheckpointFeatureContext  # noqa: E402,F401
+
+
+def is_authenticated_generation_feature_context(value) -> bool:
+    """Recognize live accepted feature contexts across replay and checkpoint eras."""
+    return type(value) in (
+        AuthenticatedGenerationFeatureContext,
+        AuthenticatedCheckpointFeatureContext,
+    )

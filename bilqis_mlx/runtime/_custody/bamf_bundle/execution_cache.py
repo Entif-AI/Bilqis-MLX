@@ -9,11 +9,6 @@ import weakref
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_engram import MotifManifest
-from bilqis_mlx.runtime.backbone_identity import (
-    execution_generation_object_key, issue_execution_generation_binding,
-    require_execution_generation_binding,
-)
-
 
 _CANDIDATE_CACHE_ISSUER = object()
 
@@ -45,6 +40,7 @@ class AcceptedExecutionCache:
     _run_dir: Path | None = field(init=False, repr=False, compare=False)
     _correction_registry: object | None = field(init=False, repr=False, compare=False)
     _source_authority: object | None = field(init=False, repr=False, compare=False)
+    _bundle_currentness: object | None = field(init=False, repr=False, compare=False)
     _execution_bindings: dict = field(init=False, repr=False, compare=False)
     _execution_binding_lock: object = field(init=False, repr=False, compare=False)
     _candidate_identity_sha256: str | None = field(init=False, repr=False, compare=False)
@@ -113,6 +109,7 @@ def _new_execution_cache(
         ("_run_dir", None),
         ("_correction_registry", None),
         ("_source_authority", None),
+        ("_bundle_currentness", None),
         ("_execution_bindings", {}),
         ("_execution_binding_lock", RLock()),
         ("_candidate_identity_sha256", None),
@@ -127,6 +124,8 @@ def _new_execution_cache(
 
 def bind_candidate_execution_cache(cache, parent, candidate, *, spec, extents):
     """Bind speculative neural weights to the current accepted cache authority."""
+    from bilqis_mlx.runtime.backbone_identity import issue_execution_generation_binding
+
     accepted = require_accepted_execution_cache(cache)
     from bilqis_mlx.learning.atlas_candidate import CandidateTransaction
     from bilqis_mlx.runtime.bamf_bundle.records import CompleteStudent
@@ -162,6 +161,8 @@ def bind_candidate_execution_cache(cache, parent, candidate, *, spec, extents):
 
 
 def require_candidate_execution_cache(cache) -> CandidateExecutionCache:
+    from bilqis_mlx.runtime.backbone_identity import require_execution_generation_binding
+
     if type(cache) is not CandidateExecutionCache:
         _invalid("B13_CANDIDATE_EXECUTION_CACHE_REQUIRED")
     accepted = require_accepted_execution_cache(cache._accepted_cache)
@@ -192,6 +193,11 @@ def require_candidate_execution_cache(cache) -> CandidateExecutionCache:
 
 def bind_execution_generation(cache, parameters, *, spec, extents):
     """Return the one process-local generation proof for this immutable state."""
+    from bilqis_mlx.runtime.backbone_identity import (
+        execution_generation_object_key, issue_execution_generation_binding,
+        require_execution_generation_binding,
+    )
+
     from .distributed_execution_cache import (
         DistributedExecutionCache, require_distributed_execution_binding,
     )

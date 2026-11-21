@@ -28,6 +28,7 @@ def _sync_directory(path: Path) -> None:
 
 def _read_bundle(
     bundle_dir: str | Path, predecessor: AtlasFeatures | None,
+    *, require_lineage: bool = True,
 ) -> tuple[AtlasFeatures, str]:
     root = Path(bundle_dir)
     if (root.is_symlink() or not root.is_dir()
@@ -73,7 +74,8 @@ def _read_bundle(
             or len(feature_payload) != descriptor['bytes']
             or _digest(feature_payload) != descriptor['sha256']):
         _invalid('BAMF_FEATURE_ARTIFACT_FILE_DIGEST_INVALID')
-    features = _parse_features(feature_payload, predecessor)
+    features = _parse_features(
+        feature_payload, predecessor, require_lineage=require_lineage)
     if (features.digest != manifest['feature_digest']
             or any(getattr(features, field) != manifest[field]
                    for field in ('semantic_release', 'source_bundle_id',
@@ -173,4 +175,47 @@ def load_feature_manifest(
     if any(expected is not None and actual != expected
            for actual, expected in pins):
         _invalid('BAMF_FEATURE_ARTIFACT_PIN_MISMATCH')
+    return features
+
+
+def load_checkpoint_feature_manifest(
+    bundle_dir: str | Path,
+    *,
+    expected_bundle_id: str,
+    expected_feature_digest: str,
+    expected_semantic_release: str,
+    expected_source_bundle_id: str,
+    expected_atlas_bundle_id: str,
+    expected_predecessor_digest: str | None,
+) -> AtlasFeatures:
+    """Verify current immutable bytes for an authenticated accepted checkpoint.
+
+    This entry point does not establish successor lineage. Its caller must already
+    hold owner-authenticated accepted authority that commits every exact pin below.
+    Candidate and transition validation continue to use ``load_feature_manifest``
+    with the predecessor artifact and therefore retain full lineage validation.
+    """
+    required = (
+        expected_bundle_id, expected_feature_digest, expected_semantic_release,
+        expected_source_bundle_id, expected_atlas_bundle_id,
+    )
+    if any(not isinstance(value, str) or not _SHA.fullmatch(value)
+           for value in required):
+        _invalid('BAMF_FEATURE_ARTIFACT_CHECKPOINT_PIN_INVALID')
+    if (expected_predecessor_digest is not None
+            and (not isinstance(expected_predecessor_digest, str)
+                 or not _SHA.fullmatch(expected_predecessor_digest))):
+        _invalid('BAMF_FEATURE_ARTIFACT_CHECKPOINT_PIN_INVALID')
+    features, bundle_id = _read_bundle(
+        bundle_dir, None, require_lineage=False)
+    pins = (
+        (bundle_id, expected_bundle_id),
+        (features.digest, expected_feature_digest),
+        (features.semantic_release, expected_semantic_release),
+        (features.source_bundle_id, expected_source_bundle_id),
+        (features.atlas_bundle_id, expected_atlas_bundle_id),
+        (features.predecessor_digest, expected_predecessor_digest),
+    )
+    if any(actual != expected for actual, expected in pins):
+        _invalid('BAMF_FEATURE_ARTIFACT_CHECKPOINT_MISMATCH')
     return features

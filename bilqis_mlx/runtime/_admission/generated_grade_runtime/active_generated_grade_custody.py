@@ -191,36 +191,24 @@ def _read_stored_active(run_dir: Path) -> ActiveGeneratedGrade | None:
 
 def _accepted_bound_generated_grade_proposal(run_dir: Path) -> GeneratedGradeProposal:
     """Read the newest #1320 proposal proven by accepted C07/B13 ancestry."""
-    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
-    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
-        accepted_binding_for_manifest,
-        accepted_generation,
-        parent_acceptance_anchor_from_manifest,
+    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import accepted_generation
+    from bilqis_mlx.runtime.bamf_bundle.feature.historical_acceptance import (
+        iter_accepted_bamf_history,
     )
     root = Path(run_dir)
     pointer, student = accepted_generation(root / "bamf-state.json")
-    manifest = pointer["manifest_sha256"]
-    acceptance = pointer["acceptance_sha256"]
     visited = set()
-    while True:
+    for manifest, _acceptance, student, binding in iter_accepted_bamf_history(
+            root,
+            current_manifest_sha256=pointer["manifest_sha256"],
+            current_acceptance_sha256=pointer["acceptance_sha256"],
+            current=student):
         if manifest in visited:
             _fail("BAMF_ACTIVE_GENERATED_GRADE_ACCEPTED_ANCESTRY_DRIFT")
         visited.add(manifest)
-        binding = accepted_binding_for_manifest(
-            root, manifest, student, expected_acceptance_sha256=acceptance)
         proposal_sha256 = getattr(binding, "generated_grade_proposal_sha256", None)
         if proposal_sha256 is not None:
             return _read_issued_proposal(root, proposal_sha256)
-        if student.generation == 0:
-            break
-        parent_manifest = student.parent_manifest_sha256
-        parent_acceptance = parent_acceptance_anchor_from_manifest(root, manifest)
-        if parent_manifest is None or parent_acceptance is None:
-            break
-        student = load_bamf_bundle(
-            root / "bamf-bundles" / parent_manifest,
-            expected_manifest_sha256=parent_manifest)
-        manifest, acceptance = parent_manifest, parent_acceptance
     _fail("BAMF_ACTIVE_GENERATED_GRADE_ADMITTED_PROPOSAL_REQUIRED")
 
 
@@ -243,34 +231,23 @@ def _activation_is_accepted_ancestor(
     run_dir: Path,
     active: ActiveGeneratedGrade,
 ) -> bool:
-    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
-    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
-        accepted_binding_for_manifest,
-        accepted_generation,
-        parent_acceptance_anchor_from_manifest,
+    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import accepted_generation
+    from bilqis_mlx.runtime.bamf_bundle.feature.historical_acceptance import (
+        iter_accepted_bamf_history,
     )
     root = Path(run_dir)
     pointer, student = accepted_generation(root / "bamf-state.json")
-    manifest = pointer["manifest_sha256"]
-    acceptance = pointer["acceptance_sha256"]
-    while True:
-        accepted_binding_for_manifest(
-            root, manifest, student, expected_acceptance_sha256=acceptance)
+    for manifest, acceptance, student, _binding in iter_accepted_bamf_history(
+            root,
+            current_manifest_sha256=pointer["manifest_sha256"],
+            current_acceptance_sha256=pointer["acceptance_sha256"],
+            current=student):
         if manifest == active.activation_manifest_sha256:
             return (
                 acceptance == active.activation_acceptance_sha256
                 and student.run_id == active.run_id
                 and student.generation == active.activation_generation)
-        if student.generation == 0:
-            return False
-        parent_manifest = student.parent_manifest_sha256
-        parent_acceptance = parent_acceptance_anchor_from_manifest(root, manifest)
-        if parent_manifest is None or parent_acceptance is None:
-            return False
-        student = load_bamf_bundle(
-            root / "bamf-bundles" / parent_manifest,
-            expected_manifest_sha256=parent_manifest)
-        manifest, acceptance = parent_manifest, parent_acceptance
+    return False
 
 
 def _require_identity_still_current(run_dir: Path, identity) -> None:

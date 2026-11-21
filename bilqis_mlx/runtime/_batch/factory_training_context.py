@@ -83,12 +83,11 @@ def _source_frame_inventory_verified(
 
 def _require_materialized_manifest(semantic_context, manifest):
     from bilqis_mlx.runtime.bamf_bundle import (
-        AuthenticatedCandidateFeatureContext, AuthenticatedGenerationFeatureContext,
+        AuthenticatedCandidateFeatureContext, is_authenticated_generation_feature_context,
     )
     from bilqis_mlx.semantics.released_frame_schemas import _source_pins
-    if type(semantic_context) not in (
-            AuthenticatedCandidateFeatureContext,
-            AuthenticatedGenerationFeatureContext):
+    if (type(semantic_context) is not AuthenticatedCandidateFeatureContext
+            and not is_authenticated_generation_feature_context(semantic_context)):
         from .atlas_training_contracts import _invalid
         _invalid("UPSTREAM_SEMANTIC_AUTHORITY_MISMATCH")
     semantic_context.__post_init__()

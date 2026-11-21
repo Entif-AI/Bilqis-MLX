@@ -225,3 +225,49 @@ def require_published_acceptance(
             or acceptance.parent_candidate_identity_sha256 != parent_digest):
         invalid("BAMF_RUN_IDENTITY_DRIFT")
     return acceptance
+
+
+def require_checkpoint_published_acceptance(
+        run_dir: Path, pointer: dict, student: CompleteStudent, checkpoint, *,
+        live_manifest):
+    """Authenticate only the current acceptance under durable checkpoint authority.
+
+    The direct-parent transition was proven when B13 issued ``checkpoint``.  Cold
+    consumption therefore validates the current immutable bundle/acceptance and
+    the parent facts frozen into that owner-issued checkpoint without reopening
+    the parent bundle or walking accepted history.
+    """
+    if pointer.get("schema") != BAMF_POINTER_SCHEMA:
+        invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
+    record = _read_published_acceptance_record(run_dir, pointer)
+    acceptance = _parse_published_acceptance(student, pointer, record)
+    if student.generation == 0:
+        from .genesis_trust import require_initial_generation_trust_root
+        require_initial_generation_trust_root(pointer, student, acceptance)
+    else:
+        _require_non_genesis_acceptance_identity(acceptance, pointer, student)
+    live_manifest(run_dir, pointer)
+
+    if (getattr(checkpoint, "run_id", None) != student.run_id
+            or getattr(checkpoint, "generation", None) != student.generation
+            or getattr(checkpoint, "manifest_sha256", None)
+            != pointer.get("manifest_sha256")
+            or getattr(checkpoint, "acceptance_sha256", None)
+            != pointer.get("acceptance_sha256")
+            or getattr(checkpoint, "candidate_identity_sha256", None)
+            != getattr(acceptance, "candidate_identity_sha256", None)):
+        invalid("BAMF_ACCEPTED_AUTHORITY_CHECKPOINT_DRIFT")
+    if student.generation == 0:
+        if (getattr(checkpoint, "parent_checkpoint_sha256", None) is not None
+                or getattr(checkpoint, "parent_manifest_sha256", None) is not None
+                or getattr(checkpoint, "parent_acceptance_sha256", None) is not None
+                or getattr(checkpoint, "parent_candidate_identity_sha256", None) is not None):
+            invalid("BAMF_ACCEPTED_AUTHORITY_CHECKPOINT_DRIFT")
+        return acceptance
+    if (student.parent_manifest_sha256 is None
+            or getattr(checkpoint, "parent_manifest_sha256", None)
+            != student.parent_manifest_sha256
+            or getattr(checkpoint, "parent_candidate_identity_sha256", None)
+            != acceptance.parent_candidate_identity_sha256):
+        invalid("BAMF_ACCEPTED_AUTHORITY_CHECKPOINT_DRIFT")
+    return acceptance

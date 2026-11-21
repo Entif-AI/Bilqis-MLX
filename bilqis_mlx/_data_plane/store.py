@@ -7,10 +7,17 @@ import zlib
 from contextlib import contextmanager
 from pathlib import Path
 from .contracts import (
-    LEGACY_SCHEMA_VERSION, SCHEMA_VERSION, SQLITE_BUSY_TIMEOUT_MS, SQLITE_MMAP_BYTES, SQLITE_CACHE_KIB,
-    DataPlaneError, _error,
+    SCHEMA_VERSION, SQLITE_BUSY_TIMEOUT_MS, SQLITE_MMAP_BYTES, SQLITE_CACHE_KIB,
+    UPGRADABLE_SCHEMA_VERSIONS, DataPlaneError, _error,
 )
-from .schema import CORE_SCHEMA_SQL, C05_FIXED_SCHOOL_TRUST_SQL, PLANNER_FRONTIER_TRUST_SQL
+from .schema import (
+    ACCEPTED_AUTHORITY_SQL, CORE_SCHEMA_SQL, C05_FIXED_SCHOOL_TRUST_SQL,
+    PLANNER_FRONTIER_TRUST_SQL,
+)
+
+_PROTECTED_OBJECT_REFERENCE_PREFIXES = (
+    "bamf-accepted-authority-tip-v1:",
+)
 
 class DataPlaneStoreMixin:
     def __init__(self, path: Path):
@@ -29,13 +36,14 @@ class DataPlaneStoreMixin:
         self._db.executescript(CORE_SCHEMA_SQL)
         self._db.executescript(C05_FIXED_SCHOOL_TRUST_SQL)
         self._db.executescript(PLANNER_FRONTIER_TRUST_SQL)
+        self._db.executescript(ACCEPTED_AUTHORITY_SQL)
         row = self._db.execute(
             "SELECT value FROM meta WHERE key='schema_version'").fetchone()
         if row is None:
             self._db.execute(
                 "INSERT INTO meta(key,value) VALUES('schema_version',?)",
                 (str(SCHEMA_VERSION),))
-        elif int(row[0]) == LEGACY_SCHEMA_VERSION:
+        elif int(row[0]) in UPGRADABLE_SCHEMA_VERSIONS:
             self._db.execute(
                 "UPDATE meta SET value=? WHERE key='schema_version'",
                 (str(SCHEMA_VERSION),))
@@ -106,6 +114,8 @@ class DataPlaneStoreMixin:
         if (not isinstance(reference, str) or not reference
                 or "\n" in reference or "\r" in reference):
             raise ValueError(DataPlaneError.OBJECT_DIGEST_INVALID.value)
+        if reference.startswith(_PROTECTED_OBJECT_REFERENCE_PREFIXES):
+            raise ValueError(DataPlaneError.PROTECTED_REFERENCE_FORBIDDEN.value)
         digest = hashlib.sha256(raw).hexdigest()
         self.put_object(digest, raw)
         with self.transaction():

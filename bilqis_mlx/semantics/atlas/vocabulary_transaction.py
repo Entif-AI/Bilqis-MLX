@@ -17,7 +17,9 @@ from .vocabulary import (
     CandidateState, VocabularyBankParent, VocabularyExtension,
     STAGED_ONLY, apply_vocabulary_extension,
 )
-from .vocabulary_staging import _apply_authenticated_vocabulary_extension
+from .vocabulary_staging import (
+    _apply_authenticated_vocabulary_extension, _apply_checkpoint_vocabulary_extension,
+)
 from .vocabulary_resources import (
     DEFAULT_DISK_RESERVE_BYTES, DEFAULT_EXTRA_PLANNING_BYTES,
     VocabularyResourceEstimate, estimate_vocabulary_resources,
@@ -129,14 +131,13 @@ def stage_full_vocabulary_extension(
     )
 
 
-def _stage_authenticated_full_vocabulary_extension(
+def _stage_full_vocabulary_extension_with(
     parent: FullVocabularyParent,
     plan: VocabularyExtension,
     *,
-    accepted_features,
-    predecessor,
+    apply_extension,
 ) -> PreparedVocabularyCandidate:
-    """Full-tree owner path after accepted predecessor-feature verification."""
+    """Shared full-tree staging after the caller establishes feature authority."""
     if (type(parent) is not FullVocabularyParent
             or type(parent.topology) is not ModelTopologySpecV2
             or not isinstance(parent.parameters, Mapping)
@@ -169,9 +170,7 @@ def _stage_authenticated_full_vocabulary_extension(
         extra_planning_bytes=parent.extra_planning_bytes)
     if not estimate.fits:
         _invalid("BAMF_VOCABULARY_DISK_STAGING_BUDGET_EXCEEDED")
-    staged = _apply_authenticated_vocabulary_extension(
-        banks, plan, accepted_features=accepted_features,
-        predecessor=predecessor)
+    staged = apply_extension(banks, plan)
     parameters = dict(parent.parameters)
     optimizer_state = dict(parent.optimizer_state)
     for bank, weight in enumerate(staged.weights):
@@ -189,3 +188,33 @@ def _stage_authenticated_full_vocabulary_extension(
         staged, parent.topology.digest, staged.extents.digest,
         hashlib.sha256(staged.active_mask).hexdigest(), estimate,
         parameters, optimizer_state)
+
+
+def _stage_authenticated_full_vocabulary_extension(
+    parent: FullVocabularyParent,
+    plan: VocabularyExtension,
+    *,
+    accepted_features,
+    predecessor,
+) -> PreparedVocabularyCandidate:
+    """Historical owner path after exact predecessor-feature verification."""
+    return _stage_full_vocabulary_extension_with(
+        parent, plan,
+        apply_extension=lambda banks, extension: _apply_authenticated_vocabulary_extension(
+            banks, extension, accepted_features=accepted_features,
+            predecessor=predecessor))
+
+
+def _stage_checkpoint_full_vocabulary_extension(
+    parent: FullVocabularyParent,
+    plan: VocabularyExtension,
+    *,
+    accepted_features,
+    checkpoint_snapshot,
+) -> PreparedVocabularyCandidate:
+    """Current B13 path without reconstructing historical predecessor state."""
+    return _stage_full_vocabulary_extension_with(
+        parent, plan,
+        apply_extension=lambda banks, extension: _apply_checkpoint_vocabulary_extension(
+            banks, extension, accepted_features=accepted_features,
+            checkpoint_snapshot=checkpoint_snapshot))

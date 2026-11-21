@@ -167,14 +167,12 @@ def test_unmeasured_target_still_allows_established_protected_veto():
 def test_live_screen_short_circuits_before_protected_compilation():
     target, protected = "future.target", "future.protected"
     target_plan = N(
-        target_capability_id=target,
-        target_grade_id="opaque-grade",
+        target_capability_id=target, target_grade_id="opaque-grade",
         protected_capability_ids=(protected,),
         evaluated_capability_ids=(target, protected),
-        evaluated_capability_groups=((target, "opaque-grade"),
-                                     (protected, "prior-grade")),
-        evaluation_scope_sha256="1" * 64,
-        comparison_scope_sha256="2" * 64,
+        evaluated_capability_groups=(
+            (target, "opaque-grade"), (protected, "prior-grade")),
+        evaluation_scope_sha256="1" * 64, comparison_scope_sha256="2" * 64,
     )
     plan = N(digest="3" * 64, rubric_sha256="4" * 64,
              source_sha256="5" * 64)
@@ -188,6 +186,7 @@ def test_live_screen_short_circuits_before_protected_compilation():
         seed=13, rows=({"id": "fresh", "capability": target},)))
     target_cohort = object()
     assessments = Mock(side_effect=(object(), object()))
+    solvers = Mock(side_effect=((object(), "a" * 64), (object(), "b" * 64)))
     observed = []
 
     with patch.multiple(
@@ -204,8 +203,7 @@ def test_live_screen_short_circuits_before_protected_compilation():
             _instruments=Mock(return_value=(target_instrument,)),
             _policy=Mock(return_value=object()),
             _cohort=Mock(return_value=target_cohort),
-            factory_complete_solver=Mock(side_effect=(
-                (object(), "a" * 64), (object(), "b" * 64))),
+            factory_complete_solver=solvers,
             evaluate_capabilities=assessments,
             AssessmentPair=Mock(return_value=object()),
             evaluate_target_gate=Mock(return_value=rejection),
@@ -218,6 +216,8 @@ def test_live_screen_short_circuits_before_protected_compilation():
             cache, observer=observed.append)
 
     assert result[0] is rejection
+    assert solvers.call_args_list[0].kwargs.get("execution_cache") is cache
+    assert solvers.call_args_list[1].kwargs.get("execution_cache") is None
     protected_compile.assert_not_called()
     fresh_rows.assert_called_once_with(
         ANY,

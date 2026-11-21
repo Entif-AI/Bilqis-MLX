@@ -94,6 +94,32 @@ class DashboardWatchTests(unittest.TestCase):
 
             self.assertEqual(board.state["graduations"], "0.0.1 / 2.2.3")
 
+    def test_build_rehydrates_old_exam_header_beyond_recent_record_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "events.jsonl"
+            exam = {
+                "event": "SCHOOL_EXAM_COMMITTED", "grade": "B",
+                "generation": 7, "optimizer_step": 60,
+                "rubric": "r" * 64, "student_sha256": "s" * 64,
+                "phase": "MAIN",
+                "scores": {
+                    "A.IDENTITY": {"grade": "A", "correct": 5, "total": 6},
+                    "B.OR": {"grade": "B", "correct": 6, "total": 6},
+                },
+            }
+            history = [exam]
+            history.extend({"event": "IGNORED", "n": n} for n in range(520))
+            path.write_text("".join(json.dumps(event) + "\n" for event in history))
+
+            board = build(root, stream=io.StringIO())
+            rendered = board.render(width=300, height=38)
+            headings, values = rendered.splitlines()[:2]
+
+            self.assertEqual(
+                values[headings.index("EXAM"):headings.index("EXAM") + 6].strip(), "7")
+            self.assertIn("11/12 @60", values)
+
     def test_automatically_selects_the_only_active_cross_worktree_run(self):
         with tempfile.TemporaryDirectory() as tmp:
             roots = (Path(tmp) / "canonical", Path(tmp) / "codex")

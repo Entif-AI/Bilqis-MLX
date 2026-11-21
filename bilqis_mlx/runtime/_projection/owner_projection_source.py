@@ -44,11 +44,12 @@ def build_accepted_source_loader():
         return source
 
     def load(root: Path):
-        from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
         from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
             accepted_binding_for_manifest,
             accepted_generation,
-            parent_acceptance_anchor_from_manifest,
+        )
+        from bilqis_mlx.runtime.bamf_bundle.feature.historical_acceptance import (
+            load_historical_accepted_parent,
         )
 
         root = Path(root)
@@ -59,15 +60,8 @@ def build_accepted_source_loader():
         parent = None
         parent_binding = None
         if student.parent_manifest_sha256 is not None:
-            parent = load_bamf_bundle(
-                root / "bamf-bundles" / student.parent_manifest_sha256,
-                expected_manifest_sha256=student.parent_manifest_sha256)
-            parent_acceptance_sha256 = parent_acceptance_anchor_from_manifest(
-                root, pointer["manifest_sha256"])
-            if parent_acceptance_sha256 is not None:
-                parent_binding = accepted_binding_for_manifest(
-                    root, student.parent_manifest_sha256, parent,
-                    expected_acceptance_sha256=parent_acceptance_sha256)
+            parent, parent_binding = load_historical_accepted_parent(
+                root, pointer["manifest_sha256"], student, binding)
         return issue(
             root, pointer["manifest_sha256"], student, binding,
             parent, parent_binding)

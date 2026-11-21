@@ -3,6 +3,7 @@ from contextlib import nullcontext
 from types import SimpleNamespace
 
 from bilqis_mlx.runtime.bamf_operator._session_visit import visit
+from bilqis_mlx.runtime.bamf_operator.performance import measure_observed_phase
 
 
 def _prepared(*, accepted):
@@ -40,16 +41,16 @@ def _prepared(*, accepted):
         structural_weaknesses=())
 
 
-def _run(prepared, order):
+def _run(prepared, order, *, observer=None, measure_phase=None):
     return visit(
         "/run", 0.0, steps_per_visit=1, progress=None,
         source_prefetch_workers=0, source_prefetch_executor=None,
-        source_prefetch_metrics=None, observer=None, run_authority_binding=None,
+        source_prefetch_metrics=None, observer=observer, run_authority_binding=None,
         prepare_visit=lambda *_args, **_kwargs: prepared,
         record_rejection=lambda *_args, **_kwargs: order.append("rejection"),
         accept_publish=lambda *_args, **_kwargs: order.append("publication"),
-        load_generation=lambda *_args, **_kwargs: None,
-        measure_phase=lambda *_args, **_kwargs: nullcontext(),
+        load_generation=lambda *_args, **_kwargs: order.append("refresh"),
+        measure_phase=(measure_phase or (lambda *_args, **_kwargs: nullcontext())),
         emit_progress=lambda *_args, **_kwargs: None,
         record_cadence_attempt=lambda *_args, **_kwargs: order.append("cadence"),
     )
@@ -64,4 +65,19 @@ def test_rejected_attempt_records_cadence_after_rejection_custody():
 def test_accepted_attempt_records_cadence_after_successor_publication():
     order = []
     assert _run(_prepared(accepted=True), order) == "ACCEPTED"
-    assert order == ["publication", "cadence"]
+    assert order == ["publication", "refresh", "cadence"]
+
+
+def test_rejected_attempt_exposes_rejection_phase_and_wall_time():
+    order = []
+    events = []
+    observer = SimpleNamespace(update=lambda **fields: events.append(fields))
+    assert _run(
+        _prepared(accepted=False), order, observer=observer,
+        measure_phase=measure_observed_phase,
+    ) == "REJECTED"
+    assert order == ["rejection", "cadence"]
+    assert {"phase": "REJECTING"} in events
+    timing = [event for event in events if "rejection_wall_seconds" in event]
+    assert len(timing) == 1
+    assert timing[0]["rejection_wall_seconds"] >= 0.0

@@ -12,7 +12,8 @@ __path__.append(str(Path(__file__).parent / "_support"))
 from .codec import load_bamf_bundle, save_bamf_bundle
 from .feature_authority import (
     AcceptedGenerationFeatureContext, AcceptedGenerationFeatureReceipt,
-    AuthenticatedCandidateFeatureContext, AuthenticatedGenerationFeatureContext,
+    AuthenticatedCandidateFeatureContext, AuthenticatedCheckpointFeatureContext,
+    AuthenticatedGenerationFeatureContext,
     authenticate_bamf_execution_feature_context,
     authenticate_bamf_generation_feature_context,
     authenticate_bamf_candidate_feature_context, authenticate_bamf_candidate_features,
@@ -21,6 +22,13 @@ from .feature_authority import (
     read_accepted_generation_semantic_snapshot,
     read_accepted_generation_feature_lineage, read_accepted_generation_feature_receipt,
     verify_accepted_generation_feature_receipt,
+)
+from .feature.context import is_authenticated_generation_feature_context
+from .accepted_runtime import (
+    load_accepted_generation_with_feature_context,
+    read_current_accepted_generation_feature_context,
+    read_current_accepted_generation_feature_receipt,
+    read_current_accepted_generation_semantic_snapshot,
 )
 from .publication import (
     AcceptedGenerationInspection, inspect_accepted_generation,
@@ -63,6 +71,7 @@ _LAZY_EXPORTS = MappingProxyType({
     "require_staged_vocabulary_admission_headroom": ".vocabulary.admission",
     "AcceptedVocabularyRegistryExport": ".vocabulary.registry_export",
     "read_accepted_vocabulary_registry_export": ".vocabulary.registry_export",
+    "backfill_current_accepted_authority": ".publication.accepted_authority_migration",
 })
 
 
@@ -95,18 +104,24 @@ __all__ = (
     "AcceptedVocabularyRegistryExport", "read_accepted_vocabulary_registry_export",
     "PackageImportTransition",
     "AcceptedGenerationFeatureContext", "AcceptedGenerationFeatureReceipt",
-    "AuthenticatedCandidateFeatureContext", "AuthenticatedGenerationFeatureContext",
+    "AuthenticatedCandidateFeatureContext", "AuthenticatedCheckpointFeatureContext",
+    "AuthenticatedGenerationFeatureContext", "is_authenticated_generation_feature_context",
     "authenticate_bamf_candidate_feature_context", "read_accepted_generation_feature_lineage",
     "authenticate_bamf_execution_feature_context",
     "authenticate_bamf_generation_feature_context",
     "read_accepted_generation_feature_context", "read_accepted_generation_semantic_snapshot",
     "feature_schema_from_compiler_features",
     "read_accepted_generation_feature_receipt",
+    "load_accepted_generation_with_feature_context",
+    "read_current_accepted_generation_feature_context",
+    "read_current_accepted_generation_feature_receipt",
+    "read_current_accepted_generation_semantic_snapshot",
     "authenticate_bamf_candidate_features",
     "verify_accepted_generation_feature_receipt",
     "BamfRunIdentity", "InitialGenerationBinding", "PreparedInitialGeneration",
     "InitialFactoryFoundationAuthority", "issue_initial_factory_foundation_authority",
     "InitialFoundationFeatureAuthority", "issue_initial_foundation_feature_authority",
     "recover_prepared_initial_generation", "recover_sealed_initial_generation",
+    "backfill_current_accepted_authority",
     "prepare_initial_generation", "publish_initial_generation",
 )

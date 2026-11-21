@@ -9,7 +9,6 @@ from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.semantics.domains import contract_digest
 
 from .bundle_currentness import (
-    bind_bamf_bundle_currentness,
     require_bamf_bundle_currentness,
 )
 from .records import CompleteStudent, canonical, invalid, sha
@@ -171,11 +170,7 @@ def bind_accepted_currentness_transaction(
     before = _pointer_snapshot(
         run_dir, cache.accepted_manifest_sha256,
         expected_run_id=cache.run_id, expected_generation=cache.generation)
-    bundle = bind_bamf_bundle_currentness(
-        run_dir / "bamf-bundles" / cache.accepted_manifest_sha256,
-        expected_manifest_sha256=cache.accepted_manifest_sha256,
-    )
-    metrics.increment("bundle_tree_scans", 2)
+    bundle = require_bamf_bundle_currentness(cache._bundle_currentness)
     source = bind_source_authority_currentness(
         run_dir, parent.correction_frontier, cache._correction_registry)
     after = _pointer_snapshot(

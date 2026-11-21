@@ -6,15 +6,15 @@ from hashlib import sha256
 from pathlib import Path
 import math
 import shutil
+import time
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.paths import LEGACY_SOURCE
 from bilqis_mlx.runtime.accepted_corrections import AcceptedRuntimeHost
-from bilqis_mlx.runtime.bamf_bundle import (
-    authenticate_bamf_execution_feature_context,
+from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+    bind_accepted_execution_feature_context,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
-from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 from .evidence_validation import validate_candidate_horizon_event
 
 
@@ -64,20 +64,37 @@ class BamfOperatorResult:
     stop_receipt_sha256: str | None = None
 
 
-def _execution_context(run_dir: Path, *, currentness_metrics=None):
+def _execution_context(
+        run_dir: Path, *, currentness_metrics=None, performance_metrics=None):
+    started = time.perf_counter()
     host = AcceptedRuntimeHost(run_dir, currentness_metrics=currentness_metrics)
+    if performance_metrics is not None:
+        performance_metrics["accepted_runtime_host_wall_seconds"] = max(
+            0.0, time.perf_counter() - started)
+    started = time.perf_counter()
     parent = load_accepted_generation(run_dir)
+    if performance_metrics is not None:
+        performance_metrics["accepted_generation_load_wall_seconds"] = max(
+            0.0, time.perf_counter() - started)
+    started = time.perf_counter()
     context = host.source_context(source_root=LEGACY_SOURCE.resolve())
+    if performance_metrics is not None:
+        performance_metrics["accepted_source_context_wall_seconds"] = max(
+            0.0, time.perf_counter() - started)
     for event in getattr(parent, "outbox", ()):
         if isinstance(event, dict) and event.get("event") == "BAMF_C16_3_ACCEPTED":
             validate_candidate_horizon_event(run_dir, event, context.release)
-    authenticated = authenticate_bamf_execution_feature_context(
-        parent, None, run_dir)
+    started = time.perf_counter()
+    authenticated = bind_accepted_execution_feature_context(
+        run_dir, parent, None)
+    if performance_metrics is not None:
+        performance_metrics["accepted_feature_authentication_wall_seconds"] = max(
+            0.0, time.perf_counter() - started)
     object.__setattr__(context, "_accepted_feature_context", authenticated)
-    feature = persist_feature_manifest(
-        authenticated.features, run_dir / "operator-artifacts" / "features",
-        predecessor=authenticated.construction_predecessor)
-    return parent, context, authenticated.selection.path, feature.path
+    return (
+        parent, context, authenticated.selection.path,
+        authenticated.feature_artifact_path,
+    )
 
 
 def _step_seed(visit_id: str, ordinal: int = 1) -> int:

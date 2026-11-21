@@ -87,18 +87,17 @@ class GeneratedGradeAcceptanceTests(unittest.TestCase):
         parent = SimpleNamespace(
             run_id="fixture-run", generation=8,
             parent_manifest_sha256="older-manifest")
+        activation_binding = object()
+        parent_binding = object()
         with patch(
-            "bilqis_mlx.runtime.bamf_bundle.codec.load_bamf_bundle",
-            side_effect=[activation, parent],
-        ) as load, patch(
-            "bilqis_mlx.runtime.bamf_bundle.feature.acceptance."
-            "accepted_binding_for_manifest",
-            side_effect=[object(), object()],
-        ) as accepted_binding, patch(
-            "bilqis_mlx.runtime.bamf_bundle.feature.acceptance."
-            "parent_acceptance_anchor_from_manifest",
-            return_value="parent-acceptance",
-        ), patch(
+            "bilqis_mlx.runtime.bamf_bundle.feature.historical_acceptance."
+            "iter_historical_bamf_history",
+            return_value=iter((
+                ("activation-manifest", "activation-acceptance",
+                 activation, activation_binding),
+                ("parent-manifest", "parent-acceptance", parent, parent_binding),
+            )),
+        ) as history, patch(
             "bilqis_mlx.runtime.generated_grade_acceptance._binding_accepts_proposal",
             side_effect=[False, True],
         ):
@@ -109,14 +108,13 @@ class GeneratedGradeAcceptanceTests(unittest.TestCase):
                 acceptance_sha256="activation-acceptance",
             )
         self.assertTrue(authorized)
-        self.assertEqual(load.call_args_list[0].args[0], Path(
-            "/accepted-run/bamf-bundles/activation-manifest"))
-        self.assertEqual(load.call_args_list[1].args[0], Path(
-            "/accepted-run/bamf-bundles/parent-manifest"))
-        self.assertEqual(
-            accepted_binding.call_args_list[0].args[1], "activation-manifest")
-        self.assertEqual(
-            accepted_binding.call_args_list[1].args[1], "parent-manifest")
+        history.assert_called_once_with(
+            Path("/accepted-run"),
+            manifest_sha256="activation-manifest",
+            acceptance_sha256="activation-acceptance",
+            run_id="fixture-run",
+            generation=9,
+        )
 
 
 if __name__ == "__main__":

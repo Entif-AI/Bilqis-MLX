@@ -46,8 +46,10 @@ def frozen_snapshot(selection: AtlasArtifactSelection) -> FrozenAtlasSnapshot:
 
 
 def source_features(*, release: str = ATLAS_RELEASE) -> AtlasFeatures:
+    sentinel_map = (("NONE", 1), ("UNKNOWN", 0))
     return AtlasFeatures(
-        release, ATLAS_BUNDLE, SOURCE_BUNDLE, None, (), (), (), (), ())
+        release, ATLAS_BUNDLE, SOURCE_BUNDLE, None,
+        sentinel_map, sentinel_map, sentinel_map, (), ())
 
 
 @contextmanager

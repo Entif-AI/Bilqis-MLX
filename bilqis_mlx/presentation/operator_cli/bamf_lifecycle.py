@@ -10,6 +10,7 @@ from .bamf_lifecycle_inputs import (
     atlas_manifest_identity, foundation_hyperparameters, fresh_source_run_dir, invalid,
     source_foundation,
 )
+from .bamf_resume_migration import _load_resume_generation_authority
 
 
 SCHEMA = "bilqis.bamf.operator-lifecycle/v1"
@@ -98,9 +99,11 @@ def _validate_fresh_request_compatibility(args, topology, atlas, request) -> Non
 
 
 def _accepted_atlas(run_dir: Path, identity) -> AtlasArtifactIdentity:
-    from bilqis_mlx.runtime.bamf_bundle import read_accepted_generation_feature_receipt
+    from bilqis_mlx.runtime.bamf_bundle import (
+        read_current_accepted_generation_feature_receipt,
+    )
 
-    features = read_accepted_generation_feature_receipt(run_dir / "bamf-state.json")
+    features = read_current_accepted_generation_feature_receipt(run_dir)
     if features.source_release_sha256 != identity.initial_release_digest:
         invalid("BAMF_ATLAS_V2_ACCEPTED_ATLAS_CUSTODY_DRIFT")
     return AtlasArtifactIdentity(
@@ -167,8 +170,6 @@ def _validated_resume_parent_graph(args, identity):
 
 
 def _resume(args, requested_topology, *, include_parent_graph=False):
-    from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
-
     run_dir = Path(args.run_dir).expanduser().resolve()
     request = None
     flywheel = None
@@ -180,7 +181,8 @@ def _resume(args, requested_topology, *, include_parent_graph=False):
         from bilqis_mlx.runtime.atlas_admission import read_atlas_enrollment_request_v2
         request = read_atlas_enrollment_request_v2(args.atlas_admission_scope)
     pointer = run_dir / "bamf-state.json"
-    student, manifest_sha256 = load_bamf_generation_authority(pointer)
+    student, manifest_sha256 = _load_resume_generation_authority(
+        args, run_dir, pointer)
     identity = student.run_identity
     if identity is None:
         invalid("BAMF_OPERATOR_RESUME_RUN_IDENTITY_REQUIRED")
@@ -210,7 +212,9 @@ def _resume(args, requested_topology, *, include_parent_graph=False):
             invalid("BAMF_OPERATOR_RESUME_ADMISSION_POLICY_CONFLICT")
         result = "READY_TO_RESUME"
 
-        if policy == "atlas-release" and args.human_run is True and not args.dry_run:
+        strict_evidence = bool(getattr(args, "strict_evidence", True))
+        if (policy == "atlas-release" and args.human_run is True and not args.dry_run
+                and strict_evidence):
             from bilqis_mlx.runtime.atlas_flywheel_runtime import (
                 run_accepted_atlas_flywheel,
             )
@@ -220,7 +224,8 @@ def _resume(args, requested_topology, *, include_parent_graph=False):
                 flywheel = run_accepted_atlas_flywheel(
                     run_dir, parent_graph, reserve_gib=args.reserve_gib)
                 result = flywheel.status.value
-                student, manifest_sha256 = load_bamf_generation_authority(pointer)
+                student, manifest_sha256 = _load_resume_generation_authority(
+                    args, run_dir, pointer)
                 identity = _validate_resume_overrides(args, student)
                 atlas = _accepted_atlas(run_dir, identity)
 

@@ -11,6 +11,7 @@ from unittest.mock import Mock, patch
 
 from bilqis_mlx.control_plane.tests.cp07.native_source_support import NativeSourceFixture
 from bilqis_mlx.data_plane import data_plane
+from bilqis_mlx._data_plane.maintenance import gc_report
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.teaching import content_digest
 from bilqis_mlx.learning.atlas_retention_decision import issue_factory_retention_decision
@@ -222,6 +223,10 @@ destination.write_text(json.dumps(result, sort_keys=True, allow_nan=False))
             },))["delivery_outbox"][0]
         checkpoints._record(self.run, event)
         cache = SimpleNamespace(**vars(cache), _correction_registry=registry)
+        import bilqis_mlx.runtime.priority_rejection_replay as projection
+        projection._projection.cache_clear()
+        gc_report(data_plane(), (self.run,), apply=True)
+        projection._projection.cache_clear()
 
         credited = replay_rejected_outcomes(self.run, parent, cache, teacher)
 

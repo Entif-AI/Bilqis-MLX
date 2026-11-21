@@ -15,7 +15,8 @@ from .vocabulary_contracts import (
 )
 from .vocabulary_factors import prepare_identity_factors
 from .vocabulary_planning import (
-    _plan_from_snapshot, _verified_authenticated_prior, _verified_prior,
+    _plan_from_snapshot, _verified_authenticated_prior, _verified_checkpoint_prior,
+    _verified_prior,
 )
 
 def _mask(indices: tuple[int, ...], capacity: int) -> bytes:
@@ -59,14 +60,21 @@ def _validate_bank_parent(parent: VocabularyBankParent) -> None:
         _invalid("BAMF_VOCABULARY_ROW_COUNTS_INVALID")
 
 
-def _verified_extension(parent, plan, *, accepted_features=None, predecessor=None):
+def _verified_extension(
+        parent, plan, *, accepted_features=None, predecessor=None,
+        checkpoint_snapshot=None):
     _validate_bank_parent(parent)
     if (type(plan) is not VocabularyExtension
             or not isinstance(plan.allocations, tuple)
             or any(type(item) is not VocabularyAllocation
                    for item in plan.allocations)):
         _invalid("BAMF_VOCABULARY_PLAN_INVALID")
-    if accepted_features is None and predecessor is None:
+    if checkpoint_snapshot is not None:
+        if accepted_features is None or predecessor is not None:
+            _invalid("BAMF_VOCABULARY_CHECKPOINT_FEATURE_AUTHORITY_REQUIRED")
+        snapshot = _verified_checkpoint_prior(
+            parent.prior, accepted_features, checkpoint_snapshot)
+    elif accepted_features is None and predecessor is None:
         snapshot = _verified_prior(parent.prior)
     elif accepted_features is not None:
         snapshot = _verified_authenticated_prior(
@@ -207,6 +215,24 @@ def _apply_authenticated_vocabulary_extension(
     snapshot, old_count, estimated_bytes, factors = _verified_extension(
         parent, plan, accepted_features=accepted_features,
         predecessor=predecessor)
+    touched, weights, moments_m, moments_v = _detached_bank_copies(
+        parent, plan, old_count)
+    staged = _stage_extension_rows(
+        parent, plan, factors, touched, weights, moments_m, moments_v)
+    return _candidate_state(parent, plan, snapshot, estimated_bytes, staged)
+
+
+def _apply_checkpoint_vocabulary_extension(
+    parent: VocabularyBankParent,
+    plan: VocabularyExtension,
+    *,
+    accepted_features,
+    checkpoint_snapshot,
+) -> CandidateState:
+    """Owner path consuming current B13 checkpoint authority without history replay."""
+    snapshot, old_count, estimated_bytes, factors = _verified_extension(
+        parent, plan, accepted_features=accepted_features,
+        checkpoint_snapshot=checkpoint_snapshot)
     touched, weights, moments_m, moments_v = _detached_bank_copies(
         parent, plan, old_count)
     staged = _stage_extension_rows(

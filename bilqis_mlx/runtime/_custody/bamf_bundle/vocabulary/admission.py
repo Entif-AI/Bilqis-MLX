@@ -15,33 +15,25 @@ from bilqis_mlx.learning.capability_championship_state import clear_championship
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
 from bilqis_mlx.runtime.accepted_teacher_custody import rebind_accepted_teacher_custody
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
-from bilqis_mlx.semantics.atlas.snapshot import (
-    AtlasArtifactSelection, load_pinned_atlas_snapshot,
-)
 from bilqis_mlx.semantics.atlas_projection import (
     _canonical_bytes as _atlas_bytes, _digest as _atlas_sha256,
     resolve_atlas_source_bundle,
 )
-from bilqis_mlx.semantics.atlas_features import FeatureSchema
 from bilqis_mlx.semantics.atlas.vocabulary import VocabularyBankParent, VocabularyPrior
 from bilqis_mlx.semantics.atlas.vocabulary_planning import (
-    _plan_authenticated_vocabulary_extension,
+    _plan_checkpoint_vocabulary_extension,
 )
 from bilqis_mlx.semantics.atlas.vocabulary_resources import (
-    RESOURCE_SCHEMA, _build_authenticated_registry_mirror_delta,
+    RESOURCE_SCHEMA, _build_checkpoint_registry_mirror_delta,
 )
 from bilqis_mlx.semantics.atlas.vocabulary_transaction import (
-    FullVocabularyParent, _stage_authenticated_full_vocabulary_extension,
+    FullVocabularyParent, _stage_checkpoint_full_vocabulary_extension,
 )
 from .admission_records import (
     A02StagedVocabularyExtension, A02VocabularyStagingReceipt, STAGED_EVENT,
     _issue_a02_staged_vocabulary_extension,
     require_issued_a02_staged_vocabulary_extension,
 )
-from ..feature_authority import (
-    feature_schema_from_compiler_features, read_accepted_generation_feature_context,
-)
-from ..publication import load_bamf_generation_authority
 from ..records import BamfBundleCandidate, canonical, invalid, sha
 
 
@@ -67,7 +59,7 @@ def _accepted_active_ids(parent, snapshot) -> tuple[str, ...]:
         invalid("BAMF_A02_PARENT_ACTIVE_SET_DRIFT")
 
 
-def _bank_parent(parent, prior, available: int) -> VocabularyBankParent:
+def _bank_parent(parent, prior, snapshot, available: int) -> VocabularyBankParent:
     optimizer = parent.retained_state.optimizer
     if parent.run_identity is None:
         invalid("BAMF_RUN_IDENTITY_DRIFT")
@@ -76,7 +68,6 @@ def _bank_parent(parent, prior, available: int) -> VocabularyBankParent:
     moments_m = tuple(optimizer.m[f"identity.bank.{bank}"] for bank in banks)
     moments_v = tuple(optimizer.v[f"identity.bank.{bank}"] for bank in banks)
     counts = []
-    snapshot = load_pinned_atlas_snapshot(prior.source_selection)
     for semantic_id in prior.active_semantic_ids:
         entry = snapshot.abi_for_semantic(semantic_id)
         name = f"identity.bank.{entry.index // ModelTopologySpecV2.semantic_bank_rows}"
@@ -92,7 +83,7 @@ def _bank_parent(parent, prior, available: int) -> VocabularyBankParent:
         parent.run_identity.run_seed, available)
 
 
-def _full_parent(parent, prior, available: int) -> FullVocabularyParent:
+def _full_parent(parent, prior, snapshot, available: int) -> FullVocabularyParent:
     optimizer = parent.retained_state.optimizer
     state = {
         "step": mx.array(parent.retained_state.optimizer_step, dtype=mx.uint64),
@@ -102,7 +93,7 @@ def _full_parent(parent, prior, available: int) -> FullVocabularyParent:
            for name in optimizer.parameters},
     }
     return FullVocabularyParent(
-        _bank_parent(parent, prior, available), parent.topology,
+        _bank_parent(parent, prior, snapshot, available), parent.topology,
         optimizer.parameters, state, observed_available_bytes=available)
 
 
@@ -189,39 +180,37 @@ def require_staged_vocabulary_admission_headroom(
 
 
 def _accepted_vocabulary_parent(run_dir: Path, artifact_path: str):
-    pointer_path = run_dir / "bamf-state.json"
-    feature_context = read_accepted_generation_feature_context(pointer_path)
+    from ..accepted_runtime import load_accepted_generation_with_feature_context
+
+    parent, feature_context = load_accepted_generation_with_feature_context(
+        run_dir, artifact_path)
     parent_receipt = feature_context.receipt
     features = feature_context.features
-    predecessor = feature_context.construction_predecessor
-    parent, parent_manifest = load_bamf_generation_authority(pointer_path)
-    if parent_manifest != parent_receipt.generation_manifest_sha256:
-        invalid("BAMF_A02_PARENT_AUTHORITY_DRIFT")
-    selection = AtlasArtifactSelection(
-        str(artifact_path), features.atlas_bundle_id,
-        features.semantic_release, features.source_bundle_id)
-    snapshot = load_pinned_atlas_snapshot(selection)
-    recorded = feature_schema_from_compiler_features(parent.compiler_features)
-    schema = FeatureSchema(
-        recorded.role_ids, recorded.schema_ids, predecessor,
-        recorded.source_bindings)
+    parent_manifest = parent_receipt.generation_manifest_sha256
+    selection = feature_context.selection
+    snapshot = feature_context.snapshot
     prior = VocabularyPrior(
-        selection, parent.extents, features, schema,
+        selection, parent.extents, features, feature_context.schema,
         _accepted_active_ids(parent, snapshot), parent_manifest)
-    return parent, parent_manifest, parent_receipt, features, predecessor, prior
+    return parent, parent_manifest, parent_receipt, feature_context, prior
 
 
 def _prepare_vocabulary_extension(
         run_dir: Path, source_bundle_path: Path, admissions: tuple[str, ...],
-        parent, features, predecessor, prior):
-    full_parent = _full_parent(parent, prior, int(shutil.disk_usage(run_dir).free))
-    plan = _plan_authenticated_vocabulary_extension(
-        prior, admissions, parent.topology, features, predecessor)
-    prepared = _stage_authenticated_full_vocabulary_extension(
-        full_parent, plan, accepted_features=features, predecessor=predecessor)
-    mirror = _build_authenticated_registry_mirror_delta(
+        parent, feature_context, prior):
+    full_parent = _full_parent(
+        parent, prior, feature_context.snapshot,
+        int(shutil.disk_usage(run_dir).free))
+    plan = _plan_checkpoint_vocabulary_extension(
+        prior, admissions, parent.topology,
+        feature_context.features, feature_context.snapshot)
+    prepared = _stage_checkpoint_full_vocabulary_extension(
+        full_parent, plan, accepted_features=feature_context.features,
+        checkpoint_snapshot=feature_context.snapshot)
+    mirror = _build_checkpoint_registry_mirror_delta(
         prior, plan, source_bundle_path=source_bundle_path,
-        accepted_features=features, predecessor=predecessor)
+        accepted_features=feature_context.features,
+        checkpoint_snapshot=feature_context.snapshot)
     return plan, prepared, mirror
 
 
@@ -229,11 +218,9 @@ def _stage_vocabulary_extension_from_accepted(
         run_dir: Path, source_bundle_path: Path, admissions: tuple[str, ...],
         accepted_parent) -> A02StagedVocabularyExtension:
     run_dir = Path(run_dir)
-    parent, parent_manifest, parent_receipt, features, predecessor, prior = (
-        accepted_parent)
+    parent, parent_manifest, parent_receipt, feature_context, prior = accepted_parent
     plan, prepared, mirror = _prepare_vocabulary_extension(
-        run_dir, Path(source_bundle_path), admissions, parent, features,
-        predecessor, prior)
+        run_dir, Path(source_bundle_path), admissions, parent, feature_context, prior)
     successor_state = _successor_state(parent, prepared)
     resource_record = _resource_requirement(prepared.resource_estimate)
     receipt = A02VocabularyStagingReceipt(
@@ -248,7 +235,7 @@ def _stage_vocabulary_extension_from_accepted(
         registry_mirror_sha256=mirror.digest,
         resource_estimate_sha256=_digest_record(resource_record),
         active_set_sha256=prepared.bank_candidate.extents.active_semantic_digest,
-        feature_sha256=features.digest,
+        feature_sha256=feature_context.features.digest,
         semantic_bank_count=prepared.bank_candidate.extents.semantic_bank_count,
     )
     event = {

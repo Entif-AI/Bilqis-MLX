@@ -145,7 +145,8 @@ def _validate_lineage(
 
 
 def _parse_features(
-    payload: bytes, predecessor: AtlasFeatures | None,
+    payload: bytes, predecessor: AtlasFeatures | None, *,
+    require_lineage: bool = True,
 ) -> AtlasFeatures:
     try:
         data = json.loads(payload, parse_constant=_reject_nonfinite)
@@ -175,7 +176,7 @@ def _parse_features(
         )
     except (ValueError, TypeError, KeyError, UnicodeError):
         _invalid("BAMF_FEATURE_ARTIFACT_PAYLOAD_INVALID")
-    _validate_features(value, predecessor)
+    _validate_features(value, predecessor, require_lineage=require_lineage)
     if _canonical(asdict(value)) != payload:
         _invalid("BAMF_FEATURE_ARTIFACT_NONCANONICAL")
     return value

@@ -5,7 +5,8 @@ from dataclasses import dataclass
 
 from bilqis_mlx.runtime.backbone_identity import issue_execution_generation_binding
 from bilqis_mlx.runtime.bamf_bundle import (
-    BamfBundleCandidate, authenticate_bamf_execution_feature_context,
+    AuthenticatedCheckpointFeatureContext, BamfBundleCandidate,
+    authenticate_bamf_execution_feature_context,
 )
 from bilqis_mlx.runtime.capability_retention import CompleteSolver, EvaluationCase
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
@@ -53,15 +54,42 @@ class FactoryEvaluationInstrument:
             _invalid("BAMF_C05_FACTORY_INSTRUMENT_INVALID")
 
 
-def _execution_binding(candidate: BamfBundleCandidate, parameters=None):
+def _execution_binding(
+        candidate: BamfBundleCandidate, parameters=None, *, execution_cache=None):
     if not isinstance(candidate, BamfBundleCandidate):
         _invalid("BAMF_C05_CANDIDATE_REQUIRED")
     parameters = (
         candidate.retained_state.optimizer.parameters
         if parameters is None else parameters
     )
-    return issue_execution_generation_binding(parameters,
+    if execution_cache is None:
+        return issue_execution_generation_binding(
+            parameters, spec=candidate.topology, extents=candidate.extents)
+    from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+        bind_execution_generation,
+    )
+    return bind_execution_generation(
+        execution_cache, parameters,
         spec=candidate.topology, extents=candidate.extents)
+
+
+def _accepted_solver_feature_context(source_context, candidate):
+    """Reuse current checkpoint-backed feature authority for an accepted parent."""
+    context = getattr(source_context, "_accepted_feature_context", None)
+    if type(context) is not AuthenticatedCheckpointFeatureContext:
+        from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+            bind_accepted_execution_feature_context,
+        )
+        context = bind_accepted_execution_feature_context(
+            source_context.run_dir, candidate, None)
+    receipt = context.commitment.receipt
+    if (receipt.run_id != candidate.run_id
+            or receipt.generation != candidate.generation
+            or receipt.feature_sha256 != candidate.extents.factor_map_digest
+            or receipt.active_set_sha256 != candidate.extents.active_semantic_digest
+            or receipt.implementation_sha256 != candidate.implementation_sha256):
+        _invalid("BAMF_C05_ACCEPTED_FEATURE_CONTEXT_DRIFT")
+    return context
 
 
 def _factory_gold(source_context, row, goal):
@@ -230,6 +258,7 @@ def factory_complete_solver(
     instruments: tuple[FactoryEvaluationInstrument, ...],
     *,
     parameters=None,
+    execution_cache=None,
 ) -> tuple[CompleteSolver, str]:
     """Bind cases to one semantic candidate and one explicit read-only weight view.
 
@@ -241,10 +270,15 @@ def factory_complete_solver(
     if (not instruments or any(type(item) is not FactoryEvaluationInstrument
                                for item in instruments)):
         _invalid("BAMF_C05_FACTORY_INSTRUMENTS_REQUIRED")
+    authenticate_context = authenticate_bamf_execution_feature_context
+    if execution_cache is not None:
+        accepted_context = _accepted_solver_feature_context(source_context, candidate)
+        authenticate_context = lambda *_args: accepted_context
     return build_factory_complete_solver(
         source_context, candidate, artifact_path, instruments,
-        execution_binding=_execution_binding,
-        authenticate_context=authenticate_bamf_execution_feature_context,
+        execution_binding=lambda owned, values: _execution_binding(
+            owned, values, execution_cache=execution_cache),
+        authenticate_context=authenticate_context,
         bind_case=bind_factory_evaluation_case,
         route_plan=task_goal_route_plan,
         scalar_proposer=b11_task_goal_proposer,

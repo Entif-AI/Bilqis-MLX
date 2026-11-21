@@ -46,6 +46,70 @@ BEGIN
 END;
 """
 
+ACCEPTED_AUTHORITY_SQL = """
+CREATE TABLE IF NOT EXISTS bamf_accepted_authority_checkpoints(
+    checkpoint_sha256 TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL,
+    generation INTEGER NOT NULL CHECK(generation >= 0),
+    manifest_sha256 TEXT NOT NULL,
+    parent_checkpoint_sha256 TEXT,
+    payload BLOB NOT NULL,
+    UNIQUE(run_id,manifest_sha256)
+) WITHOUT ROWID;
+CREATE INDEX IF NOT EXISTS bamf_accepted_authority_checkpoints_generation
+ON bamf_accepted_authority_checkpoints(run_id,generation);
+CREATE TRIGGER IF NOT EXISTS bamf_accepted_authority_checkpoints_no_update
+BEFORE UPDATE ON bamf_accepted_authority_checkpoints
+BEGIN
+    SELECT RAISE(ABORT, 'BAMF_ACCEPTED_AUTHORITY_CHECKPOINT_IMMUTABLE');
+END;
+CREATE TRIGGER IF NOT EXISTS bamf_accepted_authority_checkpoints_no_delete
+BEFORE DELETE ON bamf_accepted_authority_checkpoints
+BEGIN
+    SELECT RAISE(ABORT, 'BAMF_ACCEPTED_AUTHORITY_CHECKPOINT_IMMUTABLE');
+END;
+CREATE TABLE IF NOT EXISTS bamf_accepted_authority_tips(
+    run_id TEXT PRIMARY KEY,
+    generation INTEGER NOT NULL CHECK(generation >= 0),
+    checkpoint_sha256 TEXT NOT NULL
+) WITHOUT ROWID;
+CREATE TRIGGER IF NOT EXISTS bamf_accepted_authority_tips_insert_guard
+BEFORE INSERT ON bamf_accepted_authority_tips
+WHEN NOT EXISTS(
+    SELECT 1 FROM bamf_accepted_authority_checkpoints
+    WHERE checkpoint_sha256=NEW.checkpoint_sha256
+      AND run_id=NEW.run_id
+      AND generation=NEW.generation
+      AND parent_checkpoint_sha256 IS NULL
+)
+BEGIN
+    SELECT RAISE(ABORT, 'BAMF_ACCEPTED_AUTHORITY_TIP_UNOWNED');
+END;
+CREATE TRIGGER IF NOT EXISTS bamf_accepted_authority_tips_no_delete
+BEFORE DELETE ON bamf_accepted_authority_tips
+BEGIN
+    SELECT RAISE(ABORT, 'BAMF_ACCEPTED_AUTHORITY_TIP_PROTECTED');
+END;
+CREATE TRIGGER IF NOT EXISTS bamf_accepted_authority_tips_monotonic_update
+BEFORE UPDATE ON bamf_accepted_authority_tips
+WHEN NEW.run_id != OLD.run_id OR NEW.generation != OLD.generation + 1
+BEGIN
+    SELECT RAISE(ABORT, 'BAMF_ACCEPTED_AUTHORITY_TIP_NON_MONOTONIC');
+END;
+CREATE TRIGGER IF NOT EXISTS bamf_accepted_authority_tips_update_guard
+BEFORE UPDATE ON bamf_accepted_authority_tips
+WHEN NOT EXISTS(
+    SELECT 1 FROM bamf_accepted_authority_checkpoints
+    WHERE checkpoint_sha256=NEW.checkpoint_sha256
+      AND run_id=OLD.run_id
+      AND generation=NEW.generation
+      AND parent_checkpoint_sha256=OLD.checkpoint_sha256
+)
+BEGIN
+    SELECT RAISE(ABORT, 'BAMF_ACCEPTED_AUTHORITY_TIP_UNOWNED');
+END;
+"""
+
 CORE_SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS meta(
     key TEXT PRIMARY KEY,
