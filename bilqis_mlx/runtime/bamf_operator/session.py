@@ -191,6 +191,73 @@ def _training_memory_context():
     return training_memory_policy(mx)
 
 
+def _run_post_operator_maintenance(
+        run_dir: Path, *, progress=None, expected_token: str | None = None):
+    """Best-effort bounded storage maintenance after the trainer lock is released."""
+    try:
+        from types import SimpleNamespace
+        from bilqis_mlx._data_plane.cli import _maintenance
+        from bilqis_mlx._data_plane.maintenance import maintenance_roots
+        from bilqis_mlx._data_plane.maintenance_lifecycle import (
+            clear_maintenance_pending,
+        )
+        from bilqis_mlx.data_plane import data_plane
+
+        run_dir = Path(run_dir)
+        if not ((run_dir / "bamf-state.json").is_file()
+                or (run_dir / "state.json").is_file()):
+            return None
+        plane = data_plane()
+        roots = maintenance_roots(plane, run_dir)
+        result = _maintenance(SimpleNamespace(
+            scan_root=list(roots),
+            apply=True,
+            scope="all",
+            max_records=0,
+            vacuum=False,
+        ))
+        if expected_token is not None:
+            clear_maintenance_pending(plane, run_dir, expected_token)
+    except Exception as error:
+        _emit_progress(
+            progress,
+            f"post-operator data-plane maintenance deferred: {error}",
+        )
+        return None
+    _emit_progress(
+        progress,
+        "post-operator data-plane maintenance completed: "
+        f"{result.get('gc', {}).get('reclaimable_object_bytes', 0)} object bytes, "
+        f"{result.get('gc', {}).get('reclaimable_node_bytes', 0)} node bytes, "
+        f"{result.get('file_gc', {}).get('reclaimable_file_bytes', 0)} file bytes",
+    )
+    return result
+
+
+def _run_pending_operator_maintenance(run_dir: Path, *, progress=None):
+    """Recover cleanup left pending by a prior hard process death."""
+    run_dir = Path(run_dir)
+    if not ((run_dir / "bamf-state.json").is_file()
+            or (run_dir / "state.json").is_file()):
+        return None
+    try:
+        from bilqis_mlx._data_plane.maintenance_lifecycle import (
+            maintenance_pending_token,
+        )
+        from bilqis_mlx.data_plane import data_plane
+        token = maintenance_pending_token(data_plane(), run_dir)
+    except Exception as error:
+        _emit_progress(
+            progress,
+            f"pending data-plane maintenance deferred: {error}",
+        )
+        return None
+    if token is None:
+        return None
+    return _run_post_operator_maintenance(
+        run_dir, progress=progress, expected_token=token)
+
+
 def operate_bamf(
     run_dir: Path, *, minutes: int = 90,
     max_visits: int = 0, steps_per_visit: int = 16,
@@ -210,7 +277,16 @@ def operate_bamf(
     if (distributed_profile is None
             and type(distributed_executor) is DistributedExecutorBinding):
         distributed_profile = distributed_executor.profile
+    maintenance_token = None
     def before_visits(root):
+        nonlocal maintenance_token
+        root = Path(root)
+        if (root / "bamf-state.json").is_file() or (root / "state.json").is_file():
+            from bilqis_mlx._data_plane.maintenance_lifecycle import (
+                mark_maintenance_pending,
+            )
+            from bilqis_mlx.data_plane import data_plane
+            maintenance_token = mark_maintenance_pending(data_plane(), root)
         if profile_release is not None:
             from bilqis_mlx.runtime._release_adoption.native_profile import adopt_profile_release
             adopt_profile_release(root, profile_release, reserve_gib=reserve_gib)
@@ -220,21 +296,38 @@ def operate_bamf(
         return _visit(
             *args, **kwargs, distributed_profile=distributed_profile,
             distributed_executor=distributed_executor)
-    return _operate_impl(
-        Path(run_dir), minutes=minutes, max_visits=max_visits,
-        steps_per_visit=steps_per_visit, reserve_gib=reserve_gib,
-        source_prefetch_workers=source_prefetch_workers, progress=progress,
-        max_horizon=_MAX_CANDIDATE_HORIZON,
-        worker_counts=NATIVE_SOURCE_WORKER_COUNTS, invalid=_invalid,
-        metrics_type=SourcePrefetchMetrics, source_pool_factory=source_prefetch_pool,
-        null_context=nullcontext, operator_lock=bamf_operator_lock,
-        visit_fn=visit_fn, observer_type=TrainerObservation,
-        emit_progress=_emit_progress, monotonic=time.monotonic,
-        load_generation=load_accepted_generation, result_type=BamfOperatorResult,
-        resource_snapshot=stop_resource_witness,
-        record_stop=record_normal_stop_receipt, elapsed_clock=time.perf_counter,
-        before_visits=before_visits,
-        training_memory_context=_training_memory_context,
-        bind_run_authority=(
-            lambda current_run_dir:
-            bind_native_run_authority(current_run_dir, run_authority)))
+    _run_pending_operator_maintenance(Path(run_dir), progress=progress)
+    try:
+        return _operate_impl(
+            Path(run_dir), minutes=minutes, max_visits=max_visits,
+            steps_per_visit=steps_per_visit, reserve_gib=reserve_gib,
+            source_prefetch_workers=source_prefetch_workers, progress=progress,
+            max_horizon=_MAX_CANDIDATE_HORIZON,
+            worker_counts=NATIVE_SOURCE_WORKER_COUNTS, invalid=_invalid,
+            metrics_type=SourcePrefetchMetrics, source_pool_factory=source_prefetch_pool,
+            null_context=nullcontext, operator_lock=bamf_operator_lock,
+            visit_fn=visit_fn, observer_type=TrainerObservation,
+            emit_progress=_emit_progress, monotonic=time.monotonic,
+            load_generation=load_accepted_generation, result_type=BamfOperatorResult,
+            resource_snapshot=stop_resource_witness,
+            record_stop=record_normal_stop_receipt, elapsed_clock=time.perf_counter,
+            before_visits=before_visits,
+            training_memory_context=_training_memory_context,
+            bind_run_authority=(
+                lambda current_run_dir:
+                bind_native_run_authority(current_run_dir, run_authority)))
+    finally:
+        try:
+            _run_post_operator_maintenance(
+                Path(run_dir), progress=progress,
+                expected_token=maintenance_token)
+        except Exception as error:
+            # Cleanup is subordinate to the trainer outcome. Never replace a
+            # successful result or the original trainer failure with GC failure.
+            try:
+                _emit_progress(
+                    progress,
+                    f"post-operator data-plane maintenance deferred: {error}",
+                )
+            except Exception:
+                pass
