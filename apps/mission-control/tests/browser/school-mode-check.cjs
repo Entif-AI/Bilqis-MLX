@@ -185,6 +185,7 @@ async function audit(page, launchMode, viewport, theme, density) {
   return result;
 }
 (async () => {
+  const { default: globalInteractionsJourney } = await import("./journeys/global-interactions-journey.mjs");
   const app = server(); await new Promise(resolve => app.listen(0, "127.0.0.1", resolve)); const port = app.address().port;
   const browser = await playwright.chromium.launch({ executablePath: chrome, headless: true }); const results = [];
   try {
@@ -192,6 +193,12 @@ async function audit(page, launchMode, viewport, theme, density) {
       const page = await browser.newPage(); await page.goto("http://127.0.0.1:" + port + "/apps/mission-control/renderer/?launchMode=" + launchMode, { waitUntil: "domcontentloaded" });
       for (const variant of [[{width:1440,height:960},"dark","comfortable"],[{width:1440,height:960},"light","compact"],[{width:390,height:844},"light","compact"]]) {
         results.push({ launchMode, viewport: variant[0], theme: variant[1], density: variant[2], ...(await audit(page, launchMode, ...variant)) });
+      }
+      if (launchMode === "fixtures") {
+        page.setDefaultTimeout(5000);
+        await page.setViewportSize({ width: 1440, height: 920 });
+        await page.goto("http://127.0.0.1:" + port + "/apps/mission-control/renderer/?launchMode=fixtures", { waitUntil: "domcontentloaded" });
+        results.push({ launchMode, globalInteractions: await globalInteractionsJourney(page) });
       }
       await page.close();
     }
