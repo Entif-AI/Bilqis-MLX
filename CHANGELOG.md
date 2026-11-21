@@ -18,6 +18,19 @@ All new releases use [Semantic Versioning](https://semver.org/) and Conventional
 * **bamf:** satisfy changed-path hygiene gates ([b572dc7](https://github.com/Entif-AI/Bilqis-MLX/commit/b572dc79e7fa8eefc96ae990d4d971efe257e5ed))
 * **bamf:** satisfy performance module boundaries ([7df95cc](https://github.com/Entif-AI/Bilqis-MLX/commit/7df95cc00ed0305e5892b0243b21951c58b47653))
 
+<!-- release-history:pr:1511:start -->
+### PR #1511 constituent commit inventory
+
+Release Please summarized PR #1511 as [`dbc13d3`](https://github.com/Entif-AI/Bilqis-MLX/commit/dbc13d3bf48bd5e9b457e42bbd9e33b18ca37d5b). This generated inventory preserves **1 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **1 source commit**.
+
+<details>
+<summary>1 source commit (newest-first PR order)</summary>
+
+- [`5756108507`](https://github.com/Entif-AI/Bilqis-MLX/commit/5756108507576f698cbf92b601ea9c4f1727f606) docs(bamf): record subsecond operator witness
+
+</details>
+
+<!-- release-history:pr:1511:end -->
 ## [1.2.18](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.17...v1.2.18) (2026-11-20)
 
 
