@@ -76,6 +76,17 @@ test("owning selections map directly into evidence criteria", () => {
   assert.deepEqual(criteriaForSelection({ kind: "evidence", id: "receipt:one" }), {
     kind: "record", value: "receipt:one",
   });
+  assert.deepEqual(criteriaForSelection({ kind: "reference", id: "receipt:one" }), {
+    kind: "reference", value: "receipt:one",
+  });
+  assert.deepEqual(
+    buildEvidenceRequest(context, criteriaForSelection({ kind: "reference", id: "receipt:one" })),
+    {
+      schema: "bilqis.bamf.control-plane.query/v1", family: "reference", mode: "current",
+      run_id: "run-7", record_id: null, schema_version: null, generation: 7,
+      frontier_id: null, as_of: null, reference: "receipt:one", cursor: null, limit: 16,
+    },
+  );
   assert.deepEqual(criteriaForSelection({ kind: "generation", id: "generation:44239" }), {
     kind: "record", value: "generation:44239",
   });

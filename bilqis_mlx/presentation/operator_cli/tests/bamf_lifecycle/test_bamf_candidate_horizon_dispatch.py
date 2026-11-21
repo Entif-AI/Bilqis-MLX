@@ -109,3 +109,32 @@ def test_interactive_bamf_resume_uses_compact_dashboard_not_final_json(capsys):
     assert board.rows["SYSTEM & QUALIFICATION"][-1] == {
         "kind": "TRAINER", "detail": "planner: compiling semantic curriculum"}
     assert board.draw.call_count >= 3
+
+
+def test_interactive_bamf_resume_routes_checkpoint_events_into_dashboard_not_stdout(capsys, tmp_path):
+    args = SimpleNamespace(
+        human_run=True, dry_run=False, minutes=90, max_visits=1,
+        steps_per_visit=4, reserve_gib=0.0, source_prefetch_workers=0)
+    report = {"result": "READY_TO_RESUME"}
+    result = BamfOperatorResult("VISIT_LIMIT", 1, 0, 1, 7, 31, elapsed_seconds=1.0)
+    board = SimpleNamespace(
+        mode="", state={}, rows={"SYSTEM & QUALIFICATION": []}, draw=Mock())
+
+    def operate(run_dir, **_kwargs):
+        from bilqis_mlx.runtime import checkpoints
+        checkpoints._record(run_dir, {"event": "BAMF_TEST_CHECKPOINT", "value": 7})
+        return result
+
+    with patch(
+            "bilqis_mlx.control_plane.active_endpoint.advertise_active_endpoint",
+            return_value=nullcontext()), patch(
+            "bilqis_mlx.runtime.bamf_operator.operate_bamf", side_effect=operate), patch(
+            "sys.stdout.isatty", return_value=True), patch(
+            "bilqis_mlx.presentation.dashboard.build", return_value=board), patch(
+            "bilqis_mlx.presentation.dashboard.ingest") as ingest:
+        handled, code, _next = _dispatch_bamf_resume(args, tmp_path, report)
+
+    output = capsys.readouterr().out
+    assert handled is True and code == 0
+    assert "BAMF_TEST_CHECKPOINT" not in output
+    ingest.assert_any_call(board, {"event": "BAMF_TEST_CHECKPOINT", "value": 7})

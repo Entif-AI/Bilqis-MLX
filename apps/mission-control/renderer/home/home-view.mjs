@@ -184,6 +184,17 @@ function pulse(model, { nowMs, locale } = {}) {
   </section>`;
 }
 
+function notifications(model, { nowMs, locale } = {}) {
+  const rows = Array.isArray(model.notifications) ? model.notifications : [];
+  return `<section class="home-analysis home-notifications" ${testIdAttribute("home", "notifications")}>
+    <header><div><span class="eyebrow">${esc(t("home.notifications.eyebrow"))}</span><h2>${esc(t("home.notifications.title"))}</h2></div><span>${esc(t("home.notifications.count", { count: rows.length }))}</span></header>
+    <div class="pulse-list">${rows.map((item, index) => {
+      const time = temporalMarkup({ unixSeconds: item.createdAt, nowMs, locale, testId: `home-notification-time-${index}` });
+      return `<div class="home-list-item" data-severity="${esc(String(item.severity ?? "INFO").toLowerCase())}"><button type="button" data-home-target-kind="${esc(item.target?.kind ?? "reference")}" data-home-target-id="${esc(item.target?.id ?? item.evidenceRef)}" ${testIdAttribute("home", "notification", "item", index)}><span class="pulse-kind">${esc(item.kind)}</span><strong>${esc(item.subjectRef)}</strong><small>${esc(t("home.notifications.evidence", { evidence: item.evidenceRef }))}</small></button>${time}</div>`;
+    }).join("") || `<p class="home-empty">${esc(t("home.notifications.empty"))}</p>`}</div>
+  </section>`;
+}
+
 function school(model) {
   return `<section class="home-analysis home-school" ${testIdAttribute("home", "school")}>
     <header><div><span class="eyebrow">${esc(t("home.school.eyebrow"))}</span><h2>${esc(t("home.school.title"))}</h2></div><div class="home-heading-tools"><span>${esc(t("home.school.rows", { count: model.schoolRows.length }))}</span>${help("home.help.school.label", "home.help.school.body", "home-help-school")}</div></header>
@@ -233,7 +244,7 @@ export function renderHomeMarkup(model, { historical = false, nowMs = Date.now()
     return `<div class="home-dashboard" data-attention-priority="${status.attentionPriority}" ${testIdAttribute("home", "root")}>
       ${statusBand(model, status, badge)}
       <div class="home-primary-grid">${primary}</div>
-      <div class="home-analysis-grid">${pulse(model, temporal)}${school(model)}</div>
+      <div class="home-analysis-grid">${notifications(model, temporal)}${pulse(model, temporal)}${school(model)}</div>
       ${healthDetails(model)}
     </div>`;
   })();

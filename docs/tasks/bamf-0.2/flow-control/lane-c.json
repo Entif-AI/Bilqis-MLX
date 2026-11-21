@@ -542,6 +542,16 @@
       "preserved_branch": "codex/1513-operator-event-error-20261120"
     },
     {
+      "issue": 1523,
+      "pr": 1524,
+      "state": "TURNED_IN",
+      "head_sha": "6cf25263ca9e4827811fdd5e7aacd9b46a3e63d1",
+      "head_sha_role": "verified implementation head before this turn-in bookkeeping receipt",
+      "summary": "Issue #1523 is turned in as PR #1524. Interactive BAMF resume now hydrates bounded terminal history from durable accepted/rejected event evidence and overlays the current disposable trainer observation window instead of allowing that tiny snapshot to erase prior-run visits. Interactive BAMF also installs the checkpoint operator-view callback so durable events update/redraw the cockpit rather than dumping raw JSON onto stdout; non-TTY machine behavior is unchanged. Failing-before proof reproduced both defects. Exact regressions passed 2/2, the two directly affected test files passed 8/8, BAMF flow-control and diff hygiene are clean, and no live learner run was performed.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1523-bamf-terminal-history-20261120"
+    },
+    {
       "issue": 1395,
       "pr": 1414,
       "state": "TURNED_IN",

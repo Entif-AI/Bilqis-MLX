@@ -19,6 +19,7 @@ from .feature_authority import (
     authenticate_bamf_candidate_feature_context, authenticate_bamf_candidate_features,
     feature_schema_from_compiler_features,
     read_accepted_generation_feature_context,
+    read_accepted_generation_semantic_snapshot,
     read_accepted_generation_feature_lineage, read_accepted_generation_feature_receipt,
     verify_accepted_generation_feature_receipt,
 )
@@ -102,7 +103,8 @@ __all__ = (
     "authenticate_bamf_candidate_feature_context", "read_accepted_generation_feature_lineage",
     "authenticate_bamf_execution_feature_context",
     "authenticate_bamf_generation_feature_context",
-    "read_accepted_generation_feature_context", "feature_schema_from_compiler_features",
+    "read_accepted_generation_feature_context", "read_accepted_generation_semantic_snapshot",
+    "feature_schema_from_compiler_features",
     "read_accepted_generation_feature_receipt",
     "authenticate_bamf_candidate_features",
     "verify_accepted_generation_feature_receipt",

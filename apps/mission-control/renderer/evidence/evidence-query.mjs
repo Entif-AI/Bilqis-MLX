@@ -128,7 +128,7 @@ export function criteriaForSelection(selection) {
     evidence: "record", capability: "capability", episode: "episode",
     semantic: "semantic", memory: "memory", checkpoint: "checkpoint", generation: "record",
     correction: "correction", strategy: "reference", neural: "reference",
-    warning: "reference",
+    warning: "reference", reference: "reference",
   };
   return { kind: kinds[selection.kind] ?? "record", value: selection.id };
 }

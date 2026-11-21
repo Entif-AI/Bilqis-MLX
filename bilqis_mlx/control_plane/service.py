@@ -17,6 +17,7 @@ from bilqis_mlx.mission_control.model import MissionControlContractError
 from bilqis_mlx.mission_control.operator import (
     OperatorActionReceiptV2, OperatorActionRequestV2,
 )
+from bilqis_mlx.mission_control.projection import MissionControlProjection
 
 from .contracts import (
     ControlPlaneState, ERROR_SCHEMA,
@@ -82,6 +83,7 @@ class ControlPlaneService:
         event_retention_limit: int = 256, event_queue_limit: int = 64,
         resource_bucket_span: int = 5, event_heartbeat_seconds: float = 0.25,
         command_store_path: Path | None = None, command_manager=None,
+        notification_projection: MissionControlProjection | None = None,
     ):
         _validate_service_options(
             query_source, event_retention_limit, event_queue_limit,
@@ -114,6 +116,10 @@ class ControlPlaneService:
         self._query_source = (
             MissionControlQueryCatalog.unavailable
             if query_source is None else query_source)
+        if (notification_projection is not None
+                and type(notification_projection) is not MissionControlProjection):
+            _invalid("CONTROL_PLANE_NOTIFICATION_PROJECTION_INVALID")
+        self._notification_projection = notification_projection
         self.event_heartbeat_seconds = event_heartbeat_seconds
         self._commands = command_manager
         self._service_state = ControlPlaneState.HEALTHY
@@ -316,7 +322,10 @@ class ControlPlaneService:
 
     def publish_event(self, family: EventFamily, payload, *, event_id: str | None = None):
         """Publish one CP02-backed delta without making the stream authoritative."""
-        return self.events.publish_record(family, payload, event_id=event_id)
+        event = self.events.publish_record(family, payload, event_id=event_id)
+        if event is not None and self._notification_projection is not None:
+            self._notification_projection.ingest_notification_event(event, payload)
+        return event
 
     def flush_event_telemetry(self):
         return self.events.flush_resource_samples()

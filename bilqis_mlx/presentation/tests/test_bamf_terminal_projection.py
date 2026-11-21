@@ -73,6 +73,56 @@ def observed_visit(capability, visit, step, *, before, after, wall):
 
 
 class BamfTerminalProjectionTests(unittest.TestCase):
+    def test_resume_keeps_durable_history_beyond_disposable_observation_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            (run / "bamf-state.json").write_text(json.dumps({
+                "run_id": "aspirant", "generation": 14,
+            }))
+            accepted = {
+                "event": "BAMF_C16_3_ACCEPTED", "event_id": "accepted-1",
+                "capability": "A.EDGE", "candidate_attempt_ordinal": 11,
+                "optimizer_step": 50, "selected_policy_key": "policy-a",
+                "visit_id": "visit-accepted",
+                "how_outcome": {
+                    "attempted_steps": 4, "retained_steps": 4,
+                    "scores": [["A.EDGE", 2, 3, 6]],
+                    "decision": {"decision": "PROVISIONAL", "reason": "WITHIN_BUDGET"},
+                    "context": {"grade": "A"},
+                },
+            }
+            rejected = {
+                "event": "BAMF_CANDIDATE_REJECTED", "event_id": "rejected-1",
+                "generation": 13, "optimizer_step": 50,
+                "evidence": {
+                    "capability": "A.PARENT", "candidate_optimizer_step": 54,
+                    "rejection_attempt_ordinal": 12, "selected_policy_key": "policy-b",
+                    "visit_id": "visit-rejected", "retention_reason": "NO_GAIN",
+                    "how_outcome": {
+                        "attempted_steps": 4, "retained_steps": 0,
+                        "scores": [["A.PARENT", 3, 3, 6]],
+                        "decision": {"decision": "REJECT", "reason": "NO_GAIN"},
+                        "context": {"grade": "A"},
+                    },
+                },
+            }
+            (run / "events.jsonl").write_text(
+                json.dumps(accepted) + "\n" + json.dumps(rejected) + "\n")
+            (run / "trainer-observed.json").write_text(json.dumps({
+                "schema": "bilqis.bamf.trainer-observed/v7",
+                "visits": [observed_visit("A.MAPS", 13, 58, before=4, after=5, wall=9.2)],
+            }))
+            board = Dashboard(
+                stream=io.StringIO(), clock=lambda: 1000.0,
+                tables=LETTER_TABLES, compact_header=True, show_all_panels=True)
+            board.school_telemetry = SchoolTelemetry(board, active_grades=("A",))
+            board.log_hint = str(run / "events.jsonl")
+
+            board.draw()
+
+            capabilities = [row["capability"] for row in board.rows["CANDIDATES"]]
+            self.assertEqual(capabilities, ["A.EDGE", "A.PARENT", "A.MAPS"])
+
     def test_tty_draw_projects_existing_bamf_observation_into_dense_cockpit(self):
         with tempfile.TemporaryDirectory() as tmp:
             run = Path(tmp)

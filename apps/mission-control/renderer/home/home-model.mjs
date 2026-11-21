@@ -3,9 +3,14 @@ import { formatDurationSeconds } from "../foundation/temporal.mjs";
 
 const QUERY_SCHEMA = "bilqis.bamf.control-plane.query/v1";
 const PRESENT = "PRESENT";
+const NOTIFICATION_EVENT_FAMILIES = new Set([
+  "capability.graduated", "grade.promoted", "semantic.release.changed",
+  "graph.materialized", "qualification.gate.changed", "blocker.changed",
+  "drift.detected", "warning.failure",
+]);
 
 export const HOME_FAMILIES = Object.freeze([
-  "run", "school", "capability", "episode", "semantic", "resource", "correction", "teacher",
+  "run", "school", "capability", "episode", "semantic", "resource", "correction", "teacher", "notification",
 ]);
 
 export function queryRequest(family, context, overrides = {}) {
@@ -37,6 +42,10 @@ export function familyForEvent(event) {
   if (family.startsWith("resource.")) return "resource";
   if (family.startsWith("run.") || family.startsWith("checkpoint.")) return "run";
   return null;
+}
+
+export function isNotificationEvent(event) {
+  return NOTIFICATION_EVENT_FAMILIES.has(String(event?.event_family ?? ""));
 }
 
 function value(record, field) {
@@ -115,6 +124,7 @@ export function projectionFromPages(pages, context) {
   const resources = pageRecords(pages, "resource");
   const corrections = pageRecords(pages, "correction");
   const teachers = pageRecords(pages, "teacher");
+  const notifications = pageRecords(pages, "notification");
 
   const run = latest(runRecords, "bilqis.bamf.mission-control.run-context/v1");
   const observed = observedHomeState(runRecords, context, run);
@@ -136,7 +146,7 @@ export function projectionFromPages(pages, context) {
   const qualified = capabilityRows.filter((record) => record.status === "QUALIFIED").length;
   const domainRecordCount = (
     capabilities.length + episodes.length + schoolRecords.length + semanticRecords.length +
-    resources.length + corrections.length + teachers.length
+    resources.length + corrections.length + teachers.length + notifications.length
   );
   const startup = run && !observed.current && context?.mode !== "HISTORICAL" && domainRecordCount === 0
     ? Object.freeze({
@@ -240,6 +250,18 @@ export function projectionFromPages(pages, context) {
       materializedAt: record.meta?.materialized_at ?? null,
       target: Object.freeze({ kind: "capability", id: record.capability_id }),
     }))),
+    notifications: Object.freeze(notifications
+      .filter((record) => record.schema_version === "bilqis.bamf.mission-control.notification/v1" && record.state === "ACTIVE")
+      .reverse().map((record) => Object.freeze({
+        id: record.notification_id,
+        kind: record.kind,
+        severity: record.severity,
+        subjectRef: record.subject_ref,
+        evidenceRef: record.evidence_ref,
+        createdAt: record.created_at,
+        supersedesNotificationId: record.supersedes_notification_id,
+        target: Object.freeze({ kind: "reference", id: record.evidence_ref }),
+      }))),
     attention: Object.freeze([
       ...(correctionDebt ? [{
         kind: "correction", severity: "invalid", count: correctionDebt, id: corrections[0]?.meta?.record_id,
