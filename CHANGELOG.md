@@ -2,6 +2,14 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.4.1](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.0...v1.4.1) (2026-11-21)
+
+
+### Bug Fixes
+
+* **bamf:** recover stale cache at visit boundary ([#1522](https://github.com/Entif-AI/Bilqis-MLX/issues/1522)) ([f69f541](https://github.com/Entif-AI/Bilqis-MLX/commit/f69f5417e625f034664721378a7dad75f2686a15))
+* preserve BAMF terminal history and route live events to cockpit ([#1524](https://github.com/Entif-AI/Bilqis-MLX/issues/1524)) ([f18b835](https://github.com/Entif-AI/Bilqis-MLX/commit/f18b835c24b8cb163f0fabbccd67432ccbcdbd17))
+
 ## [1.4.0](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.3.0...v1.4.0) (2026-11-21)
 
 
