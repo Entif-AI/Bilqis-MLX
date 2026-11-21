@@ -59,6 +59,7 @@ class RejectionProjection:
 
     offset: int = 0
     rows: list[tuple[str, str, str, str]] = field(default_factory=list)
+    evidence_rows: list[dict] = field(default_factory=list)
     weakness_rows: list[dict] = field(default_factory=list)
     seen_receipts: set[str] = field(default_factory=set)
     capability_counts: dict[str, int] = field(default_factory=dict)
@@ -141,7 +142,7 @@ class RejectionProjection:
             self._accept(item, invalid)
 
     def _accept(self, item, invalid):
-        receipt_sha256, row, ordinal, journal_ordinal, *extra = item
+        receipt_sha256, row, ordinal, journal_ordinal, weaknesses, evidence = item
         if receipt_sha256 in self.seen_receipts:
             return
         capability = row[0]
@@ -161,8 +162,8 @@ class RejectionProjection:
         if journal_ordinal is not None or len(self.legacy_capabilities) <= 1:
             self.last_positions[capability] = expected_global
         self.rows.append(row)
-        if extra:
-            self.weakness_rows.extend(extra[0])
+        self.evidence_rows.append(evidence)
+        self.weakness_rows.extend(weaknesses)
 
     def _require_order(
             self, capability, journal_ordinal, ordinal, expected_global, count, invalid):
@@ -197,6 +198,13 @@ class RejectionProjection:
             return RejectionRows(self.rows, 0)
         return RejectionRows(self.rows, len(self.rows) - start, start)
 
+    def outcomes_view(self):
+        with self.lock:
+            return tuple(
+                (*row, self.evidence_rows[index])
+                for index, row in enumerate(self.rows)
+            )
+
     def next_ordinals(self, capability):
         with self.lock:
             return len(self.rows) + 1, self.capability_counts.get(capability, 0) + 1
@@ -219,6 +227,7 @@ class RejectionProjection:
     def _reset(self, *, keep_hydrated=False):
         self.offset = 0
         self.rows.clear()
+        self.evidence_rows.clear()
         self.weakness_rows.clear()
         self.seen_receipts.clear()
         self.capability_counts.clear()

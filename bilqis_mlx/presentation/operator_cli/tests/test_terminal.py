@@ -28,6 +28,13 @@ class OperatorTests(unittest.TestCase):
             "DETAILS: reason=BAMF_PRIORITY_REJECTION_ORDER_INVALID",
             stderr.getvalue())
 
+    def test_raw_key_error_never_masquerades_as_operator_error_code(self):
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            self.assertEqual(_report_operator_blocked(KeyError("event"), None), 2)
+        self.assertIn("OPERATOR BLOCKED: INTERNAL.UNHANDLED_KEY_ERROR", stderr.getvalue())
+        self.assertNotIn("OPERATOR BLOCKED: 'event'", stderr.getvalue())
+
     def test_cold_resume_stop_explains_accepted_generation_restart(self):
         summary = human_stop_summary({
             "stop_reason": "ATLAS_ADMISSION_ADOPTED_COLD_RESUME",

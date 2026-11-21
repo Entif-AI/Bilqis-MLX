@@ -31,6 +31,8 @@ _EXACT = MappingProxyType({
 
 
 def leading_legacy_code(error: BaseException | str) -> str:
+    if isinstance(error, KeyError):
+        return "INTERNAL.UNHANDLED_KEY_ERROR"
     text = str(error).strip()
     return text.split(":", 1)[0].strip() or error.__class__.__name__
 

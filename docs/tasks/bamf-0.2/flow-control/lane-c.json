@@ -532,6 +532,16 @@
       "preserved_branch": "codex/1504-bamf-performance-regression-20261120"
     },
     {
+      "issue": 1513,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "dbc13d3bf48bd5e9b457e42bbd9e33b18ca37d5b",
+      "head_sha_role": "current main baseline for the isolated operator-error repair branch",
+      "summary": "Live BAMF rejection continuation exposed a portable v2 rejection-receipt compatibility defect: authenticated teacher-outcome replay still assumed the historical v1 receipt embedded an event and raised KeyError('event'). #1513 owns replaying HOW evidence from the already-authenticated rejection projection, preserving hot/cold replay semantics, and preventing raw KeyError payloads from masquerading as operator blocker codes. No neural updates are authorized or required.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1513-operator-event-error-20261120"
+    },
+    {
       "issue": 1395,
       "pr": 1414,
       "state": "TURNED_IN",

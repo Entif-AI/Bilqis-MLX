@@ -121,8 +121,10 @@ def _render_stopped_board(board, build, args, result: dict) -> int | None:
 
 
 def _report_operator_blocked(err, trace_path) -> int:
-    print("OPERATOR BLOCKED: " + str(err), file=sys.stderr)
-    context = getattr(err, "context", None)
+    from bilqis_mlx.errors import ErrorBus
+    report = ErrorBus.report(err)
+    print("OPERATOR BLOCKED: " + report.code, file=sys.stderr)
+    context = report.context
     if context:
         details = ", ".join(
             f"{key}={value}" for key, value in sorted(context.items()))
