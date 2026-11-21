@@ -12,11 +12,60 @@ from .migration import migrate_legacy_payloads, vacuum
 
 _HEAD_SCHEMA = "bilqis.state-head/v1"
 _OBJECT_FRONTIER_BATCH_RECORDS = 400
+_MAINTENANCE_ROOT_PREFIX = "maintenance_root_v1:"
 
 
 def _valid_digest(value) -> bool:
     return (isinstance(value, str) and len(value) == 64
             and all(char in "0123456789abcdef" for char in value))
+
+
+def _recognized_root(root: Path) -> bool:
+    return root.is_dir() and any(
+        (root / name).exists()
+        for name in ("bamf-state.json", "state.json", ".bamf-operator.lock",
+                     ".grade-a-operator.lock")
+    )
+
+
+def register_maintenance_root(plane, run_dir: Path) -> Path:
+    """Record one live custody root so shared-store GC can lock the whole root set."""
+    root = Path(run_dir).expanduser().resolve(strict=True)
+    if not _recognized_root(root):
+        raise ValueError(DataPlaneError.MAINTENANCE_ROOT_UNRECOGNIZED.value)
+    digest = hashlib.sha256(str(root).encode("utf-8")).hexdigest()
+    with plane.transaction():
+        plane._db.execute(
+            "INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)",
+            (_MAINTENANCE_ROOT_PREFIX + digest, str(root)),
+        )
+    return root
+
+
+def maintenance_roots(plane, primary: Path) -> tuple[Path, ...]:
+    """Return every extant custody root known to the workstation data plane."""
+    primary = Path(primary).expanduser().resolve(strict=True)
+    roots = {primary}
+    rows = plane._db.execute(
+        "SELECT value FROM meta WHERE key LIKE ?",
+        (_MAINTENANCE_ROOT_PREFIX + "%",),
+    )
+    candidates = [row[0] for row in rows]
+    # Before the registry exists, preserve sibling durable runs in the same
+    # configured storage family. Event-ledger paths are intentionally not roots:
+    # they include transient benchmarks and deleted/replayed observations.
+    try:
+        candidates.extend(str(path) for path in primary.parent.iterdir())
+    except OSError:
+        pass
+    for raw in candidates:
+        try:
+            root = Path(raw).expanduser().resolve(strict=True)
+        except (OSError, RuntimeError):
+            continue
+        if _recognized_root(root):
+            roots.add(root)
+    return tuple(sorted(roots, key=str))
 
 
 def _pointer_digest(path: Path) -> str | None:

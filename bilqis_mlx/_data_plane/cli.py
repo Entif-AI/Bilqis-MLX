@@ -78,8 +78,14 @@ def _maintenance(args) -> dict:
         if args.scope in {"all", "file-gc"}:
             result["file_gc"] = file_gc_report(plane, roots, apply=True)
         if args.scope in {"all", "gc"}:
-            result["compaction"] = {
-                kind: plane.compact_archive(kind) for kind in ("objects", "nodes")}
+            gc = result["gc"]
+            compaction = {}
+            if gc["unreachable_objects"]:
+                compaction["objects"] = plane.compact_archive("objects")
+            if gc["unreachable_nodes"]:
+                compaction["nodes"] = plane.compact_archive("nodes")
+            if compaction:
+                result["compaction"] = compaction
         if args.vacuum:
             vacuum(plane)
         result["sqlite_integrity"] = plane._db.execute(

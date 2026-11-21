@@ -176,6 +176,42 @@ def _training_memory_context():
     return training_memory_policy(mx)
 
 
+def _run_post_operator_maintenance(run_dir: Path, *, progress=None):
+    """Best-effort bounded storage maintenance after the trainer lock is released."""
+    from types import SimpleNamespace
+    from bilqis_mlx._data_plane.cli import _maintenance
+    from bilqis_mlx._data_plane.maintenance import maintenance_roots
+    from bilqis_mlx.data_plane import data_plane
+
+    run_dir = Path(run_dir)
+    if not ((run_dir / "bamf-state.json").is_file()
+            or (run_dir / "state.json").is_file()):
+        return None
+    try:
+        roots = maintenance_roots(data_plane(), run_dir)
+        result = _maintenance(SimpleNamespace(
+            scan_root=list(roots),
+            apply=True,
+            scope="all",
+            max_records=0,
+            vacuum=False,
+        ))
+    except Exception as error:
+        _emit_progress(
+            progress,
+            f"post-operator data-plane maintenance deferred: {error}",
+        )
+        return None
+    _emit_progress(
+        progress,
+        "post-operator data-plane maintenance completed: "
+        f"{result.get('gc', {}).get('reclaimable_object_bytes', 0)} object bytes, "
+        f"{result.get('gc', {}).get('reclaimable_node_bytes', 0)} node bytes, "
+        f"{result.get('file_gc', {}).get('reclaimable_file_bytes', 0)} file bytes",
+    )
+    return result
+
+
 def operate_bamf(
     run_dir: Path, *, minutes: int = 90,
     max_visits: int = 0, steps_per_visit: int = 16,
@@ -196,6 +232,11 @@ def operate_bamf(
             and type(distributed_executor) is DistributedExecutorBinding):
         distributed_profile = distributed_executor.profile
     def before_visits(root):
+        root = Path(root)
+        if (root / "bamf-state.json").is_file() or (root / "state.json").is_file():
+            from bilqis_mlx._data_plane.maintenance import register_maintenance_root
+            from bilqis_mlx.data_plane import data_plane
+            register_maintenance_root(data_plane(), root)
         if profile_release is not None:
             from bilqis_mlx.runtime._release_adoption.native_profile import adopt_profile_release
             adopt_profile_release(root, profile_release, reserve_gib=reserve_gib)
@@ -205,7 +246,7 @@ def operate_bamf(
         return _visit(
             *args, **kwargs, distributed_profile=distributed_profile,
             distributed_executor=distributed_executor)
-    return _operate_impl(
+    result = _operate_impl(
         Path(run_dir), minutes=minutes, max_visits=max_visits,
         steps_per_visit=steps_per_visit, reserve_gib=reserve_gib,
         source_prefetch_workers=source_prefetch_workers, progress=progress,
@@ -223,3 +264,5 @@ def operate_bamf(
         bind_run_authority=(
             lambda current_run_dir:
             bind_native_run_authority(current_run_dir, run_authority)))
+    _run_post_operator_maintenance(Path(run_dir), progress=progress)
+    return result
