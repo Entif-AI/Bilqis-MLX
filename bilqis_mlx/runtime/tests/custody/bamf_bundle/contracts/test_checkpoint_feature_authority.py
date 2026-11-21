@@ -5,6 +5,7 @@ from unittest.mock import patch
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
 from bilqis_mlx.runtime.bamf_bundle import feature_authority
+from bilqis_mlx.runtime.bamf_bundle.feature import current_authority
 from bilqis_mlx.runtime.bamf_bundle.feature.receipt import (
     AcceptedFeatureArtifactCommitment,
 )
@@ -72,7 +73,7 @@ class CheckpointFeatureAuthorityTests(FeatureLineageCase):
                 side_effect=AssertionError("historical bundle load")), patch.object(
                 feature_authority, "build_feature_manifest",
                 side_effect=AssertionError("feature rebuild")), patch.object(
-                feature_authority, "load_pinned_atlas_snapshot",
+                current_authority, "load_pinned_atlas_snapshot",
                 side_effect=frozen_snapshot):
             context = (
                 feature_authority.authenticate_checkpointed_bamf_generation_feature_context(
@@ -92,7 +93,7 @@ class CheckpointFeatureAuthorityTests(FeatureLineageCase):
         forged_commitment = AcceptedFeatureArtifactCommitment(
             forged_receipt, artifact.bundle_id, successor.predecessor_digest)
         with patch.object(
-                feature_authority, "load_pinned_atlas_snapshot",
+                current_authority, "load_pinned_atlas_snapshot",
                 side_effect=frozen_snapshot), self.assertRaises(BilqisError) as failure:
             feature_authority.authenticate_checkpointed_bamf_generation_feature_context(
                 student, "/artifact", artifact.path, forged_commitment)
@@ -103,7 +104,7 @@ class CheckpointFeatureAuthorityTests(FeatureLineageCase):
         wrong_predecessor = AcceptedFeatureArtifactCommitment(
             commitment.receipt, artifact.bundle_id, ARBITRARY)
         with patch.object(
-                feature_authority, "load_pinned_atlas_snapshot",
+                current_authority, "load_pinned_atlas_snapshot",
                 side_effect=frozen_snapshot), self.assertRaises(BilqisError) as failure:
             feature_authority.authenticate_checkpointed_bamf_generation_feature_context(
                 student, "/artifact", artifact.path, wrong_predecessor)

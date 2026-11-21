@@ -8,25 +8,13 @@ from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
 
 from ..records import invalid
-from .receipt import (
-    AcceptedFeatureArtifactCommitment, AcceptedGenerationFeatureReceipt,
+from .context_validation import (
+    validate_materialized_feature_context as _validate_materialized_context,
 )
+from .receipt import AcceptedGenerationFeatureReceipt
 
 
 _FEATURE_CONTEXT_ISSUER = object()
-
-
-def _validate_materialized_context(selection, snapshot, schema, features) -> None:
-    if (type(selection) is not AtlasArtifactSelection
-            or type(snapshot) is not FrozenAtlasSnapshot
-            or type(schema) is not FeatureSchema
-            or features.semantic_release != selection.release_sha256
-            or features.atlas_bundle_id != selection.bundle_id
-            or features.source_bundle_id != selection.source_bundle_id
-            or snapshot.release_sha256 != selection.release_sha256
-            or snapshot.bundle_id != selection.bundle_id
-            or snapshot.source_bundle_id != selection.source_bundle_id):
-        invalid("BAMF_FEATURE_CONTEXT_INVALID")
 
 
 @dataclass(frozen=True, init=False)
@@ -81,59 +69,6 @@ class AuthenticatedGenerationFeatureContext:
             invalid("BAMF_ACCEPTED_FEATURE_CONTEXT_INVALID")
 
 
-@dataclass(frozen=True, init=False)
-class AuthenticatedCheckpointFeatureContext:
-    """Current accepted feature bytes authenticated from a durable checkpoint."""
-
-    selection: AtlasArtifactSelection
-    snapshot: FrozenAtlasSnapshot
-    schema: FeatureSchema
-    features: object
-    commitment: AcceptedFeatureArtifactCommitment
-    feature_artifact_path: str
-    atlas_reload_count: int
-    feature_manifest_rebuild_count: int
-    _issuance: object = field(repr=False, compare=False)
-
-    def __init__(self, *args, **kwargs):
-        invalid("BAMF_CHECKPOINT_FEATURE_CONTEXT_CALLER_CONSTRUCTION_FORBIDDEN")
-
-    def __post_init__(self) -> None:
-        if self._issuance is not _FEATURE_CONTEXT_ISSUER:
-            invalid("BAMF_CHECKPOINT_FEATURE_CONTEXT_INVALID")
-        _validate_materialized_context(
-            self.selection, self.snapshot, self.schema, self.features)
-        if type(self.commitment) is not AcceptedFeatureArtifactCommitment:
-            invalid("BAMF_CHECKPOINT_FEATURE_CONTEXT_INVALID")
-        receipt = self.commitment.receipt
-        if (receipt.feature_sha256 != self.features.digest
-                or receipt.semantic_release != self.features.semantic_release
-                or not isinstance(self.feature_artifact_path, str)
-                or not self.feature_artifact_path
-                or type(self.atlas_reload_count) is not int
-                or self.atlas_reload_count != 1
-                or type(self.feature_manifest_rebuild_count) is not int
-                or self.feature_manifest_rebuild_count != 0):
-            invalid("BAMF_CHECKPOINT_FEATURE_CONTEXT_INVALID")
-
-    @property
-    def receipt(self) -> AcceptedGenerationFeatureReceipt:
-        return self.commitment.receipt
-
-    @property
-    def construction_predecessor(self):
-        """Checkpoint consumption never needs the historical predecessor object."""
-        return None
-
-
-def is_authenticated_generation_feature_context(value) -> bool:
-    """Recognize live accepted feature contexts across replay and checkpoint eras."""
-    return type(value) in (
-        AuthenticatedGenerationFeatureContext,
-        AuthenticatedCheckpointFeatureContext,
-    )
-
-
 def _issue_candidate_feature_context(
         selection, snapshot, schema, features) -> AuthenticatedCandidateFeatureContext:
     context = object.__new__(AuthenticatedCandidateFeatureContext)
@@ -162,21 +97,6 @@ def _issue_generation_feature_context(
     return context
 
 
-def _issue_checkpoint_feature_context(
-        selection, snapshot, schema, features, commitment, feature_artifact_path
-) -> AuthenticatedCheckpointFeatureContext:
-    context = object.__new__(AuthenticatedCheckpointFeatureContext)
-    for name, value in (
-            ("selection", selection), ("snapshot", snapshot), ("schema", schema),
-            ("features", features), ("commitment", commitment),
-            ("feature_artifact_path", str(feature_artifact_path)),
-            ("atlas_reload_count", 1), ("feature_manifest_rebuild_count", 0),
-            ("_issuance", _FEATURE_CONTEXT_ISSUER)):
-        object.__setattr__(context, name, value)
-    context.__post_init__()
-    return context
-
-
 @dataclass(frozen=True)
 class AcceptedGenerationFeatureContext:
     """Typed B13 replay context for one accepted generation."""
@@ -185,3 +105,15 @@ class AcceptedGenerationFeatureContext:
     features: object
     predecessor_features: object | None
     construction_predecessor: object | None
+
+
+# Compatibility import for callers that previously sourced the current context here.
+from .current_authority import AuthenticatedCheckpointFeatureContext  # noqa: E402,F401
+
+
+def is_authenticated_generation_feature_context(value) -> bool:
+    """Recognize live accepted feature contexts across replay and checkpoint eras."""
+    return type(value) in (
+        AuthenticatedGenerationFeatureContext,
+        AuthenticatedCheckpointFeatureContext,
+    )

@@ -9,33 +9,31 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.semantics.atlas_features import FeatureSchema, build_feature_manifest
+from bilqis_mlx.semantics.atlas_features import build_feature_manifest
 from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
     resolve_atlas_artifact_selection,
 )
-from bilqis_mlx.semantics.atlas.feature_io_storage import (
-    load_checkpoint_feature_manifest,
-)
 
 from .codec import load_bamf_bundle
-from .publication import _require_published_acceptance
 from .records import BamfBundleCandidate, CompleteStudent, invalid
 from .feature.acceptance import (
-    accepted_binding_for_manifest, accepted_generation,
-    parent_acceptance_anchor_from_manifest,
+    accepted_binding_for_manifest, parent_acceptance_anchor_from_manifest,
 )
-from .atlas_admission import ParsedAtlasAdmissionBinding
 from .feature.context import (
     AcceptedGenerationFeatureContext, AuthenticatedCandidateFeatureContext,
-    AuthenticatedCheckpointFeatureContext, AuthenticatedGenerationFeatureContext,
-    _issue_candidate_feature_context, _issue_checkpoint_feature_context,
+    AuthenticatedGenerationFeatureContext, _issue_candidate_feature_context,
     _issue_generation_feature_context,
 )
-from .feature.receipt import (
-    AcceptedFeatureArtifactCommitment, AcceptedGenerationFeatureReceipt, is_digest,
+from .feature.current_authority import (
+    AuthenticatedCheckpointFeatureContext,
+    authenticate_checkpointed_bamf_generation_feature_context,
 )
+from .feature.history_replay import (
+    read_accepted_generation_feature_materialization as _historical_materialization,
+    replay_accepted_feature_context as _historical_feature_context,
+)
+from .feature.receipt import AcceptedGenerationFeatureReceipt
 from .feature.replay_support import (
     artifact_identity as _artifact_identity,
     authenticate_feature_materialization as _authenticate_feature_materialization_with,
@@ -73,76 +71,13 @@ def _authenticate_feature_materialization(
 def _accepted_feature_context(run_dir: Path, manifest_sha256: str, student, *,
                               expected_acceptance_sha256: str):
     """Historical audit/migration oracle for accepted feature ancestry."""
-    history = []
-    current_sha = manifest_sha256
-    current = student
-    current_acceptance = expected_acceptance_sha256
-    legacy_feature_tail = False
-
-    while True:
-        binding = None if legacy_feature_tail else accepted_binding_for_manifest(
-            run_dir, current_sha, current,
-            expected_acceptance_sha256=current_acceptance)
-        history.append((current, binding))
-        if current.generation == 0:
-            break
-        parent_sha = current.parent_manifest_sha256
-        if parent_sha is None:
-            invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
-        parent = load_bamf_bundle(
-            run_dir / "bamf-bundles" / parent_sha,
-            expected_manifest_sha256=parent_sha)
-        if (parent.run_id != current.run_id
-                or parent.generation + 1 != current.generation):
-            invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
-        if not legacy_feature_tail:
-            parent_acceptance = parent_acceptance_anchor_from_manifest(
-                run_dir, current_sha)
-            if parent_acceptance is None:
-                legacy_feature_tail = True
-            else:
-                current_acceptance = parent_acceptance
-        current_sha = parent_sha
-        current = parent
-
-    genesis, _, = history[-1]
-    materialization = _authenticate_feature_materialization(genesis)
-    materialization_count = 1
-    features = materialization.features
-    predecessor = None
-    construction_predecessor = None
-    result_binding = history[0][1]
-    if result_binding is None:
-        invalid("BAMF_GENERATION_ACCEPTANCE_MISSING")
-    for child, child_binding in reversed(history[:-1]):
-        parent = current
-        predecessor = features
-        if child.extents.factor_map_digest == parent.extents.factor_map_digest:
-            if (child.extents.active_semantic_digest
-                    != parent.extents.active_semantic_digest
-                    and not isinstance(child_binding, ParsedAtlasAdmissionBinding)):
-                invalid("BAMF_FEATURE_ACTIVE_SET_DRIFT")
-            source = _feature_source(child.compiler_features)
-            if (child.compiler_features.get("factor_map_sha256") != features.digest
-                    or source != _feature_source(parent.compiler_features)
-                    or _feature_schema(child.compiler_features)
-                    != _feature_schema(parent.compiler_features)
-                    or child.provenance.release_digest != features.semantic_release
-                    or source["release_sha256"] != features.semantic_release
-                    or source["atlas_bundle_id"] != features.atlas_bundle_id
-                    or source["source_bundle_id"] != features.source_bundle_id):
-                invalid("BAMF_FEATURE_SOURCE_REPLAY_MISMATCH")
-        else:
-            construction_predecessor = features
-            materialization = _authenticate_feature_materialization(
-                child, predecessor=features)
-            materialization_count += 1
-            features = materialization.features
-            if features.predecessor_digest != predecessor.digest:
-                invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
-        current = child
-    return (features, result_binding, predecessor, construction_predecessor,
-            materialization, materialization_count)
+    return _historical_feature_context(
+        run_dir, manifest_sha256, student,
+        expected_acceptance_sha256=expected_acceptance_sha256,
+        authenticate_materialization=_authenticate_feature_materialization,
+        load_bundle=load_bamf_bundle,
+        accepted_binding=accepted_binding_for_manifest,
+        parent_acceptance_anchor=parent_acceptance_anchor_from_manifest)
 
 
 def _accepted_feature_chain(run_dir: Path, manifest_sha256: str, student, *,
@@ -231,65 +166,6 @@ def authenticate_bamf_generation_feature_context(
         feature_manifest_rebuild_count=materialization_count)
 
 
-def authenticate_checkpointed_bamf_generation_feature_context(
-        student: CompleteStudent, artifact_path: str | None,
-        feature_artifact_path: str | Path,
-        commitment: AcceptedFeatureArtifactCommitment,
-) -> AuthenticatedCheckpointFeatureContext:
-    """Authenticate current accepted feature bytes from checkpoint commitments.
-
-    ``commitment`` must come from the accepted-authority checkpoint owner. This
-    feature-side consumer deliberately does not authenticate that owner or replay
-    historical acceptance. It verifies every feature binding against the current
-    immutable generation, the current Atlas source identity, and the committed
-    content-addressed feature artifact.
-    """
-    if (type(student) is not CompleteStudent
-            or type(commitment) is not AcceptedFeatureArtifactCommitment
-            or not isinstance(feature_artifact_path, (str, Path))):
-        invalid("BAMF_CHECKPOINT_FEATURE_AUTHORITY_REQUIRED")
-    receipt = commitment.receipt
-    compiler = student.compiler_features
-    source = _feature_source(compiler)
-    if (receipt.run_id != student.run_id
-            or receipt.generation != student.generation
-            or receipt.parent_generation_manifest_sha256
-            != student.parent_manifest_sha256
-            or receipt.semantic_release != student.provenance.release_digest
-            or receipt.source_release_sha256 != receipt.semantic_release
-            or receipt.active_set_sha256 != student.extents.active_semantic_digest
-            or receipt.feature_sha256 != student.extents.factor_map_digest
-            or compiler.get("factor_map_sha256") != receipt.feature_sha256
-            or receipt.compiler_sha256 != compiler.get("compiler_sha256")
-            or receipt.implementation_sha256 != student.implementation_sha256
-            or receipt.source_atlas_bundle_id != source["atlas_bundle_id"]
-            or receipt.source_release_sha256 != source["release_sha256"]
-            or receipt.source_source_bundle_id != source["source_bundle_id"]):
-        invalid("BAMF_CHECKPOINT_FEATURE_BINDING_DRIFT")
-
-    schema = _feature_schema(compiler)
-    identity = _artifact_identity(source)
-    selection = (resolve_atlas_artifact_selection(identity)
-                 if artifact_path is None else AtlasArtifactSelection(
-                     str(artifact_path), identity.bundle_id,
-                     identity.release_sha256, identity.source_bundle_id))
-    snapshot = load_pinned_atlas_snapshot(selection)
-    if snapshot.active_set_sha256 != receipt.active_set_sha256:
-        invalid("BAMF_CHECKPOINT_FEATURE_ACTIVE_SET_DRIFT")
-    features = load_checkpoint_feature_manifest(
-        feature_artifact_path,
-        expected_bundle_id=commitment.artifact_bundle_id,
-        expected_feature_digest=receipt.feature_sha256,
-        expected_semantic_release=receipt.semantic_release,
-        expected_source_bundle_id=receipt.source_source_bundle_id,
-        expected_atlas_bundle_id=receipt.source_atlas_bundle_id,
-        expected_predecessor_digest=commitment.artifact_predecessor_digest,
-    )
-    return _issue_checkpoint_feature_context(
-        selection, snapshot, schema, features, commitment,
-        str(feature_artifact_path))
-
-
 def authenticate_bamf_execution_feature_context(
         candidate: BamfBundleCandidate, artifact_path: str,
         run_dir: Path | None = None):
@@ -306,40 +182,12 @@ def authenticate_bamf_execution_feature_context(
 
 def _read_accepted_generation_feature_materialization(pointer_path: Path):
     """Historical replay used by audit/migration and legacy callers."""
-    pointer, student = accepted_generation(pointer_path)
-    current_binding = _require_published_acceptance(
-        pointer_path.parent, pointer, student)
-    (features, binding, predecessor_features, construction_predecessor,
-     materialization, materialization_count) = (
-        _accepted_feature_context(
-        pointer_path.parent, pointer["manifest_sha256"], student,
-        expected_acceptance_sha256=pointer["acceptance_sha256"]))
-    if binding != current_binding:
-        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-    predecessor = None if predecessor_features is None else predecessor_features.digest
-    if student.generation == 0:
-        if predecessor is not None or features.predecessor_digest is not None:
-            invalid("BAMF_FEATURE_LINEAGE_DRIFT")
-    elif predecessor is None:
-        invalid("BAMF_FEATURE_PREDECESSOR_UNAUTHENTICATED")
-    receipt = AcceptedGenerationFeatureReceipt(
-        run_id=student.run_id,
-        generation=student.generation,
-        generation_manifest_sha256=pointer["manifest_sha256"],
-        parent_generation_manifest_sha256=student.parent_manifest_sha256,
-        semantic_release=features.semantic_release,
-        active_set_sha256=student.extents.active_semantic_digest,
-        feature_sha256=features.digest,
-        predecessor_feature_sha256=predecessor,
-        compiler_sha256=student.compiler_features["compiler_sha256"],
-        implementation_sha256=student.implementation_sha256,
-        acceptance_sha256=binding.digest,
-        source_atlas_bundle_id=features.atlas_bundle_id,
-        source_release_sha256=features.semantic_release,
-        source_source_bundle_id=features.source_bundle_id,
-    )
-    return (receipt, features, predecessor_features, construction_predecessor,
-            materialization, materialization_count)
+    return _historical_materialization(
+        pointer_path,
+        authenticate_materialization=_authenticate_feature_materialization,
+        load_bundle=load_bamf_bundle,
+        accepted_binding=accepted_binding_for_manifest,
+        parent_acceptance_anchor=parent_acceptance_anchor_from_manifest)
 
 
 def _read_accepted_generation_feature_context(pointer_path: Path):
