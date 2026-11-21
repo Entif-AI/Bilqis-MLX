@@ -1,4 +1,5 @@
 """#1273 B11 consumes prepared source proofs instead of replaying cold owners."""
+import importlib
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
@@ -120,9 +121,9 @@ def test_prepared_b11_binding_reuses_compiled_encoder_input_with_live_owner_chec
         partial_forest_receipts=None,
         __post_init__=Mock(),
     )
-    with patch(
-            "bilqis_mlx.runtime.factory_training_source.CompiledFrameRows",
-            return_value=compiled_rows), patch(
+    implementation = importlib.import_module(_prepared_b11_compiled_input.__module__)
+    with patch.object(
+            implementation, "CompiledFrameRows", return_value=compiled_rows), patch(
                 "bilqis_mlx.learning.frame_encoder.compiled."
                 "_compiled_encoder_input_with_packed_owner",
                 return_value=cached) as constructor:
