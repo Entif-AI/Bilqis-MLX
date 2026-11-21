@@ -2,6 +2,35 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.2.19](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.18...v1.2.19) (2026-11-21)
+
+
+### Bug Fixes
+
+* **bamf:** name training digest length contract ([9e550d4](https://github.com/Entif-AI/Bilqis-MLX/commit/9e550d455683b341c994c40217099fbb55620d53))
+* **bamf:** restore subsecond operator steps ([f73f8ab](https://github.com/Entif-AI/Bilqis-MLX/commit/f73f8abed55e31e014aaaa675f635d5ff68f9154))
+* **bamf:** restore subsecond production operator steps ([#1511](https://github.com/Entif-AI/Bilqis-MLX/issues/1511)) ([dbc13d3](https://github.com/Entif-AI/Bilqis-MLX/commit/dbc13d3bf48bd5e9b457e42bbd9e33b18ca37d5b))
+
+
+### Code Refactoring
+
+* **bamf:** compartmentalize forward helpers ([891ce02](https://github.com/Entif-AI/Bilqis-MLX/commit/891ce02ae1d38ea812df45d408fd204198cc41c2))
+* **bamf:** satisfy changed-path hygiene gates ([b572dc7](https://github.com/Entif-AI/Bilqis-MLX/commit/b572dc79e7fa8eefc96ae990d4d971efe257e5ed))
+* **bamf:** satisfy performance module boundaries ([7df95cc](https://github.com/Entif-AI/Bilqis-MLX/commit/7df95cc00ed0305e5892b0243b21951c58b47653))
+
+<!-- release-history:pr:1511:start -->
+### PR #1511 constituent commit inventory
+
+Release Please summarized PR #1511 as [`dbc13d3`](https://github.com/Entif-AI/Bilqis-MLX/commit/dbc13d3bf48bd5e9b457e42bbd9e33b18ca37d5b). This generated inventory preserves **1 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **1 source commit**.
+
+<details>
+<summary>1 source commit (newest-first PR order)</summary>
+
+- [`5756108507`](https://github.com/Entif-AI/Bilqis-MLX/commit/5756108507576f698cbf92b601ea9c4f1727f606) docs(bamf): record subsecond operator witness
+
+</details>
+
+<!-- release-history:pr:1511:end -->
 ## [1.2.18](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.17...v1.2.18) (2026-11-20)
 
 
