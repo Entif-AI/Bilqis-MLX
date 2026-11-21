@@ -109,6 +109,9 @@ export default async function globalInteractionsJourney(page) {
   await page.locator('[data-test-id="learning-episode-selector"]').selectOption(
     "episode-record:fixture:interference-reject",
   );
+  if (!await learningForensics.evaluate((node) => node.open)) {
+    await learningForensics.locator("summary").click();
+  }
   await page.locator('[data-test-id="learning-candidate-inspect"]').click();
   await page.locator('[data-test-id="investigation-inspector-compare-right"]').click();
   await page.locator('[data-test-id="investigation-compare-row-target-committed"]').waitFor();
