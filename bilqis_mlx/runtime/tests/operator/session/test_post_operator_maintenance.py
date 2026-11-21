@@ -1,6 +1,8 @@
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from bilqis_mlx.runtime.bamf_operator import session
 
 
@@ -33,17 +35,14 @@ def test_operate_runs_data_plane_maintenance_after_operator_crashes():
         patch.object(session, "_operate_impl", side_effect=failure),
         patch.object(session, "_run_post_operator_maintenance") as cleanup,
     ):
-        try:
+        with pytest.raises(RuntimeError) as captured:
             session.operate_bamf(
                 Path("/tmp/bilqis-storage-lifecycle-fixture"),
                 minutes=1,
                 max_visits=1,
                 source_prefetch_workers=0,
             )
-        except RuntimeError as error:
-            assert error is failure
-        else:
-            raise AssertionError("trainer failure was swallowed")
+    assert captured.value is failure
 
     cleanup.assert_called_once_with(
         Path("/tmp/bilqis-storage-lifecycle-fixture"),
@@ -62,17 +61,14 @@ def test_cleanup_failure_never_masks_trainer_failure():
             side_effect=ValueError("cleanup exploded"),
         ),
     ):
-        try:
+        with pytest.raises(RuntimeError) as captured:
             session.operate_bamf(
                 Path("/tmp/bilqis-storage-lifecycle-fixture"),
                 minutes=1,
                 max_visits=1,
                 source_prefetch_workers=0,
             )
-        except RuntimeError as error:
-            assert error is trainer_failure
-        else:
-            raise AssertionError("trainer failure was swallowed")
+    assert captured.value is trainer_failure
 
 
 def test_pending_cleanup_is_replayed_before_next_operator_attempt(tmp_path):
