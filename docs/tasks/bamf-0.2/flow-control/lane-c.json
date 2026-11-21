@@ -533,11 +533,11 @@
     },
     {
       "issue": 1513,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "dbc13d3bf48bd5e9b457e42bbd9e33b18ca37d5b",
-      "head_sha_role": "current main baseline for the isolated operator-error repair branch",
-      "summary": "Live BAMF rejection continuation exposed a portable v2 rejection-receipt compatibility defect: authenticated teacher-outcome replay still assumed the historical v1 receipt embedded an event and raised KeyError('event'). #1513 owns replaying HOW evidence from the already-authenticated rejection projection, preserving hot/cold replay semantics, and preventing raw KeyError payloads from masquerading as operator blocker codes. No neural updates are authorized or required.",
+      "pr": 1515,
+      "state": "TURNED_IN",
+      "head_sha": "6fa0b5962b98e09546e514f0565ee1db199e5fa9",
+      "head_sha_role": "verified implementation head before the turn-in bookkeeping receipt",
+      "summary": "Issue #1513 is turned in as PR #1515. Portable v2 rejection receipts no longer break HOW replay: the authenticated rejection projection now carries the already-validated rejection evidence needed for hot/cold teacher outcome replay, so no consumer assumes the compact receipt embeds a legacy event. Raw KeyError payloads are normalized to INTERNAL.UNHANDLED_KEY_ERROR and the operator terminal renders the structured ErrorBus code. Failing-before proof reproduced KeyError('event'); the affected neighborhood passed 31 tests plus 2 subtests, and post-main-merge exact regressions passed 2/2 with BAMF flow-control and diff hygiene clean. No neural run was required or performed.",
       "resume_trigger": null,
       "preserved_branch": "codex/1513-operator-event-error-20261120"
     },
