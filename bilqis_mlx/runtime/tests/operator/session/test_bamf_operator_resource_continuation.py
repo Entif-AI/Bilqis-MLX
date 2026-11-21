@@ -6,9 +6,11 @@ from unittest.mock import Mock
 
 import pytest
 
+from bilqis_mlx.errors import BilqisError, SCHOOL
 from bilqis_mlx.runtime.atlas_memory_retry import RESOURCE_REJECTION_SCHEMA
 from bilqis_mlx.runtime.bamf_operator._session_execution import _run_visits
 from bilqis_mlx.runtime.bamf_operator._session_visit import visit
+from bilqis_mlx.runtime.bamf_operator.session_parts.retention import _instruction_event
 from bilqis_mlx.runtime.bamf_operator.session_parts.stop_receipt import _resume_state
 from bilqis_mlx.runtime.bamf_operator.session_support import BamfPreparedVisit
 
@@ -111,3 +113,81 @@ def test_acquisition_rearmed_continues_without_candidate_decision(tmp_path):
     assert prepare.call_count == 2
     assert outcome[:4] == ("VISIT_LIMIT", 1, 1, 0)
     publish.assert_called_once()
+
+
+def test_stale_execution_cache_restarts_visit_from_current_custody(tmp_path):
+    stale = BilqisError(
+        SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID,
+        {"reason": "B13_EXECUTION_CACHE_STALE"},
+    )
+    visit_fn = Mock(side_effect=(stale, "REJECTED"))
+    observer = SimpleNamespace(finish=Mock(), update=Mock())
+    messages = []
+
+    outcome = _run_visits(
+        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, reserve_gib=100,
+        source_prefetch_workers=0, progress=messages.append,
+        source_prefetch_executor=None, metrics=None, run_authority_binding=None,
+        resource_snapshot=None, monotonic=lambda: 0,
+        observer_type=lambda *_: nullcontext(observer),
+        emit_progress=lambda callback, message: callback(message) if callback else None,
+        visit_fn=visit_fn,
+    )
+
+    assert visit_fn.call_count == 2
+    assert outcome[:4] == ("VISIT_LIMIT", 1, 0, 1)
+    assert any("refreshing accepted custody" in message for message in messages)
+    observer.update.assert_any_call(
+        error_code="SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID",
+        error_detail="B13_EXECUTION_CACHE_STALE",
+    )
+    observer.finish.assert_any_call("INTERRUPTED")
+
+
+def test_repeated_stale_execution_cache_still_fails_closed(tmp_path):
+    stale = BilqisError(
+        SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID,
+        {"reason": "B13_EXECUTION_CACHE_STALE"},
+    )
+    visit_fn = Mock(side_effect=(stale, stale))
+    observer = SimpleNamespace(finish=Mock(), update=Mock())
+
+    with pytest.raises(BilqisError) as caught:
+        _run_visits(
+            tmp_path, deadline=100, max_visits=1, steps_per_visit=1,
+            reserve_gib=100, source_prefetch_workers=0, progress=None,
+            source_prefetch_executor=None, metrics=None,
+            run_authority_binding=None, resource_snapshot=None,
+            monotonic=lambda: 0,
+            observer_type=lambda *_: nullcontext(observer),
+            emit_progress=lambda *_: None,
+            visit_fn=visit_fn,
+        )
+
+    assert visit_fn.call_count == 2
+    assert caught.value.context["reason"] == "B13_EXECUTION_CACHE_STALE"
+
+
+def test_instruction_history_does_not_hide_stale_execution_cache(monkeypatch):
+    stale = BilqisError(
+        SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID,
+        {"reason": "B13_EXECUTION_CACHE_STALE"},
+    )
+    monkeypatch.setattr(
+        "bilqis_mlx.learning.teacher_lineage.instruction_history",
+        lambda _teacher: ("COMPLETE", ("A.IDENTITY",)),
+    )
+    monkeypatch.setattr(
+        "bilqis_mlx.runtime.priority_rejection_replay.rejection_recency",
+        Mock(side_effect=stale),
+    )
+
+    with pytest.raises(BilqisError) as caught:
+        _instruction_event(
+            object(),
+            SimpleNamespace(teacher_state={}),
+            object(),
+            "A.EDGE",
+        )
+
+    assert caught.value.context["reason"] == "B13_EXECUTION_CACHE_STALE"
