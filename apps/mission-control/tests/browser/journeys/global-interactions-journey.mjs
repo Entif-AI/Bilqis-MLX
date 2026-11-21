@@ -81,8 +81,11 @@ export default async function globalInteractionsJourney(page) {
     "Memory renders the exact historical motif identity");
   check(page.url().includes("generation=44238") && page.url().includes("mode=HISTORICAL"),
     "Memory uses the same historical lens");
-  await page.locator('[data-test-id="investigation-open-saved"]').click();
-  await page.locator('[data-test-id="investigation-saved-open-0"]').click();
+  const savedInvestigation = page.locator('[data-test-id="investigation-saved-open-0"]');
+  if (!await savedInvestigation.count()) {
+    await page.locator('[data-test-id="investigation-open-saved"]').click();
+  }
+  await savedInvestigation.click();
   check(page.url().includes("generation=7") && page.url().includes("mode=HISTORICAL"),
     "saved live capture reopens as exact historical evidence after the lens changes");
 
