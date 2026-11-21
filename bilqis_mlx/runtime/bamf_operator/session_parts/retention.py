@@ -213,6 +213,7 @@ def retention_result(
 
 
 def _instruction_event(run_dir, parent, cache, capability):
+    from bilqis_mlx.errors import BilqisError
     try:
         from bilqis_mlx.learning.teacher_lineage import instruction_history
         from bilqis_mlx.runtime.priority_rejection_replay import rejection_recency
@@ -224,6 +225,8 @@ def _instruction_event(run_dir, parent, cache, capability):
             "state": history_state,
             "capability_ids": sorted(set(seen) | set(rejected) | {capability}),
         }
+    except BilqisError:
+        raise
     except (AttributeError, TypeError, ValueError, KeyError):
         return {
             "event": "BAMF_INSTRUCTION_HISTORY",
