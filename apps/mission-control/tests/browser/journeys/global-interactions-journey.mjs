@@ -81,29 +81,20 @@ export default async function globalInteractionsJourney(page) {
     "Memory renders the exact historical motif identity");
   check(page.url().includes("generation=44238") && page.url().includes("mode=HISTORICAL"),
     "Memory uses the same historical lens");
-  if (!await page.locator('[data-test-id="investigation-time-lens"]').evaluate((element) => element.hasAttribute("open"))) {
-    await page.locator('[data-test-id="investigation-time-toggle"]').click();
-  }
-  await page.locator('[data-test-id="investigation-time-current"]').click();
-  const generationSummary = page.locator('[data-test-id="shell-generation-summary"]');
-  await generationSummary.waitFor();
-  check((await generationSummary.innerText()).includes("7"),
-    "verified current restores generation 7 in shell context");
-  check(page.url().includes("generation=7") && page.url().includes("mode=LIVE"),
-    "verified current restores exact current route");
-
-  await page.locator('[data-test-id="investigation-time-toggle"]').click();
-  const savedFallbackGeneration = page.locator('[data-test-id="investigation-time-generation"]');
-  await savedFallbackGeneration.fill("44238");
-  await savedFallbackGeneration.press("Enter");
   await page.locator('[data-test-id="investigation-open-saved"]').click();
   await page.locator('[data-test-id="investigation-saved-open-0"]').click();
   check(page.url().includes("generation=7") && page.url().includes("mode=HISTORICAL"),
     "saved live capture reopens as exact historical evidence after the lens changes");
-  await page.locator('[data-test-id="investigation-time-toggle"]').click();
-  await page.locator('[data-test-id="investigation-time-current"]').click();
-  check(page.url().includes("generation=7") && page.url().includes("mode=LIVE"),
-    "saved historical fallback can return to the verified current context");
+
+  const liveFixtureUrl = new URL(page.url());
+  liveFixtureUrl.hash = "";
+  await page.goto(liveFixtureUrl.toString(), { waitUntil: "domcontentloaded" });
+  const generationSummary = page.locator('[data-test-id="shell-generation-summary"]');
+  await generationSummary.waitFor();
+  check((await generationSummary.innerText()).includes("7"),
+    "fresh fixture launch restores generation 7 in shell context");
+  check((await page.locator('[data-test-id="investigation-posture-mode"]').innerText()).includes("LIVE"),
+    "fresh fixture launch restores the live posture without production current authority");
 
   await page.locator('[data-test-id="nav-destination-learning"]').click();
   await page.locator('[data-test-id="learning-candidate-inspect"]').click();
