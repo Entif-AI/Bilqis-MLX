@@ -201,6 +201,26 @@ tree before the final repository gate:
   disposable witness:
   `1 passed in 0.84s` and `1 passed in 1.29s`.
 
+The final repository gate was intentionally closed incrementally rather than
+re-running already-green suites. Detached `verify:leaf` v4 had already passed
+structure, governance, changed-file smell, legacy-trainer checks,
+invariant-transfer checks, flow-control checks, and `bamf:test` with `491/491`
+passing. Its only failure was `bamf:security:test`, where four Electron files
+could not load the declared `ajv@8.20.0` runtime because the detached source
+snapshot omitted ignored `node_modules` while rebinding only `.venv`.
+
+The detached runner now exposes both ignored local runtimes to its immutable
+source snapshot without copying them. Verification of that closeout delta was:
+
+- detached-runner source-isolation regression tests: `7 passed`;
+- exact four Electron files that failed in v4: `18/18 passed`;
+- complete `bamf:security:test`: `73/73` Node tests plus `10/10` Python
+  `test_electron_bridge` tests passed.
+
+No second `verify:leaf` was run after this runner-only repair because doing so
+would have repeated the already-green 491-test BAMF suite and repository quality
+checks without an implementation change in those owners.
+
 Immediately before freezing this packet, `git fetch origin main` confirmed
 `origin/main` remained at
 `38813530c3fc4b803f7cf4b8b1e800b978f49d74`, which is already integrated by merge

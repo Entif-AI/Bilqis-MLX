@@ -104,7 +104,12 @@
     "source_prefetch_reuse": "20 passed, 9 subtests passed",
     "a02_production_staging": "5 passed in 54.98s",
     "motif_c03_successor": "1 passed in 0.84s",
-    "mature_c03_reuse": "1 passed in 1.29s"
+    "mature_c03_reuse": "1 passed in 1.29s",
+    "final_verify_leaf_v4": "quality and bamf:test green; bamf:test 491/491; security blocked only by detached snapshot AJV resolution",
+    "detached_runner_runtime_binding": "7 passed",
+    "electron_v4_failures_recheck": "18/18 passed",
+    "bamf_security_test": "73/73 Node tests and 10/10 Python electron_bridge tests passed",
+    "final_verification_strategy": "incremental closeout; no second verify:leaf because the runner-only repair did not invalidate already-green BAMF or quality owners"
   },
   "remaining_distinct_owner": {
     "selected_source_cold_construction_wall_seconds_observed": 11.021,

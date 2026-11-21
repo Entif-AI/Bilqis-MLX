@@ -89,6 +89,9 @@ class DetachedLongRunTests(unittest.TestCase):
             venv = source / ".venv"
             (venv / "bin").mkdir(parents=True)
             (venv / "bin" / "python").write_text("#!/bin/sh\n", encoding="utf-8")
+            node_modules = source / "node_modules" / "ajv" / "dist"
+            node_modules.mkdir(parents=True)
+            (node_modules / "2020.js").write_text("module.exports = {};\n", encoding="utf-8")
 
             receipt = _snapshot_workdir(source, snapshot)
 
@@ -108,6 +111,10 @@ class DetachedLongRunTests(unittest.TestCase):
                 (snapshot / "vendor" / "example" / "runs" / "checkpoint.bin").read_bytes(),
                 b"historical evidence")
             self.assertTrue((snapshot / ".venv").is_symlink())
+            self.assertTrue((snapshot / "node_modules").is_symlink())
+            self.assertEqual(
+                (snapshot / "node_modules" / "ajv" / "dist" / "2020.js").read_text(),
+                "module.exports = {};\n")
             self.assertEqual(receipt["source_sha256"], receipt["snapshot_sha256"])
 
     def test_worker_allows_private_generated_outputs(self):
