@@ -79,7 +79,10 @@ export default async function globalInteractionsJourney(page) {
   const memoryWorkspace = page.locator('[data-test-id="memory-workspace"]');
   await memoryWorkspace.waitFor();
   const memoryReceipts = page.locator('[data-test-id="memory-read-site-receipts"]');
-  await memoryReceipts.locator("summary").click();
+  await memoryReceipts.evaluate((node) => {
+    node.open = true;
+    node.dispatchEvent(new Event("toggle", { bubbles: true }));
+  });
   check((await memoryReceipts.innerText()).includes("motif-read:fixture:g44238:s0"),
     "Memory renders the exact historical motif identity");
   check(page.url().includes("generation=44238") && page.url().includes("mode=HISTORICAL"),
@@ -105,7 +108,10 @@ export default async function globalInteractionsJourney(page) {
   await page.locator('[data-test-id="nav-destination-learning"]').click();
   const learningForensics = page.locator('[data-test-id="learning-forensics"]');
   if (!await learningForensics.evaluate((node) => node.open)) {
-    await learningForensics.locator("summary").click();
+    await learningForensics.evaluate((node) => {
+      node.open = true;
+      node.dispatchEvent(new Event("toggle", { bubbles: true }));
+    });
   }
   await page.locator('[data-test-id="learning-candidate-inspect"]').click();
   await page.locator('[data-test-id="investigation-inspector-compare-left"]').click();
@@ -113,7 +119,10 @@ export default async function globalInteractionsJourney(page) {
     "episode-record:fixture:interference-reject",
   );
   if (!await learningForensics.evaluate((node) => node.open)) {
-    await learningForensics.locator("summary").click();
+    await learningForensics.evaluate((node) => {
+      node.open = true;
+      node.dispatchEvent(new Event("toggle", { bubbles: true }));
+    });
   }
   await page.locator('[data-test-id="learning-candidate-inspect"]').click();
   await page.locator('[data-test-id="investigation-inspector-compare-right"]').click();
