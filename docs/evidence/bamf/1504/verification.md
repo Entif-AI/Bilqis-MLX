@@ -226,6 +226,15 @@ The <=1.000-second acceptance target is satisfied on the actual operator candida
 surface twice, including terminal motif staging. Planning and retention remain
 separately measured visit-level work and are not relabeled as candidate-step work.
 
+After runtime commit `f73f8abed55e31e014aaaa675f635d5ff68f9154` froze the
+implementation, two further uninstrumented samples measured **1.003020125 s** and
+**0.859748334 s**. Their median is **0.931384229 s**. The first sample exceeded the
+target by 3.020 ms; the second cleared it by 140.252 ms. Both were `ACCEPTED`, used
+the same four-row/114-position terminal workload, and retained one vectorized
+gradient launch with zero scalar fallback. The complete frozen-SHA receipt is
+`subsecond-operator-witness.json`; the over-target sample is retained there rather
+than discarded as timing noise.
+
 ## Focused verification completed
 
 - candidate identity binding + publication reuse + cold trust: 15 passed;
