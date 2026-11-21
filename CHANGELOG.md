@@ -2,6 +2,18 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.3.0](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.19...v1.3.0) (2026-11-21)
+
+
+### Features
+
+* **mission-control:** complete generalized investigation UX ([#1514](https://github.com/Entif-AI/Bilqis-MLX/issues/1514)) ([d774b6a](https://github.com/Entif-AI/Bilqis-MLX/commit/d774b6a4bd20204b4ab0e0697f047642ab14d3e8))
+
+
+### Bug Fixes
+
+* replay portable rejection outcomes without raw KeyError leakage ([#1515](https://github.com/Entif-AI/Bilqis-MLX/issues/1515)) ([6e2e496](https://github.com/Entif-AI/Bilqis-MLX/commit/6e2e49600806328bd77a979e2863a80fbc5625b5))
+
 ## [1.2.19](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.18...v1.2.19) (2026-11-21)
 
 
