@@ -156,6 +156,38 @@ class AtlasResourcesTests(AtlasResourcesFixture):
 
 
 class FactoryRetryRestorationTests(AtlasResourcesFixture):
+    def test_factory_retry_uses_current_objective_for_historical_unbound_parent(self):
+        import mlx.core as mx
+
+        from bilqis_mlx.runtime.candidate import retry
+
+        weights = mx.array([1.0])
+        optimizer = SimpleNamespace(
+            parameters={"weight": weights}, m={}, v={}, update_counts={})
+        parent = SimpleNamespace(
+            topology=self.topology,
+            retained_state=SimpleNamespace(
+                optimizer=optimizer,
+                optimizer_step=3,
+                custody=SimpleNamespace(training_objective_digest=None)))
+        cache = SimpleNamespace(
+            _candidate_identity_sha256="a" * 64,
+            accepted_manifest_sha256="b" * 64)
+        rows = _rows(2)
+        plan = plan_microbatches(
+            rows, self.topology, self.budget, max_microbatch_size=2)
+        expected = object()
+
+        with patch.object(retry, "_resource_rows", return_value=rows):
+            result, returned_plan, state = retry.execute_with_oom_retry(
+                lambda _plan: expected, plan, parent=parent, candidate=None,
+                prepared=None, budget=self.budget, cache=cache,
+                require_current=lambda: (cache, GENERATION))
+
+        self.assertIs(result, expected)
+        self.assertIs(returned_plan, plan)
+        self.assertIsNone(state)
+
     def test_factory_retry_rejects_optimizer_mutation_during_failed_attempt(self):
         import mlx.core as mx
 

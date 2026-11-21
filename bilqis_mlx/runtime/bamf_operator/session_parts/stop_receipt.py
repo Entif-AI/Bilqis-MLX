@@ -25,8 +25,10 @@ def _canonical(value: dict) -> str:
 
 
 def _checkpoint_identity(student) -> str:
-    from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
-    return candidate_identity_digest(student.retained_state)
+    from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+        candidate_identity_for_canonical_consumer,
+    )
+    return candidate_identity_for_canonical_consumer(student.retained_state)
 
 
 def _accepted_pointer(run_dir: Path) -> dict:
@@ -47,7 +49,9 @@ def _resume_state(status: str) -> tuple[bool, str]:
         return False, "RESUME_AFTER_RESOURCE_RECOVERY"
     if status == "RESOURCE_HOLD":
         return True, "RESUME_AFTER_RESOURCE_RECOVERY"
-    if status in {"PRIORITY_HOLD", "ADMISSION_HOLD", "FIXED_POINT"}:
+    if status in {
+            "PRIORITY_HOLD", "ADMISSION_HOLD", "IMPLEMENTATION_UNCOVERED",
+            "FIXED_POINT"}:
         return True, "RESUME_WHEN_WORK_AVAILABLE"
     return True, "RESUME_ALLOWED"
 

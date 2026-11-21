@@ -51,13 +51,14 @@ class FoundationTeacherOwnerTests(unittest.TestCase):
         }
         projection = SimpleNamespace(teacher_state=projected_state)
         epoch = object()
+        cadence = SimpleNamespace(
+            phase=SimpleNamespace(value="BOUNDARY"),
+            authorized_capability_ids=())
         authority = SimpleNamespace(
             frontier="frontier", history="history", planning="planning",
             lawful_frontier="lawful-frontier", offers="offers", now=17,
             planning_generation="planning-generation",
-            cadence=SimpleNamespace(
-                phase=SimpleNamespace(value="BOUNDARY"),
-                authorized_capability_ids=()))
+            cadence=cadence, selection_cadence=cadence)
         selected = object()
         with patch(
                 "bilqis_mlx.runtime.bamf_bundle.admission.load_accepted_generation",
@@ -93,7 +94,8 @@ class FoundationTeacherOwnerTests(unittest.TestCase):
         authority = SimpleNamespace(
             frontier="frontier", history="history", planning="planning",
             lawful_frontier="lawful", offers="offers", now=17,
-            planning_generation="planning-generation", cadence=cadence)
+            planning_generation="planning-generation", cadence=cadence,
+            selection_cadence=cadence)
         school = PrioritySchoolContext(
             "a" * 64, ("descriptive",), PriorityStudentIdentity("b" * 64))
         with patch(

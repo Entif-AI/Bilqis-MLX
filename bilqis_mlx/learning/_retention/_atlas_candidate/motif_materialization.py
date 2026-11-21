@@ -68,14 +68,14 @@ def _materialize_optimizer(candidate, motif_candidate, *, spec, parent_extents,
     if new_names != expected_new or old_names - set(declared_by_name):
         invalid()
 
-    parameters = {name: _array_copy(value)
-                  for name, value in candidate.optimizer.parameters.items()}
-    moments_m = {name: _array_copy(value)
-                 for name, value in candidate.optimizer.m.items()}
-    moments_v = {name: _array_copy(value)
-                 for name, value in candidate.optimizer.v.items()}
-    counts = {name: _array_copy(value)
-              for name, value in candidate.optimizer.update_counts.items()}
+    # Candidate optimizer leaves are immutable MLX arrays. Motif staging changes
+    # only newly allocated motif rows, so preserve exact objects for every
+    # unaffected leaf instead of round-tripping the complete B01 state through
+    # host NumPy memory.
+    parameters = dict(candidate.optimizer.parameters)
+    moments_m = dict(candidate.optimizer.m)
+    moments_v = dict(candidate.optimizer.v)
+    counts = dict(candidate.optimizer.update_counts)
     for name in expected_new:
         item = declared_by_name[name]
         parameters[name] = initialize_bamf_parameter(item, run_seed=run_seed)
@@ -83,6 +83,7 @@ def _materialize_optimizer(candidate, motif_candidate, *, spec, parent_extents,
         moments_v[name] = np.zeros(item.shape, dtype=np.float32)
         counts[name] = np.zeros(declared_update_count_shape(item), dtype=np.uint64)
 
+    mutable_parameter_pages = set()
     for slot in view.plan.allocated:
         page = slot.slot_id // INITIAL_MOTIF_CAPACITY
         row = slot.slot_id % INITIAL_MOTIF_CAPACITY
@@ -91,18 +92,29 @@ def _materialize_optimizer(candidate, motif_candidate, *, spec, parent_extents,
             invalid()
         for tree in (parameters, moments_m, moments_v, counts):
             _require_zero_row(tree, name, row)
+        if name not in expected_new and name not in mutable_parameter_pages:
+            parameters[name] = _array_copy(parameters[name])
+            mutable_parameter_pages.add(name)
         parameters[name][row] = initialize_planned_motif_slot(
             view, slot.slot_id, run_seed=run_seed, topology=spec,
             extents=successor_extents)
 
     optimizer = AdamWStateTree(
-        {item.name: mx.array(parameters[item.name], dtype=mx.float32)
+        {item.name: (parameters[item.name]
+                     if isinstance(parameters[item.name], mx.array)
+                     else mx.array(parameters[item.name], dtype=mx.float32))
          for item in declared},
-        {item.name: mx.array(moments_m[item.name], dtype=mx.float32)
+        {item.name: (moments_m[item.name]
+                     if isinstance(moments_m[item.name], mx.array)
+                     else mx.array(moments_m[item.name], dtype=mx.float32))
          for item in declared},
-        {item.name: mx.array(moments_v[item.name], dtype=mx.float32)
+        {item.name: (moments_v[item.name]
+                     if isinstance(moments_v[item.name], mx.array)
+                     else mx.array(moments_v[item.name], dtype=mx.float32))
          for item in declared},
-        {item.name: mx.array(counts[item.name], dtype=mx.uint64)
+        {item.name: (counts[item.name]
+                     if isinstance(counts[item.name], mx.array)
+                     else mx.array(counts[item.name], dtype=mx.uint64))
          for item in declared},
     )
     reconcile_b01_optimizer_manifest(optimizer, spec, successor_extents)
@@ -157,4 +169,6 @@ def _stage_candidate_motif_allocation_impl(
         candidate.parent, optimizer, candidate.teacher_requests_full,
         candidate.update_steps, candidate.step_proofs,
         candidate.training_authorities,
-        allocations=proposed, motif_transition=transition)
+        allocations=proposed, motif_transition=transition,
+        parent_identity_sha256=candidate._parent_identity_sha256,
+        parent_guard=candidate._parent_guard)

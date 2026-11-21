@@ -2,6 +2,8 @@
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
+
 from bilqis_mlx.runtime.priority_source_materialization import (
     PreparedPrioritySourceMaterialization,
     prepare_priority_source_materialization,
@@ -79,8 +81,46 @@ def test_selected_source_ast_context_and_prefix_materialize_once_per_visit():
     motif.assert_called_once()
     assert context._source_preparation_metrics.source_context_builds == 1
     assert context._source_preparation_metrics.compiled_source_builds == 1
-    assert len(registrar.registrations) == 6
+    assert len(registrar.registrations) == 3
     assert feature_owner.requires == 2
     assert packed_owner.requires == 2
     assert source_owner.requires == 2
     assert b11_source.requires == 2
+
+
+def test_cached_source_currentness_residual_subtracts_only_direct_children():
+    rows = ({"id": "row:one", "capability": "cap", "tokens": [1]},)
+    owner = _Owner()
+    offer = SimpleNamespace(
+        _materialized={},
+        _performance_observation={
+            "source_currentness_offer_validate_wall_seconds": 0.4,
+            "source_currentness_row_authority_wall_seconds": 0.3,
+            "source_currentness_qualification_owner_wall_seconds": 0.2,
+        },
+        require_qualified_current=lambda *_args, **_kwargs: rows,
+    )
+    materialized = PreparedPrioritySourceMaterialization(
+        offer, rows, None, None, None, (object(),), (object(),), (object(),),
+        (owner,), (object(),), SimpleNamespace(features=object()), owner, owner, owner)
+    object.__setattr__(materialized, "_performance_observation", {
+        "source_currentness_feature_owner_wall_seconds": 0.4,
+        "source_currentness_source_owner_wall_seconds": 0.3,
+        "source_currentness_b11_sources_wall_seconds": 0.2,
+        "source_currentness_packed_frames_wall_seconds": 0.1,
+        "source_currentness_materialized_other_wall_seconds": 0.1,
+        "source_currentness_registration_wall_seconds": 0.1,
+    })
+    offer._materialized["value"] = materialized
+    clock = iter((0.0, 0.0, 1.0, 3.0))
+
+    with patch(
+            "bilqis_mlx.runtime.priority_source_materialization._register_and_require",
+            return_value=materialized), patch(
+                "bilqis_mlx.runtime.priority_source_materialization.time.perf_counter",
+                side_effect=lambda: next(clock)):
+        result = prepare_priority_source_materialization(offer, SimpleNamespace(), "parent")
+
+    observation = result._performance_observation
+    assert observation["source_currentness_qualification_wall_seconds"] == 1.0
+    assert observation["source_currentness_internal_other_wall_seconds"] == pytest.approx(0.8)

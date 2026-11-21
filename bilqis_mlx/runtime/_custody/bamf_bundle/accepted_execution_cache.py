@@ -224,89 +224,110 @@ def _current_hydration_locked(
     return hydration
 
 
-def _make_execution_cache_runtime():
-    lock = RLock()
-    hydrations, executions = {}, {}
+class _ExecutionCacheRuntime:
+    def __init__(self):
+        self.lock = RLock()
+        self.hydrations = {}
+        self.executions = {}
 
-    def current_hydration(run_dir: Path, *, metrics=None):
+    def current_hydration(self, run_dir: Path, *, metrics=None):
         run_dir = Path(run_dir).resolve()
         key = str(run_dir)
         with _pointer_read_lock(run_dir):
             pointer = _read_pointer(run_dir / "bamf-state.json")
             return _current_hydration_locked(
-                lock, hydrations, executions, run_dir, key, pointer,
+                self.lock, self.hydrations, self.executions, run_dir, key, pointer,
                 metrics=metrics)
 
-    def bind(run_dir: Path, *, metrics=None):
+    def bind(self, run_dir: Path, *, metrics=None):
         run_dir = Path(run_dir).resolve()
         key = str(run_dir)
         with _pointer_read_lock(run_dir):
             pointer = _read_pointer(run_dir / "bamf-state.json")
             hydration = _current_hydration_locked(
-                lock, hydrations, executions, run_dir, key, pointer,
+                self.lock, self.hydrations, self.executions, run_dir, key, pointer,
                 metrics=metrics)
             registry = _accepted_source_authority_registry(
                 run_dir, hydration.student)
-            with lock:
-                retained = executions.get(key)
+            with self.lock:
+                retained = self.executions.get(key)
                 if (retained is not None
                         and retained.hydration is hydration):
                     _require_execution_entry(retained, registry)
                     return retained.cache
                 retained = _new_execution_entry(run_dir, hydration, registry)
-                executions[key] = retained
+                self.executions[key] = retained
                 return retained.cache
 
-    def require(cache):
+    def require(self, cache):
         key = getattr(cache, "_run_dir", None)
         if key is None:
             invalid("B13_EXECUTION_CACHE_REQUIRED")
         run_dir = Path(key).resolve()
-        hydration = current_hydration(run_dir)
+        hydration = self.current_hydration(run_dir)
         if (getattr(cache, "accepted_manifest_sha256", None)
                 != hydration.manifest_sha256
                 or getattr(cache, "run_id", None) != hydration.student.run_id
                 or getattr(cache, "generation", None) != hydration.student.generation):
             invalid("B13_EXECUTION_CACHE_STALE")
         registry = _current_registry(run_dir, hydration)
-        with lock:
-            retained = executions.get(str(run_dir))
+        with self.lock:
+            retained = self.executions.get(str(run_dir))
             if retained is None or retained.cache is not cache:
                 invalid("B13_EXECUTION_CACHE_REQUIRED")
             _require_execution_entry(retained, registry)
         return cache
 
-    def load(run_dir: Path):
-        return current_hydration(run_dir).student
+    def load(self, run_dir: Path):
+        return self.current_hydration(run_dir).student
 
-    def bind_publication_parent_locked(run_dir: Path, pointer):
+    def load_with_pointer_if_cached(self, run_dir: Path):
+        """Reuse current accepted hydration only when this process already owns one."""
+        run_dir = Path(run_dir).resolve()
+        key = str(run_dir)
+        with self.lock:
+            retained = self.hydrations.get(key)
+        if retained is None:
+            return None
+        with _pointer_read_lock(run_dir):
+            pointer = _read_pointer(run_dir / "bamf-state.json")
+            hydration = _require_current_hydration(run_dir, pointer, retained)
+            return pointer, hydration.student
+
+    def bind_publication_parent_locked(self, run_dir: Path, pointer):
         run_dir = Path(run_dir).resolve()
         key = str(run_dir)
         from .publication.instrumentation import publication_bundle_load
         with publication_bundle_load("parent"):
             hydration = _current_hydration_locked(
-                lock, hydrations, executions, run_dir, key, pointer)
+                self.lock, self.hydrations, self.executions,
+                run_dir, key, pointer)
         return _new_publication_parent(run_dir, hydration)
 
-    def bind_publication_parent(run_dir: Path):
+    def bind_publication_parent(self, run_dir: Path):
         run_dir = Path(run_dir).resolve()
         with _pointer_read_lock(run_dir):
             pointer = _read_pointer(run_dir / "bamf-state.json")
-            return bind_publication_parent_locked(run_dir, pointer)
+            return self.bind_publication_parent_locked(run_dir, pointer)
 
-    def require_publication_parent_locked(run_dir: Path, pointer, witness):
+    def require_publication_parent_locked(self, run_dir: Path, pointer, witness):
         return _require_publication_parent_locked(
-            lock, hydrations, run_dir, pointer, witness)
+            self.lock, self.hydrations, run_dir, pointer, witness)
 
-    def reset_for_tests():
-        with lock:
-            hydrations.clear()
-            executions.clear()
+    def reset_for_tests(self):
+        with self.lock:
+            self.hydrations.clear()
+            self.executions.clear()
+
+
+def _make_execution_cache_runtime():
+    runtime = _ExecutionCacheRuntime()
 
     return (
-        bind, require, load, reset_for_tests,
-        bind_publication_parent, bind_publication_parent_locked,
-        require_publication_parent_locked,
+        runtime.bind, runtime.require, runtime.load,
+        runtime.load_with_pointer_if_cached, runtime.reset_for_tests,
+        runtime.bind_publication_parent, runtime.bind_publication_parent_locked,
+        runtime.require_publication_parent_locked,
     )
 
 
@@ -314,6 +335,7 @@ def _make_execution_cache_runtime():
     bind_accepted_execution_cache,
     _require_owned_execution_cache,
     load_accepted_generation,
+    load_accepted_generation_with_pointer_if_cached,
     _reset_execution_cache_owner_for_tests,
     bind_accepted_publication_parent,
     _bind_accepted_publication_parent_locked,
@@ -324,4 +346,5 @@ def _make_execution_cache_runtime():
 __all__ = (
     "AcceptedPublicationParent", "bind_accepted_execution_cache",
     "bind_accepted_publication_parent", "load_accepted_generation",
+    "load_accepted_generation_with_pointer_if_cached",
 )

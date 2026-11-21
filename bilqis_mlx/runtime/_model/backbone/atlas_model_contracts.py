@@ -17,7 +17,7 @@ from .active_semantic_rows import (
     _issue_bamf_active_semantic_rows,
     bind_candidate_active_semantic_rows,
 )
-from .compiled_batch import BamfCompiledBatch
+from .compiled_batch import BamfCompiledBatch, _reissue_validated_task_authority
 
 
 def _invalid(reason: str) -> None:

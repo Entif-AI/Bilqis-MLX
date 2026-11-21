@@ -199,6 +199,8 @@ export const SHELL_MESSAGES = Object.freeze({
   "shell.school.subnav": "School views",
   "shell.school.matrix": "Capability matrix",
   "shell.school.atlas": "Curriculum Semantic Atlas",
+  "shell.school.factory": "Factory & releases",
+  "shell.destination.school.factoryPurpose": "Inspect immutable curriculum Factory and release evidence without acquiring admission authority.",
   "shell.school.historical.eyebrow": "Historical School lens",
   "shell.school.historical.title": "UNAVAILABLE",
   "shell.school.historical.summary": "School matrix detail for generation {generation} is pending. The global historical lens remains pinned to that generation.",

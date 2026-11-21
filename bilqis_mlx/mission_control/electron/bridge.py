@@ -23,6 +23,7 @@ _CLIENT_ID = "mission-control-electron"
 _REQUEST_TIMEOUT_SECONDS = 8.0
 MAX_BROKER_REQUEST_BYTES = 64 * 1024
 QUERY_ERROR_SCHEMA = "bamf.gui07.query-error/v1"
+EVENT_BRIDGE_READY_SCHEMA = "bilqis.bamf.mission-control.event-bridge-ready/v1"
 
 
 def _safe_broker_error_code(error: BaseException) -> str:
@@ -267,6 +268,10 @@ def stream_events() -> int:
         if not payload.get("accepted"):
             return 1
         subscription = client.subscribe_events()
+        sys.stdout.write(json.dumps(
+            {"schema": EVENT_BRIDGE_READY_SCHEMA},
+            sort_keys=True, separators=(",", ":")) + "\n")
+        sys.stdout.flush()
         for event in subscription:
             sys.stdout.write(json.dumps(
                 encode_record(event), sort_keys=True, separators=(",", ":")) + "\n")

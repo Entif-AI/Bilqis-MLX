@@ -60,9 +60,31 @@ class LiveGradeAGenerationTests(unittest.TestCase):
             rows = adapter.draw(
                 source_root=ROOT, graph=self.graph, course=None,
                 capability=capability, seed=377, each=12)
-            self.assertEqual(rows, tuple(base))
+            self.assertEqual(
+                tuple({
+                    **{
+                        key: value for key, value in row.items()
+                        if key not in ("source_family_id", "source_family_seed")
+                    },
+                    "oracle": base_row["oracle"],
+                } for row, base_row in zip(rows, base)),
+                tuple(base),
+            )
+            self.assertEqual(
+                {row["oracle"] for row in rows},
+                {"bilqis.mlx.grade-a-record-oracle/v2"},
+            )
+            self.assertEqual(len({row["source_family_id"] for row in rows}), 1)
+            fresh = adapter.draw(
+                source_root=ROOT, graph=self.graph, course=None,
+                capability=capability, seed=378, each=12)
+            self.assertNotEqual(
+                rows[0]["source_family_id"], fresh[0]["source_family_id"])
             self.assertTrue(all(adapter.check(
                 row, source_root=ROOT, graph=self.graph, course=None) for row in rows))
+            forged = {**rows[0], "source_family_id": "forged"}
+            self.assertFalse(adapter.check(
+                forged, source_root=ROOT, graph=self.graph, course=None))
 
     def test_member_context_expands_the_fresh_false_size3_source_space(self):
         identities = set()

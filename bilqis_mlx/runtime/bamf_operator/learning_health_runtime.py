@@ -4,7 +4,9 @@ from __future__ import annotations
 from bilqis_mlx.diagnostics.learning_health import (
     STATE_SCHEMA, project_learning_health, validate_learning_health_state,
 )
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+    candidate_identity_for_canonical_consumer,
+)
 from .evidence_projection import complete_visit_evidence, selected_visit_evidence
 
 _MAX_CAPABILITIES = 48
@@ -32,7 +34,8 @@ def accepted_learning_health_state(
     methodology = getattr(capture, "learning_methodology", None)
     visit["learning_methodology"] = (
         methodology() if callable(methodology) else ())
-    visit["accepted_checkpoint_sha256"] = candidate_identity_digest(retained)
+    visit["accepted_checkpoint_sha256"] = candidate_identity_for_canonical_consumer(
+        retained)
     visit["accepted_optimizer_step"] = retained.optimizer_step
     visit["history_seed_state"] = coverage
     health = project_learning_health(

@@ -5,7 +5,10 @@ from ..atlas_projection import FrozenAtlasSnapshot
 
 
 from .common import _SHA, _ADMITTED_GRAPH_PREDICATES, _invalid, _utf8, _sorted_ids, _factor_overflow, _category_map
-from .records import ProspectiveIdentityFeature, ProspectiveIdentityFeatureSet, AtlasFeatures
+from .records import (
+    ProspectiveIdentityFeature, ProspectiveIdentityFeatureSet, FeatureRow,
+    AtlasFeatures,
+)
 from .sources import _graph_vector, _senses_by_root
 
 def _validate_prospective_binding(release, current, semantic_ids, expected_feature_digest):
@@ -166,4 +169,75 @@ def plan_prospective_identity_features(
         predecessor_feature_digest=current.digest,
         type_map=type_map,
         identities=tuple(planned),
+    )
+
+
+def generation_feature_row(
+    release: FrozenAtlasSnapshot,
+    current: AtlasFeatures,
+    semantic_id: str,
+    abi_index: int,
+    scope: str,
+    *,
+    active_indices: tuple[int, ...],
+) -> FeatureRow:
+    """Resolve factors for an identity admitted by the current generation.
+
+    The immutable A01 snapshot remains the source of factor composition while
+    C07 owns append-only generation admission.  This helper never mutates or
+    expands the accepted AtlasFeatures manifest.
+    """
+    if (
+        not isinstance(semantic_id, str) or not semantic_id
+        or type(abi_index) is not int or abi_index < 0
+        or not isinstance(scope, str) or not scope
+        or type(active_indices) is not tuple
+        or abi_index not in active_indices
+    ):
+        _invalid("BAMF_FEATURE_GENERATION_IDENTITY_INACTIVE")
+    admitted = current._concept_by_id.get(semantic_id)
+    if admitted is not None:
+        row = current.features_for(semantic_id, "NONE", "NONE", scope)
+        if row.abi_index != abi_index:
+            _invalid("BAMF_FEATURE_GENERATION_ABI_DRIFT")
+        return row
+
+    prospective = plan_prospective_identity_features(
+        release,
+        current,
+        (semantic_id,),
+        expected_feature_digest=current.digest,
+    )
+    if prospective.type_map != current.type_map or len(prospective.identities) != 1:
+        _invalid("BAMF_FEATURE_GENERATION_ABI_DRIFT")
+    identity = prospective.identities[0]
+    if identity.semantic_id != semantic_id or identity.abi_index != abi_index:
+        _invalid("BAMF_FEATURE_GENERATION_ABI_DRIFT")
+    roles = current._role_by_id
+    schemas = current._schema_by_id
+    if "NONE" not in roles or "NONE" not in schemas:
+        _invalid("BAMF_FEATURE_ROLE_SCHEMA_NOT_ADMITTED")
+    return FeatureRow(
+        semantic_id=identity.semantic_id,
+        abi_index=identity.abi_index,
+        scope=scope,
+        type_ids=identity.type_ids,
+        type_rows=identity.type_rows,
+        type_overflow=tuple(
+            (type_id, overflow)
+            for type_id, overflow in zip(
+                identity.type_ids, identity.type_overflow)
+            if overflow is not None
+        ),
+        role_id="NONE",
+        role_row=roles["NONE"],
+        role_overflow=None,
+        schema_id="NONE",
+        schema_row=schemas["NONE"],
+        schema_overflow=None,
+        graph64=identity.graph64,
+        source_status={
+            "SOURCE_ELIGIBLE_NOT_ADMITTED": "ADMITTED_SOURCE",
+            "FORMAL_ABI_NOT_ADMITTED": "ADMITTED_FORMAL_ABI_UNTYPED",
+        }.get(identity.source_status, identity.source_status),
     )

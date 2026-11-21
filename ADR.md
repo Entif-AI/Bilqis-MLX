@@ -3795,3 +3795,127 @@ operator stop.
 trainer should continue making useful lawful progress until its requested
 time/visit/resource bound or a genuine external authority/safety boundary is
 reached. Clean termination is not a substitute for continuous training.
+
+## ADR-149 | 2026-11-19 | Pre-selector accepted lineages retain their versioned certification policy
+
+**Status:** Accepted by direct owner instruction on 2026-11-19 to restore the
+existing learner before broader authority/security redesign.
+
+**Problem:** #1334 introduced certification-policy selection through the accepted
+C07 v2 lease. The current accepted learner predates that selector and therefore has
+no accepted v2 lease carrying `progression_policy_sha256`. Treating that historical
+absence as an operator/security failure bricks an otherwise valid retained learner
+at the genuine grade-certification boundary.
+
+**Decision:** If an already accepted lineage has no accepted C07 v2 lease because it
+predates the progression-policy selector, #1334 uses the existing explicitly
+versioned `adr-084-mean-stability/v1` policy: 92% entry, 87% continuation, ADR-111
+retry comparison, ADR-084 debt authority. The selected policy digest remains bound
+into certification requests/receipts. This is a compatibility rule for absence of
+the later selector, not a generic default-selection mechanism.
+
+If an accepted C07 v2 lease exists, its exact signed selector remains authoritative.
+An unknown or unsupported selected digest still fails closed. This ADR does not
+authorize a run-local policy file, change source gold, mint mastery, widen C07/C09
+source authority, or permit the learner/trainer to author a new policy.
+
+**Priority:** Restore stable learning continuity first. The broader single-owner
+alpha threat model, local authority topology, and security-versus-reliability
+tradeoffs are follow-up architecture work and must not block this compatibility
+repair.
+
+## ADR-150 | 2026-11-19 | FactoryRelease availability is not generated-grade teaching authority
+
+**Status:** Accepted by direct owner correction on 2026-11-19 for issue #1482.
+
+**Problem:** ADR-148 correctly separated `RECOVERY_EXHAUSTED` from genuine grade
+completion, but its cross-grade recovery mechanism used a materially incorrect
+definition of "already admitted." The implementation treated a later grade's
+presence in `FactoryRelease.execution_plan.grades` as sufficient learner-relative
+teaching authority. A live Grade A run then exhausted its bounded recovery cadence,
+selected `B.AND`, and was rejected downstream with
+`BAMF_REHEARSAL_TARGET_OUTSIDE_ACTIVE_GRADE`. The active generated-grade custody
+had never left Grade A: no receipt-bound Grade B successor proposal/activation
+existed.
+
+**Decision:** Packaging a capability or grade in an accepted `FactoryRelease`
+establishes executable/source availability; it does not admit that grade into the
+learner's active generated-grade progression. `RECOVERY_EXHAUSTED` MUST NOT widen
+the lawful teaching frontier beyond the exact current #1314 active generated-grade
+membership merely because later release grades are available. With no authorized
+active-grade work remaining, priority returns a cadence-bound
+`NO_ADMISSIBLE_TEACHING`/hold. If accepted learner/checkpoint evidence later
+changes through another lawful path, the existing #1333 currentness rules may reopen
+that same active grade's MAIN/recovery cadence.
+
+`GRADE_COMPLETE` remains the only grade-certification boundary. Later-grade
+teaching begins only after the receipt-bound successor synthesis/activation path
+authorizes that generated grade; C07/B13 participates when the transition genuinely
+requires new accepted executable/source/rights scope, but release reuse never
+substitutes for generated-grade activation. Rehearsal's active-grade-membership
+check remains fail-closed and is evidence of an upstream authority contradiction,
+not a bypass target.
+
+**Supersession:** This ADR supersedes only ADR-148's clauses authorizing temporary
+teaching from later release-listed grades and its use of "already admitted" for
+that condition. ADR-148 remains authoritative that recovery exhaustion is not
+graduation, cannot mint certification/mastery/successor authority, and may reopen
+after lawful accepted learner evidence changes. The continuity invariant means
+continue while useful **lawful** work exists; when none exists, a truthful hold is
+preferable to manufacturing progression authority.
+
+## ADR-151 | 2026-11-20 | Recovery exhaustion recycles the active grade until completion
+
+**Status:** Accepted by direct owner instruction on 2026-11-20 through issue #1489.
+
+**Problem:** ADR-148 correctly rejected recovery exhaustion as graduation, and
+ADR-150 correctly rejected teaching a future grade merely because it is packaged in
+the accepted FactoryRelease. Their composition nevertheless left the persistent
+trainer with a product regression: an incomplete active grade could exhaust one
+bounded MAIN/recovery cadence, emit `PRIORITY_HOLD`, and terminate the human-started
+session without another neural visit. The internal cadence budget had accidentally
+become a school-level stop condition.
+
+**Decision:** The developmental machine is a strict recursive staircase:
+
+`teach current grade -> certify completed grade -> design next grade -> activate next grade -> teach next grade`.
+
+Exactly one generated grade is the active teaching surface at a time. A bounded
+MAIN/recovery cadence is only an internal scheduling cycle inside that grade.
+`RECOVERY_EXHAUSTED` on an incomplete active grade MUST rearm ordinary MAIN
+acquisition for the same active grade in a fresh cadence epoch. It MUST NOT certify
+the grade, synthesize or activate a successor, borrow future-grade work, or terminate
+the operator merely because the bounded recovery cycle ended.
+
+This recycling rule does not turn genuine blockers into busy loops. If the current
+active grade has no executable teaching work because of an actual source, rights,
+implementation, custody, or other external authority blocker, preserve and surface
+that exact blocker. Ordinary prerequisite ordering remains local: a dependent member
+waits while other READY members of the same active grade remain teachable.
+
+`GRADE_COMPLETE` remains the only grade-certification boundary. Only successful
+certification may authorize next-grade synthesis/activation, with C07 participating
+when that transition genuinely changes accepted executable/source/rights scope.
+Once the successor is activated, the same grade-neutral loop applies again without
+an A/B/C runtime branch.
+
+**Supersession:** This ADR supersedes ADR-148's temporary cross-grade yield and the
+ADR-150 clause that treats incomplete-grade recovery exhaustion itself as a truthful
+terminal hold. It preserves ADR-150's prohibition on FactoryRelease presence as
+future-grade teaching authority, preserves genuine blocker holds, and preserves the
+rule that recovery exhaustion never mints completion, mastery, certification, or
+successor authority.
+
+## ADR-152 | 2026-11-20 | Provenance boundaries preserve operator information value
+
+**Status:** Accepted by direct owner instruction on 2026-11-20 through issues #1496, #1497, and #1498.
+
+**Problem:** BAMF correctly separated accepted learner state, provisional observation, historical evidence, and unavailable data. Mission Control then treated some incomplete read-model contracts as if the contract boundary itself proved that operator-useful evidence was unavailable. The result preserved provenance but regressed the owner's ability to understand the learner compared with the predecessor terminal cockpit. Several production Home metrics were explicitly hard-coded to null while related trainer or custody evidence already existed elsewhere.
+
+**Decision:** Provenance discipline and operator information value are simultaneous requirements. For every operator-useful fact already produced by the active trainer or authenticated custody, one read-only projection owner must expose the value with its truthful evidence class, expose a precise reasoned absence state, or record an intentional retirement and replacement operator question. An intermediate schema that does not yet carry the fact is an implementation gap, not a permanent `UNAVAILABLE` disposition.
+
+The predecessor School50 cockpit is an information-value baseline, not a visual or authority template. BAMF may reorganize, summarize, and progressively disclose its evidence, but the combined operator surfaces must preserve the ability to answer what the trainer is doing, what changed, what was retained or rejected and why, how the bounded run is progressing, what resource/curriculum condition applies, and what evidence supports or fails to support a learning claim.
+
+Observed/provisional evidence remains non-authoritative for learner state. Throughput remains distinct from learning. Missing evidence is never synthesized as zero, healthy, retained, mastered, or improved. `NOT_MEASURED`, `NOT_APPLICABLE`, `MISSING`, `UNKNOWN`, `PARTIAL`, `STALE`, `DENIED`, and `UNAVAILABLE` remain distinct. Arithmetic summaries require compatible identified inputs and must state their denominator/scope semantics.
+
+The checked-in `docs/architecture/BAMF_OPERATOR_OBSERVABILITY_INVARIANT.md` parity matrix is the implementation map for this decision. Future Mission Control contract changes must treat producer-present/operator-permitted data that collapses to generic null/Unavailable as a conformance regression unless an explicit retirement decision supersedes the operator question.

@@ -120,8 +120,7 @@ test("preload invokes only fixed channels and unsubscribes its fixed event liste
   await api.fetchReceipt("receipt:abc-123");
 
   const events = [];
-  const unsubscribe = api.subscribeEvents((value) => events.push(value));
-  await new Promise((resolve) => setImmediate(resolve));
+  const unsubscribe = await api.subscribeEvents((value) => events.push(value));
   renderer.listeners.get(CHANNELS.event)?.({}, { cursor: "event:1" });
   await unsubscribe();
 
@@ -137,5 +136,28 @@ test("preload invokes only fixed channels and unsubscribes its fixed event liste
     CHANNELS.receipt,
     CHANNELS.eventsSubscribe,
     CHANNELS.eventsUnsubscribe,
+  ]);
+});
+
+test("preload does not publish an unsubscribe owner before event subscription startup succeeds", async () => {
+  const renderer = fakeRenderer();
+  let rejectStart;
+  renderer.invoke = function invoke(channel, ...args) {
+    this.invoked.push([channel, ...args]);
+    if (channel === CHANNELS.eventsSubscribe) {
+      return new Promise((_resolve, reject) => { rejectStart = reject; });
+    }
+    return Promise.resolve({ channel });
+  };
+  const api = loadSandboxedPreload(renderer).api;
+
+  const startup = api.subscribeEvents(() => {});
+  assert.equal(typeof startup?.then, "function");
+  rejectStart(new Error("BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED"));
+  await assert.rejects(startup, /BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED/);
+
+  assert.equal(renderer.listeners.has(CHANNELS.event), false);
+  assert.deepEqual(renderer.invoked.map(([channel]) => channel), [
+    CHANNELS.eventsSubscribe,
   ]);
 });

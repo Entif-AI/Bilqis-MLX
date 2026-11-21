@@ -18,6 +18,7 @@ from bilqis_mlx.runtime.atlas_resources import (
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_bundle import (
     CompleteStudent,
+    seal_source_qualified_motif_batch_from_accepted_parent,
     seal_source_qualified_motif_batch_from_bundle,
     seal_source_qualified_motifs_from_bundle,
     stage_source_qualified_motif_allocation,
@@ -190,14 +191,16 @@ def _stage_retained_motifs(run_dir, parent, cache, transaction, prepared,
                 motif.source_root, motif.source_graph, motif.task, motif.frontier,
                 motif.policy, motif.source_seed, motif.source_each,
                 motif.source_profile_parameters, motif.course,
+                motif.formal_projection, motif.formal_frontier,
             )
             for motif in prepared.motif_inputs
         )
-        result = seal_source_qualified_motif_batch_from_bundle(
+        result = seal_source_qualified_motif_batch_from_accepted_parent(
             requests,
-            retained_bundle_root=bundle_root,
+            accepted_parent=parent,
             expected_manifest_sha256=cache.accepted_manifest_sha256,
             budget=budget,
+            snapshot=prepared.semantic_context.snapshot,
         )
         if isinstance(result, ContextHold):
             _invalid("FACTORY_CANDIDATE_STEP_MOTIF_CONTEXT_HELD")
@@ -217,7 +220,10 @@ def _stage_retained_motifs(run_dir, parent, cache, transaction, prepared,
         policy=motif.policy, source_seed=motif.source_seed,
         source_each=motif.source_each, budget=budget,
         source_profile_parameters=motif.source_profile_parameters,
-        course=motif.course)
+        course=motif.course,
+        prepared_projection=motif.formal_projection,
+        prepared_frontier=motif.formal_frontier,
+        snapshot=prepared.semantic_context.snapshot)
     if isinstance(result, ContextHold):
         _invalid("FACTORY_CANDIDATE_STEP_MOTIF_CONTEXT_HELD")
     continuation, _ = result

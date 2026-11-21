@@ -6,7 +6,9 @@ import math
 from weakref import WeakKeyDictionary
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+    candidate_identity_for_canonical_consumer,
+)
 from bilqis_mlx.learning.salience_teacher import PrioritySchoolContext, PriorityStudentIdentity
 
 
@@ -152,7 +154,8 @@ def accepted_priority_school(parent, program, *, candidate_identity_sha256=None)
     if not grades:
         _invalid('BAMF_PRIORITY_PROGRAM_INVALID')
     if candidate_identity_sha256 is None:
-        candidate_identity_sha256 = candidate_identity_digest(parent.retained_state)
+        candidate_identity_sha256 = candidate_identity_for_canonical_consumer(
+            parent.retained_state)
     return PrioritySchoolContext(
         course_digest=program.digest(),
         active_grades=grades,

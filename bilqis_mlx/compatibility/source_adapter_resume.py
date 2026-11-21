@@ -22,11 +22,15 @@ _NUMERIC_PRE_R20_IMPLEMENTATION = (
     "621257de25895cc5cfcf0b9730c43fbe04260a3aa68732cfcc41a43988cd8141")
 _NUMERIC_CURRENT_IMPLEMENTATION = (
     "788978ebb80d2349f6aa91e994f45d2ce32c154040f5ab5b17d8502a8d6dfa10")
+_NUMERIC_PROVENANCE_IMPLEMENTATION = (
+    "06a517b9f1272b90233f0ac28ae98458a3a130bf9069e78202b58b84baf2c4cb")
 _GRADE_A_ADAPTER_ID = "source.micro.predicates/v1"
 _GRADE_A_ACCEPTED_IMPLEMENTATION = (
     "c451c3e6bf5ab538450c691d504230036b9a729ddfc67b53163c6a1f106d62a9")
 _GRADE_A_CURRENT_IMPLEMENTATION = (
     "7f05ec04d200d7394f32ed1811a3d9a47ce4cdb9267692bf558453e81e9fb04a")
+_GRADE_A_PROVENANCE_IMPLEMENTATION = (
+    "622d963b3a6c9846701e895bcdece1558eb450a92f2e0e5d757a4b3729dd5990")
 _GRADE_A_1324082_IMPLEMENTATION = (
     "f8e5aec9398538adc633deabe9c41c485e69a96044b9b86a5f1075ce6e201778")
 _GRADE_A_BASE_VARIATION_AXES = (
@@ -80,6 +84,7 @@ def _numeric_adr106_pair(admitted, current) -> bool:
                 _NUMERIC_IMPLEMENTATION,
                 _NUMERIC_MODULAR_IMPLEMENTATION,
                 _NUMERIC_CURRENT_IMPLEMENTATION,
+                _NUMERIC_PROVENANCE_IMPLEMENTATION,
             )):
         return False
     admitted_releases = dict(admitted.cohort_releases)
@@ -111,7 +116,8 @@ def _numeric_modular_pair(admitted, current) -> bool:
                 _NUMERIC_IMPLEMENTATION, _NUMERIC_MODULAR_IMPLEMENTATION,
                 _NUMERIC_PRE_R20_IMPLEMENTATION)
             or current.implementation_sha256 not in (
-                _NUMERIC_MODULAR_IMPLEMENTATION, _NUMERIC_CURRENT_IMPLEMENTATION)):
+                _NUMERIC_MODULAR_IMPLEMENTATION, _NUMERIC_CURRENT_IMPLEMENTATION,
+                _NUMERIC_PROVENANCE_IMPLEMENTATION)):
         return False
     migrated = replace(admitted, implementation_sha256=current.implementation_sha256)
     return (
@@ -155,6 +161,18 @@ def _accepted_school_provider_pair(admitted, current) -> bool:
         )
         or _cohort_bound_implementation_pair(
             admitted, current,
+            adapter_id=_GRADE_A_ADAPTER_ID,
+            admitted_sha256=_GRADE_A_ACCEPTED_IMPLEMENTATION,
+            current_sha256=_GRADE_A_PROVENANCE_IMPLEMENTATION,
+        )
+        or _cohort_bound_implementation_pair(
+            admitted, current,
+            adapter_id=_GRADE_A_ADAPTER_ID,
+            admitted_sha256=_GRADE_A_CURRENT_IMPLEMENTATION,
+            current_sha256=_GRADE_A_PROVENANCE_IMPLEMENTATION,
+        )
+        or _cohort_bound_implementation_pair(
+            admitted, current,
             adapter_id=_BOOLEAN_IDENTIFICATION_ADAPTER_ID,
             admitted_sha256=_BOOLEAN_IDENTIFICATION_ACCEPTED_IMPLEMENTATION,
             current_sha256=_BOOLEAN_IDENTIFICATION_CURRENT_IMPLEMENTATION,
@@ -175,7 +193,8 @@ def _grade_a_1324082_pair(admitted, current) -> bool:
             or admitted.adapter_id != _GRADE_A_ADAPTER_ID
             or admitted.implementation_sha256 != _GRADE_A_1324082_IMPLEMENTATION
             or current.implementation_sha256 not in (
-                _GRADE_A_ACCEPTED_IMPLEMENTATION, _GRADE_A_CURRENT_IMPLEMENTATION)
+                _GRADE_A_ACCEPTED_IMPLEMENTATION, _GRADE_A_CURRENT_IMPLEMENTATION,
+                _GRADE_A_PROVENANCE_IMPLEMENTATION)
             or admitted.generator_id != current.generator_id
             or admitted.accepted_oracle_ids != current.accepted_oracle_ids
             or admitted.cohort_generator_id != current.cohort_generator_id
@@ -196,12 +215,13 @@ def _grade_a_1324082_pair(admitted, current) -> bool:
     )
     if current.implementation_sha256 == _GRADE_A_ACCEPTED_IMPLEMENTATION:
         return intermediate == current
-    return _cohort_bound_implementation_pair(
-        intermediate, current,
-        adapter_id=_GRADE_A_ADAPTER_ID,
-        admitted_sha256=_GRADE_A_ACCEPTED_IMPLEMENTATION,
-        current_sha256=_GRADE_A_CURRENT_IMPLEMENTATION,
-    )
+    if _cohort_bound_implementation_pair(
+            intermediate, current,
+            adapter_id=_GRADE_A_ADAPTER_ID,
+            admitted_sha256=_GRADE_A_ACCEPTED_IMPLEMENTATION,
+            current_sha256=current.implementation_sha256):
+        return True
+    return False
 
 
 def resume_adapter_compatible(admitted, current) -> bool:

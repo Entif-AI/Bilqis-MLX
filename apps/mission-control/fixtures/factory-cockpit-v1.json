@@ -1,0 +1,163 @@
+[
+  {
+    "admission_authority": "HUMAN_ONLY",
+    "admission_receipt_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "blockers": [],
+    "candidate_sha256": null,
+    "capability_ids": [
+      "B.AND",
+      "B.OR"
+    ],
+    "currency_state": "CURRENT",
+    "debt_capability_ids": [
+      "B.OR"
+    ],
+    "delivery_status": "LAUNCH_QUALIFIED",
+    "dependency_edges": [
+      [
+        "B.OR",
+        "B.AND"
+      ]
+    ],
+    "factory_release_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "grade_frontier": [
+      {
+        "capability_ids": [
+          "B.AND",
+          "B.OR"
+        ],
+        "grade_id": "B"
+      }
+    ],
+    "lifecycle_state": "ADMITTED",
+    "lineage": [
+      {
+        "checkpoint_lineage_id": "lineage-current",
+        "checkpoint_receipt_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "checkpoint_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "generation": 7,
+        "generation_manifest_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "run_id": "fixture-run",
+        "topology": {
+          "architecture_id": "bamf-atlas-v2",
+          "compatibility_ref": null,
+          "context_length": 1024,
+          "feed_forward_dimension": 3072,
+          "knowledge": "EXACT",
+          "kv_heads": 8,
+          "layers": 12,
+          "model_dimension": 768,
+          "query_heads": 16,
+          "topology_schema": "bilqis.mlx.model-topology/v2",
+          "topology_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+          "view_schema_version": "bilqis.akasha.factory-topology-view/v1"
+        }
+      }
+    ],
+    "meta": {
+      "as_of": null,
+      "authority": "DERIVED",
+      "coverage": "COMPLETE",
+      "evidence_refs": [],
+      "materialized_at": 120,
+      "observed_at": null,
+      "receipt_refs": [
+        "1111111111111111111111111111111111111111111111111111111111111111",
+        "2222222222222222222222222222222222222222222222222222222222222222"
+      ],
+      "record_id": "factory-release:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "run": null,
+      "source_refs": [
+        "factory-release-manifest:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    },
+    "promoted_capability_ids": [
+      "B.AND"
+    ],
+    "qualification_receipt_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "receipt_refs": [
+      "1111111111111111111111111111111111111111111111111111111111111111",
+      "2222222222222222222222222222222222222222222222222222222222222222"
+    ],
+    "schema_version": "bilqis.bamf.mission-control.factory-cockpit-snapshot/v1",
+    "semantic_release_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "subject_kind": "FACTORY_RELEASE",
+    "subject_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  {
+    "admission_authority": "HUMAN_ONLY",
+    "admission_receipt_sha256": null,
+    "blockers": [
+      {
+        "evidence_ref": "receipt:6666666666666666666666666666666666666666666666666666666666666666",
+        "owner_ref": "issue:#320",
+        "reason": "Historical topology requires compatibility review"
+      }
+    ],
+    "candidate_sha256": null,
+    "capability_ids": [
+      "A.IDENTITY"
+    ],
+    "currency_state": "STALE",
+    "debt_capability_ids": [],
+    "delivery_status": "BLOCKED",
+    "dependency_edges": [
+      [
+        "A.IDENTITY",
+        "ROOT.IDENTITY"
+      ]
+    ],
+    "factory_release_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "grade_frontier": [],
+    "lifecycle_state": "SUPERSEDED",
+    "lineage": [
+      {
+        "checkpoint_lineage_id": "lineage-historical",
+        "checkpoint_receipt_sha256": null,
+        "checkpoint_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+        "generation": 2,
+        "generation_manifest_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "run_id": "fixture-run",
+        "topology": {
+          "architecture_id": null,
+          "compatibility_ref": "topology-compatibility:legacy-v1",
+          "context_length": null,
+          "feed_forward_dimension": null,
+          "knowledge": "HISTORICAL_COMPATIBILITY_REQUIRED",
+          "kv_heads": null,
+          "layers": null,
+          "model_dimension": null,
+          "query_heads": null,
+          "topology_schema": null,
+          "topology_sha256": null,
+          "view_schema_version": "bilqis.akasha.factory-topology-view/v1"
+        }
+      }
+    ],
+    "meta": {
+      "as_of": null,
+      "authority": "DERIVED",
+      "coverage": "COMPLETE",
+      "evidence_refs": [],
+      "materialized_at": 120,
+      "observed_at": null,
+      "receipt_refs": [
+        "6666666666666666666666666666666666666666666666666666666666666666"
+      ],
+      "record_id": "factory-release:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "run": null,
+      "source_refs": [
+        "factory-release-manifest:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      ]
+    },
+    "promoted_capability_ids": [],
+    "qualification_receipt_sha256": null,
+    "receipt_refs": [
+      "6666666666666666666666666666666666666666666666666666666666666666"
+    ],
+    "schema_version": "bilqis.bamf.mission-control.factory-cockpit-snapshot/v1",
+    "semantic_release_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "subject_kind": "FACTORY_RELEASE",
+    "subject_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  }
+]

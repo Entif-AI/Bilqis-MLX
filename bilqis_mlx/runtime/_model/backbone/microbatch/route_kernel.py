@@ -13,6 +13,7 @@ from bilqis_mlx.learning.atlas_readout.decoder.feedback import (
 )
 from bilqis_mlx.learning.atlas_salience import project_salience_heads
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+from bilqis_mlx.runtime.training_objective import REFINEMENT_ROUTING_WEIGHT
 
 from ..atlas_model_contracts import _invalid
 
@@ -205,7 +206,7 @@ def _model_feedback(previous, dependency_mask, rows):
 
 def route_microbatch_loss_and_trajectory(
         params, hidden, kernel: RouteMicrobatchKernel, *, salience_hidden=None,
-        return_logits=False):
+        refinement_routing_loss=None, return_logits=False):
     """Compute supervised loss while deriving causal route choices on device."""
     if not kernel.dependency_masks:
         result = (route_microbatch_mean_loss(
@@ -254,6 +255,12 @@ def route_microbatch_loss_and_trajectory(
         if salience_hidden is None:
             _invalid("B11_MICROBATCH_SALIENCE_HIDDEN_REQUIRED")
         row_loss = row_loss + _salience_loss(params, salience_hidden, kernel)
+    if refinement_routing_loss is not None:
+        if (not isinstance(refinement_routing_loss, mx.array)
+                or refinement_routing_loss.shape != (hidden.shape[0],)
+                or refinement_routing_loss.dtype != mx.float32):
+            _invalid("B11_MICROBATCH_REFINEMENT_ROUTING_LOSS_INVALID")
+        row_loss = row_loss + refinement_routing_loss * REFINEMENT_ROUTING_WEIGHT
     result = (mx.mean(row_loss), tuple(trajectory))
     return (*result, tuple(route_logits)) if return_logits else result
 

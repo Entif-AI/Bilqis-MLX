@@ -161,6 +161,8 @@ test("renderer protocol resolves only the checked-in Model Forensics asset allow
     "/school/curriculum-atlas-model.mjs",
     "/school/curriculum-atlas-view.mjs",
     "/school/curriculum-atlas.css",
+    "/school/factory-cockpit-view.mjs",
+    "/school/factory-live.mjs",
     "/school/school-domain-controller.mjs",
     "/school/school-live.mjs",
     "/salience/salience-fixture.mjs",

@@ -62,6 +62,60 @@ def _manifest_lineage(run_dir: Path, manifest_sha256: str) -> tuple[str, ...]:
 
 
 def read_records(run_dir: Path, manifest_sha256: str) -> tuple[dict, ...]:
+    return read_records_snapshot(run_dir, manifest_sha256)[2]
+
+
+def _path_freshness(path: Path) -> tuple:
+    if path.is_symlink() or (path.exists() and not path.is_file()):
+        _invalid("BAMF_C09_CORRECTION_LEDGER_UNSAFE")
+    if not path.exists():
+        return (False,)
+    try:
+        stat = path.stat()
+    except OSError:
+        _invalid("BAMF_C09_CORRECTION_LEDGER_INVALID")
+    return (
+        True, stat.st_dev, stat.st_ino, stat.st_size,
+        stat.st_mtime_ns, stat.st_ctime_ns,
+    )
+
+
+def _ledger_freshness_locked(run_dir: Path) -> tuple:
+    path = ledger_path(run_dir)
+    return _path_freshness(path)
+
+
+def _lineage_freshness_locked(
+    run_dir: Path, lineage: tuple[str, ...],
+) -> tuple:
+    root = Path(run_dir) / "bamf-bundles"
+    return tuple(
+        (manifest_sha256, _path_freshness(root / manifest_sha256 / "manifest.json"))
+        for manifest_sha256 in lineage
+    )
+
+
+def ledger_freshness(run_dir: Path) -> tuple:
+    """Return a lock-linearized identity for the accepted C09 event stream."""
+    with ledger_lock(run_dir):
+        return _ledger_freshness_locked(run_dir)
+
+
+def accepted_history_freshness(
+    run_dir: Path, lineage: tuple[str, ...],
+) -> tuple:
+    """Fence the event stream and the already-verified accepted lineage together."""
+    with ledger_lock(run_dir):
+        return (
+            _ledger_freshness_locked(run_dir),
+            _lineage_freshness_locked(run_dir, lineage),
+        )
+
+
+def read_records_snapshot(
+    run_dir: Path, manifest_sha256: str,
+) -> tuple[tuple, tuple[str, ...], tuple[dict, ...]]:
+    """Read and verify accepted C09 records with their exact ledger identity."""
     with ledger_lock(run_dir):
         lineage = _manifest_lineage(run_dir, manifest_sha256)
         for lineage_manifest in lineage:
@@ -72,7 +126,12 @@ def read_records(run_dir: Path, manifest_sha256: str) -> tuple[dict, ...]:
         if not path.exists():
             if any(committed_history(run_dir, item) is not None for item in lineage):
                 _invalid("BAMF_C09_CORRECTION_LEDGER_MISSING")
-            return ()
+            return (
+                (_ledger_freshness_locked(run_dir),
+                 _lineage_freshness_locked(run_dir, lineage)),
+                lineage,
+                (),
+            )
         try:
             raw = path.read_bytes()
         except OSError:
@@ -85,7 +144,12 @@ def read_records(run_dir: Path, manifest_sha256: str) -> tuple[dict, ...]:
                 tuple(item for item in records
                       if item["accepted_manifest_sha256"] == lineage_manifest),
             )
-        return records
+        return (
+            (_ledger_freshness_locked(run_dir),
+             _lineage_freshness_locked(run_dir, lineage)),
+            lineage,
+            records,
+        )
 
 
 def accepted_correction_id(
@@ -197,5 +261,7 @@ __all__ = (
     "context_frontier_from_record", "context_revalidation_record",
     "context_invalidation_from_record", "context_invalidation_record",
     "context_temporal_identity_from_record",
-    "frontier_from_record", "read_records", "revalidation_record",
+    "accepted_history_freshness", "frontier_from_record", "ledger_freshness",
+    "read_records", "read_records_snapshot",
+    "revalidation_record",
 )

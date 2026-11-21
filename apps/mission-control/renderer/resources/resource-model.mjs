@@ -1,6 +1,15 @@
 const QUERY_SCHEMA = "bilqis.bamf.control-plane.query/v1";
 const RESOURCE_SCHEMA = "bilqis.bamf.mission-control.resource-sample/v1";
 const PRESENT = "PRESENT";
+const TRAINER_SCHEMAS = new Set([
+  "bilqis.bamf.mission-control.trainer-observation/v1",
+  "bilqis.bamf.mission-control.trainer-observation/v2",
+  "bilqis.bamf.mission-control.trainer-observation/v3",
+  "bilqis.bamf.mission-control.trainer-observation/v4",
+  "bilqis.bamf.mission-control.trainer-observation/v5",
+  "bilqis.bamf.mission-control.trainer-observation/v6",
+  "bilqis.bamf.mission-control.trainer-observation/v7",
+]);
 
 function absent(units = null) {
   return Object.freeze({ state: "UNAVAILABLE", value: null, units, semantic: "UNAVAILABLE", origin: null });
@@ -20,6 +29,12 @@ function fromDatum(datum, semantic = null) {
 function derived(value, units, semantic = "DERIVED") {
   return Number.isFinite(value)
     ? Object.freeze({ state: PRESENT, value, units, semantic, origin: "DERIVED" })
+    : absent(units);
+}
+
+function observed(value, units) {
+  return Number.isFinite(value)
+    ? Object.freeze({ state: PRESENT, value, units, semantic: "OBSERVED", origin: "TRAINER_OBSERVATION" })
     : absent(units);
 }
 
@@ -43,8 +58,25 @@ export function resourceQuery(context, overrides = {}) {
     as_of: null,
     reference: null,
     cursor: null,
-    limit: 64,
+    limit: 32,
     ...overrides,
+  });
+}
+
+export function resourceRunQuery(context) {
+  return Object.freeze({
+    schema: QUERY_SCHEMA,
+    family: "run",
+    mode: "current",
+    run_id: context?.runId ?? null,
+    record_id: null,
+    schema_version: null,
+    generation: null,
+    frontier_id: null,
+    as_of: null,
+    reference: null,
+    cursor: null,
+    limit: 32,
   });
 }
 
@@ -86,20 +118,28 @@ function liveTimeline(records) {
   })));
 }
 
-export function resourceProfileFromPage(page, context) {
+export function resourceProfileFromPage(page, context, runPage = null) {
   const records = pageRecords(page);
   const latest = records.at(-1) ?? null;
+  const observation = context?.mode === "HISTORICAL" ? null : (runPage?.accepted === true && Array.isArray(runPage.records)
+    ? runPage.records.filter((record) =>
+      TRAINER_SCHEMAS.has(record?.schema_version) && record.posture === "OBSERVED" &&
+      record.meta?.run?.run_id === context?.runId)
+      .sort((a, b) => ((b.meta?.observed_at ?? 0) - (a.meta?.observed_at ?? 0)) ||
+        ((b.revision ?? 0) - (a.revision ?? 0))).at(0) ?? null
+    : null);
   const stepPerMinute = latest?.step_rate_per_minute?.state === PRESENT
     ? latest.step_rate_per_minute.value : null;
   const aggregate = Object.freeze({
     unifiedMemoryUsed: fromDatum(latest?.memory_used_bytes),
     unifiedMemoryBudget: fromDatum(latest?.memory_budget_bytes, "BUDGET_VALUE"),
     forecastMemoryPeak: absent("bytes"),
+    peakRss: observed(observation?.peak_rss_bytes, "bytes"),
     mlxAllocatedMemory: absent("bytes"),
     mlxCacheMemory: absent("bytes"),
     cpuUtilization: absent("percent"),
     preparationWorkers: absent("workers"),
-    diskFree: absent("bytes"),
+    diskFree: observed(observation?.disk_free_bytes, "bytes"),
     diskUsed: fromDatum(latest?.disk_used_bytes),
     diskReserve: absent("bytes"),
     candidateSnapshotFootprint: absent("bytes"),
@@ -116,9 +156,10 @@ export function resourceProfileFromPage(page, context) {
   });
   return Object.freeze({
     provenance: "LIVE_QUERY",
-    pageState: page?.accepted === true ? page.state : "UNAVAILABLE",
+    pageState: observation && (page?.accepted !== true || page.state === "EMPTY")
+      ? "PARTIAL" : page?.accepted === true ? page.state : "UNAVAILABLE",
     generation: context?.generation ?? latest?.meta?.run?.generation ?? null,
-    window: "accepted CP03 resource page",
+    window: observation ? "resource + observed trainer data" : "accepted CP03 resource page",
     aggregate,
     memoryDecomposition: Object.freeze([
       "model-parameters", "optimizer-state", "gradients", "engram", "activations",

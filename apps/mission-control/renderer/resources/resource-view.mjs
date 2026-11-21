@@ -8,7 +8,7 @@ import { esc, stateText, bytes, metricValue, badge, unit } from "./resource-form
 export const RESOURCE_TABS = Object.freeze(["overview", "compute", "timeline", "comparison"]);
 
 const summaryKeys = ["unifiedMemoryUsed", "unifiedMemoryBudget", "forecastMemoryPeak"];
-const computeKeys = ["mlxAllocatedMemory", "mlxCacheMemory", "cpuUtilization", "preparationWorkers", "diskFree", "diskUsed", "diskReserve", "candidateSnapshotFootprint", "acceptedStepsHour", "preparationCompileMs", "mlxWallMs", "monetaryCost"];
+const computeKeys = ["peakRss", "mlxAllocatedMemory", "mlxCacheMemory", "cpuUtilization", "preparationWorkers", "diskFree", "diskUsed", "diskReserve", "candidateSnapshotFootprint", "acceptedStepsHour", "preparationCompileMs", "mlxWallMs", "monetaryCost"];
 const lengthKeys = ["sequenceDensity", "frameDensity", "batchSize", "actualLengthP50", "actualLengthP95", "actualLengthMax"];
 const hook = id => `data-test-id="${esc(id)}"`;
 const text = (t, key, params) => esc(t(`resource.${key}`, params));
@@ -95,6 +95,9 @@ export function renderResourceMarkup(state, { historical = false, locale, messag
   const tab = RESOURCE_TABS.includes(activeTab) ? activeTab : "overview";
   if (!current) return `<div class="resource-view" ${hook("resources-view")}><section class="resource-panel"><h2>${text(t, state?.currentState === "LOADING" ? "loading" : "unavailable")}</h2>${badge(t, state?.currentState ?? "UNAVAILABLE")}<p>${text(t, state?.currentState === "LOADING" ? "loadingDetail" : "missing")}</p></section></div>`;
   const provenance = current.provenance === "FIXTURE" ? "fixture" : historical ? "historical" : "live";
+  const window = current.window === "accepted CP03 resource page" ? t("resource.acceptedWindow")
+    : current.window === "resource + observed trainer data" ? t("resource.observedWindow")
+      : current.window;
   const panels = {
     overview: summary(t, current) + decompositionPanel(t, current),
     compute: table(t, "compute", metricRows(t, current, computeKeys, "resources-compute"), "resources-compute", [
@@ -106,7 +109,7 @@ export function renderResourceMarkup(state, { historical = false, locale, messag
     timeline: timeline(t, current, locale),
     comparison: comparison(t, current, state),
   };
-  return `<div class="resource-view" ${hook("resources-view")}><header class="resource-heading"><div><span class="eyebrow">${text(t, "eyebrow")}</span><h2>${text(t, "title")}</h2></div></header><div class="resource-provenance" data-provenance="${esc(current.provenance.toLowerCase())}" ${hook("resources-provenance")}><strong>${text(t, provenance)}</strong><span>${text(t, "provenance", { generation: current.generation ?? stateText(t, "UNKNOWN"), window: current.window === "accepted CP03 resource page" ? t("resource.acceptedWindow") : current.window })}</span></div><div class="resource-tabs" role="tablist" aria-label="${text(t, "tabs.aria")}" ${hook("resources-tabs")}>${tabsMarkup(t, tab)}</div>${RESOURCE_TABS.map(id => tabPanel(id, tab, panels[id])).join("")}</div>`;
+  return `<div class="resource-view" ${hook("resources-view")}><header class="resource-heading"><div><span class="eyebrow">${text(t, "eyebrow")}</span><h2>${text(t, "title")}</h2></div></header><div class="resource-provenance" data-provenance="${esc(current.provenance.toLowerCase())}" ${hook("resources-provenance")}><strong>${text(t, provenance)}</strong><span>${text(t, "provenance", { generation: current.generation ?? stateText(t, "UNKNOWN"), window })}</span></div><div class="resource-tabs" role="tablist" aria-label="${text(t, "tabs.aria")}" ${hook("resources-tabs")}>${tabsMarkup(t, tab)}</div>${RESOURCE_TABS.map(id => tabPanel(id, tab, panels[id])).join("")}</div>`;
 }
 
 function bindResourceTabs(host, onTabChange) {

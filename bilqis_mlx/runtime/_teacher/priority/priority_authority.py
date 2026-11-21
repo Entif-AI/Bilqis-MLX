@@ -253,16 +253,6 @@ def issue_foundation_priority_authority(
     cadence = issue_active_grade_cadence(run_dir, planning_epoch, lawful_frontier)
     selection_cadence = cadence
     ready_capabilities = cadence.authorized_capability_ids
-    if cadence.disposition.value == "RECOVERY_EXHAUSTED":
-        from bilqis_mlx.runtime.lawful_teaching_frontier import (
-            issue_recovery_yield_teaching_frontier,
-        )
-        yielded = issue_recovery_yield_teaching_frontier(
-            lawful_frontier, planning_epoch, cadence)
-        if yielded is not None and yielded.ready_capability_ids:
-            lawful_frontier = yielded
-            ready_capabilities = yielded.ready_capability_ids
-            selection_cadence = None
     if not ready_capabilities:
         return AcceptedPriorityAuthority(
             None, None, planning, lawful_frontier,

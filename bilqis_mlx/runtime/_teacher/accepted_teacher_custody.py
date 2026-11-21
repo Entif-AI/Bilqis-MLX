@@ -7,7 +7,9 @@ from dataclasses import dataclass, field, replace
 import json
 from pathlib import Path
 
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+    candidate_identity_for_canonical_consumer,
+)
 from bilqis_mlx.learning.atlas_candidate import CandidateState, CandidateTransaction
 from bilqis_mlx.learning.teacher_lineage import (
     TeacherCustodyProjection, advance_teacher_lineage, bind_next_teacher_epoch,
@@ -34,7 +36,8 @@ from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
 
 from .accepted_teacher_state import (
     _bank_identity, _c03_projection, _plasticity_identity,
-    _student_region, rebind_package_import_teacher_custody,
+    _student_region, rebind_accepted_teacher_custody,
+    rebind_package_import_teacher_custody,
 )
 
 _BOUND_VISIT_ISSUER = object()
@@ -140,7 +143,8 @@ def select_accepted_teacher_visit(
     projection = current_teacher_projection(run_dir, parent, cache, projection)
     epoch = restore_teacher_lineage(projection.teacher_state)
     school_student = getattr(getattr(school, "current_student", None), "sha256", None)
-    if school_student != candidate_identity_digest(parent.retained_state):
+    if school_student != candidate_identity_for_canonical_consumer(
+            parent.retained_state):
         invalid("TEACHER_SELECTION_STUDENT_DRIFT")
     teacher = epoch.teacher()
     key, policy, metadata = select_visit_policy(
@@ -186,7 +190,7 @@ def _require_current_visit(
         projection.__post_init__()
         identity.__post_init__()
         if candidate_identity_sha256 is None:
-            candidate_identity_sha256 = candidate_identity_digest(
+            candidate_identity_sha256 = candidate_identity_for_canonical_consumer(
                 parent.retained_state)
         if (parent.run_identity is None
                 or identity.run_identity_sha256 != parent.run_identity.digest
@@ -211,7 +215,8 @@ def _require_current_visit(
         accepted_manifest_sha256=cache.accepted_manifest_sha256,
         capability_id=identity.capability_id, policy_key=identity.policy_key)
     if candidate_identity_sha256 is None:
-        candidate_identity_sha256 = candidate_identity_digest(parent.retained_state)
+        candidate_identity_sha256 = candidate_identity_for_canonical_consumer(
+            parent.retained_state)
     if (identity != expected
             or identity.student_sha256 != candidate_identity_sha256):
         invalid("TEACHER_VISIT_ACCEPTED_GENERATION_DRIFT")
@@ -248,7 +253,7 @@ def derive_c03_successor_bundle(
             delivery_events=delivery_events)
     bank_identity = _bank_identity(successor)
     plasticity_identity = _plasticity_identity(retained_state)
-    student_sha = candidate_identity_digest(retained_state)
+    student_sha = candidate_identity_for_canonical_consumer(retained_state)
     student = {
         "schema": _STUDENT_SCHEMA,
         "student_sha256": student_sha,
@@ -274,5 +279,6 @@ def derive_c03_successor_bundle(
 __all__ = (
     "BoundTeacherVisit",
     "current_teacher_projection", "derive_c03_successor_bundle",
+    "rebind_accepted_teacher_custody",
     "rebind_package_import_teacher_custody",
 )

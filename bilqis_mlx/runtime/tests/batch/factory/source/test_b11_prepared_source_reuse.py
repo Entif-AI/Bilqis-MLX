@@ -1,7 +1,8 @@
 """#1273 B11 consumes prepared source proofs instead of replaying cold owners."""
+import importlib
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -13,6 +14,9 @@ from bilqis_mlx.runtime.b11_source_execution_authority import (
 )
 from bilqis_mlx.runtime.b11_source_execution_binding import (
     bind_prepared_motif_context, bind_prepared_source_handoff,
+)
+from bilqis_mlx.runtime.factory_training_source import (
+    _PreparedB11SourceBinding, _prepared_b11_compiled_input,
 )
 from bilqis_mlx.semantics.context_eligibility import SourceFrontier, TaskScope
 from bilqis_mlx.semantics.frame_adapters import MICRO_PREDICATE_ADAPTER
@@ -95,3 +99,39 @@ def test_caller_minted_prepared_artifacts_are_not_a_sealed_proof():
                 source_witness="caller", motif_projection="caller",
                 motif_frontier="caller"),
             SimpleNamespace(source_row={}), SimpleNamespace())
+
+
+def test_prepared_b11_binding_reuses_compiled_encoder_input_with_live_owner_check():
+    prefix = SimpleNamespace(positions=(1, 2))
+    config = object()
+    source = object()
+    authority = object()
+    owner = object()
+    features = object()
+    extents = object()
+    compiled_rows = SimpleNamespace(rows=(prefix,))
+    prepared = _PreparedB11SourceBinding(prefix, config, source, authority)
+    cached = SimpleNamespace(
+        compiled=compiled_rows,
+        compiler_configs=(config,),
+        features=features,
+        extents=extents,
+        packed_frame_artifact_owner=owner,
+        source_asts=None,
+        partial_forest_receipts=None,
+        __post_init__=Mock(),
+    )
+    implementation = importlib.import_module(_prepared_b11_compiled_input.__module__)
+    with patch.object(
+            implementation, "CompiledFrameRows", return_value=compiled_rows), patch(
+                "bilqis_mlx.learning.frame_encoder.compiled."
+                "_compiled_encoder_input_with_packed_owner",
+                return_value=cached) as constructor:
+        first = _prepared_b11_compiled_input(
+            prepared, features, extents, owner)
+        second = _prepared_b11_compiled_input(
+            prepared, features, extents, owner)
+
+    assert second is first is cached
+    constructor.assert_called_once()
+    cached.__post_init__.assert_called_once()

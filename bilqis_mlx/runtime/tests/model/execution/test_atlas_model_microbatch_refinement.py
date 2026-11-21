@@ -6,9 +6,11 @@ import unittest
 import mlx.core as mx
 import numpy as np
 
-from bilqis_mlx.runtime.atlas_refinement import _refine_frame
+from bilqis_mlx.runtime.atlas_refinement import _refine_frame, masked_routing_loss
 from bilqis_mlx.runtime.autodiff_trace import defer_host_tensor_validation
-from bilqis_mlx.runtime.microbatch.refinement_kernel import _batched_refine_slot
+from bilqis_mlx.runtime.microbatch.refinement_kernel import (
+    _batched_refine_slot, batched_refinement_routing_loss,
+)
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 
 
@@ -69,6 +71,35 @@ class MicrobatchRefinementKernelTests(unittest.TestCase):
                 np.testing.assert_allclose(
                     np.asarray(batch_gradients[name]), np.asarray(scalar_gradients[name]),
                     atol=FP32_ATOL, rtol=FP32_RTOL)
+
+    def test_batched_routing_loss_matches_scalar_per_row_mean(self):
+        logits_one = mx.array((
+            (0.2, 0.4, 0.1),
+            (0.5, 0.1, 0.2),
+            (0.3, 0.6, 0.4),
+        ), dtype=mx.float32)
+        logits_two = mx.array((
+            (0.7, 0.2, 0.1),
+            (0.2, 0.3, 0.8),
+            (0.4, 0.1, 0.5),
+        ), dtype=mx.float32)
+        routing = (
+            (logits_one, mx.array((0, 1, 2), dtype=mx.int32),
+             mx.array((True, True, True), dtype=mx.bool_)),
+            (logits_two, mx.array((2, 0, 1), dtype=mx.int32),
+             mx.array((True, False, True), dtype=mx.bool_)),
+        )
+
+        observed = batched_refinement_routing_loss(routing, 3)
+        expected = mx.stack((
+            (masked_routing_loss(logits_one[0], 0)
+             + masked_routing_loss(logits_two[0], 2)) / 2,
+            masked_routing_loss(logits_one[1], 1),
+            (masked_routing_loss(logits_one[2], 2)
+             + masked_routing_loss(logits_two[2], 1)) / 2,
+        ))
+        np.testing.assert_allclose(
+            np.asarray(observed), np.asarray(expected), atol=FP32_ATOL, rtol=FP32_RTOL)
 
 
 if __name__ == "__main__":

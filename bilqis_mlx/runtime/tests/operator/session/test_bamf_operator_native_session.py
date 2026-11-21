@@ -8,6 +8,9 @@ from unittest.mock import patch
 from bilqis_mlx.runtime.bamf_operator.session import (
     _execution_context, prepare_bamf_visit,
 )
+from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import (
+    priority_hold_result,
+)
 from bilqis_mlx.runtime.tests.operator.test_bamf_operator_session import (
     _assert_horizon_result, _candidate_executor, _evidence_receipt,
     _prepare_native_resource_visit,
@@ -166,3 +169,112 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
                 _execution_context(Path("/run")),
                 (parent, context, "/atlas", "/feature"))
         self.assertIs(context._accepted_feature_context, authenticated)
+
+    def test_recovery_exhaustion_rearms_same_grade_without_certification(self):
+        parent = object()
+        context = object()
+        authorization = object()
+        lawful_frontier = object()
+        selection = SimpleNamespace(
+            status="HELD",
+            metadata={"cadence": {"disposition": "RECOVERY_EXHAUSTED"}},
+            holds=(),
+            exclusions=(),
+        )
+        progress = []
+
+        with patch(
+                "bilqis_mlx.runtime.grade_certification.run_grade_boundary_certification",
+                return_value=SimpleNamespace(status="SUCCEEDED")) as certify, patch(
+                "bilqis_mlx.runtime.accepted_priority_visit_contracts."
+                "require_priority_cadence_authorization",
+                return_value=authorization), patch(
+                "bilqis_mlx.runtime.accepted_priority_visit_contracts."
+                "require_priority_lawful_frontier",
+                return_value=lawful_frontier), patch(
+                "bilqis_mlx.runtime.active_grade_cadence."
+                "rearm_active_grade_acquisition") as rearm:
+            prepared = priority_hold_result(
+                Path("/run"), selection, context, parent, Path("/atlas"), 0.0,
+                progress.append,
+                emit_progress=lambda sink, message: sink(message),
+            )
+
+        self.assertEqual(prepared.status, "ACQUISITION_REARMED")
+        self.assertIs(prepared.parent, parent)
+        rearm.assert_called_once_with(
+            Path("/run"), authorization, lawful_frontier)
+        certify.assert_not_called()
+        self.assertIn(
+            "active grade recovery exhausted; rearmed ordinary MAIN acquisition",
+            progress,
+        )
+
+    def test_genuine_current_grade_hold_remains_terminal(self):
+        parent = object()
+        selection = SimpleNamespace(
+            status="HELD",
+            metadata={"cadence": {"disposition": "HELD"}},
+            holds=(("A.BLOCKED", "SOURCE_HELD"),),
+            exclusions=(),
+        )
+
+        with patch(
+                "bilqis_mlx.runtime.grade_certification.run_grade_boundary_certification") as certify, patch(
+                "bilqis_mlx.runtime.active_grade_cadence."
+                "rearm_active_grade_acquisition") as rearm:
+            prepared = priority_hold_result(
+                Path("/run"), selection, object(), parent, Path("/atlas"), 0.0,
+                None, emit_progress=lambda _sink, _message: None,
+            )
+
+        self.assertEqual(prepared.status, "HELD")
+        self.assertIs(prepared.parent, parent)
+        certify.assert_not_called()
+        rearm.assert_not_called()
+
+    def test_successful_grade_completion_refreshes_a09_only_at_boundary_before_c07(self):
+        parent = object()
+        context = object()
+        selection = SimpleNamespace(
+            status="HELD",
+            metadata={"cadence": {"disposition": "GRADE_COMPLETE"}},
+            holds=(),
+            exclusions=(),
+        )
+        progress = []
+        order = []
+        evidence = SimpleNamespace(
+            measured=2, passed=2, final_action="QUALIFICATION")
+
+        with patch(
+                "bilqis_mlx.runtime.grade_certification.run_grade_boundary_certification",
+                return_value=SimpleNamespace(
+                    status="SUCCEEDED",
+                    receipt=SimpleNamespace(receipt_sha256="c" * 64))), patch(
+                "bilqis_mlx.runtime.bamf_operator.accepted_learning_evidence."
+                "refresh_accepted_learning_evidence",
+                side_effect=lambda *_args, **_kwargs: (
+                    order.append("A09") or evidence)) as refresh, patch(
+                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
+                "adopt_and_activate_certified_successor",
+                side_effect=lambda *_args, **_kwargs: (
+                    order.append("C07") or True)) as adopt:
+            prepared = priority_hold_result(
+                Path("/run"), selection, context, parent, Path("/atlas"), 0.0,
+                progress.append,
+                emit_progress=lambda sink, message: sink(message),
+            )
+
+        self.assertEqual(prepared.status, "GRADE_TRANSITIONED")
+        self.assertEqual(order, ["A09", "C07"])
+        refresh.assert_called_once_with(Path("/run"), progress=progress.append)
+        adopt.assert_called_once_with(
+            Path("/run"), context,
+            certification_receipt_sha256="c" * 64,
+            reserve_gib=0.0,
+        )
+        self.assertIn(
+            "grade boundary learner evidence refresh: 2 measured, 2 passed; next QUALIFICATION",
+            progress,
+        )

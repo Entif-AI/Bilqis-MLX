@@ -41,10 +41,14 @@ class SnapshotsView:
     def _curriculum_snapshot(self):
         rows=self._section_rows("GRADES & MASTERY")
         summaries=[row for row in rows if row.get('row_type')=='summary']
+        authoritative_summaries=[
+            row for row in summaries
+            if row.get('_bamf_terminal_observed') is not True
+        ]
         full=self.grade_program or tuple(dict.fromkeys(
             row.get('grade') for row in summaries if row.get('grade')))
         latest=max(
-            summaries,
+            authoritative_summaries,
             key=lambda row:(
                 row.get('attempt') if type(row.get('attempt')) is int else -1,
                 row.get('step') if type(row.get('step')) is int else -1,
@@ -54,8 +58,17 @@ class SnapshotsView:
         return {
             'exam':latest.get('attempt','-'),
             'grades':len(full),
-            'capabilities':sum(
-                row.get('row_type')!='summary' for row in rows),
+            'capabilities':(
+                sum(row.get('row_type')!='summary' for row in rows
+                    if row.get('_bamf_terminal_observed') is not True)
+                if any(row.get('row_type')!='summary' and
+                       row.get('_bamf_terminal_observed') is not True
+                       for row in rows)
+                else '-' if any(row.get('row_type')!='summary' and
+                                row.get('_bamf_terminal_observed') is True
+                                for row in rows)
+                else 0
+            ),
         }
 
     def _same_student_snapshot(self):

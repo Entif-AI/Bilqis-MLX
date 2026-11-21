@@ -7,7 +7,9 @@ import hashlib
 import json
 
 from bilqis_mlx.factory.generation import runtime_adapter_for_release
-from bilqis_mlx.runtime.atlas_model_contracts import BamfCompiledBatch
+from bilqis_mlx.runtime.atlas_model_contracts import (
+    BamfCompiledBatch, _reissue_validated_task_authority,
+)
 from bilqis_mlx.runtime.source_execution import (
     SourceExecutionContext, source_content_digest,
 )
@@ -20,7 +22,8 @@ from bilqis_mlx.semantics.domains import contract_digest
 
 from .capability_evaluation import _invalid
 from .factory_task_template import (
-    FactoryTaskTemplate, _source_view, factory_task_template,
+    FactoryTaskTemplate, _factory_task_template_from_validated, _source_view,
+    factory_task_template,
     validate_factory_task_template,
 )
 from bilqis_mlx.source_adapters.task_goal_registry import require_task_goal_lowerer
@@ -144,7 +147,7 @@ def factory_task_authority(
             source_context.source_registry,
             compiled_batch.sources[0],
         )
-    template = factory_task_template(source_context, compiled_batch)
+    template = _factory_task_template_from_validated(source_context, compiled_batch)
     source_row_sha256 = source_content_digest((compiled_batch.sources[0].source_row,))
     generation_binding, release_sha256, training_sha256 = _generation_authority(
         source_context, compiled_batch, template.source_row_id,
@@ -233,9 +236,21 @@ def bind_factory_task_compiled_batch(
     if (type(compiled_batch) is not BamfCompiledBatch
             or type(authority) is not FactoryTaskAuthority):
         _invalid("BAMF_C04_B11_TASK_AUTHORITY_BINDING_INVALID")
-    authority.__post_init__()
     compiled_batch.__post_init__()
-    return replace(compiled_batch, task_authority=authority)
+    authority.__post_init__()
+    return _reissue_validated_task_authority(compiled_batch, authority)
+
+
+def _bind_validated_factory_task_compiled_batch(
+    compiled_batch: BamfCompiledBatch,
+    authority: FactoryTaskAuthority,
+) -> BamfCompiledBatch:
+    """Fast internal bind after ``factory_task_authority`` validated this batch."""
+    if (type(compiled_batch) is not BamfCompiledBatch
+            or type(authority) is not FactoryTaskAuthority):
+        _invalid("BAMF_C04_B11_TASK_AUTHORITY_BINDING_INVALID")
+    authority.__post_init__()
+    return _reissue_validated_task_authority(compiled_batch, authority)
 
 
 __all__ = (

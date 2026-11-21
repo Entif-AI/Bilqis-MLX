@@ -29,7 +29,7 @@ export function memoryQuery(context, overrides = {}) {
     as_of: null,
     reference: null,
     cursor: null,
-    limit: 64,
+    limit: 32,
     ...overrides,
   });
 }

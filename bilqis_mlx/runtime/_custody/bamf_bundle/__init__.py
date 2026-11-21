@@ -1,6 +1,13 @@
 """Versioned BAMF generation bundle custody."""
 from importlib import import_module
+from pathlib import Path
 from types import MappingProxyType
+
+# Keep low-level compatibility helpers out of the package's direct-module
+# surface without changing their established import names. Python resolves
+# modules found on an extended package path under the same package fullname,
+# so existing callers and relative imports retain their identity.
+__path__.append(str(Path(__file__).parent / "_support"))
 
 from .codec import load_bamf_bundle, save_bamf_bundle
 from .feature_authority import (
@@ -28,6 +35,7 @@ from .package_import_transition import PackageImportTransition
 from .motif.source_continuation import (
     SourceQualifiedMotifContinuation,
     continue_source_qualified_motifs_from_bundle,
+    seal_source_qualified_motif_batch_from_accepted_parent,
     seal_source_qualified_motif_batch_from_bundle,
     seal_source_qualified_motifs_from_bundle,
     stage_source_qualified_motif_allocation,
@@ -70,6 +78,7 @@ __all__ = (
     "BAMF_BUNDLE_SCHEMA", "BAMF_POINTER_SCHEMA", "BamfBundleCandidate",
     "BamfGenerationManifest", "CompleteStudent", "save_bamf_bundle", "load_bamf_bundle",
     "continue_source_qualified_motifs_from_bundle",
+    "seal_source_qualified_motif_batch_from_accepted_parent",
     "seal_source_qualified_motif_batch_from_bundle",
     "seal_source_qualified_motifs_from_bundle",
     "stage_source_qualified_motif_allocation",

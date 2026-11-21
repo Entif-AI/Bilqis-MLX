@@ -1,5 +1,6 @@
 """B07 retained-allocation materialization at the B12 candidate boundary."""
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
@@ -31,13 +32,32 @@ class CandidateMotifAllocationTests(
             1, 1, "a" * 64, proposal.proposed.manifest.digest, "c" * 64)
         continuation = self._continuation(proposal)
 
-        with self._shape_patches(), self._continuation_patch(continuation):
+        with (self._shape_patches(), self._continuation_patch(continuation),
+              patch(
+                  "bilqis_mlx.learning.atlas_acceptance.candidate_identity_digest",
+                  side_effect=AssertionError("motif staging rehashed accepted parent"))):
             staged = _stage_candidate_motif_allocation(
                 transaction, continuation, spec=self.spec,
                 parent_extents=self.extents, candidate_extents=successor_extents,
                 run_seed=17)
 
         self.assertEqual(staged.allocations, proposal.proposed)
+        self.assertEqual(
+            staged._parent_identity_sha256, transaction._parent_identity_sha256)
+        self.assertEqual(staged._parent_guard, transaction._parent_guard)
+        self.assertIs(
+            staged.optimizer.parameters[IDENTITY],
+            transaction.optimizer.parameters[IDENTITY])
+        self.assertIs(staged.optimizer.m[IDENTITY], transaction.optimizer.m[IDENTITY])
+        self.assertIs(staged.optimizer.v[IDENTITY], transaction.optimizer.v[IDENTITY])
+        self.assertIs(
+            staged.optimizer.update_counts[IDENTITY],
+            transaction.optimizer.update_counts[IDENTITY])
+        self.assertIs(staged.optimizer.m[MOTIF], transaction.optimizer.m[MOTIF])
+        self.assertIs(staged.optimizer.v[MOTIF], transaction.optimizer.v[MOTIF])
+        self.assertIs(
+            staged.optimizer.update_counts[MOTIF],
+            transaction.optimizer.update_counts[MOTIF])
         self.assertEqual(self.parent.allocations, transaction.parent.allocations)
         expected = initialize_planned_motif_slot(
             proposal.view, 0, run_seed=17, topology=self.spec,
@@ -95,6 +115,11 @@ class CandidateMotifAllocationTests(
             self.assertEqual(transition.candidate_extents.motif_page_count, 2)
             self.assertEqual(set(staged.optimizer.parameters),
                              {IDENTITY, MOTIF, "motif.page.1"})
+            for tree_name in ("parameters", "m", "v", "update_counts"):
+                staged_tree = getattr(staged.optimizer, tree_name)
+                parent_tree = getattr(transaction.optimizer, tree_name)
+                self.assertIs(staged_tree[IDENTITY], parent_tree[IDENTITY])
+                self.assertIs(staged_tree[MOTIF], parent_tree[MOTIF])
             np.testing.assert_array_equal(
                 np.asarray(staged.optimizer.parameters[MOTIF]), before_page)
             np.testing.assert_array_equal(np.asarray(staged.optimizer.m[MOTIF]), before_m)

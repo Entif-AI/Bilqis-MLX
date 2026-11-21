@@ -22,7 +22,7 @@ class RenderView:
         exam=curriculum['exam']
         visits=state.get('visits')
         teacher=state.get('teacher')
-        retained=state.get("retained_visits",0)
+        retained=state.get("retained_visits")
         student=self._same_student_snapshot()
         latest="-"
         best="-"
@@ -172,6 +172,8 @@ class RenderView:
     def draw(self):
         self.dirty=False
         try:
+            from ..bamf_terminal_projection import refresh_bamf_terminal_projection
+            refresh_bamf_terminal_projection(self)
             self._sample_step_rate()
             if self.stream.isatty():
                 self.stream.write("\x1b[H\x1b[2J"+self.render()+"\x1b[J")

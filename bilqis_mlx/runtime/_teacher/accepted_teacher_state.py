@@ -5,14 +5,16 @@ from collections.abc import Mapping
 import hashlib
 import json
 
-from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+    candidate_identity_for_canonical_consumer,
+)
 from bilqis_mlx.learning.atlas_candidate import CandidateState
 from bilqis_mlx.learning.teacher_lineage import (
     TeacherCustodyProjection, advance_teacher_lineage, bind_next_teacher_epoch,
     initialize_teacher_lineage, restore_teacher_lineage,
 )
 from bilqis_mlx.learning._teaching.teacher_lineage_records import invalid
-from bilqis_mlx.runtime.bamf_bundle import CompleteStudent
+from bilqis_mlx.runtime.bamf_bundle import BamfBundleCandidate, CompleteStudent
 from bilqis_mlx.runtime.bamf_bundle.factory_release_adoption import (
     is_factory_release_adoption_transition,
     validate_factory_release_adoption_transition,
@@ -26,7 +28,7 @@ from bilqis_mlx.semantics.domains import contract_digest
 _STUDENT_SCHEMA = "bilqis.bamf.student-reference/v1"
 
 
-def _bank_identity(student: CompleteStudent) -> str:
+def _bank_identity(student: BamfBundleCandidate) -> str:
     banks = student.semantic_abi.get("bank_identities")
     if not isinstance(banks, (tuple, list)) or not banks:
         invalid("TEACHER_STUDENT_BANK_IDENTITY_INVALID")
@@ -50,9 +52,10 @@ def _student_region(student_sha256: str, bank_identity: str,
     return hashlib.sha256(json.dumps(binding, sort_keys=True).encode()).hexdigest()
 
 
-def _student_reference(student: CompleteStudent, state: CandidateState | None = None) -> dict:
+def _student_reference(
+        student: BamfBundleCandidate, state: CandidateState | None = None) -> dict:
     retained = student.retained_state if state is None else state
-    student_sha = candidate_identity_digest(retained)
+    student_sha = candidate_identity_for_canonical_consumer(retained)
     bank_identity = _bank_identity(student)
     plasticity_identity = _plasticity_identity(retained)
     return {
@@ -113,25 +116,36 @@ def _c03_projection(parent: CompleteStudent, *, legacy_receipt, adaptation,
         next_seed=state["next_seed"], cursor=state["cursor"])
 
 
-def rebind_package_import_teacher_custody(
-        parent: CompleteStudent, retained_state: CandidateState,
+def rebind_accepted_teacher_custody(
+        parent: CompleteStudent, retained_state: CandidateState, *,
+        successor: BamfBundleCandidate | None = None,
 ) -> TeacherCustodyProjection | None:
-    """Rebind mature recipient teacher custody after an accepted package import."""
+    """Rebind mature C03 custody to a non-teaching accepted successor student."""
     if type(parent) is not CompleteStudent or type(retained_state) is not CandidateState:
+        invalid("TEACHER_STUDENT_BINDING_INVALID")
+    if successor is not None and not isinstance(successor, BamfBundleCandidate):
         invalid("TEACHER_STUDENT_BINDING_INVALID")
     state = dict(parent.teacher_state)
     if "c03_lineage" not in state:
         return None
     _require_current_c03_lineage(parent, state)
-    student = _student_reference(parent, retained_state)
+    student_owner = parent if successor is None else successor
+    student = _student_reference(student_owner, retained_state)
     next_epoch = bind_next_teacher_epoch(
-        state, student, bank_identity=_bank_identity(parent),
+        state, student, bank_identity=_bank_identity(student_owner),
         plasticity_identity=_plasticity_identity(retained_state))
     return advance_teacher_lineage(
         state, next_epoch, next_seed=state["next_seed"], cursor=state["cursor"])
 
 
+def rebind_package_import_teacher_custody(
+        parent: CompleteStudent, retained_state: CandidateState,
+) -> TeacherCustodyProjection | None:
+    """Compatibility wrapper for package-import callers."""
+    return rebind_accepted_teacher_custody(parent, retained_state)
+
+
 __all__ = (
     "_bank_identity", "_c03_projection", "_plasticity_identity",
-    "rebind_package_import_teacher_custody",
+    "rebind_accepted_teacher_custody", "rebind_package_import_teacher_custody",
 )

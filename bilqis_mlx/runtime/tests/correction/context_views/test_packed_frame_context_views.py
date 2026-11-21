@@ -1,6 +1,7 @@
 """Packed-frame physical identity versus scoped context-view custody."""
 from dataclasses import replace
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.tests.frames.nested_fixtures import _case as _nested_case
@@ -100,6 +101,16 @@ class PackedFrameContextViewTests(unittest.TestCase):
             caught.exception.context["reason"],
             "BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT",
         )
+
+    def test_exact_owner_row_reuses_precomputed_static_dependency_identity(self):
+        _ast, _config, compiled, _vectors, _params = _nested_case()
+        owner = compiled.packed_frame_artifact_owner
+        row = compiled.compiled.rows[0]
+        with patch(
+                "bilqis_mlx.runtime.atlas_packed_frame_owner._packed_frame_node",
+                side_effect=AssertionError("static packed-frame identity rebuilt")):
+            current = owner.require_row(row)
+        self.assertTrue(current)
 
 
 if __name__ == "__main__":

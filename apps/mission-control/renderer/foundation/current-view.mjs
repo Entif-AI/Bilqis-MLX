@@ -61,16 +61,19 @@ export function renderCurrentView(
   if (state.view === "mission-control") {
     domain.hidden = false;
     summary.textContent = t("shell.destination.mission-control.purpose");
+    domain.innerHTML = "";
     return;
   }
   if (state.view === "atlas") {
     domain.hidden = false;
     summary.textContent = t("shell.destination.atlas.purpose");
+    domain.innerHTML = "";
     return;
   }
   if (state.view === "capability") {
     domain.hidden = false;
     summary.textContent = t("shell.destination.capability.purpose");
+    domain.innerHTML = "";
     return;
   }
   if (state.view === "model") {
@@ -215,6 +218,7 @@ export function renderCurrentView(
   if (state.view === "resources") {
     domain.hidden = false;
     summary.textContent = t("shell.destination.resources.purpose");
+    domain.innerHTML = "";
     return;
   }
   if (state.view === "operate") {

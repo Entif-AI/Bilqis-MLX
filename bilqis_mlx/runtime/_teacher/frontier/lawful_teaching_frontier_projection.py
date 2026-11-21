@@ -42,6 +42,14 @@ def _semantic_ids(release, capability_id: str) -> tuple[str, ...]:
     return tuple(sorted(identities))
 
 
+def _grade_semantic_ids(release, capability_id: str) -> tuple[str, ...]:
+    """Return semantic identities that define frozen generated-grade membership."""
+    try:
+        return (candidate_realizations.realized_atlas_semantic_id(capability_id),)
+    except ValueError:
+        return _semantic_ids(release, capability_id)
+
+
 def _holds_for_capability(
         capability_id, semantic_ids, execution, snapshot, closure, plan,
         mastered, *, semantic_scope_complete=True):
@@ -115,7 +123,7 @@ def _capabilities(
     execution_map = release.execution_plan.capability_map
     projected = (
         tuple(
-            (capability_id, _semantic_ids(release, capability_id))
+            (capability_id, _grade_semantic_ids(release, capability_id))
             for capability_id in sorted(execution_map))
         if active_members is None else tuple(active_members))
     capability_ids = tuple(capability_id for capability_id, _ in projected)
@@ -129,7 +137,7 @@ def _capabilities(
         execution = execution_map[capability_id]
         if capability_id not in curriculum or capability_id not in bindings:
             _invalid("BAMF_LEARNER_FRONTIER_RELEASE_IDENTITY_INVALID")
-        available_semantics = set(_semantic_ids(release, capability_id))
+        available_semantics = set(_grade_semantic_ids(release, capability_id))
         if (len(set(semantic_ids)) != len(semantic_ids)
                 or not set(semantic_ids).issubset(available_semantics)):
             _invalid("BAMF_ACTIVE_GENERATED_GRADE_MEMBER_DRIFT")
@@ -157,48 +165,6 @@ def _capabilities(
     return tuple(result)
 
 
-def _recovery_yield_capabilities(
-        release, snapshot, closure, plan, mastered, *, active_capability_ids):
-    """Project the next admitted grade after an exhausted active-grade window."""
-    active = set(active_capability_ids)
-    if not active:
-        return ()
-    grades = tuple(getattr(release.execution_plan, "grades", ()))
-    positions = tuple(
-        index for index, grade in enumerate(grades)
-        if active & set(grade.capabilities)
-    )
-    if not positions:
-        return ()
-    for grade in grades[max(positions) + 1:]:
-        members = tuple(
-            (capability_id, _semantic_ids(release, capability_id))
-            for capability_id in grade.capabilities
-        )
-        capabilities = _capabilities(
-            release, snapshot, closure, plan, mastered,
-            active_members=members,
-        )
-        if any(
-                item.disposition is LawfulTeachingDisposition.READY
-                for item in capabilities):
-            return capabilities
-    return ()
-
-
-def _recovery_yield_exclusions(active_frontier, release, capabilities):
-    yielded = {item.capability_id for item in capabilities}
-    retained = tuple(
-        item for item in active_frontier.exclusions
-        if item.capability_id not in yielded
-    )
-    yielded_holds = tuple(
-        item for item in _exclusions(release, capabilities)
-        if item.capability_id in yielded
-    )
-    return (*retained, *yielded_holds)
-
-
 def _exclusions(release, capabilities) -> tuple[LawfulTeachingExclusion, ...]:
     codes = {
         LawfulTeachingDisposition.EVIDENCE_COMPLETE:
@@ -224,7 +190,7 @@ def _exclusions(release, capabilities) -> tuple[LawfulTeachingExclusion, ...]:
     for capability_id in sorted(set(execution_map) - active_ids):
         result.append(LawfulTeachingExclusion(
             capability_id,
-            _semantic_ids(release, capability_id),
+            _grade_semantic_ids(release, capability_id),
             LawfulTeachingExclusionCode.FUTURE_GENERATED_GRADE,
             (),
         ))
@@ -242,7 +208,8 @@ def _active_member_projection(release, active):
         if (capability_id not in execution or capability_id not in curriculum
                 or capability_id not in bindings
                 or bindings[capability_id].source_anchor != member.source_anchor
-                or member.semantic_id not in _semantic_ids(release, capability_id)):
+                or member.semantic_id not in _grade_semantic_ids(
+                    release, capability_id)):
             _invalid("BAMF_ACTIVE_GENERATED_GRADE_MEMBER_DRIFT")
         if capability_id not in by_capability:
             by_capability[capability_id] = []

@@ -39,9 +39,11 @@ def _add_bamf_foundation_args(parser) -> None:
     add_atlas_admission_arguments(
         parser, admission_policy_action=_AdmissionPolicyExplicitStore)
     parser.add_argument('--atlas-release-manifest', type=Path,
-                        help='Pinned Atlas release manifest for a BAMF semantic foundation.')
+                        help=('Optional pinned Atlas release override; omitted fresh creates use '
+                              'the repository-packaged foundation manifest.'))
     parser.add_argument('--source-run-dir', type=Path, action=_FoundationExplicitStore,
-                        help='Accepted source learner used to derive a fresh BAMF foundation.')
+                        help=('Accepted source learner used to derive a fresh BAMF foundation. '
+                              'Omit it to use the repository-packaged read-only source seed.'))
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--factory-profile-release", type=Path,

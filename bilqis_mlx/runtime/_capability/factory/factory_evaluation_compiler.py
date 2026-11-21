@@ -140,7 +140,7 @@ def compile_factory_evaluation_batch(
     profile_parameters = (dict(execution.provider_parameters)
                           if execution.provider_parameters else None)
     source_graph = canonical_graph_for(
-        row.get("generator"), source_context.source_root)
+        row.get("generator"), source_context.source_root, row=row)
     task, frontier, policy = _evaluation_context(
         authenticated.features.semantic_release,
         row["capability"], len(row["tokens"]),

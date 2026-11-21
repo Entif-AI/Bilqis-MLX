@@ -11,7 +11,7 @@
 
 Bilqis MLX is an Apple Silicon-native cognitive learner and training system built around MLX. It combines a source-grounded semantic substrate, a generative curriculum Factory, a continually extensible neural learner, retention-aware training, durable checkpoint custody, a local control plane, and the Model Forensics desktop interface.
 
-The current system is the **BAMF-0.2 owner-operated alpha**. It is designed to learn source-qualified capabilities while preserving accepted knowledge and exact optimizer lineage. The repository is public; model weights, optimizer state, source-authority material, and live run data are not stored in Git.
+The current runtime is an **owner-operated BAMF-derived alpha**. Its current desired-state architecture is [BMF-0.3-SPEC v0.3.8](https://docs.google.com/document/d/1-rQ2U8RuUFNNPFdPOV0kDFMWrcIWPbzNZpNx2E9_6BM/edit), while the BAMF-0.2 documents remain historical implementation provenance. Bilqis is designed to learn source-qualified capabilities while preserving accepted knowledge and exact optimizer lineage. The repository is public; model weights, optimizer state, private source-authority signer material, and live run data are not stored in Git.
 
 If you want to run the software rather than study its architecture, start with the [setup and operator guide](docs/operations/OPERATOR_GUIDE.md).
 
@@ -34,7 +34,7 @@ The repository contains the model and the local learning system around it:
 - **Model Forensics:** an Electron desktop cockpit for inspection and owner-authorized trainer operations.
 - **Historical compatibility:** frozen predecessor code and source-oracle material under vendor/legacy-v16. New development belongs in bilqis_mlx.
 
-The architectural contract is [BAMF-0.2](docs/architecture/BAMF_0_2.md), including `ADR-BAMF02-004` for the functional recursive Factory. Numbered specifications under [docs/specifications](docs/specifications/) own normative behavior.
+The current desired-state contract is **BMF-0.3-SPEC v0.3.8**. The checked-in [BAMF-0.2 architecture](docs/architecture/BAMF_0_2.md) and its ADRs remain useful historical evidence but are not the current design target by default. Numbered specifications under [docs/specifications](docs/specifications/) and live accepted repository authorities govern implemented behavior where they are more specific.
 
 ## What runs today
 
@@ -89,7 +89,7 @@ npm run bamf:test
 npm run bamf:security:test
 ~~~
 
-For the complete setup matrix, including what a bare clone can and cannot provision, see [Setup and operation](docs/operations/OPERATOR_GUIDE.md).
+For the complete setup matrix, including the one host-level authority prerequisite that is deliberately not committed to Git, see [Setup and operation](docs/operations/OPERATOR_GUIDE.md).
 
 ## Quick start
 
@@ -101,7 +101,27 @@ For a **new** target, use an absolute path such as:
 export RUN_DIR="$HOME/Code/bilqis-mlx-runs/aspirant"
 ~~~
 
-Do not use `--resume`, start CP01, or launch Model Forensics yet. A fresh-lineage `--dry-run` is only a neural-inert preflight and intentionally does not create `RUN_DIR`. Follow [Creating a new BAMF lineage](docs/operations/OPERATOR_GUIDE.md#creating-a-new-bamf-lineage), then continue here only after `RUN_DIR/bamf-state.json` exists.
+The repository now includes the source seed and pinned Atlas artifact needed for a fresh foundation. You do not need a historical Bilqis worktree, `SOURCE_RUN`, `ATLAS_MANIFEST`, or `BILQIS_ATLAS_ARTIFACT_ROOT` for the normal path. The fixed host source-authority store must still be provisioned because it is host custody, not repository data.
+
+Verify that host prerequisite, then run the neural-inert creation preflight:
+
+~~~bash
+python3 scripts/authority_store/cli.py verify
+
+npm run train -- --dry-run \
+  --model-topology configs/models/bamf-0.2.json \
+  --run-dir "$RUN_DIR" \
+  --run-id example-run \
+  --run-seed 543 \
+  --learning-rate 0.0007 \
+  --adam-beta1 0.88 \
+  --adam-beta2 0.97 \
+  --adam-eps 1e-7 \
+  --weight-decay 0.03 \
+  --source-prefetch-workers 0
+~~~
+
+Expected result: `READY_TO_CREATE`, zero neural updates, and no created target directory. Do not use `--resume`, start CP01, or launch Model Forensics until generation zero has been created. Follow [Creating a new BAMF lineage](docs/operations/OPERATOR_GUIDE.md#creating-a-new-bamf-lineage) for the creation step and optional bootstrap overrides.
 
 For an **existing accepted** BAMF run, use the exact run directory. A dry-run resume is neural-inert:
 
@@ -162,21 +182,22 @@ The current CLI requires `--human-run` as an explicit operator confirmation befo
 
 A terminal-launched run stops through its normal interrupt path with Ctrl-C. A run launched through Model Forensics should use **Stop** in Operate so the control plane can bind the interrupt to the exact accepted operation.
 
-## A clean clone is not a production authority bootstrap
+## What a clean clone supplies
 
-A clean clone is sufficient for development, portable verification, read-only tools, Model Forensics, and operation of an accepted run whose custody is already present.
+A clean clone now carries the immutable bootstrap material that used to live only on the original development machine:
 
-It is **not** sufficient to mint a new production BAMF lineage from empty disk. Fresh generation-zero creation consumes:
+- `bilqis_mlx/bootstrap_assets/source-run/` is a small read-only foundation source seed. It contains a current-format Factory release for the A/B/C school, its semantic catalog, and the authenticated predecessor checkpoint identity. It contains no predecessor model weights or AdamW state.
+- `bilqis_mlx/bootstrap_assets/atlas/` contains the pinned A01 Atlas bundle and manifest used by the foundation feature authority.
 
-- an already accepted source run at the canonical active-run location;
-- an admitted, source-pinned Atlas release manifest and its pinned artifact;
-- a host-provisioned source-authority registry at
-  <account-home>/.entif-ai/bilqis/source-authority-registry.json;
-- the matching signer when the selected authority path requires one.
+Fresh creation uses those packaged assets by default. An explicit `--source-run-dir`, `--atlas-release-manifest`, or `BILQIS_ATLAS_ARTIFACT_ROOT` still overrides the packaged input for a separately provisioned deployment.
 
-The runtime intentionally reads and validates those authority files but does not create or repair them. If the host has not been provisioned, stop at neural-inert inspection and testing rather than fabricating substitutes.
+The repository does **not** package a host's private source-authority signer, accepted learner checkpoints, optimizer state, or live run data. A host that creates a new lineage must have its fixed source-authority store provisioned at `<account-home>/.entif-ai/bilqis/`. Verify it with:
 
-See [Creating a new BAMF lineage](docs/operations/OPERATOR_GUIDE.md#creating-a-new-bamf-lineage) for the provisioned-host workflow.
+~~~bash
+python3 scripts/authority_store/cli.py verify
+~~~
+
+That host store is a current custody boundary, not a dependency on the original developer's legacy worktree. See [Creating a new BAMF lineage](docs/operations/OPERATOR_GUIDE.md#creating-a-new-bamf-lineage) for the normal packaged-bootstrap path and the explicit override path.
 
 ## Runtime data
 
@@ -200,7 +221,8 @@ BILQIS_STORAGE_ROOT changes the default run root. Model bundles and optimizer st
 - **Recover from a hard stop:** [Operator Field Manual](docs/operations/OPERATOR_FIELD_MANUAL.md)
 - **Look up an error:** python -m bilqis_mlx.cli explain CODE and the [Error Field Manual](docs/operations/ERROR_FIELD_MANUAL.md)
 - **Exact BAMF CLI semantics:** [BAMF-0.2 runbook](docs/operations/BAMF_0_2_RUNBOOK.md)
-- **Architecture:** [BAMF-0.2](docs/architecture/BAMF_0_2.md)
+- **Current desired-state architecture:** [BMF-0.3-SPEC v0.3.8](https://docs.google.com/document/d/1-rQ2U8RuUFNNPFdPOV0kDFMWrcIWPbzNZpNx2E9_6BM/edit)
+- **Historical implementation architecture:** [BAMF-0.2](docs/architecture/BAMF_0_2.md)
 - **Normative specifications:** [docs/specifications](docs/specifications/)
 - **Documentation map:** [docs/README.md](docs/README.md)
 - **Contributing and development:** [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md)

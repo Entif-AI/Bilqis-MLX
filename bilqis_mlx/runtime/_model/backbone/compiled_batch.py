@@ -161,8 +161,35 @@ class BamfCompiledBatch:
         _bind_atlas_feature_owner(self)
 
 
+def _reissue_validated_task_authority(batch, task_authority):
+    """Attach C04 authority after the caller has just validated the exact batch.
+
+    Preserve process-live artifact owners rather than reconstructing them through
+    ``dataclasses.replace``. Only the newly attached task-authority relation is
+    new at this boundary; all other fields remain exact object identities.
+    """
+    if type(batch) is not BamfCompiledBatch:
+        _invalid("B11_COMPILED_BATCH_INVALID")
+    rebound = object.__new__(BamfCompiledBatch)
+    for name, value in (
+        ("compiled", batch.compiled),
+        ("sources", batch.sources),
+        ("feature_schema", batch.feature_schema),
+        ("active_semantic_rows", batch.active_semantic_rows),
+        ("training_authority", batch.training_authority),
+        ("visit_provenance", batch.visit_provenance),
+        ("task_authority", task_authority),
+        ("schema_version", batch.schema_version),
+        ("source_execution_authority", batch.source_execution_authority),
+        ("atlas_feature_artifact_owner", batch.atlas_feature_artifact_owner),
+    ):
+        object.__setattr__(rebound, name, value)
+    _validate_task_authority(rebound)
+    return rebound
+
+
 # Keep the pre-extraction public identity stable for introspection and pickle.
 BamfCompiledBatch.__module__ = "bilqis_mlx.runtime.atlas_model_contracts"
 
 
-__all__ = ("BamfCompiledBatch",)
+__all__ = ("BamfCompiledBatch", "_reissue_validated_task_authority")

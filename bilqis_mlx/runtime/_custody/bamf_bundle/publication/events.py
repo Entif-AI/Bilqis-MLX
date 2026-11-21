@@ -7,6 +7,10 @@ from bilqis_mlx.data_plane import DataPlaneError, data_plane
 from bilqis_mlx.runtime.atlas_memory_retry import RESOURCE_REJECTION_SCHEMA
 
 from ..records import CompleteStudent, canonical, invalid, sha
+from bilqis_mlx.runtime.bamf_rejection import (
+    portable_rejection_receipt, rejection_registry,
+    try_issue_portable_rejection_authority,
+)
 from .storage import _live_bundle_manifest, _pointer_lock, _read_pointer
 
 
@@ -75,17 +79,36 @@ def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dic
         if type(optimizer_step) is not int or optimizer_step != manifest.get("tensors", {}).get("optimizer_step"):
             invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
         evidence = _validated_c03_rejection_evidence(student, pointer, evidence)
-        authority = {
-            "schema": "bilqis.mlx.bamf-rejection-authority/v1",
-            "run_id": student.run_id,
-            "generation": student.generation,
-            "student_manifest_sha256": pointer["manifest_sha256"],
-            "optimizer_step": optimizer_step,
-            "evidence": dict(evidence),
-        }
+        registry = rejection_registry(dict(student.correction_frontier))
+        portable_authority = (
+            None if registry is None else try_issue_portable_rejection_authority(
+                registry, run_id=student.run_id, generation=student.generation,
+                student_manifest_sha256=pointer["manifest_sha256"],
+                optimizer_step=optimizer_step, evidence=dict(evidence)))
+        if portable_authority is None:
+            authority = {
+                "schema": "bilqis.mlx.bamf-rejection-authority/v1",
+                "run_id": student.run_id,
+                "generation": student.generation,
+                "student_manifest_sha256": pointer["manifest_sha256"],
+                "optimizer_step": optimizer_step,
+                "evidence": dict(evidence),
+            }
+        else:
+            authority = portable_authority
         authority_raw = canonical(authority)
         authority_sha256 = sha(authority_raw)
         data_plane().put_object(authority_sha256, authority_raw)
+        portable_receipt = None
+        if portable_authority is not None:
+            portable_receipt = portable_rejection_receipt(
+                run_id=student.run_id, generation=student.generation,
+                student_manifest_sha256=pointer["manifest_sha256"],
+                optimizer_step=optimizer_step,
+                authority_sha256=authority_sha256)
+            portable_raw = canonical(portable_receipt)
+            portable_digest = sha(portable_raw)
+            data_plane().put_object(portable_digest, portable_raw)
         event = {
             "event": (
                 "BAMF_CANDIDATE_RESOURCE_REJECTED"
@@ -97,16 +120,24 @@ def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dic
             "evidence": dict(evidence),
             "rejection_authority_sha256": authority_sha256,
         }
+        if portable_authority is not None:
+            event.update({
+                "rejection_authority": authority,
+                "rejection_receipt_sha256": portable_digest,
+            })
         record = {"run_id": pointer["run_id"], "generation": pointer["generation"]}
         outbox = checkpoint_outbox.with_delivery_outbox(record, (event,))["delivery_outbox"]
-        receipt = {
-            "schema": "bilqis.mlx.bamf-rejection-receipt/v1",
-            "run_id": student.run_id, "generation": student.generation,
-            "student_manifest_sha256": pointer["manifest_sha256"], "event": outbox[0],
-        }
-        raw = canonical(receipt)
-        digest = sha(raw)
-        data_plane().put_object(digest, raw)
+        if portable_receipt is None:
+            receipt = {
+                "schema": "bilqis.mlx.bamf-rejection-receipt/v1",
+                "run_id": student.run_id, "generation": student.generation,
+                "student_manifest_sha256": pointer["manifest_sha256"], "event": outbox[0],
+            }
+            raw = canonical(receipt)
+            digest = sha(raw)
+            data_plane().put_object(digest, raw)
+        else:
+            digest = portable_digest
         checkpoints._reconcile_delivery_outbox(
             run_dir, {**record, "delivery_outbox": outbox})
         return digest

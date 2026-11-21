@@ -7,9 +7,12 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
 from bilqis_mlx.learning.capability_championship_state import (
     championship_epoch_identity, compact_championship_state,
 )
+from bilqis_mlx.runtime.accepted_teacher_state import _c03_projection
 from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation, stage_vocabulary_extension_from_source_id,
 )
@@ -20,12 +23,64 @@ import bilqis_mlx.runtime.bamf_bundle.vocabulary.admission as vocabulary_admissi
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.vocabulary.production_staging_support import (
     A02ProductionStagingSupport,
 )
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.teacher_custody_fixtures import (
+    adaptation, selection_teacher,
+)
 from bilqis_mlx.semantics.tests.atlas.projection.helpers import (
     _fixture_bundle, _rewrite_bundle,
 )
 
 
 class A02ProductionStagingBoundaryTests(A02ProductionStagingSupport):
+    def test_parameter_extension_rebinds_mature_c03_teacher_to_successor_student(self):
+        current_snapshot, _features, _optimizer = self._publish_source_parent()
+        with self._source_patches(current_snapshot):
+            accepted = vocabulary_admission._accepted_vocabulary_parent(
+                self.run, "/artifact")
+            parent, parent_manifest, parent_receipt, features, predecessor, prior = accepted
+            teacher = _c03_projection(
+                parent,
+                legacy_receipt={"teacher": selection_teacher()},
+                adaptation=adaptation(),
+                prior_region="legacy-region",
+            )
+            parent = replace(
+                parent,
+                provenance=replace(
+                    parent.provenance,
+                    teacher_identity=teacher.teacher_identity,
+                    teacher_epoch=teacher.teacher_epoch,
+                ),
+                teacher_state=dict(teacher.teacher_state),
+            )
+            accepted = (
+                parent, parent_manifest, parent_receipt, features, predecessor, prior)
+            with patch(
+                    "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission.shutil.disk_usage",
+                    return_value=SimpleNamespace(free=1 << 50)):
+                staged = vocabulary_admission._stage_vocabulary_extension_from_accepted(
+                    self.run, Path("/source"), ("urn:concept:8192",), accepted)
+
+        projected = _c03_projection(
+            staged.candidate,
+            legacy_receipt=None,
+            adaptation=None,
+            prior_region=None,
+        )
+        lineage = restore_teacher_lineage(projected.teacher_state)
+        self.assertEqual(
+            lineage.student_sha256,
+            candidate_identity_digest(staged.candidate.retained_state),
+        )
+        self.assertEqual(
+            staged.candidate.provenance.teacher_identity,
+            projected.teacher_identity,
+        )
+        self.assertEqual(
+            staged.candidate.provenance.teacher_epoch,
+            projected.teacher_epoch,
+        )
+
     def test_new_semantic_staging_archives_and_clears_championship_epoch(self):
         current_snapshot, _features, _optimizer = self._publish_source_parent()
         with self._source_patches(current_snapshot):
@@ -52,8 +107,11 @@ class A02ProductionStagingBoundaryTests(A02ProductionStagingSupport):
             parent = replace(parent, championship_state=state)
             accepted = (
                 parent, parent_manifest, parent_receipt, features, predecessor, prior)
-            staged = vocabulary_admission._stage_vocabulary_extension_from_accepted(
-                self.run, Path("/source"), ("urn:concept:8192",), accepted)
+            with patch(
+                    "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission.shutil.disk_usage",
+                    return_value=SimpleNamespace(free=1 << 50)):
+                staged = vocabulary_admission._stage_vocabulary_extension_from_accepted(
+                    self.run, Path("/source"), ("urn:concept:8192",), accepted)
         championship = staged.candidate.championship_state
         self.assertEqual(championship["active_roles"], {})
         self.assertEqual(championship["settled_matchups"], {})

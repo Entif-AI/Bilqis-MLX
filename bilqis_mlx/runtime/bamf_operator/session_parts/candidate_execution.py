@@ -61,14 +61,11 @@ def _lesson_for_step(source_lane, rows, ordinal):
     return lesson, lesson.direct, lesson.enrichment, rehearsal_rows
 
 
-def execute_horizon(
-        run_dir, selection, context, parent, atlas_path, feature_path,
-        rows, horizon, cache, candidate_attempt_ordinal, progress,
-        source_prefetch_workers, source_prefetch_executor,
-        source_prefetch_metrics, observer, adviser_pool=None, *, source_lane_cls,
-        source_metrics_cls, prepare_evidence_root, capture_cls,
-        delivery_observation_cls, execute_candidate, step_seed,
-        emit_progress, invalid, observe_completed_step_fn, rehearsal_plan=None):
+def _candidate_capture(
+        run_dir, selection, context, parent, cache, candidate_attempt_ordinal,
+        source_prefetch_workers, source_prefetch_executor, source_prefetch_metrics,
+        horizon, rehearsal_plan, source_lane_cls, source_metrics_cls,
+        prepare_evidence_root, capture_cls):
     source_lane = None
     if source_prefetch_metrics is not None or source_prefetch_workers:
         metrics = source_prefetch_metrics or source_metrics_cls()
@@ -102,22 +99,53 @@ def execute_horizon(
     )
     if introductory is not None:
         capture_kwargs["introductory"] = introductory
-    capture = capture_cls(run_dir, selection, **capture_kwargs)
+    return source_lane, capture_cls(run_dir, selection, **capture_kwargs)
+
+
+def execute_horizon(
+        run_dir, selection, context, parent, atlas_path, feature_path,
+        rows, horizon, cache, candidate_attempt_ordinal, progress,
+        source_prefetch_workers, source_prefetch_executor,
+        source_prefetch_metrics, observer, adviser_pool=None, *, source_lane_cls,
+        source_metrics_cls, prepare_evidence_root, capture_cls,
+        delivery_observation_cls, execute_candidate, step_seed,
+        emit_progress, invalid, observe_completed_step_fn, rehearsal_plan=None):
+    source_lane, capture = _candidate_capture(
+        run_dir, selection, context, parent, cache, candidate_attempt_ordinal,
+        source_prefetch_workers, source_prefetch_executor, source_prefetch_metrics,
+        horizon, rehearsal_plan, source_lane_cls, source_metrics_cls,
+        prepare_evidence_root, capture_cls)
     steps, candidate = [], None
     for ordinal in range(1, horizon + 1):
         candidate_step_started_at = time.perf_counter()
+        begin_step_started = time.perf_counter()
         begin_step = getattr(observer, "begin_step", None)
         if callable(begin_step):
             begin_step(ordinal, parent.retained_state.optimizer_step + ordinal)
-        source_prepare_started = candidate_step_started_at
+        observer_begin_step_wall_seconds = (
+            time.perf_counter() - begin_step_started)
+        source_prepare_started = time.perf_counter()
+        source_wait_before = (
+            float(source_lane.metrics.wait_seconds)
+            if source_lane is not None else 0.0)
         lesson, source_rows, enrichment_rows, rehearsal_rows = _lesson_for_step(
             source_lane, rows, ordinal)
         source_prepare_wall_seconds = time.perf_counter() - source_prepare_started
+        source_lane_wait_wall_seconds = max(
+            0.0,
+            (float(source_lane.metrics.wait_seconds) - source_wait_before)
+            if source_lane is not None else 0.0)
+        source_lesson_materialization_wall_seconds = max(
+            0.0, source_prepare_wall_seconds - source_lane_wait_wall_seconds)
+        mentor_started = time.perf_counter()
         observation, mentor_supervision = _mentor_observation(
             adviser_pool, source_rows, lesson, selection, capture,
             parent.retained_state.optimizer_step + ordinal,
             delivery_observation_cls, observer)
+        mentor_observation_wall_seconds = time.perf_counter() - mentor_started
+        progress_started = time.perf_counter()
         emit_progress(progress, f"executing candidate step {ordinal}/{horizon}")
+        progress_emission_wall_seconds = time.perf_counter() - progress_started
         step = execute_candidate(
             selection, context, atlas_path, feature_path,
             teacher_hparams=parent.optimizer_hyperparameters,
@@ -132,7 +160,13 @@ def execute_horizon(
             rehearsal_bindings=getattr(lesson, "rehearsal_bindings_by_id", {}),
             rehearsal_authorities=getattr(lesson, "rehearsal_authorities_by_id", {}),
             candidate_step_started_at=candidate_step_started_at,
-            source_prepare_wall_seconds=source_prepare_wall_seconds)
+            source_prepare_wall_seconds=source_prepare_wall_seconds,
+            source_lane_wait_wall_seconds=source_lane_wait_wall_seconds,
+            source_lesson_materialization_wall_seconds=(
+                source_lesson_materialization_wall_seconds),
+            mentor_observation_wall_seconds=mentor_observation_wall_seconds,
+            progress_emission_wall_seconds=progress_emission_wall_seconds,
+            observer_begin_step_wall_seconds=observer_begin_step_wall_seconds)
         candidate = step.transaction
         if candidate.update_steps != ordinal:
             invalid("BAMF_C16_3_CANDIDATE_HORIZON_DRIFT")

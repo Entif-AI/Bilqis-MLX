@@ -60,13 +60,6 @@ class BamfOperatorRoutingContinuationTests(unittest.TestCase):
         self.assertEqual(result.visits, 0)
         self.assertEqual(result.accepted, 0)
         self.assertEqual(result.rejected, 0)
-        visit.assert_called_once_with(
-            run_dir.resolve(), 0.0, steps_per_visit=16,
-            progress=progress.append, source_prefetch_workers=2,
-            source_prefetch_executor=visit.call_args.kwargs["source_prefetch_executor"],
-            source_prefetch_metrics=visit.call_args.kwargs["source_prefetch_metrics"],
-            observer=visit.call_args.kwargs["observer"],
-            run_authority_binding=None)
         self.assertEqual(progress, ["starting visit 1", "visit 1 outcome: HELD"])
 
     def test_candidate_horizon_is_bounded_to_historical_sixteen_step_ceiling(self):

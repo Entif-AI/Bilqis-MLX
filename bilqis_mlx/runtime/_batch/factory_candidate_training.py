@@ -28,7 +28,11 @@ def _prepare_candidate_step_inputs(
         rehearsal_by_id, rehearsal_bindings, rehearsal_authorities,
         salience_provider, candidate, currentness_transaction,
         candidate_step_started_at, currentness_binding_wall_seconds,
-        upstream_pre_neural_source_compile_wall_seconds, semantic_context,
+        upstream_pre_neural_source_compile_wall_seconds,
+        source_lane_wait_wall_seconds, source_lesson_materialization_wall_seconds,
+        mentor_observation_wall_seconds, progress_emission_wall_seconds,
+        observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
+        semantic_context,
         prepared_source):
     start = time.perf_counter()
     if candidate_step_started_at is None:
@@ -38,6 +42,15 @@ def _prepare_candidate_step_inputs(
         run_dir, source_context, parent, candidate, currentness_transaction)
     stage_metrics = {
         "candidate_step_started_at": candidate_step_started_at,
+        "source_lane_wait_wall_seconds": float(source_lane_wait_wall_seconds),
+        "source_lesson_materialization_wall_seconds": float(
+            source_lesson_materialization_wall_seconds),
+        "mentor_observation_wall_seconds": float(mentor_observation_wall_seconds),
+        "progress_emission_wall_seconds": float(progress_emission_wall_seconds),
+        "observer_begin_step_wall_seconds": float(
+            observer_begin_step_wall_seconds),
+        "candidate_delivery_setup_wall_seconds": float(
+            candidate_delivery_setup_wall_seconds),
         "currentness_binding_wall_seconds": (
             float(currentness_binding_wall_seconds)
             + time.perf_counter() - binding_started),
@@ -55,6 +68,13 @@ def _prepare_candidate_step_inputs(
         rehearsal_authorities=rehearsal_authorities,
         semantic_context=semantic_context,
         prepared_source=prepared_source)
+    prepared_observation = getattr(prepared, "_performance_observation", {})
+    if isinstance(prepared_observation, dict):
+        stage_metrics.update({
+            name: float(value) for name, value in prepared_observation.items()
+            if name.startswith("factory_")
+        })
+    salience_started = time.perf_counter()
     supervision = None
     if salience_provider is not None:
         from bilqis_mlx.runtime.salience_training import prepare_salience_training
@@ -62,6 +82,9 @@ def _prepare_candidate_step_inputs(
             _invalid("BAMF_SALIENCE_PROVIDER_REQUIRED")
         prepared, supervision = prepare_salience_training(
             prepared, source_context, salience_provider(prepared))
+    stage_metrics["salience_preparation_wall_seconds"] = (
+        time.perf_counter() - salience_started if salience_provider is not None
+        else 0.0)
     stage_metrics["pre_neural_source_compile_wall_seconds"] = (
         float(upstream_pre_neural_source_compile_wall_seconds)
         + time.perf_counter() - pre_neural_started)
@@ -105,6 +128,31 @@ def _require_mentor_supervision_current(
         _invalid("FACTORY_MENTOR_SUPERVISION_CURRENTNESS_DRIFT")
 
 
+def _candidate_mentor_supervision(
+        parent, observation, mentor_supervision, capture_diagnostics, finalize_candidate):
+    if (not isinstance(parent, CompleteStudent)
+            or not isinstance(observation, FactoryDeliveryObservation)
+            or type(capture_diagnostics) is not bool
+            or type(finalize_candidate) is not bool):
+        _invalid("FACTORY_CANDIDATE_STEP_INPUT_INVALID")
+    observed = observation._mentor_supervision
+    if mentor_supervision is None:
+        return observed
+    if observed is not None and mentor_supervision is not observed:
+        _invalid("FACTORY_MENTOR_SUPERVISION_BINDING_DRIFT")
+    return mentor_supervision
+
+
+def _require_mentor_supervision_timed(
+        mentor_supervision, observation, parent, cache, teacher_strategy,
+        source_seed, stage_metrics):
+    started = time.perf_counter()
+    _require_mentor_supervision_current(
+        mentor_supervision, observation, parent, cache, teacher_strategy, source_seed)
+    stage_metrics["mentor_supervision_currentness_wall_seconds"] = (
+        time.perf_counter() - started)
+
+
 def execute_factory_candidate_step(
     run_dir: Path,
     source_context,
@@ -137,6 +185,12 @@ def execute_factory_candidate_step(
     candidate_step_started_at: float | None = None,
     currentness_binding_wall_seconds: float = 0.0,
     upstream_pre_neural_source_compile_wall_seconds: float = 0.0,
+    source_lane_wait_wall_seconds: float = 0.0,
+    source_lesson_materialization_wall_seconds: float = 0.0,
+    mentor_observation_wall_seconds: float = 0.0,
+    progress_emission_wall_seconds: float = 0.0,
+    observer_begin_step_wall_seconds: float = 0.0,
+    candidate_delivery_setup_wall_seconds: float = 0.0,
     semantic_context=None,
     prepared_source=None,
     distributed_profile=None,
@@ -148,17 +202,8 @@ def execute_factory_candidate_step(
     preserves row-scoped B11 loss/authority evidence, accumulates group gradients
     with plan weights, and enters B12 exactly once per logical teacher step.
     """
-    if (not isinstance(parent, CompleteStudent)
-            or not isinstance(observation, FactoryDeliveryObservation)
-            or type(capture_diagnostics) is not bool
-            or type(finalize_candidate) is not bool):
-        _invalid("FACTORY_CANDIDATE_STEP_INPUT_INVALID")
-    observed_mentor_supervision = observation._mentor_supervision
-    if mentor_supervision is None:
-        mentor_supervision = observed_mentor_supervision
-    elif (observed_mentor_supervision is not None
-          and mentor_supervision is not observed_mentor_supervision):
-        _invalid("FACTORY_MENTOR_SUPERVISION_BINDING_DRIFT")
+    mentor_supervision = _candidate_mentor_supervision(
+        parent, observation, mentor_supervision, capture_diagnostics, finalize_candidate)
     (
         start, cache, generation, stage_metrics, prepared, supervision,
         semantic_context_materialized_in_step,
@@ -169,11 +214,15 @@ def execute_factory_candidate_step(
         rehearsal_by_id, rehearsal_bindings, rehearsal_authorities,
         salience_provider, candidate, currentness_transaction,
         candidate_step_started_at, currentness_binding_wall_seconds,
-        upstream_pre_neural_source_compile_wall_seconds, semantic_context,
+        upstream_pre_neural_source_compile_wall_seconds,
+        source_lane_wait_wall_seconds, source_lesson_materialization_wall_seconds,
+        mentor_observation_wall_seconds, progress_emission_wall_seconds,
+        observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
+        semantic_context,
         prepared_source)
-    _require_mentor_supervision_current(
+    _require_mentor_supervision_timed(
         mentor_supervision, observation, parent, cache, teacher_strategy,
-        source_seed)
+        source_seed, stage_metrics)
     return _execute_prepared_candidate(
         run_dir, source_context, parent, atlas_artifact_path, delivered_rows,
         capability=capability, teacher_hparams=teacher_hparams,

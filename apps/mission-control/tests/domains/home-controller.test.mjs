@@ -202,3 +202,40 @@ test("historical home never opens a live CP04 subscription", async () => {
   });
   assert.equal(subscriptions, 0);
 });
+
+test("failed CP04 startup is retried without restarting the CP01 query lifecycle", async () => {
+  const calls = [];
+  let subscriptions = 0;
+  let scheduled = null;
+  const api = {
+    async status() { return { learnerActive: true }; },
+    async query(request) {
+      calls.push(request.family);
+      return emptyPage(request.family);
+    },
+    async subscribeEvents() {
+      subscriptions += 1;
+      if (subscriptions === 1) throw new Error("BAMF_GUI20_CONTROL_PLANE_REQUEST_FAILED");
+      return async () => {};
+    },
+  };
+  const controller = createHomeController(api, {
+    schedule(callback) { scheduled = callback; return 1; },
+    cancel() {},
+  });
+
+  await controller.activate(context, {
+    host: fakeHost(), onInspect: () => {}, defense: { historical: false },
+  });
+  assert.equal(subscriptions, 1);
+  assert.equal(calls.length, 9);
+  assert.ok(controller.currentModel());
+
+  const baselineCalls = calls.length;
+  await scheduled();
+  assert.equal(subscriptions, 2);
+  assert.equal(calls.length, baselineCalls + 1);
+  assert.equal(calls.at(-1), "run");
+
+  await controller.deactivate();
+});

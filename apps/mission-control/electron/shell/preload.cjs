@@ -96,20 +96,21 @@ const api = Object.freeze({
   requestDryRun: (request) => ipcRenderer.invoke(CHANNELS.dryRun, assertRequestObject(request)),
   requestCommand: (request) => ipcRenderer.invoke(CHANNELS.command, assertRequestObject(request)),
   fetchReceipt: (ref) => ipcRenderer.invoke(CHANNELS.receipt, assertStableRef(ref)),
-  subscribeEvents: (listener) => {
+  subscribeEvents: async (listener) => {
     if (typeof listener !== "function") throw new TypeError("BAMF_GUI20_EVENT_LISTENER_REQUIRED");
     const wrapped = (_event, payload) => listener(payload);
     ipcRenderer.on(CHANNELS.event, wrapped);
-    const started = ipcRenderer.invoke(CHANNELS.eventsSubscribe).catch((error) => {
+    try {
+      await ipcRenderer.invoke(CHANNELS.eventsSubscribe);
+    } catch (error) {
       ipcRenderer.removeListener(CHANNELS.event, wrapped);
       throw error;
-    });
+    }
     let active = true;
     return async () => {
-      if (!active) return started;
+      if (!active) return;
       active = false;
       ipcRenderer.removeListener(CHANNELS.event, wrapped);
-      await started;
       return ipcRenderer.invoke(CHANNELS.eventsUnsubscribe);
     };
   },
