@@ -6,6 +6,8 @@ export const BANK_SCHEMA = "bilqis.bamf.mission-control.semantic-bank-snapshot/v
 export const HELD_SCHEMA = "bilqis.bamf.mission-control.semantic-held-mapping/v1";
 export const SIMILARITY_SCHEMA = "bilqis.bamf.mission-control.semantic-similarity-snapshot/v1";
 export const SUMMARY_SCHEMA = "bilqis.bamf.mission-control.semantic-atlas-snapshot/v1";
+export const RELEASE_SCHEMA = "bilqis.bamf.mission-control.semantic-release-snapshot/v1";
+export const PROJECTION_SCHEMA = "bilqis.bamf.mission-control.semantic-projection-snapshot/v1";
 
 const PAGE_STATES = new Set([
   "PRESENT", "EMPTY", "MISSING", "UNAVAILABLE", "PARTIAL", "STALE", "DENIED", "UNKNOWN",
@@ -94,14 +96,18 @@ export function firstRecord(page, schema) {
 }
 
 export async function loadAtlasOverview(api, context) {
-  const summary = await ask(api, generationQuery(context, { schemaVersion: SUMMARY_SCHEMA, limit: 1 }));
+  const [summary, releaseEvidence, projection] = await Promise.all([
+    ask(api, generationQuery(context, { schemaVersion: SUMMARY_SCHEMA, limit: 1 })),
+    ask(api, generationQuery(context, { schemaVersion: RELEASE_SCHEMA, limit: 1 })),
+    ask(api, generationQuery(context, { schemaVersion: PROJECTION_SCHEMA, limit: 1 })),
+  ]);
   const release = firstRecord(summary, SUMMARY_SCHEMA)?.atlas_release_sha256 ?? null;
   const [banks, held, similarities] = await Promise.all([
     ask(api, generationQuery(context, { schemaVersion: BANK_SCHEMA, limit: 32 })),
     heldForRelease(api, release),
     ask(api, generationQuery(context, { schemaVersion: SIMILARITY_SCHEMA, limit: 8 })),
   ]);
-  return Object.freeze({ summary, banks, held, similarities });
+  return Object.freeze({ summary, releaseEvidence, projection, banks, held, similarities });
 }
 
 async function heldForRelease(api, release) {

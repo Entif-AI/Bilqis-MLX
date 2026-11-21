@@ -11,7 +11,8 @@ from .events import (
 )
 from .observability import (
     GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
-    SemanticAtlasSnapshot, TeacherSnapshot,
+    SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticReleaseSnapshot,
+    TeacherSnapshot,
 )
 from .notifications import Notification
 from .operator import (
@@ -54,6 +55,8 @@ ALL_RECORD_TYPES = (
     LearningEpisode,
     CandidateDecision,
     SemanticAtlasSnapshot,
+    SemanticReleaseSnapshot,
+    SemanticProjectionSnapshot,
     SemanticConceptSnapshot,
     SemanticGenerationState,
     SemanticBankSnapshot,

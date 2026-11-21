@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.akasha_outbox import (
     AkashaEvent, AkashaEventKind, append_c09_intent, append_outbox, pending_events,
-    project_event, read_outbox, record_delivery_attempt,
+    project_event, read_outbox, read_outbox_read_only, record_delivery_attempt,
 )
 from bilqis_mlx.runtime.atlas_revalidation import (
     CorrectionEvent, SourceAuthorityKey, SourceAuthorityRegistry,
@@ -125,6 +125,9 @@ class AkashaOutboxTests(unittest.TestCase):
             self.assertTrue(append_outbox(db, event))
             self.assertFalse(append_outbox(db, event))
             self.assertEqual(read_outbox(db), (event,))
+            before = db.read_bytes()
+            self.assertEqual(read_outbox_read_only(db), (event,))
+            self.assertEqual(db.read_bytes(), before)
             self.assertEqual(pending_events(db), (event,))
             self.assertTrue(record_delivery_attempt(
                 db, event.event_id, "attempt:1", "FAILED", "a" * 64, 590))

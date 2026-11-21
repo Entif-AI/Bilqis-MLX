@@ -20,7 +20,8 @@ from .contracts.model import (
 )
 from .contracts.observability import (
     GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
-    SemanticAtlasSnapshot, TeacherSnapshot,
+    SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticProjectionState,
+    SemanticReleaseSnapshot, TeacherSnapshot,
 )
 from .contracts.notifications import (
     Notification, NotificationKind, NotificationSeverity, NotificationState,
@@ -73,7 +74,8 @@ __all__ = (
     "DEFAULT_PAGE_SIZE", "MAX_PAGE_SIZE", "QUERY_PAGE_SCHEMA",
     "QUERY_REQUEST_SCHEMA", "QueryFamily", "QueryLink", "QueryMode",
     "QueryPage", "QueryRequest", "QueryState",
-    "SchoolSnapshot", "SemanticAtlasSnapshot", "StaleEnvelope",
+    "SchoolSnapshot", "SemanticAtlasSnapshot", "SemanticProjectionSnapshot",
+    "SemanticProjectionState", "SemanticReleaseSnapshot", "StaleEnvelope",
     "SemanticAdmissionState", "SemanticBankSnapshot", "SemanticConceptSnapshot",
     "SemanticGenerationState", "SemanticHeldMappingSnapshot", "SemanticLabel",
     "SemanticRealization", "SemanticRelation", "SemanticSimilaritySnapshot",

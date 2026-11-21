@@ -4,7 +4,9 @@ import { testIdAttribute } from "../foundation/test-hooks.mjs";
 import {
   ATLAS_TABS, bankTable, heldMappings, relationMarkup, tabMarkup, temporalFact,
 } from "./atlas-view-parts.mjs";
-import { firstRecord, invalid, SUMMARY_SCHEMA } from "./atlas-data.mjs";
+import {
+  firstRecord, invalid, PROJECTION_SCHEMA, RELEASE_SCHEMA, SUMMARY_SCHEMA,
+} from "./atlas-data.mjs";
 export * from "./atlas-data.mjs";
 
 export function lensEdges(selection, lens) {
@@ -34,6 +36,8 @@ export function lensEdges(selection, lens) {
 
 export function summarizeOverview(overview) {
   const summary = firstRecord(overview?.summary ?? {}, SUMMARY_SCHEMA);
+  const release = firstRecord(overview?.releaseEvidence ?? {}, RELEASE_SCHEMA);
+  const projection = firstRecord(overview?.projection ?? {}, PROJECTION_SCHEMA);
   const banks = overview?.banks?.accepted === true ? overview.banks.records : [];
   return Object.freeze({
     active: summary?.active_concepts?.value ?? null,
@@ -43,7 +47,73 @@ export function summarizeOverview(overview) {
       ? overview.similarities.total_matches : null,
     banks,
     meta: summary?.meta ?? null,
+    release,
+    projection,
   });
+}
+
+function dataValue(record, key, fallbackKey = "atlas.value.unavailable") {
+  const value = record?.[key];
+  return value?.state === "PRESENT" ? value.value : t(fallbackKey);
+}
+
+function releaseCockpitMarkup(aggregate) {
+  const release = aggregate?.release;
+  const projection = aggregate?.projection;
+  if (!release) {
+    const state = projection?.state ?? "MISSING";
+    return `<section class="atlas-release-block" ${testIdAttribute("atlas", "release", "cockpit")}>
+      <div class="atlas-projection-state" role="status">${esc(t("atlas.release.unavailable"))}</div>
+      <div class="atlas-release-status state-${statusClass(state)}" role="status" ${testIdAttribute("atlas", "release", "projection", "state")}><strong>${esc(t(`atlas.release.state.${state}`))}</strong></div>
+    </section>`;
+  }
+  const state = projection?.state ?? "MISSING";
+  const sourceRefs = release.meta?.source_refs ?? [];
+  const releaseReceipts = release.meta?.receipt_refs ?? [];
+  const projectionRefs = projection?.meta?.evidence_refs ?? [];
+  const projectionReceipts = projection?.meta?.receipt_refs ?? [];
+  return `<section class="atlas-release-block" ${testIdAttribute("atlas", "release", "cockpit")}>
+    <div class="atlas-panel-heading"><div><span class="eyebrow">${esc(t("atlas.release.eyebrow"))}</span><h3>${esc(t("atlas.release.title"))}</h3></div>
+      ${contextHelpMarkup({ label: t("atlas.help.release.label"), description: t("atlas.help.release.description"), testId: "atlas-help-release" })}</div>
+    <div class="atlas-release-status state-${statusClass(state)}" role="status" ${testIdAttribute("atlas", "release", "projection", "state")}><strong>${esc(t(`atlas.release.state.${state}`))}</strong></div>
+    <div class="atlas-dossier-grid">
+      <section data-authority="source"><div class="atlas-subheading"><h4>${esc(t("atlas.release.identity"))}</h4><span class="atlas-evidence-label atlas-evidence-label--source">${esc(t("atlas.evidence.source"))}</span></div><dl class="atlas-details">
+        <dt>${esc(t("atlas.release.semanticRelease"))}</dt><dd><code>${esc(release.semantic_release_sha256)}</code></dd>
+        <dt>${esc(t("atlas.release.atlasBundle"))}</dt><dd><code>${esc(release.atlas_bundle_id)}</code></dd>
+        <dt>${esc(t("atlas.release.sourceBundle"))}</dt><dd><code>${esc(release.source_bundle_id)}</code></dd>
+        <dt>${esc(t("atlas.release.rdf"))}</dt><dd><code>${esc(release.canonical_rdf_sha256)}</code></dd>
+        <dt>${esc(t("atlas.release.coverage"))}</dt><dd><code>${esc(release.coverage_sha256)}</code></dd>
+        <dt>${esc(t("atlas.release.conformance"))}</dt><dd><code>${esc(release.conformance_sha256)}</code></dd>
+        <dt>${esc(t("atlas.release.activeSet"))}</dt><dd><code>${esc(release.active_set_sha256)}</code></dd>
+        <dt>${esc(t("atlas.release.conformanceStatus"))}</dt><dd>${esc(release.conformance_status)}</dd>
+      </dl></section>
+      <section data-authority="source"><div class="atlas-subheading"><h4>${esc(t("atlas.release.accounting"))}</h4><span class="atlas-evidence-label atlas-evidence-label--source">${esc(t("atlas.evidence.source"))}</span></div><dl class="atlas-details">
+        <dt>${esc(t("atlas.release.sourceRows"))}</dt><dd>${esc(release.source_rows)}</dd>
+        <dt>${esc(t("atlas.release.concepts"))}</dt><dd>${esc(release.semantic_concepts)}</dd>
+        <dt>${esc(t("atlas.release.admitted"))}</dt><dd>${esc(release.active_abi_indices)}</dd>
+        <dt>${esc(t("atlas.release.held"))}</dt><dd>${esc(release.source_held)}</dd>
+        <dt>${esc(t("atlas.release.irOnly"))}</dt><dd>${esc(release.source_ir_only)}</dd>
+        <dt>${esc(t("atlas.release.uncovered"))}</dt><dd>${esc(release.implementation_uncovered)}</dd>
+        <dt>${esc(t("atlas.release.coverageStatus"))}</dt><dd>${esc(dataValue(release, "coverage_status"))}</dd>
+        <dt>${esc(t("atlas.release.frontierDebt"))}</dt><dd>${esc(dataValue(release, "frontier_debt"))}</dd>
+      </dl></section>
+      <section data-authority="derived"><div class="atlas-subheading"><h4>${esc(t("atlas.release.projection"))}</h4><span class="atlas-evidence-label atlas-evidence-label--derived">${esc(t("atlas.evidence.generationDerived"))}</span></div><dl class="atlas-details">
+        <dt>${esc(t("atlas.release.graph"))}</dt><dd>${esc(dataValue(projection, "graph"))}</dd>
+        <dt>${esc(t("atlas.release.owner"))}</dt><dd>${esc(dataValue(projection, "owner"))}</dd>
+        <dt>${esc(t("atlas.release.materializationReceipt"))}</dt><dd><code>${esc(dataValue(projection, "materialization_receipt_sha256"))}</code></dd>
+        <dt>${esc(t("atlas.release.coverageStatus"))}</dt><dd>${esc(dataValue(projection, "coverage_status"))}</dd>
+        <dt>${esc(t("atlas.release.projectionVersion"))}</dt><dd>${esc(dataValue(projection, "projection_version"))}</dd>
+        <dt>${esc(t("atlas.release.importer"))}</dt><dd><code>${esc(dataValue(projection, "importer_implementation_sha256"))}</code></dd>
+        <dt>${esc(t("atlas.release.smoke"))}</dt><dd><code>${esc(dataValue(projection, "smoke_suite_sha256"))}</code></dd>
+      </dl></section>
+    </div>
+    <details class="atlas-release-evidence" ${testIdAttribute("atlas", "release", "evidence")}><summary>${esc(t("atlas.release.evidence"))}</summary><dl class="atlas-details">
+      <dt>${esc(t("atlas.release.sourceRefs"))}</dt><dd>${sourceRefs.map((item) => `<code>${esc(item)}</code>`).join("<br>") || esc(t("atlas.value.unavailable"))}</dd>
+      <dt>${esc(t("atlas.release.releaseReceipts"))}</dt><dd>${releaseReceipts.map((item) => `<code>${esc(item)}</code>`).join("<br>") || esc(t("atlas.value.unavailable"))}</dd>
+      <dt>${esc(t("atlas.release.projectionRefs"))}</dt><dd>${projectionRefs.map((item) => `<code>${esc(item)}</code>`).join("<br>") || esc(t("atlas.value.unavailable"))}</dd>
+      <dt>${esc(t("atlas.release.projectionReceipts"))}</dt><dd>${projectionReceipts.map((item) => `<code>${esc(item)}</code>`).join("<br>") || esc(t("atlas.value.unavailable"))}</dd>
+    </dl></details>
+  </section>`;
 }
 
 function esc(value) {
@@ -100,6 +170,8 @@ export function renderAtlasMarkup({ status, error, overview, selection, lens = "
         </section>
         ${Number.isSafeInteger(aggregate?.meta?.materialized_at) ? `<dl class="atlas-time-facts">${temporalFact("atlas.time.materialized", aggregate.meta.materialized_at, "atlas-overview-materialized")}</dl>` : ""}
       </section>
+
+      ${releaseCockpitMarkup(aggregate)}
 
       <div class="atlas-tabs" role="tablist" aria-label="${esc(t("atlas.tabs.aria"))}" ${testIdAttribute("atlas", "tabs")}>
         ${tabMarkup(validTab)}

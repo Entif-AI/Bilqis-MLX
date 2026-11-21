@@ -15,7 +15,8 @@ from bilqis_mlx.mission_control.model import (
 )
 from bilqis_mlx.mission_control.observability import (
     GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
-    SemanticAtlasSnapshot, TeacherSnapshot,
+    SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticProjectionState,
+    SemanticReleaseSnapshot, TeacherSnapshot,
 )
 from bilqis_mlx.mission_control.notifications import (
     Notification, NotificationKind, NotificationSeverity, NotificationState,
@@ -90,6 +91,25 @@ BASE_SAMPLES = (
                       CandidateOutcome.ACCEPTED, "SOURCE_GOLD_PASS"),
     SemanticAtlasSnapshot(meta("atlas"), D2, D1, D3,
                           value(30), value(40), value(10)),
+    SemanticReleaseSnapshot(
+        meta("semantic-release", authority=AuthorityClass.SOURCE_AUTHORITATIVE),
+        D1, D3, D2, D4, D1, D2, D3, D4, "COMPLETE",
+        DataValue(ValueState.MISSING, None, None),
+        DataValue(ValueState.MISSING, None, None), 50, 40, 30, 10, 2, 3,
+    ),
+    SemanticProjectionSnapshot(
+        meta("semantic-projection", coverage=CoverageState.PARTIAL),
+        SemanticProjectionState.PARTIAL,
+        DataValue(ValueState.PRESENT, ValueOrigin.SOURCE_AUTHORITATIVE, "semantic"),
+        DataValue(ValueState.PRESENT, ValueOrigin.SOURCE_AUTHORITATIVE, "semantic-release-authority"),
+        DataValue(ValueState.PRESENT, ValueOrigin.SOURCE_AUTHORITATIVE, D4),
+        DataValue(ValueState.PRESENT, ValueOrigin.SOURCE_AUTHORITATIVE, "1.0.0"),
+        DataValue(ValueState.PRESENT, ValueOrigin.SOURCE_AUTHORITATIVE, "partial"),
+        DataValue(ValueState.PRESENT, ValueOrigin.SOURCE_AUTHORITATIVE, D4),
+        DataValue(ValueState.PRESENT, ValueOrigin.SOURCE_AUTHORITATIVE, D1),
+        DataValue(ValueState.PRESENT, ValueOrigin.SOURCE_AUTHORITATIVE, D2),
+        DataValue(ValueState.PRESENT, ValueOrigin.SOURCE_AUTHORITATIVE, D3),
+    ),
     FrameCompileReceipt(meta("frame"), "frame-1", D1, D2, False, 2),
     NeuralRuntimeSample(meta("runtime"), 42, value(12.5, "ms"),
                         value(1000, "parameters"), value(0.25, "fraction")),
