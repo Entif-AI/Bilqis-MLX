@@ -105,6 +105,62 @@ def _logical_batch_result(
     return result
 
 
+def _empty_b11_observation():
+    names = (
+        "b11_preflight_wall_seconds", "b11_finite_validation_wall_seconds",
+        "b11_execution_rebinding_wall_seconds", "b11_refinement_selection_wall_seconds",
+        "b11_route_compatibility_wall_seconds", "b11_route_kernel_prepare_wall_seconds",
+        "b11_fallback_trace_preflight_wall_seconds", "b11_preflight_other_wall_seconds",
+        "b11_autodiff_wall_seconds", "b11_autodiff_dispatch_wall_seconds",
+        "b11_autodiff_dispatch_rebind_wall_seconds",
+        "b11_autodiff_dispatch_source_producer_wall_seconds",
+        "b11_autodiff_dispatch_source_hidden_graph_wall_seconds",
+        "b11_autodiff_dispatch_refinement_graph_wall_seconds",
+        "b11_autodiff_dispatch_route_graph_wall_seconds",
+        "b11_autodiff_dispatch_transform_other_wall_seconds",
+        "b11_autodiff_materialization_wall_seconds", "b11_route_evidence_wall_seconds",
+        "b11_autodiff_other_wall_seconds", "b11_gradient_finite_validation_wall_seconds",
+        "b11_postflight_validation_wall_seconds",
+        "b11_postflight_trajectory_validation_wall_seconds",
+        "b11_postflight_output_attestation_wall_seconds",
+        "b11_postflight_loss_validation_wall_seconds",
+        "b11_postflight_gradient_structure_wall_seconds",
+        "b11_postflight_result_construction_wall_seconds",
+    )
+    observation = {name: 0.0 for name in names}
+    observation.update({"b11_provider_draw_count": 0, "b11_atlas_reload_count": 0})
+    return observation
+
+
+def _finalize_logical_batch(
+        plan, aggregate, weighted_loss, losses, gradient_launches,
+        vectorized_microbatches, scalar_fallback_rows, started,
+        group_execution_wall_seconds, aggregation_wall_seconds,
+        reused_materialized_full_batch, b11_observation):
+    materialization_started = time.perf_counter()
+    if not reused_materialized_full_batch:
+        mx.eval(aggregate, weighted_loss)
+    materialization_seconds = time.perf_counter() - materialization_started
+    wall_seconds = float(time.perf_counter() - started)
+    accounted = group_execution_wall_seconds + aggregation_wall_seconds + materialization_seconds
+    b11_observation.update({
+        "c08_group_execution_wall_seconds": float(group_execution_wall_seconds),
+        "c08_aggregation_wall_seconds": float(aggregation_wall_seconds),
+        "c08_final_materialization_wall_seconds": float(materialization_seconds),
+        "c08_unattributed_wall_seconds": float(max(0.0, wall_seconds - accounted)),
+        "c08_reused_materialized_full_batch": bool(reused_materialized_full_batch),
+    })
+    result_started = time.perf_counter()
+    result = _logical_batch_result(
+        plan, aggregate, weighted_loss, losses, gradient_launches,
+        vectorized_microbatches, scalar_fallback_rows, wall_seconds, b11_observation)
+    observation = dict(getattr(result, "_performance_observation", {}) or {})
+    observation["c08_result_construction_wall_seconds"] = float(
+        time.perf_counter() - result_started)
+    attach_performance_observation(result, observation)
+    return result
+
+
 def accumulate_logical_batch_gradients(
         plan: BatchPlan,
         execute_row: Callable[[int], BamfGradientExecution],
@@ -128,36 +184,7 @@ def accumulate_logical_batch_gradients(
     group_execution_wall_seconds = 0.0
     aggregation_wall_seconds = 0.0
     reused_materialized_full_batch = False
-    b11_observation = {
-        "b11_preflight_wall_seconds": 0.0,
-        "b11_finite_validation_wall_seconds": 0.0,
-        "b11_execution_rebinding_wall_seconds": 0.0,
-        "b11_refinement_selection_wall_seconds": 0.0,
-        "b11_route_compatibility_wall_seconds": 0.0,
-        "b11_route_kernel_prepare_wall_seconds": 0.0,
-        "b11_fallback_trace_preflight_wall_seconds": 0.0,
-        "b11_preflight_other_wall_seconds": 0.0,
-        "b11_autodiff_wall_seconds": 0.0,
-        "b11_autodiff_dispatch_wall_seconds": 0.0,
-        "b11_autodiff_dispatch_rebind_wall_seconds": 0.0,
-        "b11_autodiff_dispatch_source_producer_wall_seconds": 0.0,
-        "b11_autodiff_dispatch_source_hidden_graph_wall_seconds": 0.0,
-        "b11_autodiff_dispatch_refinement_graph_wall_seconds": 0.0,
-        "b11_autodiff_dispatch_route_graph_wall_seconds": 0.0,
-        "b11_autodiff_dispatch_transform_other_wall_seconds": 0.0,
-        "b11_autodiff_materialization_wall_seconds": 0.0,
-        "b11_route_evidence_wall_seconds": 0.0,
-        "b11_autodiff_other_wall_seconds": 0.0,
-        "b11_gradient_finite_validation_wall_seconds": 0.0,
-        "b11_postflight_validation_wall_seconds": 0.0,
-        "b11_postflight_trajectory_validation_wall_seconds": 0.0,
-        "b11_postflight_output_attestation_wall_seconds": 0.0,
-        "b11_postflight_loss_validation_wall_seconds": 0.0,
-        "b11_postflight_gradient_structure_wall_seconds": 0.0,
-        "b11_postflight_result_construction_wall_seconds": 0.0,
-        "b11_provider_draw_count": 0,
-        "b11_atlas_reload_count": 0,
-    }
+    b11_observation = _empty_b11_observation()
     for group in plan.groups:
         group_started = time.perf_counter()
         microbatch = execute_group(group) if execute_group is not None and len(group) > 1 else None
@@ -184,35 +211,11 @@ def accumulate_logical_batch_gradients(
         gradient_launches += scalar_launches
     if len(losses) != total_rows or aggregate is None:
         _invalid("C08_LOGICAL_BATCH_EXECUTION_COVERAGE_DRIFT")
-    materialization_started = time.perf_counter()
-    if not reused_materialized_full_batch:
-        mx.eval(aggregate, weighted_loss)
-    final_materialization_wall_seconds = time.perf_counter() - materialization_started
-    wall_seconds = float(time.perf_counter() - started)
-    accounted_wall_seconds = (
-        group_execution_wall_seconds
-        + aggregation_wall_seconds
-        + final_materialization_wall_seconds)
-    b11_observation.update({
-        "c08_group_execution_wall_seconds": float(group_execution_wall_seconds),
-        "c08_aggregation_wall_seconds": float(aggregation_wall_seconds),
-        "c08_final_materialization_wall_seconds": float(
-            final_materialization_wall_seconds),
-        "c08_unattributed_wall_seconds": float(max(
-            0.0, wall_seconds - accounted_wall_seconds)),
-        "c08_reused_materialized_full_batch": bool(reused_materialized_full_batch),
-    })
-    result_started = time.perf_counter()
-    result = _logical_batch_result(
+    return _finalize_logical_batch(
         plan, aggregate, weighted_loss, losses, gradient_launches,
-        vectorized_microbatches, scalar_fallback_rows, wall_seconds,
-        b11_observation)
-    result_construction_wall_seconds = time.perf_counter() - result_started
-    observation = dict(getattr(result, "_performance_observation", {}) or {})
-    observation["c08_result_construction_wall_seconds"] = float(
-        result_construction_wall_seconds)
-    attach_performance_observation(result, observation)
-    return result
+        vectorized_microbatches, scalar_fallback_rows, started,
+        group_execution_wall_seconds, aggregation_wall_seconds,
+        reused_materialized_full_batch, b11_observation)
 
 
 __all__ = (

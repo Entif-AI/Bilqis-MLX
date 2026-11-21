@@ -152,6 +152,26 @@ def _register_and_require(offer, materialized):
     return materialized
 
 
+def _attach_currentness_observation(
+        materialized, qualification_seconds, qualification_observation, started):
+    observation = dict(getattr(materialized, "_performance_observation", {}) or {})
+    observation["source_currentness_qualification_wall_seconds"] = float(
+        qualification_seconds)
+    observation.update(qualification_observation)
+    direct_currentness_seconds = sum(float(observation.get(key, 0.0) or 0.0) for key in (
+        "source_currentness_feature_owner_wall_seconds",
+        "source_currentness_source_owner_wall_seconds",
+        "source_currentness_b11_sources_wall_seconds",
+        "source_currentness_packed_frames_wall_seconds",
+        "source_currentness_materialized_other_wall_seconds",
+        "source_currentness_registration_wall_seconds",
+    ))
+    observation["source_currentness_internal_other_wall_seconds"] = float(max(
+        0.0, time.perf_counter() - started - qualification_seconds - direct_currentness_seconds))
+    object.__setattr__(materialized, "_performance_observation", observation)
+    return materialized
+
+
 def prepare_priority_source_materialization(
         offer, source_context, parent, *, prepared_rows=None):
     """Build source AST/formal/prefix state once after the option is selected."""
@@ -168,25 +188,8 @@ def prepare_priority_source_materialization(
                 or cached.offer is not offer or cached.rows != rows):
             _invalid_source_batch("BAMF_PRIORITY_SOURCE_MATERIALIZATION_DRIFT")
         materialized = _register_and_require(offer, cached)
-        observation = dict(getattr(materialized, "_performance_observation", {}) or {})
-        observation["source_currentness_qualification_wall_seconds"] = float(
-            qualification_seconds)
-        observation.update(qualification_observation)
-        total_seconds = time.perf_counter() - started
-        direct_currentness_seconds = sum(float(observation.get(key, 0.0) or 0.0) for key in (
-            "source_currentness_feature_owner_wall_seconds",
-            "source_currentness_source_owner_wall_seconds",
-            "source_currentness_b11_sources_wall_seconds",
-            "source_currentness_packed_frames_wall_seconds",
-            "source_currentness_materialized_other_wall_seconds",
-            "source_currentness_registration_wall_seconds",
-        ))
-        observation["source_currentness_internal_other_wall_seconds"] = float(max(
-            0.0, total_seconds
-            - qualification_seconds
-            - direct_currentness_seconds))
-        object.__setattr__(materialized, "_performance_observation", observation)
-        return materialized
+        return _attach_currentness_observation(
+            materialized, qualification_seconds, qualification_observation, started)
 
     authenticated = offer._planning_generation._authenticated_features
     from bilqis_mlx.runtime.factory_training_bridge import (
@@ -230,25 +233,8 @@ def prepare_priority_source_materialization(
         packed_owner, source_owner)
     offer._materialized["value"] = materialized
     materialized = _register_and_require(offer, materialized)
-    observation = dict(getattr(materialized, "_performance_observation", {}) or {})
-    observation["source_currentness_qualification_wall_seconds"] = float(
-        qualification_seconds)
-    observation.update(qualification_observation)
-    total_seconds = time.perf_counter() - started
-    direct_currentness_seconds = sum(float(observation.get(key, 0.0) or 0.0) for key in (
-        "source_currentness_feature_owner_wall_seconds",
-        "source_currentness_source_owner_wall_seconds",
-        "source_currentness_b11_sources_wall_seconds",
-        "source_currentness_packed_frames_wall_seconds",
-        "source_currentness_materialized_other_wall_seconds",
-        "source_currentness_registration_wall_seconds",
-    ))
-    observation["source_currentness_internal_other_wall_seconds"] = float(max(
-        0.0,
-        total_seconds - qualification_seconds - direct_currentness_seconds,
-    ))
-    object.__setattr__(materialized, "_performance_observation", observation)
-    return materialized
+    return _attach_currentness_observation(
+        materialized, qualification_seconds, qualification_observation, started)
 
 
 __all__ = (

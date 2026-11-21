@@ -10,8 +10,8 @@ from bilqis_mlx.runtime.c08_gradient_accumulation import (
 )
 
 
-def test_b11_observation_aggregation_is_pure_host_accounting():
-    total = {
+def _empty_observation():
+    return {
         "b11_preflight_wall_seconds": 0.0,
         "b11_finite_validation_wall_seconds": 0.0,
         "b11_execution_rebinding_wall_seconds": 0.0,
@@ -41,7 +41,10 @@ def test_b11_observation_aggregation_is_pure_host_accounting():
         "b11_provider_draw_count": 0,
         "b11_atlas_reload_count": 0,
     }
-    execution = SimpleNamespace(_performance_observation={
+
+
+def _sample_execution():
+    return SimpleNamespace(_performance_observation={
         "b11_preflight_wall_seconds": 0.2,
         "b11_finite_validation_wall_seconds": 0.01,
         "b11_execution_rebinding_wall_seconds": 0.02,
@@ -72,39 +75,22 @@ def test_b11_observation_aggregation_is_pure_host_accounting():
         "b11_atlas_reload_count": 2,
     })
 
+
+def _doubled_observation():
+    return {
+        name: value * 2
+        for name, value in _sample_execution()._performance_observation.items()
+    }
+
+
+def test_b11_observation_aggregation_is_pure_host_accounting():
+    total = _empty_observation()
+    execution = _sample_execution()
+
     _add_b11_observation(total, execution)
     _add_b11_observation(total, execution)
 
-    assert total == {
-        "b11_preflight_wall_seconds": 0.4,
-        "b11_finite_validation_wall_seconds": 0.02,
-        "b11_execution_rebinding_wall_seconds": 0.04,
-        "b11_refinement_selection_wall_seconds": 0.06,
-        "b11_route_compatibility_wall_seconds": 0.08,
-        "b11_route_kernel_prepare_wall_seconds": 0.1,
-        "b11_fallback_trace_preflight_wall_seconds": 0.0,
-        "b11_preflight_other_wall_seconds": 0.1,
-        "b11_autodiff_wall_seconds": 0.8,
-        "b11_autodiff_dispatch_wall_seconds": 0.06,
-        "b11_autodiff_dispatch_rebind_wall_seconds": 0.002,
-        "b11_autodiff_dispatch_source_producer_wall_seconds": 0.004,
-        "b11_autodiff_dispatch_source_hidden_graph_wall_seconds": 0.006,
-        "b11_autodiff_dispatch_refinement_graph_wall_seconds": 0.008,
-        "b11_autodiff_dispatch_route_graph_wall_seconds": 0.01,
-        "b11_autodiff_dispatch_transform_other_wall_seconds": 0.03,
-        "b11_autodiff_materialization_wall_seconds": 0.62,
-        "b11_route_evidence_wall_seconds": 0.08,
-        "b11_autodiff_other_wall_seconds": 0.04,
-        "b11_gradient_finite_validation_wall_seconds": 0.12,
-        "b11_postflight_validation_wall_seconds": 0.14,
-        "b11_postflight_trajectory_validation_wall_seconds": 0.02,
-        "b11_postflight_output_attestation_wall_seconds": 0.04,
-        "b11_postflight_loss_validation_wall_seconds": 0.02,
-        "b11_postflight_gradient_structure_wall_seconds": 0.02,
-        "b11_postflight_result_construction_wall_seconds": 0.04,
-        "b11_provider_draw_count": 16,
-        "b11_atlas_reload_count": 4,
-    }
+    assert total == _doubled_observation()
 
 
 def test_full_batch_vector_group_reuses_materialized_mean_without_scaling_tree():

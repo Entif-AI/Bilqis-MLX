@@ -61,14 +61,11 @@ def _lesson_for_step(source_lane, rows, ordinal):
     return lesson, lesson.direct, lesson.enrichment, rehearsal_rows
 
 
-def execute_horizon(
-        run_dir, selection, context, parent, atlas_path, feature_path,
-        rows, horizon, cache, candidate_attempt_ordinal, progress,
-        source_prefetch_workers, source_prefetch_executor,
-        source_prefetch_metrics, observer, adviser_pool=None, *, source_lane_cls,
-        source_metrics_cls, prepare_evidence_root, capture_cls,
-        delivery_observation_cls, execute_candidate, step_seed,
-        emit_progress, invalid, observe_completed_step_fn, rehearsal_plan=None):
+def _candidate_capture(
+        run_dir, selection, context, parent, cache, candidate_attempt_ordinal,
+        source_prefetch_workers, source_prefetch_executor, source_prefetch_metrics,
+        horizon, rehearsal_plan, source_lane_cls, source_metrics_cls,
+        prepare_evidence_root, capture_cls):
     source_lane = None
     if source_prefetch_metrics is not None or source_prefetch_workers:
         metrics = source_prefetch_metrics or source_metrics_cls()
@@ -102,7 +99,22 @@ def execute_horizon(
     )
     if introductory is not None:
         capture_kwargs["introductory"] = introductory
-    capture = capture_cls(run_dir, selection, **capture_kwargs)
+    return source_lane, capture_cls(run_dir, selection, **capture_kwargs)
+
+
+def execute_horizon(
+        run_dir, selection, context, parent, atlas_path, feature_path,
+        rows, horizon, cache, candidate_attempt_ordinal, progress,
+        source_prefetch_workers, source_prefetch_executor,
+        source_prefetch_metrics, observer, adviser_pool=None, *, source_lane_cls,
+        source_metrics_cls, prepare_evidence_root, capture_cls,
+        delivery_observation_cls, execute_candidate, step_seed,
+        emit_progress, invalid, observe_completed_step_fn, rehearsal_plan=None):
+    source_lane, capture = _candidate_capture(
+        run_dir, selection, context, parent, cache, candidate_attempt_ordinal,
+        source_prefetch_workers, source_prefetch_executor, source_prefetch_metrics,
+        horizon, rehearsal_plan, source_lane_cls, source_metrics_cls,
+        prepare_evidence_root, capture_cls)
     steps, candidate = [], None
     for ordinal in range(1, horizon + 1):
         candidate_step_started_at = time.perf_counter()

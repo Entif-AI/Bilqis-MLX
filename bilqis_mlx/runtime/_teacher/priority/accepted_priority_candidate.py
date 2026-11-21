@@ -112,6 +112,26 @@ def _candidate_currentness(selection, source_context, prepared_source_rows):
     )
 
 
+def _require_live_currentness_fence(
+        currentness_step, planning_generation, parent, currentness_timings):
+    from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
+        require_live_accepted_currentness_step,
+    )
+    stage_started = time.perf_counter()
+    require_live_accepted_currentness_step(
+        currentness_step, planning_generation._accepted_currentness, parent)
+    currentness_timings["accepted_currentness_live_fence_wall_seconds"] = (
+        time.perf_counter() - stage_started)
+    return sum(currentness_timings[name] for name in (
+        "accepted_currentness_refresh_wall_seconds",
+        "accepted_parent_currentness_wall_seconds",
+        "lawful_frontier_currentness_wall_seconds",
+        "teacher_visit_currentness_wall_seconds",
+        "source_currentness_wall_seconds",
+        "accepted_currentness_live_fence_wall_seconds",
+    ))
+
+
 def execute_accepted_priority_candidate(selection, source_context,
         atlas_artifact_path, feature_artifact_path, *, teacher_hparams, observation,
         optimizer_step_seed, max_norm, memory_budget=None, salience_provider=None,
@@ -154,23 +174,8 @@ def execute_accepted_priority_candidate(selection, source_context,
     caller_pre_neural_wall_seconds = (
         float(source_prepare_wall_seconds)
         + candidate_delivery_setup_wall_seconds)
-    from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
-        require_live_accepted_currentness_step,
-    )
-    stage_started = time.perf_counter()
-    require_live_accepted_currentness_step(
-        currentness_step, planning_generation._accepted_currentness, parent)
-    currentness_timings["accepted_currentness_live_fence_wall_seconds"] = (
-        time.perf_counter() - stage_started)
-    currentness_wall_seconds = sum(
-        currentness_timings[name] for name in (
-            "accepted_currentness_refresh_wall_seconds",
-            "accepted_parent_currentness_wall_seconds",
-            "lawful_frontier_currentness_wall_seconds",
-            "teacher_visit_currentness_wall_seconds",
-            "source_currentness_wall_seconds",
-            "accepted_currentness_live_fence_wall_seconds",
-        ))
+    currentness_wall_seconds = _require_live_currentness_fence(
+        currentness_step, planning_generation, parent, currentness_timings)
     result = execute_factory_candidate_step(
         Path(selection._run_dir), source_context, parent,
         atlas_artifact_path, feature_artifact_path, delivered_rows,

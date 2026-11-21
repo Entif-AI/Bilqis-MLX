@@ -128,6 +128,31 @@ def _require_mentor_supervision_current(
         _invalid("FACTORY_MENTOR_SUPERVISION_CURRENTNESS_DRIFT")
 
 
+def _candidate_mentor_supervision(
+        parent, observation, mentor_supervision, capture_diagnostics, finalize_candidate):
+    if (not isinstance(parent, CompleteStudent)
+            or not isinstance(observation, FactoryDeliveryObservation)
+            or type(capture_diagnostics) is not bool
+            or type(finalize_candidate) is not bool):
+        _invalid("FACTORY_CANDIDATE_STEP_INPUT_INVALID")
+    observed = observation._mentor_supervision
+    if mentor_supervision is None:
+        return observed
+    if observed is not None and mentor_supervision is not observed:
+        _invalid("FACTORY_MENTOR_SUPERVISION_BINDING_DRIFT")
+    return mentor_supervision
+
+
+def _require_mentor_supervision_timed(
+        mentor_supervision, observation, parent, cache, teacher_strategy,
+        source_seed, stage_metrics):
+    started = time.perf_counter()
+    _require_mentor_supervision_current(
+        mentor_supervision, observation, parent, cache, teacher_strategy, source_seed)
+    stage_metrics["mentor_supervision_currentness_wall_seconds"] = (
+        time.perf_counter() - started)
+
+
 def execute_factory_candidate_step(
     run_dir: Path,
     source_context,
@@ -177,17 +202,8 @@ def execute_factory_candidate_step(
     preserves row-scoped B11 loss/authority evidence, accumulates group gradients
     with plan weights, and enters B12 exactly once per logical teacher step.
     """
-    if (not isinstance(parent, CompleteStudent)
-            or not isinstance(observation, FactoryDeliveryObservation)
-            or type(capture_diagnostics) is not bool
-            or type(finalize_candidate) is not bool):
-        _invalid("FACTORY_CANDIDATE_STEP_INPUT_INVALID")
-    observed_mentor_supervision = observation._mentor_supervision
-    if mentor_supervision is None:
-        mentor_supervision = observed_mentor_supervision
-    elif (observed_mentor_supervision is not None
-          and mentor_supervision is not observed_mentor_supervision):
-        _invalid("FACTORY_MENTOR_SUPERVISION_BINDING_DRIFT")
+    mentor_supervision = _candidate_mentor_supervision(
+        parent, observation, mentor_supervision, capture_diagnostics, finalize_candidate)
     (
         start, cache, generation, stage_metrics, prepared, supervision,
         semantic_context_materialized_in_step,
@@ -204,12 +220,9 @@ def execute_factory_candidate_step(
         observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
         semantic_context,
         prepared_source)
-    mentor_currentness_started = time.perf_counter()
-    _require_mentor_supervision_current(
+    _require_mentor_supervision_timed(
         mentor_supervision, observation, parent, cache, teacher_strategy,
-        source_seed)
-    stage_metrics["mentor_supervision_currentness_wall_seconds"] = (
-        time.perf_counter() - mentor_currentness_started)
+        source_seed, stage_metrics)
     return _execute_prepared_candidate(
         run_dir, source_context, parent, atlas_artifact_path, delivered_rows,
         capability=capability, teacher_hparams=teacher_hparams,

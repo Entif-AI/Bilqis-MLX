@@ -186,6 +186,34 @@ def _compile_factory_training(
         prepared_model_sources=prepared_model_sources)
 
 
+def _prepared_factory_result(
+        training, compiled_rows, source_rows, authenticated, prepared_motif_inputs,
+        source_context, *, request_validation_seconds, semantic_context_seconds,
+        prepared_source_seconds, compile_seconds, b11_binding_seconds):
+    stage_started = time.perf_counter()
+    motif_inputs = (
+        prepared_motif_inputs if prepared_motif_inputs is not None else
+        tuple(_motif_planning_input(
+            source_context, authenticated, item.source_adapter, item.profile, item,
+            source_seed=item.source_seed, source_each=item.source_each)
+            for item in source_rows))
+    motif_planning_seconds = time.perf_counter() - stage_started
+    stage_started = time.perf_counter()
+    prepared = PreparedFactoryTrainingBatch(training, compiled_rows, motif_inputs, authenticated)
+    prepared.__post_init__()
+    result_construction_seconds = time.perf_counter() - stage_started
+    object.__setattr__(prepared, "_performance_observation", {
+        "factory_request_validation_wall_seconds": float(request_validation_seconds),
+        "factory_semantic_context_wall_seconds": float(semantic_context_seconds),
+        "factory_prepared_source_validation_wall_seconds": float(prepared_source_seconds),
+        "factory_training_compile_wall_seconds": float(compile_seconds),
+        "factory_b11_binding_wall_seconds": float(b11_binding_seconds),
+        "factory_motif_planning_wall_seconds": float(motif_planning_seconds),
+        "factory_result_construction_wall_seconds": float(result_construction_seconds),
+    })
+    return prepared
+
+
 def prepare_factory_training_batch(
     source_context: SourceExecutionContext,
     candidate: BamfBundleCandidate,
@@ -256,33 +284,12 @@ def prepare_factory_training_batch(
         prepared_b11=prepared_b11_sources,
         packed_owner=prepared_packed_owner)
     b11_binding_seconds = time.perf_counter() - stage_started
-    stage_started = time.perf_counter()
-    motif_inputs = (
-        prepared_motif_inputs if prepared_motif_inputs is not None else
-        tuple(_motif_planning_input(
-            source_context, authenticated, item.source_adapter, item.profile, item,
-            source_seed=item.source_seed, source_each=item.source_each)
-            for item in source_rows))
-    motif_planning_seconds = time.perf_counter() - stage_started
-    stage_started = time.perf_counter()
-    prepared = PreparedFactoryTrainingBatch(
-        training, compiled_rows, motif_inputs, authenticated)
-    prepared.__post_init__()
-    result_construction_seconds = time.perf_counter() - stage_started
-    object.__setattr__(prepared, "_performance_observation", {
-        "factory_request_validation_wall_seconds": float(
-            request_validation_seconds),
-        "factory_semantic_context_wall_seconds": float(
-            semantic_context_seconds),
-        "factory_prepared_source_validation_wall_seconds": float(
-            prepared_source_seconds),
-        "factory_training_compile_wall_seconds": float(compile_seconds),
-        "factory_b11_binding_wall_seconds": float(b11_binding_seconds),
-        "factory_motif_planning_wall_seconds": float(motif_planning_seconds),
-        "factory_result_construction_wall_seconds": float(
-            result_construction_seconds),
-    })
-    return prepared
+    return _prepared_factory_result(
+        training, compiled_rows, source_rows, authenticated, prepared_motif_inputs,
+        source_context, request_validation_seconds=request_validation_seconds,
+        semantic_context_seconds=semantic_context_seconds,
+        prepared_source_seconds=prepared_source_seconds, compile_seconds=compile_seconds,
+        b11_binding_seconds=b11_binding_seconds)
 
 
 __all__ = ("PreparedFactoryTrainingBatch", "prepare_factory_training_batch")

@@ -46,6 +46,61 @@ def _distributed_cost(prepared, gradient, logical_batch_wall_seconds) -> dict:
     }
 
 
+def _stage_timing_cost(stage_metrics):
+    optional = (
+        "source_lane_wait_wall_seconds", "source_lesson_materialization_wall_seconds",
+        "mentor_observation_wall_seconds", "progress_emission_wall_seconds",
+        "observer_begin_step_wall_seconds", "candidate_delivery_setup_wall_seconds",
+        "factory_request_validation_wall_seconds", "factory_semantic_context_wall_seconds",
+        "factory_prepared_source_validation_wall_seconds", "factory_training_compile_wall_seconds",
+        "factory_b11_binding_wall_seconds", "factory_motif_planning_wall_seconds",
+        "factory_result_construction_wall_seconds", "salience_preparation_wall_seconds",
+        "mentor_supervision_currentness_wall_seconds", "mentor_evidence_validation_wall_seconds",
+        "resource_plan_wall_seconds", "prepared_feature_context_wall_seconds",
+        "candidate_training_orchestration_wall_seconds",
+    )
+    result = {name: stage_metrics.get(name, 0.0) for name in optional}
+    result.update({
+        "pre_neural_source_compile_wall_seconds": stage_metrics[
+            "pre_neural_source_compile_wall_seconds"],
+        "currentness_binding_wall_seconds": stage_metrics["currentness_binding_wall_seconds"],
+        "optimizer_admission_wall_seconds": stage_metrics["optimizer_admission_wall_seconds"],
+        "motif_staging_wall_seconds": stage_metrics["motif_staging_wall_seconds"],
+        "candidate_terminal_step": stage_metrics["candidate_terminal_step"],
+    })
+    return result
+
+
+def _b11_timing_cost(b11):
+    float_names = (
+        "b11_preflight_wall_seconds", "b11_finite_validation_wall_seconds",
+        "b11_execution_rebinding_wall_seconds", "b11_refinement_selection_wall_seconds",
+        "b11_route_compatibility_wall_seconds", "b11_route_kernel_prepare_wall_seconds",
+        "b11_fallback_trace_preflight_wall_seconds", "b11_preflight_other_wall_seconds",
+        "b11_autodiff_wall_seconds", "b11_autodiff_dispatch_wall_seconds",
+        "b11_autodiff_dispatch_rebind_wall_seconds",
+        "b11_autodiff_dispatch_source_producer_wall_seconds",
+        "b11_autodiff_dispatch_source_hidden_graph_wall_seconds",
+        "b11_autodiff_dispatch_refinement_graph_wall_seconds",
+        "b11_autodiff_dispatch_route_graph_wall_seconds",
+        "b11_autodiff_dispatch_transform_other_wall_seconds",
+        "b11_autodiff_materialization_wall_seconds", "b11_route_evidence_wall_seconds",
+        "b11_autodiff_other_wall_seconds", "b11_gradient_finite_validation_wall_seconds",
+        "b11_postflight_validation_wall_seconds",
+        "b11_postflight_trajectory_validation_wall_seconds",
+        "b11_postflight_output_attestation_wall_seconds",
+        "b11_postflight_loss_validation_wall_seconds",
+        "b11_postflight_gradient_structure_wall_seconds",
+        "b11_postflight_result_construction_wall_seconds",
+    )
+    result = {name: float(b11.get(name, 0.0)) for name in float_names}
+    result.update({
+        "b11_provider_draw_count": int(b11.get("b11_provider_draw_count", 0)),
+        "b11_atlas_reload_count": int(b11.get("b11_atlas_reload_count", 0)),
+    })
+    return result
+
+
 def realized_candidate_cost(
         start, candidate_step_started_at, loss_total, prepared,
         resource_plan, memory_budget, transaction,
@@ -72,104 +127,6 @@ def realized_candidate_cost(
     cost = {
         "wall_seconds": elapsed,
         "candidate_step_wall_seconds": time.perf_counter() - candidate_step_started_at,
-        "pre_neural_source_compile_wall_seconds": stage_metrics[
-            "pre_neural_source_compile_wall_seconds"],
-        "source_lane_wait_wall_seconds": stage_metrics.get(
-            "source_lane_wait_wall_seconds", 0.0),
-        "source_lesson_materialization_wall_seconds": stage_metrics.get(
-            "source_lesson_materialization_wall_seconds", 0.0),
-        "mentor_observation_wall_seconds": stage_metrics.get(
-            "mentor_observation_wall_seconds", 0.0),
-        "progress_emission_wall_seconds": stage_metrics.get(
-            "progress_emission_wall_seconds", 0.0),
-        "observer_begin_step_wall_seconds": stage_metrics.get(
-            "observer_begin_step_wall_seconds", 0.0),
-        "candidate_delivery_setup_wall_seconds": stage_metrics.get(
-            "candidate_delivery_setup_wall_seconds", 0.0),
-        "factory_request_validation_wall_seconds": stage_metrics.get(
-            "factory_request_validation_wall_seconds", 0.0),
-        "factory_semantic_context_wall_seconds": stage_metrics.get(
-            "factory_semantic_context_wall_seconds", 0.0),
-        "factory_prepared_source_validation_wall_seconds": stage_metrics.get(
-            "factory_prepared_source_validation_wall_seconds", 0.0),
-        "factory_training_compile_wall_seconds": stage_metrics.get(
-            "factory_training_compile_wall_seconds", 0.0),
-        "factory_b11_binding_wall_seconds": stage_metrics.get(
-            "factory_b11_binding_wall_seconds", 0.0),
-        "factory_motif_planning_wall_seconds": stage_metrics.get(
-            "factory_motif_planning_wall_seconds", 0.0),
-        "factory_result_construction_wall_seconds": stage_metrics.get(
-            "factory_result_construction_wall_seconds", 0.0),
-        "salience_preparation_wall_seconds": stage_metrics.get(
-            "salience_preparation_wall_seconds", 0.0),
-        "mentor_supervision_currentness_wall_seconds": stage_metrics.get(
-            "mentor_supervision_currentness_wall_seconds", 0.0),
-        "mentor_evidence_validation_wall_seconds": stage_metrics.get(
-            "mentor_evidence_validation_wall_seconds", 0.0),
-        "resource_plan_wall_seconds": stage_metrics.get(
-            "resource_plan_wall_seconds", 0.0),
-        "prepared_feature_context_wall_seconds": stage_metrics.get(
-            "prepared_feature_context_wall_seconds", 0.0),
-        "candidate_training_orchestration_wall_seconds": stage_metrics.get(
-            "candidate_training_orchestration_wall_seconds", 0.0),
-        "currentness_binding_wall_seconds": stage_metrics[
-            "currentness_binding_wall_seconds"],
-        "b11_preflight_wall_seconds": float(b11.get("b11_preflight_wall_seconds", 0.0)),
-        "b11_finite_validation_wall_seconds": float(
-            b11.get("b11_finite_validation_wall_seconds", 0.0)),
-        "b11_execution_rebinding_wall_seconds": float(
-            b11.get("b11_execution_rebinding_wall_seconds", 0.0)),
-        "b11_refinement_selection_wall_seconds": float(
-            b11.get("b11_refinement_selection_wall_seconds", 0.0)),
-        "b11_route_compatibility_wall_seconds": float(
-            b11.get("b11_route_compatibility_wall_seconds", 0.0)),
-        "b11_route_kernel_prepare_wall_seconds": float(
-            b11.get("b11_route_kernel_prepare_wall_seconds", 0.0)),
-        "b11_fallback_trace_preflight_wall_seconds": float(
-            b11.get("b11_fallback_trace_preflight_wall_seconds", 0.0)),
-        "b11_preflight_other_wall_seconds": float(
-            b11.get("b11_preflight_other_wall_seconds", 0.0)),
-        "b11_autodiff_wall_seconds": float(b11.get("b11_autodiff_wall_seconds", 0.0)),
-        "b11_autodiff_dispatch_wall_seconds": float(
-            b11.get("b11_autodiff_dispatch_wall_seconds", 0.0)),
-        "b11_autodiff_dispatch_rebind_wall_seconds": float(
-            b11.get("b11_autodiff_dispatch_rebind_wall_seconds", 0.0)),
-        "b11_autodiff_dispatch_source_producer_wall_seconds": float(
-            b11.get("b11_autodiff_dispatch_source_producer_wall_seconds", 0.0)),
-        "b11_autodiff_dispatch_source_hidden_graph_wall_seconds": float(
-            b11.get("b11_autodiff_dispatch_source_hidden_graph_wall_seconds", 0.0)),
-        "b11_autodiff_dispatch_refinement_graph_wall_seconds": float(
-            b11.get("b11_autodiff_dispatch_refinement_graph_wall_seconds", 0.0)),
-        "b11_autodiff_dispatch_route_graph_wall_seconds": float(
-            b11.get("b11_autodiff_dispatch_route_graph_wall_seconds", 0.0)),
-        "b11_autodiff_dispatch_transform_other_wall_seconds": float(
-            b11.get("b11_autodiff_dispatch_transform_other_wall_seconds", 0.0)),
-        "b11_autodiff_materialization_wall_seconds": float(
-            b11.get("b11_autodiff_materialization_wall_seconds", 0.0)),
-        "b11_route_evidence_wall_seconds": float(
-            b11.get("b11_route_evidence_wall_seconds", 0.0)),
-        "b11_autodiff_other_wall_seconds": float(
-            b11.get("b11_autodiff_other_wall_seconds", 0.0)),
-        "b11_gradient_finite_validation_wall_seconds": float(
-            b11.get("b11_gradient_finite_validation_wall_seconds", 0.0)),
-        "b11_postflight_validation_wall_seconds": float(
-            b11.get("b11_postflight_validation_wall_seconds", 0.0)),
-        "b11_postflight_trajectory_validation_wall_seconds": float(
-            b11.get("b11_postflight_trajectory_validation_wall_seconds", 0.0)),
-        "b11_postflight_output_attestation_wall_seconds": float(
-            b11.get("b11_postflight_output_attestation_wall_seconds", 0.0)),
-        "b11_postflight_loss_validation_wall_seconds": float(
-            b11.get("b11_postflight_loss_validation_wall_seconds", 0.0)),
-        "b11_postflight_gradient_structure_wall_seconds": float(
-            b11.get("b11_postflight_gradient_structure_wall_seconds", 0.0)),
-        "b11_postflight_result_construction_wall_seconds": float(
-            b11.get("b11_postflight_result_construction_wall_seconds", 0.0)),
-        "optimizer_admission_wall_seconds": stage_metrics[
-            "optimizer_admission_wall_seconds"],
-        "motif_staging_wall_seconds": stage_metrics["motif_staging_wall_seconds"],
-        "candidate_terminal_step": stage_metrics["candidate_terminal_step"],
-        "b11_provider_draw_count": int(b11.get("b11_provider_draw_count", 0)),
-        "b11_atlas_reload_count": int(b11.get("b11_atlas_reload_count", 0)),
         "logical_rows": len(prepared.compiled_rows),
         "compiled_positions": sum(
             len(item.compiled.compiled.rows[0].positions) for item in prepared.compiled_rows),
@@ -205,6 +162,8 @@ def realized_candidate_cost(
         "b11_source_authority_bound_rows": bound_source_authorities,
         "b11_source_cold_requalification_rows": cold_requalification_rows,
     }
+    cost.update(_stage_timing_cost(stage_metrics))
+    cost.update(_b11_timing_cost(b11))
     cost.update(_distributed_cost(
         prepared, gradient, logical_batch_wall_seconds))
     return cost
