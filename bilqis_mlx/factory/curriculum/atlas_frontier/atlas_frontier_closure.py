@@ -300,9 +300,16 @@ def resolve_frontier_closure(
     resolved: dict[str, tuple[ClosureStatus, ...]] = {}
     candidates = []
     rows = _coverage(snapshot, census)
+    families_by_semantic: dict[str, list[str]] = {}
+    for semantic_id, family_id in rows:
+        families_by_semantic.setdefault(semantic_id, []).append(family_id)
+    families_by_semantic = {
+        semantic_id: sorted(family_ids)
+        for semantic_id, family_ids in families_by_semantic.items()
+    }
     for semantic_id in order:
         current = []
-        for family_id in sorted(key[1] for key in rows if key[0] == semantic_id):
+        for family_id in families_by_semantic.get(semantic_id, ()):
             row = rows[(semantic_id, family_id)]
             status = direct[(semantic_id, family_id)]
             reasons = []

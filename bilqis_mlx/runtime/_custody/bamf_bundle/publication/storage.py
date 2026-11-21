@@ -6,6 +6,7 @@ import fcntl
 import os
 import shutil
 import stat
+import time
 import uuid
 from pathlib import Path
 
@@ -89,12 +90,22 @@ def _validate_pointer_lock(lock: Path, fd: int) -> None:
         invalid(DataPlaneError.BUNDLE_ENTRY_UNSAFE)
 
 
-def _acquire_pointer_lock(
-        fd: int, operation: int) -> None:
-    try:
-        fcntl.flock(fd, operation | fcntl.LOCK_NB)
-    except BlockingIOError:
-        invalid("BAMF_POINTER_WRITER_ACTIVE")
+_POINTER_WRITER_WAIT_SECONDS = 2.0
+_POINTER_WRITER_RETRY_SECONDS = 0.01
+
+
+def _acquire_pointer_lock(fd: int, operation: int) -> None:
+    deadline = (
+        time.monotonic() + _POINTER_WRITER_WAIT_SECONDS
+        if operation == fcntl.LOCK_EX else None)
+    while True:
+        try:
+            fcntl.flock(fd, operation | fcntl.LOCK_NB)
+            return
+        except BlockingIOError:
+            if deadline is None or time.monotonic() >= deadline:
+                invalid("BAMF_POINTER_WRITER_ACTIVE")
+            time.sleep(_POINTER_WRITER_RETRY_SECONDS)
 
 
 def _synchronize_pointer_lock(fd: int, run_dir: Path, *, synchronize: bool) -> None:

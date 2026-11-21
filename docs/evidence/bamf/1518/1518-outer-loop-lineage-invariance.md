@@ -256,20 +256,81 @@ drive current-session visits, attempted steps, retained visits, RTN%, ST/M and
 R/H without conflating prior-session history. Focused cadence/dashboard/renderer
 verification passed 40 tests across the directly affected owners.
 
-Immediately before freezing this packet, `git fetch origin main` confirmed
-`origin/main` remained at
-`38813530c3fc4b803f7cf4b8b1e800b978f49d74`, which is already integrated by merge
-commit `0623b992eff7052a8331b6ae6bfb91540272d468`.
+After the user's sequencing correction, `origin/main` was reconciled before the
+final expensive throughput witness. The integrated main head is
+`0ab5f893d4653e113440160851eeb24627fc0d9a` and the local integration merge is
+`5631e16f3920ae0f2c308c0a9a17f7998948817b`. The integration-invalidated seam
+was rerun only once after that merge: `10 passed in 0.89s`.
+
+## Post-main six-step learning-first operator witness
+
+The final throughput authority for this patchset is a disposable, non-authorizing
+production operator-path witness through `prepare_bamf_visit(..., steps_per_visit=6)`.
+It did not publish, did not mutate the human run, and used `strict_evidence=false`.
+The detached runner again verified that the source worktree was not mutated.
+
+Detached receipt:
+
+- label: `1532 real operator six-step learning-first v5 post-main-reconcile`;
+- detached schema: `bilqis.bamf.detached-long-run/v2`;
+- source snapshot SHA-256:
+  `83d00f2e87825cb5227a0739e796d8c49df3558f813a09ecbc56e4059c75c8d9`;
+- return code: `0`;
+- source mutated during detached run: `false`;
+- operator status: `REJECTED` after a lawful completed six-step candidate visit;
+- selected capability: `A.EDGE`;
+- candidate update steps: `6`.
+
+Because the machine's declared legacy trainer current pointer referenced a data-plane
+node unavailable both in the isolated witness plane and through the host default
+path, the witness explicitly substituted the repository's deterministic C03 bootstrap
+fixture. It also used the production-shaped `COMBINED_REGISTRY` plus the matching
+fixture `owner:c06` signer so disposable C09/C06 authority was internally coherent.
+Those substitutions are disclosed in the witness payload. They are scaffolding for a
+non-authorizing throughput measurement, not claims of live legacy-trainer authority.
+
+Measured operator-path timings:
+
+- accepted-state setup: `0.326840 s`;
+- planning: `40.966371 s`;
+- selected-source materialization: `10.020139 s`;
+- six candidate optimizer steps combined: `4.856691 s`;
+  - step walls: `0.602360`, `0.859840`, `0.857885`, `0.896890`, `0.773753`,
+    `0.865963 s`;
+- retention total: `18.859068 s`;
+  - target preparation: `5.527459 s`;
+  - parent target assessment: `5.975979 s`;
+  - candidate target assessment: `6.052372 s`;
+  - target solver: `0.777300 s`;
+- target evaluation aggregate: `12.025718 s`;
+- complete timed visit: `75.077155 s`;
+- total process wall including disposable setup: `101.907906 s`.
+
+This clears the issue's explicit under-two-minute six-step requirement. It does not
+meet the under-one-minute ideal. The remaining wall is dominated by operator
+orchestration, especially planning, source materialization, and retention. The neural
+candidate path is no longer the dominant owner: all six production-path candidate
+steps are subsecond and their combined wall is under five seconds. For comparison,
+the earlier #1504 production operator witness reported roughly `0.84-1.00 s` candidate
+steps, so the current candidate kernel is not exhibiting the regression that motivated
+this repair.
+
+The separate `222.863 s` six-step C05 component witness is not operator throughput
+authority. It repeatedly invoked the lower-level direct candidate-training horizon and
+bypassed production operator prepared-source reuse; it remains useful component
+correctness evidence only.
 
 ## What this packet does not claim
 
-It does not claim a new live-trainer wall-clock result or a controlled apples-to-
-apples speedup ratio against the pre-repair human trainer. The human trainer
-remained untouched by automated verification. The post-repair claim is both
-architectural and production-path tested: ordinary hot and cold accepted-state
-proof is bounded by current state rather than lineage depth; cadence restart is
-projection-plus-tail; retention consumes current accepted execution state; and
-historical replay is an explicit audit/rebuild/migration operation.
+It does not claim a controlled apples-to-apples speedup ratio against the human
+trainer or a live human-run benchmark. The human trainer remained untouched by
+automated verification. The post-repair claim is architectural plus disposable
+production-path evidence: ordinary hot and cold accepted-state proof is bounded by
+current state rather than lineage depth; cadence restart is projection-plus-tail;
+retention consumes current accepted execution state; historical replay is explicit;
+and a six-step learning-first operator visit now completes inside the required
+under-two-minute envelope.
 
-The observed ~11-second cold selected-source construction remains a distinct
-owner. This issue does not relabel that cost as accepted-history currentness.
+The remaining performance owners are planning (~41 s), selected-source materialization
+(~10 s), and retention (~19 s). They are not relabeled as accepted-history currentness
+or neural-training cost.

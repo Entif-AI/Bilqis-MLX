@@ -174,10 +174,13 @@ def _persist_ready_realizations(
         run_dir, frontier, current,
         source_registry=sources, answer_registry=answers)
     known = {item.candidate_id for item in staged}
+    known_capabilities = {item.target_capability_id for item in staged}
     for semantic_id in candidate.source_eligible_concept_ids:
         try:
-            candidate_realizations.realized_capability_id(semantic_id)
+            capability_id = candidate_realizations.realized_capability_id(semantic_id)
         except ValueError:
+            continue
+        if capability_id in known_capabilities:
             continue
         try:
             candidate_realizations.project_realized_target(semantic_id, current)
@@ -192,6 +195,7 @@ def _persist_ready_realizations(
         if realized.candidate_id not in known:
             persist_staged_candidate(run_dir, realized, frontier, current)
             known.add(realized.candidate_id)
+            known_capabilities.add(realized.target_capability_id)
     return load_staged_candidates(
         run_dir, frontier, current,
         source_registry=sources, answer_registry=answers)

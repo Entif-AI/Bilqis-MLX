@@ -125,6 +125,10 @@ def _add_training_execution_args(parser) -> None:
                         help="Pure host-side lesson prep workers; 2 workers + main MLX lane = 3 lanes")
     parser.add_argument("--flash-mode", action="store_true",
                         help="Defer expensive assessments while training; stop owing a real assessment")
+    parser.add_argument(
+        "--strict-evidence", action="store_true",
+        help=("Opt into heavyweight BAMF rehearsal/championship evidence on the live "
+              "training path. Default BAMF human training is learning-first."))
     parser.add_argument("--source-teaching-enrichment", "--boolean-association-bridge",
                         dest="boolean_association_bridge", action="store_true",
                         help="Add optional source-owned lessons declared by the admitted factory release")

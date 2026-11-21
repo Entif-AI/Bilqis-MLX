@@ -7,8 +7,9 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.control_plane import ControlPlaneClient, ControlPlaneService, EventFamily
 from bilqis_mlx.control_plane.native_contracts import materialized_at, run_ref
 from bilqis_mlx.control_plane.native_source import (
-    authenticated_history, materialize_native_projection, native_query_catalog,
-    native_query_source, refresh_native_events,
+    authenticated_history, materialize_current_native_projection,
+    materialize_native_projection, native_query_catalog, native_query_source,
+    refresh_native_events,
 )
 from bilqis_mlx.mission_control import (
     CandidateDecision, CapabilitySnapshot, LearningEpisode, OperatorView, ResourceSample,
@@ -141,8 +142,8 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
         self.parent()
         self.publish_successor()
         with patch(
-                "bilqis_mlx.control_plane.native_source.materialize_native_projection",
-                wraps=materialize_native_projection) as materialize:
+                "bilqis_mlx.control_plane.native_source.materialize_current_native_projection",
+                wraps=materialize_current_native_projection) as materialize:
             source = native_query_source(self.run)
             first = source()
             self.assertIs(source(), first)
@@ -152,7 +153,7 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             self.assertIsNot(second, first)
             self.assertEqual(materialize.call_count, 2)
 
-    def test_query_source_observation_change_does_not_reauthenticate_accepted_history(self):
+    def test_query_source_current_path_never_reauthenticates_accepted_history(self):
         self.parent()
         self.publish_successor()
         with patch(
@@ -160,11 +161,25 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
                 wraps=authenticated_history) as authenticate:
             source = native_query_source(self.run)
             source()
-            first = authenticate.call_count
-            self.assertGreater(first, 0)
+            self.assertEqual(authenticate.call_count, 0)
             (self.run / "trainer-observed.json").write_text("{}")
             source()
-            self.assertEqual(authenticate.call_count, first)
+            self.assertEqual(authenticate.call_count, 0)
+
+    def test_query_source_historical_request_uses_authenticated_history(self):
+        self.parent()
+        source_generation, _pointer = self.publish_successor()
+        source = native_query_source(self.run)
+        request = QueryRequest(
+            QueryFamily.RUN, mode=QueryMode.HISTORICAL,
+            run_id=source_generation.run_id, generation=0)
+        with patch(
+                "bilqis_mlx.control_plane.native_source.authenticated_history",
+                wraps=authenticated_history) as authenticate:
+            catalog = source(request)
+        self.assertGreater(authenticate.call_count, 0)
+        page = catalog.query(request)
+        self.assertIn(page.state.value, {"PRESENT", "PARTIAL"})
 
     def test_query_source_observation_refresh_does_not_cold_load_accepted_student(self):
         self.parent()
@@ -188,6 +203,23 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             page = query_source().query(QueryRequest(
                 QueryFamily.RUN, run_id=source_generation.run_id))
         self.assertIn(page.state.value, {"PRESENT", "PARTIAL"})
+
+    def test_query_source_current_tip_projects_latest_accepted_capability_and_episode(self):
+        self.parent()
+        source_generation, _pointer = self.publish_successor()
+        catalog = native_query_source(self.run)()
+        capability = catalog.query(QueryRequest(
+            QueryFamily.CAPABILITY, run_id=source_generation.run_id))
+        episode = catalog.query(QueryRequest(
+            QueryFamily.EPISODE, run_id=source_generation.run_id))
+        self.assertTrue(any(
+            isinstance(record, CapabilitySnapshot)
+            and record.capability_id == "A.NATIVE"
+            for record in capability.records))
+        self.assertTrue(any(
+            isinstance(record, LearningEpisode)
+            and record.capability_id == "A.NATIVE"
+            for record in episode.records))
 
     def test_native_query_catalog_exposes_current_operator_view_without_cp06_database(self):
         self.parent()

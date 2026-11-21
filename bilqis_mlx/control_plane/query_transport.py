@@ -18,7 +18,11 @@ def serve_query(service, session, request: dict) -> dict:
     except MissionControlContractError:
         return service.rejected_request(session, "CONTROL_PLANE_QUERY_INVALID")
     try:
-        catalog = service._query_source()
+        source = service._query_source
+        catalog = (
+            source(query)
+            if getattr(source, "_bilqis_query_aware", False)
+            else source())
     except Exception:
         return service.rejected_request(
             session, "CONTROL_PLANE_QUERY_SOURCE_UNAVAILABLE")

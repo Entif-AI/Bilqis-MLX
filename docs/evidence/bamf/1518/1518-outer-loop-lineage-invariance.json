@@ -1,5 +1,5 @@
 {
-  "schema": "bilqis.bamf.outer-loop-lineage-invariance/v2",
+  "schema": "bilqis.bamf.outer-loop-lineage-invariance/v3",
   "issue": 1518,
   "architecture_issue": 1526,
   "authorizing": false,
@@ -92,8 +92,8 @@
     "comparison_scope": "post-repair-production-path-witness-not-live-trainer-speedup-ratio"
   },
   "verification": {
-    "integrated_origin_main_sha256": "38813530c3fc4b803f7cf4b8b1e800b978f49d74",
-    "integration_merge_sha256": "0623b992eff7052a8331b6ae6bfb91540272d468",
+    "integrated_origin_main_sha256": "0ab5f893d4653e113440160851eeb24627fc0d9a",
+    "integration_merge_sha256": "5631e16f3920ae0f2c308c0a9a17f7998948817b",
     "current_admission_control_plane": "42 passed, 3 subtests passed in 21.78s",
     "vocabulary_semantics": "12 passed, 2 skipped, 3 subtests passed in 0.52s",
     "cadence": "18 passed in 0.54s",
@@ -115,10 +115,66 @@
     "legacy_cadence_resume_migration": "human resume rebuilds only BAMF_ACTIVE_GRADE_CADENCE_PROJECTION_REBUILD_REQUIRED under exclusive operator custody; dry-run remains non-mutating",
     "dashboard_cold_resume_hydration": "complete-journal score/graduation projection restores old whole-student header evidence beyond the bounded recent display window",
     "dashboard_live_refresh": "display-only redraw loop every 0.5s; live trainer observation remains a one-second atomic heartbeat",
-    "cadence_dashboard_focused_verification": "40 passed across resume migration, cadence replay, terminal projection, dashboard watch, renderer metrics, and operator dashboard events"
+    "cadence_dashboard_focused_verification": "40 passed across resume migration, cadence replay, terminal projection, dashboard watch, renderer metrics, and operator dashboard events",
+    "post_main_integration_seam": "10 passed in 0.89s",
+    "final_six_step_operator_witness": "PASS receipt; six-step visit 75.077155s; source_mutated=false; human run untouched"
   },
   "remaining_distinct_owner": {
-    "selected_source_cold_construction_wall_seconds_observed": 11.021,
-    "optimized_by_this_issue": false
+    "planning_wall_seconds_observed": 40.96637108293362,
+    "selected_source_materialization_wall_seconds_observed": 10.020139375003055,
+    "retention_wall_seconds_observed": 18.859068333171308,
+    "candidate_steps_combined_wall_seconds_observed": 4.8566911679226905,
+    "neural_candidate_path_is_dominant_owner": false,
+    "optimized_further_by_this_closeout": false
+  },
+  "post_repair_disposable_real_operator_witness": {
+    "label": "1532 real operator six-step learning-first v5 post-main-reconcile",
+    "detached_runner_schema": "bilqis.bamf.detached-long-run/v2",
+    "returncode": 0,
+    "source_mutated": false,
+    "source_snapshot_sha256": "83d00f2e87825cb5227a0739e796d8c49df3558f813a09ecbc56e4059c75c8d9",
+    "authorizing": false,
+    "published": false,
+    "human_run_mutated": false,
+    "strict_evidence": false,
+    "c03_bootstrap_authority": "deterministic-disposable-fixture",
+    "source_authority_registry": "combined-production-shaped-fixture",
+    "salience_signer_authority": "owner:c06 deterministic fixture key",
+    "operator_status": "REJECTED",
+    "capability": "A.EDGE",
+    "candidate_update_steps": 6,
+    "step_count": 6,
+    "candidate_step_wall_seconds": [
+      0.6023595419246703,
+      0.8598399581387639,
+      0.8578847500029951,
+      0.8968902088236064,
+      0.7737533340696245,
+      0.8659633749630302
+    ],
+    "candidate_steps_combined_wall_seconds": 4.8566911679226905,
+    "accepted_state_setup_wall_seconds": 0.3268396658822894,
+    "planning_wall_seconds": 40.96637108293362,
+    "source_materialization_wall_seconds": 10.020139375003055,
+    "retention_wall_seconds": 18.859068333171308,
+    "retention_target_prepare_wall_seconds": 5.527458916883916,
+    "retention_target_parent_wall_seconds": 5.9759790420066565,
+    "retention_target_candidate_wall_seconds": 6.0523718749172986,
+    "retention_target_solver_wall_seconds": 0.7772999580483884,
+    "target_evaluation_wall_seconds": 12.025717749958858,
+    "visit_wall_seconds": 75.07715512486175,
+    "total_process_wall_seconds": 101.90790633298457,
+    "mlx_default_device": "Device(gpu, 0)",
+    "memory": {
+      "host_peak_rss_bytes": 4258742272,
+      "mlx_active_bytes": 6414172392,
+      "mlx_cache_bytes": 0,
+      "mlx_peak_bytes": 7296210343
+    },
+    "throughput_gate": {
+      "required_under_120_seconds": true,
+      "ideal_under_60_seconds": false
+    },
+    "comparison_scope": "disposable-production-operator-path-not-live-human-trainer-speedup-ratio"
   }
 }

@@ -105,6 +105,7 @@ def _run_bamf_resume(
             max_visits=args.max_visits, steps_per_visit=args.steps_per_visit,
             reserve_gib=args.reserve_gib,
             source_prefetch_workers=args.source_prefetch_workers,
+            strict_evidence=bool(getattr(args, "strict_evidence", False)),
             parent_graph=parent_graph,
             **({"profile_release": profile_release} if profile_release is not None else {}),
             run_authority=run_authority,

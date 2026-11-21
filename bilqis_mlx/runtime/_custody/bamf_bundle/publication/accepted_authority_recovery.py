@@ -11,7 +11,8 @@ from .acceptance import (
 from .accepted_authority_checkpoint import read_protected_accepted_authority_tip
 from .events import reconcile_bamf_outbox
 from .storage import (
-    _atomic_pointer, _live_bundle_manifest, _pointer_lock, _read_pointer,
+    _atomic_pointer, _live_bundle_manifest, _pointer_lock, _pointer_read_lock,
+    _read_pointer,
 )
 
 
@@ -75,14 +76,16 @@ def recover_accepted_authority_pointer(run_dir: Path):
     committed by the protected B13 tip.
     """
     run_dir = Path(run_dir)
-    with _pointer_lock(run_dir, create=True):
+    if run_dir.is_symlink() or not run_dir.is_dir():
+        return None
+    with _pointer_read_lock(run_dir):
         pointer = _read_pointer(run_dir / "bamf-state.json")
         run_id = pointer.get("run_id") if pointer is not None else None
         if run_id is None:
-            # Pointerless genesis recovery cannot infer a run identifier from the
-            # filesystem.  Its prepared/sealed recovery owner supplies that path.
             return pointer
         tip = read_protected_accepted_authority_tip(run_id)
+        if tip is not None and _pointer_matches_checkpoint(pointer, tip):
+            return pointer
         if tip is None:
             if pointer.get("generation") == 0:
                 student = load_bamf_bundle(
@@ -91,6 +94,13 @@ def recover_accepted_authority_pointer(run_dir: Path):
                 require_published_acceptance(
                     run_dir, pointer, student, load_bundle=load_bamf_bundle,
                     live_manifest=_live_bundle_manifest)
+            invalid("BAMF_ACCEPTED_AUTHORITY_CHECKPOINT_REQUIRED")
+    with _pointer_lock(run_dir, create=True):
+        pointer = _read_pointer(run_dir / "bamf-state.json")
+        if pointer is None or pointer.get("run_id") != run_id:
+            invalid("BAMF_ACCEPTED_AUTHORITY_TIP_DRIFT")
+        tip = read_protected_accepted_authority_tip(run_id)
+        if tip is None:
             invalid("BAMF_ACCEPTED_AUTHORITY_CHECKPOINT_REQUIRED")
         return _recover_tip_ahead_locked(run_dir, pointer, tip)
 

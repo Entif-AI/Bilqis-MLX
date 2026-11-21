@@ -246,14 +246,17 @@ def _accepted_successor(
         return None, None
     learned_visit = credited_visit(selection.visit, how_outcome)
     instruction_event = _instruction_event(run_dir, parent, cache, capability)
+    from ..evidence_mode import strict_evidence_enabled
     learning_health = None
-    try:
-        from ..learning_health_runtime import accepted_learning_health_state
-        health_state, learning_health = accepted_learning_health_state(
-            run_dir, parent, selection, candidate_evidence, decision, retained, capture,
-            plasticity_escape=plasticity_escape)
-    except (AttributeError, TypeError, ValueError, KeyError):
-        health_state = None
+    health_state = None
+    if strict_evidence_enabled():
+        try:
+            from ..learning_health_runtime import accepted_learning_health_state
+            health_state, learning_health = accepted_learning_health_state(
+                run_dir, parent, selection, candidate_evidence, decision, retained, capture,
+                plasticity_escape=plasticity_escape)
+        except (AttributeError, TypeError, ValueError, KeyError):
+            health_state = None
     events = ({
         "event": "BAMF_C16_3_ACCEPTED",
         "optimizer_step": retained.optimizer_step,
@@ -282,7 +285,9 @@ def _accepted_successor(
         bind_accepted_championship_successor,
         championship_boundary_capabilities,
     )
-    championship_scope = championship_boundary_capabilities(selection, capability)
+    championship_scope = (
+        championship_boundary_capabilities(selection, capability)
+        if strict_evidence_enabled() else ())
     if championship_scope:
         from bilqis_mlx.runtime._factory_retention_support import _training_exclusions
         from bilqis_mlx.runtime.factory_retention_owner import CURRENT_EVIDENCE_STAGE

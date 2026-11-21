@@ -49,7 +49,7 @@ def _run(prepared, order, *, observer=None, measure_phase=None):
         prepare_visit=lambda *_args, **_kwargs: prepared,
         record_rejection=lambda *_args, **_kwargs: order.append("rejection"),
         accept_publish=lambda *_args, **_kwargs: order.append("publication"),
-        load_generation=lambda *_args, **_kwargs: None,
+        load_generation=lambda *_args, **_kwargs: order.append("refresh"),
         measure_phase=(measure_phase or (lambda *_args, **_kwargs: nullcontext())),
         emit_progress=lambda *_args, **_kwargs: None,
         record_cadence_attempt=lambda *_args, **_kwargs: order.append("cadence"),
@@ -65,7 +65,7 @@ def test_rejected_attempt_records_cadence_after_rejection_custody():
 def test_accepted_attempt_records_cadence_after_successor_publication():
     order = []
     assert _run(_prepared(accepted=True), order) == "ACCEPTED"
-    assert order == ["publication", "cadence"]
+    assert order == ["publication", "refresh", "cadence"]
 
 
 def test_rejected_attempt_exposes_rejection_phase_and_wall_time():

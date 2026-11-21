@@ -76,7 +76,7 @@ def _record_candidate_rejection(
 def _publish_accepted(
         run_dir, reserve_gib, prepared, *, progress, observer,
         run_authority_binding, accept_publish, measure_phase, emit_progress,
-        record_cadence_attempt):
+        record_cadence_attempt, load_generation=None):
     parent, selection = prepared.parent, prepared.selection
     step, decision, retained = prepared.step, prepared.decision, prepared.retained
     successor = prepared.successor
@@ -97,6 +97,8 @@ def _publish_accepted(
             reserve_gib=reserve_gib,
             training_authorities=step.transaction.training_authorities,
             publication_observer=publication_observer)
+    if load_generation is not None:
+        load_generation(run_dir)
     cadence = _cadence(selection)
     if cadence is not None and record_cadence_attempt is not None:
         record_cadence_attempt(run_dir, cadence, prepared.capability)
@@ -140,7 +142,8 @@ def visit(
         run_dir, reserve_gib, prepared, progress=progress, observer=observer,
         run_authority_binding=run_authority_binding, accept_publish=accept_publish,
         measure_phase=measure_phase, emit_progress=emit_progress,
-        record_cadence_attempt=record_cadence_attempt)
+        record_cadence_attempt=record_cadence_attempt,
+        load_generation=load_generation)
 
 
 __all__ = ("visit",)
