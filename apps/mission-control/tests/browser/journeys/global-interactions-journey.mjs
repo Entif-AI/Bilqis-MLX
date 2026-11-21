@@ -68,9 +68,12 @@ export default async function globalInteractionsJourney(page) {
     input.dispatchEvent(new Event("input", {bubbles: true}));
   });
   await generation.press("Enter");
-  await page.locator('[data-test-id="school-historical-unavailable"]').waitFor();
+  await page.waitForFunction(() => location.hash.includes("generation=44238") &&
+    location.hash.includes("mode=HISTORICAL"));
   check(page.url().includes("generation=44238") && page.url().includes("mode=HISTORICAL"),
-    "School preserves the exact historical lens while unavailable");
+    "School preserves the exact historical lens");
+  check((await page.locator('[data-test-id="investigation-posture-mode"]').innerText()).includes("HISTORICAL"),
+    "global investigation posture exposes the historical lens explicitly");
 
   await page.locator('[data-test-id="nav-destination-memory"]').click();
   const memoryWorkspace = page.locator('[data-test-id="memory-workspace"]');
