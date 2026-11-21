@@ -110,10 +110,11 @@ def _accepted_bamf_refs(root: Path, file_ids: set[str]) -> tuple[set[str], dict[
     first = True
     while _valid_digest(digest):
         manifest, path = _manifest(root, digest)
-        found: set[str] = set()
-        _digests(manifest, found)
-        reachable.update(found & file_ids)
-        reachable.update(_sidecar_refs(manifest, path, digest, file_ids))
+        if first:
+            found: set[str] = set()
+            _digests(manifest, found)
+            reachable.update(found & file_ids)
+            reachable.update(_sidecar_refs(manifest, path, digest, file_ids))
         tiers["bamf_current" if first else "bamf_ancestry"] += 1
         parent = manifest.get("parent_manifest_sha256")
         if not _valid_digest(parent):
