@@ -2,6 +2,14 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.4.0](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.3.0...v1.4.0) (2026-11-21)
+
+
+### Features
+
+* **mission-control:** add persistent notification feed ([#1519](https://github.com/Entif-AI/Bilqis-MLX/issues/1519)) ([cb66491](https://github.com/Entif-AI/Bilqis-MLX/commit/cb66491f8daf6a0e68956717e512086ddbabe2f0))
+* **mission-control:** add read-only semantic release cockpit ([#1517](https://github.com/Entif-AI/Bilqis-MLX/issues/1517)) ([e76748d](https://github.com/Entif-AI/Bilqis-MLX/commit/e76748dd6d37f3e445c5c697e60fc85ca41bdb0a))
+
 ## [1.3.0](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.19...v1.3.0) (2026-11-21)
 
 
