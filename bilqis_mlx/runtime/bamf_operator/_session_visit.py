@@ -125,11 +125,17 @@ def visit(
     if prepared.status in _TERMINAL_PREPARED_STATUSES:
         return prepared.status
     if prepared.status == "RESOURCE_REJECTED":
-        return _record_resource_rejection(
-            run_dir, prepared, record_rejection, run_authority_binding)
+        if observer is not None:
+            observer.update(phase="REJECTING")
+        with measure_phase(observer, "rejection_wall_seconds"):
+            return _record_resource_rejection(
+                run_dir, prepared, record_rejection, run_authority_binding)
     if not prepared.decision.accepted:
-        return _record_candidate_rejection(
-            run_dir, prepared, record_rejection, record_cadence_attempt)
+        if observer is not None:
+            observer.update(phase="REJECTING")
+        with measure_phase(observer, "rejection_wall_seconds"):
+            return _record_candidate_rejection(
+                run_dir, prepared, record_rejection, record_cadence_attempt)
     return _publish_accepted(
         run_dir, reserve_gib, prepared, progress=progress, observer=observer,
         run_authority_binding=run_authority_binding, accept_publish=accept_publish,

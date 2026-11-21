@@ -103,6 +103,34 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
             capture_factory, horizon, evaluate, decide, derive, context,
             parent, cache, selection, transactions, evidence)
 
+    def test_execution_context_reports_accepted_setup_substages(self):
+        parent = SimpleNamespace(outbox=())
+        context = SimpleNamespace()
+        host = SimpleNamespace(source_context=lambda **_kwargs: context)
+        authenticated = SimpleNamespace(
+            features="features",
+            selection=SimpleNamespace(path="atlas"),
+            construction_predecessor=None,
+            feature_artifact_path="feature",
+        )
+        metrics = {}
+        prefix = "bilqis_mlx.runtime.bamf_operator.session_support."
+        with patch(prefix + "AcceptedRuntimeHost", return_value=host), patch(
+                prefix + "load_accepted_generation", return_value=parent), patch(
+                prefix + "bind_accepted_execution_feature_context",
+                return_value=authenticated), patch(
+                prefix + "time.perf_counter",
+                side_effect=(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0)):
+            result = _execution_context(Path("/run"), performance_metrics=metrics)
+
+        self.assertEqual(result, (parent, context, "atlas", "feature"))
+        self.assertEqual(metrics, {
+            "accepted_runtime_host_wall_seconds": 1.0,
+            "accepted_generation_load_wall_seconds": 1.0,
+            "accepted_source_context_wall_seconds": 1.0,
+            "accepted_feature_authentication_wall_seconds": 1.0,
+        })
+
     def test_resource_observation_reports_semantic_materialization_counts(self):
         from bilqis_mlx.runtime.bamf_operator.session_support import _resource_observation
 
@@ -154,17 +182,15 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
         host = SimpleNamespace(source_context=lambda **_kwargs: context)
         authenticated = SimpleNamespace(
             features="features", construction_predecessor="predecessor",
-            selection=SimpleNamespace(path="/atlas"))
-        feature = SimpleNamespace(path="/feature")
+            selection=SimpleNamespace(path="/atlas"),
+            feature_artifact_path="/feature")
         with patch(
                 "bilqis_mlx.runtime.bamf_operator.session_support.load_accepted_generation",
                 return_value=parent), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_support.AcceptedRuntimeHost",
                 return_value=host), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_support.authenticate_bamf_execution_feature_context",
-                return_value=authenticated), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_support.persist_feature_manifest",
-                return_value=feature):
+                "bilqis_mlx.runtime.bamf_operator.session_support.bind_accepted_execution_feature_context",
+                return_value=authenticated):
             self.assertEqual(
                 _execution_context(Path("/run")),
                 (parent, context, "/atlas", "/feature"))

@@ -64,6 +64,21 @@ class AcceptedExecutionRuntimeTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             AcceptedExecutionCache()
 
+    def test_rebound_accepted_cache_does_not_repeat_deep_bundle_validation(self):
+        self.publish(candidate(parent_state()))
+        with shape_patch():
+            cache = bind_accepted_execution_cache(self.run)
+            with patch(
+                    "bilqis_mlx.runtime.bamf_bundle.accepted_hydration."
+                    "require_bamf_bundle_currentness",
+                    wraps=__import__(
+                        "bilqis_mlx.runtime.bamf_bundle.accepted_hydration",
+                        fromlist=["require_bamf_bundle_currentness"],
+                    ).require_bamf_bundle_currentness) as current:
+                rebound = bind_accepted_execution_cache(self.run)
+        self.assertIs(rebound, cache)
+        current.assert_called_once()
+
     def test_candidate_execution_cache_is_bound_to_current_parent_and_transaction(self):
         self.publish(candidate(parent_state()))
         with shape_patch():

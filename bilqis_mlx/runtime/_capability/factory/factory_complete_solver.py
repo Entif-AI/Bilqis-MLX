@@ -53,14 +53,22 @@ class FactoryEvaluationInstrument:
             _invalid("BAMF_C05_FACTORY_INSTRUMENT_INVALID")
 
 
-def _execution_binding(candidate: BamfBundleCandidate, parameters=None):
+def _execution_binding(
+        candidate: BamfBundleCandidate, parameters=None, *, execution_cache=None):
     if not isinstance(candidate, BamfBundleCandidate):
         _invalid("BAMF_C05_CANDIDATE_REQUIRED")
     parameters = (
         candidate.retained_state.optimizer.parameters
         if parameters is None else parameters
     )
-    return issue_execution_generation_binding(parameters,
+    if execution_cache is None:
+        return issue_execution_generation_binding(
+            parameters, spec=candidate.topology, extents=candidate.extents)
+    from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
+        bind_execution_generation,
+    )
+    return bind_execution_generation(
+        execution_cache, parameters,
         spec=candidate.topology, extents=candidate.extents)
 
 
@@ -230,6 +238,7 @@ def factory_complete_solver(
     instruments: tuple[FactoryEvaluationInstrument, ...],
     *,
     parameters=None,
+    execution_cache=None,
 ) -> tuple[CompleteSolver, str]:
     """Bind cases to one semantic candidate and one explicit read-only weight view.
 
@@ -243,7 +252,8 @@ def factory_complete_solver(
         _invalid("BAMF_C05_FACTORY_INSTRUMENTS_REQUIRED")
     return build_factory_complete_solver(
         source_context, candidate, artifact_path, instruments,
-        execution_binding=_execution_binding,
+        execution_binding=lambda owned, values: _execution_binding(
+            owned, values, execution_cache=execution_cache),
         authenticate_context=authenticate_bamf_execution_feature_context,
         bind_case=bind_factory_evaluation_case,
         route_plan=task_goal_route_plan,

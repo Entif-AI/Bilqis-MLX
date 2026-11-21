@@ -105,6 +105,12 @@ STEP_COST_FIELDS = (
 )
 
 VISIT_PERFORMANCE_FIELDS = (
+    "accepted_state_setup_wall_seconds",
+    "accepted_state_setup_other_wall_seconds",
+    "accepted_runtime_host_wall_seconds",
+    "accepted_generation_load_wall_seconds",
+    "accepted_source_context_wall_seconds",
+    "accepted_feature_authentication_wall_seconds",
     "planning_wall_seconds",
     "source_materialization_wall_seconds",
     "target_evaluation_wall_seconds",
@@ -127,6 +133,7 @@ VISIT_PERFORMANCE_FIELDS = (
     "championship_candidate_wall_seconds",
     "adviser_wall_seconds",
     "evidence_finalization_wall_seconds",
+    "rejection_wall_seconds",
     "publishing_wall_seconds",
 )
 

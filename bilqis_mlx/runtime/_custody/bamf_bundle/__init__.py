@@ -12,7 +12,8 @@ __path__.append(str(Path(__file__).parent / "_support"))
 from .codec import load_bamf_bundle, save_bamf_bundle
 from .feature_authority import (
     AcceptedGenerationFeatureContext, AcceptedGenerationFeatureReceipt,
-    AuthenticatedCandidateFeatureContext, AuthenticatedGenerationFeatureContext,
+    AuthenticatedCandidateFeatureContext, AuthenticatedCheckpointFeatureContext,
+    AuthenticatedGenerationFeatureContext,
     authenticate_bamf_execution_feature_context,
     authenticate_bamf_generation_feature_context,
     authenticate_bamf_candidate_feature_context, authenticate_bamf_candidate_features,
@@ -21,6 +22,7 @@ from .feature_authority import (
     read_accepted_generation_feature_lineage, read_accepted_generation_feature_receipt,
     verify_accepted_generation_feature_receipt,
 )
+from .feature.context import is_authenticated_generation_feature_context
 from .publication import (
     AcceptedGenerationInspection, inspect_accepted_generation,
     load_bamf_generation, load_bamf_generation_authority,
@@ -62,6 +64,7 @@ _LAZY_EXPORTS = MappingProxyType({
     "require_staged_vocabulary_admission_headroom": ".vocabulary.admission",
     "AcceptedVocabularyRegistryExport": ".vocabulary.registry_export",
     "read_accepted_vocabulary_registry_export": ".vocabulary.registry_export",
+    "backfill_current_accepted_authority": ".publication.accepted_authority_migration",
 })
 
 
@@ -94,7 +97,8 @@ __all__ = (
     "AcceptedVocabularyRegistryExport", "read_accepted_vocabulary_registry_export",
     "PackageImportTransition",
     "AcceptedGenerationFeatureContext", "AcceptedGenerationFeatureReceipt",
-    "AuthenticatedCandidateFeatureContext", "AuthenticatedGenerationFeatureContext",
+    "AuthenticatedCandidateFeatureContext", "AuthenticatedCheckpointFeatureContext",
+    "AuthenticatedGenerationFeatureContext", "is_authenticated_generation_feature_context",
     "authenticate_bamf_candidate_feature_context", "read_accepted_generation_feature_lineage",
     "authenticate_bamf_execution_feature_context",
     "authenticate_bamf_generation_feature_context",
@@ -106,5 +110,6 @@ __all__ = (
     "InitialFactoryFoundationAuthority", "issue_initial_factory_foundation_authority",
     "InitialFoundationFeatureAuthority", "issue_initial_foundation_feature_authority",
     "recover_prepared_initial_generation", "recover_sealed_initial_generation",
+    "backfill_current_accepted_authority",
     "prepare_initial_generation", "publish_initial_generation",
 )

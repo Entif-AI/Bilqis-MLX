@@ -41,7 +41,8 @@ class AcceptedFeatureLineageTests(FeatureLineageCase):
         proposed = replace(proposed, transition={
             **proposed.transition, "kind": "PARAMETER_EXTENSION",
             "invalidate_derived_caches": True})
-        self.publish(proposed)
+        with self.source_replay(successor):
+            self.publish(proposed)
 
         def replay(snapshot, schema):
             return successor if schema.predecessor is not None else root
@@ -133,7 +134,8 @@ class AcceptedFeatureLineageTests(FeatureLineageCase):
         changed_candidate = replace(changed_candidate, transition={
             **changed_candidate.transition, "kind": "PARAMETER_EXTENSION",
             "invalidate_derived_caches": True})
-        second = self.publish(changed_candidate)
+        with self.source_replay(changed):
+            second = self.publish(changed_candidate)
         with shape_patch():
             accepted_parent = load_bamf_generation(self.pointer)
         retained = feature_bound(

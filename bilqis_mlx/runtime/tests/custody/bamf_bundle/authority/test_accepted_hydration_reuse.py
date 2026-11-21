@@ -76,9 +76,26 @@ class AcceptedHydrationReuseTests(unittest.TestCase):
             cold = load_accepted_generation(self.run)
             self.assertIs(load_accepted_generation(self.run), cold)
         self.assertEqual(cold.generation, 1)
-        # A true process restart intentionally rehydrates the historical parent
-        # once as part of the pre-existing acceptance-lineage verification.
-        self.assertEqual(payload.call_count, 2)
+        # Durable accepted authority makes cold restart current-only: the parent
+        # transition was established at publication and is not replayed here.
+        self.assertEqual(payload.call_count, 1)
+
+    def test_cold_hydration_cost_is_invariant_to_lineage_depth(self):
+        pointer = self.publish(candidate(parent_state()))
+        state = parent_state()
+        for generation in range(1, 6):
+            state = next_accepted_step(state)
+            pointer = self.publish(candidate(
+                state, generation=generation,
+                parent=pointer["manifest_sha256"]))
+
+        _reset_execution_cache_owner_for_tests()
+        original = mlx_checkpoint.load_bamf_state_payload
+        with shape_patch(), patch.object(
+                mlx_checkpoint, "load_bamf_state_payload", wraps=original) as payload:
+            cold = load_accepted_generation(self.run)
+        self.assertEqual(cold.generation, 5)
+        self.assertEqual(payload.call_count, 1)
 
 
 if __name__ == "__main__":

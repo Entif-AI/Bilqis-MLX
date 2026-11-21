@@ -99,7 +99,7 @@ def bind_candidate_active_semantic_rows(candidate, authenticated) -> BamfActiveS
     """Bind retained generation-active rows to one authenticated lifecycle context."""
     from bilqis_mlx.learning.atlas_candidate import CandidateState as RetainedCandidateState
     from bilqis_mlx.runtime.bamf_bundle import (
-        AuthenticatedCandidateFeatureContext, AuthenticatedGenerationFeatureContext,
+        AuthenticatedCandidateFeatureContext, is_authenticated_generation_feature_context,
         BamfBundleCandidate, CompleteStudent,
     )
 
@@ -108,7 +108,7 @@ def bind_candidate_active_semantic_rows(candidate, authenticated) -> BamfActiveS
         and type(authenticated) is AuthenticatedCandidateFeatureContext)
     accepted_context = (
         type(candidate) is CompleteStudent
-        and type(authenticated) is AuthenticatedGenerationFeatureContext)
+        and is_authenticated_generation_feature_context(authenticated))
     if (not (candidate_context or accepted_context)
             or type(candidate.extents) is not GenerationExtents
             or type(candidate.retained_state) is not RetainedCandidateState

@@ -102,8 +102,11 @@ def prepare_bamf_visit(
         _invalid("BAMF_OPERATOR_SESSION_BOUNDS_INVALID")
     _emit_progress(progress, "validating accepted generation and source custody")
     visit_currentness_metrics = VisitCurrentnessMetrics()
+    accepted_state_metrics = {}
+    accepted_state_started = time.perf_counter()
     parent, context, atlas_path, feature_path = _execution_context(
-        run_dir, currentness_metrics=visit_currentness_metrics)
+        run_dir, currentness_metrics=visit_currentness_metrics,
+        performance_metrics=accepted_state_metrics)
     if observer is not None:
         observer.bind_parent(parent)
         observer.update(phase="SELECTING")
@@ -116,6 +119,18 @@ def prepare_bamf_visit(
         parent, program,
         candidate_identity_sha256=getattr(
             host_cache, "_candidate_identity_sha256", None))
+    accepted_state_total = max(0.0, time.perf_counter() - accepted_state_started)
+    accepted_state_metrics["accepted_state_setup_wall_seconds"] = accepted_state_total
+    accepted_state_metrics["accepted_state_setup_other_wall_seconds"] = max(
+        0.0,
+        accepted_state_total - sum(float(accepted_state_metrics.get(name, 0.0)) for name in (
+            "accepted_runtime_host_wall_seconds",
+            "accepted_generation_load_wall_seconds",
+            "accepted_source_context_wall_seconds",
+            "accepted_feature_authentication_wall_seconds",
+        )))
+    if observer is not None:
+        observer.update(**accepted_state_metrics)
     _emit_progress(progress, "planning current candidate frontier and teacher priority")
     planning_started = time.perf_counter()
     selection = select_foundation_priority_visit(

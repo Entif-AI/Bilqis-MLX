@@ -205,7 +205,8 @@ def _target_stage(
 
     started = time.perf_counter()
     parent_solver, parent_generation = factory_complete_solver(
-        source_context, parent, artifact_path, target_instruments)
+        source_context, parent, artifact_path, target_instruments,
+        execution_cache=cache)
     candidate_solver, candidate_generation = factory_complete_solver(
         source_context, candidate_bundle, artifact_path, target_instruments)
     _elapsed(observer, "retention_target_solver_wall_seconds", started)
@@ -261,7 +262,8 @@ def _protected_stage(
             source_sha256=plan.source_sha256)
         started = time.perf_counter()
         protected_parent_solver, protected_parent_generation = factory_complete_solver(
-            source_context, parent, artifact_path, protected_instruments)
+            source_context, parent, artifact_path, protected_instruments,
+            execution_cache=cache)
         parent_identity = factory_parent_assessment_identity(
             source_context, parent, cache, protected_cohort,
             protected_parent_solver, protected_parent_generation)

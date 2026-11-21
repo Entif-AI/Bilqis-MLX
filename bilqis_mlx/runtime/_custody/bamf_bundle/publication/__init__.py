@@ -209,6 +209,8 @@ def _publish_authorized_generation(
         reserve_gib: float, parent_witness=None,
         expected_active_grade_activation_sha256=None) -> dict:
     """Shared crash-safe transaction after generation-specific authority validates."""
+    from .accepted_authority_recovery import recover_known_run_accepted_authority_pointer
+    recover_known_run_accepted_authority_pointer(run_dir, candidate.run_id)
     authority, prepared, existing = _authorize_publication_candidate(
         run_dir, candidate, authority)
     if existing is not None:
@@ -280,6 +282,14 @@ def _publish_authorized_generation(
                 "bundle": str(target.relative_to(run_dir)),
                 "manifest_sha256": digest, "acceptance_sha256": authority.digest,
             }
+            from .accepted_authority_commit import commit_accepted_authority
+            commit_accepted_authority(
+                run_dir, pointer, published_student, current=current, parent=parent,
+                genesis_features=(
+                    None if prepared is None else prepared.foundation_features.features),
+                candidate_identity_sha256=authority.candidate_identity_sha256,
+                parent_candidate_identity_sha256=getattr(
+                    authority, "parent_candidate_identity_sha256", None))
             _atomic_pointer(pointer_path, pointer)
             reconcile_bamf_outbox(run_dir, published_student)
             return pointer
@@ -293,17 +303,25 @@ def load_bamf_generation_authority(
         pointer_path: Path) -> tuple[CompleteStudent, str]:
     """Read current accepted B13 authority without mutating delivery state."""
     pointer_path = Path(pointer_path)
+    from .accepted_authority_recovery import recover_accepted_authority_pointer
+    recover_accepted_authority_pointer(pointer_path.parent)
     with _pointer_read_lock(pointer_path.parent):
         student, pointer = _load_generation_locked(pointer_path)
-        _require_published_acceptance(pointer_path.parent, pointer, student)
+        from ..accepted_runtime import _require_checkpoint_current_state
+        _require_checkpoint_current_state(pointer_path.parent, pointer, student)
         return student, pointer["manifest_sha256"]
 
 
 def load_bamf_generation(
         pointer_path: Path, *, publish_missing_outbox: bool = True) -> CompleteStudent:
     pointer_path = Path(pointer_path)
+    from .accepted_authority_recovery import recover_accepted_authority_pointer
+    recover_accepted_authority_pointer(pointer_path.parent)
     with _pointer_lock(pointer_path.parent):
         student, _ = _load_generation_locked(pointer_path)
+        pointer = _read_pointer(pointer_path)
+        from ..accepted_runtime import _require_checkpoint_current_state
+        _require_checkpoint_current_state(pointer_path.parent, pointer, student)
         reconcile_bamf_outbox(
             pointer_path.parent, student, publish_missing=publish_missing_outbox)
         return student

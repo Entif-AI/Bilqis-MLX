@@ -5,9 +5,7 @@ import time
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_resources import MemoryBudget
-from bilqis_mlx.runtime.bamf_bundle import (
-    AuthenticatedGenerationFeatureContext, CompleteStudent,
-)
+from bilqis_mlx.runtime.bamf_bundle import CompleteStudent
 
 from .atlas_visit_provenance import BamfVisitProvenance
 from .candidate.step import (

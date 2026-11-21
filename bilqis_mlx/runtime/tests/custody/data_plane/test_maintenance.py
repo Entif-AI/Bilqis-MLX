@@ -98,7 +98,7 @@ class DataPlaneMaintenanceTests(DataPlaneCase):
 
         self.assertEqual(
             plane._db.execute("SELECT value FROM meta WHERE key='schema_version'").fetchone(),
-            ("2",),
+            ("3",),
         )
         self.assertEqual(plane.stats()["objects"], 0)
 

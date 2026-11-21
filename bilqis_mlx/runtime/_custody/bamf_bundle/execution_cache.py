@@ -45,6 +45,7 @@ class AcceptedExecutionCache:
     _run_dir: Path | None = field(init=False, repr=False, compare=False)
     _correction_registry: object | None = field(init=False, repr=False, compare=False)
     _source_authority: object | None = field(init=False, repr=False, compare=False)
+    _bundle_currentness: object | None = field(init=False, repr=False, compare=False)
     _execution_bindings: dict = field(init=False, repr=False, compare=False)
     _execution_binding_lock: object = field(init=False, repr=False, compare=False)
     _candidate_identity_sha256: str | None = field(init=False, repr=False, compare=False)
@@ -113,6 +114,7 @@ def _new_execution_cache(
         ("_run_dir", None),
         ("_correction_registry", None),
         ("_source_authority", None),
+        ("_bundle_currentness", None),
         ("_execution_bindings", {}),
         ("_execution_binding_lock", RLock()),
         ("_candidate_identity_sha256", None),

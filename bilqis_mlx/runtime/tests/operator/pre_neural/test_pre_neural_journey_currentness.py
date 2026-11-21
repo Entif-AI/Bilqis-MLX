@@ -15,6 +15,48 @@ from .pre_neural_journey_support import (
 
 
 class PreNeuralJourneyCurrentnessTests(PreNeuralJourneySupport, unittest.TestCase):
+    def test_same_generation_execution_context_never_replays_feature_history(self):
+        from bilqis_mlx.runtime.bamf_bundle import feature_authority
+
+        self.current, self.parent_graph = historical_school_release()
+        snapshot = portable_atlas_snapshot()
+        schema, features, atlas_selection = journey_source(snapshot)
+        with wide_shape_patch(len(snapshot.abi_entries)):
+            self.publish_matching_genesis(snapshot, schema, features)
+            with self.journey_mounts(snapshot, schema, features, atlas_selection):
+                with patch.object(
+                        feature_authority, "_accepted_feature_context",
+                        side_effect=AssertionError("historical feature replay")):
+                    first = _execution_context(self.run)
+                    second = _execution_context(self.run)
+
+        first_context = first[1]._accepted_feature_context
+        second_context = second[1]._accepted_feature_context
+        self.assertGreaterEqual(first_context.atlas_reload_count, 1)
+        self.assertEqual(first_context.feature_manifest_rebuild_count, 0)
+        self.assertGreaterEqual(second_context.atlas_reload_count, 1)
+        self.assertEqual(second_context.feature_manifest_rebuild_count, 0)
+        self.assertEqual(first_context.receipt.digest, second_context.receipt.digest)
+
+    def test_feature_cache_hit_rejects_pointer_advance_before_return(self):
+        from bilqis_mlx.errors import BilqisError
+        from bilqis_mlx.runtime.bamf_bundle import accepted_runtime
+
+        self.current, self.parent_graph = historical_school_release()
+        snapshot = portable_atlas_snapshot()
+        schema, features, atlas_selection = journey_source(snapshot)
+        with wide_shape_patch(len(snapshot.abi_entries)):
+            self.publish_matching_genesis(snapshot, schema, features)
+            with self.journey_mounts(snapshot, schema, features, atlas_selection):
+                parent, _context, _atlas_path, _feature_path = _execution_context(self.run)
+                binder = accepted_runtime.bind_accepted_execution_feature_context
+                runtime = binder.__self__
+                hydration = runtime.current_hydration(self.run)
+                with patch.object(
+                        runtime, "current_hydration",
+                        side_effect=(hydration, object())), self.assertRaises(BilqisError):
+                    binder(self.run, parent, None)
+
     def test_priority_planning_authenticates_generation_once_for_all_capabilities(self):
         from bilqis_mlx.runtime import priority_planning_generation
 

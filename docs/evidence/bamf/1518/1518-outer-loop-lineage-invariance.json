@@ -1,0 +1,74 @@
+{
+  "schema": "bilqis.bamf.outer-loop-lineage-invariance/v2",
+  "issue": 1518,
+  "architecture_issue": 1526,
+  "authorizing": false,
+  "human_trainer_mutated": false,
+  "baseline_observation": {
+    "accepted_generation": 13,
+    "visit_wall_seconds": 432.839,
+    "planning_wall_seconds": 217.997,
+    "source_materialization_wall_seconds": 11.021,
+    "candidate_steps_combined_wall_seconds": 6.316,
+    "retention_wall_seconds": 66.985,
+    "retention_target_solver_wall_seconds": 43.725,
+    "retention_target_assessments_combined_wall_seconds": 15.462,
+    "adjacent_preplanning_accepted_setup_wall_seconds": 83.5
+  },
+  "accepted_authority": {
+    "checkpoint": "immutable-per-generation",
+    "protected_tip": "b13-owned-cas",
+    "generic_reference_can_mint_authority": false,
+    "normal_hot_history_replay": false,
+    "normal_cold_history_replay": false,
+    "cold_current_payload_loads_at_depth_5": 1,
+    "historical_replay_use": [
+      "explicit-audit",
+      "explicit-rebuild",
+      "explicit-migration"
+    ]
+  },
+  "publication_order": [
+    "install-child-bundle",
+    "persist-child-acceptance",
+    "persist-current-feature-artifact",
+    "store-child-checkpoint",
+    "cas-protected-tip",
+    "publish-filesystem-pointer",
+    "reconcile-outbox"
+  ],
+  "recovery": {
+    "tip_ahead_by_one": "deterministic-forward-reconcile",
+    "larger_gap_or_fork": "fail-closed",
+    "multi_generation_pointer_rollback": "rejected"
+  },
+  "feature_authority": {
+    "candidate_lineage_validation": "strict",
+    "accepted_cold_load": "checkpointed-current-artifact",
+    "accepted_cold_predecessor_payload_required": false,
+    "accepted_cold_history_replay": false
+  },
+  "cadence": {
+    "ordinary_restart": "durable-projection-plus-unseen-tail",
+    "full_replay": "explicit-rebuild-only"
+  },
+  "legacy": {
+    "silent_runtime_backfill": false,
+    "explicit_backfill": "backfill_current_accepted_authority",
+    "checkpoint_kind": "AUDIT_BACKFILL"
+  },
+  "timing_fields_added": [
+    "accepted_state_setup_wall_seconds",
+    "accepted_state_setup_other_wall_seconds",
+    "accepted_runtime_host_wall_seconds",
+    "accepted_generation_load_wall_seconds",
+    "accepted_source_context_wall_seconds",
+    "accepted_feature_authentication_wall_seconds",
+    "rejection_wall_seconds"
+  ],
+  "post_repair_live_wall_clock_claim": null,
+  "remaining_distinct_owner": {
+    "selected_source_cold_construction_wall_seconds_observed": 11.021,
+    "optimized_by_this_issue": false
+  }
+}

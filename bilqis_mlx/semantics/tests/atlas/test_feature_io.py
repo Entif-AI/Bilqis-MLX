@@ -15,6 +15,9 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.semantics.atlas.feature_io import (
     load_feature_manifest, persist_feature_manifest,
 )
+from bilqis_mlx.semantics.atlas.feature_io_storage import (
+    load_checkpoint_feature_manifest,
+)
 from bilqis_mlx.semantics.tests.test_atlas_features import (
     BROADER, _features, _snapshot,
 )
@@ -220,6 +223,30 @@ class AtlasFeatureIOTests(TestCase):
             self.assertEqual(
                 load_feature_manifest(receipt.path, predecessor=base),
                 successor)
+            self.assertEqual(
+                load_checkpoint_feature_manifest(
+                    receipt.path,
+                    expected_bundle_id=receipt.bundle_id,
+                    expected_feature_digest=successor.digest,
+                    expected_semantic_release=successor.semantic_release,
+                    expected_source_bundle_id=successor.source_bundle_id,
+                    expected_atlas_bundle_id=successor.atlas_bundle_id,
+                    expected_predecessor_digest=base.digest,
+                ),
+                successor)
+            with self.assertRaises(BilqisError) as caught:
+                load_checkpoint_feature_manifest(
+                    receipt.path,
+                    expected_bundle_id=receipt.bundle_id,
+                    expected_feature_digest=successor.digest,
+                    expected_semantic_release=successor.semantic_release,
+                    expected_source_bundle_id=successor.source_bundle_id,
+                    expected_atlas_bundle_id=successor.atlas_bundle_id,
+                    expected_predecessor_digest="f" * 64,
+                )
+            self.assertEqual(
+                caught.exception.context["reason"],
+                "BAMF_FEATURE_ARTIFACT_CHECKPOINT_MISMATCH")
 
     def test_cleanup_failure_never_leaks_raw_os_error(self):
         features = _features()

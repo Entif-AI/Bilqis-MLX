@@ -180,6 +180,18 @@ def require_initial_generation_trust_root(
         invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_INVALID")
 
 
+def initial_generation_trust_sha256(run_id: str) -> str:
+    """Return the integrity-checked external genesis trust digest for one run."""
+    stored = _stored_trust(run_id)
+    if stored is None:
+        invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_REQUIRED")
+    generation, _manifest, payload_sha256, raw = stored
+    if generation != 0 or payload_sha256 != sha(raw):
+        invalid("BAMF_INITIAL_GENERATION_TRUST_ROOT_INVALID")
+    return payload_sha256
+
+
 __all__ = (
-    "publish_initial_generation_trust_root", "require_initial_generation_trust_root",
+    "initial_generation_trust_sha256", "publish_initial_generation_trust_root",
+    "require_initial_generation_trust_root",
 )

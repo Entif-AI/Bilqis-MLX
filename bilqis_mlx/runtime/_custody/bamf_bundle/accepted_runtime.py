@@ -12,8 +12,12 @@ from bilqis_mlx.learning._atlas_candidate.identity_binding import (
 from .codec import load_bamf_bundle
 from .publication import (
     _live_bundle_manifest, _pointer_read_lock, _read_pointer,
-    _require_published_acceptance,
 )
+from .publication.acceptance import require_checkpoint_published_acceptance
+from .publication.accepted_authority_checkpoint import (
+    require_accepted_authority_checkpoint,
+)
+from .publication.genesis_trust import initial_generation_trust_sha256
 from .records import (
     BAMF_POINTER_SCHEMA, CompleteStudent, canonical, invalid, sha, sidecar_records,
 )
@@ -37,6 +41,45 @@ class AcceptedGenerationIdentity:
     optimizer_step: int
     candidate_identity_sha256: str
 
+
+def _acceptance_file_sha256(run_dir: Path, manifest_sha256: str) -> str:
+    path = Path(run_dir) / "bamf-acceptance" / f"{manifest_sha256}.json"
+    if path.is_symlink() or not path.is_file():
+        invalid("BAMF_GENERATION_ACCEPTANCE_REQUIRED")
+    return sha(path.read_bytes())
+
+
+def _require_checkpoint_current_state(run_dir: Path, pointer: dict, student):
+    """Bind current B13 custody to its protected durable accepted-authority tip."""
+    checkpoint = require_accepted_authority_checkpoint(
+        student.run_id, pointer["manifest_sha256"])
+    source = student.compiler_features.get("feature_source")
+    registry_sha = student.correction_frontier.get("source_authority_registry_sha256")
+    if registry_sha is None:
+        registry_sha = sha(canonical(None))
+    identity = student.run_identity
+    if (identity is None
+            or not isinstance(source, dict)
+            or checkpoint.run_identity_sha256 != identity.digest
+            or checkpoint.generation != student.generation
+            or checkpoint.pointer_sha256 != sha(canonical(pointer))
+            or checkpoint.acceptance_file_sha256
+            != _acceptance_file_sha256(run_dir, pointer["manifest_sha256"])
+            or checkpoint.optimizer_step != student.retained_state.optimizer_step
+            or checkpoint.topology_sha256 != student.topology.digest
+            or checkpoint.extents_sha256 != student.extents.digest
+            or checkpoint.implementation_sha256 != student.implementation_sha256
+            or checkpoint.source_authority_registry_sha256 != registry_sha
+            or checkpoint.semantic_release_sha256 != student.provenance.release_digest
+            or checkpoint.atlas_bundle_sha256 != source.get("atlas_bundle_id")
+            or checkpoint.factory_release_sha256 != identity.factory_release_sha256
+            or checkpoint.genesis_trust_sha256
+            != initial_generation_trust_sha256(student.run_id)):
+        invalid("BAMF_ACCEPTED_AUTHORITY_CHECKPOINT_DRIFT")
+    require_checkpoint_published_acceptance(
+        run_dir, pointer, student, checkpoint, live_manifest=_live_bundle_manifest)
+    return checkpoint
+
 def _read_accepted_locked(
         run_dir: Path, *, accepted_parent: tuple[str, CompleteStudent] | None = None):
     run_dir = Path(run_dir)
@@ -51,8 +94,7 @@ def _read_accepted_locked(
             or student.generation != pointer["generation"]
             or student.parent_manifest_sha256 != pointer["parent_manifest_sha256"]):
         invalid("BAMF_GENERATION_POINTER_DRIFT")
-    _require_published_acceptance(
-        run_dir, pointer, student, accepted_parent=accepted_parent)
+    _require_checkpoint_current_state(run_dir, pointer, student)
     return pointer, student
 
 
@@ -114,8 +156,7 @@ def _published_in_memory_identity_locked(
                 or stored.get("sha256") != sha(canonical(record))):
             invalid("BAMF_GENERATION_POINTER_DRIFT")
     if not acceptance_verified:
-        _require_published_acceptance(
-            run_dir, pointer, student, accepted_parent=accepted_parent)
+        _require_checkpoint_current_state(run_dir, pointer, student)
     return identity
 
 
@@ -131,7 +172,8 @@ def _published_in_memory_identity(
 
 from .accepted_execution_cache import (
     _require_owned_execution_cache, _reset_execution_cache_owner_for_tests,
-    bind_accepted_execution_cache, load_accepted_generation,
+    bind_accepted_execution_cache, bind_accepted_execution_feature_context,
+    load_accepted_generation,
     load_accepted_generation_with_pointer_if_cached,
 )
 
@@ -156,7 +198,7 @@ def _accepted_correction_registry(run_dir: Path):
 __all__ = (
     "AcceptedGenerationIdentity",
     "_identity_from_pointer", "_published_in_memory_identity", "_read_accepted",
-    "bind_accepted_execution_cache",
+    "bind_accepted_execution_cache", "bind_accepted_execution_feature_context",
     "load_accepted_generation",
     "load_accepted_generation_with_pointer_if_cached",
 )

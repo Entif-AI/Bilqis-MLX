@@ -15,6 +15,9 @@ from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactSelection, load_pinned_atlas_snapshot,
     resolve_atlas_artifact_selection,
 )
+from bilqis_mlx.semantics.atlas.feature_io_storage import (
+    load_checkpoint_feature_manifest,
+)
 
 from .codec import load_bamf_bundle
 from .publication import _require_published_acceptance
@@ -24,11 +27,14 @@ from .feature.acceptance import (
     parent_acceptance_anchor_from_manifest,
 )
 from .atlas_admission import ParsedAtlasAdmissionBinding
-from .feature.receipt import AcceptedGenerationFeatureReceipt, is_digest
 from .feature.context import (
     AcceptedGenerationFeatureContext, AuthenticatedCandidateFeatureContext,
-    AuthenticatedGenerationFeatureContext, _issue_candidate_feature_context,
+    AuthenticatedCheckpointFeatureContext, AuthenticatedGenerationFeatureContext,
+    _issue_candidate_feature_context, _issue_checkpoint_feature_context,
     _issue_generation_feature_context,
+)
+from .feature.receipt import (
+    AcceptedFeatureArtifactCommitment, AcceptedGenerationFeatureReceipt, is_digest,
 )
 from .feature.replay_support import (
     artifact_identity as _artifact_identity,
@@ -66,7 +72,7 @@ def _authenticate_feature_materialization(
 
 def _accepted_feature_context(run_dir: Path, manifest_sha256: str, student, *,
                               expected_acceptance_sha256: str):
-    """Rebuild generation and feature-construction ancestry from accepted custody."""
+    """Historical audit/migration oracle for accepted feature ancestry."""
     history = []
     current_sha = manifest_sha256
     current = student
@@ -225,6 +231,65 @@ def authenticate_bamf_generation_feature_context(
         feature_manifest_rebuild_count=materialization_count)
 
 
+def authenticate_checkpointed_bamf_generation_feature_context(
+        student: CompleteStudent, artifact_path: str | None,
+        feature_artifact_path: str | Path,
+        commitment: AcceptedFeatureArtifactCommitment,
+) -> AuthenticatedCheckpointFeatureContext:
+    """Authenticate current accepted feature bytes from checkpoint commitments.
+
+    ``commitment`` must come from the accepted-authority checkpoint owner. This
+    feature-side consumer deliberately does not authenticate that owner or replay
+    historical acceptance. It verifies every feature binding against the current
+    immutable generation, the current Atlas source identity, and the committed
+    content-addressed feature artifact.
+    """
+    if (type(student) is not CompleteStudent
+            or type(commitment) is not AcceptedFeatureArtifactCommitment
+            or not isinstance(feature_artifact_path, (str, Path))):
+        invalid("BAMF_CHECKPOINT_FEATURE_AUTHORITY_REQUIRED")
+    receipt = commitment.receipt
+    compiler = student.compiler_features
+    source = _feature_source(compiler)
+    if (receipt.run_id != student.run_id
+            or receipt.generation != student.generation
+            or receipt.parent_generation_manifest_sha256
+            != student.parent_manifest_sha256
+            or receipt.semantic_release != student.provenance.release_digest
+            or receipt.source_release_sha256 != receipt.semantic_release
+            or receipt.active_set_sha256 != student.extents.active_semantic_digest
+            or receipt.feature_sha256 != student.extents.factor_map_digest
+            or compiler.get("factor_map_sha256") != receipt.feature_sha256
+            or receipt.compiler_sha256 != compiler.get("compiler_sha256")
+            or receipt.implementation_sha256 != student.implementation_sha256
+            or receipt.source_atlas_bundle_id != source["atlas_bundle_id"]
+            or receipt.source_release_sha256 != source["release_sha256"]
+            or receipt.source_source_bundle_id != source["source_bundle_id"]):
+        invalid("BAMF_CHECKPOINT_FEATURE_BINDING_DRIFT")
+
+    schema = _feature_schema(compiler)
+    identity = _artifact_identity(source)
+    selection = (resolve_atlas_artifact_selection(identity)
+                 if artifact_path is None else AtlasArtifactSelection(
+                     str(artifact_path), identity.bundle_id,
+                     identity.release_sha256, identity.source_bundle_id))
+    snapshot = load_pinned_atlas_snapshot(selection)
+    if snapshot.active_set_sha256 != receipt.active_set_sha256:
+        invalid("BAMF_CHECKPOINT_FEATURE_ACTIVE_SET_DRIFT")
+    features = load_checkpoint_feature_manifest(
+        feature_artifact_path,
+        expected_bundle_id=commitment.artifact_bundle_id,
+        expected_feature_digest=receipt.feature_sha256,
+        expected_semantic_release=receipt.semantic_release,
+        expected_source_bundle_id=receipt.source_source_bundle_id,
+        expected_atlas_bundle_id=receipt.source_atlas_bundle_id,
+        expected_predecessor_digest=commitment.artifact_predecessor_digest,
+    )
+    return _issue_checkpoint_feature_context(
+        selection, snapshot, schema, features, commitment,
+        str(feature_artifact_path))
+
+
 def authenticate_bamf_execution_feature_context(
         candidate: BamfBundleCandidate, artifact_path: str,
         run_dir: Path | None = None):
@@ -240,7 +305,7 @@ def authenticate_bamf_execution_feature_context(
 
 
 def _read_accepted_generation_feature_materialization(pointer_path: Path):
-    """Return accepted receipt plus the one A01/A06 materialization used for replay."""
+    """Historical replay used by audit/migration and legacy callers."""
     pointer, student = accepted_generation(pointer_path)
     current_binding = _require_published_acceptance(
         pointer_path.parent, pointer, student)
@@ -286,7 +351,7 @@ def _read_accepted_generation_feature_context(pointer_path: Path):
 
 def read_accepted_generation_feature_context(
         pointer_path: Path) -> AcceptedGenerationFeatureContext:
-    """Return typed accepted feature replay plus construction ancestry."""
+    """Replay historical accepted feature construction ancestry."""
     receipt, features, predecessor, construction = (
         _read_accepted_generation_feature_context(pointer_path))
     return AcceptedGenerationFeatureContext(
