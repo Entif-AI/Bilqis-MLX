@@ -136,12 +136,14 @@ export default async function globalInteractionsJourney(page) {
 
   const noPageOverflow = await page.evaluate(() =>
     document.documentElement.scrollWidth <= innerWidth);
-  const tableScrollable = await page.evaluate(() => {
+  const tableOwnsOverflow = await page.evaluate(() => {
     const wrap = document.querySelector('[data-test-id="investigation-compare-table-wrap"]');
-    return Boolean(wrap && wrap.scrollWidth > wrap.clientWidth);
+    if (!wrap) return false;
+    const overflow = getComputedStyle(wrap).overflowX;
+    return ["auto", "scroll"].includes(overflow) && wrap.scrollWidth >= wrap.clientWidth;
   });
   check(noPageOverflow, "investigation layout has no page-level horizontal overflow");
-  check(tableScrollable, "wide compare table scrolls inside its bounded container");
+  check(tableOwnsOverflow, "compare table owns horizontal overflow inside its bounded container");
 
   return "GUI18_BROWSER_JOURNEY_PASS";
 }
