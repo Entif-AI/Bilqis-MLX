@@ -246,7 +246,7 @@ def _accepted_successor(
         return None, None
     learned_visit = credited_visit(selection.visit, how_outcome)
     instruction_event = _instruction_event(run_dir, parent, cache, capability)
-    from ..evidence_mode import strict_evidence_enabled
+    from .evidence_mode import strict_evidence_enabled
     learning_health = None
     health_state = None
     if strict_evidence_enabled():

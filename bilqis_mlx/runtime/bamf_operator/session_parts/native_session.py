@@ -179,7 +179,7 @@ def candidate_horizon_execution(
         distributed_profile=None, distributed_executor=None):
     cache = host_cache if host_cache is not None else bind_accepted_execution_cache(run_dir)
     from bilqis_mlx.runtime.bamf_bundle.execution_cache import AcceptedExecutionCache
-    from ..evidence_mode import strict_evidence_enabled
+    from .evidence_mode import strict_evidence_enabled
     rehearsal_plan = (
         compile_rehearsal_plan(run_dir, parent, cache, context, selection)
         if strict_evidence_enabled() and type(cache) is AcceptedExecutionCache else None)
@@ -238,7 +238,7 @@ def execute_selected_visit(
     adviser_cache = host_cache if host_cache is not None else bind_accepted_execution_cache(run_dir)
     if host_cache is not None:
         bind_current_retention_source_rows(context, host_cache, capability)
-    from ..evidence_mode import strict_evidence_enabled
+    from .evidence_mode import strict_evidence_enabled
     adviser_pool = None
     if strict_evidence_enabled():
         from bilqis_mlx.runtime.championship_advisers import prepare_championship_adviser_pool

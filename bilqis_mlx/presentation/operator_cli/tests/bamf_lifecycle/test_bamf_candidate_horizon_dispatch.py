@@ -2,6 +2,7 @@
 from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
+import threading
 from unittest.mock import Mock, patch
 
 from bilqis_mlx.presentation.operator_cli.command import _dispatch_bamf_resume
@@ -110,7 +111,7 @@ def test_interactive_bamf_resume_uses_compact_dashboard_not_final_json(capsys):
     result = BamfOperatorResult(
         "VISIT_LIMIT", 1, 0, 1, 7, 31, elapsed_seconds=12.5)
     board = SimpleNamespace(
-        mode="", state={}, rows={"SYSTEM & QUALIFICATION": []}, draw=Mock())
+        mode="", state={}, rows={"SYSTEM & QUALIFICATION": []}, draw=Mock(), _draw_lock=threading.RLock())
     with patch(
             "bilqis_mlx.control_plane.active_endpoint.advertise_active_endpoint",
             return_value=nullcontext()), patch(
@@ -137,7 +138,7 @@ def test_interactive_bamf_resume_routes_checkpoint_events_into_dashboard_not_std
     report = {"result": "READY_TO_RESUME"}
     result = BamfOperatorResult("VISIT_LIMIT", 1, 0, 1, 7, 31, elapsed_seconds=1.0)
     board = SimpleNamespace(
-        mode="", state={}, rows={"SYSTEM & QUALIFICATION": []}, draw=Mock())
+        mode="", state={}, rows={"SYSTEM & QUALIFICATION": []}, draw=Mock(), _draw_lock=threading.RLock())
 
     def operate(run_dir, **_kwargs):
         from bilqis_mlx.runtime import checkpoints

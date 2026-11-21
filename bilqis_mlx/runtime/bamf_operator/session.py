@@ -298,7 +298,7 @@ def operate_bamf(
             *args, **kwargs, distributed_profile=distributed_profile,
             distributed_executor=distributed_executor)
     _run_pending_operator_maintenance(Path(run_dir), progress=progress)
-    from .evidence_mode import evidence_mode
+    from .session_parts.evidence_mode import evidence_mode
     try:
         with evidence_mode(strict=strict_evidence):
             return _operate_impl(
