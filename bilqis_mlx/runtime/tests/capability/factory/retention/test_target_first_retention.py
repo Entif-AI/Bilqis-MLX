@@ -167,14 +167,12 @@ def test_unmeasured_target_still_allows_established_protected_veto():
 def test_live_screen_short_circuits_before_protected_compilation():
     target, protected = "future.target", "future.protected"
     target_plan = N(
-        target_capability_id=target,
-        target_grade_id="opaque-grade",
+        target_capability_id=target, target_grade_id="opaque-grade",
         protected_capability_ids=(protected,),
         evaluated_capability_ids=(target, protected),
-        evaluated_capability_groups=((target, "opaque-grade"),
-                                     (protected, "prior-grade")),
-        evaluation_scope_sha256="1" * 64,
-        comparison_scope_sha256="2" * 64,
+        evaluated_capability_groups=(
+            (target, "opaque-grade"), (protected, "prior-grade")),
+        evaluation_scope_sha256="1" * 64, comparison_scope_sha256="2" * 64,
     )
     plan = N(digest="3" * 64, rubric_sha256="4" * 64,
              source_sha256="5" * 64)
@@ -188,8 +186,7 @@ def test_live_screen_short_circuits_before_protected_compilation():
         seed=13, rows=({"id": "fresh", "capability": target},)))
     target_cohort = object()
     assessments = Mock(side_effect=(object(), object()))
-    solvers = Mock(side_effect=(
-        (object(), "a" * 64), (object(), "b" * 64)))
+    solvers = Mock(side_effect=((object(), "a" * 64), (object(), "b" * 64)))
     observed = []
 
     with patch.multiple(
