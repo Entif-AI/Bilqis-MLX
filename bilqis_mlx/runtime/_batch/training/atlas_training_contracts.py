@@ -7,6 +7,7 @@ import hashlib
 import json
 from typing import Any
 
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.semantics.atlas_features import FeatureRow
@@ -115,7 +116,7 @@ class BamfTrainingBatch:
                 or type(self.rows) is not tuple or not self.rows
                 or any(type(row) is not BamfTrainingRow for row in self.rows)
                 or not isinstance(self._authority_digest, str)
-                or len(self._authority_digest) != 64):
+                or len(self._authority_digest) != SHA256_HEX_LENGTH):
             _invalid('TRAINING_BATCH_INVALID')
 
     @property
