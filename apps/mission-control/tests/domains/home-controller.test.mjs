@@ -18,6 +18,18 @@ function fakeHost() {
   return { hidden: false, innerHTML: "", querySelectorAll: () => [] };
 }
 
+function notification(index) {
+  return {
+    schema_version: "bilqis.bamf.mission-control.notification/v1",
+    notification_id: `notification:${index}`, source_event_id: `event:${index}`,
+    subject_ref: `subject:${index}`, kind: index % 2 ? "BLOCKER" : "GRADUATION",
+    severity: index % 2 ? "BLOCKER" : "SUCCESS", state: "ACTIVE",
+    created_at: 1_799_100_000 + index, evidence_ref: `evidence:${index}`,
+    acknowledged_at: null, supersedes_notification_id: null,
+    meta: { record_id: `notification:${index}`, materialized_at: 1_799_100_000 + index },
+  };
+}
+
 test("historical home queries bind the explicit prior generation", () => {
   const request = queryRequest("capability", { runId: "run-7", generation: 6, mode: "HISTORICAL" });
   assert.equal(request.mode, "historical");
@@ -65,6 +77,40 @@ test("live home uses one family query per CP04 event rather than polling the ful
   assert.equal(calls.at(-1), "capability");
   await listener({ event_family: "capability.graduated" });
   assert.equal(calls.length, baseline + 1 + HOME_FAMILIES.length + 1);
+  await controller.deactivate();
+});
+
+test("notification loading exhausts cursors and the recovery tick refreshes durable notices", async () => {
+  let scheduled = null;
+  let count = 40;
+  const api = {
+    async status() { return { learnerActive: true }; },
+    async query(request) {
+      if (request.family !== "notification") return emptyPage(request.family);
+      const records = Array.from({ length: count }, (_, index) => notification(index));
+      const offset = request.cursor === "notification-page-2" ? 32 : 0;
+      const page = records.slice(offset, offset + 32);
+      return {
+        accepted: true, family: "notification", mode: "current", state: "PRESENT",
+        coverage: "COMPLETE", records: page, markers: [], links: [],
+        returned: page.length, total_matches: records.length,
+        truncated: offset + page.length < records.length,
+        next_cursor: offset + page.length < records.length ? "notification-page-2" : null,
+      };
+    },
+    subscribeEvents() { return async () => {}; },
+  };
+  const controller = createHomeController(api, {
+    schedule(callback) { scheduled = callback; return 1; },
+    cancel() {},
+  });
+  await controller.activate(context, {
+    host: fakeHost(), onInspect: () => {}, defense: { historical: false },
+  });
+  assert.equal(controller.currentModel().notifications.length, 40);
+  count = 41;
+  await scheduled();
+  assert.equal(controller.currentModel().notifications.length, 41);
   await controller.deactivate();
 });
 
@@ -241,8 +287,8 @@ test("failed CP04 startup is retried without restarting the CP01 query lifecycle
   const baselineCalls = calls.length;
   await scheduled();
   assert.equal(subscriptions, 2);
-  assert.equal(calls.length, baselineCalls + 1);
-  assert.equal(calls.at(-1), "run");
+  assert.equal(calls.length, baselineCalls + 2);
+  assert.deepEqual(calls.slice(-2), ["run", "notification"]);
 
   await controller.deactivate();
 });

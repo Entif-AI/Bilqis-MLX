@@ -9,7 +9,9 @@ from bilqis_mlx.paths import active_run_dir
 from bilqis_mlx.mission_control.projection import MissionControlProjection
 from bilqis_mlx.control_plane.native_source import native_query_source
 from bilqis_mlx.mission_control import MissionControlQueryCatalog
-from bilqis_mlx.control_plane.notifications import sync_akasha_notifications
+from bilqis_mlx.control_plane.notifications import (
+    sync_akasha_notifications, sync_native_transition_notifications,
+)
 
 from .discovery import discover_learner
 from .service import ControlPlaneService
@@ -46,6 +48,7 @@ def _composed_query_source(run_dir: Path, projection: MissionControlProjection):
         catalog = native()
         if not catalog.available:
             return catalog
+        sync_native_transition_notifications(run_dir, projection)
         return MissionControlQueryCatalog((*catalog.records, *projection.notifications()))
 
     return source

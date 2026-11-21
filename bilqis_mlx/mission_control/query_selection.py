@@ -131,7 +131,13 @@ def matches_identity(
     if request.schema_version is not None and item.schema_version != request.schema_version:
         return False
     if request.run_id is not None:
-        if item.meta.run is None or item.meta.run.run_id != request.run_id:
+        global_notification = (
+            request.family is QueryFamily.NOTIFICATION
+            and type(item) is Notification
+            and item.meta.run is None
+        )
+        if (not global_notification
+                and (item.meta.run is None or item.meta.run.run_id != request.run_id)):
             return False
     if match_record_id and request.record_id is not None and item.meta.record_id != request.record_id:
         return False

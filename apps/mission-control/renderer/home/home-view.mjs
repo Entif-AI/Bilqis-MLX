@@ -190,7 +190,7 @@ function notifications(model, { nowMs, locale } = {}) {
     <header><div><span class="eyebrow">${esc(t("home.notifications.eyebrow"))}</span><h2>${esc(t("home.notifications.title"))}</h2></div><span>${esc(t("home.notifications.count", { count: rows.length }))}</span></header>
     <div class="pulse-list">${rows.map((item, index) => {
       const time = temporalMarkup({ unixSeconds: item.createdAt, nowMs, locale, testId: `home-notification-time-${index}` });
-      return `<div class="home-list-item" data-severity="${esc(String(item.severity ?? "INFO").toLowerCase())}"><button type="button" data-home-target-kind="${esc(item.target?.kind ?? "evidence")}" data-home-target-id="${esc(item.target?.id ?? item.evidenceRef)}" ${testIdAttribute("home", "notification", "item", index)}><span class="pulse-kind">${esc(item.kind)}</span><strong>${esc(item.subjectRef)}</strong><small>${esc(t("home.notifications.evidence", { evidence: item.evidenceRef }))}</small></button>${time}</div>`;
+      return `<div class="home-list-item" data-severity="${esc(String(item.severity ?? "INFO").toLowerCase())}"><button type="button" data-home-target-kind="${esc(item.target?.kind ?? "reference")}" data-home-target-id="${esc(item.target?.id ?? item.evidenceRef)}" ${testIdAttribute("home", "notification", "item", index)}><span class="pulse-kind">${esc(item.kind)}</span><strong>${esc(item.subjectRef)}</strong><small>${esc(t("home.notifications.evidence", { evidence: item.evidenceRef }))}</small></button>${time}</div>`;
     }).join("") || `<p class="home-empty">${esc(t("home.notifications.empty"))}</p>`}</div>
   </section>`;
 }

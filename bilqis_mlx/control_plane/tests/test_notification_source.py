@@ -3,7 +3,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from bilqis_mlx.control_plane.notifications import sync_akasha_notifications
+from bilqis_mlx.control_plane.notifications import (
+    notification_from_native_event, notification_from_semantic_release_change,
+    sync_akasha_notifications,
+)
+from bilqis_mlx.control_plane.native_contracts import AuthenticatedGeneration
 from bilqis_mlx.mission_control.projection import MissionControlProjection
 from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryRequest
 from bilqis_mlx.runtime.akasha_outbox import (
@@ -71,6 +75,9 @@ class NotificationSourceTests(unittest.TestCase):
             records = projection.catalog().query(
                 QueryRequest(QueryFamily.NOTIFICATION, limit=32)).records
             self.assertEqual(len(records), len(events))
+            run_scoped = projection.catalog().query(QueryRequest(
+                QueryFamily.NOTIFICATION, run_id="live-run", limit=32)).records
+            self.assertEqual(run_scoped, records)
             self.assertEqual(
                 {record.kind.value for record in records},
                 {"GRADUATION", "GRAPH_MATERIALIZATION", "BLOCKER", "DRIFT", "GATE_TRANSITION", "FAILURE"},
@@ -78,14 +85,67 @@ class NotificationSourceTests(unittest.TestCase):
             graduation = next(record for record in records if record.kind.value == "GRADUATION")
             self.assertEqual(graduation.evidence_ref, "b" * 64)
 
-    def test_c10_event_without_an_explicit_time_does_not_invent_creation_time(self):
-        with TemporaryDirectory() as temporary:
-            run = Path(temporary)
-            projection = MissionControlProjection.create_empty(run / "notifications.sqlite3")
-            # Accepted owner-generated factory-release events may intentionally
-            # lack source-owned clocks. They cannot become a timestamped notice.
-            self.assertEqual(sync_akasha_notifications(run, projection), 0)
-            self.assertEqual(projection.notifications(), ())
+    @staticmethod
+    def _generation(semantic_release, *, manifest="a", acceptance="b", generation=1):
+        return AuthenticatedGeneration(
+            manifest_sha256=manifest * 64,
+            acceptance_sha256=acceptance * 64,
+            manifest={
+                "run_id": "run:fixture", "generation": generation,
+                "provenance": {"release_digest": semantic_release * 64},
+                "topology": {"digest": "d" * 64},
+            },
+            acceptance={
+                "candidate_identity_sha256": "e" * 64,
+                "factory_release_sha256": "f" * 64,
+            },
+            run_identity={"run_identity_sha256": "1" * 64},
+            correction_frontier={}, teacher_state={}, outbox=(),
+        )
+
+    def test_accepted_lineage_projects_semantic_release_change(self):
+        parent = self._generation("2", manifest="a", acceptance="b", generation=1)
+        current = self._generation("3", manifest="4", acceptance="5", generation=2)
+        notice = notification_from_semantic_release_change(
+            current, parent, projected_at=777)
+        self.assertIsNotNone(notice)
+        self.assertEqual(notice.kind.value, "SEMANTIC_RELEASE")
+        self.assertEqual(notice.subject_ref, "semantic-release:" + "3" * 64)
+        self.assertEqual(notice.created_at, 777)
+        unchanged = self._generation("2", manifest="6", acceptance="7", generation=2)
+        self.assertIsNone(notification_from_semantic_release_change(
+            unchanged, parent, projected_at=778))
+
+    def test_accepted_append_grade_event_projects_real_promotion_notice(self):
+        generation = AuthenticatedGeneration(
+            manifest_sha256="a" * 64,
+            acceptance_sha256="b" * 64,
+            manifest={
+                "run_id": "run:fixture", "generation": 1,
+                "provenance": {"release_digest": "c" * 64},
+                "topology": {"digest": "d" * 64},
+            },
+            acceptance={
+                "candidate_identity_sha256": "e" * 64,
+                "factory_release_sha256": "f" * 64,
+            },
+            run_identity={"run_identity_sha256": "1" * 64},
+            correction_frontier={}, teacher_state={}, outbox=(),
+        )
+        event = {
+            "event": "SCHOOL_EXECUTION_PROFILE_ADOPTED",
+            "event_id": "promotion-event-1",
+            "transition_kind": "APPEND_GRADE",
+            "grade": "B",
+            "factory_release_sha256": "f" * 64,
+        }
+        notification = notification_from_native_event(
+            generation, event, projected_at=888)
+        self.assertIsNotNone(notification)
+        self.assertEqual(notification.kind.value, "PROMOTION")
+        self.assertEqual(notification.subject_ref, "grade:B")
+        self.assertEqual(notification.evidence_ref, "factory-release:" + "f" * 64)
+        self.assertEqual(notification.created_at, 888)
 
 
 if __name__ == "__main__":

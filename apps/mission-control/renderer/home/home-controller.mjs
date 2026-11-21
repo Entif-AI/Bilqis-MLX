@@ -73,8 +73,35 @@ export function createHomeController(api, {
     queue = result;
     return result;
   }
+  async function queryFamily(family, source) {
+    if (family !== "notification") return api.query(queryRequest(family, source));
+    let cursor = null;
+    let first = null;
+    const records = [], markers = [], links = [];
+    const seen = new Set();
+    do {
+      const page = await api.query(queryRequest(family, source, { cursor }));
+      if (page?.accepted !== true) return page;
+      first ??= page;
+      records.push(...(page.records ?? []));
+      markers.push(...(page.markers ?? []));
+      links.push(...(page.links ?? []));
+      const next = page.next_cursor ?? null;
+      if (next === null) break;
+      if (seen.has(next)) throw new Error("HOME_NOTIFICATION_CURSOR_LOOP");
+      seen.add(next);
+      cursor = next;
+    } while (true);
+    return {
+      ...first,
+      records, markers, links,
+      returned: records.length,
+      truncated: false,
+      next_cursor: null,
+    };
+  }
   async function loadFamily(family, current) {
-    const page = await api.query(queryRequest(family, context));
+    const page = await queryFamily(family, context);
     if (current !== epoch) return null;
     if (page?.accepted !== true) throw new Error("HOME_QUERY_UNAVAILABLE");
     pages = { ...pages, [family]: page };
@@ -83,7 +110,7 @@ export function createHomeController(api, {
   }
   async function loadAll(current) {
     const source = context;
-    const request = (family) => api.query(queryRequest(family, source));
+    const request = (family) => queryFamily(family, source);
     const anchor = historical ? null : await request("run");
     if (current !== epoch) return;
     const families = historical ? HOME_FAMILIES : HOME_FAMILIES.filter((family) => family !== "run");
@@ -158,6 +185,8 @@ export function createHomeController(api, {
       await refreshStatus(current);
       if (current !== epoch) return;
       await refreshRun(current);
+      if (current !== epoch) return;
+      await loadFamily("notification", current);
     }
   }
   function startTimer(current) {

@@ -146,7 +146,7 @@ export function projectionFromPages(pages, context) {
   const qualified = capabilityRows.filter((record) => record.status === "QUALIFIED").length;
   const domainRecordCount = (
     capabilities.length + episodes.length + schoolRecords.length + semanticRecords.length +
-    resources.length + corrections.length + teachers.length
+    resources.length + corrections.length + teachers.length + notifications.length
   );
   const startup = run && !observed.current && context?.mode !== "HISTORICAL" && domainRecordCount === 0
     ? Object.freeze({
@@ -260,7 +260,7 @@ export function projectionFromPages(pages, context) {
         evidenceRef: record.evidence_ref,
         createdAt: record.created_at,
         supersedesNotificationId: record.supersedes_notification_id,
-        target: Object.freeze({ kind: "evidence", id: record.evidence_ref }),
+        target: Object.freeze({ kind: "reference", id: record.evidence_ref }),
       }))),
     attention: Object.freeze([
       ...(correctionDebt ? [{
