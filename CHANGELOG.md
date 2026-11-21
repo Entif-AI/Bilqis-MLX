@@ -2,6 +2,58 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.4.1](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.0...v1.4.1) (2026-11-21)
+
+
+### Bug Fixes
+
+* **bamf:** recover stale cache at visit boundary ([#1522](https://github.com/Entif-AI/Bilqis-MLX/issues/1522)) ([f69f541](https://github.com/Entif-AI/Bilqis-MLX/commit/f69f5417e625f034664721378a7dad75f2686a15))
+* preserve BAMF terminal history and route live events to cockpit ([#1524](https://github.com/Entif-AI/Bilqis-MLX/issues/1524)) ([f18b835](https://github.com/Entif-AI/Bilqis-MLX/commit/f18b835c24b8cb163f0fabbccd67432ccbcdbd17))
+
+<!-- release-history:pr:1522:start -->
+### PR #1522 constituent commit inventory
+
+Release Please summarized PR #1522 as [`f69f541`](https://github.com/Entif-AI/Bilqis-MLX/commit/f69f5417e625f034664721378a7dad75f2686a15). This generated inventory preserves **2 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **1 source commit and 1 internal merge commit**.
+
+<details>
+<summary>1 source commit (newest-first PR order)</summary>
+
+- [`3e90273aca`](https://github.com/Entif-AI/Bilqis-MLX/commit/3e90273aca0d68af5c2237894a41c7ef3518dc88) fix(bamf): recover stale cache at visit boundary
+
+</details>
+
+<details>
+<summary>1 internal merge commit (newest-first PR order)</summary>
+
+- [`6ebb29f70d`](https://github.com/Entif-AI/Bilqis-MLX/commit/6ebb29f70d2ab35911ac4a26071f11876ee9be3f) Merge remote-tracking branch 'review-source/main' into codex/1521-bamf-stale-cache-recovery-20261120
+
+</details>
+
+<!-- release-history:pr:1522:end -->
+
+<!-- release-history:pr:1524:start -->
+### PR #1524 constituent commit inventory
+
+Release Please summarized PR #1524 as [`f18b835`](https://github.com/Entif-AI/Bilqis-MLX/commit/f18b835c24b8cb163f0fabbccd67432ccbcdbd17). This generated inventory preserves **5 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **4 source commits and 1 internal merge commit**.
+
+<details>
+<summary>4 source commits (newest-first PR order)</summary>
+
+- [`5c7e2f6754`](https://github.com/Entif-AI/Bilqis-MLX/commit/5c7e2f6754f43969f1211802cefc1d65b323dd1e) fix(ci): extract BAMF resume dispatch module (#1523)
+- [`0b266ad395`](https://github.com/Entif-AI/Bilqis-MLX/commit/0b266ad39582176442fae58d9d871d01680e0db6) fix(ci): split BAMF resume dispatch (#1523)
+- [`e4c5bc653b`](https://github.com/Entif-AI/Bilqis-MLX/commit/e4c5bc653bc8e6c470e3cd03d141e757be19c367) chore(bamf): turn in #1523 via #1524
+- [`6cf25263ca`](https://github.com/Entif-AI/Bilqis-MLX/commit/6cf25263ca9e4827811fdd5e7aacd9b46a3e63d1) fix(bamf): restore terminal history and event routing (#1523)
+
+</details>
+
+<details>
+<summary>1 internal merge commit (newest-first PR order)</summary>
+
+- [`2eaba51d78`](https://github.com/Entif-AI/Bilqis-MLX/commit/2eaba51d7810582f62acd3cbb57e64147b742a8a) Merge remote-tracking branch 'review-source/main' into codex/1523-bamf-terminal-history-20261120
+
+</details>
+
+<!-- release-history:pr:1524:end -->
 ## [1.4.0](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.3.0...v1.4.0) (2026-11-21)
 
 
