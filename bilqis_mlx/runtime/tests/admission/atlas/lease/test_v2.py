@@ -200,11 +200,11 @@ class AtlasLeaseV2Tests(unittest.TestCase):
             initial_topology_digest='a' * 64,
             initial_release_digest=_scope().atlas_release_sha256)
         with tempfile.TemporaryDirectory() as temporary, patch(
-                'bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority',
-                return_value=(SimpleNamespace(run_identity=identity), 'b' * 64)), patch(
-                'bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt',
-                return_value=SimpleNamespace(
-                    source_release_sha256=identity.initial_release_digest)), patch(
+                'bilqis_mlx.runtime.bamf_bundle.accepted_runtime.'
+                'load_accepted_generation_with_feature_context',
+                return_value=(SimpleNamespace(run_identity=identity), SimpleNamespace(
+                    receipt=SimpleNamespace(
+                        source_release_sha256=identity.initial_release_digest)))), patch(
                 'bilqis_mlx.runtime.atlas_admission._accepted_run_lease_identity',
                 return_value=_run()), patch(
                 'bilqis_mlx.runtime.atlas_admission._accepted_source_registry',
@@ -224,11 +224,11 @@ class AtlasLeaseV2Tests(unittest.TestCase):
             initial_topology_digest='a' * 64,
             initial_release_digest=_scope().atlas_release_sha256)
         with tempfile.TemporaryDirectory() as temporary, patch(
-                'bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority',
-                return_value=(SimpleNamespace(run_identity=identity), 'b' * 64)), patch(
-                'bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt',
-                return_value=SimpleNamespace(
-                    source_release_sha256=identity.initial_release_digest)), patch(
+                'bilqis_mlx.runtime.bamf_bundle.accepted_runtime.'
+                'load_accepted_generation_with_feature_context',
+                return_value=(SimpleNamespace(run_identity=identity), SimpleNamespace(
+                    receipt=SimpleNamespace(
+                        source_release_sha256=identity.initial_release_digest)))), patch(
                 'bilqis_mlx.runtime.atlas_admission._accepted_source_registry',
                 side_effect=AssertionError('C09 must not run')):
             with self.assertRaises(BilqisError) as failure:
@@ -247,10 +247,10 @@ class AtlasLeaseV2Tests(unittest.TestCase):
             initial_topology_digest='a' * 64,
             initial_release_digest=_scope().atlas_release_sha256)
         with tempfile.TemporaryDirectory() as temporary, patch(
-                'bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority',
-                return_value=(SimpleNamespace(run_identity=identity), 'b' * 64)), patch(
-                'bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt',
-                return_value=SimpleNamespace(source_release_sha256='e' * 64)), patch(
+                'bilqis_mlx.runtime.bamf_bundle.accepted_runtime.'
+                'load_accepted_generation_with_feature_context',
+                return_value=(SimpleNamespace(run_identity=identity), SimpleNamespace(
+                    receipt=SimpleNamespace(source_release_sha256='e' * 64)))), patch(
                 'bilqis_mlx.runtime.atlas_admission._accepted_source_registry',
                 side_effect=AssertionError('C09 must not run')):
             with self.assertRaises(BilqisError) as failure:
@@ -268,11 +268,11 @@ class AtlasLeaseV2Tests(unittest.TestCase):
             initial_topology_digest='a' * 64,
             initial_release_digest=_scope().atlas_release_sha256)
         with tempfile.TemporaryDirectory() as temporary, patch(
-                'bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority',
-                return_value=(SimpleNamespace(run_identity=identity), 'b' * 64)), patch(
-                'bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt',
-                return_value=SimpleNamespace(
-                    source_release_sha256=identity.initial_release_digest)), patch(
+                'bilqis_mlx.runtime.bamf_bundle.accepted_runtime.'
+                'load_accepted_generation_with_feature_context',
+                return_value=(SimpleNamespace(run_identity=identity), SimpleNamespace(
+                    receipt=SimpleNamespace(
+                        source_release_sha256=identity.initial_release_digest)))), patch(
                 'bilqis_mlx.runtime.atlas_admission._accepted_run_lease_identity',
                 return_value=_run()), patch(
                 'bilqis_mlx.runtime.atlas_admission._accepted_source_registry',

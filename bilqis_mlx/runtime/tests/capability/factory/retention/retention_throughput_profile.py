@@ -25,6 +25,7 @@ from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_execution_feature_c
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache, load_accepted_generation,
 )
+from bilqis_mlx.runtime.bamf_operator.session_support import _execution_context
 from bilqis_mlx.runtime.bamf_first_student import BamfFoundationConfig, preflight_bamf_foundation
 from bilqis_mlx.runtime.factory_retention_owner import (
     bind_current_retention_protection_plan, bind_current_retention_source_rows,
@@ -35,13 +36,15 @@ from bilqis_mlx.runtime.state import _fingerprint
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
     C05_TRAINING_LEARNING_RATE, HP, live_factory_context,
 )
+from bilqis_mlx.runtime.tests.capability.factory.retention.owner_live_support import (
+    _publish_disposable_source_qualified_successor,
+)
 from bilqis_mlx.runtime.tests.capability.factory.owner.bamf_c16_2c_witness_support import (
     real_candidate_training_horizon, real_candidate_training_step,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.publication.publication_helpers import (
     host_source_authority_patch,
 )
-from bilqis_mlx.semantics.atlas.feature_io import persist_feature_manifest
 from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactIdentity,
 )
@@ -146,7 +149,7 @@ def _print_preflight(capability, source_each, retention_setup_wall, protection,
 
 def _profile_receipt(capability, bound, rows, step, cached_rows, evaluation,
                      issued, observed, training_wall, retention_setup_wall,
-                     retention_wall, attempt_wall):
+                     retention_wall, attempt_wall, accepted_state_metrics):
     profile = {}
     for event in observed:
         profile.update(event)
@@ -160,6 +163,8 @@ def _profile_receipt(capability, bound, rows, step, cached_rows, evaluation,
         "authorizing": False,
         "published": False,
         "target_capability": capability,
+        "accepted_generation": evaluation.decision.parent_generation,
+        "accepted_state": dict(accepted_state_metrics),
         "candidate_update_steps": step.transaction.update_steps,
         "selected_visit": bound.identity.to_record(),
         "training_row_ids": [row["id"] for row in rows],
@@ -212,6 +217,32 @@ def main() -> int:
             }):
                 run_dir, parent, source_context = _prepare_run(
                     stage_root, root, source, artifact)
+                pregenerations = int(os.environ.get(
+                    "BILQIS_C05_PROFILE_PREGENERATIONS", "0"))
+                if pregenerations not in (0, 1):
+                    raise SystemExit("BILQIS_C05_PROFILE_PREGENERATIONS must be 0 or 1")
+                if pregenerations:
+                    accepted_cache = bind_accepted_execution_cache(run_dir)
+                    feature = authenticate_bamf_execution_feature_context(
+                        parent, str(artifact), run_dir)
+                    pre_bound, _rows, pre_step = _train_candidate(
+                        run_dir, parent, source_context,
+                        feature.feature_artifact_path, artifact,
+                        capability, source_each)
+                    _publish_disposable_source_qualified_successor(
+                        run_dir, parent, accepted_cache, pre_step.transaction,
+                        visit=pre_bound)
+
+                accepted_state_metrics = {}
+                parent, source_context, _atlas_path, feature_path = _execution_context(
+                    run_dir, performance_metrics=accepted_state_metrics)
+                accepted_state_metrics["accepted_state_setup_wall_seconds"] = sum(
+                    float(accepted_state_metrics.get(name, 0.0)) for name in (
+                        "accepted_runtime_host_wall_seconds",
+                        "accepted_generation_load_wall_seconds",
+                        "accepted_source_context_wall_seconds",
+                        "accepted_feature_authentication_wall_seconds",
+                    ))
                 retention_setup_started = time.perf_counter()
                 accepted_cache = bind_accepted_execution_cache(run_dir)
                 protection = bind_current_retention_protection_plan(
@@ -220,11 +251,6 @@ def main() -> int:
                     source_context, accepted_cache, capability)
                 retention_setup_wall = max(
                     0.0, time.perf_counter() - retention_setup_started)
-                feature = authenticate_bamf_execution_feature_context(
-                    parent, str(artifact), run_dir)
-                feature_path = persist_feature_manifest(
-                    feature.features, stage_root / "features").path
-
                 mx.clear_cache()
                 mx.reset_peak_memory()
                 attempt_started = time.perf_counter()
@@ -256,7 +282,7 @@ def main() -> int:
                 receipt = _profile_receipt(
                     capability, bound, rows, step, cached_rows, evaluation, issued,
                     observed, training_wall, retention_setup_wall, retention_wall,
-                    attempt_wall)
+                    attempt_wall, accepted_state_metrics)
                 print("C05_RETENTION_THROUGHPUT_PROFILE " + json.dumps(
                     receipt, sort_keys=True), flush=True)
     mx.set_default_device(previous_device)

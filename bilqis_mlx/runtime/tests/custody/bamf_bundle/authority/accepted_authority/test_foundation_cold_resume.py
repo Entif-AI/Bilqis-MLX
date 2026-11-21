@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle import accepted_runtime as _accepted_runtime  # noqa: F401
-from bilqis_mlx.runtime.bamf_bundle.accepted_execution_cache import (
+from bilqis_mlx.runtime.bamf_bundle.accepted_hydration import (
     _require_initial_foundation_authority,
 )
 from bilqis_mlx.runtime.bamf_bundle.publication.factory_release import (

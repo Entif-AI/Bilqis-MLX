@@ -79,7 +79,6 @@ def require_current_hydration(
             != hydration.acceptance_file_sha256):
         invalid("B13_EXECUTION_CACHE_STALE")
     require_bamf_bundle_currentness(hydration.currentness)
-    _require_initial_foundation_authority(run_dir, student)
     return hydration
 
 

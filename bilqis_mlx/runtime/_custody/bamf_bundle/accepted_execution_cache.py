@@ -111,6 +111,8 @@ class _ExecutionCacheRuntime:
     def bind(self, run_dir: Path, *, metrics=None):
         run_dir = Path(run_dir).resolve()
         key = str(run_dir)
+        from .publication.accepted_authority_recovery import recover_accepted_authority_pointer
+        recover_accepted_authority_pointer(run_dir)
         with _pointer_read_lock(run_dir):
             pointer = _read_pointer(run_dir / "bamf-state.json")
             hydration, changed = current_hydration_locked(
@@ -140,6 +142,17 @@ class _ExecutionCacheRuntime:
         if self.current_hydration(run_dir) is not hydration:
             invalid("BAMF_ACCEPTED_FEATURE_CONTEXT_STALE")
         return context
+
+    def load_feature_context(self, run_dir: Path, artifact_path=None):
+        """Return the owned current student and checkpoint feature context together."""
+        run_dir = Path(run_dir).resolve()
+        hydration = self.current_hydration(run_dir)
+        from .accepted_feature import bind_checkpoint_feature_context
+        context = bind_checkpoint_feature_context(
+            run_dir, hydration.student, hydration, artifact_path)
+        if self.current_hydration(run_dir) is not hydration:
+            invalid("BAMF_ACCEPTED_FEATURE_CONTEXT_STALE")
+        return hydration.student, context
 
     def require(self, cache):
         key = getattr(cache, "_run_dir", None)
@@ -214,6 +227,7 @@ def _make_execution_cache_runtime():
         runtime.load_with_pointer_if_cached, runtime.reset_for_tests,
         runtime.bind_publication_parent, runtime.bind_publication_parent_locked,
         runtime.require_publication_parent_locked, runtime.bind_feature_context,
+        runtime.load_feature_context,
     )
 
 
@@ -227,6 +241,7 @@ def _make_execution_cache_runtime():
     _bind_accepted_publication_parent_locked,
     _require_accepted_publication_parent_locked,
     bind_accepted_execution_feature_context,
+    load_accepted_generation_with_feature_context,
 ) = _make_execution_cache_runtime()
 
 
@@ -234,5 +249,6 @@ __all__ = (
     "AcceptedPublicationParent", "bind_accepted_execution_cache",
     "bind_accepted_execution_feature_context",
     "bind_accepted_publication_parent", "load_accepted_generation",
+    "load_accepted_generation_with_feature_context",
     "load_accepted_generation_with_pointer_if_cached",
 )

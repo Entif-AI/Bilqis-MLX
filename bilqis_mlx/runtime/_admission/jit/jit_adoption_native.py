@@ -12,9 +12,11 @@ def _authenticate_native_staged_candidate(run_dir: Path, staged):
 
     from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
     from bilqis_mlx.runtime.bamf_bundle import (
-        BamfBundleCandidate, load_bamf_generation_authority,
-        read_accepted_generation_feature_receipt,
+        BamfBundleCandidate,
         require_issued_a02_staged_vocabulary_extension,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        load_accepted_generation_with_feature_context,
     )
     from bilqis_mlx.runtime.accepted_teacher_custody import (
         rebind_accepted_teacher_custody,
@@ -32,9 +34,9 @@ def _authenticate_native_staged_candidate(run_dir: Path, staged):
             or not _sha(expected_parent_feature_receipt_sha256)):
         _invalid("BAMF_ATLAS_NATIVE_STAGING_ARGUMENT_INVALID")
 
-    pointer = run_dir / "bamf-state.json"
-    parent, parent_manifest_sha256 = load_bamf_generation_authority(pointer)
-    parent_feature = read_accepted_generation_feature_receipt(pointer)
+    parent, parent_feature_context = load_accepted_generation_with_feature_context(run_dir)
+    parent_feature = parent_feature_context.receipt
+    parent_manifest_sha256 = parent_feature.generation_manifest_sha256
     parent_state = parent.retained_state
     state = candidate.retained_state
     transition = dict(candidate.transition)

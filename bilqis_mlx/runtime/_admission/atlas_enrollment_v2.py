@@ -75,15 +75,14 @@ def enroll_accepted_atlas_lease_v2(
         _invalid('BAMF_ATLAS_V2_EXPLICIT_HUMAN_REQUEST_REQUIRED')
     run_dir = Path(run_dir)
 
-    from bilqis_mlx.runtime.bamf_bundle import (
-        load_bamf_generation_authority, read_accepted_generation_feature_receipt,
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        load_accepted_generation_with_feature_context,
     )
-    pointer = run_dir / 'bamf-state.json'
-    student, _manifest_sha256 = load_bamf_generation_authority(pointer)
+    student, feature_context = load_accepted_generation_with_feature_context(run_dir)
     identity = student.run_identity
     if identity is None:
         _invalid('BAMF_ATLAS_ACCEPTED_RUN_IDENTITY_REQUIRED')
-    features = read_accepted_generation_feature_receipt(pointer)
+    features = feature_context.receipt
     if features.source_release_sha256 != identity.initial_release_digest:
         _invalid('BAMF_ATLAS_V2_ACCEPTED_ATLAS_CUSTODY_DRIFT')
     if (request.requested_run_id != identity.run_id

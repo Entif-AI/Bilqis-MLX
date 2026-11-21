@@ -87,14 +87,17 @@ runtime never falls back to historical replay.
 `backfill_current_accepted_authority()` is the explicit migration entry point.
 It audits the legacy accepted history once, persists the current feature artifact
 and an audit receipt, seeds an `AUDIT_BACKFILL` checkpoint/protected tip, and
-leaves future ordinary cold loads lineage-depth invariant.
+leaves future ordinary cold loads lineage-depth invariant. The backfill acquires
+exclusive BAMF operator custody when called directly and may reuse only a live,
+owner-issued same-run/same-thread custody token when invoked from an already-held
+operator lock. Active unrelated operator custody remains fail-closed.
 
 ## Structural proof
 
 Focused regressions establish:
 
 - cold accepted hydration at generation 5 loads one current numerical payload,
-  the same bounded count as shallow lineage;
+  exactly the same count as generation 1 (`1` payload load in each case);
 - current checkpoint feature authentication fails if historical feature replay,
   historical bundle loading, or feature rebuilding is attempted;
 - a crash after protected-tip commit but before pointer publication recovers
@@ -105,7 +108,12 @@ Focused regressions establish:
 - missing checkpoint authority remains a visible error until explicit backfill;
 - cadence cold restart consumes the durable projection frontier and unseen tail;
 - accepted execution binding and target-first retention reuse the accepted parent
-  execution cache rather than rehashing the parameter tree.
+  execution cache rather than rehashing the parameter tree;
+- ordinary A02 vocabulary staging consumes the checkpoint-authenticated current
+  feature context and snapshot without historical feature replay or a second Atlas
+  snapshot load;
+- accepted-authority backfill is idempotent and cannot mutate while another BAMF
+  operator owns the run unless the caller presents the exact live custody token.
 
 The old process-local feature-currentness cache and the doctrine that cold restart
 should replay accepted history were removed rather than preserved behind a new
@@ -122,13 +130,91 @@ planning/source/candidate/retention substages, accepted publication timing, and
 
 No device synchronization was added solely for timing.
 
+## Post-repair disposable production-shaped witness
+
+The human production trainer remained untouched. A disposable GPU-backed profile
+used the real source-owned training step, real generation-1 accepted publication,
+real C03 teacher advancement, real accepted-runtime cold setup, and the production
+C05 retention owner. The notification-aware detached runner snapshotted the source
+tree before launch and verified that the source worktree was not mutated during the
+run.
+
+Detached receipt:
+
+- label: `1518 generation-1 retention profile v6`;
+- source snapshot SHA-256:
+  `795a32a2c7aec802e84b930c28e36ccd10ce154359297a014542db98f6b7d3e8`;
+- return code: `0`;
+- source mutated during detached run: `false`;
+- measured accepted visit generation: `1`.
+
+Measured post-repair timings from that disposable production-shaped visit:
+
+- accepted-state setup: `2.370273 s`;
+  - accepted runtime host: `0.729007 s`;
+  - accepted generation load: `0.001412 s`;
+  - accepted source context: `1.263252 s`;
+  - accepted feature authentication: `0.376602 s`;
+- retention setup: `0.036609 s`;
+- retention total: `19.873033 s`;
+- retention target solver construction: `0.843849 s`;
+- retention target parent assessment: `6.337149 s`;
+- retention target candidate assessment: `6.215945 s`;
+- candidate training step: `31.978532 s`;
+- complete measured attempt: `51.851700 s`.
+
+These values are not presented as a same-machine speedup ratio against the human
+trainer baseline. They are a post-repair production-path witness. The structural
+lineage-depth claim is established separately by generation-1 versus generation-5
+cold hydration performing exactly one accepted payload load each.
+
+For context only, the pre-repair human trainer observation recorded about `83.5 s`
+of adjacent accepted-state validation, `66.985 s` of retention, and `43.725 s` of
+retention solver construction. The disposable post-repair path is therefore no
+longer exhibiting the same order-of-magnitude accepted-history and solver setup
+cost, without using the human trainer as a benchmark target.
+
+## Verification receipt
+
+The following focused proof was run on the repaired, already-`origin/main`-integrated
+tree before the final repository gate:
+
+- current admission/control-plane ownership ring:
+  `42 passed, 3 subtests passed in 21.78s`;
+- Atlas vocabulary semantics:
+  `12 passed, 2 skipped, 3 subtests passed in 0.52s`;
+- cadence projection/replay/recovery after structural split:
+  `18 passed in 0.54s`;
+- accepted hydration/foundation/recovery/migration on the final repaired tree:
+  `14 passed in 8.06s`;
+- checkpoint feature authority:
+  `2 passed`;
+- accepted solver/mentor reuse:
+  `14 passed`;
+- #1504 direct throughput regressions:
+  `4 passed`;
+- source prefetch/reuse:
+  `20 passed, 9 subtests passed`;
+- real gated A02 production staging witness:
+  `5 passed in 54.98s`;
+- exact motif/C03 teacher-successor custody proofs used by the generation-1
+  disposable witness:
+  `1 passed in 0.84s` and `1 passed in 1.29s`.
+
+Immediately before freezing this packet, `git fetch origin main` confirmed
+`origin/main` remained at
+`38813530c3fc4b803f7cf4b8b1e800b978f49d74`, which is already integrated by merge
+commit `0623b992eff7052a8331b6ae6bfb91540272d468`.
+
 ## What this packet does not claim
 
-It does not claim a new live-trainer wall-clock result. The human trainer remained
-untouched by automated verification. The post-repair claim is architectural and
-testable: ordinary hot and cold accepted-state proof is bounded by current state,
-not lineage depth; cadence restart is projection-plus-tail; and historical replay
-is an explicit audit/migration operation.
+It does not claim a new live-trainer wall-clock result or a controlled apples-to-
+apples speedup ratio against the pre-repair human trainer. The human trainer
+remained untouched by automated verification. The post-repair claim is both
+architectural and production-path tested: ordinary hot and cold accepted-state
+proof is bounded by current state rather than lineage depth; cadence restart is
+projection-plus-tail; retention consumes current accepted execution state; and
+historical replay is an explicit audit/rebuild/migration operation.
 
 The observed ~11-second cold selected-source construction remains a distinct
 owner. This issue does not relabel that cost as accepted-history currentness.

@@ -48,12 +48,7 @@ def _persist_audit_receipt(run_dir: Path, record: dict) -> str:
     return digest
 
 
-def backfill_current_accepted_authority(run_dir: Path):
-    """Explicitly audit legacy history once and seed the current protected tip.
-
-    Normal runtime never calls this function. Missing checkpoint authority remains
-    a visible migration requirement until an operator invokes this entry point.
-    """
+def _backfill_current_accepted_authority_exclusive(run_dir: Path):
     run_dir = Path(run_dir)
     with _pointer_read_lock(run_dir):
         pointer = _read_pointer(run_dir / "bamf-state.json")
@@ -137,6 +132,28 @@ def backfill_current_accepted_authority(run_dir: Path):
         compare_and_swap_protected_accepted_authority_tip(
             checkpoint, expected_checkpoint_sha256=None)
         return checkpoint
+
+
+def backfill_current_accepted_authority(run_dir: Path, *, operator_custody=None):
+    """Explicitly audit legacy history once under exclusive operator custody.
+
+    Normal runtime never calls this function. Missing checkpoint authority remains
+    a visible migration requirement until an operator invokes this entry point.
+    """
+    run_dir = Path(run_dir)
+    from bilqis_mlx.runtime.bamf_operator.locking import (
+        bamf_operator_lock, bamf_operator_lock_covers, bamf_operator_lock_held,
+    )
+
+    if operator_custody is not None:
+        if not bamf_operator_lock_covers(operator_custody, run_dir):
+            invalid("BAMF_ACCEPTED_AUTHORITY_MIGRATION_OPERATOR_CUSTODY_INVALID")
+        return _backfill_current_accepted_authority_exclusive(run_dir)
+    held = bamf_operator_lock_held(run_dir)
+    if held is not False:
+        invalid("BAMF_ACCEPTED_AUTHORITY_MIGRATION_OPERATOR_ACTIVE")
+    with bamf_operator_lock(run_dir):
+        return _backfill_current_accepted_authority_exclusive(run_dir)
 
 
 __all__ = ("backfill_current_accepted_authority",)

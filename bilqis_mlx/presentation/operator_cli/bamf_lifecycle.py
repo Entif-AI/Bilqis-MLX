@@ -98,9 +98,11 @@ def _validate_fresh_request_compatibility(args, topology, atlas, request) -> Non
 
 
 def _accepted_atlas(run_dir: Path, identity) -> AtlasArtifactIdentity:
-    from bilqis_mlx.runtime.bamf_bundle import read_accepted_generation_feature_receipt
+    from bilqis_mlx.runtime.bamf_bundle import (
+        read_current_accepted_generation_feature_receipt,
+    )
 
-    features = read_accepted_generation_feature_receipt(run_dir / "bamf-state.json")
+    features = read_current_accepted_generation_feature_receipt(run_dir)
     if features.source_release_sha256 != identity.initial_release_digest:
         invalid("BAMF_ATLAS_V2_ACCEPTED_ATLAS_CUSTODY_DRIFT")
     return AtlasArtifactIdentity(

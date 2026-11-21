@@ -21,10 +21,9 @@ class AtlasAdoptionExecutorTests(AtlasAdoptionExecutorFixture, unittest.TestCase
         parent_feature = SimpleNamespace(
             generation_manifest_sha256="a" * 64, digest="b" * 64)
         with patch(
-                "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
-                return_value=(parent, "a" * 64)), patch(
-                "bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt",
-                return_value=parent_feature):
+                "bilqis_mlx.runtime.bamf_bundle.accepted_runtime."
+                "load_accepted_generation_with_feature_context",
+                return_value=(parent, SimpleNamespace(receipt=parent_feature))):
             self.assertIs(
                 _authenticate_native_staged_candidate(self.root, owner_staged),
                 owner_staged.candidate)
@@ -42,10 +41,9 @@ class AtlasAdoptionExecutorTests(AtlasAdoptionExecutorFixture, unittest.TestCase
         owner_staged = self._a02_staged(
             replace(staged, parent_manifest_sha256="d" * 64))
         with patch(
-                "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
-                return_value=(parent, "a" * 64)), patch(
-                "bilqis_mlx.runtime.bamf_bundle.read_accepted_generation_feature_receipt",
-                return_value=parent_feature):
+                "bilqis_mlx.runtime.bamf_bundle.accepted_runtime."
+                "load_accepted_generation_with_feature_context",
+                return_value=(parent, SimpleNamespace(receipt=parent_feature))):
             with self.assertRaises(BilqisError) as failure:
                 _authenticate_native_staged_candidate(self.root, owner_staged)
             self.assertEqual(

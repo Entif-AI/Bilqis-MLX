@@ -115,6 +115,12 @@ def _unpointed_initial_generation_retry(
     if (acceptance.digest != prepared.binding.digest
             or not _same_initial_candidate(student, prepared.candidate)):
         invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
+    from .accepted_authority_commit import commit_accepted_authority
+    commit_accepted_authority(
+        run_dir, pointer, student, current=None, parent=None,
+        genesis_features=prepared.foundation_features.features,
+        candidate_identity_sha256=prepared.binding.candidate_identity_sha256,
+    )
     atomic_pointer(run_dir / "bamf-state.json", pointer)
     reconcile(run_dir, student)
     return pointer
@@ -151,6 +157,11 @@ def existing_initial_generation_retry(
                 or not _same_initial_candidate(student, candidate)):
             invalid(DataPlaneError.BUNDLE_IDENTITY_CONFLICT)
         require_initial_factory_release(run_dir, student)
+        from .accepted_authority_checkpoint import require_accepted_authority_checkpoint
+        checkpoint = require_accepted_authority_checkpoint(
+            student.run_id, current["manifest_sha256"])
+        if checkpoint.pointer_sha256 != sha(canonical(current)):
+            invalid("BAMF_ACCEPTED_AUTHORITY_CHECKPOINT_DRIFT")
         reconcile(run_dir, student)
         return current
 

@@ -159,10 +159,10 @@ def accepted_semantic_release_records(run_dir: Path, generation: AuthenticatedGe
     """Project the accepted release and durable materialization evidence without mutation."""
     root = Path(run_dir)
     from bilqis_mlx.runtime.bamf_bundle import (
-        read_accepted_generation_semantic_snapshot,
+        read_current_accepted_generation_semantic_snapshot,
     )
     try:
-        snapshot = read_accepted_generation_semantic_snapshot(root / "bamf-state.json")
+        snapshot = read_current_accepted_generation_semantic_snapshot(root)
     except BilqisError:
         return (_empty_projection(generation, SemanticProjectionState.ERROR),)
     release = _release_record(generation, snapshot)

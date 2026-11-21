@@ -21,7 +21,9 @@
     "generic_reference_can_mint_authority": false,
     "normal_hot_history_replay": false,
     "normal_cold_history_replay": false,
+    "cold_current_payload_loads_at_depth_1": 1,
     "cold_current_payload_loads_at_depth_5": 1,
+    "cold_payload_load_count_depth_invariant": true,
     "historical_replay_use": [
       "explicit-audit",
       "explicit-rebuild",
@@ -55,7 +57,8 @@
   "legacy": {
     "silent_runtime_backfill": false,
     "explicit_backfill": "backfill_current_accepted_authority",
-    "checkpoint_kind": "AUDIT_BACKFILL"
+    "checkpoint_kind": "AUDIT_BACKFILL",
+    "operator_exclusion": "exclusive-lock-or-live-owner-issued-same-run-thread-custody"
   },
   "timing_fields_added": [
     "accepted_state_setup_wall_seconds",
@@ -67,6 +70,42 @@
     "rejection_wall_seconds"
   ],
   "post_repair_live_wall_clock_claim": null,
+  "post_repair_disposable_production_shaped_witness": {
+    "label": "1518 generation-1 retention profile v6",
+    "detached_runner_schema": "bilqis.bamf.detached-long-run/v2",
+    "returncode": 0,
+    "source_mutated": false,
+    "source_snapshot_sha256": "795a32a2c7aec802e84b930c28e36ccd10ce154359297a014542db98f6b7d3e8",
+    "accepted_generation": 1,
+    "accepted_state_setup_wall_seconds": 2.370272918138653,
+    "accepted_runtime_host_wall_seconds": 0.7290065831039101,
+    "accepted_generation_load_wall_seconds": 0.001411583973094821,
+    "accepted_source_context_wall_seconds": 1.2632523339707404,
+    "accepted_feature_authentication_wall_seconds": 0.3766024170909077,
+    "retention_setup_wall_seconds": 0.03660858306102455,
+    "retention_wall_seconds": 19.873032999923453,
+    "retention_target_solver_wall_seconds": 0.8438493339344859,
+    "retention_target_parent_wall_seconds": 6.337149374885485,
+    "retention_target_candidate_wall_seconds": 6.215945375151932,
+    "candidate_training_wall_seconds": 31.978532458189875,
+    "attempt_wall_seconds": 51.85169958299957,
+    "comparison_scope": "post-repair-production-path-witness-not-live-trainer-speedup-ratio"
+  },
+  "verification": {
+    "integrated_origin_main_sha256": "38813530c3fc4b803f7cf4b8b1e800b978f49d74",
+    "integration_merge_sha256": "0623b992eff7052a8331b6ae6bfb91540272d468",
+    "current_admission_control_plane": "42 passed, 3 subtests passed in 21.78s",
+    "vocabulary_semantics": "12 passed, 2 skipped, 3 subtests passed in 0.52s",
+    "cadence": "18 passed in 0.54s",
+    "accepted_hydration_foundation_recovery_migration": "14 passed in 8.06s",
+    "checkpoint_feature_authority": "2 passed",
+    "accepted_solver_mentor_reuse": "14 passed",
+    "issue_1504_throughput": "4 passed",
+    "source_prefetch_reuse": "20 passed, 9 subtests passed",
+    "a02_production_staging": "5 passed in 54.98s",
+    "motif_c03_successor": "1 passed in 0.84s",
+    "mature_c03_reuse": "1 passed in 1.29s"
+  },
   "remaining_distinct_owner": {
     "selected_source_cold_construction_wall_seconds_observed": 11.021,
     "optimized_by_this_issue": false

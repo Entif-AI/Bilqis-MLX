@@ -37,7 +37,7 @@ class A02ProductionStagingBoundaryTests(A02ProductionStagingSupport):
         with self._source_patches(current_snapshot):
             accepted = vocabulary_admission._accepted_vocabulary_parent(
                 self.run, "/artifact")
-            parent, parent_manifest, parent_receipt, features, predecessor, prior = accepted
+            parent, parent_manifest, parent_receipt, feature_context, prior = accepted
             teacher = _c03_projection(
                 parent,
                 legacy_receipt={"teacher": selection_teacher()},
@@ -54,7 +54,7 @@ class A02ProductionStagingBoundaryTests(A02ProductionStagingSupport):
                 teacher_state=dict(teacher.teacher_state),
             )
             accepted = (
-                parent, parent_manifest, parent_receipt, features, predecessor, prior)
+                parent, parent_manifest, parent_receipt, feature_context, prior)
             with patch(
                     "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission.shutil.disk_usage",
                     return_value=SimpleNamespace(free=1 << 50)):
@@ -86,7 +86,7 @@ class A02ProductionStagingBoundaryTests(A02ProductionStagingSupport):
         with self._source_patches(current_snapshot):
             accepted = vocabulary_admission._accepted_vocabulary_parent(
                 self.run, "/artifact")
-            parent, parent_manifest, parent_receipt, features, predecessor, prior = accepted
+            parent, parent_manifest, parent_receipt, feature_context, prior = accepted
             identity = championship_epoch_identity(
                 factory_release_sha256="1" * 64,
                 semantic_catalog_sha256="2" * 64,
@@ -106,7 +106,7 @@ class A02ProductionStagingBoundaryTests(A02ProductionStagingSupport):
             }, identity)
             parent = replace(parent, championship_state=state)
             accepted = (
-                parent, parent_manifest, parent_receipt, features, predecessor, prior)
+                parent, parent_manifest, parent_receipt, feature_context, prior)
             with patch(
                     "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission.shutil.disk_usage",
                     return_value=SimpleNamespace(free=1 << 50)):

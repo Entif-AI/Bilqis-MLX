@@ -169,12 +169,17 @@ def authenticate_bamf_generation_feature_context(
 def authenticate_bamf_execution_feature_context(
         candidate: BamfBundleCandidate, artifact_path: str,
         run_dir: Path | None = None):
-    """Dispatch feature replay by lifecycle class without collapsing authority."""
+    """Authenticate execution feature authority by lifecycle class.
+
+    Accepted students consume the current durable checkpoint. Historical replay is
+    available only through the explicitly historical generation/lineage APIs below.
+    """
     if type(candidate) is CompleteStudent:
         if not isinstance(run_dir, Path):
             invalid("BAMF_ACCEPTED_FEATURE_POINTER_REQUIRED")
-        return authenticate_bamf_generation_feature_context(
-            candidate, artifact_path, run_dir / "bamf-state.json")
+        from .accepted_runtime import bind_accepted_execution_feature_context
+        return bind_accepted_execution_feature_context(
+            run_dir, candidate, artifact_path)
     if type(candidate) is BamfBundleCandidate:
         return authenticate_bamf_candidate_feature_context(candidate, artifact_path)
     invalid("BAMF_FEATURE_CANDIDATE_REQUIRED")

@@ -166,11 +166,10 @@ def _require_exact_atlas_release(
         handoff: AtlasDeltaScopeHandoff,
         lease: AtlasAdmissionLeaseV2) -> None:
     from bilqis_mlx.runtime.bamf_bundle import (
-        read_accepted_generation_feature_context,
+        read_current_accepted_generation_feature_context,
     )
 
-    context = read_accepted_generation_feature_context(
-        current.run_dir / 'bamf-state.json')
+    context = read_current_accepted_generation_feature_context(current.run_dir)
     semantic_release = handoff.receipt.selection_snapshot.semantic_release
     if (lease.source_approval.atlas_release_sha256 != semantic_release
             or context.receipt.source_release_sha256 != semantic_release

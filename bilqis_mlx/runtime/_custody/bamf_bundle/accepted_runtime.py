@@ -174,8 +174,25 @@ from .accepted_execution_cache import (
     _require_owned_execution_cache, _reset_execution_cache_owner_for_tests,
     bind_accepted_execution_cache, bind_accepted_execution_feature_context,
     load_accepted_generation,
+    load_accepted_generation_with_feature_context,
     load_accepted_generation_with_pointer_if_cached,
 )
+
+
+def read_current_accepted_generation_feature_context(
+        run_dir: Path, artifact_path: str | None = None):
+    """Read current checkpoint-backed feature authority without historical replay."""
+    _student, context = load_accepted_generation_with_feature_context(
+        Path(run_dir), artifact_path)
+    return context
+
+
+def read_current_accepted_generation_feature_receipt(run_dir: Path):
+    return read_current_accepted_generation_feature_context(run_dir).receipt
+
+
+def read_current_accepted_generation_semantic_snapshot(run_dir: Path):
+    return read_current_accepted_generation_feature_context(run_dir).snapshot
 
 
 def _accepted_correction_registry(run_dir: Path):
@@ -200,5 +217,9 @@ __all__ = (
     "_identity_from_pointer", "_published_in_memory_identity", "_read_accepted",
     "bind_accepted_execution_cache", "bind_accepted_execution_feature_context",
     "load_accepted_generation",
+    "load_accepted_generation_with_feature_context",
     "load_accepted_generation_with_pointer_if_cached",
+    "read_current_accepted_generation_feature_context",
+    "read_current_accepted_generation_feature_receipt",
+    "read_current_accepted_generation_semantic_snapshot",
 )

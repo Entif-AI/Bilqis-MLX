@@ -58,6 +58,11 @@ class AuthenticatedCheckpointFeatureContext:
                 or self.feature_manifest_rebuild_count != 0):
             invalid("BAMF_CHECKPOINT_FEATURE_CONTEXT_INVALID")
 
+    @property
+    def receipt(self):
+        """Expose the checkpoint-authenticated current-generation feature receipt."""
+        return self.commitment.receipt
+
 
 def _issue_checkpoint_feature_context(
         selection, snapshot, schema, features, commitment, feature_artifact_path

@@ -46,14 +46,15 @@ def _context(run_dir, successor):
         read_accepted_atlas_factory_release, read_accepted_atlas_lease_v2,
     )
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import accepted_generation
-    from bilqis_mlx.runtime.bamf_bundle import (
-        load_bamf_generation_authority, read_accepted_generation_feature_context,
+    from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
+        load_accepted_generation_with_feature_context,
     )
     from bilqis_mlx.runtime.jit_adoption import verify_current_implementations
     from bilqis_mlx.factory.live_answers import live_answer_registry
     from bilqis_mlx.source_adapters.school import live_source_registry
 
-    parent, manifest = load_bamf_generation_authority(run_dir / 'bamf-state.json')
+    parent, feature = load_accepted_generation_with_feature_context(run_dir)
+    manifest = feature.receipt.generation_manifest_sha256
     pointer, _ = accepted_generation(run_dir / 'bamf-state.json')
     if pointer['manifest_sha256'] != manifest:
         _invalid('BAMF_PROFILE_ACCEPTED_PARENT_CHANGED')
@@ -62,7 +63,6 @@ def _context(run_dir, successor):
     if lease is None:
         _invalid('BAMF_PROFILE_CURRENT_LEASE_REQUIRED')
     approval = lease.source_approval
-    feature = read_accepted_generation_feature_context(run_dir / 'bamf-state.json')
     if (not approval.audit_passed or not approval.rights_compatible
             or approval.atlas_release_sha256 != feature.receipt.source_release_sha256
             or approval.atlas_release_sha256 != feature.features.semantic_release):

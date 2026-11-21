@@ -14,6 +14,10 @@ from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
 from bilqis_mlx.runtime.bamf_bundle.publication.accepted_authority_migration import (
     backfill_current_accepted_authority,
 )
+from bilqis_mlx.runtime.bamf_bundle.publication.accepted_authority_checkpoint import (
+    read_protected_accepted_authority_tip,
+)
+from bilqis_mlx.runtime.bamf_operator.locking import bamf_operator_lock
 import bilqis_mlx.runtime.bamf_bundle.publication as publication
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
     accepted_feature_source_patch,
@@ -57,10 +61,44 @@ class AcceptedAuthorityMigrationTests(unittest.TestCase):
             "BAMF_ACCEPTED_AUTHORITY_CHECKPOINT_REQUIRED",
         )
 
+        with bamf_operator_lock(self.run), shape_patch(), accepted_feature_source_patch():
+            with self.assertRaises(BilqisError) as active:
+                backfill_current_accepted_authority(self.run)
+        self.assertEqual(
+            active.exception.context["reason"],
+            "BAMF_ACCEPTED_AUTHORITY_MIGRATION_OPERATOR_ACTIVE",
+        )
+        self.assertIsNone(read_protected_accepted_authority_tip("run"))
+
+        with bamf_operator_lock(self.run) as custody, shape_patch(), accepted_feature_source_patch():
+            checkpoint = backfill_current_accepted_authority(
+                self.run, operator_custody=custody)
+            self.assertEqual(checkpoint.kind, "AUDIT_BACKFILL")
+            from bilqis_mlx.runtime.bamf_operator.locking import bamf_operator_lock_held
+            self.assertIs(bamf_operator_lock_held(self.run), True)
+
+        with shape_patch(), accepted_feature_source_patch(), self.assertRaises(
+                BilqisError) as stale:
+            backfill_current_accepted_authority(self.run, operator_custody=custody)
+        self.assertEqual(
+            stale.exception.context["reason"],
+            "BAMF_ACCEPTED_AUTHORITY_MIGRATION_OPERATOR_CUSTODY_INVALID",
+        )
+
+        other = self.root / "other-run"
+        with bamf_operator_lock(self.run) as custody, self.assertRaises(
+                BilqisError) as wrong_run:
+            backfill_current_accepted_authority(other, operator_custody=custody)
+        self.assertEqual(
+            wrong_run.exception.context["reason"],
+            "BAMF_ACCEPTED_AUTHORITY_MIGRATION_OPERATOR_CUSTODY_INVALID",
+        )
+
         with shape_patch(), accepted_feature_source_patch():
-            checkpoint = backfill_current_accepted_authority(self.run)
+            repeated = backfill_current_accepted_authority(self.run)
         self.assertEqual(checkpoint.kind, "AUDIT_BACKFILL")
         self.assertEqual(checkpoint.generation, 0)
+        self.assertEqual(repeated, checkpoint)
 
         _reset_execution_cache_owner_for_tests()
         with shape_patch():

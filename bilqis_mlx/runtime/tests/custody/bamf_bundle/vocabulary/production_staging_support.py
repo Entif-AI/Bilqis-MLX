@@ -81,8 +81,16 @@ class A02ProductionStagingSupport(unittest.TestCase):
             side_effect=lambda identity: AtlasArtifactSelection(
                 "/artifact", identity.bundle_id, identity.release_sha256,
                 identity.source_bundle_id)))
+        stack.enter_context(patch(
+            "bilqis_mlx.runtime.bamf_bundle.feature.current_authority."
+            "resolve_atlas_artifact_selection",
+            side_effect=lambda identity: AtlasArtifactSelection(
+                "/artifact", identity.bundle_id, identity.release_sha256,
+                identity.source_bundle_id)))
         for target in (
                 "bilqis_mlx.runtime.bamf_bundle.feature_authority.load_pinned_atlas_snapshot",
+                "bilqis_mlx.runtime.bamf_bundle.feature.current_authority."
+                "load_pinned_atlas_snapshot",
                 "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission.load_pinned_atlas_snapshot",
                 "bilqis_mlx.semantics.atlas.vocabulary_planning.load_pinned_atlas_snapshot",
                 "bilqis_mlx.semantics.atlas.vocabulary_resources.load_pinned_atlas_snapshot"):

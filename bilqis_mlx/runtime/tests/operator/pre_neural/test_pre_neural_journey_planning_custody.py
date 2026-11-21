@@ -14,15 +14,10 @@ class PreNeuralJourneyPlanningCustodyTests(PreNeuralJourneySupport, unittest.Tes
         from bilqis_mlx.runtime.bamf_bundle.source_authority_custody import currentness
         from bilqis_mlx.runtime.priority_source_offer import _require_planning_generation
 
-        b13_original = currentness_transaction.bind_bamf_bundle_currentness
         c09_original = currentness_transaction.bind_source_authority_currentness
-        context_features_original = session_support.authenticate_bamf_execution_feature_context
+        context_features_original = session_support.bind_accepted_execution_feature_context
         planning_features_original = bamf_bundle.authenticate_bamf_execution_feature_context
-        counts = {"b13": 0, "c09": 0, "context_features": 0, "planning_features": 0}
-
-        def b13_counted(*args, **kwargs):
-            counts["b13"] += 1
-            return b13_original(*args, **kwargs)
+        counts = {"c09": 0, "context_features": 0, "planning_features": 0}
 
         def c09_counted(*args, **kwargs):
             counts["c09"] += 1
@@ -36,31 +31,35 @@ class PreNeuralJourneyPlanningCustodyTests(PreNeuralJourneySupport, unittest.Tes
             counts["planning_features"] += 1
             return planning_features_original(*args, **kwargs)
 
-        with patch.object(currentness_transaction, "bind_bamf_bundle_currentness",
-                          side_effect=b13_counted), patch.object(
-                              currentness_transaction, "bind_source_authority_currentness",
-                              side_effect=c09_counted), patch.object(
-                                  session_support, "authenticate_bamf_execution_feature_context",
-                                  side_effect=context_features_counted), patch.object(
-                                  bamf_bundle, "authenticate_bamf_execution_feature_context",
-                                  side_effect=planning_features_counted):
+        with patch.object(
+                currentness_transaction, "bind_source_authority_currentness",
+                side_effect=c09_counted), patch.object(
+                    session_support, "bind_accepted_execution_feature_context",
+                    side_effect=context_features_counted), patch.object(
+                        bamf_bundle, "authenticate_bamf_execution_feature_context",
+                        side_effect=planning_features_counted):
             (_pointer, _before, _after, context, selected, _rows,
              _pointer_bytes, _event_bytes) = self.exercise_journey()
 
         binding = selected.offer._planning_generation
         parent = binding._parent
         self.assertEqual(counts, {
-            "b13": 1, "c09": 1, "context_features": 1, "planning_features": 0})
+            "c09": 1, "context_features": 1, "planning_features": 0})
+        self.assertEqual(
+            currentness_transaction.currentness_metrics(binding._accepted_currentness)[
+                "deep_authentication_count"],
+            1,
+        )
         stable_trust_root = binding._accepted_currentness._source_currentness._trust_root
 
         with patch.object(
-                currentness_transaction, "bind_bamf_bundle_currentness",
-                side_effect=AssertionError("deep B13 validation repeated")), patch.object(
+                currentness_transaction, "bind_source_authority_currentness",
+                side_effect=AssertionError("deep C09 validation repeated")), patch.object(
                     currentness, "resolve_source_authority_registry",
                     side_effect=AssertionError("deep C09 resolution repeated")), patch.object(
                         currentness, "_trust_root_snapshot",
                         return_value=stable_trust_root), patch.object(
-                            session_support, "authenticate_bamf_execution_feature_context",
+                            session_support, "bind_accepted_execution_feature_context",
                             side_effect=AssertionError(
                                 "execution context reauthenticated features")), patch.object(
                             bamf_bundle, "authenticate_bamf_execution_feature_context",

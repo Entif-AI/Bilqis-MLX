@@ -57,7 +57,7 @@ from .atlas_flywheel_runtime_context import AcceptedAtlasAdmissionRuntime
 from .autonomy_live import build_live_autonomy_plan, reconcile_live_autonomy_state
 from .bamf_bundle import (
     load_bamf_generation_authority,
-    read_accepted_generation_feature_receipt,
+    read_current_accepted_generation_feature_receipt,
     stage_vocabulary_extension_from_source_id,
 )
 from .candidate_staging import load_staged_candidates, persist_staged_candidate
@@ -113,8 +113,7 @@ def _candidate_frontier(
 
 
 def _accepted_selection(run_dir: Path):
-    receipt = read_accepted_generation_feature_receipt(
-        run_dir / "bamf-state.json")
+    receipt = read_current_accepted_generation_feature_receipt(run_dir)
     identity = AtlasArtifactIdentity(
         receipt.source_atlas_bundle_id,
         receipt.source_release_sha256,

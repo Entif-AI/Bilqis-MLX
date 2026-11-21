@@ -155,7 +155,7 @@ class SemanticReleaseProjectionTests(unittest.TestCase):
 
     def test_missing_feature_authority_degrades_only_semantic_cockpit(self):
         bamf_bundle = ModuleType("bilqis_mlx.runtime.bamf_bundle")
-        bamf_bundle.read_accepted_generation_semantic_snapshot = (
+        bamf_bundle.read_current_accepted_generation_semantic_snapshot = (
             lambda _path: invalid("SEMANTIC_FIXTURE_UNAVAILABLE"))
         with TemporaryDirectory() as temporary:
             with patch.dict(sys.modules, {"bilqis_mlx.runtime.bamf_bundle": bamf_bundle}):

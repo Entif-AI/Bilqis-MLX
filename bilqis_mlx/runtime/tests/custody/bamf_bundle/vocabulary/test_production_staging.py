@@ -133,8 +133,15 @@ class A02ProductionStagingTests(A02ProductionStagingSupport):
                 stage_vocabulary_extension(
                     self.run, "/artifact", Path("/source"),
                     ("urn:concept:not-present",))
-            staged = stage_vocabulary_extension(
-                self.run, "/artifact", Path("/source"), ("urn:concept:8192",))
+            with patch(
+                    "bilqis_mlx.runtime.bamf_bundle.feature_authority."
+                    "_read_accepted_generation_feature_materialization",
+                    side_effect=AssertionError("ordinary A02 replayed accepted history")), patch(
+                    "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission."
+                    "load_pinned_atlas_snapshot",
+                    side_effect=AssertionError("ordinary A02 reloaded checkpoint snapshot")):
+                staged = stage_vocabulary_extension(
+                    self.run, "/artifact", Path("/source"), ("urn:concept:8192",))
             authenticated = authenticate_bamf_candidate_feature_context(
                 staged.candidate, "/artifact")
             active_rows = bind_candidate_active_semantic_rows(

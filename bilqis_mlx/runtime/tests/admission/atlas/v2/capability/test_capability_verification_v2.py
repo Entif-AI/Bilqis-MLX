@@ -82,30 +82,22 @@ class CapabilityVerificationV2Tests(CapabilityV2Support):
                 active_semantic_digest=active_digest,
             ),
         )
+        selection = SimpleNamespace(release_sha256=semantic_release)
+        snapshot = SimpleNamespace(active_set_sha256=active_digest)
         feature_context = SimpleNamespace(
             receipt=SimpleNamespace(
                 generation_manifest_sha256=parent_manifest,
                 active_set_sha256=active_digest,
             ),
             features=SimpleNamespace(semantic_release=semantic_release),
+            selection=selection,
+            snapshot=snapshot,
         )
-        selection = SimpleNamespace(release_sha256=semantic_release)
-        snapshot = SimpleNamespace(active_set_sha256=active_digest)
 
         with patch(
-                "bilqis_mlx.runtime.bamf_bundle.load_bamf_generation_authority",
-                return_value=(parent, parent_manifest)), patch(
                 "bilqis_mlx.runtime.bamf_bundle."
-                "read_accepted_generation_feature_context",
-                return_value=feature_context), patch(
-                "bilqis_mlx.runtime.bamf_bundle.feature.replay_support.feature_source",
-                return_value=object()), patch(
-                "bilqis_mlx.runtime.bamf_bundle.feature.replay_support.artifact_identity",
-                return_value=object()), patch(
-                "bilqis_mlx.semantics.atlas.snapshot.resolve_atlas_artifact_selection",
-                return_value=selection), patch(
-                "bilqis_mlx.semantics.atlas.snapshot.load_pinned_atlas_snapshot",
-                return_value=snapshot), patch(
+                "load_accepted_generation_with_feature_context",
+                return_value=(parent, feature_context)), patch(
                 "bilqis_mlx.runtime.bamf_bundle.vocabulary.admission_facts."
                 "accepted_active_semantic_ids",
                 return_value=("a", "b", "c", "d", "e")), patch(

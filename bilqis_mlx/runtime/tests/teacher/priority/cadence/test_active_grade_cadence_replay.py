@@ -186,3 +186,60 @@ def test_missing_projection_on_deep_history_requires_explicit_rebuild(tmp_path):
     finally:
         plane.close()
     assert failure.value.context.get("reason") == replay._REBUILD_REQUIRED
+
+
+def test_missing_projection_on_generation_one_requires_explicit_rebuild_without_tail_scan(
+        tmp_path):
+    (tmp_path / "bamf-state.json").write_text("{}", encoding="utf-8")
+    pointer = _pointer(1, "b" * 64, parent="a" * 64)
+    student = _student(1, manifest_parent="a" * 64)
+    plane = DataPlane(tmp_path / "plane.sqlite3")
+    try:
+        with patch.object(replay, "_current_accepted", return_value=(pointer, student)), patch(
+                "bilqis_mlx.data_plane.data_plane", return_value=plane), patch.object(
+                    plane, "indexed_event_tail",
+                    side_effect=AssertionError("missing projection scanned history")):
+            with pytest.raises(BilqisError) as failure:
+                authenticated_cadence_attempts(tmp_path)
+    finally:
+        plane.close()
+    assert failure.value.context.get("reason") == replay._REBUILD_REQUIRED
+
+
+def test_missing_projection_with_existing_generation_zero_cadence_requires_rebuild(
+        tmp_path):
+    (tmp_path / "bamf-state.json").write_text("{}", encoding="utf-8")
+    pointer = _pointer(0, "a" * 64)
+    student = _student(0)
+    plane = DataPlane(tmp_path / "plane.sqlite3")
+    try:
+        with patch.object(replay, "_current_accepted", return_value=(pointer, student)), patch(
+                "bilqis_mlx.data_plane.data_plane", return_value=plane), patch(
+                    "bilqis_mlx.runtime.active_grade_cadence_custody."
+                    "read_current_cadence", return_value=object()), patch.object(
+                        plane, "indexed_event_tail",
+                        side_effect=AssertionError("missing projection scanned history")):
+            with pytest.raises(BilqisError) as failure:
+                authenticated_cadence_attempts(tmp_path)
+    finally:
+        plane.close()
+    assert failure.value.context.get("reason") == replay._REBUILD_REQUIRED
+
+
+def test_projection_compacts_attempts_already_consumed_by_durable_cadence_state():
+    current = _cadence("current")
+    current["phase_sha256"] = "7" * 64
+    old = _cadence("old")
+    old["phase_sha256"] = "8" * 64
+    state = SimpleNamespace(
+        phase_sha256="7" * 64,
+        attempted_capability_ids=("done",),
+    )
+
+    pending = replay._pending_attempts((
+        (current, "done"),
+        (current, "pending"),
+        (old, "old"),
+    ), state)
+
+    assert pending == ((current, "pending"),)
