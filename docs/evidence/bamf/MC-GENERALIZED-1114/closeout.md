@@ -4,7 +4,7 @@ Issue: #1114 `BAMF-0.3 | Complete generalized Mission Control investigation UX a
 
 ## Scope closure
 
-#1114 is a remainder/integration issue, not a greenfield GUI build. The unified branch already carries the broad Mission Control surfaces delivered by GUI01-GUI20, the #1124 redesign program, #1128 global investigation recomposition, #1122 layout polish, and #1170 observed trainer telemetry. This closeout preserves those accepted surfaces and fills the generalized investigation gaps that remained after the owner-only BAMF-0.2 release boundary.
+#1114 is a remainder/integration issue, not a greenfield GUI build. Current `main` carries the broad Mission Control surfaces delivered by GUI01-GUI20, the #1124 redesign program, #1128 global investigation recomposition, #1122 layout polish, and #1170 observed trainer telemetry. This closeout preserves those accepted surfaces and fills the generalized investigation gaps that remained after the owner-only BAMF-0.2 release boundary.
 
 The implementation adds:
 
@@ -62,9 +62,9 @@ Mission Control renderer/domain suite:
 npm run bamf:test
 ```
 
-Result: 475 passed, 0 failed on the implementation checkout.
+Result: 483 passed, 0 failed after reverse-integrating `main` at `311c0c6753efda01d7d67155f1ac26be0aedf93b`.
 
-The first local Electron-security attempt was environment-blocked because this clean worktree had no `ajv/dist/2020` installation. That is an environment/dependency failure, not a product assertion; authoritative verification is therefore rerun in the prepared M3 Ultra repository as part of the detached final proof.
+The affected Electron security surface passed 68/68 tests on M3 Ultra when the unrelated `cp01-python-broker.test.cjs` file was excluded. The full security suite reached 71/73 Node tests; only the two CP01 broker subprocess tests failed because no installed M3 Python simultaneously provides the repository's modern syntax requirements and the `cryptography` package. Homebrew Python 3.14 lacks `cryptography`; system Python 3.9 lacks required modern standard-library/runtime features. The separate Python Electron-bridge unittest is blocked by the same M3 dependency split. No #1114 production file touches CP01. Hosted PR CI remains the final full-environment integration gate.
 
 Browser journey:
 
@@ -72,7 +72,19 @@ Browser journey:
 node apps/mission-control/tests/browser/global-interactions-check.cjs
 ```
 
-This dedicated fixture-mode harness exercises compare, cross-highlighting, pins, notes, evidence posture, owner/generalized-authorization presentation, saved investigations, historical fallback, verified-current restoration, cross-view history, and bounded table overflow.
+Result on M3 Ultra: `GUI18_BROWSER_JOURNEY_PASS`.
+
+This dedicated fixture-mode harness exercises compare, cross-highlighting, pins, notes, evidence posture, owner/generalized-authorization presentation, saved investigations, exact historical fallback, cross-view history, and bounded local overflow ownership. It preserves the fixture boundary that deliberately denies production verified-current authority.
+
+Release structure checks:
+
+```text
+python3 -B scripts/check_module_size.py <changed Mission Control JS files>
+python3 -B scripts/quality/check_governance_integrity.py --base-ref origin/main
+git diff --check
+```
+
+Result: 0 module-size violations, 0 governance-integrity violations, and no whitespace errors. The generic history-walking `quality:structure` wrapper was stopped after it spent its time reconstructing ancestral merge scope rather than the 13-file PR diff; the same module-size contract was then run directly against the actual changed code paths.
 
 ## Deferred independently owned work
 
