@@ -196,6 +196,7 @@ async function audit(page, launchMode, viewport, theme, density) {
       }
       if (launchMode === "fixtures") {
         page.setDefaultTimeout(5000);
+        await page.setViewportSize({ width: 1440, height: 920 });
         await page.goto("http://127.0.0.1:" + port + "/apps/mission-control/renderer/?launchMode=fixtures", { waitUntil: "domcontentloaded" });
         results.push({ launchMode, globalInteractions: await globalInteractionsJourney(page) });
       }
