@@ -8,10 +8,6 @@ import weakref
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_engram import MotifManifest
-from bilqis_mlx.runtime.backbone_identity import (
-    issue_execution_generation_binding, require_execution_generation_binding,
-)
-
 
 _ISSUER = object()
 
@@ -100,6 +96,8 @@ def bind_distributed_execution_cache(
         witness: DistributedExecutionCacheWitness, parameters, *, spec, extents
 ) -> DistributedExecutionCache:
     """Mint rank-local read authority after revalidating exact parameter identity."""
+    from bilqis_mlx.runtime.backbone_identity import issue_execution_generation_binding
+
     if type(witness) is not DistributedExecutionCacheWitness:
         _invalid("B13_DISTRIBUTED_EXECUTION_CACHE_WITNESS_INVALID")
     witness.__post_init__()
@@ -133,6 +131,8 @@ def require_distributed_execution_cache(cache) -> DistributedExecutionCache:
 
 
 def require_distributed_execution_binding(cache, parameters, *, spec, extents):
+    from bilqis_mlx.runtime.backbone_identity import require_execution_generation_binding
+
     cache = require_distributed_execution_cache(cache)
     try:
         return require_execution_generation_binding(

@@ -5,11 +5,6 @@ import json
 from pathlib import Path
 from threading import RLock
 
-from bilqis_mlx.runtime.backbone_identity import (
-    execution_generation_object_key,
-    issue_execution_generation_binding,
-)
-
 from .accepted_runtime import _accepted_source_authority_registry
 from .accepted_hydration import (
     AcceptedHydration, AcceptedPublicationParent, current_hydration_locked,
@@ -63,6 +58,11 @@ def _require_execution_entry(entry, registry) -> None:
 
 
 def _new_execution_entry(run_dir: Path, hydration, registry):
+    from bilqis_mlx.runtime.backbone_identity import (
+        execution_generation_object_key,
+        issue_execution_generation_binding,
+    )
+
     student = hydration.student
     parameters = student.retained_state.optimizer.parameters
     binding = issue_execution_generation_binding(
