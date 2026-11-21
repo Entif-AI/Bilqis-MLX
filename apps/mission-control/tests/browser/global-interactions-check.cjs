@@ -22,7 +22,7 @@ const bridge = `window.bamfMissionControl={
 launchMode:"fixtures",
 connect:async()=>({state:"disconnected"}),
 status:async()=>({state:"disconnected"}),
-querySnapshot:async()=>${JSON.stringify(operator)}
+querySnapshot:async()=>(${JSON.stringify(operator)})
 };`;
 
 function server() {
