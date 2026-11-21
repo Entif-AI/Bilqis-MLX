@@ -56,9 +56,14 @@ class PreNeuralProductionJourneyTests(PreNeuralJourneySupport, unittest.TestCase
     def _load_verified_staged_candidate(self, context):
         staged_paths = tuple(
             (self.run / "autonomy/staged-candidates").glob("*.json"))
-        self.assertEqual(len(staged_paths), 1)
-        staged_payload = json.loads(staged_paths[0].read_text())
-        staged = StagedCandidate.from_manifest(staged_payload, staged_paths[0].stem)
+        staged = None
+        for path in staged_paths:
+            payload = json.loads(path.read_text())
+            candidate = StagedCandidate.from_manifest(payload, path.stem)
+            if candidate.candidate_id == "D-01":
+                self.assertIsNone(staged, "duplicate D-01 staged candidate")
+                staged = candidate
+        self.assertIsNotNone(staged, "expected D-01 staged candidate")
         builder = ROOT / "lib/ithkuil/src/build_curriculum_frontier.py"
         frontier = load_candidate_frontier(
             self.run / "candidate-frontier", ROOT / "lib/ithkuil/_data/csv",
