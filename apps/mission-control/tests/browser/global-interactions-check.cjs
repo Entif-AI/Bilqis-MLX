@@ -50,6 +50,7 @@ function server() {
   const browser = await playwright.chromium.launch({ executablePath: chrome, headless: true });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 920 } });
+    page.setDefaultTimeout(5000);
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
     await page.addInitScript({ content: bridge });
