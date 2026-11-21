@@ -50,6 +50,24 @@
     "accepted_cold_predecessor_payload_required": false,
     "accepted_cold_history_replay": false
   },
+  "historical_custody": {
+    "current_executable_tensor_required": true,
+    "historical_tensor_payload_required": false,
+    "historical_tensor_identity_required": true,
+    "historical_manifest_node_required": true,
+    "historical_sidecars_required": true,
+    "historical_acceptance_required": true,
+    "blanket_accepted_ancestry_tensor_pinning": false,
+    "explicit_executable_historical_pins_preserved": true,
+    "repair_commit_sha256": "c668acff766d8774c0a71c8ad1385d5ba7d44529",
+    "fail_before_reason": "DATA_PLANE_BUNDLE_PAYLOAD_DRIFT",
+    "reclaimed_parent_tensor_authenticated_after_repair": true,
+    "missing_current_tensor_fails_closed": true,
+    "focused_verification": "26 passed in 8.89s",
+    "structure_gate": "0 violations",
+    "smell_gate": "0 findings",
+    "human_trainer_mutated": false
+  },
   "cadence": {
     "ordinary_restart": "durable-projection-plus-unseen-tail",
     "full_replay": "explicit-rebuild-only"
@@ -117,7 +135,8 @@
     "dashboard_live_refresh": "display-only redraw loop every 0.5s; live trainer observation remains a one-second atomic heartbeat",
     "cadence_dashboard_focused_verification": "40 passed across resume migration, cadence replay, terminal projection, dashboard watch, renderer metrics, and operator dashboard events",
     "post_main_integration_seam": "10 passed in 0.89s",
-    "final_six_step_operator_witness": "PASS receipt; six-step visit 75.077155s; source_mutated=false; human run untouched"
+    "final_six_step_operator_witness": "PASS receipt; six-step visit 75.077155s; source_mutated=false; human run untouched",
+    "tensor_thin_historical_custody": "26 passed in 8.89s; reclaimed parent tensor authenticates; missing current tensor remains fatal"
   },
   "remaining_distinct_owner": {
     "planning_wall_seconds_observed": 40.96637108293362,

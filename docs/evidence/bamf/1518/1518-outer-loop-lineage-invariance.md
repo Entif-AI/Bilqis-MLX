@@ -242,6 +242,44 @@ history rebuild once, releases custody, and rechecks the incremental projection.
 Dry-run remains non-mutating and reports the rebuild requirement. No other
 curriculum error is eligible for this recovery path.
 
+## Tensor-thin historical custody invariant
+
+The storage lifecycle now intentionally separates executable current state from
+authenticated historical state. Current executable custody still requires the
+current tensor payload object. Accepted historical custody requires immutable
+manifest/node identity, acceptance, sidecars, run/lineage metadata, optimizer
+metadata, and tensor binding identity, but not the historical tensor payload
+bytes themselves.
+
+This contract was locked by a fail-before regression that created an accepted
+generation chain, ran the current file-GC policy, and confirmed that the parent
+tensor object had been reclaimed while the current tensor remained present.
+Before the repair, current acceptance authentication reopened the parent with
+full bundle custody and failed with
+`SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID` /
+`DATA_PLANE_BUNDLE_PAYLOAD_DRIFT`. After the repair, the same accepted history
+authenticates through tensor-thin historical custody without restoring blanket
+historical tensor retention.
+
+A complementary current-custody regression deletes the current tensor object
+and proves `load_bamf_bundle()` still fails closed with
+`DATA_PLANE_BUNDLE_PAYLOAD_DRIFT`. The existing storage-lifecycle witness also
+remains green: accepted ancestry does not pin every historical tensor.
+
+Metadata-only ancestry readers were migrated across cadence replay, Atlas
+accepted-factory and obligation discovery, generated-grade ancestry and
+correction replay, owner projection, C09 capability-support history, historical
+Factory authority, and profile retry. In the searched startup/history families,
+the only remaining full bundle load is the deliberate current-tip C09 execution
+digest that hashes live executable parameters.
+
+The implementation landed at
+`c668acff766d8774c0a71c8ad1385d5ba7d44529`. Focused verification on the
+invalidated owners was `26 passed in 8.89s`; staged anti-monolith reported
+`0 violations`, staged smell audit reported `0 findings`, and
+`git diff --check` was clean. Automated verification did not launch or mutate
+the sovereign human trainer.
+
 The BAMF terminal cockpit was also repaired at this cold-resume boundary. Its
 live trainer observation is persisted on a one-second heartbeat, but the screen
 previously reread that file only when an unrelated progress/event callback
