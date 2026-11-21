@@ -100,6 +100,10 @@ export default async function globalInteractionsJourney(page) {
     "fresh fixture launch restores the live posture without production current authority");
 
   await page.locator('[data-test-id="nav-destination-learning"]').click();
+  const learningForensics = page.locator('[data-test-id="learning-forensics"]');
+  if (!await learningForensics.evaluate((node) => node.open)) {
+    await learningForensics.locator("summary").click();
+  }
   await page.locator('[data-test-id="learning-candidate-inspect"]').click();
   await page.locator('[data-test-id="investigation-inspector-compare-left"]').click();
   await page.locator('[data-test-id="learning-episode-selector"]').selectOption(
