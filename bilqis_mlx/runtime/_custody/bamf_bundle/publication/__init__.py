@@ -204,6 +204,72 @@ def _install_publication_target(stage, target, digest, published_student):
     return published_student
 
 
+def _publish_locked(
+        run_dir, candidate, authority, prepared, digest, stage, target,
+        published_student, pointer_path, parent_acceptance, parent_witness,
+        expected_active_grade_activation_sha256):
+    current = _read_pointer(pointer_path)
+    if expected_active_grade_activation_sha256 is not None:
+        from bilqis_mlx.runtime.active_generated_grade_custody import _read_stored_active
+        active = _read_stored_active(run_dir)
+        if (active is None or active.activation_sha256 !=
+                expected_active_grade_activation_sha256):
+            invalid("BAMF_PROFILE_ACTIVE_GRADE_MEMBERSHIP_DRIFT")
+    if current is not None and current["generation"] == candidate.generation:
+        return _reconcile_already_pointed_retry(
+            run_dir, current, candidate, authority, prepared, digest, stage,
+            require_successor_source_authority=_require_successor_source_authority)
+    if prepared is not None:
+        from ..genesis import validate_initial_generation_preparation
+        validate_initial_generation_preparation(prepared)
+    witnessed_parent, parent_witness = _witnessed_parent_locked(
+        run_dir, current, parent_witness)
+    parent = _validate_parent_transition_impl(
+        run_dir, current, candidate,
+        load_bundle=load_bamf_bundle, reconcile=reconcile_bamf_outbox,
+        parent=witnessed_parent,
+        factory_release_new_semantic_admission=(
+            type(authority) is FactoryReleaseAdmissionBinding
+            and authority.generated_grade_proposal_sha256 is not None))
+    if candidate.generation > 0:
+        if parent is None:
+            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+        _require_successor_source_authority(run_dir, parent, candidate, authority)
+        _require_accepted_parent_impl(
+            run_dir, candidate, authority, load_bundle=load_bamf_bundle,
+            parent=parent)
+        live_parent_acceptance = (
+            parent_witness.acceptance_sha256
+            if parent_witness is not None else
+            _require_published_acceptance(run_dir, current, parent).digest)
+        if live_parent_acceptance != parent_acceptance:
+            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    published_student = _install_publication_target(
+        stage, target, digest, published_student)
+    if prepared is not None:
+        persist_prepared_initial_factory_release(run_dir, prepared)
+        publish_initial_generation_trust_root(run_dir, prepared, digest)
+    _write_acceptance(run_dir, digest, authority)
+    pointer = {
+        "schema": BAMF_POINTER_SCHEMA, "run_id": candidate.run_id,
+        "generation": candidate.generation,
+        "parent_manifest_sha256": candidate.parent_manifest_sha256,
+        "bundle": str(target.relative_to(run_dir)),
+        "manifest_sha256": digest, "acceptance_sha256": authority.digest,
+    }
+    from .accepted_authority_commit import commit_accepted_authority
+    commit_accepted_authority(
+        run_dir, pointer, published_student, current=current, parent=parent,
+        genesis_features=(
+            None if prepared is None else prepared.foundation_features.features),
+        candidate_identity_sha256=authority.candidate_identity_sha256,
+        parent_candidate_identity_sha256=getattr(
+            authority, "parent_candidate_identity_sha256", None))
+    _atomic_pointer(pointer_path, pointer)
+    reconcile_bamf_outbox(run_dir, published_student)
+    return pointer
+
+
 def _publish_authorized_generation(
         run_dir: Path, candidate: BamfBundleCandidate, authority, *,
         reserve_gib: float, parent_witness=None,
@@ -230,69 +296,10 @@ def _publish_authorized_generation(
             _initial_generation_pointer_lock
             if candidate.generation == 0 else _publication_pointer_lock)
         with pointer_lock(run_dir):
-            current = _read_pointer(pointer_path)
-            if expected_active_grade_activation_sha256 is not None:
-                from bilqis_mlx.runtime.active_generated_grade_custody import (
-                    _read_stored_active,
-                )
-                active = _read_stored_active(run_dir)
-                if (active is None or active.activation_sha256 !=
-                        expected_active_grade_activation_sha256):
-                    invalid("BAMF_PROFILE_ACTIVE_GRADE_MEMBERSHIP_DRIFT")
-            if current is not None and current["generation"] == candidate.generation:
-                return _reconcile_already_pointed_retry(
-                    run_dir, current, candidate, authority, prepared, digest, stage,
-                    require_successor_source_authority=_require_successor_source_authority)
-            if prepared is not None:
-                from ..genesis import validate_initial_generation_preparation
-                validate_initial_generation_preparation(prepared)
-            witnessed_parent, parent_witness = _witnessed_parent_locked(
-                run_dir, current, parent_witness)
-            parent = _validate_parent_transition_impl(
-                run_dir, current, candidate,
-                load_bundle=load_bamf_bundle, reconcile=reconcile_bamf_outbox,
-                parent=witnessed_parent,
-                factory_release_new_semantic_admission=(
-                    type(authority) is FactoryReleaseAdmissionBinding
-                    and authority.generated_grade_proposal_sha256 is not None))
-            if candidate.generation > 0:
-                if parent is None:
-                    invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-                _require_successor_source_authority(
-                    run_dir, parent, candidate, authority)
-                _require_accepted_parent_impl(
-                    run_dir, candidate, authority, load_bundle=load_bamf_bundle,
-                    parent=parent)
-                live_parent_acceptance = (
-                    parent_witness.acceptance_sha256
-                    if parent_witness is not None else
-                    _require_published_acceptance(run_dir, current, parent).digest)
-                if live_parent_acceptance != parent_acceptance:
-                    invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-            published_student = _install_publication_target(
-                stage, target, digest, published_student)
-            if prepared is not None:
-                persist_prepared_initial_factory_release(run_dir, prepared)
-                publish_initial_generation_trust_root(run_dir, prepared, digest)
-            _write_acceptance(run_dir, digest, authority)
-            pointer = {
-                "schema": BAMF_POINTER_SCHEMA, "run_id": candidate.run_id,
-                "generation": candidate.generation,
-                "parent_manifest_sha256": candidate.parent_manifest_sha256,
-                "bundle": str(target.relative_to(run_dir)),
-                "manifest_sha256": digest, "acceptance_sha256": authority.digest,
-            }
-            from .accepted_authority_commit import commit_accepted_authority
-            commit_accepted_authority(
-                run_dir, pointer, published_student, current=current, parent=parent,
-                genesis_features=(
-                    None if prepared is None else prepared.foundation_features.features),
-                candidate_identity_sha256=authority.candidate_identity_sha256,
-                parent_candidate_identity_sha256=getattr(
-                    authority, "parent_candidate_identity_sha256", None))
-            _atomic_pointer(pointer_path, pointer)
-            reconcile_bamf_outbox(run_dir, published_student)
-            return pointer
+            return _publish_locked(
+                run_dir, candidate, authority, prepared, digest, stage, target,
+                published_student, pointer_path, parent_acceptance, parent_witness,
+                expected_active_grade_activation_sha256)
     except BaseException:
         if stage.exists() and stage.is_dir() and not stage.is_symlink():
             _remove_stage(stage)

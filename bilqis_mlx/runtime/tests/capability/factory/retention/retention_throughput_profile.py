@@ -196,97 +196,93 @@ def _profile_receipt(capability, bound, rows, step, cached_rows, evaluation,
     }
 
 
+def _run_profile(stage_root, root, source, artifact, capability, source_each) -> int:
+    run_dir, parent, source_context = _prepare_run(stage_root, root, source, artifact)
+    pregenerations = int(os.environ.get("BILQIS_C05_PROFILE_PREGENERATIONS", "0"))
+    if pregenerations not in (0, 1):
+        raise SystemExit("BILQIS_C05_PROFILE_PREGENERATIONS must be 0 or 1")
+    if pregenerations:
+        accepted_cache = bind_accepted_execution_cache(run_dir)
+        feature = authenticate_bamf_execution_feature_context(
+            parent, str(artifact), run_dir)
+        pre_bound, _rows, pre_step = _train_candidate(
+            run_dir, parent, source_context, feature.feature_artifact_path,
+            artifact, capability, source_each)
+        _publish_disposable_source_qualified_successor(
+            run_dir, parent, accepted_cache, pre_step.transaction, visit=pre_bound)
+
+    accepted_state_metrics = {}
+    parent, source_context, _atlas_path, feature_path = _execution_context(
+        run_dir, performance_metrics=accepted_state_metrics)
+    accepted_state_metrics["accepted_state_setup_wall_seconds"] = sum(
+        float(accepted_state_metrics.get(name, 0.0)) for name in (
+            "accepted_runtime_host_wall_seconds",
+            "accepted_generation_load_wall_seconds",
+            "accepted_source_context_wall_seconds",
+            "accepted_feature_authentication_wall_seconds",
+        ))
+    retention_setup_started = time.perf_counter()
+    accepted_cache = bind_accepted_execution_cache(run_dir)
+    protection = bind_current_retention_protection_plan(
+        source_context, parent, accepted_cache)
+    cached_rows = bind_current_retention_source_rows(
+        source_context, accepted_cache, capability)
+    retention_setup_wall = max(0.0, time.perf_counter() - retention_setup_started)
+    mx.clear_cache()
+    mx.reset_peak_memory()
+    attempt_started = time.perf_counter()
+    training_started = time.perf_counter()
+    bound, rows, step = _train_candidate(
+        run_dir, parent, source_context, feature_path, artifact, capability, source_each)
+    training_wall = max(0.0, time.perf_counter() - training_started)
+    if os.environ.get("BILQIS_C05_PROFILE_PREFLIGHT_ONLY") == "1":
+        _print_preflight(
+            capability, source_each, retention_setup_wall, protection,
+            cached_rows, step, source_context, training_wall)
+        return 0
+
+    observed: list[dict] = []
+    retention_started = time.perf_counter()
+    evaluation = evaluate_factory_retention_candidate(
+        source_context, step.transaction, str(artifact), capability,
+        run_dir=run_dir, observer=observed.append)
+    mx.synchronize()
+    retention_wall = max(0.0, time.perf_counter() - retention_started)
+    from bilqis_mlx.learning.atlas_retention_decision import issue_factory_retention_decision
+    issued = issue_factory_retention_decision(evaluation)
+    attempt_wall = max(0.0, time.perf_counter() - attempt_started)
+    receipt = _profile_receipt(
+        capability, bound, rows, step, cached_rows, evaluation, issued,
+        observed, training_wall, retention_setup_wall, retention_wall,
+        attempt_wall, accepted_state_metrics)
+    print("C05_RETENTION_THROUGHPUT_PROFILE " + json.dumps(
+        receipt, sort_keys=True), flush=True)
+    return 0
+
+
 def main() -> int:
     if not mx.metal.is_available():
         raise SystemExit("Apple Metal is required")
     previous_device = mx.default_device()
     mx.set_default_device(mx.gpu)
-    artifact = _artifact()
-    capability = os.environ.get("BILQIS_C05_PROFILE_CAPABILITY", "B.AND")
-    source_each = 4 if capability == "B.AND" else 1
-    root = Path.cwd()
-    source = (root / "vendor/legacy-v16").resolve()
-    if not source.is_dir():
-        raise SystemExit("pinned vendor/legacy-v16 source fixture is required")
-    memory_policy = training_memory_policy(mx)
-    with memory_policy:
-        with tempfile.TemporaryDirectory() as directory, host_source_authority_patch():
-            stage_root = Path(directory)
-            with patch.dict(os.environ, {
-                    "BILQIS_DATA_PLANE": str(stage_root / "plane.sqlite3")
-            }):
-                run_dir, parent, source_context = _prepare_run(
-                    stage_root, root, source, artifact)
-                pregenerations = int(os.environ.get(
-                    "BILQIS_C05_PROFILE_PREGENERATIONS", "0"))
-                if pregenerations not in (0, 1):
-                    raise SystemExit("BILQIS_C05_PROFILE_PREGENERATIONS must be 0 or 1")
-                if pregenerations:
-                    accepted_cache = bind_accepted_execution_cache(run_dir)
-                    feature = authenticate_bamf_execution_feature_context(
-                        parent, str(artifact), run_dir)
-                    pre_bound, _rows, pre_step = _train_candidate(
-                        run_dir, parent, source_context,
-                        feature.feature_artifact_path, artifact,
-                        capability, source_each)
-                    _publish_disposable_source_qualified_successor(
-                        run_dir, parent, accepted_cache, pre_step.transaction,
-                        visit=pre_bound)
-
-                accepted_state_metrics = {}
-                parent, source_context, _atlas_path, feature_path = _execution_context(
-                    run_dir, performance_metrics=accepted_state_metrics)
-                accepted_state_metrics["accepted_state_setup_wall_seconds"] = sum(
-                    float(accepted_state_metrics.get(name, 0.0)) for name in (
-                        "accepted_runtime_host_wall_seconds",
-                        "accepted_generation_load_wall_seconds",
-                        "accepted_source_context_wall_seconds",
-                        "accepted_feature_authentication_wall_seconds",
-                    ))
-                retention_setup_started = time.perf_counter()
-                accepted_cache = bind_accepted_execution_cache(run_dir)
-                protection = bind_current_retention_protection_plan(
-                    source_context, parent, accepted_cache)
-                cached_rows = bind_current_retention_source_rows(
-                    source_context, accepted_cache, capability)
-                retention_setup_wall = max(
-                    0.0, time.perf_counter() - retention_setup_started)
-                mx.clear_cache()
-                mx.reset_peak_memory()
-                attempt_started = time.perf_counter()
-                training_started = time.perf_counter()
-                bound, rows, step = _train_candidate(
-                    run_dir, parent, source_context, feature_path, artifact,
-                    capability, source_each)
-                training_wall = max(0.0, time.perf_counter() - training_started)
-
-                if os.environ.get("BILQIS_C05_PROFILE_PREFLIGHT_ONLY") == "1":
-                    _print_preflight(
-                        capability, source_each, retention_setup_wall, protection,
-                        cached_rows, step, source_context, training_wall)
-                    mx.set_default_device(previous_device)
-                    return 0
-
-                observed: list[dict] = []
-                retention_started = time.perf_counter()
-                evaluation = evaluate_factory_retention_candidate(
-                    source_context, step.transaction, str(artifact), capability,
-                    run_dir=run_dir, observer=observed.append)
-                mx.synchronize()
-                retention_wall = max(0.0, time.perf_counter() - retention_started)
-                from bilqis_mlx.learning.atlas_retention_decision import (
-                    issue_factory_retention_decision,
-                )
-                issued = issue_factory_retention_decision(evaluation)
-                attempt_wall = max(0.0, time.perf_counter() - attempt_started)
-                receipt = _profile_receipt(
-                    capability, bound, rows, step, cached_rows, evaluation, issued,
-                    observed, training_wall, retention_setup_wall, retention_wall,
-                    attempt_wall, accepted_state_metrics)
-                print("C05_RETENTION_THROUGHPUT_PROFILE " + json.dumps(
-                    receipt, sort_keys=True), flush=True)
-    mx.set_default_device(previous_device)
-    return 0
+    try:
+        artifact = _artifact()
+        capability = os.environ.get("BILQIS_C05_PROFILE_CAPABILITY", "B.AND")
+        source_each = 4 if capability == "B.AND" else 1
+        root = Path.cwd()
+        source = (root / "vendor/legacy-v16").resolve()
+        if not source.is_dir():
+            raise SystemExit("pinned vendor/legacy-v16 source fixture is required")
+        with training_memory_policy(mx):
+            with tempfile.TemporaryDirectory() as directory, host_source_authority_patch():
+                stage_root = Path(directory)
+                with patch.dict(os.environ, {
+                        "BILQIS_DATA_PLANE": str(stage_root / "plane.sqlite3")
+                }):
+                    return _run_profile(
+                        stage_root, root, source, artifact, capability, source_each)
+    finally:
+        mx.set_default_device(previous_device)
 
 
 if __name__ == "__main__":
