@@ -2,6 +2,15 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.4.2](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.1...v1.4.2) (2026-11-21)
+
+
+### Bug Fixes
+
+* **bamf:** make accepted-state proof cost lineage-depth invariant ([#1527](https://github.com/Entif-AI/Bilqis-MLX/issues/1527)) ([51abf62](https://github.com/Entif-AI/Bilqis-MLX/commit/51abf62d121e8e90961fba178f4665c1e5eb5cbf))
+* **data-plane:** bound total workstation storage ([#1529](https://github.com/Entif-AI/Bilqis-MLX/issues/1529)) ([c5679dd](https://github.com/Entif-AI/Bilqis-MLX/commit/c5679dd7b3108e6fbac76c26b3e294bde66a31c2))
+* **data-plane:** recover maintenance after trainer crashes ([#1531](https://github.com/Entif-AI/Bilqis-MLX/issues/1531)) ([0ab5f89](https://github.com/Entif-AI/Bilqis-MLX/commit/0ab5f893d4653e113440160851eeb24627fc0d9a))
+
 ## [1.4.1](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.0...v1.4.1) (2026-11-21)
 
 
