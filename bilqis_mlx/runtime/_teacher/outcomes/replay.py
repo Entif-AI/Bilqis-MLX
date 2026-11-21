@@ -6,6 +6,9 @@ from bilqis_mlx.runtime.priority_rejection_replay import current_rejection_outco
 from .observations import apply_outcome, invalid
 
 
+_PORTABLE_TEACHER_AUTHORITY = "_portable_teacher_authority_verified"
+
+
 def replay_rejected_outcomes(run_dir, parent, cache, teacher):
     for capability, visit_id, reason, receipt_sha, evidence in current_rejection_outcomes(
             run_dir, parent, cache):
@@ -13,7 +16,8 @@ def replay_rejected_outcomes(run_dir, parent, cache, teacher):
         if observation is None:
             continue
         visit = TeacherVisitIdentity.from_record(observation['teacher_visit'])
-        require_teacher_visit_receipt(visit)
+        if evidence.get(_PORTABLE_TEACHER_AUTHORITY) is not True:
+            require_teacher_visit_receipt(visit)
         payload = read_candidate_horizon_evidence(run_dir, evidence['candidate_evidence'])
         proposal = payload['proposal']
         decision = observation['decision']

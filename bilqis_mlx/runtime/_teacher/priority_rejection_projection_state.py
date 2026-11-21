@@ -1,7 +1,7 @@
 """Durable codec for the hot BAMF rejection projection."""
 from __future__ import annotations
 
-SCHEMA = "bilqis.mlx.bamf-priority-rejection-projection/v2"
+SCHEMA = "bilqis.mlx.bamf-priority-rejection-projection/v3"
 REJECTION_ROW_FIELDS = 4
 
 
