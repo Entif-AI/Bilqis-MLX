@@ -34,7 +34,6 @@ def _factory_release(issue, require_source, source):
 
 
 def _teacher_visit(issue, require_source, source):
-    from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
     from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
     from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity
     source = require_source(source)
@@ -50,7 +49,7 @@ def _teacher_visit(issue, require_source, source):
             or visit.accepted_manifest_sha256
             != source.student.parent_manifest_sha256
             or visit.student_sha256
-            != candidate_identity_digest(source.parent.retained_state)):
+            != source.binding.parent_candidate_identity_sha256):
         _invalid("BAMF_C10_TEACHER_VISIT_OWNER_DRIFT")
     return issue(
         kind=AkashaEventKind.TEACHER_VISIT,
@@ -134,7 +133,7 @@ def _plasticity(issue, require_source, source):
     parent, parent_binding = source.parent, source.parent_binding
     if parent_binding is None or parent is None:
         return None
-    parent_policy = contract_digest(parent.retained_state.policy.to_record())
+    parent_policy = contract_digest(parent.records["plasticity_policy"])
     policy = contract_digest(student.retained_state.policy.to_record())
     if policy == parent_policy:
         return None

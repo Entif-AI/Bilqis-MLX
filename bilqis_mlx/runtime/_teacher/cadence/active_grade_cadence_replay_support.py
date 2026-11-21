@@ -39,15 +39,24 @@ def _current_accepted_events(student):
     return result
 
 
-def _anchored_parent(run_dir: Path, anchor, student):
+def _anchored_parent(run_dir: Path, anchor, student, pointer):
     if anchor is None or student.generation != anchor[1] + 1:
         return None
-    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
+    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
+        accepted_binding_for_manifest,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.feature.historical_acceptance import (
+        load_historical_accepted_parent,
+    )
 
+    root = Path(run_dir)
+    child_manifest = pointer["manifest_sha256"]
+    binding = accepted_binding_for_manifest(
+        root, child_manifest, student,
+        expected_acceptance_sha256=pointer["acceptance_sha256"])
+    parent, _parent_binding = load_historical_accepted_parent(
+        root, child_manifest, student, binding)
     manifest = anchor[2]
-    parent = load_bamf_bundle(
-        Path(run_dir) / "bamf-bundles" / manifest,
-        expected_manifest_sha256=manifest)
     if (parent.run_id != anchor[0]
             or parent.generation != anchor[1]
             or student.parent_manifest_sha256 != manifest):
@@ -85,7 +94,8 @@ def _incremental_attempts(run_dir, events, pointer, student, attempts, seen, anc
         elif (anchor is not None and generation == anchor[1]
                 and student.generation == anchor[1] + 1):
             if parent is None:
-                parent = _anchored_parent(Path(run_dir), anchor, student)
+                parent = _anchored_parent(
+                    Path(run_dir), anchor, student, pointer)
             owner, manifest = parent, anchor[2]
         else:
             _invalid(_REBUILD_REQUIRED)

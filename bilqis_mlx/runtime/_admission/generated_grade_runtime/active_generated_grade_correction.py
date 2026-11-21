@@ -163,7 +163,9 @@ def _historical_accepted_corrections(
     manifest_sha256: str,
 ):
     """Verify C09 evidence at one accepted historical manifest without currentness."""
-    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
+    from bilqis_mlx.runtime.bamf_bundle.feature.historical_custody import (
+        load_historical_bamf_bundle,
+    )
     from bilqis_mlx.runtime.bamf_bundle.source_authority_custody import (
         resolve_source_authority_registry,
     )
@@ -173,7 +175,7 @@ def _historical_accepted_corrections(
     )
 
     root = Path(run_dir)
-    student = load_bamf_bundle(
+    student = load_historical_bamf_bundle(
         root / "bamf-bundles" / manifest_sha256,
         expected_manifest_sha256=manifest_sha256,
     )

@@ -75,8 +75,17 @@ def _anchor_dependencies(anchors, policy_sha256, manifest_sha256):
 
 
 def _verify_anchor_proofs(binding, student, capability_id):
+    from bilqis_mlx.learning._retention._atlas_candidate.proofs import (
+        CandidateStepProof,
+    )
+    if hasattr(student, "retained_state"):
+        step_proofs = student.retained_state.step_proofs
+    else:
+        step_proofs = tuple(
+            CandidateStepProof.from_record(item)
+            for item in student.records["step_proofs"]["proofs"])
     expected = []
-    for step_index, proof in enumerate(student.retained_state.step_proofs, 1):
+    for step_index, proof in enumerate(step_proofs, 1):
         if (getattr(proof, "step_index", None) != step_index
                 or proof.training_authority_sha256 is None):
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_PROOF_DRIFT")
@@ -165,10 +174,20 @@ def retained_closure_nodes(binding, student, capability_id):
     )
     from bilqis_mlx.semantics.dependencies.closure import decode_closure_nodes
 
-    require_closure_proofs(binding, student.retained_state.step_proofs)
+    from bilqis_mlx.learning._retention._atlas_candidate.proofs import (
+        CandidateStepProof,
+    )
+    step_proofs = (
+        student.retained_state.step_proofs
+        if hasattr(student, "retained_state")
+        else tuple(
+            CandidateStepProof.from_record(item)
+            for item in student.records["step_proofs"]["proofs"])
+    )
+    require_closure_proofs(binding, step_proofs)
     proofs = {
         proof.step_index: proof
-        for proof in student.retained_state.step_proofs
+        for proof in step_proofs
     }
     nodes = {}
     for entry in getattr(binding, "artifact_closures", ()) or ():

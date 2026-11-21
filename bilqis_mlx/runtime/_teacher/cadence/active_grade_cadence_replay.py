@@ -13,14 +13,12 @@ from .active_grade_cadence_replay_support import (
 
 
 def _accepted_chain(run_dir: Path):
-    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
         load_accepted_generation_with_pointer_if_cached,
     )
-    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
-        accepted_binding_for_manifest,
-        accepted_generation,
-        parent_acceptance_anchor_from_manifest,
+    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import accepted_generation
+    from bilqis_mlx.runtime.bamf_bundle.feature.historical_acceptance import (
+        iter_accepted_bamf_history,
     )
 
     root = Path(run_dir)
@@ -29,24 +27,13 @@ def _accepted_chain(run_dir: Path):
         pointer, student = accepted_generation(root / "bamf-state.json")
     else:
         pointer, student = cached
-    manifest = pointer["manifest_sha256"]
-    acceptance = pointer["acceptance_sha256"]
     result = {}
-    while True:
-        accepted_binding_for_manifest(
-            root, manifest, student,
-            expected_acceptance_sha256=acceptance)
-        result[student.generation] = (student, manifest)
-        if student.generation == 0:
-            break
-        parent_manifest = student.parent_manifest_sha256
-        parent_acceptance = parent_acceptance_anchor_from_manifest(root, manifest)
-        if parent_manifest is None or parent_acceptance is None:
-            break
-        student = load_bamf_bundle(
-            root / "bamf-bundles" / parent_manifest,
-            expected_manifest_sha256=parent_manifest)
-        manifest, acceptance = parent_manifest, parent_acceptance
+    for manifest, _acceptance, bundle, _binding in iter_accepted_bamf_history(
+            root,
+            current_manifest_sha256=pointer["manifest_sha256"],
+            current_acceptance_sha256=pointer["acceptance_sha256"],
+            current=student):
+        result[bundle.generation] = (bundle, manifest)
     return result
 
 

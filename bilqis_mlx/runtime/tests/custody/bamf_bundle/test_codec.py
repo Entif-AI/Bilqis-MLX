@@ -18,6 +18,7 @@ import numpy as np
 
 import bilqis_mlx.runtime.bamf_bundle.codec as codec
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
+from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.errors import BilqisError, ErrorBus
 from bilqis_mlx.diagnostics.learning_health import STATE_SCHEMA, project_learning_health
 from bilqis_mlx.learning.atlas_engram import MotifKey, MotifManifest, MotifSlot
@@ -205,6 +206,23 @@ class BamfBundleCodecTests(unittest.TestCase):
             with self.assertRaises(BilqisError):
                 save_bamf_bundle(wrong, self.root / "rejected")
         tensor_save.assert_not_called()
+
+    def test_current_executable_bundle_requires_tensor_object(self):
+        source = candidate(parent_state())
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            manifest = save_bamf_bundle(source, self.root / "bundle")
+        record = json.loads((self.root / "bundle" / "manifest.json").read_text())
+        data_plane().require_file_object(
+            record["tensors"]["object_sha256"]).unlink()
+
+        with self.assertRaises(BilqisError) as caught:
+            load_bamf_bundle(
+                self.root / "bundle",
+                expected_manifest_sha256=manifest["manifest_sha256"])
+
+        self.assertEqual(
+            ErrorBus.report(caught.exception).context["reason"],
+            "DATA_PLANE_BUNDLE_PAYLOAD_DRIFT")
 
     def test_historical_v1_reads_but_cannot_be_coerced_to_v2(self):
         parameters = {"p": mx.array([1., 2.], dtype=mx.float32)}

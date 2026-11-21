@@ -145,34 +145,24 @@ def _proposal_bound_at_or_before_accepted_generation(
     generation: int, manifest_sha256: str, acceptance_sha256: str,
 ) -> bool:
     """Authenticate a proposal in accepted B13 ancestry no later than activation."""
-    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
-    from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
-        accepted_binding_for_manifest, parent_acceptance_anchor_from_manifest,
+    from bilqis_mlx.runtime.bamf_bundle.feature.historical_acceptance import (
+        iter_historical_bamf_history,
     )
     root = Path(run_dir)
-    student = load_bamf_bundle(
-        root / "bamf-bundles" / manifest_sha256,
-        expected_manifest_sha256=manifest_sha256,
-    )
-    if student.run_id != run_id or student.generation != generation:
-        return False
-    manifest, acceptance, visited = manifest_sha256, acceptance_sha256, set()
-    while student.generation > 0:
+    visited = set()
+    for manifest, _acceptance, student, binding in iter_historical_bamf_history(
+            root,
+            manifest_sha256=manifest_sha256,
+            acceptance_sha256=acceptance_sha256,
+            run_id=run_id,
+            generation=generation):
+        if student.generation == 0:
+            break
         if manifest in visited:
             return False
         visited.add(manifest)
-        binding = accepted_binding_for_manifest(
-            root, manifest, student, expected_acceptance_sha256=acceptance)
         if _binding_accepts_proposal(binding, proposal):
             return True
-        parent_manifest = student.parent_manifest_sha256
-        parent_acceptance = parent_acceptance_anchor_from_manifest(root, manifest)
-        if parent_manifest is None or parent_acceptance is None:
-            return False
-        student = load_bamf_bundle(
-            root / "bamf-bundles" / parent_manifest,
-            expected_manifest_sha256=parent_manifest)
-        manifest, acceptance = parent_manifest, parent_acceptance
     return False
 
 

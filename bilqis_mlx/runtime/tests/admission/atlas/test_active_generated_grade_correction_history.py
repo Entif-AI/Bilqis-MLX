@@ -19,7 +19,8 @@ class HistoricalCorrectionReplayTests(unittest.TestCase):
         accepted = (("b" * 64, object()),)
 
         with TemporaryDirectory() as directory, patch(
-            "bilqis_mlx.runtime.bamf_bundle.codec.load_bamf_bundle",
+            "bilqis_mlx.runtime.bamf_bundle.feature.historical_custody."
+            "load_historical_bamf_bundle",
             return_value=student,
         ) as load, patch(
             "bilqis_mlx.runtime.bamf_bundle.source_authority_custody."

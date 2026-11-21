@@ -145,16 +145,36 @@ def accepted_binding_for_manifest(
     parent_sha = student.parent_manifest_sha256
     if parent_sha is None:
         invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
-    parent = load_bamf_bundle(
-        run_dir / "bamf-bundles" / parent_sha,
-        expected_manifest_sha256=parent_sha)
-    if (parent.generation + 1 != student.generation
-            or parent.run_id != student.run_id
-            or (parent_anchor is not None
-                and parent.run_identity != student.run_identity)
-            or binding.parent_candidate_identity_sha256
-            != candidate_identity_for_canonical_consumer(parent.retained_state)):
-        invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    if parent_anchor is None:
+        parent = load_bamf_bundle(
+            run_dir / "bamf-bundles" / parent_sha,
+            expected_manifest_sha256=parent_sha)
+        if (parent.generation + 1 != student.generation
+                or parent.run_id != student.run_id
+                or binding.parent_candidate_identity_sha256
+                != candidate_identity_for_canonical_consumer(parent.retained_state)):
+            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
+    else:
+        from .historical_acceptance import (
+            historical_accepted_binding_for_manifest,
+        )
+        from .historical_custody import (
+            load_historical_bamf_bundle,
+        )
+        parent = load_historical_bamf_bundle(
+            run_dir / "bamf-bundles" / parent_sha,
+            expected_manifest_sha256=parent_sha)
+        historical_accepted_binding_for_manifest(
+            run_dir,
+            parent_sha,
+            parent,
+            expected_acceptance_sha256=parent_anchor,
+            expected_candidate_identity_sha256=binding.parent_candidate_identity_sha256,
+        )
+        if (parent.generation + 1 != student.generation
+                or parent.run_id != student.run_id
+                or parent.run_identity != student.run_identity):
+            invalid("BAMF_GENERATION_ACCEPTANCE_DRIFT")
     return binding
 
 def parent_acceptance_anchor_from_manifest(

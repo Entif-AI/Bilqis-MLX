@@ -29,10 +29,16 @@ def _accepted_materialization(
     *, current_student=None,
 ):
     """Authenticate every ancestor against the current pointer's acceptance chain."""
-    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.feature.acceptance import (
         accepted_binding_for_manifest, parent_acceptance_anchor_from_manifest,
     )
+    from bilqis_mlx.runtime.bamf_bundle.feature.historical_acceptance import (
+        historical_accepted_binding_for_manifest,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.feature.historical_custody import (
+        load_historical_bamf_bundle,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.codec import load_bamf_bundle
     from bilqis_mlx.runtime.bamf_bundle.publication import (
         _live_bundle_manifest, _pointer_read_lock, _read_pointer,
     )
@@ -58,20 +64,34 @@ def _accepted_materialization(
                     _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_MISSING")
         if expected_acceptance_sha256 is not None and expected != expected_acceptance_sha256:
             _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_DRIFT")
-        if current == manifest_sha256 and current_student is not None:
-            student = current_student
+        if current == manifest_sha256:
+            student = (
+                current_student
+                if current_student is not None
+                else load_bamf_bundle(
+                    run_dir / "bamf-bundles" / manifest_sha256,
+                    expected_manifest_sha256=manifest_sha256,
+                )
+            )
             if (student.run_id != pointer.get("run_id")
                     or student.generation != pointer.get("generation")
                     or student.parent_manifest_sha256
                     != pointer.get("parent_manifest_sha256")):
                 _invalid("BAMF_C09_CAPABILITY_SUPPORT_ACCEPTANCE_DRIFT")
         else:
-            student = load_bamf_bundle(
+            student = load_historical_bamf_bundle(
                 run_dir / "bamf-bundles" / manifest_sha256,
                 expected_manifest_sha256=manifest_sha256,
             )
-        binding = accepted_binding_for_manifest(
-            run_dir, manifest_sha256, student, expected_acceptance_sha256=expected)
+        if hasattr(student, "retained_state"):
+            binding = accepted_binding_for_manifest(
+                run_dir, manifest_sha256, student,
+                expected_acceptance_sha256=expected)
+        else:
+            binding = historical_accepted_binding_for_manifest(
+                run_dir, manifest_sha256, student,
+                expected_acceptance_sha256=expected,
+                expected_candidate_identity_sha256=None)
     return binding, student
 
 
