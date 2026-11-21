@@ -10,6 +10,7 @@ from .bamf_lifecycle_inputs import (
     atlas_manifest_identity, foundation_hyperparameters, fresh_source_run_dir, invalid,
     source_foundation,
 )
+from .bamf_resume_migration import _load_resume_generation_authority
 
 
 SCHEMA = "bilqis.bamf.operator-lifecycle/v1"
@@ -169,8 +170,6 @@ def _validated_resume_parent_graph(args, identity):
 
 
 def _resume(args, requested_topology, *, include_parent_graph=False):
-    from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
-
     run_dir = Path(args.run_dir).expanduser().resolve()
     request = None
     flywheel = None
@@ -182,7 +181,8 @@ def _resume(args, requested_topology, *, include_parent_graph=False):
         from bilqis_mlx.runtime.atlas_admission import read_atlas_enrollment_request_v2
         request = read_atlas_enrollment_request_v2(args.atlas_admission_scope)
     pointer = run_dir / "bamf-state.json"
-    student, manifest_sha256 = load_bamf_generation_authority(pointer)
+    student, manifest_sha256 = _load_resume_generation_authority(
+        args, run_dir, pointer)
     identity = student.run_identity
     if identity is None:
         invalid("BAMF_OPERATOR_RESUME_RUN_IDENTITY_REQUIRED")
@@ -222,7 +222,8 @@ def _resume(args, requested_topology, *, include_parent_graph=False):
                 flywheel = run_accepted_atlas_flywheel(
                     run_dir, parent_graph, reserve_gib=args.reserve_gib)
                 result = flywheel.status.value
-                student, manifest_sha256 = load_bamf_generation_authority(pointer)
+                student, manifest_sha256 = _load_resume_generation_authority(
+                    args, run_dir, pointer)
                 identity = _validate_resume_overrides(args, student)
                 atlas = _accepted_atlas(run_dir, identity)
 

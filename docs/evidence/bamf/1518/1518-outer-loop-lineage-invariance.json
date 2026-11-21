@@ -109,7 +109,9 @@
     "detached_runner_runtime_binding": "7 passed",
     "electron_v4_failures_recheck": "18/18 passed",
     "bamf_security_test": "73/73 Node tests and 10/10 Python electron_bridge tests passed",
-    "final_verification_strategy": "incremental closeout; no second verify:leaf because the runner-only repair did not invalidate already-green BAMF or quality owners"
+    "final_verification_strategy": "incremental closeout; no second verify:leaf because the runner-only repair did not invalidate already-green BAMF or quality owners",
+    "legacy_human_resume_migration": "3 passed; exact missing-checkpoint human resume performs one audited backfill, dry-run remains non-mutating, current checkpoint remains incremental",
+    "accepted_authority_migration_owner": "1 passed"
   },
   "remaining_distinct_owner": {
     "selected_source_cold_construction_wall_seconds_observed": 11.021,

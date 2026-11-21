@@ -221,6 +221,18 @@ No second `verify:leaf` was run after this runner-only repair because doing so
 would have repeated the already-green 491-test BAMF suite and repository quality
 checks without an implementation change in those owners.
 
+Legacy accepted runs created before the durable B13 checkpoint existed are
+handled at the explicit human resume boundary. If and only if a mutating
+`--human-run --resume` encounters
+`BAMF_ACCEPTED_AUTHORITY_CHECKPOINT_REQUIRED`, the operator boundary acquires
+exclusive BAMF operator custody, performs the one-time audited
+`AUDIT_BACKFILL`, releases that custody, and retries the current accepted load
+once. Dry-run and non-human paths remain non-mutating and fail closed, and no
+other authority error is eligible for this migration path. Focused proofs cover
+legacy human resume, dry-run non-mutation, and the already-current checkpoint
+path (`3 passed`), while the underlying migration owner test remains green
+(`1 passed`).
+
 Immediately before freezing this packet, `git fetch origin main` confirmed
 `origin/main` remained at
 `38813530c3fc4b803f7cf4b8b1e800b978f49d74`, which is already integrated by merge
