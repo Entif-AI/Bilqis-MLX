@@ -2,6 +2,79 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.3.0](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.19...v1.3.0) (2026-11-21)
+
+
+### Features
+
+* **mission-control:** complete generalized investigation UX ([#1514](https://github.com/Entif-AI/Bilqis-MLX/issues/1514)) ([d774b6a](https://github.com/Entif-AI/Bilqis-MLX/commit/d774b6a4bd20204b4ab0e0697f047642ab14d3e8))
+
+
+### Bug Fixes
+
+* replay portable rejection outcomes without raw KeyError leakage ([#1515](https://github.com/Entif-AI/Bilqis-MLX/issues/1515)) ([6e2e496](https://github.com/Entif-AI/Bilqis-MLX/commit/6e2e49600806328bd77a979e2863a80fbc5625b5))
+
+<!-- release-history:pr:1514:start -->
+### PR #1514 constituent commit inventory
+
+Release Please summarized PR #1514 as [`d774b6a`](https://github.com/Entif-AI/Bilqis-MLX/commit/d774b6a4bd20204b4ab0e0697f047642ab14d3e8). This generated inventory preserves **21 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **18 source commits and 3 internal merge commits**.
+
+<details>
+<summary>18 source commits (newest-first PR order)</summary>
+
+- [`a54cf5849b`](https://github.com/Entif-AI/Bilqis-MLX/commit/a54cf5849b0e37c2edd16ca526a5c0705ef93747) test(mission-control): use stable hooks in investigation journey
+- [`93eb2b6fc4`](https://github.com/Entif-AI/Bilqis-MLX/commit/93eb2b6fc4fb50381d79ce925204f5b0b63afb04) test(mission-control): reset desktop viewport before global journey
+- [`96f3cc2d60`](https://github.com/Entif-AI/Bilqis-MLX/commit/96f3cc2d60b7901a671ba5b39025cc33cb3ad539) test(mission-control): keep investigation browser proof within directory budget
+- [`99be24fb1e`](https://github.com/Entif-AI/Bilqis-MLX/commit/99be24fb1e952551aa845e78f647c1b177c87ffa) docs(mission-control): record issue 1114 release proof
+- [`edb898caf1`](https://github.com/Entif-AI/Bilqis-MLX/commit/edb898caf10aa7e766535d8cbb897eebec01cfcd) test(mission-control): assert historical posture across school
+- [`62ed6fde02`](https://github.com/Entif-AI/Bilqis-MLX/commit/62ed6fde027868e40956cef5673b73a036047698) test(mission-control): verify local compare overflow ownership
+- [`54a1ca95b9`](https://github.com/Entif-AI/Bilqis-MLX/commit/54a1ca95b94ce78b0d4b435086efe05f558c4caa) test(mission-control): reopen learning forensics after selection
+- [`546f887675`](https://github.com/Entif-AI/Bilqis-MLX/commit/546f887675a8839a66035c0771d7e170ca8f00f8) test(mission-control): open learning forensics before candidate inspect
+- [`1979dcc563`](https://github.com/Entif-AI/Bilqis-MLX/commit/1979dcc56395ce31b8960e05deb8d4e3141d05fb) test(mission-control): make saved investigation panel idempotent
+- [`985bad40ce`](https://github.com/Entif-AI/Bilqis-MLX/commit/985bad40cec638adbabc7456ced2112e9e4886ff) test(mission-control): respect fixture current-authority boundary
+- [`8d70714ff0`](https://github.com/Entif-AI/Bilqis-MLX/commit/8d70714ff06654407f0ec09a711907f432e85d74) test(mission-control): bind fixture journey to verified current context
+- [`84dcc67af7`](https://github.com/Entif-AI/Bilqis-MLX/commit/84dcc67af77fa762a99c3b9cb1cc29d48e2f9902) test(mission-control): inspect historical memory receipts explicitly
+- [`61b2a28560`](https://github.com/Entif-AI/Bilqis-MLX/commit/61b2a285601f2f6c5d059f876778755bea85873e) test(mission-control): navigate fixture journey to school
+- [`1749d7cf6f`](https://github.com/Entif-AI/Bilqis-MLX/commit/1749d7cf6fc23a7ce9aac078e675b56601ed91cf) test(mission-control): tolerate hydrated fixture reconnect state
+- [`0b1b0d98d6`](https://github.com/Entif-AI/Bilqis-MLX/commit/0b1b0d98d6ca1607db0088e224536232724cbcee) test(mission-control): bound generalized investigation browser waits
+- [`7fe748fd42`](https://github.com/Entif-AI/Bilqis-MLX/commit/7fe748fd42b66bc5635f188b586ea77dc0ad9408) test(mission-control): fix fixture bridge syntax
+- [`e98f5ce01f`](https://github.com/Entif-AI/Bilqis-MLX/commit/e98f5ce01f8fd492cecc35d0c40b4deb279497a3) test(mission-control): harden generalized investigation browser harness
+- [`c4904ed351`](https://github.com/Entif-AI/Bilqis-MLX/commit/c4904ed3517ac9af37c3620c83ce6a7c3ed36c86) feat(mission-control): complete generalized investigation polish
+
+</details>
+
+<details>
+<summary>3 internal merge commits (newest-first PR order)</summary>
+
+- [`058ba77c6a`](https://github.com/Entif-AI/Bilqis-MLX/commit/058ba77c6a4efada8ee8bffe4807491332e21822) merge: consume current main before issue 1114 release
+- [`55fed5beb6`](https://github.com/Entif-AI/Bilqis-MLX/commit/55fed5beb6026b4d93bd54192aef5d71c7ac9b16) merge: reverse-integrate main for issue 1114 release
+- [`c9aab9cd29`](https://github.com/Entif-AI/Bilqis-MLX/commit/c9aab9cd29f80461af2b305d53a1abb4a681f2c6) merge: integrate main before issue 1114
+
+</details>
+
+<!-- release-history:pr:1514:end -->
+
+<!-- release-history:pr:1515:start -->
+### PR #1515 constituent commit inventory
+
+Release Please summarized PR #1515 as [`6e2e496`](https://github.com/Entif-AI/Bilqis-MLX/commit/6e2e49600806328bd77a979e2863a80fbc5625b5). This generated inventory preserves **3 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **2 source commits and 1 internal merge commit**.
+
+<details>
+<summary>2 source commits (newest-first PR order)</summary>
+
+- [`93a35b39b6`](https://github.com/Entif-AI/Bilqis-MLX/commit/93a35b39b6cc4f5116dd91d02ab5d8a260868a90) chore(bamf): turn in #1513 via #1515
+- [`712386af68`](https://github.com/Entif-AI/Bilqis-MLX/commit/712386af68ebf339e5e83278c64aa0560917b6ec) fix(bamf): replay portable rejection outcomes safely (#1513)
+
+</details>
+
+<details>
+<summary>1 internal merge commit (newest-first PR order)</summary>
+
+- [`6fa0b5962b`](https://github.com/Entif-AI/Bilqis-MLX/commit/6fa0b5962b98e09546e514f0565ee1db199e5fa9) Merge remote-tracking branch 'review-source/main' into codex/1513-operator-event-error-20261120
+
+</details>
+
+<!-- release-history:pr:1515:end -->
 ## [1.2.19](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.2.18...v1.2.19) (2026-11-21)
 
 
