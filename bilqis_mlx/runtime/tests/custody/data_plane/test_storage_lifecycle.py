@@ -6,8 +6,9 @@ from .base import DataPlaneCase
 from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx._data_plane.cli import _maintenance
 from bilqis_mlx._data_plane.file_retention import file_gc_report
-from bilqis_mlx._data_plane.maintenance import (
-    maintenance_roots, register_maintenance_root,
+from bilqis_mlx._data_plane.maintenance import maintenance_roots, register_maintenance_root
+from bilqis_mlx._data_plane.maintenance_lifecycle import (
+    clear_maintenance_pending, maintenance_pending_token, mark_maintenance_pending,
 )
 
 
@@ -89,6 +90,21 @@ class DataPlaneStorageLifecycleTests(DataPlaneCase):
         register_maintenance_root(plane, second)
 
         self.assertEqual(maintenance_roots(plane, first), (first.resolve(), second.resolve()))
+
+    def test_pending_maintenance_epoch_is_compare_cleared(self):
+        plane = data_plane()
+        run = self.root / "run"
+        run.mkdir()
+        (run / "bamf-state.json").write_text("{}")
+
+        token = mark_maintenance_pending(plane, run)
+        self.assertEqual(maintenance_pending_token(plane, run), token)
+
+        clear_maintenance_pending(plane, run, "not-the-current-epoch")
+        self.assertEqual(maintenance_pending_token(plane, run), token)
+
+        clear_maintenance_pending(plane, run, token)
+        self.assertIsNone(maintenance_pending_token(plane, run))
 
     def test_explicit_rollback_root_keeps_its_current_tensor_only(self):
         plane = data_plane()
