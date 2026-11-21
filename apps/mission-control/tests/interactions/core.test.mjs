@@ -146,6 +146,9 @@ test("investigation composition keeps tools terse and deep links out of permanen
   assert.match(markup, /data-test-id="investigation-open-compare"/);
   assert.match(markup, /data-test-id="investigation-open-pins"/);
   assert.match(markup, /data-test-id="investigation-open-notes"/);
+  assert.match(markup, /data-test-id="investigation-open-saved"/);
+  assert.match(markup, /data-test-id="investigation-open-authority"/);
+  assert.match(markup, /data-test-id="investigation-evidence-posture"/);
   assert.doesNotMatch(markup, /bilqis:\/\//);
   assert.doesNotMatch(markup, /Exact app URI/);
 });

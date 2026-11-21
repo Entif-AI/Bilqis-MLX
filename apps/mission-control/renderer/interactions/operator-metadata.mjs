@@ -1,11 +1,14 @@
 import { objectRefKey } from "./model.mjs";
 
 export const OPERATOR_METADATA_KEY = "bilqis.mc.operator-metadata.v1";
-export const OPERATOR_METADATA_SCHEMA = "bilqis.bamf.mission-control.operator-metadata/v1";
+export const OPERATOR_METADATA_SCHEMA = "bilqis.bamf.mission-control.operator-metadata/v2";
+const LEGACY_OPERATOR_METADATA_SCHEMA = "bilqis.bamf.mission-control.operator-metadata/v1";
 
 const MAX_PINS = 64;
 const MAX_ANNOTATIONS = 128;
+const MAX_SAVED_INVESTIGATIONS = 32;
 const MAX_NOTE_LENGTH = 2000;
+const MAX_INVESTIGATION_NAME_LENGTH = 120;
 
 function isTarget(target) {
   return target && typeof target === "object" &&
@@ -32,6 +35,39 @@ export function emptyOperatorMetadata() {
     schema: OPERATOR_METADATA_SCHEMA,
     pins: Object.freeze([]),
     annotations: Object.freeze([]),
+    savedInvestigations: Object.freeze([]),
+  });
+}
+
+function isSavedContext(context) {
+  return context && typeof context === "object" &&
+    typeof context.runId === "string" && context.runId.length > 0 &&
+    Number.isSafeInteger(context.generation) && context.generation >= 0 &&
+    ["LIVE", "HISTORICAL"].includes(context.mode) &&
+    typeof context.fixture === "boolean";
+}
+
+function validSavedInvestigation(saved) {
+  return saved && typeof saved === "object" &&
+    typeof saved.investigationId === "string" && saved.investigationId.length > 0 &&
+    typeof saved.name === "string" && saved.name.trim().length > 0 &&
+    saved.name.length <= MAX_INVESTIGATION_NAME_LENGTH &&
+    Number.isSafeInteger(saved.createdAt) && saved.createdAt >= 0 &&
+    typeof saved.view === "string" && saved.view.length > 0 &&
+    isSavedContext(saved.context) &&
+    (saved.selected === null || isTarget(saved.selected)) &&
+    (saved.compareLeft === null || isTarget(saved.compareLeft)) &&
+    (saved.compareRight === null || isTarget(saved.compareRight)) &&
+    saved.authority === "OPERATOR_WORKSPACE_NON_AUTHORITATIVE";
+}
+
+function storedInvestigation(saved) {
+  return Object.freeze({
+    ...saved,
+    context: Object.freeze({ ...saved.context }),
+    selected: saved.selected ? storedTarget(saved.selected) : null,
+    compareLeft: saved.compareLeft ? storedTarget(saved.compareLeft) : null,
+    compareRight: saved.compareRight ? storedTarget(saved.compareRight) : null,
   });
 }
 
@@ -49,10 +85,15 @@ function validAnnotation(annotation) {
 }
 
 function validateParsed(value) {
-  if (!value || value.schema !== OPERATOR_METADATA_SCHEMA ||
+  const legacy = value?.schema === LEGACY_OPERATOR_METADATA_SCHEMA;
+  const current = value?.schema === OPERATOR_METADATA_SCHEMA;
+  if (!value || (!legacy && !current) ||
       !Array.isArray(value.pins) || value.pins.length > MAX_PINS ||
       !Array.isArray(value.annotations) || value.annotations.length > MAX_ANNOTATIONS ||
-      !value.pins.every(isTarget) || !value.annotations.every(validAnnotation)) {
+      !value.pins.every(isTarget) || !value.annotations.every(validAnnotation) ||
+      (current && (!Array.isArray(value.savedInvestigations) ||
+        value.savedInvestigations.length > MAX_SAVED_INVESTIGATIONS ||
+        !value.savedInvestigations.every(validSavedInvestigation)))) {
     return null;
   }
   return Object.freeze({
@@ -62,6 +103,9 @@ function validateParsed(value) {
       ...annotation,
       target: storedTarget(annotation.target),
     }))),
+    savedInvestigations: Object.freeze(
+      current ? value.savedInvestigations.map(storedInvestigation) : [],
+    ),
   });
 }
 
@@ -123,4 +167,54 @@ export function addAnnotation(metadata, target, body, {
       [...metadata.annotations, annotation].slice(-MAX_ANNOTATIONS),
     ),
   });
+}
+
+export function saveInvestigation(metadata, {
+  name,
+  view,
+  context,
+  selected = null,
+  compareLeft = null,
+  compareRight = null,
+}, { now = Date.now() } = {}) {
+  const label = typeof name === "string" ? name.trim() : "";
+  if (!label || label.length > MAX_INVESTIGATION_NAME_LENGTH ||
+      typeof view !== "string" || !view || !isSavedContext(context) ||
+      (selected !== null && !isTarget(selected)) ||
+      (compareLeft !== null && !isTarget(compareLeft)) ||
+      (compareRight !== null && !isTarget(compareRight)) ||
+      !Number.isSafeInteger(now) || now < 0) {
+    return metadata;
+  }
+  const saved = storedInvestigation({
+    investigationId: `investigation:${now}:${metadata.savedInvestigations.length + 1}`,
+    name: label,
+    createdAt: now,
+    view,
+    context: {
+      runId: context.runId,
+      generation: context.generation,
+      mode: context.mode,
+      fixture: context.fixture === true,
+    },
+    selected,
+    compareLeft,
+    compareRight,
+    authority: "OPERATOR_WORKSPACE_NON_AUTHORITATIVE",
+  });
+  return Object.freeze({
+    ...metadata,
+    savedInvestigations: Object.freeze(
+      [...metadata.savedInvestigations, saved].slice(-MAX_SAVED_INVESTIGATIONS),
+    ),
+  });
+}
+
+export function removeSavedInvestigation(metadata, investigationId) {
+  if (typeof investigationId !== "string" || !investigationId) return metadata;
+  const savedInvestigations = metadata.savedInvestigations.filter(
+    (saved) => saved.investigationId !== investigationId,
+  );
+  if (savedInvestigations.length === metadata.savedInvestigations.length) return metadata;
+  return Object.freeze({ ...metadata, savedInvestigations: Object.freeze(savedInvestigations) });
 }

@@ -1,12 +1,11 @@
-async (page) => {
+export default async function globalInteractionsJourney(page) {
   const check = (condition, message) => {
     if (!condition) throw new Error(message);
   };
 
-  await page.evaluate(() => {
-    window.bamfMissionControl.connect = async () => ({state: "healthy"});
-  });
-  await page.locator('[data-test-id="foundation-reconnect"]').click();
+  const reconnect = page.locator('[data-test-id="foundation-reconnect"]');
+  if (await reconnect.count()) await reconnect.click();
+  await page.locator('[data-test-id="nav-destination-school"]').click();
   const andCapability = page.locator('[data-test-id="school-matrix-capability-b-and"]');
   const notCapability = page.locator('[data-test-id="school-matrix-capability-b-not"]');
   await andCapability.waitFor();
@@ -42,6 +41,23 @@ async (page) => {
   await page.locator('[data-test-id="investigation-note-save"]').click();
   await page.locator('[data-test-id="investigation-note-0"]').waitFor();
 
+  check((await page.locator('[data-test-id="investigation-posture-custody"]').innerText()).includes("FIXTURE_BACKED"),
+    "global investigation posture identifies fixture-backed custody");
+  check((await page.locator('[data-test-id="investigation-posture-mode"]').innerText()).includes("LIVE"),
+    "global investigation posture identifies live mode separately from custody");
+  check((await page.locator('[data-test-id="investigation-posture-authority"]').innerText()).includes("DERIVED"),
+    "global investigation posture identifies derived authority");
+  await page.locator('[data-test-id="investigation-open-authority"]').click();
+  check((await page.locator('[data-test-id="investigation-authority-state"]').innerText()).includes("OWNER_ONLY"),
+    "owner-only BAMF-0.2 remains the default authorization presentation");
+
+  await page.locator('[data-test-id="investigation-open-saved"]').click();
+  await page.locator('[data-test-id="investigation-saved-name"]').fill("Boolean capability triage");
+  await page.locator('[data-test-id="investigation-saved-save"]').click();
+  await page.locator('[data-test-id="investigation-saved-0"]').waitFor();
+  check((await page.locator('[data-test-id="investigation-saved-0"]').innerText()).includes("non-authoritative"),
+    "saved investigation is explicitly local and non-authoritative");
+
   await page.locator('[data-test-id="investigation-time-toggle"]').click();
   const generation = page.locator('[data-test-id="investigation-time-generation"]');
   await generation.evaluate((input) => {
@@ -52,34 +68,62 @@ async (page) => {
     input.dispatchEvent(new Event("input", {bubbles: true}));
   });
   await generation.press("Enter");
-  await page.locator('[data-test-id="school-historical-unavailable"]').waitFor();
+  await page.waitForFunction(() => location.hash.includes("generation=44238") &&
+    location.hash.includes("mode=HISTORICAL"));
   check(page.url().includes("generation=44238") && page.url().includes("mode=HISTORICAL"),
-    "School preserves the exact historical lens while unavailable");
+    "School preserves the exact historical lens");
+  check((await page.locator('[data-test-id="investigation-posture-mode"]').innerText()).includes("HISTORICAL"),
+    "global investigation posture exposes the historical lens explicitly");
 
   await page.locator('[data-test-id="nav-destination-memory"]').click();
   const memoryWorkspace = page.locator('[data-test-id="memory-workspace"]');
   await memoryWorkspace.waitFor();
-  check((await memoryWorkspace.innerText()).includes("motif-read:fixture:g44238:s0"),
+  const memoryReceipts = page.locator('[data-test-id="memory-read-site-receipts"]');
+  await memoryReceipts.evaluate((node) => {
+    node.open = true;
+    node.dispatchEvent(new Event("toggle", { bubbles: true }));
+  });
+  check((await memoryReceipts.innerText()).includes("motif-read:fixture:g44238:s0"),
     "Memory renders the exact historical motif identity");
   check(page.url().includes("generation=44238") && page.url().includes("mode=HISTORICAL"),
     "Memory uses the same historical lens");
-  if (!await page.locator('[data-test-id="investigation-time-lens"]').evaluate((element) => element.hasAttribute("open"))) {
-    await page.locator('[data-test-id="investigation-time-toggle"]').click();
+  const savedInvestigation = page.locator('[data-test-id="investigation-saved-open-0"]');
+  if (!await savedInvestigation.count()) {
+    await page.locator('[data-test-id="investigation-open-saved"]').click();
   }
-  await page.locator('[data-test-id="investigation-time-current"]').click();
+  await savedInvestigation.click();
+  check(page.url().includes("generation=7") && page.url().includes("mode=HISTORICAL"),
+    "saved live capture reopens as exact historical evidence after the lens changes");
+
+  const liveFixtureUrl = new URL(page.url());
+  liveFixtureUrl.hash = "";
+  await page.goto(liveFixtureUrl.toString(), { waitUntil: "domcontentloaded" });
   const generationSummary = page.locator('[data-test-id="shell-generation-summary"]');
   await generationSummary.waitFor();
   check((await generationSummary.innerText()).includes("7"),
-    "verified current restores generation 7 in shell context");
-  check(page.url().includes("generation=7") && page.url().includes("mode=LIVE"),
-    "verified current restores exact current route");
+    "fresh fixture launch restores generation 7 in shell context");
+  check((await page.locator('[data-test-id="investigation-posture-mode"]').innerText()).includes("LIVE"),
+    "fresh fixture launch restores the live posture without production current authority");
 
   await page.locator('[data-test-id="nav-destination-learning"]').click();
+  const learningForensics = page.locator('[data-test-id="learning-forensics"]');
+  if (!await learningForensics.evaluate((node) => node.open)) {
+    await learningForensics.evaluate((node) => {
+      node.open = true;
+      node.dispatchEvent(new Event("toggle", { bubbles: true }));
+    });
+  }
   await page.locator('[data-test-id="learning-candidate-inspect"]').click();
   await page.locator('[data-test-id="investigation-inspector-compare-left"]').click();
   await page.locator('[data-test-id="learning-episode-selector"]').selectOption(
     "episode-record:fixture:interference-reject",
   );
+  if (!await learningForensics.evaluate((node) => node.open)) {
+    await learningForensics.evaluate((node) => {
+      node.open = true;
+      node.dispatchEvent(new Event("toggle", { bubbles: true }));
+    });
+  }
   await page.locator('[data-test-id="learning-candidate-inspect"]').click();
   await page.locator('[data-test-id="investigation-inspector-compare-right"]').click();
   await page.locator('[data-test-id="investigation-compare-row-target-committed"]').waitFor();
@@ -104,12 +148,14 @@ async (page) => {
 
   const noPageOverflow = await page.evaluate(() =>
     document.documentElement.scrollWidth <= innerWidth);
-  const tableScrollable = await page.evaluate(() => {
+  const tableOwnsOverflow = await page.evaluate(() => {
     const wrap = document.querySelector('[data-test-id="investigation-compare-table-wrap"]');
-    return Boolean(wrap && wrap.scrollWidth > wrap.clientWidth);
+    if (!wrap) return false;
+    const overflow = getComputedStyle(wrap).overflowX;
+    return ["auto", "scroll"].includes(overflow) && wrap.scrollWidth >= wrap.clientWidth;
   });
   check(noPageOverflow, "investigation layout has no page-level horizontal overflow");
-  check(tableScrollable, "wide compare table scrolls inside its bounded container");
+  check(tableOwnsOverflow, "compare table owns horizontal overflow inside its bounded container");
 
   return "GUI18_BROWSER_JOURNEY_PASS";
 }

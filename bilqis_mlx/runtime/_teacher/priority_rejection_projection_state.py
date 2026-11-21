@@ -1,7 +1,7 @@
 """Durable codec for the hot BAMF rejection projection."""
 from __future__ import annotations
 
-SCHEMA = "bilqis.mlx.bamf-priority-rejection-projection/v1"
+SCHEMA = "bilqis.mlx.bamf-priority-rejection-projection/v2"
 REJECTION_ROW_FIELDS = 4
 
 
@@ -9,6 +9,7 @@ def encode(projection) -> dict:
     return {
         "schema": SCHEMA,
         "rows": [list(row) for row in projection.rows],
+        "evidence_rows": list(projection.evidence_rows),
         "weakness_rows": list(projection.weakness_rows),
         "seen_receipts": sorted(projection.seen_receipts),
         "capability_counts": dict(projection.capability_counts),
@@ -29,10 +30,14 @@ def restore(projection, record: dict) -> bool:
         if record.get("schema") != SCHEMA:
             return False
         rows = [tuple(row) for row in record["rows"]]
+        evidence_rows = list(record["evidence_rows"])
         weakness_rows = list(record.get("weakness_rows", ()))
         if any(len(row) != REJECTION_ROW_FIELDS
                or any(not isinstance(value, str) for value in row)
-               for row in rows) or any(not isinstance(row, dict) for row in weakness_rows):
+               for row in rows) or len(evidence_rows) != len(rows) or any(
+                   not isinstance(evidence, dict)
+                   for evidence in evidence_rows) or any(
+                       not isinstance(row, dict) for row in weakness_rows):
             return False
         seen = set(record["seen_receipts"])
         capabilities = dict(record["capability_counts"])
@@ -52,6 +57,7 @@ def restore(projection, record: dict) -> bool:
     except (AttributeError, KeyError, TypeError, ValueError):
         return False
     projection.rows[:] = rows
+    projection.evidence_rows[:] = evidence_rows
     projection.weakness_rows[:] = weakness_rows
     projection.seen_receipts.clear()
     projection.seen_receipts.update(seen)

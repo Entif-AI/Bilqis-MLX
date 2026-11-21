@@ -82,6 +82,34 @@ const interactionController = createInteractionController({
   },
   canUseCurrent: () => Boolean(verifiedLiveContext),
   onOpenRef: (ref) => { state = withRoute(state, routeForLaunchMode(routeForObjectRef(ref))); render(); },
+  onOpenInvestigation: (saved) => {
+    if (!state) return;
+    const verifiedLive = Boolean(
+      saved.context.mode === "LIVE" && verifiedLiveContext &&
+      saved.context.runId === verifiedLiveContext.runId &&
+      saved.context.generation === verifiedLiveContext.generation,
+    );
+    const base = verifiedLive
+      ? { ...state, context: verifiedLiveContext }
+      : withHistoricalLens(state, saved.context.generation);
+    const route = routeForLaunchMode({
+      view: saved.view,
+      context: {
+        runId: saved.context.runId,
+        generation: saved.context.generation,
+        mode: verifiedLive ? "LIVE" : "HISTORICAL",
+        fixture: saved.context.fixture,
+        historicalPinned: !verifiedLive,
+      },
+      selected: saved.selected ? { kind: saved.selected.kind, id: saved.selected.id } : null,
+    });
+    state = withRoute(base, route);
+    if (!verifiedLive) state = { ...state, mutationAvailable: false };
+    render();
+    announce(t(verifiedLive
+      ? "investigation.announce.investigationOpenedLive"
+      : "investigation.announce.investigationOpenedHistorical"));
+  },
   compareRefs: fixtureSupport?.interactions?.compareRefs,
   copyText: async (value) => {
     if (!navigator.clipboard?.writeText) return false;
