@@ -7,7 +7,7 @@ import time
 from types import MappingProxyType
 
 from bilqis_mlx.mission_control.contracts.model import (
-    AuthorityClass, CoverageState, RecordMeta,
+    AuthorityClass, CoverageState, RecordMeta, require,
 )
 from bilqis_mlx.mission_control.contracts.notifications import (
     Notification, NotificationKind, NotificationSeverity, NotificationState,
@@ -58,13 +58,12 @@ def notification_from_akasha_event(
     event: AkashaEvent, *, projected_at: int | None = None,
 ) -> Notification | None:
     """Derive a bounded notice from one validated durable event."""
-    if not isinstance(event, AkashaEvent):
-        raise TypeError("AKASHA_EVENT_REQUIRED")
+    require(isinstance(event, AkashaEvent), "AKASHA_EVENT")
     event.validate()
     rule = _RULES.get(event.kind)
     projection_time = int(time.time()) if projected_at is None else projected_at
-    if type(projection_time) is not int or projection_time < 0:
-        raise ValueError("NOTIFICATION_PROJECTION_TIME_INVALID")
+    require(type(projection_time) is int and projection_time >= 0,
+            "NOTIFICATION_PROJECTION_TIME")
     created_at = _event_time(event, projection_time)
     payload = json.loads(event.payload_json)
     if event.kind is AkashaEventKind.REVALIDATION:
