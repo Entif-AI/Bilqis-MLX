@@ -5,6 +5,7 @@ from dataclasses import replace
 import hashlib
 import math
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.semantics.atlas_features import (
@@ -118,3 +119,27 @@ if __name__ == "__main__":
 
 class AtlasFeatureTests(unittest.TestCase):
     """Shared test base; behavior cases live beside their owners."""
+
+    def test_immutable_manifest_digest_is_serialized_once(self):
+        features = _features()
+        with patch(
+                "bilqis_mlx.semantics.atlas_features.records.json.dumps",
+                wraps=__import__("json").dumps) as dumps:
+            first = features.digest
+            second = features.digest
+        self.assertEqual(first, second)
+        self.assertEqual(dumps.call_count, 1)
+
+    def test_feature_lookup_reuses_immutable_manifest_indexes(self):
+        features = _features()
+        first = features.features_for("urn:concept:A", "left", "frame:urn:concept:A", "scope")
+        concept_index = features._concept_by_id
+        type_index = features._type_by_id
+        role_index = features._role_by_id
+        schema_index = features._schema_by_id
+        second = features.features_for("urn:concept:A", "left", "frame:urn:concept:A", "scope")
+        self.assertEqual(first, second)
+        self.assertIs(features._concept_by_id, concept_index)
+        self.assertIs(features._type_by_id, type_index)
+        self.assertIs(features._role_by_id, role_index)
+        self.assertIs(features._schema_by_id, schema_index)

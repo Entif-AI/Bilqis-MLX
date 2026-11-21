@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 import unittest
+from contextlib import nullcontext
 from types import SimpleNamespace
 from unittest import skipUnless
 from unittest.mock import patch
@@ -12,6 +13,7 @@ import numpy as np
 
 import bilqis_mlx.runtime.backbone_identity as backbone_identity
 import bilqis_mlx.runtime.atlas_model_microbatch as microbatch_impl
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_readout import (
     AnswerPlan, ControlAction, DecisionKind, DecisionOutput, DecisionSpec,
     compile_frame_output,
@@ -180,6 +182,42 @@ class RouteMicrobatchKernelTests(unittest.TestCase):
 
 
 class MicrobatchParticipationProjectionTests(unittest.TestCase):
+    def test_nonfinite_gradient_fused_witness_blocks_finalization_with_one_eval(self):
+        class Backend:
+            topology = object()
+
+            def __post_init__(self):
+                return None
+
+        params = {"x": mx.array(1.0, dtype=mx.float32)}
+        row_batches = (object(), object())
+        plans = tuple(SimpleNamespace(generation_binding="generation", snapshot="snapshot") for _ in row_batches)
+        batch = SimpleNamespace(compiled=SimpleNamespace(extents=object()))
+        preflight = tuple(SimpleNamespace(output=None) for _ in row_batches)
+
+        with patch.object(microbatch_impl, "_compiled_microbatch", return_value=batch), patch.object(
+                microbatch_impl, "_require_finite_tensor_tree"), patch.object(
+                microbatch_impl, "_gradient_execution_rebinder", return_value=lambda _current: object()), patch.object(
+                    microbatch_impl, "_gradient_path",
+                    return_value=(False, preflight, (None, None), None, {})), patch.object(
+                        microbatch_impl, "_source_producer", return_value=(object(), None, False)), patch.object(
+                            microbatch_impl, "_finalize_source_hidden",
+                            return_value=mx.zeros((2, 1, 1), dtype=mx.float32)), patch.object(
+                                microbatch_impl, "_decode_bamf_producer_row",
+                                side_effect=lambda _backend, current, *_args, **_kwargs: current["x"] * mx.array(float("nan"))), patch.object(
+                                    microbatch_impl, "loss_bearing_bamf",
+                                    side_effect=lambda output, *_args, **_kwargs: SimpleNamespace(loss=SimpleNamespace(total=output))), patch.object(
+                                        microbatch_impl, "finalize_microbatch_gradient") as finalize, patch(
+                                            "bilqis_mlx.runtime.b11_source_execution_authority.b11_source_authority_launch_epoch",
+                                            side_effect=lambda _rows: nullcontext()), patch.object(
+                                                mx, "eval", wraps=mx.eval) as evaluate:
+            with self.assertRaises(BilqisError):
+                microbatch_impl._bamf_microbatch_value_and_grad_impl(
+                    Backend(), params, row_batches, plans, ((), ()), ({}, {}), None)
+
+        finalize.assert_not_called()
+        self.assertEqual(evaluate.call_count, 1)
+
     def test_batched_motif_read_projects_exact_row_slots(self):
         read = MotifReadResult(
             mx.zeros((2, 1, 768), dtype=mx.float32),

@@ -4,6 +4,13 @@ Date: 2026-11-20
 
 ## Acceptance target
 
+The reopened #1504 acceptance target supersedes the earlier roughly ten-second
+restoration target below. The qualifying surface is now the real BAMF operator
+candidate step, including terminal motif staging, and MUST be **<= 1.000 second**
+where physically achievable. Reduced, source-only, prepared-owner-only, and
+non-terminal witnesses remain diagnostic evidence only. Timing ownership must be
+exhaustive to a noise-floor residual and nested spans must not be double-counted.
+
 The matched historical warm production target is the #1388 live B.COMPOSITE
 four-row path observed on 2026-11-17 and retained locally in
 `baseline-1388.md`:
@@ -146,6 +153,10 @@ Every sampled candidate step added:
 This is below the retained ~9.78-second warm production baseline rather than merely
 explaining the 40+ second regression.
 
+That witness is historical diagnostic evidence only after #1504 was reopened. It
+did not exercise the real operator terminal path and therefore does not satisfy the
+current <=1.000-second acceptance contract.
+
 For comparison, the same disposable candidate owner without the prepared-source
 handoff measured 21.466498 seconds, of which 15.826183 seconds was pre-neural
 source compilation. That is expected cold/rebuild work and demonstrates why the
@@ -165,6 +176,64 @@ oracles for the expensive work that regressed:
   refinement-routing loss semantics while the vector route path is active;
 - B11/C08 performance observation tests require the new subspan fields to survive
   through candidate reporting.
+- `test_prepared_b11_binding_reuses_compiled_encoder_input_with_live_owner_check`
+  requires a sealed prepared B11 binding to construct its immutable encoder input
+  once, then re-run live packed-frame currentness on reuse rather than rebuilding
+  the same compiled structure every optimizer step.
+- `test_accepted_parent_batch_seal_does_not_reload_validated_bundle` forbids the
+  terminal batch motif owner from cold-loading the accepted B13 bundle after the
+  exact `CompleteStudent` parent is already custody-bound in memory; the paired
+  manifest-drift test fails closed before motif planning.
+
+## Reopened real-operator qualification
+
+The reopened repair was qualified through the unmodified production
+`prepare_bamf_visit(...)` entrypoint against a fresh disposable generation while
+using the host's real read-only source-authority registry and signer. The sovereign
+human learner was not mutated. The operator performed real planning, selected a
+lawful four-row A.EDGE visit, executed the candidate, staged terminal motifs, and
+completed real retention with status `ACCEPTED`.
+
+Before the final terminal-staging repair, a representative operator candidate at
+114 compiled positions measured **1.410617250 s**. Its dominant remaining serial
+owner was `motif_staging_wall_seconds = 0.533700750 s`. Direct subspan profiling on
+the same operator surface localized **0.450828916 s** of that cost to a redundant
+`load_bamf_bundle(...)`; actual source-qualified batch motif planning was only
+**0.022350375 s**. The accepted `CompleteStudent` parent and its exact manifest
+identity were already present in memory under the same currentness transaction.
+
+The repair therefore preserves the private continuation issuer and exact manifest,
+run, generation, topology, and extents checks, but seals the batch motif proposal
+directly against that already custody-validated accepted parent. It does not move
+the cold read outside the timed interval; it removes a redundant second custody
+read of the same immutable parent.
+
+Two consecutive post-repair real-operator terminal candidates measured:
+
+| witness | candidate wall | rows | compiled positions | currentness/binding | B11 binding | C08 wall | optimizer/admission | motif staging | candidate residual |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | **0.969292042 s** | 4 | 114 | 0.343177416 s | 0.134653833 s | 0.198069417 s | 0.120554416 s | 0.080009042 s | 0.000122290 s |
+| 2 | **0.839155208 s** | 4 | 114 | 0.248139083 s | 0.106188209 s | 0.201128375 s | 0.122167166 s | 0.077031250 s | 0.000114747 s |
+
+Both candidates used one C08 gradient launch, one vectorized microbatch, four rows,
+and zero scalar fallback rows. Witness 1 additionally recorded B11 autodiff at
+0.160632541 s, C08 row-input preparation at 0.075831000 s, pre-neural source compile
+at 0.144537793 s, evidence capture at 0.002513500 s, training orchestration at
+0.000383833 s, C08 unattributed wall at 0.000018834 s, and reporting at
+0.000039583 s. Candidate-level unattributed time is therefore at the noise floor.
+
+The <=1.000-second acceptance target is satisfied on the actual operator candidate
+surface twice, including terminal motif staging. Planning and retention remain
+separately measured visit-level work and are not relabeled as candidate-step work.
+
+After runtime commit `f73f8abed55e31e014aaaa675f635d5ff68f9154` froze the
+implementation, two further uninstrumented samples measured **1.003020125 s** and
+**0.859748334 s**. Their median is **0.931384229 s**. The first sample exceeded the
+target by 3.020 ms; the second cleared it by 140.252 ms. Both were `ACCEPTED`, used
+the same four-row/114-position terminal workload, and retained one vectorized
+gradient launch with zero scalar fallback. The complete frozen-SHA receipt is
+`subsecond-operator-witness.json`; the over-target sample is retained there rather
+than discarded as timing noise.
 
 ## Focused verification completed
 

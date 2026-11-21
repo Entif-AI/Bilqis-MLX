@@ -149,12 +149,14 @@ def _install_fault(
             installer(requalification)
 
 
-def replay_persisted_faults(retained, records=None) -> tuple[object, ...]:
+def replay_persisted_faults(
+        retained, records=None, lineage=None) -> tuple[object, ...]:
     """Install already-committed process faults without reclassifying claims."""
     records = (read_records(retained.run_dir, retained.manifest_sha256)
                if records is None else records)
     targets = tuple(retained.targets.values())
-    lineage = _manifest_lineage(retained.run_dir, retained.manifest_sha256)
+    lineage = (_manifest_lineage(retained.run_dir, retained.manifest_sha256)
+               if lineage is None else lineage)
     faults = []
     for record in records:
         if record["event"] != PROCESS_FAULT_EVENT:
@@ -225,14 +227,16 @@ def _flush_context_requalifications(retained, ledger, records) -> None:
             outbox, retained.run_dir, retained.manifest_sha256, task, ledger)
 
 
-def replay_stale_evidence(retained) -> tuple[object, ...]:
+def replay_stale_evidence(retained, records=None, lineage=None) -> tuple[object, ...]:
     """Rebuild durable stale-replay faults from accepted evidence and live owners."""
     if retained.registry is None:
         return ()
-    records = read_records(retained.run_dir, retained.manifest_sha256)
+    records = (read_records(retained.run_dir, retained.manifest_sha256)
+               if records is None else records)
     targets = tuple(retained.targets.values())
     replay_persisted_faults(retained, records)
-    lineage = _manifest_lineage(retained.run_dir, retained.manifest_sha256)
+    lineage = (_manifest_lineage(retained.run_dir, retained.manifest_sha256)
+               if lineage is None else lineage)
 
     census, census_nodes = _support_census(retained)
     index = _registered_index(targets, census_nodes)

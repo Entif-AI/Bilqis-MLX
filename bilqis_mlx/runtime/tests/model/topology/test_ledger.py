@@ -13,6 +13,13 @@ from bilqis_mlx.runtime.tests.model.topology.helpers import (
 
 
 class TopologyLedgerTests(TopologyFixture):
+    def test_immutable_tensor_ledger_expansion_is_reused_for_same_extents(self):
+        spec = ModelTopologySpecV2()
+        extents = self.extents()
+        first = expected_bamf_shapes(spec, extents)
+        second = expected_bamf_shapes(spec, extents)
+        self.assertIs(second, first)
+
     def test_literal_tensor_ledger_and_extents(self):
         spec = ModelTopologySpecV2()
         rows = expected_bamf_shapes(spec, self.extents())

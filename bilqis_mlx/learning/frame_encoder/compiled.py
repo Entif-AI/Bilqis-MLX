@@ -141,12 +141,15 @@ class CompiledEncoderInput:
             object.__setattr__(
                 self, "packed_frame_artifact_owner",
                 PackedFrameArtifactOwner(self.compiled))
-        from bilqis_mlx.runtime.b11_source_execution_authority import (
-            b11_compiled_input_launch_trusted,
-        )
-        if (b11_compiled_input_launch_trusted(self)
-                and hasattr(self, "_groups") and hasattr(self, "_projections")
+        # This object is frozen and these four fields are pure derivations of its
+        # compiler-owned rows/configs. Reusing them is therefore memoization, not
+        # authority caching. C09 currentness remains live: every reuse still asks
+        # the process-owned packed-frame owner to admit the exact rows before the
+        # derived projection is consumed.
+        if (hasattr(self, "_groups") and hasattr(self, "_projections")
                 and hasattr(self, "member_requests") and hasattr(self, "atomic_handles")):
+            for row in self.compiled.rows:
+                self.packed_frame_artifact_owner.require_row(row)
             return
         source_asts = self.source_asts or (None,) * len(self.compiled.rows)
         receipts = self.partial_forest_receipts or (None,) * len(self.compiled.rows)
@@ -172,3 +175,31 @@ class CompiledEncoderInput:
                     handles.append(AtomicSourceHandle(projection, position.frame_handle, source.members[0].source_handle))
             atomic_handles.append(tuple(handles))
         object.__setattr__(self, "atomic_handles", tuple(atomic_handles))
+
+
+def _compiled_encoder_input_with_packed_owner(
+        compiled, compiler_configs, features, extents, packed_owner, *,
+        source_asts=None, partial_forest_receipts=None):
+    """Construct one encoder input under an already-issued live C09 owner.
+
+    The owner is not caller-selected authority: this internal seam is used only
+    when the selected source materialization already registered the exact
+    multi-row owner. ``__post_init__`` still requires every exact row through
+    that owner before deriving any neural input.
+    """
+    if type(packed_owner) is not PackedFrameArtifactOwner:
+        _invalid()
+    value = object.__new__(CompiledEncoderInput)
+    for name, item in (
+        ("compiled", compiled),
+        ("compiler_configs", compiler_configs),
+        ("features", features),
+        ("extents", extents),
+        ("source_asts", source_asts),
+        ("partial_forest_receipts", partial_forest_receipts),
+        ("packed_frame_artifact_owner", packed_owner),
+        ("schema_version", "bilqis.mlx.compiled-encoder-input/v1"),
+    ):
+        object.__setattr__(value, name, item)
+    value.__post_init__()
+    return value

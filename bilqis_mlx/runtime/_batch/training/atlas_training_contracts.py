@@ -7,6 +7,7 @@ import hashlib
 import json
 from typing import Any
 
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.semantics.atlas_features import FeatureRow
@@ -101,6 +102,7 @@ class BamfTrainingBatch:
     delivered_content_sha256: str
     delivery_capability: str
     rows: tuple[BamfTrainingRow, ...]
+    _authority_digest: str = field(init=False, repr=False, compare=False)
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
@@ -112,32 +114,44 @@ class BamfTrainingBatch:
                     self.release_sha256, self.generation_binding,
                     self.delivered_content_sha256, self.delivery_capability))
                 or type(self.rows) is not tuple or not self.rows
-                or any(type(row) is not BamfTrainingRow for row in self.rows)):
+                or any(type(row) is not BamfTrainingRow for row in self.rows)
+                or not isinstance(self._authority_digest, str)
+                or len(self._authority_digest) != SHA256_HEX_LENGTH):
             _invalid('TRAINING_BATCH_INVALID')
 
     @property
     def authority_digest(self) -> str:
-        payload = {
-            'release_sha256': self.release_sha256,
-            'generation_binding': self.generation_binding,
-            'delivered_content_sha256': self.delivered_content_sha256,
-            'delivery_capability': self.delivery_capability,
-            'rows': tuple(_canonical_json_value(row.provenance)
-                          for row in self.rows),
-        }
-        wire = json.dumps(payload, sort_keys=True, separators=(',', ':'))
-        return hashlib.sha256(wire.encode()).hexdigest()
+        return self._authority_digest
+
+
+def _training_batch_authority_digest(
+        release_sha256, generation_binding, delivered_content_sha256,
+        delivery_capability, rows) -> str:
+    payload = {
+        'release_sha256': release_sha256,
+        'generation_binding': generation_binding,
+        'delivered_content_sha256': delivered_content_sha256,
+        'delivery_capability': delivery_capability,
+        'rows': tuple(_canonical_json_value(row.provenance) for row in rows),
+    }
+    wire = json.dumps(payload, sort_keys=True, separators=(',', ':'))
+    return hashlib.sha256(wire.encode()).hexdigest()
 
 
 def _issue_training_batch(release_sha256, generation_binding, delivered_content_sha256,
                           delivery_capability, rows):
+    rows = tuple(rows)
+    authority_digest = _training_batch_authority_digest(
+        release_sha256, generation_binding, delivered_content_sha256,
+        delivery_capability, rows)
     batch = object.__new__(BamfTrainingBatch)
     for name, value in (
             ('release_sha256', release_sha256),
             ('generation_binding', generation_binding),
             ('delivered_content_sha256', delivered_content_sha256),
             ('delivery_capability', delivery_capability),
-            ('rows', tuple(rows)), ('_issuance', _TRAINING_BATCH_ISSUER)):
+            ('rows', rows), ('_authority_digest', authority_digest),
+            ('_issuance', _TRAINING_BATCH_ISSUER)):
         object.__setattr__(batch, name, value)
     batch.__post_init__()
     return batch

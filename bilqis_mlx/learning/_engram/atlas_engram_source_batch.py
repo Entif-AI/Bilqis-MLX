@@ -38,6 +38,8 @@ class SourceQualifiedMotifRequest:
     source_each: int
     source_profile_parameters: dict | None = None
     course: object = None
+    prepared_projection: object = None
+    prepared_frontier: object = None
 
     def __post_init__(self):
         if (not isinstance(self.row, dict)
@@ -50,7 +52,9 @@ class SourceQualifiedMotifRequest:
                 or type(self.source_seed) is not int or self.source_seed < 0
                 or type(self.source_each) is not int or self.source_each < 1
                 or (self.source_profile_parameters is not None
-                    and not isinstance(self.source_profile_parameters, dict))):
+                    and not isinstance(self.source_profile_parameters, dict))
+                or ((self.prepared_projection is None)
+                    != (self.prepared_frontier is None))):
             _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
 
 
@@ -67,7 +71,7 @@ def _batch_context_digest(projections) -> str:
 
 def make_batch_parent_preparer(issue_approved, source_context):
     """Compose row-qualified contexts into one candidate motif transition."""
-    def prepare(requests, *, budget, parent):
+    def prepare(requests, *, budget, parent, snapshot=None):
         if (type(requests) is not tuple
                 or len(requests) < LOGICAL_BATCH_MIN_ROWS
                 or any(type(request) is not SourceQualifiedMotifRequest
@@ -81,15 +85,32 @@ def make_batch_parent_preparer(issue_approved, source_context):
             request.__post_init__()
             if parent.manifest.semantic_release != request.task_scope.semantic_release:
                 _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
-            context = source_context(
-                request.source_adapter, request.row, request.atlas_selection,
-                source_root=request.source_root, graph=request.graph,
-                task_scope=request.task_scope, source_frontier=request.source_frontier,
-                policy=request.policy, source_seed=request.source_seed,
-                source_each=request.source_each,
-                source_profile_parameters=request.source_profile_parameters,
-                course=request.course,
-            )
+            if request.prepared_projection is not None:
+                if snapshot is None:
+                    _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
+                from .atlas_engram_source_context import (
+                    qualify_prepared_source_motif_context,
+                )
+                context = qualify_prepared_source_motif_context(
+                    request.source_adapter,
+                    request.prepared_projection,
+                    request.prepared_frontier,
+                    request.atlas_selection,
+                    source_root=request.source_root, graph=request.graph,
+                    task_scope=request.task_scope,
+                    source_frontier=request.source_frontier,
+                    policy=request.policy, snapshot=snapshot,
+                )
+            else:
+                context = source_context(
+                    request.source_adapter, request.row, request.atlas_selection,
+                    source_root=request.source_root, graph=request.graph,
+                    task_scope=request.task_scope, source_frontier=request.source_frontier,
+                    policy=request.policy, source_seed=request.source_seed,
+                    source_each=request.source_each,
+                    source_profile_parameters=request.source_profile_parameters,
+                    course=request.course,
+                )
             if isinstance(context, ContextHold):
                 return context
             projection, row_inputs, frontier = context

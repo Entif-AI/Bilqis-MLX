@@ -105,6 +105,14 @@ def factory_task_template(
         _invalid("BAMF_C04_FACTORY_TASK_TEMPLATE_REQUIRED")
     source_context.__post_init__()
     compiled_batch.__post_init__()
+    return _factory_task_template_from_validated(source_context, compiled_batch)
+
+
+def _factory_task_template_from_validated(
+    source_context: SourceExecutionContext,
+    compiled_batch: BamfCompiledBatch,
+) -> FactoryTaskTemplate:
+    """Lower one row after the caller has just validated context and batch."""
     row, row_id, capability_id, row_sha256, execution, lowerer, family, episode = (
         _owner(source_context, compiled_batch))
     lowered = lowerer.lower(

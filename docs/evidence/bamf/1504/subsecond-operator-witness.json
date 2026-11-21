@@ -1,0 +1,67 @@
+{
+  "schema": "bilqis.mlx.issue-1504-subsecond-operator-witness/v1",
+  "issue": 1504,
+  "date": "2026-11-20",
+  "implementation_commit": "f73f8abed55e31e014aaaa675f635d5ff68f9154",
+  "entrypoint": "bilqis_mlx.runtime.bamf_operator.session.prepare_bamf_visit",
+  "workload": {
+    "capability_id": "A.EDGE",
+    "logical_rows": 4,
+    "compiled_positions": 114,
+    "candidate_terminal_step": true,
+    "gradient_launches": 1,
+    "vectorized_microbatches": 1,
+    "scalar_fallback_rows": 0
+  },
+  "custody": {
+    "learner": "disposable",
+    "human_trainer_mutated": false,
+    "host_source_authority": "real-read-only-host-registry-and-signer",
+    "publication": "not-performed"
+  },
+  "samples": [
+    {
+      "candidate_step_wall_seconds": 1.003020124975592,
+      "pre_neural_source_compile_wall_seconds": 0.13356254203245044,
+      "currentness_binding_wall_seconds": 0.3905392496380955,
+      "factory_b11_binding_wall_seconds": 0.12195004196837544,
+      "c08_logical_batch_wall_seconds": 0.18804483395069838,
+      "b11_autodiff_wall_seconds": 0.1530155420769006,
+      "optimizer_admission_wall_seconds": 0.12285062507726252,
+      "motif_staging_wall_seconds": 0.08106704195961356,
+      "candidate_unattributed_wall_seconds": 0.00013229018077254295,
+      "status": "ACCEPTED"
+    },
+    {
+      "candidate_step_wall_seconds": 0.8597483339253813,
+      "pre_neural_source_compile_wall_seconds": 0.11328945821151137,
+      "currentness_binding_wall_seconds": 0.26798462588340044,
+      "factory_b11_binding_wall_seconds": 0.10841137496754527,
+      "c08_logical_batch_wall_seconds": 0.19116362486965954,
+      "b11_autodiff_wall_seconds": 0.1542569170705974,
+      "optimizer_admission_wall_seconds": 0.12435512500815094,
+      "motif_staging_wall_seconds": 0.08393695787526667,
+      "candidate_unattributed_wall_seconds": 0.00012825033627450466,
+      "status": "ACCEPTED"
+    }
+  ],
+  "qualification": {
+    "target_seconds": 1.0,
+    "best_frozen_sha_seconds": 0.8597483339253813,
+    "median_frozen_sha_seconds": 0.9313842294504866,
+    "noise_note": "One frozen-SHA sample exceeded the target by 3.020 ms; the next uninstrumented sample was 140.252 ms below it. Candidate residuals remained approximately 0.13 ms."
+  },
+  "span_semantics": {
+    "candidate_step_wall_seconds": "top-level candidate wall",
+    "c08_logical_batch_wall_seconds": "nested inside candidate wall",
+    "b11_autodiff_wall_seconds": "nested inside C08 logical-batch wall",
+    "serial_candidate_owners": [
+      "pre_neural_source_compile_wall_seconds",
+      "currentness_binding_wall_seconds",
+      "optimizer_admission_wall_seconds",
+      "motif_staging_wall_seconds",
+      "evidence_capture_wall_seconds",
+      "candidate_reporting_wall_seconds"
+    ]
+  }
+}

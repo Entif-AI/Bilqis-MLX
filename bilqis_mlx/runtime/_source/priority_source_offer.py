@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 import hashlib
 import json
 import math
+import time
 from pathlib import Path
 
 from bilqis_mlx.runtime.source_execution import SourceBatchAuthority, SourceExecutionContext, _invalid_source_batch
@@ -106,9 +107,14 @@ class PreparedPrioritySourceOffer:
 
     def require_qualified_current(self, source_context, parent, *, prepared_rows=None):
         """Verify source qualification/currentness without rebuilding source content."""
+        stage_started = time.perf_counter()
         self._validate()
+        offer_validate_seconds = time.perf_counter() - stage_started
+        stage_started = time.perf_counter()
         cache, _authenticated = _require_planning_generation(
             self._planning_generation, source_context, parent)
+        planning_generation_seconds = time.perf_counter() - stage_started
+        stage_started = time.perf_counter()
         if (Path(source_context.run_dir).resolve() != self._run_dir
                 or cache.accepted_manifest_sha256 != self.accepted_manifest_sha256
                 or cache.generation_binding != self.generation_binding
@@ -117,11 +123,36 @@ class PreparedPrioritySourceOffer:
                 or contract_digest(source_context.release.source_bindings.by_capability[self.capability_id])
                 != self.source_binding_digest):
             _invalid_source_batch('BAMF_PRIORITY_SOURCE_OFFER_STALE')
+        static_binding_seconds = time.perf_counter() - stage_started
+        stage_started = time.perf_counter()
         rows = self.rows() if prepared_rows is None else tuple(prepared_rows)
+        row_decode_seconds = time.perf_counter() - stage_started
+        stage_started = time.perf_counter()
         source_context.require_bound_rows(rows, self.source_authority)
+        row_authority_seconds = time.perf_counter() - stage_started
+        stage_started = time.perf_counter()
         if _canonical_rows(rows) != self._rows_json:
             _invalid_source_batch('BAMF_PRIORITY_SOURCE_OFFER_ROWS_DRIFT')
+        row_canonical_seconds = time.perf_counter() - stage_started
+        stage_started = time.perf_counter()
         self._qualification_owner.require()
+        qualification_owner_seconds = time.perf_counter() - stage_started
+        object.__setattr__(self, "_performance_observation", {
+            "source_currentness_offer_validate_wall_seconds": float(
+                offer_validate_seconds),
+            "source_currentness_planning_generation_wall_seconds": float(
+                planning_generation_seconds),
+            "source_currentness_static_binding_wall_seconds": float(
+                static_binding_seconds),
+            "source_currentness_row_decode_wall_seconds": float(
+                row_decode_seconds),
+            "source_currentness_row_authority_wall_seconds": float(
+                row_authority_seconds),
+            "source_currentness_row_canonical_wall_seconds": float(
+                row_canonical_seconds),
+            "source_currentness_qualification_owner_wall_seconds": float(
+                qualification_owner_seconds),
+        })
         return rows
 
     def require_current(self, source_context, parent, *, prepared_rows=None):

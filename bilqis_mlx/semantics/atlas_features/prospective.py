@@ -195,10 +195,7 @@ def generation_feature_row(
         or abi_index not in active_indices
     ):
         _invalid("BAMF_FEATURE_GENERATION_IDENTITY_INACTIVE")
-    admitted = next(
-        (item for item in current.concepts if item.semantic_id == semantic_id),
-        None,
-    )
+    admitted = current._concept_by_id.get(semantic_id)
     if admitted is not None:
         row = current.features_for(semantic_id, "NONE", "NONE", scope)
         if row.abi_index != abi_index:
@@ -216,8 +213,8 @@ def generation_feature_row(
     identity = prospective.identities[0]
     if identity.semantic_id != semantic_id or identity.abi_index != abi_index:
         _invalid("BAMF_FEATURE_GENERATION_ABI_DRIFT")
-    roles = dict(current.role_map)
-    schemas = dict(current.schema_map)
+    roles = current._role_by_id
+    schemas = current._schema_by_id
     if "NONE" not in roles or "NONE" not in schemas:
         _invalid("BAMF_FEATURE_ROLE_SCHEMA_NOT_ADMITTED")
     return FeatureRow(

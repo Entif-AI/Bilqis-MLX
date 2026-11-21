@@ -112,6 +112,13 @@ computations / bytes.
 
 ## Performance qualification
 
+Reopened acceptance tightens the candidate-step target to **<=1.000 second** on
+the real operator path where physically achievable. The witness MUST include
+terminal publication/staging mechanics owned by the candidate path; a non-terminal
+or prepared-owner surrogate cannot satisfy this gate. If the target is not reached,
+the remaining wall must be covered by a non-overlapping millisecond-level necessity
+ledger rather than waived by the earlier roughly ten-second baseline.
+
 Deterministic regression gates should enforce expensive-work multiplicity rather
 than brittle heterogeneous-CI wall time. Final acceptance also requires one
 production-shaped, disposable four-row timing witness recording the exact frozen
@@ -147,7 +154,8 @@ detached long-run wrapper and durable receipt path.
   B.COMPOSITE four-row production baseline: about 9.78 seconds median full optimizer
   step at ~49 compiled positions, one launch, one vectorized microbatch and zero
   scalar fallback. The final #1504 witness must return the matched warm workload to
-  that roughly 10-second class or better. Measurement may explain a small residual
-  delta; it may not waive a still-25-40-second candidate step.
+  that roughly 10-second class or better. This historical requirement is now a
+  lower bar than the reopened acceptance gate: the real terminal operator candidate
+  must be <=1.000 second where physically achievable.
 - No correctness, custody, provenance, currentness, source, retention, or
   fail-closed invariant is weakened.
