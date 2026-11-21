@@ -3,9 +3,6 @@ export default async function globalInteractionsJourney(page) {
     if (!condition) throw new Error(message);
   };
 
-  await page.evaluate(() => {
-    window.bamfMissionControl.connect = async () => ({state: "healthy"});
-  });
   const reconnect = page.locator('[data-test-id="foundation-reconnect"]');
   if (await reconnect.count()) await reconnect.click();
   await page.locator('[data-test-id="nav-destination-school"]').click();

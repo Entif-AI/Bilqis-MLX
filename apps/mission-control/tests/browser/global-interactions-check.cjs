@@ -20,8 +20,8 @@ const mime = {
 };
 const bridge = `window.bamfMissionControl={
 launchMode:"fixtures",
-connect:async()=>({state:"disconnected"}),
-status:async()=>({state:"disconnected"}),
+connect:async()=>({state:"healthy",serviceLive:true,serviceReady:true,learnerReady:true,learnerActive:false,learnerState:"READY",runId:"fixture-run",generation:7}),
+status:async()=>({state:"healthy",serviceLive:true,serviceReady:true,learnerReady:true,learnerActive:false,learnerState:"READY",runId:"fixture-run",generation:7}),
 querySnapshot:async()=>(${JSON.stringify(operator)})
 };`;
 
