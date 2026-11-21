@@ -6,7 +6,8 @@ export default async function globalInteractionsJourney(page) {
   await page.evaluate(() => {
     window.bamfMissionControl.connect = async () => ({state: "healthy"});
   });
-  await page.locator('[data-test-id="foundation-reconnect"]').click();
+  const reconnect = page.locator('[data-test-id="foundation-reconnect"]');
+  if (await reconnect.count()) await reconnect.click();
   const andCapability = page.locator('[data-test-id="school-matrix-capability-b-and"]');
   const notCapability = page.locator('[data-test-id="school-matrix-capability-b-not"]');
   await andCapability.waitFor();
