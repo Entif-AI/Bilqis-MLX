@@ -78,7 +78,9 @@ export default async function globalInteractionsJourney(page) {
   await page.locator('[data-test-id="nav-destination-memory"]').click();
   const memoryWorkspace = page.locator('[data-test-id="memory-workspace"]');
   await memoryWorkspace.waitFor();
-  check((await memoryWorkspace.innerText()).includes("motif-read:fixture:g44238:s0"),
+  const memoryReceipts = page.locator('[data-test-id="memory-read-site-receipts"]');
+  await memoryReceipts.locator("summary").click();
+  check((await memoryReceipts.innerText()).includes("motif-read:fixture:g44238:s0"),
     "Memory renders the exact historical motif identity");
   check(page.url().includes("generation=44238") && page.url().includes("mode=HISTORICAL"),
     "Memory uses the same historical lens");
