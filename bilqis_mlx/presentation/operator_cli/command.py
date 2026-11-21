@@ -80,6 +80,17 @@ def _dispatch_bamf_resume(
             board.state["stop"] = "RUNNING"
             board.draw()
 
+        def on_event(event):
+            if board is None:
+                return
+            from bilqis_mlx.presentation.dashboard import ingest
+            ingest(board, event)
+            runtime_phase = event.get("_runtime_phase")
+            if isinstance(runtime_phase, str) and runtime_phase:
+                board.state["phase"] = runtime_phase
+            if event.get("_dashboard_redraw", True):
+                board.draw()
+
         def progress(message):
             if board is None:
                 print("BAMF TRAINER: " + message, file=sys.stderr, flush=True)
@@ -93,7 +104,9 @@ def _dispatch_bamf_resume(
             board.state["stop"] = "RUNNING"
             board.draw()
 
-        with advertise_active_endpoint(run_dir):
+        from bilqis_mlx.runtime.checkpoints import operator_view
+        view = operator_view(on_event) if board is not None else nullcontext()
+        with advertise_active_endpoint(run_dir), view:
             result = operate_bamf(
                 run_dir, minutes=args.minutes,
                 max_visits=args.max_visits, steps_per_visit=args.steps_per_visit,
