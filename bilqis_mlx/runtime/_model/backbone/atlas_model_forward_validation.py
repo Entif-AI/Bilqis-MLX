@@ -9,11 +9,11 @@ from .atlas_model_contracts import (
     BamfMicrobatchGradientExecution, _MICROBATCH_EXECUTION_ISSUER, _invalid,
 )
 from bilqis_mlx.runtime.model_topology_v2 import validate_bamf_parameters
-from .atlas_model_forward_preflight import (
+from .microbatch.forward_preflight import (
     microbatch_trace_from_hidden, microbatch_trace_preflight,
     validate_decode_row_custody, validate_decode_row_input, validate_task_plan_custody,
 )
-from .atlas_model_route_evidence import microbatch_trace_from_route
+from .microbatch.route_evidence import microbatch_trace_from_route
 
 
 def _validate_route_trajectory(answer_plans, executions, trajectory):

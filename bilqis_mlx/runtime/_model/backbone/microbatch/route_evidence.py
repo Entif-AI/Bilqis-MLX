@@ -4,8 +4,8 @@ from __future__ import annotations
 import mlx.core as mx
 import numpy as np
 
-from .atlas_model_contracts import _FORWARD_ISSUANCE, _invalid
-from .atlas_model_forward_preflight import (
+from ..atlas_model_contracts import _FORWARD_ISSUANCE, _invalid
+from .forward_preflight import (
     validate_decode_row_custody, validate_decode_row_input, validate_task_plan_custody,
 )
 
@@ -76,8 +76,8 @@ def microbatch_trace_from_route(
     from dataclasses import replace
     from bilqis_mlx.runtime.autodiff_trace import defer_host_tensor_validation
     from bilqis_mlx.runtime.backbone_identity import require_execution_generation_binding
-    from .atlas_model_participation import _forward_participation
-    from .atlas_model_training import loss_bearing_bamf
+    from ..atlas_model_participation import _forward_participation
+    from ..atlas_model_training import loss_bearing_bamf
 
     if (hidden.shape[0] != len(row_batches)
             or len(refinement_selections) != len(row_batches)):

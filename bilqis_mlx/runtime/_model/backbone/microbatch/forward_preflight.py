@@ -5,8 +5,8 @@ import mlx.core as mx
 
 from bilqis_mlx.learning.atlas_readout import AnswerPlan
 
-from .atlas_model_backend import Backend
-from .atlas_model_contracts import BamfCompiledBatch, _invalid
+from ..atlas_model_backend import Backend
+from ..atlas_model_contracts import BamfCompiledBatch, _invalid
 
 
 _FORWARD_HIDDEN_RANK = 3
@@ -88,10 +88,10 @@ def microbatch_trace_preflight(
     backend, params, batch, row_batches, answer_plans, targets, masks,
     generation, cache, rebind_execution, salience_supervision, snapshot,
 ):
-    from .atlas_model_forward import (
+    from ..atlas_model_forward import (
         _decode_bamf_producer_row, _finalize_source_hidden, _source_producer,
     )
-    from .atlas_model_training import loss_bearing_bamf
+    from ..atlas_model_training import loss_bearing_bamf
 
     binding = rebind_execution(params)
     producer, accepted_cache, _ = _source_producer(
@@ -115,8 +115,8 @@ def microbatch_trace_from_hidden(
     backend, params, row_batches, answer_plans, targets, masks,
     producer, hidden, accepted_cache, execution_binding, salience_supervision,
 ):
-    from .atlas_model_forward import _decode_bamf_producer_row
-    from .atlas_model_training import loss_bearing_bamf
+    from ..atlas_model_forward import _decode_bamf_producer_row
+    from ..atlas_model_training import loss_bearing_bamf
 
     if hidden.shape[0] != len(row_batches):
         _invalid("B11_MICROBATCH_HIDDEN_BATCH_MISMATCH")
