@@ -1,5 +1,5 @@
 {
-  "legacy_raw_file_count": 298,
+  "legacy_raw_file_count": 299,
   "legacy_raw_raise_count": 2086,
   "legacy_raw_raise_groups": [
     {
@@ -11287,6 +11287,41 @@
       "path": "bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_live_support.py"
     },
     {
+      "code_hint": "C05 source-owned route decision drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 source-owned route decision drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/live/owner_live_candidate_support.py"
+    },
+    {
+      "code_hint": "C05 source-owned step did not execute exactly once",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 source-owned step did not execute exactly once'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/live/owner_live_candidate_support.py"
+    },
+    {
+      "code_hint": "C05 source-owned MLX backend is not GPU",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "f'C05 source-owned MLX backend is not GPU: {backend.device}'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/live/owner_live_candidate_support.py"
+    },
+    {
+      "code_hint": "C05 source-owned generation-one publication drift",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'C05 source-owned generation-one publication drift'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/live/owner_live_generation_support.py"
+    },
+    {
+      "code_hint": "C05 Factory retention did not accept source-owned candidate",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "f'C05 Factory retention did not accept source-owned candidate: reason={decision.reason} evidence={decision.evidence_sha256} policy={decision.policy_sha256} blocking_capability={evaluation.decision.blocking_capability}'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/live/owner_live_generation_support.py"
+    },
+    {
       "code_hint": "B13.2 accepted bundle/CAS mutated",
       "count": 1,
       "exception": "AssertionError",
@@ -11467,41 +11502,6 @@
       "exception": "AssertionError",
       "expression": "'B13.2 witness requires published accepted generation one'",
       "path": "bilqis_mlx/runtime/tests/capability/factory/retention/next_step/factory_retention_next_step_witness.py"
-    },
-    {
-      "code_hint": "C05 source-owned generation-one publication drift",
-      "count": 1,
-      "exception": "AssertionError",
-      "expression": "'C05 source-owned generation-one publication drift'",
-      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
-    },
-    {
-      "code_hint": "C05 source-owned route decision drift",
-      "count": 1,
-      "exception": "AssertionError",
-      "expression": "'C05 source-owned route decision drift'",
-      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
-    },
-    {
-      "code_hint": "C05 source-owned step did not execute exactly once",
-      "count": 1,
-      "exception": "AssertionError",
-      "expression": "'C05 source-owned step did not execute exactly once'",
-      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
-    },
-    {
-      "code_hint": "C05 Factory retention did not accept source-owned candidate",
-      "count": 1,
-      "exception": "AssertionError",
-      "expression": "f'C05 Factory retention did not accept source-owned candidate: reason={decision.reason} evidence={decision.evidence_sha256} policy={decision.policy_sha256} blocking_capability={evaluation.decision.blocking_capability}'",
-      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
-    },
-    {
-      "code_hint": "C05 source-owned MLX backend is not GPU",
-      "count": 1,
-      "exception": "AssertionError",
-      "expression": "f'C05 source-owned MLX backend is not GPU: {backend.device}'",
-      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py"
     },
     {
       "code_hint": "malformed decoder payload",

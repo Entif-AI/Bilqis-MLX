@@ -7,6 +7,9 @@ import sqlite3
 from .contracts import DataPlaneError
 
 
+_CHECKPOINT_PAYLOAD_INDEX = 4
+
+
 class DataPlaneAcceptedAuthorityMixin:
     """Private persistence API consumed only by the B13 accepted-authority owner."""
 
@@ -54,7 +57,7 @@ class DataPlaneAcceptedAuthorityMixin:
             ).fetchone()
         if row is None:
             return None
-        if hashlib.sha256(row[4]).hexdigest() != checkpoint_sha256:
+        if hashlib.sha256(row[_CHECKPOINT_PAYLOAD_INDEX]).hexdigest() != checkpoint_sha256:
             raise ValueError(DataPlaneError.ACCEPTED_AUTHORITY_CHECKPOINT_CORRUPTED.value)
         return row
 

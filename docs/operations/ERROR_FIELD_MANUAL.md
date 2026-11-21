@@ -2090,7 +2090,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2086** raw raises across **298** files. The baseline gate permits only reduction.
+Current production scan: **2086** raw raises across **299** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -2302,7 +2302,7 @@ Current production scan: **2086** raw raises across **298** files. The baseline 
 | `BOOLEAN_COMPOSITE_REQUIRES_RESUME` | 1 | `bilqis_mlx/runtime/operator_session/operator_preflight.py` |
 | `BOOLEAN_IDBOOLOPS_REQUIRES_RESUME` | 1 | `bilqis_mlx/runtime/operator_session/operator_preflight.py` |
 | `BRIDGE_LEGACY_ALIAS_INVALID` | 1 | `bilqis_mlx/_source_evidence/ithkuil_alignment.py` |
-| `C05 Factory retention did not accept source-owned candidate` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py` |
+| `C05 Factory retention did not accept source-owned candidate` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/live/owner_live_generation_support.py` |
 | `C05 fixed diagnostic Factory release drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/diagnostics/factory_retention_fixed_diagnostic.py` |
 | `C05 fixed diagnostic capability is not admitted` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/diagnostics/factory_retention_fixed_diagnostic.py` |
 | `C05 fixed diagnostic cohort unavailable` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/diagnostics/factory_retention_fixed_diagnostic.py` |
@@ -2311,11 +2311,11 @@ Current production scan: **2086** raw raises across **298** files. The baseline 
 | `C05 fixed diagnostic training authority drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/diagnostics/factory_retention_fixed_diagnostic.py` |
 | `C05 lesson diagnostic capability is not admitted` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/diagnostics/factory_retention_lesson_diagnostic.py` |
 | `C05 lesson diagnostic training authority drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/diagnostics/factory_retention_lesson_diagnostic.py` |
-| `C05 source-owned MLX backend is not GPU` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py` |
-| `C05 source-owned generation-one publication drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py` |
+| `C05 source-owned MLX backend is not GPU` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/live/owner_live_candidate_support.py` |
+| `C05 source-owned generation-one publication drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/live/owner_live_generation_support.py` |
 | `C05 source-owned identity bank unavailable` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/factory_retention_live_support.py` |
-| `C05 source-owned route decision drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py` |
-| `C05 source-owned step did not execute exactly once` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/owner_live_support.py` |
+| `C05 source-owned route decision drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/live/owner_live_candidate_support.py` |
+| `C05 source-owned step did not execute exactly once` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/live/owner_live_candidate_support.py` |
 | `C05 target diagnostic capability is not admitted` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/diagnostics/factory_retention_target_diagnostic.py` |
 | `C05 target diagnostic training authority drift` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/diagnostics/factory_retention_target_diagnostic.py` |
 | `C06 Factory C05 rejected labeled candidate` | 1 | `bilqis_mlx/runtime/tests/model/salience/retained_publication_witness.py` |

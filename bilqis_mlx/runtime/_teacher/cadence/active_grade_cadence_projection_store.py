@@ -4,6 +4,7 @@ from __future__ import annotations
 
 _PROJECTION_KEY = "active-grade-cadence-terminal-attempts"
 _PROJECTION_SCHEMA = "bilqis.mlx.bamf-active-grade-cadence-attempt-projection/v2"
+_ATTEMPT_PAIR_SIZE = 2
 
 
 def _digest(value) -> bool:
@@ -41,7 +42,7 @@ def _restore_projection(record):
             return None
         attempts = []
         for item in record["attempts"]:
-            if (not isinstance(item, list) or len(item) != 2
+            if (not isinstance(item, list) or len(item) != _ATTEMPT_PAIR_SIZE
                     or not isinstance(item[0], dict)
                     or not isinstance(item[1], str) or not item[1]):
                 return None
