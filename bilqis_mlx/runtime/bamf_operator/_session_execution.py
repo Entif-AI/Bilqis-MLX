@@ -1,6 +1,8 @@
 """Compatibility exports and session loop for the BAMF operator coordinator."""
 from __future__ import annotations
 
+from bilqis_mlx.errors import BilqisError, SCHOOL
+
 from ._session_visit import ResourceRejectedVisit
 from .session_parts.candidate_execution import candidate_horizon_execution, execute_horizon
 from .session_parts.retention import retention_result
@@ -26,6 +28,13 @@ def _source_pool(workers, source_pool_factory, null_context):
     return source_pool_factory(workers) if workers else null_context(None)
 
 
+def _stale_execution_cache(error: BilqisError) -> bool:
+    return (
+        error.spec is SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID
+        and error.context.get("reason") == "B13_EXECUTION_CACHE_STALE"
+    )
+
+
 def _terminal_visit_status(outcome):
     return {
         "HELD": "PRIORITY_HOLD",
@@ -48,6 +57,7 @@ def _run_visits(
     admission_status, admission_advances = None, 0
     status = "TIME_LIMIT"
     resource_witness = None
+    stale_retry_armed = False
     while monotonic() < deadline and (not max_visits or visits < max_visits):
         _assert_current(run_authority_binding)
         if resource_snapshot is not None:
@@ -62,15 +72,37 @@ def _run_visits(
                 observer.update(activity=str(message)[:256])
                 emit_progress(progress, message)
 
-            outcome = visit_fn(
-                run_dir, reserve_gib, steps_per_visit=steps_per_visit,
-                progress=observed_progress, source_prefetch_workers=source_prefetch_workers,
-                source_prefetch_executor=source_prefetch_executor,
-                source_prefetch_metrics=metrics, observer=observer,
-                run_authority_binding=run_authority_binding,
-                **({"resource_holds": frozenset(resource_holds)} if resource_holds else {}))
-            resource_rejected = isinstance(outcome, ResourceRejectedVisit)
-            observer.finish("RESOURCE_REJECTED" if resource_rejected else outcome)
+            try:
+                outcome = visit_fn(
+                    run_dir, reserve_gib, steps_per_visit=steps_per_visit,
+                    progress=observed_progress,
+                    source_prefetch_workers=source_prefetch_workers,
+                    source_prefetch_executor=source_prefetch_executor,
+                    source_prefetch_metrics=metrics, observer=observer,
+                    run_authority_binding=run_authority_binding,
+                    **({"resource_holds": frozenset(resource_holds)}
+                       if resource_holds else {}))
+            except BilqisError as error:
+                if not _stale_execution_cache(error) or stale_retry_armed:
+                    raise
+                observer.update(
+                    error_code=error.code,
+                    error_detail=error.context["reason"],
+                )
+                observer.finish("INTERRUPTED")
+                stale_retry_armed = True
+                outcome = None
+            else:
+                stale_retry_armed = False
+                resource_rejected = isinstance(outcome, ResourceRejectedVisit)
+                observer.finish("RESOURCE_REJECTED" if resource_rejected else outcome)
+        if outcome is None:
+            emit_progress(
+                progress,
+                f"visit {attempts} accepted execution cache became stale; "
+                "refreshing accepted custody",
+            )
+            continue
         if resource_rejected:
             resource_holds.add(outcome.capability)
             emit_progress(progress, f"visit {attempts} resource-held {outcome.capability}")
