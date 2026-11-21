@@ -12,6 +12,7 @@ from bilqis_mlx.mission_control.query_contracts import (
 from bilqis_mlx.mission_control.query_catalog import MissionControlQueryCatalog
 from bilqis_mlx.mission_control.operator import OperatorActionReceipt
 from bilqis_mlx.mission_control.observability import MemorySnapshot
+from bilqis_mlx.mission_control.notifications import Notification
 from bilqis_mlx.mission_control.tests.samples import SAMPLES
 from bilqis_mlx.presentation.atlas_metrics import bamf_status
 
@@ -32,13 +33,15 @@ _FAMILIES = (
     QueryFamily.CORRECTION,
     QueryFamily.RESOURCE,
     QueryFamily.FACTORY,
+    QueryFamily.NOTIFICATION,
 )
 
 
 class MissionControlQueryFamilyTests(unittest.TestCase):
     def setUp(self):
         factory = next(item for item in SAMPLES if type(item) is FactoryCockpitSnapshot)
-        self.domain_records = (*SAMPLES[:16], factory)
+        notification = next(item for item in SAMPLES if type(item) is Notification)
+        self.domain_records = (*SAMPLES[:16], factory, notification)
         self.index = MissionControlQueryCatalog(self.domain_records)
 
     def test_literal_fixture_queries_cover_every_required_family(self):

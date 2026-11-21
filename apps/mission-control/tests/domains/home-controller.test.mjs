@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   HOME_FAMILIES,
   familyForEvent,
+  isNotificationEvent,
   queryRequest,
 } from "../../renderer/home/home-model.mjs";
 import { createHomeController } from "../../renderer/home/home-controller.mjs";
@@ -29,6 +30,10 @@ test("CP04 event families refresh only their owning CP03 family", () => {
   assert.equal(familyForEvent({ event_family: "capability.changed" }), "capability");
   assert.equal(familyForEvent({ event_family: "resource.health.sample" }), "resource");
   assert.equal(familyForEvent({ event_family: "warning.failure" }), null);
+  assert.equal(isNotificationEvent({ event_family: "capability.graduated" }), true);
+  assert.equal(isNotificationEvent({ event_family: "semantic.release.changed" }), true);
+  assert.equal(isNotificationEvent({ event_family: "warning.failure" }), true);
+  assert.equal(isNotificationEvent({ event_family: "candidate.retained" }), false);
 });
 
 test("live home uses one family query per CP04 event rather than polling the full view", async () => {
@@ -58,6 +63,8 @@ test("live home uses one family query per CP04 event rather than polling the ful
   await listener({ event_family: "capability.changed" });
   assert.equal(calls.length, baseline + 1);
   assert.equal(calls.at(-1), "capability");
+  await listener({ event_family: "capability.graduated" });
+  assert.equal(calls.length, baseline + 1 + HOME_FAMILIES.length + 1);
   await controller.deactivate();
 });
 
@@ -124,7 +131,7 @@ test("failed unsubscribe does not make a changed context look successfully activ
   await controller.activate(context, {
     host: fakeHost(), onInspect: () => {}, defense: { historical: false },
   });
-  assert.equal(calls.length, 9);
+  assert.equal(calls.length, HOME_FAMILIES.length + 1);
   assert.equal(subscriptions, 1);
 
   const changed = { ...context, generation: context.generation + 1 };
@@ -135,7 +142,7 @@ test("failed unsubscribe does not make a changed context look successfully activ
   await controller.activate(changed, {
     host: fakeHost(), onInspect: () => {}, defense: { historical: false },
   });
-  assert.equal(calls.length, 18);
+  assert.equal(calls.length, (HOME_FAMILIES.length + 1) * 2);
   assert.equal(subscriptions, 2);
   await controller.deactivate();
 });
@@ -167,7 +174,7 @@ test("concurrent changed-context activation waits for failed teardown and retrie
   await controller.activate(context, {
     host: fakeHost(), onInspect: () => {}, defense: { historical: false },
   });
-  assert.equal(calls.length, 9);
+  assert.equal(calls.length, HOME_FAMILIES.length + 1);
   assert.equal(subscriptions, 1);
 
   const changed = { ...context, generation: context.generation + 1 };
@@ -185,7 +192,7 @@ test("concurrent changed-context activation waits for failed teardown and retrie
   await rejected;
   await second;
   assert.equal(stopCalls, 2);
-  assert.equal(calls.length, 18);
+  assert.equal(calls.length, (HOME_FAMILIES.length + 1) * 2);
   assert.equal(subscriptions, 2);
   await controller.deactivate();
 });
@@ -228,7 +235,7 @@ test("failed CP04 startup is retried without restarting the CP01 query lifecycle
     host: fakeHost(), onInspect: () => {}, defense: { historical: false },
   });
   assert.equal(subscriptions, 1);
-  assert.equal(calls.length, 9);
+  assert.equal(calls.length, HOME_FAMILIES.length + 1);
   assert.ok(controller.currentModel());
 
   const baselineCalls = calls.length;

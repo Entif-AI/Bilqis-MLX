@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+from dataclasses import replace
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -10,6 +11,10 @@ from typing import Iterable
 
 from ..contracts.codec import canonical_json
 from ..contracts.envelopes import EventEnvelope
+from ..contracts.notifications import (
+    Notification, NotificationState, acknowledge_notification,
+    notification_from_event, supersede_notification,
+)
 from ..contracts.model import WireRecord, is_name, is_sha256, is_wire_integer
 from .contracts import (
     PROJECTION_SCHEMA, PROJECTION_SCHEMA_VERSION, ProjectionFrontierState,
@@ -123,9 +128,91 @@ class MissionControlProjection:
             with store.connect(self.path) as db:
                 store.ingest_record(db, payload)
                 store.ingest_record(db, event)
+                projected = notification_from_event(event)
+                if projected is not None:
+                    self._ingest_notification_record(db, projected)
                 store.advance_frontier(db, event.position)
                 db.commit()
                 return store.stats(db)
+        except sqlite3.Error:
+            projection_invalid("PROJECTION_WRITE_FAILED_REBUILD_REQUIRED")
+
+    def ingest_notification_event(
+        self, event: EventEnvelope, payload: WireRecord,
+    ) -> ProjectionStats:
+        """Persist a noteworthy event by identity, independent of CP04 stream epochs."""
+        if type(event) is not EventEnvelope or not isinstance(payload, WireRecord):
+            projection_invalid("PROJECTION_EVENT_PAYLOAD_REQUIRED")
+        if (event.payload_schema_version != payload.schema_version
+                or event.payload_record_id != payload.meta.record_id
+                or event.payload_sha256 != hashlib.sha256(canonical_json(payload)).hexdigest()):
+            projection_invalid("PROJECTION_EVENT_PAYLOAD_MISMATCH")
+        projected = notification_from_event(event)
+        if projected is None:
+            return self.stats()
+        try:
+            with store.connect(self.path) as db:
+                store.ingest_record(db, payload)
+                store.ingest_record(db, event)
+                self._ingest_notification_record(db, projected)
+                db.commit()
+                return store.stats(db)
+        except sqlite3.Error:
+            projection_invalid("PROJECTION_WRITE_FAILED_REBUILD_REQUIRED")
+
+    @staticmethod
+    def _ingest_notification_record(db, notification: Notification) -> None:
+        existing = store.notification_by_id(db, notification.notification_id)
+        if existing is not None:
+            return
+        prior = store.active_notification(
+            db, subject_ref=notification.subject_ref, kind=notification.kind)
+        if prior is None:
+            store.ingest_record(db, notification)
+            return
+        incoming_key = (notification.created_at, notification.source_event_id)
+        prior_key = (prior.created_at, prior.source_event_id)
+        if incoming_key <= prior_key:
+            store.ingest_record(
+                db, replace(notification, state=NotificationState.SUPERSEDED))
+            return
+        transition_time = max(
+            notification.meta.materialized_at, prior.meta.materialized_at + 1)
+        store.ingest_record(db, supersede_notification(prior, transition_time))
+        store.ingest_record(db, replace(
+            notification,
+            meta=replace(notification.meta, materialized_at=transition_time),
+            supersedes_notification_id=prior.notification_id,
+        ))
+
+    def ingest_notification(self, notification: Notification) -> ProjectionStats:
+        """Persist one source-derived notice without making its source a CP02 record."""
+        if type(notification) is not Notification:
+            projection_invalid("PROJECTION_NOTIFICATION_REQUIRED")
+        try:
+            with store.connect(self.path) as db:
+                self._ingest_notification_record(db, notification)
+                db.commit()
+                return store.stats(db)
+        except sqlite3.Error:
+            projection_invalid("PROJECTION_WRITE_FAILED_REBUILD_REQUIRED")
+
+    def acknowledge_notification(
+        self, notification_id: str, *, acknowledged_at: int,
+    ) -> Notification:
+        if not is_name(notification_id):
+            projection_invalid("PROJECTION_NOTIFICATION_ID_INVALID")
+        try:
+            with store.connect(self.path) as db:
+                notification = store.notification_by_id(db, notification_id)
+                if notification is None:
+                    projection_invalid("PROJECTION_NOTIFICATION_MISSING")
+                if notification.state is not NotificationState.ACTIVE:
+                    projection_invalid("PROJECTION_NOTIFICATION_NOT_ACTIVE")
+                updated = acknowledge_notification(notification, acknowledged_at)
+                store.ingest_record(db, updated)
+                db.commit()
+                return updated
         except sqlite3.Error:
             projection_invalid("PROJECTION_WRITE_FAILED_REBUILD_REQUIRED")
 
@@ -182,6 +269,13 @@ class MissionControlProjection:
             return MissionControlQueryCatalog(store.decode_rows(rows))
         except sqlite3.Error:
             projection_invalid("PROJECTION_READ_FAILED_REBUILD_REQUIRED")
+
+    def notifications(self) -> tuple[Notification, ...]:
+        """Return notification records for safe composition with source reads."""
+        return tuple(
+            record for record in self.catalog().records
+            if type(record) is Notification
+        )
 
     def revisions(self, record_id: str) -> tuple[WireRecord, ...]:
         try:

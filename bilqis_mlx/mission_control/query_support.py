@@ -25,6 +25,7 @@ from .contracts.observability import (
     GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, TeacherSnapshot,
 )
+from .contracts.notifications import Notification
 from .query_contracts import (
     MAX_PAGE_ROWS_BYTES, QUERY_PAGE_SCHEMA, QueryFamily, QueryMode, QueryPage,
     QueryRequest, QueryState,
@@ -62,6 +63,7 @@ FAMILY_TYPES = MappingProxyType({
     QueryFamily.CORRECTION: (CorrectionEvent,),
     QueryFamily.RESOURCE: (ResourceSample,),
     QueryFamily.FACTORY: (FactoryCockpitSnapshot,),
+    QueryFamily.NOTIFICATION: (Notification,),
 })
 
 

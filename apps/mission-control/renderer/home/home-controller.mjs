@@ -1,6 +1,7 @@
 import {
   HOME_FAMILIES,
   familyForEvent,
+  isNotificationEvent,
   projectionFromPages,
   queryRequest,
 } from "./home-model.mjs";
@@ -129,6 +130,7 @@ export function createHomeController(api, {
     let stop;
     try { stop = await api.subscribeEvents((event) => enqueueOnce(current, event?.event_family ?? "unknown", async () => {
       if (event?.event_family === "operator.action.state") return refreshStatus(current);
+      if (isNotificationEvent(event)) return loadAll(current);
       const family = familyForEvent(event);
       if (!family) return;
       if (event.event_family === "run.trainer.observed") return refreshRun(current);

@@ -10,6 +10,7 @@ from .contracts.snapshots import (
     CapabilitySnapshot, CurriculumFrontier, OperatorView, RunContext, SchoolSnapshot,
 )
 from .contracts.trainer import TrainerObservation
+from .contracts.notifications import Notification
 from .query_contracts import QueryFamily, QueryMode, QueryRequest
 from .semantic import (
     SemanticBankSnapshot, SemanticConceptSnapshot, SemanticGenerationState,
@@ -157,7 +158,7 @@ def select_current(rows: list[WireRecord]) -> list[WireRecord]:
     if generations:
         rows = [
             item for item in rows
-            if isinstance(item, TrainerObservation) or item.meta.run is None
+            if isinstance(item, (TrainerObservation, Notification)) or item.meta.run is None
             or item.meta.run.generation == generations[item.meta.run.run_id]
         ]
     newest = {}

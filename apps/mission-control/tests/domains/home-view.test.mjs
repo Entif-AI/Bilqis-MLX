@@ -45,6 +45,34 @@ test("Home uses the governed five-state band and target overview regions", () =>
   assert.equal(model.learningStatus, "REGRESSION");
 });
 
+test("Home renders durable milestone, release, materialization, gate, blocker, and drift notifications", () => {
+  const pages = Object.fromEntries(HOME_FAMILIES.map((family) => [family, emptyPage(family)]));
+  const kinds = ["GRADUATION", "SEMANTIC_RELEASE", "GRAPH_MATERIALIZATION", "GATE_TRANSITION", "BLOCKER", "DRIFT"];
+  pages.notification = {
+    accepted: true, family: "notification", mode: "current", state: "PRESENT", coverage: "COMPLETE",
+    records: kinds.map((kind, index) => ({
+      schema_version: "bilqis.bamf.mission-control.notification/v1",
+      meta: { record_id: `notification:${index}`, observed_at: 1_799_100_000 + index, materialized_at: 1_799_100_000 + index },
+      notification_id: `notification:${index}`,
+      source_event_id: `event:${index}`,
+      subject_ref: `subject:${index}`,
+      kind,
+      severity: ["BLOCKER", "DRIFT"].includes(kind) ? "WARNING" : "SUCCESS",
+      state: "ACTIVE",
+      created_at: 1_799_100_000 + index,
+      evidence_ref: `evidence:${index}`,
+      acknowledged_at: null,
+      supersedes_notification_id: null,
+    })),
+  };
+  const model = projectionFromPages(pages, context);
+  const markup = renderHomeMarkup(model, { nowMs: 1_799_100_100_000, locale: "en-US" });
+  assert.equal(model.notifications.length, kinds.length);
+  assert.match(markup, /data-test-id="home-notifications"/);
+  for (const kind of kinds) assert.match(markup, new RegExp(kind));
+  assert.match(markup, /Evidence: evidence:0/);
+});
+
 test("Home health is collapsed detail and operator-significant work values remain complete", () => {
   const markup = renderHomeMarkup(referenceHomeProjection());
   assert.match(markup, /<details class="home-health" data-test-id="home-health-details">/);
