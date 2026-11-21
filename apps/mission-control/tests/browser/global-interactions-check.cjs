@@ -28,11 +28,6 @@ querySnapshot:async()=>${JSON.stringify(operator)}
 function server() {
   return http.createServer((req, res) => {
     const url = new URL(req.url, "http://127.0.0.1");
-    if (url.pathname === "/preview-bridge.js") {
-      res.writeHead(200, { "Content-Type": "text/javascript" });
-      res.end(bridge);
-      return;
-    }
     let file = path.join(repo, decodeURIComponent(url.pathname));
     if (url.pathname === "/" || url.pathname === "/apps/mission-control/renderer/") {
       file = path.join(renderer, "index.html");
@@ -42,13 +37,7 @@ function server() {
       res.end("not found");
       return;
     }
-    let body = fs.readFileSync(file);
-    if (file.endsWith("index.html")) {
-      body = Buffer.from(body.toString().replace(
-        '<script type="module" src="./renderer.mjs">',
-        '<script src="/preview-bridge.js"></script><script type="module" src="./renderer.mjs">',
-      ));
-    }
+    const body = fs.readFileSync(file);
     res.writeHead(200, { "Content-Type": mime[path.extname(file)] || "application/octet-stream" });
     res.end(body);
   });
@@ -63,6 +52,7 @@ function server() {
     const page = await browser.newPage({ viewport: { width: 1440, height: 920 } });
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
+    await page.addInitScript({ content: bridge });
     await page.goto(`http://127.0.0.1:${srv.address().port}/apps/mission-control/renderer/`);
     const result = await journey(page);
     if (errors.length) throw new Error(`browser page errors: ${errors.join(" | ")}`);
