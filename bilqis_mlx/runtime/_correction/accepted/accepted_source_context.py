@@ -6,8 +6,37 @@ from pathlib import Path
 from threading import RLock
 
 
-_CACHE_LOCK = RLock()
-_CACHE = {}
+class _AcceptedSourceContextCache:
+    """Process-local cache with one retained context identity per accepted run."""
+
+    def __init__(self) -> None:
+        self._lock = RLock()
+        self._entries = {}
+
+    def reuse(self, key, host):
+        from bilqis_mlx.runtime.source_execution import SourcePreparationMetrics
+
+        with self._lock:
+            retained = self._entries.get(key)
+        if retained is None:
+            return None
+        object.__setattr__(retained, "_accepted_runtime_host", host)
+        object.__setattr__(
+            retained, "_source_preparation_metrics", SourcePreparationMetrics())
+        object.__setattr__(retained, "_accepted_feature_context", None)
+        return retained
+
+    def retain(self, key, context):
+        run_key = key[0]
+        with self._lock:
+            for existing in tuple(self._entries):
+                if existing[0] == run_key and existing != key:
+                    self._entries.pop(existing, None)
+            self._entries[key] = context
+        return context
+
+
+_CACHE = _AcceptedSourceContextCache()
 
 
 def _cache_key(run_dir: Path, student, factory_release_sha256: str, source_root):
@@ -22,26 +51,11 @@ def _cache_key(run_dir: Path, student, factory_release_sha256: str, source_root)
 
 
 def _reuse(key, host):
-    from bilqis_mlx.runtime.source_execution import SourcePreparationMetrics
-
-    with _CACHE_LOCK:
-        retained = _CACHE.get(key)
-    if retained is None:
-        return None
-    object.__setattr__(retained, "_accepted_runtime_host", host)
-    object.__setattr__(retained, "_source_preparation_metrics", SourcePreparationMetrics())
-    object.__setattr__(retained, "_accepted_feature_context", None)
-    return retained
+    return _CACHE.reuse(key, host)
 
 
 def _retain(key, context):
-    run_key = key[0]
-    with _CACHE_LOCK:
-        for existing in tuple(_CACHE):
-            if existing[0] == run_key and existing != key:
-                _CACHE.pop(existing, None)
-        _CACHE[key] = context
-    return context
+    return _CACHE.retain(key, context)
 
 
 def accepted_source_context(host, student, *, graph=None, source_root=None):
