@@ -52,6 +52,19 @@ class FactoryCandidateReportingTests(unittest.TestCase):
             "b11_fallback_trace_preflight_wall_seconds": 0.0,
             "b11_preflight_other_wall_seconds": 0.05,
             "b11_autodiff_wall_seconds": 0.4,
+            "b11_autodiff_dispatch_wall_seconds": 0.03,
+            "b11_autodiff_materialization_wall_seconds": 0.31,
+            "b11_route_evidence_wall_seconds": 0.04,
+            "b11_autodiff_other_wall_seconds": 0.02,
+            "b11_gradient_finite_validation_wall_seconds": 0.06,
+            "b11_postflight_validation_wall_seconds": 0.07,
+            "c08_group_execution_wall_seconds": 0.7,
+            "c08_row_execution_inputs_wall_seconds": 0.08,
+            "c08_aggregation_wall_seconds": 0.05,
+            "c08_final_materialization_wall_seconds": 0.04,
+            "c08_result_construction_wall_seconds": 0.01,
+            "c08_unattributed_wall_seconds": 0.01,
+            "c08_reused_materialized_full_batch": True,
             "b11_provider_draw_count": 8,
             "b11_atlas_reload_count": 4,
         })
@@ -76,12 +89,19 @@ class FactoryCandidateReportingTests(unittest.TestCase):
         self.assertEqual(cost["b11_route_kernel_prepare_wall_seconds"], 0.05)
         self.assertEqual(cost["b11_preflight_other_wall_seconds"], 0.05)
         self.assertEqual(cost["b11_autodiff_wall_seconds"], 0.4)
+        self.assertEqual(cost["b11_autodiff_materialization_wall_seconds"], 0.31)
+        self.assertEqual(cost["b11_gradient_finite_validation_wall_seconds"], 0.06)
+        self.assertEqual(cost["b11_postflight_validation_wall_seconds"], 0.07)
         self.assertEqual(cost["b11_provider_draw_count"], 8)
         self.assertEqual(cost["b11_atlas_reload_count"], 4)
         self.assertEqual(cost["b11_source_authority_bound_rows"], 2)
         self.assertEqual(cost["b11_source_cold_requalification_rows"], 0)
         self.assertEqual(cost["c08_gradient_launches"], 2)
         self.assertEqual(cost["c08_vectorized_microbatches"], 1)
+        self.assertEqual(cost["c08_group_execution_wall_seconds"], 0.7)
+        self.assertEqual(cost["c08_row_execution_inputs_wall_seconds"], 0.08)
+        self.assertEqual(cost["c08_final_materialization_wall_seconds"], 0.04)
+        self.assertTrue(cost["c08_reused_materialized_full_batch"])
         self.assertEqual(cost["logical_rows"], 2)
         self.assertEqual(cost["compiled_positions"], 5)
         self.assertFalse(cost["candidate_terminal_step"])

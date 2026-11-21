@@ -1,7 +1,7 @@
 """Source/context preparation owned by the Factory training bridge."""
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from bilqis_mlx.factory.generation import runtime_adapter_for_release
@@ -61,6 +61,8 @@ class _FactoryMotifPlanningInput:
     source_each: int
     source_profile_parameters: dict | None
     course: object
+    formal_projection: ApprovedContextProjection
+    formal_frontier: SourceFrontier
 
     def __post_init__(self) -> None:
         if (not isinstance(self.row, dict)
@@ -69,6 +71,8 @@ class _FactoryMotifPlanningInput:
                 or type(self.task) is not TaskScope
                 or type(self.frontier) is not SourceFrontier
                 or type(self.policy) is not ContextPolicy
+                or type(self.formal_projection) is not ApprovedContextProjection
+                or type(self.formal_frontier) is not SourceFrontier
                 or type(self.source_seed) is not int or self.source_seed < 0
                 or type(self.source_each) is not int or self.source_each < 1
                 or (self.source_profile_parameters is not None
@@ -108,10 +112,49 @@ class _PreparedB11SourceBinding:
     config: FrameCompilerConfig
     source: SourceAtomRow
     authority: B11SourceExecutionAuthority
+    _compiled_input: CompiledEncoderInput | None = field(
+        default=None, init=False, repr=False, compare=False)
 
     def require_current(self):
         return require_b11_source_execution_authority_current(
             self.authority, self.prefix, self.config, self.source)
+
+
+def _prepared_b11_compiled_input(
+        prepared, features, extents, packed_owner, *, source_ast=None):
+    """Reuse immutable B11 encoder structure under the live C09 row owner."""
+    if type(prepared) is not _PreparedB11SourceBinding:
+        _invalid("FACTORY_TRAINING_PREPARED_B11_INVALID")
+    cached = prepared._compiled_input
+    if cached is not None:
+        cached_ast = None if cached.source_asts is None else cached.source_asts[0]
+        if (cached.compiled.rows[0] is not prepared.prefix
+                or cached.compiler_configs[0] is not prepared.config
+                or cached.features is not features
+                or cached.extents is not extents
+                or cached.packed_frame_artifact_owner is not packed_owner
+                or cached_ast is not source_ast):
+            _invalid("FACTORY_TRAINING_PREPARED_B11_COMPILED_DRIFT")
+        cached.__post_init__()
+        return cached
+
+    prefix = prepared.prefix
+    compiled_rows = CompiledFrameRows(
+        (prefix,), (prefix.positions,), ((True,) * len(prefix.positions),))
+    from bilqis_mlx.learning.frame_encoder.compiled import (
+        _compiled_encoder_input_with_packed_owner,
+    )
+    if source_ast is None:
+        compiled = _compiled_encoder_input_with_packed_owner(
+            compiled_rows, (prepared.config,), features, extents, packed_owner)
+    else:
+        receipt = validate_partial_visible_forest(
+            prefix, source_ast, prepared.config)
+        compiled = _compiled_encoder_input_with_packed_owner(
+            compiled_rows, (prepared.config,), features, extents, packed_owner,
+            source_asts=(source_ast,), partial_forest_receipts=(receipt,))
+    object.__setattr__(prepared, "_compiled_input", compiled)
+    return compiled
 
 
 def _prepare_source_row(source_context, authenticated, manifest,
@@ -190,7 +233,8 @@ def _motif_planning_input(source_context, authenticated, adapter, profile, item,
         adapter, item.row, authenticated.selection,
         Path(source_context.source_root), item.source_graph,
         item.task, item.frontier, item.policy,
-        source_seed, source_each, profile, source_context.release.curriculum)
+        source_seed, source_each, profile, source_context.release.curriculum,
+        item.formal_projection, item.formal_frontier)
     result.__post_init__()
     return result
 
@@ -213,7 +257,8 @@ def _prepare_b11_source_binding(
 
 
 def _bind_b11_rows(source_context, candidate, authenticated, training, source_rows,
-                   profile, *, source_seed, source_each, prepared_b11=None):
+                   profile, *, source_seed, source_each, prepared_b11=None,
+                   packed_owner=None):
     compiled_rows = []
     if prepared_b11 is not None and (
             type(prepared_b11) is not tuple
@@ -237,20 +282,30 @@ def _bind_b11_rows(source_context, candidate, authenticated, training, source_ro
             prepared = prepared_b11[index]
             if prepared.prefix is not prefix:
                 _invalid("FACTORY_TRAINING_PREPARED_B11_PREFIX_DRIFT")
-            prepared.require_current()
+            # _prepared_source_inputs() immediately required the containing
+            # PreparedPrioritySourceMaterialization in this same bridge call.
+            # That owner check already required every prepared B11 binding,
+            # including A13 rights/currentness. Repeating it here only
+            # re-hashes the identical source/config before B11 binding; C02
+            # binding and the launch epoch still verify exact source custody.
             approved_config = prepared.config
-        compiled_frame_rows = CompiledFrameRows(
-            (prefix,), (prefix.positions,), ((True,) * len(prefix.positions),))
-        if item.projection is None:
-            compiled = CompiledEncoderInput(
-                compiled_frame_rows, (approved_config,), authenticated.features,
-                candidate.extents)
+        if prepared_b11 is not None and packed_owner is not None:
+            compiled = _prepared_b11_compiled_input(
+                prepared, authenticated.features, candidate.extents, packed_owner,
+                source_ast=(None if item.projection is None else item.ast))
         else:
-            receipt = validate_partial_visible_forest(prefix, item.ast, approved_config)
-            compiled = CompiledEncoderInput(
-                compiled_frame_rows, (approved_config,), authenticated.features,
-                candidate.extents, source_asts=(item.ast,),
-                partial_forest_receipts=(receipt,))
+            compiled_frame_rows = CompiledFrameRows(
+                (prefix,), (prefix.positions,), ((True,) * len(prefix.positions),))
+            if item.projection is None:
+                compiled = CompiledEncoderInput(
+                    compiled_frame_rows, (approved_config,), authenticated.features,
+                    candidate.extents)
+            else:
+                receipt = validate_partial_visible_forest(prefix, item.ast, approved_config)
+                compiled = CompiledEncoderInput(
+                    compiled_frame_rows, (approved_config,), authenticated.features,
+                    candidate.extents, source_asts=(item.ast,),
+                    partial_forest_receipts=(receipt,))
         if (compiled.compiled.rows[0] is not prepared.prefix
                 or compiled.compiler_configs[0] is not prepared.config):
             _invalid("FACTORY_TRAINING_PREPARED_B11_COMPILED_DRIFT")

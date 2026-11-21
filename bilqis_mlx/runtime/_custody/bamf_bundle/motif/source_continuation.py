@@ -13,7 +13,7 @@ from bilqis_mlx.learning.atlas_engram_source import (
 )
 from bilqis_mlx.semantics.context_eligibility import ContextHold
 from ..codec import load_bamf_bundle
-from ..records import invalid
+from ..records import CompleteStudent, invalid
 
 
 def _new_continuation_owner():
@@ -117,7 +117,8 @@ def _seal_source_qualified_motifs_from_bundle(
         source_adapter, row, atlas_selection, *, retained_bundle_root: str | Path,
         expected_manifest_sha256: str, source_root, graph, task_scope,
         source_frontier, policy, source_seed: int, source_each: int, budget,
-        source_profile_parameters=None, course=None):
+        source_profile_parameters=None, course=None, prepared_projection=None,
+        prepared_frontier=None, snapshot=None):
     """Source-plan and seal one B07 proposal to the exact B13 parent identity."""
     expected_manifest_sha256 = _required_manifest_sha256(expected_manifest_sha256)
     student = load_bamf_bundle(
@@ -128,7 +129,9 @@ def _seal_source_qualified_motifs_from_bundle(
         source_frontier=source_frontier, policy=policy,
         source_seed=source_seed, source_each=source_each, budget=budget,
         parent=student.retained_state.allocations,
-        source_profile_parameters=source_profile_parameters, course=course)
+        source_profile_parameters=source_profile_parameters, course=course,
+        prepared_projection=prepared_projection,
+        prepared_frontier=prepared_frontier, snapshot=snapshot)
     if isinstance(result, ContextHold):
         return result
     approved, frontier = result
@@ -144,12 +147,13 @@ def _make_source_sealer(issue_continuation):
 
 def _make_batch_source_sealer(issue_continuation):
     def seal(requests, *, retained_bundle_root: str | Path,
-             expected_manifest_sha256: str, budget):
+             expected_manifest_sha256: str, budget, snapshot=None):
         expected = _required_manifest_sha256(expected_manifest_sha256)
         student = load_bamf_bundle(
             Path(retained_bundle_root), expected_manifest_sha256=expected)
         result = _prepare_source_qualified_motif_batch_with_parent(
-            requests, budget=budget, parent=student.retained_state.allocations)
+            requests, budget=budget, parent=student.retained_state.allocations,
+            snapshot=snapshot)
         if isinstance(result, ContextHold):
             return result
         approved, frontiers = result
@@ -157,17 +161,52 @@ def _make_batch_source_sealer(issue_continuation):
     return seal
 
 
+def _require_accepted_parent_for_motif_seal(student, expected_manifest_sha256):
+    expected = _required_manifest_sha256(expected_manifest_sha256)
+    custody = getattr(getattr(student, "retained_state", None), "custody", None)
+    if (type(student) is not CompleteStudent
+            or custody is None
+            or custody.run_id != student.run_id
+            or custody.generation != student.generation
+            or custody.manifest_sha256 != expected
+            or custody.topology_digest != student.topology.digest
+            or custody.extents_digest != student.extents.digest):
+        invalid("BAMF_MOTIF_SOURCE_CONTINUATION_PARENT_INVALID")
+    custody.__post_init__()
+    return student
+
+
+def _make_batch_accepted_parent_sealer(issue_continuation):
+    def seal(requests, *, accepted_parent, expected_manifest_sha256: str,
+             budget, snapshot=None):
+        student = _require_accepted_parent_for_motif_seal(
+            accepted_parent, expected_manifest_sha256)
+        result = _prepare_source_qualified_motif_batch_with_parent(
+            requests, budget=budget, parent=student.retained_state.allocations,
+            snapshot=snapshot)
+        if isinstance(result, ContextHold):
+            return result
+        approved, frontiers = result
+        return issue_continuation(
+            approved, student, expected_manifest_sha256), frontiers
+    return seal
+
+
 seal_source_qualified_motifs_from_bundle = _make_source_sealer(
     _raw_issue_continuation)
 seal_source_qualified_motif_batch_from_bundle = _make_batch_source_sealer(
     _raw_issue_continuation)
+seal_source_qualified_motif_batch_from_accepted_parent = (
+    _make_batch_accepted_parent_sealer(_raw_issue_continuation))
 del _raw_issue_continuation
 
 
 def stage_source_qualified_motif_allocation(
         run_dir: str | Path, transaction, continuation: SourceQualifiedMotifContinuation):
     """Materialize one exact sealed B07 proposal into speculative B12 custody."""
-    from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+    from bilqis_mlx.learning._atlas_candidate.identity_binding import (
+        candidate_identity_for_canonical_consumer,
+    )
     from bilqis_mlx.learning.atlas_candidate import CandidateTransaction
     from bilqis_mlx.learning._atlas_candidate.transaction import (
         _stage_candidate_motif_allocation,
@@ -187,8 +226,8 @@ def stage_source_qualified_motif_allocation(
             or continuation.parent_extents_sha256 != custody.extents_digest
             or continuation.parent_allocation_sha256 != parent.retained_state.allocations.digest
             or continuation.parent_allocation_sha256 != transaction.parent.allocations.digest
-            or candidate_identity_digest(transaction.parent)
-            != candidate_identity_digest(parent.retained_state)):
+            or candidate_identity_for_canonical_consumer(transaction.parent)
+            != candidate_identity_for_canonical_consumer(parent.retained_state)):
         invalid("BAMF_MOTIF_SOURCE_CONTINUATION_INVALID")
     approved = continuation.approved
     from bilqis_mlx.runtime.model_topology_v2 import b01_generation_extents

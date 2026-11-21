@@ -112,8 +112,10 @@ class AtlasResourcesTests(AtlasResourcesFixture):
         self.assertEqual(result.materialization_barriers, 1)
         self.assertEqual(result.scalar_fallback_rows, 0)
         self.assertGreaterEqual(result.wall_seconds, 0.0)
-        self.assertEqual(evaluate.call_count, 1)
+        self.assertEqual(evaluate.call_count, 0)
         self.assertEqual(result.loss_executions, microbatch.executions)
+        self.assertIs(result.gradients, microbatch.gradients)
+        self.assertIs(result.weighted_mean_loss, microbatch.mean_loss)
         self.assertTrue(bool(mx.array_equal(
             result.gradients["weight"], microbatch.gradients["weight"])))
         self.assertEqual(float(result.weighted_mean_loss.item()), 2.5)

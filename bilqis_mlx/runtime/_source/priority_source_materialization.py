@@ -1,7 +1,8 @@
 """Visit-scoped heavy source preparation for one selected C03 offer."""
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
+import time
 
 from bilqis_mlx.runtime.source_execution import _invalid_source_batch
 from bilqis_mlx.semantics.frame_compiler import (
@@ -30,6 +31,7 @@ class PreparedPrioritySourceMaterialization:
     feature_owner: object
     packed_owner: object
     source_owner: object
+    _registered: bool = field(default=False, init=False, repr=False, compare=False)
 
     def __post_init__(self):
         count = len(self.rows)
@@ -43,13 +45,38 @@ class PreparedPrioritySourceMaterialization:
             _invalid_source_batch("BAMF_PRIORITY_SOURCE_MATERIALIZATION_INVALID")
 
     def require_current(self):
+        started = time.perf_counter()
         self.__post_init__()
+        stage_started = time.perf_counter()
         self.feature_owner.require(self.semantic_context.features)
+        feature_owner_seconds = time.perf_counter() - stage_started
+        stage_started = time.perf_counter()
         self.source_owner.require()
+        source_owner_seconds = time.perf_counter() - stage_started
+        stage_started = time.perf_counter()
         for source in self.b11_sources:
             source.require_current()
+        b11_sources_seconds = time.perf_counter() - stage_started
+        stage_started = time.perf_counter()
         for prefix in self.prefixes:
             self.packed_owner.require_row(prefix)
+        packed_frames_seconds = time.perf_counter() - stage_started
+        total_seconds = time.perf_counter() - started
+        measured_seconds = (
+            feature_owner_seconds + source_owner_seconds
+            + b11_sources_seconds + packed_frames_seconds)
+        object.__setattr__(self, "_performance_observation", {
+            "source_currentness_feature_owner_wall_seconds": float(
+                feature_owner_seconds),
+            "source_currentness_source_owner_wall_seconds": float(
+                source_owner_seconds),
+            "source_currentness_b11_sources_wall_seconds": float(
+                b11_sources_seconds),
+            "source_currentness_packed_frames_wall_seconds": float(
+                packed_frames_seconds),
+            "source_currentness_materialized_other_wall_seconds": float(max(
+                0.0, total_seconds - measured_seconds)),
+        })
         return self
 
 
@@ -104,26 +131,62 @@ def _owners(offer, authenticated, rows, prefixes):
 
 
 def _register_and_require(offer, materialized):
-    registrar = offer._planning_generation._target_registrar
-    for kind, owner in (
-            ("ATLAS_FEATURE", materialized.feature_owner),
-            ("PACKED_FRAME", materialized.packed_owner),
-            ("SALIENCE_EVIDENCE", materialized.source_owner)):
-        registrar.register(kind, owner)
-    return materialized.require_current()
+    registration_seconds = 0.0
+    if not materialized._registered:
+        started = time.perf_counter()
+        registrar = offer._planning_generation._target_registrar
+        for kind, owner in (
+                ("ATLAS_FEATURE", materialized.feature_owner),
+                ("PACKED_FRAME", materialized.packed_owner),
+                ("SALIENCE_EVIDENCE", materialized.source_owner)):
+            registrar.register(kind, owner)
+        object.__setattr__(materialized, "_registered", True)
+        registration_seconds = time.perf_counter() - started
+    materialized = materialized.require_current()
+    observation = dict(
+        getattr(materialized, "_performance_observation", {}) or {})
+    observation["source_currentness_registration_wall_seconds"] = float(
+        registration_seconds)
+    object.__setattr__(
+        materialized, "_performance_observation", observation)
+    return materialized
 
 
 def prepare_priority_source_materialization(
         offer, source_context, parent, *, prepared_rows=None):
     """Build source AST/formal/prefix state once after the option is selected."""
+    started = time.perf_counter()
+    stage_started = time.perf_counter()
     rows = offer.require_qualified_current(
         source_context, parent, prepared_rows=prepared_rows)
+    qualification_seconds = time.perf_counter() - stage_started
+    qualification_observation = dict(
+        getattr(offer, "_performance_observation", {}) or {})
     cached = offer._materialized.get("value")
     if cached is not None:
         if (type(cached) is not PreparedPrioritySourceMaterialization
                 or cached.offer is not offer or cached.rows != rows):
             _invalid_source_batch("BAMF_PRIORITY_SOURCE_MATERIALIZATION_DRIFT")
-        return _register_and_require(offer, cached)
+        materialized = _register_and_require(offer, cached)
+        observation = dict(getattr(materialized, "_performance_observation", {}) or {})
+        observation["source_currentness_qualification_wall_seconds"] = float(
+            qualification_seconds)
+        observation.update(qualification_observation)
+        total_seconds = time.perf_counter() - started
+        direct_currentness_seconds = sum(float(observation.get(key, 0.0) or 0.0) for key in (
+            "source_currentness_feature_owner_wall_seconds",
+            "source_currentness_source_owner_wall_seconds",
+            "source_currentness_b11_sources_wall_seconds",
+            "source_currentness_packed_frames_wall_seconds",
+            "source_currentness_materialized_other_wall_seconds",
+            "source_currentness_registration_wall_seconds",
+        ))
+        observation["source_currentness_internal_other_wall_seconds"] = float(max(
+            0.0, total_seconds
+            - qualification_seconds
+            - direct_currentness_seconds))
+        object.__setattr__(materialized, "_performance_observation", observation)
+        return materialized
 
     authenticated = offer._planning_generation._authenticated_features
     from bilqis_mlx.runtime.factory_training_bridge import (
@@ -166,7 +229,26 @@ def prepare_priority_source_materialization(
         motif_inputs, b11_sources, prefixes, authenticated, feature_owner,
         packed_owner, source_owner)
     offer._materialized["value"] = materialized
-    return _register_and_require(offer, materialized)
+    materialized = _register_and_require(offer, materialized)
+    observation = dict(getattr(materialized, "_performance_observation", {}) or {})
+    observation["source_currentness_qualification_wall_seconds"] = float(
+        qualification_seconds)
+    observation.update(qualification_observation)
+    total_seconds = time.perf_counter() - started
+    direct_currentness_seconds = sum(float(observation.get(key, 0.0) or 0.0) for key in (
+        "source_currentness_feature_owner_wall_seconds",
+        "source_currentness_source_owner_wall_seconds",
+        "source_currentness_b11_sources_wall_seconds",
+        "source_currentness_packed_frames_wall_seconds",
+        "source_currentness_materialized_other_wall_seconds",
+        "source_currentness_registration_wall_seconds",
+    ))
+    observation["source_currentness_internal_other_wall_seconds"] = float(max(
+        0.0,
+        total_seconds - qualification_seconds - direct_currentness_seconds,
+    ))
+    object.__setattr__(materialized, "_performance_observation", observation)
+    return materialized
 
 
 __all__ = (

@@ -134,15 +134,25 @@ def _execute_prepared_candidate(
         stage_metrics=None, distributed_profile=None, distributed_executor=None,
         finalize_candidate=True) -> FactoryCandidateStep:
     stage_metrics = dict(stage_metrics or {})
+    mentor_evidence_started = time.perf_counter()
     if mentor_supervision is not None:
         try:
             mentor_supervision.require_evidence(
                 observation.mentors, observation.guidance)
         except BilqisError:
             _invalid("FACTORY_MENTOR_EVIDENCE_DRIFT")
+    stage_metrics["mentor_evidence_validation_wall_seconds"] = (
+        time.perf_counter() - mentor_evidence_started
+        if mentor_supervision is not None else 0.0)
     identity_before = candidate_identity_metrics_snapshot()
+    resource_plan_started = time.perf_counter()
     resource_plan, memory_budget = _resource_plan(prepared, parent, memory_budget)
+    stage_metrics["resource_plan_wall_seconds"] = (
+        time.perf_counter() - resource_plan_started)
+    feature_context_started = time.perf_counter()
     feature_context = _prepared_feature_context(prepared, semantic_context)
+    stage_metrics["prepared_feature_context_wall_seconds"] = (
+        time.perf_counter() - feature_context_started)
     def execute(plan):
         (gradient, authorities, target_rows, transaction, loss_total, c08_metrics,
          optimizer_seconds) = _execute_training_and_admission(
@@ -167,14 +177,33 @@ def _execute_prepared_candidate(
         return _candidate_cache_and_generation(
             run_dir, source_context, parent, candidate, currentness_transaction)
 
+    retry_started = time.perf_counter()
     result, resource_plan, retry = execute_with_oom_retry(
         execute, resource_plan, parent=parent, candidate=candidate, prepared=prepared,
         budget=memory_budget, cache=cache, require_current=require_current)
+    retry_wall_seconds = time.perf_counter() - retry_started
     (gradient, authorities, target_rows, transaction, loss_total, c08_metrics,
      optimizer_wall_seconds, motif_seconds) = result
+    gradient_observation = dict(
+        getattr(gradient, "_performance_observation", {}) or {})
+    c08_row_inputs_seconds = float(
+        gradient_observation.get("c08_row_execution_inputs_wall_seconds", 0.0))
+    c08_result_seconds = float(
+        gradient_observation.get("c08_result_construction_wall_seconds", 0.0))
+    c08_wall_seconds = float(c08_metrics[4] or 0.0)
+    stage_metrics["candidate_training_orchestration_wall_seconds"] = max(
+        0.0,
+        retry_wall_seconds
+        - c08_row_inputs_seconds
+        - c08_wall_seconds
+        - c08_result_seconds
+        - optimizer_wall_seconds
+        - motif_seconds,
+    )
     stage_metrics["optimizer_admission_wall_seconds"] = optimizer_wall_seconds
     stage_metrics["motif_staging_wall_seconds"] = motif_seconds
     stage_metrics["candidate_terminal_step"] = finalize_candidate
+    reporting_started = time.perf_counter()
     cost = _realized_candidate_cost(
         start, stage_metrics["candidate_step_started_at"], loss_total,
         prepared, resource_plan, memory_budget, transaction,
@@ -184,6 +213,8 @@ def _execute_prepared_candidate(
         cost["c08_oom_retries"] = retry.retries_used
         cost["c08_original_microbatch_size"] = retry.original_plan.microbatch_size
     cost.update(candidate_identity_metrics_delta(identity_before))
+    cost["candidate_reporting_wall_seconds"] = (
+        time.perf_counter() - reporting_started)
     evidence_started = time.perf_counter()
     capture_realized_delivery(
         prepared.training_batch, source_context, observation.capture,
@@ -199,6 +230,37 @@ def _execute_prepared_candidate(
     cost["wall_seconds"] = elapsed
     cost["candidate_step_wall_seconds"] = (
         time.perf_counter() - stage_metrics["candidate_step_started_at"])
+    exclusive_wall_seconds = sum(float(cost.get(name, 0.0) or 0.0) for name in (
+        "observer_begin_step_wall_seconds",
+        "source_lane_wait_wall_seconds",
+        "source_lesson_materialization_wall_seconds",
+        "mentor_observation_wall_seconds",
+        "progress_emission_wall_seconds",
+        "currentness_binding_wall_seconds",
+        "candidate_delivery_setup_wall_seconds",
+        "factory_request_validation_wall_seconds",
+        "factory_semantic_context_wall_seconds",
+        "factory_prepared_source_validation_wall_seconds",
+        "factory_training_compile_wall_seconds",
+        "factory_b11_binding_wall_seconds",
+        "factory_motif_planning_wall_seconds",
+        "factory_result_construction_wall_seconds",
+        "salience_preparation_wall_seconds",
+        "mentor_supervision_currentness_wall_seconds",
+        "mentor_evidence_validation_wall_seconds",
+        "resource_plan_wall_seconds",
+        "prepared_feature_context_wall_seconds",
+        "c08_row_execution_inputs_wall_seconds",
+        "c08_logical_batch_wall_seconds",
+        "c08_result_construction_wall_seconds",
+        "candidate_training_orchestration_wall_seconds",
+        "optimizer_admission_wall_seconds",
+        "motif_staging_wall_seconds",
+        "candidate_reporting_wall_seconds",
+        "evidence_capture_wall_seconds",
+    ))
+    cost["candidate_unattributed_wall_seconds"] = max(
+        0.0, cost["candidate_step_wall_seconds"] - exclusive_wall_seconds)
     diagnostics = _reporting_diagnostics(gradient, capture_diagnostics)
     return FactoryCandidateStep(
         prepared, resource_plan,

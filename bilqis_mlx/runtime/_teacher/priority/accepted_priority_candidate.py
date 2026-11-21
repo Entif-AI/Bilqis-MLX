@@ -98,6 +98,14 @@ def _candidate_currentness(selection, source_context, prepared_source_rows):
             source_context, parent, prepared_rows=prepared_source_rows))
     timings["source_currentness_wall_seconds"] = (
         time.perf_counter() - stage_started)
+    source_observation = getattr(prepared_source, "_performance_observation", {})
+    if isinstance(source_observation, dict):
+        timings.update({
+            name: float(value)
+            for name, value in source_observation.items()
+            if name.startswith("source_currentness_")
+            and name != "source_currentness_wall_seconds"
+        })
     return (
         planning_generation, parent, currentness_step,
         planning_generation._authenticated_features, prepared_source, timings,
@@ -113,6 +121,11 @@ def execute_accepted_priority_candidate(selection, source_context,
         rehearsal_bindings=None, rehearsal_authorities=None,
         candidate_step_started_at=None,
         source_prepare_wall_seconds=0.0,
+        source_lane_wait_wall_seconds=0.0,
+        source_lesson_materialization_wall_seconds=0.0,
+        mentor_observation_wall_seconds=0.0,
+        progress_emission_wall_seconds=0.0,
+        observer_begin_step_wall_seconds=0.0,
         distributed_profile=None, distributed_executor=None):
     _require_issued(selection)
     if selection.status != 'TEACHER_SELECTED':
@@ -136,9 +149,11 @@ def execute_accepted_priority_candidate(selection, source_context,
         rehearsal_authorities, observation)
     delivered_rows = (*rows, *rehearsal, *enrichment)
     provenance = BamfVisitProvenance.from_c03_record(selection.visit.identity.to_record())
+    candidate_delivery_setup_wall_seconds = (
+        time.perf_counter() - caller_pre_neural_started)
     caller_pre_neural_wall_seconds = (
         float(source_prepare_wall_seconds)
-        + time.perf_counter() - caller_pre_neural_started)
+        + candidate_delivery_setup_wall_seconds)
     from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
         require_live_accepted_currentness_step,
     )
@@ -147,7 +162,15 @@ def execute_accepted_priority_candidate(selection, source_context,
         currentness_step, planning_generation._accepted_currentness, parent)
     currentness_timings["accepted_currentness_live_fence_wall_seconds"] = (
         time.perf_counter() - stage_started)
-    currentness_wall_seconds = sum(currentness_timings.values())
+    currentness_wall_seconds = sum(
+        currentness_timings[name] for name in (
+            "accepted_currentness_refresh_wall_seconds",
+            "accepted_parent_currentness_wall_seconds",
+            "lawful_frontier_currentness_wall_seconds",
+            "teacher_visit_currentness_wall_seconds",
+            "source_currentness_wall_seconds",
+            "accepted_currentness_live_fence_wall_seconds",
+        ))
     result = execute_factory_candidate_step(
         Path(selection._run_dir), source_context, parent,
         atlas_artifact_path, feature_artifact_path, delivered_rows,
@@ -165,6 +188,13 @@ def execute_accepted_priority_candidate(selection, source_context,
         candidate_step_started_at=candidate_step_started_at,
         currentness_binding_wall_seconds=currentness_wall_seconds,
         upstream_pre_neural_source_compile_wall_seconds=caller_pre_neural_wall_seconds,
+        source_lane_wait_wall_seconds=source_lane_wait_wall_seconds,
+        source_lesson_materialization_wall_seconds=(
+            source_lesson_materialization_wall_seconds),
+        mentor_observation_wall_seconds=mentor_observation_wall_seconds,
+        progress_emission_wall_seconds=progress_emission_wall_seconds,
+        observer_begin_step_wall_seconds=observer_begin_step_wall_seconds,
+        candidate_delivery_setup_wall_seconds=candidate_delivery_setup_wall_seconds,
         semantic_context=semantic_context,
         prepared_source=(prepared_source if not enrichment and not rehearsal else None),
         distributed_profile=distributed_profile,

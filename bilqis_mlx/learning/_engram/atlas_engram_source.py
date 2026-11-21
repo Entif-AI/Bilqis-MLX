@@ -20,7 +20,7 @@ from .atlas_engram_source_batch import (
 )
 from .atlas_engram_source_context import (
     _source_family as _source_family_impl,
-    qualify_source_motif_context,
+    qualify_prepared_source_motif_context, qualify_source_motif_context,
 )
 from .atlas_engram_transaction import (
     CandidateMotifSnapshot, MotifAllocationSnapshot,
@@ -141,6 +141,9 @@ def _prepare_source_qualified_motifs_with_parent_impl(
     parent: MotifAllocationSnapshot,
     source_profile_parameters: dict | None = None,
     course=None,
+    prepared_projection=None,
+    prepared_frontier=None,
+    snapshot=None,
 ) -> tuple[ApprovedMotifCandidate, SourceFrontier] | ContextHold:
     """Pure B07 planning from source owners plus an already qualified parent."""
     if (type(atlas_selection) is not AtlasArtifactSelection
@@ -151,11 +154,21 @@ def _prepare_source_qualified_motifs_with_parent_impl(
             or type(parent) is not MotifAllocationSnapshot):
         _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
     parent.__post_init__()
-    context = source_qualified_motif_context(
-        source_adapter, row, atlas_selection, source_root=source_root,
-        graph=graph, task_scope=task_scope, source_frontier=source_frontier,
-        policy=policy, source_seed=source_seed, source_each=source_each,
-        source_profile_parameters=source_profile_parameters, course=course)
+    prepared = (prepared_projection is not None, prepared_frontier is not None,
+                snapshot is not None)
+    if any(prepared) and not all(prepared):
+        _invalid("BAMF_MOTIF_SOURCE_AUTHORITY_INVALID")
+    context = (
+        qualify_prepared_source_motif_context(
+            source_adapter, prepared_projection, prepared_frontier, atlas_selection,
+            source_root=source_root, graph=graph, task_scope=task_scope,
+            source_frontier=source_frontier, policy=policy, snapshot=snapshot)
+        if all(prepared) else
+        source_qualified_motif_context(
+            source_adapter, row, atlas_selection, source_root=source_root,
+            graph=graph, task_scope=task_scope, source_frontier=source_frontier,
+            policy=policy, source_seed=source_seed, source_each=source_each,
+            source_profile_parameters=source_profile_parameters, course=course))
     if isinstance(context, ContextHold):
         return context
     projection, qualified, issued_frontier = context

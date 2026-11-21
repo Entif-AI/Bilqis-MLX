@@ -5,12 +5,13 @@ import time
 
 import mlx.core as mx
 
+from bilqis_mlx.b11_observation import attach_performance_observation
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.atlas_model import (
     bamf_microbatch_value_and_grad, bamf_value_and_grad, microbatch_compatible,
 )
 from bilqis_mlx.runtime.factory_task_authority import (
-    bind_factory_task_compiled_batch, factory_task_authority,
+    _bind_validated_factory_task_compiled_batch, factory_task_authority,
     factory_task_training_goal,
 )
 from bilqis_mlx.runtime.task_goal_readout import (
@@ -40,7 +41,7 @@ from bilqis_mlx.runtime.atlas_resources import partition_logical_batch
 def _row_execution_inputs(
         source_context, compiled, feature_snapshot, generation):
     authority = factory_task_authority(source_context, compiled)
-    bound = bind_factory_task_compiled_batch(compiled, authority)
+    bound = _bind_validated_factory_task_compiled_batch(compiled, authority)
     resolved = factory_task_training_goal(source_context, bound, authority)
     targets, mask = task_goal_training_targets(authority.goal, resolved)
     plan = task_goal_route_plan(
@@ -77,9 +78,11 @@ def execute_factory_logical_batch(
         parameters, prepared, source_context, feature_snapshot, generation, cache,
         resource_plan, *, salience_supervision=None, mentor_supervision=None):
     """Execute each compatible C08 group with one MLX gradient launch."""
+    row_inputs_started = time.perf_counter()
     rows = tuple(_row_execution_inputs(
         source_context, compiled, feature_snapshot, generation)
         for compiled in prepared.compiled_rows)
+    row_execution_inputs_wall_seconds = time.perf_counter() - row_inputs_started
     bound = tuple(item[0] for item in rows)
     authorities = tuple(item[1] for item in rows)
     targets = tuple(item[2] for item in rows)
@@ -117,6 +120,11 @@ def execute_factory_logical_batch(
 
     gradient = accumulate_logical_batch_gradients(
         resource_plan, execute_row, execute_group=execute_group)
+    observation = dict(
+        getattr(gradient, "_performance_observation", {}) or {})
+    observation["c08_row_execution_inputs_wall_seconds"] = float(
+        row_execution_inputs_wall_seconds)
+    attach_performance_observation(gradient, observation)
     return gradient, authorities, targets
 
 

@@ -3,6 +3,7 @@ from dataclasses import replace
 import hashlib
 from lib.ithkuil.src.skos.publication import json_bytes
 import unittest
+from unittest.mock import patch
 
 import mlx.core as mx
 import numpy as np
@@ -15,6 +16,10 @@ from bilqis_mlx.learning.frame_encoder import (
     AtomicEncoderInput, AtomicSourceHandle, FrameEncoderInput, encode_frames, frame_encoder_parameter_view,
     CompiledEncoderInput, CompiledEmbeddingVectors, MemberEmbedding, AtomicFrameEmbedding,
 )
+from bilqis_mlx.learning.frame_encoder.compiled import (
+    _compiled_encoder_input_with_packed_owner,
+)
+from bilqis_mlx.runtime.atlas_artifact_owner import PackedFrameArtifactOwner
 from bilqis_mlx.learning.tests.test_frame_embeddings import _context_for
 from bilqis_mlx.runtime.tests.test_atlas_revalidation import AUTHORITY, _event, _result
 from bilqis_mlx.runtime.model_topology_v2 import (
@@ -187,6 +192,24 @@ class FrameEncoderTests(unittest.TestCase):
         self.assertEqual(progress.queue.pending, ())
         self.assertEqual(progress.queue.held_artifact_ids, ())
         encode_frames(compiled, vectors, self.params)
+
+    def test_frozen_compiled_input_reuses_derived_groups_after_currentness_check(self):
+        compiled, _vectors, _ = self.compiled_inputs()
+        with patch(
+                "bilqis_mlx.learning.frame_encoder.compiled._compiled_groups",
+                side_effect=AssertionError("immutable derived groups rebuilt")) as rebuild:
+            compiled.__post_init__()
+        rebuild.assert_not_called()
+
+    def test_factory_compiled_input_reuses_existing_live_packed_frame_owner(self):
+        compiled, _vectors, _ = self.compiled_inputs()
+        owner = PackedFrameArtifactOwner(compiled.compiled)
+        rebound = _compiled_encoder_input_with_packed_owner(
+            compiled.compiled, compiled.compiler_configs, compiled.features,
+            compiled.extents, owner, source_asts=compiled.source_asts,
+            partial_forest_receipts=compiled.partial_forest_receipts)
+        self.assertIs(rebound.packed_frame_artifact_owner, owner)
+        self.assertEqual(rebound.member_requests, compiled.member_requests)
 
     def empty_inputs(self):
         full,vectors,ast=self.compiled_inputs()

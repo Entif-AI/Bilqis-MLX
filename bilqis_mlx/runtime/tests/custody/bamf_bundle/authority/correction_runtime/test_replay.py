@@ -9,6 +9,7 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
+import bilqis_mlx.runtime.accepted_correction_dispatch as accepted_correction_dispatch
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.tests.test_frame_encoder import FrameEncoderTests
@@ -116,6 +117,13 @@ class AcceptedCorrectionReplayTests(unittest.TestCase):
                 bind_accepted_execution_cache(self.run),
                 cache,
             )
+        with patch.object(
+                accepted_correction_dispatch, "read_records_snapshot",
+                wraps=accepted_correction_dispatch.read_records_snapshot) as deep_read:
+            for _ in range(4):
+                self.assertIs(owner.require(cache, compiled), owner.current_node)
+            self.assertEqual(deep_read.call_count, 0)
+
         correction = _event(owner.source_dependencies[0])
         record = correction_record(cache.accepted_manifest_sha256, correction)
         script = (
@@ -143,8 +151,12 @@ class AcceptedCorrectionReplayTests(unittest.TestCase):
             msg=f"stdout={completed.stdout!r} stderr={completed.stderr!r}",
         )
 
-        with self.assertRaises(BilqisError) as held:
+        with patch.object(
+                accepted_correction_dispatch, "read_records_snapshot",
+                wraps=accepted_correction_dispatch.read_records_snapshot) as deep_read, \
+                self.assertRaises(BilqisError) as held:
             owner.require(cache, compiled)
+        self.assertEqual(deep_read.call_count, 1)
         self.assertEqual(held.exception.context["reason"], "BAMF_C09_ARTIFACT_HELD")
 
     def test_concurrent_accepted_corrections_remain_staged_until_each_revalidates(self):

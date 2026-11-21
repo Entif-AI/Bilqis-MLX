@@ -1,6 +1,7 @@
 """Versioned Atlas feature and prospective identity records."""
 from __future__ import annotations
 from dataclasses import asdict, dataclass
+from functools import cached_property
 import hashlib
 import json
 
@@ -111,12 +112,32 @@ class AtlasFeatures:
     held_reasons: tuple[tuple[str, str], ...]
     schema_version: str = FEATURE_MANIFEST_SCHEMA
 
-    @property
+    @cached_property
     def digest(self) -> str:
         return hashlib.sha256(json.dumps(
             asdict(self), sort_keys=True, ensure_ascii=False,
             separators=(",", ":"), allow_nan=False,
         ).encode("utf-8")).hexdigest()
+
+    @cached_property
+    def _concept_by_id(self):
+        return {entry.semantic_id: entry for entry in self.concepts}
+
+    @cached_property
+    def _held_by_id(self):
+        return dict(self.held_reasons)
+
+    @cached_property
+    def _type_by_id(self):
+        return dict(self.type_map)
+
+    @cached_property
+    def _role_by_id(self):
+        return dict(self.role_map)
+
+    @cached_property
+    def _schema_by_id(self):
+        return dict(self.schema_map)
 
     def features_for(
         self, concept: str | ConceptRef, role: str, schema: str, scope: str,
@@ -129,11 +150,9 @@ class AtlasFeatures:
             semantic_id = concept
         else:
             _invalid("BAMF_FEATURE_CONCEPT_INVALID")
-        item = next(
-            (entry for entry in self.concepts if entry.semantic_id == semantic_id),
-            None)
+        item = self._concept_by_id.get(semantic_id)
         if item is None:
-            held_reason = dict(self.held_reasons).get(semantic_id)
+            held_reason = self._held_by_id.get(semantic_id)
             if held_reason is not None:
                 _invalid(
                     "BAMF_FEATURE_CONCEPT_NOT_ADMITTED",
@@ -147,7 +166,7 @@ class AtlasFeatures:
         if not isinstance(scope, str) or not scope:
             _invalid("BAMF_FEATURE_SCOPE_INVALID")
         roles, schemas, types = (
-            dict(self.role_map), dict(self.schema_map), dict(self.type_map))
+            self._role_by_id, self._schema_by_id, self._type_by_id)
         if role not in roles or schema not in schemas:
             _invalid("BAMF_FEATURE_ROLE_SCHEMA_NOT_ADMITTED")
         return FeatureRow(

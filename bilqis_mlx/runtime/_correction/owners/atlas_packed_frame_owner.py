@@ -126,6 +126,21 @@ class PackedFrameArtifactOwner:
         self._physical_artifact_ids = tuple(sorted(physical_nodes))
         self._multi_context_artifact_ids = frozenset(multi_context_artifact_ids)
         self._origin_context_keys = tuple(sorted(set(origin_context_keys)))
+        hot_rows = {}
+        for row in rows.rows:
+            entries = []
+            for position in row.positions:
+                if position.packed is None:
+                    continue
+                artifact_id = "frame:" + position.packed.sidecar.occurrence_id
+                view_id = None
+                if artifact_id in multi_context_artifact_ids:
+                    if row.context_digest is None:
+                        _invalid("BAMF_C09_PACKED_FRAME_IDENTITY_DRIFT")
+                    view_id = artifact_id + ":context:" + row.context_digest
+                entries.append((artifact_id, view_id))
+            hot_rows[id(row)] = (row, tuple(entries))
+        self._hot_rows = hot_rows
         nodes = {**physical_nodes, **view_nodes}
         self._index = DependencyIndex.build(tuple(nodes.values()))
         self._queue: RevalidationQueue | None = None
@@ -195,7 +210,39 @@ class PackedFrameArtifactOwner:
         return self._index.node("frame:" + packed.sidecar.occurrence_id)
 
     def require_row(self, row: CompiledFrameBatch) -> tuple[ArtifactNode, ...]:
-        if type(row) is not CompiledFrameBatch or row not in self._rows.rows:
+        if type(row) is not CompiledFrameBatch:
+            _invalid("BAMF_C09_PACKED_FRAME_OWNER_MISMATCH")
+        hot = self._hot_rows.get(id(row))
+        if hot is not None and hot[0] is row:
+            result = []
+            from bilqis_mlx.runtime.accepted_correction_runtime import (
+                require_pending_corrections,
+            )
+            for artifact_id, view_id in hot[1]:
+                node = self._index.node(artifact_id)
+                require_pending_corrections(self, node.artifact_id)
+                if self._queue is not None:
+                    node = read_artifact(self._index, self._queue, node.artifact_id)
+                elif not node.eligible:
+                    _invalid("BAMF_C09_ARTIFACT_INELIGIBLE")
+                if view_id is not None:
+                    view = self._index.node(view_id)
+                    require_pending_corrections(self, view.artifact_id)
+                    if self._queue is not None:
+                        view = read_artifact(self._index, self._queue, view.artifact_id)
+                    elif not view.eligible:
+                        _invalid("BAMF_C09_ARTIFACT_INELIGIBLE")
+                    time_refs = tuple(
+                        ref for ref in view.immediate_dependencies
+                        if ref.kind is DependencyKind.TIME)
+                    node = ArtifactNode(
+                        node.artifact_id, node.kind, node.content_digest,
+                        node.eligible and view.eligible,
+                        tuple(sorted((*node.immediate_dependencies, *time_refs))),
+                        impact=node.impact, exigency=node.exigency)
+                result.append(node)
+            return tuple(result)
+        if row not in self._rows.rows:
             _invalid("BAMF_C09_PACKED_FRAME_OWNER_MISMATCH")
         result = []
         for position in row.positions:

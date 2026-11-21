@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import time
 
 from bilqis_mlx.factory.teaching import DeliveredTeaching
 from bilqis_mlx.runtime.atlas_model_contracts import BamfCompiledBatch
@@ -119,7 +120,7 @@ def _prepared_source_inputs(
         return (
             source_authority,
             adapter, manifest, profile, source_rows, prepared_model_sources,
-            None, None,
+            None, None, None,
         )
     from bilqis_mlx.runtime.priority_source_materialization import (
         PreparedPrioritySourceMaterialization,
@@ -143,6 +144,7 @@ def _prepared_source_inputs(
         prepared_source.model_sources,
         prepared_source.motif_inputs,
         prepared_source.b11_sources,
+        prepared_source.packed_owner,
     )
 
 
@@ -211,6 +213,7 @@ def prepare_factory_training_batch(
     The bridge owns composition only. A05/A06/A13 remain source authority, B11
     remains the neural owner, and C16 remains the durable-student launch owner.
     """
+    stage_started = time.perf_counter()
     rows = _validated_training_request(
         source_context, candidate, delivered_rows, generation_binding,
         capability=capability, delivery=delivery, requested_count=requested_count,
@@ -218,6 +221,8 @@ def prepare_factory_training_batch(
         optimizer_step_seed=optimizer_step_seed,
         visit_provenance=visit_provenance, teacher_strategy=teacher_strategy,
         rehearsal_by_id=rehearsal_by_id)
+    request_validation_seconds = time.perf_counter() - stage_started
+    stage_started = time.perf_counter()
     authenticated = semantic_context
     if authenticated is None:
         authenticated = authenticate_bamf_execution_feature_context(
@@ -225,33 +230,58 @@ def prepare_factory_training_batch(
     elif type(authenticated) is not AuthenticatedGenerationFeatureContext:
         _invalid("FACTORY_TRAINING_SEMANTIC_CONTEXT_INVALID")
     authenticated.__post_init__()
+    semantic_context_seconds = time.perf_counter() - stage_started
+    stage_started = time.perf_counter()
     (source_authority, _adapter, manifest, profile, source_rows,
      prepared_model_sources, prepared_motif_inputs,
-     prepared_b11_sources) = _prepared_source_inputs(
+     prepared_b11_sources, prepared_packed_owner) = _prepared_source_inputs(
         prepared_source, source_context, authenticated, rows,
         capability=capability, source_seed=source_seed, source_each=source_each,
         delivery=delivery, rehearsal_by_id=rehearsal_by_id,
         rehearsal_bindings=rehearsal_bindings,
         rehearsal_authorities=rehearsal_authorities)
+    prepared_source_seconds = time.perf_counter() - stage_started
+    stage_started = time.perf_counter()
     training = _compile_factory_training(
         rows, source_context, candidate, delivery, capability, teacher_strategy,
         requested_count, optimizer_step_seed, visit_provenance, source_authority,
         rehearsal_by_id, rehearsal_authorities, source_rows,
         feature_artifact_path, generation_binding,
         authenticated, manifest, prepared_model_sources)
+    compile_seconds = time.perf_counter() - stage_started
+    stage_started = time.perf_counter()
     compiled_rows = _bind_b11_rows(
         source_context, candidate, authenticated, training, source_rows,
         profile, source_seed=source_seed, source_each=source_each,
-        prepared_b11=prepared_b11_sources)
+        prepared_b11=prepared_b11_sources,
+        packed_owner=prepared_packed_owner)
+    b11_binding_seconds = time.perf_counter() - stage_started
+    stage_started = time.perf_counter()
     motif_inputs = (
         prepared_motif_inputs if prepared_motif_inputs is not None else
         tuple(_motif_planning_input(
             source_context, authenticated, item.source_adapter, item.profile, item,
             source_seed=item.source_seed, source_each=item.source_each)
             for item in source_rows))
+    motif_planning_seconds = time.perf_counter() - stage_started
+    stage_started = time.perf_counter()
     prepared = PreparedFactoryTrainingBatch(
         training, compiled_rows, motif_inputs, authenticated)
     prepared.__post_init__()
+    result_construction_seconds = time.perf_counter() - stage_started
+    object.__setattr__(prepared, "_performance_observation", {
+        "factory_request_validation_wall_seconds": float(
+            request_validation_seconds),
+        "factory_semantic_context_wall_seconds": float(
+            semantic_context_seconds),
+        "factory_prepared_source_validation_wall_seconds": float(
+            prepared_source_seconds),
+        "factory_training_compile_wall_seconds": float(compile_seconds),
+        "factory_b11_binding_wall_seconds": float(b11_binding_seconds),
+        "factory_motif_planning_wall_seconds": float(motif_planning_seconds),
+        "factory_result_construction_wall_seconds": float(
+            result_construction_seconds),
+    })
     return prepared
 
 

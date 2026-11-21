@@ -144,6 +144,23 @@ def _add_b11_observation(total: dict, execution) -> None:
         "b11_fallback_trace_preflight_wall_seconds",
         "b11_preflight_other_wall_seconds",
         "b11_autodiff_wall_seconds",
+        "b11_autodiff_dispatch_wall_seconds",
+        "b11_autodiff_dispatch_rebind_wall_seconds",
+        "b11_autodiff_dispatch_source_producer_wall_seconds",
+        "b11_autodiff_dispatch_source_hidden_graph_wall_seconds",
+        "b11_autodiff_dispatch_refinement_graph_wall_seconds",
+        "b11_autodiff_dispatch_route_graph_wall_seconds",
+        "b11_autodiff_dispatch_transform_other_wall_seconds",
+        "b11_autodiff_materialization_wall_seconds",
+        "b11_route_evidence_wall_seconds",
+        "b11_autodiff_other_wall_seconds",
+        "b11_gradient_finite_validation_wall_seconds",
+        "b11_postflight_validation_wall_seconds",
+        "b11_postflight_trajectory_validation_wall_seconds",
+        "b11_postflight_output_attestation_wall_seconds",
+        "b11_postflight_loss_validation_wall_seconds",
+        "b11_postflight_gradient_structure_wall_seconds",
+        "b11_postflight_result_construction_wall_seconds",
     ):
         total[name] += float(observed.get(name, 0.0))
     for name in ("b11_provider_draw_count", "b11_atlas_reload_count"):
@@ -161,10 +178,16 @@ def _vectorized_group(
             or any(execution.output.generation_binding != plan.generation_binding
                    for execution in microbatch.executions)):
         _invalid("C08_LOGICAL_BATCH_GENERATION_DRIFT")
-    aggregate = _sum_tree(
-        aggregate, _scale_tree(microbatch.gradients, len(group) / total_rows))
-    weighted_loss = weighted_loss + (
-        microbatch.mean_loss * (len(group) / total_rows))
+    weight = len(group) / total_rows
+    if aggregate is None and weight == 1.0:
+        # The common one-group vector path already owns the exact logical-batch
+        # mean. Reuse its materialized gradient tree instead of manufacturing a
+        # second tree through multiply-by-one operations.
+        aggregate = microbatch.gradients
+        weighted_loss = microbatch.mean_loss
+    else:
+        aggregate = _sum_tree(aggregate, _scale_tree(microbatch.gradients, weight))
+        weighted_loss = weighted_loss + (microbatch.mean_loss * weight)
     losses.extend(microbatch.executions)
     return aggregate, weighted_loss
 
@@ -174,8 +197,13 @@ def _scalar_group(
         losses, b11_observation):
     group_sum = None
     group_loss = mx.array(0.0, dtype=mx.float32)
+    execution_wall_seconds = 0.0
+    aggregation_wall_seconds = 0.0
     for index in group:
+        started = time.perf_counter()
         execution = execute_row(index)
+        execution_wall_seconds += time.perf_counter() - started
+        started = time.perf_counter()
         if type(execution) is not BamfGradientExecution:
             _invalid("C08_LOGICAL_BATCH_B11_EXECUTION_REQUIRED")
         execution.__post_init__()
@@ -185,12 +213,18 @@ def _scalar_group(
         group_sum = _sum_tree(group_sum, execution.gradients)
         group_loss = group_loss + execution.loss_total
         losses.append(execution.execution)
+        aggregation_wall_seconds += time.perf_counter() - started
+    started = time.perf_counter()
     group_mean = _scale_tree(group_sum, 1.0 / len(group))
     aggregate = _sum_tree(
         aggregate, _scale_tree(group_mean, len(group) / total_rows))
     weighted_loss = weighted_loss + (
         group_loss / len(group)) * (len(group) / total_rows)
-    return aggregate, weighted_loss, len(group)
+    aggregation_wall_seconds += time.perf_counter() - started
+    return (
+        aggregate, weighted_loss, len(group),
+        execution_wall_seconds, aggregation_wall_seconds,
+    )
 
 
 def _logical_batch_result(
@@ -239,6 +273,9 @@ def accumulate_logical_batch_gradients(
     gradient_launches = 0
     vectorized_microbatches = 0
     scalar_fallback_rows = 0
+    group_execution_wall_seconds = 0.0
+    aggregation_wall_seconds = 0.0
+    reused_materialized_full_batch = False
     b11_observation = {
         "b11_preflight_wall_seconds": 0.0,
         "b11_finite_validation_wall_seconds": 0.0,
@@ -249,32 +286,81 @@ def accumulate_logical_batch_gradients(
         "b11_fallback_trace_preflight_wall_seconds": 0.0,
         "b11_preflight_other_wall_seconds": 0.0,
         "b11_autodiff_wall_seconds": 0.0,
+        "b11_autodiff_dispatch_wall_seconds": 0.0,
+        "b11_autodiff_dispatch_rebind_wall_seconds": 0.0,
+        "b11_autodiff_dispatch_source_producer_wall_seconds": 0.0,
+        "b11_autodiff_dispatch_source_hidden_graph_wall_seconds": 0.0,
+        "b11_autodiff_dispatch_refinement_graph_wall_seconds": 0.0,
+        "b11_autodiff_dispatch_route_graph_wall_seconds": 0.0,
+        "b11_autodiff_dispatch_transform_other_wall_seconds": 0.0,
+        "b11_autodiff_materialization_wall_seconds": 0.0,
+        "b11_route_evidence_wall_seconds": 0.0,
+        "b11_autodiff_other_wall_seconds": 0.0,
+        "b11_gradient_finite_validation_wall_seconds": 0.0,
+        "b11_postflight_validation_wall_seconds": 0.0,
+        "b11_postflight_trajectory_validation_wall_seconds": 0.0,
+        "b11_postflight_output_attestation_wall_seconds": 0.0,
+        "b11_postflight_loss_validation_wall_seconds": 0.0,
+        "b11_postflight_gradient_structure_wall_seconds": 0.0,
+        "b11_postflight_result_construction_wall_seconds": 0.0,
         "b11_provider_draw_count": 0,
         "b11_atlas_reload_count": 0,
     }
     for group in plan.groups:
+        group_started = time.perf_counter()
         microbatch = execute_group(group) if execute_group is not None and len(group) > 1 else None
+        group_execution_wall_seconds += time.perf_counter() - group_started
         if microbatch is not None:
+            aggregation_started = time.perf_counter()
             aggregate, weighted_loss = _vectorized_group(
                 group, microbatch, plan, total_rows, aggregate, weighted_loss,
                 losses, b11_observation)
+            aggregation_wall_seconds += time.perf_counter() - aggregation_started
+            reused_materialized_full_batch = (
+                len(plan.groups) == 1 and len(group) == total_rows)
             gradient_launches += 1
             vectorized_microbatches += 1
             continue
         if len(group) > 1 and execute_group is not None:
             scalar_fallback_rows += len(group)
-        aggregate, weighted_loss, scalar_launches = _scalar_group(
+        (aggregate, weighted_loss, scalar_launches, scalar_execution_seconds,
+         scalar_aggregation_seconds) = _scalar_group(
             group, plan, total_rows, execute_row, aggregate, weighted_loss,
             losses, b11_observation)
+        group_execution_wall_seconds += scalar_execution_seconds
+        aggregation_wall_seconds += scalar_aggregation_seconds
         gradient_launches += scalar_launches
     if len(losses) != total_rows or aggregate is None:
         _invalid("C08_LOGICAL_BATCH_EXECUTION_COVERAGE_DRIFT")
-    mx.eval(aggregate, weighted_loss)
+    materialization_started = time.perf_counter()
+    if not reused_materialized_full_batch:
+        mx.eval(aggregate, weighted_loss)
+    final_materialization_wall_seconds = time.perf_counter() - materialization_started
     wall_seconds = float(time.perf_counter() - started)
-    return _logical_batch_result(
+    accounted_wall_seconds = (
+        group_execution_wall_seconds
+        + aggregation_wall_seconds
+        + final_materialization_wall_seconds)
+    b11_observation.update({
+        "c08_group_execution_wall_seconds": float(group_execution_wall_seconds),
+        "c08_aggregation_wall_seconds": float(aggregation_wall_seconds),
+        "c08_final_materialization_wall_seconds": float(
+            final_materialization_wall_seconds),
+        "c08_unattributed_wall_seconds": float(max(
+            0.0, wall_seconds - accounted_wall_seconds)),
+        "c08_reused_materialized_full_batch": bool(reused_materialized_full_batch),
+    })
+    result_started = time.perf_counter()
+    result = _logical_batch_result(
         plan, aggregate, weighted_loss, losses, gradient_launches,
         vectorized_microbatches, scalar_fallback_rows, wall_seconds,
         b11_observation)
+    result_construction_wall_seconds = time.perf_counter() - result_started
+    observation = dict(getattr(result, "_performance_observation", {}) or {})
+    observation["c08_result_construction_wall_seconds"] = float(
+        result_construction_wall_seconds)
+    attach_performance_observation(result, observation)
+    return result
 
 
 __all__ = (

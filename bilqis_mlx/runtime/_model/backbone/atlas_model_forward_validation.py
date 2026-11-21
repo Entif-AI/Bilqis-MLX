@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import mlx.core as mx
 import numpy as np
+import time
 
+from bilqis_mlx.b11_observation import attach_performance_observation
 from bilqis_mlx.learning.atlas_readout import AnswerPlan
 
 from .atlas_model_backend import Backend
@@ -220,8 +222,6 @@ def microbatch_trace_from_route(
     generation = require_execution_generation_binding(
         execution_binding, params, spec=backend.topology,
         extents=row_batches[0].compiled.extents).generation_digest
-    validate_bamf_parameters(
-        backend.topology, row_batches[0].compiled.extents, params)
     if not trajectory:
         _invalid("B11_MICROBATCH_ROUTE_EVIDENCE_MISSING")
     trajectory_indices = np.asarray(mx.stack(trajectory), dtype=np.int64)
@@ -296,10 +296,12 @@ def finalize_microbatch_gradient(
     executions, mean_loss, gradients, *, answer_plans=None, route_trajectory=None,
 ):
     """Verify row evidence, numerical parity and issue one microbatch result."""
+    finalize_started = time.perf_counter()
     from bilqis_mlx.learning.atlas_readout.decoder.prediction import (
         attest_issued_outputs,
     )
 
+    stage_started = time.perf_counter()
     if preflight_executions is None:
         if (type(executions) is not tuple or len(executions) != len(row_batches)
                 or route_trajectory is None):
@@ -318,17 +320,25 @@ def finalize_microbatch_gradient(
                 for execution, preflight in zip(executions, preflight_executions)):
             _invalid("B11_MICROBATCH_TRAJECTORY_DRIFT")
         reference_executions = preflight_executions
+    trajectory_validation_seconds = time.perf_counter() - stage_started
     if type(executions) is not tuple or len(executions) != len(row_batches):
         _invalid("B11_MICROBATCH_EXECUTION_MISSING")
+    stage_started = time.perf_counter()
     if not attest_issued_outputs(tuple(execution.output for execution in executions)):
         _invalid("B11_MICROBATCH_OUTPUT_ATTESTATION_FAILED")
+    output_attestation_seconds = time.perf_counter() - stage_started
+    stage_started = time.perf_counter()
     reference_mean = sum(
         (execution.loss.total for execution in reference_executions),
         mx.array(0.0, dtype=mx.float32)) / len(reference_executions)
     if not bool(mx.allclose(mean_loss, reference_mean, rtol=1e-5, atol=1e-6)):
         _invalid("B11_MICROBATCH_LOSS_DRIFT")
+    loss_validation_seconds = time.perf_counter() - stage_started
+    stage_started = time.perf_counter()
     validate_bamf_parameters(
         backend.topology, batch.compiled.extents, gradients)
+    gradient_structure_seconds = time.perf_counter() - stage_started
+    stage_started = time.perf_counter()
     result = object.__new__(BamfMicrobatchGradientExecution)
     for name, value in (
         ("executions", executions), ("gradients", gradients),
@@ -338,6 +348,23 @@ def finalize_microbatch_gradient(
     ):
         object.__setattr__(result, name, value)
     result.__post_init__()
+    result_construction_seconds = time.perf_counter() - stage_started
+    observation = {
+        "b11_postflight_trajectory_validation_wall_seconds": float(
+            trajectory_validation_seconds),
+        "b11_postflight_output_attestation_wall_seconds": float(
+            output_attestation_seconds),
+        "b11_postflight_loss_validation_wall_seconds": float(
+            loss_validation_seconds),
+        "b11_postflight_gradient_structure_wall_seconds": float(
+            gradient_structure_seconds),
+        "b11_postflight_result_construction_wall_seconds": float(
+            result_construction_seconds),
+    }
+    measured = sum(observation.values())
+    observation["b11_postflight_other_wall_seconds"] = float(max(
+        0.0, time.perf_counter() - finalize_started - measured))
+    attach_performance_observation(result, observation)
     return result
 
 

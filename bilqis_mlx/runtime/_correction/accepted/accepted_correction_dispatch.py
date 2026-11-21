@@ -12,7 +12,7 @@ from .accepted_correction_ledger import (
     CONTEXT_INVALIDATION_EVENT, CONTEXT_REVALIDATION_EVENT,
     CORRECTION_EVENT, REVALIDATION_EVENT,
     context_frontier_from_record, context_invalidation_from_record,
-    frontier_from_record, read_records,
+    accepted_history_freshness, frontier_from_record, read_records_snapshot,
 )
 from .accepted_correction_target import AcceptedCorrectionTarget
 from .atlas_revalidation_common import _invalid
@@ -36,6 +36,9 @@ class AcceptedCorrectionRuntime:
         self.targets: dict[tuple[str, int], AcceptedCorrectionTarget] = {}
         self.lock = RLock()
         self._accepted_support_census = None
+        self._records_freshness = None
+        self._records_snapshot = None
+        self._manifest_lineage_cache = None
         self._require_runtime = require_live
         self._authorize_owner = authorize_owner
         self._retire_owner = retire_owner
@@ -48,6 +51,28 @@ class AcceptedCorrectionRuntime:
         if owner is None:
             return action()
         return self._authorize_owner(owner, action)
+
+    def _current_records(self) -> tuple[dict, ...]:
+        freshness = (
+            accepted_history_freshness(
+                self.run_dir, self._manifest_lineage_cache)
+            if self._manifest_lineage_cache is not None else None)
+        if (freshness is not None and self._records_snapshot is not None
+                and freshness == self._records_freshness):
+            return self._records_snapshot
+        freshness, lineage, records = read_records_snapshot(
+            self.run_dir, self.manifest_sha256)
+        self._records_freshness = freshness
+        self._records_snapshot = records
+        self._manifest_lineage_cache = lineage
+        return records
+
+    def _manifest_lineage(self) -> tuple[str, ...]:
+        if self._manifest_lineage_cache is None:
+            from .accepted_correction_ledger import _manifest_lineage
+            self._manifest_lineage_cache = _manifest_lineage(
+                self.run_dir, self.manifest_sha256)
+        return self._manifest_lineage_cache
 
     def _advance(
         self, target: AcceptedCorrectionTarget, event_id: str,
@@ -101,30 +126,34 @@ class AcceptedCorrectionRuntime:
             elif target.owner is not owner:
                 _invalid("BAMF_C09_ACCEPTED_TARGET_IDENTITY_CONFLICT")
             def hydrate():
-                self._restore_branches(target)
+                records = self._current_records()
+                self._restore_branches(target, records)
                 target.seen.update(seen_event_ids)
                 if prepare is not None:
                     prepare(self.registry)
-                self._replay(target)
+                self._replay(target, records)
                 target.reconcile_late_materializations(self.registry)
                 target.activate_pending(self.registry)
                 self._retry_deferred(target)
                 self._retry_context_deferred(target)
                 from .accepted_stale_replay_runtime import replay_stale_evidence
-                replay_stale_evidence(self)
+                replay_stale_evidence(
+                    self, records=records, lineage=self._manifest_lineage())
             self._with_target(target, hydrate)
 
     def refresh_target(self, target: AcceptedCorrectionTarget) -> None:
         self._require_live()
         with self.lock:
             def refresh():
-                self._replay(target)
+                records = self._current_records()
+                self._replay(target, records)
                 target.reconcile_late_materializations(self.registry)
                 target.activate_pending(self.registry)
                 self._retry_deferred(target)
                 self._retry_context_deferred(target)
                 from .accepted_stale_replay_runtime import replay_persisted_faults
-                replay_persisted_faults(self)
+                replay_persisted_faults(
+                    self, records=records, lineage=self._manifest_lineage())
             self._with_target(target, refresh)
 
     def _retire_divergent_aliases(self, kind: str, owner) -> None:
@@ -165,8 +194,10 @@ class AcceptedCorrectionRuntime:
 
         return AcceptedCorrectionTarget(weakref.ref(owner, remove_dead), apply)
 
-    def _restore_branches(self, target: AcceptedCorrectionTarget) -> None:
-        for record in read_records(self.run_dir, self.manifest_sha256):
+    def _restore_branches(
+        self, target: AcceptedCorrectionTarget, records: tuple[dict, ...],
+    ) -> None:
+        for record in records:
             if record["event"] != CORRECTION_EVENT:
                 continue
             if self.registry is None:
@@ -175,8 +206,10 @@ class AcceptedCorrectionRuntime:
             self.registry.verify_correction(event)
             target.record_correction_branch(event, self.registry)
 
-    def _replay(self, target: AcceptedCorrectionTarget) -> None:
-        for record in read_records(self.run_dir, self.manifest_sha256):
+    def _replay(
+        self, target: AcceptedCorrectionTarget, records: tuple[dict, ...],
+    ) -> None:
+        for record in records:
             event_id = record["event_id"]
             if event_id in target.seen:
                 continue
@@ -258,7 +291,9 @@ class AcceptedCorrectionRuntime:
                     self._retry_deferred(target)
                 self._with_target(target, apply_frontier)
             from .accepted_stale_replay_runtime import replay_stale_evidence
-            replay_stale_evidence(self)
+            records = self._current_records()
+            replay_stale_evidence(
+                self, records=records, lineage=self._manifest_lineage())
 
     def deliver_context_invalidation(self, event_id: str, event) -> None:
         self._require_live()
@@ -288,7 +323,9 @@ class AcceptedCorrectionRuntime:
                         target.context_deferred[event_id] = frontier
                 self._with_target(target, apply_context_frontier)
             from .accepted_stale_replay_runtime import replay_stale_evidence
-            replay_stale_evidence(self)
+            records = self._current_records()
+            replay_stale_evidence(
+                self, records=records, lineage=self._manifest_lineage())
 
 
 __all__ = ("AcceptedCorrectionRuntime",)

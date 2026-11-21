@@ -1,5 +1,6 @@
 """B01 ledger ownership; historical tensor and initializer contracts retained."""
 from __future__ import annotations
+from functools import lru_cache
 from bilqis_mlx.errors import ErrorBus
 from bilqis_mlx.errors import SCHOOL
 from .spec import ModelTopologySpecV2
@@ -106,6 +107,7 @@ def _output_parameters() -> tuple[ParameterSpec, ...]:
         )),
     )
 
+@lru_cache(maxsize=64)
 def expected_bamf_shapes(spec: ModelTopologySpecV2,
                          extents: GenerationExtents) -> tuple[ParameterSpec, ...]:
     """Expand the normative tensor ledger in stable serialization order."""
