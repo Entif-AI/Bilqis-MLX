@@ -69,12 +69,12 @@ The affected Electron security surface passed 68/68 tests on M3 Ultra when the u
 Browser journey:
 
 ```text
-node apps/mission-control/tests/browser/global-interactions-check.cjs
+node apps/mission-control/tests/browser/school-mode-check.cjs
 ```
 
 Result on M3 Ultra: `GUI18_BROWSER_JOURNEY_PASS`.
 
-This dedicated fixture-mode harness exercises compare, cross-highlighting, pins, notes, evidence posture, owner/generalized-authorization presentation, saved investigations, exact historical fallback, cross-view history, and bounded local overflow ownership. It preserves the fixture boundary that deliberately denies production verified-current authority.
+The School browser harness runs the global investigation journey in its fixture leg. The journey exercises compare, cross-highlighting, pins, notes, evidence posture, owner/generalized-authorization presentation, saved investigations, exact historical fallback, cross-view history, and bounded local overflow ownership. It preserves the fixture boundary that deliberately denies production verified-current authority.
 
 Release structure checks:
 
