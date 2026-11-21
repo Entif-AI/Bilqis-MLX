@@ -1,19 +1,14 @@
 """Fold B13-authenticated current-parent rejection credit before HOW selection."""
-import json
-
-from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity, require_teacher_visit_receipt
 from bilqis_mlx.runtime.bamf_operator.evidence_validation import read_candidate_horizon_evidence
-from bilqis_mlx.runtime.priority_rejection_replay import current_rejections
+from bilqis_mlx.runtime.priority_rejection_replay import current_rejection_outcomes
 
 from .observations import apply_outcome, invalid
 
 
 def replay_rejected_outcomes(run_dir, parent, cache, teacher):
-    for capability, visit_id, reason, receipt_sha in current_rejections(run_dir, parent, cache):
-        receipt = json.loads(data_plane().get_object(receipt_sha))
-        event = receipt['event']
-        evidence = event['evidence']
+    for capability, visit_id, reason, receipt_sha, evidence in current_rejection_outcomes(
+            run_dir, parent, cache):
         observation = evidence.get('how_outcome')
         if observation is None:
             continue

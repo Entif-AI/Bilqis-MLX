@@ -150,6 +150,7 @@ def _validated_rejection(event, parent, cache):
         rejection_attempt_ordinal,
         rejection_journal_ordinal,
         weaknesses,
+        evidence,
     )
 
 def _current_projection(run_dir, parent, cache):
@@ -175,6 +176,11 @@ def _current_projection(run_dir, parent, cache):
 def current_rejections(run_dir, parent, cache):
     """O(1)-snapshot view of authenticated current-generation rejection rows."""
     return _current_projection(run_dir, parent, cache).rows_view()
+
+
+def current_rejection_outcomes(run_dir, parent, cache):
+    """Authenticated rejection rows paired with their optional HOW observations."""
+    return _current_projection(run_dir, parent, cache).outcomes_view()
 
 
 def authenticated_rejection_event(event, parent, manifest_sha256):
@@ -261,7 +267,7 @@ def candidate_step_horizon(run_dir, parent, cache, capability, configured_steps)
 
 __all__ = (
     "authenticated_rejection_event", "candidate_step_horizon",
-    "current_rejections", "ordered_rejections",
+    "current_rejections", "current_rejection_outcomes", "ordered_rejections",
     "current_structural_weaknesses",
     "rejection_attempt_ordinals",
     "rejection_pressure", "rejection_recency",

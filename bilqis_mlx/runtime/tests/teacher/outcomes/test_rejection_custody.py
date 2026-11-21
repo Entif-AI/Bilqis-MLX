@@ -1,5 +1,6 @@
 """Native issued outcome through B13 journal and cold HOW replay."""
 from dataclasses import replace
+import hashlib
 import importlib
 import json
 import subprocess
@@ -9,19 +10,28 @@ import unittest
 from unittest.mock import Mock, patch
 
 from bilqis_mlx.control_plane.tests.cp07.native_source_support import NativeSourceFixture
+from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.factory.teaching import content_digest
 from bilqis_mlx.learning.atlas_retention_decision import issue_factory_retention_decision
 from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
 from bilqis_mlx.runtime.accepted_priority_visit import _issue_result
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection, load_bamf_generation
+from bilqis_mlx.runtime import checkpoint_outbox, checkpoints
+from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import HostSourceAuthoritySigner
+from bilqis_mlx.runtime.bamf_bundle.records import canonical
+from bilqis_mlx.runtime.bamf_rejection import (
+    issue_portable_rejection_authority, portable_rejection_receipt,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe import retained_digest
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
 from bilqis_mlx.runtime.bamf_operator.evidence import CandidateEvidenceCapture, prepare_candidate_evidence_root
 from bilqis_mlx.runtime.capability_retention import DecisionStatus
 from bilqis_mlx.runtime.outcomes.issuance import build_outcome
+from bilqis_mlx.runtime.outcomes.replay import replay_rejected_outcomes
 from bilqis_mlx.runtime.tests.capability.factory.owner import test_factory_retention_owner_adversarial as factory_fixture
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.teacher_custody_fixtures import selection_teacher
+from bilqis_mlx.runtime.tests.teacher.priority.authority.test_priority_rejection_signer import _registry
 
 
 def _structural_weakness_evidence(evidence):
@@ -178,6 +188,45 @@ destination.write_text(json.dumps(result, sort_keys=True, allow_nan=False))
         with shape_patch():
             restored = load_bamf_generation(self.run / 'bamf-state.json')
         self.assertEqual(retained_digest(restored.retained_state), retained_before)
+
+    def test_portable_rejection_receipt_replays_outcome_without_embedded_event(self):
+        parent, teacher, cache, evidence = self.fixture()
+        registry = _registry()
+        signer = HostSourceAuthoritySigner("owner:c06", "44" * 32, registry)
+        with patch(
+                "bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer."
+                "read_host_system_source_authority_signer", return_value=signer):
+            authority = issue_portable_rejection_authority(
+                registry, run_id=cache.run_id, generation=cache.generation,
+                student_manifest_sha256=cache.accepted_manifest_sha256,
+                optimizer_step=parent.retained_state.optimizer_step,
+                evidence=evidence)
+        authority_sha = hashlib.sha256(canonical(authority)).hexdigest()
+        receipt = portable_rejection_receipt(
+            run_id=cache.run_id, generation=cache.generation,
+            student_manifest_sha256=cache.accepted_manifest_sha256,
+            optimizer_step=parent.retained_state.optimizer_step,
+            authority_sha256=authority_sha)
+        receipt_sha = hashlib.sha256(canonical(receipt)).hexdigest()
+        data_plane().put_object(receipt_sha, canonical(receipt))
+        event = checkpoint_outbox.with_delivery_outbox(
+            {"run_id": cache.run_id, "generation": cache.generation}, ({
+                "event": "BAMF_CANDIDATE_REJECTED",
+                "generation": cache.generation,
+                "student_manifest_sha256": cache.accepted_manifest_sha256,
+                "optimizer_step": parent.retained_state.optimizer_step,
+                "evidence": evidence,
+                "rejection_authority_sha256": authority_sha,
+                "rejection_authority": authority,
+                "rejection_receipt_sha256": receipt_sha,
+            },))["delivery_outbox"][0]
+        checkpoints._record(self.run, event)
+        cache = SimpleNamespace(**vars(cache), _correction_registry=registry)
+
+        credited = replay_rejected_outcomes(self.run, parent, cache, teacher)
+
+        self.assertEqual(credited["causal_experiment"]["events"], 1)
+        self.assertIn(evidence["how_outcome"]["attempt_id"], credited["how_outcomes"]["applied"])
 
     def test_committed_rejection_is_current_for_the_next_hot_and_cold_teacher_visit(self):
         from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
