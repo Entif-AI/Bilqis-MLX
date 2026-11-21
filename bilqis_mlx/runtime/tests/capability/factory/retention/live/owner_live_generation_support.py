@@ -35,7 +35,7 @@ from bilqis_mlx.runtime.model_topology_v2 import b01_generation_authority, b01_g
 from bilqis_mlx.runtime.tests.capability.factory.retention.factory_retention_live_support import (
     C05_GENESIS_SEED, HP,
 )
-from bilqis_mlx.runtime.tests.capability.factory.retention.owner_live_candidate_support import TARGET
+from .owner_live_candidate_support import TARGET
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.genesis_authority_fixtures import (
     issue_factory_authority,
 )
