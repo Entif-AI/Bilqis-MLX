@@ -36,12 +36,23 @@ _FAMILIES = (
     QueryFamily.NOTIFICATION,
 )
 
+_DOMAIN_RECORD_IDS = (
+    "run-context", "operator-view", "school", "capability", "frontier",
+    "episode", "decision", "atlas", "frame", "runtime", "memory",
+    "teacher", "salience", "correction", "generation", "resources",
+)
+
 
 class MissionControlQueryFamilyTests(unittest.TestCase):
     def setUp(self):
         factory = next(item for item in SAMPLES if type(item) is FactoryCockpitSnapshot)
         notification = next(item for item in SAMPLES if type(item) is Notification)
-        self.domain_records = (*SAMPLES[:16], factory, notification)
+        by_id = {item.meta.record_id: item for item in SAMPLES}
+        self.domain_records = (
+            *(by_id[record_id] for record_id in _DOMAIN_RECORD_IDS),
+            factory,
+            notification,
+        )
         self.index = MissionControlQueryCatalog(self.domain_records)
 
     def test_literal_fixture_queries_cover_every_required_family(self):
@@ -95,7 +106,9 @@ class MissionControlQueryFamilyTests(unittest.TestCase):
             QueryFamily.LINKS, record_id="generation"))
         checkpoint = next(
             link for link in generation.links if link.relation == "CHECKPOINT")
-        expected_checkpoint = "checkpoint:" + SAMPLES[14].checkpoint_sha256
+        generation_record = next(
+            item for item in self.domain_records if item.meta.record_id == "generation")
+        expected_checkpoint = "checkpoint:" + generation_record.checkpoint_sha256
         self.assertEqual(checkpoint.target_ref, expected_checkpoint)
         self.assertEqual(checkpoint.target_record_id, expected_checkpoint)
         checkpoint_links = self.index.query(QueryRequest(
