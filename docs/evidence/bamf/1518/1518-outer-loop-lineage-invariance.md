@@ -233,6 +233,29 @@ legacy human resume, dry-run non-mutation, and the already-current checkpoint
 path (`3 passed`), while the underlying migration owner test remains green
 (`1 passed`).
 
+The same human resume boundary now owns the one-time cadence projection
+migration required by pre-projection runs. Ordinary resume first checks the
+incremental cadence projection. If and only if it encounters
+`BAMF_ACTIVE_GRADE_CADENCE_PROJECTION_REBUILD_REQUIRED`, a mutating human
+resume acquires exclusive operator custody, performs the explicit authenticated
+history rebuild once, releases custody, and rechecks the incremental projection.
+Dry-run remains non-mutating and reports the rebuild requirement. No other
+curriculum error is eligible for this recovery path.
+
+The BAMF terminal cockpit was also repaired at this cold-resume boundary. Its
+live trainer observation is persisted on a one-second heartbeat, but the screen
+previously reread that file only when an unrelated progress/event callback
+caused a draw. The human trainer now runs a display-only 0.5-second redraw loop
+under a reentrant board lock; display refresh never owns or mutates neural
+state. On board construction, longitudinal exam/graduation evidence is restored
+from the complete journal while visible tables remain bounded, so old complete
+whole-student exams can populate `EXAM`, `STUDENT LATEST`, `STUDENT BEST`, and
+lifetime graduation data even when they fall outside the recent display window.
+At human resume, execution-local counters are reset and live BAMF observations
+drive current-session visits, attempted steps, retained visits, RTN%, ST/M and
+R/H without conflating prior-session history. Focused cadence/dashboard/renderer
+verification passed 40 tests across the directly affected owners.
+
 Immediately before freezing this packet, `git fetch origin main` confirmed
 `origin/main` remained at
 `38813530c3fc4b803f7cf4b8b1e800b978f49d74`, which is already integrated by merge

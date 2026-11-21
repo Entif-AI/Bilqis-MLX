@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections import deque
 import sys
+import threading
 import time
 from .tables import TABLES
 from .champions import ChampionsView
@@ -53,6 +54,7 @@ class Dashboard(ChampionsView, HistoryView, EventsView, SectionsView, WideView, 
         self._rate_step=None
         self._rate_time=None
         self._steps_per_min=None
+        self._draw_lock=threading.RLock()
 
 
 Dashboard.__module__ = "bilqis_mlx.presentation.spiral_dashboard"

@@ -8,10 +8,10 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.errors import BilqisError, SCHOOL
 import bilqis_mlx.runtime.mlx_checkpoint as mlx_checkpoint
 from bilqis_mlx.presentation.operator_cli.bamf_resume_migration import (
-    _load_resume_generation_authority,
+    _ensure_resume_cadence_projection, _load_resume_generation_authority,
 )
 from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
     _reset_execution_cache_owner_for_tests,
@@ -95,6 +95,37 @@ class AcceptedAuthorityResumeMigrationTests(unittest.TestCase):
         self.assertEqual(checkpoint.manifest_sha256, manifest_sha256)
         self.assertEqual(student.generation, 0)
         self.assertFalse((self.run / "bamf-authority-migrations").exists())
+
+    def test_human_resume_rebuilds_only_missing_cadence_projection(self):
+        args = SimpleNamespace(human_run=True, dry_run=False)
+        missing = BilqisError(SCHOOL.BAMF_CURRICULUM.INVALID, {
+            "reason": "BAMF_ACTIVE_GRADE_CADENCE_PROJECTION_REBUILD_REQUIRED",
+        })
+        with patch(
+                "bilqis_mlx.runtime.active_grade_cadence_replay."
+                "authenticated_cadence_attempts",
+                side_effect=(missing, ())) as authenticated, patch(
+                    "bilqis_mlx.runtime.active_grade_cadence_replay."
+                    "rebuild_authenticated_cadence_attempts",
+                    return_value=()) as rebuild:
+            _ensure_resume_cadence_projection(args, self.run)
+        self.assertEqual(authenticated.call_count, 2)
+        rebuild.assert_called_once_with(self.run)
+
+    def test_dry_run_reports_missing_cadence_projection_without_rebuild(self):
+        args = SimpleNamespace(human_run=True, dry_run=True)
+        missing = BilqisError(SCHOOL.BAMF_CURRICULUM.INVALID, {
+            "reason": "BAMF_ACTIVE_GRADE_CADENCE_PROJECTION_REBUILD_REQUIRED",
+        })
+        with patch(
+                "bilqis_mlx.runtime.active_grade_cadence_replay."
+                "authenticated_cadence_attempts", side_effect=missing), patch(
+                    "bilqis_mlx.runtime.active_grade_cadence_replay."
+                    "rebuild_authenticated_cadence_attempts") as rebuild, self.assertRaises(
+                        BilqisError) as raised:
+            _ensure_resume_cadence_projection(args, self.run)
+        self.assertEqual(raised.exception.context["reason"], missing.context["reason"])
+        rebuild.assert_not_called()
 
 
 if __name__ == "__main__":

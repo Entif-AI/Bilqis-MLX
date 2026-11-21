@@ -20,6 +20,8 @@ class RenderView:
         curriculum=self._curriculum_snapshot()
         step=state.get('step')
         exam=curriculum['exam']
+        if exam in (None, '', '?', '-'):
+            exam=state.get('_latest_exam_generation', exam)
         visits=state.get('visits')
         teacher=state.get('teacher')
         retained=state.get("retained_visits")
@@ -170,16 +172,17 @@ class RenderView:
         return self._render_narrow(headers,footer,width=width,height=height)
 
     def draw(self):
-        self.dirty=False
-        try:
-            from ..bamf_terminal_projection import refresh_bamf_terminal_projection
-            refresh_bamf_terminal_projection(self)
-            self._sample_step_rate()
-            if self.stream.isatty():
-                self.stream.write("\x1b[H\x1b[2J"+self.render()+"\x1b[J")
-            else:
-                self.stream.write(self.render()+"\n")
-            self.stream.flush()
-        except (OSError,ValueError):
-            # Display failures must never change neural training policy.
-            self.dirty=True
+        with self._draw_lock:
+            self.dirty=False
+            try:
+                from ..bamf_terminal_projection import refresh_bamf_terminal_projection
+                refresh_bamf_terminal_projection(self)
+                self._sample_step_rate()
+                if self.stream.isatty():
+                    self.stream.write("\x1b[H\x1b[2J"+self.render()+"\x1b[J")
+                else:
+                    self.stream.write(self.render()+"\n")
+                self.stream.flush()
+            except (OSError,ValueError):
+                # Display failures must never change neural training policy.
+                self.dirty=True
