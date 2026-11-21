@@ -293,6 +293,13 @@ def read_accepted_generation_feature_context(
         receipt, features, predecessor, construction)
 
 
+def read_accepted_generation_semantic_snapshot(pointer_path: Path):
+    """Return the fully authenticated immutable Atlas snapshot for the accepted generation."""
+    _receipt, _features, _predecessor, _construction, materialization, _count = (
+        _read_accepted_generation_feature_materialization(pointer_path))
+    return materialization.snapshot
+
+
 def read_accepted_generation_feature_lineage(pointer_path: Path):
     """Return the accepted receipt plus current/immediate-parent generation maps."""
     receipt, features, predecessor, _ = _read_accepted_generation_feature_context(

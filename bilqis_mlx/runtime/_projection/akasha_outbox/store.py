@@ -144,6 +144,29 @@ def read_outbox(path: Path) -> tuple[AkashaEvent, ...]:
     return tuple(_read_event(row) for row in rows)
 
 
+def read_outbox_read_only(path: Path) -> tuple[AkashaEvent, ...]:
+    """Read durable events without initializing, migrating, or otherwise writing the store."""
+    if not isinstance(path, Path):
+        _invalid("BAMF_C10_OUTBOX_PATH_INVALID")
+    if path.is_symlink():
+        _invalid("BAMF_C10_OUTBOX_READ_INVALID")
+    if not path.exists():
+        return ()
+    if not path.is_file():
+        _invalid("BAMF_C10_OUTBOX_READ_INVALID")
+    try:
+        connection = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True, timeout=10)
+        try:
+            connection.execute("PRAGMA query_only=ON")
+            rows = connection.execute(
+                "SELECT envelope_json FROM akasha_events ORDER BY seq").fetchall()
+        finally:
+            connection.close()
+    except sqlite3.DatabaseError:
+        _invalid("BAMF_C10_OUTBOX_READ_INVALID")
+    return tuple(_read_event(row) for row in rows)
+
+
 def pending_events(path: Path) -> tuple[AkashaEvent, ...]:
     if not isinstance(path, Path):
         _invalid("BAMF_C10_OUTBOX_PATH_INVALID")

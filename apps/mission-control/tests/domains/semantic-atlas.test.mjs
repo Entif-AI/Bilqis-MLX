@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  BANK_SCHEMA, HELD_SCHEMA, SIMILARITY_SCHEMA, SUMMARY_SCHEMA,
+  BANK_SCHEMA, HELD_SCHEMA, PROJECTION_SCHEMA, RELEASE_SCHEMA, SIMILARITY_SCHEMA, SUMMARY_SCHEMA,
   conceptRecordId, loadAbiRow, loadAtlasOverview, loadSemanticIdentity, renderAtlasMarkup, stateRecordId,
 } from "../../renderer/atlas/semantic-atlas.mjs";
 import {
@@ -177,6 +177,8 @@ test("overview aggregates bank state while held mappings remain a separate sourc
         atlas_release_sha256: RELEASE,
         active_concepts: { value: 2 }, source_eligible: { value: 3 }, source_held: { value: 1 },
       }]);
+      if (request.schema_version === RELEASE_SCHEMA) return page(request);
+      if (request.schema_version === PROJECTION_SCHEMA) return page(request);
       if (request.schema_version === BANK_SCHEMA) return page(request, [{
         schema_version: BANK_SCHEMA, bank: 0, row_capacity: 8192,
         allocated_rows: 3, active_rows: 2, masked_rows: 1,
@@ -202,3 +204,21 @@ test("overview aggregates bank state while held mappings remain a separate sourc
   assert.ok(markup.includes("Held mappings"));
   assert.ok(markup.includes(`data-source-unix-seconds="${SUMMARY_MATERIALIZED_AT}"`));
 });
+
+for (const state of ["CURRENT", "STALE", "PARTIAL", "MISSING", "ERROR"]) {
+  test(`fixture semantic release cockpit preserves explicit ${state} projection state`, async () => {
+    const api = createAtlasFixtureApi({ projectionState: state });
+    const fixtureContext = {
+      runId: ATLAS_FIXTURE_IDENTITY.runId,
+      generation: ATLAS_FIXTURE_IDENTITY.generation,
+      semanticRelease: ATLAS_FIXTURE_IDENTITY.semanticRelease,
+      mode: "LIVE",
+      fixture: true,
+    };
+    const overview = await loadAtlasOverview(api, fixtureContext);
+    const markup = renderAtlasMarkup({ status: "ready", overview, context: fixtureContext });
+    assert.equal(overview.projection.records[0].state, state);
+    assert.ok(markup.includes(`state-${state.toLowerCase()}`));
+    assert.ok(markup.includes("Release and graph projection evidence"));
+  });
+}
