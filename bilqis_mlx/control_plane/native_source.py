@@ -18,6 +18,7 @@ from .observed import observed_records, publish_observed_events
 from .projection.capability_dossier import (
     accepted_capability_dossiers as _accepted_capability_dossiers,
 )
+from .projection.semantic_release import accepted_semantic_release_records
 from bilqis_mlx.mission_control.contracts.trainer import TrainerObservation
 
 
@@ -34,7 +35,10 @@ def _source_token(run_dir: Path):
     """Cheap change detector for mutable CP07 observation inputs."""
     root = Path(run_dir)
     token = []
-    for name in ("bamf-state.json", "events.jsonl", "trainer-observed.json"):
+    for name in (
+        "bamf-state.json", "events.jsonl", "trainer-observed.json",
+        "akasha-outbox.sqlite3", "akasha-outbox.sqlite3-wal",
+    ):
         path = root / name
         try:
             stat = path.stat()
@@ -86,6 +90,8 @@ def materialize_native_projection(
         manifests.append(generation.manifest_sha256)
         parent = generation
     records.extend(accepted_factory_records(history))
+    if history:
+        records.extend(accepted_semantic_release_records(Path(run_dir), history[-1]))
     rejected_records, rejected_events = (
         rejection_material(Path(run_dir), history)
         if include_live_rejections
@@ -146,6 +152,7 @@ def native_query_source(run_dir: Path):
             observation_only = (
                 cached_catalog is not None and cached_token is not None
                 and cached_token[:2] == before[:2]
+                and cached_token[3:] == before[3:]
                 and cached_run_refs
             )
             if observation_only:
@@ -231,6 +238,7 @@ def refresh_native_events(service):
             accepted_health = getattr(service, _ACCEPTED_HEALTH_ATTR, {})
             observation_only = (
                 previous is not None and previous[:2] == before[:2]
+                and previous[3:] == before[3:]
                 and run_refs
             )
             seen = getattr(service, _SEEN_ATTR, None)

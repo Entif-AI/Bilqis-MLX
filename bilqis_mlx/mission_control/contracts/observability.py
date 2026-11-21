@@ -2,10 +2,84 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 
 from .model import (
     DataValue, RecordMeta, WireRecord, is_name, is_sha256, is_wire_integer, require,
 )
+
+
+class SemanticProjectionState(StrEnum):
+    CURRENT = "CURRENT"
+    STALE = "STALE"
+    MISSING = "MISSING"
+    PARTIAL = "PARTIAL"
+    ERROR = "ERROR"
+
+
+@dataclass(frozen=True)
+class SemanticReleaseSnapshot(WireRecord):
+    SCHEMA = "bilqis.bamf.mission-control.semantic-release-snapshot/v1"
+    meta: RecordMeta
+    atlas_bundle_id: str
+    semantic_release_sha256: str
+    source_bundle_id: str
+    canonical_rdf_sha256: str
+    coverage_sha256: str
+    conformance_sha256: str
+    source_rows_sha256: str
+    active_set_sha256: str
+    conformance_status: str
+    coverage_status: DataValue
+    frontier_debt: DataValue
+    source_rows: int
+    semantic_concepts: int
+    active_abi_indices: int
+    source_held: int
+    source_ir_only: int
+    implementation_uncovered: int
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        require(all(is_sha256(item) for item in (
+            self.atlas_bundle_id, self.semantic_release_sha256, self.source_bundle_id,
+            self.canonical_rdf_sha256, self.coverage_sha256,
+            self.conformance_sha256, self.source_rows_sha256, self.active_set_sha256,
+        )), "SEMANTIC_RELEASE_DIGEST")
+        require(self.conformance_status == "COMPLETE", "SEMANTIC_RELEASE_CONFORMANCE")
+        require(type(self.coverage_status) is DataValue
+                and type(self.frontier_debt) is DataValue, "SEMANTIC_RELEASE_COVERAGE")
+        require(all(is_wire_integer(item) and item >= 0 for item in (
+            self.source_rows, self.semantic_concepts, self.active_abi_indices,
+            self.source_held, self.source_ir_only,
+            self.implementation_uncovered,
+        )), "SEMANTIC_RELEASE_COUNTS")
+
+
+@dataclass(frozen=True)
+class SemanticProjectionSnapshot(WireRecord):
+    SCHEMA = "bilqis.bamf.mission-control.semantic-projection-snapshot/v1"
+    meta: RecordMeta
+    state: SemanticProjectionState
+    graph: DataValue
+    owner: DataValue
+    materialization_receipt_sha256: DataValue
+    projection_version: DataValue
+    coverage_status: DataValue
+    canonical_rdf_sha256: DataValue
+    semantic_coverage_sha256: DataValue
+    importer_implementation_sha256: DataValue
+    smoke_suite_sha256: DataValue
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        require(type(self.state) is SemanticProjectionState, "SEMANTIC_PROJECTION_STATE")
+        require(all(type(item) is DataValue for item in (
+            self.graph, self.owner, self.materialization_receipt_sha256,
+            self.projection_version, self.coverage_status, self.canonical_rdf_sha256,
+            self.semantic_coverage_sha256, self.importer_implementation_sha256,
+            self.smoke_suite_sha256,
+        )), "SEMANTIC_PROJECTION_VALUES")
 
 
 @dataclass(frozen=True)

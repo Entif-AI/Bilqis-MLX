@@ -6,6 +6,8 @@ import {
   SIMILARITY_SCHEMA,
   STATE_SCHEMA,
   SUMMARY_SCHEMA,
+  RELEASE_SCHEMA,
+  PROJECTION_SCHEMA,
   conceptRecordId,
   stateRecordId,
 } from "./semantic-atlas.mjs";
@@ -18,6 +20,8 @@ const SEMANTIC = "https://example.test/id/sense/atlas-fixture/primary";
 const NEIGHBOR = "https://example.test/id/sense/atlas-fixture/neighbor";
 const MATERIALIZED = 1794700120;
 const OBSERVED = 1794700118;
+const RDF = "7".repeat(64);
+const COVERAGE = "8".repeat(64);
 
 function meta(recordId, authority, { run = true, observedAt = OBSERVED } = {}) {
   return {
@@ -125,7 +129,63 @@ function page(request, records = [], links = []) {
   });
 }
 
-export function createAtlasFixtureApi() {
+function value(value) {
+  return { state: "PRESENT", origin: "SOURCE_AUTHORITATIVE", value };
+}
+
+function missing() {
+  return { state: "MISSING", origin: null, value: null, units: null };
+}
+
+function releaseEvidence() {
+  return {
+    schema_version: RELEASE_SCHEMA,
+    meta: { ...meta("semantic-release:fixture-run:7", "SOURCE_AUTHORITATIVE"),
+      source_refs: ["atlas-bundle:" + "5".repeat(64), "semantic-release:" + RELEASE],
+      receipt_refs: ["bamf-acceptance:" + "b".repeat(64)] },
+    atlas_bundle_id: "5".repeat(64),
+    semantic_release_sha256: RELEASE,
+    source_bundle_id: "6".repeat(64),
+    canonical_rdf_sha256: RDF,
+    coverage_sha256: COVERAGE,
+    conformance_sha256: "9".repeat(64),
+    source_rows_sha256: "a".repeat(64),
+    active_set_sha256: "1".repeat(64),
+    conformance_status: "COMPLETE",
+    coverage_status: missing(),
+    frontier_debt: missing(),
+    source_rows: 977,
+    semantic_concepts: 801,
+    active_abi_indices: 742,
+    source_held: 1,
+    source_ir_only: 2,
+    implementation_uncovered: 3,
+  };
+}
+
+function projectionEvidence(state = "CURRENT") {
+  const absent = state === "MISSING" || state === "ERROR";
+  const coverageStatus = state === "PARTIAL" ? "partial" : "complete";
+  return {
+    schema_version: PROJECTION_SCHEMA,
+    meta: { ...meta("semantic-projection:fixture-run:7", "DERIVED"),
+      coverage: ["STALE", "PARTIAL", "ERROR"].includes(state) ? "PARTIAL" : state === "MISSING" ? "UNKNOWN" : "COMPLETE",
+      evidence_refs: absent ? [] : ["akasha-event:" + "c".repeat(64)],
+      receipt_refs: absent ? [] : ["materialization-receipt:" + "b".repeat(64)] },
+    state,
+    graph: absent ? missing() : value("semantic"),
+    owner: absent ? missing() : value("semantic-release-authority"),
+    materialization_receipt_sha256: absent ? missing() : value("b".repeat(64)),
+    projection_version: absent ? missing() : value("1.0.0"),
+    coverage_status: absent ? missing() : value(coverageStatus),
+    canonical_rdf_sha256: absent ? missing() : value(state === "STALE" ? "c".repeat(64) : RDF),
+    semantic_coverage_sha256: absent ? missing() : value(state === "STALE" ? "d".repeat(64) : COVERAGE),
+    importer_implementation_sha256: absent ? missing() : value("e".repeat(64)),
+    smoke_suite_sha256: absent ? missing() : value("f".repeat(64)),
+  };
+}
+
+export function createAtlasFixtureApi({ projectionState = "CURRENT" } = {}) {
   return Object.freeze({
     async query(request) {
       if ((request.run_id !== null && request.run_id !== RUN_ID) ||
@@ -143,6 +203,10 @@ export function createAtlasFixtureApi() {
           source_eligible: { state: "PRESENT", origin: "SOURCE_AUTHORITATIVE", value: 801 },
           source_held: { state: "PRESENT", origin: "SOURCE_AUTHORITATIVE", value: 1 },
         }]);
+      }
+      if (request.schema_version === RELEASE_SCHEMA) return page(request, [releaseEvidence()]);
+      if (request.schema_version === PROJECTION_SCHEMA) {
+        return page(request, [projectionEvidence(projectionState)]);
       }
       if (request.schema_version === BANK_SCHEMA) {
         return page(request, [{

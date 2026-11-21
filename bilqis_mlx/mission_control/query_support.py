@@ -23,7 +23,8 @@ from .contracts.model import CoverageState, WireRecord, is_wire_integer, require
 from .contracts.registry import ALL_RECORD_TYPES
 from .contracts.observability import (
     GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
-    SemanticAtlasSnapshot, TeacherSnapshot,
+    SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticReleaseSnapshot,
+    TeacherSnapshot,
 )
 from .query_contracts import (
     MAX_PAGE_ROWS_BYTES, QUERY_PAGE_SCHEMA, QueryFamily, QueryMode, QueryPage,
@@ -53,6 +54,7 @@ FAMILY_TYPES = MappingProxyType({
     QueryFamily.SEMANTIC: (
         SemanticAtlasSnapshot, SemanticConceptSnapshot, SemanticGenerationState,
         SemanticBankSnapshot, SemanticHeldMappingSnapshot, SemanticSimilaritySnapshot,
+        SemanticReleaseSnapshot, SemanticProjectionSnapshot,
     ),
     QueryFamily.FRAME: (FrameCompileReceipt,),
     QueryFamily.NEURAL: (NeuralRuntimeSample,),
