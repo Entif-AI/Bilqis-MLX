@@ -8,6 +8,7 @@ import sqlite3
 
 from ..contracts.codec import canonical_json, decode_json
 from ..contracts.envelopes import EventEnvelope, StreamPosition
+from ..contracts.notifications import Notification, NotificationKind, NotificationState
 from ..contracts.model import MissionControlContractError, WireRecord
 from .contracts import (
     PROJECTION_SCHEMA, PROJECTION_SCHEMA_VERSION, ProjectionStats,
@@ -259,6 +260,37 @@ def decode_rows(rows) -> tuple[WireRecord, ...]:
         except MissionControlContractError:
             projection_invalid("PROJECTION_ROW_CORRUPT_REBUILD_REQUIRED")
     return tuple(decoded)
+
+
+def active_notification(
+    db: sqlite3.Connection, *, subject_ref: str, kind: NotificationKind,
+) -> Notification | None:
+    rows = tuple(db.execute(
+        """SELECT payload_json, payload_sha256 FROM record_revisions
+        WHERE schema_version = ? AND active = 1 ORDER BY revision_id DESC""",
+        (Notification.SCHEMA,),
+    ))
+    return next((
+        item for item in decode_rows(rows)
+        if type(item) is Notification
+        and item.subject_ref == subject_ref
+        and item.kind is kind
+        and item.state is NotificationState.ACTIVE
+    ), None)
+
+
+def notification_by_id(
+    db: sqlite3.Connection, notification_id: str,
+) -> Notification | None:
+    row = db.execute(
+        """SELECT payload_json, payload_sha256 FROM record_revisions
+        WHERE record_id = ? AND active = 1""",
+        (notification_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    decoded = decode_rows((row,))[0]
+    return decoded if type(decoded) is Notification else None
 
 
 def stats(db: sqlite3.Connection) -> ProjectionStats:

@@ -45,6 +45,34 @@ test("Home uses the governed five-state band and target overview regions", () =>
   assert.equal(model.learningStatus, "REGRESSION");
 });
 
+test("Home renders durable milestone, release, materialization, gate, blocker, and drift notifications", () => {
+  const pages = Object.fromEntries(HOME_FAMILIES.map((family) => [family, emptyPage(family)]));
+  const kinds = ["GRADUATION", "SEMANTIC_RELEASE", "GRAPH_MATERIALIZATION", "GATE_TRANSITION", "BLOCKER", "DRIFT"];
+  pages.notification = {
+    accepted: true, family: "notification", mode: "current", state: "PRESENT", coverage: "COMPLETE",
+    records: kinds.map((kind, index) => ({
+      schema_version: "bilqis.bamf.mission-control.notification/v1",
+      meta: { record_id: `notification:${index}`, observed_at: 1_799_100_000 + index, materialized_at: 1_799_100_000 + index },
+      notification_id: `notification:${index}`,
+      source_event_id: `event:${index}`,
+      subject_ref: `subject:${index}`,
+      kind,
+      severity: ["BLOCKER", "DRIFT"].includes(kind) ? "WARNING" : "SUCCESS",
+      state: "ACTIVE",
+      created_at: 1_799_100_000 + index,
+      evidence_ref: `evidence:${index}`,
+      acknowledged_at: null,
+      supersedes_notification_id: null,
+    })),
+  };
+  const model = projectionFromPages(pages, context);
+  const markup = renderHomeMarkup(model, { nowMs: 1_799_100_100_000, locale: "en-US" });
+  assert.equal(model.notifications.length, kinds.length);
+  assert.match(markup, /data-test-id="home-notifications"/);
+  for (const kind of kinds) assert.match(markup, new RegExp(kind));
+  assert.match(markup, /Evidence: evidence:0/);
+});
+
 test("Home health is collapsed detail and operator-significant work values remain complete", () => {
   const markup = renderHomeMarkup(referenceHomeProjection());
   assert.match(markup, /<details class="home-health" data-test-id="home-health-details">/);
@@ -207,4 +235,27 @@ test("accepted generation zero renders a setup state instead of a wall of unavai
   assert.match(markup, /data-test-id="home-startup-operate"/);
   assert.doesNotMatch(markup, /Unavailable/);
   assert.doesNotMatch(markup, /Latest school score|Whole-school growth|Peak memory/);
+});
+
+test("active notifications remain visible during otherwise-empty generation-zero startup", () => {
+  const pages = Object.fromEntries(HOME_FAMILIES.map((family) => [family, emptyPage(family)]));
+  pages.run = runPage();
+  pages.notification = {
+    accepted: true, family: "notification", mode: "current", state: "PRESENT", coverage: "COMPLETE",
+    records: [{
+      schema_version: "bilqis.bamf.mission-control.notification/v1",
+      notification_id: "notification:startup", source_event_id: "event:startup",
+      subject_ref: "grade:B", kind: "BLOCKER", severity: "BLOCKER", state: "ACTIVE",
+      created_at: 1_799_100_000, evidence_ref: "receipt:startup",
+      acknowledged_at: null, supersedes_notification_id: null,
+      meta: { record_id: "notification:startup", materialized_at: 1_799_100_000 },
+    }],
+  };
+  const model = projectionFromPages(
+    pages, { ...context, runId: "aspirant", generation: 0, operatorActive: false });
+  const markup = renderHomeMarkup(model);
+  assert.equal(model.startup, null);
+  assert.match(markup, /data-test-id="home-notifications"/);
+  assert.match(markup, /BLOCKER/);
+  assert.match(markup, /data-home-target-kind="reference"/);
 });

@@ -43,6 +43,11 @@ class MissionControlQueryCatalog:
     def unavailable(cls) -> "MissionControlQueryCatalog":
         return cls((), available=False)
 
+    @property
+    def records(self) -> tuple[WireRecord, ...]:
+        """Expose the immutable catalog input for bounded derived composition."""
+        return self._records
+
     def _base_records(self, request: QueryRequest) -> tuple[WireRecord, ...]:
         record_types = FAMILY_TYPES.get(request.family)
         require(record_types is not None, "QUERY_FAMILY_RECORDS")

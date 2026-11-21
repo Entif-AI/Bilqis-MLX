@@ -23,6 +23,9 @@ from .contracts.observability import (
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticProjectionState,
     SemanticReleaseSnapshot, TeacherSnapshot,
 )
+from .contracts.notifications import (
+    Notification, NotificationKind, NotificationSeverity, NotificationState,
+)
 from .contracts.operator import (
     ActionParameter, ActionReceiptState, OperatorActionReceipt,
     OperatorActionReceiptV2, OperatorActionRequest, OperatorActionRequestV2,
@@ -60,6 +63,7 @@ __all__ = (
     "FactoryLifecycleStatus", "FactoryRunLineage", "FactorySubjectKind",
     "FactoryTopologyEvidence", "FactoryTopologyKnowledge",
     "LearningEpisode", "MemorySnapshot", "MissionControlContractError",
+    "Notification", "NotificationKind", "NotificationSeverity", "NotificationState",
     "MissionControlQueryCatalog",
     "MissionControlProjection", "PROJECTION_SCHEMA", "PROJECTION_SCHEMA_VERSION",
     "ProjectionFrontierState", "ProjectionFrontierStatus", "ProjectionStats",
@@ -86,7 +90,7 @@ __all__ = (
 import sys as _sys
 from importlib import import_module as _import_module
 
-for _name in ('codec', 'model', 'envelopes', 'events', 'factory', 'snapshots', 'observability', 'operator', 'registry', 'schema', 'fixtures'):
+for _name in ('codec', 'model', 'envelopes', 'events', 'factory', 'snapshots', 'observability', 'notifications', 'operator', 'registry', 'schema', 'fixtures'):
     _module = _import_module(f".contracts.{_name}", __name__)
     _sys.modules[f"{__name__}.{_name}"] = _module
     globals()[_name] = _module

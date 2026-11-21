@@ -33,6 +33,7 @@ class QueryFamily(StrEnum):
     CORRECTION = "correction"
     RESOURCE = "resource"
     FACTORY = "factory"
+    NOTIFICATION = "notification"
     REFERENCE = "reference"
     LINKS = "links"
 

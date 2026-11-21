@@ -14,6 +14,7 @@ from .observability import (
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticReleaseSnapshot,
     TeacherSnapshot,
 )
+from .notifications import Notification
 from .operator import (
     OperatorActionReceipt, OperatorActionReceiptV2,
     OperatorActionRequest, OperatorActionRequestV2,
@@ -69,6 +70,7 @@ ALL_RECORD_TYPES = (
     CorrectionEvent,
     GenerationManifest,
     ResourceSample,
+    Notification,
     OperatorActionRequest,
     OperatorActionReceipt,
     OperatorActionRequestV2,

@@ -18,6 +18,9 @@ from bilqis_mlx.mission_control.observability import (
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticProjectionState,
     SemanticReleaseSnapshot, TeacherSnapshot,
 )
+from bilqis_mlx.mission_control.notifications import (
+    Notification, NotificationKind, NotificationSeverity, NotificationState,
+)
 from bilqis_mlx.mission_control.operator import (
     ActionParameter, ActionReceiptState, OperatorActionReceipt,
     OperatorActionReceiptV2, OperatorActionRequest, OperatorActionRequestV2,
@@ -194,6 +197,12 @@ BASE_SAMPLES = (
         "decision",
         D1,
         "evidence:event-9",
+    ),
+    Notification(
+        meta("notification:fixture", run=None),
+        "notification:fixture", "event:graduation", "capability:B.EXAMPLE",
+        NotificationKind.GRADUATION, NotificationSeverity.SUCCESS,
+        NotificationState.ACTIVE, 118, "evidence:a", None, None,
     ),
 )
 
