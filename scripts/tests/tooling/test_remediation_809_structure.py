@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def _verifier_module():
-    root = Path(__file__).resolve().parents[2]
+    root = Path(__file__).resolve().parents[3]
     path = root / "scripts" / "remediation_809" / "verify_structure.py"
     spec = importlib.util.spec_from_file_location("remediation_809_verify_structure", path)
     module = importlib.util.module_from_spec(spec)
