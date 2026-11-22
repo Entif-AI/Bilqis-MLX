@@ -1,8 +1,14 @@
 """#1232 selected-offer source materialization reuse witnesses."""
+import os
 from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("BILQIS_STRICT_EVIDENCE_TESTS") != "1",
+    reason="strict source-materialization machinery is opt-in during BAMF stabilization",
+)
 
 from bilqis_mlx.runtime.priority_source_materialization import (
     PreparedPrioritySourceMaterialization,

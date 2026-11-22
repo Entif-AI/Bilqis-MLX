@@ -40,7 +40,8 @@ from bilqis_mlx.runtime.atlas_resources import partition_logical_batch
 
 def _row_execution_inputs(
         source_context, compiled, feature_snapshot, generation):
-    authority = factory_task_authority(source_context, compiled)
+    authority = factory_task_authority(
+        source_context, compiled, generation_binding=generation)
     bound = _bind_validated_factory_task_compiled_batch(compiled, authority)
     resolved = factory_task_training_goal(source_context, bound, authority)
     targets, mask = task_goal_training_targets(authority.goal, resolved)

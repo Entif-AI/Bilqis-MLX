@@ -331,6 +331,23 @@ expensive probe is still running so the successor does not launch a duplicate.
 Acceptance-scale witnesses belong at a stable boundary after cheaper evidence has
 changed; they are not the ordinary inner debugging loop.
 
+**BAMF training-first stabilization authority (2026-11-22):** During the current
+BAMF stabilization phase, production/full-path trainer learning throughput is the
+controlling performance acceptance authority. Component-local microbenchmarks are
+diagnostic evidence only and do not close a performance issue when the actual
+persistent trainer remains slow.
+
+Fast, durable learning takes precedence over auditability, provenance rigor,
+cryptographic custody, execution-authority ceremony, and broad currentness
+certification on the ordinary teaching cadence. If those mechanisms materially
+delay the learner, keep their implementation available behind an explicit strict
+or evidence mode and remove them from the default training hot path unless they are
+proven necessary for one of these learning invariants: real measured gain,
+acceptable regression protection, atomic accepted model+optimizer persistence, or
+correct resume from accepted state. This stabilization authority does not delete
+the stricter machinery or authorize fabricated evidence. It changes which work is
+allowed to block training by default.
+
 **Staged fail-fast verification for expensive tests (ADR-139):** Treat every
 expensive test or witness as an ordered pipeline. Do not make a multi-minute MLX,
 Factory, full-model, or end-to-end run the first place that fixture, import,

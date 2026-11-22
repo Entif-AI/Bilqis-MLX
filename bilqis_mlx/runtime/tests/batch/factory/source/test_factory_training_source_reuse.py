@@ -1,6 +1,12 @@
 """#1264 source-authority reuse acceptance at the Factory/B11 boundary."""
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import unittest
+
+if os.environ.get("BILQIS_STRICT_EVIDENCE_TESTS") != "1":
+    raise unittest.SkipTest(
+        "strict Factory/B11 source authority is opt-in during BAMF stabilization")
 
 from bilqis_mlx.learning.student_ops import train_bamf_factory_step
 from bilqis_mlx.b11_observation import source_replay_observation

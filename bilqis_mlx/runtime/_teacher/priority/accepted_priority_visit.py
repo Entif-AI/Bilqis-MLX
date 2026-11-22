@@ -28,6 +28,7 @@ from .priority_qualification import _grade, requalify_priority
 from bilqis_mlx.runtime.outcomes.issuance import context_for_selection
 from .accepted_priority_candidate import (
     execute_accepted_priority_candidate,
+    execute_learning_first_priority_candidate,
     prepare_accepted_priority_candidate_visit,
 )
 from .accepted_priority_visit_contracts import (
@@ -197,12 +198,16 @@ def select_accepted_priority_visit(
             holds.append((option.stable_id, OOM_EXHAUSTED))
             continue
         offer = by_id[option.stable_id]
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
         materialization_started = time.perf_counter()
-        try:
-            offer.require_current(source_context, parent)
-        except ValueError:
-            holds.append((option.stable_id, 'SOURCE_OFFER_HELD'))
-            continue
+        if strict_evidence_enabled():
+            try:
+                offer.require_current(source_context, parent)
+            except ValueError:
+                holds.append((option.stable_id, 'SOURCE_OFFER_HELD'))
+                continue
         grade = _grade(program, school, option.context.capability_id)
         if grade is None:
             _invalid('BAMF_PRIORITY_PROGRAM_INVALID')

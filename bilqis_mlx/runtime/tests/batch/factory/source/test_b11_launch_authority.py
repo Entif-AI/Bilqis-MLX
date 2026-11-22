@@ -1,5 +1,11 @@
 """#1272 one-check-per-launch B11 source authority regressions."""
+import os
+import unittest
 from unittest.mock import patch
+
+if os.environ.get("BILQIS_STRICT_EVIDENCE_TESTS") != "1":
+    raise unittest.SkipTest(
+        "strict B11 launch authority is opt-in during BAMF stabilization")
 
 from bilqis_mlx.errors import BilqisError
 import bilqis_mlx.learning.frame_encoder.compiled as frame_encoder_compiled_impl

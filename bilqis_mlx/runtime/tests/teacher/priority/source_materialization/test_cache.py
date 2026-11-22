@@ -1,9 +1,15 @@
 """#1537 exact selected-source cross-offer cache regressions."""
+import os
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("BILQIS_STRICT_EVIDENCE_TESTS") != "1",
+    reason="strict source-materialization cache is opt-in during BAMF stabilization",
+)
 
 from bilqis_mlx.runtime.priority_source_materialization import (
     prepare_priority_source_materialization,

@@ -580,6 +580,16 @@
       "summary": "#1542 is turned in as PR #1561. Ordinary FOUNDATION retention now protects every same-grade peer with current accepted-learning baseline authority while preserving structural protection edges, target-first early rejection, and admission-without-learning non-authority. The existing FOUNDATION mastery-debt law remains the decision owner; operator scorecard evidence now exposes its exact utility calculation. Failing-before proved established same-grade peers were omitted. Reconciled-head proof passed 20 focused scope/economics/evidence tests, 19 rollback/custody checks plus 2 expected skips, 5 adjacent teacher-outcome tests, structure/governance/Factory/docs/flow/smell/diff gates, and error-control new debt 0. No production trainer mutation was performed.",
       "resume_trigger": null,
       "preserved_branch": "codex/1542-foundation-same-grade-retention-20261122"
+    },
+    {
+      "issue": 1566,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "6598b4b55181f89de6b9f3b71fec93940db54a12",
+      "head_sha_role": "current origin/main baseline consumed before implementation",
+      "summary": "Training-first stabilization leaf. The human operator explicitly directed that selected-source authority/materialization ceremony be disabled on the default BAMF teaching path and preserved only behind explicit strict/evidence mode. The leaf owns removal of B11 execution-authority manufacture, repeated source-owner/provenance/currentness reconstruction, and equivalent non-learning ceremony from ordinary teaching cadence while retaining real gain measurement, regression protection, atomic accepted model+optimizer persistence, and correct resume. Production/full-path trainer timing is the acceptance authority; strict-only tests may be gated or skipped rather than block default CI. No automated verification may mutate the sovereign human run.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1566-training-first-bypass-20261122"
     }
   ]
 }

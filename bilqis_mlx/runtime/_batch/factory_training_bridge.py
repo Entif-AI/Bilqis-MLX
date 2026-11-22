@@ -17,8 +17,10 @@ from .atlas_training_adapter import compile_training_batch
 from .atlas_training_contracts import BamfTrainingBatch, BamfVisitProvenance, _invalid
 from .factory_training_context import training_answer_plan
 from .factory_training_source import (
-    _FactoryMotifPlanningInput, _bind_b11_rows, _motif_planning_input,
+    _FactoryMotifPlanningInput, _bind_b11_rows, _bind_learning_first_rows,
+    _motif_planning_input,
     _prepare_b11_source_binding, _prepare_factory_source_rows,
+    _prepare_learning_first_model_sources,
 )
 
 
@@ -106,17 +108,26 @@ def _prepared_source_inputs(
                     or authority.each != binding.get("each")):
                 _invalid("FACTORY_REHEARSAL_SOURCE_AUTHORITY_INVALID")
             source_context.require_bound_rows((row,), authority)
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        strict = strict_evidence_enabled()
         adapter, manifest, profile, source_rows = _prepare_factory_source_rows(
             source_context, authenticated, rows, capability=capability,
             source_seed=source_seed, source_each=source_each,
             source_authority=source_authority,
             source_authorities_by_id=rehearsal_authorities,
-            source_bindings_by_id=rehearsal_bindings)
-        from bilqis_mlx.runtime.priority_source_materialization import (
-            _prepare_model_sources,
-        )
-        prepared_model_sources, _configs = _prepare_model_sources(
-            source_context, authenticated, manifest, source_rows)
+            source_bindings_by_id=rehearsal_bindings,
+            issue_b11_proofs=strict)
+        if strict:
+            from bilqis_mlx.runtime.priority_source_materialization import (
+                _prepare_model_sources,
+            )
+            prepared_model_sources, _configs = _prepare_model_sources(
+                source_context, authenticated, manifest, source_rows)
+        else:
+            prepared_model_sources = _prepare_learning_first_model_sources(
+                authenticated, source_rows)
         return (
             source_authority,
             adapter, manifest, profile, source_rows, prepared_model_sources,
@@ -278,11 +289,19 @@ def prepare_factory_training_batch(
         authenticated, manifest, prepared_model_sources)
     compile_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
-    compiled_rows = _bind_b11_rows(
-        source_context, candidate, authenticated, training, source_rows,
-        profile, source_seed=source_seed, source_each=source_each,
-        prepared_b11=prepared_b11_sources,
-        packed_owner=prepared_packed_owner)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if strict_evidence_enabled():
+        compiled_rows = _bind_b11_rows(
+            source_context, candidate, authenticated, training, source_rows,
+            profile, source_seed=source_seed, source_each=source_each,
+            prepared_b11=prepared_b11_sources,
+            packed_owner=prepared_packed_owner)
+    else:
+        compiled_rows = _bind_learning_first_rows(
+            source_context, candidate, authenticated, training, source_rows,
+            profile, source_seed=source_seed, source_each=source_each)
     b11_binding_seconds = time.perf_counter() - stage_started
     return _prepared_factory_result(
         training, compiled_rows, source_rows, authenticated, prepared_motif_inputs,
