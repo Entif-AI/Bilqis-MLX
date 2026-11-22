@@ -42,6 +42,16 @@ def _plasticity_identity(state: CandidateState) -> str:
                             state.policy.to_record()))
 
 
+def _teacher_credit_plasticity_identity(state: CandidateState) -> str:
+    """Bind teacher evidence to the plasticity regime, not accepted row-age clocks."""
+    if type(state) is not CandidateState:
+        invalid("TEACHER_STUDENT_PLASTICITY_IDENTITY_INVALID")
+    record = state.policy.to_record()
+    record.pop("row_ages")
+    return contract_digest((
+        "bilqis.bamf.c03-teacher-credit-plasticity-identity/v1", record))
+
+
 def _student_region(student_sha256: str, bank_identity: str,
                     plasticity_identity: str) -> str:
     binding = {
@@ -147,5 +157,6 @@ def rebind_package_import_teacher_custody(
 
 __all__ = (
     "_bank_identity", "_c03_projection", "_plasticity_identity",
+    "_teacher_credit_plasticity_identity",
     "rebind_accepted_teacher_custody", "rebind_package_import_teacher_custody",
 )

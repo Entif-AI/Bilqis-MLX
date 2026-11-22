@@ -74,12 +74,10 @@ def _diagnostic_effective_scope(teacher: dict, scope: dict,
 def _learning_rate_prior_scope(teacher: dict, channel: dict, capability: str,
                                curriculum_scope: str,
                                current_context_key: str) -> dict:
-    """Pool same-capability reward evidence by LR across sibling phases."""
+    """Pool same-capability reward evidence by LR across current and sibling phases."""
     priors = {}
     strategies = teacher.get("strategies", {})
     for context_key, scope in channel.get("contexts", {}).items():
-        if context_key == current_context_key:
-            continue
         try:
             context_capability, _phase, context_scope = context_key.split("|", 2)
         except ValueError:
@@ -202,11 +200,7 @@ def _contextual_scope_state(teacher, channel, capability, curriculum_scope,
                     LearningExperimentError.EFFECTIVE_POLICY_LR_DRIFT.value)
             prior = learning_rate_priors.get(next(iter(member_lrs)))
             if prior and prior["trials"]:
-                mean = (
-                    record["reward_sum"] + prior["reward_sum"]
-                ) / (
-                    record["trials"] + prior["trials"]
-                )
+                mean = prior["reward_sum"] / prior["trials"]
         exploration = (
             TEACHER_UCB_EXPLORATION_WEIGHT *
             math.sqrt(math.log(trials+2)/(record["trials"]+1)))
