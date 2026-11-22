@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "92299b7ccddb1a1b4155723b4eb4eee1057864cb",
-  "updated_at": "2026-11-19T00:52:52+00:00",
+  "updated_at": "2026-11-22T06:47:02+00:00",
   "exception": null,
   "items": [
     {
@@ -560,6 +560,16 @@
       "summary": "Issue #1395 is turned in as PR #1414 against reviewed unified 204a5f47. Ordinary FOUNDATION C05 no longer executes championship evidence; championship follows the existing final active-grade cadence teaching boundary after the accepted successor is derived and before B13 publication, preserving #1326-#1328 title, challenge, history/reset, cold ancestry and adviser custody. Zero-distill supervision now means no mentor envelope, and the real-A01 B.AND microbatch witness records one vectorized microbatch with zero scalar fallback rows while the nonzero mentor oracle remains scalar-exact. Fresh 16-step native B.AND evidence: accepted ELIGIBLE; retention 39.982s; 73.16 attempted/retained steps/hour; 6 target / 0 protected cases; 2 shared-backbone launches / 0 scalar neural launches; ~17.11 GB peak MLX / ~4.63 GB host peak RSS; no championship telemetry in the C05 profile. Final semantic head f4b238e8 is quality/governance/error-contract clean; the host's inherited 100 GiB disposable-bundle reserve condition is baseline-reproduced and separately reserve-neutralized for bounded custody/profile witnesses. No persistent learner, adjacent C07/OOM policy, self-merge, or championship policy redesign.",
       "resume_trigger": null,
       "preserved_branch": "codex/1395-championship-hotpath-20261118"
+    },
+    {
+      "issue": 1542,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "657bdfff37dc58904ca9a3df55303240aba9cea6",
+      "head_sha_role": "intake baseline at current main before #1542 implementation",
+      "summary": "#1542 owns BMF-0.3.8 FOUNDATION same-grade retention conformance: preserve target-first rejection, then measure established same-grade peers and apply the active mastery-debt/protection law without granting veto authority to merely admitted never-retained capabilities. Automated verification must not mutate the human production trainer.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1542-foundation-same-grade-retention-20261122"
     }
   ]
 }
