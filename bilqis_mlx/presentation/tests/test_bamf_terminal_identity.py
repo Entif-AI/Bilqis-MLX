@@ -109,3 +109,92 @@ def test_live_and_durable_forms_of_one_terminal_visit_count_once(tmp_path):
     assert board.state["retained_visits"] == 1
     assert board.state["attempted_steps"] == 12
     assert [row["capability"] for row in board.rows["CANDIDATES"]].count("A.MAPS") == 1
+
+
+
+def test_running_observation_rekeys_to_durable_terminal_identity_without_duplication(tmp_path):
+    run = tmp_path
+    (run / "bamf-state.json").write_text(json.dumps({
+        "run_id": "aspirant", "generation": 20,
+    }))
+    historical = {
+        "event": "BAMF_CANDIDATE_REJECTED",
+        "event_id": "historical-2",
+        "evidence": {
+            "capability": "A.EDGE",
+            "candidate_optimizer_step": 126,
+            "rejection_attempt_ordinal": 1,
+            "visit_id": "historical-visit-2",
+            "retention_reason": "NO_GAIN",
+            "how_outcome": {
+                "attempted_steps": 12,
+                "retained_steps": 0,
+                "decision": {"decision": "REJECT", "reason": "NO_GAIN"},
+                "context": {"grade": "A"},
+            },
+        },
+    }
+    events = run / "events.jsonl"
+    events.write_text(json.dumps(historical) + "\n")
+    (run / "trainer-observed.json").write_text(json.dumps({
+        "schema": "bilqis.bamf.trainer-observed/v7",
+        "visits": [],
+    }))
+    board = Dashboard(
+        stream=io.StringIO(),
+        clock=lambda: 1000.0,
+        tables=LETTER_TABLES,
+        compact_header=True,
+        show_all_panels=True,
+    )
+    board.school_telemetry = SchoolTelemetry(board, active_grades=("A",))
+    board.log_hint = str(events)
+    board.draw()
+
+    live = _live_visit("A.MAPS", 13, 138)
+    live["phase"] = "TRAINING"
+    live["outcome"] = "RUNNING"
+    live["candidate_step"] = 6
+    (run / "trainer-observed.json").write_text(json.dumps({
+        "schema": "bilqis.bamf.trainer-observed/v7",
+        "visits": [live],
+    }))
+    board.draw()
+    assert board.state["visits"] == 0
+    assert board.state["attempted_steps"] == 6
+
+    accepted = {
+        "event": "BAMF_C16_3_ACCEPTED",
+        "event_id": "accepted-transition",
+        "capability": "A.MAPS",
+        "candidate_attempt_ordinal": 1,
+        "optimizer_step": 138,
+        "selected_policy_key": "8694ee76cff6",
+        "visit_id": "authoritative-transition-id",
+        "how_outcome": {
+            "attempted_steps": 12,
+            "retained_steps": 12,
+            "scores": [["A.MAPS", 3, 4, 6]],
+            "decision": {
+                "decision": "PROVISIONAL",
+                "reason": "WITHIN_BUDGET",
+                "evaluated_capability_ids": ["A.MAPS"],
+            },
+            "context": {"grade": "A", "phase": "RECOVERY_1"},
+        },
+    }
+    events.write_text(json.dumps(historical) + "\n" + json.dumps(accepted) + "\n")
+    live["phase"] = "COMPLETED"
+    live["outcome"] = "ACCEPTED"
+    live["candidate_step"] = 12
+    (run / "trainer-observed.json").write_text(json.dumps({
+        "schema": "bilqis.bamf.trainer-observed/v7",
+        "visits": [live],
+    }))
+
+    board.draw()
+
+    assert board.state["visits"] == 1
+    assert board.state["retained_visits"] == 1
+    assert board.state["attempted_steps"] == 12
+    assert [row["capability"] for row in board.rows["CANDIDATES"]].count("A.MAPS") == 1
