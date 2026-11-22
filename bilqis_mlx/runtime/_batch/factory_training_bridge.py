@@ -86,19 +86,33 @@ def _validated_training_request(
 def _prepared_source_inputs(
         prepared_source, source_context, authenticated, rows, *, capability,
         source_seed, source_each, delivery=None, rehearsal_by_id=None,
-        rehearsal_bindings=None, rehearsal_authorities=None):
+        rehearsal_bindings=None, rehearsal_authorities=None,
+        selected_source_authority=None):
     if prepared_source is None:
         rehearsal_by_id = rehearsal_by_id or {}
         rehearsal_bindings = rehearsal_bindings or {}
         rehearsal_authorities = rehearsal_authorities or {}
         target_rows = tuple(row for row in rows if row.get("id") not in rehearsal_by_id)
-        source_authority = (
-            source_context.bind_rows(
-                target_rows, seed=source_seed, capability=capability, each=source_each)
-            if delivery is None or len(delivery.specimen_ids) == len(target_rows) else
-            source_context.bind_delivery_rows(
-                target_rows, seed=source_seed, capability=capability,
-                direct_each=len(delivery.specimen_ids)))
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        strict = strict_evidence_enabled()
+        if not strict and selected_source_authority is not None:
+            direct_ids = (
+                {row.get("id") for row in target_rows}
+                if delivery is None else set(delivery.specimen_ids))
+            direct_rows = tuple(
+                row for row in target_rows if row.get("id") in direct_ids)
+            source_authority = source_context.bind_prequalified_delivery_rows(
+                direct_rows, target_rows, selected_source_authority)
+        else:
+            source_authority = (
+                source_context.bind_rows(
+                    target_rows, seed=source_seed, capability=capability, each=source_each)
+                if delivery is None or len(delivery.specimen_ids) == len(target_rows) else
+                source_context.bind_delivery_rows(
+                    target_rows, seed=source_seed, capability=capability,
+                    direct_each=len(delivery.specimen_ids)))
         for identity, authority in rehearsal_authorities.items():
             row = next((item for item in rows if item.get("id") == identity), None)
             binding = rehearsal_bindings.get(identity)
@@ -108,10 +122,6 @@ def _prepared_source_inputs(
                     or authority.each != binding.get("each")):
                 _invalid("FACTORY_REHEARSAL_SOURCE_AUTHORITY_INVALID")
             source_context.require_bound_rows((row,), authority)
-        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
-            strict_evidence_enabled,
-        )
-        strict = strict_evidence_enabled()
         adapter, manifest, profile, source_rows = _prepare_factory_source_rows(
             source_context, authenticated, rows, capability=capability,
             source_seed=source_seed, source_each=source_each,
@@ -246,6 +256,7 @@ def prepare_factory_training_batch(
     rehearsal_authorities: dict | None = None,
     semantic_context=None,
     prepared_source=None,
+    selected_source_authority=None,
 ) -> PreparedFactoryTrainingBatch:
     """Compile one real Factory draw once, then bind each C02 row into B11.
 
@@ -278,7 +289,8 @@ def prepare_factory_training_batch(
         capability=capability, source_seed=source_seed, source_each=source_each,
         delivery=delivery, rehearsal_by_id=rehearsal_by_id,
         rehearsal_bindings=rehearsal_bindings,
-        rehearsal_authorities=rehearsal_authorities)
+        rehearsal_authorities=rehearsal_authorities,
+        selected_source_authority=selected_source_authority)
     prepared_source_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
     training = _compile_factory_training(

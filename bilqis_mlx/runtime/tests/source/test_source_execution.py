@@ -59,6 +59,25 @@ class SourceExecutionContextTests(unittest.TestCase):
             self.assertEqual(draw.call_count, 1)
         self.assertEqual(context._source_preparation_metrics.provider_draws, 1)
 
+    def test_prequalified_delivery_extension_does_not_redraw_provider(self):
+        from bilqis_mlx.factory import generation
+
+        context = SourceExecutionContext(**self.arguments)
+        original = generation.draw_executable_release_rows
+        with patch.object(
+                generation, "draw_executable_release_rows",
+                wraps=original) as draw:
+            rows, authority = context.draw_bound_rows(
+                seed=17, capability="Z.C0", each=1)
+            enrichment = {**rows[0], "id": rows[0]["id"] + ":enrichment"}
+            extended = context.bind_prequalified_delivery_rows(
+                rows, (*rows, enrichment), authority)
+            self.assertEqual(draw.call_count, 1)
+            self.assertEqual(extended.each, 2)
+            self.assertEqual(extended.seed, authority.seed)
+            self.assertEqual(extended.capability_id, authority.capability_id)
+        self.assertEqual(context._source_preparation_metrics.provider_draws, 1)
+
     def test_unbound_source_context_cannot_claim_accepted_runtime_custody(self):
         from pathlib import Path
         context = SourceExecutionContext(**self.arguments)

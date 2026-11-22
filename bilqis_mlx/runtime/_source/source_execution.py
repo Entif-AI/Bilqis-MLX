@@ -13,6 +13,7 @@ from ..factory.executable_release import ExecutableFactoryRelease
 
 from .source_batch_authority import (
     SourceBatchAuthority, bind_delivery_rows as _bind_delivery_rows,
+    bind_prequalified_delivery_rows as _bind_prequalified_delivery_rows,
     bind_rows as _bind_rows, draw_bound_rows as _draw_bound_rows,
     _source_family,
     require_bound_rows as _require_bound_rows,
@@ -227,6 +228,12 @@ class SourceExecutionContext:
         """Bind the exact direct draw plus Factory-released optional teaching rows."""
         return _bind_delivery_rows(
             self, rows, seed=seed, capability=capability, direct_each=direct_each)
+
+    def bind_prequalified_delivery_rows(
+            self, direct_rows, rows,
+            authority: SourceBatchAuthority) -> SourceBatchAuthority:
+        """Extend an already-selected batch over materialized teaching enrichment."""
+        return _bind_prequalified_delivery_rows(self, direct_rows, rows, authority)
 
 __all__ = (
     "SourceBatchAuthority", "SourceExecutionContext", "SourcePreparationMetrics",

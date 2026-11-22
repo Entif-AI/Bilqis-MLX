@@ -71,7 +71,8 @@ def execute_learning_first_priority_candidate(
         observer_begin_step_wall_seconds=observer_begin_step_wall_seconds,
         candidate_delivery_setup_wall_seconds=candidate_delivery_setup_wall_seconds,
         semantic_context=semantic_context, prepared_source=None,
-        accepted_cache=None, distributed_profile=distributed_profile,
+        accepted_cache=None, selected_source_authority=offer.source_authority,
+        distributed_profile=distributed_profile,
         distributed_executor=distributed_executor)
 
 

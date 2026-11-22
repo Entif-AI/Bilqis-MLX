@@ -31,7 +31,7 @@ def _prepare_candidate_step_inputs(
         mentor_observation_wall_seconds, progress_emission_wall_seconds,
         observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
         semantic_context,
-        prepared_source, accepted_cache):
+        prepared_source, accepted_cache, selected_source_authority):
     start = time.perf_counter()
     if candidate_step_started_at is None:
         candidate_step_started_at = start
@@ -66,7 +66,8 @@ def _prepare_candidate_step_inputs(
         rehearsal_bindings=rehearsal_bindings,
         rehearsal_authorities=rehearsal_authorities,
         semantic_context=semantic_context,
-        prepared_source=prepared_source)
+        prepared_source=prepared_source,
+        selected_source_authority=selected_source_authority)
     prepared_observation = getattr(prepared, "_performance_observation", {})
     if isinstance(prepared_observation, dict):
         stage_metrics.update({
@@ -193,6 +194,7 @@ def execute_factory_candidate_step(
     semantic_context=None,
     prepared_source=None,
     accepted_cache=None,
+    selected_source_authority=None,
     distributed_profile=None,
     distributed_executor=None,
 ) -> FactoryCandidateStep:
@@ -219,7 +221,7 @@ def execute_factory_candidate_step(
         mentor_observation_wall_seconds, progress_emission_wall_seconds,
         observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
         semantic_context,
-        prepared_source, accepted_cache)
+        prepared_source, accepted_cache, selected_source_authority)
     _require_mentor_supervision_timed(
         mentor_supervision, observation, parent, cache, teacher_strategy,
         source_seed, stage_metrics)

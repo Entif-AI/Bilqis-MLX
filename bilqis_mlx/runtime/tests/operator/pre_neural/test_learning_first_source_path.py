@@ -1,6 +1,7 @@
 """Production-shaped proof for the authority-light BAMF source path."""
 import time
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
@@ -30,17 +31,23 @@ class LearningFirstSourcePathTests(PreNeuralJourneySupport, unittest.TestCase):
                 execution = context.release.execution_plan.capability_map["B.AND"]
                 delivery = describe_delivered_teaching(
                     context.release, "B.AND", execution.teaching_option_ids[0], rows)
+                selected_source_authority = context.bind_rows(
+                    rows, seed=12345, capability="B.AND", each=4)
                 generation = execution_generation_digest(
                     parent.retained_state.optimizer.parameters,
                     spec=parent.topology, extents=parent.extents)
                 with evidence_mode(strict=False):
                     started = time.perf_counter()
-                    prepared = prepare_factory_training_batch(
-                        context, parent, atlas_path, feature_path, rows, generation,
-                        capability="B.AND", delivery=delivery, requested_count=4,
-                        source_seed=12345, source_each=4, optimizer_step_seed=7,
-                        visit_provenance=visit_provenance("B.AND"),
-                        teacher_strategy={"policy": "learning-first"})
+                    with patch.object(
+                            type(context), "bind_rows",
+                            side_effect=AssertionError("learning-first source redraw")):
+                        prepared = prepare_factory_training_batch(
+                            context, parent, atlas_path, feature_path, rows, generation,
+                            capability="B.AND", delivery=delivery, requested_count=4,
+                            source_seed=12345, source_each=4, optimizer_step_seed=7,
+                            visit_provenance=visit_provenance("B.AND"),
+                            teacher_strategy={"policy": "learning-first"},
+                            selected_source_authority=selected_source_authority)
                     preparation_wall_seconds = time.perf_counter() - started
 
         self.assertEqual(len(prepared.compiled_rows), 4)
