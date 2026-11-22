@@ -38,7 +38,8 @@ def test_resource_rejection_returns_to_scheduler_without_learner_feedback(tmp_pa
     disk = Mock(return_value={"sufficient": True})
     observer = SimpleNamespace(finish=Mock(), update=Mock())
     outcome = _run_visits(
-        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, reserve_gib=100,
+        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, batch_size=1,
+        reserve_gib=100,
         source_prefetch_workers=0, progress=None, source_prefetch_executor=None,
         metrics=None, run_authority_binding=authority, resource_snapshot=disk,
         monotonic=lambda: 0, observer_type=lambda *_: nullcontext(observer),
@@ -76,7 +77,8 @@ def test_visit_progress_is_mirrored_into_observation_activity(tmp_path):
         kwargs['progress']('planner: compiling semantic curriculum')
         return 'REJECTED'
     outcome = _run_visits(
-        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, reserve_gib=100,
+        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, batch_size=1,
+        reserve_gib=100,
         source_prefetch_workers=0, progress=messages.append, source_prefetch_executor=None,
         metrics=None, run_authority_binding=None, resource_snapshot=None,
         monotonic=lambda: 0, observer_type=lambda *_: nullcontext(observer),
