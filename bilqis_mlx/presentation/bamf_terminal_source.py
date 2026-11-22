@@ -201,17 +201,18 @@ def _legacy_durable_match(live: dict, durable_by_key: dict):
     key = _legacy_match_key(live)
     if key is None:
         return None
+    capability, optimizer_step, policy_key = key
     exact = durable_by_key.get(key, ())
     unique = _only(exact)
     if unique is not None:
         return unique
-    if key[2] is not None:
+    if policy_key is not None:
         return None
-    broad = [
-        visit for candidate_key, visits in durable_by_key.items()
-        if candidate_key[:2] == key[:2]
-        for visit in visits
-    ]
+    broad = []
+    for candidate_key, visits in durable_by_key.items():
+        candidate_capability, candidate_step, _candidate_policy = candidate_key
+        if candidate_capability == capability and candidate_step == optimizer_step:
+            broad.extend(visits)
     return _only(broad)
 
 
