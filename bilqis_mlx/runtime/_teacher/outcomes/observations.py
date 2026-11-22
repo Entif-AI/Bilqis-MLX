@@ -27,6 +27,27 @@ def ledger(teacher, manifest):
     return deepcopy(record)
 
 
+def _compact_selected_teacher(teacher, context):
+    selected = deepcopy(teacher)
+    key = context.get('diagnostic_context_key')
+    if key is None:
+        return selected
+    diagnostics = context.get('diagnostics')
+    if not isinstance(key, str) or not key or not isinstance(diagnostics, dict):
+        invalid()
+    channel = selected.get('causal_experiment')
+    if not isinstance(channel, dict):
+        invalid()
+    contexts = channel.setdefault('diagnostic_contexts', {})
+    if not isinstance(contexts, dict):
+        invalid()
+    existing = contexts.get(key)
+    if existing is not None and existing != diagnostics:
+        invalid()
+    contexts[key] = deepcopy(diagnostics)
+    return selected
+
+
 def _deltas(observation):
     scores = observation['scores']
     deltas = {}
@@ -59,10 +80,10 @@ def _apply_outcome(teacher, observation):
         selected = deepcopy(observation['selected_teacher'])
     else:
         selected_sha256 = observation.get('selected_teacher_sha256')
+        selected = _compact_selected_teacher(teacher, context)
         if (not isinstance(selected_sha256, str)
-                or selected_sha256 != _fingerprint(teacher)):
+                or selected_sha256 != _fingerprint(selected)):
             invalid()
-        selected = deepcopy(teacher)
     if ledger(selected, manifest) != prior:
         invalid()
     key, cap = visit['policy_key'], visit['capability_id']

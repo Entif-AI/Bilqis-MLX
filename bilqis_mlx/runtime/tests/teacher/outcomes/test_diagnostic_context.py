@@ -55,6 +55,50 @@ def test_native_selection_and_feedback_preserve_verified_salience_key():
     assert key == visit['policy_key']
 
 
+def test_compact_selection_reconstructs_diagnostic_context_before_identity_check():
+    epoch, _, _, school, evidence = _fixture()
+    parent = epoch.teacher()
+    teacher = deepcopy(parent)
+    capability, scope = evidence.scope.capability_id, evidence.scope.scope
+    diagnostics = {
+        'salience_evidence': evidence,
+        'teacher_epoch_digest': contract_digest(epoch),
+    }
+    key, policy, metadata = select_visit_policy(
+        engine, teacher, capability, school, random.Random(12), Settings(),
+        scope, diagnostics, 'any-grade')
+    diagnostic_key = metadata['diagnostic_context_key']
+    payload = teacher['causal_experiment']['diagnostic_contexts'][diagnostic_key]
+    value = {
+        'schema': 'bilqis.bamf.teacher-outcome/v1', 'attempt_id': 'compact:1',
+        'proposal_id': 'a' * 64, 'candidate_evidence': {'sha256': 'b' * 64},
+        'teacher_visit': {
+            'accepted_manifest_sha256': 'a' * 64,
+            'student_sha256': epoch.student_sha256, 'policy_key': key,
+            'capability_id': capability,
+        },
+        'context': {
+            'grade': 'any-grade', 'phase': school.stage,
+            'curriculum_scope': scope, 'rubric_sha256': 'd' * 64,
+            'diagnostics': payload, 'diagnostic_context_key': diagnostic_key,
+        },
+        'selected_teacher_sha256': _fingerprint(teacher),
+        'selected_policy': policy,
+        'effective_policy_key': effective_policy_key(policy),
+        'realized_action': None, 'attempted_steps': 1, 'retained_steps': 0,
+        'decision': {
+            'decision': 'REJECT', 'reason': 'NO_MEASURABLE_TARGET_GAIN',
+            'evidence_sha256': 'e' * 64,
+        },
+        'scores': [[capability, 1, 1, 4]], 'protected_capabilities': [],
+    }
+    value['outcome_sha256'] = _fingerprint(value)
+
+    credited = apply_outcome(parent, value)
+
+    assert credited['causal_experiment']['diagnostic_contexts'][diagnostic_key] == payload
+
+
 def test_changed_selected_diagnostic_payload_cannot_credit():
     teacher, value, _, _ = selected_outcome()
     value['context']['diagnostics'] = {'salience': 'changed'}
