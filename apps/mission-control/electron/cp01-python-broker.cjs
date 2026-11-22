@@ -22,7 +22,7 @@ class Cp01PythonBroker {
     pythonExecutable = "python3",
     cwd = path.resolve(__dirname, "../../.."),
     env = process.env,
-    requestTimeoutMs = 10000,
+    requestTimeoutMs = 20000,
   } = {}) {
     this.pythonExecutable = pythonExecutable;
     this.cwd = cwd;
