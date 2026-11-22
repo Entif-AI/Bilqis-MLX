@@ -241,7 +241,8 @@ def _execute_prepared_candidate(
         motif_started = time.perf_counter()
         if finalize_candidate:
             transaction = _stage_retained_motifs(
-                run_dir, parent, cache, transaction, prepared, plan, memory_budget)
+                run_dir, parent, cache, transaction, prepared, plan, memory_budget,
+                currentness_transaction=currentness_transaction)
         motif_seconds = time.perf_counter() - motif_started if finalize_candidate else 0.0
         return (gradient, authorities, target_rows, transaction, loss_total,
                 c08_metrics, optimizer_seconds, motif_seconds)

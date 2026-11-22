@@ -46,6 +46,7 @@ from .motif.source_continuation import (
     continue_source_qualified_motifs_from_bundle,
     seal_source_qualified_motif_batch_from_accepted_parent,
     seal_source_qualified_motif_batch_from_bundle,
+    seal_source_qualified_motifs_from_accepted_parent,
     seal_source_qualified_motifs_from_bundle,
     stage_source_qualified_motif_allocation,
 )
@@ -90,6 +91,7 @@ __all__ = (
     "continue_source_qualified_motifs_from_bundle",
     "seal_source_qualified_motif_batch_from_accepted_parent",
     "seal_source_qualified_motif_batch_from_bundle",
+    "seal_source_qualified_motifs_from_accepted_parent",
     "seal_source_qualified_motifs_from_bundle",
     "stage_source_qualified_motif_allocation",
     "SourceQualifiedMotifContinuation",
