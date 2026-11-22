@@ -46,7 +46,8 @@ class PreNeuralJourneyGuardTests(PreNeuralJourneySupport, unittest.TestCase):
             "planner: resolving frontier closure",
             "planner: ranking next bounded target",
             "planner: candidate frontier ready",
-            "teacher: preparing source-backed offers for 14 lawful capabilities",
+            "teacher: preparing source-backed offers for "
+            "14 cadence-authorized capabilities",
             "teacher: ranking priority options",
             "teacher: selecting current priority visit",
             "teacher: priority selection complete (TEACHER_SELECTED)",

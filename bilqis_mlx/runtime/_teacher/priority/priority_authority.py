@@ -265,9 +265,11 @@ def issue_foundation_priority_authority(
     signer = read_host_system_source_authority_signer(registry)
     capabilities = ready_capabilities
     if progress is not None:
+        capability_label = (
+            "capability" if len(capabilities) == 1 else "capabilities")
         progress(
             "teacher: preparing source-backed offers for "
-            f"{len(capabilities)} lawful capabilities")
+            f"{len(capabilities)} cadence-authorized {capability_label}")
     capabilities, offers = _priority_offers(
         source_context, parent, atlas_artifact_path, next_seed,
         planning_generation, lawful_frontier, ready_capabilities)
