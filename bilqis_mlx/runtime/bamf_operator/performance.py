@@ -85,6 +85,7 @@ STEP_COST_FIELDS = (
     "motif_staging_wall_seconds",
     "evidence_capture_wall_seconds",
     "candidate_terminal_step",
+    "loss_total",
     "c08_gradient_launches",
     "c08_vectorized_microbatches",
     "c08_materialization_barriers",

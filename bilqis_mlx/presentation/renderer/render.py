@@ -6,6 +6,22 @@ from .tables import WIDE_MIN_HEIGHT, WIDE_MIN_WIDTH
 from .scores import _score_summary
 from .layout import _clean, _columns, _header_table, _human_duration, _right_header, _section_heading, _table_line
 
+
+def _bamf_exam_student_headers(rows, exam, student):
+    observed = any(
+        row.get('_bamf_terminal_observed') is True
+        for row in rows.get('CANDIDATES', ()))
+    if student is not None:
+        latest_score,best_score=student
+        latest=f"{latest_score[0]}/{latest_score[1]} @{latest_score[2]}"
+        best=f"{best_score[0]}/{best_score[1]} @{best_score[2]}"
+    else:
+        latest=best="EXAM PENDING" if observed else "-"
+    if exam in (None, '', '?', '-') and observed:
+        exam="PEND"
+    return exam,latest,best
+
+
 class RenderView:
     def _compact_headers(self,state):
         elapsed=max(0,self.clock()-self.started)
@@ -26,12 +42,7 @@ class RenderView:
         teacher=state.get('teacher')
         retained=state.get("retained_visits")
         student=self._same_student_snapshot()
-        latest="-"
-        best="-"
-        if student is not None:
-            latest_score,best_score=student
-            latest=f"{latest_score[0]}/{latest_score[1]} @{latest_score[2]}"
-            best=f"{best_score[0]}/{best_score[1]} @{best_score[2]}"
+        exam,latest,best=_bamf_exam_student_headers(self.rows,exam,student)
         fields=[
             ("BILQIS",school,22,False),
             ("RUNTIME",_human_duration(elapsed),15,False),

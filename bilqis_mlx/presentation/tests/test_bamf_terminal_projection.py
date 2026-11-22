@@ -84,11 +84,20 @@ class BamfTerminalProjectionTests(unittest.TestCase):
                 "capability": "A.EDGE", "candidate_attempt_ordinal": 11,
                 "optimizer_step": 50, "selected_policy_key": "policy-a",
                 "visit_id": "visit-accepted",
+                "resource": {"loss_total": 0.812},
                 "how_outcome": {
                     "attempted_steps": 4, "retained_steps": 4,
+                    "selected_policy": {
+                        "lr": 0.0003, "depth": 2, "contrast": 0.0,
+                        "old": 6, "preview": 4, "distill": 0.35,
+                    },
+                    "protected_capabilities": [],
                     "scores": [["A.EDGE", 2, 3, 6]],
-                    "decision": {"decision": "PROVISIONAL", "reason": "WITHIN_BUDGET"},
-                    "context": {"grade": "A"},
+                    "decision": {
+                        "decision": "PROVISIONAL", "reason": "WITHIN_BUDGET",
+                        "evaluated_capability_ids": ["A.EDGE"],
+                    },
+                    "context": {"grade": "A", "phase": "MAIN"},
                 },
             }
             rejected = {
@@ -122,6 +131,71 @@ class BamfTerminalProjectionTests(unittest.TestCase):
 
             capabilities = [row["capability"] for row in board.rows["CANDIDATES"]]
             self.assertEqual(capabilities, ["A.EDGE", "A.PARENT", "A.MAPS"])
+            accepted_candidate = board.rows["CANDIDATES"][0]
+            accepted_teacher = board.rows["SOUP & TEACHER"][0]
+            accepted_retention = board.rows["SENTINEL & RETENTION"][0]
+            self.assertEqual(accepted_candidate["lr"], "30")
+            self.assertEqual(accepted_candidate["old"], "6")
+            self.assertEqual(accepted_candidate["loss"], "0.812")
+            self.assertEqual(accepted_teacher["lr"], "30")
+            self.assertEqual(accepted_teacher["depth"], "2")
+            self.assertEqual(accepted_teacher["contrast"], "0")
+            self.assertEqual(accepted_teacher["old"], "6")
+            self.assertEqual(accepted_teacher["distill"], "0.350")
+            self.assertEqual(accepted_teacher["p_ret"], "50.0%")
+            self.assertEqual(accepted_teacher["health"], "UNCERTAIN")
+            self.assertEqual(accepted_retention["protected"], "0")
+            self.assertTrue(accepted_retention["evidence"].startswith("1/1 | "))
+
+    def test_live_overlay_preserves_richer_durable_visit_fields(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            (run / "bamf-state.json").write_text(json.dumps({
+                "run_id": "aspirant", "generation": 14,
+            }))
+            accepted = {
+                "event": "BAMF_C16_3_ACCEPTED", "event_id": "accepted-overlay",
+                "capability": "A.PARENT", "candidate_attempt_ordinal": 3,
+                "optimizer_step": 78, "selected_policy_key": "ad7180a27c27",
+                "visit_id": "shared-visit",
+                "how_outcome": {
+                    "attempted_steps": 12, "retained_steps": 12,
+                    "selected_policy": {
+                        "lr": 0.0003, "depth": 2, "contrast": 0.0,
+                        "old": 6, "preview": 4, "distill": 0.35,
+                    },
+                    "protected_capabilities": [],
+                    "scores": [["A.PARENT", 3, 4, 6]],
+                    "decision": {
+                        "decision": "PROVISIONAL",
+                        "reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+                        "evaluated_capability_ids": ["A.PARENT"],
+                    },
+                    "context": {"grade": "A", "phase": "RECOVERY_1"},
+                },
+            }
+            (run / "events.jsonl").write_text(json.dumps(accepted) + "\n")
+            live = observed_visit("A.PARENT", 3, 78, before=3, after=4, wall=2.2)
+            live["visit_id"] = "shared-visit"
+            live["visit_evidence"]["teacher_policy_key"] = "ad7180a27c27"
+            (run / "trainer-observed.json").write_text(json.dumps({
+                "schema": "bilqis.bamf.trainer-observed/v7", "visits": [live],
+            }))
+            board = Dashboard(
+                stream=io.StringIO(), clock=lambda: 1000.0,
+                tables=LETTER_TABLES, compact_header=True, show_all_panels=True)
+            board.school_telemetry = SchoolTelemetry(board, active_grades=("A", "B"))
+            board.grade_program = ("A", "B")
+            board.log_hint = str(run / "events.jsonl")
+
+            board.draw()
+
+            teacher = board.rows["SOUP & TEACHER"][0]
+            self.assertEqual(teacher["policy"], "ad7180a27c")
+            self.assertEqual(teacher["lr"], "30")
+            self.assertEqual(teacher["depth"], "2")
+            rendered = board.render(width=300, height=38)
+            self.assertIn("EXAM PENDING", rendered)
 
     def test_tty_draw_projects_existing_bamf_observation_into_dense_cockpit(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -162,7 +236,10 @@ class BamfTerminalProjectionTests(unittest.TestCase):
             self.assertGreaterEqual(len(board.rows["BRIDGE FAMILIES"]), 2)
             rendered = board.render(width=300, height=38)
             headings, values = rendered.splitlines()[:2]
-            self.assertEqual(values[headings.index("EXAM"):headings.index("EXAM") + 6].strip(), "-")
+            self.assertEqual(
+                values[headings.index("EXAM"):headings.index("EXAM") + 6].strip(),
+                "PEND",
+            )
             self.assertEqual(values[headings.index("CAPS"):headings.index("CAPS") + 5].strip(), "-")
             self.assertRegex(rendered, r"CANDIDATES\s+\[2/2 visible\]")
             self.assertIn("A.LINK", rendered)

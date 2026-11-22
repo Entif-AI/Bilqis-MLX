@@ -104,8 +104,9 @@ def refresh_bamf_terminal_projection(board) -> None:
         candidate_row(visit) for visit in projected_visits)
     board.rows["SENTINEL & RETENTION"].extend(
         retention_row(visit) for visit in projected_visits)
+    teacher_history = {}
     board.rows["SOUP & TEACHER"].extend(
-        teacher_row(visit) for visit in projected_visits)
+        teacher_row(visit, teacher_history) for visit in projected_visits)
     summaries, families = mastery_rows(projected_visits)
     board.rows["GRADES & MASTERY"].extend(summaries)
     board.rows["BRIDGE FAMILIES"].extend(families)
