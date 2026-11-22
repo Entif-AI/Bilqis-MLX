@@ -89,6 +89,18 @@ def health(visit):
     return str(value.get("qualification_state") or value.get("state") or "-")
 
 
+def latest_step_number(visit, field):
+    steps = visit.get("candidate_steps")
+    if not isinstance(steps, list):
+        return None
+    for step in reversed(steps):
+        if isinstance(step, dict):
+            value = number(step.get(field))
+            if value is not None:
+                return value
+    return None
+
+
 def candidate_row(visit):
     measured = score(visit)
     strategy = selected_policy(visit)
@@ -100,7 +112,11 @@ def candidate_row(visit):
         "capability": visit.get("capability_id") or "-",
         "attempt": visit.get("visit_index", "-"), "strategy": policy(visit),
         "lr": _scaled_lr(strategy.get("lr")),
-        "score_line": score_line, "reward": "-", "loss": _display(visit.get("loss_total")),
+        "score_line": score_line, "reward": "-",
+        "loss": _display(
+            number(visit.get("loss_total"))
+            if number(visit.get("loss_total")) is not None
+            else latest_step_number(visit, "loss_total")),
         "gradient": "-", "method": "BAMF", "old": _whole(strategy.get("old")),
         "result": str(visit.get("outcome") or "-"),
         "reason": reason(visit), "warnings": warnings(visit),
