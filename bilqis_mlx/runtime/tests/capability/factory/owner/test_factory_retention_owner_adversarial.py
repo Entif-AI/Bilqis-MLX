@@ -162,6 +162,23 @@ def _evaluate_foundation_owner(source, candidate, target, fixed, fresh,
 
 
 class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
+    def test_learning_first_candidate_preserves_source_independence_coordinates(self):
+        candidate = object.__new__(CandidateTransaction)
+        object.__setattr__(candidate, "learning_first", True)
+        object.__setattr__(candidate, "training_authorities", ())
+        object.__setattr__(candidate, "step_proofs", ())
+        object.__setattr__(candidate, "update_steps", 1)
+        object.__setattr__(candidate, "training_source_coordinates", (
+            ("B.IDBOOLOPS", "family-a", "episode-a"),
+            ("B.IDBOOLOPS", "family-a", "episode-b"),
+        ))
+
+        self.assertEqual(
+            owner._training_exclusions(candidate),
+            (("family-a",), ("episode-a", "episode-b")),
+        )
+        self.assertEqual(owner._training_capabilities(candidate), ("B.IDBOOLOPS",))
+
     def test_optimizer_delta_summary_distinguishes_decay_only_from_gradient_driven_change(self):
         parent = SimpleNamespace(retained_state=SimpleNamespace(
             optimizer=SimpleNamespace(parameters={

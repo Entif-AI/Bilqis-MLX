@@ -153,21 +153,7 @@ def candidate_step(candidate: CandidateTransaction, gradients, execution,
         parent_guard=candidate._parent_guard)
 
 
-def learning_first_candidate_step(
-        candidate: CandidateTransaction, gradients, loss_executions: tuple,
-        group_eligible, teacher_hparams, *, spec, extents,
-        max_norm: float) -> CandidateTransaction:
-    """Apply one proofless numerical optimizer step from actual loss ancestry.
-
-    ADR-153 ordinary training preserves participation masking and native AdamW
-    while deferring provenance/proof custody to accepted-state publication.
-    """
-    if (type(candidate) is not CandidateTransaction
-            or not candidate.learning_first
-            or type(loss_executions) is not tuple
-            or not loss_executions):
-        invalid()
-    executions = loss_executions
+def _learning_first_optimizer_inputs(candidate, executions, group_eligible, spec, extents):
     inputs = StepParticipationInputs(
         visible_identity_rows=tuple(sorted({
             row for execution in executions
@@ -226,6 +212,21 @@ def learning_first_candidate_step(
         item.name: (item.whole_parameter, item.row_indices)
         for item in mask.parameters
     }
+    return update_mask, decay, authority
+
+
+def learning_first_candidate_step(
+        candidate: CandidateTransaction, gradients, loss_executions: tuple,
+        group_eligible, teacher_hparams, *, training_source_coordinates, spec, extents,
+        max_norm: float) -> CandidateTransaction:
+    """Apply one proofless numerical optimizer step from actual loss ancestry."""
+    if (type(candidate) is not CandidateTransaction or not candidate.learning_first
+            or type(loss_executions) is not tuple or not loss_executions
+            or type(training_source_coordinates) is not tuple
+            or not training_source_coordinates):
+        invalid()
+    update_mask, decay, authority = _learning_first_optimizer_inputs(
+        candidate, loss_executions, group_eligible, spec, extents)
     optimizer = _adamw_update(
         candidate.optimizer, gradients, update_mask, teacher_hparams,
         decay=decay, loss_bearing=True, max_norm=max_norm,
@@ -236,7 +237,9 @@ def learning_first_candidate_step(
         candidate.parent, optimizer, candidate.teacher_requests_full,
         candidate.update_steps + 1,
         parent_identity_sha256=candidate._parent_identity_sha256,
-        parent_guard=candidate._parent_guard, learning_first=True)
+        parent_guard=candidate._parent_guard, learning_first=True,
+        training_source_coordinates=tuple(sorted(set(
+            candidate.training_source_coordinates + training_source_coordinates))))
 
 
 

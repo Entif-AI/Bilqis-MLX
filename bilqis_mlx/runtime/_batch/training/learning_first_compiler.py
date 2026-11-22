@@ -11,6 +11,7 @@ from bilqis_mlx.runtime.atlas_training_contracts import (
     _freeze, _invalid, _issue_training_batch,
 )
 from bilqis_mlx.runtime.factory_training_context import training_answer_plan
+from bilqis_mlx.runtime.source_execution import _source_family
 
 
 def _native_target(row):
@@ -73,11 +74,16 @@ def compile_learning_first_training_batch(
         episode_id = row.get("episode_id")
         if not isinstance(episode_id, str) or not episode_id:
             episode_id = identity
+        source_family_id = row.get("source_family_id")
+        if source_family_id is None:
+            source_family_id = _source_family(capability)
+        elif not isinstance(source_family_id, str) or not source_family_id:
+            _invalid("LEARNING_FIRST_SOURCE_FAMILY_INVALID")
         metadata = BamfLearningRowMetadata(
             identity, source_id, capability_id, operation_id,
             _freeze(teacher_strategy), requested_count, len(rows),
             (rehearsal_by_id or {}).get(identity), optimizer_step_seed,
-            visit_provenance, capability.provider_id, episode_id)
+            visit_provenance, source_family_id, episode_id)
         compiled_rows.append(BamfTrainingRow(
             model_input, target, _native_target(row), metadata))
     return _issue_training_batch(

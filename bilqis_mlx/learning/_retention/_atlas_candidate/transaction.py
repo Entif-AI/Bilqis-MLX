@@ -51,6 +51,7 @@ class CandidateTransaction:
     update_steps: int = 0
     step_proofs: tuple = ()
     training_authorities: tuple = ()
+    training_source_coordinates: tuple = ()
     motif_transition: CandidateMotifAllocationTransition | None = None
     learning_first: bool = False
     training_objective_ref: str = field(init=False)
@@ -79,6 +80,7 @@ class CandidateTransaction:
                 or len(self.step_proofs) != self.update_steps
                 or type(self.training_authorities) is not tuple
                 or len(self.training_authorities) != self.update_steps
+                or self.training_source_coordinates != ()
                 or any(type(proof) is not CandidateStepProof for proof in self.step_proofs)
                 or any(proof.step_index != index + 1
                        for index, proof in enumerate(self.step_proofs))
@@ -149,6 +151,7 @@ class CandidateTransaction:
 
 
 def _validate_learning_first_transaction(candidate):
+    coordinates = candidate.training_source_coordinates
     if (type(candidate.parent) is not CandidateState
             or type(candidate.optimizer) is not AdamWStateTree
             or candidate.allocations is not candidate.parent.allocations
@@ -156,6 +159,13 @@ def _validate_learning_first_transaction(candidate):
             or type(candidate.update_steps) is not int or candidate.update_steps < 0
             or candidate.step_proofs != ()
             or candidate.training_authorities != ()
+            or type(coordinates) is not tuple
+            or coordinates != tuple(sorted(set(coordinates)))
+            or any(type(item) is not tuple or len(item) != 3
+                   or any(not isinstance(value, str) or not value for value in item)
+                   for item in coordinates)
+            or (candidate.update_steps > 0 and not coordinates)
+            or (candidate.update_steps == 0 and coordinates)
             or candidate.motif_transition is not None
             or not isinstance(candidate.training_objective_ref, str)
             or not candidate.training_objective_ref
@@ -171,7 +181,8 @@ def _validate_learning_first_transaction(candidate):
 def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0,
                        step_proofs=(), training_authorities=(), *, allocations=None,
                        motif_transition=None, parent_identity_sha256=None,
-                       parent_guard=None, learning_first=False):
+                       parent_guard=None, learning_first=False,
+                       training_source_coordinates=()):
     """Continue one candidate; B07 allocation state is terminal when present."""
     candidate = object.__new__(CandidateTransaction)
     allocations = parent.allocations if allocations is None else allocations
@@ -200,6 +211,7 @@ def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0,
             ('teacher_requests_full', teacher_requests_full), ('update_steps', update_steps),
             ('step_proofs', tuple(step_proofs)),
             ('training_authorities', tuple(training_authorities)),
+            ('training_source_coordinates', tuple(training_source_coordinates)),
             ('motif_transition', motif_transition),
             ('learning_first', bool(learning_first)),
             ('training_objective_ref', objective_ref),

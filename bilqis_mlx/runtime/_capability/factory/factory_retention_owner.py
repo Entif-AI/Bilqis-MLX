@@ -52,7 +52,7 @@ from ._factory_retention_support import (
     C05_MAX_FRESH_DRAWS, C05_PROBE_EACH, C05_PROTECTED_REFERENCE_LOSS,
     _candidate_from_live_parent, _cohort, _fresh_rows, _instruments,
     _owner_seed, _package_import_from_live_parent,
-    _training_exclusions,
+    _training_capabilities, _training_exclusions,
 )
 
 def _fixed_school_instruments(
@@ -207,10 +207,13 @@ def evaluate_factory_retention_candidate(
     source_context.require_accepted_runtime(run_dir)
     release = source_context.release
     training = _training_exclusions(candidate)
-    if (any(authority.delivery_capability != target_capability
-            or authority.release_sha256 != release.release_sha256
-            for authority in candidate.training_authorities
-            if authority is not None)):
+    if getattr(candidate, "learning_first", False):
+        if _training_capabilities(candidate) != (target_capability,):
+            _invalid("BAMF_C05_TARGET_NOT_OWNED_BY_TRAINING")
+    elif any(authority.delivery_capability != target_capability
+             or authority.release_sha256 != release.release_sha256
+             for authority in candidate.training_authorities
+             if authority is not None):
         _invalid("BAMF_C05_TARGET_NOT_OWNED_BY_TRAINING")
     parent, candidate_bundle, candidate_state, cache = _candidate_from_live_parent(
         run_dir, candidate)
