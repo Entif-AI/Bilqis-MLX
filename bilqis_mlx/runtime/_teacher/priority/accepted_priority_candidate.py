@@ -211,6 +211,48 @@ def _refresh_candidate_step(binding):
     }
 
 
+def _candidate_visit_inputs(
+        selection, source_context, prepared_source_rows, candidate_visit):
+    visit_binding = (
+        None if candidate_visit is None else
+        _require_candidate_visit(candidate_visit, selection, source_context))
+    if visit_binding is None:
+        values = _candidate_currentness(
+            selection, source_context, prepared_source_rows)
+        return (*values, None)
+    if (prepared_source_rows is not None
+            and tuple(prepared_source_rows) != visit_binding.prepared_source.rows):
+        _invalid('BAMF_PRIORITY_CANDIDATE_SOURCE_ROWS_DRIFT')
+    return (
+        visit_binding.planning_generation,
+        visit_binding.parent,
+        visit_binding.cache,
+        None,
+        visit_binding.semantic_context,
+        visit_binding.prepared_source,
+        {},
+        visit_binding,
+    )
+
+
+def _candidate_delivery_setup(
+        selection, source_context, prepared_source_rows,
+        prepared_enrichment_rows, prepared_rehearsal_rows, rehearsal_by_id,
+        rehearsal_bindings, rehearsal_authorities, observation, teacher_hparams):
+    started = time.perf_counter()
+    policy = selection.policy
+    lr = policy.get('lr') if isinstance(policy, dict) else None
+    if (type(teacher_hparams) is not AdamWHyperparameters
+            or type(lr) not in (int, float) or not math.isfinite(lr) or lr <= 0):
+        _invalid('BAMF_PRIORITY_TEACHER_RATE_INVALID')
+    hparams = replace(teacher_hparams, learning_rate=float(lr))
+    delivery_inputs = _candidate_delivery_inputs(
+        selection, source_context, prepared_source_rows, prepared_enrichment_rows,
+        prepared_rehearsal_rows, rehearsal_by_id, rehearsal_bindings,
+        rehearsal_authorities, observation)
+    return policy, hparams, delivery_inputs, time.perf_counter() - started
+
+
 def execute_accepted_priority_candidate(selection, source_context,
         atlas_artifact_path, feature_artifact_path, *, teacher_hparams, observation,
         optimizer_step_seed, max_norm, memory_budget=None, salience_provider=None,
@@ -232,40 +274,18 @@ def execute_accepted_priority_candidate(selection, source_context,
         return selection
     if candidate_step_started_at is None:
         candidate_step_started_at = time.perf_counter()
-    visit_binding = (
-        None if candidate_visit is None else
-        _require_candidate_visit(candidate_visit, selection, source_context))
-    if visit_binding is None:
-        (planning_generation, parent, cache, currentness_step, semantic_context,
-         prepared_source, currentness_timings) = _candidate_currentness(
-            selection, source_context, prepared_source_rows)
-    else:
-        planning_generation = visit_binding.planning_generation
-        parent = visit_binding.parent
-        cache = visit_binding.cache
-        semantic_context = visit_binding.semantic_context
-        prepared_source = visit_binding.prepared_source
-        currentness_step = None
-        currentness_timings = {}
-        if (prepared_source_rows is not None
-                and tuple(prepared_source_rows) != prepared_source.rows):
-            _invalid('BAMF_PRIORITY_CANDIDATE_SOURCE_ROWS_DRIFT')
-    caller_pre_neural_started = time.perf_counter()
-    policy = selection.policy
-    lr = policy.get('lr') if isinstance(policy, dict) else None
-    if (type(teacher_hparams) is not AdamWHyperparameters
-            or type(lr) not in (int, float) or not math.isfinite(lr) or lr <= 0):
-        _invalid('BAMF_PRIORITY_TEACHER_RATE_INVALID')
-    hparams = replace(teacher_hparams, learning_rate=float(lr))
-    (offer, rows, enrichment, rehearsal, rehearsal_by_id, rehearsal_bindings,
-     rehearsal_authorities, capability, delivery, observation) = _candidate_delivery_inputs(
+    (planning_generation, parent, cache, currentness_step, semantic_context,
+     prepared_source, currentness_timings, visit_binding) = _candidate_visit_inputs(
+        selection, source_context, prepared_source_rows, candidate_visit)
+    (policy, hparams, delivery_inputs,
+     candidate_delivery_setup_wall_seconds) = _candidate_delivery_setup(
         selection, source_context, prepared_source_rows, prepared_enrichment_rows,
         prepared_rehearsal_rows, rehearsal_by_id, rehearsal_bindings,
-        rehearsal_authorities, observation)
+        rehearsal_authorities, observation, teacher_hparams)
+    (offer, rows, enrichment, rehearsal, rehearsal_by_id, rehearsal_bindings,
+     rehearsal_authorities, capability, delivery, observation) = delivery_inputs
     delivered_rows = (*rows, *rehearsal, *enrichment)
     provenance = BamfVisitProvenance.from_c03_record(selection.visit.identity.to_record())
-    candidate_delivery_setup_wall_seconds = (
-        time.perf_counter() - caller_pre_neural_started)
     caller_pre_neural_wall_seconds = (
         float(source_prepare_wall_seconds)
         + candidate_delivery_setup_wall_seconds)

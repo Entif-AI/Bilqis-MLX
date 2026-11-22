@@ -51,6 +51,47 @@ def _terminal_visit_status(outcome):
     }.get(outcome)
 
 
+def _observed_visit_attempt(
+        run_dir, attempts, *, reserve_gib, steps_per_visit, batch_size,
+        source_prefetch_workers, progress, source_prefetch_executor, metrics,
+        run_authority_binding, resource_holds, observer_type, emit_progress,
+        visit_fn, stale_retry_armed):
+    resource_rejected = False
+    with observer_type(run_dir, attempts) as observer:
+        def observed_progress(message):
+            stage = getattr(observer, "stage", None)
+            if callable(stage):
+                stage(activity=str(message)[:256])
+            else:
+                observer.update(activity=str(message)[:256])
+            emit_progress(progress, message)
+
+        try:
+            outcome = visit_fn(
+                run_dir, reserve_gib, steps_per_visit=steps_per_visit,
+                batch_size=batch_size,
+                progress=observed_progress,
+                source_prefetch_workers=source_prefetch_workers,
+                source_prefetch_executor=source_prefetch_executor,
+                source_prefetch_metrics=metrics, observer=observer,
+                run_authority_binding=run_authority_binding,
+                **({"resource_holds": frozenset(resource_holds)}
+                   if resource_holds else {}))
+        except BilqisError as error:
+            if not _stale_execution_cache(error) or stale_retry_armed:
+                raise
+            observer.update(
+                error_code=error.code,
+                error_detail=error.context["reason"],
+            )
+            observer.finish("INTERRUPTED")
+            return None, False, True
+
+        resource_rejected = isinstance(outcome, ResourceRejectedVisit)
+        observer.finish("RESOURCE_REJECTED" if resource_rejected else outcome)
+        return outcome, resource_rejected, False
+
+
 def _run_visits(
         run_dir, *, deadline, max_visits, steps_per_visit, batch_size, reserve_gib,
         source_prefetch_workers, progress, source_prefetch_executor, metrics,
@@ -72,40 +113,15 @@ def _run_visits(
                 break
         attempts += 1
         emit_progress(progress, f"starting visit {attempts}")
-        with observer_type(run_dir, attempts) as observer:
-            def observed_progress(message):
-                stage = getattr(observer, "stage", None)
-                if callable(stage):
-                    stage(activity=str(message)[:256])
-                else:
-                    observer.update(activity=str(message)[:256])
-                emit_progress(progress, message)
-
-            try:
-                outcome = visit_fn(
-                    run_dir, reserve_gib, steps_per_visit=steps_per_visit,
-                    batch_size=batch_size,
-                    progress=observed_progress,
-                    source_prefetch_workers=source_prefetch_workers,
-                    source_prefetch_executor=source_prefetch_executor,
-                    source_prefetch_metrics=metrics, observer=observer,
-                    run_authority_binding=run_authority_binding,
-                    **({"resource_holds": frozenset(resource_holds)}
-                       if resource_holds else {}))
-            except BilqisError as error:
-                if not _stale_execution_cache(error) or stale_retry_armed:
-                    raise
-                observer.update(
-                    error_code=error.code,
-                    error_detail=error.context["reason"],
-                )
-                observer.finish("INTERRUPTED")
-                stale_retry_armed = True
-                outcome = None
-            else:
-                stale_retry_armed = False
-                resource_rejected = isinstance(outcome, ResourceRejectedVisit)
-                observer.finish("RESOURCE_REJECTED" if resource_rejected else outcome)
+        outcome, resource_rejected, stale_retry_armed = _observed_visit_attempt(
+            run_dir, attempts, reserve_gib=reserve_gib,
+            steps_per_visit=steps_per_visit, batch_size=batch_size,
+            source_prefetch_workers=source_prefetch_workers, progress=progress,
+            source_prefetch_executor=source_prefetch_executor, metrics=metrics,
+            run_authority_binding=run_authority_binding,
+            resource_holds=resource_holds, observer_type=observer_type,
+            emit_progress=emit_progress, visit_fn=visit_fn,
+            stale_retry_armed=stale_retry_armed)
         if outcome is None:
             emit_progress(
                 progress,
