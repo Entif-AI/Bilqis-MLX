@@ -159,7 +159,7 @@ def _package_import_from_live_parent(
 
 def _instruments(
         source_context, candidate, artifact_path, rows, *, seed, each=None,
-        release_prevalidated=False):
+        release_prevalidated=False, authenticated=None):
     source_cohort_sha256 = None
     if each is None:
         measured = {row.get("capability") for row in rows}
@@ -173,7 +173,7 @@ def _instruments(
     return factory_evaluation_instruments(
         source_context, candidate, artifact_path, rows, seed=seed, each=each,
         source_cohort_sha256=source_cohort_sha256,
-        release_prevalidated=release_prevalidated)
+        release_prevalidated=release_prevalidated, authenticated=authenticated)
 
 
 @dataclass(frozen=True)

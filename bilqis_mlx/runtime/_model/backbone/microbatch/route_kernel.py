@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import mlx.core as mx
 
-from bilqis_mlx.learning.atlas_readout import DecisionKind
+from bilqis_mlx.learning.atlas_readout import DecisionKind, DecisionOutput
 from bilqis_mlx.learning.atlas_readout.causal_training import encode_feedback_value
 from bilqis_mlx.learning.atlas_readout.decoder.feedback import (
     occurrence_vector, role_id_vector,
@@ -167,6 +167,21 @@ def prepare_route_microbatch_kernel(
         row_batches[0].compiled.extents, tuple(dependency_masks))
 
 
+def prepare_route_microbatch_inference_kernel(row_batches, answer_plans):
+    """Freeze route geometry for model-owned inference without label authority."""
+    ordered = tuple(_ordered(plan) for plan in answer_plans)
+    targets = tuple(
+        tuple(DecisionOutput(item.decision_id, item.legal_values[0]) for item in items)
+        for items in ordered
+    )
+    masks = tuple(
+        {item.decision_id: True for item in items}
+        for items in ordered
+    )
+    return prepare_route_microbatch_kernel(
+        row_batches, answer_plans, targets, masks, None)
+
+
 def _norm(value, gamma):
     return value * mx.rsqrt(
         mx.mean(value * value, axis=-1, keepdims=True)
@@ -212,32 +227,12 @@ def route_microbatch_loss_and_trajectory(
         result = (route_microbatch_mean_loss(
             params, hidden, kernel, salience_hidden=salience_hidden), ())
         return (*result, ()) if return_logits else result
-    position_mask = mx.arange(hidden.shape[1])[None, :] < kernel.lengths[:, None]
-    rows = mx.arange(hidden.shape[0])
-    anchors = hidden[rows, kernel.lengths - 1]
-    keys = hidden @ params["readout.key"].T
-    values = hidden @ params["readout.value"].T
-    role = role_id_vector("NONE", SimpleNamespace(features=kernel.features), params)
+    trajectory, route_logits = route_microbatch_trajectory(params, hidden, kernel)
     operator = mx.zeros((hidden.shape[0],), dtype=mx.float32)
     operand = mx.zeros((hidden.shape[0],), dtype=mx.float32)
-    model_values, trajectory, route_logits = [], [], []
-    for operator_mask, operand_mask, occurrence, dependency_mask, candidates, \
-            candidate_mask, targets in zip(
-                kernel.operator_masks, kernel.operand_masks,
-                kernel.occurrences, kernel.dependency_masks,
-                kernel.candidate_vectors, kernel.candidate_masks, kernel.target_indices):
-        feedback = _model_feedback(model_values, dependency_mask, hidden.shape[0])
-        logits = _decision_logits(
-            params, anchors, keys, values, position_mask, role, occurrence, feedback,
-            candidates, candidate_mask)
-        model_indices = mx.argmax(logits, axis=-1)
-        selected = mx.sum(
-            candidates * (mx.arange(candidates.shape[1])[None, :]
-                          == model_indices[:, None])[..., None],
-            axis=1)
-        model_values.append(mx.stop_gradient(selected))
-        trajectory.append(mx.stop_gradient(model_indices))
-        route_logits.append(logits)
+    for operator_mask, operand_mask, targets, logits in zip(
+            kernel.operator_masks, kernel.operand_masks,
+            kernel.target_indices, route_logits):
         loss = _decision_loss(logits, targets)
         operator = operator + mx.where(
             operator_mask, loss, mx.zeros_like(loss))
@@ -261,8 +256,38 @@ def route_microbatch_loss_and_trajectory(
                 or refinement_routing_loss.dtype != mx.float32):
             _invalid("B11_MICROBATCH_REFINEMENT_ROUTING_LOSS_INVALID")
         row_loss = row_loss + refinement_routing_loss * REFINEMENT_ROUTING_WEIGHT
-    result = (mx.mean(row_loss), tuple(trajectory))
-    return (*result, tuple(route_logits)) if return_logits else result
+    result = (mx.mean(row_loss), trajectory)
+    return (*result, route_logits) if return_logits else result
+
+
+def route_microbatch_trajectory(
+        params, hidden, kernel: RouteMicrobatchKernel):
+    """Derive causal route choices for every row entirely on device."""
+    if not kernel.dependency_masks:
+        _invalid("B11_MICROBATCH_ROUTE_DEPENDENCY_REQUIRED")
+    position_mask = mx.arange(hidden.shape[1])[None, :] < kernel.lengths[:, None]
+    rows = mx.arange(hidden.shape[0])
+    anchors = hidden[rows, kernel.lengths - 1]
+    keys = hidden @ params["readout.key"].T
+    values = hidden @ params["readout.value"].T
+    role = role_id_vector("NONE", SimpleNamespace(features=kernel.features), params)
+    model_values, trajectory, route_logits = [], [], []
+    for occurrence, dependency_mask, candidates, candidate_mask in zip(
+            kernel.occurrences, kernel.dependency_masks,
+            kernel.candidate_vectors, kernel.candidate_masks):
+        feedback = _model_feedback(model_values, dependency_mask, hidden.shape[0])
+        logits = _decision_logits(
+            params, anchors, keys, values, position_mask, role, occurrence, feedback,
+            candidates, candidate_mask)
+        model_indices = mx.argmax(logits, axis=-1)
+        selected = mx.sum(
+            candidates * (mx.arange(candidates.shape[1])[None, :]
+                          == model_indices[:, None])[..., None],
+            axis=1)
+        model_values.append(mx.stop_gradient(selected))
+        trajectory.append(mx.stop_gradient(model_indices))
+        route_logits.append(logits)
+    return tuple(trajectory), tuple(route_logits)
 
 
 def _salience_loss(params, hidden, kernel):
@@ -319,7 +344,8 @@ def route_microbatch_mean_loss(
 
 
 __all__ = (
-    "RouteMicrobatchKernel", "prepare_route_microbatch_kernel",
+    "RouteMicrobatchKernel", "prepare_route_microbatch_inference_kernel",
+    "prepare_route_microbatch_kernel",
     "route_microbatch_compatible", "route_microbatch_loss_and_trajectory",
-    "route_microbatch_mean_loss",
+    "route_microbatch_mean_loss", "route_microbatch_trajectory",
 )

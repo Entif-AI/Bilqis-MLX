@@ -66,7 +66,11 @@ class _FactoryCompleteSolverBuilder:
 
     def register_context(self, authority, proposer):
         context = SolveContext(authority.binding, neural_proposer=proposer)
-        self.source_context.register_solve_context(context)
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        if strict_evidence_enabled():
+            self.source_context.register_solve_context(context)
         return context
 
     def scalar_context(self, batch, plan, authority):

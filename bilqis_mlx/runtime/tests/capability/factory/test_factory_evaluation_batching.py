@@ -90,6 +90,21 @@ class FactoryEvaluationBatchingTests(FactoryTrainingBridgeFixture):
         self.assertLess(batch_telemetry["shared_backbone_launches"], self.EACH)
         self.assertLessEqual(batch_telemetry["largest_shared_positions"], 96)
 
+    def test_default_shared_batch_uses_receipt_free_backbone_trace(self):
+        instruments = self._instruments()
+        _scalar, batched, generation = self._solver_pair(instruments)
+        goals = tuple(item.case.goal for item in instruments)
+        original = batching.start_source_backbone_producer
+
+        with patch.object(
+                batching, "start_source_backbone_producer",
+                wraps=original) as producer:
+            batched.evaluate_cases(goals, generation)
+
+        self.assertGreater(producer.call_count, 0)
+        self.assertTrue(all(call.kwargs.get("trace") is True
+                            for call in producer.call_args_list))
+
     def test_assessment_and_work_disposition_are_scalar_batch_identical(self):
         instruments = self._instruments()
         scalar, batched, generation = self._solver_pair(instruments)

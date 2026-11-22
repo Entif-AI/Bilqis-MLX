@@ -105,7 +105,7 @@ def _learning_first_value_and_grad_impl(
         salience_supervision, source_loss_multiplier):
     """Run one numerical training pass with no evidence replay or preflight."""
     rebind_execution = _gradient_execution_rebinder(
-        params, None, spec=backend.topology,
+        params, cache, spec=backend.topology,
         extents=compiled_batch.compiled.extents,
         generation=answer_plan.generation_binding)
     holder = {}

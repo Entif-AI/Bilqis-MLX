@@ -204,12 +204,14 @@ def test_live_screen_short_circuits_before_protected_compilation():
             _policy=Mock(return_value=object()),
             _cohort=Mock(return_value=target_cohort),
             factory_complete_solver=solvers,
+            authenticate_bamf_execution_feature_context=Mock(
+                return_value=object()),
             evaluate_capabilities=assessments,
             AssessmentPair=Mock(return_value=object()),
             evaluate_target_gate=Mock(return_value=rejection),
             _cached_instruments=protected_compile):
         result = local_screen.foundation_local_retention_screen(
-            object(), parent, object(), object(), "artifact", release, plan,
+            N(run_dir=None), parent, object(), object(), "artifact", release, plan,
             target_plan, (("trained-family",), ("trained-episode",)),
             ((target, 7, ({"id": "reference", "capability": target},)),
              (protected, 8, ({"id": "protected", "capability": protected},))),

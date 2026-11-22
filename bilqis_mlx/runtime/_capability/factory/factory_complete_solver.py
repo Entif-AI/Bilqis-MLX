@@ -189,13 +189,17 @@ def factory_evaluation_instruments(
     each: int | None = None,
     source_cohort_sha256: str | None = None,
     release_prevalidated: bool = False,
+    authenticated=None,
 ) -> tuple[FactoryEvaluationInstrument, ...]:
     """Compile one immutable cohort with one shared feature authentication."""
     rows = tuple(rows)
     if not rows:
         _invalid("BAMF_C05_FACTORY_INSTRUMENTS_REQUIRED")
-    authenticated = authenticate_bamf_execution_feature_context(
-        candidate, artifact_path, source_context.run_dir)
+    authenticated = (
+        authenticate_bamf_execution_feature_context(
+            candidate, artifact_path, source_context.run_dir)
+        if authenticated is None else authenticated)
+    authenticated.__post_init__()
     counts = {}
     if each is None:
         for row in rows:

@@ -10,14 +10,16 @@ import numpy as np
 import pytest
 
 import bilqis_mlx.runtime.atlas_model_microbatch as microbatch
+import bilqis_mlx.runtime.microbatch.execution as microbatch_execution
 import bilqis_mlx.runtime.atlas_model_forward_validation as validation
 import bilqis_mlx.runtime.atlas_model_forward as forward
 import bilqis_mlx.runtime.atlas_model_training as training
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_readout import DecisionKind, DecisionOutput, DecisionSpec
 from bilqis_mlx.runtime.microbatch.route_kernel import (
-    prepare_route_microbatch_kernel, route_microbatch_loss_and_trajectory,
-    route_microbatch_compatible, route_microbatch_mean_loss,
+    prepare_route_microbatch_inference_kernel, prepare_route_microbatch_kernel,
+    route_microbatch_loss_and_trajectory, route_microbatch_compatible,
+    route_microbatch_mean_loss, route_microbatch_trajectory,
 )
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 def _parameters():
@@ -82,6 +84,23 @@ def test_route_trajectory_is_model_owned_and_label_independent():
     assert len(first_trajectory) == len(second_trajectory) == 2
     for left, right in zip(first_trajectory, second_trajectory):
         np.testing.assert_array_equal(np.asarray(left), np.asarray(right))
+
+
+def test_inference_kernel_preserves_model_owned_route_trajectory():
+    params = _parameters()
+    rows, plans, _targets, _masks, supervised, hidden = _route_fixture()
+    inference = prepare_route_microbatch_inference_kernel(rows, plans)
+
+    supervised_trajectory, _ = route_microbatch_trajectory(
+        params, hidden, supervised)
+    inference_trajectory, _ = route_microbatch_trajectory(
+        params, hidden, inference)
+    mx.eval(supervised_trajectory, inference_trajectory)
+
+    for supervised_choice, inference_choice in zip(
+            supervised_trajectory, inference_trajectory):
+        np.testing.assert_array_equal(
+            np.asarray(supervised_choice), np.asarray(inference_choice))
 
 
 def test_partial_route_supervision_is_not_eligible_for_one_backbone_path():
@@ -157,9 +176,9 @@ def test_route_gradient_launch_executes_one_source_backbone_and_no_preflight():
 
     producer = object()
     with patch.object(
-            microbatch, "_compiled_microbatch", return_value=batch), patch.object(
-                microbatch, "_require_finite_tensor_tree"), patch.object(
-                    microbatch, "_gradient_execution_rebinder",
+            microbatch_execution, "_compiled_microbatch", return_value=batch), patch.object(
+                microbatch_execution, "_require_finite_tensor_tree"), patch.object(
+                    microbatch_execution, "_gradient_execution_rebinder",
                     return_value=lambda current: object()), patch.object(
                         microbatch, "route_microbatch_compatible",
                         return_value=True), patch.object(
@@ -185,7 +204,7 @@ def test_route_gradient_launch_executes_one_source_backbone_and_no_preflight():
                                                                         microbatch, "microbatch_trace_from_hidden",
                                                                         side_effect=AssertionError(
                                                                             "vector route replayed scalar postflight")) as legacy_postflight, patch.object(
-                                                                        microbatch, "finalize_microbatch_gradient",
+                                                                        microbatch_execution, "finalize_microbatch_gradient",
                                                                         return_value="done"), patch.object(
                                                                             mx, "value_and_grad",
                                                                             wraps=mx.value_and_grad) as value_and_grad:
@@ -218,9 +237,9 @@ def test_route_gradient_with_refinement_supervision_stays_vectorized():
 
     producer = object()
     with patch.object(
-            microbatch, "_compiled_microbatch", return_value=batch), patch.object(
-                microbatch, "_require_finite_tensor_tree"), patch.object(
-                    microbatch, "_gradient_execution_rebinder",
+            microbatch_execution, "_compiled_microbatch", return_value=batch), patch.object(
+                microbatch_execution, "_require_finite_tensor_tree"), patch.object(
+                    microbatch_execution, "_gradient_execution_rebinder",
                     return_value=lambda current: object()), patch.object(
                         microbatch, "route_microbatch_compatible",
                         return_value=True), patch.object(
@@ -251,7 +270,7 @@ def test_route_gradient_with_refinement_supervision_stays_vectorized():
                                                             (mx.zeros((4, 1), dtype=mx.float32),))), patch.object(
                                                                 microbatch, "microbatch_trace_from_route",
                                                                 return_value=(object(),) * 4), patch.object(
-                                                                    microbatch, "finalize_microbatch_gradient",
+                                                                    microbatch_execution, "finalize_microbatch_gradient",
                                                                     return_value="done"):
         result = microbatch._bamf_microbatch_value_and_grad_impl(
             Backend(), params, rows, plans, ((),) * 4, ({},) * 4, None)
@@ -283,9 +302,9 @@ def test_route_postflight_rebinds_execution_identity_to_original_parameters():
         return (object(),) * 4
 
     with patch.object(
-            microbatch, "_compiled_microbatch", return_value=batch), patch.object(
-                microbatch, "_require_finite_tensor_tree"), patch.object(
-                    microbatch, "_gradient_execution_rebinder",
+            microbatch_execution, "_compiled_microbatch", return_value=batch), patch.object(
+                microbatch_execution, "_require_finite_tensor_tree"), patch.object(
+                    microbatch_execution, "_gradient_execution_rebinder",
                     return_value=rebind), patch.object(
                         microbatch, "route_microbatch_compatible",
                         return_value=True), patch.object(
@@ -304,12 +323,56 @@ def test_route_postflight_rebinds_execution_identity_to_original_parameters():
                                                     (mx.zeros((4, 1), dtype=mx.float32),))), patch.object(
                                                         microbatch, "microbatch_trace_from_route",
                                                         side_effect=postflight), patch.object(
-                                                            microbatch, "finalize_microbatch_gradient",
+                                                            microbatch_execution, "finalize_microbatch_gradient",
                                                             return_value="done"):
         result = microbatch._bamf_microbatch_value_and_grad_impl(
             Backend(), params, rows, plans, ((),) * 4, ({},) * 4, None)
 
     assert result == "done"
+
+
+def test_learning_first_reuses_prebound_execution_cache_for_gradient_identity():
+    cache = object()
+    params = {"x": mx.array(1.0, dtype=mx.float32)}
+    rows = (object(), object())
+    plans = (object(), object())
+    batch = SimpleNamespace(compiled=SimpleNamespace(extents=object()))
+
+    class Backend:
+        topology = object()
+
+    with patch.object(
+            microbatch_execution, "_microbatch_request_context",
+            return_value=(batch, None, "generation", object())), patch.object(
+                microbatch_execution, "route_microbatch_compatible",
+                return_value=True), patch.object(
+                    microbatch_execution, "_gradient_execution_rebinder",
+                    return_value=lambda current: object()) as rebind, patch.object(
+                        microbatch_execution, "prepare_route_microbatch_kernel",
+                        return_value=object()), patch.object(
+                            microbatch_execution, "_microbatch_objective",
+                            return_value=object()), patch.object(
+                                microbatch_execution, "_materialize_gradient",
+                                return_value=(
+                                    mx.array(0.0, dtype=mx.float32),
+                                    params,
+                                    (object(), object()),
+                                    (),
+                                    mx.array(True),
+                                    {},
+                                )), patch.object(
+                                    microbatch_execution,
+                                    "_require_materialized_finite_witness"), patch.object(
+                                        microbatch_execution,
+                                        "finalize_microbatch_gradient",
+                                        return_value="done"), patch.object(
+                                            microbatch_execution,
+                                            "attach_performance_observation"):
+        result = microbatch_execution._learning_first_microbatch_value_and_grad_impl(
+            Backend(), params, rows, plans, ((), ()), ({}, {}), cache, None)
+
+    assert result == "done"
+    assert rebind.call_args.args[1] is cache
 
 
 def test_route_trajectory_drift_fails_closed_after_materialization():

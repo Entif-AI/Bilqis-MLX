@@ -21,7 +21,7 @@ from bilqis_mlx.semantics.frame_compiler import (
 )
 from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.source_adapters.atoms.admission import (
-    authorize_public_formal_prefix, public_formal_atom_context,
+    _public_formal_atom_context_from_snapshot, authorize_public_formal_prefix,
 )
 from bilqis_mlx.source_adapters.atoms.authority import canonical_graph_for
 
@@ -131,7 +131,11 @@ def compile_factory_evaluation_batch(
         source_context.release.verify()
         source_context.release.verify_semantic_catalog(source_context.graph)
     else:
-        source_context.require_accepted_runtime(source_context.run_dir)
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        if strict_evidence_enabled():
+            source_context.require_accepted_runtime(source_context.run_dir)
     authenticated = (_authenticated if _authenticated is not None else
                      authenticate_bamf_execution_feature_context(
                          candidate, artifact_path, source_context.run_dir))
@@ -145,8 +149,8 @@ def compile_factory_evaluation_batch(
         authenticated.features.semantic_release,
         row["capability"], len(row["tokens"]),
     )
-    ast, config = public_formal_atom_context(
-        authenticated.selection, row, source_graph,
+    ast, config = _public_formal_atom_context_from_snapshot(
+        authenticated.selection, authenticated.snapshot, row, source_graph,
         source_root=source_context.source_root,
         source_seed=source_seed, source_each=source_each,
         course=source_context.release.curriculum,
@@ -168,7 +172,11 @@ def compile_factory_evaluation_batch(
         compiled, (source,), authenticated.schema,
         bind_candidate_active_semantic_rows(candidate, authenticated))
     batch.__post_init__()
-    source_context.register_compiled_batch(batch)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if strict_evidence_enabled():
+        source_context.register_compiled_batch(batch)
     return batch
 
 def compile_factory_evaluation_case(

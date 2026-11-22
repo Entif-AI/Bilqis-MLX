@@ -49,6 +49,19 @@ def _source_atom_row(
         source_context.release.curriculum, profile_parameters)
 
 
+def _evaluation_context_matches_compiled_config(
+        config, expected_task, expected_frontier, expected_policy) -> bool:
+    """Match current evaluator law without discarding row-specific source grants."""
+    frontier = config.frontier
+    return (
+        config.task == expected_task
+        and config.policy == expected_policy
+        and frontier.rights_epoch == expected_frontier.rights_epoch
+        and frontier.correction_generation
+        == expected_frontier.correction_generation
+    )
+
+
 def compiled_case_matches_contract(
     source_context: SourceExecutionContext,
     candidate: BamfBundleCandidate,
@@ -71,7 +84,11 @@ def compiled_case_matches_contract(
         source_context.release.verify()
         source_context.release.verify_semantic_catalog(source_context.graph)
     else:
-        source_context.require_accepted_runtime(source_context.run_dir)
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        if strict_evidence_enabled():
+            source_context.require_accepted_runtime(source_context.run_dir)
     authenticated = (authenticated if authenticated is not None else
                      authenticate_bamf_execution_feature_context(
                          candidate, artifact_path, source_context.run_dir))
@@ -81,6 +98,7 @@ def compiled_case_matches_contract(
     expected_task, expected_frontier, expected_policy = _evaluation_context(
         authenticated.features.semantic_release,
         row.get("capability"), len(row.get("tokens", ())))
+    config = compiled_case.compiler_configs[0]
     if (identity["factory_release_sha256"] != source_context.release.release_sha256
             or identity["semantic_catalog_sha256"]
             != source_context.release.semantic_catalog_sha256
@@ -92,7 +110,9 @@ def compiled_case_matches_contract(
             or identity["feature_schema_sha256"]
             != contract_digest(authenticated.schema)
             or identity["evaluator_policy_sha256"] != contract_digest((
-                expected_task, expected_frontier, expected_policy))):
+                config.task, config.frontier, config.policy))
+            or not _evaluation_context_matches_compiled_config(
+                config, expected_task, expected_frontier, expected_policy)):
         return False
     compiled = CompiledEncoderInput(
         compiled_case.compiled_rows, compiled_case.compiler_configs,
@@ -174,7 +194,11 @@ def bind_factory_evaluation_case(
     batch = BamfCompiledBatch(
         batch.compiled, batch.sources, batch.feature_schema,
         batch.active_semantic_rows, task_authority=authority)
-    source_context.register_compiled_batch(batch)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if strict_evidence_enabled():
+        source_context.register_compiled_batch(batch)
     return batch, authority
 
 

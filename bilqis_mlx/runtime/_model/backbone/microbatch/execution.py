@@ -88,7 +88,7 @@ def _learning_first_microbatch_value_and_grad_impl(
         _invalid("B11_MICROBATCH_ROUTE_KERNEL_INCOMPATIBLE")
     rebind_started = time.perf_counter()
     rebind_execution = _gradient_execution_rebinder(
-        params, None, spec=backend.topology, extents=batch.compiled.extents,
+        params, cache, spec=backend.topology, extents=batch.compiled.extents,
         generation=generation)
     execution_rebinding_wall_seconds = time.perf_counter() - rebind_started
     refinement_selections = (None,) * len(row_batches)
