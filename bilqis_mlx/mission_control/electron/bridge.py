@@ -20,7 +20,7 @@ from bilqis_mlx.paths import active_run_dir
 
 
 _CLIENT_ID = "mission-control-electron"
-_REQUEST_TIMEOUT_SECONDS = 8.0
+_REQUEST_TIMEOUT_SECONDS = 15.0
 MAX_BROKER_REQUEST_BYTES = 64 * 1024
 QUERY_ERROR_SCHEMA = "bamf.gui07.query-error/v1"
 EVENT_BRIDGE_READY_SCHEMA = "bilqis.bamf.mission-control.event-bridge-ready/v1"

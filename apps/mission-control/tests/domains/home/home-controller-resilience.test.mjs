@@ -54,6 +54,20 @@ test("one unavailable family cannot blind paginated live run evidence", async ()
           reason: "CONTROL_PLANE_QUERY_RESPONSE_TOO_LARGE",
         };
       }
+      if (request.family === "episode") {
+        if (request.limit !== 8) {
+          return {
+            accepted: false, family: "episode", mode: "current",
+            reason: "CONTROL_PLANE_QUERY_RESPONSE_TOO_LARGE",
+          };
+        }
+        return {
+          accepted: true, family: "episode", mode: "current", state: "PARTIAL",
+          coverage: "PARTIAL", records: [], markers: [], links: [],
+          next_cursor: request.cursor === null ? "episode-page-2" : null,
+          truncated: request.cursor === null,
+        };
+      }
       if (request.family !== "run") return emptyPage(request.family);
       if (request.cursor === null) {
         return {
@@ -100,5 +114,7 @@ test("one unavailable family cannot blind paginated live run evidence", async ()
   assert.equal(model.currentWork.strategy, "db43f0c78c41");
   assert.ok(calls.some(([family, cursor]) =>
     family === "run" && cursor === "run-page-2"));
+  assert.ok(calls.some(([family, cursor]) =>
+    family === "episode" && cursor === "episode-page-2"));
   await controller.deactivate();
 });
