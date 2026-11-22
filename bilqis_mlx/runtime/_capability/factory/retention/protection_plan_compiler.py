@@ -147,10 +147,14 @@ def _compile_plan(
     for item in capabilities:
         affected_edges = _target_edges(
             item, admitted, reverse, constituent_members)
+        same_grade = {
+            capability for capability in established - {item.capability_id}
+            if by_id[capability].grade_id == item.grade_id
+        }
         protected = tuple(sorted({
             edge.capability_id for edge in affected_edges
             if edge.capability_id in established
-        }))
+        } | same_grade))
         evaluated = (item.capability_id, *protected)
         groups = tuple((capability, by_id[capability].grade_id)
                        for capability in evaluated)

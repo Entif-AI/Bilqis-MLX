@@ -4,10 +4,17 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.runtime.capability_retention import EvidenceStage
+from bilqis_mlx.runtime.baseline.lifecycle import (
+    BaselineComparisonIdentity, BaselineLedger,
+    _issue_factory_baseline_transition, apply_factory_baseline_transition,
+)
 from bilqis_mlx.runtime.retention.protection_plan import (
     RetentionProtectionPlan,
 )
-from bilqis_mlx.runtime.retention.protection_plan_compiler import _compile_plan
+from bilqis_mlx.runtime.retention.protection_plan_compiler import (
+    _compile_plan, _current_established_capabilities, _rubric_sha256,
+    policy_epoch_sha256,
+)
 from bilqis_mlx.semantics.domains import contract_digest
 
 
@@ -54,7 +61,7 @@ def _release(*, extra=0, target_grade="A", add_dependency=False):
         _capability("PART"),
         _capability("DEPENDENT", prerequisites=("TARGET",)),
         _capability("SIBLING", composed_of=("PART",)),
-        _capability("RAW_SKOS_NEIGHBOR"),
+        _capability("RAW_SKOS_NEIGHBOR", "Z"),
     ]
     if add_dependency:
         capabilities.append(_capability("NEW"))
@@ -93,18 +100,78 @@ class RetentionProtectionPlanTests(unittest.TestCase):
         )
         self.assertNotIn("RAW_SKOS_NEIGHBOR", target.evaluated_capability_ids)
 
-    def test_unrelated_school_growth_does_not_change_ordinary_scope(self):
+    def test_established_same_grade_peers_join_ordinary_scope(self):
         established = {"PRE", "PART", "DEPENDENT", "SIBLING"}
         small = _plan(_release(extra=0), established).for_target("TARGET")
         large = _plan(
-            _release(extra=1000),
-            established | {f"UNRELATED:{index}" for index in range(1000)},
+            _release(extra=2),
+            established | {"UNRELATED:0", "UNRELATED:1"},
         ).for_target("TARGET")
 
         self.assertEqual(
-            large.evaluated_capability_ids,
-            small.evaluated_capability_ids,
+            set(large.evaluated_capability_ids) - set(small.evaluated_capability_ids),
+            {"UNRELATED:0", "UNRELATED:1"},
         )
+        self.assertEqual(
+            set(large.protected_capability_ids) - set(small.protected_capability_ids),
+            {"UNRELATED:0", "UNRELATED:1"},
+        )
+
+    def test_merely_admitted_same_grade_peer_does_not_gain_protection(self):
+        established = {"PRE", "PART", "DEPENDENT", "SIBLING"}
+        target = _plan(_release(extra=1), established).for_target("TARGET")
+
+        self.assertNotIn("UNRELATED:0", target.evaluated_capability_ids)
+
+    def test_accepted_baseline_measurement_establishes_protection_authority(self):
+        release = _release(extra=1)
+        stage = EvidenceStage.FOUNDATION_ACQUISITION
+        policy = policy_epoch_sha256(stage)
+        rubric = _rubric_sha256(release)
+        registry = "6" * 64
+        correction = "7" * 64
+        evaluation = "8" * 64
+        identity = BaselineComparisonIdentity(
+            capability_id="UNRELATED:0",
+            factory_release_sha256=release.release_sha256,
+            semantic_catalog_sha256=release.semantic_catalog_sha256,
+            rubric_sha256=rubric,
+            scope_sha256="9" * 64,
+            policy_sha256=policy,
+            source_sha256=release.execution_plan.projection_digests.source,
+            source_authority_registry_sha256=registry,
+            correction_frontier_sha256=correction,
+            evaluation_contract_sha256=evaluation,
+            fixed_cohort_sha256="f" * 64,
+            evidence_stage=stage.value,
+        )
+        empty = BaselineLedger.empty()
+        ledger = apply_factory_baseline_transition(
+            empty,
+            _issue_factory_baseline_transition(
+                identity,
+                run_id="fixture-run",
+                accepted_generation=1,
+                accepted_parent_manifest_sha256="1" * 64,
+                accepted_candidate_sha256="2" * 64,
+                decision_evidence_sha256="3" * 64,
+                parent_ledger_sha256=empty.digest,
+            ),
+        )
+
+        established = _current_established_capabilities(
+            ledger, release,
+            policy_sha256=policy,
+            rubric_sha256=rubric,
+            source_authority_registry_sha256=registry,
+            correction_frontier_sha256=correction,
+            evaluation_contract_sha256=evaluation,
+            evidence_stage=stage,
+        )
+
+        self.assertEqual(established, ("UNRELATED:0",))
+        target = _plan(release, established).for_target("TARGET")
+        self.assertIn("UNRELATED:0", target.protected_capability_ids)
 
     def test_one_real_dependency_adds_exactly_one_protected_capability(self):
         established = {"PRE", "PART", "DEPENDENT", "SIBLING"}

@@ -114,6 +114,9 @@ def merge_retention_scorecard(visit, scorecard):
         result[field] = scorecard.get(field)
     result["probe_each"] = scorecard.get("probe_each")
     result["baseline_coverage"] = deepcopy(scorecard.get("baseline_coverage"))
+    if "foundation_mastery_debt_utility" in scorecard:
+        result["foundation_mastery_debt_utility"] = deepcopy(
+            scorecard["foundation_mastery_debt_utility"])
     return result
 
 
