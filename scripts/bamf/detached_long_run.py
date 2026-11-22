@@ -16,6 +16,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import time
 
 
 SCHEMA = "bilqis.bamf.detached-long-run/v2"
@@ -28,6 +29,7 @@ MUTATION_IGNORED_NAMES = SNAPSHOT_IGNORED_NAMES | frozenset({
     "_private", "runs",
 })
 SOURCE_MUTATED_EXIT = 86
+DEFAULT_HEARTBEAT_SECONDS = 60.0
 
 
 def _utc_now() -> str:
@@ -202,6 +204,41 @@ def _notify(label: str, returncode: int) -> None:
         )
 
 
+def _run_child_with_heartbeats(
+    args, *, workdir: Path, stream, receipt: Path, initial: dict,
+    heartbeat_seconds: float, environment: dict[str, str],
+) -> int:
+    process = subprocess.Popen(
+        args.command,
+        cwd=workdir,
+        stdin=subprocess.DEVNULL,
+        stdout=stream,
+        stderr=subprocess.STDOUT,
+        env=environment,
+    )
+    child_started = _utc_now()
+    stream.write(
+        (f"DETACHED_LONG_RUN_CHILD_STARTED {child_started} label={args.label!r} "
+         f"child_pid={process.pid}\n").encode()
+    )
+    child_started_monotonic = time.monotonic()
+    while True:
+        try:
+            return process.wait(timeout=heartbeat_seconds)
+        except subprocess.TimeoutExpired:
+            heartbeat_at = _utc_now()
+            elapsed_seconds = time.monotonic() - child_started_monotonic
+            stream.write(
+                (f"DETACHED_LONG_RUN_HEARTBEAT {heartbeat_at} label={args.label!r} "
+                 f"child_pid={process.pid} elapsed_seconds={elapsed_seconds:.1f}\n").encode()
+            )
+            _write_json(receipt, {
+                **initial,
+                "last_heartbeat_at": heartbeat_at,
+                "elapsed_seconds": round(elapsed_seconds, 1),
+            })
+
+
 def _worker(args) -> int:
     workdir = args.workdir.resolve()
     source_workdir = (args.source_workdir or args.workdir).resolve()
@@ -212,6 +249,9 @@ def _worker(args) -> int:
     pid_file.parent.mkdir(parents=True, exist_ok=True)
     pid_file.write_text(f"{os.getpid()}\n", encoding="utf-8")
     started = _utc_now()
+    heartbeat_seconds = float(getattr(args, "heartbeat_seconds", DEFAULT_HEARTBEAT_SECONDS))
+    if heartbeat_seconds <= 0:
+        raise SystemExit("heartbeat seconds must be positive")
     snapshot_sha256 = _tree_digest(workdir)
     mutation_guard_sha256 = _tree_digest(
         workdir, ignored_names=MUTATION_IGNORED_NAMES)
@@ -229,6 +269,7 @@ def _worker(args) -> int:
         "mutation_guard_sha256": mutation_guard_sha256,
         "command": args.command,
         "log": str(log),
+        "heartbeat_seconds": heartbeat_seconds,
         "started_at": started,
     }
     _write_json(receipt, initial)
@@ -242,22 +283,23 @@ def _worker(args) -> int:
             "BILQIS_DETACHED_SOURCE_WORKDIR": str(source_workdir),
             "BILQIS_DETACHED_SOURCE_SNAPSHOT": str(workdir),
             "BILQIS_DETACHED_SOURCE_SHA256": snapshot_sha256,
+            "PYTHONUNBUFFERED": "1",
         })
-        completed = subprocess.run(
-            args.command,
-            cwd=workdir,
-            stdin=subprocess.DEVNULL,
-            stdout=stream,
-            stderr=subprocess.STDOUT,
-            check=False,
-            env=environment,
+        command_returncode = _run_child_with_heartbeats(
+            args,
+            workdir=workdir,
+            stream=stream,
+            receipt=receipt,
+            initial=initial,
+            heartbeat_seconds=heartbeat_seconds,
+            environment=environment,
         )
         finished = _utc_now()
         final_snapshot_sha256 = _tree_digest(workdir)
         final_mutation_guard_sha256 = _tree_digest(
             workdir, ignored_names=MUTATION_IGNORED_NAMES)
         source_mutated = final_mutation_guard_sha256 != mutation_guard_sha256
-        returncode = SOURCE_MUTATED_EXIT if source_mutated else completed.returncode
+        returncode = SOURCE_MUTATED_EXIT if source_mutated else command_returncode
         stream.write(
             (f"DETACHED_LONG_RUN_END {finished} label={args.label!r} "
              f"returncode={returncode} source_mutated={source_mutated}\n").encode()
@@ -266,7 +308,7 @@ def _worker(args) -> int:
         **initial,
         "status": "PASS" if returncode == 0 else "FAIL",
         "returncode": returncode,
-        "command_returncode": completed.returncode,
+        "command_returncode": command_returncode,
         "source_mutated": source_mutated,
         "final_snapshot_sha256": final_snapshot_sha256,
         "final_mutation_guard_sha256": final_mutation_guard_sha256,
@@ -296,6 +338,7 @@ def _launch(args) -> int:
         "--source-workdir", str(source_workdir),
         "--source-sha256", snapshot_receipt["source_sha256"],
         "--snapshot-sha256", snapshot_receipt["snapshot_sha256"],
+        "--heartbeat-seconds", str(args.heartbeat_seconds),
         "--log", str(args.log),
         "--receipt", str(args.receipt),
         "--pid-file", str(args.pid_file),
@@ -344,6 +387,10 @@ def _parser() -> argparse.ArgumentParser:
         subparser.add_argument("--source-workdir", type=Path)
         subparser.add_argument("--source-sha256")
         subparser.add_argument("--snapshot-sha256")
+        subparser.add_argument(
+            "--heartbeat-seconds", type=float, default=DEFAULT_HEARTBEAT_SECONDS,
+            help="Seconds between durable liveness records while the child is running.",
+        )
         subparser.add_argument("--no-notify", action="store_true")
         subparser.add_argument("command", nargs=argparse.REMAINDER)
     return parser
