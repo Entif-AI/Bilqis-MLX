@@ -2,12 +2,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 
 from bilqis_mlx.semantic_sampling import (
     BinaryBalancePolicy,
     DEFAULT_BINARY_BALANCE,
     sample_count_violations,
 )
+
+
+class LogicalBatchError(str, Enum):
+    INVALID = "BAMF_LOGICAL_BATCH_INVALID"
 
 
 @dataclass(frozen=True)
@@ -21,7 +26,7 @@ class BamfLogicalBatchContract:
         violations = sample_count_violations(
             self.target_rows, policy=self.source_balance)
         if violations:
-            raise ValueError("BAMF_LOGICAL_BATCH_INVALID")
+            raise ValueError(LogicalBatchError.INVALID.value)
 
     @property
     def source_minimum_rows(self) -> int:
@@ -33,4 +38,4 @@ class BamfLogicalBatchContract:
         return self.target_rows
 
 
-__all__ = ("BamfLogicalBatchContract",)
+__all__ = ("BamfLogicalBatchContract", "LogicalBatchError")

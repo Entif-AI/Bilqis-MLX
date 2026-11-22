@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from bilqis_mlx.errors import BilqisError, SCHOOL
+from bilqis_mlx.runtime.logical_batch import BamfLogicalBatchContract
 
 from ._session_visit import ResourceRejectedVisit
 from .session_parts.candidate_execution import candidate_horizon_execution, execute_horizon
@@ -10,10 +11,13 @@ from .session_parts.retention import retention_result
 
 def _validate_bounds(*, minutes, max_visits, steps_per_visit, reserve_gib,
                      batch_size, source_prefetch_workers, max_horizon, worker_counts, invalid):
+    try:
+        BamfLogicalBatchContract(batch_size)
+    except ValueError:
+        invalid("BAMF_OPERATOR_SESSION_BOUNDS_INVALID")
     if (type(minutes) is not int or minutes < 1 or type(max_visits) is not int
             or max_visits < 0 or type(steps_per_visit) is not int
             or not 1 <= steps_per_visit <= max_horizon
-            or type(batch_size) is not int or batch_size < 2
             or type(source_prefetch_workers) is not int
             or source_prefetch_workers not in worker_counts
             or reserve_gib < 0):
