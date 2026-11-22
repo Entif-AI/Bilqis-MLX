@@ -236,27 +236,17 @@ def _prepared_factory_result(
 
 
 def prepare_factory_training_batch(
-    source_context: SourceExecutionContext,
-    candidate: BamfBundleCandidate,
-    atlas_artifact_path: str,
-    feature_artifact_path: str,
-    delivered_rows,
-    generation_binding: str,
+    source_context: SourceExecutionContext, candidate: BamfBundleCandidate,
+    atlas_artifact_path: str, feature_artifact_path: str,
+    delivered_rows, generation_binding: str,
     *,
-    capability: str,
-    delivery: DeliveredTeaching,
-    requested_count: int,
-    source_seed: int,
-    source_each: int,
+    capability: str, delivery: DeliveredTeaching, requested_count: int,
+    source_seed: int, source_each: int,
     optimizer_step_seed: int = 0,
-    visit_provenance: BamfVisitProvenance,
-    teacher_strategy: dict,
-    rehearsal_by_id: dict | None = None,
-    rehearsal_bindings: dict | None = None,
+    visit_provenance: BamfVisitProvenance, teacher_strategy: dict,
+    rehearsal_by_id: dict | None = None, rehearsal_bindings: dict | None = None,
     rehearsal_authorities: dict | None = None,
-    semantic_context=None,
-    prepared_source=None,
-    selected_source_authority=None,
+    semantic_context=None, prepared_source=None, selected_source_authority=None,
 ) -> PreparedFactoryTrainingBatch:
     """Compile one real Factory draw once, then bind each C02 row into B11.
 
