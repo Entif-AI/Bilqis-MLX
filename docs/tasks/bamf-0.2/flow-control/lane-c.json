@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "db2c0233147069414c83fae76bcbad9c51ca58c5",
-  "updated_at": "2026-11-22T10:40:55+00:00",
+  "updated_at": "2026-11-22T10:47:58+00:00",
   "exception": null,
   "items": [
     {
@@ -585,9 +585,9 @@
       "issue": 1566,
       "pr": 1567,
       "state": "TURNED_IN",
-      "head_sha": "fe519d552a64aef5287461f439875f27e75ccac4",
-      "head_sha_role": "exact #1566 semantic head fixing learning-first C05 source-independence and portable-core structure debt before this flow-control receipt commit",
-      "summary": "#1566 remains turned in as PR #1567 under ADR-153. Default non-strict Step 1 remains verification-free numerical learning while strict/evidence mode retains legacy ceremony. A live trainer regression exposed that proofless candidates had discarded the minimal source coordinates C05 needs to draw an independent retention cohort. The repair carries only target capability, source-family, and episode coordinates from the actual learning rows; no training authorities or step proofs are restored. Production-shaped clone evidence on the accepted aspirant-derived 8192x768 model passed at 0.7486447920s candidate / 0.7507104999s external with learning_first=true, a real optimizer update, zero proofs, zero training authorities, no task authority, target capability A.EDGE, one exact training source family, both exact training episodes, and source_mutated=false. The same repair also resolves hosted portable-core development-structure failures by extracting four encounter-triggered >360-line modules behind stable public facades and moving logical_batch into the mounted _batch owner; explicit structure check reports 0 violations. Focused local evidence: C05 adversarial 10/10, learning-first/session 4/4, focused C08 microbatch PASS, code-smell audit 0 findings, flow/governance/syntax/diff clean. Sovereign human aspirant run was never mutated, reset, restarted, or stopped.",
+      "head_sha": "e6be253b4257dae1f9ee6d97faf34479d8f6ebbd",
+      "head_sha_role": "exact #1566 semantic head after naming learning-first operator contracts and clearing portable-core error-control debt before this flow-control receipt commit",
+      "summary": "#1566 remains turned in as PR #1567 under ADR-153. The sub-second learning-first/C05 repair remains intact. A subsequent hosted portable-core run exposed only operator-contract ratchet debt: two opaque numeric guards for the three-field training-source coordinate and one raw ValueError identity in learning-first schema lookup. The repair names the coordinate contract fields and routes schema unavailability through the existing structured BAMF training-adapter error boundary. Targeted operator-contract comparison against origin/main reports 0 new debt; C05 adversarial 10/10 and learning-first source 2/2 remain green; Factory architecture, docs, BAMF flow-control, diff hygiene, and 3-file smell audit are green. No performance or custody semantics changed and no sovereign human trainer state was mutated.",
       "resume_trigger": null,
       "preserved_branch": "codex/1566-training-first-bypass-20261122"
     }
