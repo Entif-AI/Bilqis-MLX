@@ -174,6 +174,7 @@ def _bind_learning_first_rows(
         prefix = training.rows[index].model_input.prefix
         config = (item.config if item.projection is None
                   else replace(item.config, approved=item.projection))
+        config = authorize_public_formal_prefix(item.ast, prefix, config)
         rows = CompiledFrameRows(
             (prefix,), (prefix.positions,), ((True,) * len(prefix.positions),))
         if item.projection is None:

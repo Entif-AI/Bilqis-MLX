@@ -10,6 +10,9 @@ from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidenc
 from bilqis_mlx.runtime.factory_task_authority import factory_task_authority
 from bilqis_mlx.runtime.factory_training_bridge import prepare_factory_training_batch
 from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
+from bilqis_mlx.semantics.frame_compiler import (
+    prefix_inventory_evidence_digest, prefix_inventory_handle,
+)
 
 from .pre_neural_journey_support import (
     PreNeuralJourneySupport, historical_school_release, journey_source,
@@ -57,6 +60,16 @@ class LearningFirstSourcePathTests(PreNeuralJourneySupport, unittest.TestCase):
         self.assertIsNone(compiled.training_authority)
         self.assertIsNotNone(compiled.visit_provenance)
         self.assertEqual(compiled.visit_provenance.capability_id, "B.AND")
+        prefix = compiled.compiled.compiled.rows[0]
+        config = compiled.compiled.compiler_configs[0]
+        inventory = next((
+            grant for grant in config.frontier.grants
+            if grant.source_handle == prefix_inventory_handle(
+                prefix.source_instance_id, prefix.visible_end)
+        ), None)
+        self.assertIsNotNone(inventory)
+        self.assertEqual(
+            inventory.evidence_digest, prefix_inventory_evidence_digest(prefix))
         authority = factory_task_authority(
             context, compiled, generation_binding=generation)
         self.assertEqual(authority.generation_binding, generation)
