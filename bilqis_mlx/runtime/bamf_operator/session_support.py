@@ -18,6 +18,10 @@ from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 from .evidence_validation import validate_candidate_horizon_event
 
 
+DEFAULT_CANDIDATE_HORIZON = 16
+MAX_CANDIDATE_HORIZON = 24
+
+
 def _invalid(reason: str):
     ErrorBus.raise_(SCHOOL.BAMF_FIRST_STUDENT.INVALID, reason=reason)
 
