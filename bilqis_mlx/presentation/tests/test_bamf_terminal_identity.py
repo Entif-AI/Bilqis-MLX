@@ -246,11 +246,16 @@ def test_command_accounting_survives_bounded_display_history(tmp_path):
     events = [_terminal_event(index) for index in range(70)]
     for event in events:
         ingest(board, event)
+        ingest(board, event)
     (run / "events.jsonl").write_text(
         "".join(json.dumps(event) + "\n" for event in events))
 
+    ingest(board, {
+        "event": "BAMF_RUN_STOPPED",
+        "run_stop_receipt": {"visits": 71, "accepted_visits": 8},
+    })
     board.draw()
 
-    assert board.state["visits"] == 70
-    assert board.state["retained_visits"] == 7
+    assert board.state["visits"] == 71
+    assert board.state["retained_visits"] == 8
     assert board.state["attempted_steps"] == 840
