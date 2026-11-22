@@ -1,5 +1,6 @@
 """Depth-invariant CURRENT control-plane query behavior."""
 import json
+import bilqis_mlx.control_plane.native_source as native_source_module
 import os
 import unittest
 from unittest.mock import patch
@@ -74,6 +75,35 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
                 source()
                 self.assertEqual(authenticate.call_count, 1)
                 (self.run / "trainer-observed.json").write_text("{}")
+                source()
+                self.assertEqual(authenticate.call_count, 1)
+
+    def test_query_source_warms_base_cache_during_observation_heartbeat(self):
+            self.parent()
+            self.publish_successor()
+            real_materialize = native_source_module._materialize_authenticated_history
+            mutated = False
+
+            def materialize(*args, **kwargs):
+                nonlocal mutated
+                material = real_materialize(*args, **kwargs)
+                if not mutated:
+                    (self.run / "trainer-observed.json").write_text(json.dumps({
+                        "schema": "bilqis.bamf.trainer-observed/v7",
+                        "visits": [],
+                    }))
+                    mutated = True
+                return material
+
+            with (
+                    patch(
+                        "bilqis_mlx.control_plane.native_source.authenticated_history",
+                        wraps=authenticated_history) as authenticate,
+                    patch(
+                        "bilqis_mlx.control_plane.native_source._materialize_authenticated_history",
+                        side_effect=materialize)):
+                source = native_query_source(self.run)
+                source()
                 source()
                 self.assertEqual(authenticate.call_count, 1)
 
