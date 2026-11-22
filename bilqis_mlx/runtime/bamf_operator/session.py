@@ -27,6 +27,9 @@ from bilqis_mlx.runtime.active_grade_cadence import record_active_grade_cadence_
 from .locking import bamf_operator_lock
 from .performance import measure_observed_phase
 from .telemetry import TrainerObservation
+from bilqis_mlx.runtime.operator_session import (
+    DEFAULT_CANDIDATE_HORIZON, MAX_CANDIDATE_HORIZON,
+)
 from .session_support import (
     BamfPreparedVisit, _execution_context, _resource_observation, _step_seed,
 )
@@ -47,7 +50,6 @@ from .session_parts.native_session import (
     priority_hold_result as _priority_hold_result,
 )
 
-_MAX_CANDIDATE_HORIZON = 16
 def _invalid(reason: str):
     ErrorBus.raise_(SCHOOL.BAMF_FIRST_STUDENT.INVALID, reason=reason)
 from .session_support import BamfOperatorResult
@@ -89,7 +91,7 @@ def _accepted_learning_reentry(
 
 
 def prepare_bamf_visit(
-        run_dir: Path, *, steps_per_visit: int = 16,
+        run_dir: Path, *, steps_per_visit: int = DEFAULT_CANDIDATE_HORIZON,
         reserve_gib: float = 100.0,
         progress=None, source_prefetch_workers: int = 0,
         source_prefetch_executor=None,
@@ -98,7 +100,7 @@ def prepare_bamf_visit(
         distributed_executor=None, planning_cache=None) -> BamfPreparedVisit:
     """Compose the production visit through retention without publishing it."""
     if (type(steps_per_visit) is not int
-            or not 1 <= steps_per_visit <= _MAX_CANDIDATE_HORIZON):
+            or not 1 <= steps_per_visit <= MAX_CANDIDATE_HORIZON):
         _invalid("BAMF_OPERATOR_SESSION_BOUNDS_INVALID")
     _emit_progress(progress, "validating accepted generation and source custody")
     visit_currentness_metrics = VisitCurrentnessMetrics()
@@ -170,7 +172,7 @@ def prepare_bamf_visit(
             capability=selection.offer.capability_id, resource=error.to_record())
 
 
-def _visit(run_dir: Path, reserve_gib: float, *, steps_per_visit=16,
+def _visit(run_dir: Path, reserve_gib: float, *, steps_per_visit=DEFAULT_CANDIDATE_HORIZON,
            progress=None, source_prefetch_workers=0,
            source_prefetch_executor=None, source_prefetch_metrics=None, observer=None,
            run_authority_binding=None, resource_holds=frozenset(),
@@ -268,7 +270,7 @@ def _run_pending_operator_maintenance(run_dir: Path, *, progress=None):
 
 def operate_bamf(
     run_dir: Path, *, minutes: int = 90,
-    max_visits: int = 0, steps_per_visit: int = 16,
+    max_visits: int = 0, steps_per_visit: int = DEFAULT_CANDIDATE_HORIZON,
     reserve_gib: float = 100.0,
     source_prefetch_workers: int = 2,
     parent_graph: dict | None = None,
@@ -316,7 +318,7 @@ def operate_bamf(
                 Path(run_dir), minutes=minutes, max_visits=max_visits,
                 steps_per_visit=steps_per_visit, reserve_gib=reserve_gib,
                 source_prefetch_workers=source_prefetch_workers, progress=progress,
-                max_horizon=_MAX_CANDIDATE_HORIZON,
+                max_horizon=MAX_CANDIDATE_HORIZON,
                 worker_counts=NATIVE_SOURCE_WORKER_COUNTS, invalid=_invalid,
                 metrics_type=SourcePrefetchMetrics, source_pool_factory=source_prefetch_pool,
                 null_context=nullcontext, operator_lock=bamf_operator_lock,
