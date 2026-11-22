@@ -23,6 +23,10 @@ from .motif_transition import (
     _stage_candidate_motif_allocation,
 )
 
+TRAINING_SOURCE_COORDINATE_FIELDS = (
+    "capability", "source_family", "episode",
+)
+
 
 def _parent_object_guard(parent: CandidateState) -> tuple:
     """Cheap process-local proof that the accepted parent objects are unchanged."""
@@ -161,7 +165,8 @@ def _validate_learning_first_transaction(candidate):
             or candidate.training_authorities != ()
             or type(coordinates) is not tuple
             or coordinates != tuple(sorted(set(coordinates)))
-            or any(type(item) is not tuple or len(item) != 3
+            or any(type(item) is not tuple
+                   or len(item) != len(TRAINING_SOURCE_COORDINATE_FIELDS)
                    or any(not isinstance(value, str) or not value for value in item)
                    for item in coordinates)
             or (candidate.update_steps > 0 and not coordinates)

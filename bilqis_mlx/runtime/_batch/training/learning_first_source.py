@@ -21,6 +21,7 @@ from bilqis_mlx.semantics.frame_compiler import (
 from bilqis_mlx.semantics.frame_schema import SourceSpan, frame_schema_from_bytes
 from bilqis_mlx.runtime.factory_training_context import public_training_context
 from bilqis_mlx.runtime.factory_training_source_rows import _FactorySourceRow
+from bilqis_mlx.runtime.atlas_training_contracts import _invalid
 
 
 _SEMANTICS_ROOT = Path(__file__).resolve().parents[3] / "semantics"
@@ -44,7 +45,7 @@ def _schema_bundle(source_family, release_sha256, bundle_id, source_bundle_id):
         and item["atlas_bundle_id"] == bundle_id
         and item["source_bundle_id"] == source_bundle_id)
     if len(matches) != 1:
-        raise ValueError("learning-first schema release unavailable")
+        _invalid("LEARNING_FIRST_SCHEMA_RELEASE_UNAVAILABLE")
     manifest = json.loads((
         _SEMANTICS_ROOT / "frame_schema_releases" /
         ("frame-schemas-" + matches[0]["schema_manifest_sha256"] + ".json")

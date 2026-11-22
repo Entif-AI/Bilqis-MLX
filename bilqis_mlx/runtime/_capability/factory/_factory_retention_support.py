@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from bilqis_mlx.learning.atlas_candidate import CandidateTransaction, resolve_candidate
+from bilqis_mlx.learning._retention._atlas_candidate.transaction import (
+    TRAINING_SOURCE_COORDINATE_FIELDS,
+)
 from bilqis_mlx.learning._atlas_candidate.identity_binding import (
     bind_candidate_identity_or_fallback, candidate_identity_for_canonical_consumer,
 )
@@ -39,7 +42,8 @@ def _training_coordinates(candidate: CandidateTransaction):
         coordinates = getattr(candidate, "training_source_coordinates", ())
         if (type(coordinates) is not tuple or not coordinates
                 or coordinates != tuple(sorted(set(coordinates)))
-                or any(type(item) is not tuple or len(item) != 3
+                or any(type(item) is not tuple
+                       or len(item) != len(TRAINING_SOURCE_COORDINATE_FIELDS)
                        or any(not isinstance(value, str) or not value for value in item)
                        for item in coordinates)):
             _invalid("BAMF_C05_TRAINING_SOURCE_INDEPENDENCE_UNAVAILABLE")
