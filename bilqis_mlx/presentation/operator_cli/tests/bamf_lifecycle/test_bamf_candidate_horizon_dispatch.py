@@ -189,4 +189,6 @@ def test_final_bamf_dashboard_preserves_command_session_baseline(capsys):
 
     assert handled is True and code == 0
     assert final_board._bamf_session_visit_baseline == baseline
+    assert final_board.state["visits"] == 1
+    assert final_board.state["retained_visits"] == 1
     assert "accepted 1" in capsys.readouterr().out
