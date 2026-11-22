@@ -28,6 +28,7 @@ from .locking import bamf_operator_lock
 from .performance import measure_observed_phase
 from .telemetry import TrainerObservation
 from .session_support import (
+    DEFAULT_CANDIDATE_HORIZON, MAX_CANDIDATE_HORIZON,
     BamfPreparedVisit, _execution_context, _resource_observation, _step_seed,
 )
 from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import VisitCurrentnessMetrics
@@ -40,7 +41,6 @@ from .session_parts.stop_receipt import (
 )
 from ._session_execution import operate as _operate_impl
 from ._session_visit import visit as _visit_impl
-from .session_limits import DEFAULT_CANDIDATE_HORIZON, MAX_CANDIDATE_HORIZON
 from .session_parts.native_session import (
     accepted_admission_reentry as _accepted_admission_reentry_impl,
     adopt_and_activate_certified_successor as _adopt_and_activate_certified_successor,
