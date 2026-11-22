@@ -142,9 +142,10 @@ def _finish_bamf_resume(board, args, run_dir: Path, operator_report):
     if session_baseline is not None:
         board._bamf_session_visit_baseline = set(session_baseline)
     from bilqis_mlx.presentation.bamf_terminal_accounting import (
-        transfer_bamf_command_accounting,
+        finalize_bamf_command_accounting, transfer_bamf_command_accounting,
     )
     transfer_bamf_command_accounting(prior_board, board)
+    finalize_bamf_command_accounting(board, operator_report)
     board.mode = "BAMF | " + str(operator_report.get("status", "STOPPED"))
     board.state["stop"] = str(operator_report.get("status", "STOPPED"))
     board.draw()
