@@ -7,6 +7,7 @@ from .bamf_terminal_rows import (
     MARKER, candidate_row, grade, mastery_rows, retention_row, system_rows,
     teacher_row,
 )
+from .bamf_terminal_accounting import bamf_command_accounting_active
 from .bamf_terminal_source import (
     logical_visit_identity, read_bamf_terminal_observation,
 )
@@ -87,13 +88,26 @@ def refresh_bamf_terminal_projection(board) -> None:
     terminal_visits = tuple(
         visit for visit in session_visits
         if visit.get("outcome") in {"ACCEPTED", "REJECTED"})
-    board.state.update(
-        visits=len(terminal_visits),
-        retained_visits=sum(
-            visit.get("outcome") == "ACCEPTED" for visit in terminal_visits),
-        attempted_steps=sum(_attempted_steps(visit) for visit in session_visits),
-        _rate_sample_eligible=True,
-    )
+    if bamf_command_accounting_active(board):
+        accounting = board._bamf_command_accounting
+        running_steps = sum(
+            _attempted_steps(visit) for visit in session_visits
+            if visit.get("outcome") == "RUNNING")
+        board.state.update(
+            visits=accounting["visits"],
+            retained_visits=accounting["retained_visits"],
+            attempted_steps=accounting["attempted_steps"] + running_steps,
+            retained_steps=accounting["retained_steps"],
+            _rate_sample_eligible=True,
+        )
+    else:
+        board.state.update(
+            visits=len(terminal_visits),
+            retained_visits=sum(
+                visit.get("outcome") == "ACCEPTED" for visit in terminal_visits),
+            attempted_steps=sum(_attempted_steps(visit) for visit in session_visits),
+            _rate_sample_eligible=True,
+        )
     _clear_owned(board)
     board.rows["CANDIDATES"].extend(
         candidate_row(visit) for visit in projected_visits)
