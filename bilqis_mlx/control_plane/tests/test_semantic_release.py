@@ -53,6 +53,7 @@ def snapshot():
             source_held=11, source_ir_only=13,
             implementation_uncovered=17,
         ),
+        formal_domain_bindings=(), concepts=(), abi_entries=(), withheld_rows=(),
     )
 
 
@@ -125,7 +126,7 @@ class SemanticReleaseProjectionTests(unittest.TestCase):
         self.assertIs(record.state, SemanticProjectionState.CURRENT)
         self.assertEqual(record.meta.materialized_at, 100)
 
-    def test_native_query_cache_rebuilds_for_outbox_change_but_not_trainer_only_change(self):
+    def test_native_query_cache_reprojects_outbox_without_reauthenticating_history(self):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / "bamf-state.json").write_text("{}", encoding="utf-8")
@@ -135,7 +136,9 @@ class SemanticReleaseProjectionTests(unittest.TestCase):
             outbox.write_text("one", encoding="utf-8")
             material = NativeProjectionMaterial((), (), (), {})
             with (
-                patch("bilqis_mlx.control_plane.native_source.materialize_native_projection",
+                patch("bilqis_mlx.control_plane.native_source.authenticated_history",
+                      return_value=("accepted-history",)) as authenticate,
+                patch("bilqis_mlx.control_plane.native_source._materialize_authenticated_history",
                       return_value=material) as materialize,
                 patch("bilqis_mlx.control_plane.native_source._run_refs",
                       return_value=("run-ref",)),
@@ -146,12 +149,15 @@ class SemanticReleaseProjectionTests(unittest.TestCase):
                 source()
                 source()
                 self.assertEqual(materialize.call_count, 1)
+                self.assertEqual(authenticate.call_count, 1)
                 trainer.write_text("trainer changed", encoding="utf-8")
                 source()
                 self.assertEqual(materialize.call_count, 1)
+                self.assertEqual(authenticate.call_count, 1)
                 outbox.write_text("materialization changed", encoding="utf-8")
                 source()
                 self.assertEqual(materialize.call_count, 2)
+                self.assertEqual(authenticate.call_count, 1)
 
     def test_missing_feature_authority_degrades_only_semantic_cockpit(self):
         bamf_bundle = ModuleType("bilqis_mlx.runtime.bamf_bundle")
@@ -162,6 +168,19 @@ class SemanticReleaseProjectionTests(unittest.TestCase):
                 records = accepted_semantic_release_records(Path(temporary), generation())
         self.assertEqual(len(records), 1)
         self.assertIs(records[0].state, SemanticProjectionState.ERROR)
+
+    def test_accepted_semantic_source_also_projects_atlas_summary(self):
+        bamf_bundle = ModuleType("bilqis_mlx.runtime.bamf_bundle")
+        bamf_bundle.read_current_accepted_generation_semantic_snapshot = (
+            lambda _path: snapshot())
+        with TemporaryDirectory() as temporary, patch.dict(
+                sys.modules, {"bilqis_mlx.runtime.bamf_bundle": bamf_bundle}), patch(
+                "bilqis_mlx.control_plane.projection.semantic_release.read_outbox_read_only",
+                return_value=()):
+            records = accepted_semantic_release_records(Path(temporary), generation())
+        self.assertTrue(any(
+            record.schema_version == "bilqis.bamf.mission-control.semantic-atlas-snapshot/v1"
+            for record in records))
 
 
 if __name__ == "__main__":

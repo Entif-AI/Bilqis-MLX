@@ -32,7 +32,7 @@ test("production neural query binds current and historical contexts exactly", ()
   assert.equal(current.family, "neural");
   assert.equal(current.mode, "current");
   assert.equal(current.run_id, "accepted-run");
-  assert.equal(current.generation, 7);
+  assert.equal(current.generation, null);
   const historical = neuralRuntimeQuery({ ...context, mode: "HISTORICAL", generation: 6 });
   assert.equal(historical.mode, "historical");
   assert.equal(historical.generation, 6);

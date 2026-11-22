@@ -4,9 +4,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from bilqis_mlx.data_plane import DataPlaneError
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.mission_control import (
     CandidateDecision, CandidateOutcome, CoverageState, LearningEpisode,
+    UnavailableEnvelope, UnavailableReason,
 )
 from bilqis_mlx.runtime.bamf_rejection import (
     portable_rejection_receipt, rejection_registry,
@@ -18,6 +20,24 @@ from .native_contracts import (
     AuthenticatedGeneration, accepted_student_sha256, canonical, derived_event_id,
     invalid, is_digest, native_outbox_event_id, record_meta, run_ref, sha,
 )
+
+
+class _LegacyRejectionUnavailable(Exception):
+    """A legacy rejection is shaped, but its optional backing object is gone."""
+
+
+def _missing_data_plane_object(error: ValueError) -> bool:
+    return str(error).split(":", 1)[0] == DataPlaneError.OBJECT_MISSING.value
+
+
+def _unavailable_rejection(native, generation):
+    run = run_ref(generation)
+    event_id = native.get("event_id")
+    return UnavailableEnvelope(
+        record_meta(
+            f"rejection-unavailable:{event_id}", run, generation,
+            native=native, coverage=CoverageState.UNKNOWN),
+        f"episode:{run.run_id}", UnavailableReason.UNAVAILABLE, None)
 
 
 def _verified_rejection(native, generation, data_plane=None):
@@ -84,7 +104,9 @@ def _verified_rejection(native, generation, data_plane=None):
     authority_raw = canonical(authority)
     try:
         stored_authority = data_plane.get_object(authority_sha)
-    except ValueError:
+    except ValueError as error:
+        if _missing_data_plane_object(error):
+            raise _LegacyRejectionUnavailable from None
         invalid("CONTROL_PLANE_NATIVE_REJECTION_AUTHORITY_DRIFT")
     if sha(authority_raw) != authority_sha or stored_authority != authority_raw:
         invalid("CONTROL_PLANE_NATIVE_REJECTION_AUTHORITY_DRIFT")
@@ -97,7 +119,9 @@ def _verified_rejection(native, generation, data_plane=None):
     receipt_sha = sha(receipt_raw)
     try:
         stored_receipt = data_plane.get_object(receipt_sha)
-    except ValueError:
+    except ValueError as error:
+        if _missing_data_plane_object(error):
+            raise _LegacyRejectionUnavailable from None
         invalid("CONTROL_PLANE_NATIVE_REJECTION_RECEIPT_DRIFT")
     if stored_receipt != receipt_raw:
         invalid("CONTROL_PLANE_NATIVE_REJECTION_RECEIPT_DRIFT")
@@ -210,7 +234,11 @@ def rejection_material(
             generation = by_manifest.get(native.get("student_manifest_sha256"))
             if generation is None:
                 invalid("CONTROL_PLANE_NATIVE_REJECTION_INVALID")
-            verified = _verified_rejection(native, generation, plane)
+            try:
+                verified = _verified_rejection(native, generation, plane)
+            except _LegacyRejectionUnavailable:
+                records.append(_unavailable_rejection(native, generation))
+                continue
             if verified is None:
                 continue
             receipt_sha = verified[2]

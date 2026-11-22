@@ -156,6 +156,30 @@ test("Home pulse keeps observed and materialized time identities separate", () =
   assert.equal(model.pulse[0].materializedAt, 1_799_000_305);
 });
 
+test("Home pulse keeps the newest cumulative decisions when current pages are newest-first", () => {
+  const pages = Object.fromEntries(HOME_FAMILIES.map((family) => [family, emptyPage(family)]));
+  pages.episode = {
+    accepted: true, family: "episode", mode: "current", state: "PRESENT", coverage: "COMPLETE",
+    records: Array.from({ length: 12 }, (_, index) => ({
+      schema_version: "bilqis.bamf.mission-control.candidate-decision/v1",
+      meta: {
+        record_id: `decision:${12 - index}`,
+        observed_at: 1_799_000_400 - index,
+        materialized_at: 1_799_000_500 - index,
+      },
+      capability_id: `A.CAP.${12 - index}`,
+      outcome: "ACCEPTED",
+      reason_code: "RETAINED",
+    })),
+  };
+  const model = projectionFromPages(pages, context);
+  assert.equal(model.pulse.length, 8);
+  assert.deepEqual(model.pulse.map((event) => event.capabilityId), [
+    "A.CAP.12", "A.CAP.11", "A.CAP.10", "A.CAP.9",
+    "A.CAP.8", "A.CAP.7", "A.CAP.6", "A.CAP.5",
+  ]);
+});
+
 test("Home fixtures never relabel generation coordinates as wall-clock time", () => {
   const model = referenceHomeProjection();
   assert.equal(model.pulse.every((event) => event.observedAt === null && event.materializedAt === null), true);

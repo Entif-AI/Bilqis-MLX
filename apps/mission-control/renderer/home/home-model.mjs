@@ -10,7 +10,7 @@ const NOTIFICATION_EVENT_FAMILIES = new Set([
 ]);
 
 export const HOME_FAMILIES = Object.freeze([
-  "run", "school", "capability", "episode", "semantic", "resource", "correction", "teacher", "notification",
+  "run", "school", "capability", "episode", "semantic", "neural", "resource", "correction", "teacher", "notification",
 ]);
 
 export function queryRequest(family, context, overrides = {}) {
@@ -55,6 +55,14 @@ function value(record, field) {
 
 function latest(records, schema) {
   return records.filter((record) => record?.schema_version === schema).at(-1) ?? null;
+}
+
+function newestFirst(records) {
+  return records.toSorted((left, right) => {
+    const leftTime = left?.meta?.observed_at ?? left?.meta?.materialized_at ?? -1;
+    const rightTime = right?.meta?.observed_at ?? right?.meta?.materialized_at ?? -1;
+    return rightTime - leftTime;
+  });
 }
 
 function pageRecords(pages, family) {
@@ -121,13 +129,20 @@ export function projectionFromPages(pages, context) {
   const schoolRecords = pageRecords(pages, "school");
   const runRecords = pageRecords(pages, "run");
   const semanticRecords = pageRecords(pages, "semantic");
+  const neuralRecords = pageRecords(pages, "neural");
   const resources = pageRecords(pages, "resource");
   const corrections = pageRecords(pages, "correction");
   const teachers = pageRecords(pages, "teacher");
   const notifications = pageRecords(pages, "notification");
 
   const run = latest(runRecords, "bilqis.bamf.mission-control.run-context/v1");
-  const observed = observedHomeState(runRecords, context, run);
+  const neural = latest(neuralRecords, "bilqis.bamf.mission-control.neural-runtime-sample/v1");
+  const acceptedStepDurationMs = value(neural, "step_duration_ms");
+  const observed = Object.freeze({
+    ...observedHomeState(runRecords, context, run),
+    acceptedStepDurationSeconds: Number.isFinite(acceptedStepDurationMs)
+      ? acceptedStepDurationMs / 1000 : null,
+  });
   const school = latest(schoolRecords, "bilqis.bamf.mission-control.school-snapshot/v1");
   const frontier = latest(schoolRecords, "bilqis.bamf.mission-control.curriculum-frontier/v1");
   const semantic = latest(semanticRecords, "bilqis.bamf.mission-control.semantic-atlas-snapshot/v1");
@@ -145,7 +160,7 @@ export function projectionFromPages(pages, context) {
   const correctionDebt = corrections.filter((record) => record.state === "REQUALIFICATION_REQUIRED").length;
   const qualified = capabilityRows.filter((record) => record.status === "QUALIFIED").length;
   const domainRecordCount = (
-    capabilities.length + episodes.length + schoolRecords.length + semanticRecords.length +
+    capabilities.length + episodes.length + schoolRecords.length + semanticRecords.length + neuralRecords.length +
     resources.length + corrections.length + teachers.length + notifications.length
   );
   const startup = run && !observed.current && context?.mode !== "HISTORICAL" && domainRecordCount === 0
@@ -242,7 +257,7 @@ export function projectionFromPages(pages, context) {
       status: record.status,
       recordId: record.meta?.record_id ?? record.capability_id,
     }))),
-    pulse: Object.freeze(decisions.slice(-8).reverse().map((record) => Object.freeze({
+    pulse: Object.freeze(newestFirst(decisions).slice(0, 8).map((record) => Object.freeze({
       kind: record.outcome === "ACCEPTED" ? "retain" : "reject",
       capabilityId: record.capability_id,
       reasonCode: record.reason_code,

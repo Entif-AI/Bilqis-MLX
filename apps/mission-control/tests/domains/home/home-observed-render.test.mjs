@@ -206,6 +206,56 @@ test("new visit keeps the latest completed step visible instead of an unavailabl
   assert.doesNotMatch(html, /Step wall time<\/dt><dd>Unavailable/);
 });
 
+test("sparse restart keeps accepted candidate-step duration visible from durable neural telemetry", () => {
+  const current = observation({
+    observation_id: "current-after-restart", revision: 2, phase: "SELECTING",
+    candidate_step: null, candidate_horizon: null, candidate_steps: [],
+    candidate_step_wall_seconds: null,
+    meta: { run: { run_id: "trainer-run", generation: 20 }, observed_at: 1300 },
+  });
+  const neural = {
+    accepted: true, state: "PRESENT", coverage: "PARTIAL", markers: [], links: [],
+    records: [{
+      schema_version: "bilqis.bamf.mission-control.neural-runtime-sample/v1",
+      meta: { record_id: "neural:accepted", run: { run_id: "trainer-run", generation: 20 } },
+      optimizer_step: 126,
+      step_duration_ms: { state: "PRESENT", origin: "DERIVED", value: 26_800, units: "ms" },
+      active_parameters: { state: "MISSING", origin: null, value: null, units: null },
+      refinement_fraction: { state: "MISSING", origin: null, value: null, units: null },
+    }],
+  };
+  const model = projectionFromPages({ run: runPage(current, 20), neural }, context);
+  const html = renderHomeMarkup(model, { nowMs: 1_300_000, locale: "en-US" });
+  assert.equal(model.observed.acceptedStepDurationSeconds, 26.8);
+  assert.match(html, /Latest completed step performance/);
+  assert.match(html, /Step wall time<\/th><td>27 seconds/);
+});
+
+test("sparse prior step falls through to durable neural timing instead of hiding it", () => {
+  const current = observation({
+    observation_id: "current-after-sparse-step", revision: 3, phase: "SELECTING",
+    candidate_step: null, candidate_horizon: null,
+    candidate_steps: [{ candidate_step: 1, candidate_step_wall_seconds: null }],
+    candidate_step_wall_seconds: null,
+    meta: { run: { run_id: "trainer-run", generation: 20 }, observed_at: 1301 },
+  });
+  const neural = {
+    accepted: true, state: "PRESENT", coverage: "PARTIAL", markers: [], links: [],
+    records: [{
+      schema_version: "bilqis.bamf.mission-control.neural-runtime-sample/v1",
+      meta: { record_id: "neural:accepted", run: { run_id: "trainer-run", generation: 20 } },
+      optimizer_step: 126,
+      step_duration_ms: { state: "PRESENT", origin: "DERIVED", value: 26_800, units: "ms" },
+      active_parameters: { state: "MISSING", origin: null, value: null, units: null },
+      refinement_fraction: { state: "MISSING", origin: null, value: null, units: null },
+    }],
+  };
+  const model = projectionFromPages({ run: runPage(current, 20), neural }, context);
+  const html = renderHomeMarkup(model, { nowMs: 1_301_000, locale: "en-US" });
+  assert.match(html, /Latest completed step performance/);
+  assert.match(html, /Step wall time<\/th><td>27 seconds/);
+});
+
 test("epoch-millisecond trainer heartbeat projected to Unix seconds renders near the real observation time", () => {
   const heartbeatMs = Date.UTC(2026, 10, 15, 13, 0, 0, 123);
   const projectedSeconds = Math.floor(heartbeatMs / 1000);

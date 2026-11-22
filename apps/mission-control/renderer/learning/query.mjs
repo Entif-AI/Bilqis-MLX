@@ -14,7 +14,7 @@ export function buildLearningQuery(context, recordId = null) {
     run_id: context?.runId ?? null,
     record_id: recordId,
     schema_version: null,
-    generation: context?.generation ?? null,
+    generation: historical ? context?.generation ?? null : null,
     frontier_id: null,
     as_of: null,
     reference: null,

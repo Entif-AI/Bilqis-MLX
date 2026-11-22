@@ -109,6 +109,10 @@ def _state(records, markers, *, historical_missing: bool) -> QueryState:
         return QueryState.PARTIAL
     unavailable = next((item for item in markers if type(item) is UnavailableEnvelope), None)
     if unavailable is not None:
+        if unavailable.reason is UnavailableReason.DENIED:
+            return QueryState.DENIED
+        if records:
+            return QueryState.PARTIAL
         return {
             UnavailableReason.MISSING: QueryState.MISSING,
             UnavailableReason.DENIED: QueryState.DENIED,

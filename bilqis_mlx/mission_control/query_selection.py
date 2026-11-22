@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from .contracts.model import WireRecord
+from .contracts.dossier import CapabilityDossier
 from .contracts.observability import (
     GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticReleaseSnapshot,
@@ -86,7 +87,9 @@ def record_sort_key(record: WireRecord):
 
 def _freshness_key(record: WireRecord):
     meta = record.meta
+    run = meta.run
     return (
+        -1 if run is None else run.generation,
         -1 if meta.as_of is None else meta.as_of,
         -1 if meta.observed_at is None else meta.observed_at,
         meta.materialized_at,
@@ -103,6 +106,8 @@ def _current_identity(record: WireRecord):
     if isinstance(record, TrainerObservation):
         return (*base, record.observation_id)
     if type(record) is CapabilitySnapshot:
+        return (*base, record.capability_id)
+    if type(record) is CapabilityDossier:
         return (*base, record.capability_id)
     if type(record) is SemanticGenerationState:
         return (*base, record.semantic_id)
@@ -157,18 +162,22 @@ def matches_identity(
     return True
 
 
-def select_current(rows: list[WireRecord]) -> list[WireRecord]:
+def select_current(
+        rows: list[WireRecord], family: QueryFamily | None = None) -> list[WireRecord]:
+    cumulative = family in {QueryFamily.CAPABILITY, QueryFamily.EPISODE}
     generations = {}
-    for item in rows:
-        run = item.meta.run
-        if run is not None and not isinstance(item, TrainerObservation):
-            generations[run.run_id] = max(run.generation, generations.get(run.run_id, -1))
-    if generations:
-        rows = [
-            item for item in rows
-            if isinstance(item, (TrainerObservation, Notification)) or item.meta.run is None
-            or item.meta.run.generation == generations[item.meta.run.run_id]
-        ]
+    if not cumulative:
+        for item in rows:
+            run = item.meta.run
+            if run is not None and not isinstance(item, TrainerObservation):
+                generations[run.run_id] = max(
+                    run.generation, generations.get(run.run_id, -1))
+        if generations:
+            rows = [
+                item for item in rows
+                if isinstance(item, (TrainerObservation, Notification)) or item.meta.run is None
+                or item.meta.run.generation == generations[item.meta.run.run_id]
+            ]
     newest = {}
     passthrough = []
     for item in rows:

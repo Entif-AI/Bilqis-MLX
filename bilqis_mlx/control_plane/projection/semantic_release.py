@@ -12,6 +12,9 @@ from bilqis_mlx.mission_control import (
 from bilqis_mlx.runtime.akasha_outbox import (
     AkashaEventKind, read_outbox_read_only,
 )
+from bilqis_mlx.mission_control.semantic.projection import (
+    project_semantic_atlas_records,
+)
 
 from ..native_contracts import AuthenticatedGeneration, invalid, run_ref
 
@@ -171,7 +174,12 @@ def accepted_semantic_release_records(run_dir: Path, generation: AuthenticatedGe
         projection = _projection_record(generation, snapshot, events)
     except BilqisError:
         projection = _empty_projection(generation, SemanticProjectionState.ERROR)
-    return release, projection
+    active_indices = tuple(
+        entry.index for entry in getattr(snapshot, "abi_entries", ())
+        if getattr(entry, "active", False))
+    atlas = project_semantic_atlas_records(
+        snapshot, run_ref(generation), active_indices, materialized_at=0)
+    return release, projection, *atlas
 
 
 __all__ = ("accepted_semantic_release_records",)

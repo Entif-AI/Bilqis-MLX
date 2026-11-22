@@ -8,14 +8,17 @@ from unittest.mock import patch
 from bilqis_mlx.control_plane import ControlPlaneService
 from bilqis_mlx.control_plane.native_contracts import canonical, sha
 from bilqis_mlx.control_plane.native_source import (
-    materialize_native_projection, native_query_catalog, refresh_native_events,
+    materialize_native_projection, native_query_catalog, native_query_source,
+    refresh_native_events,
 )
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.learning.teacher_visit_identity import (
     TeacherVisitIdentity, require_teacher_visit_receipt,
     teacher_visit_receipt_record,
 )
-from bilqis_mlx.mission_control import CandidateDecision, QueryFamily, QueryRequest
+from bilqis_mlx.mission_control import (
+    CandidateDecision, MissionControlQueryCatalog, QueryFamily, QueryMode, QueryRequest,
+)
 from bilqis_mlx.mission_control import LearningEpisode
 from bilqis_mlx.runtime import checkpoint_outbox
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
@@ -168,7 +171,7 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
         with self.assertRaises(BilqisError):
             materialize_native_projection(self.run, include_live_rejections=True)
 
-    def test_forged_rejection_pair_cannot_become_live_authority(self):
+    def test_missing_legacy_rejection_authority_degrades_without_becoming_authority(self):
         parent = self.parent()
         evidence = self.rejection_evidence(parent)
         authority = {
@@ -198,12 +201,23 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
         self.assertFalse(any(
             isinstance(record, CandidateDecision) and record.outcome.value == "REJECTED"
             for record in portable.records))
-        with self.assertRaises(BilqisError) as caught:
-            materialize_native_projection(self.run, include_live_rejections=True)
-        self.assertEqual(
-            caught.exception.context.get("reason"),
-            "CONTROL_PLANE_NATIVE_REJECTION_AUTHORITY_DRIFT",
-        )
+        material = materialize_native_projection(
+            self.run, include_live_rejections=True)
+        self.assertFalse(any(
+            isinstance(record, CandidateDecision)
+            and record.outcome.value == "REJECTED"
+            for record in material.records))
+        page = MissionControlQueryCatalog(material.records).query(QueryRequest(
+            QueryFamily.EPISODE, mode=QueryMode.HISTORICAL,
+            run_id=parent.run_id, generation=parent.generation))
+        self.assertEqual(page.state.value, "UNAVAILABLE")
+        self.assertEqual(page.records, ())
+        self.assertEqual(len(page.markers), 1)
+        current = native_query_source(self.run)().query(QueryRequest(
+            QueryFamily.EPISODE, run_id=parent.run_id))
+        self.assertEqual(current.state.value, "UNAVAILABLE")
+        self.assertEqual(current.records, ())
+        self.assertEqual(len(current.markers), 1)
 
     def test_generic_rejection_is_authenticated_but_not_projected(self):
         parent = self.parent()

@@ -11,8 +11,6 @@ from bilqis_mlx.mission_control import MissionControlQueryCatalog
 from .native_contracts import AuthenticatedGeneration, NativeProjectionMaterial
 from .native_custody import accepted_pointer, authenticated_history
 from .native_mapping import accepted_records
-from .current.custody import authenticated_current_generation
-from .current.mapping import accepted_current_records
 from .native_factory import accepted_factory_records
 from .native_rejections import rejection_material
 from .native_contracts import run_ref
@@ -79,10 +77,11 @@ def _service_lock(service):
         return lock
 
 
-def materialize_native_projection(
-        run_dir: Path, *, include_live_rejections: bool = False) -> NativeProjectionMaterial:
-    """Materialize portable history; optionally add legacy live-only rejection facts."""
-    history = authenticated_history(run_dir)
+def _materialize_authenticated_history(
+        run_dir: Path, history: tuple[AuthenticatedGeneration, ...], *,
+        include_live_rejections: bool) -> NativeProjectionMaterial:
+    """Project an already-authenticated lineage without re-reading its ancestry."""
+    run_dir = Path(run_dir)
     records, events, manifests = [], [], []
     parent = None
     for generation in history:
@@ -93,13 +92,13 @@ def materialize_native_projection(
         parent = generation
     records.extend(accepted_factory_records(history))
     if history:
-        records.extend(accepted_semantic_release_records(Path(run_dir), history[-1]))
+        records.extend(accepted_semantic_release_records(run_dir, history[-1]))
     rejected_records, rejected_events = (
-        rejection_material(Path(run_dir), history)
+        rejection_material(run_dir, history)
         if include_live_rejections
-        else rejection_material(Path(run_dir), history, portable_only=True))
+        else rejection_material(run_dir, history, portable_only=True))
     records.extend(_accepted_capability_dossiers(history, rejected_records))
-    after = accepted_pointer(Path(run_dir))
+    after = accepted_pointer(run_dir)
     if (not history
             or after["manifest_sha256"] != history[-1].manifest_sha256
             or after["acceptance_sha256"] != history[-1].acceptance_sha256):
@@ -116,18 +115,27 @@ def materialize_native_projection(
         tuple(records), tuple(events), tuple(manifests), accepted_health)
 
 
-def materialize_current_native_projection(run_dir: Path) -> NativeProjectionMaterial:
-    """Materialize the authenticated accepted tip plus bounded live observations."""
+def materialize_native_projection(
+        run_dir: Path, *, include_live_rejections: bool = False) -> NativeProjectionMaterial:
+    """Materialize portable history; optionally add legacy live-only rejection facts."""
     root = Path(run_dir)
-    current = authenticated_current_generation(root)
-    records = list(accepted_current_records(current))
-    records.extend(accepted_factory_records((current,)))
-    records.extend(_accepted_capability_dossiers((current,), ()))
-    accepted_health = _accepted_learning_health((current,))
-    records.extend(observed_records(
-        root, (run_ref(current),), accepted_health_by_manifest=accepted_health))
-    return NativeProjectionMaterial(
-        tuple(records), (), (current.manifest_sha256,), accepted_health)
+    return _materialize_authenticated_history(
+        root, authenticated_history(root),
+        include_live_rejections=include_live_rejections)
+
+
+def materialize_current_native_projection(run_dir: Path) -> NativeProjectionMaterial:
+    """Materialize cumulative accepted current context plus bounded live observations.
+
+    ``CURRENT`` is a read-model context, not a claim that all useful evidence was
+    physically minted in the accepted tip generation.  Build the portable,
+    tensor-thin accepted history once, then overlay disposable live observation.
+    ``native_query_source`` keeps that accepted base cached so heartbeat-only
+    refreshes never replay accepted lineage.
+    """
+    root = Path(run_dir)
+    return _materialize_authenticated_history(
+        root, authenticated_history(root), include_live_rejections=True)
 
 
 def native_query_catalog(run_dir: Path) -> MissionControlQueryCatalog:
@@ -157,10 +165,11 @@ def native_query_source(run_dir: Path):
     cached_base_records = ()
     cached_run_refs = ()
     cached_accepted_health = {}
+    cached_history = ()
 
     def source(query=None):
         nonlocal cached_token, cached_catalog, cached_base_records, cached_run_refs
-        nonlocal cached_accepted_health
+        nonlocal cached_accepted_health, cached_history
         with lock:
             from bilqis_mlx.mission_control import QueryMode
             historical = query is not None and query.mode is not QueryMode.CURRENT
@@ -171,9 +180,14 @@ def native_query_source(run_dir: Path):
             before = _source_token(root)
             if cached_catalog is not None and cached_token == before:
                 return cached_catalog
-            observation_only = (
+            accepted_unchanged = (
                 cached_catalog is not None and cached_token is not None
-                and cached_token[:2] == before[:2]
+                and cached_token[0] == before[0]
+                and cached_history
+            )
+            observation_only = (
+                accepted_unchanged
+                and cached_token[1] == before[1]
                 and cached_token[3:] == before[3:]
                 and cached_run_refs
             )
@@ -189,7 +203,11 @@ def native_query_source(run_dir: Path):
                 if not pointer.exists() and not pointer.is_symlink():
                     return MissionControlQueryCatalog.unavailable()
                 try:
-                    material = materialize_current_native_projection(root)
+                    history = (
+                        cached_history if accepted_unchanged
+                        else authenticated_history(root))
+                    material = _materialize_authenticated_history(
+                        root, history, include_live_rejections=True)
                 except BilqisError as error:
                     if error.context.get("reason") in {
                         "BAMF_GENERATION_POINTER_CHANGED_DURING_READ",
@@ -215,6 +233,8 @@ def native_query_source(run_dir: Path):
                 cached_accepted_health = (
                     accepted_health if not observation_only
                     else cached_accepted_health)
+                if not observation_only:
+                    cached_history = history
             return catalog
 
     source._bilqis_query_aware = True
