@@ -189,7 +189,8 @@ def _priority_options(parent, release_sha256, offers, teacher_epoch, counter,
 
 
 def _bind_lawful_priority_epoch(
-        run_dir, source_context, parent, atlas_artifact_path, progress):
+        run_dir, source_context, parent, atlas_artifact_path, progress,
+        planning_cache=None):
     if progress is not None:
         progress("teacher: binding accepted planning generation")
     planning_generation = bind_priority_planning_generation(
@@ -201,11 +202,12 @@ def _bind_lawful_priority_epoch(
     )
     planning_epoch = _build_priority_planning_epoch(
         run_dir, source_context, atlas_artifact_path, progress,
-        authenticated_features=_authenticated)
+        authenticated_features=_authenticated, planning_cache=planning_cache)
     planning = _priority_planning_from_epoch(
-        planning_epoch, progress=progress)
+        planning_epoch, progress=progress, planning_cache=planning_cache)
     lawful_frontier = _issue_lawful_teaching_frontier_from_epoch(
-        planning_epoch, source_context, parent, planning_generation)
+        planning_epoch, source_context, parent, planning_generation,
+        planning_cache=planning_cache)
     return planning_generation, cache, planning_epoch, planning, lawful_frontier
 
 
@@ -237,7 +239,7 @@ def _priority_history(
 
 def issue_foundation_priority_authority(
         run_dir, source_context, parent, teacher_epoch, atlas_artifact_path, *,
-        teacher_state, progress=None):
+        teacher_state, progress=None, planning_cache=None):
     """Issue only signed UNKNOWN salience; C06 ranking owns the resulting order."""
     from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import (
         read_host_system_source_authority_signer,
@@ -248,7 +250,8 @@ def issue_foundation_priority_authority(
     counter, last_selected = priority_rotation_state(teacher_state)
     planning_generation, cache, planning_epoch, planning, lawful_frontier = (
         _bind_lawful_priority_epoch(
-            run_dir, source_context, parent, atlas_artifact_path, progress))
+            run_dir, source_context, parent, atlas_artifact_path, progress,
+            planning_cache=planning_cache))
     from bilqis_mlx.runtime.active_grade_cadence import issue_active_grade_cadence
     cadence = issue_active_grade_cadence(run_dir, planning_epoch, lawful_frontier)
     selection_cadence = cadence

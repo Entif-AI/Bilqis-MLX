@@ -36,7 +36,8 @@ from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
 
 from .accepted_teacher_state import (
     _bank_identity, _c03_projection, _plasticity_identity,
-    _student_region, rebind_accepted_teacher_custody,
+    _student_region, _teacher_credit_plasticity_identity,
+    rebind_accepted_teacher_custody,
     rebind_package_import_teacher_custody,
 )
 

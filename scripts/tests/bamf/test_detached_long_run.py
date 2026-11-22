@@ -222,6 +222,43 @@ class DetachedLongRunTests(unittest.TestCase):
             self.assertNotEqual(
                 result["snapshot_sha256"], result["final_snapshot_sha256"])
 
+    def test_worker_logs_child_liveness_and_unbuffers_python_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            snapshot = root / "snapshot"
+            source.mkdir()
+            (source / "subject.py").write_text("VALUE = 'before'\n", encoding="utf-8")
+            snapshot_receipt = _snapshot_workdir(source, snapshot)
+            receipt = root / "receipt.json"
+            log = root / "run.log"
+            args = SimpleNamespace(
+                label="liveness-test",
+                workdir=snapshot,
+                source_workdir=source,
+                source_sha256=snapshot_receipt["source_sha256"],
+                snapshot_sha256=snapshot_receipt["snapshot_sha256"],
+                log=log,
+                receipt=receipt,
+                pid_file=root / "pid",
+                no_notify=True,
+                heartbeat_seconds=0.01,
+                command=[
+                    sys.executable, "-B", "-c",
+                    "import os,time; print('UNBUFFERED=' + os.environ['PYTHONUNBUFFERED']); "
+                    "time.sleep(0.04)",
+                ],
+            )
+
+            self.assertEqual(_worker(args), 0)
+            contents = log.read_text(encoding="utf-8")
+            self.assertIn("DETACHED_LONG_RUN_CHILD_STARTED", contents)
+            self.assertIn("DETACHED_LONG_RUN_HEARTBEAT", contents)
+            self.assertIn("UNBUFFERED=1", contents)
+            result = json.loads(receipt.read_text(encoding="utf-8"))
+            self.assertEqual(result["status"], "PASS")
+            self.assertEqual(result["heartbeat_seconds"], 0.01)
+
     def test_worker_fails_if_command_mutates_snapshot_source(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

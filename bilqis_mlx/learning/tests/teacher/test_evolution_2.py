@@ -77,6 +77,80 @@ class Evolution2Tests(CausalTeacherExperimentTests):
             curriculum_scope="scope")
         self.assertEqual(picked, "low")
 
+    def test_rejection_pressure_pools_learning_rate_evidence_within_current_phase(self):
+        teacher = {
+            "strategies": {
+                "low-proven": {
+                    "contrast": .0, "depth": 3, "distill": .15,
+                    "lr": .00013, "old": 15, "preview": 4,
+                },
+                "low-new": {
+                    "contrast": 1., "depth": 2, "distill": .35,
+                    "lr": .00013, "old": 12, "preview": 4,
+                },
+                "high-bad": {
+                    "contrast": .0, "depth": 1, "distill": .65,
+                    "lr": .00008, "old": 6, "preview": 4,
+                },
+                "high-new": {
+                    "contrast": 1., "depth": 3, "distill": .15,
+                    "lr": .00008, "old": 16, "preview": 4,
+                },
+            },
+            "global_stats": {
+                key: {"trials": 20, "reward_sum": 0., "reward_ema": 0.,
+                      "latest": 0.}
+                for key in ("low-proven", "low-new", "high-bad", "high-new")
+            },
+            "grade_stats": {},
+            "events": 80,
+            "causal_experiment": {
+                "version": "bilqis.mlx.causal-teacher-experiment/v1",
+                "contexts": {
+                    "A.PARENT|RECOVERY_1|factory/foundation": {
+                        "low-proven": {
+                            "trials": 2, "reward_sum": 1.,
+                            "unsafe": 0, "retained": 2,
+                            "latest": .5, "no_target_gain_streak": 0,
+                        },
+                        "low-new": {
+                            "trials": 1, "reward_sum": -.1,
+                            "unsafe": 1, "retained": 0,
+                            "latest": -.1, "no_target_gain_streak": 1,
+                        },
+                        "high-bad": {
+                            "trials": 5, "reward_sum": -2.5,
+                            "unsafe": 5, "retained": 0,
+                            "latest": -.5, "no_target_gain_streak": 3,
+                        },
+                        "high-new": {
+                            "trials": 1, "reward_sum": .1,
+                            "unsafe": 1, "retained": 0,
+                            "latest": .1, "no_target_gain_streak": 0,
+                        },
+                    },
+                },
+                "capability_stagnation": {
+                    "A.PARENT|factory/foundation": {
+                        "rejection_streak": 2, "no_target_gain_streak": 2,
+                        "attempts_since_retained": 2, "total_rejections": 7,
+                        "total_retained": 2, "current_rejection_reasons": {},
+                    },
+                },
+            },
+        }
+
+        class Legacy:
+            @staticmethod
+            def pick(_teacher, _grade, _rng):
+                return "high-new", _teacher["strategies"]["high-new"]
+
+        picked, policy = contextual_pick(
+            Legacy, teacher, "A.PARENT", "RECOVERY_1", random.Random(2),
+            curriculum_scope="factory/foundation")
+        self.assertEqual(policy["lr"], .00013)
+        self.assertIn(picked, {"low-proven", "low-new"})
+
     def test_rejection_pressure_exploration_mints_novel_effective_strategy(self):
         import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
         teacher = strategy_population_teacher(count=24)

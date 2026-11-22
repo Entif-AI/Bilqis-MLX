@@ -21,11 +21,16 @@ def replay_rejected_outcomes(run_dir, parent, cache, teacher):
         payload = read_candidate_horizon_evidence(run_dir, evidence['candidate_evidence'])
         proposal = payload['proposal']
         decision = observation['decision']
+        selected_teacher_matches = (
+            observation.get('selected_teacher') == proposal.get('selected_teacher')
+            if 'selected_teacher' in observation or 'selected_teacher' in proposal
+            else observation.get('selected_teacher_sha256')
+                 == proposal.get('selected_teacher_sha256'))
         if (observation['attempt_id'] != payload['attempt_id']
                 or observation['proposal_id'] != payload['proposal_id']
                 or observation['candidate_evidence'] != evidence['candidate_evidence']['object']
                 or observation['context'] != proposal.get('how_context')
-                or observation['selected_teacher'] != proposal.get('selected_teacher')
+                or not selected_teacher_matches
                 or observation['selected_policy'] != proposal['policy']
                 or observation['teacher_visit'] != proposal['teacher_visit']
                 or observation['context']['factory_release_sha256'] != proposal['factory_release_sha256']

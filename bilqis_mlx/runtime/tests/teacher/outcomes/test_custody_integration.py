@@ -90,10 +90,20 @@ class NativeOutcomeCustodyTests(NativeSourceFixture, unittest.TestCase):
         self.assertNotIn('A.NATIVE|RECOVERY_1|factory/7',
                          restore_teacher_lineage(actual.teacher_state).teacher()['causal_experiment']['contexts'])
 
-    def test_changed_plasticity_does_not_carry_incompatible_evidence(self):
+    def test_accepted_row_age_advance_preserves_compatible_evidence(self):
         parent, visit, successor = self.prepared()
         changed = self.source().retained_state.policy
         self.assertNotEqual(changed.to_record(), parent.retained_state.policy.to_record())
+        altered = replace(successor, retained_state=replace(successor.retained_state, policy=changed))
+        with shape_patch():
+            actual = carry_credit_to_successor(visit, altered, parent)
+        record = restore_teacher_lineage(actual.teacher_state).teacher()[
+            'causal_experiment']['contexts']['A.NATIVE|RECOVERY_1|factory/7']
+        self.assertEqual(record[visit.identity.policy_key]['retained'], 1)
+
+    def test_changed_plasticity_mode_does_not_carry_incompatible_evidence(self):
+        parent, visit, successor = self.prepared()
+        changed = replace(parent.retained_state.policy, mode='ADAPTIVE')
         altered = replace(successor, retained_state=replace(successor.retained_state, policy=changed))
         with shape_patch():
             actual = carry_credit_to_successor(visit, altered, parent)
