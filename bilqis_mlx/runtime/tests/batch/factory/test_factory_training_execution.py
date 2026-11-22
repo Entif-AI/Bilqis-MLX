@@ -194,6 +194,9 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
             self.assertEqual(len(result.route_targets), 1)
             self.assertIsNone(result.diagnostics)
             self.assertEqual(result.realized_cost["optimizer_steps"], 1)
+            self.assertEqual(result.realized_cost["logical_batch_size"], 1)
+            self.assertEqual(result.realized_cost["c08_microbatch_size"], 1)
+            self.assertEqual(result.realized_cost["c08_microbatch_count"], 1)
             self.assertEqual(result.realized_cost["atlas_reload_count"], 1)
             self.assertEqual(result.realized_cost["feature_manifest_rebuild_count"], 1)
             self.assertEqual(result.realized_cost["visit_atlas_reload_count"], 1)
@@ -204,6 +207,8 @@ class FactoryTrainingExecutionTests(FactoryTrainingBridgeFixture):
                 payload["positions"][0]["row"]["sha256"],
                 store_sidecar(run_dir, rows[0])["sha256"])
             self.assertEqual(payload["controls"]["realized_cost"]["optimizer_steps"], 1)
+            self.assertEqual(payload["controls"]["realized_cost"]["logical_batch_size"], 1)
+            self.assertEqual(payload["controls"]["realized_cost"]["c08_microbatch_size"], 1)
 
     def test_factory_rejects_mentor_evidence_without_supervision_before_training(self):
         rows, delivery = draw(self, "B.IDBOOLOPS", 37117, 1)

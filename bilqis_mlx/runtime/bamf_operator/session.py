@@ -92,6 +92,7 @@ def _accepted_learning_reentry(
 
 def prepare_bamf_visit(
         run_dir: Path, *, steps_per_visit: int = DEFAULT_CANDIDATE_HORIZON,
+        batch_size: int = 32,
         reserve_gib: float = 100.0,
         progress=None, source_prefetch_workers: int = 0,
         source_prefetch_executor=None,
@@ -138,7 +139,7 @@ def prepare_bamf_visit(
     selection = select_foundation_priority_visit(
         run_dir, context, atlas_path, program=program, school=school,
         progress=progress, resource_holds=resource_holds,
-        planning_cache=planning_cache)
+        planning_cache=planning_cache, logical_batch_size=batch_size)
     if observer is not None:
         identity = getattr(getattr(getattr(selection, "visit", None), "identity", None),
                            "visit_id", None)
@@ -175,6 +176,7 @@ def prepare_bamf_visit(
 
 
 def _visit(run_dir: Path, reserve_gib: float, *, steps_per_visit=DEFAULT_CANDIDATE_HORIZON,
+           batch_size=32,
            progress=None, source_prefetch_workers=0,
            source_prefetch_executor=None, source_prefetch_metrics=None, observer=None,
            run_authority_binding=None, resource_holds=frozenset(),
@@ -187,6 +189,7 @@ def _visit(run_dir: Path, reserve_gib: float, *, steps_per_visit=DEFAULT_CANDIDA
             planning_cache=planning_cache)
     return _visit_impl(
         run_dir, reserve_gib, steps_per_visit=steps_per_visit, progress=progress,
+        batch_size=batch_size,
         source_prefetch_workers=source_prefetch_workers,
         source_prefetch_executor=source_prefetch_executor,
         source_prefetch_metrics=source_prefetch_metrics, observer=observer,
@@ -273,6 +276,7 @@ def _run_pending_operator_maintenance(run_dir: Path, *, progress=None):
 def operate_bamf(
     run_dir: Path, *, minutes: int = 90,
     max_visits: int = 0, steps_per_visit: int = DEFAULT_CANDIDATE_HORIZON,
+    batch_size: int = 32,
     reserve_gib: float = 100.0,
     source_prefetch_workers: int = 2,
     parent_graph: dict | None = None,
@@ -318,7 +322,8 @@ def operate_bamf(
         with evidence_mode(strict=strict_evidence):
             return _operate_impl(
                 Path(run_dir), minutes=minutes, max_visits=max_visits,
-                steps_per_visit=steps_per_visit, reserve_gib=reserve_gib,
+                steps_per_visit=steps_per_visit, batch_size=batch_size,
+                reserve_gib=reserve_gib,
                 source_prefetch_workers=source_prefetch_workers, progress=progress,
                 max_horizon=MAX_CANDIDATE_HORIZON,
                 worker_counts=NATIVE_SOURCE_WORKER_COUNTS, invalid=_invalid,

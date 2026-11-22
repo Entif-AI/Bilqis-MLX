@@ -150,7 +150,7 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
     ):
         issued = authority.issue_foundation_priority_authority(
             run_dir, source_context, parent, {"epoch": 1}, "/atlas",
-            teacher_state=parent.teacher_state)
+            teacher_state=parent.teacher_state, logical_batch_size=32)
 
     evidence = dict(issued.frontier.evidence)
     assert issued.now == 1
@@ -162,8 +162,7 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
     assert tuple(item.stable_id for item in ranked.ordered) == (
         "capability:beta", "capability:alpha")
     assert {tier for _, tier in ranked.tiers} == {DispatchTier.FAIR_ROTATION}
-    assert {offer.source_each for _, offer in issued.offers} == {
-        DEFAULT_BINARY_BALANCE.minimum_total}
+    assert {offer.source_each for _, offer in issued.offers} == {32}
     assert len({offer.source_seed for _, offer in issued.offers}) == 2
     assert issued.planning is planning
     assert issued.lawful_frontier is lawful
@@ -217,3 +216,14 @@ def test_all_held_frontier_issues_empty_priority_authority_without_source_rows()
     assert issued.lawful_frontier is lawful
     prepare.assert_not_called()
     signer.assert_not_called()
+
+
+def test_logical_batch_size_expands_source_request_without_changing_sampling_floor():
+    from bilqis_mlx.runtime import priority_authority as authority
+    from bilqis_mlx.runtime.logical_batch import BamfLogicalBatchContract
+
+    contract = BamfLogicalBatchContract(32)
+    assert contract.source_minimum_rows == DEFAULT_BINARY_BALANCE.minimum_total
+    assert contract.direct_source_rows == 32
+    assert authority._source_each_for_logical_batch(None) == DEFAULT_BINARY_BALANCE.minimum_total
+    assert authority._source_each_for_logical_batch(32) == 32

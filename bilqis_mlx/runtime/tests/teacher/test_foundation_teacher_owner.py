@@ -80,6 +80,7 @@ class FoundationTeacherOwnerTests(unittest.TestCase):
 
         self.assertIs(result, selected)
         self.assertIs(issue.call_args.kwargs["teacher_state"], projected_state)
+        self.assertIsNone(issue.call_args.kwargs["logical_batch_size"])
         self.assertNotIn("c03_lineage", parent.teacher_state)
 
     def test_cadence_phase_and_authority_reach_priority_selection_as_how_metadata(self):
