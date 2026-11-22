@@ -10,7 +10,11 @@ _COUNTER_FIELDS = ("visits", "retained_visits", "attempted_steps", "retained_ste
 
 def begin_bamf_command_accounting(board) -> None:
     """Start one operator-command counter epoch."""
-    board._bamf_command_accounting = {"active": True, "seen": set()}
+    board._bamf_command_accounting = {
+        "active": True, "seen": set(),
+        "visits": 0, "retained_visits": 0,
+        "attempted_steps": 0, "retained_steps": 0,
+    }
     board.state.update(
         visits=0, retained_visits=0, attempted_steps=0, retained_steps=0,
         _rate_sample_eligible=True)
@@ -64,6 +68,9 @@ def _apply_stop_receipt(board, event: dict) -> bool:
     accepted = receipt.get("accepted_visits")
     if type(visits) is not int or visits < 0 or type(accepted) is not int or accepted < 0:
         return False
+    accounting = board._bamf_command_accounting
+    accounting["visits"] = visits
+    accounting["retained_visits"] = accepted
     board.state.update(
         visits=visits, retained_visits=accepted, _rate_sample_eligible=True)
     return True
@@ -84,12 +91,15 @@ def ingest_bamf_command_event(board, event: dict) -> bool:
     if key in seen:
         return True
     seen.add(key)
+    accounting["visits"] += 1
+    accounting["retained_visits"] += 1 if accepted else 0
+    accounting["attempted_steps"] += attempted
+    accounting["retained_steps"] += retained
     board.state.update(
-        visits=_nonnegative_int(board.state.get("visits")) + 1,
-        retained_visits=_nonnegative_int(board.state.get("retained_visits"))
-        + (1 if accepted else 0),
-        attempted_steps=_nonnegative_int(board.state.get("attempted_steps")) + attempted,
-        retained_steps=_nonnegative_int(board.state.get("retained_steps")) + retained,
+        visits=accounting["visits"],
+        retained_visits=accounting["retained_visits"],
+        attempted_steps=accounting["attempted_steps"],
+        retained_steps=accounting["retained_steps"],
         _rate_sample_eligible=True,
     )
     return True
@@ -101,10 +111,12 @@ def transfer_bamf_command_accounting(source, target) -> None:
     if not isinstance(accounting, dict) or accounting.get("active") is not True:
         return
     target._bamf_command_accounting = {
-        "active": True, "seen": set(accounting.get("seen", ()))}
+        "active": True,
+        "seen": set(accounting.get("seen", ())),
+        **{field: _nonnegative_int(accounting.get(field)) for field in _COUNTER_FIELDS},
+    }
     for field in _COUNTER_FIELDS:
-        if field in source.state:
-            target.state[field] = source.state[field]
+        target.state[field] = target._bamf_command_accounting[field]
     target.state["_rate_sample_eligible"] = True
     for field in ("started", "_rate_step", "_rate_time", "_steps_per_min"):
         if hasattr(source, field):
