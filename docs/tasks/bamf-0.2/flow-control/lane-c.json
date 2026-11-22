@@ -583,11 +583,11 @@
     },
     {
       "issue": 1566,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "6598b4b55181f89de6b9f3b71fec93940db54a12",
-      "head_sha_role": "current origin/main baseline consumed before implementation",
-      "summary": "Training-first stabilization leaf. The human operator explicitly directed that selected-source authority/materialization ceremony be disabled on the default BAMF teaching path and preserved only behind explicit strict/evidence mode. The leaf owns removal of B11 execution-authority manufacture, repeated source-owner/provenance/currentness reconstruction, and equivalent non-learning ceremony from ordinary teaching cadence while retaining real gain measurement, regression protection, atomic accepted model+optimizer persistence, and correct resume. Production/full-path trainer timing is the acceptance authority; strict-only tests may be gated or skipped rather than block default CI. No automated verification may mutate the sovereign human run.",
+      "pr": 1567,
+      "state": "TURNED_IN",
+      "head_sha": "28a67fdfd898062dd451dddd2355b52323aaa092",
+      "head_sha_role": "verified executable candidate before this turn-in bookkeeping receipt",
+      "summary": "#1566 is turned in as PR #1567. Default human training now bypasses selected-source materialization, AcceptedPriorityCandidateVisit source preparation, B11 source-execution authority minting/binding, strict model-source authority revalidation, and compiled-batch owner registration; the preserved path remains behind --strict-evidence. Learning-first Factory/compiler proof produces authority-less model-ready batches under the <=2 s gate. Strict-only source/B11/priority authority tests are quarantined by default and remain opt-in through BILQIS_STRICT_EVIDENCE_TESTS=1. Adjacent task/microbatch and routing checks pass. A cloned-run full CLI witness was blocked before this path by an unrelated HistoricalBamfBundle resume-migration defect and was not counted as performance proof. No sovereign human run was mutated.",
       "resume_trigger": null,
       "preserved_branch": "codex/1566-training-first-bypass-20261122"
     }
