@@ -39,6 +39,29 @@ def _attempted_steps(visit) -> int:
     return value if type(value) is int and value >= 0 else 0
 
 
+def _update_session_state(board, session_visits, terminal_visits) -> None:
+    if bamf_command_accounting_active(board):
+        accounting = board._bamf_command_accounting
+        running_steps = sum(
+            _attempted_steps(visit) for visit in session_visits
+            if visit.get("outcome") == "RUNNING")
+        board.state.update(
+            visits=accounting["visits"],
+            retained_visits=accounting["retained_visits"],
+            attempted_steps=accounting["attempted_steps"] + running_steps,
+            retained_steps=accounting["retained_steps"],
+            _rate_sample_eligible=True,
+        )
+        return
+    board.state.update(
+        visits=len(terminal_visits),
+        retained_visits=sum(
+            visit.get("outcome") == "ACCEPTED" for visit in terminal_visits),
+        attempted_steps=sum(_attempted_steps(visit) for visit in session_visits),
+        _rate_sample_eligible=True,
+    )
+
+
 def refresh_bamf_terminal_projection(board) -> None:
     """Update display-only rows; malformed input preserves the last good view."""
     hint = getattr(board, "log_hint", "")
@@ -88,26 +111,7 @@ def refresh_bamf_terminal_projection(board) -> None:
     terminal_visits = tuple(
         visit for visit in session_visits
         if visit.get("outcome") in {"ACCEPTED", "REJECTED"})
-    if bamf_command_accounting_active(board):
-        accounting = board._bamf_command_accounting
-        running_steps = sum(
-            _attempted_steps(visit) for visit in session_visits
-            if visit.get("outcome") == "RUNNING")
-        board.state.update(
-            visits=accounting["visits"],
-            retained_visits=accounting["retained_visits"],
-            attempted_steps=accounting["attempted_steps"] + running_steps,
-            retained_steps=accounting["retained_steps"],
-            _rate_sample_eligible=True,
-        )
-    else:
-        board.state.update(
-            visits=len(terminal_visits),
-            retained_visits=sum(
-                visit.get("outcome") == "ACCEPTED" for visit in terminal_visits),
-            attempted_steps=sum(_attempted_steps(visit) for visit in session_visits),
-            _rate_sample_eligible=True,
-        )
+    _update_session_state(board, session_visits, terminal_visits)
     _clear_owned(board)
     board.rows["CANDIDATES"].extend(
         candidate_row(visit) for visit in projected_visits)
