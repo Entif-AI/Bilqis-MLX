@@ -1,0 +1,28 @@
+{
+  "command": [
+    "env",
+    "PYTHONPATH=/Users/emilie/Code/Bilqis/.worktrees/1539-verification-20261122/.local/issue1539-witness-final-r2/source-snapshot",
+    "BILQIS_WITNESS_HEAD=9382495d3f604c81b8640f9574268ee65315485b",
+    "BILQIS_WITNESS_STEPS=4",
+    "/Users/emilie/Code/Bilqis/.worktrees/1539-verification-20261122/.local/issue1539-r2/source-snapshot/.venv/bin/python",
+    "/Users/emilie/Code/Bilqis/.worktrees/1539-verification-20261122/.local/issue1539-witness/operator_witness.py"
+  ],
+  "command_returncode": 0,
+  "final_mutation_guard_sha256": "380f0534050942a6efb220bd6eee42608a3185acac71da9c0b66e2de106fe7ee",
+  "final_snapshot_sha256": "63d6bd6bd481a61e00abccd6ed56f186b8262eb3df51da044185843c0c848312",
+  "finished_at": "2026-11-22T07:54:43.371137+00:00",
+  "heartbeat_seconds": 60.0,
+  "label": "issue1539-witness-final-r2",
+  "log": "/Users/emilie/Code/Bilqis/.worktrees/1539-verification-20261122/.local/issue1539-witness-final-r2/witness.log",
+  "mutation_guard_sha256": "380f0534050942a6efb220bd6eee42608a3185acac71da9c0b66e2de106fe7ee",
+  "pid": 72144,
+  "returncode": 0,
+  "schema": "bilqis.bamf.detached-long-run/v2",
+  "snapshot_sha256": "63d6bd6bd481a61e00abccd6ed56f186b8262eb3df51da044185843c0c848312",
+  "source_mutated": false,
+  "source_sha256": "63d6bd6bd481a61e00abccd6ed56f186b8262eb3df51da044185843c0c848312",
+  "source_workdir": "/Users/emilie/Code/Bilqis/.worktrees/1539-verification-20261122",
+  "started_at": "2026-11-22T07:52:52.960644+00:00",
+  "status": "PASS",
+  "workdir": "/Users/emilie/Code/Bilqis/.worktrees/1539-verification-20261122/.local/issue1539-witness-final-r2/source-snapshot"
+}
