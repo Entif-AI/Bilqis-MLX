@@ -83,7 +83,7 @@ export function createHomeController(api, {
     };
   }
   async function queryFamily(family, source) {
-    const paginated = new Set(["run", "capability", "episode", "notification"]);
+    const paginated = new Set(["run", "notification"]);
     if (!paginated.has(family)) return api.query(queryRequest(family, source));
     let cursor = null;
     let first = null;
