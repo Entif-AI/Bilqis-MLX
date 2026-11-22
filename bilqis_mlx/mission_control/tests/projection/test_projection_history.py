@@ -22,7 +22,9 @@ class MissionControlProjectionHistoryTests(unittest.TestCase):
         with TemporaryDirectory() as temporary:
             projection = MissionControlProjection.create_empty(
                 Path(temporary) / "projection.sqlite3")
-            old = SAMPLES[14]
+            old = next(
+                item for item in SAMPLES if type(item) is GenerationManifest
+            )
             self.assertIs(type(old), GenerationManifest)
             new_run = replace(
                 old.meta.run,

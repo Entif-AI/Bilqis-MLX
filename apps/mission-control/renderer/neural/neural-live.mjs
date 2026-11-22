@@ -22,7 +22,7 @@ export function neuralRuntimeQuery(context, cursor = null) {
     run_id: context?.runId ?? null,
     record_id: null,
     schema_version: NEURAL_RUNTIME_SCHEMA,
-    generation: context?.generation ?? null,
+    generation: historical ? context?.generation ?? null : null,
     frontier_id: null,
     as_of: null,
     reference: null,

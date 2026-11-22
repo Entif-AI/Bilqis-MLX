@@ -12,11 +12,14 @@ from bilqis_mlx.learning.learning_experiment import Settings
 from bilqis_mlx.runtime.accepted_teacher_custody import (
     derive_c03_successor_bundle, select_accepted_teacher_visit,
 )
+from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation
 from bilqis_mlx.runtime.bamf_operator.session import _resource_observation
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.contracts.acceptance._generation_acceptance_support import (
     GenerationAcceptanceFixture,
 )
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
+    acceptance, accepted_state, shape_patch,
+)
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.teacher_custody_fixtures import (
     adaptation, selection_teacher,
 )
@@ -78,6 +81,33 @@ class NativeSourceFixture(GenerationAcceptanceFixture):
         source = self.successor()
         with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
             pointer = self.publish(source, acceptance=self.binding(source))
+        return source, pointer
+
+    def publish_next_successor(self, capability):
+        """Publish a second accepted visit against the actual current parent."""
+        with shape_patch():
+            parent = load_bamf_generation(self.run / "bamf-state.json")
+        retained = accepted_state(parent.retained_state, parent.extents, parent.topology)
+        visit = self.bound_native_visit(parent, capability=capability)
+        resource = _resource_observation(self.run, SimpleNamespace(realized_cost={
+            "wall_seconds": 20.0,
+            "optimizer_steps": 1,
+            "c08_memory_budget_bytes": 64 * 1024 ** 3,
+        }))
+        with shape_patch():
+            source = derive_c03_successor_bundle(
+                self.run, retained, visit,
+                next_seed=visit.identity.selection_seed + 1,
+                cursor=visit.identity.visit_id,
+                delivery_events=({
+                    "event": "BAMF_C16_3_ACCEPTED",
+                    "optimizer_step": retained.optimizer_step,
+                    "capability": capability,
+                    "resource": resource,
+                },),
+            )
+        pointer = self.publish(
+            source, acceptance=acceptance(source, parent=parent.retained_state))
         return source, pointer
 
 

@@ -4,7 +4,8 @@ import math
 
 from bilqis_mlx.mission_control import (
     CandidateDecision, CandidateOutcome, CapabilitySnapshot, CoverageState, DataValue,
-    LearningEpisode, OperatorView, ResourceSample, RunContext, TeacherSnapshot,
+    LearningEpisode, NeuralRuntimeSample, OperatorView, ResourceSample, RunContext,
+    TeacherSnapshot,
     UnavailableEnvelope,
     UnavailableReason, ValueOrigin, ValueState,
 )
@@ -219,6 +220,19 @@ def _append_resource_sample(generation, run, native, records, events) -> bool:
         DataValue(ValueState.PRESENT, ValueOrigin.DERIVED, rate, "steps/minute"),
     )
     records.append(sample)
+    records.append(NeuralRuntimeSample(
+        record_meta(
+            f"neural:{run.run_id}:{run.generation}:{event_id}",
+            run, generation, native=native,
+            evidence_refs=(f"native-event:{event_id}",),
+            coverage=CoverageState.PARTIAL),
+        native["optimizer_step"],
+        DataValue(
+            ValueState.PRESENT, ValueOrigin.DERIVED,
+            float(wall_seconds) * 1000.0 / optimizer_steps, "ms"),
+        missing_value(),
+        missing_value(),
+    ))
     events.append((
         EventFamily.RESOURCE_HEALTH_SAMPLE, sample,
         derived_event_id(event_id, "resource"),

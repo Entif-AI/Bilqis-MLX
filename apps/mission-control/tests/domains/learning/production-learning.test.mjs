@@ -53,7 +53,7 @@ const decision = Object.freeze({
   reason_code: "SOURCE_GOLD_PASS",
 });
 
-test("production Learning query binds the accepted run and exact generation", () => {
+test("production Learning current query binds the run without amputating accepted chronology", () => {
   assert.deepEqual(buildLearningQuery(context), {
     schema: "bilqis.bamf.control-plane.query/v1",
     family: "episode",
@@ -61,7 +61,7 @@ test("production Learning query binds the accepted run and exact generation", ()
     run_id: "accepted-run-7",
     record_id: null,
     schema_version: null,
-    generation: 7,
+    generation: null,
     frontier_id: null,
     as_of: null,
     reference: null,

@@ -21,6 +21,13 @@ test("exact generation and schema bind every dossier request", () => {
   assert.throws(() => chooseDossier([row, row], lens, "B.AND"), /AMBIGUOUS/);
   assert.deepEqual(historyEntries(row).map((e) => e.entry_id), ["regress", "recover"]);
 });
+test("current dossier query follows cumulative run context instead of the sparse tip generation", () => {
+  const current = { ...lens, mode: "LIVE" };
+  assert.equal(buildQuery(current).mode, "current");
+  assert.equal(buildQuery(current).generation, null);
+  assert.equal(chooseDossier([row], current, "B.AND"), row);
+  assert.equal(chooseDossier([row], { ...current, generation: 99 }, "B.AND"), row);
+});
 test("pagination accumulates only within one lens; absence remains partial", async () => {
   const calls = [];
   const controller = new DossierController(async (q) => { calls.push(q); return calls.length === 1 ? page([], "next") : page(); });

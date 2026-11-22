@@ -56,8 +56,12 @@ class MissionControlQueryCatalog:
             if type(item) in record_types and matches_identity(item, request)
         ]
         if request.mode is QueryMode.CURRENT and request.record_id is None:
-            rows = select_current(rows)
-        return tuple(sorted(rows, key=record_sort_key))
+            rows = select_current(rows, request.family)
+        newest_first = (
+            request.mode is QueryMode.CURRENT
+            and request.family is QueryFamily.EPISODE
+            and request.record_id is None)
+        return tuple(sorted(rows, key=record_sort_key, reverse=newest_first))
 
     def _markers(self, records, request: QueryRequest) -> tuple[WireRecord, ...]:
         record_ids = {item.meta.record_id for item in records}
@@ -84,8 +88,9 @@ class MissionControlQueryCatalog:
                 and type(self._by_id[item.stale_record_id])
                 in FAMILY_TYPES.get(request.family, ())
             )
+        cumulative = request.family in {QueryFamily.CAPABILITY, QueryFamily.EPISODE}
         if (request.mode is QueryMode.CURRENT and request.generation is None
-                and request.as_of is None):
+                and request.as_of is None and not cumulative):
             current_generation = {}
             for item in self._records:
                 run = item.meta.run

@@ -4,16 +4,17 @@ export const RECORD_FAMILIES = ["run", "school", "capability", "episode", "gener
   "frame", "neural", "memory", "teacher", "salience", "correction", "resource"];
 
 export function buildQuery(lens, overrides = {}) {
+  const historical = lens.mode === "HISTORICAL";
   return { schema: "bilqis.bamf.control-plane.query/v1", family: "capability",
-    mode: lens.mode === "HISTORICAL" ? "historical" : "current", run_id: lens.runId,
-    generation: lens.generation, schema_version: DOSSIER_SCHEMA, record_id: null,
+    mode: historical ? "historical" : "current", run_id: lens.runId,
+    generation: historical ? lens.generation : null, schema_version: DOSSIER_SCHEMA, record_id: null,
     frontier_id: null, as_of: null, reference: null, cursor: null, limit: 8, ...overrides };
 }
 
 export function chooseDossier(records, lens, capabilityId) {
   const found = records.filter((row) => row.schema_version === DOSSIER_SCHEMA &&
     row.capability_id === capabilityId && row.meta?.run?.run_id === lens.runId &&
-    row.meta.run.generation === lens.generation);
+    (lens.mode === "HISTORICAL" ? row.meta.run.generation === lens.generation : true));
   if (found.length > 1) throw new Error("DOSSIER_IDENTITY_AMBIGUOUS");
   return found[0] ?? null;
 }

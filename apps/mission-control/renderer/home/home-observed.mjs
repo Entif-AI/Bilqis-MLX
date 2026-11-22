@@ -161,9 +161,19 @@ export function renderObservedWork(observed, esc, { nowMs = Date.now(), locale }
   const activeStep = row.phase === "TRAINING" && row.candidate_step > 0 && !activeCompleted
     ? { ...row } : null;
   const stepRows = [...completedSteps, ...(activeStep ? [activeStep] : [])];
-  const fallbackPerformance = priorCompletedStep
-    ? stepPerformance(priorCompletedStep)
-    : performance;
+  const hasInformativeStepPerformance = stepRows.some((step) =>
+    stepPerformance(step).some(([_key, value]) => value !== null && value !== undefined));
+  const currentPerformance = performance.filter(([_key, value]) =>
+    value !== null && value !== undefined);
+  const acceptedPerformance = Number.isFinite(observed.acceptedStepDurationSeconds)
+    ? [["home.observed.stepWall", stageDuration(observed.acceptedStepDurationSeconds)]] : [];
+  const priorPerformance = priorCompletedStep
+    ? stepPerformance(priorCompletedStep).filter(([_key, value]) =>
+      value !== null && value !== undefined)
+    : [];
+  const fallbackPerformance = priorPerformance.length
+    ? priorPerformance
+    : currentPerformance.length ? currentPerformance : acceptedPerformance;
   const availableFallbackPerformance = fallbackPerformance.filter(([_key, value]) =>
     value !== null && value !== undefined);
   const healthEvidence = row.learning_health ? row : observed.latestLearningEvidence;
@@ -208,12 +218,15 @@ export function renderObservedWork(observed, esc, { nowMs = Date.now(), locale }
     const rows = stepPerformance(step);
     return `<details ${testIdAttribute("home", "observed", "step", step.candidate_step)}><summary>${esc(summary)}</summary><table><thead><tr><th scope="col">${esc(t("home.observed.stage"))}</th><th scope="col">${esc(t("home.observed.value"))}</th></tr></thead><tbody>${rows.map(([key, value]) => `<tr><th scope="row">${esc(t(key))}</th><td>${esc(value ?? unknown)}</td></tr>`).join("")}</tbody></table></details>`;
   }).join("");
+  const fallbackMarkup = availableFallbackPerformance.length && !hasInformativeStepPerformance
+    ? `<details ${testIdAttribute("home", "observed", "performance")}><summary>${esc(t("home.observed.performance"))}${priorPerformance.length && priorCompletedStep ? ` · ${esc(t("home.observed.stepComplete", { step: priorCompletedStep.candidate_step, duration: stageDuration(priorCompletedStep.candidate_step_wall_seconds) ?? unknown }))}` : ""}</summary><table><thead><tr><th scope="col">${esc(t("home.observed.stage"))}</th><th scope="col">${esc(t("home.observed.value"))}</th></tr></thead><tbody>${availableFallbackPerformance.map(([key, value]) => `<tr><th scope="row">${esc(t(key))}</th><td>${esc(value)}</td></tr>`).join("")}</tbody></table></details>`
+    : "";
   return `<div class="home-observed" data-posture="OBSERVED" data-connection="${esc(row.connection_state)}" data-test-id="home-observed">
     <div class="home-observed-head"><strong class="home-observed-badge">${esc(posture)}</strong>${observedTime}</div>
     <p class="home-observed-accepted">${esc(t("home.observed.acceptedGeneration"))}: ${esc(observed.acceptedGeneration ?? unknown)} · ${esc(t("home.observed.acceptedStep"))}: ${esc(observed.acceptedOptimizerStep ?? unknown)}</p>
     <dl>${[...fields, ...visitFields].map(([key, value]) => `<div><dt>${esc(t(key))}</dt><dd>${esc(value ?? unknown)}</dd></div>`).join("")}</dl>
     ${healthMarkup}
-    ${stepRows.length ? `<section data-test-id="home-observed-steps"><h4>${esc(t("home.observed.steps"))}</h4>${stepsMarkup}</section>` : availableFallbackPerformance.length ? `<details ${testIdAttribute("home", "observed", "performance")}><summary>${esc(t("home.observed.performance"))}${priorCompletedStep ? ` · ${esc(t("home.observed.stepComplete", { step: priorCompletedStep.candidate_step, duration: stageDuration(priorCompletedStep.candidate_step_wall_seconds) ?? unknown }))}` : ""}</summary><table><thead><tr><th scope="col">${esc(t("home.observed.stage"))}</th><th scope="col">${esc(t("home.observed.value"))}</th></tr></thead><tbody>${availableFallbackPerformance.map(([key, value]) => `<tr><th scope="row">${esc(t(key))}</th><td>${esc(value)}</td></tr>`).join("")}</tbody></table></details>` : ""}
+    ${stepRows.length ? `<section data-test-id="home-observed-steps"><h4>${esc(t("home.observed.steps"))}</h4>${stepsMarkup}</section>` : ""}${fallbackMarkup}
 
     <details ${testIdAttribute("home", "observed", "history")}><summary>${esc(t("home.observed.history"))}</summary><ol>${observed.history.map((item, index) => `<li><span>${esc(historyLine(item))}</span>${temporalMarkup({ unixSeconds: item.meta?.observed_at ?? null, nowMs, locale, testId: `home-observed-history-time-${index}` })}</li>`).join("")}</ol></details>
   </div>`;
