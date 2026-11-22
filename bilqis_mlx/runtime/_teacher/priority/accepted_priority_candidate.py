@@ -1,5 +1,5 @@
 """Execution half of one accepted C03 priority visit."""
-from dataclasses import replace
+from dataclasses import dataclass, field, replace
 import math
 from pathlib import Path
 import time
@@ -14,8 +14,29 @@ from .accepted_priority_visit_contracts import _require_issued
 from .accepted_teacher_custody import _require_current_visit
 
 
+_VISIT_CANDIDATE_ISSUER = object()
+
+
 def _invalid(reason):
     ErrorBus.Raise(SCHOOL.BAMF_CURRICULUM.INVALID, reason=reason)
+
+
+@dataclass(frozen=True, init=False, eq=False)
+class AcceptedPriorityCandidateVisit:
+    """Visit-bound immutable authority reused by steady-state candidate steps."""
+
+    selection: object = field(repr=False, compare=False)
+    source_context: object = field(repr=False, compare=False)
+    planning_generation: object = field(repr=False, compare=False)
+    parent: object = field(repr=False, compare=False)
+    cache: object = field(repr=False, compare=False)
+    semantic_context: object = field(repr=False, compare=False)
+    prepared_source: object = field(repr=False, compare=False)
+    release_sha256: str
+    _issuance: object = field(repr=False, compare=False)
+
+    def __init__(self, *args, **kwargs):
+        _invalid('BAMF_PRIORITY_CANDIDATE_VISIT_CALLER_CONSTRUCTION_FORBIDDEN')
 
 
 def _rehearsal_inputs(rows, bindings, authorities):
@@ -107,7 +128,7 @@ def _candidate_currentness(selection, source_context, prepared_source_rows):
             and name != "source_currentness_wall_seconds"
         })
     return (
-        planning_generation, parent, currentness_step,
+        planning_generation, parent, cache, currentness_step,
         planning_generation._authenticated_features, prepared_source, timings,
     )
 
@@ -132,6 +153,106 @@ def _require_live_currentness_fence(
     ))
 
 
+def _issue_candidate_visit(
+        selection, source_context, planning_generation, parent, cache,
+        semantic_context, prepared_source):
+    binding = object.__new__(AcceptedPriorityCandidateVisit)
+    release_sha256 = source_context.release.release_sha256
+    for name, value in (
+            ('selection', selection), ('source_context', source_context),
+            ('planning_generation', planning_generation), ('parent', parent),
+            ('cache', cache), ('semantic_context', semantic_context),
+            ('prepared_source', prepared_source),
+            ('release_sha256', release_sha256),
+            ('_issuance', _VISIT_CANDIDATE_ISSUER)):
+        object.__setattr__(binding, name, value)
+    return binding
+
+
+def _require_candidate_visit(binding, selection, source_context):
+    if (type(binding) is not AcceptedPriorityCandidateVisit
+            or getattr(binding, '_issuance', None) is not _VISIT_CANDIDATE_ISSUER
+            or binding.selection is not selection
+            or binding.source_context is not source_context
+            or binding.planning_generation is not selection.offer._planning_generation
+            or binding.parent is not binding.planning_generation._parent
+            or binding.prepared_source.offer is not selection.offer
+            or source_context.release.release_sha256 != binding.release_sha256):
+        _invalid('BAMF_PRIORITY_CANDIDATE_VISIT_DRIFT')
+    return binding
+
+
+def prepare_accepted_priority_candidate_visit(selection, source_context):
+    """Pay static source/frontier/visit authority once before the step loop."""
+    _require_issued(selection)
+    if selection.status != 'TEACHER_SELECTED':
+        _invalid('BAMF_PRIORITY_CANDIDATE_VISIT_REQUIRED')
+    (planning_generation, parent, cache, currentness_step, semantic_context,
+     prepared_source, currentness_timings) = _candidate_currentness(
+        selection, source_context, None)
+    _require_live_currentness_fence(
+        currentness_step, planning_generation, parent, currentness_timings)
+    return _issue_candidate_visit(
+        selection, source_context, planning_generation, parent, cache,
+        semantic_context, prepared_source)
+
+
+def _refresh_candidate_step(binding):
+    """Fence only mutable accepted/source authority at candidate-step cadence."""
+    from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
+        refresh_accepted_currentness,
+    )
+    started = time.perf_counter()
+    refresh_accepted_currentness(
+        binding.planning_generation._accepted_currentness, binding.parent)
+    elapsed = time.perf_counter() - started
+    return elapsed, {
+        'accepted_currentness_refresh_wall_seconds': elapsed,
+    }
+
+
+def _candidate_visit_inputs(
+        selection, source_context, prepared_source_rows, candidate_visit):
+    visit_binding = (
+        None if candidate_visit is None else
+        _require_candidate_visit(candidate_visit, selection, source_context))
+    if visit_binding is None:
+        values = _candidate_currentness(
+            selection, source_context, prepared_source_rows)
+        return (*values, None)
+    if (prepared_source_rows is not None
+            and tuple(prepared_source_rows) != visit_binding.prepared_source.rows):
+        _invalid('BAMF_PRIORITY_CANDIDATE_SOURCE_ROWS_DRIFT')
+    return (
+        visit_binding.planning_generation,
+        visit_binding.parent,
+        visit_binding.cache,
+        None,
+        visit_binding.semantic_context,
+        visit_binding.prepared_source,
+        {},
+        visit_binding,
+    )
+
+
+def _candidate_delivery_setup(
+        selection, source_context, prepared_source_rows,
+        prepared_enrichment_rows, prepared_rehearsal_rows, rehearsal_by_id,
+        rehearsal_bindings, rehearsal_authorities, observation, teacher_hparams):
+    started = time.perf_counter()
+    policy = selection.policy
+    lr = policy.get('lr') if isinstance(policy, dict) else None
+    if (type(teacher_hparams) is not AdamWHyperparameters
+            or type(lr) not in (int, float) or not math.isfinite(lr) or lr <= 0):
+        _invalid('BAMF_PRIORITY_TEACHER_RATE_INVALID')
+    hparams = replace(teacher_hparams, learning_rate=float(lr))
+    delivery_inputs = _candidate_delivery_inputs(
+        selection, source_context, prepared_source_rows, prepared_enrichment_rows,
+        prepared_rehearsal_rows, rehearsal_by_id, rehearsal_bindings,
+        rehearsal_authorities, observation)
+    return policy, hparams, delivery_inputs, time.perf_counter() - started
+
+
 def execute_accepted_priority_candidate(selection, source_context,
         atlas_artifact_path, feature_artifact_path, *, teacher_hparams, observation,
         optimizer_step_seed, max_norm, memory_budget=None, salience_provider=None,
@@ -146,36 +267,34 @@ def execute_accepted_priority_candidate(selection, source_context,
         mentor_observation_wall_seconds=0.0,
         progress_emission_wall_seconds=0.0,
         observer_begin_step_wall_seconds=0.0,
+        candidate_visit=None,
         distributed_profile=None, distributed_executor=None):
     _require_issued(selection)
     if selection.status != 'TEACHER_SELECTED':
         return selection
     if candidate_step_started_at is None:
         candidate_step_started_at = time.perf_counter()
-    (planning_generation, parent, currentness_step, semantic_context,
-     prepared_source, currentness_timings) = _candidate_currentness(
-        selection, source_context, prepared_source_rows)
-    caller_pre_neural_started = time.perf_counter()
-    policy = selection.policy
-    lr = policy.get('lr') if isinstance(policy, dict) else None
-    if (type(teacher_hparams) is not AdamWHyperparameters
-            or type(lr) not in (int, float) or not math.isfinite(lr) or lr <= 0):
-        _invalid('BAMF_PRIORITY_TEACHER_RATE_INVALID')
-    hparams = replace(teacher_hparams, learning_rate=float(lr))
-    (offer, rows, enrichment, rehearsal, rehearsal_by_id, rehearsal_bindings,
-     rehearsal_authorities, capability, delivery, observation) = _candidate_delivery_inputs(
+    (planning_generation, parent, cache, currentness_step, semantic_context,
+     prepared_source, currentness_timings, visit_binding) = _candidate_visit_inputs(
+        selection, source_context, prepared_source_rows, candidate_visit)
+    (policy, hparams, delivery_inputs,
+     candidate_delivery_setup_wall_seconds) = _candidate_delivery_setup(
         selection, source_context, prepared_source_rows, prepared_enrichment_rows,
         prepared_rehearsal_rows, rehearsal_by_id, rehearsal_bindings,
-        rehearsal_authorities, observation)
+        rehearsal_authorities, observation, teacher_hparams)
+    (offer, rows, enrichment, rehearsal, rehearsal_by_id, rehearsal_bindings,
+     rehearsal_authorities, capability, delivery, observation) = delivery_inputs
     delivered_rows = (*rows, *rehearsal, *enrichment)
     provenance = BamfVisitProvenance.from_c03_record(selection.visit.identity.to_record())
-    candidate_delivery_setup_wall_seconds = (
-        time.perf_counter() - caller_pre_neural_started)
     caller_pre_neural_wall_seconds = (
         float(source_prepare_wall_seconds)
         + candidate_delivery_setup_wall_seconds)
-    currentness_wall_seconds = _require_live_currentness_fence(
-        currentness_step, planning_generation, parent, currentness_timings)
+    if visit_binding is None:
+        currentness_wall_seconds = _require_live_currentness_fence(
+            currentness_step, planning_generation, parent, currentness_timings)
+    else:
+        currentness_wall_seconds, currentness_timings = _refresh_candidate_step(
+            visit_binding)
     result = execute_factory_candidate_step(
         Path(selection._run_dir), source_context, parent,
         atlas_artifact_path, feature_artifact_path, delivered_rows,
@@ -202,6 +321,7 @@ def execute_accepted_priority_candidate(selection, source_context,
         candidate_delivery_setup_wall_seconds=candidate_delivery_setup_wall_seconds,
         semantic_context=semantic_context,
         prepared_source=(prepared_source if not enrichment and not rehearsal else None),
+        accepted_cache=(cache if visit_binding is not None else None),
         distributed_profile=distributed_profile,
         distributed_executor=distributed_executor)
     if not hasattr(result, "realized_cost"):
@@ -214,4 +334,8 @@ def execute_accepted_priority_candidate(selection, source_context,
     return replace(result, realized_cost=cost)
 
 
-__all__ = ("execute_accepted_priority_candidate",)
+__all__ = (
+    "AcceptedPriorityCandidateVisit",
+    "execute_accepted_priority_candidate",
+    "prepare_accepted_priority_candidate_visit",
+)

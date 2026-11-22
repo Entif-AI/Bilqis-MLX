@@ -20,6 +20,7 @@ from bilqis_mlx.runtime.bamf_bundle import (
     CompleteStudent,
     seal_source_qualified_motif_batch_from_accepted_parent,
     seal_source_qualified_motif_batch_from_bundle,
+    seal_source_qualified_motifs_from_accepted_parent,
     seal_source_qualified_motifs_from_bundle,
     stage_source_qualified_motif_allocation,
 )
@@ -176,7 +177,8 @@ def _resource_plan(prepared, parent, memory_budget):
 
 
 def _stage_retained_motifs(run_dir, parent, cache, transaction, prepared,
-                           resource_plan, memory_budget):
+                           resource_plan, memory_budget, *,
+                           currentness_transaction=None):
     spare = max(0, memory_budget.allocation_bytes - resource_plan.estimated_peak_bytes)
     budget = MotifBudget(
         64,
@@ -209,21 +211,38 @@ def _stage_retained_motifs(run_dir, parent, cache, transaction, prepared,
                 == parent.retained_state.allocations.digest):
             return transaction
         return stage_source_qualified_motif_allocation(
-            Path(run_dir), transaction, continuation)
+            Path(run_dir), transaction, continuation,
+            accepted_parent=(parent if currentness_transaction is not None else None),
+            currentness_transaction=currentness_transaction)
     motif = prepared.motif_inputs[0]
-    result = seal_source_qualified_motifs_from_bundle(
-        motif.source_adapter, motif.row, motif.atlas_selection,
-        retained_bundle_root=bundle_root,
-        expected_manifest_sha256=cache.accepted_manifest_sha256,
-        source_root=motif.source_root, graph=motif.source_graph,
-        task_scope=motif.task, source_frontier=motif.frontier,
-        policy=motif.policy, source_seed=motif.source_seed,
-        source_each=motif.source_each, budget=budget,
-        source_profile_parameters=motif.source_profile_parameters,
-        course=motif.course,
-        prepared_projection=motif.formal_projection,
-        prepared_frontier=motif.formal_frontier,
-        snapshot=prepared.semantic_context.snapshot)
+    if currentness_transaction is None:
+        result = seal_source_qualified_motifs_from_bundle(
+            motif.source_adapter, motif.row, motif.atlas_selection,
+            retained_bundle_root=bundle_root,
+            expected_manifest_sha256=cache.accepted_manifest_sha256,
+            source_root=motif.source_root, graph=motif.source_graph,
+            task_scope=motif.task, source_frontier=motif.frontier,
+            policy=motif.policy, source_seed=motif.source_seed,
+            source_each=motif.source_each, budget=budget,
+            source_profile_parameters=motif.source_profile_parameters,
+            course=motif.course,
+            prepared_projection=motif.formal_projection,
+            prepared_frontier=motif.formal_frontier,
+            snapshot=prepared.semantic_context.snapshot)
+    else:
+        result = seal_source_qualified_motifs_from_accepted_parent(
+            motif.source_adapter, motif.row, motif.atlas_selection,
+            accepted_parent=parent,
+            expected_manifest_sha256=cache.accepted_manifest_sha256,
+            source_root=motif.source_root, graph=motif.source_graph,
+            task_scope=motif.task, source_frontier=motif.frontier,
+            policy=motif.policy, source_seed=motif.source_seed,
+            source_each=motif.source_each, budget=budget,
+            source_profile_parameters=motif.source_profile_parameters,
+            course=motif.course,
+            prepared_projection=motif.formal_projection,
+            prepared_frontier=motif.formal_frontier,
+            snapshot=prepared.semantic_context.snapshot)
     if isinstance(result, ContextHold):
         _invalid("FACTORY_CANDIDATE_STEP_MOTIF_CONTEXT_HELD")
     continuation, _ = result
@@ -231,4 +250,6 @@ def _stage_retained_motifs(run_dir, parent, cache, transaction, prepared,
             == parent.retained_state.allocations.digest):
         return transaction
     return stage_source_qualified_motif_allocation(
-        Path(run_dir), transaction, continuation)
+        Path(run_dir), transaction, continuation,
+        accepted_parent=(parent if currentness_transaction is not None else None),
+        currentness_transaction=currentness_transaction)

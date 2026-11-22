@@ -38,7 +38,8 @@ def test_resource_rejection_returns_to_scheduler_without_learner_feedback(tmp_pa
     disk = Mock(return_value={"sufficient": True})
     observer = SimpleNamespace(finish=Mock(), update=Mock())
     outcome = _run_visits(
-        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, reserve_gib=100,
+        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, batch_size=1,
+        reserve_gib=100,
         source_prefetch_workers=0, progress=None, source_prefetch_executor=None,
         metrics=None, run_authority_binding=authority, resource_snapshot=disk,
         monotonic=lambda: 0, observer_type=lambda *_: nullcontext(observer),
@@ -70,19 +71,23 @@ def test_resource_rejection_returns_to_scheduler_without_learner_feedback(tmp_pa
 
 
 def test_visit_progress_is_mirrored_into_observation_activity(tmp_path):
-    observer = SimpleNamespace(finish=Mock(), update=Mock())
+    observer = SimpleNamespace(finish=Mock(), update=Mock(), stage=Mock())
     messages = []
     def visit_fn(*_args, **kwargs):
         kwargs['progress']('planner: compiling semantic curriculum')
         return 'REJECTED'
     outcome = _run_visits(
-        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, reserve_gib=100,
+        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, batch_size=1,
+        reserve_gib=100,
         source_prefetch_workers=0, progress=messages.append, source_prefetch_executor=None,
         metrics=None, run_authority_binding=None, resource_snapshot=None,
         monotonic=lambda: 0, observer_type=lambda *_: nullcontext(observer),
         emit_progress=lambda callback, message: callback(message) if callback else None,
         visit_fn=visit_fn)
-    observer.update.assert_any_call(activity='planner: compiling semantic curriculum')
+    observer.stage.assert_any_call(activity='planner: compiling semantic curriculum')
+    assert not any(
+        call.kwargs == {'activity': 'planner: compiling semantic curriculum'}
+        for call in observer.update.call_args_list)
     assert 'planner: compiling semantic curriculum' in messages
     assert outcome[:4] == ('VISIT_LIMIT', 1, 0, 1)
 
@@ -100,7 +105,8 @@ def test_acquisition_rearmed_continues_without_candidate_decision(tmp_path):
     observer = SimpleNamespace(finish=Mock(), update=Mock())
 
     outcome = _run_visits(
-        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, reserve_gib=100,
+        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, batch_size=1,
+        reserve_gib=100,
         source_prefetch_workers=0, progress=None, source_prefetch_executor=None,
         metrics=None, run_authority_binding=None, resource_snapshot=None,
         monotonic=lambda: 0, observer_type=lambda *_: nullcontext(observer),
@@ -125,7 +131,8 @@ def test_stale_execution_cache_restarts_visit_from_current_custody(tmp_path):
     messages = []
 
     outcome = _run_visits(
-        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, reserve_gib=100,
+        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, batch_size=1,
+        reserve_gib=100,
         source_prefetch_workers=0, progress=messages.append,
         source_prefetch_executor=None, metrics=None, run_authority_binding=None,
         resource_snapshot=None, monotonic=lambda: 0,
@@ -154,7 +161,7 @@ def test_repeated_stale_execution_cache_still_fails_closed(tmp_path):
 
     with pytest.raises(BilqisError) as caught:
         _run_visits(
-            tmp_path, deadline=100, max_visits=1, steps_per_visit=1,
+            tmp_path, deadline=100, max_visits=1, steps_per_visit=1, batch_size=1,
             reserve_gib=100, source_prefetch_workers=0, progress=None,
             source_prefetch_executor=None, metrics=None,
             run_authority_binding=None, resource_snapshot=None,

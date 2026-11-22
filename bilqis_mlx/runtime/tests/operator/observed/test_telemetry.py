@@ -3,6 +3,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import time
 import unittest
+import unittest.mock
 
 from bilqis_mlx.errors import ErrorBus
 from bilqis_mlx.runtime.topology_v2.spec import ModelTopologySpecV2
@@ -99,6 +100,7 @@ class TrainerObservationTests(unittest.TestCase):
                     b11_provider_draw_count=4, b11_atlas_reload_count=1,
                     logical_rows=4, compiled_positions=32)
                 obs.begin_step(2, 9)
+                obs.update()
                 final = json.loads((root / 'trainer-observed.json').read_text())['visits'][-1]
                 self.assertEqual(len(final['candidate_steps']), 1)
                 self.assertEqual(final['candidate_steps'][0]['candidate_step'], 1)
@@ -107,6 +109,17 @@ class TrainerObservationTests(unittest.TestCase):
                     final['candidate_steps'][0]['lawful_frontier_currentness_wall_seconds'],
                     0.002)
                 self.assertEqual(final['candidate_step'], 2)
+
+    def test_step_boundaries_do_not_force_synchronous_observation_writes(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            obs = TrainerObservation(root, 1, heartbeat_seconds=60)
+            with unittest.mock.patch.object(obs, '_persist_snapshot') as persist:
+                obs.begin_step(1, 8)
+                obs.complete_step(candidate_step=1, candidate_optimizer_step=8)
+            persist.assert_not_called()
+            self.assertEqual(obs.record['candidate_step'], 1)
+            self.assertEqual(obs.record['candidate_steps'][-1]['candidate_step'], 1)
 
     def test_snapshot_trims_old_step_detail_before_disabling_live_observation(self):
         with TemporaryDirectory() as tmp:

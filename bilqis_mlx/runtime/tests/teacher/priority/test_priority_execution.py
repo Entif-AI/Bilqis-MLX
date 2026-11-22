@@ -234,6 +234,71 @@ def test_final_live_currentness_fence_is_immediately_before_candidate_execution(
     assert events[-2:] == ['fence', 'execute']
 
 
+def test_visit_binding_pays_static_priority_authority_once(priority):
+    candidate = _candidate_owner(priority)
+    currentness_owner = sys.modules[
+        'bilqis_mlx.runtime.bamf_bundle.currentness_transaction']
+
+    class CountingOffer(Offer):
+        def __init__(self):
+            self.current_calls = 0
+            self.materialized = SimpleNamespace(
+                offer=self,
+                rows=({'id': 'one', 'capability': 'cap'},),
+            )
+
+        def require_current(self, context, parent, *, prepared_rows=None):
+            self.current_calls += 1
+            return self.materialized
+
+    offer = CountingOffer()
+    identity = SimpleNamespace(to_record=lambda: {'visit': 1})
+    selected = priority._issue_result(
+        'TEACHER_SELECTED', 'o', offer, Visit(identity), {'lr': 0.25}, {}, 'g', (),
+        '/run', lawful())
+    release = SimpleNamespace(
+        release_sha256='b' * 64,
+        execution_plan=SimpleNamespace(capability_map={
+        'cap': SimpleNamespace(teaching_option_ids=('instruction',))}))
+    source_context = SimpleNamespace(release=release)
+    calls = []
+
+    with patch.object(
+            currentness_owner, 'refresh_accepted_currentness',
+            side_effect=lambda transaction, parent:
+            calls.append('refresh') or transaction), \
+         patch.object(
+            currentness_owner, 'require_live_accepted_currentness_step',
+            side_effect=lambda step, transaction, parent:
+            calls.append('live-fence') or step), \
+         patch.object(candidate, 'AdamWHyperparameters', HParams), \
+         patch.object(candidate, '_require_current_visit') as require_visit, \
+         patch.object(
+            candidate.BamfVisitProvenance, 'from_c03_record',
+            return_value='provenance'), \
+         patch.object(
+            candidate, 'describe_delivered_teaching',
+            return_value='delivery'), \
+         patch.object(
+            candidate, 'execute_factory_candidate_step',
+            return_value='step') as execute:
+        binding = priority.prepare_accepted_priority_candidate_visit(
+            selected, source_context)
+        for _ in range(2):
+            assert priority.execute_accepted_priority_candidate(
+                selected, source_context, 'atlas', 'features',
+                teacher_hparams=HParams(0.01, (0.8, 0.9), 1e-8, 0.2),
+                observation=Observation(({'id': 'old'},), 0),
+                optimizer_step_seed=3, max_norm=1,
+                candidate_visit=binding) == 'step'
+
+    assert offer.current_calls == 1
+    assert require_visit.call_count == 1
+    assert calls.count('live-fence') == 1
+    assert calls.count('refresh') == 3
+    assert execute.call_count == 2
+
+
 def test_accepted_priority_school_derives_all_admitted_grades_and_student(priority):
     contracts = _contracts_owner(priority)
     program = ScheduleProgramStub(

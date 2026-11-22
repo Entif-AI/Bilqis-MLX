@@ -31,13 +31,14 @@ def _prepare_candidate_step_inputs(
         mentor_observation_wall_seconds, progress_emission_wall_seconds,
         observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
         semantic_context,
-        prepared_source):
+        prepared_source, accepted_cache):
     start = time.perf_counter()
     if candidate_step_started_at is None:
         candidate_step_started_at = start
     binding_started = time.perf_counter()
     cache, generation = _candidate_cache_and_generation(
-        run_dir, source_context, parent, candidate, currentness_transaction)
+        run_dir, source_context, parent, candidate, currentness_transaction,
+        accepted_cache=accepted_cache)
     stage_metrics = {
         "candidate_step_started_at": candidate_step_started_at,
         "source_lane_wait_wall_seconds": float(source_lane_wait_wall_seconds),
@@ -191,6 +192,7 @@ def execute_factory_candidate_step(
     candidate_delivery_setup_wall_seconds: float = 0.0,
     semantic_context=None,
     prepared_source=None,
+    accepted_cache=None,
     distributed_profile=None,
     distributed_executor=None,
 ) -> FactoryCandidateStep:
@@ -217,7 +219,7 @@ def execute_factory_candidate_step(
         mentor_observation_wall_seconds, progress_emission_wall_seconds,
         observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
         semantic_context,
-        prepared_source)
+        prepared_source, accepted_cache)
     _require_mentor_supervision_timed(
         mentor_supervision, observation, parent, cache, teacher_strategy,
         source_seed, stage_metrics)
@@ -230,6 +232,7 @@ def execute_factory_candidate_step(
         salience_supervision=supervision, mentor_supervision=mentor_supervision,
         candidate=candidate,
         currentness_transaction=currentness_transaction,
+        accepted_cache=accepted_cache,
         finalize_candidate=finalize_candidate, semantic_context=semantic_context,
         semantic_context_materialized_in_step=semantic_context_materialized_in_step,
         stage_metrics=stage_metrics, distributed_profile=distributed_profile,

@@ -261,7 +261,7 @@ class TrainerObservation:
                 self.record.update(fields)
 
     def begin_step(self, candidate_step: int, candidate_optimizer_step: int):
-        """Expose one active step immediately; completed history stays immutable."""
+        """Stage one active step for the heartbeat; do not block learning on I/O."""
         with self.lock:
             if not self.enabled:
                 return
@@ -271,10 +271,9 @@ class TrainerObservation:
                 candidate_optimizer_step=candidate_optimizer_step,
                 **{name: None for name in PERFORMANCE_FIELDS
                    if name not in VISIT_PERFORMANCE_FIELDS})
-        self.update()
 
     def complete_step(self, **fields):
-        """Freeze one completed step for click-through inspection, then publish it."""
+        """Freeze one completed step; heartbeat/finalization publishes it."""
         with self.lock:
             if not self.enabled:
                 return
@@ -295,7 +294,6 @@ class TrainerObservation:
             history.append(snapshot)
             self.record['candidate_steps'] = history[-STEP_HISTORY_LIMIT:]
             self.step_started = None
-        self.update()
 
     def bind_parent(self, parent):
         try:
