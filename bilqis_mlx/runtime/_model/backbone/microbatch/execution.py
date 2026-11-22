@@ -88,7 +88,7 @@ def _learning_first_microbatch_value_and_grad_impl(
         _invalid("B11_MICROBATCH_ROUTE_KERNEL_INCOMPATIBLE")
     rebind_started = time.perf_counter()
     rebind_execution = _gradient_execution_rebinder(
-        params, cache, spec=backend.topology, extents=batch.compiled.extents,
+        params, None, spec=backend.topology, extents=batch.compiled.extents,
         generation=generation)
     execution_rebinding_wall_seconds = time.perf_counter() - rebind_started
     refinement_selections = (None,) * len(row_batches)
@@ -96,7 +96,7 @@ def _learning_first_microbatch_value_and_grad_impl(
         row_batches, answer_plans, targets, masks, None, salience_labels)
     holder = {}
     objective = _microbatch_objective(
-        backend, batch, row_batches, answer_plans, targets, masks, cache,
+        backend, batch, row_batches, answer_plans, targets, masks, None,
         generation, snapshot, rebind_execution, True, None,
         refinement_selections, route_kernel, salience_supervision, holder)
     with source_replay_observation() as replay:

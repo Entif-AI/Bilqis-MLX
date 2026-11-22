@@ -85,14 +85,13 @@ def _execute_training_and_admission(
         salience_supervision, mentor_supervision, distributed_profile, distributed_executor):
     parameters = dict((parent.retained_state.optimizer if candidate is None
                        else candidate.optimizer).parameters)
-    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
-        strict_evidence_enabled,
-    )
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import strict_evidence_enabled
     strict = strict_evidence_enabled()
+    neural_cache = cache if strict or distributed_profile is not None else None
     if len(prepared.compiled_rows) == 1:
         gradient, authority, targets = execute_factory_training_row(
             parameters, prepared.compiled_rows[0], source_context,
-            feature_context.snapshot, generation, cache,
+            feature_context.snapshot, generation, neural_cache,
             salience_supervision=salience_supervision,
             mentor_supervision=mentor_supervision)
         authorities, target_rows = (authority,), (targets,)
@@ -116,7 +115,7 @@ def _execute_training_and_admission(
         if distributed_profile is None:
             gradient, authorities, target_rows = execute_factory_logical_batch(
                 parameters, prepared, source_context, feature_context.snapshot,
-                generation, cache, resource_plan,
+                generation, neural_cache, resource_plan,
                 salience_supervision=salience_supervision,
                 mentor_supervision=mentor_supervision)
             logical_batch_wall_seconds = gradient.wall_seconds
@@ -134,7 +133,7 @@ def _execute_training_and_admission(
                 parameters=parameters, prepared=prepared,
                 source_context=source_context,
                 feature_snapshot=feature_context.snapshot,
-                generation=generation, cache=cache, resource_plan=resource_plan,
+                generation=generation, cache=neural_cache, resource_plan=resource_plan,
                 manifest=manifest, salience_supervision=salience_supervision,
                 mentor_supervision=mentor_supervision)
             if type(outcome) is not DistributedStepOutcome:

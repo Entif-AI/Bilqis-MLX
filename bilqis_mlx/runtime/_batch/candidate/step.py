@@ -209,14 +209,9 @@ def _candidate_cache_and_generation(run_dir, source_context, parent, candidate,
             cache, parameters, spec=parent.topology,
             extents=parent.extents).generation_digest
     else:
-        if accepted_cache is not None:
-            generation = bind_execution_generation(
-                cache, parameters, spec=parent.topology,
-                extents=parent.extents).generation_digest
-        else:
-            from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
-            generation = execution_generation_digest(
-                parameters, spec=parent.topology, extents=parent.extents)
+        from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
+        generation = execution_generation_digest(
+            parameters, spec=parent.topology, extents=parent.extents)
     if strict and cache.generation_binding != generation:
         _invalid("FACTORY_CANDIDATE_STEP_GENERATION_DRIFT")
     return cache, generation

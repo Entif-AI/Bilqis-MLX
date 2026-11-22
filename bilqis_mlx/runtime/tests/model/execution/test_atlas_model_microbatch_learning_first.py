@@ -180,7 +180,7 @@ def test_route_postflight_rebinds_execution_identity_to_original_parameters():
     assert result == "done"
 
 
-def test_learning_first_reuses_prebound_execution_cache_for_gradient_identity():
+def test_learning_first_ignores_accepted_cache_for_gradient_identity():
     cache = object()
     params = {"x": mx.array(1.0, dtype=mx.float32)}
     rows = (object(), object())
@@ -221,5 +221,5 @@ def test_learning_first_reuses_prebound_execution_cache_for_gradient_identity():
             Backend(), params, rows, plans, ((), ()), ({}, {}), cache, None)
 
     assert result == "done"
-    assert rebind.call_args.args[1] is cache
+    assert rebind.call_args.args[1] is None
 

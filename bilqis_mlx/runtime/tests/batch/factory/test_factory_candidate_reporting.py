@@ -1,10 +1,12 @@
 """B11.2 compact Factory reporting boundary."""
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_model import BamfGradientExecution
+from bilqis_mlx.runtime.candidate import execution as candidate_execution
+from bilqis_mlx.runtime.candidate import step as candidate_step
 from bilqis_mlx.runtime.factory_candidate_training import (
     FactoryCandidateDiagnostics,
     _realized_candidate_cost,
@@ -64,6 +66,54 @@ def _reporting_fixture():
 
 
 class FactoryCandidateReportingTests(unittest.TestCase):
+    def test_learning_first_candidate_generation_does_not_bind_parent_cache(self):
+        cache = object()
+        candidate = SimpleNamespace(
+            optimizer=SimpleNamespace(parameters={"candidate": object()}))
+        parent = SimpleNamespace(topology=object(), extents=object())
+
+        with patch(
+                "bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode."
+                "strict_evidence_enabled", return_value=False), patch.object(
+                    candidate_step, "bind_execution_generation",
+                    side_effect=AssertionError(
+                        "speculative weights were bound to accepted cache")), patch(
+                            "bilqis_mlx.runtime.backbone_identity."
+                            "execution_generation_digest",
+                            return_value="candidate-generation"):
+            bound, generation = candidate_step._candidate_cache_and_generation(
+                "unused", object(), parent, candidate, None,
+                accepted_cache=cache)
+
+        self.assertIs(bound, cache)
+        self.assertEqual(generation, "candidate-generation")
+
+    def test_learning_first_neural_execution_does_not_receive_parent_cache(self):
+        cache = object()
+        parent = SimpleNamespace(
+            retained_state=SimpleNamespace(
+                optimizer=SimpleNamespace(parameters={"parent": object()})))
+        prepared = SimpleNamespace(compiled_rows=(object(),))
+        feature_context = SimpleNamespace(snapshot=object())
+        gradient = SimpleNamespace(loss_total=object())
+        execute_row = Mock(return_value=(gradient, object(), object()))
+        admit = Mock(return_value="candidate")
+
+        with patch(
+                "bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode."
+                "strict_evidence_enabled", return_value=False), patch.object(
+                    candidate_execution, "execute_factory_training_row",
+                    execute_row), patch.object(
+                        candidate_execution, "_learning_first_admit", admit):
+            result = candidate_execution._execute_training_and_admission(
+                "unused", object(), parent, prepared, feature_context,
+                "candidate-generation", cache, object(), object(), 1.0, None,
+                None, None, None, None, None)
+
+        self.assertIsNone(execute_row.call_args.args[5])
+        self.assertIs(admit.call_args.args[1], cache)
+        self.assertEqual(result[3], "candidate")
+
     def test_heavy_gradient_execution_is_retained_only_by_explicit_opt_in(self):
         execution = object.__new__(BamfGradientExecution)
 
