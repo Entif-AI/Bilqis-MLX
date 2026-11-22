@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "92299b7ccddb1a1b4155723b4eb4eee1057864cb",
-  "updated_at": "2026-11-19T00:52:52+00:00",
+  "observed_unified": "ef14c3dc8e086b5b444401a8a36924bb66c1aaaf",
+  "updated_at": "2026-11-22T07:07:49+00:00",
   "exception": null,
   "items": [
     {
@@ -530,6 +530,16 @@
       "summary": "Production BAMF four-row candidate steps regressed from the previously demonstrated ~10-second class to sustained 40+ seconds. Issue #1504 owns restoration of hot-path throughput without weakening correctness, custody, provenance, currentness, fail-closed behavior, or one-launch vectorization. Confirmed first target is lost #1238 candidate-identity reuse: a four-step live visit performed 24 full identity computations, 0 binding reuses, and hashed 22.89 GB. Secondary scope is measured B11 preflight multiplicity and reproducible production-shaped performance qualification. No agent-run live learner updates are authorized.",
       "resume_trigger": null,
       "preserved_branch": "codex/1504-bamf-performance-regression-20261120"
+    },
+    {
+      "issue": 1537,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "ef14c3dc8e086b5b444401a8a36924bb66c1aaaf",
+      "head_sha_role": "current main consumed before #1537 source-materialization turn-in verification",
+      "summary": "Issue #1537 owns the selected-source preparation/materialization hot path only. It will profile qualification, draw/build, lesson construction, persistence/currentness and wait time; reuse only exact immutable source/release/lesson identities; keep prefetch bounded and non-authoritative; and target <=2 s selected-source handoff without changing planning selection, neural execution, source authority, retention decisions or evidence semantics.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1537-source-materialization-20261122"
     },
     {
       "issue": 1513,

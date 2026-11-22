@@ -3,6 +3,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.runtime.priority_source_materialization_cache import (
+    PrioritySourceMaterializationCache,
+)
 
 
 def _invalid(reason):
@@ -41,6 +44,8 @@ class PriorityPlanningCache:
     closure_misses: int = 0
     planning_hits: int = 0
     planning_misses: int = 0
+    source_materialization_cache: PrioritySourceMaterializationCache = field(
+        default_factory=PrioritySourceMaterializationCache, repr=False)
     _static_key: tuple | None = field(default=None, init=False, repr=False)
     _candidate_set: object | None = field(default=None, init=False, repr=False)
     _candidate_frontier: object | None = field(default=None, init=False, repr=False)
@@ -57,7 +62,7 @@ class PriorityPlanningCache:
         self.run_dir = Path(self.run_dir).resolve()
 
     def metrics(self) -> dict[str, int]:
-        return {
+        metrics = {
             "static_hits": self.static_hits,
             "static_misses": self.static_misses,
             "snapshot_hits": self.snapshot_hits,
@@ -67,6 +72,11 @@ class PriorityPlanningCache:
             "planning_hits": self.planning_hits,
             "planning_misses": self.planning_misses,
         }
+        metrics.update({
+            "source_materialization_" + name: value
+            for name, value in self.source_materialization_cache.metrics().items()
+        })
+        return metrics
 
 
 def _require_cache(cache, run_dir):

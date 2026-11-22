@@ -134,7 +134,8 @@ def _planning_unlocks(capability_id, planning):
 
 
 def _priority_offers(source_context, parent, atlas_artifact_path, next_seed,
-                     planning_generation, lawful_frontier, authorized):
+                     planning_generation, lawful_frontier, authorized,
+                     planning_cache=None):
     by_id = {
         capability.capability_id: capability
         for capability in source_context.release.execution_plan.capabilities
@@ -145,11 +146,20 @@ def _priority_offers(source_context, parent, atlas_artifact_path, next_seed,
             or any(capability_id not in by_id for capability_id in authorized)):
         _invalid("BAMF_PRIORITY_LAWFUL_FRONTIER_RELEASE_DRIFT")
     capabilities = tuple(by_id[capability_id] for capability_id in authorized)
-    return capabilities, tuple((capability.capability_id, prepare_priority_source_offer(
-        source_context, parent, atlas_artifact_path,
-        capability=capability.capability_id,
-        source_seed=_offer_seed(next_seed, capability.capability_id),
-        source_each=_SOURCE_EACH, planning_generation=planning_generation))
+    def prepare(capability):
+        kwargs = {
+            "capability": capability.capability_id,
+            "source_seed": _offer_seed(next_seed, capability.capability_id),
+            "source_each": _SOURCE_EACH,
+            "planning_generation": planning_generation,
+        }
+        if planning_cache is not None:
+            kwargs["materialization_cache"] = planning_cache.source_materialization_cache
+        return prepare_priority_source_offer(
+            source_context, parent, atlas_artifact_path, **kwargs)
+
+    return capabilities, tuple(
+        (capability.capability_id, prepare(capability))
         for capability in capabilities)
 
 
@@ -270,7 +280,8 @@ def issue_foundation_priority_authority(
             f"{len(capabilities)} lawful capabilities")
     capabilities, offers = _priority_offers(
         source_context, parent, atlas_artifact_path, next_seed,
-        planning_generation, lawful_frontier, ready_capabilities)
+        planning_generation, lawful_frontier, ready_capabilities,
+        planning_cache=planning_cache)
     if progress is not None:
         progress("teacher: ranking priority options")
     rejections = _ordered_rejections(run_dir, parent, cache)

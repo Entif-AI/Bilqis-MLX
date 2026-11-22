@@ -114,6 +114,15 @@ VISIT_PERFORMANCE_FIELDS = (
     "accepted_feature_authentication_wall_seconds",
     "planning_wall_seconds",
     "source_materialization_wall_seconds",
+    "selected_source_cache_hit",
+    "selected_source_cache_lookup_wall_seconds",
+    "selected_source_factory_build_wall_seconds",
+    "selected_source_model_build_wall_seconds",
+    "selected_source_b11_binding_wall_seconds",
+    "selected_source_motif_planning_wall_seconds",
+    "selected_source_owner_build_wall_seconds",
+    "selected_source_registration_currentness_wall_seconds",
+    "selected_source_qualification_wall_seconds",
     "target_evaluation_wall_seconds",
     "protected_retention_wall_seconds",
     "broad_certification_wall_seconds",
@@ -152,6 +161,28 @@ RETENTION_PROFILE_FIELDS = (
 )
 
 PERFORMANCE_FIELDS = STEP_COST_FIELDS + VISIT_PERFORMANCE_FIELDS
+
+_SELECTED_SOURCE_FIELDS = (
+    ("source_materialization_cache_hit", "selected_source_cache_hit"),
+    ("source_materialization_cache_lookup_wall_seconds", "selected_source_cache_lookup_wall_seconds"),
+    ("source_materialization_factory_source_wall_seconds", "selected_source_factory_build_wall_seconds"),
+    ("source_materialization_model_source_wall_seconds", "selected_source_model_build_wall_seconds"),
+    ("source_materialization_b11_binding_wall_seconds", "selected_source_b11_binding_wall_seconds"),
+    ("source_materialization_motif_planning_wall_seconds", "selected_source_motif_planning_wall_seconds"),
+    ("source_materialization_owner_build_wall_seconds", "selected_source_owner_build_wall_seconds"),
+    ("source_materialization_registration_currentness_wall_seconds", "selected_source_registration_currentness_wall_seconds"),
+    ("source_currentness_qualification_wall_seconds", "selected_source_qualification_wall_seconds"),
+)
+
+
+def selected_source_visit_fields(observation) -> dict:
+    if not isinstance(observation, dict):
+        return {}
+    return {
+        target: observation[source]
+        for source, target in _SELECTED_SOURCE_FIELDS
+        if type(observation.get(source)) in (int, float) and observation[source] >= 0
+    }
 
 
 def observe_completed_step(observer, step, candidate) -> None:
@@ -199,5 +230,5 @@ def measure_observed_phase(observer, field: str):
 __all__ = (
     "PERFORMANCE_FIELDS", "RETENTION_PROFILE_FIELDS", "STEP_COST_FIELDS",
     "VISIT_PERFORMANCE_FIELDS",
-    "measure_observed_phase", "observe_completed_step",
+    "measure_observed_phase", "observe_completed_step", "selected_source_visit_fields",
 )

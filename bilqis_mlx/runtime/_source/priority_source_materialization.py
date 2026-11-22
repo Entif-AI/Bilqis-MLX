@@ -5,6 +5,11 @@ from dataclasses import dataclass, field, replace
 import time
 
 from bilqis_mlx.runtime.source_execution import _invalid_source_batch
+from bilqis_mlx.runtime.priority_source_materialization_cache import (
+    PreparedPrioritySourceArtifacts,
+    priority_source_materialization_identity,
+    rebind_priority_source_rows,
+)
 from bilqis_mlx.semantics.frame_compiler import (
     CompiledFrameRows, validate_partial_visible_forest,
 )
@@ -130,6 +135,66 @@ def _owners(offer, authenticated, rows, prefixes):
     )
 
 
+def _build_prepared_artifacts(
+        offer, source_context, authenticated, rows, *, identity=()):
+    from bilqis_mlx.runtime.factory_training_bridge import _prepare_factory_source_rows
+
+    timings = {}
+    stage_started = time.perf_counter()
+    source_context._source_preparation_metrics.source_context_builds += 1
+    adapter, manifest, profile, source_rows = _prepare_factory_source_rows(
+        source_context, authenticated, rows, capability=offer.capability_id,
+        source_seed=offer.source_seed, source_each=offer.source_each,
+        source_authority=offer.source_authority)
+    timings["source_materialization_factory_source_wall_seconds"] = (
+        time.perf_counter() - stage_started)
+    if len({tuple(item.row["tokens"]) for item in source_rows}) != len(rows):
+        _invalid_source_batch("FACTORY_TRAINING_AMBIGUOUS_SOURCE_PREFIX")
+
+    stage_started = time.perf_counter()
+    model_sources, b11_configs = _prepare_model_sources(
+        source_context, authenticated, manifest, source_rows)
+    timings["source_materialization_model_source_wall_seconds"] = (
+        time.perf_counter() - stage_started)
+    if (len(model_sources) != len(source_rows)
+            or len(b11_configs) != len(source_rows)):
+        _invalid_source_batch("BAMF_PRIORITY_SOURCE_MATERIALIZATION_INVALID")
+
+    prefixes = tuple(item.prefix for item in model_sources)
+    source_context._source_preparation_metrics.compiled_source_builds += 1
+    artifacts = PreparedPrioritySourceArtifacts(
+        identity, manifest, source_rows, model_sources, b11_configs, prefixes)
+    if identity:
+        artifacts.require_exact(offer)
+    return artifacts, timings, adapter, profile
+
+
+def _prepared_artifacts(offer, source_context, authenticated, rows):
+    cache = getattr(offer, "_materialization_cache", None)
+    identity = (
+        priority_source_materialization_identity(offer)
+        if cache is not None else ())
+    lookup_started = time.perf_counter()
+    artifacts = None if cache is None else cache.get(identity)
+    timings = {
+        "source_materialization_cache_lookup_wall_seconds": (
+            time.perf_counter() - lookup_started),
+        "source_materialization_cache_hit": int(artifacts is not None),
+    }
+    if artifacts is None:
+        artifacts, build_timings, adapter, profile = _build_prepared_artifacts(
+            offer, source_context, authenticated, rows, identity=identity)
+        timings.update(build_timings)
+        if cache is None:
+            return artifacts, timings, adapter, profile, artifacts.source_rows
+        cache.put(artifacts)
+    else:
+        artifacts.require_exact(offer)
+    adapter, profile, source_rows = rebind_priority_source_rows(
+        offer, source_context, authenticated, rows, artifacts)
+    return artifacts, timings, adapter, profile, source_rows
+
+
 def _register_and_require(offer, materialized):
     registration_seconds = 0.0
     if not materialized._registered:
@@ -153,8 +218,10 @@ def _register_and_require(offer, materialized):
 
 
 def _attach_currentness_observation(
-        materialized, qualification_seconds, qualification_observation, started):
+        materialized, qualification_seconds, qualification_observation, started,
+        materialization_observation=None):
     observation = dict(getattr(materialized, "_performance_observation", {}) or {})
+    observation.update(materialization_observation or {})
     observation["source_currentness_qualification_wall_seconds"] = float(
         qualification_seconds)
     observation.update(qualification_observation)
@@ -166,8 +233,11 @@ def _attach_currentness_observation(
         "source_currentness_materialized_other_wall_seconds",
         "source_currentness_registration_wall_seconds",
     ))
+    finished = time.perf_counter()
+    total_seconds = max(0.0, finished - started)
     observation["source_currentness_internal_other_wall_seconds"] = float(max(
-        0.0, time.perf_counter() - started - qualification_seconds - direct_currentness_seconds))
+        0.0, total_seconds - qualification_seconds - direct_currentness_seconds))
+    observation["source_materialization_total_wall_seconds"] = float(total_seconds)
     object.__setattr__(materialized, "_performance_observation", observation)
     return materialized
 
@@ -192,52 +262,61 @@ def prepare_priority_source_materialization(
             materialized, qualification_seconds, qualification_observation, started)
 
     authenticated = offer._planning_generation._authenticated_features
+    artifacts, materialization_observation, adapter, profile, source_rows = _prepared_artifacts(
+        offer, source_context, authenticated, rows)
     from bilqis_mlx.runtime.factory_training_bridge import (
         _motif_planning_input, _prepare_b11_source_binding,
-        _prepare_factory_source_rows,
     )
-
-    source_context._source_preparation_metrics.source_context_builds += 1
-    adapter, manifest, profile, source_rows = _prepare_factory_source_rows(
-        source_context, authenticated, rows, capability=offer.capability_id,
-        source_seed=offer.source_seed, source_each=offer.source_each,
-        source_authority=offer.source_authority)
-    if len({tuple(item.row["tokens"]) for item in source_rows}) != len(rows):
-        _invalid_source_batch("FACTORY_TRAINING_AMBIGUOUS_SOURCE_PREFIX")
-    model_sources, b11_configs = _prepare_model_sources(
-        source_context, authenticated, manifest, source_rows)
-    if (len(model_sources) != len(source_rows)
-            or len(b11_configs) != len(source_rows)):
-        _invalid_source_batch("BAMF_PRIORITY_SOURCE_MATERIALIZATION_INVALID")
+    b11_started = time.perf_counter()
     b11_sources = tuple(
         _prepare_b11_source_binding(
             source_context, authenticated, profile, item,
             model.prefix, config,
             source_seed=getattr(item, "source_seed", offer.source_seed),
             source_each=getattr(item, "source_each", offer.source_each))
-        for item, model, config in zip(source_rows, model_sources, b11_configs)
+        for item, model, config in zip(
+            source_rows, artifacts.model_sources, artifacts.b11_configs)
     )
-    prefixes = tuple(item.prefix for item in model_sources)
+    materialization_observation["source_materialization_b11_binding_wall_seconds"] = (
+        time.perf_counter() - b11_started)
+    motif_started = time.perf_counter()
     motif_inputs = tuple(_motif_planning_input(
         source_context, authenticated, item.source_adapter,
         getattr(item, "profile", profile), item,
         source_seed=getattr(item, "source_seed", offer.source_seed),
         source_each=getattr(item, "source_each", offer.source_each))
         for item in source_rows)
-    source_context._source_preparation_metrics.compiled_source_builds += 1
+    materialization_observation["source_materialization_motif_planning_wall_seconds"] = (
+        time.perf_counter() - motif_started)
+    owner_started = time.perf_counter()
     feature_owner, packed_owner, source_owner = _owners(
-        offer, authenticated, rows, prefixes)
+        offer, authenticated, rows, artifacts.prefixes)
+    materialization_observation["source_materialization_owner_build_wall_seconds"] = (
+        time.perf_counter() - owner_started)
     materialized = PreparedPrioritySourceMaterialization(
-        offer, rows, adapter, manifest, profile, source_rows, model_sources,
-        motif_inputs, b11_sources, prefixes, authenticated, feature_owner,
+        offer, rows, adapter, artifacts.manifest, profile,
+        source_rows, artifacts.model_sources, motif_inputs,
+        b11_sources, artifacts.prefixes, authenticated, feature_owner,
         packed_owner, source_owner)
     offer._materialized["value"] = materialized
+    currentness_started = time.perf_counter()
     materialized = _register_and_require(offer, materialized)
+    materialization_observation[
+        "source_materialization_registration_currentness_wall_seconds"] = (
+            time.perf_counter() - currentness_started)
     return _attach_currentness_observation(
-        materialized, qualification_seconds, qualification_observation, started)
+        materialized, qualification_seconds, qualification_observation, started,
+        materialization_observation)
+
+
+def source_materialization_observation(offer) -> dict:
+    materialized = getattr(offer, "_materialized", {}).get("value")
+    return ({} if type(materialized) is not PreparedPrioritySourceMaterialization else
+            dict(getattr(materialized, "_performance_observation", {}) or {}))
 
 
 __all__ = (
     "PreparedPrioritySourceMaterialization",
     "prepare_priority_source_materialization",
+    "source_materialization_observation",
 )
