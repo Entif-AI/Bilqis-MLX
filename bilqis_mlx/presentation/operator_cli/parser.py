@@ -93,7 +93,7 @@ def _add_training_policy_args(parser) -> None:
 
 
 def _add_training_execution_args(parser) -> None:
-    from bilqis_mlx.runtime.bamf_operator.session_limits import (
+    from bilqis_mlx.runtime.bamf_operator.session_support import (
         DEFAULT_CANDIDATE_HORIZON, MAX_CANDIDATE_HORIZON,
     )
     parser.add_argument("--legacy-code-root", type=Path,
