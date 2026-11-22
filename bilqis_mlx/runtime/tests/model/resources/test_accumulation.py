@@ -196,6 +196,35 @@ class AtlasResourcesTests(AtlasResourcesFixture):
         self.assertEqual(caught.exception.context["reason"],
                          "BAMF_C08_BACKEND_STEP_DRIFT")
 
+    def test_thirty_two_row_logical_batch_is_equivalent_across_deterministic_microbatches(self):
+        rows = _rows(32)
+        split = plan_microbatches(
+            rows, self.topology, self.budget, max_microbatch_size=8)
+        whole = plan_microbatches(
+            rows, self.topology, self.budget, max_microbatch_size=32)
+        self.assertEqual(tuple(index for group in split.groups for index in group), tuple(range(32)))
+        self.assertEqual(whole.groups, (tuple(range(32)),))
+
+        values = tuple(float(index + 1) for index in range(32))
+        chunks = tuple(
+            GradientChunk(
+                group,
+                (sum(values[index] for index in group) / len(group),),
+                sum(values[index] for index in group) / len(group),
+                73, GENERATION,
+            )
+            for group in split.groups
+        )
+        split_grad = accumulate_gradients(split, chunks, clip_norm=1e9)
+        whole_mean = sum(values) / len(values)
+        whole_grad = accumulate_gradients(
+            whole,
+            (GradientChunk(tuple(range(32)), (whole_mean,), whole_mean, 73, GENERATION),),
+            clip_norm=1e9,
+        )
+        self.assertEqual(split_grad.gradient, whole_grad.gradient)
+        self.assertEqual(split_grad.weighted_mean_loss, whole_grad.weighted_mean_loss)
+
     def test_wrong_generation_seed_or_group_rejects_before_backend_call(self):
         rows = _rows(4)
         plan = plan_microbatches(rows, self.topology, self.budget)

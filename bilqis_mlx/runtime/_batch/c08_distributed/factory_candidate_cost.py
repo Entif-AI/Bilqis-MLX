@@ -128,6 +128,9 @@ def realized_candidate_cost(
         "wall_seconds": elapsed,
         "candidate_step_wall_seconds": time.perf_counter() - candidate_step_started_at,
         "logical_rows": len(prepared.compiled_rows),
+        "logical_batch_size": len(prepared.compiled_rows),
+        "c08_microbatch_size": resource_plan.microbatch_size,
+        "c08_microbatch_count": len(resource_plan.groups),
         "compiled_positions": sum(
             len(item.compiled.compiled.rows[0].positions) for item in prepared.compiled_rows),
         "loss_total": float(loss_total.item()),

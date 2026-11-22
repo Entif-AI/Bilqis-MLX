@@ -136,7 +136,9 @@ def _add_training_execution_args(parser) -> None:
     parser.add_argument("--source-teaching-enrichment", "--boolean-association-bridge",
                         dest="boolean_association_bridge", action="store_true",
                         help="Add optional source-owned lessons declared by the admitted factory release")
-    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument(
+        "--batch-size", type=int, default=32,
+        help="Logical BAMF optimizer batch target; default 32 source-qualified rows")
     parser.add_argument("--reserve-gib", type=float, default=100.)
     parser.add_argument("--stagnation-grace-grade", type=str, default=None,
                         help="Human-authorized grade whose stagnation quarantine actuator is temporarily suppressed")
