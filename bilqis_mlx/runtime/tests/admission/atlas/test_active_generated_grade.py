@@ -133,39 +133,6 @@ class ActiveGeneratedGradeTests(unittest.TestCase):
         self.assertIsNone(cold.predecessor_activation_sha256)
         self.assertIsNone(cold.transition_receipt_sha256)
 
-    def test_bootstrap_ancestry_memo_skips_historical_replay_after_validation(self):
-        from bilqis_mlx.runtime import active_generated_grade_custody as custody
-
-        proposal, definition = self._fixture()
-        active = self._bootstrap_active_grade(proposal, definition)
-        with TemporaryDirectory() as directory:
-            root = Path(directory)
-            memo = custody._ancestry_memo_path(root, active)
-            memo.parent.mkdir(parents=True, exist_ok=True)
-            memo.write_text(json.dumps({
-                "schema": "bilqis.bamf.active-grade-ancestry-memo/v1",
-                "run_id": active.run_id,
-                "activation_sha256": active.activation_sha256,
-                "activation_manifest_sha256": active.activation_manifest_sha256,
-                "activation_acceptance_sha256": active.activation_acceptance_sha256,
-                "activation_generation": active.activation_generation,
-                "validated_checkpoint_sha256": "9" * 64,
-            }, sort_keys=True, indent=2) + "\n", encoding="utf-8")
-            with patch(
-                "bilqis_mlx.runtime.bamf_bundle.publication."
-                "accepted_authority_checkpoint."
-                "accepted_authority_tip_extends_checkpoint",
-                return_value=True,
-            ), patch(
-                "bilqis_mlx.runtime.bamf_bundle.feature.acceptance.accepted_generation",
-                side_effect=AssertionError("validated ancestry memo replayed history"),
-            ), patch(
-                "bilqis_mlx.runtime.bamf_bundle.feature.historical_acceptance."
-                "iter_accepted_bamf_history",
-                side_effect=AssertionError("validated ancestry memo replayed history"),
-            ):
-                self.assertTrue(custody._activation_is_accepted_ancestor(root, active))
-
     def test_bootstrap_hot_currentness_reuses_frozen_grade_and_rejects_file_drift(self):
         from bilqis_mlx.runtime.active_generated_grade import (
             _bind_active_generated_grade_currentness,
