@@ -21,6 +21,7 @@ from ..factory.skos_curriculum import (
 )
 from ..errors import ErrorBus, SCHOOL
 from ..paths import LEGACY_SOURCE
+from ..semantics.atlas import snapshot as atlas_snapshot
 from ..source_adapters.school import live_source_registry
 from .accepted_corrections import AcceptedRuntimeHost
 from .atlas_admission import (
@@ -53,6 +54,11 @@ from bilqis_mlx.runtime.atlas_flywheel_runtime_parts.planning import (
     _persist_ready_realizations,
     _replay_current_graph,
 )
+
+
+def resolve_atlas_artifact_selection(identity):
+    """Preserve the flywheel's patchable resolver seam after helper extraction."""
+    return atlas_snapshot.resolve_atlas_artifact_selection(identity)
 
 
 @dataclass(frozen=True)

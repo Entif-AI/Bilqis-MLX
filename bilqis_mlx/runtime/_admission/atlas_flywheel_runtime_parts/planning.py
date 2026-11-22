@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 from pathlib import Path
 import subprocess
 import sys
@@ -14,14 +15,11 @@ from bilqis_mlx.factory.candidate_frontier import (
     candidate_frontier_source_identity,
     load_candidate_frontier,
 )
-from bilqis_mlx.factory.live_answers import live_answer_registry
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.paths import LEGACY_SOURCE
 from bilqis_mlx.semantics.atlas.snapshot import (
     AtlasArtifactIdentity,
-    resolve_atlas_artifact_selection,
 )
-from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.runtime.bamf_bundle import (
     load_bamf_generation_authority,
     read_current_accepted_generation_feature_receipt,
@@ -41,7 +39,17 @@ def _frontier_progress(progress, message):
         progress(message)
 
 
-def _candidate_frontier_trust_identity(factory_release_sha256: str) -> tuple:
+@dataclass(frozen=True)
+class CandidateFrontierTrustIdentity:
+    builder_sha256: str
+    input_digest: str
+    factory_release_sha256: str
+    frontier_release_sha256: str | None
+    receipt_sha256: str | None
+
+
+def _candidate_frontier_trust_identity(
+        factory_release_sha256: str) -> CandidateFrontierTrustIdentity:
     """Return the current builder/input/trust identity for planning reuse."""
     root = _repo_root()
     builder = root / "lib/ithkuil/src/build_curriculum_frontier.py"
@@ -53,12 +61,13 @@ def _candidate_frontier_trust_identity(factory_release_sha256: str) -> tuple:
     )
     trust = load_planner_frontier_trust(
         builder_sha256, input_digest, factory_release_sha256)
-    return (
-        builder_sha256,
-        input_digest,
-        factory_release_sha256,
-        None if trust is None else trust.frontier_release_sha256,
-        None if trust is None else trust.receipt_sha256,
+    return CandidateFrontierTrustIdentity(
+        builder_sha256=builder_sha256,
+        input_digest=input_digest,
+        factory_release_sha256=factory_release_sha256,
+        frontier_release_sha256=(
+            None if trust is None else trust.frontier_release_sha256),
+        receipt_sha256=None if trust is None else trust.receipt_sha256,
     )
 
 
@@ -113,7 +122,8 @@ def _accepted_selection(run_dir: Path):
         receipt.source_release_sha256,
         receipt.source_source_bundle_id,
     )
-    return resolve_atlas_artifact_selection(identity), receipt
+    from bilqis_mlx.runtime import atlas_flywheel_runtime as runtime
+    return runtime.resolve_atlas_artifact_selection(identity), receipt
 
 
 def _accepted_checkpoint(run_dir: Path) -> Checkpoint:
@@ -158,7 +168,8 @@ def _replay_current_graph(current, parent_graph: dict) -> dict:
 
 def _persist_ready_realizations(
         run_dir: Path, current, candidate, frontier, graph: dict) -> tuple:
-    sources, answers = live_source_registry(), live_answer_registry()
+    from bilqis_mlx.runtime import atlas_flywheel_runtime as runtime
+    sources, answers = runtime.live_source_registry(), runtime.live_answer_registry()
     staging_sources = predecessor_compatible_source_registry(current, sources)
     staged = load_staged_candidates(
         run_dir, frontier, current,

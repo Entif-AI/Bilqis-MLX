@@ -70,8 +70,8 @@ def build_priority_planning_epoch(
             frontier_trust_identity)
         if planning_cache is not None else None)
     if (planning_cache is not None
-            and frontier_trust_identity[3] is not None
-            and frontier_trust_identity[4] is not None
+            and frontier_trust_identity.frontier_release_sha256 is not None
+            and frontier_trust_identity.receipt_sha256 is not None
             and planning_cache._static_key == key):
         planning_cache.static_hits += 1
         candidate = planning_cache._candidate_set
@@ -81,7 +81,8 @@ def build_priority_planning_epoch(
         if (candidate is None or frontier is None or staged is None
                 or plan is None
                 or frontier_trust_identity is None
-                or frontier.release_sha256 != frontier_trust_identity[3]):
+                or frontier.release_sha256
+                != frontier_trust_identity.frontier_release_sha256):
             _invalid("BAMF_PRIORITY_PLANNING_CACHE_INVALID")
         _emit_progress(
             progress, "planner: reusing source/release planning products")
@@ -104,9 +105,10 @@ def build_priority_planning_epoch(
         if planning_cache is not None:
             frontier_trust_identity = _candidate_frontier_trust_identity(
                 current.release_sha256)
-            if (frontier_trust_identity[3] is None
-                    or frontier_trust_identity[4] is None
-                    or frontier.release_sha256 != frontier_trust_identity[3]):
+            if (frontier_trust_identity.frontier_release_sha256 is None
+                    or frontier_trust_identity.receipt_sha256 is None
+                    or frontier.release_sha256
+                    != frontier_trust_identity.frontier_release_sha256):
                 _invalid("BAMF_PRIORITY_PLANNING_CACHE_INVALID")
             key = _static_key(
                 current, selection, feature_receipt, source,
