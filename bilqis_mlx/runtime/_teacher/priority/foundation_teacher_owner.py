@@ -115,7 +115,7 @@ def current_foundation_teacher_projection(run_dir):
 def select_foundation_priority_visit(
         run_dir, source_context, atlas_artifact_path, *, program, school,
         progress=None, resource_holds=frozenset(), planning_cache=None,
-        logical_batch_size=32):
+        logical_batch_size=None):
     """Compose C16.3 bootstrap with the production C03.4 priority owner."""
     from bilqis_mlx.learning.learning_experiment import Settings
     from bilqis_mlx.runtime.accepted_priority_visit import select_accepted_priority_visit
