@@ -2,6 +2,26 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.4.4](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.3...v1.4.4) (2026-11-22)
+
+
+### Bug Fixes
+
+* **bamf:** protect established same-grade learning ([#1561](https://github.com/Entif-AI/Bilqis-MLX/issues/1561)) ([ae454a8](https://github.com/Entif-AI/Bilqis-MLX/commit/ae454a8d7a70189597bd066c6a754a3a5e56d130))
+* **bamf:** replay compact teacher observations ([#1558](https://github.com/Entif-AI/Bilqis-MLX/issues/1558)) ([ef14c3d](https://github.com/Entif-AI/Bilqis-MLX/commit/ef14c3dc8e086b5b444401a8a36924bb66c1aaaf))
+* **bamf:** separate logical batch from source sampling floor ([#1562](https://github.com/Entif-AI/Bilqis-MLX/issues/1562)) ([db2c023](https://github.com/Entif-AI/Bilqis-MLX/commit/db2c0233147069414c83fae76bcbad9c51ca58c5))
+* **mission-control:** finish cold live projection ([#1556](https://github.com/Entif-AI/Bilqis-MLX/issues/1556)) ([f040622](https://github.com/Entif-AI/Bilqis-MLX/commit/f0406226a8dc0abfd1d63d022bd86dcd3a4fed2c))
+* **mission-control:** preserve live evidence under partial query failure ([#1549](https://github.com/Entif-AI/Bilqis-MLX/issues/1549)) ([6fc2fdd](https://github.com/Entif-AI/Bilqis-MLX/commit/6fc2fdd6615c2311a43ffd287a94895cfa7a36ca))
+* support explicit 24-step BAMF candidate horizons ([#1553](https://github.com/Entif-AI/Bilqis-MLX/issues/1553)) ([42a46d5](https://github.com/Entif-AI/Bilqis-MLX/commit/42a46d5eac62c0ab04c81b7727fb56dae6b46c77))
+
+
+### Performance Improvements
+
+* **bamf:** make planning incremental and compact teacher outcomes ([#1551](https://github.com/Entif-AI/Bilqis-MLX/issues/1551)) ([657bdff](https://github.com/Entif-AI/Bilqis-MLX/commit/657bdfff37dc58904ca9a3df55303240aba9cea6))
+* **bamf:** move global curriculum derivation off teaching cadence ([#1564](https://github.com/Entif-AI/Bilqis-MLX/issues/1564)) ([d11d63f](https://github.com/Entif-AI/Bilqis-MLX/commit/d11d63fac9050175ebb233f0e59a6481649c5152))
+* **bamf:** remove steady-state candidate orchestration tax ([#1565](https://github.com/Entif-AI/Bilqis-MLX/issues/1565)) ([6598b4b](https://github.com/Entif-AI/Bilqis-MLX/commit/6598b4b55181f89de6b9f3b71fec93940db54a12))
+* **bamf:** reuse exact selected-source preparation ([#1537](https://github.com/Entif-AI/Bilqis-MLX/issues/1537)) ([#1563](https://github.com/Entif-AI/Bilqis-MLX/issues/1563)) ([d3d03c2](https://github.com/Entif-AI/Bilqis-MLX/commit/d3d03c222c1f880cc4f0f89d85a71eb15d7a3c6a))
+
 ## [1.4.3](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.2...v1.4.3) (2026-11-22)
 
 
