@@ -2,6 +2,256 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.4.4](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.3...v1.4.4) (2026-11-22)
+
+
+### Bug Fixes
+
+* **bamf:** protect established same-grade learning ([#1561](https://github.com/Entif-AI/Bilqis-MLX/issues/1561)) ([ae454a8](https://github.com/Entif-AI/Bilqis-MLX/commit/ae454a8d7a70189597bd066c6a754a3a5e56d130))
+* **bamf:** replay compact teacher observations ([#1558](https://github.com/Entif-AI/Bilqis-MLX/issues/1558)) ([ef14c3d](https://github.com/Entif-AI/Bilqis-MLX/commit/ef14c3dc8e086b5b444401a8a36924bb66c1aaaf))
+* **bamf:** separate logical batch from source sampling floor ([#1562](https://github.com/Entif-AI/Bilqis-MLX/issues/1562)) ([db2c023](https://github.com/Entif-AI/Bilqis-MLX/commit/db2c0233147069414c83fae76bcbad9c51ca58c5))
+* **mission-control:** finish cold live projection ([#1556](https://github.com/Entif-AI/Bilqis-MLX/issues/1556)) ([f040622](https://github.com/Entif-AI/Bilqis-MLX/commit/f0406226a8dc0abfd1d63d022bd86dcd3a4fed2c))
+* **mission-control:** preserve live evidence under partial query failure ([#1549](https://github.com/Entif-AI/Bilqis-MLX/issues/1549)) ([6fc2fdd](https://github.com/Entif-AI/Bilqis-MLX/commit/6fc2fdd6615c2311a43ffd287a94895cfa7a36ca))
+* support explicit 24-step BAMF candidate horizons ([#1553](https://github.com/Entif-AI/Bilqis-MLX/issues/1553)) ([42a46d5](https://github.com/Entif-AI/Bilqis-MLX/commit/42a46d5eac62c0ab04c81b7727fb56dae6b46c77))
+
+
+### Performance Improvements
+
+* **bamf:** make planning incremental and compact teacher outcomes ([#1551](https://github.com/Entif-AI/Bilqis-MLX/issues/1551)) ([657bdff](https://github.com/Entif-AI/Bilqis-MLX/commit/657bdfff37dc58904ca9a3df55303240aba9cea6))
+* **bamf:** move global curriculum derivation off teaching cadence ([#1564](https://github.com/Entif-AI/Bilqis-MLX/issues/1564)) ([d11d63f](https://github.com/Entif-AI/Bilqis-MLX/commit/d11d63fac9050175ebb233f0e59a6481649c5152))
+* **bamf:** remove steady-state candidate orchestration tax ([#1565](https://github.com/Entif-AI/Bilqis-MLX/issues/1565)) ([6598b4b](https://github.com/Entif-AI/Bilqis-MLX/commit/6598b4b55181f89de6b9f3b71fec93940db54a12))
+* **bamf:** reuse exact selected-source preparation ([#1537](https://github.com/Entif-AI/Bilqis-MLX/issues/1537)) ([#1563](https://github.com/Entif-AI/Bilqis-MLX/issues/1563)) ([d3d03c2](https://github.com/Entif-AI/Bilqis-MLX/commit/d3d03c222c1f880cc4f0f89d85a71eb15d7a3c6a))
+
+<!-- release-history:pr:1549:start -->
+### PR #1549 constituent commit inventory
+
+Release Please summarized PR #1549 as [`6fc2fdd`](https://github.com/Entif-AI/Bilqis-MLX/commit/6fc2fdd6615c2311a43ffd287a94895cfa7a36ca). This generated inventory preserves **19 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **18 source commits and 1 internal merge commit**.
+
+<details>
+<summary>18 source commits (newest-first PR order)</summary>
+
+- [`0c042f379e`](https://github.com/Entif-AI/Bilqis-MLX/commit/0c042f379e8ac50b655c7883ca6d3d822e5876ce) fix(mission-control): bound partial query degradation
+- [`22b1d19012`](https://github.com/Entif-AI/Bilqis-MLX/commit/22b1d190122b88aa6d9c3fedd7d7d2ea76c5f1d1) fix(mission-control): limit home cursor exhaustion
+- [`080eac4699`](https://github.com/Entif-AI/Bilqis-MLX/commit/080eac4699d51964d939c712bb55ba8054ffa05c) fix(mission-control): distinguish unavailable school evidence
+- [`11f23780c4`](https://github.com/Entif-AI/Bilqis-MLX/commit/11f23780c40d4e04069fbf600bc93ebcdc732c00) test(mission-control): distinguish unavailable school evidence
+- [`dd237f2879`](https://github.com/Entif-AI/Bilqis-MLX/commit/dd237f2879a8a03ec673b302bef882ec7e946aa1) fix(terminal): retain latest completed candidate loss
+- [`11df0ef2c6`](https://github.com/Entif-AI/Bilqis-MLX/commit/11df0ef2c69006ad3d5d174652560fa81d8f4ad4) test(terminal): reproduce live loss projection gap
+- [`90ee808703`](https://github.com/Entif-AI/Bilqis-MLX/commit/90ee80870395b97ac4ac7d960704be175da43dfc) fix(control-plane): preserve query-aware composition
+- [`6022dc467b`](https://github.com/Entif-AI/Bilqis-MLX/commit/6022dc467bb48ca6688331c5940d279a5aeeb777) test(control-plane): reproduce query-awareness loss
+- [`3cccbd60b1`](https://github.com/Entif-AI/Bilqis-MLX/commit/3cccbd60b110761395dabd5ca35018cec925e0bb) refactor(control-plane): split native cache responsibilities
+- [`747a5a3b2e`](https://github.com/Entif-AI/Bilqis-MLX/commit/747a5a3b2e86b4240255badd9e0931db8a9af0bf) refactor(control-plane): compartmentalize native query cache
+- [`82b937187f`](https://github.com/Entif-AI/Bilqis-MLX/commit/82b937187f93d6a31eeb3e3296aa94e101817528) fix(control-plane): warm base cache across live heartbeats
+- [`93792361ec`](https://github.com/Entif-AI/Bilqis-MLX/commit/93792361ec61456e79b54e2e4751c1f0f5342db4) test(mission-control): repair cache test extraction
+- [`284516523e`](https://github.com/Entif-AI/Bilqis-MLX/commit/284516523e35e29cd6c23c819139c791e8d177a2) test(mission-control): isolate native cache warmup regression
+- [`f415bb81a9`](https://github.com/Entif-AI/Bilqis-MLX/commit/f415bb81a945ce538e2e786b1deba61f275d6297) test(mission-control): bind native cache regression to gui ci
+- [`aa8d549a97`](https://github.com/Entif-AI/Bilqis-MLX/commit/aa8d549a97d250d2ccb7df99646df534f65a7fa5) fix(mission-control): preserve transport disconnect semantics
+- [`3304529a88`](https://github.com/Entif-AI/Bilqis-MLX/commit/3304529a88ef2e605e4885e9f1b16cdc7014430d) fix(mission-control): degrade home queries by family
+- [`b7aee6efbf`](https://github.com/Entif-AI/Bilqis-MLX/commit/b7aee6efbf953820125884fd131de82b54a706eb) test(mission-control): isolate live blackout regression
+- [`44529910b0`](https://github.com/Entif-AI/Bilqis-MLX/commit/44529910b05b16033df54ca83b9d7a352ccfdeae) test(mission-control): reproduce post-merge live blackout
+
+</details>
+
+<details>
+<summary>1 internal merge commit (newest-first PR order)</summary>
+
+- [`58e2a72baa`](https://github.com/Entif-AI/Bilqis-MLX/commit/58e2a72baa4880aa3fe68f9906eb18716db6dc39) Merge main into codex/1534-postmerge-live-projection-20261121
+
+</details>
+
+<!-- release-history:pr:1549:end -->
+
+<!-- release-history:pr:1551:start -->
+### PR #1551 constituent commit inventory
+
+Release Please summarized PR #1551 as [`657bdff`](https://github.com/Entif-AI/Bilqis-MLX/commit/657bdfff37dc58904ca9a3df55303240aba9cea6). This generated inventory preserves **23 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **20 source commits and 3 internal merge commits**.
+
+<details>
+<summary>20 source commits (newest-first PR order)</summary>
+
+- [`d7da35e0cf`](https://github.com/Entif-AI/Bilqis-MLX/commit/d7da35e0cffe7d53df40f714ee6967cbb1b7333f) fix(ci): split detached runner support (#1536)
+- [`689c4b2107`](https://github.com/Entif-AI/Bilqis-MLX/commit/689c4b210794ce6443f9bd6a2a0d6da375ac9c96) fix(ci): split priority planning epoch stages (#1536)
+- [`c2a13edcda`](https://github.com/Entif-AI/Bilqis-MLX/commit/c2a13edcda5dbef32ec328436ea72686b6759a0d) fix(bamf): log detached run liveness (#1536)
+- [`2b1d41e733`](https://github.com/Entif-AI/Bilqis-MLX/commit/2b1d41e733ef1e464096e4198fdf719542373596) fix(ci): name frontier trust identity fields (#1536)
+- [`4b491b1a11`](https://github.com/Entif-AI/Bilqis-MLX/commit/4b491b1a11d051f964a6f1d0c2d64dbf60ff9f3f) chore(bamf): remove top-level incremental profile copy (#1536)
+- [`3a1fb4b760`](https://github.com/Entif-AI/Bilqis-MLX/commit/3a1fb4b760f8ea77e54f44db6bdaff05c1f05d10) chore(bamf): relocate incremental planning profile (#1536)
+- [`5bc5a6cfe1`](https://github.com/Entif-AI/Bilqis-MLX/commit/5bc5a6cfe10e34f63605b8dd82757a29a8991249) test(bamf): remove top-level test_priority_planning_verification copy (#1536)
+- [`eb9f37cc41`](https://github.com/Entif-AI/Bilqis-MLX/commit/eb9f37cc410035a98f809d8f0677209ef81f7344) test(bamf): relocate test_priority_planning_verification (#1536)
+- [`55fc40180f`](https://github.com/Entif-AI/Bilqis-MLX/commit/55fc40180fd8386b301cfdf507d561cb74cd9645) test(bamf): remove top-level test_priority_planning_cache copy (#1536)
+- [`d5618801f2`](https://github.com/Entif-AI/Bilqis-MLX/commit/d5618801f217b06217b9efe2ebd6d00ecba3fc5c) test(bamf): relocate test_priority_planning_cache (#1536)
+- [`afcf20535d`](https://github.com/Entif-AI/Bilqis-MLX/commit/afcf20535d260233944cdaf847ee840a761189be) test(bamf): group incremental planning regressions (#1536)
+- [`09cfd82341`](https://github.com/Entif-AI/Bilqis-MLX/commit/09cfd82341266d7084a1f52bd94cd0e4b200a397) refactor(bamf): keep priority planning owner structurally bounded (#1536)
+- [`ac1aa85651`](https://github.com/Entif-AI/Bilqis-MLX/commit/ac1aa8565177f6d86108eef3dccef8ba2b4c5b3b) refactor(bamf): extract priority planning epoch derivation (#1536)
+- [`51db48b788`](https://github.com/Entif-AI/Bilqis-MLX/commit/51db48b7880628b9a9660a8a85447074b7f4328e) refactor(bamf): extract priority planning cache keys (#1536)
+- [`9d2c03ab2b`](https://github.com/Entif-AI/Bilqis-MLX/commit/9d2c03ab2b0d0e5ef8297f0278c57048195d1d36) refactor(bamf): split priority planning owner (#1536)
+- [`b5bed38c3c`](https://github.com/Entif-AI/Bilqis-MLX/commit/b5bed38c3cd94733ec3c5c3d03306f5a14302424) perf(bamf): preserve teacher learning across accepted generations (#1554)
+- [`99328063b9`](https://github.com/Entif-AI/Bilqis-MLX/commit/99328063b9f255e91ac1e43b7c6971baeef0a221) refactor(bamf): keep atlas flywheel runtime structurally bounded (#1536)
+- [`ba1fb97c54`](https://github.com/Entif-AI/Bilqis-MLX/commit/ba1fb97c5459f5171085fb6a0ef23ef3a7163871) refactor(bamf): extract atlas flywheel planning helpers (#1536)
+- [`db9e13a7c8`](https://github.com/Entif-AI/Bilqis-MLX/commit/db9e13a7c891c1b01a64fce125232ab9b0f3e9e8) refactor(bamf): split atlas flywheel runtime helpers (#1536)
+- [`fc34bc63a6`](https://github.com/Entif-AI/Bilqis-MLX/commit/fc34bc63a6801af4ac25225bdc9b1e6f5c7028c3) perf(bamf): reuse planning and compact teacher outcomes
+
+</details>
+
+<details>
+<summary>3 internal merge commits (newest-first PR order)</summary>
+
+- [`4c3736e064`](https://github.com/Entif-AI/Bilqis-MLX/commit/4c3736e06449cdd4e2790d0cf1f1f66e6de8fb03) Merge remote-tracking branch 'review-source/main' into codex/1536-planning-incremental-20261121
+- [`fdf135d906`](https://github.com/Entif-AI/Bilqis-MLX/commit/fdf135d90685ce8f37bbf91eb1802d78e20fde59) Merge remote-tracking branch 'review-source/main' into codex/1536-planning-incremental-20261121
+- [`0522202d73`](https://github.com/Entif-AI/Bilqis-MLX/commit/0522202d73c486a227a5f6bcf1c1c48901360791) Merge remote-tracking branch 'review-source/main' into codex/1536-planning-incremental-20261121
+
+</details>
+
+<!-- release-history:pr:1551:end -->
+
+<!-- release-history:pr:1553:start -->
+### PR #1553 constituent commit inventory
+
+Release Please summarized PR #1553 as [`42a46d5`](https://github.com/Entif-AI/Bilqis-MLX/commit/42a46d5eac62c0ab04c81b7727fb56dae6b46c77). This generated inventory preserves **16 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **16 source commits**.
+
+<details>
+<summary>16 source commits (newest-first PR order)</summary>
+
+- [`c33c67b5aa`](https://github.com/Entif-AI/Bilqis-MLX/commit/c33c67b5aafd22d5faa97be54054e1c1c502256d) test(bamf): bind horizon regression to neural-inert contract (#1552)
+- [`3e98e73ec5`](https://github.com/Entif-AI/Bilqis-MLX/commit/3e98e73ec5580d79d799c4d5cea58f53029a73b0) fix(ci): keep CLI horizon import neural-inert (#1552)
+- [`cde05e5b76`](https://github.com/Entif-AI/Bilqis-MLX/commit/cde05e5b761c63dbc2dc3548aaafc6e6abc34845) fix(ci): import horizon bounds from lightweight operator contract (#1552)
+- [`fbd1eb8aad`](https://github.com/Entif-AI/Bilqis-MLX/commit/fbd1eb8aada833a971973d2a6c2a87c74719b4cf) fix(ci): keep BAMF support free of CLI limit ownership (#1552)
+- [`64e2a222ab`](https://github.com/Entif-AI/Bilqis-MLX/commit/64e2a222abbbe7b0977e99170971073696395822) fix(ci): place BAMF horizon limits on lightweight operator boundary (#1552)
+- [`79588f526b`](https://github.com/Entif-AI/Bilqis-MLX/commit/79588f526bb86047db938fa65d163ec50650243d) fix(ci): avoid growing BAMF operator package file count (#1552)
+- [`6f3202bab6`](https://github.com/Entif-AI/Bilqis-MLX/commit/6f3202bab6528952167a4408da245888c3266880) test(bamf): bind horizon tests to existing owner module (#1552)
+- [`f4832e238e`](https://github.com/Entif-AI/Bilqis-MLX/commit/f4832e238e403b4821f599bfc67158a58639872a) fix(ci): reuse existing BAMF session support authority (#1552)
+- [`32db9a097d`](https://github.com/Entif-AI/Bilqis-MLX/commit/32db9a097d54fdd6d60b3254ae2ad2ed6d44be59) fix(ci): import horizon bounds from session support (#1552)
+- [`fd77af0645`](https://github.com/Entif-AI/Bilqis-MLX/commit/fd77af06455e7e63308f9f9d57c5b16d58d96de8) fix(ci): keep BAMF horizon limits in existing owner module (#1552)
+- [`6788b1ae01`](https://github.com/Entif-AI/Bilqis-MLX/commit/6788b1ae01a90484b146ef95bf6fb1cb1255fbe8) test(bamf): move operator horizon rejection boundary to 25 (#1552)
+- [`ad71c261a4`](https://github.com/Entif-AI/Bilqis-MLX/commit/ad71c261a482509d571c36479f8f1a883d3eef8a) fix(bamf): align CLI horizon help with runtime ceiling (#1552)
+- [`32b0378458`](https://github.com/Entif-AI/Bilqis-MLX/commit/32b0378458c983e4217c09800dc221abc1fa5c62) fix(bamf): admit explicit 24-step candidate horizons (#1552)
+- [`4489556b56`](https://github.com/Entif-AI/Bilqis-MLX/commit/4489556b564b03feb3039da941a4f43564283a41) fix(bamf): define shared 24-step operator horizon ceiling (#1552)
+- [`fb81fc891f`](https://github.com/Entif-AI/Bilqis-MLX/commit/fb81fc891f2d0a1ffe0251b2a9c6a56c31d7d48b) test(bamf): lock 24-step interference shortening (#1552)
+- [`4da4c4953b`](https://github.com/Entif-AI/Bilqis-MLX/commit/4da4c4953beec35377660b08eb0bb77bf0066bef) test(bamf): reproduce 24-step operator horizon rejection (#1552)
+
+</details>
+
+<!-- release-history:pr:1553:end -->
+
+<!-- release-history:pr:1561:start -->
+### PR #1561 constituent commit inventory
+
+Release Please summarized PR #1561 as [`ae454a8`](https://github.com/Entif-AI/Bilqis-MLX/commit/ae454a8d7a70189597bd066c6a754a3a5e56d130). This generated inventory preserves **4 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **3 source commits and 1 internal merge commit**.
+
+<details>
+<summary>3 source commits (newest-first PR order)</summary>
+
+- [`3fe7a671f2`](https://github.com/Entif-AI/Bilqis-MLX/commit/3fe7a671f23adc92eba52ed7c231861bd7f615a7) chore(flow-control): turn in issue 1542
+- [`595a00608a`](https://github.com/Entif-AI/Bilqis-MLX/commit/595a00608aa843815ccf1a35b11fde5429f0f36c) fix(bamf): protect established same-grade learning
+- [`c3914aafd2`](https://github.com/Entif-AI/Bilqis-MLX/commit/c3914aafd20579b00e07b797166863d2d8d609cd) chore(flow-control): activate issue 1542
+
+</details>
+
+<details>
+<summary>1 internal merge commit (newest-first PR order)</summary>
+
+- [`65a77c13ed`](https://github.com/Entif-AI/Bilqis-MLX/commit/65a77c13ed0d42166e421f75d30fd8272712c345) Merge remote-tracking branch 'origin/main' into codex/1542-foundation-same-grade-retention-20261122
+
+</details>
+
+<!-- release-history:pr:1561:end -->
+
+<!-- release-history:pr:1562:start -->
+### PR #1562 constituent commit inventory
+
+Release Please summarized PR #1562 as [`db2c023`](https://github.com/Entif-AI/Bilqis-MLX/commit/db2c0233147069414c83fae76bcbad9c51ca58c5). This generated inventory preserves **4 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **4 source commits**.
+
+<details>
+<summary>4 source commits (newest-first PR order)</summary>
+
+- [`c537cdb527`](https://github.com/Entif-AI/Bilqis-MLX/commit/c537cdb52795ec01584506c379013ad6804a4d5b) fix(bamf): preserve source-only teacher defaults
+- [`be58fccdc3`](https://github.com/Entif-AI/Bilqis-MLX/commit/be58fccdc3c40b60682b620a14bca1789d173cc9) fix(bamf): satisfy operator contract gate
+- [`009bd694f7`](https://github.com/Entif-AI/Bilqis-MLX/commit/009bd694f7662729375b0a25bec619d9c6a0bd5a) refactor(bamf): own logical batch policy explicitly
+- [`c5cd832cc2`](https://github.com/Entif-AI/Bilqis-MLX/commit/c5cd832cc2a326f4045e3f8360f4132d8c2d1117) fix(bamf): separate logical batch from sampling floor
+
+</details>
+
+<!-- release-history:pr:1562:end -->
+
+<!-- release-history:pr:1563:start -->
+### PR #1563 constituent commit inventory
+
+Release Please summarized PR #1563 as [`d3d03c2`](https://github.com/Entif-AI/Bilqis-MLX/commit/d3d03c222c1f880cc4f0f89d85a71eb15d7a3c6a). This generated inventory preserves **10 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **8 source commits and 2 internal merge commits**.
+
+<details>
+<summary>8 source commits (newest-first PR order)</summary>
+
+- [`711de0ba1c`](https://github.com/Entif-AI/Bilqis-MLX/commit/711de0ba1c4a9d4c6e93a62fbab20c6b04cc844b) chore(bamf): refresh #1537 structure receipt
+- [`c7b04f553f`](https://github.com/Entif-AI/Bilqis-MLX/commit/c7b04f553f1170f906e790954b2f702182759006) test(bamf): compartmentalize source cache regressions (#1537)
+- [`e0b5267edf`](https://github.com/Entif-AI/Bilqis-MLX/commit/e0b5267edf2f8aecfaed53797118028d071a57f7) chore(bamf): refresh #1537 CI turn-in receipt
+- [`2ab648c55d`](https://github.com/Entif-AI/Bilqis-MLX/commit/2ab648c55d272ba191018afa532112bdaeef9f21) test(bamf): split source cache regressions (#1537)
+- [`87fd390400`](https://github.com/Entif-AI/Bilqis-MLX/commit/87fd3904001e53b82b6564694f13391aec013044) chore(bamf): turn in source handoff repair (#1537)
+- [`5b0b707eab`](https://github.com/Entif-AI/Bilqis-MLX/commit/5b0b707eab74e89bd2a01c254ebaa60c97e171cd) docs(bamf): record source handoff evidence (#1537)
+- [`86cb2ae8dd`](https://github.com/Entif-AI/Bilqis-MLX/commit/86cb2ae8dd27dcc74acfe5cefb345749c5084fe2) test(bamf): close source handoff proof gaps (#1537)
+- [`f9b4511bae`](https://github.com/Entif-AI/Bilqis-MLX/commit/f9b4511bae077ebf64a70145b05e94aba4655a51) perf(bamf): reuse selected-source preparation (#1537)
+
+</details>
+
+<details>
+<summary>2 internal merge commits (newest-first PR order)</summary>
+
+- [`ebde34a92a`](https://github.com/Entif-AI/Bilqis-MLX/commit/ebde34a92a53e2233c53da1779a690a48eaf5eb4) Merge remote-tracking branch 'review-source/main' into codex/1537-source-materialization-20261122
+- [`5b9b2d443e`](https://github.com/Entif-AI/Bilqis-MLX/commit/5b9b2d443ea6a9eea0715b3eeaf362f1dce6c469) Merge remote-tracking branch 'review-source/main' into codex/1537-source-materialization-20261122
+
+</details>
+
+<!-- release-history:pr:1563:end -->
+
+<!-- release-history:pr:1564:start -->
+### PR #1564 constituent commit inventory
+
+Release Please summarized PR #1564 as [`d11d63f`](https://github.com/Entif-AI/Bilqis-MLX/commit/d11d63fac9050175ebb233f0e59a6481649c5152). This generated inventory preserves **7 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **5 source commits and 2 internal merge commits**.
+
+<details>
+<summary>5 source commits (newest-first PR order)</summary>
+
+- [`dddf4e88c5`](https://github.com/Entif-AI/Bilqis-MLX/commit/dddf4e88c54d0f3aaf0f579e2564632084aaa48c) refactor(bamf): isolate restart candidate resolution
+- [`98ee74ae73`](https://github.com/Entif-AI/Bilqis-MLX/commit/98ee74ae73eddc5b527cbb6146003bb69147d15d) fix(bamf): use canonical sha256 guard length
+- [`36a331bf80`](https://github.com/Entif-AI/Bilqis-MLX/commit/36a331bf80e309165fc6a4fb75e4a10b55ccc0d4) test(bamf): compartmentalize restart memo coverage
+- [`463c67ed1e`](https://github.com/Entif-AI/Bilqis-MLX/commit/463c67ed1ea56061998b7b05a57ed42ee79e3fda) test(bamf): isolate active grade restart regression
+- [`1ebd903d80`](https://github.com/Entif-AI/Bilqis-MLX/commit/1ebd903d806cbda1770b72c95f5566c2098174cb) perf(bamf): move planning derivation off restart cadence
+
+</details>
+
+<details>
+<summary>2 internal merge commits (newest-first PR order)</summary>
+
+- [`9bc0877c34`](https://github.com/Entif-AI/Bilqis-MLX/commit/9bc0877c3412d000a149038220c8d336af81208b) Merge remote-tracking branch 'origin/main' into codex/1560-planning-cadence-20261122
+- [`929b6807d4`](https://github.com/Entif-AI/Bilqis-MLX/commit/929b6807d4b920c7ed348951131556576be27491) Merge remote-tracking branch 'origin/main' into codex/1560-planning-cadence-20261122
+
+</details>
+
+<!-- release-history:pr:1564:end -->
+
+<!-- release-history:pr:1565:start -->
+### PR #1565 constituent commit inventory
+
+Release Please summarized PR #1565 as [`6598b4b`](https://github.com/Entif-AI/Bilqis-MLX/commit/6598b4b55181f89de6b9f3b71fec93940db54a12). This generated inventory preserves **8 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **5 source commits and 3 internal merge commits**.
+
+<details>
+<summary>5 source commits (newest-first PR order)</summary>
+
+- [`f9a1a97365`](https://github.com/Entif-AI/Bilqis-MLX/commit/f9a1a9736567e51ba6e468edd1ab350f569d6724) refactor(bamf): split candidate and visit orchestration seams
+- [`fa13141261`](https://github.com/Entif-AI/Bilqis-MLX/commit/fa13141261d9f9781488f0ed3d1e6360adca93cb) docs(bamf): record issue 1539 performance proof
+- [`9382495d3f`](https://github.com/Entif-AI/Bilqis-MLX/commit/9382495d3f604c81b8640f9574268ee65315485b) test(bamf): follow logical batch session contract
+- [`f2e3678ca2`](https://github.com/Entif-AI/Bilqis-MLX/commit/f2e3678ca2a0c54f5698feadd3c0f12e47723835) perf(bamf): keep terminal motif staging on warm custody
+- [`854ba9d101`](https://github.com/Entif-AI/Bilqis-MLX/commit/854ba9d1016ee02a34d96fb93c6b7d28f3f74082) perf(bamf): remove steady-state candidate orchestration tax
+
+</details>
+
+<details>
+<summary>3 internal merge commits (newest-first PR order)</summary>
+
+- [`7d8610d9ee`](https://github.com/Entif-AI/Bilqis-MLX/commit/7d8610d9eebb97d71681b66d3accb6220dce3054) Merge remote-tracking branch 'origin/main' into codex/1539-candidate-step-overhead-20261122
+- [`0661df8c78`](https://github.com/Entif-AI/Bilqis-MLX/commit/0661df8c78200076afbac918051b3f2d8ddf9bf6) Merge remote-tracking branch 'origin/main' into codex/1539-candidate-step-overhead-20261122
+- [`4311c4cde4`](https://github.com/Entif-AI/Bilqis-MLX/commit/4311c4cde4d370cbaf3acdb15053cd86721eda4e) Merge remote-tracking branch 'origin/main' into codex/1539-candidate-step-overhead-20261122
+
+</details>
+
+<!-- release-history:pr:1565:end -->
 ## [1.4.3](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.2...v1.4.3) (2026-11-22)
 
 
