@@ -7,6 +7,7 @@ import sqlite3
 from bilqis_mlx.data_plane import close_data_planes, data_plane
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_bundle.publication.accepted_authority_checkpoint import (
+    accepted_authority_tip_extends_checkpoint,
     compare_and_swap_protected_accepted_authority_tip,
     issue_accepted_authority_checkpoint,
     read_protected_accepted_authority_tip,
@@ -180,6 +181,23 @@ class AcceptedAuthorityCheckpointTests(DataPlaneCase):
                 (_sha("generic-forged-tip"), genesis.run_id),
             )
         self.assertEqual(read_protected_accepted_authority_tip(genesis.run_id), genesis)
+
+    def test_tip_extension_proves_compact_descendant_and_unknown_memo_target_misses(self):
+        genesis = _checkpoint(0)
+        child = _checkpoint(1, parent=genesis)
+        for checkpoint in (genesis, child):
+            store_accepted_authority_checkpoint(checkpoint)
+        compare_and_swap_protected_accepted_authority_tip(
+            genesis, expected_checkpoint_sha256=None)
+        compare_and_swap_protected_accepted_authority_tip(
+            child, expected_checkpoint_sha256=genesis.digest)
+
+        self.assertTrue(accepted_authority_tip_extends_checkpoint(
+            child.run_id, genesis.digest))
+        self.assertTrue(accepted_authority_tip_extends_checkpoint(
+            child.run_id, child.digest))
+        self.assertFalse(accepted_authority_tip_extends_checkpoint(
+            child.run_id, _sha("non-authoritative-memo-only-checkpoint")))
 
     def test_forged_checkpoint_digest_and_conflicting_manifest_are_rejected(self):
         plane = data_plane()

@@ -12,15 +12,33 @@ from bilqis_mlx.runtime.priority_planning_parts.cache import (
 )
 
 
+def _semantic_candidate(run_dir, selection, atlas_snapshot, adapters, progress):
+    from bilqis_mlx.factory.skos_curriculum import (
+        LearnedFrontier, _compile_semantic_curriculum_snapshot,
+        compile_semantic_curriculum,
+    )
+    from bilqis_mlx.runtime.priority_planning_parts.candidate_memo import (
+        load_candidate_memo, persist_candidate_memo,
+    )
+
+    candidate = load_candidate_memo(run_dir, selection, adapters)
+    if candidate is not None:
+        _emit_progress(progress, "planner: reusing durable semantic curriculum")
+        return candidate
+    _emit_progress(progress, "planner: compiling semantic curriculum")
+    frontier_state = LearnedFrontier(selection.release_sha256)
+    candidate = (_compile_semantic_curriculum_snapshot(
+        atlas_snapshot, adapters, frontier_state)
+        if atlas_snapshot is not None else compile_semantic_curriculum(
+            selection, adapters, frontier_state))
+    persist_candidate_memo(run_dir, selection, adapters, candidate)
+    return candidate
+
+
 def _static_planning_products(
         run_dir, source_context, current, selection, feature_receipt, source,
         atlas_snapshot, planning_cache, progress):
-    from bilqis_mlx.factory.skos_curriculum import (
-        LearnedFrontier,
-        SOURCE_FAMILY_ADAPTERS,
-        _compile_semantic_curriculum_snapshot,
-        compile_semantic_curriculum,
-    )
+    from bilqis_mlx.factory.skos_curriculum import SOURCE_FAMILY_ADAPTERS
     from bilqis_mlx.runtime.atlas_flywheel_runtime import (
         _candidate_frontier,
         _candidate_frontier_trust_identity,
@@ -58,12 +76,8 @@ def _static_planning_products(
 
     if planning_cache is not None:
         planning_cache.static_misses += 1
-    _emit_progress(progress, "planner: compiling semantic curriculum")
-    frontier_state = LearnedFrontier(selection.release_sha256)
-    candidate = (_compile_semantic_curriculum_snapshot(
-        atlas_snapshot, SOURCE_FAMILY_ADAPTERS, frontier_state)
-        if atlas_snapshot is not None else compile_semantic_curriculum(
-            selection, SOURCE_FAMILY_ADAPTERS, frontier_state))
+    candidate = _semantic_candidate(
+        run_dir, selection, atlas_snapshot, SOURCE_FAMILY_ADAPTERS, progress)
     frontier = _candidate_frontier(
         run_dir, current.release_sha256, progress=progress)
     _emit_progress(
