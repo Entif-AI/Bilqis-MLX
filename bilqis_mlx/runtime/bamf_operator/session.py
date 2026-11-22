@@ -27,8 +27,10 @@ from bilqis_mlx.runtime.active_grade_cadence import record_active_grade_cadence_
 from .locking import bamf_operator_lock
 from .performance import measure_observed_phase
 from .telemetry import TrainerObservation
-from .session_support import (
+from bilqis_mlx.runtime.operator_session import (
     DEFAULT_CANDIDATE_HORIZON, MAX_CANDIDATE_HORIZON,
+)
+from .session_support import (
     BamfPreparedVisit, _execution_context, _resource_observation, _step_seed,
 )
 from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import VisitCurrentnessMetrics
