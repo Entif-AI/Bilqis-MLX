@@ -164,10 +164,11 @@ def carry_credit_to_successor(visit, successor, parent):
     from copy import deepcopy
     from bilqis_mlx.learning.teacher_lineage import TeacherCustodyProjection
     from bilqis_mlx.runtime.accepted_teacher_custody import (
-        _bank_identity, _plasticity_identity, _selection_projection,
+        _bank_identity, _selection_projection, _teacher_credit_plasticity_identity,
     )
     if (_bank_identity(parent) != _bank_identity(successor)
-            or _plasticity_identity(parent.retained_state) != _plasticity_identity(successor.retained_state)
+            or _teacher_credit_plasticity_identity(parent.retained_state)
+            != _teacher_credit_plasticity_identity(successor.retained_state)
             or parent.provenance.source_identity != successor.provenance.source_identity
             or parent.provenance.release_digest != successor.provenance.release_digest):
         return successor
