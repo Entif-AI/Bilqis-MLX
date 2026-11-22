@@ -132,7 +132,10 @@ def _finish_bamf_resume(board, args, run_dir: Path, operator_report):
     if board is None:
         return True, _print_status(operator_report), None
     from bilqis_mlx.presentation.dashboard import build
+    session_baseline = getattr(board, "_bamf_session_visit_baseline", None)
     board = build(run_dir, reserve_gib=args.reserve_gib)
+    if session_baseline is not None:
+        board._bamf_session_visit_baseline = set(session_baseline)
     board.mode = "BAMF | " + str(operator_report.get("status", "STOPPED"))
     board.state["stop"] = str(operator_report.get("status", "STOPPED"))
     board.draw()
