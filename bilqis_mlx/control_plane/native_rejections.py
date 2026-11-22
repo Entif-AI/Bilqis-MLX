@@ -40,6 +40,43 @@ def _unavailable_rejection(native, generation):
         f"episode:{run.run_id}", UnavailableReason.UNAVAILABLE, None)
 
 
+def _verified_legacy_rejection(
+        native, generation, data_plane, *, event_id, authority_sha, evidence):
+    authority = {
+        "schema": "bilqis.mlx.bamf-rejection-authority/v1",
+        "run_id": generation.manifest["run_id"],
+        "generation": generation.manifest["generation"],
+        "student_manifest_sha256": generation.manifest_sha256,
+        "optimizer_step": generation.manifest["optimizer"].get("step"),
+        "evidence": evidence,
+    }
+    authority_raw = canonical(authority)
+    try:
+        stored_authority = data_plane.get_object(authority_sha)
+    except ValueError as error:
+        if _missing_data_plane_object(error):
+            raise _LegacyRejectionUnavailable from None
+        invalid("CONTROL_PLANE_NATIVE_REJECTION_AUTHORITY_DRIFT")
+    if sha(authority_raw) != authority_sha or stored_authority != authority_raw:
+        invalid("CONTROL_PLANE_NATIVE_REJECTION_AUTHORITY_DRIFT")
+    receipt = {
+        "schema": "bilqis.mlx.bamf-rejection-receipt/v1",
+        "run_id": authority["run_id"], "generation": authority["generation"],
+        "student_manifest_sha256": generation.manifest_sha256, "event": native,
+    }
+    receipt_raw = canonical(receipt)
+    receipt_sha = sha(receipt_raw)
+    try:
+        stored_receipt = data_plane.get_object(receipt_sha)
+    except ValueError as error:
+        if _missing_data_plane_object(error):
+            raise _LegacyRejectionUnavailable from None
+        invalid("CONTROL_PLANE_NATIVE_REJECTION_RECEIPT_DRIFT")
+    if stored_receipt != receipt_raw:
+        invalid("CONTROL_PLANE_NATIVE_REJECTION_RECEIPT_DRIFT")
+    return event_id, authority_sha, receipt_sha, evidence, False
+
+
 def _verified_rejection(native, generation, data_plane=None):
     event_id = native.get("event_id")
     authority_sha = native.get("rejection_authority_sha256")
@@ -93,39 +130,9 @@ def _verified_rejection(native, generation, data_plane=None):
         return event_id, authority_sha, receipt_sha, evidence, True
     if data_plane is None:
         return None
-    authority = {
-        "schema": "bilqis.mlx.bamf-rejection-authority/v1",
-        "run_id": generation.manifest["run_id"],
-        "generation": generation.manifest["generation"],
-        "student_manifest_sha256": generation.manifest_sha256,
-        "optimizer_step": generation.manifest["optimizer"].get("step"),
-        "evidence": evidence,
-    }
-    authority_raw = canonical(authority)
-    try:
-        stored_authority = data_plane.get_object(authority_sha)
-    except ValueError as error:
-        if _missing_data_plane_object(error):
-            raise _LegacyRejectionUnavailable from None
-        invalid("CONTROL_PLANE_NATIVE_REJECTION_AUTHORITY_DRIFT")
-    if sha(authority_raw) != authority_sha or stored_authority != authority_raw:
-        invalid("CONTROL_PLANE_NATIVE_REJECTION_AUTHORITY_DRIFT")
-    receipt = {
-        "schema": "bilqis.mlx.bamf-rejection-receipt/v1",
-        "run_id": authority["run_id"], "generation": authority["generation"],
-        "student_manifest_sha256": generation.manifest_sha256, "event": native,
-    }
-    receipt_raw = canonical(receipt)
-    receipt_sha = sha(receipt_raw)
-    try:
-        stored_receipt = data_plane.get_object(receipt_sha)
-    except ValueError as error:
-        if _missing_data_plane_object(error):
-            raise _LegacyRejectionUnavailable from None
-        invalid("CONTROL_PLANE_NATIVE_REJECTION_RECEIPT_DRIFT")
-    if stored_receipt != receipt_raw:
-        invalid("CONTROL_PLANE_NATIVE_REJECTION_RECEIPT_DRIFT")
-    return event_id, authority_sha, receipt_sha, evidence, False
+    return _verified_legacy_rejection(
+        native, generation, data_plane, event_id=event_id,
+        authority_sha=authority_sha, evidence=evidence)
 
 
 def _project_verified_rejection(verified, generation):
