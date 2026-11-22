@@ -70,6 +70,7 @@ class PreparedPrioritySourceOffer:
     _rows_sha256: str = field(repr=False)
     _run_dir: Path = field(repr=False)
     _materialized: dict = field(repr=False, compare=False)
+    _materialization_cache: object = field(repr=False, compare=False)
     _qualification_owner: object = field(repr=False, compare=False)
     _planning_generation: PriorityPlanningGeneration = field(repr=False, compare=False)
     _issuance: object = field(repr=False)
@@ -92,6 +93,12 @@ class PreparedPrioritySourceOffer:
                 or type(self._planning_generation) is not PriorityPlanningGeneration
                 or getattr(self._planning_generation, '_issuance', None) is not _PLANNING_ISSUER):
             _invalid_source_batch('BAMF_PRIORITY_SOURCE_OFFER_INVALID')
+        if self._materialization_cache is not None:
+            from .priority_source_materialization_cache import (
+                PrioritySourceMaterializationCache,
+            )
+            if type(self._materialization_cache) is not PrioritySourceMaterializationCache:
+                _invalid_source_batch('BAMF_PRIORITY_SOURCE_OFFER_INVALID')
         self.source_authority.__post_init__()
 
     def rows(self):
@@ -166,7 +173,8 @@ class PreparedPrioritySourceOffer:
 
 def prepare_priority_source_offer(source_context, parent, atlas_artifact_path, *,
                                   capability, source_seed, source_each,
-                                  planning_generation=None):
+                                  planning_generation=None,
+                                  materialization_cache=None):
     """Issue a current, source-qualified offer without constructing a teacher visit."""
     if planning_generation is None:
         planning_generation = bind_priority_planning_generation(
@@ -198,6 +206,7 @@ def prepare_priority_source_offer(source_context, parent, atlas_artifact_path, *
         ('source_binding_digest', contract_digest(source_context.release.source_bindings.by_capability[capability])),
         ('_rows_json', wire), ('_rows_sha256', hashlib.sha256(wire.encode('utf-8')).hexdigest()),
         ('_run_dir', Path(source_context.run_dir).resolve()), ('_materialized', {}),
+        ('_materialization_cache', materialization_cache),
         ('_qualification_owner', qualification_owner),
         ('_planning_generation', planning_generation),
         ('_issuance', _ISSUER)):

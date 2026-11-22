@@ -25,7 +25,7 @@ from bilqis_mlx.runtime.factory_retention_owner import (
 from bilqis_mlx.runtime.foundation_teacher_owner import select_foundation_priority_visit
 from bilqis_mlx.runtime.active_grade_cadence import record_active_grade_cadence_attempt
 from .locking import bamf_operator_lock
-from .performance import measure_observed_phase
+from .performance import measure_observed_phase, selected_source_visit_fields
 from .telemetry import TrainerObservation
 from bilqis_mlx.runtime.operator_session import (
     DEFAULT_CANDIDATE_HORIZON, MAX_CANDIDATE_HORIZON,
@@ -149,11 +149,13 @@ def prepare_bamf_visit(
     source_materialization_wall_seconds = float(
         getattr(selection, "source_materialization_wall_seconds", None) or 0.0)
     if observer is not None:
+        from bilqis_mlx.runtime.priority_source_materialization import source_materialization_observation
         observer.update(
             planning_wall_seconds=max(
                 0.0, planning_total - source_materialization_wall_seconds),
             source_materialization_wall_seconds=(
-                source_materialization_wall_seconds or None))
+                source_materialization_wall_seconds or None),
+            **selected_source_visit_fields(source_materialization_observation(selection.offer)))
     if selection.status != "TEACHER_SELECTED":
         if (selection.status == "NO_ADMISSIBLE_TEACHING"
                 and any(reason == OOM_EXHAUSTED for _, reason in selection.holds)):
