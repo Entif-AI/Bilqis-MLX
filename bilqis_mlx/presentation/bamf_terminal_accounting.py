@@ -105,6 +105,21 @@ def ingest_bamf_command_event(board, event: dict) -> bool:
     return True
 
 
+def finalize_bamf_command_accounting(board, result: dict) -> None:
+    """Make the returned operator result the final command-count authority."""
+    if not bamf_command_accounting_active(board):
+        return
+    visits = result.get("visits")
+    accepted = result.get("accepted")
+    if type(visits) is not int or visits < 0 or type(accepted) is not int or accepted < 0:
+        return
+    accounting = board._bamf_command_accounting
+    accounting["visits"] = visits
+    accounting["retained_visits"] = accepted
+    board.state.update(
+        visits=visits, retained_visits=accepted, _rate_sample_eligible=True)
+
+
 def transfer_bamf_command_accounting(source, target) -> None:
     """Carry one command epoch across the final dashboard rebuild."""
     accounting = getattr(source, "_bamf_command_accounting", None)
@@ -125,5 +140,6 @@ def transfer_bamf_command_accounting(source, target) -> None:
 
 __all__ = (
     "bamf_command_accounting_active", "begin_bamf_command_accounting",
-    "ingest_bamf_command_event", "transfer_bamf_command_accounting",
+    "finalize_bamf_command_accounting", "ingest_bamf_command_event",
+    "transfer_bamf_command_accounting",
 )
