@@ -106,6 +106,7 @@ def _run_bamf_resume(
         return operate_bamf(
             run_dir, minutes=args.minutes,
             max_visits=args.max_visits, steps_per_visit=args.steps_per_visit,
+            batch_size=args.batch_size,
             reserve_gib=args.reserve_gib,
             source_prefetch_workers=args.source_prefetch_workers,
             strict_evidence=bool(getattr(args, "strict_evidence", False)),

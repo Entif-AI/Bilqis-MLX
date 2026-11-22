@@ -8,6 +8,7 @@ from bilqis_mlx.runtime.priority_source_materialization import (
     PreparedPrioritySourceMaterialization,
     prepare_priority_source_materialization,
 )
+from bilqis_mlx.runtime.bamf_operator.performance import selected_source_visit_fields
 from bilqis_mlx.runtime.source_execution import SourcePreparationMetrics
 
 
@@ -119,8 +120,23 @@ def test_cached_source_currentness_residual_subtracts_only_direct_children():
             return_value=materialized), patch(
                 "bilqis_mlx.runtime.priority_source_materialization.time.perf_counter",
                 side_effect=lambda: next(clock)):
-        result = prepare_priority_source_materialization(offer, SimpleNamespace(), "parent")
+        result = prepare_priority_source_materialization(
+            offer, SimpleNamespace(), "parent")
 
     observation = result._performance_observation
     assert observation["source_currentness_qualification_wall_seconds"] == 1.0
     assert observation["source_currentness_internal_other_wall_seconds"] == pytest.approx(0.8)
+
+
+def test_selected_source_visit_fields_projects_only_numeric_stage_observations():
+    assert selected_source_visit_fields({
+        "source_materialization_cache_hit": 1,
+        "source_materialization_wait_wall_seconds": 0.0,
+        "source_materialization_factory_source_wall_seconds": 1.25,
+        "source_materialization_model_source_wall_seconds": -1.0,
+        "source_materialization_b11_binding_wall_seconds": "slow",
+    }) == {
+        "selected_source_cache_hit": 1,
+        "selected_source_wait_wall_seconds": 0.0,
+        "selected_source_factory_build_wall_seconds": 1.25,
+    }

@@ -1,0 +1,110 @@
+{
+  "schema": "bilqis.bamf.issue1537-source-materialization-evidence/v1",
+  "issue": 1537,
+  "implementation_sha": "86cb2ae8dd27dcc74acfe5cefb345749c5084fe2",
+  "consumed_main_sha": "ae454a8d7a70189597bd066c6a754a3a5e56d130",
+  "baseline": {
+    "source": "docs/evidence/bamf/1518/1518-outer-loop-lineage-invariance.json",
+    "selected_source_materialization_seconds": 10.020139375003055,
+    "historical_stage_breakdown_available": false,
+    "note": "The #1518 witness predates #1537 stage instrumentation, so the historical 10.02 s scalar cannot be retroactively decomposed without inventing data. #1537 adds the stage decomposition used below."
+  },
+  "profile": {
+    "fixture": "bilqis_mlx.runtime.tests.operator.pre_neural.PreNeuralJourneySupport",
+    "neural_updates": 0,
+    "repeats": 3,
+    "max_warm_seconds_gate": 2.0,
+    "stable_source_identity": true,
+    "gate_passed": true,
+    "cold": {
+      "selected_source_materialization_seconds": 0.31422475003637373,
+      "selection_total_seconds": 40.825818500015885,
+      "source_context_builds": 1,
+      "compiled_source_builds": 1,
+      "atlas_reload_count": 1,
+      "wait_seconds": 0.0,
+      "factory_source_build_seconds": 0.14623691700398922,
+      "model_source_build_seconds": 0.03886245796456933,
+      "fresh_b11_binding_seconds": 0.10410962509922683,
+      "qualification_seconds": 0.0005726250819861889,
+      "owner_build_seconds": 0.0014213330578058958,
+      "registration_currentness_seconds": 0.0023351248819381
+    },
+    "warm": [
+      {
+        "selected_source_materialization_seconds": 0.13103420799598098,
+        "selection_total_seconds": 1.8400869581382722,
+        "source_context_builds": 0,
+        "compiled_source_builds": 0,
+        "atlas_reload_count": 1,
+        "wait_seconds": 0.0,
+        "fresh_b11_binding_seconds": 0.10841041593812406,
+        "factory_source_build_seconds": 0.0,
+        "model_source_build_seconds": 0.0
+      },
+      {
+        "selected_source_materialization_seconds": 0.15089283301495016,
+        "selection_total_seconds": 1.97593579092063,
+        "source_context_builds": 0,
+        "compiled_source_builds": 0,
+        "atlas_reload_count": 1,
+        "wait_seconds": 0.0,
+        "fresh_b11_binding_seconds": 0.11842483282089233,
+        "factory_source_build_seconds": 0.0,
+        "model_source_build_seconds": 0.0
+      }
+    ],
+    "final_cache": {
+      "capacity": 4,
+      "entries": 1,
+      "hits": 2,
+      "misses": 1,
+      "evictions": 0
+    }
+  },
+  "result": {
+    "worst_warm_materialization_seconds": 0.15089283301495016,
+    "baseline_to_worst_warm_speedup": 66.41,
+    "baseline_to_worst_warm_reduction_percent": 98.49,
+    "acceptance_le_2_seconds": true,
+    "stretch_le_1_second": true
+  },
+  "safety": {
+    "cache_scope": "process-live PriorityPlanningCache only",
+    "bounded_entries": 4,
+    "cache_population": "only after successful complete heavy preparation",
+    "exact_identity_includes": [
+      "accepted manifest and generation binding",
+      "accepted file/run identity",
+      "Factory release and correction frontier",
+      "authenticated feature receipt",
+      "accepted parent candidate identity",
+      "capability, source seed/count/family/binding/rows",
+      "provider id and implementation digest",
+      "source content digest and episode ids"
+    ],
+    "fresh_per_visit": [
+      "process-live registered source-owner validation/rebinding",
+      "prepared B11 source proof",
+      "B11 source execution binding and compiled-input cache",
+      "motif planning input",
+      "ATLAS_FEATURE/PACKED_FRAME/SALIENCE_EVIDENCE correction owners",
+      "owner registration and currentness checks"
+    ],
+    "interrupted_cold_build": "does not populate the cache",
+    "accepted_authority_change": "changes the exact cache identity and forces a cold build",
+    "atlas_reload_boundary": "authenticated feature context reports exactly one Atlas load on cold and warm samples; selected-source reuse adds no second Atlas load",
+    "warm_heavy_rebuilds": "zero source-context builds and zero compiled model-source builds on both warm samples",
+    "candidate_retention_equivalence": "The #1537 diff does not modify accepted candidate execution or Factory retention decision owners. The focused cross-offer regression proves identical rows, manifest, profile, source-row content, model-source objects and prefixes across cold/warm materialization while only visit-local authority/B11 wrappers are fresh. Downstream candidate/retention owners therefore receive the same decision-visible prepared inputs; no neural or retention policy code is altered."
+  },
+  "verification": {
+    "focused_source_authority": "26 passed, 1 pre-existing stale-currentness test deselected",
+    "production_shaped_neural_inert_witness": "1 passed in 49.80s after current-main reconciliation",
+    "exact_profile_revision": "86cb2ae8dd27dcc74acfe5cefb345749c5084fe2",
+    "code_smell": "0 changed-file findings",
+    "flow_control": "OK; Lane C ACTIVE 4/6",
+    "diff_check": "clean",
+    "downstream_decision_owner_diff": "empty against review-source/main for accepted_priority_candidate.py, factory_retention_owner.py and atlas_retention_decision.py",
+    "known_unrelated_test_debt": "test_planning_generation_rejects_acceptance_change_during_binding patches a removed currentness symbol on current main and is intentionally excluded from #1537 verification"
+  }
+}

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from bilqis_mlx.errors import BilqisError, SCHOOL
+from bilqis_mlx.runtime.logical_batch import BamfLogicalBatchContract
 
 from ._session_visit import ResourceRejectedVisit
 from .session_parts.candidate_execution import candidate_horizon_execution, execute_horizon
@@ -9,7 +10,11 @@ from .session_parts.retention import retention_result
 
 
 def _validate_bounds(*, minutes, max_visits, steps_per_visit, reserve_gib,
-                     source_prefetch_workers, max_horizon, worker_counts, invalid):
+                     batch_size, source_prefetch_workers, max_horizon, worker_counts, invalid):
+    try:
+        BamfLogicalBatchContract(batch_size)
+    except ValueError:
+        invalid("BAMF_OPERATOR_SESSION_BOUNDS_INVALID")
     if (type(minutes) is not int or minutes < 1 or type(max_visits) is not int
             or max_visits < 0 or type(steps_per_visit) is not int
             or not 1 <= steps_per_visit <= max_horizon
@@ -47,7 +52,7 @@ def _terminal_visit_status(outcome):
 
 
 def _run_visits(
-        run_dir, *, deadline, max_visits, steps_per_visit, reserve_gib,
+        run_dir, *, deadline, max_visits, steps_per_visit, batch_size, reserve_gib,
         source_prefetch_workers, progress, source_prefetch_executor, metrics,
         run_authority_binding, resource_snapshot, monotonic, visit_fn,
         observer_type, emit_progress):
@@ -79,6 +84,7 @@ def _run_visits(
             try:
                 outcome = visit_fn(
                     run_dir, reserve_gib, steps_per_visit=steps_per_visit,
+                    batch_size=batch_size,
                     progress=observed_progress,
                     source_prefetch_workers=source_prefetch_workers,
                     source_prefetch_executor=source_prefetch_executor,
@@ -134,7 +140,7 @@ def _run_visits(
 
 
 def _finalize_stop(
-        run_dir, *, status, minutes, max_visits, steps_per_visit, reserve_gib,
+        run_dir, *, status, minutes, max_visits, steps_per_visit, batch_size, reserve_gib,
         source_prefetch_workers, visits, accepted, rejected, admission_status,
         admission_advances, resource_witness, resource_snapshot, elapsed_clock,
         elapsed_started, load_generation, record_stop):
@@ -149,6 +155,7 @@ def _finalize_stop(
         receipt_sha256 = record_stop(
             run_dir, current, status=status, minutes=minutes,
             max_visits=max_visits, steps_per_visit=steps_per_visit,
+            batch_size=batch_size,
             reserve_gib=reserve_gib,
             source_prefetch_workers=source_prefetch_workers,
             visits=visits, accepted=accepted, rejected=rejected,
@@ -159,7 +166,7 @@ def _finalize_stop(
 
 
 def operate(
-        run_dir, *, minutes, max_visits, steps_per_visit, reserve_gib,
+        run_dir, *, minutes, max_visits, steps_per_visit, batch_size=32, reserve_gib,
         source_prefetch_workers, progress, max_horizon, worker_counts,
         invalid, metrics_type, source_pool_factory, null_context,
         operator_lock, visit_fn, observer_type, emit_progress,
@@ -168,7 +175,8 @@ def operate(
         record_stop=None, elapsed_clock=None, training_memory_context=None):
     _validate_bounds(
         minutes=minutes, max_visits=max_visits, steps_per_visit=steps_per_visit,
-        reserve_gib=reserve_gib, source_prefetch_workers=source_prefetch_workers,
+        batch_size=batch_size, reserve_gib=reserve_gib,
+        source_prefetch_workers=source_prefetch_workers,
         max_horizon=max_horizon, worker_counts=worker_counts, invalid=invalid)
     run_dir = run_dir.resolve()
     run_authority_binding = bind_run_authority(run_dir) if bind_run_authority else None
@@ -186,7 +194,7 @@ def operate(
             admission_advances, resource_witness,
         ) = _run_visits(
             run_dir, deadline=deadline, max_visits=max_visits,
-            steps_per_visit=steps_per_visit, reserve_gib=reserve_gib,
+            steps_per_visit=steps_per_visit, batch_size=batch_size, reserve_gib=reserve_gib,
             source_prefetch_workers=source_prefetch_workers, progress=progress,
             source_prefetch_executor=source_prefetch_executor, metrics=metrics,
             run_authority_binding=run_authority_binding,
@@ -195,7 +203,8 @@ def operate(
             emit_progress=emit_progress)
         current, elapsed_seconds, stop_receipt_sha256 = _finalize_stop(
             run_dir, status=status, minutes=minutes, max_visits=max_visits,
-            steps_per_visit=steps_per_visit, reserve_gib=reserve_gib,
+            steps_per_visit=steps_per_visit, batch_size=batch_size,
+            reserve_gib=reserve_gib,
             source_prefetch_workers=source_prefetch_workers, visits=visits,
             accepted=accepted, rejected=rejected, admission_status=admission_status,
             admission_advances=admission_advances,

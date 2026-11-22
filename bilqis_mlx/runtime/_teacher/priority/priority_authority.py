@@ -19,6 +19,7 @@ from bilqis_mlx.runtime.priority_source_offer import (
     _require_planning_generation, bind_priority_planning_generation,
     prepare_priority_source_offer,
 )
+from bilqis_mlx.runtime.logical_batch import BamfLogicalBatchContract
 from bilqis_mlx.semantic_sampling import DEFAULT_BINARY_BALANCE
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from bilqis_mlx.semantics.domains import contract_digest
@@ -35,6 +36,17 @@ from .priority_rejection_replay import (
 
 _SCOPE = "factory/foundation"
 _SOURCE_EACH = DEFAULT_BINARY_BALANCE.minimum_total
+
+
+def _source_each_for_logical_batch(logical_batch_size):
+    """Resolve source draw size; the balanced minimum is only an admissibility floor."""
+    if logical_batch_size is None:
+        return _SOURCE_EACH
+    try:
+        contract = BamfLogicalBatchContract(logical_batch_size)
+    except ValueError:
+        _invalid("BAMF_PRIORITY_LOGICAL_BATCH_INVALID")
+    return contract.direct_source_rows
 
 
 def _invalid(reason):
@@ -134,7 +146,8 @@ def _planning_unlocks(capability_id, planning):
 
 
 def _priority_offers(source_context, parent, atlas_artifact_path, next_seed,
-                     planning_generation, lawful_frontier, authorized):
+                     planning_generation, lawful_frontier, authorized, source_each,
+                     planning_cache=None):
     by_id = {
         capability.capability_id: capability
         for capability in source_context.release.execution_plan.capabilities
@@ -145,11 +158,20 @@ def _priority_offers(source_context, parent, atlas_artifact_path, next_seed,
             or any(capability_id not in by_id for capability_id in authorized)):
         _invalid("BAMF_PRIORITY_LAWFUL_FRONTIER_RELEASE_DRIFT")
     capabilities = tuple(by_id[capability_id] for capability_id in authorized)
-    return capabilities, tuple((capability.capability_id, prepare_priority_source_offer(
-        source_context, parent, atlas_artifact_path,
-        capability=capability.capability_id,
-        source_seed=_offer_seed(next_seed, capability.capability_id),
-        source_each=_SOURCE_EACH, planning_generation=planning_generation))
+    def prepare(capability):
+        kwargs = {
+            "capability": capability.capability_id,
+            "source_seed": _offer_seed(next_seed, capability.capability_id),
+            "source_each": source_each,
+            "planning_generation": planning_generation,
+        }
+        if planning_cache is not None:
+            kwargs["materialization_cache"] = planning_cache.source_materialization_cache
+        return prepare_priority_source_offer(
+            source_context, parent, atlas_artifact_path, **kwargs)
+
+    return capabilities, tuple(
+        (capability.capability_id, prepare(capability))
         for capability in capabilities)
 
 
@@ -239,7 +261,7 @@ def _priority_history(
 
 def issue_foundation_priority_authority(
         run_dir, source_context, parent, teacher_epoch, atlas_artifact_path, *,
-        teacher_state, progress=None, planning_cache=None):
+        teacher_state, progress=None, planning_cache=None, logical_batch_size=None):
     """Issue only signed UNKNOWN salience; C06 ranking owns the resulting order."""
     from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import (
         read_host_system_source_authority_signer,
@@ -270,7 +292,9 @@ def issue_foundation_priority_authority(
             f"{len(capabilities)} lawful capabilities")
     capabilities, offers = _priority_offers(
         source_context, parent, atlas_artifact_path, next_seed,
-        planning_generation, lawful_frontier, ready_capabilities)
+        planning_generation, lawful_frontier, ready_capabilities,
+        _source_each_for_logical_batch(logical_batch_size),
+        planning_cache=planning_cache)
     if progress is not None:
         progress("teacher: ranking priority options")
     rejections = _ordered_rejections(run_dir, parent, cache)

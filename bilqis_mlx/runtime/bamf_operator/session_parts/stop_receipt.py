@@ -67,7 +67,7 @@ def record_normal_stop_receipt(
         steps_per_visit: int, reserve_gib: float, source_prefetch_workers: int,
         visits: int, accepted: int, rejected: int, elapsed_seconds: float,
         admission_status: str | None, admission_advances: int,
-        resource_witness: dict) -> str | None:
+        resource_witness: dict, batch_size: int = 32) -> str | None:
     """Append a normal-stop receipt without minting or replacing a generation."""
     run_dir = Path(run_dir)
     # Unit routing tests use lightweight stand-ins. Production custody always has
@@ -99,6 +99,7 @@ def record_normal_stop_receipt(
             "minutes": minutes,
             "max_visits": max_visits,
             "steps_per_visit": steps_per_visit,
+            "logical_batch_size": batch_size,
             "reserve_gib": reserve_gib,
             "source_prefetch_workers": source_prefetch_workers,
         },
