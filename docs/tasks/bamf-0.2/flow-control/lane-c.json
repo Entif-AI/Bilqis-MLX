@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "db2c0233147069414c83fae76bcbad9c51ca58c5",
-  "updated_at": "2026-11-22T07:30:01+00:00",
+  "updated_at": "2026-11-22T10:27:13+00:00",
   "exception": null,
   "items": [
     {
@@ -585,9 +585,9 @@
       "issue": 1566,
       "pr": 1567,
       "state": "TURNED_IN",
-      "head_sha": "46a5450b5e5e28d9be324cb334d483a007669625",
-      "head_sha_role": "verified executable candidate before this CI-checkpoint bookkeeping receipt",
-      "summary": "#1566 is turned in as PR #1567. Default human training bypasses selected-source materialization, AcceptedPriorityCandidateVisit source preparation, B11 source-execution authority minting/binding, strict model-source authority revalidation, and compiled-batch owner registration; the preserved path remains behind --strict-evidence. The initial live B11_REFINEMENT_TRAINING_VISIT_REQUIRED crash was fixed by preserving lightweight visit provenance without restoring strict authority. Follow-up 3d421c6cd removed a per-step provider redraw by reusing the selected offer authority. The next live human run still failed Step 1 after 53.95 s with generic SCHOOL.MODEL_TOPOLOGY.INVALID and no error_detail. A read-only witness against the exact accepted aspirant generation reproduced the real stack with the production 8192x768 parameters: B06 refinement failed in refinement_policy._verify_prefix_inventory because learning-first binding omitted the A05 prefix-inventory grant that strict binding adds with authorize_public_formal_prefix. Failing-before portable proof observed the missing grant. Fix e91da0b0 restores only that exact prefix authorization on authority-light B11 rows; it does not restore training authority, source-execution authority, strict currentness, B11 proof issuance, or selected-source materialization. The same read-only production-state witness then completed a real BamfGradientExecution. CI on prior head b15efbfd0 failed only the code-smell gate because execute_factory_candidate_step and prepare_factory_training_batch were 86 physical lines; refactor 46a5450b5 compacts their public signatures without behavior change. Explicit audit over all 19 changed Python files now reports 0 review findings and 0 new baseline-relative findings; focused learning-first tests, strict materialization smoke, structure, flow-control, and diff checks pass. The roughly 54 s full trainer wall is not claimed solved until a new human full-path step completes. No sovereign human run was mutated or restarted.",
+      "head_sha": "d562f6c9d",
+      "head_sha_role": "exact #1566 <=1s training-first semantic implementation and final-code production witness head before this flow-control receipt commit",
+      "summary": "#1566 is turned in as PR #1567 under ADR-153. Default non-strict BAMF Step 1 is now a numerical learning path: source/training authority, selected-source materialization, currentness/provenance/custody replay, prefix inventory grants, refinement-policy replay, B11 proof issuance, candidate cache custody rebinding, motif evidence staging, and equivalent evidence ceremony are absent from the ordinary hot path while strict/evidence mode preserves the legacy verification path. Ordinary provisional candidates are proofless but retain real loss-ancestry participation masking, AdamW updates, accepted-state publication/resume authority, and atomic model+optimizer persistence. Production-shaped accepted aspirant evidence on the 8192x768 model passed twice below the <=1s target: r5 candidate 0.7578272501s / external 0.7601306250s; final-code r6 candidate 0.9734155841s / external 0.9759875841s. r6 performed one real optimizer update with learning_first=true, optimizer counts changed, zero step proofs, zero training authorities, no task authority, and B11 preflight 0.0s. Final local gates are green: flow control, syntax/diff hygiene, 4 focused learning-first/session tests, strict selected-source smoke, and changed-file code-smell audit with 0 findings. The sovereign human aspirant run was never mutated, reset, restarted, or stopped.",
       "resume_trigger": null,
       "preserved_branch": "codex/1566-training-first-bypass-20261122"
     }
