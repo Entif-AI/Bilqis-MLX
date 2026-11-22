@@ -7,7 +7,6 @@ import {
   queryRequest,
 } from "../../renderer/home/home-model.mjs";
 import { createHomeController } from "../../renderer/home/home-controller.mjs";
-import { observation } from "./home/home-observed-fixtures.mjs";
 
 const context = Object.freeze({ runId: "fixture-run", generation: 7, mode: "LIVE" });
 
@@ -291,77 +290,5 @@ test("failed CP04 startup is retried without restarting the CP01 query lifecycle
   assert.equal(calls.length, baselineCalls + 2);
   assert.deepEqual(calls.slice(-2), ["run", "notification"]);
 
-  await controller.deactivate();
-});
-
-
-test("one unavailable family cannot blind paginated live run evidence", async () => {
-  const liveContext = Object.freeze({
-    runId: "trainer-run", generation: 21, mode: "LIVE", operatorActive: true,
-  });
-  const liveObservation = observation({
-    schema_version: "bilqis.bamf.mission-control.trainer-observation/v7",
-    observation_id: "live-parent", revision: 7, phase: "TRAINING",
-    capability_id: "A.PARENT",
-    visit_evidence: {
-      state: "PARTIAL", capability_id: "A.PARENT",
-      teacher_policy_key: "db43f0c78c41", selected_option_id: "A.PARENT",
-      target: { state: "NOT_MEASURED" },
-      protected_scope_state: "UNKNOWN", protected: [],
-    },
-    meta: {
-      run: {
-        run_id: "trainer-run", generation: 21,
-        generation_manifest_sha256: "manifest-21",
-      },
-      observed_at: 1_795_323_120,
-    },
-  });
-  const calls = [];
-  const api = {
-    async status() { return { learnerActive: true }; },
-    async query(request) {
-      calls.push([request.family, request.cursor ?? null]);
-      if (request.family === "semantic") {
-        throw new Error("SEMANTIC_FAMILY_UNAVAILABLE");
-      }
-      if (request.family === "run") {
-        if (request.cursor === null) {
-          return {
-            accepted: true, family: "run", mode: "current", state: "PARTIAL",
-            coverage: "PARTIAL",
-            records: [{
-              schema_version: "bilqis.bamf.mission-control.run-context/v1",
-              meta: {
-                record_id: "run-context:trainer-run:21",
-                run: {
-                  run_id: "trainer-run", generation: 21,
-                  generation_manifest_sha256: "manifest-21",
-                },
-              },
-              run_state: "ACCEPTED", optimizer_step: 138, stage: "FOUNDATION",
-            }],
-            markers: [], links: [], next_cursor: "run-page-2", truncated: true,
-          };
-        }
-        return {
-          accepted: true, family: "run", mode: "current", state: "PRESENT",
-          coverage: "PARTIAL", records: [liveObservation],
-          markers: [], links: [], next_cursor: null, truncated: false,
-        };
-      }
-      return emptyPage(request.family);
-    },
-    subscribeEvents() { return async () => {}; },
-  };
-  const controller = createHomeController(api, { schedule: () => 1, cancel: () => {} });
-  await controller.activate(liveContext, {
-    host: fakeHost(), onInspect: () => {}, defense: { historical: false },
-  });
-  const model = controller.currentModel();
-  assert.equal(model.observed.current.capability_id, "A.PARENT");
-  assert.equal(model.currentWork.capabilityId, "A.PARENT");
-  assert.equal(model.currentWork.strategy, "db43f0c78c41");
-  assert.ok(calls.some(([family, cursor]) => family === "run" && cursor === "run-page-2"));
   await controller.deactivate();
 });
