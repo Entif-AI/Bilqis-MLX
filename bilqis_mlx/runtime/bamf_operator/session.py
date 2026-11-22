@@ -95,7 +95,7 @@ def prepare_bamf_visit(
         source_prefetch_executor=None,
         source_prefetch_metrics: SourcePrefetchMetrics | None = None, observer=None,
         resource_holds=frozenset(), distributed_profile=None,
-        distributed_executor=None) -> BamfPreparedVisit:
+        distributed_executor=None, planning_cache=None) -> BamfPreparedVisit:
     """Compose the production visit through retention without publishing it."""
     if (type(steps_per_visit) is not int
             or not 1 <= steps_per_visit <= _MAX_CANDIDATE_HORIZON):
@@ -135,7 +135,8 @@ def prepare_bamf_visit(
     planning_started = time.perf_counter()
     selection = select_foundation_priority_visit(
         run_dir, context, atlas_path, program=program, school=school,
-        progress=progress, resource_holds=resource_holds)
+        progress=progress, resource_holds=resource_holds,
+        planning_cache=planning_cache)
     if observer is not None:
         identity = getattr(getattr(getattr(selection, "visit", None), "identity", None),
                            "visit_id", None)
@@ -173,11 +174,13 @@ def _visit(run_dir: Path, reserve_gib: float, *, steps_per_visit=16,
            progress=None, source_prefetch_workers=0,
            source_prefetch_executor=None, source_prefetch_metrics=None, observer=None,
            run_authority_binding=None, resource_holds=frozenset(),
-           distributed_profile=None, distributed_executor=None):
+           distributed_profile=None, distributed_executor=None,
+           planning_cache=None):
     def prepare_visit(*args, **kwargs):
         return prepare_bamf_visit(
             *args, **kwargs, distributed_profile=distributed_profile,
-            distributed_executor=distributed_executor)
+            distributed_executor=distributed_executor,
+            planning_cache=planning_cache)
     return _visit_impl(
         run_dir, reserve_gib, steps_per_visit=steps_per_visit, progress=progress,
         source_prefetch_workers=source_prefetch_workers,
@@ -278,6 +281,7 @@ def operate_bamf(
 ) -> BamfOperatorResult:
     """Run the human-authorized BAMF lineage until a bounded stop condition."""
     from bilqis_mlx.runtime.c08_distributed_executor import DistributedExecutorBinding
+    from bilqis_mlx.runtime.priority_planning_owner import PriorityPlanningCache
     from bilqis_mlx.runtime.run_authority import bind_native_run_authority
     from bilqis_mlx.runtime.source_prefetch import source_prefetch_pool
     if (distributed_profile is None
@@ -296,12 +300,14 @@ def operate_bamf(
         if profile_release is not None:
             from bilqis_mlx.runtime._release_adoption.native_profile import adopt_profile_release
             adopt_profile_release(root, profile_release, reserve_gib=reserve_gib)
+    planning_cache = PriorityPlanningCache(Path(run_dir))
     def visit_fn(*args, **kwargs):
         if distributed_profile is None and distributed_executor is None:
-            return _visit(*args, **kwargs)
+            return _visit(*args, **kwargs, planning_cache=planning_cache)
         return _visit(
             *args, **kwargs, distributed_profile=distributed_profile,
-            distributed_executor=distributed_executor)
+            distributed_executor=distributed_executor,
+            planning_cache=planning_cache)
     _run_pending_operator_maintenance(Path(run_dir), progress=progress)
     from .session_parts.evidence_mode import evidence_mode
     try:

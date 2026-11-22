@@ -72,6 +72,25 @@ def _frontier_progress(progress, message):
         progress(message)
 
 
+def _candidate_frontier_trust_identity(factory_release_sha256: str) -> tuple:
+    """Return the current builder/input/trust identity for planning reuse."""
+    root = _repo_root()
+    builder = root / "lib/ithkuil/src/build_curriculum_frontier.py"
+    source_dir = root / "lib/ithkuil/_data/csv"
+    builder_sha256, input_digest = candidate_frontier_source_identity(
+        source_dir, builder)
+    from .planner_frontier_trust import load_planner_frontier_trust
+    trust = load_planner_frontier_trust(
+        builder_sha256, input_digest, factory_release_sha256)
+    return (
+        builder_sha256,
+        input_digest,
+        factory_release_sha256,
+        None if trust is None else trust.frontier_release_sha256,
+        None if trust is None else trust.receipt_sha256,
+    )
+
+
 def _candidate_frontier(
         run_dir: Path, factory_release_sha256: str, *, progress=None):
     root = _repo_root()

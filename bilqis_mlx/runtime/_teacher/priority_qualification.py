@@ -1,5 +1,5 @@
 """Qualify signed C06 priorities against admitted source offers and A09 planning."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 from bilqis_mlx.factory.atlas_frontier_selection import FrontierDeltaSelection, validate_frontier_selection
@@ -14,6 +14,8 @@ from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _accepted_correction
 from bilqis_mlx.semantics.domains import contract_digest
 
 PRIORITY_OFFER_PAIR_WIDTH = 2
+_PLANNING_OWNER = object()
+_PLANNING_VERIFICATION_ISSUER = object()
 
 
 def _invalid(reason):
@@ -26,6 +28,20 @@ class PriorityPlanningInput:
     closure: object
     selection: object | None
     selected_projection: object | None
+    _owner: object | None = field(default=None, init=False, repr=False, compare=False)
+    _verification: object | None = field(
+        default=None, init=False, repr=False, compare=False)
+
+
+@dataclass(frozen=True, init=False, eq=False)
+class _PlanningVerification:
+    planning: PriorityPlanningInput = field(repr=False, compare=False)
+    release: object = field(repr=False, compare=False)
+    fingerprint: tuple = field(repr=False, compare=False)
+    _issuance: object = field(repr=False, compare=False)
+
+    def __init__(self, *args, **kwargs):
+        _invalid('BAMF_PRIORITY_PLANNING_VERIFICATION_CALLER_CONSTRUCTION_FORBIDDEN')
 
 
 @dataclass(frozen=True)
@@ -61,6 +77,94 @@ def _planning(planning, release):
         _invalid('BAMF_PRIORITY_PLANNING_SELECTION_REQUIRED')
 
 
+def _issue_internal_priority_planning(
+        progress, closure, selection, selected_projection):
+    """Mark one owner-derived A09 projection as eligible for process-live proof reuse."""
+    planning = PriorityPlanningInput(
+        progress, closure, selection, selected_projection)
+    object.__setattr__(planning, '_owner', _PLANNING_OWNER)
+    return planning
+
+
+def _planning_fingerprint(planning, release):
+    """Cheap tamper-evident identity for fields consumed after full A09 verification."""
+    progress = planning.progress
+    closure = planning.closure
+    selection = planning.selection
+    projection = planning.selected_projection
+    release_digest = release.expected_digest()
+    return (
+        id(planning),
+        id(progress),
+        progress.progress_sha256,
+        id(progress.input_snapshot),
+        progress.input_snapshot_sha256,
+        progress.proposal_selection_sha256,
+        progress.status,
+        id(closure),
+        closure.closure_sha256,
+        closure.snapshot_sha256,
+        None if selection is None else (
+            id(selection),
+            selection.selection_sha256,
+            selection.snapshot_sha256,
+            selection.closure_sha256,
+            selection.admitted_release_sha256,
+            selection.selected_semantic_id,
+            selection.downstream_unlocks,
+        ),
+        None if projection is None else (
+            id(projection),
+            projection.projection_sha256,
+            projection.semantic_id,
+            projection.current_release_sha256,
+            projection.current_semantic_catalog_sha256,
+            projection.projected_semantic_catalog_sha256,
+        ),
+        id(release),
+        release.release_sha256,
+        release_digest,
+        id(release.execution_plan),
+        release.execution_plan.digest(),
+        id(release.curriculum),
+        release.curriculum.digest(),
+        id(release.source_bindings),
+        release.source_bindings.digest(),
+    )
+
+
+def _mint_planning_verification(planning, release):
+    release.verify()
+    fingerprint = _planning_fingerprint(planning, release)
+    witness = object.__new__(_PlanningVerification)
+    for name, value in (
+        ('planning', planning),
+        ('release', release),
+        ('fingerprint', fingerprint),
+        ('_issuance', _PLANNING_VERIFICATION_ISSUER),
+    ):
+        object.__setattr__(witness, name, value)
+    object.__setattr__(planning, '_verification', witness)
+
+
+def _has_current_planning_verification(planning, release):
+    if (type(planning) is not PriorityPlanningInput
+            or getattr(planning, '_owner', None) is not _PLANNING_OWNER):
+        return False
+    witness = getattr(planning, '_verification', None)
+    if (type(witness) is not _PlanningVerification
+            or getattr(witness, '_issuance', None)
+               is not _PLANNING_VERIFICATION_ISSUER
+            or witness.planning is not planning
+            or witness.release is not release):
+        return False
+    try:
+        fingerprint = _planning_fingerprint(planning, release)
+    except Exception:
+        return False
+    return fingerprint == witness.fingerprint
+
+
 def _planning_hold(option, selection):
     if option.downstream_unlocks == 0:
         return False
@@ -79,14 +183,21 @@ def _grade(program, school, capability):
 
 
 def _verify_planning(planning, release, observer):
-    if observer is None:
+    def verify():
+        if _has_current_planning_verification(planning, release):
+            return
         _planning(planning, release)
+        if getattr(planning, '_owner', None) is _PLANNING_OWNER:
+            _mint_planning_verification(planning, release)
+
+    if observer is None:
+        verify()
         return
     from bilqis_mlx.factory.atlas_frontier_progress_metrics import (
         frontier_verification_measurement,
     )
     with frontier_verification_measurement(observer):
-        _planning(planning, release)
+        verify()
 
 
 def _lawful_priority_context(
@@ -105,8 +216,16 @@ def _lawful_priority_context(
         registry = cache._correction_registry
         if getattr(lawful_frontier, "_planning_generation", None) is not planning_generation:
             _invalid('BAMF_PRIORITY_LAWFUL_FRONTIER_BINDING_DRIFT')
-    require_bound_lawful_teaching_frontier(
-        lawful_frontier, source_context, parent)
+        from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
+            refresh_accepted_currentness,
+        )
+        currentness_step = refresh_accepted_currentness(
+            planning_generation._accepted_currentness, parent)
+        require_bound_lawful_teaching_frontier(
+            lawful_frontier, source_context, parent,
+            currentness_step=currentness_step)
+        return cache, registry, set(lawful_frontier.ready_capability_ids)
+    require_bound_lawful_teaching_frontier(lawful_frontier, source_context, parent)
     return cache, registry, set(lawful_frontier.ready_capability_ids)
 
 

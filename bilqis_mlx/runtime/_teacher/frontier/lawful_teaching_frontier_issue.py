@@ -70,7 +70,7 @@ def _bind_frontier_currentness(root, epoch, active_grade):
 
 
 def _issue_lawful_teaching_frontier_from_epoch(
-        epoch, source_context, parent, planning_generation):
+        epoch, source_context, parent, planning_generation, *, planning_cache=None):
     """Seal one already-derived accepted A09 epoch for an internal consumer."""
     from bilqis_mlx.runtime.priority_planning_owner import PriorityPlanningEpoch
     if type(epoch) is not PriorityPlanningEpoch:
@@ -113,7 +113,8 @@ def _issue_lawful_teaching_frontier_from_epoch(
         from bilqis_mlx.runtime.priority_planning_owner import (
             priority_planning_from_epoch,
         )
-        planning_status = priority_planning_from_epoch(epoch).progress.status
+        planning_status = priority_planning_from_epoch(
+            epoch, planning_cache=planning_cache).progress.status
     snapshot = epoch.snapshot
     if snapshot.admission_receipt_sha256 is None:
         _invalid("BAMF_LEARNER_FRONTIER_ADMISSION_RECEIPT_REQUIRED")

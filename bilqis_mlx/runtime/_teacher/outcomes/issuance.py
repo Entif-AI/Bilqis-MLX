@@ -91,7 +91,12 @@ def build_outcome(run_dir, selection, evaluation, decision, candidate_evidence):
     if (context['grade'] != selection.lesson_grade
             or context.get('diagnostic_context_key') != selection.metadata.get('diagnostic_context_key')):
         invalid()
-    selected = restore_teacher_lineage(selection.visit.projection.teacher_state).teacher()
+    selected_sha256 = selection.visit.projection.teacher_state['c03_lineage'][
+        'current_teacher_sha256']
+    selected = None
+    if 'selected_teacher' in proposal:
+        selected = restore_teacher_lineage(
+            selection.visit.projection.teacher_state).teacher()
     persisted_decision = json.loads(json.dumps(
         decision.to_record(), sort_keys=True, allow_nan=False))
     if (evaluation.parent_candidate_sha256 != identity.student_sha256
@@ -102,7 +107,9 @@ def build_outcome(run_dir, selection, evaluation, decision, candidate_evidence):
             or proposal.get('accepted_manifest_sha256') != identity.accepted_manifest_sha256
             or proposal.get('factory_release_sha256') != context['factory_release_sha256']
             or proposal.get('how_context') != context
-            or proposal.get('selected_teacher') != selected
+            or (proposal.get('selected_teacher') != selected
+                if 'selected_teacher' in proposal
+                else proposal.get('selected_teacher_sha256') != selected_sha256)
             or proposal.get('policy') != selection.policy
             or payload['outcome'] != {
                 'accepted': decision.accepted, 'decision': persisted_decision}
@@ -129,7 +136,8 @@ def build_outcome(run_dir, selection, evaluation, decision, candidate_evidence):
         'schema': SCHEMA, 'attempt_id': payload['attempt_id'],
         'proposal_id': payload['proposal_id'], 'candidate_evidence': candidate_evidence['object'],
         'teacher_visit': identity.to_record(), 'context': context,
-        'selected_teacher': selected, 'selected_policy': selection.policy,
+        'selected_teacher_sha256': selected_sha256,
+        'selected_policy': selection.policy,
         'effective_policy_key': effective_policy_key(selection.policy),
         'realized_action': realized, 'attempted_steps': len(steps),
         'retained_steps': len(steps) if decision.accepted else 0,

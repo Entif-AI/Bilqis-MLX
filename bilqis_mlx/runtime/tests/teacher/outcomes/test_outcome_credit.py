@@ -64,6 +64,26 @@ def test_rejected_and_retained_observations_credit_once_without_mutating_inputs(
     assert stagnation['total_retained'] == 1
 
 
+def test_compact_teacher_identity_credits_without_embedding_teacher_snapshot():
+    parent = teacher_fixture()
+    compact = outcome(parent)
+    selected = compact.pop('selected_teacher')
+    compact['selected_teacher_sha256'] = state._fingerprint(selected)
+    compact['outcome_sha256'] = state._fingerprint(
+        {key: value for key, value in compact.items() if key != 'outcome_sha256'})
+
+    credited = apply_outcome(parent, compact)
+    assert credited['events'] == 1
+    assert credited['global_stats']['policy']['latest'] < 0
+
+    drifted = deepcopy(compact)
+    drifted['selected_teacher_sha256'] = '0' * 64
+    drifted['outcome_sha256'] = state._fingerprint(
+        {key: value for key, value in drifted.items() if key != 'outcome_sha256'})
+    with pytest.raises(BilqisError):
+        apply_outcome(parent, drifted)
+
+
 def test_changed_duplicate_or_forked_snapshot_fails_closed():
     parent = teacher_fixture()
     first = outcome(parent)

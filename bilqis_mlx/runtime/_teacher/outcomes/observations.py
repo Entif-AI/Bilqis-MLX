@@ -55,7 +55,14 @@ def _apply_outcome(teacher, observation):
         if prior['applied'][attempt] != digest:
             invalid()
         return deepcopy(teacher)
-    selected = deepcopy(observation['selected_teacher'])
+    if 'selected_teacher' in observation:
+        selected = deepcopy(observation['selected_teacher'])
+    else:
+        selected_sha256 = observation.get('selected_teacher_sha256')
+        if (not isinstance(selected_sha256, str)
+                or selected_sha256 != _fingerprint(teacher)):
+            invalid()
+        selected = deepcopy(teacher)
     if ledger(selected, manifest) != prior:
         invalid()
     key, cap = visit['policy_key'], visit['capability_id']

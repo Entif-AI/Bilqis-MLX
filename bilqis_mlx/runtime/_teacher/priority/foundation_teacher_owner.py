@@ -114,7 +114,7 @@ def current_foundation_teacher_projection(run_dir):
 
 def select_foundation_priority_visit(
         run_dir, source_context, atlas_artifact_path, *, program, school,
-        progress=None, resource_holds=frozenset()):
+        progress=None, resource_holds=frozenset(), planning_cache=None):
     """Compose C16.3 bootstrap with the production C03.4 priority owner."""
     from bilqis_mlx.learning.learning_experiment import Settings
     from bilqis_mlx.runtime.accepted_priority_visit import select_accepted_priority_visit
@@ -126,7 +126,8 @@ def select_foundation_priority_visit(
     epoch = restore_teacher_lineage(projection.teacher_state)
     authority = issue_foundation_priority_authority(
         run_dir, source_context, parent, epoch, atlas_artifact_path,
-        teacher_state=projection.teacher_state, progress=progress)
+        teacher_state=projection.teacher_state, progress=progress,
+        planning_cache=planning_cache)
     if authority.cadence.phase.value in {"MAIN", "RECOVERY_1", "RECOVERY_2"}:
         school = replace(school, stage=authority.cadence.phase.value)
     bootstrap = {"legacy_receipt": None, "adaptation": None, "prior_region": None}

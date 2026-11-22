@@ -157,6 +157,59 @@ class PreNeuralJourneySemanticReuseTests(PreNeuralJourneySupport, unittest.TestC
         self.assertEqual(selected.status, "TEACHER_SELECTED")
         self.assertGreaterEqual(direct.call_count, 1)
 
+    def test_priority_planning_reuses_static_and_unchanged_learner_products(self):
+        from bilqis_mlx.factory import atlas_frontier_closure, skos_curriculum
+        from bilqis_mlx.runtime.priority_planning_owner import (
+            PriorityPlanningCache,
+            build_priority_planning_epoch,
+            priority_planning_from_epoch,
+        )
+
+        self.current, self.parent_graph = historical_school_release()
+        snapshot = portable_atlas_snapshot()
+        schema, features, atlas_selection = journey_source(snapshot)
+        snapshot_compile = skos_curriculum._compile_semantic_curriculum_snapshot
+        closure_resolve = atlas_frontier_closure.resolve_frontier_closure
+        with wide_shape_patch(len(snapshot.abi_entries)):
+            self.publish_matching_genesis(snapshot, schema, features)
+            with self.journey_mounts(snapshot, schema, features, atlas_selection):
+                _parent, context, atlas_path, _feature_path = _execution_context(self.run)
+                authenticated = context._accepted_feature_context
+                cache = PriorityPlanningCache(self.run)
+                with patch.object(
+                        skos_curriculum, "_compile_semantic_curriculum_snapshot",
+                        wraps=snapshot_compile) as compile_candidate, patch.object(
+                            atlas_frontier_closure, "resolve_frontier_closure",
+                            wraps=closure_resolve) as resolve_closure:
+                    first = build_priority_planning_epoch(
+                        self.run, context, atlas_path,
+                        authenticated_features=authenticated,
+                        planning_cache=cache)
+                    second = build_priority_planning_epoch(
+                        self.run, context, atlas_path,
+                        authenticated_features=authenticated,
+                        planning_cache=cache)
+                    first_planning = priority_planning_from_epoch(
+                        first, planning_cache=cache)
+                    second_planning = priority_planning_from_epoch(
+                        second, planning_cache=cache)
+
+        self.assertIs(first.snapshot, second.snapshot)
+        self.assertIs(first.closure, second.closure)
+        self.assertIs(first_planning, second_planning)
+        self.assertEqual(compile_candidate.call_count, 1)
+        self.assertEqual(resolve_closure.call_count, 1)
+        self.assertEqual(cache.metrics(), {
+            "static_hits": 1,
+            "static_misses": 1,
+            "snapshot_hits": 1,
+            "snapshot_misses": 1,
+            "closure_hits": 1,
+            "closure_misses": 1,
+            "planning_hits": 1,
+            "planning_misses": 1,
+        })
+
     def test_priority_requalification_reuses_planning_generation_authority(self):
         from bilqis_mlx.runtime import priority_qualification
 

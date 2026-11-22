@@ -34,9 +34,12 @@ class PriorityPlanningRuntimeTests(MixedWitnessSupport, unittest.TestCase):
             self.assertEqual(classify_accepted_atlas_epoch(self.run), "staged")
 
             with self.source_replay(snapshot, schema, features), self.host_registry(), patch(
-                    "bilqis_mlx.runtime.atlas_flywheel_runtime."
+                    "bilqis_mlx.runtime.bamf_bundle.feature.current_authority."
                     "resolve_atlas_artifact_selection",
                     return_value=selection), patch(
+                        "bilqis_mlx.runtime.bamf_bundle.feature.current_authority."
+                        "load_pinned_atlas_snapshot",
+                        return_value=snapshot), patch(
                         "bilqis_mlx.factory.skos_curriculum."
                         "compile_semantic_curriculum",
                         return_value=candidate), patch(
