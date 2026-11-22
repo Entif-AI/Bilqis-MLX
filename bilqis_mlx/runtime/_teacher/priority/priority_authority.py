@@ -19,7 +19,8 @@ from bilqis_mlx.runtime.priority_source_offer import (
     _require_planning_generation, bind_priority_planning_generation,
     prepare_priority_source_offer,
 )
-from bilqis_mlx.semantic_sampling import DEFAULT_BINARY_BALANCE, sample_count_violations
+from bilqis_mlx.runtime.logical_batch import BamfLogicalBatchContract
+from bilqis_mlx.semantic_sampling import DEFAULT_BINARY_BALANCE
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from bilqis_mlx.semantics.domains import contract_digest
 from .priority_planning_owner import (
@@ -41,9 +42,11 @@ def _source_each_for_logical_batch(logical_batch_size):
     """Resolve source draw size; the balanced minimum is only an admissibility floor."""
     if logical_batch_size is None:
         return _SOURCE_EACH
-    if sample_count_violations(logical_batch_size):
+    try:
+        contract = BamfLogicalBatchContract(logical_batch_size)
+    except ValueError:
         _invalid("BAMF_PRIORITY_LOGICAL_BATCH_INVALID")
-    return logical_batch_size
+    return contract.direct_source_rows
 
 
 def _invalid(reason):

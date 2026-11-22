@@ -220,6 +220,10 @@ def test_all_held_frontier_issues_empty_priority_authority_without_source_rows()
 
 def test_logical_batch_size_expands_source_request_without_changing_sampling_floor():
     from bilqis_mlx.runtime import priority_authority as authority
+    from bilqis_mlx.runtime.logical_batch import BamfLogicalBatchContract
 
+    contract = BamfLogicalBatchContract(32)
+    assert contract.source_minimum_rows == DEFAULT_BINARY_BALANCE.minimum_total
+    assert contract.direct_source_rows == 32
     assert authority._source_each_for_logical_batch(None) == DEFAULT_BINARY_BALANCE.minimum_total
     assert authority._source_each_for_logical_batch(32) == 32
