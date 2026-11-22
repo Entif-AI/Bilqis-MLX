@@ -2,6 +2,71 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.4.3](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.2...v1.4.3) (2026-11-22)
+
+
+### Bug Fixes
+
+* **mission-control:** reconstruct cumulative run evidence ([#1545](https://github.com/Entif-AI/Bilqis-MLX/issues/1545)) ([483d47e](https://github.com/Entif-AI/Bilqis-MLX/commit/483d47e0ceb4ecf85c0231f96f7e6366ed4a435f))
+* reconcile BAMF terminal visit identity across live and durable views ([#1547](https://github.com/Entif-AI/Bilqis-MLX/issues/1547)) ([23e94cd](https://github.com/Entif-AI/Bilqis-MLX/commit/23e94cd4c9d9b61d313470ba7060844d86e26976))
+
+<!-- release-history:pr:1545:start -->
+### PR #1545 constituent commit inventory
+
+Release Please summarized PR #1545 as [`483d47e`](https://github.com/Entif-AI/Bilqis-MLX/commit/483d47e0ceb4ecf85c0231f96f7e6366ed4a435f). This generated inventory preserves **4 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **4 source commits**.
+
+<details>
+<summary>4 source commits (newest-first PR order)</summary>
+
+- [`6082f8c1f6`](https://github.com/Entif-AI/Bilqis-MLX/commit/6082f8c1f6d97bbe78db84266fd1f7882db3a072) test(mission-control): avoid sample-order coupling
+- [`a5ba5a4379`](https://github.com/Entif-AI/Bilqis-MLX/commit/a5ba5a4379cb7cc09134f17b359fdf5c324a5228) refactor(control-plane): split rejection verification paths
+- [`7018023a5e`](https://github.com/Entif-AI/Bilqis-MLX/commit/7018023a5e07a221b178f92bd226b6ce69c56117) refactor(mission-control): compartmentalize control-plane tests
+- [`961cb72644`](https://github.com/Entif-AI/Bilqis-MLX/commit/961cb72644676d81f8ba99fa5f6d177dcdcd77d6) fix(mission-control): reconstruct cumulative run evidence
+
+</details>
+
+<!-- release-history:pr:1545:end -->
+
+<!-- release-history:pr:1547:start -->
+### PR #1547 constituent commit inventory
+
+Release Please summarized PR #1547 as [`23e94cd`](https://github.com/Entif-AI/Bilqis-MLX/commit/23e94cd4c9d9b61d313470ba7060844d86e26976). This generated inventory preserves **28 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **28 source commits**.
+
+<details>
+<summary>28 source commits (newest-first PR order)</summary>
+
+- [`d74e7a2f5d`](https://github.com/Entif-AI/Bilqis-MLX/commit/d74e7a2f5d029e3e179068b977a05a157bb72bc6) fix(ci): name legacy visit match dimensions (#1546)
+- [`14f6c845cb`](https://github.com/Entif-AI/Bilqis-MLX/commit/14f6c845cb8b94d6e243242f3c7d195af9022135) fix(ci): make legacy visit uniqueness structural (#1546)
+- [`7b2ff03c0a`](https://github.com/Entif-AI/Bilqis-MLX/commit/7b2ff03c0aae033e8d29b54f341e222962ab2076) test(bamf): keep resource rejects out of visit cardinality (#1546)
+- [`1b05c735ee`](https://github.com/Entif-AI/Bilqis-MLX/commit/1b05c735ee274198ac6aa7c7b4f0088b73e082cb) fix(bamf): exclude non-visit rejection events from counters (#1546)
+- [`b0068dba3c`](https://github.com/Entif-AI/Bilqis-MLX/commit/b0068dba3c1e0ef23f7c94ad3a4642092a27bad4) refactor(bamf): bound terminal projection accounting helper (#1546)
+- [`5158a79cb9`](https://github.com/Entif-AI/Bilqis-MLX/commit/5158a79cb96aec19839c28cde4c24e2f502772a9) fix(bamf): align final cockpit with command result (#1546)
+- [`977064a221`](https://github.com/Entif-AI/Bilqis-MLX/commit/977064a221f857ed4aff855044534df85a3700b4) fix(bamf): reconcile stopped cockpit to operator result (#1546)
+- [`a7e467fcf3`](https://github.com/Entif-AI/Bilqis-MLX/commit/a7e467fcf32581acb4ce10f717a98d80cc87d9c9) test(bamf): require final cockpit to match operator result (#1546)
+- [`5056c81f2b`](https://github.com/Entif-AI/Bilqis-MLX/commit/5056c81f2b71a80d974c2f47b70ba812fa4ee306) test(bamf): make stop receipt authoritative over bounded rows (#1546)
+- [`df97502ec1`](https://github.com/Entif-AI/Bilqis-MLX/commit/df97502ec171e7067c57967ebf4e999b696b2988) fix(bamf): preserve command accounting across dashboard lifecycle (#1546)
+- [`395e0152a1`](https://github.com/Entif-AI/Bilqis-MLX/commit/395e0152a17080266b51b682dceca8f0c4d34308) fix(bamf): keep session counters independent of row retention (#1546)
+- [`184979da16`](https://github.com/Entif-AI/Bilqis-MLX/commit/184979da167ff38a8a2d762074ff5408cc20c7f1) fix(bamf): ingest durable terminal events into command counters (#1546)
+- [`f421101c9d`](https://github.com/Entif-AI/Bilqis-MLX/commit/f421101c9dc02de883699a32be6e4c9092392b17) fix(bamf): keep completed command totals separate from live overlay (#1546)
+- [`34baf2dde0`](https://github.com/Entif-AI/Bilqis-MLX/commit/34baf2dde02789087d5298f3ac22f6236da83f82) fix(bamf): separate command accounting from display history (#1546)
+- [`ee54e8e4cf`](https://github.com/Entif-AI/Bilqis-MLX/commit/ee54e8e4cfd0b2ff9f732c0f9a63951850f5b891) test(bamf): decouple command counts from display history (#1546)
+- [`760997cc09`](https://github.com/Entif-AI/Bilqis-MLX/commit/760997cc098a261d60a23b3a85c4377c7b722e0a) test(bamf): keep terminal identity regression structurally bounded (#1546)
+- [`a72e1a3b4e`](https://github.com/Entif-AI/Bilqis-MLX/commit/a72e1a3b4e61d0c02b398f9d2e0d2a4c1577cab9) test(bamf): lock live-to-durable visit rekeying (#1546)
+- [`66b1785188`](https://github.com/Entif-AI/Bilqis-MLX/commit/66b1785188a99f856044c5bebf34bc740fa7a71c) test(bamf): lock logical terminal visit accounting (#1546)
+- [`1c1fb7d8a6`](https://github.com/Entif-AI/Bilqis-MLX/commit/1c1fb7d8a6f9586fdcbed0a86a38a9d02f60c832) test(bamf): isolate terminal identity regression (#1546)
+- [`34f6403ef2`](https://github.com/Entif-AI/Bilqis-MLX/commit/34f6403ef2fc373ea3e350f4c27a0f368d338743) test(bamf): align legacy reconciliation evidence (#1546)
+- [`82c4be072d`](https://github.com/Entif-AI/Bilqis-MLX/commit/82c4be072dd27f275ab150f5f3a6c11f4f06d8de) fix(bamf): preserve session accounting on final dashboard (#1546)
+- [`01c16e829c`](https://github.com/Entif-AI/Bilqis-MLX/commit/01c16e829c0c198d6a710523e58c3f817159cc54) test(bamf): preserve final dashboard session baseline (#1546)
+- [`7ae377cc9c`](https://github.com/Entif-AI/Bilqis-MLX/commit/7ae377cc9cd000a03093f6be92a134cefeba6311) test(bamf): require selected visit id in live telemetry (#1546)
+- [`7322b71654`](https://github.com/Entif-AI/Bilqis-MLX/commit/7322b71654d7e36cc35e122726ae3559adc0ddbf) fix(bamf): bind selected visit id to live observation (#1546)
+- [`cb5218b4b3`](https://github.com/Entif-AI/Bilqis-MLX/commit/cb5218b4b31350a407d8dc0e43ba53cef98e89cb) fix(bamf): expose authoritative visit id in telemetry (#1546)
+- [`49c9f35ae4`](https://github.com/Entif-AI/Bilqis-MLX/commit/49c9f35ae4b2b464e2f7c341a646e83a132e87aa) fix(bamf): key terminal history by logical visit (#1546)
+- [`012a7b4870`](https://github.com/Entif-AI/Bilqis-MLX/commit/012a7b4870e08d1fe51f48596a469f83131cb663) fix(bamf): reconcile live and durable visit identity (#1546)
+- [`12a8913bf1`](https://github.com/Entif-AI/Bilqis-MLX/commit/12a8913bf1a623ee040f30a51f34add22f85a19d) test(bamf): reproduce terminal visit double-counting (#1546)
+
+</details>
+
+<!-- release-history:pr:1547:end -->
 ## [1.4.2](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.1...v1.4.2) (2026-11-22)
 
 
