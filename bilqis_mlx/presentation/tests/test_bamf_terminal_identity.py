@@ -242,6 +242,12 @@ def test_command_accounting_survives_bounded_display_history(tmp_path):
     board.school_telemetry = SchoolTelemetry(board, active_grades=("A",))
     board.log_hint = str(run / "events.jsonl")
     begin_bamf_command_accounting(board)
+    ingest(board, {
+        "event": "BAMF_CANDIDATE_REJECTED",
+        "event_id": "resource-rejected",
+        "evidence": {"visit_id": "resource-only", "capability": "A.EDGE"},
+    })
+    assert board.state["visits"] == 0
 
     events = [_terminal_event(index) for index in range(70)]
     for event in events:
