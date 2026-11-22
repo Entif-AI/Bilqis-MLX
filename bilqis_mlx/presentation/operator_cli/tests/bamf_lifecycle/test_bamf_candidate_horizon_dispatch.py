@@ -16,6 +16,7 @@ def test_bamf_resume_forwards_explicit_candidate_horizon():
         minutes=90,
         max_visits=1,
         steps_per_visit=8,
+        batch_size=18,
         reserve_gib=100.0,
         source_prefetch_workers=2,
     )
@@ -34,6 +35,7 @@ def test_bamf_resume_forwards_explicit_candidate_horizon():
     assert operate.call_args.kwargs["minutes"] == 90
     assert operate.call_args.kwargs["max_visits"] == 1
     assert operate.call_args.kwargs["steps_per_visit"] == 8
+    assert operate.call_args.kwargs["batch_size"] == 18
     assert operate.call_args.kwargs["reserve_gib"] == 100.0
     assert operate.call_args.kwargs["source_prefetch_workers"] == 2
     assert operate.call_args.kwargs["strict_evidence"] is False

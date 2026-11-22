@@ -55,6 +55,7 @@ class NativeRunStopReceiptTests(unittest.TestCase):
             self.assertEqual(receipt["checkpoint_identity_sha256"], "b" * 64)
             self.assertEqual(receipt["optimizer_step"], 11)
             self.assertEqual(receipt["stop_reason"], "VISIT_LIMIT")
+            self.assertEqual(receipt["configured"]["logical_batch_size"], 32)
             self.assertEqual(receipt["configured"]["reserve_gib"], 7.5)
             self.assertEqual(receipt["resource_witness"], witness)
             self.assertTrue(receipt["safe_resume_available"])
