@@ -28,6 +28,11 @@ def _measured_target(how: dict, capability: str):
     return {"state": "MEASURED", "before": before, "after": after, "total": total}
 
 
+def _event_resource(event: dict, envelope: dict, accepted: bool) -> dict:
+    value = event.get("resource") if accepted else envelope.get("resource")
+    return value if isinstance(value, dict) else {}
+
+
 def _durable_visit(event: dict, run_id: str):
     kind = event.get("event")
     if kind not in _DURABLE_EVENTS:
@@ -46,6 +51,7 @@ def _durable_visit(event: dict, run_id: str):
     decision = decision if isinstance(decision, dict) else {}
     context = how.get("context")
     context = context if isinstance(context, dict) else {}
+    resource = _event_resource(event, envelope, accepted)
     selected_policy = how.get("selected_policy")
     selected_policy = selected_policy if isinstance(selected_policy, dict) else None
     realized_action = how.get("realized_action")
@@ -93,6 +99,7 @@ def _durable_visit(event: dict, run_id: str):
         "retention_total": evaluated_count,
         "retention_phase": context.get("phase"),
         "retention_decision": decision.get("decision"),
+        "loss_total": resource.get("loss_total"),
         "selected_policy": selected_policy,
         "realized_action": realized_action,
         "protected_capabilities": protected_capabilities,

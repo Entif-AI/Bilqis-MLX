@@ -128,6 +128,10 @@ def _retention_resource(
         "evidence_objects": candidate_evidence["persistence"]["evidence_objects"],
         "evidence_persistence_seconds": candidate_evidence["persistence"]["persistence_seconds"],
     })
+    final_cost = getattr(steps[-1], "realized_cost", {}) if steps else {}
+    loss_total = final_cost.get("loss_total") if isinstance(final_cost, dict) else None
+    if type(loss_total) in (int, float):
+        resource["loss_total"] = float(loss_total)
     return resource
 
 

@@ -100,7 +100,7 @@ def candidate_row(visit):
         "capability": visit.get("capability_id") or "-",
         "attempt": visit.get("visit_index", "-"), "strategy": policy(visit),
         "lr": _scaled_lr(strategy.get("lr")),
-        "score_line": score_line, "reward": "-", "loss": "-",
+        "score_line": score_line, "reward": "-", "loss": _display(visit.get("loss_total")),
         "gradient": "-", "method": "BAMF", "old": _whole(strategy.get("old")),
         "result": str(visit.get("outcome") or "-"),
         "reason": reason(visit), "warnings": warnings(visit),

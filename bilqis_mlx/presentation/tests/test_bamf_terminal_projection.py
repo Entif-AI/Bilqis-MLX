@@ -84,6 +84,7 @@ class BamfTerminalProjectionTests(unittest.TestCase):
                 "capability": "A.EDGE", "candidate_attempt_ordinal": 11,
                 "optimizer_step": 50, "selected_policy_key": "policy-a",
                 "visit_id": "visit-accepted",
+                "resource": {"loss_total": 0.812},
                 "how_outcome": {
                     "attempted_steps": 4, "retained_steps": 4,
                     "selected_policy": {
@@ -135,6 +136,7 @@ class BamfTerminalProjectionTests(unittest.TestCase):
             accepted_retention = board.rows["SENTINEL & RETENTION"][0]
             self.assertEqual(accepted_candidate["lr"], "30")
             self.assertEqual(accepted_candidate["old"], "6")
+            self.assertEqual(accepted_candidate["loss"], "0.812")
             self.assertEqual(accepted_teacher["lr"], "30")
             self.assertEqual(accepted_teacher["depth"], "2")
             self.assertEqual(accepted_teacher["contrast"], "0")
