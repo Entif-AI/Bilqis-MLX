@@ -7,7 +7,7 @@ const test = require("node:test");
 
 const REPO_ROOT = path.resolve(__dirname, "../../../..");
 
-test("native current source warms accepted cache across trainer heartbeat", () => {
+test("native query source preserves cache and request identity", () => {
   const python = process.env.BILQIS_PYTHON || "python3";
   const result = spawnSync(
     python,
@@ -26,6 +26,6 @@ test("native current source warms accepted cache across trainer heartbeat", () =
   assert.equal(
     result.status,
     0,
-    ["Python cache regression failed.", result.stdout, result.stderr].join("\n"),
+    ["Python native-query regression failed.", result.stdout, result.stderr].join("\n"),
   );
 });
