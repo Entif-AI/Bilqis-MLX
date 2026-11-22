@@ -42,7 +42,8 @@ def _terminal_payload(event: dict):
     if not isinstance(envelope, dict):
         return None
     how = envelope.get("how_outcome")
-    how = how if isinstance(how, dict) else {}
+    if not isinstance(how, dict):
+        return None
     visit_id = event.get("visit_id") or envelope.get("visit_id")
     event_id = event.get("event_id")
     if isinstance(visit_id, str) and visit_id:
