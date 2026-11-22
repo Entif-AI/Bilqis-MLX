@@ -62,9 +62,9 @@ class BamfOperatorRoutingContinuationTests(unittest.TestCase):
         self.assertEqual(result.rejected, 0)
         self.assertEqual(progress, ["starting visit 1", "visit 1 outcome: HELD"])
 
-    def test_candidate_horizon_is_bounded_to_historical_sixteen_step_ceiling(self):
+    def test_candidate_horizon_rejects_values_above_operator_ceiling(self):
         with self.assertRaises(BilqisError):
-            operate_bamf("/run", minutes=1, steps_per_visit=17)
+            operate_bamf("/run", minutes=1, steps_per_visit=25)
 
     def test_external_native_run_reaches_source_pool_without_issue_custody(self):
         with TemporaryDirectory() as temporary, patch(
