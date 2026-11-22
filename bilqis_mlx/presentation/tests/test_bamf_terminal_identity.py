@@ -150,7 +150,6 @@ def test_running_observation_rekeys_to_durable_terminal_identity_without_duplica
     board.school_telemetry = SchoolTelemetry(board, active_grades=("A",))
     board.log_hint = str(events)
     board.draw()
-
     live = _live_visit("A.MAPS", 13, 138)
     live["phase"] = "TRAINING"
     live["outcome"] = "RUNNING"
@@ -162,7 +161,6 @@ def test_running_observation_rekeys_to_durable_terminal_identity_without_duplica
     board.draw()
     assert board.state["visits"] == 0
     assert board.state["attempted_steps"] == 6
-
     accepted = {
         "event": "BAMF_C16_3_ACCEPTED",
         "event_id": "accepted-transition",
@@ -191,9 +189,7 @@ def test_running_observation_rekeys_to_durable_terminal_identity_without_duplica
         "schema": "bilqis.bamf.trainer-observed/v7",
         "visits": [live],
     }))
-
     board.draw()
-
     assert board.state["visits"] == 1
     assert board.state["retained_visits"] == 1
     assert board.state["attempted_steps"] == 12
