@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "ae454a8d7a70189597bd066c6a754a3a5e56d130",
-  "updated_at": "2026-11-22T07:23:48+00:00",
+  "observed_unified": "db2c0233147069414c83fae76bcbad9c51ca58c5",
+  "updated_at": "2026-11-22T07:30:01+00:00",
   "exception": null,
   "items": [
     {
@@ -535,9 +535,9 @@
       "issue": 1537,
       "pr": 1563,
       "state": "TURNED_IN",
-      "head_sha": "5b0b707eab74e89bd2a01c254ebaa60c97e171cd",
-      "head_sha_role": "candidate submitted for review before this turn-in bookkeeping receipt; exact runtime performance proof is 86cb2ae8dd27dcc74acfe5cefb345749c5084fe2",
-      "summary": "Issue #1537 is turned in as PR #1563. A bounded process-live exact-identity cache reuses only selected-source heavy preparation while fresh process-live source-owner validation/rebinding, B11 proof/binding, motif inputs, correction owners, registration and currentness remain visit-local. The exact neural-inert production-shaped runtime proof at 86cb2ae8 measured 0.314225 s cold and 0.131034/0.150893 s warm selected-source handoffs versus the durable #1518 10.020139 s baseline; both warm samples performed zero source-context and compiled-source rebuilds, reported 0.0 s selected-source wait and one authenticated Atlas load per visit. Focused proof passed 26 tests with one unrelated stale-currentness current-main test deselected; smell, flow-control and diff hygiene are green; no human trainer or neural optimizer update was used.",
+      "head_sha": "2ab648c55d272ba191018afa532112bdaeef9f21",
+      "head_sha_role": "candidate after reconciling current main db2c0233 and fixing the hosted development-structure failure; exact runtime performance proof remains 86cb2ae8dd27dcc74acfe5cefb345749c5084fe2",
+      "summary": "Issue #1537 is turned in as PR #1563. A bounded process-live exact-identity cache reuses only selected-source heavy preparation while fresh process-live source-owner validation/rebinding, B11 proof/binding, motif inputs, correction owners, registration and currentness remain visit-local. The exact neural-inert production-shaped runtime proof at 86cb2ae8 measured 0.314225 s cold and 0.131034/0.150893 s warm selected-source handoffs versus the durable #1518 10.020139 s baseline. Current main db2c0233 was merged normally, preserving #1562 logical-batch source sizing alongside #1537 cache handoff. Hosted portable-core failed only because test_priority_source_materialization.py grew from 126 to 394 lines; cache-specific regressions were split into a 237-line companion module, leaving the original at 142 lines. The focused merged surface passes 13 tests and the explicit module-size gate is green; no human trainer or neural optimizer update was used.",
       "resume_trigger": null,
       "preserved_branch": "codex/1537-source-materialization-20261122"
     },
