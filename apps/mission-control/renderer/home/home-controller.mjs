@@ -112,6 +112,10 @@ export function createHomeController(api, {
     return page?.accepted === false &&
       /(NOT_CONNECTED|DISCONNECTED|BROKER_EXITED)/.test(reason);
   }
+  function familyLocalRejected(page) {
+    return page?.accepted === false &&
+      page?.reason === "CONTROL_PLANE_QUERY_RESPONSE_TOO_LARGE";
+  }
   async function safeQueryFamily(family, source) {
     return queryFamily(family, source);
   }
@@ -119,6 +123,9 @@ export function createHomeController(api, {
     const page = await safeQueryFamily(family, context);
     if (current !== epoch) return null;
     if (transportRejected(page)) throw new Error("HOME_TRANSPORT_UNAVAILABLE");
+    if (page?.accepted !== true && !familyLocalRejected(page)) {
+      throw new Error("HOME_QUERY_UNAVAILABLE");
+    }
     if (page?.accepted === true) retryFamilies.delete(family);
     else retryFamilies.add(family);
     pages = { ...pages, [family]: page };
@@ -137,6 +144,10 @@ export function createHomeController(api, {
     if (current !== epoch) return;
     const queried = [...entries.map(([, page]) => page), ...[anchor, frontier].filter(Boolean)];
     if (queried.some(transportRejected)) throw new Error("HOME_TRANSPORT_UNAVAILABLE");
+    if ((!historical && (anchor?.accepted !== true || frontier?.accepted !== true)) ||
+        entries.some(([, page]) => page?.accepted !== true && !familyLocalRejected(page))) {
+      throw new Error("HOME_QUERY_UNAVAILABLE");
+    }
     if (!historical && anchor?.accepted === true && frontier?.accepted === true &&
         acceptedIdentity(anchor) !== acceptedIdentity(frontier)) {
       needsSnapshot = true;
@@ -157,12 +168,7 @@ export function createHomeController(api, {
     const page = await safeQueryFamily("run", context);
     if (current !== epoch) return;
     if (transportRejected(page)) throw new Error("HOME_TRANSPORT_UNAVAILABLE");
-    if (page?.accepted !== true) {
-      retryFamilies.add("run");
-      pages = { ...pages, run: page };
-      project(true);
-      return;
-    }
+    if (page?.accepted !== true) throw new Error("HOME_QUERY_UNAVAILABLE");
     retryFamilies.delete("run");
     if (needsSnapshot || acceptedIdentity(pages.run) !== acceptedIdentity(page)) return loadAll(current);
     pages = { ...pages, run: page };
