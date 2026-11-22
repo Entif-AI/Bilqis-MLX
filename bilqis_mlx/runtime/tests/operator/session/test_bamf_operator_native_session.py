@@ -2,7 +2,6 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
-import inspect
 import unittest
 from unittest.mock import patch
 
@@ -10,9 +9,8 @@ from bilqis_mlx.runtime.bamf_operator.session import (
     _execution_context, prepare_bamf_visit,
 )
 from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import (
-    candidate_horizon_execution, priority_hold_result,
+    priority_hold_result,
 )
-from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.tests.operator.test_bamf_operator_session import (
     _assert_horizon_result, _candidate_executor, _evidence_receipt,
     _prepare_native_resource_visit,
@@ -82,7 +80,7 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
                 return_value=capture) as capture_factory, patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.FactoryDeliveryObservation",
                 return_value="observation"), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.execute_learning_first_priority_candidate",
+                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.execute_accepted_priority_candidate",
                 side_effect=execute) as execute_candidate, patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.evaluate_factory_retention_candidate",
                 return_value=SimpleNamespace(
@@ -98,72 +96,12 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
                 return_value=successor), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_support.shutil.disk_usage",
                 return_value=SimpleNamespace(used=123)):
-            with evidence_mode(strict=False):
-                prepared = prepare_bamf_visit(Path("/run"), steps_per_visit=16)
+            prepared = prepare_bamf_visit(Path("/run"), steps_per_visit=16)
 
         _assert_horizon_result(
             self, prepared, execute_candidate, bind_plan, bind_rows,
             capture_factory, horizon, evaluate, decide, derive, context,
             parent, cache, selection, transactions, evidence)
-
-    def test_learning_first_horizon_never_prepares_strict_source_authority(self):
-        selection = SimpleNamespace(status="TEACHER_SELECTED")
-        sentinel = object()
-        captured = {}
-
-        def horizon_impl(*args, **kwargs):
-            captured.update(kwargs)
-            return sentinel
-
-        with evidence_mode(strict=False), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
-                "prepare_accepted_priority_candidate_visit") as strict_prepare, patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
-                "_candidate_horizon_execution_impl",
-                side_effect=horizon_impl):
-            result = candidate_horizon_execution(
-                Path("/run"), object(), object(), "atlas", "features",
-                selection, (), "A.TEST", object(), 12, None, 0, None, None,
-                None, None, emit_progress=lambda *_args: None,
-                invalid=lambda reason: (_ for _ in ()).throw(ValueError(reason)))
-
-        self.assertIs(result, sentinel)
-        strict_prepare.assert_not_called()
-        closure = inspect.getclosurevars(captured["execute_horizon_fn"]).nonlocals
-        from bilqis_mlx.runtime.bamf_operator.session_parts import native_session
-        self.assertIs(
-            closure["candidate_executor"],
-            native_session.execute_learning_first_priority_candidate)
-
-    def test_strict_horizon_preserves_legacy_source_authority_path(self):
-        selection = SimpleNamespace(status="TEACHER_SELECTED")
-        binding = object()
-        captured = {}
-
-        def horizon_impl(*args, **kwargs):
-            captured.update(kwargs)
-            return "strict"
-
-        with evidence_mode(strict=True), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
-                "prepare_accepted_priority_candidate_visit",
-                return_value=binding) as strict_prepare, patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
-                "_candidate_horizon_execution_impl",
-                side_effect=horizon_impl):
-            result = candidate_horizon_execution(
-                Path("/run"), object(), object(), "atlas", "features",
-                selection, (), "A.TEST", object(), 12, None, 0, None, None,
-                None, None, emit_progress=lambda *_args: None,
-                invalid=lambda reason: (_ for _ in ()).throw(ValueError(reason)))
-
-        self.assertEqual(result, "strict")
-        strict_prepare.assert_called_once()
-        closure = inspect.getclosurevars(captured["execute_horizon_fn"]).nonlocals
-        from bilqis_mlx.runtime.bamf_operator.session_parts import native_session
-        self.assertIs(
-            closure["candidate_executor"],
-            native_session.execute_accepted_priority_candidate)
 
     def test_execution_context_reports_accepted_setup_substages(self):
         parent = SimpleNamespace(outbox=())

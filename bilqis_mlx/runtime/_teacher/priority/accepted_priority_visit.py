@@ -28,9 +28,9 @@ from .priority_qualification import _grade, requalify_priority
 from bilqis_mlx.runtime.outcomes.issuance import context_for_selection
 from .accepted_priority_candidate import (
     execute_accepted_priority_candidate,
-    execute_learning_first_priority_candidate,
     prepare_accepted_priority_candidate_visit,
 )
+from .accepted_priority_learning_first import execute_learning_first_priority_candidate
 from .accepted_priority_visit_contracts import (
     PriorityVisitResult,
     _issue_result,
