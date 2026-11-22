@@ -190,7 +190,8 @@ def _bind_learning_first_rows(
             item.source_seed, item.source_each,
             source_context.release.curriculum, profile)
         batch = BamfCompiledBatch(
-            compiled, (source,), authenticated.schema, active_semantic_rows)
+            compiled, (source,), authenticated.schema, active_semantic_rows,
+            visit_provenance=training.rows[index].provenance.visit)
         batch.__post_init__()
         compiled_rows.append(batch)
     return tuple(compiled_rows)

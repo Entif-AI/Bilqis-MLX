@@ -48,6 +48,8 @@ class LearningFirstSourcePathTests(PreNeuralJourneySupport, unittest.TestCase):
         compiled = prepared.compiled_rows[0]
         self.assertIsNone(compiled.source_execution_authority)
         self.assertIsNone(compiled.training_authority)
+        self.assertIsNotNone(compiled.visit_provenance)
+        self.assertEqual(compiled.visit_provenance.capability_id, "B.AND")
         authority = factory_task_authority(
             context, compiled, generation_binding=generation)
         self.assertEqual(authority.generation_binding, generation)
