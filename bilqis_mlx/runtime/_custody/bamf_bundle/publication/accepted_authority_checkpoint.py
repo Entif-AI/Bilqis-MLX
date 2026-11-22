@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, fields
 
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH, data_plane
+from bilqis_mlx.errors import BilqisError
 
 from ..records import canonical, invalid, sha
 
@@ -267,6 +268,34 @@ def require_accepted_authority_checkpoint(
     return checkpoint
 
 
+def accepted_authority_tip_extends_checkpoint(
+        run_id: str, checkpoint_sha256: str) -> bool:
+    """Prove current protected B13 authority extends one accepted checkpoint.
+
+    This walks only compact immutable checkpoint rows. It never substitutes for
+    pre-checkpoint historical custody: an audit-backfill boundary returns False.
+    """
+    try:
+        target = load_accepted_authority_checkpoint(checkpoint_sha256)
+    except BilqisError:
+        # The target identity comes only from a non-authoritative memo. A stale
+        # or corrupt memo must miss, while corruption encountered walking the
+        # actual protected tip remains fail-closed below.
+        return False
+    if target.run_id != run_id:
+        return False
+    current = read_protected_accepted_authority_tip(run_id)
+    while current is not None and current.generation >= target.generation:
+        if current.digest == target.digest:
+            return True
+        if current.kind != "INCREMENTAL" or current.parent_checkpoint_sha256 is None:
+            return False
+        parent = load_accepted_authority_checkpoint(current.parent_checkpoint_sha256)
+        _require_incremental_parent(current, parent.digest)
+        current = parent
+    return False
+
+
 def _require_incremental_parent(
         checkpoint: AcceptedAuthorityCheckpoint,
         expected_checkpoint_sha256: str) -> None:
@@ -310,6 +339,7 @@ def compare_and_swap_protected_accepted_authority_tip(
 __all__ = (
     "ACCEPTED_AUTHORITY_CHECKPOINT_SCHEMA",
     "AcceptedAuthorityCheckpoint",
+    "accepted_authority_tip_extends_checkpoint",
     "compare_and_swap_protected_accepted_authority_tip",
     "issue_accepted_authority_checkpoint",
     "load_accepted_authority_checkpoint",

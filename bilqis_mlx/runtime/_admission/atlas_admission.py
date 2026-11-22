@@ -181,6 +181,12 @@ def _accepted_atlas_obligation_state(run_dir):
 
     root = Path(run_dir)
     pointer, student = _accepted_current_generation(root)
+    from .atlas_obligation_projection import (
+        load_accepted_obligation_projection, persist_accepted_obligation_projection,
+    )
+    memo = load_accepted_obligation_projection(root, pointer)
+    if memo is not None:
+        return memo
     current_acceptance = pointer["acceptance_sha256"]
     current_release = read_accepted_atlas_factory_release(root)
     visited = set()
@@ -199,22 +205,28 @@ def _accepted_atlas_obligation_state(run_dir):
                 and binding.schema_version in {
                     ATLAS_ADMISSION_SCHEMA_V2, ATLAS_ADMISSION_SCHEMA_V3,
                     ATLAS_ADMISSION_SCHEMA_V4}):
-            return (
+            result = (
                 current_release.release_sha256,
                 current_acceptance,
                 binding.selected_obligation_keys,
             )
+            persist_accepted_obligation_projection(root, pointer, result[0], result[2])
+            return result
         if (isinstance(binding, ParsedFactoryReleaseAdmissionBinding)
                 and binding.schema_version in {
                     FACTORY_RELEASE_ADMISSION_SCHEMA_V2,
                     FACTORY_RELEASE_ADMISSION_SCHEMA_V3,
                     FACTORY_RELEASE_ADMISSION_SCHEMA_V4}):
-            return (
+            result = (
                 current_release.release_sha256,
                 current_acceptance,
                 binding.accepted_obligation_keys,
             )
-    return current_release.release_sha256, current_acceptance, ()
+            persist_accepted_obligation_projection(root, pointer, result[0], result[2])
+            return result
+    result = current_release.release_sha256, current_acceptance, ()
+    persist_accepted_obligation_projection(root, pointer, result[0], result[2])
+    return result
 
 
 def read_accepted_atlas_obligation_credit(run_dir):

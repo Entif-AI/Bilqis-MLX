@@ -93,12 +93,17 @@ def _ancestors(identity: str, graph: dict[str, tuple[str, ...]]) -> frozenset[st
 
 
 def _grouped(closure: FrontierClosure) -> dict[str, tuple[CandidateClosure, ...]]:
+    buckets = {identity: [] for identity in closure.constituent_order}
+    for item in closure.candidates:
+        bucket = buckets.get(item.semantic_id)
+        if bucket is not None:
+            bucket.append(item)
     result = {}
     for identity in closure.constituent_order:
-        result[identity] = tuple(sorted(
-            item for item in closure.candidates if item.semantic_id == identity))
-        if not result[identity]:
+        rows = tuple(sorted(buckets[identity]))
+        if not rows:
             _fail("BAMF_PLANNER_SELECTION_CLOSURE_INCOMPLETE")
+        result[identity] = rows
     return result
 
 
