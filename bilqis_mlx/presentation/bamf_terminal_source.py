@@ -182,14 +182,29 @@ def _legacy_match_key(visit: dict):
     return capability, step, _teacher_policy_key(visit)
 
 
+def _only(values):
+    """Return the sole value, or None when cardinality is zero or plural."""
+    iterator = iter(values)
+    try:
+        value = next(iterator)
+    except StopIteration:
+        return None
+    try:
+        next(iterator)
+    except StopIteration:
+        return value
+    return None
+
+
 def _legacy_durable_match(live: dict, durable_by_key: dict):
     """Match a pre-visit-id live row only when the durable candidate is unique."""
     key = _legacy_match_key(live)
     if key is None:
         return None
     exact = durable_by_key.get(key, ())
-    if len(exact) == 1:
-        return exact[0]
+    unique = _only(exact)
+    if unique is not None:
+        return unique
     if key[2] is not None:
         return None
     broad = [
@@ -197,7 +212,7 @@ def _legacy_durable_match(live: dict, durable_by_key: dict):
         if candidate_key[:2] == key[:2]
         for visit in visits
     ]
-    return broad[0] if len(broad) == 1 else None
+    return _only(broad)
 
 
 def _overlay_visit(durable: dict, live: dict) -> dict:
