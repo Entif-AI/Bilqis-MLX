@@ -158,3 +158,35 @@ def test_interactive_bamf_resume_routes_checkpoint_events_into_dashboard_not_std
     assert handled is True and code == 0
     assert "BAMF_TEST_CHECKPOINT" not in output
     ingest.assert_any_call(board, {"event": "BAMF_TEST_CHECKPOINT", "value": 7})
+
+
+
+def test_final_bamf_dashboard_preserves_command_session_baseline(capsys):
+    args = SimpleNamespace(
+        human_run=True, dry_run=False, minutes=90, max_visits=1,
+        steps_per_visit=4, reserve_gib=0.0, source_prefetch_workers=0)
+    report = {"result": "READY_TO_RESUME"}
+    result = BamfOperatorResult(
+        "VISIT_LIMIT", 1, 1, 0, 7, 31, elapsed_seconds=1.0)
+    baseline = {("visit", "before-command")}
+    live_board = SimpleNamespace(
+        mode="", state={}, rows={"SYSTEM & QUALIFICATION": []},
+        draw=Mock(), _draw_lock=threading.RLock(),
+        _bamf_session_visit_baseline=baseline)
+    final_board = SimpleNamespace(
+        mode="", state={}, rows={"SYSTEM & QUALIFICATION": []},
+        draw=Mock(), _draw_lock=threading.RLock())
+
+    with patch(
+            "bilqis_mlx.control_plane.active_endpoint.advertise_active_endpoint",
+            return_value=nullcontext()), patch(
+            "bilqis_mlx.runtime.bamf_operator.operate_bamf",
+            return_value=result), patch(
+            "sys.stdout.isatty", return_value=True), patch(
+            "bilqis_mlx.presentation.dashboard.build",
+            side_effect=[live_board, final_board]):
+        handled, code, _next = _dispatch_bamf_resume(args, Path("/run"), report)
+
+    assert handled is True and code == 0
+    assert final_board._bamf_session_visit_baseline == baseline
+    assert "accepted 1" in capsys.readouterr().out
