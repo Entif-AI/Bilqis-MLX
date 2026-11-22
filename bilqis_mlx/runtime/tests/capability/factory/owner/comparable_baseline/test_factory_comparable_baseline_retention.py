@@ -4,7 +4,7 @@ import unittest
 
 from bilqis_mlx.runtime.baseline.currentness import BaselineCoverage
 from bilqis_mlx.runtime.capability_retention import (
-    EvidenceStage,
+    EvidenceKind, EvidenceStage, EvaluationCohort,
     case_census_digest,
     evaluate_retention_candidate,
 )
@@ -18,7 +18,9 @@ from bilqis_mlx.runtime.retention.local_evaluation import (
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
     CANDIDATE,
     PARENT,
+    _cases,
     _screen_inputs,
+    _solver,
 )
 
 
@@ -102,6 +104,44 @@ def _local_foundation_inputs(*, protected_loss, measured):
 
 
 class FactoryComparableBaselineRetentionTests(unittest.TestCase):
+    def test_foundation_target_gain_rejects_same_grade_peer_damage(self):
+        target_cases, target_contexts = _cases("target", "A", 6, "target-six")
+        peer_cases, peer_contexts = _cases("peer", "A", 6, "peer-six")
+        cases = target_cases + peer_cases
+        groups = (("target", "A"), ("peer", "A"))
+        coverage = BaselineCoverage(
+            ("target", "peer"), (), (("A", 2, 2),), 2, 2, "e" * 64)
+        policy = FoundationRetentionPolicy(
+            groups, ("A",), (("peer", 1),), 6,
+            case_census_digest(cases), coverage)
+        cohort = EvaluationCohort(
+            EvidenceKind.FIXED_SCHOOL, cases, groups,
+            "d" * 64, "e" * 64, "f" * 64, policy.digest(),
+            ("trained-family",), ("trained-episode",),
+            case_census_digest(cases),
+            evidence_stage=EvidenceStage.FOUNDATION_ACQUISITION)
+        contexts = {**target_contexts, **peer_contexts}
+        parent_correct = {
+            *(case.case_id for case in target_cases[:3]),
+            *(case.case_id for case in peer_cases[:4]),
+        }
+        candidate_correct = {
+            *(case.case_id for case in target_cases[:4]),
+            *(case.case_id for case in peer_cases[:2]),
+        }
+
+        decision = evaluate_foundation_fixed_school_candidate(
+            _solver(contexts, parent_correct),
+            _solver(contexts, candidate_correct),
+            "target", policy, cohort, PARENT, CANDIDATE)
+
+        self.assertEqual(decision.reason, "PROTECTED_CAPABILITY_REGRESSION")
+        self.assertEqual(decision.blocking_capability, "peer")
+        self.assertEqual(
+            {capability: (before, after, total)
+             for capability, before, after, total in decision.outcome_scores},
+            {"target": (3, 4, 6), "peer": (4, 2, 6)})
+
     def test_first_zero_delta_target_measurement_establishes_baseline_candidate(self):
         for target_group in ("amber", "Z"):
             with self.subTest(target_group=target_group):
@@ -187,7 +227,7 @@ class FactoryComparableBaselineRetentionTests(unittest.TestCase):
         self.assertEqual(
             decision.retention_protection_plan_sha256, "1" * 64)
 
-    def test_local_plan_does_not_apply_whole_grade_aggregate_veto(self):
+    def test_local_plan_allows_positive_foundation_mastery_debt_tradeoff(self):
         args = _local_foundation_inputs(
             protected_loss=3, measured=("protected",))
 
@@ -198,6 +238,8 @@ class FactoryComparableBaselineRetentionTests(unittest.TestCase):
 
         self.assertEqual(decision.reason, "PAIRED_SCREEN_WITHIN_BUDGET")
         self.assertIsNone(decision.blocking_scope)
+        self.assertEqual(
+            decision.evaluated_capability_ids, ("target", "protected"))
 
 
 if __name__ == "__main__":

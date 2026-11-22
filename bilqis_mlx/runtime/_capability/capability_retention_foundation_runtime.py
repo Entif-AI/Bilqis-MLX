@@ -5,8 +5,8 @@ import time
 
 from bilqis_mlx.runtime.bamf_operator.telemetry import emit
 
-from ..learning.retention_policy import _mastery_debt_utility
-from .capability_evaluation import Assessment, _invalid
+from ..learning.retention_policy import _mastery_debt_utility, mastery_debt_utility
+from .capability_evaluation import Assessment, EvidenceStage, _invalid
 from .capability_retention import AssessmentPair, Decision, DecisionStatus
 
 
@@ -72,7 +72,7 @@ def _fixed_school_score_context(
         scores[capability] = {"before": before, "after": after, "total": total}
     target_delta = fixed_pair.delta(target_capability)
     from bilqis_mlx.diagnostics.assessment_signals import optional_prediction_signals
-    emit(observer, retention_scorecard={
+    scorecard = {
         "schema": "bilqis.bamf.retention-scorecard/v1",
         "fixed_cohort_sha256": fixed.expected_case_digest,
         "rubric_sha256": fixed.rubric_sha256,
@@ -108,7 +108,11 @@ def _fixed_school_score_context(
         "policy_sha256": policy.digest(),
         "probe_each": policy.probe_each,
         "baseline_coverage": (coverage.to_record() if coverage is not None else None),
-    })
+    }
+    if fixed.evidence_stage is EvidenceStage.FOUNDATION_ACQUISITION:
+        scorecard["foundation_mastery_debt_utility"] = mastery_debt_utility(
+            scores, (target_capability, *references))
+    emit(observer, retention_scorecard=scorecard)
     return fixed_pair, census, coverage, measured, measured_set, scores, target_delta
 
 
