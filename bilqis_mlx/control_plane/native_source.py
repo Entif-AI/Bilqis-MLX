@@ -31,23 +31,6 @@ _SERVICE_LOCKS_GUARD = threading.Lock()
 
 
 
-def _source_token(run_dir: Path):
-    """Cheap change detector for mutable CP07 observation inputs."""
-    root = Path(run_dir)
-    token = []
-    for name in (
-        "bamf-state.json", "events.jsonl", "trainer-observed.json",
-        "akasha-outbox.sqlite3", "akasha-outbox.sqlite3-wal",
-    ):
-        path = root / name
-        try:
-            stat = path.stat()
-            token.append((name, stat.st_ino, stat.st_size, stat.st_mtime_ns))
-        except FileNotFoundError:
-            token.append((name, None, None, None))
-    return tuple(token)
-
-
 def _run_refs(records):
     """Recover one stable RunRef per accepted generation from projected records."""
     refs = {}
@@ -158,87 +141,16 @@ def native_query_catalog(run_dir: Path) -> MissionControlQueryCatalog:
 
 def native_query_source(run_dir: Path):
     """Reuse accepted CP03 custody while refreshing live observation independently."""
-    root = Path(run_dir).expanduser().resolve()
-    lock = threading.Lock()
-    cached_token = None
-    cached_catalog = None
-    cached_base_records = ()
-    cached_run_refs = ()
-    cached_accepted_health = {}
-    cached_history = ()
+    from .native_cache.source import build_native_query_source
 
-    def source(query=None):
-        nonlocal cached_token, cached_catalog, cached_base_records, cached_run_refs
-        nonlocal cached_accepted_health, cached_history
-        with lock:
-            from bilqis_mlx.mission_control import QueryMode
-            historical = query is not None and query.mode is not QueryMode.CURRENT
-            if historical:
-                material = materialize_native_projection(
-                    root, include_live_rejections=True)
-                return MissionControlQueryCatalog(material.records)
-            before = _source_token(root)
-            if cached_catalog is not None and cached_token == before:
-                return cached_catalog
-            accepted_unchanged = (
-                cached_catalog is not None and cached_token is not None
-                and cached_token[0] == before[0]
-                and cached_history
-            )
-            observation_only = (
-                accepted_unchanged
-                and cached_token[1] == before[1]
-                and cached_token[3:] == before[3:]
-                and cached_run_refs
-            )
-            if observation_only:
-                observed = observed_records(
-                    root, cached_run_refs,
-                    accepted_health_by_manifest=cached_accepted_health)
-                catalog = MissionControlQueryCatalog((*cached_base_records, *observed))
-                base_records = cached_base_records
-                run_refs = cached_run_refs
-            else:
-                pointer = root / "bamf-state.json"
-                if not pointer.exists() and not pointer.is_symlink():
-                    return MissionControlQueryCatalog.unavailable()
-                try:
-                    history = (
-                        cached_history if accepted_unchanged
-                        else authenticated_history(root))
-                    material = _materialize_authenticated_history(
-                        root, history, include_live_rejections=True)
-                except BilqisError as error:
-                    if error.context.get("reason") in {
-                        "BAMF_GENERATION_POINTER_CHANGED_DURING_READ",
-                        "CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED",
-                    }:
-                        return MissionControlQueryCatalog.unavailable()
-                    raise
-                base_records = tuple(
-                    record for record in material.records
-                    if not isinstance(record, TrainerObservation))
-                observed = tuple(
-                    record for record in material.records
-                    if isinstance(record, TrainerObservation))
-                run_refs = _run_refs(base_records)
-                accepted_health = material.accepted_learning_health_by_manifest or {}
-                catalog = MissionControlQueryCatalog((*base_records, *observed))
-            after = _source_token(root)
-            if after == before:
-                cached_token = after
-                cached_catalog = catalog
-                cached_base_records = base_records
-                cached_run_refs = run_refs
-                cached_accepted_health = (
-                    accepted_health if not observation_only
-                    else cached_accepted_health)
-                if not observation_only:
-                    cached_history = history
-            return catalog
-
-    source._bilqis_query_aware = True
-    return source
+    return build_native_query_source(
+        run_dir,
+        authenticated_history_fn=authenticated_history,
+        materialize_history_fn=_materialize_authenticated_history,
+        materialize_projection_fn=materialize_native_projection,
+        run_refs_fn=_run_refs,
+        observed_records_fn=observed_records,
+    )
 
 
 def publish_native_events(service, *, seen_event_ids: set[str] | None = None):

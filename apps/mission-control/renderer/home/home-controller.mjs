@@ -21,7 +21,7 @@ export function createHomeController(api, {
   let pages = {}, model = null, context = null, historical = false;
   let renderTarget = null, inspectTarget = null, navigateTarget = null;
   let unsubscribe = null, teardown = null, timer = null, epoch = 0, queue = Promise.resolve();
-  let disconnected = false, needsSnapshot = false, pending = new Map();
+  let disconnected = false, needsSnapshot = false, pending = new Map(), retryFamilies = new Set();
   let activationKey = null;
 
   function keyFor(nextContext, nextHistorical) {
@@ -73,8 +73,18 @@ export function createHomeController(api, {
     queue = result;
     return result;
   }
+  function unavailablePage(family, source) {
+    return {
+      accepted: false, family,
+      mode: source?.mode === "HISTORICAL" ? "historical" : "current",
+      state: "UNAVAILABLE", coverage: "UNKNOWN",
+      records: [], markers: [], links: [], returned: 0,
+      total_matches: 0, truncated: false, next_cursor: null,
+    };
+  }
   async function queryFamily(family, source) {
-    if (family !== "notification") return api.query(queryRequest(family, source));
+    const paginated = new Set(["run", "notification"]);
+    if (!paginated.has(family)) return api.query(queryRequest(family, source));
     let cursor = null;
     let first = null;
     const records = [], markers = [], links = [];
@@ -88,29 +98,43 @@ export function createHomeController(api, {
       links.push(...(page.links ?? []));
       const next = page.next_cursor ?? null;
       if (next === null) break;
-      if (seen.has(next)) throw new Error("HOME_NOTIFICATION_CURSOR_LOOP");
+      if (seen.has(next)) throw new Error("HOME_QUERY_CURSOR_LOOP");
       seen.add(next);
       cursor = next;
     } while (true);
     return {
-      ...first,
-      records, markers, links,
-      returned: records.length,
-      truncated: false,
-      next_cursor: null,
+      ...first, records, markers, links,
+      returned: records.length, truncated: false, next_cursor: null,
     };
   }
+  function transportRejected(page) {
+    const reason = String(page?.reason ?? "");
+    return page?.accepted === false &&
+      /(NOT_CONNECTED|DISCONNECTED|BROKER_EXITED)/.test(reason);
+  }
+  function familyLocalRejected(page) {
+    return page?.accepted === false &&
+      page?.reason === "CONTROL_PLANE_QUERY_RESPONSE_TOO_LARGE";
+  }
+  async function safeQueryFamily(family, source) {
+    return queryFamily(family, source);
+  }
   async function loadFamily(family, current) {
-    const page = await queryFamily(family, context);
+    const page = await safeQueryFamily(family, context);
     if (current !== epoch) return null;
-    if (page?.accepted !== true) throw new Error("HOME_QUERY_UNAVAILABLE");
+    if (transportRejected(page)) throw new Error("HOME_TRANSPORT_UNAVAILABLE");
+    if (page?.accepted !== true && !familyLocalRejected(page)) {
+      throw new Error("HOME_QUERY_UNAVAILABLE");
+    }
+    if (page?.accepted === true) retryFamilies.delete(family);
+    else retryFamilies.add(family);
     pages = { ...pages, [family]: page };
     project();
     return page;
   }
   async function loadAll(current) {
     const source = context;
-    const request = (family) => queryFamily(family, source);
+    const request = (family) => safeQueryFamily(family, source);
     const anchor = historical ? null : await request("run");
     if (current !== epoch) return;
     const families = historical ? HOME_FAMILIES : HOME_FAMILIES.filter((family) => family !== "run");
@@ -118,22 +142,34 @@ export function createHomeController(api, {
     if (current !== epoch) return;
     const frontier = historical ? null : await request("run");
     if (current !== epoch) return;
-    if ([...entries.map(([, page]) => page), ...[anchor, frontier].filter(Boolean)]
-      .some((page) => page?.accepted !== true)) throw new Error("HOME_QUERY_UNAVAILABLE");
-    if (!historical && acceptedIdentity(anchor) !== acceptedIdentity(frontier)) {
+    const queried = [...entries.map(([, page]) => page), ...[anchor, frontier].filter(Boolean)];
+    if (queried.some(transportRejected)) throw new Error("HOME_TRANSPORT_UNAVAILABLE");
+    if ((!historical && (anchor?.accepted !== true || frontier?.accepted !== true)) ||
+        entries.some(([, page]) => page?.accepted !== true && !familyLocalRejected(page))) {
+      throw new Error("HOME_QUERY_UNAVAILABLE");
+    }
+    if (!historical && anchor?.accepted === true && frontier?.accepted === true &&
+        acceptedIdentity(anchor) !== acceptedIdentity(frontier)) {
       needsSnapshot = true;
       return;
     }
-    pages = Object.fromEntries(historical ? entries : [...entries, ["run", frontier]]);
+    const run = frontier?.accepted === true ? frontier : anchor;
+    const allEntries = historical ? entries : [...entries, ["run", run]];
+    pages = Object.fromEntries(allEntries);
+    retryFamilies = new Set(allEntries
+      .filter(([, page]) => page?.accepted !== true)
+      .map(([family]) => family));
     needsSnapshot = false;
     disconnected = false;
     context = { ...context, transportDisconnected: false };
     project(true);
   }
   async function refreshRun(current) {
-    const page = await api.query(queryRequest("run", context));
+    const page = await safeQueryFamily("run", context);
     if (current !== epoch) return;
+    if (transportRejected(page)) throw new Error("HOME_TRANSPORT_UNAVAILABLE");
     if (page?.accepted !== true) throw new Error("HOME_QUERY_UNAVAILABLE");
+    retryFamilies.delete("run");
     if (needsSnapshot || acceptedIdentity(pages.run) !== acceptedIdentity(page)) return loadAll(current);
     pages = { ...pages, run: page };
     project(true);
@@ -186,7 +222,12 @@ export function createHomeController(api, {
       if (current !== epoch) return;
       await refreshRun(current);
       if (current !== epoch) return;
-      await loadFamily("notification", current);
+      const families = new Set([...retryFamilies, "notification"]);
+      families.delete("run");
+      for (const family of families) {
+        await loadFamily(family, current);
+        if (current !== epoch) return;
+      }
     }
   }
   function startTimer(current) {
@@ -242,7 +283,7 @@ export function createHomeController(api, {
     }
     const current = ++epoch;
     if (timer !== null) { cancel(timer); timer = null; }
-    queue = Promise.resolve(); pending = new Map();
+    queue = Promise.resolve(); pending = new Map(); retryFamilies = new Set();
     renderTarget = host; inspectTarget = onInspect; navigateTarget = onNavigate;
     historical = nextHistorical;
     context = { ...nextContext, mode: historical ? "HISTORICAL" : nextContext?.mode }; pages = {}; disconnected = false; needsSnapshot = false;

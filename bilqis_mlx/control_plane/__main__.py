@@ -43,14 +43,15 @@ def _notification_projection(run_dir: Path) -> MissionControlProjection:
 def _composed_query_source(run_dir: Path, projection: MissionControlProjection):
     native = native_query_source(run_dir)
 
-    def source():
+    def source(query=None):
         sync_akasha_notifications(run_dir, projection)
-        catalog = native()
+        catalog = native(query)
         if not catalog.available:
             return catalog
         sync_native_transition_notifications(run_dir, projection)
         return MissionControlQueryCatalog((*catalog.records, *projection.notifications()))
 
+    source._bilqis_query_aware = True
     return source
 
 
