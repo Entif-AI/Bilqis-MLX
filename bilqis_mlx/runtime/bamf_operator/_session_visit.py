@@ -110,14 +110,15 @@ def _publish_accepted(
 
 
 def visit(
-        run_dir, reserve_gib, *, steps_per_visit, progress,
+        run_dir, reserve_gib, *, steps_per_visit, batch_size=32, progress,
         source_prefetch_workers, source_prefetch_executor,
         source_prefetch_metrics, observer, run_authority_binding,
         prepare_visit, record_rejection,
         accept_publish, load_generation, measure_phase, emit_progress,
         record_cadence_attempt=None, resource_holds=frozenset()):
     prepared = prepare_visit(
-        run_dir, steps_per_visit=steps_per_visit, reserve_gib=reserve_gib,
+        run_dir, steps_per_visit=steps_per_visit, batch_size=batch_size,
+        reserve_gib=reserve_gib,
         progress=progress,
         source_prefetch_workers=source_prefetch_workers,
         source_prefetch_executor=source_prefetch_executor,
