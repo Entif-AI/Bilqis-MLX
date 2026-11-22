@@ -227,6 +227,68 @@ def _accepted_generation_identity(run_dir: Path) -> tuple[str, int, str, str]:
     )
 
 
+_ANCESTRY_MEMO_SCHEMA = "bilqis.bamf.active-grade-ancestry-memo/v1"
+
+
+def _ancestry_memo_path(run_dir: Path, active: ActiveGeneratedGrade) -> Path:
+    return (Path(run_dir) / "generated-grades" / "ancestry-memos"
+            / f"{active.activation_sha256}.json")
+
+
+def _load_ancestry_memo(run_dir: Path, active: ActiveGeneratedGrade) -> bool:
+    path = _ancestry_memo_path(run_dir, active)
+    if path.is_symlink() or not path.is_file():
+        return False
+    try:
+        record = json.loads(path.read_bytes())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    if (not isinstance(record, dict)
+            or set(record) != {
+                "schema", "run_id", "activation_sha256",
+                "activation_manifest_sha256", "activation_acceptance_sha256",
+                "activation_generation", "validated_checkpoint_sha256",
+            }
+            or record["schema"] != _ANCESTRY_MEMO_SCHEMA
+            or record["run_id"] != active.run_id
+            or record["activation_sha256"] != active.activation_sha256
+            or record["activation_manifest_sha256"] != active.activation_manifest_sha256
+            or record["activation_acceptance_sha256"] != active.activation_acceptance_sha256
+            or record["activation_generation"] != active.activation_generation
+            or not isinstance(record["validated_checkpoint_sha256"], str)
+            or len(record["validated_checkpoint_sha256"]) != 64
+            or any(char not in "0123456789abcdef"
+                   for char in record["validated_checkpoint_sha256"])):
+        return False
+    from bilqis_mlx.runtime.bamf_bundle.publication.accepted_authority_checkpoint import (
+        accepted_authority_tip_extends_checkpoint,
+    )
+    return accepted_authority_tip_extends_checkpoint(
+        active.run_id, record["validated_checkpoint_sha256"])
+
+
+def _persist_ancestry_memo(run_dir: Path, active: ActiveGeneratedGrade) -> None:
+    from bilqis_mlx.runtime.bamf_bundle.publication.accepted_authority_checkpoint import (
+        read_protected_accepted_authority_tip,
+    )
+    tip = read_protected_accepted_authority_tip(active.run_id)
+    if tip is None:
+        return
+    path = _ancestry_memo_path(run_dir, active)
+    if (path.is_symlink() or path.parent.is_symlink()
+            or (path.parent.exists() and not path.parent.is_dir())):
+        return
+    _durable_json(path, {
+        "schema": _ANCESTRY_MEMO_SCHEMA,
+        "run_id": active.run_id,
+        "activation_sha256": active.activation_sha256,
+        "activation_manifest_sha256": active.activation_manifest_sha256,
+        "activation_acceptance_sha256": active.activation_acceptance_sha256,
+        "activation_generation": active.activation_generation,
+        "validated_checkpoint_sha256": tip.digest,
+    }, replace_existing=True)
+
+
 def _activation_is_accepted_ancestor(
     run_dir: Path,
     active: ActiveGeneratedGrade,
@@ -236,6 +298,8 @@ def _activation_is_accepted_ancestor(
         iter_accepted_bamf_history,
     )
     root = Path(run_dir)
+    if _load_ancestry_memo(root, active):
+        return True
     pointer, student = accepted_generation(root / "bamf-state.json")
     for manifest, acceptance, student, _binding in iter_accepted_bamf_history(
             root,
@@ -243,10 +307,13 @@ def _activation_is_accepted_ancestor(
             current_acceptance_sha256=pointer["acceptance_sha256"],
             current=student):
         if manifest == active.activation_manifest_sha256:
-            return (
+            matched = (
                 acceptance == active.activation_acceptance_sha256
                 and student.run_id == active.run_id
                 and student.generation == active.activation_generation)
+            if matched:
+                _persist_ancestry_memo(root, active)
+            return matched
     return False
 
 

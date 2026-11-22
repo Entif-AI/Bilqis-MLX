@@ -216,12 +216,17 @@ def validate_closure_structure(snapshot: CurriculumSnapshot, closure: FrontierCl
     candidates = {(item.semantic_id, item.family_id): item for item in closure.candidates}
     if len(candidates) != len(closure.candidates) or set(candidates) != set(coverage):
         _fail("BAMF_PLANNER_SELECTION_CLOSURE_INCOMPLETE")
+    keys_by_identity = {identity: [] for identity in closure.constituent_order}
+    for key in coverage:
+        bucket = keys_by_identity.get(key[0])
+        if bucket is not None:
+            bucket.append(key)
 
     grouped_statuses: dict[str, tuple[ClosureStatus, ...]] = {}
     evidence_wait: dict[str, bool] = {}
     for identity in closure.constituent_order:
         identity_rows = []
-        for key in sorted(item for item in coverage if item[0] == identity):
+        for key in sorted(keys_by_identity[identity]):
             row, candidate = coverage[key], candidates[key]
             _validate_candidate_header(row, candidate, graph[identity])
             direct = _direct_status(row, candidate)

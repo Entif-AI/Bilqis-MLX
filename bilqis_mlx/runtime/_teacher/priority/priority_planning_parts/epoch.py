@@ -58,12 +58,22 @@ def _static_planning_products(
 
     if planning_cache is not None:
         planning_cache.static_misses += 1
-    _emit_progress(progress, "planner: compiling semantic curriculum")
-    frontier_state = LearnedFrontier(selection.release_sha256)
-    candidate = (_compile_semantic_curriculum_snapshot(
-        atlas_snapshot, SOURCE_FAMILY_ADAPTERS, frontier_state)
-        if atlas_snapshot is not None else compile_semantic_curriculum(
-            selection, SOURCE_FAMILY_ADAPTERS, frontier_state))
+    from bilqis_mlx.runtime.priority_planning_parts.candidate_memo import (
+        load_candidate_memo, persist_candidate_memo,
+    )
+    candidate = load_candidate_memo(
+        run_dir, selection, SOURCE_FAMILY_ADAPTERS)
+    if candidate is None:
+        _emit_progress(progress, "planner: compiling semantic curriculum")
+        frontier_state = LearnedFrontier(selection.release_sha256)
+        candidate = (_compile_semantic_curriculum_snapshot(
+            atlas_snapshot, SOURCE_FAMILY_ADAPTERS, frontier_state)
+            if atlas_snapshot is not None else compile_semantic_curriculum(
+                selection, SOURCE_FAMILY_ADAPTERS, frontier_state))
+        persist_candidate_memo(
+            run_dir, selection, SOURCE_FAMILY_ADAPTERS, candidate)
+    else:
+        _emit_progress(progress, "planner: reusing durable semantic curriculum")
     frontier = _candidate_frontier(
         run_dir, current.release_sha256, progress=progress)
     _emit_progress(

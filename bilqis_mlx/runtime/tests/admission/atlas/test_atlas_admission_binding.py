@@ -1,6 +1,7 @@
 """C07 admission authority is distinct from C05 retention acceptance."""
 from dataclasses import fields, replace
 from pathlib import Path
+import json
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -198,6 +199,90 @@ class AtlasAdmissionBindingTests(unittest.TestCase):
         self.assertEqual(credit.factory_release_sha256, "6" * 64)
         self.assertEqual(credit.acceptance_sha256, binding.digest)
         self.assertEqual(credit.obligation_keys, keys)
+
+    def test_obligation_projection_reuses_retained_descendant_and_rejects_admission(self):
+        from bilqis_mlx.runtime.atlas_obligation_projection import (
+            load_accepted_obligation_projection, persist_accepted_obligation_projection,
+        )
+        from bilqis_mlx.runtime.bamf_bundle.records import sha
+
+        release = "6" * 64
+        keys = (("semantic:event", "2" * 64),)
+        parent_tip = type("Tip", (), {
+            "digest": "a" * 64,
+            "manifest_sha256": "b" * 64,
+            "acceptance_sha256": "c" * 64,
+            "factory_release_sha256": release,
+        })()
+        parent_pointer = {
+            "run_id": "fixture-run",
+            "manifest_sha256": parent_tip.manifest_sha256,
+            "acceptance_sha256": parent_tip.acceptance_sha256,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch(
+                "bilqis_mlx.runtime.bamf_bundle.publication."
+                "accepted_authority_checkpoint.read_protected_accepted_authority_tip",
+                return_value=parent_tip,
+            ):
+                persist_accepted_obligation_projection(root, parent_pointer, release, keys)
+
+            child_manifest = "d" * 64
+            child_acceptance = "e" * 64
+            acceptance_dir = root / "bamf-acceptance"
+            acceptance_dir.mkdir(parents=True)
+            retention_raw = json.dumps({
+                "schema_version": "bilqis.mlx.accepted-candidate-binding/v11"
+            }).encode("utf-8")
+            (acceptance_dir / f"{child_manifest}.json").write_bytes(retention_raw)
+            child_tip = type("Tip", (), {
+                "digest": "f" * 64,
+                "manifest_sha256": child_manifest,
+                "acceptance_sha256": child_acceptance,
+                "acceptance_file_sha256": sha(retention_raw),
+                "factory_release_sha256": release,
+                "parent_checkpoint_sha256": parent_tip.digest,
+            })()
+            child_pointer = {
+                "run_id": "fixture-run",
+                "manifest_sha256": child_manifest,
+                "acceptance_sha256": child_acceptance,
+            }
+            with patch(
+                "bilqis_mlx.runtime.bamf_bundle.publication."
+                "accepted_authority_checkpoint.read_protected_accepted_authority_tip",
+                return_value=child_tip,
+            ), patch(
+                "bilqis_mlx.runtime.bamf_bundle.publication."
+                "accepted_authority_checkpoint.accepted_authority_tip_extends_checkpoint",
+                return_value=True,
+            ), patch(
+                "bilqis_mlx.runtime.bamf_bundle.publication."
+                "accepted_authority_checkpoint.load_accepted_authority_checkpoint",
+                return_value=parent_tip,
+            ):
+                self.assertEqual(
+                    load_accepted_obligation_projection(root, child_pointer),
+                    (release, child_acceptance, keys),
+                )
+
+            admission_raw = json.dumps({
+                "schema_version": ATLAS_ADMISSION_SCHEMA_V4
+            }).encode("utf-8")
+            (acceptance_dir / f"{child_manifest}.json").write_bytes(admission_raw)
+            child_tip.acceptance_file_sha256 = sha(admission_raw)
+            with patch(
+                "bilqis_mlx.runtime.bamf_bundle.publication."
+                "accepted_authority_checkpoint.read_protected_accepted_authority_tip",
+                return_value=child_tip,
+            ), patch(
+                "bilqis_mlx.runtime.bamf_bundle.publication."
+                "accepted_authority_checkpoint.accepted_authority_tip_extends_checkpoint",
+                return_value=True,
+            ):
+                self.assertIsNone(
+                    load_accepted_obligation_projection(root, child_pointer))
 
     def test_b13_publication_accepts_live_c07_binding_without_relabeling_it_as_retention(self):
         parent, staged = self._parent_and_candidate()
