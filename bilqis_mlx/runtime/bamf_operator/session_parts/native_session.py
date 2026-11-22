@@ -228,8 +228,11 @@ def execute_selected_visit(
     if observer is not None:
         from ..evidence_projection import selected_visit_evidence, unknown_generated_grade_evidence
         visit_evidence = selected_visit_evidence(selection)
+        selected_policy = getattr(selection, "policy", None)
         observer.update(
             visit_evidence=visit_evidence,
+            selected_policy=(
+                dict(selected_policy) if isinstance(selected_policy, dict) else None),
             generated_grade_evidence=unknown_generated_grade_evidence(
                 visit_evidence.get("grade_id")))
     emit_progress(

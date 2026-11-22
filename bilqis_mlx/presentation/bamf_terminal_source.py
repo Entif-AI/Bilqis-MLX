@@ -46,6 +46,18 @@ def _durable_visit(event: dict, run_id: str):
     decision = decision if isinstance(decision, dict) else {}
     context = how.get("context")
     context = context if isinstance(context, dict) else {}
+    selected_policy = how.get("selected_policy")
+    selected_policy = selected_policy if isinstance(selected_policy, dict) else None
+    realized_action = how.get("realized_action")
+    realized_action = realized_action if isinstance(realized_action, dict) else None
+    protected_capabilities = how.get("protected_capabilities")
+    protected_capabilities = (
+        list(protected_capabilities)
+        if isinstance(protected_capabilities, (list, tuple)) else None)
+    evaluated_capabilities = decision.get("evaluated_capability_ids")
+    evaluated_count = (
+        len(evaluated_capabilities)
+        if isinstance(evaluated_capabilities, (list, tuple)) else None)
     candidate_step = (
         event.get("optimizer_step") if accepted
         else envelope.get("candidate_optimizer_step"))
@@ -77,8 +89,13 @@ def _durable_visit(event: dict, run_id: str):
         "candidate_optimizer_step": candidate_step,
         "candidate_step": how.get("attempted_steps"),
         "candidate_horizon": how.get("attempted_steps"),
-        "retention_completed": None,
-        "retention_total": None,
+        "retention_completed": evaluated_count,
+        "retention_total": evaluated_count,
+        "retention_phase": context.get("phase"),
+        "retention_decision": decision.get("decision"),
+        "selected_policy": selected_policy,
+        "realized_action": realized_action,
+        "protected_capabilities": protected_capabilities,
         "visit_evidence": evidence,
         "candidate_steps": [],
         "_durable_terminal_history": True,
@@ -132,6 +149,23 @@ def _identity(visit: dict):
     )
 
 
+def _overlay_visit(durable: dict, live: dict) -> dict:
+    """Overlay disposable live telemetry without erasing richer durable evidence."""
+    result = dict(durable)
+    for key, value in live.items():
+        if value is not None or key not in result:
+            result[key] = value
+    durable_evidence = durable.get("visit_evidence")
+    live_evidence = live.get("visit_evidence")
+    if isinstance(durable_evidence, dict) and isinstance(live_evidence, dict):
+        evidence = dict(durable_evidence)
+        for key, value in live_evidence.items():
+            if value is not None or key not in evidence:
+                evidence[key] = value
+        result["visit_evidence"] = evidence
+    return result
+
+
 def read_bamf_terminal_observation(run_dir: Path):
     """Return durable history overlaid by the newest disposable live observations."""
     try:
@@ -145,5 +179,8 @@ def read_bamf_terminal_observation(run_dir: Path):
     for visit in _read_durable_history(run_dir, run_id):
         combined[_identity(visit)] = visit
     for visit in _read_live_observation(run_dir, run_id):
-        combined[_identity(visit)] = visit
+        identity = _identity(visit)
+        prior = combined.get(identity)
+        combined[identity] = (
+            _overlay_visit(prior, visit) if isinstance(prior, dict) else visit)
     return run_id, tuple(combined.values())

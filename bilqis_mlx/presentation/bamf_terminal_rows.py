@@ -1,6 +1,9 @@
 """Truth-preserving table rows for the BAMF terminal cockpit."""
 from __future__ import annotations
 
+from bilqis_mlx.presentation.school50.formatting import _display, _scaled_lr, _whole
+from bilqis_mlx.presentation.teacher_vnext import teacher_fields
+
 
 MARKER = "_bamf_terminal_observed"
 
@@ -54,6 +57,11 @@ def policy(visit):
     return str(value)[:10] if value else "-"
 
 
+def selected_policy(visit):
+    value = visit.get("selected_policy")
+    return value if isinstance(value, dict) else {}
+
+
 def reason(visit):
     evidence = visit.get("visit_evidence")
     if not isinstance(evidence, dict):
@@ -83,6 +91,7 @@ def health(visit):
 
 def candidate_row(visit):
     measured = score(visit)
+    strategy = selected_policy(visit)
     score_line = (
         f"{measured[0]}/-/{measured[1]}/{measured[2]}"
         if measured is not None else "-")
@@ -90,8 +99,9 @@ def candidate_row(visit):
         MARKER: True, "grade": grade(visit),
         "capability": visit.get("capability_id") or "-",
         "attempt": visit.get("visit_index", "-"), "strategy": policy(visit),
-        "lr": "-", "score_line": score_line, "reward": "-", "loss": "-",
-        "gradient": "-", "method": "BAMF", "old": "-",
+        "lr": _scaled_lr(strategy.get("lr")),
+        "score_line": score_line, "reward": "-", "loss": "-",
+        "gradient": "-", "method": "BAMF", "old": _whole(strategy.get("old")),
         "result": str(visit.get("outcome") or "-"),
         "reason": reason(visit), "warnings": warnings(visit),
     }
@@ -110,25 +120,55 @@ def retention_row(visit):
     progress = (
         f"{completed}/{total}" if type(completed) is int and type(total) is int
         else "-")
+    protected_capabilities = visit.get("protected_capabilities")
+    protected = (
+        str(len(protected_capabilities))
+        if isinstance(protected_capabilities, (list, tuple)) else
+        str(evidence.get("protected_scope_state") or "-")[:3].upper())
     return {
         MARKER: True, "grade": grade(visit),
         "capability": visit.get("capability_id") or "-",
         "attempt": visit.get("visit_index", "-"), "target": target,
         "target_delta": f"{delta:+d}" if type(delta) is int else "-",
-        "protected": str(evidence.get("protected_scope_state") or "-")[:3].upper(),
+        "protected": protected,
         "worst": "-", "decision": decision, "result": decision,
         "evidence": f"{progress} | {reason(visit)}",
     }
 
 
-def teacher_row(visit):
+def teacher_row(visit, history=None):
+    strategy = selected_policy(visit)
+    retention_decision = visit.get("retention_decision")
+    retention_phase = visit.get("retention_phase")
+    capability = visit.get("capability_id")
+    policy_key = policy(visit)
+    projected = (
+        teacher_fields({
+            "capability": capability,
+            "teacher_policy": policy_key,
+            "candidate_retention": {
+                "phase": retention_phase,
+                "decision": retention_decision,
+            },
+        }, history)
+        if (history is not None and isinstance(capability, str) and capability
+            and policy_key != "-" and isinstance(retention_phase, str)
+            and retention_decision in {"PROVISIONAL", "REJECT"})
+        else {}
+    )
+    projected_health = projected.get("health") or health(visit)
     return {
         MARKER: True, "grade": grade(visit),
         "capability": visit.get("capability_id") or "-",
         "attempt": visit.get("visit_index", "-"), "policy": policy(visit),
-        "lr": "-", "depth": "-", "contrast": "-", "old": "-",
-        "preview": "-", "distill": "-", "credit": "-", "p_ret": "-",
-        "health": health(visit),
+        "lr": _scaled_lr(strategy.get("lr")),
+        "depth": _whole(strategy.get("depth")),
+        "contrast": _whole(strategy.get("contrast")),
+        "old": _whole(strategy.get("old")),
+        "preview": _display(strategy.get("preview")),
+        "distill": _display(strategy.get("distill")),
+        "credit": "-", "p_ret": projected.get("p_ret", "-"),
+        "health": projected_health,
     }
 
 
