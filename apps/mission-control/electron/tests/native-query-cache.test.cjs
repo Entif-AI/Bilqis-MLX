@@ -13,9 +13,7 @@ test("native current source warms accepted cache across trainer heartbeat", () =
     python,
     [
       "-B", "-m", "unittest",
-      "bilqis_mlx.control_plane.tests.cp07.test_native_query_cache." +
-        "NativeQueryCacheTests." +
-        "test_heartbeat_does_not_prevent_base_cache_warmup",
+"bilqis_mlx.control_plane.tests.cp07.test_native_query_cache",
       "-q",
     ],
     {
