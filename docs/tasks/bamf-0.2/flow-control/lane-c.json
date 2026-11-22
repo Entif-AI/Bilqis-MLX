@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "92299b7ccddb1a1b4155723b4eb4eee1057864cb",
-  "updated_at": "2026-11-22T06:47:02+00:00",
+  "updated_at": "2026-11-22T06:59:03+00:00",
   "exception": null,
   "items": [
     {
@@ -563,11 +563,11 @@
     },
     {
       "issue": 1542,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "657bdfff37dc58904ca9a3df55303240aba9cea6",
-      "head_sha_role": "intake baseline at current main before #1542 implementation",
-      "summary": "#1542 owns BMF-0.3.8 FOUNDATION same-grade retention conformance: preserve target-first rejection, then measure established same-grade peers and apply the active mastery-debt/protection law without granting veto authority to merely admitted never-retained capabilities. Automated verification must not mutate the human production trainer.",
+      "pr": 1561,
+      "state": "TURNED_IN",
+      "head_sha": "65a77c13ed0d42166e421f75d30fd8272712c345",
+      "head_sha_role": "verified executable candidate before this turn-in bookkeeping receipt",
+      "summary": "#1542 is turned in as PR #1561. Ordinary FOUNDATION retention now protects every same-grade peer with current accepted-learning baseline authority while preserving structural protection edges, target-first early rejection, and admission-without-learning non-authority. The existing FOUNDATION mastery-debt law remains the decision owner; operator scorecard evidence now exposes its exact utility calculation. Failing-before proved established same-grade peers were omitted. Reconciled-head proof passed 20 focused scope/economics/evidence tests, 19 rollback/custody checks plus 2 expected skips, 5 adjacent teacher-outcome tests, structure/governance/Factory/docs/flow/smell/diff gates, and error-control new debt 0. No production trainer mutation was performed.",
       "resume_trigger": null,
       "preserved_branch": "codex/1542-foundation-same-grade-retention-20261122"
     }
