@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "db2c0233147069414c83fae76bcbad9c51ca58c5",
-  "updated_at": "2026-11-22T10:27:13+00:00",
+  "updated_at": "2026-11-22T10:40:55+00:00",
   "exception": null,
   "items": [
     {
@@ -585,9 +585,9 @@
       "issue": 1566,
       "pr": 1567,
       "state": "TURNED_IN",
-      "head_sha": "d562f6c9d",
-      "head_sha_role": "exact #1566 <=1s training-first semantic implementation and final-code production witness head before this flow-control receipt commit",
-      "summary": "#1566 is turned in as PR #1567 under ADR-153. Default non-strict BAMF Step 1 is now a numerical learning path: source/training authority, selected-source materialization, currentness/provenance/custody replay, prefix inventory grants, refinement-policy replay, B11 proof issuance, candidate cache custody rebinding, motif evidence staging, and equivalent evidence ceremony are absent from the ordinary hot path while strict/evidence mode preserves the legacy verification path. Ordinary provisional candidates are proofless but retain real loss-ancestry participation masking, AdamW updates, accepted-state publication/resume authority, and atomic model+optimizer persistence. Production-shaped accepted aspirant evidence on the 8192x768 model passed twice below the <=1s target: r5 candidate 0.7578272501s / external 0.7601306250s; final-code r6 candidate 0.9734155841s / external 0.9759875841s. r6 performed one real optimizer update with learning_first=true, optimizer counts changed, zero step proofs, zero training authorities, no task authority, and B11 preflight 0.0s. Final local gates are green: flow control, syntax/diff hygiene, 4 focused learning-first/session tests, strict selected-source smoke, and changed-file code-smell audit with 0 findings. The sovereign human aspirant run was never mutated, reset, restarted, or stopped.",
+      "head_sha": "fe519d552a64aef5287461f439875f27e75ccac4",
+      "head_sha_role": "exact #1566 semantic head fixing learning-first C05 source-independence and portable-core structure debt before this flow-control receipt commit",
+      "summary": "#1566 remains turned in as PR #1567 under ADR-153. Default non-strict Step 1 remains verification-free numerical learning while strict/evidence mode retains legacy ceremony. A live trainer regression exposed that proofless candidates had discarded the minimal source coordinates C05 needs to draw an independent retention cohort. The repair carries only target capability, source-family, and episode coordinates from the actual learning rows; no training authorities or step proofs are restored. Production-shaped clone evidence on the accepted aspirant-derived 8192x768 model passed at 0.7486447920s candidate / 0.7507104999s external with learning_first=true, a real optimizer update, zero proofs, zero training authorities, no task authority, target capability A.EDGE, one exact training source family, both exact training episodes, and source_mutated=false. The same repair also resolves hosted portable-core development-structure failures by extracting four encounter-triggered >360-line modules behind stable public facades and moving logical_batch into the mounted _batch owner; explicit structure check reports 0 violations. Focused local evidence: C05 adversarial 10/10, learning-first/session 4/4, focused C08 microbatch PASS, code-smell audit 0 findings, flow/governance/syntax/diff clean. Sovereign human aspirant run was never mutated, reset, restarted, or stopped.",
       "resume_trigger": null,
       "preserved_branch": "codex/1566-training-first-bypass-20261122"
     }
