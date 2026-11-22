@@ -164,7 +164,7 @@ def test_unmeasured_target_still_allows_established_protected_veto():
     assert decision.outcome_scores[0] == (target, 0, 0, 3)
 
 
-def test_live_screen_short_circuits_before_protected_compilation():
+def _live_short_circuit_fixture():
     target, protected = "future.target", "future.protected"
     target_plan = N(
         target_capability_id=target, target_grade_id="opaque-grade",
@@ -174,60 +174,24 @@ def test_live_screen_short_circuits_before_protected_compilation():
             (target, "opaque-grade"), (protected, "prior-grade")),
         evaluation_scope_sha256="1" * 64, comparison_scope_sha256="2" * 64,
     )
-    plan = N(digest="3" * 64, rubric_sha256="4" * 64,
-             source_sha256="5" * 64)
-    release = N(release_sha256="6" * 64)
-    parent = N(baseline_evidence=None)
-    cache, target_instrument = N(), N(case=N(capability_id=target))
-    rejection = object()
-    protected_compile = Mock(side_effect=AssertionError(
-        "protected compilation ran before target rejection"))
-    fresh_rows = Mock(return_value=N(
-        seed=13, rows=({"id": "fresh", "capability": target},)))
-    target_cohort = object()
-    assessments = Mock(side_effect=(object(), object()))
-    solvers = Mock(side_effect=((object(), "a" * 64), (object(), "b" * 64)))
-    observed = []
+    return N(
+        target=target, protected=protected, target_plan=target_plan,
+        plan=N(digest="3" * 64, rubric_sha256="4" * 64, source_sha256="5" * 64),
+        release=N(release_sha256="6" * 64), parent=N(baseline_evidence=None),
+        cache=N(), target_instrument=N(case=N(capability_id=target)),
+        rejection=object(),
+        protected_compile=Mock(side_effect=AssertionError(
+            "protected compilation ran before target rejection")),
+        fresh_rows=Mock(return_value=N(
+            seed=13, rows=({"id": "fresh", "capability": target},))),
+        target_cohort=object(),
+        assessments=Mock(side_effect=(object(), object())),
+        solvers=Mock(side_effect=((object(), "a" * 64), (object(), "b" * 64))),
+        observed=[],
+    )
 
-    with patch.multiple(
-            local_screen,
-            _split_cached_rows=Mock(return_value=(
-                (7, ({"id": "reference", "capability": target},)),
-                ((protected, 8, ({"id": "protected", "capability": protected},)),))),
-            _comparison_epoch=Mock(return_value=N(identity=lambda capability: capability)),
-            BaselineLedger=N(from_optional_record=Mock(return_value=object())),
-            baseline_coverage=Mock(return_value=N()),
-            candidate_identity_for_canonical_consumer=Mock(return_value="7" * 64),
-            _owner_seed=Mock(return_value=11),
-            _fresh_rows=fresh_rows,
-            _instruments=Mock(return_value=(target_instrument,)),
-            _policy=Mock(return_value=object()),
-            _cohort=Mock(return_value=target_cohort),
-            factory_complete_solver=solvers,
-            authenticate_bamf_execution_feature_context=Mock(
-                return_value=object()),
-            evaluate_capabilities=assessments,
-            AssessmentPair=Mock(return_value=object()),
-            evaluate_target_gate=Mock(return_value=rejection),
-            _cached_instruments=protected_compile):
-        result = local_screen.foundation_local_retention_screen(
-            N(run_dir=None), parent, object(), object(), "artifact", release, plan,
-            target_plan, (("trained-family",), ("trained-episode",)),
-            ((target, 7, ({"id": "reference", "capability": target},)),
-             (protected, 8, ({"id": "protected", "capability": protected},))),
-            cache, observer=observed.append)
 
-    assert result[0] is rejection
-    assert solvers.call_args_list[0].kwargs.get("execution_cache") is cache
-    assert solvers.call_args_list[1].kwargs.get("execution_cache") is None
-    protected_compile.assert_not_called()
-    fresh_rows.assert_called_once_with(
-        ANY,
-        (target,), seed=11 + local_screen.C05_FRESH_TARGET_SEED_OFFSET,
-        training=(("trained-family",), ("trained-episode",)),
-        require_independent=False)
-    assert assessments.call_args_list[0].args[1] is target_cohort
-    assert assessments.call_args_list[1].args[1] is target_cohort
+def _assert_short_circuit_profile(observed, target):
     profile = {}
     for event in observed:
         profile.update(event)
@@ -251,3 +215,52 @@ def test_live_screen_short_circuits_before_protected_compilation():
         assert isinstance(profile[field], float)
         assert profile[field] >= 0.0
     assert "retention_protected_prepare_wall_seconds" not in profile
+
+
+def test_live_screen_short_circuits_before_protected_compilation():
+    fixture = _live_short_circuit_fixture()
+
+    with patch.multiple(
+            local_screen,
+            _split_cached_rows=Mock(return_value=(
+                (7, ({"id": "reference", "capability": fixture.target},)),
+                ((fixture.protected, 8, ({
+                    "id": "protected", "capability": fixture.protected},)),))),
+            _comparison_epoch=Mock(return_value=N(identity=lambda capability: capability)),
+            BaselineLedger=N(from_optional_record=Mock(return_value=object())),
+            baseline_coverage=Mock(return_value=N()),
+            candidate_identity_for_canonical_consumer=Mock(return_value="7" * 64),
+            _owner_seed=Mock(return_value=11),
+            _fresh_rows=fixture.fresh_rows,
+            _instruments=Mock(return_value=(fixture.target_instrument,)),
+            _policy=Mock(return_value=object()),
+            _cohort=Mock(return_value=fixture.target_cohort),
+            factory_complete_solver=fixture.solvers,
+            authenticate_bamf_execution_feature_context=Mock(
+                return_value=object()),
+            evaluate_capabilities=fixture.assessments,
+            AssessmentPair=Mock(return_value=object()),
+            evaluate_target_gate=Mock(return_value=fixture.rejection),
+            _cached_instruments=fixture.protected_compile):
+        result = local_screen.foundation_local_retention_screen(
+            N(run_dir=None), fixture.parent, object(), object(), "artifact",
+            fixture.release, fixture.plan, fixture.target_plan,
+            (("trained-family",), ("trained-episode",)),
+            ((fixture.target, 7, ({"id": "reference", "capability": fixture.target},)),
+             (fixture.protected, 8, ({
+                 "id": "protected", "capability": fixture.protected},))),
+            fixture.cache, observer=fixture.observed.append)
+
+    assert result[0] is fixture.rejection
+    assert fixture.solvers.call_args_list[0].kwargs.get(
+        "execution_cache") is fixture.cache
+    assert fixture.solvers.call_args_list[1].kwargs.get("execution_cache") is None
+    fixture.protected_compile.assert_not_called()
+    fixture.fresh_rows.assert_called_once_with(
+        ANY,
+        (fixture.target,), seed=11 + local_screen.C05_FRESH_TARGET_SEED_OFFSET,
+        training=(("trained-family",), ("trained-episode",)),
+        require_independent=False)
+    assert fixture.assessments.call_args_list[0].args[1] is fixture.target_cohort
+    assert fixture.assessments.call_args_list[1].args[1] is fixture.target_cohort
+    _assert_short_circuit_profile(fixture.observed, fixture.target)

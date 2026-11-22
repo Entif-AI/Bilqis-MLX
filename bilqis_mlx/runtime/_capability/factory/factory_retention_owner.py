@@ -5,7 +5,6 @@ from pathlib import Path
 
 from bilqis_mlx.fixed_frontier import load_frontier_cohort
 from bilqis_mlx.learning.atlas_candidate import CandidateTransaction
-from bilqis_mlx.learning.atlas_package_import import PackageImportTransaction
 from bilqis_mlx.learning._atlas_candidate.identity_binding import candidate_identity_for_canonical_consumer
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache, derive_successor_bundle,
@@ -31,7 +30,6 @@ from ._factory_identity_evaluation import (
 from .retention.screen import (
     bind_factory_baseline_successor, bind_factory_evaluation_issuer,
 )
-from .retention.protection_plan import BroadCertificationTrigger
 from .retention.protection_plan_compiler import (
     bind_retention_protection_plan,
     policy_epoch_sha256,
@@ -152,44 +150,6 @@ def require_current_retention_plan(cache, release, capability_id):
     return plan, plan.for_target(capability_id)
 
 
-def measure_factory_foundation_progress(
-    source_context, artifact_path: str, *, run_dir: Path,
-):
-    """Measure the accepted parent on C05's immutable whole-school fixture.
-
-    This is observation only.  It grants no admission or retention authority;
-    C16.3 uses the scores solely to choose the next prerequisite-lawful target
-    from the admitted Factory plan.
-    """
-    if not isinstance(run_dir, Path):
-        _invalid("BAMF_C05_FACTORY_OWNER_INPUT_INVALID")
-    from bilqis_mlx.runtime.source_execution import SourceExecutionContext
-    if type(source_context) is not SourceExecutionContext:
-        _invalid("BAMF_C05_FACTORY_OWNER_INPUT_INVALID")
-    source_context.require_accepted_runtime(run_dir)
-    parent = load_accepted_generation(run_dir)
-    cache = bind_accepted_execution_cache(run_dir)
-    release = source_context.release
-    fixed = _fixed_school_instruments(
-        source_context, parent, artifact_path, run_dir, release,
-        parent=parent, cache=cache)
-    cases = tuple(item.case for item in fixed)
-    measured = {case.capability_id for case in cases}
-    groups = tuple(
-        (item.capability_id, item.grade_id)
-        for item in release.execution_plan.capabilities
-        if item.capability_id in measured)
-    policy = FoundationRetentionPolicy(
-        groups, tuple(dict.fromkeys(group for _, group in groups)), (),
-        C05_PROBE_EACH, case_census_digest(cases))
-    cohort = _cohort(
-        EvidenceKind.FIXED_SCHOOL, fixed, groups, release, policy, ((), ()),
-        evidence_stage=CURRENT_EVIDENCE_STAGE)
-    solver, generation = factory_complete_solver(
-        source_context, parent, artifact_path, fixed)
-    return evaluate_capabilities(solver, cohort, generation)
-
-
 def evaluate_factory_retention_candidate(
     source_context,
     candidate: CandidateTransaction,
@@ -241,83 +201,11 @@ def evaluate_factory_retention_candidate(
         **({"observer": observer} if observer is not None else {}))
 
 
-def derive_current_plasticity_escape_state(parent, selection, release):
-    """Derive exceptional state from accepted/replayed evidence only in strict C05."""
-    if CURRENT_EVIDENCE_STAGE is not EvidenceStage.STRICT_GENERALIZATION:
-        return None
-    from bilqis_mlx.runtime.plasticity_escape import derive_plasticity_escape_state
-    context = getattr(selection, "metadata", {}).get("how_context")
-    visit = getattr(selection, "visit", None)
-    projection = getattr(visit, "projection", None)
-    teacher_state = getattr(projection, "teacher_state", None)
-    if not isinstance(context, dict):
-        _invalid("BAMF_PLASTICITY_HOW_CONTEXT_REQUIRED")
-    grades = tuple(release.execution_plan.grades)
-    if not grades:
-        _invalid("BAMF_PLASTICITY_ACTIVE_GRADE_REQUIRED")
-    return derive_plasticity_escape_state(
-        teacher_state,
-        getattr(parent, "learning_health_state", None),
-        target_capability_id=selection.offer.capability_id,
-        target_group_id=context["grade"],
-        frontier_group_id=grades[-1].grade_id,
-        phase=context["phase"],
-        curriculum_scope=context["curriculum_scope"],
-        policy_epoch_sha256=policy_epoch_sha256(CURRENT_EVIDENCE_STAGE),
-    )
-
-
-def evaluate_factory_package_import(
-    source_context,
-    transaction: PackageImportTransaction,
-    artifact_path: str,
-    target_capability: str,
-    *,
-    run_dir: Path,
-):
-    """Run the same C05 owner over a B12 package-import state proposal."""
-    if (type(transaction) is not PackageImportTransaction
-            or not isinstance(target_capability, str) or not target_capability
-            or not isinstance(run_dir, Path)):
-        _invalid("BAMF_C05_PACKAGE_IMPORT_INPUT_INVALID")
-    source_context.__post_init__()
-    source_context.require_accepted_runtime(run_dir)
-    release = source_context.release
-    capability_map = release.execution_plan.capability_map
-    if target_capability not in capability_map:
-        _invalid("BAMF_C05_TARGET_CAPABILITY_NOT_ADMITTED")
-    groups = tuple((item.capability_id, item.grade_id)
-                   for item in release.execution_plan.capabilities)
-    target_group = capability_map[target_capability].grade_id
-    lesson_capabilities = tuple(capability for capability, group in groups
-                                if group == target_group)
-    # A package import is not a training episode. C05 still owns every source draw
-    # and complete-solver comparison, but there is no neural-training provenance
-    # to exclude from those draws.
-    training = ((), ())
-    parent, candidate_bundle, candidate_state, cache = _package_import_from_live_parent(
-        run_dir, transaction)
-    fixed_instruments = _fixed_school_instruments(
-        source_context, candidate_bundle, artifact_path, run_dir, release,
-        parent=parent, cache=cache)
-
-    if {(item.case.capability_id, item.case.group_id) for item in fixed_instruments} != set(groups):
-        _invalid("BAMF_C05_FIXED_SCHOOL_COVERAGE_INCOMPLETE")
-
-    if CURRENT_EVIDENCE_STAGE is EvidenceStage.FOUNDATION_ACQUISITION:
-        return _broad_foundation_retention_evaluation(
-            source_context, parent, candidate_bundle, artifact_path,
-            target_capability, release, groups, training, fixed_instruments,
-            cache,
-            broad_certification_trigger=(
-                BroadCertificationTrigger.DECLARED_BROAD_BLAST_RADIUS))
-    return _adaptive_retention_evaluation(
-        source_context, parent, candidate_bundle, candidate_state, artifact_path,
-        target_capability, target_group, lesson_capabilities, release, groups,
-        training, fixed_instruments, cache,
-        protected_capabilities=tuple(
-            capability for capability, _group in groups
-            if capability != target_capability))
+from .retention.owner_aux import (
+    derive_current_plasticity_escape_state,
+    evaluate_factory_package_import,
+    measure_factory_foundation_progress,
+)
 
 
 __all__ = (
