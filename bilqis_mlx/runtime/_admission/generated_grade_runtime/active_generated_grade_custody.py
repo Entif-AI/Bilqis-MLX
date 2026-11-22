@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.factory.generated_grade import GeneratedGradeProposal
 from bilqis_mlx.runtime.state import _durable_json
@@ -256,7 +257,7 @@ def _load_ancestry_memo(run_dir: Path, active: ActiveGeneratedGrade) -> bool:
             or record["activation_acceptance_sha256"] != active.activation_acceptance_sha256
             or record["activation_generation"] != active.activation_generation
             or not isinstance(record["validated_checkpoint_sha256"], str)
-            or len(record["validated_checkpoint_sha256"]) != 64
+            or len(record["validated_checkpoint_sha256"]) != SHA256_HEX_LENGTH
             or any(char not in "0123456789abcdef"
                    for char in record["validated_checkpoint_sha256"])):
         return False

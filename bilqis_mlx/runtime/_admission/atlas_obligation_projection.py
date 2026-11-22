@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.runtime.state import _durable_json
 
 
@@ -20,7 +21,7 @@ def _valid_keys(value) -> bool:
         and all(isinstance(item, list) and len(item) == 2 for item in value)
         and all(isinstance(item[0], str) and item[0] for item in value)
         and all(
-            isinstance(item[1], str) and len(item[1]) == 64
+            isinstance(item[1], str) and len(item[1]) == SHA256_HEX_LENGTH
             and all(char in "0123456789abcdef" for char in item[1])
             for item in value)
         and tuple(tuple(item) for item in value)
@@ -44,9 +45,9 @@ def _record(run_dir: Path):
             or value.get("schema") != _SCHEMA
             or not isinstance(value.get("run_id"), str)
             or not isinstance(value.get("factory_release_sha256"), str)
-            or len(value["factory_release_sha256"]) != 64
+            or len(value["factory_release_sha256"]) != SHA256_HEX_LENGTH
             or not isinstance(value.get("validated_checkpoint_sha256"), str)
-            or len(value["validated_checkpoint_sha256"]) != 64
+            or len(value["validated_checkpoint_sha256"]) != SHA256_HEX_LENGTH
             or not _valid_keys(value.get("obligation_keys"))):
         return None
     return value
