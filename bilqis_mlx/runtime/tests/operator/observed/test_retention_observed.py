@@ -42,6 +42,12 @@ class RetentionObservationTests(unittest.TestCase):
         result = evaluate_retention_candidate(parent, candidate, target, policy, cohorts, PARENT, CANDIDATE, observer=events.append)
         self.assertEqual(result.reason, 'PROTECTED_CAPABILITY_REGRESSION')
         self.assert_scores_match_card(result, events)
+        card = next(event['retention_scorecard'] for event in events
+                    if 'retention_scorecard' in event)
+        utility = card['foundation_mastery_debt_utility']
+        self.assertFalse(utility['positive'])
+        self.assertEqual(
+            set(utility['capabilities']), {'target', 'protected', 'other'})
         progress = _progress(events)
         self.assertEqual([(e['retention_completed'], e['retention_total'], e['retention_role']) for e in progress],
                          [(0, 4, 'parent'), (1, 4, 'parent'),

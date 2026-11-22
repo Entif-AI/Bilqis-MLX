@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "ef14c3dc8e086b5b444401a8a36924bb66c1aaaf",
-  "updated_at": "2026-11-22T07:07:49+00:00",
+  "observed_unified": "ae454a8d7a70189597bd066c6a754a3a5e56d130",
+  "updated_at": "2026-11-22T07:14:00+00:00",
   "exception": null,
   "items": [
     {
@@ -535,7 +535,7 @@
       "issue": 1537,
       "pr": null,
       "state": "ACTIVE",
-      "head_sha": "ef14c3dc8e086b5b444401a8a36924bb66c1aaaf",
+      "head_sha": "ae454a8d7a70189597bd066c6a754a3a5e56d130",
       "head_sha_role": "current main consumed before #1537 source-materialization turn-in verification",
       "summary": "Issue #1537 owns the selected-source preparation/materialization hot path only. It will profile qualification, draw/build, lesson construction, persistence/currentness and wait time; reuse only exact immutable source/release/lesson identities; keep prefetch bounded and non-authoritative; and target <=2 s selected-source handoff without changing planning selection, neural execution, source authority, retention decisions or evidence semantics.",
       "resume_trigger": null,
@@ -570,6 +570,16 @@
       "summary": "Issue #1395 is turned in as PR #1414 against reviewed unified 204a5f47. Ordinary FOUNDATION C05 no longer executes championship evidence; championship follows the existing final active-grade cadence teaching boundary after the accepted successor is derived and before B13 publication, preserving #1326-#1328 title, challenge, history/reset, cold ancestry and adviser custody. Zero-distill supervision now means no mentor envelope, and the real-A01 B.AND microbatch witness records one vectorized microbatch with zero scalar fallback rows while the nonzero mentor oracle remains scalar-exact. Fresh 16-step native B.AND evidence: accepted ELIGIBLE; retention 39.982s; 73.16 attempted/retained steps/hour; 6 target / 0 protected cases; 2 shared-backbone launches / 0 scalar neural launches; ~17.11 GB peak MLX / ~4.63 GB host peak RSS; no championship telemetry in the C05 profile. Final semantic head f4b238e8 is quality/governance/error-contract clean; the host's inherited 100 GiB disposable-bundle reserve condition is baseline-reproduced and separately reserve-neutralized for bounded custody/profile witnesses. No persistent learner, adjacent C07/OOM policy, self-merge, or championship policy redesign.",
       "resume_trigger": null,
       "preserved_branch": "codex/1395-championship-hotpath-20261118"
+    },
+    {
+      "issue": 1542,
+      "pr": 1561,
+      "state": "TURNED_IN",
+      "head_sha": "65a77c13ed0d42166e421f75d30fd8272712c345",
+      "head_sha_role": "verified executable candidate before this turn-in bookkeeping receipt",
+      "summary": "#1542 is turned in as PR #1561. Ordinary FOUNDATION retention now protects every same-grade peer with current accepted-learning baseline authority while preserving structural protection edges, target-first early rejection, and admission-without-learning non-authority. The existing FOUNDATION mastery-debt law remains the decision owner; operator scorecard evidence now exposes its exact utility calculation. Failing-before proved established same-grade peers were omitted. Reconciled-head proof passed 20 focused scope/economics/evidence tests, 19 rollback/custody checks plus 2 expected skips, 5 adjacent teacher-outcome tests, structure/governance/Factory/docs/flow/smell/diff gates, and error-control new debt 0. No production trainer mutation was performed.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1542-foundation-same-grade-retention-20261122"
     }
   ]
 }
