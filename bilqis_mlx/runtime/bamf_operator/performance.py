@@ -165,6 +165,7 @@ PERFORMANCE_FIELDS = STEP_COST_FIELDS + VISIT_PERFORMANCE_FIELDS
 _SELECTED_SOURCE_FIELDS = (
     ("source_materialization_cache_hit", "selected_source_cache_hit"),
     ("source_materialization_cache_lookup_wall_seconds", "selected_source_cache_lookup_wall_seconds"),
+    ("source_materialization_wait_wall_seconds", "selected_source_wait_wall_seconds"),
     ("source_materialization_factory_source_wall_seconds", "selected_source_factory_build_wall_seconds"),
     ("source_materialization_model_source_wall_seconds", "selected_source_model_build_wall_seconds"),
     ("source_materialization_b11_binding_wall_seconds", "selected_source_b11_binding_wall_seconds"),

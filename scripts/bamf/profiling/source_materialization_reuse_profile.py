@@ -36,6 +36,7 @@ from bilqis_mlx.runtime.priority_source_materialization_cache import (
 SCHEMA = "bilqis.bamf.source-materialization-reuse-profile/v1"
 STAGE_FIELDS = (
     "source_materialization_cache_lookup_wall_seconds",
+    "source_materialization_wait_wall_seconds",
     "source_materialization_factory_source_wall_seconds",
     "source_materialization_model_source_wall_seconds",
     "source_materialization_b11_binding_wall_seconds",
@@ -90,6 +91,8 @@ def _one(root: Path, cache: PriorityPlanningCache) -> dict:
             "source_context_builds": context._source_preparation_metrics.source_context_builds,
             "compiled_source_builds": context._source_preparation_metrics.compiled_source_builds,
         },
+        "atlas_reload_count": int(
+            selection.offer._planning_generation._authenticated_features.atlas_reload_count),
         "cache": cache.source_materialization_cache.metrics(),
     }
 

@@ -39,9 +39,11 @@ class _Registrar:
         self.registrations.append((kind, owner))
 
 
-def _planning(authenticated, registrar, *, correction="c" * 64):
+def _planning(
+        authenticated, registrar, *, correction="c" * 64,
+        accepted_manifest="a" * 64):
     return SimpleNamespace(
-        accepted_manifest_sha256="a" * 64,
+        accepted_manifest_sha256=accepted_manifest,
         generation_binding="b" * 64,
         acceptance_sha256="d" * 64,
         acceptance_file_identity_sha256="e" * 64,
@@ -55,12 +57,15 @@ def _planning(authenticated, registrar, *, correction="c" * 64):
     )
 
 
-def _cache_offer(cache, authenticated, registrar, rows, *, correction="c" * 64):
+def _cache_offer(
+        cache, authenticated, registrar, rows, *, correction="c" * 64,
+        accepted_manifest="a" * 64):
     return SimpleNamespace(
         _materialized={},
         _materialization_cache=cache,
         _planning_generation=_planning(
-            authenticated, registrar, correction=correction),
+            authenticated, registrar, correction=correction,
+            accepted_manifest=accepted_manifest),
         release_sha256="1" * 64,
         capability_id="cap",
         source_seed=17,
@@ -213,8 +218,14 @@ def test_exact_cross_offer_materialization_reuses_heavy_artifacts_with_fresh_own
     assert first is not second
     assert first.semantic_context is first_authenticated
     assert second.semantic_context is second_authenticated
+    assert second.rows == first.rows
+    assert second.manifest == first.manifest
+    assert second.profile == first.profile
+    assert tuple(item.row for item in second.source_rows) == tuple(
+        item.row for item in first.source_rows)
     assert second.source_rows is first.source_rows
     assert second.model_sources is first.model_sources
+    assert second.prefixes is first.prefixes
     assert second.b11_sources is not first.b11_sources
     prepare.assert_called_once()
     compile_sources.assert_called_once()
@@ -242,6 +253,43 @@ def test_materialization_cache_misses_when_correction_identity_changes():
         _cache_offer(
             cache, SimpleNamespace(features="f"), _Registrar(), rows,
             correction="9" * 64),
+    )
+
+    with patch(
+            "bilqis_mlx.runtime.factory_training_bridge._prepare_factory_source_rows",
+            return_value=("adapter", "manifest", "profile", source_rows)) as prepare, patch(
+                "bilqis_mlx.runtime.priority_source_materialization._prepare_model_sources",
+                return_value=(model_sources, ("config",))), patch(
+                    "bilqis_mlx.runtime.factory_training_bridge._prepare_b11_source_binding",
+                    return_value=_Owner()), patch(
+                    "bilqis_mlx.runtime.factory_training_bridge._motif_planning_input",
+                    return_value="motif"), patch(
+                    "bilqis_mlx.runtime.priority_source_materialization.rebind_priority_source_rows",
+                    return_value=("adapter", "profile", source_rows)), patch(
+                    "bilqis_mlx.runtime.priority_source_materialization._owners",
+                    side_effect=((_Owner(), _Owner(), _Owner()),
+                                 (_Owner(), _Owner(), _Owner()))):
+        for offer in offers:
+            prepare_priority_source_materialization(offer, context, "parent")
+
+    assert prepare.call_count == 2
+    assert cache.metrics() == {
+        "hits": 0, "misses": 2, "evictions": 0, "entries": 2}
+
+
+def test_materialization_cache_misses_when_accepted_authority_changes():
+    rows = ({"id": "row:one", "capability": "cap", "tokens": [1]},)
+    prefix = SimpleNamespace(positions=(1,))
+    source_rows = (SimpleNamespace(row=rows[0], source_adapter="adapter"),)
+    model_sources = (SimpleNamespace(prefix=prefix),)
+    cache = PrioritySourceMaterializationCache()
+    context = SimpleNamespace(
+        _source_preparation_metrics=SourcePreparationMetrics())
+    offers = (
+        _cache_offer(cache, SimpleNamespace(features="f"), _Registrar(), rows),
+        _cache_offer(
+            cache, SimpleNamespace(features="f"), _Registrar(), rows,
+            accepted_manifest="9" * 64),
     )
 
     with patch(
@@ -304,11 +352,13 @@ def test_materialization_cache_is_bounded_and_evicts_oldest_identity():
 def test_selected_source_visit_fields_projects_only_numeric_stage_observations():
     assert selected_source_visit_fields({
         "source_materialization_cache_hit": 1,
+        "source_materialization_wait_wall_seconds": 0.0,
         "source_materialization_factory_source_wall_seconds": 1.25,
         "source_materialization_model_source_wall_seconds": -1.0,
         "source_materialization_b11_binding_wall_seconds": "slow",
     }) == {
         "selected_source_cache_hit": 1,
+        "selected_source_wait_wall_seconds": 0.0,
         "selected_source_factory_build_wall_seconds": 1.25,
     }
 

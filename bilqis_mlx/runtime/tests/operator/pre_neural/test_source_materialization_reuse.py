@@ -26,6 +26,17 @@ class SourceMaterializationReuseTests(PreNeuralJourneySupport, unittest.TestCase
         self.assertLessEqual(max(result["warm_seconds"]), 2.0)
         self.assertEqual(result["samples"][0]["cache"]["misses"], 1)
         self.assertEqual(result["samples"][-1]["cache"]["hits"], 2)
+        self.assertTrue(all(
+            sample["stages"]["source_materialization_wait_wall_seconds"] == 0.0
+            for sample in result["samples"]))
+        self.assertTrue(all(
+            sample["source_preparation_counts"]["source_context_builds"] == 0
+            for sample in result["samples"][1:]))
+        self.assertTrue(all(
+            sample["source_preparation_counts"]["compiled_source_builds"] == 0
+            for sample in result["samples"][1:]))
+        self.assertTrue(all(
+            sample["atlas_reload_count"] == 1 for sample in result["samples"]))
 
 
 if __name__ == "__main__":

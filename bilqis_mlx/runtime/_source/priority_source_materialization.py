@@ -180,6 +180,7 @@ def _prepared_artifacts(offer, source_context, authenticated, rows):
         "source_materialization_cache_lookup_wall_seconds": (
             time.perf_counter() - lookup_started),
         "source_materialization_cache_hit": int(artifacts is not None),
+        "source_materialization_wait_wall_seconds": 0.0,
     }
     if artifacts is None:
         artifacts, build_timings, adapter, profile = _build_prepared_artifacts(
