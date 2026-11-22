@@ -211,6 +211,7 @@ class SessionObservationTests(unittest.TestCase):
         self.assertEqual(result.status, 'REJECTED')
         self.assertEqual([e.get('phase') for e in events if 'phase' in e],
                          ['SELECTING', 'TRAINING', 'RETENTION'])
+        self.assertIn({'visit_id': 'visit'}, events)
         self.assertIn({'phase': 'TRAINING', 'capability_id': 'cap', 'candidate_step': 0,
                        'candidate_horizon': 3, 'candidate_optimizer_step': 4}, events)
         for i in (1, 2, 3):
