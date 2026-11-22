@@ -57,6 +57,10 @@ def _prepare_bamf_resume_board(args, run_dir: Path):
     if telemetry is not None:
         telemetry.begin_execution(
             grade=board.state.get("prefix"), step=board.state.get("step"))
+    from bilqis_mlx.presentation.bamf_terminal_accounting import (
+        begin_bamf_command_accounting,
+    )
+    begin_bamf_command_accounting(board)
     board.mode = "BAMF | RESUMING"
     board.state["stop"] = "RUNNING"
     board.draw()
@@ -132,7 +136,16 @@ def _finish_bamf_resume(board, args, run_dir: Path, operator_report):
     if board is None:
         return True, _print_status(operator_report), None
     from bilqis_mlx.presentation.dashboard import build
+    prior_board = board
+    session_baseline = getattr(prior_board, "_bamf_session_visit_baseline", None)
     board = build(run_dir, reserve_gib=args.reserve_gib)
+    if session_baseline is not None:
+        board._bamf_session_visit_baseline = set(session_baseline)
+    from bilqis_mlx.presentation.bamf_terminal_accounting import (
+        finalize_bamf_command_accounting, transfer_bamf_command_accounting,
+    )
+    transfer_bamf_command_accounting(prior_board, board)
+    finalize_bamf_command_accounting(board, operator_report)
     board.mode = "BAMF | " + str(operator_report.get("status", "STOPPED"))
     board.state["stop"] = str(operator_report.get("status", "STOPPED"))
     board.draw()

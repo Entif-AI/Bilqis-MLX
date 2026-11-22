@@ -136,6 +136,11 @@ def prepare_bamf_visit(
     selection = select_foundation_priority_visit(
         run_dir, context, atlas_path, program=program, school=school,
         progress=progress, resource_holds=resource_holds)
+    if observer is not None:
+        identity = getattr(getattr(getattr(selection, "visit", None), "identity", None),
+                           "visit_id", None)
+        if isinstance(identity, str) and identity:
+            observer.update(visit_id=identity)
     planning_total = max(0.0, time.perf_counter() - planning_started)
     source_materialization_wall_seconds = float(
         getattr(selection, "source_materialization_wall_seconds", None) or 0.0)

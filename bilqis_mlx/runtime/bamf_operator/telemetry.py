@@ -66,7 +66,8 @@ class TrainerObservation:
         self.record = dict(
             observation_id=str(uuid.uuid4()), revision=0, process_id=os.getpid(),
             run_id=run_id, parent_manifest_sha256=manifest, visit_index=visit_index,
-            observed_at=None, elapsed_ms=None, capability_id=None, phase='PREPARING',
+            visit_id=None, observed_at=None, elapsed_ms=None, capability_id=None,
+            phase='PREPARING',
             outcome='RUNNING', candidate_optimizer_step=None, candidate_step=None,
             candidate_horizon=None, retention_completed=None, retention_total=None,
             retention_subject=None, retention_role=None, cpu_seconds=None,
