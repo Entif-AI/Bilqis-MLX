@@ -250,6 +250,42 @@ class BamfTerminalProjectionTests(unittest.TestCase):
             self.assertIn("259.2 GiB", rendered)
             self.assertIn("publishing accepted successor checkpoint", rendered)
 
+
+    def test_active_followup_step_keeps_latest_completed_loss_visible(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            (run / "bamf-state.json").write_text(json.dumps({
+                "run_id": "aspirant", "generation": 21,
+            }))
+            live = observed_visit(
+                "A.PARENT", 21, 138, before=3, after=4, wall=2.2)
+            live.update(
+                phase="TRAINING", outcome="RUNNING",
+                candidate_step=2, candidate_horizon=12,
+                loss_total=None,
+            )
+            live["candidate_steps"] = [{
+                "candidate_step": 1,
+                "candidate_optimizer_step": 138,
+                "candidate_step_wall_seconds": 2.2,
+                "loss_total": 0.456,
+            }]
+            (run / "trainer-observed.json").write_text(json.dumps({
+                "schema": "bilqis.bamf.trainer-observed/v7",
+                "visits": [live],
+            }))
+            board = Dashboard(
+                stream=io.StringIO(), clock=lambda: 1000.0,
+                tables=LETTER_TABLES, compact_header=True,
+                show_all_panels=True)
+            board.school_telemetry = SchoolTelemetry(
+                board, active_grades=("A",))
+            board.log_hint = str(run / "events.jsonl")
+
+            board.draw()
+
+            self.assertEqual(board.rows["CANDIDATES"][0]["loss"], "0.456")
+
     def test_refresh_replaces_owned_rows_and_malformed_snapshot_keeps_last_good_view(self):
         with tempfile.TemporaryDirectory() as tmp:
             run = Path(tmp)
