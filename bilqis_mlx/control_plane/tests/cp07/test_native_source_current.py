@@ -77,29 +77,6 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
                 source()
                 self.assertEqual(authenticate.call_count, 1)
 
-    def materialize(*args, **kwargs):
-                nonlocal mutated
-                material = real_materialize(*args, **kwargs)
-                if not mutated:
-                    (self.run / "trainer-observed.json").write_text(json.dumps({
-                        "schema": "bilqis.bamf.trainer-observed/v7",
-                        "visits": [],
-                    }))
-                    mutated = True
-                return material
-
-            with (
-                    patch(
-                        "bilqis_mlx.control_plane.native_source.authenticated_history",
-                        wraps=authenticated_history) as authenticate,
-                    patch(
-                        "bilqis_mlx.control_plane.native_source._materialize_authenticated_history",
-                        side_effect=materialize)):
-                source = native_query_source(self.run)
-                source()
-                source()
-                self.assertEqual(authenticate.call_count, 1)
-
     def test_query_source_event_ledger_refresh_reuses_authenticated_accepted_history(self):
             self.parent()
             self.publish_successor()
