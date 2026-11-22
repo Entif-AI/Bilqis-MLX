@@ -2,6 +2,14 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.4.3](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.2...v1.4.3) (2026-11-22)
+
+
+### Bug Fixes
+
+* **mission-control:** reconstruct cumulative run evidence ([#1545](https://github.com/Entif-AI/Bilqis-MLX/issues/1545)) ([483d47e](https://github.com/Entif-AI/Bilqis-MLX/commit/483d47e0ceb4ecf85c0231f96f7e6366ed4a435f))
+* reconcile BAMF terminal visit identity across live and durable views ([#1547](https://github.com/Entif-AI/Bilqis-MLX/issues/1547)) ([23e94cd](https://github.com/Entif-AI/Bilqis-MLX/commit/23e94cd4c9d9b61d313470ba7060844d86e26976))
+
 ## [1.4.2](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.1...v1.4.2) (2026-11-22)
 
 
