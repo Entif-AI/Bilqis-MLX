@@ -2,6 +2,8 @@
 import io
 import json
 
+from bilqis_mlx.presentation.bamf_terminal_accounting import begin_bamf_command_accounting
+from bilqis_mlx.presentation.dashboard import ingest
 from bilqis_mlx.presentation.school_telemetry import LETTER_TABLES, SchoolTelemetry
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard
 
@@ -194,3 +196,61 @@ def test_running_observation_rekeys_to_durable_terminal_identity_without_duplica
     assert board.state["retained_visits"] == 1
     assert board.state["attempted_steps"] == 12
     assert [row["capability"] for row in board.rows["CANDIDATES"]].count("A.MAPS") == 1
+
+
+
+def _terminal_event(index: int):
+    accepted = index % 10 == 0
+    how = {
+        "attempted_steps": 12,
+        "retained_steps": 12 if accepted else 0,
+        "context": {"grade": "A"},
+    }
+    if accepted:
+        return {
+            "event": "BAMF_C16_3_ACCEPTED",
+            "event_id": f"accepted-{index}",
+            "visit_id": f"visit-{index}",
+            "capability": "A.MAPS",
+            "optimizer_step": index * 12,
+            "how_outcome": how,
+        }
+    return {
+        "event": "BAMF_CANDIDATE_REJECTED",
+        "event_id": f"rejected-{index}",
+        "evidence": {
+            "visit_id": f"visit-{index}",
+            "capability": "A.MAPS",
+            "candidate_optimizer_step": index * 12,
+            "rejection_attempt_ordinal": index,
+            "how_outcome": how,
+        },
+    }
+
+
+def test_command_accounting_survives_bounded_display_history(tmp_path):
+    run = tmp_path
+    (run / "bamf-state.json").write_text(json.dumps({
+        "run_id": "aspirant", "generation": 20,
+    }))
+    (run / "trainer-observed.json").write_text(json.dumps({
+        "schema": "bilqis.bamf.trainer-observed/v7", "visits": [],
+    }))
+    board = Dashboard(
+        stream=io.StringIO(), clock=lambda: 1000.0,
+        tables=LETTER_TABLES, compact_header=True, show_all_panels=True)
+    board.school_telemetry = SchoolTelemetry(board, active_grades=("A",))
+    board.log_hint = str(run / "events.jsonl")
+    begin_bamf_command_accounting(board)
+
+    events = [_terminal_event(index) for index in range(70)]
+    for event in events:
+        ingest(board, event)
+    (run / "events.jsonl").write_text(
+        "".join(json.dumps(event) + "\n" for event in events))
+
+    board.draw()
+
+    assert board.state["visits"] == 70
+    assert board.state["retained_visits"] == 7
+    assert board.state["attempted_steps"] == 840
