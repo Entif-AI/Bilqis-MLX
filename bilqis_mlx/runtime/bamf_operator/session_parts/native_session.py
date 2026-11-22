@@ -10,7 +10,10 @@ from bilqis_mlx.learning._atlas_candidate.identity_binding import (
     candidate_identity_metrics_delta, candidate_identity_metrics_snapshot,
 )
 from bilqis_mlx.learning.atlas_retention_decision import issue_factory_retention_decision
-from bilqis_mlx.runtime.accepted_priority_visit import execute_accepted_priority_candidate
+from bilqis_mlx.runtime.accepted_priority_visit import (
+    execute_accepted_priority_candidate,
+    prepare_accepted_priority_candidate_visit,
+)
 from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
 from bilqis_mlx.runtime.factory_candidate_training import FactoryDeliveryObservation
 from bilqis_mlx.runtime.factory_retention_owner import (
@@ -151,7 +154,7 @@ def execute_horizon(
         run_dir, selection, context, parent, atlas_path, feature_path, rows, horizon,
         cache, candidate_attempt_ordinal, progress, source_prefetch_workers,
         source_prefetch_executor, source_prefetch_metrics, observer, adviser_pool,
-        *, emit_progress, invalid, rehearsal_plan=None,
+        *, emit_progress, invalid, rehearsal_plan=None, candidate_visit=None,
         distributed_profile=None, distributed_executor=None):
     return _execute_horizon_impl(
         run_dir, selection, context, parent, atlas_path, feature_path,
@@ -163,6 +166,7 @@ def execute_horizon(
         delivery_observation_cls=FactoryDeliveryObservation,
         execute_candidate=partial(
             execute_accepted_priority_candidate,
+            candidate_visit=candidate_visit,
             distributed_profile=distributed_profile,
             distributed_executor=distributed_executor),
         step_seed=_step_seed,
@@ -178,6 +182,7 @@ def candidate_horizon_execution(
         *, emit_progress, invalid,
         distributed_profile=None, distributed_executor=None):
     cache = host_cache if host_cache is not None else bind_accepted_execution_cache(run_dir)
+    candidate_visit = prepare_accepted_priority_candidate_visit(selection, context)
     from bilqis_mlx.runtime.bamf_bundle.execution_cache import AcceptedExecutionCache
     from .evidence_mode import strict_evidence_enabled
     rehearsal_plan = (
@@ -191,7 +196,8 @@ def candidate_horizon_execution(
         rejection_ordinals=rejection_attempt_ordinals,
         execute_horizon_fn=lambda *args, **kwargs: execute_horizon(
             *args, **kwargs, emit_progress=emit_progress, invalid=invalid,
-            rehearsal_plan=rehearsal_plan, distributed_profile=distributed_profile,
+            rehearsal_plan=rehearsal_plan, candidate_visit=candidate_visit,
+            distributed_profile=distributed_profile,
             distributed_executor=distributed_executor),
         currentness_metrics_fn=currentness_metrics, emit_progress=emit_progress,
         identity_snapshot=candidate_identity_metrics_snapshot)

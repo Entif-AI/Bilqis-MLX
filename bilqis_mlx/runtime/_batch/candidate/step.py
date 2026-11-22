@@ -206,6 +206,7 @@ def _execute_prepared_candidate(
         cache, generation, prepared, start, capture_diagnostics,
         salience_supervision=None, candidate=None, currentness_transaction=None,
         mentor_supervision=None,
+        accepted_cache=None,
         semantic_context=None,
         semantic_context_materialized_in_step=False,
         stage_metrics=None, distributed_profile=None, distributed_executor=None,
@@ -252,7 +253,8 @@ def _execute_prepared_candidate(
             )
             refresh_accepted_currentness(currentness_transaction, parent)
         return _candidate_cache_and_generation(
-            run_dir, source_context, parent, candidate, currentness_transaction)
+            run_dir, source_context, parent, candidate, currentness_transaction,
+            accepted_cache=accepted_cache)
 
     retry_started = time.perf_counter()
     result, resource_plan, retry = execute_with_oom_retry(
@@ -276,9 +278,19 @@ def _execute_prepared_candidate(
 
 
 def _candidate_cache_and_generation(run_dir, source_context, parent, candidate,
-                                    currentness_transaction):
-    source_context.require_accepted_runtime(Path(run_dir))
-    if currentness_transaction is None:
+                                    currentness_transaction, *,
+                                    accepted_cache=None):
+    if accepted_cache is None:
+        source_context.require_accepted_runtime(Path(run_dir))
+    if accepted_cache is not None:
+        if currentness_transaction is None:
+            _invalid("FACTORY_CANDIDATE_ACCEPTED_CACHE_CURRENTNESS_REQUIRED")
+        from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
+            require_accepted_currentness,
+        )
+        cache = require_accepted_currentness(
+            currentness_transaction, cache=accepted_cache, parent=parent)._cache
+    elif currentness_transaction is None:
         cache = bind_accepted_execution_cache(Path(run_dir))
     else:
         from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (

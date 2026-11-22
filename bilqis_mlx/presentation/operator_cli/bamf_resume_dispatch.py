@@ -92,7 +92,6 @@ def _bamf_progress(board, message) -> None:
         rows.append({"kind": "TRAINER", "detail": str(message)})
         board.mode = "BAMF | LIVE"
         board.state["stop"] = "RUNNING"
-        board.draw()
 
 
 def _run_bamf_resume(

@@ -70,7 +70,7 @@ def test_resource_rejection_returns_to_scheduler_without_learner_feedback(tmp_pa
 
 
 def test_visit_progress_is_mirrored_into_observation_activity(tmp_path):
-    observer = SimpleNamespace(finish=Mock(), update=Mock())
+    observer = SimpleNamespace(finish=Mock(), update=Mock(), stage=Mock())
     messages = []
     def visit_fn(*_args, **kwargs):
         kwargs['progress']('planner: compiling semantic curriculum')
@@ -82,7 +82,10 @@ def test_visit_progress_is_mirrored_into_observation_activity(tmp_path):
         monotonic=lambda: 0, observer_type=lambda *_: nullcontext(observer),
         emit_progress=lambda callback, message: callback(message) if callback else None,
         visit_fn=visit_fn)
-    observer.update.assert_any_call(activity='planner: compiling semantic curriculum')
+    observer.stage.assert_any_call(activity='planner: compiling semantic curriculum')
+    assert not any(
+        call.kwargs == {'activity': 'planner: compiling semantic curriculum'}
+        for call in observer.update.call_args_list)
     assert 'planner: compiling semantic curriculum' in messages
     assert outcome[:4] == ('VISIT_LIMIT', 1, 0, 1)
 

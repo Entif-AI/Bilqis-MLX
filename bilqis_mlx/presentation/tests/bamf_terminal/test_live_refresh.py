@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import Mock
 
 from bilqis_mlx.presentation.operator_cli.bamf_resume_dispatch import (
+    _bamf_progress,
     _live_bamf_dashboard_refresh,
 )
 from bilqis_mlx.presentation.school_telemetry import LETTER_TABLES, SchoolTelemetry
@@ -27,6 +28,23 @@ def _visit(capability, visit, step, *, outcome="ACCEPTED", candidate_step=4):
 
 
 class BamfLiveRefreshTests(unittest.TestCase):
+    def test_progress_mutates_board_without_drawing_on_training_thread(self):
+        import threading
+        board = Mock()
+        board._draw_lock = threading.RLock()
+        board.rows = {"SYSTEM & QUALIFICATION": []}
+        board.state = {}
+
+        _bamf_progress(board, "executing candidate step 1/12")
+
+        board.draw.assert_not_called()
+        self.assertEqual(
+            board.rows["SYSTEM & QUALIFICATION"][-1],
+            {"kind": "TRAINER", "detail": "executing candidate step 1/12"},
+        )
+        self.assertEqual(board.mode, "BAMF | LIVE")
+        self.assertEqual(board.state["stop"], "RUNNING")
+
     def test_refreshes_without_waiting_for_progress_event(self):
         board = Mock()
         with _live_bamf_dashboard_refresh(board, interval=0.01):

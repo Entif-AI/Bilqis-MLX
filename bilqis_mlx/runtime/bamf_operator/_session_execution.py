@@ -69,7 +69,11 @@ def _run_visits(
         emit_progress(progress, f"starting visit {attempts}")
         with observer_type(run_dir, attempts) as observer:
             def observed_progress(message):
-                observer.update(activity=str(message)[:256])
+                stage = getattr(observer, "stage", None)
+                if callable(stage):
+                    stage(activity=str(message)[:256])
+                else:
+                    observer.update(activity=str(message)[:256])
                 emit_progress(progress, message)
 
             try:
