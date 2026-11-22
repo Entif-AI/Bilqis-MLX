@@ -14,8 +14,12 @@ from bilqis_mlx.runtime.factory_task_authority import (
     _bind_validated_factory_task_compiled_batch, factory_task_authority,
     factory_task_training_goal,
 )
+from bilqis_mlx.runtime.factory_task_template import _source_view
 from bilqis_mlx.runtime.task_goal_readout import (
     task_goal_route_plan, task_goal_training_targets,
+)
+from bilqis_mlx.source_adapters.task_goal_registry import (
+    learning_first_task_goal_lowerer,
 )
 from bilqis_mlx.runtime.atlas_resources import validate_runtime_rank
 
@@ -38,8 +42,37 @@ from bilqis_mlx.runtime.atlas_training_authority import extend_training_dependen
 from bilqis_mlx.runtime.atlas_resources import partition_logical_batch
 
 
+def _learning_first_task_goals(source_context, compiled):
+    row = compiled.sources[0].source_row
+    capability = source_context.release.execution_plan.capability_map.get(
+        row.get("capability"))
+    if capability is None:
+        ErrorBus.raise_(
+            SCHOOL.BAMF_TRAINING_ADAPTER.INVALID,
+            reason="FACTORY_TRAINING_CAPABILITY_MISMATCH")
+    lower, resolve = learning_first_task_goal_lowerer(capability.provider_id)
+    kwargs = {
+        "semantic_release": compiled.compiled.features.semantic_release,
+        "source_root": source_context.source_root,
+        "graph": source_context.graph,
+        "release": source_context.release,
+        "capability": capability,
+    }
+    goal, _binding = lower(_source_view(row), **kwargs)
+    return goal, resolve(dict(row), **kwargs)
+
+
 def _row_execution_inputs(
         source_context, compiled, feature_snapshot, generation):
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if not strict_evidence_enabled():
+        goal, resolved = _learning_first_task_goals(source_context, compiled)
+        targets, mask = task_goal_training_targets(goal, resolved)
+        plan = task_goal_route_plan(
+            goal, compiled, feature_snapshot, generation)
+        return compiled, None, targets, mask, plan
     authority = factory_task_authority(
         source_context, compiled, generation_binding=generation)
     bound = _bind_validated_factory_task_compiled_batch(compiled, authority)

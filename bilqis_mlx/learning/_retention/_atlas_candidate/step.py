@@ -4,10 +4,14 @@ from __future__ import annotations
 from bilqis_mlx.runtime.atlas_optimizer import (
     _adamw_update, reconcile_b01_optimizer_manifest,
 )
+from ..atlas_participation import (
+    ActiveAdmittedRows, RoleReadParticipation, SemanticDenominator,
+    StepParticipationInputs, optimizer_participation_mask,
+    parameter_update_mask, step_participation,
+)
 from ..atlas_execution_provenance import (
     StepExecutionProvenance, mask_digest, participation_digest,
 )
-from ..atlas_participation import optimizer_participation_mask
 from .common import (
     LEGACY_STEP_PROOF_SCHEMA,
     OBJECTIVE_CLOSURE_STEP_PROOF_SCHEMA,
@@ -147,6 +151,92 @@ def candidate_step(candidate: CandidateTransaction, gradients, execution,
         candidate.training_authorities + (training_authority,),
         parent_identity_sha256=candidate._parent_identity_sha256,
         parent_guard=candidate._parent_guard)
+
+
+def learning_first_candidate_step(
+        candidate: CandidateTransaction, gradients, loss_executions: tuple,
+        group_eligible, teacher_hparams, *, spec, extents,
+        max_norm: float) -> CandidateTransaction:
+    """Apply one proofless numerical optimizer step from actual loss ancestry.
+
+    ADR-153 ordinary training preserves participation masking and native AdamW
+    while deferring provenance/proof custody to accepted-state publication.
+    """
+    if (type(candidate) is not CandidateTransaction
+            or not candidate.learning_first
+            or type(loss_executions) is not tuple
+            or not loss_executions):
+        invalid()
+    executions = loss_executions
+    inputs = StepParticipationInputs(
+        visible_identity_rows=tuple(sorted({
+            row for execution in executions
+            for row in execution.visible_identity_rows
+        })),
+        feedback_identity_rows=tuple(sorted({
+            row for execution in executions
+            for row in execution.feedback_identity_rows
+        })),
+        visible_feature_rows=tuple(sorted({
+            row for execution in executions
+            for row in execution.feature_rows
+        })),
+        local_slot_rows=tuple(sorted({
+            row for execution in executions
+            for row in execution.local_slot_rows
+        })),
+        executed_parameter_names=tuple(sorted({
+            name for execution in executions
+            for name in execution.dense_parameter_names
+        })),
+        loss_bearing_target=True,
+    )
+    denominator = SemanticDenominator(
+        identity_rows=tuple(sorted({
+            row for execution in executions
+            for row in execution.semantic_denominator_identity_rows
+        })),
+        feature_rows=tuple(sorted({
+            row for execution in executions
+            for row in execution.semantic_denominator_feature_rows
+        })),
+    )
+    motif_reads = tuple(
+        result for execution in executions for result in execution.motif_reads)
+    role_reads = RoleReadParticipation(tuple(sorted({
+        row for execution in executions
+        for row in execution.role_read_feature_rows
+    })))
+    participation = step_participation(
+        inputs, denominator, motif_reads, role_reads)
+    active = ActiveAdmittedRows(
+        identity_rows=group_eligible.admitted_identity_rows,
+        motif_slots=tuple(sorted({
+            slot for result in motif_reads for slot in result.participating_slots
+        })),
+        feature_rows=inputs.visible_feature_rows,
+        local_slot_rows=inputs.local_slot_rows,
+    )
+    mask = parameter_update_mask(
+        group_eligible, participation, active, spec=spec, extents=extents)
+    update_mask = optimizer_participation_mask(
+        mask, candidate.optimizer.update_counts)
+    decay = reconcile_b01_optimizer_manifest(candidate.optimizer, spec, extents)
+    authority = {
+        item.name: (item.whole_parameter, item.row_indices)
+        for item in mask.parameters
+    }
+    optimizer = _adamw_update(
+        candidate.optimizer, gradients, update_mask, teacher_hparams,
+        decay=decay, loss_bearing=True, max_norm=max_norm,
+        participation_authority=authority)
+    if optimizer is candidate.optimizer:
+        return candidate
+    return _issue_transaction(
+        candidate.parent, optimizer, candidate.teacher_requests_full,
+        candidate.update_steps + 1,
+        parent_identity_sha256=candidate._parent_identity_sha256,
+        parent_guard=candidate._parent_guard, learning_first=True)
 
 
 

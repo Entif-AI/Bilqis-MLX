@@ -29,15 +29,21 @@ def _approve_visible_frames(
     ast, visible_end, release, compiler_config, closed,
     approved_by_occurrence, duplicates,
 ):
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
     grants = {
         grant.source_handle: grant
         for grant in compiler_config.frontier.grants}
-    for atom in ast.atoms[:visible_end]:
-        if not _public()._grant_allows(
-                grants.get(atom.source_reference),
-                _public().atom_evidence_digest(ast.source_instance_id, atom, release),
-                compiler_config, release):
-            _public()._invalid("BAMF_PREFIX_ATOM_SOURCE_UNAUTHORIZED")
+    if strict:
+        for atom in ast.atoms[:visible_end]:
+            if not _public()._grant_allows(
+                    grants.get(atom.source_reference),
+                    _public().atom_evidence_digest(
+                        ast.source_instance_id, atom, release),
+                    compiler_config, release):
+                _public()._invalid("BAMF_PREFIX_ATOM_SOURCE_UNAUTHORIZED")
     envelopes = []
     for frame in closed:
         if frame.occurrence_id in duplicates:
@@ -49,15 +55,19 @@ def _approve_visible_frames(
         envelopes.append(envelope)
     context_digest = None
     if envelopes:
-        projected = _public().project_context(
-            tuple(envelopes),
-            _public().replace(compiler_config.task, causal_prefix_end=visible_end),
-            compiler_config.frontier, compiler_config.policy)
-        if isinstance(projected, ContextHold):
-            _public()._invalid("BAMF_PREFIX_CONTEXT_HELD")
-        if (len(projected.eligible.frames) != len(envelopes)
-                or {item.frame_handle for item in projected.eligible.frames} != {
-                item.frame_handle for item in envelopes}):
-            _public()._invalid("BAMF_PREFIX_APPROVAL_DRIFT")
-        context_digest = projected.digest
+        if strict:
+            projected = _public().project_context(
+                tuple(envelopes),
+                _public().replace(
+                    compiler_config.task, causal_prefix_end=visible_end),
+                compiler_config.frontier, compiler_config.policy)
+            if isinstance(projected, ContextHold):
+                _public()._invalid("BAMF_PREFIX_CONTEXT_HELD")
+            if (len(projected.eligible.frames) != len(envelopes)
+                    or {item.frame_handle for item in projected.eligible.frames} != {
+                    item.frame_handle for item in envelopes}):
+                _public()._invalid("BAMF_PREFIX_APPROVAL_DRIFT")
+            context_digest = projected.digest
+        else:
+            context_digest = compiler_config.approved.digest
     return context_digest

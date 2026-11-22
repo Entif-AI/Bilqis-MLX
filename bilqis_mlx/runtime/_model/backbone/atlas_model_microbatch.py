@@ -267,12 +267,71 @@ def _microbatch_request_context(backend, row_batches, answer_plans, targets, mas
     return batch, salience_labels, generation, snapshot
 
 
+def _learning_first_microbatch_value_and_grad_impl(
+        backend, params, row_batches, answer_plans, targets, masks, cache,
+        salience_supervision):
+    """Run one vectorized numerical batch without evidence preflight or replay."""
+    total_started = time.perf_counter()
+    batch, salience_labels, generation, snapshot = _microbatch_request_context(
+        backend, row_batches, answer_plans, targets, masks, salience_supervision)
+    if not route_microbatch_compatible(row_batches, answer_plans, targets, masks):
+        _invalid("B11_MICROBATCH_ROUTE_KERNEL_INCOMPATIBLE")
+    rebind_started = time.perf_counter()
+    rebind_execution = _gradient_execution_rebinder(
+        params, None, spec=backend.topology, extents=batch.compiled.extents,
+        generation=generation)
+    execution_rebinding_wall_seconds = time.perf_counter() - rebind_started
+    refinement_selections = (None,) * len(row_batches)
+    route_kernel = prepare_route_microbatch_kernel(
+        row_batches, answer_plans, targets, masks, None, salience_labels)
+    holder = {}
+    objective = _microbatch_objective(
+        backend, batch, row_batches, answer_plans, targets, masks, cache,
+        generation, snapshot, rebind_execution, True, None,
+        refinement_selections, route_kernel, salience_supervision, holder)
+    with source_replay_observation() as replay:
+        autodiff_started = time.perf_counter()
+        mean_loss, gradients, executions, route_trajectory, finite_witness, timings = (
+            _materialize_gradient(
+                objective, params, True, holder, backend, row_batches,
+                answer_plans, targets, masks, salience_supervision,
+                rebind_execution, refinement_selections))
+        autodiff_wall_seconds = time.perf_counter() - autodiff_started
+    finite_started = time.perf_counter()
+    _require_materialized_finite_witness(
+        finite_witness, "B11_GRADIENT_NONFINITE")
+    finite_seconds = time.perf_counter() - finite_started
+    postflight_started = time.perf_counter()
+    result = finalize_microbatch_gradient(
+        backend, batch, row_batches, None, executions, mean_loss, gradients,
+        answer_plans=answer_plans, route_trajectory=route_trajectory)
+    postflight_seconds = time.perf_counter() - postflight_started
+    observation = _microbatch_performance_observation(
+        result, replay, preflight_wall_seconds=0.0,
+        finite_validation_wall_seconds=0.0,
+        execution_rebinding_wall_seconds=execution_rebinding_wall_seconds,
+        preflight_timings={}, preflight_other_wall_seconds=0.0,
+        autodiff_wall_seconds=autodiff_wall_seconds, autodiff_timings=timings,
+        gradient_finite_validation_wall_seconds=finite_seconds,
+        postflight_validation_wall_seconds=postflight_seconds,
+        total_started=total_started)
+    attach_performance_observation(result, observation)
+    return result
+
+
 def _bamf_microbatch_value_and_grad_impl(
     backend: Backend, params, row_batches: tuple[BamfCompiledBatch, ...],
     answer_plans: tuple, targets: tuple, masks: tuple, cache=None,
     *, salience_supervision=None,
 ) -> BamfMicrobatchGradientExecution:
     """Run one differentiable source-backbone graph for one compatible C08 group."""
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if not strict_evidence_enabled():
+        return _learning_first_microbatch_value_and_grad_impl(
+            backend, params, row_batches, answer_plans, targets, masks, cache,
+            salience_supervision)
     total_started = time.perf_counter()
     batch, salience_labels, generation, snapshot = _microbatch_request_context(
         backend, row_batches, answer_plans, targets, masks, salience_supervision)

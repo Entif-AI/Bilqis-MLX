@@ -23,6 +23,7 @@ def execute_learning_first_priority_candidate(
         progress_emission_wall_seconds=0.0,
         observer_begin_step_wall_seconds=0.0,
         candidate_visit=None,
+        accepted_cache=None,
         distributed_profile=None, distributed_executor=None):
     """Execute a selected lesson without strict source/custody ceremony."""
     _require_issued(selection)
@@ -71,7 +72,7 @@ def execute_learning_first_priority_candidate(
         observer_begin_step_wall_seconds=observer_begin_step_wall_seconds,
         candidate_delivery_setup_wall_seconds=candidate_delivery_setup_wall_seconds,
         semantic_context=semantic_context, prepared_source=None,
-        accepted_cache=None, selected_source_authority=offer.source_authority,
+        accepted_cache=accepted_cache, selected_source_authority=offer.source_authority,
         distributed_profile=distributed_profile,
         distributed_executor=distributed_executor)
 

@@ -120,9 +120,14 @@ def realized_candidate_cost(
     bound_source_authorities = sum(
         compiled.source_execution_authority is not None
         for compiled in prepared.compiled_rows)
-    cold_requalification_rows = len(prepared.compiled_rows) - bound_source_authorities
-    if cold_requalification_rows:
+    authority_free_rows = len(prepared.compiled_rows) - bound_source_authorities
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
+    if strict and authority_free_rows:
         invalid("FACTORY_CANDIDATE_SOURCE_EXECUTION_AUTHORITY_MISSING")
+    cold_requalification_rows = authority_free_rows if strict else 0
     elapsed = time.perf_counter() - start
     cost = {
         "wall_seconds": elapsed,
@@ -163,6 +168,7 @@ def realized_candidate_cost(
         "visit_atlas_reload_count": feature_context.atlas_reload_count,
         "visit_feature_manifest_rebuild_count": feature_context.feature_manifest_rebuild_count,
         "b11_source_authority_bound_rows": bound_source_authorities,
+        "b11_source_authority_free_rows": authority_free_rows,
         "b11_source_cold_requalification_rows": cold_requalification_rows,
     }
     cost.update(_stage_timing_cost(stage_metrics))

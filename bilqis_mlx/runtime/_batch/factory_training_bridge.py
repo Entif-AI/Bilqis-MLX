@@ -16,6 +16,8 @@ from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from .atlas_training_adapter import compile_training_batch
 from .atlas_training_contracts import BamfTrainingBatch, BamfVisitProvenance, _invalid
 from .factory_training_context import training_answer_plan
+from .learning_first_compiler import compile_learning_first_training_batch
+from .learning_first_source import prepare_learning_first_source_rows
 from .factory_training_source import (
     _FactoryMotifPlanningInput, _bind_b11_rows, _bind_learning_first_rows,
     _motif_planning_input,
@@ -34,20 +36,27 @@ class PreparedFactoryTrainingBatch:
     semantic_context: object
 
     def __post_init__(self) -> None:
-        if (type(self.training_batch) is not BamfTrainingBatch
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        strict = strict_evidence_enabled()
+        if (not hasattr(self.training_batch, "rows")
                 or type(self.compiled_rows) is not tuple
                 or len(self.compiled_rows) != len(self.training_batch.rows)
                 or type(self.motif_inputs) is not tuple
                 or len(self.motif_inputs) != len(self.training_batch.rows)
+                or not is_authenticated_generation_feature_context(
+                    self.semantic_context)):
+            _invalid("FACTORY_TRAINING_BRIDGE_INVALID")
+        if strict and (
+                type(self.training_batch) is not BamfTrainingBatch
                 or any(type(item) is not _FactoryMotifPlanningInput
                        for item in self.motif_inputs)
                 or any(type(item) is not BamfCompiledBatch
-                       for item in self.compiled_rows)
-                or (type(self.semantic_context) is not AuthenticatedCandidateFeatureContext
-                    and not is_authenticated_generation_feature_context(
-                        self.semantic_context))):
+                       for item in self.compiled_rows)):
             _invalid("FACTORY_TRAINING_BRIDGE_INVALID")
-        self.semantic_context.__post_init__()
+        if strict:
+            self.semantic_context.__post_init__()
 
 
 
@@ -97,22 +106,25 @@ def _prepared_source_inputs(
             strict_evidence_enabled,
         )
         strict = strict_evidence_enabled()
-        if not strict and selected_source_authority is not None:
-            direct_ids = (
-                {row.get("id") for row in target_rows}
-                if delivery is None else set(delivery.specimen_ids))
-            direct_rows = tuple(
-                row for row in target_rows if row.get("id") in direct_ids)
-            source_authority = source_context.bind_prequalified_delivery_rows(
-                direct_rows, target_rows, selected_source_authority)
-        else:
-            source_authority = (
-                source_context.bind_rows(
-                    target_rows, seed=source_seed, capability=capability, each=source_each)
-                if delivery is None or len(delivery.specimen_ids) == len(target_rows) else
-                source_context.bind_delivery_rows(
-                    target_rows, seed=source_seed, capability=capability,
-                    direct_each=len(delivery.specimen_ids)))
+        if not strict:
+            source_rows = prepare_learning_first_source_rows(
+                source_context, authenticated, rows,
+                source_seed=source_seed, source_each=source_each)
+            prepared_model_sources = _prepare_learning_first_model_sources(
+                authenticated, source_rows)
+            profile = (
+                source_rows[0].profile if len(source_rows) == 1 else None)
+            return (
+                None, source_rows[0].source_adapter, None, profile, source_rows,
+                prepared_model_sources, None, None, None,
+            )
+        source_authority = (
+            source_context.bind_rows(
+                target_rows, seed=source_seed, capability=capability, each=source_each)
+            if delivery is None or len(delivery.specimen_ids) == len(target_rows) else
+            source_context.bind_delivery_rows(
+                target_rows, seed=source_seed, capability=capability,
+                direct_each=len(delivery.specimen_ids)))
         for identity, authority in rehearsal_authorities.items():
             row = next((item for item in rows if item.get("id") == identity), None)
             binding = rehearsal_bindings.get(identity)
@@ -129,15 +141,11 @@ def _prepared_source_inputs(
             source_authorities_by_id=rehearsal_authorities,
             source_bindings_by_id=rehearsal_bindings,
             issue_b11_proofs=strict)
-        if strict:
-            from bilqis_mlx.runtime.priority_source_materialization import (
-                _prepare_model_sources,
-            )
-            prepared_model_sources, _configs = _prepare_model_sources(
-                source_context, authenticated, manifest, source_rows)
-        else:
-            prepared_model_sources = _prepare_learning_first_model_sources(
-                authenticated, source_rows)
+        from bilqis_mlx.runtime.priority_source_materialization import (
+            _prepare_model_sources,
+        )
+        prepared_model_sources, _configs = _prepare_model_sources(
+            source_context, authenticated, manifest, source_rows)
         return (
             source_authority,
             adapter, manifest, profile, source_rows, prepared_model_sources,
@@ -175,6 +183,21 @@ def _compile_factory_training(
         rehearsal_by_id, rehearsal_authorities, source_rows,
         feature_artifact_path, generation_binding,
         authenticated, manifest, prepared_model_sources):
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if not strict_evidence_enabled():
+        return compile_learning_first_training_batch(
+            rows, source_context, candidate.topology,
+            delivery_capability=capability,
+            teacher_strategy=teacher_strategy,
+            requested_count=requested_count,
+            optimizer_step_seed=optimizer_step_seed,
+            visit_provenance=visit_provenance,
+            rehearsal_by_id=(rehearsal_by_id or {}),
+            generation_binding=generation_binding,
+            prepared_model_sources=prepared_model_sources,
+            delivered_content_sha256=delivery.specimen_content_sha256)
     by_tokens = {tuple(item.row["tokens"]): item.ast for item in source_rows}
     if len(by_tokens) != len(rows):
         _invalid("FACTORY_TRAINING_AMBIGUOUS_SOURCE_PREFIX")
@@ -264,12 +287,17 @@ def prepare_factory_training_batch(
     request_validation_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
     authenticated = semantic_context
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
     if authenticated is None:
         authenticated = authenticate_bamf_execution_feature_context(
             candidate, atlas_artifact_path, source_context.run_dir)
     elif not is_authenticated_generation_feature_context(authenticated):
         _invalid("FACTORY_TRAINING_SEMANTIC_CONTEXT_INVALID")
-    authenticated.__post_init__()
+    if strict:
+        authenticated.__post_init__()
     semantic_context_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
     (source_authority, _adapter, manifest, profile, source_rows,
@@ -291,10 +319,7 @@ def prepare_factory_training_batch(
         authenticated, manifest, prepared_model_sources)
     compile_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
-    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
-        strict_evidence_enabled,
-    )
-    if strict_evidence_enabled():
+    if strict:
         compiled_rows = _bind_b11_rows(
             source_context, candidate, authenticated, training, source_rows,
             profile, source_seed=source_seed, source_each=source_each,

@@ -15,12 +15,14 @@ from bilqis_mlx.runtime.b11_source_execution_authority import (
     _bind_prepared_b11_source_execution_authority, _issue_prepared_b11_source_proof,
 )
 from bilqis_mlx.semantics.frame_adapters.registry import source_frame_strategy
+from bilqis_mlx.semantics.atlas_features.common import _factor_overflow
 from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection
 from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.semantics.frame_compiler import (
     CompiledFrameBatch, CompiledFrameRows, FrameCompilerConfig, compile_prefix,
     validate_partial_visible_forest,
 )
+from bilqis_mlx.semantics.frame_schema import FrameInstance
 from bilqis_mlx.semantics.released_frame_schemas import (
     _load_pinned_released_frame_schemas_from_snapshot,
 )
@@ -133,9 +135,30 @@ def _prepare_learning_first_model_sources(authenticated, source_rows):
     B11 proof and currentness ceremony. The already-selected source rows and the
     planning generation's authenticated feature context remain the inputs.
     """
-    from bilqis_mlx.runtime.atlas_training_adapter import (
-        PreparedModelSourceInput, _source_features as source_features,
-    )
+    from bilqis_mlx.runtime.atlas_training_adapter import PreparedModelSourceInput
+
+    def learning_features(projection):
+        rows = []
+        type_map = dict(authenticated.features.type_map)
+        for envelope in projection.envelopes:
+            frame = envelope.frame
+            if type(frame) is not FrameInstance:
+                continue
+            for binding in frame.bindings:
+                concepts = ((binding.concept,) if binding.concept is not None
+                            else binding.alternatives)
+                for concept in concepts:
+                    row = authenticated.features.features_for(
+                        concept.semantic_id, binding.role_id,
+                        frame.frame_schema_id, envelope.scope)
+                    identifiers = tuple(concept.type_ids)
+                    rows.append(replace(
+                        row, type_ids=identifiers,
+                        type_rows=tuple(type_map.get(item, 0) for item in identifiers),
+                        type_overflow=tuple(
+                            (item, _factor_overflow("type", item))
+                            for item in identifiers if type_map.get(item, 0) == 0)))
+        return tuple(rows)
     prepared = []
     for item in source_rows:
         visible = tuple(item.row["tokens"])
@@ -144,9 +167,7 @@ def _prepare_learning_first_model_sources(authenticated, source_rows):
         prefix = compile_prefix(
             item.ast, len(visible), item.task.semantic_release, config)
         features = (() if item.projection is None else
-                    source_features(
-                        item.projection, authenticated.features,
-                        authenticated.selection))
+                    learning_features(item.projection))
         eligibility_digest = (
             item.projection.digest if item.projection is not None else
             contract_digest({
@@ -174,22 +195,27 @@ def _bind_learning_first_rows(
         prefix = training.rows[index].model_input.prefix
         config = (item.config if item.projection is None
                   else replace(item.config, approved=item.projection))
-        config = authorize_public_formal_prefix(item.ast, prefix, config)
         rows = CompiledFrameRows(
             (prefix,), (prefix.positions,), ((True,) * len(prefix.positions),))
         if item.projection is None:
             compiled = CompiledEncoderInput(
                 rows, (config,), authenticated.features, candidate.extents)
         else:
-            receipt = validate_partial_visible_forest(prefix, item.ast, config)
             compiled = CompiledEncoderInput(
-                rows, (config,), authenticated.features, candidate.extents,
-                source_asts=(item.ast,), partial_forest_receipts=(receipt,))
+                rows, (config,), authenticated.features, candidate.extents)
+        abi_indices = []
+        for token_index in item.row["tokens"]:
+            entry = authenticated.snapshot.abi(token_index)
+            token = item.source_graph["tokens"][token_index]
+            if entry.symbol != token:
+                semantic_id = item.source_graph["nodes"][token_index].get("semantic_id")
+                entry = authenticated.snapshot.abi_for_semantic(semantic_id)
+            abi_indices.append(entry.index)
         source = SourceAtomRow(
             authenticated.selection, item.row, item.source_graph,
             Path(source_context.source_root),
             item.source_seed, item.source_each,
-            source_context.release.curriculum, profile)
+            source_context.release.curriculum, item.profile, tuple(abi_indices))
         batch = BamfCompiledBatch(
             compiled, (source,), authenticated.schema, active_semantic_rows,
             visit_provenance=training.rows[index].provenance.visit)

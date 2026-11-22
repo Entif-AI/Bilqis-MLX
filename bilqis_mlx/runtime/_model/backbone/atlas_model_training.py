@@ -221,6 +221,10 @@ def _finalize_gradient_execution(
         _invalid("B11_TRAINING_LOSS_DRIFT")
     validate_bamf_parameters(
         backend.topology, compiled_batch.compiled.extents, gradients)
+    return _issue_gradient_execution(execution, loss_total, gradients, observation)
+
+
+def _issue_gradient_execution(execution, loss_total, gradients, observation):
     result = object.__new__(BamfGradientExecution)
     for name, value in (
         ("execution", execution),
@@ -233,6 +237,49 @@ def _finalize_gradient_execution(
     attach_performance_observation(result, observation)
     result.__post_init__()
     return result
+
+
+def _learning_first_value_and_grad_impl(
+        backend, params, compiled_batch, answer_plan, targets, mask, cache,
+        salience_supervision, source_loss_multiplier):
+    """Run one numerical training pass with no evidence replay or preflight."""
+    rebind_execution = _gradient_execution_rebinder(
+        params, None, spec=backend.topology,
+        extents=compiled_batch.compiled.extents,
+        generation=answer_plan.generation_binding)
+    holder = {}
+    with source_replay_observation() as replay:
+        def objective(current):
+            with defer_host_tensor_validation():
+                execution_binding = rebind_execution(current)
+                output = _forward_bamf_impl(
+                    backend, current, compiled_batch, answer_plan,
+                    ExecutionMode.INFERENCE, cache,
+                    refinement_training=True,
+                    execution_binding=execution_binding,
+                    decoder_trace=False)
+                execution = loss_bearing_bamf(
+                    output, targets, mask,
+                    salience_supervision=salience_supervision,
+                    source_loss_multiplier=source_loss_multiplier,
+                    validate_finite=False)
+                holder["execution"] = execution
+                return execution.loss.total
+
+        autodiff_started = time.perf_counter()
+        loss_total, gradients = mx.value_and_grad(objective)(params)
+        mx.eval(loss_total, gradients)
+        autodiff_wall_seconds = time.perf_counter() - autodiff_started
+    _require_finite_tensor_tree(gradients, "B11_GRADIENT_NONFINITE")
+    validate_bamf_parameters(
+        backend.topology, compiled_batch.compiled.extents, gradients)
+    return _issue_gradient_execution(
+        holder.get("execution"), loss_total, gradients, {
+            "b11_preflight_wall_seconds": 0.0,
+            "b11_autodiff_wall_seconds": float(autodiff_wall_seconds),
+            "b11_provider_draw_count": replay["provider_draws"],
+            "b11_atlas_reload_count": replay["atlas_reloads"],
+        })
 
 
 def _bamf_value_and_grad_impl(
@@ -252,6 +299,13 @@ def _bamf_value_and_grad_impl(
                 SalienceSupervision, PortableSalienceSupervision):
             _invalid("BAMF_SALIENCE_SUPERVISION_REQUIRED")
         salience_supervision.labels_for(compiled_batch)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if not strict_evidence_enabled():
+        return _learning_first_value_and_grad_impl(
+            backend, params, compiled_batch, answer_plan, targets, mask, cache,
+            salience_supervision, source_loss_multiplier)
     with source_replay_observation() as replay:
         (
             rebind_execution, preflight_output, preflight_execution,

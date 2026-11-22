@@ -337,16 +337,23 @@ controlling performance acceptance authority. Component-local microbenchmarks ar
 diagnostic evidence only and do not close a performance issue when the actual
 persistent trainer remains slow.
 
-Fast, durable learning takes precedence over auditability, provenance rigor,
-cryptographic custody, execution-authority ceremony, and broad currentness
-certification on the ordinary teaching cadence. If those mechanisms materially
-delay the learner, keep their implementation available behind an explicit strict
-or evidence mode and remove them from the default training hot path unless they are
-proven necessary for one of these learning invariants: real measured gain,
-acceptable regression protection, atomic accepted model+optimizer persistence, or
-correct resume from accepted state. This stabilization authority does not delete
-the stricter machinery or authorize fabricated evidence. It changes which work is
-allowed to block training by default.
+**Default BAMF Step 1 acceptance target: <= 1 second.** Ordinary training is a
+numerical learning path, not an evidence-verification path. Authentication,
+custody, provenance, currentness, replay, source-prefix/prefix-inventory,
+refinement-policy verification, proof issuance, and equivalent evidence-plane
+ceremony MUST NOT execute on the default Step 1 hot path or be moved immediately
+before autodiff under another name. Keep that machinery available behind an
+explicit strict/evidence mode instead.
+
+The default path may retain only work required for actual gradient/learning
+formation, meaningful regression protection, atomic accepted model+optimizer
+persistence, and correct resume from accepted state. Do not re-enable strict
+source/B11 authority machinery merely to satisfy an existing validator; change or
+bypass the validator for non-strict training when it depends on evidence ceremony.
+Performance is accepted only from the production/full-path training boundary, with
+the <= 1 second Step 1 target controlling the current repair. This stabilization
+authority does not delete the stricter machinery or authorize fabricated evidence.
+It removes that machinery from ordinary training cadence.
 
 **Staged fail-fast verification for expensive tests (ADR-139):** Treat every
 expensive test or witness as an ordered pipeline. Do not make a multi-minute MLX,

@@ -158,6 +158,13 @@ def execute_horizon(
         *, emit_progress, invalid, rehearsal_plan=None, candidate_visit=None,
         candidate_executor=execute_accepted_priority_candidate,
         distributed_profile=None, distributed_executor=None):
+    candidate_kwargs = {
+        "candidate_visit": candidate_visit,
+        "distributed_profile": distributed_profile,
+        "distributed_executor": distributed_executor,
+    }
+    if candidate_executor is execute_learning_first_priority_candidate:
+        candidate_kwargs["accepted_cache"] = cache
     return _execute_horizon_impl(
         run_dir, selection, context, parent, atlas_path, feature_path,
         rows, horizon, cache, candidate_attempt_ordinal, progress,
@@ -166,11 +173,7 @@ def execute_horizon(
         source_lane_cls=CandidateSourceLane, source_metrics_cls=SourcePrefetchMetrics,
         prepare_evidence_root=prepare_candidate_evidence_root, capture_cls=_Capture,
         delivery_observation_cls=FactoryDeliveryObservation,
-        execute_candidate=partial(
-            candidate_executor,
-            candidate_visit=candidate_visit,
-            distributed_profile=distributed_profile,
-            distributed_executor=distributed_executor),
+        execute_candidate=partial(candidate_executor, **candidate_kwargs),
         step_seed=_step_seed,
         emit_progress=emit_progress, invalid=invalid,
         observe_completed_step_fn=observe_completed_step,

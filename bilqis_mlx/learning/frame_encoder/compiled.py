@@ -28,41 +28,61 @@ from .contracts import (
 )
 
 
-def _compiled_groups(row, config, source_ast=None, receipt=None):
+def _strict_compiled_source(row, config, source_ast, receipt):
     if source_ast is None:
         if receipt is not None:
             _invalid()
         visible = reconstruct(row)
+
         def has_child_edge(tree):
             return (
                 (type(tree.root) is FrameInstance
                  and any(binding.child_frame is not None
                          for binding in tree.root.bindings))
                 or any(has_child_edge(child) for child in tree.children))
+
         if any(has_child_edge(tree) for tree in visible.frames):
             _invalid()
         rebuilt = compile_prefix(
-            StreamingAST(
-                visible.source_instance_id, visible.atoms, visible.frames),
+            StreamingAST(visible.source_instance_id, visible.atoms, visible.frames),
             row.visible_end, row.semantic_release, config)
         if rebuilt != row:
             _invalid()
-    else:
-        if type(source_ast) is not StreamingAST or type(
-                receipt) is not PartialVisibleForestReceipt:
+        return
+    if type(source_ast) is not StreamingAST or type(receipt) is not PartialVisibleForestReceipt:
+        _invalid()
+    validate_partial_visible_forest(row, source_ast, config, expected_receipt=receipt)
+
+
+def _compiled_projection(row, config, closures, strict):
+    if not closures:
+        return None
+    if config.approved is None:
+        _invalid()
+    if not strict:
+        if type(config.approved) is not ApprovedContextProjection:
             _invalid()
-        validate_partial_visible_forest(
-            row, source_ast, config, expected_receipt=receipt)
-    closures = tuple(position for position in row.positions if position.kind is PositionKind.CLOSURE)
-    projection = None
-    if closures:
-        if config.approved is None:
-            _invalid()
-        handles = {position.frame_handle for position in closures}
-        projection = project_context(tuple(item for item in config.approved.envelopes if item.frame_handle in handles),
-                                     replace(config.task, causal_prefix_end=row.visible_end), config.frontier, config.policy)
-        if type(projection) is not ApprovedContextProjection or projection.digest != row.context_digest:
-            _invalid()
+        return config.approved
+    handles = {position.frame_handle for position in closures}
+    projection = project_context(
+        tuple(item for item in config.approved.envelopes if item.frame_handle in handles),
+        replace(config.task, causal_prefix_end=row.visible_end),
+        config.frontier, config.policy)
+    if type(projection) is not ApprovedContextProjection or projection.digest != row.context_digest:
+        _invalid()
+    return projection
+
+
+def _compiled_groups(row, config, source_ast=None, receipt=None):
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
+    if strict:
+        _strict_compiled_source(row, config, source_ast, receipt)
+    closures = tuple(
+        position for position in row.positions if position.kind is PositionKind.CLOSURE)
+    projection = _compiled_projection(row, config, closures, strict)
     groups = []
     for position in row.positions:
         if position.kind is PositionKind.ATOM:
@@ -98,7 +118,11 @@ def _compiled_groups(row, config, source_ast=None, receipt=None):
 
 
 def _owned_compiled_groups(row, config, artifact_owner, source_ast=None, receipt=None):
-    artifact_owner.require_row(row)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if strict_evidence_enabled():
+        artifact_owner.require_row(row)
     return _compiled_groups(row, config, source_ast, receipt)
 
 
@@ -148,8 +172,12 @@ class CompiledEncoderInput:
         # derived projection is consumed.
         if (hasattr(self, "_groups") and hasattr(self, "_projections")
                 and hasattr(self, "member_requests") and hasattr(self, "atomic_handles")):
-            for row in self.compiled.rows:
-                self.packed_frame_artifact_owner.require_row(row)
+            from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+                strict_evidence_enabled,
+            )
+            if strict_evidence_enabled():
+                for row in self.compiled.rows:
+                    self.packed_frame_artifact_owner.require_row(row)
             return
         source_asts = self.source_asts or (None,) * len(self.compiled.rows)
         receipts = self.partial_forest_receipts or (None,) * len(self.compiled.rows)

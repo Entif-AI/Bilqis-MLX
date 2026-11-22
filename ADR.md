@@ -3919,3 +3919,39 @@ The predecessor School50 cockpit is an information-value baseline, not a visual 
 Observed/provisional evidence remains non-authoritative for learner state. Throughput remains distinct from learning. Missing evidence is never synthesized as zero, healthy, retained, mastered, or improved. `NOT_MEASURED`, `NOT_APPLICABLE`, `MISSING`, `UNKNOWN`, `PARTIAL`, `STALE`, `DENIED`, and `UNAVAILABLE` remain distinct. Arithmetic summaries require compatible identified inputs and must state their denominator/scope semantics.
 
 The checked-in `docs/architecture/BAMF_OPERATOR_OBSERVABILITY_INVARIANT.md` parity matrix is the implementation map for this decision. Future Mission Control contract changes must treat producer-present/operator-permitted data that collapses to generic null/Unavailable as a conformance regression unless an explicit retirement decision supersedes the operator question.
+
+## ADR-153 | 2026-11-22 | Default BAMF Step 1 is a verification-free numerical learning path
+
+**Status:** Accepted by direct owner instruction on 2026-11-22 through issue #1566.
+
+**Problem:** The ordinary BAMF training path continued to execute source authority,
+custody, provenance/currentness, prefix-inventory, replay, and refinement-policy
+verification during or immediately around candidate gradient formation. Earlier
+repairs removed selected-source materialization from the default cadence, but live
+production evidence still showed Step 1 exceeding 123 seconds while the process was
+inside `mlx::core::value_and_grad`, with Python-side JSON work visible beneath the
+autodiff callback. The owner explicitly rejected further optimization or relocation
+of this authentication/verification machinery inside ordinary training.
+
+**Decision:** Default BAMF training Step 1 targets **<= 1 second**. The non-strict
+path MUST NOT execute authentication, custody, provenance, currentness, replay,
+source-prefix/prefix-inventory, refinement-policy verification, proof issuance, or
+equivalent evidence-plane ceremony as part of the hot path. Moving the same work
+from inside autodiff to immediately before autodiff does not satisfy this decision.
+Strict/evidence mode may retain the complete legacy verification path.
+
+Ordinary Step 1 retains only the work necessary for actual numerical
+gradient/learning formation, meaningful regression protection, atomic accepted
+model+optimizer persistence, and correct resume from accepted state. Existing
+validators or refinement contracts that require evidence-plane grants in non-strict
+training must be bypassed or redesigned rather than causing the default path to
+repay the strict ceremony.
+
+**Acceptance:** Production/full-path Step 1 latency is controlling evidence.
+Component microbenchmarks remain diagnostic only. Historical 8-12 second candidate
+steps are not an acceptable floor under this ADR; the current target is <= 1
+second. Strict/evidence behavior remains separately testable and may be slower.
+
+**Scope:** This is a stabilization decision for ordinary BAMF training. It does not
+authorize fabricated evidence, weaken accepted model+optimizer atomicity, alter
+resume correctness, or delete strict verification machinery.

@@ -11,6 +11,7 @@ from bilqis_mlx.learning._atlas_candidate.identity_binding import (
 from bilqis_mlx.runtime.bamf_bundle import is_authenticated_generation_feature_context
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     admit_uninterrupted_candidate_step, bind_accepted_execution_cache,
+    derive_participation_inputs,
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
     bind_candidate_execution_cache, bind_execution_generation,
@@ -35,6 +36,32 @@ from bilqis_mlx.runtime.c08_distributed_executor import DistributedExecutorBindi
 from .retry import execute_with_oom_retry
 
 
+def _learning_first_admit(parent, cache, candidate, gradient, teacher_hparams,
+                          max_norm):
+    from bilqis_mlx.learning._atlas_candidate.step import (
+        learning_first_candidate_step,
+    )
+    from bilqis_mlx.learning._atlas_candidate.transaction import (
+        _begin_learning_first_candidate,
+    )
+    if candidate is None:
+        parent_identity = getattr(cache, "_candidate_identity_sha256", None)
+        candidate = _begin_learning_first_candidate(
+            parent.retained_state, parent_identity)
+    elif not getattr(candidate, "learning_first", False):
+        _invalid("FACTORY_LEARNING_FIRST_CANDIDATE_REQUIRED")
+    group_eligible, _active_admitted = derive_participation_inputs(parent)
+    loss_executions = (
+        (gradient.execution,)
+        if hasattr(gradient, "execution")
+        else tuple(gradient.loss_executions)
+    )
+    return learning_first_candidate_step(
+        candidate, gradient.gradients, loss_executions, group_eligible,
+        teacher_hparams, spec=parent.topology, extents=parent.extents,
+        max_norm=max_norm)
+
+
 def _realized_candidate_cost(*args, **kwargs):
     """Compatibility seam for the reporting contract after structural extraction."""
     return realized_candidate_cost(*args, **kwargs, invalid=_invalid)
@@ -44,17 +71,24 @@ def _prepared_feature_context(prepared, semantic_context):
     feature_context = prepared.semantic_context if semantic_context is None else semantic_context
     if not is_authenticated_generation_feature_context(feature_context):
         _invalid("FACTORY_CANDIDATE_SEMANTIC_CONTEXT_INVALID")
-    feature_context.__post_init__()
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if strict_evidence_enabled():
+        feature_context.__post_init__()
     return feature_context
 
 
 def _execute_training_and_admission(
-        run_dir, source_context, parent, prepared, feature_context, generation, cache,
-        resource_plan, teacher_hparams, max_norm, candidate, currentness_transaction,
-        salience_supervision, mentor_supervision, distributed_profile,
-        distributed_executor):
+        run_dir, source_context, parent, prepared, feature_context, generation, cache, resource_plan,
+        teacher_hparams, max_norm, candidate, currentness_transaction,
+        salience_supervision, mentor_supervision, distributed_profile, distributed_executor):
     parameters = dict((parent.retained_state.optimizer if candidate is None
                        else candidate.optimizer).parameters)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
     if len(prepared.compiled_rows) == 1:
         gradient, authority, targets = execute_factory_training_row(
             parameters, prepared.compiled_rows[0], source_context,
@@ -63,11 +97,16 @@ def _execute_training_and_admission(
             mentor_supervision=mentor_supervision)
         authorities, target_rows = (authority,), (targets,)
         optimizer_started = time.perf_counter()
-        transaction = admit_uninterrupted_candidate_step(
-            Path(run_dir), parent, loss_bearing_target=True,
-            gradient_execution=gradient, teacher_hparams=teacher_hparams,
-            max_norm=max_norm, candidate=candidate, execution_cache=cache,
-            currentness_transaction=currentness_transaction)
+        transaction = (
+            admit_uninterrupted_candidate_step(
+                Path(run_dir), parent, loss_bearing_target=True,
+                gradient_execution=gradient, teacher_hparams=teacher_hparams,
+                max_norm=max_norm, candidate=candidate, execution_cache=cache,
+                currentness_transaction=currentness_transaction)
+            if strict else
+            _learning_first_admit(
+                parent, cache, candidate, gradient, teacher_hparams, max_norm)
+        )
         loss_total = gradient.loss_total
         c08_metrics = (1, 0, 1, 0, None)
     else:
@@ -104,23 +143,26 @@ def _execute_training_and_admission(
                 resource_plan, manifest, outcome)
             logical_batch_wall_seconds = time.perf_counter() - distributed_started
         optimizer_started = time.perf_counter()
-        transaction = admit_uninterrupted_candidate_step(
-            Path(run_dir), parent, loss_bearing_target=True,
-            logical_batch_execution=gradient,
-            training_batch=prepared.training_batch,
-            logical_batch_plan=resource_plan,
-            teacher_hparams=teacher_hparams, max_norm=max_norm, candidate=candidate,
-            execution_cache=cache,
-            currentness_transaction=currentness_transaction)
+        transaction = (
+            admit_uninterrupted_candidate_step(
+                Path(run_dir), parent, loss_bearing_target=True,
+                logical_batch_execution=gradient,
+                training_batch=prepared.training_batch,
+                logical_batch_plan=resource_plan,
+                teacher_hparams=teacher_hparams, max_norm=max_norm,
+                candidate=candidate, execution_cache=cache,
+                currentness_transaction=currentness_transaction)
+            if strict or distributed_profile is not None else
+            _learning_first_admit(
+                parent, cache, candidate, gradient, teacher_hparams, max_norm)
+        )
         loss_total = gradient.weighted_mean_loss
         c08_metrics = (
             gradient.gradient_launches, gradient.vectorized_microbatches,
             gradient.materialization_barriers, gradient.scalar_fallback_rows,
             logical_batch_wall_seconds)
-    return (
-        gradient, authorities, target_rows, transaction, loss_total, c08_metrics,
-        time.perf_counter() - optimizer_started,
-    )
+    return (gradient, authorities, target_rows, transaction, loss_total, c08_metrics,
+            time.perf_counter() - optimizer_started)
 
 
 def _candidate_cost(
@@ -239,7 +281,10 @@ def _execute_prepared_candidate(
             salience_supervision, mentor_supervision, distributed_profile,
             distributed_executor)
         motif_started = time.perf_counter()
-        if finalize_candidate:
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        if finalize_candidate and strict_evidence_enabled():
             transaction = _stage_retained_motifs(
                 run_dir, parent, cache, transaction, prepared, plan, memory_budget,
                 currentness_transaction=currentness_transaction)
@@ -281,16 +326,23 @@ def _execute_prepared_candidate(
 def _candidate_cache_and_generation(run_dir, source_context, parent, candidate,
                                     currentness_transaction, *,
                                     accepted_cache=None):
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
     if accepted_cache is None:
         source_context.require_accepted_runtime(Path(run_dir))
     if accepted_cache is not None:
         if currentness_transaction is None:
-            _invalid("FACTORY_CANDIDATE_ACCEPTED_CACHE_CURRENTNESS_REQUIRED")
-        from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
-            require_accepted_currentness,
-        )
-        cache = require_accepted_currentness(
-            currentness_transaction, cache=accepted_cache, parent=parent)._cache
+            if strict:
+                _invalid("FACTORY_CANDIDATE_ACCEPTED_CACHE_CURRENTNESS_REQUIRED")
+            cache = accepted_cache
+        else:
+            from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
+                require_accepted_currentness,
+            )
+            cache = require_accepted_currentness(
+                currentness_transaction, cache=accepted_cache, parent=parent)._cache
     elif currentness_transaction is None:
         cache = bind_accepted_execution_cache(Path(run_dir))
     else:
@@ -299,15 +351,20 @@ def _candidate_cache_and_generation(run_dir, source_context, parent, candidate,
         )
         cache = require_accepted_currentness(
             currentness_transaction, parent=parent)._cache
-    if candidate is not None:
+    if candidate is not None and strict:
         cache = bind_candidate_execution_cache(
             cache, parent, candidate, spec=parent.topology, extents=parent.extents)
     parameters = (
         parent.retained_state.optimizer if candidate is None else candidate.optimizer
     ).parameters
-    generation = bind_execution_generation(
-        cache, parameters, spec=parent.topology,
-        extents=parent.extents).generation_digest
-    if cache.generation_binding != generation:
+    if strict:
+        generation = bind_execution_generation(
+            cache, parameters, spec=parent.topology,
+            extents=parent.extents).generation_digest
+    else:
+        from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
+        generation = execution_generation_digest(
+            parameters, spec=parent.topology, extents=parent.extents)
+    if strict and cache.generation_binding != generation:
         _invalid("FACTORY_CANDIDATE_STEP_GENERATION_DRIFT")
     return cache, generation

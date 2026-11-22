@@ -6,6 +6,7 @@ import mlx.core as mx
 import numpy as np
 from bilqis_mlx.runtime.model_topology_v2 import FEATURE_NONE_ROW, GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes
 from bilqis_mlx.semantics.atlas_features import AtlasFeatures
+from bilqis_mlx.semantics.atlas_features.common import _factor_overflow
 from bilqis_mlx.semantics.atlas_features.formal import source_qualified_feature_row
 from .common import COMPOSITION_SCHEMA, FactorGate, POSITION_BASE, WIDTH, _SINUSOID_PAIR_WIDTH, _invalid
 from .requests import FeatureRequest
@@ -75,6 +76,21 @@ def _source_qualified_feature_row(
         return require_b11_source_feature_row(
             source_execution_authority, request)
     frame = request.projection.frame(request.frame_handle)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if not strict_evidence_enabled():
+        row = features.features_for(
+            request.concept.semantic_id, request.role_id,
+            frame.frame_schema_id, request.scope)
+        identifiers = tuple(request.concept.type_ids)
+        type_map = dict(features.type_map)
+        return replace(
+            row, type_ids=identifiers,
+            type_rows=tuple(type_map.get(item, 0) for item in identifiers),
+            type_overflow=tuple(
+                (item, _factor_overflow("type", item))
+                for item in identifiers if type_map.get(item, 0) == 0))
     return source_qualified_feature_row(
         features, request.concept, request.role_id, frame, request.scope,
         atlas_selection, invalid=_invalid)

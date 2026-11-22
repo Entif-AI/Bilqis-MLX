@@ -83,11 +83,50 @@ class BamfDeliveryProvenance:
 
 
 @dataclass(frozen=True)
+class BamfLearningRowMetadata:
+    """Operational row coordinates for verification-free ordinary training.
+
+    This is deliberately not a provenance claim.  It carries only the values
+    needed by batching, teacher routing, and deterministic optimizer seeding.
+    """
+
+    row_id: str
+    source_id: str | None
+    capability_id: str
+    operation_id: str | None
+    teacher_strategy: tuple
+    requested_count: int
+    delivered_count: int
+    rehearsal: str | None
+    optimizer_step_seed: int
+    visit: BamfVisitProvenance
+    source_family_id: str | None = None
+    episode_id: str | None = None
+    source_row_content_sha256: None = None
+    immediate_dependencies: tuple = ()
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.row_id, str) or not self.row_id
+                or not isinstance(self.capability_id, str)
+                or not self.capability_id
+                or type(self.optimizer_step_seed) is not int
+                or self.optimizer_step_seed < 0
+                or type(self.requested_count) is not int
+                or self.requested_count < 1
+                or type(self.delivered_count) is not int
+                or self.delivered_count < 1
+                or not all(hasattr(self.visit, name)
+                           for name in ("run_seed", "visit_id", "capability_id"))
+                or self.immediate_dependencies != ()):
+            _invalid("LEARNING_ROW_METADATA_INVALID")
+
+
+@dataclass(frozen=True)
 class BamfTrainingRow:
     model_input: BamfModelInput
     target: BamfTarget
     native_target: BamfTarget | None
-    provenance: BamfDeliveryProvenance
+    provenance: BamfDeliveryProvenance | BamfLearningRowMetadata
     auxiliaries: tuple = ()
     rule_policy: tuple = ()
 

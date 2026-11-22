@@ -98,6 +98,11 @@ def _validate_task_authority(batch):
 
 
 def _validate_training_context(batch):
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if not strict_evidence_enabled() and batch.training_authority is None:
+        return
     if batch.visit_provenance is not None:
         batch.visit_provenance.__post_init__()
     if batch.training_authority is None:
@@ -133,6 +138,11 @@ def _bind_atlas_feature_owner(batch):
             AtlasFeatureArtifactOwner(
                 batch.compiled.features, batch.feature_schema),
         )
+        return
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if not strict_evidence_enabled():
         return
     owner.require(batch.compiled.features)
 
