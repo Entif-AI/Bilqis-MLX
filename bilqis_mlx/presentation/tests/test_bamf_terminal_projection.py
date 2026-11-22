@@ -325,7 +325,7 @@ class BamfTerminalProjectionTests(unittest.TestCase):
             accepted = {
                 "event": "BAMF_C16_3_ACCEPTED", "event_id": "accepted-current",
                 "capability": "A.MAPS", "candidate_attempt_ordinal": 1,
-                "optimizer_step": 138, "selected_policy_key": "policy-current",
+                "optimizer_step": 138, "selected_policy_key": "8694ee76cff6",
                 "visit_id": "authoritative-visit-id",
                 "how_outcome": {
                     "attempted_steps": 12, "retained_steps": 12,
