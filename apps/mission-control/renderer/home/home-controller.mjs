@@ -107,13 +107,18 @@ export function createHomeController(api, {
       returned: records.length, truncated: false, next_cursor: null,
     };
   }
+  function transportRejected(page) {
+    const reason = String(page?.reason ?? "");
+    return page?.accepted === false &&
+      /(NOT_CONNECTED|DISCONNECTED|BROKER_EXITED)/.test(reason);
+  }
   async function safeQueryFamily(family, source) {
-    try { return await queryFamily(family, source); }
-    catch (_error) { return unavailablePage(family, source); }
+    return queryFamily(family, source);
   }
   async function loadFamily(family, current) {
     const page = await safeQueryFamily(family, context);
     if (current !== epoch) return null;
+    if (transportRejected(page)) throw new Error("HOME_TRANSPORT_UNAVAILABLE");
     if (page?.accepted === true) retryFamilies.delete(family);
     else retryFamilies.add(family);
     pages = { ...pages, [family]: page };
@@ -130,6 +135,8 @@ export function createHomeController(api, {
     if (current !== epoch) return;
     const frontier = historical ? null : await request("run");
     if (current !== epoch) return;
+    const queried = [...entries.map(([, page]) => page), ...[anchor, frontier].filter(Boolean)];
+    if (queried.some(transportRejected)) throw new Error("HOME_TRANSPORT_UNAVAILABLE");
     if (!historical && anchor?.accepted === true && frontier?.accepted === true &&
         acceptedIdentity(anchor) !== acceptedIdentity(frontier)) {
       needsSnapshot = true;
@@ -149,6 +156,7 @@ export function createHomeController(api, {
   async function refreshRun(current) {
     const page = await safeQueryFamily("run", context);
     if (current !== epoch) return;
+    if (transportRejected(page)) throw new Error("HOME_TRANSPORT_UNAVAILABLE");
     if (page?.accepted !== true) {
       retryFamilies.add("run");
       pages = { ...pages, run: page };

@@ -49,7 +49,10 @@ test("one unavailable family cannot blind paginated live run evidence", async ()
     async query(request) {
       calls.push([request.family, request.cursor ?? null]);
       if (request.family === "semantic") {
-        throw new Error("SEMANTIC_FAMILY_UNAVAILABLE");
+        return {
+          accepted: false, family: "semantic", mode: "current",
+          reason: "CONTROL_PLANE_QUERY_RESPONSE_TOO_LARGE",
+        };
       }
       if (request.family !== "run") return emptyPage(request.family);
       if (request.cursor === null) {
