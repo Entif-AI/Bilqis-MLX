@@ -13,6 +13,8 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import (
 from bilqis_mlx.runtime.capability_retention import (
     Assessment, CompleteSolver, EvaluationCohort, evaluate_capabilities,
 )
+from bilqis_mlx.runtime.cognitive_solver import SolveBudget
+from bilqis_mlx.semantics.cognitive_dag import DAGBudget
 from bilqis_mlx.semantics.domains import contract_digest
 
 from .capability_evaluation import _invalid, _sha
@@ -147,6 +149,25 @@ class _ParentAssessmentCache:
             self._by_scope[scope_key] = (retained_scope, entry)
             return assessment, _receipt(entry, False)
 
+    def lookup(
+            self, scope: object, identity: ParentAssessmentCacheIdentity,
+            cohort: EvaluationCohort, generation: str,
+    ) -> tuple[Assessment, ParentAssessmentCacheReceipt] | None:
+        with self._lock:
+            scope_key = scope if isinstance(scope, str) else id(scope)
+            scoped = self._by_scope.get(scope_key)
+            if scoped is None:
+                return None
+            retained_scope, entry = scoped
+            if retained_scope is not None and retained_scope is not scope:
+                return None
+            if entry.identity != identity:
+                return None
+            assessment = _require_assessment(entry.assessment, cohort, generation)
+            if _entry_digest(identity, assessment) != entry.cache_entry_sha256:
+                _invalid("BAMF_C05_PARENT_ASSESSMENT_CACHE_DRIFT")
+            return assessment, _receipt(entry, True)
+
     def clear(self) -> None:
         with self._lock:
             self._by_scope.clear()
@@ -212,6 +233,30 @@ def use_parent_assessment(
     return _CACHE.use(cache_scope, identity, solver, cohort, generation)
 
 
+def lookup_parent_assessment(
+        identity: ParentAssessmentCacheIdentity,
+        cohort: EvaluationCohort,
+        generation: str,
+        *,
+        scope: object | None = None,
+) -> tuple[Assessment, ParentAssessmentCacheReceipt] | None:
+    """Return exact cached parent evidence without requiring solver construction."""
+    if (
+        type(identity) is not ParentAssessmentCacheIdentity
+        or type(cohort) is not EvaluationCohort
+        or not _sha(generation)
+        or generation != identity.parent_generation_sha256
+        or identity.fixed_cohort_sha256 != contract_digest(cohort)
+        or identity.rubric_sha256 != cohort.rubric_sha256
+        or identity.source_sha256 != cohort.source_sha256
+        or identity.policy_sha256 != cohort.policy_sha256
+    ):
+        _invalid("BAMF_C05_PARENT_ASSESSMENT_CACHE_INPUT_INVALID")
+    identity.__post_init__()
+    cache_scope = identity.run_id if scope is None else scope
+    return _CACHE.lookup(cache_scope, identity, cohort, generation)
+
+
 def factory_parent_assessment_identity(
         source_context, parent, accepted_cache, cohort, parent_solver,
         parent_generation: str,
@@ -253,7 +298,9 @@ def factory_parent_assessment_identity(
         evaluator_contract_sha256=contract_digest({
             "schema": "bilqis.mlx.c05-factory-complete-solver/v1",
             "assessment_schema": "bilqis.c05.assessment/v1",
-            "solve_budget_sha256": contract_digest(parent_solver.budget),
+            "solve_budget_sha256": contract_digest(
+                parent_solver.budget if parent_solver is not None
+                else SolveBudget(DAGBudget(), max_neural_calls=1)),
             "source_context_graph_sha256": contract_digest(
                 source_context.graph),
         }),
@@ -270,5 +317,6 @@ __all__ = (
     "ParentAssessmentCacheReceipt",
     "clear_parent_assessment_cache",
     "factory_parent_assessment_identity",
+    "lookup_parent_assessment",
     "use_parent_assessment",
 )
