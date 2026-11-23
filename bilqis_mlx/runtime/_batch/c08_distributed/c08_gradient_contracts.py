@@ -62,6 +62,7 @@ class LogicalBatchGradientExecution:
     wall_seconds: float
     distributed_metadata: DistributedLogicalBatchMetadata | None = field(
         default=None, repr=False, compare=False)
+    _numerical_finite_attested: bool = field(init=False, repr=False, compare=False)
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
@@ -77,7 +78,7 @@ class LogicalBatchGradientExecution:
                        for value in self.gradients.values())
                 or not isinstance(self.weighted_mean_loss, mx.array)
                 or self.weighted_mean_loss.size != 1
-                or not bool(mx.all(mx.isfinite(self.weighted_mean_loss)))
+                or type(getattr(self, "_numerical_finite_attested", None)) is not bool
                 or not isinstance(self.source_digest, str)
                 or not self.source_digest
                 or not isinstance(self.generation_binding, str)
@@ -98,6 +99,9 @@ class LogicalBatchGradientExecution:
                 or (self.distributed_metadata is not None
                     and type(self.distributed_metadata)
                     is not DistributedLogicalBatchMetadata)):
+            _invalid("C08_LOGICAL_BATCH_GRADIENT_INVALID")
+        if (not getattr(self, "_numerical_finite_attested", False)
+                and not bool(mx.all(mx.isfinite(self.weighted_mean_loss)))):
             _invalid("C08_LOGICAL_BATCH_GRADIENT_INVALID")
         if self.distributed_metadata is not None:
             self.distributed_metadata.__post_init__()
@@ -151,7 +155,11 @@ def _add_b11_observation(total: dict, execution) -> None:
         "b11_postflight_result_construction_wall_seconds",
     ):
         total[name] += float(observed.get(name, 0.0))
-    for name in ("b11_provider_draw_count", "b11_atlas_reload_count"):
+    for name in (
+        "b11_materialization_barrier_count", "b11_host_readback_count",
+        "b11_validation_sync_count", "b11_provider_draw_count",
+        "b11_atlas_reload_count",
+    ):
         total[name] += int(observed.get(name, 0))
 
 

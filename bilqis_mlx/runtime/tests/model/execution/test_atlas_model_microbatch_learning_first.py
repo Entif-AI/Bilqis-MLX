@@ -56,7 +56,8 @@ def test_route_gradient_launch_executes_one_source_backbone_and_no_preflight():
                                                                         microbatch_execution, "finalize_microbatch_gradient",
                                                                         return_value="done"), patch.object(
                                                                             mx, "value_and_grad",
-                                                                            wraps=mx.value_and_grad) as value_and_grad:
+                                                                            wraps=mx.value_and_grad) as value_and_grad, patch.object(
+                                                                                mx, "eval", wraps=mx.eval) as evaluate:
         result = microbatch._bamf_microbatch_value_and_grad_impl(
             Backend(), params, rows, plans, ((),) * 4, ({},) * 4, None)
 
@@ -65,6 +66,8 @@ def test_route_gradient_launch_executes_one_source_backbone_and_no_preflight():
     assert source_producer.call_count == 1
     assert finalize.call_count == 1
     assert postflight.call_count == 1
+    assert isinstance(postflight.call_args.args[-3], mx.array)
+    assert evaluate.call_count == 1
     assert legacy_postflight.call_count == 0
 
 
@@ -208,7 +211,10 @@ def test_learning_first_ignores_accepted_cache_for_gradient_identity():
                                     (object(), object()),
                                     (),
                                     mx.array(True),
-                                    {},
+                                    {
+                                        "b11_materialization_barrier_count": 1,
+                                        "b11_host_readback_count": 1,
+                                    },
                                 )), patch.object(
                                     microbatch_execution,
                                     "_require_materialized_finite_witness"), patch.object(
@@ -216,10 +222,14 @@ def test_learning_first_ignores_accepted_cache_for_gradient_identity():
                                         "finalize_microbatch_gradient",
                                         return_value="done"), patch.object(
                                             microbatch_execution,
-                                            "attach_performance_observation"):
+                                            "attach_performance_observation") as observe:
         result = microbatch_execution._learning_first_microbatch_value_and_grad_impl(
             Backend(), params, rows, plans, ((), ()), ({}, {}), cache, None)
 
     assert result == "done"
     assert rebind.call_args.args[1] is None
+    observation = observe.call_args.args[1]
+    assert observation["b11_materialization_barrier_count"] == 1
+    assert observation["b11_host_readback_count"] == 2
+    assert observation["b11_validation_sync_count"] == 0
 

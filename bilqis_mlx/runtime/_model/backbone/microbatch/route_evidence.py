@@ -71,7 +71,7 @@ def _refinement_participation(selection):
 def microbatch_trace_from_route(
     backend, params, row_batches, answer_plans, targets, masks, producer, hidden,
     accepted_cache, execution_binding, salience_supervision, refinement_selections,
-    trajectory, route_logits, refinement_route_logits=(),
+    trajectory_indices, route_logits, refinement_route_logits=(),
 ):
     from dataclasses import replace
     from bilqis_mlx.runtime.autodiff_trace import defer_host_tensor_validation
@@ -85,9 +85,10 @@ def microbatch_trace_from_route(
     generation = require_execution_generation_binding(
         execution_binding, params, spec=backend.topology,
         extents=row_batches[0].compiled.extents).generation_digest
-    if not trajectory:
+    if (not isinstance(trajectory_indices, mx.array)
+            or trajectory_indices.ndim != _ROUTE_TRAJECTORY_NDIM):
         _invalid("B11_MICROBATCH_ROUTE_EVIDENCE_MISSING")
-    trajectory_indices = np.asarray(mx.stack(trajectory), dtype=np.int64)
+    trajectory_indices = np.asarray(trajectory_indices, dtype=np.int64)
     executions = []
     for index, (row_batch, plan, row_targets, mask, refinement) in enumerate(zip(
             row_batches, answer_plans, targets, masks, refinement_selections)):

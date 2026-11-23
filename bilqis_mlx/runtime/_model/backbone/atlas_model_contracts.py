@@ -179,6 +179,7 @@ class BamfMicrobatchGradientExecution:
     gradients: Mapping
     mean_loss: mx.array
     schema_version: str = "bilqis.mlx.b11-microbatch-gradient-execution/v1"
+    _numerical_finite_attested: bool = field(init=False, repr=False, compare=False)
     _issuance: object = field(init=False, repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
@@ -196,7 +197,7 @@ class BamfMicrobatchGradientExecution:
             or any(not isinstance(value, mx.array) for value in self.gradients.values())
             or not isinstance(self.mean_loss, mx.array)
             or self.mean_loss.size != 1
-            or not bool(mx.all(mx.isfinite(self.mean_loss)))
+            or getattr(self, "_numerical_finite_attested", False) is not True
             or self.schema_version
             != "bilqis.mlx.b11-microbatch-gradient-execution/v1"
         ):
