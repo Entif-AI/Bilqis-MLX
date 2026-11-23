@@ -109,6 +109,7 @@ class Offer:
     capability_id = 'cap'
     source_seed = 7
     source_each = 1
+    source_authority = SimpleNamespace(content_sha256='p' * 64)
     _planning_generation = SimpleNamespace(
         _accepted_currentness='currentness',
         _parent='planned-parent',

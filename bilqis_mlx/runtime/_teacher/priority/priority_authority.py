@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 import hashlib
+import time
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.atlas_salience import derive_salience, verify_salience_inputs
@@ -38,15 +39,15 @@ _SCOPE = "factory/foundation"
 _SOURCE_EACH = DEFAULT_BINARY_BALANCE.minimum_total
 
 
-def _source_each_for_logical_batch(logical_batch_size):
-    """Resolve source draw size; the balanced minimum is only an admissibility floor."""
+def _planning_source_each(logical_batch_size):
+    """Resolve only the provider-valid row floor needed for C06 planning."""
     if logical_batch_size is None:
         return _SOURCE_EACH
     try:
         contract = BamfLogicalBatchContract(logical_batch_size)
     except ValueError:
         _invalid("BAMF_PRIORITY_LOGICAL_BATCH_INVALID")
-    return contract.direct_source_rows
+    return contract.source_minimum_rows
 
 
 def _invalid(reason):
@@ -61,6 +62,7 @@ class AcceptedPriorityAuthority:
     lawful_frontier: object = field(compare=False, repr=False)
     lawful_frontier_sha256: str
     offers: tuple
+    planning_offer_fanout_wall_seconds: float = field(compare=False, repr=False)
     now: int
     planning_generation: object
     cadence: object = field(compare=False, repr=False)
@@ -278,10 +280,12 @@ def issue_foundation_priority_authority(
     cadence = issue_active_grade_cadence(run_dir, planning_epoch, lawful_frontier)
     selection_cadence = cadence
     ready_capabilities = cadence.authorized_capability_ids
+    planning_source_each = _planning_source_each(logical_batch_size)
     if not ready_capabilities:
         return AcceptedPriorityAuthority(
             None, None, planning, lawful_frontier,
-            lawful_frontier.frontier_sha256, (), counter, planning_generation,
+            lawful_frontier.frontier_sha256, (), 0.0,
+            counter, planning_generation,
             cadence, selection_cadence)
     registry = cache._correction_registry
     signer = read_host_system_source_authority_signer(registry)
@@ -290,11 +294,14 @@ def issue_foundation_priority_authority(
         progress(
             "teacher: preparing source-backed offers for "
             f"{len(capabilities)} lawful capabilities")
+    offer_fanout_started = time.perf_counter()
     capabilities, offers = _priority_offers(
         source_context, parent, atlas_artifact_path, next_seed,
         planning_generation, lawful_frontier, ready_capabilities,
-        _source_each_for_logical_batch(logical_batch_size),
+        planning_source_each,
         planning_cache=planning_cache)
+    planning_offer_fanout_wall_seconds = max(
+        0.0, time.perf_counter() - offer_fanout_started)
     if progress is not None:
         progress("teacher: ranking priority options")
     rejections = _ordered_rejections(run_dir, parent, cache)
@@ -316,7 +323,8 @@ def issue_foundation_priority_authority(
     return AcceptedPriorityAuthority(
         AttentionFrontier(options, evidence_rows, snapshot),
         history, planning,
-        lawful_frontier, lawful_frontier.frontier_sha256, offers, now,
+        lawful_frontier, lawful_frontier.frontier_sha256, offers,
+        planning_offer_fanout_wall_seconds, now,
         planning_generation, cadence, selection_cadence)
 
 

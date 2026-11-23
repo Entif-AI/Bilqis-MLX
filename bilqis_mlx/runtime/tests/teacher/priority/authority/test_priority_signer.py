@@ -162,7 +162,9 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
     assert tuple(item.stable_id for item in ranked.ordered) == (
         "capability:beta", "capability:alpha")
     assert {tier for _, tier in ranked.tiers} == {DispatchTier.FAIR_ROTATION}
-    assert {offer.source_each for _, offer in issued.offers} == {32}
+    assert {offer.source_each for _, offer in issued.offers} == {
+        DEFAULT_BINARY_BALANCE.minimum_total}
+    assert issued.planning_offer_fanout_wall_seconds >= 0
     assert len({offer.source_seed for _, offer in issued.offers}) == 2
     assert issued.planning is planning
     assert issued.lawful_frontier is lawful
@@ -218,12 +220,41 @@ def test_all_held_frontier_issues_empty_priority_authority_without_source_rows()
     signer.assert_not_called()
 
 
-def test_logical_batch_size_expands_source_request_without_changing_sampling_floor():
+def test_logical_batch_size_keeps_planning_at_floor_and_selected_lesson_full():
     from bilqis_mlx.runtime import priority_authority as authority
     from bilqis_mlx.runtime.logical_batch import BamfLogicalBatchContract
 
     contract = BamfLogicalBatchContract(32)
     assert contract.source_minimum_rows == DEFAULT_BINARY_BALANCE.minimum_total
     assert contract.direct_source_rows == 32
-    assert authority._source_each_for_logical_batch(None) == DEFAULT_BINARY_BALANCE.minimum_total
-    assert authority._source_each_for_logical_batch(32) == 32
+    assert authority._planning_source_each(None) == DEFAULT_BINARY_BALANCE.minimum_total
+    assert authority._planning_source_each(32) == DEFAULT_BINARY_BALANCE.minimum_total
+
+
+def test_six_capability_planning_prepares_only_provider_floor_offers():
+    from bilqis_mlx.runtime import priority_authority as authority
+
+    capability_ids = tuple(f"A.C{index}" for index in range(6))
+    source_context = SimpleNamespace(
+        release=SimpleNamespace(
+            execution_plan=SimpleNamespace(capabilities=tuple(
+                SimpleNamespace(capability_id=capability_id)
+                for capability_id in capability_ids))))
+    lawful = SimpleNamespace(ready_capability_ids=capability_ids)
+    prepared = []
+
+    def prepare(_context, _parent, _path, **kwargs):
+        prepared.append(kwargs)
+        return SimpleNamespace(capability_id=kwargs["capability"])
+
+    with patch.object(authority, "prepare_priority_source_offer", side_effect=prepare):
+        capabilities, offers = authority._priority_offers(
+            source_context, object(), "/atlas", 11, object(), lawful,
+            capability_ids, DEFAULT_BINARY_BALANCE.minimum_total)
+
+    assert tuple(item.capability_id for item in capabilities) == capability_ids
+    assert tuple(capability for capability, _ in offers) == capability_ids
+    assert len(prepared) == 6
+    assert {item["source_each"] for item in prepared} == {
+        DEFAULT_BINARY_BALANCE.minimum_total}
+    assert all(item["source_each"] != 32 for item in prepared)
