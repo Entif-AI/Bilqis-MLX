@@ -103,7 +103,9 @@ def _owner_seed(release_sha256, cache, target_capability, candidate_sha256):
     return int(digest[:16], 16)
 
 
-def _candidate_from_bound_parent(parent, cache, transaction: CandidateTransaction):
+def _candidate_from_bound_parent(
+        parent, cache, transaction: CandidateTransaction, *,
+        canonical_identity_required: bool = True):
     """Bind one speculative B12 transaction to an already authenticated B13 parent."""
     custody = transaction.parent.custody
     if (transaction.update_steps < 1 or custody is None
@@ -117,8 +119,9 @@ def _candidate_from_bound_parent(parent, cache, transaction: CandidateTransactio
         _invalid("BAMF_C05_CANDIDATE_PARENT_CUSTODY_MISMATCH")
     preview = resolve_candidate(transaction, accepted=True)
     if transaction.motif_transition is None:
-        bind_candidate_identity_or_fallback(
-            preview, parent.topology.digest, parent.extents.digest)
+        if canonical_identity_required:
+            bind_candidate_identity_or_fallback(
+                preview, parent.topology.digest, parent.extents.digest)
         successor = derive_successor_bundle(
             parent, preview,
             parent_manifest_sha256=cache.accepted_manifest_sha256,

@@ -77,16 +77,46 @@ class FactoryCandidateReportingTests(unittest.TestCase):
                 "strict_evidence_enabled", return_value=False), patch.object(
                     candidate_step, "bind_execution_generation",
                     side_effect=AssertionError(
-                        "speculative weights were bound to accepted cache")), patch(
-                            "bilqis_mlx.runtime.backbone_identity."
-                            "execution_generation_digest",
-                            return_value="candidate-generation"):
+                        "speculative weights were bound to accepted cache")), patch.object(
+                    candidate_step, "bind_learning_first_step_authority",
+                            return_value="candidate-generation") as issue:
             bound, generation = candidate_step._candidate_cache_and_generation(
                 "unused", object(), parent, candidate, None,
                 accepted_cache=cache)
 
         self.assertIs(bound, cache)
         self.assertEqual(generation, "candidate-generation")
+        issue.assert_called_once_with(cache, parent, candidate, unittest.mock.ANY)
+
+    def test_strict_candidate_generation_keeps_exact_execution_binding(self):
+        cache = SimpleNamespace(generation_binding="strict-generation")
+        candidate = SimpleNamespace(
+            optimizer=SimpleNamespace(parameters={"candidate": object()}))
+        parent = SimpleNamespace(topology=object(), extents=object())
+        candidate_cache = SimpleNamespace(generation_binding="strict-generation")
+        binding = SimpleNamespace(generation_digest="strict-generation")
+        currentness = object()
+        current = SimpleNamespace(_cache=cache)
+
+        with patch(
+                "bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode."
+                "strict_evidence_enabled", return_value=True), patch.object(
+                    candidate_step, "bind_candidate_execution_cache",
+                    return_value=candidate_cache), patch.object(
+                        candidate_step, "bind_execution_generation",
+                        return_value=binding) as exact, patch.object(
+                            candidate_step, "issue_learning_first_step_authority",
+                            side_effect=AssertionError("strict path used cheap token")), patch(
+                                "bilqis_mlx.runtime.bamf_bundle.currentness_transaction."
+                                "require_accepted_currentness",
+                                return_value=current):
+            bound, generation = candidate_step._candidate_cache_and_generation(
+                "unused", object(), parent, candidate, currentness,
+                accepted_cache=cache)
+
+        self.assertIs(bound, candidate_cache)
+        self.assertEqual(generation, "strict-generation")
+        exact.assert_called_once()
 
     def test_learning_first_neural_execution_does_not_receive_parent_cache(self):
         cache = object()

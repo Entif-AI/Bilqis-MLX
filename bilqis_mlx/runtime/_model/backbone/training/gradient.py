@@ -8,7 +8,9 @@ import mlx.core as mx
 from bilqis_mlx.learning.atlas_readout import AnswerPlan, DecisionOutput, ExecutionMode
 from bilqis_mlx.learning.atlas_readout.decoder.prediction import attest_issued_output
 from bilqis_mlx.runtime.backbone_identity import (
-    _execution_generation_autodiff_rebinder, issue_execution_generation_binding,
+    _execution_generation_autodiff_rebinder,
+    issue_execution_generation_binding,
+    issue_learning_first_execution_generation_binding,
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_execution_generation
 from bilqis_mlx.runtime.model_topology_v2 import validate_bamf_parameters
@@ -27,12 +29,26 @@ from ..atlas_model_training import loss_bearing_bamf, _require_finite_tensor_tre
 
 
 def _gradient_execution_rebinder(params, cache, *, spec, extents, generation):
-    binding = (
-        issue_execution_generation_binding(
-            params, spec=spec, extents=extents, expected_generation=generation)
-        if cache is None else bind_execution_generation(
+    if cache is None:
+        from bilqis_mlx.runtime.candidate.step_authority import (
+            learning_first_step_authority_exists,
+            record_learning_first_full_proof_fallback,
+        )
+        if learning_first_step_authority_exists(generation):
+            binding = issue_learning_first_execution_generation_binding(
+                params, spec=spec, extents=extents, generation=generation)
+        else:
+            from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+                strict_evidence_enabled,
+            )
+            if not strict_evidence_enabled():
+                record_learning_first_full_proof_fallback()
+            binding = issue_execution_generation_binding(
+                params, spec=spec, extents=extents,
+                expected_generation=generation)
+    else:
+        binding = bind_execution_generation(
             cache, params, spec=spec, extents=extents)
-    )
     if binding.generation_digest != generation:
         _invalid("B11_GRADIENT_GENERATION_BINDING_MISMATCH")
     return _execution_generation_autodiff_rebinder(

@@ -16,6 +16,7 @@ from bilqis_mlx.learning.atlas_retention_decision import (
 from bilqis_mlx.runtime.baseline.lifecycle import BaselineLifecycleState
 from bilqis_mlx.runtime.capability_retention import Decision, DecisionStatus
 import bilqis_mlx.runtime.factory_retention_owner as owner
+import bilqis_mlx.runtime._factory_retention_support as retention_support
 from bilqis_mlx.runtime.factory_retention_owner import FactoryRetentionEvaluation
 from bilqis_mlx.runtime.tests.capability.factory.retention.diagnostics.factory_retention_fixed_diagnostic import (
     _optimizer_delta_summary,
@@ -98,10 +99,73 @@ class FactoryRetentionOwnerShadowTests(unittest.TestCase):
                 source, candidate, "artifact", target, run_dir=Path("unused"),
                 parent_correct=3, accepted_parent=parent, execution_cache=cache)
         self.assertEqual(later["target_correct_delta"], 2)
-        bound.assert_called_once_with(parent, cache, candidate)
+        bound.assert_called_once_with(
+            parent, cache, candidate, canonical_identity_required=False)
         self.assertEqual(solver.call_count, 1)
         self.assertEqual(evaluator.call_count, 1)
         self.assertEqual(source.require_accepted_runtime.call_count, 1)
+
+    def test_observational_shadow_does_not_mint_canonical_candidate_identity(self):
+        retained = object()
+        preview = object()
+        custody = SimpleNamespace(
+            run_id="run", generation=3, manifest_sha256="1" * 64,
+            topology_digest="2" * 64, extents_digest="3" * 64)
+        transaction = SimpleNamespace(
+            update_steps=2, parent=SimpleNamespace(custody=custody),
+            motif_transition=None)
+        parent = SimpleNamespace(
+            retained_state=retained,
+            topology=SimpleNamespace(digest="2" * 64),
+            extents=SimpleNamespace(digest="3" * 64))
+        cache = SimpleNamespace(
+            run_id="run", generation=3, accepted_manifest_sha256="1" * 64)
+
+        with patch.object(
+                retention_support, "candidate_identity_for_canonical_consumer",
+                return_value="4" * 64), patch.object(
+                    retention_support, "resolve_candidate",
+                    return_value=preview), patch.object(
+                        retention_support, "bind_candidate_identity_or_fallback",
+                        side_effect=AssertionError("shadow canonical identity hash")), patch.object(
+                            retention_support, "derive_successor_bundle",
+                            return_value="successor"):
+            result = retention_support._candidate_from_bound_parent(
+                parent, cache, transaction, canonical_identity_required=False)
+
+        self.assertEqual(result, (parent, "successor", preview, cache))
+
+    def test_retention_boundary_still_mints_canonical_candidate_identity(self):
+        retained = object()
+        preview = object()
+        custody = SimpleNamespace(
+            run_id="run", generation=3, manifest_sha256="1" * 64,
+            topology_digest="2" * 64, extents_digest="3" * 64)
+        transaction = SimpleNamespace(
+            update_steps=2, parent=SimpleNamespace(custody=custody),
+            motif_transition=None)
+        parent = SimpleNamespace(
+            retained_state=retained,
+            topology=SimpleNamespace(digest="2" * 64),
+            extents=SimpleNamespace(digest="3" * 64))
+        cache = SimpleNamespace(
+            run_id="run", generation=3, accepted_manifest_sha256="1" * 64)
+        canonical = Mock()
+
+        with patch.object(
+                retention_support, "candidate_identity_for_canonical_consumer",
+                return_value="4" * 64), patch.object(
+                    retention_support, "resolve_candidate",
+                    return_value=preview), patch.object(
+                        retention_support, "bind_candidate_identity_or_fallback",
+                        canonical), patch.object(
+                            retention_support, "derive_successor_bundle",
+                            return_value="successor"):
+            result = retention_support._candidate_from_bound_parent(
+                parent, cache, transaction)
+
+        canonical.assert_called_once_with(preview, "2" * 64, "3" * 64)
+        self.assertEqual(result, (parent, "successor", preview, cache))
 
     def test_optimizer_delta_summary_distinguishes_decay_only_from_gradient_driven_change(self):
         parent = SimpleNamespace(retained_state=SimpleNamespace(
