@@ -248,3 +248,39 @@ class LearningFirstSourcePathTests(PreNeuralJourneySupport, unittest.TestCase):
         self.assertIsNone(compiled.task_authority)
         self.assertIsNotNone(compiled.visit_provenance)
         self.assertEqual(compiled.visit_provenance.capability_id, "B.AND")
+
+    def test_learning_first_compiler_keeps_fresh_support_out_of_rehearsal_metadata(self):
+        self.current, self.parent_graph = historical_school_release()
+        snapshot = portable_atlas_snapshot()
+        schema, features, atlas_selection = journey_source(snapshot)
+        with wide_shape_patch(len(snapshot.abi_entries)):
+            self.publish_matching_genesis(snapshot, schema, features)
+            with self.journey_mounts(snapshot, schema, features, atlas_selection):
+                parent, context, atlas_path, feature_path = _execution_context(self.run)
+                direct = tuple(context.draw_rows(
+                    seed=12345, capability="B.AND", each=4))
+                support_pool = tuple(context.draw_rows(
+                    seed=12346, capability="B.AND", each=4))
+                direct_ids = {row["id"] for row in direct}
+                support = next(row for row in support_pool if row["id"] not in direct_ids)
+                rows = (*direct, support)
+                execution = context.release.execution_plan.capability_map["B.AND"]
+                delivery = describe_delivered_teaching(
+                    context.release, "B.AND", execution.teaching_option_ids[0], direct)
+                generation = execution_generation_digest(
+                    parent.retained_state.optimizer.parameters,
+                    spec=parent.topology, extents=parent.extents)
+                with evidence_mode(strict=False):
+                    prepared = prepare_factory_training_batch(
+                        context, parent, atlas_path, feature_path, rows, generation,
+                        capability="B.AND", delivery=delivery, requested_count=5,
+                        source_seed=12345, source_each=4, optimizer_step_seed=7,
+                        visit_provenance=visit_provenance("B.AND"),
+                        teacher_strategy={"depth": 3},
+                        fresh_support_by_id={support["id"]: "fresh_support"})
+
+        metadata = tuple(row.provenance for row in prepared.training_batch.rows)
+        self.assertTrue(all(item.rehearsal is None for item in metadata))
+        self.assertTrue(all(item.auxiliary_role is None for item in metadata[:4]))
+        self.assertEqual(metadata[4].row_id, support["id"])
+        self.assertEqual(metadata[4].auxiliary_role, "fresh_support")

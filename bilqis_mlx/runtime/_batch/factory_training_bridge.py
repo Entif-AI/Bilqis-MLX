@@ -135,6 +135,7 @@ def prepare_factory_training_batch(
     visit_provenance: BamfVisitProvenance, teacher_strategy: dict,
     rehearsal_by_id: dict | None = None, rehearsal_bindings: dict | None = None,
     rehearsal_authorities: dict | None = None,
+    fresh_support_by_id: dict | None = None,
     semantic_context=None, prepared_source=None, selected_source_authority=None,
     learning_first_cache=None,
 ) -> PreparedFactoryTrainingBatch:
@@ -150,7 +151,8 @@ def prepare_factory_training_batch(
         source_seed=source_seed, source_each=source_each,
         optimizer_step_seed=optimizer_step_seed,
         visit_provenance=visit_provenance, teacher_strategy=teacher_strategy,
-        rehearsal_by_id=rehearsal_by_id)
+        rehearsal_by_id=rehearsal_by_id,
+        fresh_support_by_id=fresh_support_by_id)
     request_validation_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
     authenticated, strict = _authenticated_feature_context(
@@ -177,7 +179,7 @@ def prepare_factory_training_batch(
     training = _compile_factory_training(
         rows, source_context, candidate, delivery, capability, teacher_strategy,
         requested_count, optimizer_step_seed, visit_provenance, source_authority,
-        rehearsal_by_id, rehearsal_authorities, source_rows,
+        rehearsal_by_id, fresh_support_by_id, rehearsal_authorities, source_rows,
         feature_artifact_path, generation_binding,
         authenticated, manifest, prepared_model_sources)
     compile_seconds = time.perf_counter() - stage_started

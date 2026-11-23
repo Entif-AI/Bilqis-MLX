@@ -161,6 +161,7 @@ def execute_horizon(
         source_prefetch_executor, source_prefetch_metrics, observer, adviser_pool,
         *, emit_progress, invalid, rehearsal_plan=None, candidate_visit=None,
         candidate_executor=None,
+        policy_support_enabled=False,
         distributed_profile=None, distributed_executor=None):
     candidate_executor = (
         execute_accepted_priority_candidate
@@ -187,6 +188,7 @@ def execute_horizon(
         emit_progress=emit_progress, invalid=invalid,
         observe_completed_step_fn=observe_completed_step,
         rehearsal_plan=rehearsal_plan,
+        policy_support_enabled=policy_support_enabled,
         shadow_policy=DEFAULT_SHADOW_POLICY, shadow_rungs_fn=active_rungs,
         shadow_probe_fn=measure_current_retention_shadow_target)
 
@@ -220,6 +222,7 @@ def candidate_horizon_execution(
             *args, **kwargs, emit_progress=emit_progress, invalid=invalid,
             rehearsal_plan=rehearsal_plan, candidate_visit=candidate_visit,
             candidate_executor=candidate_executor,
+            policy_support_enabled=not strict,
             distributed_profile=distributed_profile,
             distributed_executor=distributed_executor),
         currentness_metrics_fn=currentness_metrics, emit_progress=emit_progress,

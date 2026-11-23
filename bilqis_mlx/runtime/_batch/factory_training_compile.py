@@ -12,7 +12,7 @@ from .learning_first_compiler import compile_learning_first_training_batch
 def _compile_factory_training(
         rows, source_context, candidate, delivery, capability, teacher_strategy,
         requested_count, optimizer_step_seed, visit_provenance, source_authority,
-        rehearsal_by_id, rehearsal_authorities, source_rows,
+        rehearsal_by_id, fresh_support_by_id, rehearsal_authorities, source_rows,
         feature_artifact_path, generation_binding,
         authenticated, manifest, prepared_model_sources):
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
@@ -27,6 +27,7 @@ def _compile_factory_training(
             optimizer_step_seed=optimizer_step_seed,
             visit_provenance=visit_provenance,
             rehearsal_by_id=(rehearsal_by_id or {}),
+            fresh_support_by_id=(fresh_support_by_id or {}),
             generation_binding=generation_binding,
             prepared_model_sources=prepared_model_sources,
             delivered_content_sha256=content_digest(rows))

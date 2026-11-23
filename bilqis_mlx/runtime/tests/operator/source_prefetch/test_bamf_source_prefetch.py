@@ -17,6 +17,9 @@ from bilqis_mlx.runtime.bamf_operator.source_prefetch import (
     prepare_priority_source_packet,
     priority_source_request,
 )
+from bilqis_mlx.runtime.bamf_operator.session_parts.fresh_support import (
+    DEEP_FRESH_SUPPORT_CONTROL, FreshSupportSpecimen,
+)
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.runtime.source_prefetch import (
@@ -168,6 +171,31 @@ def test_source_lane_keeps_factory_enrichment_role_separate_from_direct_rows():
     assert lesson.direct == selection.offer.rows()
     assert lesson.enrichment == enrichment
     assert lesson.delivered == (*selection.offer.rows(), *enrichment)
+
+
+def test_worker_packet_carries_fresh_support_bytes_without_process_live_authority():
+    selection, context, parent = _fixture("Z.C0")
+    support = {"id": "z-support", "capability": "Z.C0", "gold": "TRUE"}
+    binding = {
+        "row_id": "z-support", "role": "fresh_support", "capability": "Z.C0",
+        "seed": 31, "each": 1, "source_family_id": "family:Z.C0",
+        "episode_id": "episode:31", "release_sha256": "c" * 64,
+        "provider_id": "fixture", "provider_implementation_sha256": "d" * 64,
+        "source_content_sha256": source_content_digest((support,)),
+    }
+    specimen = FreshSupportSpecimen(
+        (support,), binding, object(), DEEP_FRESH_SUPPORT_CONTROL, None)
+
+    request = priority_source_request(
+        selection, context, parent, 1, enrichment_rows=(), fresh_support=specimen)
+    packet = prepare_priority_source_packet(request)
+    payload = thaw_source_packet(packet)
+
+    assert payload["fresh_support"] == [support]
+    assert payload["fresh_support_binding"] == binding
+    assert payload["fresh_support_depth_control"] == DEEP_FRESH_SUPPORT_CONTROL
+    assert "fresh_support_authority" not in request
+    assert "fresh_support_authority" not in payload
 
 
 def test_wrong_step_or_candidate_packet_fails_before_candidate_use():

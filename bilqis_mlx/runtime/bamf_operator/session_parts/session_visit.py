@@ -33,12 +33,14 @@ def _cadence(selection):
 def _record_resource_rejection(run_dir, prepared, record_rejection, binding):
     _assert_current(binding)
     identity = prepared.selection.visit.identity
+    cadence = _cadence(prepared.selection)
     record_rejection(run_dir, prepared.parent, {
         **prepared.resource,
         "capability": prepared.capability,
         "visit_id": identity.visit_id,
         "teacher_visit": identity.to_record(),
         "selected_policy_key": identity.policy_key,
+        **({"cadence": cadence} if cadence is not None else {}),
     })
     return ResourceRejectedVisit(prepared.capability)
 
@@ -69,7 +71,8 @@ def _record_candidate_rejection(
         **({"cadence": cadence} if cadence is not None else {}),
     })
     if cadence is not None and record_cadence_attempt is not None:
-        record_cadence_attempt(run_dir, cadence, prepared.capability)
+        record_cadence_attempt(
+            run_dir, cadence, prepared.capability, "REJECTED")
     return "REJECTED"
 
 
@@ -101,7 +104,8 @@ def _publish_accepted(
         load_generation(run_dir)
     cadence = _cadence(selection)
     if cadence is not None and record_cadence_attempt is not None:
-        record_cadence_attempt(run_dir, cadence, prepared.capability)
+        record_cadence_attempt(
+            run_dir, cadence, prepared.capability, "RETAINED")
     health = getattr(prepared, "learning_health", None)
     if observer is not None and isinstance(health, dict):
         observer.learning_health_by_capability[health["capability_id"]] = health

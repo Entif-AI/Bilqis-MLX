@@ -72,7 +72,8 @@ def execute_with_backend(batch, source_context, topology, *, generation_binding,
 
 def capture_realized_delivery(batch, source_context, capture, capability, step, rows, *,
                               generation_binding, option_rows, priority, preservation, support,
-                              enrichment, guidance, controls, seed, cost, prior=(), mentors=None):
+                              enrichment, guidance, controls, seed, cost, prior=(),
+                              fresh_support=(), mentors=None):
     """Forward actual delivery and measured cost to the existing #333 owner."""
     from bilqis_mlx.factory.teaching import content_digest
     require_current_release(batch, source_context, generation_binding=generation_binding)
@@ -85,7 +86,7 @@ def capture_realized_delivery(batch, source_context, capture, capability, step, 
         priority=priority, preservation=preservation, support=support, enrichment=enrichment,
         guidance=guidance, controls={**controls, 'realized_cost': cost,
                                     'delivered_content_sha256': content_digest(rows)},
-        seed=seed, prior=prior, mentors=mentors)
+        seed=seed, prior=prior, fresh_support=fresh_support, mentors=mentors)
 
 
 def require_independent_cohorts(training, holdout):

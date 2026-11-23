@@ -2,179 +2,29 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import hashlib
-import json
 import time
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.factory.teaching import optional_teaching_rows
-from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.runtime.source_prefetch import (
-    FORBIDDEN_AUTHORITY_KEYS,
     ImmutableSourcePacket,
     SCHEMA,
     SOURCE_WORKER_COUNTS,
-    freeze_source_packet,
     thaw_source_packet,
 )
-from bilqis_mlx.semantics.domains import contract_digest
 from .session_parts.rehearsal import materialize_rehearsal_rows
+from .session_parts.fresh_support import materialize_fresh_support
+from .source_prefetch_contracts import (
+    REQUEST_SCHEMA, prepare_priority_source_packet, priority_source_request,
+)
 
 
-REQUEST_SCHEMA = "bilqis.bamf.native-source-prefetch-request/v1"
 SERIAL_SOURCE_WORKERS = 0
 NATIVE_SOURCE_WORKER_COUNTS = (SERIAL_SOURCE_WORKERS, *SOURCE_WORKER_COUNTS)
 
 
 def _invalid(reason: str):
     ErrorBus.raise_(SCHOOL.BAMF_RESOURCES.INVALID, reason=reason)
-
-
-def _fingerprint(value) -> str:
-    raw = json.dumps(
-        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
-        allow_nan=False).encode("utf-8")
-    return hashlib.sha256(raw).hexdigest()
-
-
-def priority_source_request(
-        selection, source_context, parent, ordinal: int, *,
-        enrichment_rows=None, rehearsal_plan=None, rehearsal=None) -> dict:
-    """Bind one pure worker request to the exact accepted candidate step."""
-    offer = selection.offer
-    if type(ordinal) is not int or ordinal < 1:
-        _invalid("BAMF_SOURCE_PREFETCH_STEP_INVALID")
-    if enrichment_rows is None:
-        source_registry = getattr(source_context, "source_registry", None)
-        graph = getattr(source_context, "graph", None)
-        if source_registry is None or graph is None:
-            enrichment_rows = ()
-        else:
-            enrichment_rows = optional_teaching_rows(
-                getattr(source_context, "source_root", None), graph,
-                source_context.release, source_registry,
-                capability=offer.capability_id, seed=offer.source_seed, enabled=True)
-    enrichment_rows = tuple(enrichment_rows)
-    if rehearsal is None and rehearsal_plan is not None:
-        rehearsal = materialize_rehearsal_rows(source_context, rehearsal_plan, ordinal)
-    prior_rows = () if rehearsal is None else rehearsal.prior
-    preservation_rows = () if rehearsal is None else rehearsal.preservation
-    retention_support_rows = () if rehearsal is None else rehearsal.retention_support
-    role_rows = {
-        "prior": tuple(prior_rows),
-        "preservation": tuple(preservation_rows),
-        "retention_support": tuple(retention_support_rows),
-    }
-    rehearsal_bindings = () if rehearsal is None else rehearsal.bindings
-    rehearsal_sha256 = contract_digest({
-        "rows": role_rows, "bindings": rehearsal_bindings})
-    rehearsal_plan_sha256 = None if rehearsal_plan is None else rehearsal_plan.identity
-    content_binding = {
-        "release_sha256": offer.release_sha256,
-        "capability": offer.capability_id,
-        "source_seed": offer.source_seed,
-        "source_each": offer.source_each,
-        "source_family_id": offer.source_family_id,
-        "source_binding_digest": offer.source_binding_digest,
-        "source_content_sha256": offer.source_authority.content_sha256,
-        "teaching_enrichment_sha256": contract_digest(enrichment_rows),
-        "rehearsal_plan_sha256": rehearsal_plan_sha256,
-        "rehearsal_rows_sha256": rehearsal_sha256,
-    }
-    content_identity = _fingerprint(content_binding)
-    binding = {
-        "schema": REQUEST_SCHEMA,
-        "accepted_manifest_sha256": offer.accepted_manifest_sha256,
-        "generation_binding": offer.generation_binding,
-        **content_binding,
-        "content_identity": content_identity,
-        "visit_id": selection.visit.identity.visit_id,
-        "candidate_step": ordinal,
-        "parent_optimizer_step": parent.retained_state.optimizer_step,
-    }
-    return {
-        **binding,
-        "identity": _fingerprint(binding),
-        "executable_release": source_context.release,
-        "source_rows": offer.rows(),
-        "prior_rows": list(prior_rows),
-        "preservation_rows": list(preservation_rows),
-        "retention_support_rows": list(retention_support_rows),
-        "rehearsal_bindings": list(rehearsal_bindings),
-        "teaching_enrichment_rows": list(enrichment_rows),
-    }
-
-
-def prepare_priority_source_packet(request: dict) -> ImmutableSourcePacket:
-    """Transport one already-authorized source batch without executing its provider."""
-    required = {
-        "schema", "identity", "accepted_manifest_sha256", "generation_binding",
-        "release_sha256", "capability", "source_seed", "source_each",
-        "source_family_id", "source_binding_digest", "source_content_sha256",
-        "teaching_enrichment_sha256", "rehearsal_plan_sha256",
-        "rehearsal_rows_sha256", "content_identity", "visit_id",
-        "candidate_step", "parent_optimizer_step", "executable_release",
-        "source_rows", "prior_rows", "preservation_rows",
-        "retention_support_rows", "rehearsal_bindings", "teaching_enrichment_rows",
-    }
-    if (not isinstance(request, dict) or set(request) != required
-            or FORBIDDEN_AUTHORITY_KEYS & set(request)
-            or request.get("schema") != REQUEST_SCHEMA):
-        _invalid("BAMF_SOURCE_PREFETCH_REQUEST_INVALID")
-    binding = {key: request[key] for key in (
-        "schema", "accepted_manifest_sha256", "generation_binding", "release_sha256",
-        "capability", "source_seed", "source_each", "source_family_id",
-        "source_binding_digest", "source_content_sha256", "content_identity",
-        "teaching_enrichment_sha256", "rehearsal_plan_sha256",
-        "rehearsal_rows_sha256", "visit_id", "candidate_step", "parent_optimizer_step",
-    )}
-    if request["identity"] != _fingerprint(binding):
-        _invalid("BAMF_SOURCE_PREFETCH_IDENTITY_INVALID")
-    content_binding = {key: request[key] for key in (
-        "release_sha256", "capability", "source_seed", "source_each",
-        "source_family_id", "source_binding_digest", "source_content_sha256",
-        "teaching_enrichment_sha256", "rehearsal_plan_sha256",
-        "rehearsal_rows_sha256",
-    )}
-    if request["content_identity"] != _fingerprint(content_binding):
-        _invalid("BAMF_SOURCE_PREFETCH_CONTENT_IDENTITY_INVALID")
-    release = request["executable_release"]
-    if (release.release_sha256 != request["release_sha256"]
-            or contract_digest(release.source_bindings.by_capability[
-                request["capability"]]) != request["source_binding_digest"]):
-        _invalid("BAMF_SOURCE_PREFETCH_RELEASE_DRIFT")
-    rows = tuple(request["source_rows"])
-    if (len(rows) != request["source_each"]
-            or any(type(row) is not dict for row in rows)
-            or source_content_digest(rows) != request["source_content_sha256"]):
-        _invalid("BAMF_SOURCE_PREFETCH_SOURCE_DRIFT")
-    enrichment = tuple(request["teaching_enrichment_rows"])
-    if (any(type(row) is not dict for row in enrichment)
-            or contract_digest(enrichment) != request["teaching_enrichment_sha256"]):
-        _invalid("BAMF_SOURCE_PREFETCH_ENRICHMENT_DRIFT")
-    prior = tuple(request["prior_rows"])
-    preservation = tuple(request["preservation_rows"])
-    retention_support = tuple(request["retention_support_rows"])
-    rehearsal_bindings = tuple(request["rehearsal_bindings"])
-    role_rows = {
-        "prior": prior,
-        "preservation": preservation,
-        "retention_support": retention_support,
-    }
-    if (any(type(row) is not dict for row in (*prior, *preservation, *retention_support))
-            or any(type(item) is not dict for item in rehearsal_bindings)
-            or contract_digest({"rows": role_rows, "bindings": rehearsal_bindings})
-            != request["rehearsal_rows_sha256"]):
-        _invalid("BAMF_SOURCE_PREFETCH_REHEARSAL_DRIFT")
-    return freeze_source_packet({
-        "schema": SCHEMA,
-        "identity": request["identity"],
-        "fresh": list(rows),
-        "prior": list(prior),
-        "preservation": list(preservation),
-        "retention_support": list(retention_support),
-        "teaching_enrichment_rows": list(enrichment),
-    })
 
 
 @dataclass
@@ -195,12 +45,17 @@ class CandidateLessonRows:
     enrichment: tuple = ()
     rehearsal_bindings: tuple = ()
     rehearsal_authorities: tuple = ()
+    fresh_support: tuple = ()
+    fresh_support_binding: dict | None = None
+    fresh_support_authority: object = None
+    fresh_support_unavailable_reason: str | None = None
+    fresh_support_depth_control: str | None = None
 
     @property
     def delivered(self) -> tuple:
         return (
             *self.direct, *self.prior, *self.preservation,
-            *self.retention_support, *self.enrichment)
+            *self.retention_support, *self.enrichment, *self.fresh_support)
 
     @property
     def rehearsal_by_id(self) -> dict[str, str]:
@@ -218,15 +73,21 @@ class CandidateLessonRows:
     def rehearsal_authorities_by_id(self) -> dict[str, object]:
         return dict(self.rehearsal_authorities)
 
+    @property
+    def fresh_support_by_id(self) -> dict[str, str]:
+        return {row["id"]: "fresh_support" for row in self.fresh_support}
+
 
 class CandidateSourceLane:
     """Schedule exact future source packets without owning neural state."""
 
     def __init__(self, selection, source_context, parent, horizon: int, *,
                  rehearsal_plan=None,
+                 policy_support_enabled: bool = False,
                  workers: int, executor, metrics: SourcePrefetchMetrics):
         if (type(workers) is not int or workers not in NATIVE_SOURCE_WORKER_COUNTS
-                or (workers == SERIAL_SOURCE_WORKERS) != (executor is None)):
+                or (workers == SERIAL_SOURCE_WORKERS) != (executor is None)
+                or type(policy_support_enabled) is not bool):
             _invalid("BAMF_SOURCE_PREFETCH_WORKER_CONFIGURATION_INVALID")
         self.selection = selection
         self.source_context = source_context
@@ -236,8 +97,10 @@ class CandidateSourceLane:
         self.executor = executor
         self.metrics = metrics
         self.rehearsal_plan = rehearsal_plan
+        self.policy_support_enabled = policy_support_enabled
         self.pending = {}
         self.rehearsal_custody = {}
+        self.fresh_support_custody = {}
         source_registry = getattr(source_context, "source_registry", None)
         graph = getattr(source_context, "graph", None)
         self.enrichment_rows = (
@@ -258,10 +121,22 @@ class CandidateSourceLane:
                 self.source_context, self.rehearsal_plan, ordinal))
         self.rehearsal_custody[ordinal] = (
             () if rehearsal is None else rehearsal.authorities)
+        fresh_support = None
+        if self.policy_support_enabled:
+            rehearsal_rows = () if rehearsal is None else (
+                *rehearsal.prior, *rehearsal.preservation,
+                *rehearsal.retention_support)
+            fresh_support = materialize_fresh_support(
+                self.source_context, self.selection, self.rehearsal_plan, ordinal,
+                reserved_rows=(
+                    *self.selection.offer.rows(), *rehearsal_rows,
+                    *self.enrichment_rows))
+            self.fresh_support_custody[ordinal] = fresh_support.authority
         return priority_source_request(
             self.selection, self.source_context, self.parent, ordinal,
             enrichment_rows=self.enrichment_rows,
-            rehearsal_plan=self.rehearsal_plan, rehearsal=rehearsal)
+            rehearsal_plan=self.rehearsal_plan, rehearsal=rehearsal,
+            fresh_support=fresh_support)
 
     def _submit(self, ordinal):
         request = self._request(ordinal)
@@ -304,11 +179,23 @@ class CandidateSourceLane:
         if (not isinstance(enrichment, list)
                 or any(type(row) is not dict for row in enrichment)):
             _invalid("BAMF_SOURCE_PREFETCH_PACKET_INVALID")
+        fresh_support = payload.get("fresh_support", [])
+        fresh_binding = payload.get("fresh_support_binding")
+        fresh_control = payload.get("fresh_support_depth_control")
+        fresh_reason = payload.get("fresh_support_unavailable_reason")
+        if (not isinstance(fresh_support, list)
+                or any(type(row) is not dict for row in fresh_support)):
+            _invalid("BAMF_SOURCE_PREFETCH_PACKET_INVALID")
+        fresh_authority = self.fresh_support_custody.pop(ordinal, None)
+        if fresh_support and fresh_authority is None:
+            _invalid("BAMF_SOURCE_PREFETCH_FRESH_SUPPORT_AUTHORITY_MISSING")
         return CandidateLessonRows(
             tuple(rows), tuple(payload["prior"]), tuple(payload["preservation"]),
             tuple(payload["retention_support"]), tuple(enrichment),
             tuple(request.get("rehearsal_bindings", ())),
-            tuple(self.rehearsal_custody.pop(ordinal, ())))
+            tuple(self.rehearsal_custody.pop(ordinal, ())),
+            tuple(fresh_support), fresh_binding, fresh_authority,
+            fresh_reason, fresh_control)
 
     def rows(self, ordinal: int):
         return self.lesson(ordinal).direct

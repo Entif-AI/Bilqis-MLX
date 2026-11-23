@@ -72,18 +72,24 @@ class LearningFirstPreparationCache:
         self._task_inputs[key] = value
 
 
-def _target_source_count(rows, rehearsal_by_id):
-    return len(rows) - len(rehearsal_by_id)
+def _target_source_count(rows, rehearsal_by_id, fresh_support_by_id=None):
+    return len(rows) - len(rehearsal_by_id) - len(fresh_support_by_id or {})
 
 
 def _validated_training_request(
         source_context, candidate, delivered_rows, generation_binding, *,
         capability, delivery, requested_count, source_seed, source_each,
         optimizer_step_seed, visit_provenance, teacher_strategy,
-        rehearsal_by_id=None):
+        rehearsal_by_id=None, fresh_support_by_id=None):
     rows = tuple(delivered_rows) if isinstance(delivered_rows, (tuple, list)) else ()
     rehearsal_by_id = {} if rehearsal_by_id is None else dict(rehearsal_by_id)
-    target_source_count = _target_source_count(rows, rehearsal_by_id)
+    fresh_support_by_id = (
+        {} if fresh_support_by_id is None else dict(fresh_support_by_id))
+    target_source_count = _target_source_count(
+        rows, rehearsal_by_id, fresh_support_by_id)
+    if (set(rehearsal_by_id) & set(fresh_support_by_id)
+            or any(value != "fresh_support" for value in fresh_support_by_id.values())):
+        _invalid("FACTORY_TRAINING_FRESH_SUPPORT_ROLE_INVALID")
     if (type(source_context) is not SourceExecutionContext
             or not isinstance(candidate, BamfBundleCandidate)
             or not rows or any(type(row) is not dict for row in rows)

@@ -21,9 +21,34 @@ def test_learning_first_delivery_digest_covers_rehearsal_rows():
             return_value="compiled") as compiler:
         result = _compile_factory_training(
             rows, object(), NS(topology=object()), delivery, "A.PARENT", {},
-            len(rows), 1, object(), None, {"prior": "prior"}, {}, (), "feature",
-            "generation", object(), None, ())
+            len(rows), 1, object(), None, {"prior": "prior"}, {}, {}, (),
+            "feature", "generation", object(), None, ())
 
     assert result == "compiled"
     assert delivery.specimen_content_sha256 == content_digest(direct)
+    assert compiler.call_args.kwargs["delivered_content_sha256"] == content_digest(rows)
+
+
+def test_learning_first_fresh_support_has_separate_non_rehearsal_role():
+    direct = ({"id": "direct", "capability": "A.PARENT"},)
+    support = ({"id": "fresh", "capability": "A.PARENT"},)
+    rows = (*direct, *support)
+    delivery = NS(specimen_content_sha256=content_digest(direct))
+
+    with patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode."
+            "strict_evidence_enabled",
+            return_value=False), patch(
+            "bilqis_mlx.runtime.factory_training_compile."
+            "compile_learning_first_training_batch",
+            return_value="compiled") as compiler:
+        result = _compile_factory_training(
+            rows, object(), NS(topology=object()), delivery, "A.PARENT", {},
+            len(rows), 1, object(), None, {}, {"fresh": "fresh_support"}, {}, (),
+            "feature", "generation", object(), None, ())
+
+    assert result == "compiled"
+    assert compiler.call_args.kwargs["rehearsal_by_id"] == {}
+    assert compiler.call_args.kwargs["fresh_support_by_id"] == {
+        "fresh": "fresh_support"}
     assert compiler.call_args.kwargs["delivered_content_sha256"] == content_digest(rows)

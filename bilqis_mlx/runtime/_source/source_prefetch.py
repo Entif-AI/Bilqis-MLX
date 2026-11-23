@@ -39,6 +39,14 @@ IMMUTABLE_PACKET_SCHEMA = "bilqis.mlx.source-prefetch-immutable/v2"
 MAX_SOURCE_WORKERS = 2
 SOURCE_WORKER_COUNTS = (1, MAX_SOURCE_WORKERS)
 SHA256_HEX_LENGTH = hashlib.sha256().digest_size * 2
+_BASE_PACKET_FIELDS = frozenset({
+    "schema", "identity", "fresh", "prior", "preservation",
+    "retention_support", "teaching_enrichment_rows",
+})
+_FRESH_SUPPORT_PACKET_FIELDS = frozenset({
+    "fresh_support", "fresh_support_binding", "fresh_support_depth_control",
+    "fresh_support_unavailable_reason",
+})
 
 
 def _packet_invalid(reason: str) -> None:
@@ -57,8 +65,9 @@ class ImmutableSourcePacket:
             validate_payload(
                 self.payload, forbidden_mapping_keys=FORBIDDEN_NESTED_AUTHORITY_KEYS)
             fields = dict(self.payload)
-            if set(fields) != {"schema", "identity", "fresh", "prior", "preservation",
-                               "retention_support", "teaching_enrichment_rows"}:
+            if set(fields) not in (
+                    _BASE_PACKET_FIELDS,
+                    _BASE_PACKET_FIELDS | _FRESH_SUPPORT_PACKET_FIELDS):
                 _packet_invalid("SOURCE_PREFETCH_PACKET_SCHEMA_DRIFT")
             encoded = json.dumps(
                 self.payload, ensure_ascii=False, sort_keys=True,
@@ -84,11 +93,10 @@ class ImmutableSourcePacket:
 
 def freeze_source_packet(packet: dict) -> ImmutableSourcePacket:
     """Produce a picklable, recursively immutable CPU-only packet."""
-    expected = {
-        "schema", "identity", "fresh", "prior", "preservation",
-        "retention_support", "teaching_enrichment_rows",
-    }
-    if (not isinstance(packet, dict) or set(packet) != expected
+    if (not isinstance(packet, dict)
+            or set(packet) not in (
+                _BASE_PACKET_FIELDS,
+                _BASE_PACKET_FIELDS | _FRESH_SUPPORT_PACKET_FIELDS)
             or packet.get("schema") != SCHEMA):
         _packet_invalid("SOURCE_PREFETCH_PACKET_SCHEMA_DRIFT")
     try:
