@@ -131,9 +131,7 @@ class CompiledEvaluationReuseTests(unittest.TestCase):
         self.assertEqual(bind.call_count, 2)
 
     def test_complete_solver_source_does_not_recompile_evaluation_rows(self):
-        source = Path(
-            "bilqis_mlx/runtime/_capability/factory/factory_complete_solver.py"
-        ).read_text()
+        source = Path(complete_solver.__file__).read_text()
         solver = source[source.index("def factory_complete_solver("):]
         self.assertNotIn("compile_factory_evaluation_batch(", solver)
         self.assertNotIn("factory_task_authority(", solver)

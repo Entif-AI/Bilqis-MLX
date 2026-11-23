@@ -34,7 +34,7 @@ class SourcePathTests(unittest.TestCase):
         from bilqis_mlx.live_grade_b import constructor_digest
         import json
         expected = {name: hashlib.sha256(source_path(name).read_bytes()).hexdigest()
-                    for name in ('live_grade_b.py', 'grade_b_oracle.py')}
+                    for name in ('live_grade_b.py', 'grade_b_oracle.py', 'grade_b_sampling.py')}
         expected_digest = hashlib.sha256(json.dumps(expected, sort_keys=True,
             ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
         self.assertEqual(constructor_digest(), expected_digest)

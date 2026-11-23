@@ -42,6 +42,11 @@ NESTED_PHYSICAL_OWNER_GROUPS = frozenset({
     ("_correction", "owners"),
     ("_correction", "accepted"),
 })
+DEEP_NESTED_PHYSICAL_OWNER_GROUPS = frozenset({
+    ("_capability", "factory", "_evaluation"),
+    ("_capability", "factory", "_solver"),
+    ("_capability", "factory", "_task"),
+})
 
 
 def logical_source_path(path: str) -> str:
@@ -50,6 +55,9 @@ def logical_source_path(path: str) -> str:
     if (len(parts) >= 4
             and parts[:3] == ("bilqis_mlx", "semantics", "_cognitive_dag")):
         return "bilqis_mlx/semantics/cognitive_dag.py"
+    if (len(parts) >= 6 and parts[:2] == ("bilqis_mlx", "runtime")
+            and tuple(parts[2:5]) in DEEP_NESTED_PHYSICAL_OWNER_GROUPS):
+        return Path(*parts[:2], *parts[5:]).as_posix()
     if (len(parts) >= 5 and parts[:2] == ("bilqis_mlx", "runtime")
             and tuple(parts[2:4]) in NESTED_PHYSICAL_OWNER_GROUPS):
         return Path(*parts[:2], *parts[4:]).as_posix()

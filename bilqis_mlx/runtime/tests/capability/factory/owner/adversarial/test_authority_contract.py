@@ -54,6 +54,7 @@ class FactoryRetentionOwnerAuthorityTests(unittest.TestCase):
     def test_learning_first_owner_uses_bound_session_parent_and_cache(self):
         candidate = object.__new__(CandidateTransaction)
         object.__setattr__(candidate, "learning_first", True)
+        object.__setattr__(candidate, "_parent_identity_sha256", "3" * 64)
         source = SimpleNamespace(
             release=SimpleNamespace(release_sha256="1" * 64),
             __post_init__=lambda: (_ for _ in ()).throw(
@@ -65,8 +66,11 @@ class FactoryRetentionOwnerAuthorityTests(unittest.TestCase):
         cache = object()
         bundle = object()
         state = object()
-        plan = SimpleNamespace(digest="2" * 64)
         target_plan = object()
+        plan = SimpleNamespace(
+            digest="2" * 64,
+            for_target=lambda capability: target_plan if capability == "A.IDENTITY" else None,
+        )
         rows = object()
         result = object()
         with (
@@ -77,8 +81,10 @@ class FactoryRetentionOwnerAuthorityTests(unittest.TestCase):
                          side_effect=AssertionError("learning-first C05 reloaded parent")),
             patch.object(owner, "_candidate_from_bound_parent",
                          return_value=(parent, bundle, state, cache)) as bound,
-            patch.object(owner, "require_current_retention_source_rows",
-                         return_value=(plan, target_plan, rows)),
+            patch.object(owner, "bind_current_retention_source_rows",
+                         return_value=rows),
+            patch.object(owner, "require_retention_protection_plan",
+                         return_value=plan),
             patch.object(owner, "_foundation_retention_evaluation", return_value=result),
         ):
             actual = evaluate_factory_retention_candidate(

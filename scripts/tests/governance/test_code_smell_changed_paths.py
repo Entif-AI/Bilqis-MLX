@@ -96,6 +96,12 @@ class ChangedPathSmellTests(unittest.TestCase):
                 "bilqis_mlx/runtime/atlas_adoption_v2.py",
             "bilqis_mlx/runtime/_capability/factory/owner.py":
                 "bilqis_mlx/runtime/owner.py",
+            "bilqis_mlx/runtime/_capability/factory/_evaluation/factory_complete_solver.py":
+                "bilqis_mlx/runtime/factory_complete_solver.py",
+            "bilqis_mlx/runtime/_capability/factory/_solver/cognitive_solver_contracts.py":
+                "bilqis_mlx/runtime/cognitive_solver_contracts.py",
+            "bilqis_mlx/runtime/_capability/factory/_task/factory_task_authority.py":
+                "bilqis_mlx/runtime/factory_task_authority.py",
             "bilqis_mlx/runtime/_correction/accepted/accepted_corrections.py":
                 "bilqis_mlx/runtime/accepted_corrections.py",
         }

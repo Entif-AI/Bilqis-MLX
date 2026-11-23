@@ -15,7 +15,7 @@ class OptimizerStepValidationTests(TestCase):
         self.fixture = CandidateTransactionTests(methodName="runTest")
         self.fixture.setUp()
 
-    def test_one_step_performs_only_parent_and_result_numerical_validation(self):
+    def test_learning_first_step_performs_one_result_numerical_validation(self):
         candidate = begin_candidate(self.fixture.parent)
         original_validate = AdamWStateTree.validate
         calls = []
@@ -26,9 +26,9 @@ class OptimizerStepValidationTests(TestCase):
 
         with patch.object(AdamWStateTree, "validate", counted_validate):
             stepped = self.fixture.step(candidate)
-        self.assertEqual(len(calls), 2)
-        self.assertIs(calls[0], candidate.optimizer)
-        self.assertIs(calls[1], stepped.optimizer)
+        self.assertEqual(len(calls), 1)
+        self.assertIs(calls[0], stepped.optimizer)
+        stepped.optimizer.validate_structure()
 
     def test_mutated_issued_parent_is_rejected_at_step_boundary(self):
         candidate = begin_candidate(self.fixture.parent)

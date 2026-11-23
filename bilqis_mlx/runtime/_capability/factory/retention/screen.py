@@ -19,7 +19,8 @@ from bilqis_mlx.runtime.capability_retention_foundation import (
     mastery_debt_utility_margin_units,
 )
 from bilqis_mlx.runtime._factory_parent_assessment_cache import (
-    factory_parent_assessment_identity, use_parent_assessment,
+    ParentAssessmentCacheReceipt, factory_parent_assessment_identity,
+    use_parent_assessment,
 )
 from bilqis_mlx.runtime._factory_retention_support import (
     C05_FRESH_LESSON_SEED_OFFSET, C05_FRESH_TARGET_SEED_OFFSET,
@@ -251,9 +252,11 @@ def _issue_factory_evaluation(
             decision_evidence_sha256=decision.evidence_sha256,
             parent_ledger_sha256=baseline.digest)
         baseline = apply_factory_baseline_transition(baseline, baseline_transition)
+    parent_assessment_cache = (
+        cache if type(cache) is ParentAssessmentCacheReceipt else None)
     return raw_issue(
         decision, parent_identity, candidate_identity,
-        generation_authority, cache, parent_state=parent.retained_state,
+        generation_authority, parent_assessment_cache, parent_state=parent.retained_state,
         candidate_state=candidate.retained_state,
         parent_binding=parent_binding, candidate_binding=candidate_binding,
         baseline_transition=baseline_transition, baseline_ledger=baseline,
