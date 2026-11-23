@@ -126,6 +126,7 @@ VISIT_PERFORMANCE_FIELDS = (
     "accepted_source_context_wall_seconds",
     "accepted_feature_authentication_wall_seconds",
     "planning_wall_seconds",
+    "planning_offer_fanout_wall_seconds",
     "source_materialization_wall_seconds",
     "selected_source_cache_hit",
     "selected_source_cache_lookup_wall_seconds",
