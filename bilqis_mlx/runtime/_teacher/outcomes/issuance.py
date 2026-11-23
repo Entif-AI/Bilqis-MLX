@@ -194,9 +194,15 @@ def carry_credit_to_successor(visit, successor, parent):
     return replace(successor, teacher_state=dict(updated.teacher_state))
 
 
-def context_for_selection(release, program, grade, school, option, teacher, metadata):
+def context_for_selection(
+        release, program, grade, school, option, teacher, metadata,
+        total_capabilities):
     key = metadata['diagnostic_context_key']
     payload = teacher['causal_experiment']['diagnostic_contexts'][key]
     context = selection_context(release, program, grade, school.stage,
         option.context.scope, payload, option.context.capability_id)
-    return {**context, 'diagnostic_context_key': key}
+    return {
+        **context,
+        'diagnostic_context_key': key,
+        'total_capabilities': total_capabilities,
+    }

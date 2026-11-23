@@ -100,7 +100,8 @@ class NativeRejectionOutcomeTests(NativeSourceFixture, unittest.TestCase):
         offer = SimpleNamespace(capability_id=cap, source_seed=17, release_sha256=release_sha)
         context = {'grade': 'A', 'phase': 'RECOVERY_1', 'curriculum_scope': 'factory/7',
                    'rubric_sha256': 'd' * 64, 'factory_release_sha256': release_sha, 'diagnostics': {},
-                   'grade_definition_sha256': 'e' * 64, 'source_binding_sha256': 'f' * 64}
+                   'grade_definition_sha256': 'e' * 64, 'source_binding_sha256': 'f' * 64,
+                   'total_capabilities': 20}
         selection = _issue_result(
             'TEACHER_SELECTED', cap, offer, visit, policy,
             {'how_context': context},

@@ -62,7 +62,8 @@ def _selected_priority_result(
         grade, total_capabilities=total_capabilities,
         plasticity_escape=plasticity_escape)
     metadata = {**metadata, 'how_context': context_for_selection(
-        source_context.release, program, grade, school, option, teacher, metadata)}
+        source_context.release, program, grade, school, option, teacher, metadata,
+        total_capabilities)}
     if cadence_authorization is not None:
         metadata = {**metadata, 'cadence': cadence_authorization.to_record()}
     selected_epoch = replace(
