@@ -9,6 +9,22 @@ from .contracts import (
     _digest, _invalid,
 )
 
+_PRECEDING_GROUP_INDEX = -2
+_MIN_REBALANCE_DONOR_ROWS = 3
+
+
+def _contiguous_groups(row_count: int, size: int) -> tuple[tuple[int, ...], ...]:
+    groups = [
+        tuple(range(start, min(start + size, row_count)))
+        for start in range(0, row_count, size)
+    ]
+    if (len(groups) > 1 and len(groups[-1]) == 1
+            and len(groups[_PRECEDING_GROUP_INDEX]) >= _MIN_REBALANCE_DONOR_ROWS):
+        tail = groups[_PRECEDING_GROUP_INDEX][-1]
+        groups[_PRECEDING_GROUP_INDEX] = groups[_PRECEDING_GROUP_INDEX][:-1]
+        groups[-1] = (tail, *groups[-1])
+    return tuple(groups)
+
 def estimate_row_activation_bytes(
     row: ResourceRow, topology: ModelTopologySpecV2,
 ) -> int:
@@ -69,9 +85,7 @@ def plan_microbatches(
     for size in MICROBATCH_SIZES:
         if max_microbatch_size is not None and size > max_microbatch_size:
             continue
-        groups = tuple(
-            tuple(range(start, min(start + size, len(delivered_rows))))
-            for start in range(0, len(delivered_rows), size))
+        groups = _contiguous_groups(len(delivered_rows), size)
         peaks = tuple(
             resident + memory_budget.activation_safety_factor
             * sum(estimates[index] for index in group)

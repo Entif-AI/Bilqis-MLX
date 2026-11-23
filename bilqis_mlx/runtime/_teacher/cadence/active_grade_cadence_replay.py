@@ -4,8 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from .active_grade_cadence_projection_store import (
-    _PROJECTION_KEY, _PROJECTION_SCHEMA, _pending_attempts,
-    _remember_projection, _restore_projection,
+    _LEGACY_PROJECTION_SCHEMA, _PROJECTION_KEY, _PROJECTION_SCHEMA,
+    _pending_attempts, _remember_projection, _restore_legacy_projection,
+    _restore_projection,
 )
 from .active_grade_cadence_replay_support import (
     _REBUILD_REQUIRED, _canonical, _incremental_attempts, _invalid,
@@ -101,7 +102,16 @@ def authenticated_cadence_attempts(run_dir: Path):
     from .active_grade_cadence_custody import read_current_cadence
     cadence_state = read_current_cadence(root)
     if state is None:
-        if student.generation != 0 or cadence_state is not None:
+        legacy = plane.event_projection_state(
+            root, _PROJECTION_KEY, _LEGACY_PROJECTION_SCHEMA)
+        if legacy is not None:
+            restored = _restore_legacy_projection(legacy["payload"])
+            if restored is None:
+                _invalid(_REBUILD_REQUIRED)
+            attempts, seen, anchor = restored
+            offset = legacy["indexed_bytes"]
+            identity = legacy["ledger_identity"]
+        elif student.generation != 0 or cadence_state is not None:
             _invalid(_REBUILD_REQUIRED)
     if state is not None:
         restored = _restore_projection(state["payload"])
@@ -112,7 +122,7 @@ def authenticated_cadence_attempts(run_dir: Path):
         offset = state["indexed_bytes"]
         identity = state["ledger_identity"]
     tail = plane.indexed_event_tail(root, offset)
-    if state is not None and (
+    if identity is not None and (
             tail["rebuilt"] or tail["ledger_identity"] != identity):
         _invalid(_REBUILD_REQUIRED)
     _require_incremental_anchor(pointer, student, anchor)
@@ -146,7 +156,8 @@ def rebuild_authenticated_cadence_attempts(run_dir: Path):
                 _invalid("BAMF_ACTIVE_GRADE_CADENCE_ACCEPTED_EVENT_INVALID")
             if key not in seen:
                 seen.add(key)
-                attempts.append((event["cadence"], event["capability"]))
+                attempts.append((
+                    event["cadence"], event["capability"], "RETAINED"))
             continue
         evidence = event.get("evidence")
         cadence = evidence.get("cadence") if isinstance(evidence, dict) else None
@@ -161,12 +172,13 @@ def rebuild_authenticated_cadence_attempts(run_dir: Path):
         capability = evidence.get("capability")
         if capability not in cadence.get("authorized_capability_ids", ()):
             _invalid("BAMF_ACTIVE_GRADE_CADENCE_REJECTION_EVENT_INVALID")
-        attempts.append((cadence, capability))
+        attempts.append((cadence, capability, "REJECTED"))
     for key, (generation, event) in sorted(
             accepted.items(), key=lambda item: item[1][0]):
         if key not in seen:
             seen.add(key)
-            attempts.append((event["cadence"], event["capability"]))
+            attempts.append((
+                event["cadence"], event["capability"], "RETAINED"))
     pointer, student = _current_accepted(root)
     current = chain.get(student.generation)
     if (current is None or current[1] != pointer["manifest_sha256"]

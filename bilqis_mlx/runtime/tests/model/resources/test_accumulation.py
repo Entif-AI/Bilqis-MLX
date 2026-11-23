@@ -225,6 +225,45 @@ class AtlasResourcesTests(AtlasResourcesFixture):
         self.assertEqual(split_grad.gradient, whole_grad.gradient)
         self.assertEqual(split_grad.weighted_mean_loss, whole_grad.weighted_mean_loss)
 
+    def test_thirty_three_rows_rebalance_singleton_tail_for_vector_execution(self):
+        rows = _rows(33)
+        plan = plan_microbatches(
+            rows, self.topology, self.budget, max_microbatch_size=32)
+
+        self.assertEqual(tuple(map(len, plan.groups)), (31, 2))
+        self.assertEqual(
+            tuple(index for group in plan.groups for index in group),
+            tuple(range(33)))
+
+        values = tuple(float(index + 1) for index in range(33))
+
+        def execute_group(group):
+            mean = sum(values[index] for index in group) / len(group)
+            result = object.__new__(BamfMicrobatchGradientExecution)
+            object.__setattr__(result, "executions", tuple(
+                SimpleNamespace(output=SimpleNamespace(generation_binding=GENERATION))
+                for _ in group))
+            object.__setattr__(result, "gradients", {
+                "weight": mx.array([mean], dtype=mx.float32)})
+            object.__setattr__(
+                result, "mean_loss", mx.array(mean, dtype=mx.float32))
+            return result
+
+        with patch.object(
+                BamfMicrobatchGradientExecution, "__post_init__", return_value=None):
+            result = accumulate_logical_batch_gradients(
+                plan, lambda _index: self.fail("scalar fallback launched"),
+                execute_group=execute_group)
+
+        expected = sum(values) / len(values)
+        self.assertEqual(result.gradient_launches, 2)
+        self.assertEqual(result.vectorized_microbatches, 2)
+        self.assertEqual(result.scalar_fallback_rows, 0)
+        self.assertTrue(bool(mx.allclose(
+            result.gradients["weight"], mx.array([expected], dtype=mx.float32),
+            rtol=0.0, atol=1e-6)))
+        self.assertAlmostEqual(float(result.weighted_mean_loss.item()), expected, places=5)
+
     def test_wrong_generation_seed_or_group_rejects_before_backend_call(self):
         rows = _rows(4)
         plan = plan_microbatches(rows, self.topology, self.budget)

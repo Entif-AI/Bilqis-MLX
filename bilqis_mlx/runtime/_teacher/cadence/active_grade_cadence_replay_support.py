@@ -35,7 +35,7 @@ def _current_accepted_events(student):
                 or event.get("accepted_manifest_sha256") != parent_manifest
                 or capability not in cadence.get("authorized_capability_ids", ())):
             _invalid("BAMF_ACTIVE_GRADE_CADENCE_ACCEPTED_EVENT_INVALID")
-        result[_canonical(event)] = (cadence, capability)
+        result[_canonical(event)] = (cadence, capability, "RETAINED")
     return result
 
 
@@ -105,7 +105,7 @@ def _incremental_attempts(run_dir, events, pointer, student, attempts, seen, anc
         capability = evidence.get("capability")
         if capability not in cadence.get("authorized_capability_ids", ()):
             _invalid("BAMF_ACTIVE_GRADE_CADENCE_REJECTION_EVENT_INVALID")
-        attempts.append((cadence, capability))
+        attempts.append((cadence, capability, "REJECTED"))
     for key, item in current_accepted.items():
         if key not in seen and key not in observed_accepted:
             seen.add(key)

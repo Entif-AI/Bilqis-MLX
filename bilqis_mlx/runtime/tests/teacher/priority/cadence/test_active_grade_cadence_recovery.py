@@ -1,4 +1,5 @@
 """Crash/replay and projection custody regressions for #1333 cadence."""
+import json
 import shutil
 from unittest.mock import patch
 
@@ -11,6 +12,7 @@ from bilqis_mlx.runtime.active_grade_cadence import (
 )
 from bilqis_mlx.runtime.active_grade_cadence_contracts import ActiveGradeCadencePhase
 from bilqis_mlx.runtime.active_grade_cadence_custody import read_current_cadence
+from bilqis_mlx.runtime import active_grade_cadence_boundary as cadence_boundary
 
 from bilqis_mlx.runtime.tests.teacher.priority.test_active_grade_cadence import (
     _capability,
@@ -35,7 +37,7 @@ def test_terminal_event_replay_heals_stale_cadence_before_reissue(tmp_path):
         with patch(
                 "bilqis_mlx.runtime.active_grade_cadence_replay."
                 "authenticated_cadence_attempts",
-                return_value=((issued.to_record(), "A"),)):
+                return_value=((issued.to_record(), "A", "RETAINED"),)):
             cold = issue_active_grade_cadence(tmp_path, epoch, frontier)
     assert cold.authorized_capability_ids == ("B",)
     assert read_current_cadence(tmp_path).attempted_capability_ids == ("A",)
@@ -49,7 +51,7 @@ def test_projection_rebuild_after_activation_change_replays_terminal_attempt(tmp
     with _obligation_patch(epoch):
         issue_active_grade_cadence(tmp_path, epoch, first)
         issued = issue_active_grade_cadence(tmp_path, epoch, successor)
-        terminal = (issued.to_record(), "A")
+        terminal = (issued.to_record(), "A", "RETAINED")
         shutil.rmtree(tmp_path / "active-grade-cadence")
         with patch(
                 "bilqis_mlx.runtime.active_grade_cadence_replay."
@@ -67,16 +69,16 @@ def test_projection_rebuild_inside_recovery_preserves_round_and_exposure(tmp_pat
     with _obligation_patch(epoch):
         for capability in ("A", "B", "C", "D"):
             issued = issue_active_grade_cadence(tmp_path, epoch, frontier)
-            history.append((issued.to_record(), capability))
+            history.append((issued.to_record(), capability, "RETAINED"))
             _record_attempt(tmp_path, issued, capability)
         recovery_one = issue_active_grade_cadence(tmp_path, epoch, frontier)
         for capability in recovery_one.authorized_capability_ids:
             issued = issue_active_grade_cadence(tmp_path, epoch, frontier)
-            history.append((issued.to_record(), capability))
+            history.append((issued.to_record(), capability, "RETAINED"))
             _record_attempt(tmp_path, issued, capability)
         recovery_two = issue_active_grade_cadence(tmp_path, epoch, frontier)
         capability = recovery_two.authorized_capability_ids[0]
-        history.append((recovery_two.to_record(), capability))
+        history.append((recovery_two.to_record(), capability, "RETAINED"))
         _record_attempt(tmp_path, recovery_two, capability)
         expected_remaining = recovery_two.authorized_capability_ids[1:]
         expected_exposure = dict(read_current_cadence(tmp_path).recovery_attempt_counts)
@@ -100,7 +102,7 @@ def test_new_learner_evidence_reopens_exhausted_grade_main_cadence(tmp_path):
             issued = issue_active_grade_cadence(tmp_path, first_epoch, frontier)
             for capability in issued.authorized_capability_ids:
                 current = issue_active_grade_cadence(tmp_path, first_epoch, frontier)
-                history.append((current.to_record(), capability))
+                history.append((current.to_record(), capability, "RETAINED"))
                 _record_attempt(tmp_path, current, capability)
         exhausted = issue_active_grade_cadence(tmp_path, first_epoch, frontier)
         assert exhausted.phase is ActiveGradeCadencePhase.BOUNDARY
@@ -131,7 +133,7 @@ def test_projection_writer_refuses_attempt_without_authenticated_terminal_custod
         issued = issue_active_grade_cadence(tmp_path, epoch, frontier)
         with pytest.raises(BilqisError) as failure:
             record_active_grade_cadence_attempt(
-                tmp_path, issued.to_record(), "A")
+                tmp_path, issued.to_record(), "A", "RETAINED")
     assert failure.value.context.get("reason") == (
         "BAMF_ACTIVE_GRADE_CADENCE_TERMINAL_AUTHORITY_MISSING")
 
@@ -166,7 +168,7 @@ def test_boundary_rebuild_ignores_orphaned_writer_temp(tmp_path):
             issued = issue_active_grade_cadence(tmp_path, epoch, frontier)
             for capability in issued.authorized_capability_ids:
                 current = issue_active_grade_cadence(tmp_path, epoch, frontier)
-                history.append((current.to_record(), capability))
+                history.append((current.to_record(), capability, "RETAINED"))
                 _record_attempt(tmp_path, current, capability)
         exhausted = issue_active_grade_cadence(tmp_path, epoch, frontier)
         assert exhausted.phase is ActiveGradeCadencePhase.BOUNDARY
@@ -181,3 +183,32 @@ def test_boundary_rebuild_ignores_orphaned_writer_temp(tmp_path):
             rebuilt = issue_active_grade_cadence(tmp_path, epoch, frontier)
     assert rebuilt.phase is ActiveGradeCadencePhase.BOUNDARY
     assert rebuilt.disposition.value == "RECOVERY_EXHAUSTED"
+
+
+def test_legacy_boundary_receipt_remains_valid_historical_evidence(tmp_path):
+    frontier = _frontier((_capability("A"),))
+    body = {
+        "schema": cadence_boundary.LEGACY_SCHEMA,
+        "run_id": frontier.run_id,
+        "active_grade_activation_sha256":
+            frontier.active_grade_activation_sha256,
+        "active_grade_definition_sha256":
+            frontier.active_grade_definition_sha256,
+        "policy_epoch": 1,
+        "cadence_epoch": 0,
+        "member_census_sha256": "3" * 64,
+        "deficit_evidence_sha256": "4" * 64,
+        "phase_sha256": "5" * 64,
+        "recovery_attempt_counts": [["A", 2]],
+    }
+    digest = cadence_boundary._digest(body)
+    root = tmp_path / "active-grade-cadence-boundaries"
+    root.mkdir()
+    (root / f"00000000-{digest}.json").write_text(
+        json.dumps(
+            {**body, "boundary_sha256": digest},
+            sort_keys=True, indent=2) + "\n",
+        encoding="utf-8")
+
+    assert cadence_boundary._latest_boundary(
+        tmp_path, frontier, "3" * 64) is None

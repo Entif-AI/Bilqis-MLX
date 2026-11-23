@@ -5,7 +5,8 @@ import time
 from bilqis_mlx.runtime.atlas_training_contracts import BamfVisitProvenance
 from bilqis_mlx.runtime.factory_candidate_training import execute_factory_candidate_step
 
-from .accepted_priority_candidate import _candidate_delivery_setup, _invalid
+from .accepted_priority_candidate import _invalid
+from .accepted_priority_candidate_execution import _candidate_delivery_setup
 from .accepted_priority_visit_contracts import _require_issued
 
 
@@ -16,6 +17,9 @@ def execute_learning_first_priority_candidate(
         candidate=None, finalize_candidate=True, prepared_source_rows=None,
         prepared_enrichment_rows=(), prepared_rehearsal_rows=(),
         rehearsal_by_id=None, rehearsal_bindings=None, rehearsal_authorities=None,
+        prepared_fresh_support_rows=(), fresh_support_by_id=None,
+        fresh_support_binding=None, fresh_support_authority=None,
+        fresh_support_unavailable_reason=None, fresh_support_depth_control=None,
         candidate_step_started_at=None, source_prepare_wall_seconds=0.0,
         source_lane_wait_wall_seconds=0.0,
         source_lesson_materialization_wall_seconds=0.0,
@@ -40,10 +44,17 @@ def execute_learning_first_priority_candidate(
      candidate_delivery_setup_wall_seconds) = _candidate_delivery_setup(
         selection, source_context, prepared_source_rows,
         prepared_enrichment_rows, prepared_rehearsal_rows, rehearsal_by_id,
-        rehearsal_bindings, rehearsal_authorities, observation, teacher_hparams)
+        rehearsal_bindings, rehearsal_authorities, observation, teacher_hparams,
+        prepared_fresh_support_rows=prepared_fresh_support_rows,
+        fresh_support_by_id=fresh_support_by_id,
+        fresh_support_binding=fresh_support_binding,
+        fresh_support_authority=fresh_support_authority,
+        fresh_support_unavailable_reason=fresh_support_unavailable_reason,
+        fresh_support_depth_control=fresh_support_depth_control)
     (offer, rows, enrichment, rehearsal, rehearsal_by_id, rehearsal_bindings,
-     rehearsal_authorities, capability, delivery, observation) = delivery_inputs
-    delivered_rows = (*rows, *rehearsal, *enrichment)
+     rehearsal_authorities, fresh_support, fresh_support_by_id, capability, delivery,
+     observation) = delivery_inputs
+    delivered_rows = (*rows, *rehearsal, *enrichment, *fresh_support)
     provenance = BamfVisitProvenance.from_c03_record(selection.visit.identity.to_record())
     return execute_factory_candidate_step(
         Path(selection._run_dir), source_context, parent,
@@ -56,6 +67,7 @@ def execute_learning_first_priority_candidate(
         rehearsal_by_id=rehearsal_by_id,
         rehearsal_bindings=rehearsal_bindings,
         rehearsal_authorities=rehearsal_authorities,
+        fresh_support_by_id=fresh_support_by_id,
         salience_provider=salience_provider, capture_diagnostics=capture_diagnostics,
         candidate=candidate, finalize_candidate=finalize_candidate,
         currentness_transaction=None,

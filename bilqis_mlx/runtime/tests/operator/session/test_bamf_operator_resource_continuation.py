@@ -18,12 +18,18 @@ from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import BamfP
 @pytest.mark.parametrize("has_peer", (True, False))
 def test_resource_rejection_returns_to_scheduler_without_learner_feedback(tmp_path, has_peer):
     parent = object()
+    cadence_record = {
+        "schema": "bilqis.bamf.active-grade-cadence-authorization/v2",
+        "disposition": "TEACHING",
+    }
     identity = SimpleNamespace(
         visit_id="visit:failed", policy_key="policy",
         to_record=lambda: {"visit_id": "visit:failed"})
     failed = BamfPreparedVisit(
         "RESOURCE_REJECTED", parent,
-        selection=SimpleNamespace(visit=SimpleNamespace(identity=identity)),
+        selection=SimpleNamespace(
+            visit=SimpleNamespace(identity=identity),
+            metadata={"cadence": cadence_record}),
         capability="failed",
         resource={"schema": RESOURCE_REJECTION_SCHEMA, "status": "EXHAUSTED"})
     peer = BamfPreparedVisit(
@@ -59,6 +65,7 @@ def test_resource_rejection_returns_to_scheduler_without_learner_feedback(tmp_pa
         "visit_id": "visit:failed",
         "teacher_visit": {"visit_id": "visit:failed"},
         "selected_policy_key": "policy",
+        "cadence": cadence_record,
     })
     cadence.assert_not_called()
     if has_peer:
