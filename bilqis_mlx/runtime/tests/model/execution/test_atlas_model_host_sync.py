@@ -119,9 +119,9 @@ def test_learning_first_real_owners_report_one_barrier_two_readbacks_no_validati
                             route_evidence, "_route_output_from_materialized_logits",
                             side_effect=lambda *_args: SimpleNamespace(
                                 generation_binding="generation")), patch(
-                                    "bilqis_mlx.runtime._model.backbone.atlas_model_participation._forward_participation",
+                                    "bilqis_mlx.runtime.atlas_model_participation._forward_participation",
                                     return_value=object()), patch(
-                                        "bilqis_mlx.runtime._model.backbone.atlas_model_training.loss_bearing_bamf",
+                                        "bilqis_mlx.runtime.atlas_model_training.loss_bearing_bamf",
                                         side_effect=loss_execution), patch(
                                             "dataclasses.replace",
                                             side_effect=lambda value, **_kwargs: value), patch.object(
