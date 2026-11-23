@@ -22,7 +22,8 @@ def _reporting_fixture():
     )
     prepared = SimpleNamespace(compiled_rows=(
         compiled((1, 2, 3)), compiled((1, 2))))
-    resource = SimpleNamespace(estimated_peak_bytes=128)
+    resource = SimpleNamespace(
+        estimated_peak_bytes=128, microbatch_size=2, groups=(object(),))
     budget = SimpleNamespace(allocation_bytes=256)
     transaction = SimpleNamespace(update_steps=2)
     feature_context = SimpleNamespace(
