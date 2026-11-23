@@ -2,6 +2,18 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.4.6](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.5...v1.4.6) (2026-11-23)
+
+
+### Bug Fixes
+
+* **bamf:** require mastery-debt margin for score trades ([#1570](https://github.com/Entif-AI/Bilqis-MLX/issues/1570)) ([a642e7e](https://github.com/Entif-AI/Bilqis-MLX/commit/a642e7e92c2004f2d00cde8908ed4eeb8bc53e9e))
+
+
+### Performance Improvements
+
+* **bamf:** skip cached parent solver rebuild ([#1572](https://github.com/Entif-AI/Bilqis-MLX/issues/1572)) ([1273450](https://github.com/Entif-AI/Bilqis-MLX/commit/127345066ecc765799f50444e1c65f8ae76e101a))
+
 ## [1.4.5](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.4...v1.4.5) (2026-11-23)
 
 
