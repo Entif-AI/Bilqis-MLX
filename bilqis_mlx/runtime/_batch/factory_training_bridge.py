@@ -22,7 +22,8 @@ from .factory_training_preparation import (
 )
 from .factory_training_source import (
     _FactoryMotifPlanningInput, _bind_b11_rows, _bind_learning_first_rows,
-    _motif_planning_input,
+    _motif_planning_input, _prepare_b11_source_binding,
+    _prepare_factory_source_rows,
 )
 
 
