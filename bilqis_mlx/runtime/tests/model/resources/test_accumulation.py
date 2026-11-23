@@ -11,6 +11,9 @@ from unittest.mock import patch
 import mlx.core as mx
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.runtime.c08_gradient_accumulation import (
+    _logical_batch_result,
+)
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, bamf_parameter_census,
 )
@@ -48,6 +51,22 @@ GENERATION = "fixture:retained-generation"
 from bilqis_mlx.runtime.tests.model.resources.helpers import AtlasResourcesFixture, GENERATION, _rows
 
 class AtlasResourcesTests(AtlasResourcesFixture):
+    def test_unattested_logical_batch_still_rejects_nonfinite_distributed_loss(self):
+        plan = SimpleNamespace(
+            source_digest="source", generation_binding=GENERATION,
+            digest="a" * 64)
+        with self.assertRaises(BilqisError) as caught:
+            _logical_batch_result(
+                plan,
+                {"weight": mx.array([1.0], dtype=mx.float32)},
+                mx.array(float("nan"), dtype=mx.float32),
+                (object(), object()),
+                2, 0, 2, 0.0, {},
+            )
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "C08_LOGICAL_BATCH_GRADIENT_INVALID")
+
     def test_real_mlx_tree_accumulation_weights_split_groups_without_clipping(self):
         rows = _rows(3)
         row_bytes = estimate_row_activation_bytes(rows[0], self.topology)

@@ -46,6 +46,12 @@ def _microbatch_performance_observation(
         "b11_autodiff_other_wall_seconds": float(autodiff_other),
         "b11_gradient_finite_validation_wall_seconds": float(gradient_finite_validation_wall_seconds),
         "b11_postflight_validation_wall_seconds": float(postflight_validation_wall_seconds),
+        "b11_materialization_barrier_count": int(
+            autodiff_timings.get("b11_materialization_barrier_count", 0)),
+        "b11_host_readback_count": int(
+            autodiff_timings.get("b11_host_readback_count", 0)) + 1,
+        "b11_validation_sync_count": int(
+            postflight.get("b11_validation_sync_count", 0)),
         "b11_provider_draw_count": replay["provider_draws"],
         "b11_atlas_reload_count": replay["atlas_reloads"],
     }
@@ -114,7 +120,8 @@ def _learning_first_microbatch_value_and_grad_impl(
     postflight_started = time.perf_counter()
     result = finalize_microbatch_gradient(
         backend, batch, row_batches, None, executions, mean_loss, gradients,
-        answer_plans=answer_plans, route_trajectory=route_trajectory)
+        answer_plans=answer_plans, route_trajectory=route_trajectory,
+        learning_first=True, numerical_finite_attested=True)
     postflight_seconds = time.perf_counter() - postflight_started
     observation = _microbatch_performance_observation(
         result, replay, preflight_wall_seconds=0.0,
@@ -193,7 +200,7 @@ def _bamf_microbatch_value_and_grad_impl(
     result = finalize_microbatch_gradient(
         backend, batch, row_batches, preflight_executions,
         executions, mean_loss, gradients, answer_plans=answer_plans,
-        route_trajectory=route_trajectory)
+        route_trajectory=route_trajectory, numerical_finite_attested=True)
     postflight_validation_wall_seconds = time.perf_counter() - stage_started
     observation = _microbatch_performance_observation(
         result, replay, preflight_wall_seconds=preflight_wall_seconds,

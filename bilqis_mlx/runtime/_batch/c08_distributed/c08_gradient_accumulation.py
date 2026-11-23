@@ -82,7 +82,7 @@ def _scalar_group(
 def _logical_batch_result(
         plan, aggregate, weighted_loss, losses, gradient_launches,
         vectorized_microbatches, scalar_fallback_rows, wall_seconds,
-        b11_observation):
+        b11_observation, *, numerical_finite_attested=False):
     result = object.__new__(LogicalBatchGradientExecution)
     for name, value in (
         ("loss_executions", tuple(losses)),
@@ -97,6 +97,7 @@ def _logical_batch_result(
         ("scalar_fallback_rows", scalar_fallback_rows),
         ("wall_seconds", wall_seconds),
         ("distributed_metadata", None),
+        ("_numerical_finite_attested", numerical_finite_attested),
         ("_issuance", _ISSUER),
     ):
         object.__setattr__(result, name, value)
@@ -128,7 +129,13 @@ def _empty_b11_observation():
         "b11_postflight_result_construction_wall_seconds",
     )
     observation = {name: 0.0 for name in names}
-    observation.update({"b11_provider_draw_count": 0, "b11_atlas_reload_count": 0})
+    observation.update({
+        "b11_materialization_barrier_count": 0,
+        "b11_host_readback_count": 0,
+        "b11_validation_sync_count": 0,
+        "b11_provider_draw_count": 0,
+        "b11_atlas_reload_count": 0,
+    })
     return observation
 
 
@@ -139,7 +146,12 @@ def _finalize_logical_batch(
         reused_materialized_full_batch, b11_observation):
     materialization_started = time.perf_counter()
     if not reused_materialized_full_batch:
-        mx.eval(aggregate, weighted_loss)
+        checks = (mx.all(mx.isfinite(weighted_loss)),) + tuple(
+            mx.all(mx.isfinite(value)) for value in aggregate.values())
+        finite_witness = mx.all(mx.stack(checks))
+        mx.eval(aggregate, weighted_loss, finite_witness)
+        if not bool(finite_witness):
+            _invalid("C08_LOGICAL_BATCH_GRADIENT_INVALID")
     materialization_seconds = time.perf_counter() - materialization_started
     wall_seconds = float(time.perf_counter() - started)
     accounted = group_execution_wall_seconds + aggregation_wall_seconds + materialization_seconds
@@ -153,7 +165,8 @@ def _finalize_logical_batch(
     result_started = time.perf_counter()
     result = _logical_batch_result(
         plan, aggregate, weighted_loss, losses, gradient_launches,
-        vectorized_microbatches, scalar_fallback_rows, wall_seconds, b11_observation)
+        vectorized_microbatches, scalar_fallback_rows, wall_seconds, b11_observation,
+        numerical_finite_attested=True)
     observation = dict(getattr(result, "_performance_observation", {}) or {})
     observation["c08_result_construction_wall_seconds"] = float(
         time.perf_counter() - result_started)

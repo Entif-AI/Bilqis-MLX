@@ -38,6 +38,9 @@ def _empty_observation():
         "b11_postflight_loss_validation_wall_seconds": 0.0,
         "b11_postflight_gradient_structure_wall_seconds": 0.0,
         "b11_postflight_result_construction_wall_seconds": 0.0,
+        "b11_materialization_barrier_count": 0,
+        "b11_host_readback_count": 0,
+        "b11_validation_sync_count": 0,
         "b11_provider_draw_count": 0,
         "b11_atlas_reload_count": 0,
     }
@@ -71,6 +74,9 @@ def _sample_execution():
         "b11_postflight_loss_validation_wall_seconds": 0.01,
         "b11_postflight_gradient_structure_wall_seconds": 0.01,
         "b11_postflight_result_construction_wall_seconds": 0.02,
+        "b11_materialization_barrier_count": 1,
+        "b11_host_readback_count": 2,
+        "b11_validation_sync_count": 0,
         "b11_provider_draw_count": 8,
         "b11_atlas_reload_count": 2,
     })
@@ -132,6 +138,9 @@ def test_full_batch_vector_group_reuses_materialized_mean_without_scaling_tree()
         "b11_postflight_loss_validation_wall_seconds": 0.0,
         "b11_postflight_gradient_structure_wall_seconds": 0.0,
         "b11_postflight_result_construction_wall_seconds": 0.0,
+        "b11_materialization_barrier_count": 0,
+        "b11_host_readback_count": 0,
+        "b11_validation_sync_count": 0,
         "b11_provider_draw_count": 0,
         "b11_atlas_reload_count": 0,
     }

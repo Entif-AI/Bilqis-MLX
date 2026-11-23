@@ -62,9 +62,10 @@ def _attach_dispatch_timings(timings, holder):
     )
 
 
-def _finite_tensor_tree_witness(values):
-    """Build one lazy scalar finite witness for an already-issued tensor tree."""
-    checks = tuple(mx.all(mx.isfinite(value)) for value in values.values())
+def _finite_gradient_witness(mean_loss, values):
+    """Build one lazy scalar finite witness for loss plus the gradient tree."""
+    checks = (mx.all(mx.isfinite(mean_loss)),) + tuple(
+        mx.all(mx.isfinite(value)) for value in values.values())
     if not checks:
         _invalid("B11_GRADIENT_NONFINITE")
     return mx.all(mx.stack(checks))
@@ -98,13 +99,15 @@ def _materialize_gradient(
         "b11_autodiff_dispatch_wall_seconds": 0.0,
         "b11_autodiff_materialization_wall_seconds": 0.0,
         "b11_route_evidence_wall_seconds": 0.0,
+        "b11_materialization_barrier_count": 1,
+        "b11_host_readback_count": 0,
     }
     if not route_vectorized:
         started = time.perf_counter()
         mean_loss, gradients = mx.value_and_grad(objective)(params)
         timings["b11_autodiff_dispatch_wall_seconds"] = time.perf_counter() - started
         _attach_dispatch_timings(timings, holder)
-        finite_witness = _finite_tensor_tree_witness(gradients)
+        finite_witness = _finite_gradient_witness(mean_loss, gradients)
         started = time.perf_counter()
         mx.eval(mean_loss, gradients, finite_witness)
         timings["b11_autodiff_materialization_wall_seconds"] = (
@@ -119,10 +122,11 @@ def _materialize_gradient(
         objective)(params)
     timings["b11_autodiff_dispatch_wall_seconds"] = time.perf_counter() - started
     _attach_dispatch_timings(timings, holder)
-    finite_witness = _finite_tensor_tree_witness(gradients)
+    finite_witness = _finite_gradient_witness(mean_loss, gradients)
+    trajectory_indices = mx.stack(route_trajectory)
     started = time.perf_counter()
     mx.eval(
-        mean_loss, gradients, route_hidden, route_trajectory, route_logits,
+        mean_loss, gradients, route_hidden, trajectory_indices, route_logits,
         refinement_route_logits, finite_witness)
     timings["b11_autodiff_materialization_wall_seconds"] = (
         time.perf_counter() - started)
@@ -136,8 +140,9 @@ def _materialize_gradient(
     executions = microbatch_trace_from_route(
         backend, params, row_batches, answer_plans, targets, masks,
         producer, route_hidden, accepted_cache, execution_binding,
-        salience_supervision, refinement_selections, route_trajectory, route_logits,
+        salience_supervision, refinement_selections, trajectory_indices, route_logits,
         refinement_route_logits)
+    timings["b11_host_readback_count"] = 1
     timings["b11_route_evidence_wall_seconds"] = time.perf_counter() - started
     return (
         mean_loss, gradients, executions, route_trajectory,

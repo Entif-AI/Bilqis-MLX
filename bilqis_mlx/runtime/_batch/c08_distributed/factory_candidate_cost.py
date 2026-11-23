@@ -95,6 +95,10 @@ def _b11_timing_cost(b11):
     )
     result = {name: float(b11.get(name, 0.0)) for name in float_names}
     result.update({
+        "b11_materialization_barrier_count": int(
+            b11.get("b11_materialization_barrier_count", 0)),
+        "b11_host_readback_count": int(b11.get("b11_host_readback_count", 0)),
+        "b11_validation_sync_count": int(b11.get("b11_validation_sync_count", 0)),
         "b11_provider_draw_count": int(b11.get("b11_provider_draw_count", 0)),
         "b11_atlas_reload_count": int(b11.get("b11_atlas_reload_count", 0)),
     })
