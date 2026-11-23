@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "a642e7e92c2004f2d00cde8908ed4eeb8bc53e9e",
-  "updated_at": "2026-11-23T02:14:05+00:00",
+  "observed_unified": "127345066ecc765799f50444e1c65f8ae76e101a",
+  "updated_at": "2026-11-23T02:47:57+00:00",
   "exception": null,
   "items": [
     {
@@ -543,11 +543,11 @@
     },
     {
       "issue": 1541,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "a642e7e92c2004f2d00cde8908ed4eeb8bc53e9e",
-      "head_sha_role": "current main baseline consumed before #1541 adaptive candidate-budget implementation",
-      "summary": "Issue #1541 owns candidate-budget allocation only. It will qualify the existing neural-inert multi-fidelity shadow ladder against bounded evidence, report false-kill/false-continue/expected wall savings and retentions-per-hour implications, and activate only a versioned evidence-qualified early-stop or early-retention path. Proposal ranking and C05 adoption authority remain separate; early stopping cannot create retained state, and agent verification must not mutate the human production trainer.",
+      "pr": 1581,
+      "state": "TURNED_IN",
+      "head_sha": "98804e6dbe10f7af8b4ff7419a74a96bf4538778",
+      "head_sha_role": "verified implementation head before #1541 turn-in bookkeeping receipt",
+      "summary": "Issue #1541 is turned in as PR #1581 with the persistent BAMF operator collecting neural-inert 2/4/8/full-budget target-sentinel evidence inside canonical #333 candidate evidence while leaving the real horizon and C05 retention/adoption authority unchanged. The inherited 128-review factory-replay window remains NOT_QUALIFIED at 4/71 false kills (5.6338%) and is not reused as current qualification evidence; fresh records now carry false-kill/false-continue truth and measured projected wall savings while unsupported uncertainty, preservation, early-retention and retentions/hour claims remain explicit NOT_MEASURED/NOT_QUALIFIED pending production-shaped evidence. The mandatory AGENTS structure interruption also split the encountered BAMF evidence/session ownership below file and directory thresholds. Focused verification passed 55 tests, all 97 changed tests collected after relocation, flow control and diff hygiene were green, independent read-only review found no blocker, and no agent neural run or human production mutation occurred.",
       "resume_trigger": null,
       "preserved_branch": "codex/1541-adaptive-budget-20261122"
     },
