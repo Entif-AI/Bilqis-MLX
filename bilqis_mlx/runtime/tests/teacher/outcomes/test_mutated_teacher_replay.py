@@ -1,5 +1,6 @@
 """Fresh teacher mutations remain replayable without weakening compact custody."""
 from copy import deepcopy
+import json
 import random
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -112,3 +113,16 @@ def test_future_mutated_selection_carries_only_selected_teacher_digest(tmp_path)
         candidate_attempt_ordinal=1, parent_optimizer_step=0)
     assert capture.proposal["selected_teacher_sha256"] == "d" * 64
     assert "selected_teacher" not in capture.proposal
+
+    projection.teacher_state["c03_lineage"]["current_teacher"] = {
+        "history": ["x" * 4096 for _ in range(256)]
+    }
+    projection.teacher_state["c03_lineage"]["current_teacher_sha256"] = "e" * 64
+    larger = CandidateEvidenceCapture(
+        tmp_path, selection, generation=1,
+        accepted_manifest_sha256="a" * 64,
+        candidate_attempt_ordinal=1, parent_optimizer_step=0)
+    assert larger.proposal["selected_teacher_sha256"] == "e" * 64
+    assert "selected_teacher" not in larger.proposal
+    assert len(json.dumps(larger.proposal, sort_keys=True)) == len(
+        json.dumps(capture.proposal, sort_keys=True))
