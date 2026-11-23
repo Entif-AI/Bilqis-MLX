@@ -17,6 +17,9 @@ from ..atlas_model_training import (
 )
 from .compiled_batch import _MIN_ROWS, _compiled_microbatch, _microbatch_salience_labels
 from .route_kernel import prepare_route_microbatch_kernel, route_microbatch_compatible
+from .compiled_route import (
+    compiled_route_cache_size, learning_first_compiled_route,
+)
 from ..atlas_model_microbatch import (
     _gradient_path, _materialize_gradient, _microbatch_objective,
     _require_materialized_finite_witness,
@@ -100,11 +103,14 @@ def _learning_first_microbatch_value_and_grad_impl(
     refinement_selections = (None,) * len(row_batches)
     route_kernel = prepare_route_microbatch_kernel(
         row_batches, answer_plans, targets, masks, None, salience_labels)
+    compiled_route, compile_state = learning_first_compiled_route(
+        backend, row_batches, answer_plans, targets, masks, route_kernel)
     holder = {}
     objective = _microbatch_objective(
         backend, batch, row_batches, answer_plans, targets, masks, None,
         generation, snapshot, rebind_execution, True, None,
-        refinement_selections, route_kernel, salience_supervision, holder)
+        refinement_selections, route_kernel, salience_supervision, holder,
+        compiled_route=compiled_route)
     with source_replay_observation() as replay:
         autodiff_started = time.perf_counter()
         mean_loss, gradients, executions, route_trajectory, finite_witness, timings = (
@@ -132,6 +138,18 @@ def _learning_first_microbatch_value_and_grad_impl(
         gradient_finite_validation_wall_seconds=finite_seconds,
         postflight_validation_wall_seconds=postflight_seconds,
         total_started=total_started)
+    route_wall = float(
+        observation.get("b11_autodiff_dispatch_route_graph_wall_seconds", 0.0) or 0.0)
+    observation.update({
+        "b11_mlx_compile_enabled": compile_state != "disabled",
+        "b11_mlx_compile_cache_hit": compile_state == "hit",
+        "b11_mlx_compile_cache_miss": compile_state == "miss",
+        "b11_mlx_compile_cache_entries": compiled_route_cache_size(),
+        "b11_mlx_compile_cold_dispatch_wall_seconds": (
+            route_wall if compile_state == "miss" else 0.0),
+        "b11_mlx_compile_warm_dispatch_wall_seconds": (
+            route_wall if compile_state == "hit" else 0.0),
+    })
     attach_performance_observation(result, observation)
     return result
 
