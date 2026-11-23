@@ -2,6 +2,20 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.4.7](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.6...v1.4.7) (2026-11-23)
+
+
+### Bug Fixes
+
+* **bamf:** bind observation digest to trained rows ([#1587](https://github.com/Entif-AI/Bilqis-MLX/issues/1587)) ([95177d5](https://github.com/Entif-AI/Bilqis-MLX/commit/95177d55ba66c64f802ba98aa14473d99620084d))
+* **bamf:** bind rehearsal from provider-valid source draws ([#1585](https://github.com/Entif-AI/Bilqis-MLX/issues/1585)) ([798b3bb](https://github.com/Entif-AI/Bilqis-MLX/commit/798b3bb34a280f734505f64627b94b765813c3be))
+* **bamf:** restore learning-first rehearsal semantics ([#1582](https://github.com/Entif-AI/Bilqis-MLX/issues/1582)) ([30d6905](https://github.com/Entif-AI/Bilqis-MLX/commit/30d69050664878da7d40c2374efe57e8146713b4))
+
+
+### Performance Improvements
+
+* **bamf:** record adaptive candidate budget shadow evidence ([#1581](https://github.com/Entif-AI/Bilqis-MLX/issues/1581)) ([7e8a4b1](https://github.com/Entif-AI/Bilqis-MLX/commit/7e8a4b1c8f6224489770db0835e5be9d7fd59398))
+
 ## [1.4.6](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.5...v1.4.6) (2026-11-23)
 
 
