@@ -65,7 +65,7 @@ def _boundary_selection(target, group):
         option_id="fixture-option",
         lesson_grade=group,
         metadata={"cadence": {
-            "schema": "bilqis.bamf.active-grade-cadence-authorization/v1",
+            "schema": "bilqis.bamf.active-grade-cadence-authorization/v2",
             "disposition": "TEACHING",
             "phase_capability_ids": [target],
             "authorized_capability_ids": [target],
@@ -179,7 +179,7 @@ class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
             championship_boundary_capabilities,
         )
         selection = NS(metadata={"cadence": {
-            "schema": "bilqis.bamf.active-grade-cadence-authorization/v1",
+            "schema": "bilqis.bamf.active-grade-cadence-authorization/v2",
             "disposition": "TEACHING",
             "phase_capability_ids": ["cap:a", "cap:b"],
             "authorized_capability_ids": ["cap:a", "cap:b"],
@@ -193,7 +193,7 @@ class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
             championship_boundary_capabilities,
         )
         selection = NS(metadata={"cadence": {
-            "schema": "bilqis.bamf.active-grade-cadence-authorization/v1",
+            "schema": "bilqis.bamf.active-grade-cadence-authorization/v2",
             "disposition": "TEACHING",
             "phase_capability_ids": ["cap:a", "cap:b"],
             "authorized_capability_ids": ["cap:b"],

@@ -16,14 +16,18 @@ from bilqis_mlx.runtime.active_grade_cadence_replay import (
 
 def _cadence(capability="cap"):
     return {
-        "schema": "bilqis.bamf.active-grade-cadence-authorization/v1",
+        "schema": "bilqis.bamf.active-grade-cadence-authorization/v2",
         "phase": "MAIN", "phase_round": 0,
         "phase_sha256": "1" * 64, "cadence_sha256": "2" * 64,
         "active_grade_activation_sha256": "3" * 64,
         "active_grade_definition_sha256": "4" * 64,
         "member_census_sha256": "5" * 64,
         "deficit_evidence_sha256": "6" * 64,
-        "policy_epoch": 1, "authorized_capability_ids": [capability],
+        "policy_epoch": 2, "cadence_epoch": 0,
+        "recovery_attempt_counts": [],
+        "recovery_retained_counts": [],
+        "recovery_rejected_counts": [],
+        "authorized_capability_ids": [capability],
         "disposition": "TEACHING",
     }
 
@@ -43,11 +47,13 @@ def _student(generation, *, manifest_parent=None, outbox=()):
     )
 
 
-def _rejection(cadence, generation=0):
+def _rejection(
+        cadence, generation=0, reason="NO_MEASURABLE_TARGET_GAIN"):
     return {
         "event": "BAMF_CANDIDATE_REJECTED", "generation": generation,
         "evidence": {"schema": "bilqis.bamf.c16.3-rejection/v2",
-                     "capability": "cap", "cadence": cadence},
+                     "capability": "cap", "cadence": cadence,
+                     "retention_reason": reason},
     }
 
 
@@ -71,7 +77,7 @@ def test_explicit_rebuild_recovers_accepted_outbox_before_event_delivery(tmp_pat
             attempts = rebuild_authenticated_cadence_attempts(tmp_path)
     finally:
         plane.close()
-    assert attempts == ((cadence, "cap"),)
+    assert attempts == ((cadence, "cap", "RETAINED"),)
 
 
 def test_explicit_rebuild_requires_authenticated_rejection_owner(tmp_path):
@@ -92,8 +98,36 @@ def test_explicit_rebuild_requires_authenticated_rejection_owner(tmp_path):
             attempts = rebuild_authenticated_cadence_attempts(tmp_path)
     finally:
         plane.close()
-    assert attempts == ((cadence, "cap"),)
+    assert attempts == ((cadence, "cap", "REJECTED"),)
     authenticate.assert_called_once_with(event, parent, "a" * 64)
+
+
+@pytest.mark.parametrize("reason", (
+    "NO_MEASURABLE_TARGET_GAIN",
+    "TARGET_BASELINE_REGRESSION",
+    "PROTECTED_CAPABILITY_REGRESSION",
+))
+def test_rejection_classes_replay_as_negative_not_retained_exposure(
+        tmp_path, reason):
+    (tmp_path / "bamf-state.json").write_text("{}", encoding="utf-8")
+    cadence = _cadence()
+    event = _rejection(cadence, reason=reason)
+    (tmp_path / "events.jsonl").write_text(
+        json.dumps(event) + "\n", encoding="utf-8")
+    parent = _student(0)
+    chain = {0: (parent, "a" * 64)}
+    pointer = _pointer(0, "a" * 64)
+    plane = DataPlane(tmp_path / "plane.sqlite3")
+    try:
+        with patch.object(replay, "_accepted_chain", return_value=chain), patch.object(
+                replay, "_current_accepted", return_value=(pointer, parent)), patch(
+                    "bilqis_mlx.data_plane.data_plane", return_value=plane), patch(
+                        "bilqis_mlx.runtime.priority_rejection_replay."
+                        "authenticated_rejection_event", return_value=True):
+            attempts = rebuild_authenticated_cadence_attempts(tmp_path)
+    finally:
+        plane.close()
+    assert attempts == ((cadence, "cap", "REJECTED"),)
 
 
 def test_cold_restart_restores_projection_and_reads_only_unseen_tail(tmp_path):
@@ -126,10 +160,45 @@ def test_cold_restart_restores_projection_and_reads_only_unseen_tail(tmp_path):
                         "bilqis_mlx.runtime.priority_rejection_replay."
                         "authenticated_rejection_event", return_value=True), patch.object(
                             second_plane, "indexed_event_tail", wraps=original_tail) as tail:
-            assert authenticated_cadence_attempts(tmp_path) == ((cadence, "cap"),)
+            assert authenticated_cadence_attempts(tmp_path) == (
+                (cadence, "cap", "REJECTED"),)
         tail.assert_called_once_with(tmp_path.resolve(), frontier)
     finally:
         second_plane.close()
+
+
+def test_v2_projection_migration_discards_ambiguous_historical_exposure(tmp_path):
+    (tmp_path / "bamf-state.json").write_text("{}", encoding="utf-8")
+    ledger = tmp_path / "events.jsonl"
+    ledger.write_text(json.dumps({"event": "OTHER"}) + "\n", encoding="utf-8")
+    cadence = _cadence()
+    pointer = _pointer(0, "a" * 64)
+    student = _student(0)
+    plane = DataPlane(tmp_path / "plane.sqlite3")
+    try:
+        tail = plane.indexed_event_tail(tmp_path, 0)
+        plane.remember_event_projection(
+            tmp_path, replay._PROJECTION_KEY,
+            replay._LEGACY_PROJECTION_SCHEMA,
+            tail["ledger_identity"], tail["indexed_bytes"], {
+                "schema": replay._LEGACY_PROJECTION_SCHEMA,
+                "run_id": "run",
+                "accepted_generation": 0,
+                "accepted_manifest_sha256": "a" * 64,
+                "accepted_acceptance_sha256": "f" * 64,
+                "attempts": [[cadence, "cap"]],
+                "seen_accepted_events": [],
+            })
+        with patch.object(
+                replay, "_current_accepted", return_value=(pointer, student)), patch(
+                    "bilqis_mlx.data_plane.data_plane", return_value=plane):
+            assert authenticated_cadence_attempts(tmp_path) == ()
+        migrated = plane.event_projection_state(
+            tmp_path, replay._PROJECTION_KEY, replay._PROJECTION_SCHEMA)
+    finally:
+        plane.close()
+    assert migrated is not None
+    assert migrated["payload"]["attempts"] == []
 
 
 def test_accepted_outbox_projection_survives_delivery_after_restart(tmp_path):
@@ -154,7 +223,8 @@ def test_accepted_outbox_projection_survives_delivery_after_restart(tmp_path):
             assert authenticated_cadence_attempts(tmp_path) == ()
         with patch.object(replay, "_current_accepted", return_value=(child_pointer, child)), patch(
                 "bilqis_mlx.data_plane.data_plane", return_value=plane):
-            assert authenticated_cadence_attempts(tmp_path) == ((cadence, "cap"),)
+            assert authenticated_cadence_attempts(tmp_path) == (
+                (cadence, "cap", "RETAINED"),)
     finally:
         plane.close()
 
@@ -165,7 +235,8 @@ def test_accepted_outbox_projection_survives_delivery_after_restart(tmp_path):
         with patch.object(replay, "_current_accepted", return_value=(child_pointer, child)), patch(
                 "bilqis_mlx.data_plane.data_plane", return_value=restarted), patch.object(
                     replay, "_accepted_chain", side_effect=AssertionError("ordinary replay")):
-            assert authenticated_cadence_attempts(tmp_path) == ((cadence, "cap"),)
+            assert authenticated_cadence_attempts(tmp_path) == (
+                (cadence, "cap", "RETAINED"),)
     finally:
         restarted.close()
 
@@ -237,9 +308,9 @@ def test_projection_compacts_attempts_already_consumed_by_durable_cadence_state(
     )
 
     pending = replay._pending_attempts((
-        (current, "done"),
-        (current, "pending"),
-        (old, "old"),
+        (current, "done", "RETAINED"),
+        (current, "pending", "REJECTED"),
+        (old, "old", "RETAINED"),
     ), state)
 
-    assert pending == ((current, "pending"),)
+    assert pending == ((current, "pending", "REJECTED"),)

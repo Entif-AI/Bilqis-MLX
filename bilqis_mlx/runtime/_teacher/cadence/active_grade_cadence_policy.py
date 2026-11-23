@@ -94,12 +94,21 @@ def _phase_digest(*, activation_sha256, definition_sha256,
 def new_state(run_dir, previous, frontier, *, phase, phase_round,
               phase_capability_ids, deficit_evidence_sha256,
               member_census_sha256, recovery_attempt_counts=None,
+              recovery_retained_counts=None, recovery_rejected_counts=None,
               attempted_capability_ids=(), cadence_epoch=None,
               phase_sha256=None):
     counts = (
         tuple(sorted((recovery_attempt_counts or {}).items()))
         if recovery_attempt_counts is not None
         else (() if previous is None else previous.recovery_attempt_counts))
+    retained = (
+        tuple(sorted((recovery_retained_counts or {}).items()))
+        if recovery_retained_counts is not None
+        else (() if previous is None else previous.recovery_retained_counts))
+    rejected = (
+        tuple(sorted((recovery_rejected_counts or {}).items()))
+        if recovery_rejected_counts is not None
+        else (() if previous is None else previous.recovery_rejected_counts))
     if cadence_epoch is None:
         cadence_epoch = 0 if previous is None else previous.cadence_epoch
     if phase_sha256 is None:
@@ -129,6 +138,8 @@ def new_state(run_dir, previous, frontier, *, phase, phase_round,
         attempted_capability_ids=tuple(attempted_capability_ids),
         deficit_evidence_sha256=deficit_evidence_sha256,
         recovery_attempt_counts=counts,
+        recovery_retained_counts=retained,
+        recovery_rejected_counts=rejected,
     )
     persist_cadence_state(Path(run_dir), state)
     return state
@@ -147,7 +158,7 @@ def context_matches(state, frontier, member_census_sha256) -> bool:
 
 
 def recovery_members(state, ready, deficit_counts, member_order):
-    exposure = dict(state.recovery_attempt_counts)
+    exposure = dict(state.recovery_retained_counts)
     order = {capability: index for index, capability in enumerate(member_order)}
     return tuple(sorted(
         ready,

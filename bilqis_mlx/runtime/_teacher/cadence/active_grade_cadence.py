@@ -9,6 +9,7 @@ from .active_grade_cadence_contracts import (
     ActiveGradeCadenceAuthorization,
     ActiveGradeCadenceDisposition,
     ActiveGradeCadencePhase,
+    CADENCE_POLICY_EPOCH,
     MAX_RECOVERY_ROUNDS,
     _issue_cadence_authorization,
 )
@@ -59,7 +60,7 @@ def _next_phase(state):
 def _attempt_epoch(attempts) -> int:
     values = [
         record.get("cadence_epoch")
-        for record, _capability in attempts
+        for record, _capability, _outcome in attempts
         if type(record.get("cadence_epoch")) is int
     ]
     return max(values, default=-1)
@@ -74,6 +75,8 @@ def _seed_boundary(run_dir, state, frontier, census, boundary):
         deficit_evidence_sha256=boundary["deficit_evidence_sha256"],
         member_census_sha256=census,
         recovery_attempt_counts=dict(boundary["recovery_attempt_counts"]),
+        recovery_retained_counts=dict(boundary["recovery_retained_counts"]),
+        recovery_rejected_counts=dict(boundary["recovery_rejected_counts"]),
         cadence_epoch=boundary["cadence_epoch"],
         phase_sha256=boundary["phase_sha256"],
     )
@@ -100,7 +103,8 @@ def _restore_state(run_dir, lawful_frontier, member_order, census,
             reset_exposure = (
                 state is None
                 or state.active_grade_activation_sha256
-                != lawful_frontier.active_grade_activation_sha256)
+                != lawful_frontier.active_grade_activation_sha256
+                or state.policy_epoch != CADENCE_POLICY_EPOCH)
             state = new_state(
                 run_dir, state, lawful_frontier,
                 phase=ActiveGradeCadencePhase.MAIN, phase_round=0,
@@ -110,6 +114,10 @@ def _restore_state(run_dir, lawful_frontier, member_order, census,
                 cadence_epoch=(0 if state is None else state.cadence_epoch + 1),
                 recovery_attempt_counts=(
                     {} if reset_exposure else dict(state.recovery_attempt_counts)),
+                recovery_retained_counts=(
+                    {} if reset_exposure else dict(state.recovery_retained_counts)),
+                recovery_rejected_counts=(
+                    {} if reset_exposure else dict(state.recovery_rejected_counts)),
             )
     state = reconcile_terminal_attempts(run_dir, state, attempts)
     if state.deficit_evidence_sha256 != deficit_digest:
@@ -123,6 +131,8 @@ def _restore_state(run_dir, lawful_frontier, member_order, census,
                 member_census_sha256=census,
                 cadence_epoch=state.cadence_epoch + 1,
                 recovery_attempt_counts={},
+                recovery_retained_counts={},
+                recovery_rejected_counts={},
             )
         else:
             state = new_state(
@@ -134,6 +144,8 @@ def _restore_state(run_dir, lawful_frontier, member_order, census,
                 member_census_sha256=census,
                 cadence_epoch=state.cadence_epoch,
                 recovery_attempt_counts=dict(state.recovery_attempt_counts),
+                recovery_retained_counts=dict(state.recovery_retained_counts),
+                recovery_rejected_counts=dict(state.recovery_rejected_counts),
             )
     return state
 
@@ -210,20 +222,24 @@ def issue_active_grade_cadence(run_dir: Path, epoch, lawful_frontier):
 
 
 def record_active_grade_cadence_attempt(
-        run_dir: Path, cadence_record: dict, capability_id: str) -> None:
+        run_dir: Path, cadence_record: dict, capability_id: str,
+        terminal_outcome: str) -> None:
     """Project one already-authenticated terminal visit into cadence custody."""
     if not isinstance(cadence_record, dict) or not isinstance(capability_id, str):
         _invalid("BAMF_ACTIVE_GRADE_CADENCE_ATTEMPT_INVALID")
     run_dir = Path(run_dir)
     attempts = _terminal_attempts(run_dir)
     if not any(
-            recorded_capability == capability_id and record == cadence_record
-            for record, recorded_capability in attempts):
+            recorded_capability == capability_id
+            and record == cadence_record
+            and recorded_outcome == terminal_outcome
+            for record, recorded_capability, recorded_outcome in attempts):
         _invalid("BAMF_ACTIVE_GRADE_CADENCE_TERMINAL_AUTHORITY_MISSING")
     state = read_current_cadence(run_dir)
     if state is None:
         _invalid("BAMF_ACTIVE_GRADE_CADENCE_ATTEMPT_DRIFT")
-    consume_attempt(run_dir, state, cadence_record, capability_id)
+    consume_attempt(
+        run_dir, state, cadence_record, capability_id, terminal_outcome)
 
 
 def rearm_active_grade_acquisition(
@@ -255,6 +271,8 @@ def rearm_active_grade_acquisition(
         deficit_evidence_sha256=current.deficit_evidence_sha256,
         member_census_sha256=census,
         recovery_attempt_counts=dict(current.recovery_attempt_counts),
+        recovery_retained_counts=dict(current.recovery_retained_counts),
+        recovery_rejected_counts=dict(current.recovery_rejected_counts),
         cadence_epoch=current.cadence_epoch + 1,
     )
 
