@@ -15,7 +15,8 @@ from .active_grade_cadence_contracts import (
 )
 
 
-SCHEMA = "bilqis.bamf.active-grade-cadence-boundary/v1"
+LEGACY_SCHEMA = "bilqis.bamf.active-grade-cadence-boundary/v1"
+SCHEMA = "bilqis.bamf.active-grade-cadence-boundary/v2"
 _WRITER_TEMP_SPLITS = 2
 _WRITER_TEMP_PARTS = 3
 _WRITER_NONCE_HEX_LENGTH = 32
@@ -78,6 +79,10 @@ def _persist_boundary(run_dir: Path, state) -> dict:
         "deficit_evidence_sha256": state.deficit_evidence_sha256,
         "phase_sha256": state.phase_sha256,
         "recovery_attempt_counts": [list(item) for item in state.recovery_attempt_counts],
+        "recovery_retained_counts": [
+            list(item) for item in state.recovery_retained_counts],
+        "recovery_rejected_counts": [
+            list(item) for item in state.recovery_rejected_counts],
     }
     receipt = {**body, "boundary_sha256": _digest(body)}
     root = _root(run_dir)
@@ -106,7 +111,8 @@ def _latest_boundary(run_dir: Path, frontier, member_census_sha256) -> dict | No
             _invalid("BAMF_ACTIVE_GRADE_CADENCE_BOUNDARY_INVALID")
         body = dict(record)
         claimed = body.pop("boundary_sha256", None)
-        if (claimed != _digest(body) or record.get("schema") != SCHEMA
+        if (claimed != _digest(body)
+                or record.get("schema") not in {LEGACY_SCHEMA, SCHEMA}
                 or path.name != f"{record.get('cadence_epoch', -1):08d}-{claimed}.json"):
             _invalid("BAMF_ACTIVE_GRADE_CADENCE_BOUNDARY_INVALID")
         if (record.get("run_id") == frontier.run_id

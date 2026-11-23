@@ -9,10 +9,13 @@ import json
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 
-CADENCE_SCHEMA = "bilqis.bamf.active-grade-cadence/v1"
+LEGACY_CADENCE_SCHEMA = "bilqis.bamf.active-grade-cadence/v1"
+CADENCE_SCHEMA = "bilqis.bamf.active-grade-cadence/v2"
 CADENCE_POINTER_SCHEMA = "bilqis.bamf.active-grade-cadence-pointer/v1"
-CADENCE_AUTHORIZATION_SCHEMA = "bilqis.bamf.active-grade-cadence-authorization/v1"
-CADENCE_POLICY_EPOCH = 1
+LEGACY_CADENCE_AUTHORIZATION_SCHEMA = (
+    "bilqis.bamf.active-grade-cadence-authorization/v1")
+CADENCE_AUTHORIZATION_SCHEMA = "bilqis.bamf.active-grade-cadence-authorization/v2"
+CADENCE_POLICY_EPOCH = 2
 RECOVERY_WIDTH = 3
 MAX_RECOVERY_ROUNDS = 2
 _RECOVERY_2_ROUND = 2
@@ -43,6 +46,11 @@ class ActiveGradeCadencePhase(str, Enum):
     BOUNDARY = "BOUNDARY"
 
 
+class ActiveGradeCadenceOutcome(str, Enum):
+    RETAINED = "RETAINED"
+    REJECTED = "REJECTED"
+
+
 class ActiveGradeCadenceDisposition(str, Enum):
     TEACHING = "TEACHING"
     HELD = "HELD"
@@ -67,6 +75,8 @@ class ActiveGradeCadenceState:
     attempted_capability_ids: tuple[str, ...]
     deficit_evidence_sha256: str
     recovery_attempt_counts: tuple[tuple[str, int], ...]
+    recovery_retained_counts: tuple[tuple[str, int], ...]
+    recovery_rejected_counts: tuple[tuple[str, int], ...]
     cadence_sha256: str
     schema: str = CADENCE_SCHEMA
     _issuance: object = field(repr=False, compare=False)
@@ -75,7 +85,7 @@ class ActiveGradeCadenceState:
         _invalid("BAMF_ACTIVE_GRADE_CADENCE_CALLER_CONSTRUCTION_FORBIDDEN")
 
     def to_record(self) -> dict:
-        return {
+        record = {
             "schema": self.schema,
             "run_id": self.run_id,
             "revision": self.revision,
@@ -94,6 +104,14 @@ class ActiveGradeCadenceState:
             "recovery_attempt_counts": [list(item) for item in self.recovery_attempt_counts],
             "cadence_sha256": self.cadence_sha256,
         }
+        if self.schema == CADENCE_SCHEMA:
+            record.update({
+                "recovery_retained_counts": [
+                    list(item) for item in self.recovery_retained_counts],
+                "recovery_rejected_counts": [
+                    list(item) for item in self.recovery_rejected_counts],
+            })
+        return record
 
     def expected_digest(self) -> str:
         record = self.to_record()
@@ -102,7 +120,10 @@ class ActiveGradeCadenceState:
 
     def verify(self) -> None:
         counts = dict(self.recovery_attempt_counts)
-        if (self.schema != CADENCE_SCHEMA or not self.run_id
+        retained = dict(self.recovery_retained_counts)
+        rejected = dict(self.recovery_rejected_counts)
+        legacy = self.schema == LEGACY_CADENCE_SCHEMA
+        if (self.schema not in {LEGACY_CADENCE_SCHEMA, CADENCE_SCHEMA} or not self.run_id
                 or type(self.revision) is not int or self.revision < 0
                 or (self.predecessor_sha256 is not None
                     and not _sha(self.predecessor_sha256))
@@ -129,18 +150,44 @@ class ActiveGradeCadenceState:
                 or len(set(self.attempted_capability_ids)) != len(self.attempted_capability_ids)
                 or not set(self.attempted_capability_ids) <= set(self.phase_capability_ids)
                 or len(counts) != len(self.recovery_attempt_counts)
+                or len(retained) != len(self.recovery_retained_counts)
+                or len(rejected) != len(self.recovery_rejected_counts)
                 or any(not isinstance(capability, str) or not capability
                        or type(count) is not int or count < 0
                        for capability, count in self.recovery_attempt_counts)
+                or any(not isinstance(capability, str) or not capability
+                       or type(count) is not int or count < 0
+                       for capability, count in self.recovery_retained_counts)
+                or any(not isinstance(capability, str) or not capability
+                       or type(count) is not int or count < 0
+                       for capability, count in self.recovery_rejected_counts)
+                or (legacy and (
+                    self.policy_epoch != 1
+                    or self.recovery_retained_counts
+                    or self.recovery_rejected_counts))
+                or (not legacy and self.policy_epoch != CADENCE_POLICY_EPOCH)
+                or (not legacy and any(
+                    retained.get(capability, 0) + rejected.get(capability, 0)
+                    != count for capability, count in counts.items()))
+                or (not legacy and any(
+                    capability not in counts for capability in retained))
+                or (not legacy and any(
+                    capability not in counts for capability in rejected))
                 or self.cadence_sha256 != self.expected_digest()):
             _invalid("BAMF_ACTIVE_GRADE_CADENCE_INVALID")
 
 
-def _issue_cadence_state(**values) -> ActiveGradeCadenceState:
+def _issue_cadence_state(*, schema=CADENCE_SCHEMA, **values) -> ActiveGradeCadenceState:
     state = object.__new__(ActiveGradeCadenceState)
     for name, value in values.items():
         object.__setattr__(state, name, value)
-    object.__setattr__(state, "schema", CADENCE_SCHEMA)
+    object.__setattr__(state, "schema", schema)
+    object.__setattr__(
+        state, "recovery_retained_counts",
+        tuple(values.get("recovery_retained_counts", ())))
+    object.__setattr__(
+        state, "recovery_rejected_counts",
+        tuple(values.get("recovery_rejected_counts", ())))
     object.__setattr__(state, "_issuance", _ISSUER)
     object.__setattr__(state, "cadence_sha256", "0" * 64)
     object.__setattr__(state, "cadence_sha256", state.expected_digest())
@@ -157,27 +204,41 @@ def _is_issued_cadence_state(state) -> bool:
 
 
 def cadence_state_from_record(record: dict) -> ActiveGradeCadenceState:
-    expected = {
+    common = {
         "schema", "run_id", "revision", "predecessor_sha256",
         "active_grade_activation_sha256", "active_grade_definition_sha256",
         "policy_epoch", "cadence_epoch", "member_census_sha256", "phase", "phase_round",
         "phase_sha256", "phase_capability_ids", "attempted_capability_ids",
         "deficit_evidence_sha256", "recovery_attempt_counts", "cadence_sha256",
     }
-    if not isinstance(record, dict) or set(record) != expected or record.get("schema") != CADENCE_SCHEMA:
+    schema = record.get("schema") if isinstance(record, dict) else None
+    expected = (
+        common if schema == LEGACY_CADENCE_SCHEMA else
+        common | {"recovery_retained_counts", "recovery_rejected_counts"})
+    if (not isinstance(record, dict) or set(record) != expected
+            or schema not in {LEGACY_CADENCE_SCHEMA, CADENCE_SCHEMA}):
         _invalid("BAMF_ACTIVE_GRADE_CADENCE_RECORD_INVALID")
     try:
-        values = {key: record[key] for key in expected - {"schema", "cadence_sha256", "phase",
-                                                           "phase_capability_ids",
-                                                           "attempted_capability_ids",
-                                                           "recovery_attempt_counts"}}
+        special = {
+            "schema", "cadence_sha256", "phase", "phase_capability_ids",
+            "attempted_capability_ids", "recovery_attempt_counts",
+            "recovery_retained_counts", "recovery_rejected_counts",
+        }
+        values = {key: record[key] for key in expected - special}
         state = _issue_cadence_state(
+            schema=schema,
             **values,
             phase=ActiveGradeCadencePhase(record["phase"]),
             phase_capability_ids=tuple(record["phase_capability_ids"]),
             attempted_capability_ids=tuple(record["attempted_capability_ids"]),
             recovery_attempt_counts=tuple(
                 (item[0], item[1]) for item in record["recovery_attempt_counts"]),
+            recovery_retained_counts=tuple(
+                (item[0], item[1])
+                for item in record.get("recovery_retained_counts", ())),
+            recovery_rejected_counts=tuple(
+                (item[0], item[1])
+                for item in record.get("recovery_rejected_counts", ())),
         )
     except (KeyError, TypeError, ValueError, IndexError):
         _invalid("BAMF_ACTIVE_GRADE_CADENCE_RECORD_INVALID")
@@ -235,6 +296,12 @@ class ActiveGradeCadenceAuthorization:
             "recovery_attempt_counts": [
                 list(item) for item in self.state.recovery_attempt_counts
             ],
+            "recovery_retained_counts": [
+                list(item) for item in self.state.recovery_retained_counts
+            ],
+            "recovery_rejected_counts": [
+                list(item) for item in self.state.recovery_rejected_counts
+            ],
             "authorized_capability_ids": list(self.authorized_capability_ids),
             "disposition": self.disposition.value,
         }
@@ -255,9 +322,10 @@ def _issue_cadence_authorization(
 
 __all__ = (
     "ActiveGradeCadenceAuthorization", "ActiveGradeCadenceDisposition",
-    "ActiveGradeCadencePhase",
+    "ActiveGradeCadenceOutcome", "ActiveGradeCadencePhase",
     "ActiveGradeCadenceState", "CADENCE_AUTHORIZATION_SCHEMA",
     "CADENCE_POINTER_SCHEMA", "CADENCE_POLICY_EPOCH", "CADENCE_SCHEMA",
+    "LEGACY_CADENCE_AUTHORIZATION_SCHEMA", "LEGACY_CADENCE_SCHEMA",
     "MAX_RECOVERY_ROUNDS",
     "RECOVERY_WIDTH", "cadence_state_from_record",
 )
