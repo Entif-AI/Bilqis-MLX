@@ -12,6 +12,102 @@ All new releases use [Semantic Versioning](https://semver.org/) and Conventional
 * **bamf:** qualify stable MLX compiled training kernel ([#1600](https://github.com/Entif-AI/Bilqis-MLX/issues/1600)) ([b49907b](https://github.com/Entif-AI/Bilqis-MLX/commit/b49907bac3e9dd0ac64ce6fe8784faf15976c617))
 * **bamf:** stop embedding full teacher history in outcomes ([#1598](https://github.com/Entif-AI/Bilqis-MLX/issues/1598)) ([c477669](https://github.com/Entif-AI/Bilqis-MLX/commit/c4776695737f850182167ffb111dd077fa1af0ce))
 
+<!-- release-history:pr:1597:start -->
+### PR #1597 constituent commit inventory
+
+Release Please summarized PR #1597 as [`bb86a59`](https://github.com/Entif-AI/Bilqis-MLX/commit/bb86a59fb2389e216f1239d8013df500159c59cd). This generated inventory preserves **2 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **2 source commits**.
+
+<details>
+<summary>2 source commits (newest-first PR order)</summary>
+
+- [`4dd7d05d43`](https://github.com/Entif-AI/Bilqis-MLX/commit/4dd7d05d43078ff990faf9dd8b9431d6a14c7e14) refactor(bamf): isolate host pipeline wiring
+- [`98de06e25d`](https://github.com/Entif-AI/Bilqis-MLX/commit/98de06e25da68bc82f61d7d50df0f055117996a2) perf(bamf): overlap safe host preparation with Metal execution
+
+</details>
+
+<!-- release-history:pr:1597:end -->
+
+<!-- release-history:pr:1598:start -->
+### PR #1598 constituent commit inventory
+
+Release Please summarized PR #1598 as [`c477669`](https://github.com/Entif-AI/Bilqis-MLX/commit/c4776695737f850182167ffb111dd077fa1af0ce). This generated inventory preserves **8 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **7 source commits and 1 internal merge commit**.
+
+<details>
+<summary>7 source commits (newest-first PR order)</summary>
+
+- [`e87243ad53`](https://github.com/Entif-AI/Bilqis-MLX/commit/e87243ad53029078f8dc974ec7e653fd0b79ec91) test(bamf): bound compact teacher proposal size
+- [`4757d6b1d8`](https://github.com/Entif-AI/Bilqis-MLX/commit/4757d6b1d82fee5602fd9aa1047339d92bc80417) test(bamf): remove snapshot-only fixture drift
+- [`f7623a1c8e`](https://github.com/Entif-AI/Bilqis-MLX/commit/f7623a1c8efbc4706ee74e30a5615a53e73d21f8) test(bamf): mirror compact selection metadata
+- [`bdcab790a2`](https://github.com/Entif-AI/Bilqis-MLX/commit/bdcab790a2cad33a28a059747351335dd6635192) test(bamf): bind compact replay diagnostics
+- [`3702879cb8`](https://github.com/Entif-AI/Bilqis-MLX/commit/3702879cb848dca3145208a5d29abf492f0c083d) fix(bamf): bind compact replay population size
+- [`2e43e2454d`](https://github.com/Entif-AI/Bilqis-MLX/commit/2e43e2454db103dfe73428cc40751f7ef642f3fd) fix(bamf): replay compact teacher selection state
+- [`b40ccb510f`](https://github.com/Entif-AI/Bilqis-MLX/commit/b40ccb510f28555f5b7c852cdcc505c06e6d281b) perf(bamf): eliminate teacher snapshot receipts
+
+</details>
+
+<details>
+<summary>1 internal merge commit (newest-first PR order)</summary>
+
+- [`f120ba2c5b`](https://github.com/Entif-AI/Bilqis-MLX/commit/f120ba2c5b504fa0bd0a9559e2a15504ed5df56e) Merge remote-tracking branch 'origin/main' into codex/1550-compact-teacher-outcomes-20261123
+
+</details>
+
+<!-- release-history:pr:1598:end -->
+
+<!-- release-history:pr:1600:start -->
+### PR #1600 constituent commit inventory
+
+Release Please summarized PR #1600 as [`b49907b`](https://github.com/Entif-AI/Bilqis-MLX/commit/b49907bac3e9dd0ac64ce6fe8784faf15976c617). This generated inventory preserves **11 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **9 source commits and 2 internal merge commits**.
+
+<details>
+<summary>9 source commits (newest-first PR order)</summary>
+
+- [`e068059ae2`](https://github.com/Entif-AI/Bilqis-MLX/commit/e068059ae26f91e18831603cbe19d38d8e188c31) fix(bamf): route compile toggle errors through control plane
+- [`01c91ae0a1`](https://github.com/Entif-AI/Bilqis-MLX/commit/01c91ae0a1458fa06b5c70782e1aa1a74809c7ab) docs(bamf): record compile qualification evidence
+- [`84326e0c6b`](https://github.com/Entif-AI/Bilqis-MLX/commit/84326e0c6b666ab6c1c98d95a74e0421261eb9be) test(bamf): fix rehearsal helper import
+- [`a9ac37bdf1`](https://github.com/Entif-AI/Bilqis-MLX/commit/a9ac37bdf17f0539a3b3a21937a8ddf642aabb2e) perf(bamf): enable qualified compiled route kernel
+- [`e4ee756109`](https://github.com/Entif-AI/Bilqis-MLX/commit/e4ee756109ea2fa9193ebb1969d29ea12e43c300) test(bamf): harden compiled kernel qualification
+- [`c91878914b`](https://github.com/Entif-AI/Bilqis-MLX/commit/c91878914bf4d780ae79ab31859cefda0e478246) fix(bamf): preserve uncached learning-first row execution
+- [`d226e9b56e`](https://github.com/Entif-AI/Bilqis-MLX/commit/d226e9b56eb9a406ad5eb8aea6ea09fa7371ca1e) perf(bamf): add compiled kernel qualification witness
+- [`b621b4de75`](https://github.com/Entif-AI/Bilqis-MLX/commit/b621b4de75c8fc95d5f7a13cfe5526045ad6c037) test(bamf): isolate compiled route policy seam
+- [`739a491a82`](https://github.com/Entif-AI/Bilqis-MLX/commit/739a491a82969d83f694ca6fb3f28140e10b06bb) perf(bamf): qualify stable compiled route kernel
+
+</details>
+
+<details>
+<summary>2 internal merge commits (newest-first PR order)</summary>
+
+- [`b3027cccdb`](https://github.com/Entif-AI/Bilqis-MLX/commit/b3027cccdb471edb2fdc09cbad89eb289c57ab04) Merge remote-tracking branch 'origin/main' into codex/1576-mlx-compile-20261123
+- [`4f5c5f9d37`](https://github.com/Entif-AI/Bilqis-MLX/commit/4f5c5f9d37df4180bb3440822c562947b65a799a) Merge remote-tracking branch 'origin/main' into codex/1576-mlx-compile-20261123
+
+</details>
+
+<!-- release-history:pr:1600:end -->
+
+<!-- release-history:pr:1601:start -->
+### PR #1601 constituent commit inventory
+
+Release Please summarized PR #1601 as [`7e34256`](https://github.com/Entif-AI/Bilqis-MLX/commit/7e34256381a1d40707284e0be466dcb15092ec26). This generated inventory preserves **6 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **5 source commits and 1 internal merge commit**.
+
+<details>
+<summary>5 source commits (newest-first PR order)</summary>
+
+- [`7013abdb4c`](https://github.com/Entif-AI/Bilqis-MLX/commit/7013abdb4cff1516fc1cfb73c45e91ebe92fce67) chore(bamf): record accelerator CI repair (#1578)
+- [`613932cd17`](https://github.com/Entif-AI/Bilqis-MLX/commit/613932cd17eb08a392b64dc7175d47b045556bfc) fix(bamf): route work-unit validation errors (#1578)
+- [`43fa20ff82`](https://github.com/Entif-AI/Bilqis-MLX/commit/43fa20ff8213f32b8ca443d46bfb0d28f0b37d3d) chore(bamf): turn in accelerator work units (#1578)
+- [`c3149dfe28`](https://github.com/Entif-AI/Bilqis-MLX/commit/c3149dfe28eb5eae2a99134806d716c12dd0fad0) perf(bamf): qualify accelerator work units (#1578)
+- [`c512af396a`](https://github.com/Entif-AI/Bilqis-MLX/commit/c512af396a72cda4f13b0c6152dac94275fa6d8a) chore(bamf): take up accelerator work units (#1578)
+
+</details>
+
+<details>
+<summary>1 internal merge commit (newest-first PR order)</summary>
+
+- [`051d5b9967`](https://github.com/Entif-AI/Bilqis-MLX/commit/051d5b9967b434cc83d3603045d759149a211c18) Merge remote-tracking branch 'review-source/main' into codex/1578-accelerator-work-units-20261123
+
+</details>
+
+<!-- release-history:pr:1601:end -->
 ## [1.5.0](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.7...v1.5.0) (2026-11-23)
 
 
