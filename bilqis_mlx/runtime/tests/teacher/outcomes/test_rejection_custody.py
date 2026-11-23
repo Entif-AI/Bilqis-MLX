@@ -103,7 +103,7 @@ class NativeRejectionOutcomeTests(NativeSourceFixture, unittest.TestCase):
                    'grade_definition_sha256': 'e' * 64, 'source_binding_sha256': 'f' * 64}
         selection = _issue_result(
             'TEACHER_SELECTED', cap, offer, visit, policy,
-            {'how_context': context, 'selected_teacher_snapshot_required': True},
+            {'how_context': context},
             'A', (), self.run, object())
         fixture = list(factory_fixture._foundation_owner_fixture())
         fixture[-1] = replace(fixture[-1], status=DecisionStatus.ELIGIBLE if accepted else DecisionStatus.REJECT,

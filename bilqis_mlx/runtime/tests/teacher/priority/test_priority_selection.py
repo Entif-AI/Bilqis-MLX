@@ -107,7 +107,7 @@ def test_accepted_selection_calls_policy_once(priority):
         'diagnostic_context_key': 'selected',
         'diagnostics': {'salience': 'verified'},
     }
-    assert result.metadata['selected_teacher_snapshot_required'] is False
+    assert 'selected_teacher_snapshot_required' not in result.metadata
     expand.assert_called_once()
     assert expand.call_args.args[0] is qualified.offers[0][1]
     assert expand.call_args.kwargs['source_each'] == 32

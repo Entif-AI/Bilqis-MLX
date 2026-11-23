@@ -92,7 +92,7 @@ def test_compact_fresh_mutation_reconstructs_exact_selected_teacher():
     assert credited["global_stats"][key]["trials"] == 1
 
 
-def test_future_mutated_selection_embeds_selected_teacher_snapshot(tmp_path):
+def test_future_mutated_selection_carries_only_selected_teacher_digest(tmp_path):
     selected = teacher_fixture()
     identity = SimpleNamespace(
         visit_id="visit", policy_key="policy",
@@ -105,16 +105,10 @@ def test_future_mutated_selection_embeds_selected_teacher_snapshot(tmp_path):
         offer=SimpleNamespace(
             capability_id="A.TEST", source_seed=1, release_sha256="f" * 64),
         policy=deepcopy(selected["strategies"]["policy"]),
-        metadata={
-            "how_context": {},
-            "selected_teacher_snapshot_required": True,
-        })
-    with patch(
-            "bilqis_mlx.runtime.bamf_operator.evidence_parts.capture.restore_teacher_lineage",
-            return_value=SimpleNamespace(teacher=lambda: selected)):
-        capture = CandidateEvidenceCapture(
-            tmp_path, selection, generation=1,
-            accepted_manifest_sha256="a" * 64,
-            candidate_attempt_ordinal=1, parent_optimizer_step=0)
-    assert capture.proposal["selected_teacher"] == selected
-    assert "selected_teacher_sha256" not in capture.proposal
+        metadata={"how_context": {}, "selected_teacher_snapshot_required": True})
+    capture = CandidateEvidenceCapture(
+        tmp_path, selection, generation=1,
+        accepted_manifest_sha256="a" * 64,
+        candidate_attempt_ordinal=1, parent_optimizer_step=0)
+    assert capture.proposal["selected_teacher_sha256"] == "d" * 64
+    assert "selected_teacher" not in capture.proposal

@@ -6,7 +6,6 @@ from pathlib import Path
 import time
 
 from bilqis_mlx.factory.teaching import describe_delivered_teaching
-from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
 from bilqis_mlx.runtime import state
 from bilqis_mlx.runtime.teacher_observation_capture import store_sidecar
 
@@ -78,17 +77,9 @@ class CandidateEvidenceCapture:
         metadata = getattr(selection, 'metadata', None)
         if isinstance(metadata, dict) and 'how_context' in metadata:
             self.proposal['how_context'] = _plain(metadata['how_context'])
-            snapshot_required = metadata.get('selected_teacher_snapshot_required', False)
-            if type(snapshot_required) is not bool:
-                _invalid("BAMF_C16_3_EVIDENCE_SELECTION_INVALID")
-            if snapshot_required:
-                self.proposal['selected_teacher'] = _plain(
-                    restore_teacher_lineage(
-                        selection.visit.projection.teacher_state).teacher())
-            else:
-                self.proposal['selected_teacher_sha256'] = (
-                    selection.visit.projection.teacher_state['c03_lineage'][
-                        'current_teacher_sha256'])
+            self.proposal['selected_teacher_sha256'] = (
+                selection.visit.projection.teacher_state['c03_lineage'][
+                    'current_teacher_sha256'])
         self.proposal_id = state._fingerprint(self.proposal)
         self._source_objects = {}
         self._steps = []
