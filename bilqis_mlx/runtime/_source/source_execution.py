@@ -12,7 +12,8 @@ from ..factory.executable_release import ExecutableFactoryRelease
 
 
 from .source_batch_authority import (
-    SourceBatchAuthority, bind_delivery_rows as _bind_delivery_rows,
+    SourceBatchAuthority, bind_authorized_subset_rows as _bind_authorized_subset_rows,
+    bind_delivery_rows as _bind_delivery_rows,
     bind_prequalified_delivery_rows as _bind_prequalified_delivery_rows,
     bind_rows as _bind_rows, draw_bound_rows as _draw_bound_rows,
     _source_family,
@@ -234,6 +235,13 @@ class SourceExecutionContext:
             authority: SourceBatchAuthority) -> SourceBatchAuthority:
         """Extend an already-selected batch over materialized teaching enrichment."""
         return _bind_prequalified_delivery_rows(self, direct_rows, rows, authority)
+
+    def bind_authorized_subset_rows(
+            self, parent_rows, selected_rows,
+            authority: SourceBatchAuthority) -> SourceBatchAuthority:
+        """Bind only rows proven to belong to one exact owner-authorized batch."""
+        return _bind_authorized_subset_rows(
+            self, parent_rows, selected_rows, authority)
 
 __all__ = (
     "SourceBatchAuthority", "SourceExecutionContext", "SourcePreparationMetrics",

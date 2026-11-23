@@ -9,7 +9,11 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.factory._model.weakness import WeaknessClassId, classify_weakness
 from bilqis_mlx.runtime.factory_retention_owner import require_current_retention_plan
 from bilqis_mlx.runtime.priority_rejection_replay import current_structural_weaknesses
+from bilqis_mlx.semantic_sampling import DEFAULT_BINARY_BALANCE
 from bilqis_mlx.semantics.domains import contract_digest
+
+
+_SOURCE_DRAW_EACH = DEFAULT_BINARY_BALANCE.minimum_total
 
 
 def _invalid(reason: str):
@@ -127,12 +131,16 @@ def _binding(source_context, row, authority, *, role, capability, seed, each):
 
 def _draw_one(source_context, plan, role, capability, ordinal):
     seed = _seed(plan, role, capability, ordinal)
-    rows, authority = source_context.draw_bound_rows(
-        seed=seed, capability=capability, each=1)
+    rows, parent_authority = source_context.draw_bound_rows(
+        seed=seed, capability=capability, each=_SOURCE_DRAW_EACH)
     rows = tuple(rows)
-    if len(rows) != 1 or rows[0].get("capability") != capability:
+    if (len(rows) != _SOURCE_DRAW_EACH
+            or any(row.get("capability") != capability for row in rows)):
         _invalid("BAMF_REHEARSAL_SOURCE_DRAW_INVALID")
-    return rows[0], _binding(
+    row = rows[0]
+    authority = source_context.bind_authorized_subset_rows(
+        rows, (row,), parent_authority)
+    return row, _binding(
         source_context, rows[0], authority, role=role, capability=capability,
         seed=seed, each=1), authority
 
@@ -160,13 +168,25 @@ def materialize_rehearsal_rows(source_context, plan: RehearsalPlan, ordinal: int
                 seed = _seed(
                     plan, "preservation", weakness.class_sha256,
                     ordinal * 16 + attempt)
-                candidates, authority = source_context.draw_bound_rows(
-                    seed=seed, capability=plan.target_capability_id, each=1)
-                row = tuple(candidates)[0]
-                classified = classify_weakness(
-                    adapter, execution, row, provider_descriptor=admitted)
-                if classified is not None and classified.class_sha256 == weakness.class_sha256:
-                    match, match_authority, match_seed = row, authority, seed
+                candidates, parent_authority = source_context.draw_bound_rows(
+                    seed=seed, capability=plan.target_capability_id,
+                    each=_SOURCE_DRAW_EACH)
+                candidates = tuple(candidates)
+                if (len(candidates) != _SOURCE_DRAW_EACH
+                        or any(row.get("capability") != plan.target_capability_id
+                               for row in candidates)):
+                    _invalid("BAMF_REHEARSAL_SOURCE_DRAW_INVALID")
+                for row in candidates:
+                    classified = classify_weakness(
+                        adapter, execution, row, provider_descriptor=admitted)
+                    if (classified is not None
+                            and classified.class_sha256 == weakness.class_sha256):
+                        match = row
+                        match_authority = source_context.bind_authorized_subset_rows(
+                            candidates, (row,), parent_authority)
+                        match_seed = seed
+                        break
+                if match is not None:
                     break
             if match is None or match_authority is None or match_seed is None:
                 _invalid("BAMF_REHEARSAL_WEAKNESS_SPECIMEN_UNAVAILABLE")

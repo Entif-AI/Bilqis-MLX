@@ -24,6 +24,7 @@ from bilqis_mlx.runtime.source_prefetch import thaw_source_packet
 from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import (
     visit_provenance,
 )
+from bilqis_mlx.semantic_sampling import DEFAULT_BINARY_BALANCE
 from bilqis_mlx.semantics.domains import contract_digest
 
 
@@ -82,16 +83,28 @@ class _BoundSourceContext:
         )
 
     def draw_bound_rows(self, *, seed, capability, each):
-        assert each == 1
-        row = {
-            "id": f"{capability}:{seed}", "capability": capability,
-            "source_family_id": f"family:{capability}", "episode_id": f"episode:{seed}",
-        }
+        if each != DEFAULT_BINARY_BALANCE.minimum_total:
+            from bilqis_mlx._source_evidence.live_grade_a import draw_predicates
+            draw_predicates(None, {}, seed=seed, each=each)
+        rows = tuple({
+            "id": f"{capability}:{seed}:{index}", "capability": capability,
+            "source_family_id": f"family:{capability}",
+            "episode_id": f"episode:{seed}:{index}",
+        } for index in range(each))
         authority = NS(
-            capability_id=capability, seed=seed, each=1,
-            source_family_id=row["source_family_id"],
+            capability_id=capability, seed=seed, each=each,
+            source_family_id=rows[0]["source_family_id"],
         )
-        return (row,), authority
+        return rows, authority
+
+    def bind_authorized_subset_rows(self, parent_rows, selected_rows, authority):
+        assert authority.each == len(parent_rows) == DEFAULT_BINARY_BALANCE.minimum_total
+        assert len(selected_rows) == 1
+        assert selected_rows[0] in parent_rows
+        return NS(
+            capability_id=authority.capability_id, seed=authority.seed, each=1,
+            source_family_id=authority.source_family_id,
+        )
 
 
 def test_materialization_retains_one_row_source_authority_per_rehearsal_specimen():
@@ -108,6 +121,38 @@ def test_materialization_retains_one_row_source_authority_per_rehearsal_specimen
         assert binding["seed"] == authority.seed
         assert binding["each"] == authority.each == 1
         assert binding["capability"] == authority.capability_id
+
+
+def test_preservation_selects_one_matching_row_from_balanced_source_draw():
+    weakness_record = {"weakness_class": {"fixture": "weakness"}}
+    plan = RehearsalPlan(
+        "Z.C2", "GENERATED-ZETA", (), (), (weakness_record,),
+        "a" * 64, "c" * 64, "d" * 64, "b" * 64)
+    context = _BoundSourceContext()
+
+    def classify(_adapter, _execution, row, *, provider_descriptor):
+        del provider_descriptor
+        return NS(class_sha256=(
+            "wanted" if row["id"].endswith(":2") else "other"))
+
+    with patch(
+            "bilqis_mlx.runtime.structural_weakness_capture._provider_for_context",
+            return_value=(object(), object(), object())), patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal."
+            "WeaknessClassId.from_record",
+            return_value=NS(class_sha256="wanted")), patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal.classify_weakness",
+            side_effect=classify):
+        rows = materialize_rehearsal_rows(context, plan, 3)
+
+    assert len(rows.preservation) == 1
+    row = rows.preservation[0]
+    assert row["id"].endswith(":2")
+    binding = rows.bindings_by_id[row["id"]]
+    authority = rows.authorities_by_id[row["id"]]
+    assert binding["role"] == "preservation"
+    assert binding["each"] == authority.each == 1
+    assert binding["seed"] == authority.seed
 
 
 def test_candidate_delivery_receipts_actual_rehearsal_roles():
