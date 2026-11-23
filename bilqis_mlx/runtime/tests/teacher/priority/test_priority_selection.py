@@ -32,7 +32,7 @@ def test_preselection_hold_never_calls_policy(priority):
          patch.object(priority, '_c03_projection', return_value=SimpleNamespace(teacher_state={})) as base_projection, \
          patch.object(priority, 'current_teacher_projection', side_effect=lambda run, parent, cache, projection: projection) as current_projection, \
          patch.object(priority, 'restore_teacher_lineage', return_value='epoch'), \
-         patch.object(priority, 'candidate_identity_digest', return_value='student-id'), \
+         patch.object(priority, 'candidate_identity_for_canonical_consumer', return_value='student-id'), \
          patch.object(priority, '_teacher', return_value={'causal_experiment': {'diagnostic_contexts': {'selected': {'salience': 'verified'}}}}), \
          patch.object(priority, 'contract_digest', return_value='epoch-digest'), \
          patch.object(priority, 'salience_priority_features'), \
@@ -65,13 +65,16 @@ def test_accepted_selection_calls_policy_once(priority):
          patch.object(priority, '_c03_projection', return_value=SimpleNamespace(teacher_state={})) as base_projection, \
          patch.object(priority, 'current_teacher_projection', side_effect=lambda run, parent, cache, projection: projection) as current_projection, \
          patch.object(priority, 'restore_teacher_lineage', return_value=epoch), \
-         patch.object(priority, 'candidate_identity_digest', return_value='student-id'), \
+         patch.object(priority, 'candidate_identity_for_canonical_consumer', return_value='student-id'), \
          patch.object(priority, '_teacher', return_value={'causal_experiment': {'diagnostic_contexts': {'selected': {'salience': 'verified'}}}}), \
          patch.object(priority, 'contract_digest', return_value='epoch-digest'), \
          patch.object(priority, 'salience_priority_features'), \
          patch.object(priority, 'requalify_priority', return_value=qualified), \
          patch.object(priority, '_grade', return_value='g'), \
-         patch.object(priority, 'context_for_selection', return_value={'diagnostic_context_key': 'selected'}) as context, \
+         patch.object(priority, 'context_for_selection', return_value={
+             'diagnostic_context_key': 'selected',
+             'diagnostics': {'salience': 'verified'},
+         }) as context, \
          patch.object(priority, 'select_visit_policy', return_value=('k', {'lr': 0.5}, {'diagnostic_context_key': 'selected'})) as policy, \
          patch.object(priority, '_selection_projection', return_value=SimpleNamespace(teacher_state={})), \
          patch.object(priority, 'derive_teacher_visit_identity', return_value=identity), \
@@ -88,7 +91,11 @@ def test_accepted_selection_calls_policy_once(priority):
     policy.assert_called_once()
     assert policy.call_args.args[2] == 'cap'
     current_projection.assert_called_once_with('/run', parent, cache, base_projection.return_value)
-    assert result.metadata['how_context'] == {'diagnostic_context_key': 'selected'}
+    assert result.metadata['how_context'] == {
+        'diagnostic_context_key': 'selected',
+        'diagnostics': {'salience': 'verified'},
+    }
+    assert result.metadata['selected_teacher_snapshot_required'] is False
 
 
 @pytest.mark.parametrize('grades', [
@@ -112,7 +119,7 @@ def test_lawful_selection_fails_closed_when_how_grade_projection_is_invalid(prio
          patch.object(priority, '_c03_projection', return_value=SimpleNamespace(teacher_state={})), \
          patch.object(priority, 'current_teacher_projection', side_effect=lambda run, parent, cache, projection: projection), \
          patch.object(priority, 'restore_teacher_lineage', return_value='epoch'), \
-         patch.object(priority, 'candidate_identity_digest', return_value='student-id'), \
+         patch.object(priority, 'candidate_identity_for_canonical_consumer', return_value='student-id'), \
          patch.object(priority, '_teacher', return_value={}), \
          patch.object(priority, 'contract_digest', return_value='epoch-digest'), \
          patch.object(priority, 'salience_priority_features', return_value={}), \
@@ -182,8 +189,8 @@ def test_empty_lawful_frontier_returns_no_admissible_without_teacher_policy(prio
     school = SimpleNamespace(stage='MAIN', current_student=SimpleNamespace(sha256='student-id'))
     parent = SimpleNamespace(retained_state='student')
     with patch.object(
-            priority, '_accepted_parent', return_value=(parent, object())), patch.object(
-                priority, 'candidate_identity_digest', return_value='student-id'), patch.object(
+               priority, '_accepted_parent', return_value=(parent, object())), patch.object(
+                    priority, 'candidate_identity_for_canonical_consumer', return_value='student-id'), patch.object(
                 priority, '_c03_projection') as projection, patch.object(
                 priority, 'select_visit_policy') as policy:
         result = priority.select_accepted_priority_visit(

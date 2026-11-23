@@ -101,8 +101,10 @@ class NativeRejectionOutcomeTests(NativeSourceFixture, unittest.TestCase):
         context = {'grade': 'A', 'phase': 'RECOVERY_1', 'curriculum_scope': 'factory/7',
                    'rubric_sha256': 'd' * 64, 'factory_release_sha256': release_sha, 'diagnostics': {},
                    'grade_definition_sha256': 'e' * 64, 'source_binding_sha256': 'f' * 64}
-        selection = _issue_result('TEACHER_SELECTED', cap, offer, visit, policy,
-                                  {'how_context': context}, 'A', (), self.run, object())
+        selection = _issue_result(
+            'TEACHER_SELECTED', cap, offer, visit, policy,
+            {'how_context': context, 'selected_teacher_snapshot_required': True},
+            'A', (), self.run, object())
         fixture = list(factory_fixture._foundation_owner_fixture())
         fixture[-1] = replace(fixture[-1], status=DecisionStatus.ELIGIBLE if accepted else DecisionStatus.REJECT,
                               reason='PAIRED_SCREEN_WITHIN_BUDGET' if accepted else 'NO_MEASURABLE_TARGET_GAIN',

@@ -132,11 +132,16 @@ def build_outcome(run_dir, selection, evaluation, decision, candidate_evidence):
         policy_controls=[step['controls'] for step in steps],
         guidance_applied_steps=sum(step['guidance'] is not None for step in steps),
         enrichment_examples=sum('enrichment' in item['roles'] for step in steps for item in step['positions']))
+    selected_teacher_evidence = (
+        {'selected_teacher': selected}
+        if selected is not None
+        else {'selected_teacher_sha256': selected_sha256}
+    )
     observation = _IssuedOutcome({
         'schema': SCHEMA, 'attempt_id': payload['attempt_id'],
         'proposal_id': payload['proposal_id'], 'candidate_evidence': candidate_evidence['object'],
         'teacher_visit': identity.to_record(), 'context': context,
-        'selected_teacher_sha256': selected_sha256,
+        **selected_teacher_evidence,
         'selected_policy': selection.policy,
         'effective_policy_key': effective_policy_key(selection.policy),
         'realized_action': realized, 'attempted_steps': len(steps),
