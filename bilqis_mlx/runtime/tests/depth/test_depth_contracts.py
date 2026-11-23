@@ -2,6 +2,7 @@
 from dataclasses import replace
 import math
 import unittest
+from unittest.mock import patch
 
 import mlx.core as mx
 import numpy as np
@@ -17,6 +18,9 @@ from bilqis_mlx.runtime.block_attnres import (
     _DepthFeatureValues, _depth_components, _group_boundary_numerical,
     depth_parameter_view, depth_select, _numerical_depth_select,
 )
+from bilqis_mlx.runtime.backbone_identity import (
+    LearningFirstExecutionGenerationBinding,
+)
 from bilqis_mlx.runtime.model_topology_v2 import (
     GenerationExtents, ModelTopologySpecV2, expected_bamf_shapes,
     initialize_bamf_parameter,
@@ -31,6 +35,36 @@ from bilqis_mlx.runtime.tests.depth.depth_helpers import (
 )
 
 class DepthSelectionTests(unittest.TestCase):
+    def test_learning_first_view_preserves_binding_owned_parameter_mapping(self):
+        spec = ModelTopologySpecV2()
+        extents = GenerationExtents(1, 1, "a" * 64, "b" * 64, "c" * 64)
+        parameters = {
+            item.name: mx.zeros(item.shape, dtype=mx.float32)
+            for item in expected_bamf_shapes(spec, extents)
+        }
+        binding = object.__new__(LearningFirstExecutionGenerationBinding)
+        object.__setattr__(binding, "_parameters", parameters)
+        calls = []
+
+        def require(current_binding, current_parameters, **_kwargs):
+            self.assertIs(current_binding, binding)
+            self.assertIs(current_parameters, parameters)
+            calls.append(current_parameters)
+            return type("Owned", (), {
+                "generation_digest": "generation",
+                "parameter_tree_digest": "tree",
+            })()
+
+        with patch(
+                "bilqis_mlx.runtime._depth.depth_contracts.require_execution_generation_binding",
+                side_effect=require):
+            view = depth_parameter_view(
+                parameters, spec=spec, extents=extents, boundary_group=1,
+                execution_binding=binding)
+            self.assertEqual(view.generation_digest, "generation")
+
+        self.assertEqual(calls, [parameters, parameters])
+
     def test_parameter_view_factory_keeps_public_pickle_identity(self):
         import pickle
         from bilqis_mlx.runtime import block_attnres
