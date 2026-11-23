@@ -27,6 +27,33 @@ from .pre_neural_journey_support import (
 
 
 class LearningFirstSourcePathTests(PreNeuralJourneySupport, unittest.TestCase):
+    def test_learning_first_row_inputs_work_without_preparation_cache(self):
+        compiled = SimpleNamespace(
+            sources=(SimpleNamespace(source_row={"id": "row:1"}),))
+        goal = object()
+        resolved = object()
+        targets = (object(),)
+        mask = {"route": True}
+        plan = SimpleNamespace(generation_binding="generation")
+        source_context = object()
+        feature_snapshot = object()
+        import bilqis_mlx.runtime.factory_candidate_microbatch as c08
+        with evidence_mode(strict=False), patch.object(
+                c08, "_learning_first_task_goals",
+                return_value=(goal, resolved)) as task_goals, patch.object(
+                    c08, "task_goal_training_targets",
+                    return_value=(targets, mask)) as training_targets, patch.object(
+                        c08, "task_goal_route_plan",
+                        return_value=plan) as route_plan:
+            result = _row_execution_inputs(
+                source_context, compiled, feature_snapshot, "generation",
+                learning_first_cache=None)
+
+        self.assertEqual(result, (compiled, None, targets, mask, plan))
+        task_goals.assert_called_once_with(source_context, compiled)
+        training_targets.assert_called_once_with(goal, resolved)
+        route_plan.assert_called_once_with(goal, compiled, feature_snapshot, "generation")
+
     def test_learning_first_cache_reuses_invariant_row_preparation_across_steps(self):
         self.current, self.parent_graph = historical_school_release()
         snapshot = portable_atlas_snapshot()

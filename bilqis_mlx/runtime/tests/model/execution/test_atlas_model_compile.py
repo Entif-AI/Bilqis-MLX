@@ -6,7 +6,9 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import mlx.core as mx
+import numpy as np
 
+from bilqis_mlx.learning.atlas_readout import DecisionKind, DecisionOutput, DecisionSpec
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.atlas_model_microbatch import _materialize_gradient
 from bilqis_mlx.runtime.microbatch.compiled_route import (
@@ -14,7 +16,10 @@ from bilqis_mlx.runtime.microbatch.compiled_route import (
     learning_first_compiled_route,
     stable_route_compile_key,
 )
-from bilqis_mlx.runtime.microbatch.route_kernel import RouteMicrobatchKernel
+from bilqis_mlx.runtime.microbatch.route_kernel import (
+    RouteMicrobatchKernel, prepare_route_microbatch_kernel,
+    route_microbatch_loss_and_trajectory,
+)
 
 
 def _decision(name="route", values=("LEFT", "RIGHT")):
@@ -64,6 +69,51 @@ def _fixtures(*, release="a" * 64, extent="b" * 64, decisions=None):
     return backend, rows, plans, targets, masks, kernel
 
 
+def _route_parameters():
+    width, inner = ModelTopologySpecV2.width, 192
+    return {
+        "features.role": mx.stack((
+            mx.zeros((width,), dtype=mx.float32),
+            mx.arange(width, dtype=mx.float32) / 1000.0,
+        )),
+        "features.gates": mx.zeros((4,), dtype=mx.float32),
+        "features.project_role": mx.eye(width, dtype=mx.float32),
+        "readout.feedback": mx.eye(width, dtype=mx.float32) * 0.02,
+        "readout.state_norm": mx.ones((width,), dtype=mx.float32),
+        "readout.output_norm": mx.ones((width,), dtype=mx.float32),
+        "readout.key": mx.eye(inner, width, dtype=mx.float32),
+        "readout.value": mx.eye(inner, width, dtype=mx.float32),
+        "readout.query": mx.eye(inner, width, dtype=mx.float32),
+        "readout.output": mx.eye(width, inner, dtype=mx.float32),
+    }
+
+
+def _route_training_fixture():
+    decisions = (
+        DecisionSpec("op", None, 0, DecisionKind.OPERATOR, ("op.a", "op.b")),
+        DecisionSpec(
+            "arg", None, 1, DecisionKind.OPERAND,
+            ("arg.a", "arg.b"), ("op",)),
+    )
+    plans = tuple(SimpleNamespace(
+        route_only=True, decisions=decisions, execution_order=("op", "arg"))
+        for _ in range(2))
+    targets = (
+        (DecisionOutput("op", "op.b"), DecisionOutput("arg", "arg.b")),
+        (DecisionOutput("op", "op.a"), DecisionOutput("arg", "arg.a")),
+    )
+    masks = ({"op": True, "arg": True},) * 2
+    features = SimpleNamespace(role_map=(("UNKNOWN", 0), ("NONE", 1)))
+    extents = SimpleNamespace()
+    rows = tuple(SimpleNamespace(compiled=SimpleNamespace(
+        compiled=SimpleNamespace(rows=(SimpleNamespace(positions=(None,) * 3),)),
+        features=features, extents=extents)) for _ in range(2))
+    kernel = prepare_route_microbatch_kernel(rows, plans, targets, masks, None)
+    hidden = (mx.arange(2 * 3 * ModelTopologySpecV2.width, dtype=mx.float32)
+              .reshape(2, 3, ModelTopologySpecV2.width) / 10000.0)
+    return kernel, hidden
+
+
 def test_compile_key_ignores_irrelevant_python_identity_objects():
     left = _fixtures()
     right = _fixtures()
@@ -107,6 +157,26 @@ def test_compilation_toggle_is_disabled_by_default():
         compiled, state = learning_first_compiled_route(*_fixtures())
     assert compiled is None
     assert state == "disabled"
+
+
+def test_compiled_route_matches_uncompiled_loss_and_gradients_exactly():
+    params = _route_parameters()
+    kernel, hidden = _route_training_fixture()
+
+    def objective(current):
+        return route_microbatch_loss_and_trajectory(
+            current, hidden, kernel, return_logits=True)[0]
+
+    compiled_objective = mx.compile(objective)
+    plain_loss, plain_gradients = mx.value_and_grad(objective)(params)
+    compiled_loss, compiled_gradients = mx.value_and_grad(compiled_objective)(params)
+    mx.eval(plain_loss, plain_gradients, compiled_loss, compiled_gradients)
+
+    np.testing.assert_array_equal(np.asarray(plain_loss), np.asarray(compiled_loss))
+    assert set(plain_gradients) == set(compiled_gradients)
+    for name in plain_gradients:
+        np.testing.assert_array_equal(
+            np.asarray(plain_gradients[name]), np.asarray(compiled_gradients[name]))
 
 
 def test_compiled_inner_route_remains_inside_one_outer_materialization_barrier():
