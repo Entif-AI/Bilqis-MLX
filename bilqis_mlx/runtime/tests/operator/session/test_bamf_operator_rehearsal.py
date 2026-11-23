@@ -1,6 +1,7 @@
 """R14 native rehearsal planning, custody, and provenance contracts."""
 from types import SimpleNamespace as NS
 from unittest.mock import patch
+import sys
 
 import pytest
 
@@ -13,6 +14,10 @@ from bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal import (
 )
 from bilqis_mlx.runtime.bamf_operator.source_prefetch import (
     prepare_priority_source_packet, priority_source_request,
+)
+from bilqis_mlx.runtime.factory_candidate_training import FactoryDeliveryObservation
+from bilqis_mlx.runtime.accepted_priority_visit import (
+    execute_accepted_priority_candidate,
 )
 from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.runtime.source_prefetch import thaw_source_packet
@@ -103,6 +108,54 @@ def test_materialization_retains_one_row_source_authority_per_rehearsal_specimen
         assert binding["seed"] == authority.seed
         assert binding["each"] == authority.each == 1
         assert binding["capability"] == authority.capability_id
+
+
+def test_candidate_delivery_receipts_actual_rehearsal_roles():
+    candidate_owner = sys.modules[execute_accepted_priority_candidate.__module__]
+    direct = ({"id": "direct", "capability": "Z.C2"},)
+    prior = {"id": "prior", "capability": "Z.C0"}
+    preservation = {"id": "preservation", "capability": "Z.C2"}
+    support = {"id": "support", "capability": "Z.C1"}
+    rehearsal = (prior, preservation, support)
+    roles = {
+        prior["id"]: "prior",
+        preservation["id"]: "preservation",
+        support["id"]: "retention_support",
+    }
+    bindings = {identity: {"row_id": identity} for identity in roles}
+    authorities = {identity: object() for identity in roles}
+    offer = NS(
+        capability_id="Z.C2", source_seed=17, rows=lambda: direct,
+    )
+    selection = NS(offer=offer)
+    release = NS(execution_plan=NS(capability_map={
+        "Z.C2": NS(teaching_option_ids=("instruction",)),
+    }))
+    capture = NS(
+        attempt_id="attempt", proposal_id="proposal", selected_option="instruction",
+        delivery=lambda *_args, **_kwargs: None,
+    )
+    observation = FactoryDeliveryObservation(capture, 1, direct, 17)
+
+    with patch.object(candidate_owner, "describe_delivered_teaching", return_value="delivery"):
+        result = candidate_owner._candidate_delivery_inputs(
+            selection, NS(release=release), direct, (), rehearsal, roles,
+            bindings, authorities, observation)
+
+    realized = result[-1]
+    assert realized.prior == (prior,)
+    assert realized.preservation == (preservation,)
+    assert realized.support == (support,)
+    assert realized.controls["fragile_preservation_delivered"] == 1
+    assert realized.controls["retention_support_delivered"] == 1
+    import bilqis_mlx.learning.learning_experiment as experiment
+    action = experiment.realized_teacher_action(
+        {"lr": .0001, "old": 20, "distill": 0.}, candidate_steps=1,
+        batch_size=len((*direct, *rehearsal)), policy_controls=(realized.controls,),
+        guidance_applied_steps=0, enrichment_examples=0)
+    assert action["features"]["fragile_preservation_delivered"] == 1
+    assert action["features"]["retention_support_delivered"] == 1
+    assert action["features"]["old_grade_examples_delivered"] == 0
 
 
 def test_worker_packet_transports_roles_but_not_process_live_authority():

@@ -61,12 +61,23 @@ def _candidate_delivery_inputs(
     binding_records = {} if rehearsal_bindings is None else dict(rehearsal_bindings)
     if set(binding_records) != set(role_bindings) or set(source_authorities) != set(role_bindings):
         _invalid('BAMF_PRIORITY_REHEARSAL_AUTHORITY_DRIFT')
+    prior = tuple(row for row in rehearsal if role_bindings[row["id"]] == "prior")
+    preservation = tuple(
+        row for row in rehearsal if role_bindings[row["id"]] == "preservation")
+    support = tuple(
+        row for row in rehearsal if role_bindings[row["id"]] == "retention_support")
     capability = offer.capability_id
     execution = source_context.release.execution_plan.capability_map[capability]
     delivery = describe_delivered_teaching(
         source_context.release, capability, execution.teaching_option_ids[0], rows)
     observation = replace(
         observation, option_rows=rows, seed=offer.source_seed,
+        prior=prior, preservation=preservation, support=support,
+        controls={
+            **observation.controls,
+            "fragile_preservation_delivered": len(preservation),
+            "retention_support_delivered": len(support),
+        },
         **({"enrichment": enrichment} if enrichment else {}))
     return (offer, rows, enrichment, rehearsal, role_bindings, binding_records,
             source_authorities, capability, delivery, observation)
