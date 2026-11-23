@@ -137,27 +137,65 @@ def _observe_shadow_rung(
         if shadow_parent_correct is None else shadow_parent_correct)
 
 
-def _execute_horizon_step(
-        ordinal, horizon, source_lane, rows, selection, context, parent,
-        atlas_path, feature_path, capture, observer, adviser_pool, candidate,
-        shadow_rungs, shadow_parent_correct, shadow_probe_fn, run_dir, cache,
-        delivery_observation_cls, execute_candidate, step_seed, emit_progress,
-        progress, observe_completed_step_fn, invalid):
-    candidate_step_started_at = time.perf_counter()
-    begin_step_started = time.perf_counter()
-    begin_step = getattr(observer, "begin_step", None)
-    if callable(begin_step):
-        begin_step(ordinal, parent.retained_state.optimizer_step + ordinal)
-    observer_seconds = time.perf_counter() - begin_step_started
+def _step_source_inputs(source_lane, rows, ordinal, prepared_host_step):
+    if prepared_host_step is not None:
+        lesson = prepared_host_step.lesson
+        rehearsal_rows = (
+            *tuple(getattr(lesson, "prior", ())),
+            *tuple(getattr(lesson, "preservation", ())),
+            *tuple(getattr(lesson, "retention_support", ())),
+        )
+        pipeline_kwargs = {
+            "prepared_learning_first_source_inputs":
+                prepared_host_step.prepared_source_inputs,
+            "pipeline_host_preparation_wall_seconds":
+                prepared_host_step.preparation_wall_seconds,
+            "pipeline_host_overlap_wall_seconds":
+                prepared_host_step.overlap_wall_seconds,
+            "pipeline_host_wait_wall_seconds":
+                prepared_host_step.host_wait_wall_seconds,
+            "pipeline_accelerator_wait_for_host_wall_seconds":
+                prepared_host_step.host_wait_wall_seconds,
+        }
+        # The physical wait belongs exclusively to the host-preparation lane.
+        return (
+            lesson, lesson.direct, lesson.enrichment, rehearsal_rows,
+            0.0, 0.0, 0.0, pipeline_kwargs,
+        )
+
     source_started = time.perf_counter()
-    wait_before = float(source_lane.metrics.wait_seconds) if source_lane is not None else 0.0
+    wait_before = (
+        float(source_lane.metrics.wait_seconds) if source_lane is not None else 0.0)
     lesson, source_rows, enrichment_rows, rehearsal_rows = _lesson_for_step(
         source_lane, rows, ordinal)
     source_seconds = time.perf_counter() - source_started
     wait_seconds = max(
         0.0, (float(source_lane.metrics.wait_seconds) - wait_before)
         if source_lane is not None else 0.0)
-    lesson_seconds = max(0.0, source_seconds - wait_seconds)
+    return (
+        lesson, source_rows, enrichment_rows, rehearsal_rows,
+        source_seconds, wait_seconds, max(0.0, source_seconds - wait_seconds), {},
+    )
+
+
+def _execute_horizon_step(
+        ordinal, horizon, source_lane, rows, selection, context, parent,
+        atlas_path, feature_path, capture, observer, adviser_pool, candidate,
+        shadow_rungs, shadow_parent_correct, shadow_probe_fn, run_dir, cache,
+        delivery_observation_cls, execute_candidate, step_seed, emit_progress,
+        progress, observe_completed_step_fn, invalid, prepared_host_step=None,
+        candidate_step_started_at=None):
+    if candidate_step_started_at is None:
+        candidate_step_started_at = time.perf_counter()
+    begin_step_started = time.perf_counter()
+    begin_step = getattr(observer, "begin_step", None)
+    if callable(begin_step):
+        begin_step(ordinal, parent.retained_state.optimizer_step + ordinal)
+    observer_seconds = time.perf_counter() - begin_step_started
+    (
+        lesson, source_rows, enrichment_rows, rehearsal_rows,
+        source_seconds, wait_seconds, lesson_seconds, pipeline_kwargs,
+    ) = _step_source_inputs(source_lane, rows, ordinal, prepared_host_step)
     mentor_started = time.perf_counter()
     observation, mentor_supervision = _mentor_observation(
         adviser_pool, source_rows, lesson, selection, capture,
@@ -190,8 +228,12 @@ def _execute_horizon_step(
         source_lesson_materialization_wall_seconds=lesson_seconds,
         mentor_observation_wall_seconds=mentor_seconds,
         progress_emission_wall_seconds=progress_seconds,
-        observer_begin_step_wall_seconds=observer_seconds)
+        observer_begin_step_wall_seconds=observer_seconds,
+        **pipeline_kwargs)
     candidate = step.transaction
+    if prepared_host_step is not None and source_lane is not None:
+        source_lane.metrics.pipeline_discarded_steps += int(
+            step.realized_cost.get("pipeline_discarded_prefetch_work", 0))
     if candidate.update_steps != ordinal:
         invalid("BAMF_C16_3_CANDIDATE_HORIZON_DRIFT")
     observe_completed_step_fn(observer, step, candidate)
@@ -209,7 +251,7 @@ def execute_horizon(
         source_metrics_cls, prepare_evidence_root, capture_cls,
         delivery_observation_cls, execute_candidate, step_seed,
         emit_progress, invalid, observe_completed_step_fn, rehearsal_plan=None,
-        policy_support_enabled=False,
+        policy_support_enabled=False, prepare_step_ahead=None,
         shadow_policy=None, shadow_rungs_fn=None, shadow_probe_fn=None):
     source_lane, capture = _candidate_capture(
         run_dir, selection, context, parent, cache, candidate_attempt_ordinal,
@@ -220,16 +262,33 @@ def execute_horizon(
     shadow_rungs = _configure_shadow(
         capture, horizon, shadow_policy, shadow_rungs_fn, shadow_probe_fn)
     shadow_parent_correct = None
-    for ordinal in range(1, horizon + 1):
-        step, candidate, shadow_parent_correct = _execute_horizon_step(
-            ordinal, horizon, source_lane, rows, selection, context, parent,
-            atlas_path, feature_path, capture, observer, adviser_pool, candidate,
-            shadow_rungs, shadow_parent_correct, shadow_probe_fn, run_dir, cache,
-            delivery_observation_cls, execute_candidate, step_seed, emit_progress,
-            progress, observe_completed_step_fn, invalid)
-        steps.append(step)
-        if getattr(candidate, "motif_transition", None) is not None:
-            break
+    pipeline = None
+    if source_lane is not None and prepare_step_ahead is not None:
+        from .pipeline import CandidateHostPreparationPipeline
+        pipeline = CandidateHostPreparationPipeline(
+            source_lane, horizon, prepare_step_ahead, source_lane.metrics)
+        pipeline.submit(1)
+    try:
+        for ordinal in range(1, horizon + 1):
+            candidate_step_started_at = time.perf_counter()
+            prepared_host_step = None
+            if pipeline is not None:
+                prepared_host_step = pipeline.take(ordinal)
+                pipeline.submit(ordinal + 1)
+            step, candidate, shadow_parent_correct = _execute_horizon_step(
+                ordinal, horizon, source_lane, rows, selection, context, parent,
+                atlas_path, feature_path, capture, observer, adviser_pool, candidate,
+                shadow_rungs, shadow_parent_correct, shadow_probe_fn, run_dir, cache,
+                delivery_observation_cls, execute_candidate, step_seed, emit_progress,
+                progress, observe_completed_step_fn, invalid,
+                prepared_host_step=prepared_host_step,
+                candidate_step_started_at=candidate_step_started_at)
+            steps.append(step)
+            if getattr(candidate, "motif_transition", None) is not None:
+                break
+    finally:
+        if pipeline is not None:
+            pipeline.close()
     return steps, capture
 
 

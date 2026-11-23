@@ -171,10 +171,22 @@ def execute_horizon(
         "distributed_profile": distributed_profile,
         "distributed_executor": distributed_executor,
     }
+    prepare_step_ahead = None
     if candidate_executor is execute_learning_first_priority_candidate:
         candidate_kwargs["accepted_cache"] = cache
         from bilqis_mlx.runtime.factory_training_bridge import LearningFirstPreparationCache
+        from bilqis_mlx.runtime.factory_training_preparation import (
+            prepare_learning_first_source_inputs_ahead,
+        )
         candidate_kwargs["learning_first_cache"] = LearningFirstPreparationCache()
+
+        def prepare_step_ahead(_ordinal, lesson):
+            authenticated = (
+                selection.offer._planning_generation._authenticated_features)
+            return prepare_learning_first_source_inputs_ahead(
+                context, authenticated, lesson.delivered,
+                source_seed=selection.offer.source_seed,
+                source_each=len(lesson.direct) + len(lesson.enrichment))
     return _execute_horizon_impl(
         run_dir, selection, context, parent, atlas_path, feature_path,
         rows, horizon, cache, candidate_attempt_ordinal, progress,
@@ -189,6 +201,7 @@ def execute_horizon(
         observe_completed_step_fn=observe_completed_step,
         rehearsal_plan=rehearsal_plan,
         policy_support_enabled=policy_support_enabled,
+        prepare_step_ahead=prepare_step_ahead,
         shadow_policy=DEFAULT_SHADOW_POLICY, shadow_rungs_fn=active_rungs,
         shadow_probe_fn=measure_current_retention_shadow_target)
 

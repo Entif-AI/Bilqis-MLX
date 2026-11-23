@@ -42,6 +42,9 @@ def _executor_from(captured):
     return closure["candidate_executor"]
 
 
+def _prepare_step_ahead_from(captured):
+    return captured.get("prepare_step_ahead")
+
 def _rehearsal_plan_from(captured):
     closure = inspect.getclosurevars(captured["execute_horizon_fn"]).nonlocals
     return closure["rehearsal_plan"]
@@ -66,6 +69,7 @@ def test_learning_first_horizon_scopes_one_preparation_cache_to_the_candidate():
 
     def horizon_impl(*args, **kwargs):
         captured["execute_candidate"] = kwargs["execute_candidate"]
+        captured["prepare_step_ahead"] = kwargs.get("prepare_step_ahead")
         return (), object()
 
     with patch.object(native_session, "_execute_horizon_impl", side_effect=horizon_impl):
@@ -77,6 +81,25 @@ def test_learning_first_horizon_scopes_one_preparation_cache_to_the_candidate():
 
     executor = captured["execute_candidate"]
     assert isinstance(executor.keywords["learning_first_cache"], LearningFirstPreparationCache)
+    assert callable(_prepare_step_ahead_from(captured))
+
+
+def test_strict_execute_horizon_never_installs_host_preparation_pipeline():
+    from bilqis_mlx.runtime.bamf_operator.session_parts import native_session
+    captured = {}
+
+    def horizon_impl(*args, **kwargs):
+        captured.update(kwargs)
+        return (), object()
+
+    with patch.object(native_session, "_execute_horizon_impl", side_effect=horizon_impl):
+        execute_horizon(
+            Path("/run"), object(), object(), object(), "atlas", "features", (), 4,
+            object(), 1, None, 0, None, None, None, None,
+            emit_progress=lambda *_args: None, invalid=_invalid,
+            candidate_executor=native_session.execute_accepted_priority_candidate)
+
+    assert captured["prepare_step_ahead"] is None
 
 
 def test_learning_first_horizon_preserves_rehearsal_with_accepted_cache():

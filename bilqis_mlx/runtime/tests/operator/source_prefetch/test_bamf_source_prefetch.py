@@ -5,6 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import time
+from threading import Event
 from unittest.mock import patch
 
 import pytest
@@ -12,13 +13,16 @@ import pytest
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_operator.session import operate_bamf
 from bilqis_mlx.runtime.bamf_operator.source_prefetch import (
-    CandidateSourceLane,
+    CandidateLessonRows, CandidateSourceLane,
     SourcePrefetchMetrics,
     prepare_priority_source_packet,
     priority_source_request,
 )
 from bilqis_mlx.runtime.bamf_operator.session_parts.fresh_support import (
     DEEP_FRESH_SUPPORT_CONTROL, FreshSupportSpecimen,
+)
+from bilqis_mlx.runtime.bamf_operator.session_parts.pipeline import (
+    CandidateHostPreparationPipeline,
 )
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from bilqis_mlx.runtime.source_execution import source_content_digest
@@ -279,3 +283,89 @@ def test_native_operator_preserves_zero_one_two_worker_configuration(workers):
     assert visit.call_args.kwargs["source_prefetch_workers"] == workers
     assert visit.call_args.kwargs["source_prefetch_executor"] is (
         None if workers == 0 else executors[workers])
+
+
+
+def test_host_preparation_pipeline_overlaps_future_cpu_work_with_current_step():
+    class Lane:
+        def lesson(self, ordinal):
+            time.sleep(0.02)
+            return CandidateLessonRows(
+                ({"id": f"row:{ordinal}", "capability": "A.TEST"},),
+                prefetch_identity=f"{ordinal:064x}")
+
+    def prepare(_ordinal, lesson):
+        time.sleep(0.02)
+        return ("prepared", lesson.direct[0]["id"])
+
+    metrics = SourcePrefetchMetrics()
+    pipeline = CandidateHostPreparationPipeline(Lane(), 2, prepare, metrics)
+    try:
+        pipeline.submit(1)
+        first = pipeline.take(1)
+        pipeline.submit(2)
+        time.sleep(0.06)  # representative current-step Metal execution
+        second = pipeline.take(2)
+    finally:
+        pipeline.close()
+
+    assert first.prepared_source_inputs == ("prepared", "row:1")
+    assert second.prepared_source_inputs == ("prepared", "row:2")
+    assert metrics.pipeline_submitted_steps == 2
+    assert metrics.pipeline_prepared_steps == 2
+    assert metrics.pipeline_discarded_steps == 0
+    assert second.overlap_wall_seconds >= 0.03
+    assert second.host_wait_wall_seconds < first.host_wait_wall_seconds
+    assert metrics.pipeline_accelerator_wait_for_host_seconds == (
+        metrics.pipeline_host_wait_seconds)
+
+
+def test_host_preparation_pipeline_discards_unused_future_work_on_early_stop():
+    class Lane:
+        def lesson(self, ordinal):
+            return CandidateLessonRows(
+                ({"id": f"row:{ordinal}", "capability": "A.TEST"},),
+                prefetch_identity=f"{ordinal:064x}")
+
+    metrics = SourcePrefetchMetrics()
+    second_started = Event()
+
+    def prepare(ordinal, _lesson):
+        if ordinal == 2:
+            second_started.set()
+            time.sleep(0.02)
+        return ("prepared", ordinal)
+
+    pipeline = CandidateHostPreparationPipeline(Lane(), 2, prepare, metrics)
+    pipeline.submit(1)
+    first = pipeline.take(1)
+    pipeline.submit(2)
+    assert second_started.wait(timeout=1.0)
+    pipeline.close()
+
+    assert first.prepared_source_inputs == ("prepared", 1)
+    assert metrics.pipeline_submitted_steps == 2
+    assert metrics.pipeline_prepared_steps == 1
+    assert metrics.pipeline_discarded_steps == 1
+    assert metrics.pipeline_discarded_preparation_seconds > 0.0
+    assert metrics.pipeline_host_preparation_seconds >= (
+        metrics.pipeline_discarded_preparation_seconds)
+
+
+def test_host_preparation_pipeline_rejects_cross_ordinal_take():
+    class Lane:
+        def lesson(self, ordinal):
+            return CandidateLessonRows(
+                ({"id": f"row:{ordinal}", "capability": "A.TEST"},),
+                prefetch_identity=f"{ordinal:064x}")
+
+    metrics = SourcePrefetchMetrics()
+    pipeline = CandidateHostPreparationPipeline(
+        Lane(), 2, lambda ordinal, _lesson: ("prepared", ordinal), metrics)
+    try:
+        pipeline.submit(1)
+        with pytest.raises(BilqisError) as caught:
+            pipeline.take(2)
+        assert caught.value.context["reason"] == "BAMF_HOST_PREPARATION_STEP_MISSING"
+    finally:
+        pipeline.close()

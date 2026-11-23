@@ -71,7 +71,8 @@ def _capture_candidate_result(
         time.perf_counter() - candidate_step_started_at)
     exclusive_wall_seconds = sum(float(cost.get(name, 0.0) or 0.0) for name in (
         "observer_begin_step_wall_seconds", "source_lane_wait_wall_seconds",
-        "source_lesson_materialization_wall_seconds", "mentor_observation_wall_seconds",
+        "source_lesson_materialization_wall_seconds", "pipeline_host_wait_wall_seconds",
+        "mentor_observation_wall_seconds",
         "progress_emission_wall_seconds", "currentness_binding_wall_seconds",
         "candidate_delivery_setup_wall_seconds", "factory_request_validation_wall_seconds",
         "factory_semantic_context_wall_seconds", "factory_prepared_source_validation_wall_seconds",
