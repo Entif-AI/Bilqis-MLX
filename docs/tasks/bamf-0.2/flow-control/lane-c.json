@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "db2c0233147069414c83fae76bcbad9c51ca58c5",
-  "updated_at": "2026-11-22T10:47:58+00:00",
+  "observed_unified": "a642e7e92c2004f2d00cde8908ed4eeb8bc53e9e",
+  "updated_at": "2026-11-23T02:14:05+00:00",
   "exception": null,
   "items": [
     {
@@ -540,6 +540,16 @@
       "summary": "Issue #1537 is turned in as PR #1563. A bounded process-live exact-identity cache reuses only selected-source heavy preparation while fresh process-live source-owner validation/rebinding, B11 proof/binding, motif inputs, correction owners, registration and currentness remain visit-local. The exact neural-inert production-shaped runtime proof at 86cb2ae8 measured 0.314225 s cold and 0.131034/0.150893 s warm selected-source handoffs versus the durable #1518 10.020139 s baseline. Current main db2c0233 was merged normally, preserving #1562 logical-batch source sizing alongside #1537 cache handoff. Hosted portable-core first required the 394-line source-materialization test to be split; placing the extracted 237-line cache suite directly beside 17 existing modules then triggered the directory encounter rule, so it was moved into a new source_materialization test compartment. The parent remains at its baseline 17 direct modules, the original test is 142 lines, the extracted suite is 237 lines, and the focused merged surface passes 13 tests. No human trainer or neural optimizer update was used.",
       "resume_trigger": null,
       "preserved_branch": "codex/1537-source-materialization-20261122"
+    },
+    {
+      "issue": 1541,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "a642e7e92c2004f2d00cde8908ed4eeb8bc53e9e",
+      "head_sha_role": "current main baseline consumed before #1541 adaptive candidate-budget implementation",
+      "summary": "Issue #1541 owns candidate-budget allocation only. It will qualify the existing neural-inert multi-fidelity shadow ladder against bounded evidence, report false-kill/false-continue/expected wall savings and retentions-per-hour implications, and activate only a versioned evidence-qualified early-stop or early-retention path. Proposal ranking and C05 adoption authority remain separate; early stopping cannot create retained state, and agent verification must not mutate the human production trainer.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1541-adaptive-budget-20261122"
     },
     {
       "issue": 1513,
