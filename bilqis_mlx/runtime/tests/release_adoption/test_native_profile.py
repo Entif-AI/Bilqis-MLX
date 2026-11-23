@@ -39,7 +39,7 @@ class NativeProfileOperatorTests(unittest.TestCase):
         from contextlib import nullcontext
         from types import SimpleNamespace
         from unittest.mock import Mock
-        from bilqis_mlx.runtime.bamf_operator._session_execution import operate
+        from bilqis_mlx.runtime.bamf_operator.session_parts.session_execution import operate
         events = []
         binding = SimpleNamespace(assert_current=Mock())
         binding.assert_current.side_effect = RuntimeError('stale authority')

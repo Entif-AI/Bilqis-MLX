@@ -1,96 +1,24 @@
-"""Candidate-horizon evidence batching for the persistent BAMF operator."""
+"""Candidate-horizon evidence capture for the persistent BAMF operator."""
 from __future__ import annotations
 
 from dataclasses import asdict
-import os
 from pathlib import Path
 import time
 
-from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.factory.teaching import describe_delivered_teaching
 from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
 from bilqis_mlx.runtime import state
 from bilqis_mlx.runtime.teacher_observation_capture import store_sidecar
 
-
-EVIDENCE_SCHEMA = "bilqis.bamf.c16.3-candidate-evidence/v1"
-REFERENCE_SCHEMA = "bilqis.bamf.c16.3-candidate-evidence-reference/v1"
-PERSISTENCE_SCHEMA = "bilqis.bamf.c16.3-evidence-persistence/v1"
-_SHA256_HEX_LENGTH = 64
-_SIDECAR_ROOT = Path("teacher-observations/objects")
-_ROLE_FIELDS = (
-    ("option_rows", "selected_option"),
-    ("priority", "weakness_replay"),
-    ("preservation", "preservation"),
-    ("support", "retention_support"),
-    ("enrichment", "enrichment"),
-    ("prior", "prior_rehearsal"),
+from .support import (
+    EVIDENCE_SCHEMA, PERSISTENCE_SCHEMA, REFERENCE_SCHEMA, _ROLE_FIELDS,
+    _SHA256_HEX_LENGTH, _SIDECAR_ROOT, _invalid, _plain, candidate_attempt_id,
 )
-_PREPARED_ROOTS: set[Path] = set()
-
-
-def _invalid(reason: str):
-    ErrorBus.raise_(SCHOOL.BAMF_FIRST_STUDENT.INVALID, reason=reason)
-
-
-def _plain(value):
-    if isinstance(value, dict):
-        return {str(key): _plain(item) for key, item in value.items()}
-    if isinstance(value, (tuple, list)):
-        return [_plain(item) for item in value]
-    if isinstance(value, (set, frozenset)):
-        return [_plain(item) for item in sorted(value)]
-    if hasattr(value, "tolist"):
-        return value.tolist()
-    return value
-
-
-def candidate_attempt_id(
-        generation: int, accepted_manifest_sha256: str,
-        visit_id: str, candidate_attempt_ordinal: int) -> str:
-    if (type(generation) is not int or generation < 0
-            or not isinstance(accepted_manifest_sha256, str)
-            or len(accepted_manifest_sha256) != _SHA256_HEX_LENGTH
-            or any(char not in "0123456789abcdef" for char in accepted_manifest_sha256)
-            or not isinstance(visit_id, str) or not visit_id
-            or type(candidate_attempt_ordinal) is not int
-            or candidate_attempt_ordinal < 1):
-        _invalid("BAMF_C16_3_EVIDENCE_ATTEMPT_INVALID")
-    return state._fingerprint([
-        "bilqis.bamf.c16.3-candidate-attempt/v1",
-        generation, accepted_manifest_sha256, visit_id, candidate_attempt_ordinal,
-    ])
-
-
-def _fsync_directory(path: Path) -> None:
-    descriptor = os.open(path, os.O_RDONLY)
-    try:
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
-
-
-def prepare_candidate_evidence_root(run_dir: Path) -> Path:
-    """Durably install the evidence hierarchy once before candidate execution."""
-    run_dir = Path(run_dir)
-    if run_dir.is_symlink() or not run_dir.is_dir():
-        _invalid("BAMF_C16_3_EVIDENCE_ROOT_INVALID")
-    if run_dir in _PREPARED_ROOTS:
-        target = run_dir / _SIDECAR_ROOT
-        if target.is_symlink() or not target.is_dir():
-            _invalid("BAMF_C16_3_EVIDENCE_ROOT_INVALID")
-        return target
-    current = run_dir
-    for part in _SIDECAR_ROOT.parts:
-        child = current / part
-        if child.is_symlink() or (child.exists() and not child.is_dir()):
-            _invalid("BAMF_C16_3_EVIDENCE_ROOT_INVALID")
-        child.mkdir(exist_ok=True)
-        _fsync_directory(child)
-        _fsync_directory(current)
-        current = child
-    _PREPARED_ROOTS.add(run_dir)
-    return current
+from .multifidelity import (
+    configure_multifidelity as _configure_multifidelity,
+    finalize_multifidelity as _finalize_multifidelity,
+    record_multifidelity_rung as _record_multifidelity_rung,
+)
 
 
 class CandidateEvidenceCapture:
@@ -150,8 +78,7 @@ class CandidateEvidenceCapture:
         metadata = getattr(selection, 'metadata', None)
         if isinstance(metadata, dict) and 'how_context' in metadata:
             self.proposal['how_context'] = _plain(metadata['how_context'])
-            snapshot_required = metadata.get(
-                'selected_teacher_snapshot_required', False)
+            snapshot_required = metadata.get('selected_teacher_snapshot_required', False)
             if type(snapshot_required) is not bool:
                 _invalid("BAMF_C16_3_EVIDENCE_SELECTION_INVALID")
             if snapshot_required:
@@ -170,6 +97,7 @@ class CandidateEvidenceCapture:
         self._learning_steps = []
         self._learning_missing = False
         self._introductory = introductory
+        self._multifidelity = None
 
     def _object_ref(self, row):
         value = _plain(row)
@@ -221,7 +149,6 @@ class CandidateEvidenceCapture:
                 self._learning_steps.append(inspect_lesson_step(
                     course, capability, list(offered), delivered))
         except (ValueError, TypeError, AttributeError, KeyError, ImportError):
-            # Unsupported source structure is unmeasured, never a training veto.
             self._learning_missing = True
         execution = release.execution_plan.capability_map.get(capability)
         teaching_options = getattr(execution, "teaching_option_ids", ())
@@ -246,11 +173,8 @@ class CandidateEvidenceCapture:
                     owner.provider_implementation_sha256 if owner is not None else None),
             })
         self._steps.append({
-            "step": step,
-            "capability": capability,
-            "seed": seed,
-            "delivered_teaching": description,
-            "positions": positions,
+            "step": step, "capability": capability, "seed": seed,
+            "delivered_teaching": description, "positions": positions,
             "guidance": _plain(evidence.get("guidance")),
             "controls": _plain(controls),
             "mentors": _plain(evidence.get("mentors")),
@@ -286,12 +210,19 @@ class CandidateEvidenceCapture:
             })
         return tuple(result)
 
+    def configure_multifidelity(self, **kwargs):
+        return _configure_multifidelity(self, **kwargs)
+
+    def record_multifidelity_rung(self, **kwargs):
+        return _record_multifidelity_rung(self, **kwargs)
+
     def finalize(self, *, accepted: bool, decision: dict):
         if type(accepted) is not bool or not isinstance(decision, dict) or not decision:
             _invalid("BAMF_C16_3_EVIDENCE_OUTCOME_INVALID")
         if not self._steps:
             _invalid("BAMF_C16_3_EVIDENCE_EMPTY_HORIZON")
         outcome = {"accepted": accepted, "decision": _plain(decision)}
+        multifidelity = _finalize_multifidelity(self, accepted)
         payload = {
             "schema": EVIDENCE_SCHEMA,
             "attempt_id": self.attempt_id,
@@ -300,6 +231,8 @@ class CandidateEvidenceCapture:
             "source_objects": dict(sorted(self._source_objects.items())),
             "steps": list(self._steps),
             "outcome": outcome,
+            **({"multifidelity_shadow": multifidelity}
+               if multifidelity is not None else {}),
         }
         if self._finalized is not None:
             if self._finalized[0] != state._fingerprint(payload):
@@ -338,11 +271,4 @@ class CandidateEvidenceCapture:
         return receipt
 
 
-__all__ = (
-    "CandidateEvidenceCapture",
-    "EVIDENCE_SCHEMA",
-    "PERSISTENCE_SCHEMA",
-    "REFERENCE_SCHEMA",
-    "candidate_attempt_id",
-    "prepare_candidate_evidence_root",
-)
+__all__ = ("CandidateEvidenceCapture",)

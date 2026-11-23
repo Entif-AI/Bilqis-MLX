@@ -60,7 +60,7 @@ def derive_rejected_weaknesses(
         rejection_reason: str, outcome_sha256: str,
 ) -> tuple[dict, ...]:
     """Compile provider-declared classes from one validated rejected horizon."""
-    from bilqis_mlx.runtime.bamf_operator.evidence_validation import (
+    from bilqis_mlx.runtime.bamf_operator.evidence_parts.validation import (
         read_candidate_horizon_evidence,
     )
     from bilqis_mlx.runtime.source_execution import SourceExecutionContext

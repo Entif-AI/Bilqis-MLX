@@ -3,7 +3,7 @@ from contextlib import nullcontext
 from types import SimpleNamespace
 import unittest
 
-from bilqis_mlx.runtime.bamf_operator._session_visit import visit
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_visit import visit
 
 
 class BamfRunAuthorityOrderingTests(unittest.TestCase):

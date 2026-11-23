@@ -122,7 +122,7 @@ class AcceptedAtlasFlywheelHumanResumeSupport(MixedWitnessSupport, unittest.Test
         from bilqis_mlx.runtime.bamf_operator.accepted_learning_evidence import (
             _measurement_seed,
         )
-        from bilqis_mlx.runtime.bamf_operator.session_support import _execution_context
+        from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import _execution_context
 
         _accepted_parent, context, _atlas_path, _features = _execution_context(
             self.run)

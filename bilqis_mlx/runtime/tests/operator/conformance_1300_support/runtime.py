@@ -198,7 +198,7 @@ class Conformance1300RuntimeSupport(Conformance1300FixtureSupport):
         stack = self._production_parameter_context(fixture)
         stack.enter_context(
             patch(
-                "bilqis_mlx.runtime.bamf_operator.session_support.shutil.disk_usage",
+                "bilqis_mlx.runtime.bamf_operator.session_parts.session_support.shutil.disk_usage",
                 return_value=SimpleNamespace(
                     total=1 << 50,
                     used=1 << 30,

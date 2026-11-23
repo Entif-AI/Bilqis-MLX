@@ -18,7 +18,7 @@ from bilqis_mlx.runtime.factory_complete_solver import (
 )
 from bilqis_mlx.semantics.cognitive_operators import TypedValue, ValueState
 
-from .session_support import _execution_context
+from .session_parts.session_support import _execution_context
 
 
 def _invalid(reason: str) -> None:

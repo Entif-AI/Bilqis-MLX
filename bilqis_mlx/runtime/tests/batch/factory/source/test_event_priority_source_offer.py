@@ -13,7 +13,7 @@ from bilqis_mlx.runtime.atlas_flywheel_runtime import (
     run_accepted_atlas_flywheel,
 )
 from bilqis_mlx.runtime.autonomy_state import persist_autonomy_state
-from bilqis_mlx.runtime.bamf_operator.session_support import _execution_context
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import _execution_context
 from bilqis_mlx.runtime.priority_source_offer import prepare_priority_source_offer
 from bilqis_mlx.runtime.tests.admission.atlas.v2.mixed_witness_support import MixedWitnessSupport
 from bilqis_mlx.runtime.tests.admission.atlas.v2.test_c07_lease_closure_v2 import _COMPACT_DECLARED

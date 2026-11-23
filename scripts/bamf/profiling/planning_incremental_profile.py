@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from bilqis_mlx.runtime.bamf_operator.session_support import _execution_context
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import _execution_context
 from bilqis_mlx.runtime.lawful_teaching_frontier import (
     _issue_lawful_teaching_frontier_from_epoch,
 )

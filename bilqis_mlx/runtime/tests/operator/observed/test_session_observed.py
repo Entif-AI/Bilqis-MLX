@@ -173,7 +173,7 @@ def _run_observed_preparation_fixture(parent, selection, steps, events):
             'bilqis_mlx.runtime.championship_advisers.prepare_championship_adviser_pool',
             return_value=None))
         stack.enter_context(patch(
-            'bilqis_mlx.runtime.bamf_operator.evidence_projection.complete_visit_evidence',
+            'bilqis_mlx.runtime.bamf_operator.evidence_parts.projection.complete_visit_evidence',
             side_effect=RuntimeError('observation readback failed')))
         observer = NS(bind_parent=lambda value: events.append({'bound': value}),
                       update=lambda **fields: events.append(fields))

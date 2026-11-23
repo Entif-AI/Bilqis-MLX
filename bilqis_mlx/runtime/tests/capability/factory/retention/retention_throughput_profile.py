@@ -25,7 +25,7 @@ from bilqis_mlx.runtime.bamf_bundle import authenticate_bamf_execution_feature_c
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     bind_accepted_execution_cache, load_accepted_generation,
 )
-from bilqis_mlx.runtime.bamf_operator.session_support import _execution_context
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import _execution_context
 from bilqis_mlx.runtime.bamf_first_student import BamfFoundationConfig, preflight_bamf_foundation
 from bilqis_mlx.runtime.factory_retention_owner import (
     bind_current_retention_protection_plan, bind_current_retention_source_rows,

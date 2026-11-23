@@ -2,7 +2,7 @@ from pathlib import Path
 from types import SimpleNamespace as NS
 from unittest.mock import patch
 
-from bilqis_mlx.runtime.bamf_operator._session_execution import execute_horizon
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_execution import execute_horizon
 
 
 def test_native_horizon_preserves_enrichment_role_into_candidate_delivery():

@@ -8,10 +8,10 @@ from bilqis_mlx.factory.teaching import (
 from bilqis_mlx.runtime import state
 from bilqis_mlx.runtime.teacher_observation_capture import read_sidecar
 
-from .evidence import (
+from .support import (
     EVIDENCE_SCHEMA, PERSISTENCE_SCHEMA, REFERENCE_SCHEMA, candidate_attempt_id,
 )
-from .session_parts.distributed_receipt_validation import (
+from ..session_parts.distributed_receipt_validation import (
     validate_distributed_step_receipts,
 )
 

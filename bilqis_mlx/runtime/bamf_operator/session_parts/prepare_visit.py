@@ -15,7 +15,7 @@ from bilqis_mlx.runtime.factory_retention_owner import (
 from bilqis_mlx.runtime.operator_session import MAX_CANDIDATE_HORIZON
 
 from ..performance import selected_source_visit_fields
-from ..session_support import BamfPreparedVisit
+from .session_support import BamfPreparedVisit
 
 
 def _record_planning_observation(observer, selection, planning_started):

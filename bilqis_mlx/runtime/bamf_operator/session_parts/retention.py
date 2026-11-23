@@ -103,7 +103,7 @@ def _complete_observer_evidence(
         methodology = getattr(capture, "learning_methodology", None)
         if callable(methodology):
             observer.update(learning_methodology=methodology())
-        from ..evidence_projection import complete_visit_evidence
+        from ..evidence_parts.projection import complete_visit_evidence
         record = getattr(observer, "record", {})
         current_visit = (
             record.get("visit_evidence") if isinstance(record, dict) else None

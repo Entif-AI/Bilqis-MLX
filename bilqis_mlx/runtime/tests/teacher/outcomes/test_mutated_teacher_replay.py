@@ -11,7 +11,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.learning_experiment import Settings
 from bilqis_mlx.learning.teacher_strategy_population import effective_policy_key
 from bilqis_mlx.runtime import state
-from bilqis_mlx.runtime.bamf_operator.evidence import CandidateEvidenceCapture
+from bilqis_mlx.runtime.bamf_operator.evidence_parts import CandidateEvidenceCapture
 from bilqis_mlx.runtime.outcomes import replay
 from bilqis_mlx.runtime.outcomes.observations import apply_outcome
 from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
@@ -110,7 +110,7 @@ def test_future_mutated_selection_embeds_selected_teacher_snapshot(tmp_path):
             "selected_teacher_snapshot_required": True,
         })
     with patch(
-            "bilqis_mlx.runtime.bamf_operator.evidence.restore_teacher_lineage",
+            "bilqis_mlx.runtime.bamf_operator.evidence_parts.capture.restore_teacher_lineage",
             return_value=SimpleNamespace(teacher=lambda: selected)):
         capture = CandidateEvidenceCapture(
             tmp_path, selection, generation=1,

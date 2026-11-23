@@ -11,7 +11,7 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
     load_accepted_generation,
 )
 from bilqis_mlx.runtime.capability_retention import (
-    EvidenceKind, EvidenceStage,
+    EvidenceKind, EvidenceStage, EvaluationCohort,
     case_census_digest, evaluate_capabilities,
 )
 from bilqis_mlx.state_dag import read_current
@@ -30,6 +30,7 @@ from ._factory_identity_evaluation import (
 from .retention.screen import (
     bind_factory_baseline_successor, bind_factory_evaluation_issuer,
 )
+from .retention.local_screen_support import split_cached_rows
 from .retention.protection_plan_compiler import (
     bind_retention_protection_plan,
     policy_epoch_sha256,
@@ -48,7 +49,7 @@ def candidate_identity_digest(state):
 from ._factory_retention_support import (
     C05_FRESH_LESSON_SEED_OFFSET, C05_FRESH_TARGET_SEED_OFFSET,
     C05_MAX_FRESH_DRAWS, C05_PROBE_EACH, C05_PROTECTED_REFERENCE_LOSS,
-    _candidate_from_live_parent, _cohort, _fresh_rows, _instruments,
+    _candidate_from_bound_parent, _candidate_from_live_parent, _cohort, _fresh_rows, _instruments,
     _owner_seed, _package_import_from_live_parent,
     _training_capabilities, _training_exclusions,
 )
@@ -150,6 +151,92 @@ def require_current_retention_plan(cache, release, capability_id):
     return plan, plan.for_target(capability_id)
 
 
+def measure_current_retention_shadow_target(
+        source_context, candidate: CandidateTransaction, artifact_path: str,
+        target_capability: str, *, run_dir: Path, parent_correct: int | None = None,
+        accepted_parent=None, execution_cache=None):
+    """Measure one read-only target sentinel from rows prebound for ordinary C05.
+
+    This is observational evidence only.  It does not run the protected screen,
+    issue a retention decision, shorten candidate execution or create retained
+    state.  The accepted parent is scored once per candidate when ``parent_correct``
+    is absent; later rungs may reuse that immutable score.
+    """
+    if (type(candidate) is not CandidateTransaction
+            or not isinstance(target_capability, str) or not target_capability
+            or not isinstance(run_dir, Path)
+            or (parent_correct is not None
+                and (type(parent_correct) is not int or parent_correct < 0))):
+        _invalid("BAMF_C05_SHADOW_TARGET_INPUT_INVALID")
+    if (accepted_parent is None) != (execution_cache is None):
+        _invalid("BAMF_C05_SHADOW_TARGET_BOUND_PARENT_INVALID")
+    source_context.__post_init__()
+    if accepted_parent is None:
+        source_context.require_accepted_runtime(run_dir)
+    release = source_context.release
+    parent, candidate_bundle, _candidate_state, cache = (
+        _candidate_from_live_parent(run_dir, candidate)
+        if accepted_parent is None else
+        _candidate_from_bound_parent(accepted_parent, execution_cache, candidate)
+    )
+    plan, target_plan, cached_rows = require_current_retention_source_rows(
+        cache, release, target_capability)
+    (seed, rows), _protected_rows = split_cached_rows(cached_rows, target_plan)
+    instruments = tuple(_instruments(
+        source_context, candidate_bundle, artifact_path, rows,
+        seed=seed, each=C05_PROBE_EACH, release_prevalidated=True))
+    cases = tuple(item.case for item in instruments)
+    policy_sha256 = contract_digest({
+        "schema": "bilqis.bamf.multifidelity-target-sentinel-policy/v1",
+        "retention_protection_plan_sha256": plan.digest,
+        "target_capability": target_capability,
+        "comparison_scope_sha256": target_plan.comparison_scope_sha256,
+        "authority": "OBSERVATIONAL_ONLY",
+    })
+    cohort = EvaluationCohort(
+        EvidenceKind.FRESH_TARGET,
+        cases,
+        ((target_capability, target_plan.target_grade_id),),
+        plan.rubric_sha256,
+        target_plan.comparison_scope_sha256,
+        plan.source_sha256,
+        policy_sha256,
+        (), (), case_census_digest(cases),
+        evidence_stage=CURRENT_EVIDENCE_STAGE,
+    )
+    candidate_solver, candidate_generation = factory_complete_solver(
+        source_context, candidate_bundle, artifact_path, instruments)
+    candidate_assessment = evaluate_capabilities(
+        candidate_solver, cohort, candidate_generation)
+    candidate_correct, total = candidate_assessment.score(target_capability)
+    if parent_correct is None:
+        parent_solver, parent_generation = factory_complete_solver(
+            source_context, parent, artifact_path, instruments,
+            execution_cache=cache)
+        parent_assessment = evaluate_capabilities(
+            parent_solver, cohort, parent_generation)
+        parent_correct, parent_total = parent_assessment.score(target_capability)
+        if parent_total != total:
+            _invalid("BAMF_C05_SHADOW_TARGET_SCORE_DRIFT")
+    elif parent_correct > total:
+        _invalid("BAMF_C05_SHADOW_TARGET_SCORE_DRIFT")
+    return {
+        "schema": "bilqis.bamf.multifidelity-target-sentinel/v1",
+        "source": "PREBOUND_C05_REFERENCE_TARGET_ROWS",
+        "final_c05_authority": False,
+        "target_capability": target_capability,
+        "source_seed": seed,
+        "case_census_sha256": case_census_digest(cases),
+        "parent_correct": parent_correct,
+        "candidate_correct": candidate_correct,
+        "total": total,
+        "target_correct_delta": candidate_correct - parent_correct,
+        "candidate_generation": candidate_generation,
+        "retention_protection_plan_sha256": plan.digest,
+        "actual_authority_changed": False,
+    }
+
+
 def evaluate_factory_retention_candidate(
     source_context,
     candidate: CandidateTransaction,
@@ -217,5 +304,5 @@ __all__ = (
     "bind_factory_baseline_successor",
     "derive_current_plasticity_escape_state",
     "evaluate_factory_package_import",
-    "evaluate_factory_retention_candidate",
+    "evaluate_factory_retention_candidate", "measure_current_retention_shadow_target",
 )

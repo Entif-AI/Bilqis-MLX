@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import retention_result
 from bilqis_mlx.runtime.bamf_operator.session import _emit_progress
-from bilqis_mlx.runtime.bamf_operator.session_support import _resource_observation
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import _resource_observation
 from bilqis_mlx.runtime.source_execution import SourcePreparationMetrics
 
 
@@ -26,7 +26,7 @@ def test_resource_observation_reports_semantic_materialization_counts():
         provider_draws=21, source_context_builds=1,
         compiled_source_builds=1)
     with patch(
-            "bilqis_mlx.runtime.bamf_operator.session_support.shutil.disk_usage",
+            "bilqis_mlx.runtime.bamf_operator.session_parts.session_support.shutil.disk_usage",
             return_value=SimpleNamespace(used=123)):
         resource = _resource_observation(Path("/run"), step, source_metrics)
     assert resource["atlas_reload_count"] == 0

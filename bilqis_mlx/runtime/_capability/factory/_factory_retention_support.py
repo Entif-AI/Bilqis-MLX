@@ -103,10 +103,8 @@ def _owner_seed(release_sha256, cache, target_capability, candidate_sha256):
     return int(digest[:16], 16)
 
 
-def _candidate_from_live_parent(run_dir: Path, transaction: CandidateTransaction):
-    """Bind one speculative B12 transaction to the current accepted B13 parent."""
-    parent = load_accepted_generation(run_dir)
-    cache = bind_accepted_execution_cache(run_dir)
+def _candidate_from_bound_parent(parent, cache, transaction: CandidateTransaction):
+    """Bind one speculative B12 transaction to an already authenticated B13 parent."""
     custody = transaction.parent.custody
     if (transaction.update_steps < 1 or custody is None
             or candidate_identity_for_canonical_consumer(transaction.parent)
@@ -131,6 +129,13 @@ def _candidate_from_live_parent(run_dir: Path, transaction: CandidateTransaction
             parent_manifest_sha256=cache.accepted_manifest_sha256,
             delivery_events=())
     return parent, successor, preview, cache
+
+
+def _candidate_from_live_parent(run_dir: Path, transaction: CandidateTransaction):
+    """Bind one speculative B12 transaction to the current accepted B13 parent."""
+    parent = load_accepted_generation(run_dir)
+    cache = bind_accepted_execution_cache(run_dir)
+    return _candidate_from_bound_parent(parent, cache, transaction)
 
 
 def _package_import_from_live_parent(

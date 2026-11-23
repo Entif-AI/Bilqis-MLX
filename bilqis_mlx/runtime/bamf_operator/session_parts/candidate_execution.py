@@ -102,6 +102,39 @@ def _candidate_capture(
     return source_lane, capture_cls(run_dir, selection, **capture_kwargs)
 
 
+def _configure_shadow(capture, horizon, shadow_policy, shadow_rungs_fn,
+                      shadow_probe_fn):
+    if (shadow_policy is None or horizon < shadow_policy.rungs[0]
+            or not callable(shadow_rungs_fn) or not callable(shadow_probe_fn)):
+        return ()
+    shadow_rungs = tuple(shadow_rungs_fn(shadow_policy, horizon))
+    capture.configure_multifidelity(
+        full_budget_steps=horizon, rungs=shadow_rungs,
+        policy_version=shadow_policy.version,
+        minimum_target_delta_to_continue=(
+            shadow_policy.minimum_target_delta_to_continue),
+        minimum_decision_step=shadow_policy.minimum_decision_step)
+    return shadow_rungs
+
+
+def _observe_shadow_rung(
+        ordinal, shadow_rungs, shadow_parent_correct, shadow_probe_fn,
+        context, candidate, atlas_path, selection, run_dir, parent, cache, capture):
+    if ordinal not in shadow_rungs:
+        return shadow_parent_correct
+    probe_started = time.perf_counter()
+    probe = shadow_probe_fn(
+        context, candidate, atlas_path, selection.offer.capability_id,
+        run_dir=run_dir, parent_correct=shadow_parent_correct,
+        accepted_parent=parent, execution_cache=cache)
+    capture.record_multifidelity_rung(
+        step=ordinal, target_probe=probe,
+        probe_wall_seconds=max(0.0, time.perf_counter() - probe_started))
+    return (
+        probe.get("parent_correct")
+        if shadow_parent_correct is None else shadow_parent_correct)
+
+
 def execute_horizon(
         run_dir, selection, context, parent, atlas_path, feature_path,
         rows, horizon, cache, candidate_attempt_ordinal, progress,
@@ -109,13 +142,17 @@ def execute_horizon(
         source_prefetch_metrics, observer, adviser_pool=None, *, source_lane_cls,
         source_metrics_cls, prepare_evidence_root, capture_cls,
         delivery_observation_cls, execute_candidate, step_seed,
-        emit_progress, invalid, observe_completed_step_fn, rehearsal_plan=None):
+        emit_progress, invalid, observe_completed_step_fn, rehearsal_plan=None,
+        shadow_policy=None, shadow_rungs_fn=None, shadow_probe_fn=None):
     source_lane, capture = _candidate_capture(
         run_dir, selection, context, parent, cache, candidate_attempt_ordinal,
         source_prefetch_workers, source_prefetch_executor, source_prefetch_metrics,
         horizon, rehearsal_plan, source_lane_cls, source_metrics_cls,
         prepare_evidence_root, capture_cls)
     steps, candidate = [], None
+    shadow_rungs = _configure_shadow(
+        capture, horizon, shadow_policy, shadow_rungs_fn, shadow_probe_fn)
+    shadow_parent_correct = None
     for ordinal in range(1, horizon + 1):
         candidate_step_started_at = time.perf_counter()
         begin_step_started = time.perf_counter()
@@ -174,6 +211,10 @@ def execute_horizon(
         observe_completed_step_fn(observer, step, candidate)
         if getattr(candidate, "motif_transition", None) is not None:
             break
+        shadow_parent_correct = _observe_shadow_rung(
+            ordinal, shadow_rungs, shadow_parent_correct, shadow_probe_fn,
+            context, candidate, atlas_path, selection, run_dir, parent, cache,
+            capture)
     return steps, capture
 
 

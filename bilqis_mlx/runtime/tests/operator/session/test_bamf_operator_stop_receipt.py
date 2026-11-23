@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from bilqis_mlx.runtime.bamf_operator._session_execution import operate
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_execution import operate
 from bilqis_mlx.runtime.bamf_operator.session_parts.stop_receipt import (
     read_latest_run_stop_receipt, record_normal_stop_receipt,
 )
@@ -110,7 +110,7 @@ class NativeRunStopReceiptTests(unittest.TestCase):
                 monotonic=Mock(side_effect=(0.0, 0.0)),
                 load_generation=Mock(return_value=current),
                 result_type=__import__(
-                    "bilqis_mlx.runtime.bamf_operator.session_support",
+                    "bilqis_mlx.runtime.bamf_operator.session_parts.session_support",
                     fromlist=["BamfOperatorResult"]).BamfOperatorResult,
                 resource_snapshot=lambda _run, _reserve: witness,
                 record_stop=recorded, elapsed_clock=Mock(side_effect=(5.0, 5.5)))
@@ -144,7 +144,7 @@ class NativeRunStopReceiptTests(unittest.TestCase):
                 monotonic=Mock(return_value=0.0),
                 load_generation=Mock(return_value=current),
                 result_type=__import__(
-                    "bilqis_mlx.runtime.bamf_operator.session_support",
+                    "bilqis_mlx.runtime.bamf_operator.session_parts.session_support",
                     fromlist=["BamfOperatorResult"]).BamfOperatorResult,
                 resource_snapshot=lambda _run, _reserve: {
                     "free_bytes": 10, "reserve_bytes": 0,

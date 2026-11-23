@@ -4,9 +4,9 @@ from __future__ import annotations
 from bilqis_mlx.errors import BilqisError, SCHOOL
 from bilqis_mlx.runtime.logical_batch import BamfLogicalBatchContract
 
-from ._session_visit import ResourceRejectedVisit
-from .session_parts.candidate_execution import candidate_horizon_execution, execute_horizon
-from .session_parts.retention import retention_result
+from .session_visit import ResourceRejectedVisit
+from .candidate_execution import candidate_horizon_execution, execute_horizon
+from .retention import retention_result
 
 
 def _validate_bounds(*, minutes, max_visits, steps_per_visit, reserve_gib,
