@@ -22,6 +22,7 @@ import mlx.core as mx
 
 from bilqis_mlx.runtime.mlx_memory import training_memory_policy
 from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
+from bilqis_mlx.runtime.teacher_observation_capture import ObservationCapture
 from bilqis_mlx.runtime.tests.capability.factory.retention import retention_throughput_profile as p
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe import retained_digest
 
@@ -36,8 +37,17 @@ if not artifact.is_dir() or not source.is_dir():
 previous = mx.default_device()
 mx.set_default_device(mx.gpu)
 try:
+    original_delivery = ObservationCapture.delivery
+
+    def compatible_delivery(self, *args, fresh_support=(), **kwargs):
+        if fresh_support:
+            raise AssertionError(
+                "#1575 witness compatibility shim refuses non-empty fresh support")
+        return original_delivery(self, *args, **kwargs)
+
     with training_memory_policy(mx):
-        with tempfile.TemporaryDirectory() as directory, p.host_source_authority_patch():
+        with tempfile.TemporaryDirectory() as directory, p.host_source_authority_patch(), \
+                patch.object(ObservationCapture, "delivery", compatible_delivery):
             stage = Path(directory)
             with patch.dict(os.environ, {
                     "BILQIS_A01_ATLAS_BUNDLE": str(artifact),
