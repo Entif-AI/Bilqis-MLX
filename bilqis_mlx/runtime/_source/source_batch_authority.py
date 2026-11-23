@@ -166,10 +166,33 @@ def bind_prequalified_delivery_rows(
         context, rows, seed=authority.seed, capability=authority.capability_id)
 
 
+def bind_authorized_subset_rows(
+        context, parent_rows, selected_rows, authority: SourceBatchAuthority):
+    """Issue exact authority for rows selected from one already-authorized batch."""
+    parent_rows = tuple(parent_rows)
+    selected_rows = tuple(selected_rows)
+    if (not parent_rows or not selected_rows or len(selected_rows) > len(parent_rows)
+            or type(authority) is not SourceBatchAuthority):
+        _invalid("FACTORY_SOURCE_BATCH_BINDING_INVALID")
+    require_bound_rows(context, parent_rows, authority)
+    remaining = list(parent_rows)
+    for selected in selected_rows:
+        for index, candidate in enumerate(remaining):
+            if candidate == selected:
+                remaining.pop(index)
+                break
+        else:
+            _invalid("FACTORY_SOURCE_BATCH_CONTENT_DRIFT")
+    return _issue(
+        context, selected_rows, seed=authority.seed,
+        capability=authority.capability_id)
+
+
 # Preserve the historical import identity while implementation lives in this owner module.
 SourceBatchAuthority.__module__ = "bilqis_mlx.runtime._source.source_execution"
 
 __all__ = (
-    "SourceBatchAuthority", "bind_delivery_rows", "bind_prequalified_delivery_rows",
-    "bind_rows", "draw_bound_rows", "require_bound_rows", "source_content_digest",
+    "SourceBatchAuthority", "bind_authorized_subset_rows", "bind_delivery_rows",
+    "bind_prequalified_delivery_rows", "bind_rows", "draw_bound_rows",
+    "require_bound_rows", "source_content_digest",
 )

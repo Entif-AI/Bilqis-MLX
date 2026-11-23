@@ -44,8 +44,11 @@ from .atlas_training_fixture_support import (
 class AtlasTrainingAdapterTest(AtlasTrainingAdapterCase):
     def test_cross_capability_rehearsal_keeps_target_visit_and_row_authorities_distinct(self):
         target = self.context.draw_rows(seed=17, capability='Z.C2', each=1)
-        support, support_authority = self.context.draw_bound_rows(
-            seed=23, capability='Z.C0', each=1)
+        support_batch, parent_authority = self.context.draw_bound_rows(
+            seed=23, capability='Z.C0', each=2)
+        support = support_batch[:1]
+        support_authority = self.context.bind_authorized_subset_rows(
+            support_batch, support, parent_authority)
         target_authority = self.context.bind_rows(
             target, seed=17, capability='Z.C2', each=1)
         rows = (*target, *support)
@@ -65,8 +68,11 @@ class AtlasTrainingAdapterTest(AtlasTrainingAdapterCase):
 
     def test_same_capability_preservation_keeps_its_own_source_authority(self):
         target = self.context.draw_rows(seed=17, capability='Z.C0', each=1)
-        preservation, preservation_authority = self.context.draw_bound_rows(
-            seed=23, capability='Z.C0', each=1)
+        preservation_batch, parent_authority = self.context.draw_bound_rows(
+            seed=23, capability='Z.C0', each=2)
+        preservation = preservation_batch[:1]
+        preservation_authority = self.context.bind_authorized_subset_rows(
+            preservation_batch, preservation, parent_authority)
         target_authority = self.context.bind_rows(
             target, seed=17, capability='Z.C0', each=1)
         rows = (*target, *preservation)

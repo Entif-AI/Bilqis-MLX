@@ -78,6 +78,38 @@ class SourceExecutionContextTests(unittest.TestCase):
             self.assertEqual(extended.capability_id, authority.capability_id)
         self.assertEqual(context._source_preparation_metrics.provider_draws, 1)
 
+    def test_authorized_subset_binding_does_not_redraw_provider(self):
+        from bilqis_mlx.factory import generation
+
+        context = SourceExecutionContext(**self.arguments)
+        original = generation.draw_executable_release_rows
+        with patch.object(
+                generation, "draw_executable_release_rows",
+                wraps=original) as draw:
+            rows, parent_authority = context.draw_bound_rows(
+                seed=17, capability="Z.C0", each=2)
+            selected = rows[:1]
+            authority = context.bind_authorized_subset_rows(
+                rows, selected, parent_authority)
+            self.assertEqual(draw.call_count, 1)
+            self.assertEqual(authority.each, 1)
+            self.assertEqual(authority.seed, parent_authority.seed)
+            self.assertEqual(authority.capability_id, parent_authority.capability_id)
+            self.assertIs(context.require_bound_rows(selected, authority), authority)
+            self.assertEqual(draw.call_count, 1)
+
+    def test_authorized_subset_binding_rejects_row_not_in_parent_batch(self):
+        context = SourceExecutionContext(**self.arguments)
+        rows, authority = context.draw_bound_rows(
+            seed=17, capability="Z.C0", each=2)
+        tampered = ({**rows[0], "id": rows[0]["id"] + ":tampered"},)
+        with self.assertRaises(BilqisError) as caught:
+            context.bind_authorized_subset_rows(rows, tampered, authority)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "FACTORY_SOURCE_BATCH_CONTENT_DRIFT",
+        )
+
     def test_unbound_source_context_cannot_claim_accepted_runtime_custody(self):
         from pathlib import Path
         context = SourceExecutionContext(**self.arguments)
