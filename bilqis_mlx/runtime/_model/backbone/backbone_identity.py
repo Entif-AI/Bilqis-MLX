@@ -90,6 +90,44 @@ class ExecutionGenerationBinding:
             _invalid()
 
 
+@dataclass(frozen=True, init=False)
+class LearningFirstExecutionGenerationBinding:
+    """Opaque process-local binding for an ordinary disposable candidate step."""
+
+    generation_digest: str
+    parameter_tree_digest: str
+    topology_digest: str
+    extents_digest: str
+    schema_version: str
+    _parameters: object = field(repr=False, compare=False)
+    _issuance: object = field(repr=False, compare=False)
+
+
+_LEARNING_FIRST_BINDING_ISSUER = object()
+
+
+def issue_learning_first_execution_generation_binding(
+        parameters, *, spec, extents, generation: str):
+    from bilqis_mlx.runtime.candidate.step_authority import (
+        require_learning_first_step_authority,
+    )
+    authority = require_learning_first_step_authority(
+        generation, parameters=parameters, topology_digest=spec.digest,
+        extents_digest=extents.digest)
+    binding = object.__new__(LearningFirstExecutionGenerationBinding)
+    for name, value in (
+            ("generation_digest", generation),
+            ("parameter_tree_digest", generation),
+            ("topology_digest", authority.topology_digest),
+            ("extents_digest", authority.extents_digest),
+            ("schema_version",
+             "bilqis.mlx.learning-first-execution-generation-binding/v1"),
+            ("_parameters", parameters),
+            ("_issuance", _LEARNING_FIRST_BINDING_ISSUER)):
+        object.__setattr__(binding, name, value)
+    return binding
+
+
 def issue_execution_generation_binding(
     parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
     extents: GenerationExtents, expected_generation: str | None = None,
@@ -123,6 +161,22 @@ def require_execution_generation_binding(
     extents: GenerationExtents,
 ) -> ExecutionGenerationBinding:
     """Revalidate structure and exact tensor ownership without re-reading tensor bytes."""
+    if type(binding) is LearningFirstExecutionGenerationBinding:
+        from bilqis_mlx.runtime.candidate.step_authority import (
+            require_learning_first_step_authority,
+        )
+        if (binding._issuance is not _LEARNING_FIRST_BINDING_ISSUER
+                or parameters is not binding._parameters
+                or binding.topology_digest != spec.digest
+                or binding.extents_digest != extents.digest
+                or binding.parameter_tree_digest != binding.generation_digest
+                or binding.schema_version
+                != "bilqis.mlx.learning-first-execution-generation-binding/v1"):
+            _invalid("EXECUTION_GENERATION_BINDING_CURRENTNESS_MISMATCH")
+        require_learning_first_step_authority(
+            binding.generation_digest, topology_digest=spec.digest,
+            extents_digest=extents.digest)
+        return binding
     if type(binding) is not ExecutionGenerationBinding:
         _invalid()
     binding.__post_init__()
@@ -151,6 +205,20 @@ def _execution_generation_autodiff_rebinder(
     """
     owned = require_execution_generation_binding(
         binding, parameters, spec=spec, extents=extents)
+    if type(owned) is LearningFirstExecutionGenerationBinding:
+        def rebind(current: Mapping[str, mx.array]):
+            rebound = object.__new__(LearningFirstExecutionGenerationBinding)
+            for name, value in (
+                    ("generation_digest", owned.generation_digest),
+                    ("parameter_tree_digest", owned.parameter_tree_digest),
+                    ("topology_digest", owned.topology_digest),
+                    ("extents_digest", owned.extents_digest),
+                    ("schema_version", owned.schema_version),
+                    ("_parameters", current),
+                    ("_issuance", _LEARNING_FIRST_BINDING_ISSUER)):
+                object.__setattr__(rebound, name, value)
+            return rebound
+        return rebind
     names = owned.parameter_names
 
     def rebind(current: Mapping[str, mx.array]) -> ExecutionGenerationBinding:

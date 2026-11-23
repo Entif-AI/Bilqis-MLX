@@ -109,7 +109,7 @@ class BackboneTraceSession:
         if owned.generation_digest != generation:
             _invalid()
         self._hidden = hidden
-        self._parameters = dict(parameters)
+        self._parameters = parameters
         self._spec = spec
         self._extents = extents
         self._scope_ids = scope_ids

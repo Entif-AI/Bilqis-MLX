@@ -83,8 +83,8 @@ def _execute_training_and_admission(
         run_dir, source_context, parent, prepared, feature_context, generation, cache, resource_plan,
         teacher_hparams, max_norm, candidate, currentness_transaction,
         salience_supervision, mentor_supervision, distributed_profile, distributed_executor):
-    parameters = dict((parent.retained_state.optimizer if candidate is None
-                       else candidate.optimizer).parameters)
+    parameters = (parent.retained_state.optimizer if candidate is None
+                  else candidate.optimizer).parameters
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import strict_evidence_enabled
     strict = strict_evidence_enabled()
     neural_cache = cache if strict or distributed_profile is not None else None

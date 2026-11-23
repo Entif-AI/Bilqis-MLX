@@ -151,6 +151,27 @@ def require_current_retention_plan(cache, release, capability_id):
     return plan, plan.for_target(capability_id)
 
 
+def _shadow_candidate_inputs(
+        source_context, candidate, target_capability, run_dir,
+        accepted_parent, execution_cache):
+    if (accepted_parent is None) != (execution_cache is None):
+        _invalid("BAMF_C05_SHADOW_TARGET_BOUND_PARENT_INVALID")
+    source_context.__post_init__()
+    if accepted_parent is None:
+        source_context.require_accepted_runtime(run_dir)
+    parent, candidate_bundle, _candidate_state, cache = (
+        _candidate_from_live_parent(run_dir, candidate)
+        if accepted_parent is None else
+        _candidate_from_bound_parent(
+            accepted_parent, execution_cache, candidate,
+            canonical_identity_required=False)
+    )
+    plan, target_plan, cached_rows = require_current_retention_source_rows(
+        cache, source_context.release, target_capability)
+    (seed, rows), _protected_rows = split_cached_rows(cached_rows, target_plan)
+    return parent, candidate_bundle, cache, plan, target_plan, seed, rows
+
+
 def measure_current_retention_shadow_target(
         source_context, candidate: CandidateTransaction, artifact_path: str,
         target_capability: str, *, run_dir: Path, parent_correct: int | None = None,
@@ -168,20 +189,10 @@ def measure_current_retention_shadow_target(
             or (parent_correct is not None
                 and (type(parent_correct) is not int or parent_correct < 0))):
         _invalid("BAMF_C05_SHADOW_TARGET_INPUT_INVALID")
-    if (accepted_parent is None) != (execution_cache is None):
-        _invalid("BAMF_C05_SHADOW_TARGET_BOUND_PARENT_INVALID")
-    source_context.__post_init__()
-    if accepted_parent is None:
-        source_context.require_accepted_runtime(run_dir)
-    release = source_context.release
-    parent, candidate_bundle, _candidate_state, cache = (
-        _candidate_from_live_parent(run_dir, candidate)
-        if accepted_parent is None else
-        _candidate_from_bound_parent(accepted_parent, execution_cache, candidate)
-    )
-    plan, target_plan, cached_rows = require_current_retention_source_rows(
-        cache, release, target_capability)
-    (seed, rows), _protected_rows = split_cached_rows(cached_rows, target_plan)
+    parent, candidate_bundle, cache, plan, target_plan, seed, rows = (
+        _shadow_candidate_inputs(
+            source_context, candidate, target_capability, run_dir,
+            accepted_parent, execution_cache))
     instruments = tuple(_instruments(
         source_context, candidate_bundle, artifact_path, rows,
         seed=seed, each=C05_PROBE_EACH, release_prevalidated=True))

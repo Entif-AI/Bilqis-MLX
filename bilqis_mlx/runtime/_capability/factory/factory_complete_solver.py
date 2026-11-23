@@ -63,6 +63,25 @@ def _execution_binding(
         if parameters is None else parameters
     )
     if execution_cache is None:
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        if not strict_evidence_enabled():
+            from bilqis_mlx.runtime.candidate.step_authority import (
+                current_learning_first_step_authority_for_parameters,
+            )
+            token = current_learning_first_step_authority_for_parameters(parameters)
+            if token is not None:
+                from bilqis_mlx.runtime.backbone_identity import (
+                    issue_learning_first_execution_generation_binding,
+                )
+                return issue_learning_first_execution_generation_binding(
+                    parameters, spec=candidate.topology, extents=candidate.extents,
+                    generation=token)
+            from bilqis_mlx.runtime.candidate.step_authority import (
+                record_learning_first_full_proof_fallback,
+            )
+            record_learning_first_full_proof_fallback()
         return issue_execution_generation_binding(
             parameters, spec=candidate.topology, extents=candidate.extents)
     from bilqis_mlx.runtime.bamf_bundle.execution_cache import (

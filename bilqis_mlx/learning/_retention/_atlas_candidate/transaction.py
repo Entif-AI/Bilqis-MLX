@@ -31,16 +31,11 @@ TRAINING_SOURCE_COORDINATE_FIELDS = (
 def _parent_object_guard(parent: CandidateState) -> tuple:
     """Cheap process-local proof that the accepted parent objects are unchanged."""
     optimizer = parent.optimizer
-    groups = []
-    for group in ("parameters", "m", "v", "update_counts"):
-        values = getattr(optimizer, group)
-        groups.append((
-            group, id(values),
-            tuple((name, id(value)) for name, value in sorted(values.items())),
-        ))
     return (
         id(parent), id(optimizer), parent.optimizer_step,
-        id(parent.policy), id(parent.allocations), tuple(groups),
+        id(parent.policy), id(parent.allocations),
+        id(optimizer.parameters), id(optimizer.m), id(optimizer.v),
+        id(optimizer.update_counts),
     )
 
 
